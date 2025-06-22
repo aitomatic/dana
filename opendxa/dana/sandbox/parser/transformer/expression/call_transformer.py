@@ -43,7 +43,7 @@ class CallTransformer(BaseTransformer):
         The method uses two strategies to detect object method calls:
 
         Strategy 1: Dotted identifier analysis
-        - If base is an Identifier with dots (e.g., "local.obj.method")
+        - If base is an Identifier with dots (e.g., "local:obj.method")
         - And trailer is function call arguments
         - Split the dotted name into object parts and method name
         - Create ObjectFunctionCall with proper object and method separation
@@ -55,10 +55,10 @@ class CallTransformer(BaseTransformer):
 
         Examples:
         ---------
-        - `websearch.list_tools()` -> ObjectFunctionCall(object=Identifier("local.websearch"), method_name="list_tools")
-        - `obj.add(10)` -> ObjectFunctionCall(object=Identifier("local.obj"), method_name="add", args={"__positional": [10]})
+        - `websearch.list_tools()` -> ObjectFunctionCall(object=Identifier("local:websearch"), method_name="list_tools")
+        - `obj.add(10)` -> ObjectFunctionCall(object=Identifier("local:obj"), method_name="add", args={"__positional": [10]})
         - `func()` -> FunctionCall(name="func")
-        - `obj.attr` -> Identifier(name="local.obj.attr")
+        - `obj.attr` -> Identifier(name="local:obj.attr")
 
         Args:
             items: List containing base expression and trailer elements from parse tree
@@ -81,8 +81,8 @@ class CallTransformer(BaseTransformer):
             if is_function_call:
                 # Check if this looks like an object method call
                 # Split the dotted name to see if we can separate object from method
-                name_parts = base.name.split(".")
-                if len(name_parts) >= 3:  # e.g., "local.obj.method"
+                name_parts = base.name.split(":")
+                if len(name_parts) >= 3:  # e.g., "local:obj.method"
                     # Extract scope, object parts, and method name
                     scope = name_parts[0]  # "local"
                     method_name = name_parts[-1]  # "method"

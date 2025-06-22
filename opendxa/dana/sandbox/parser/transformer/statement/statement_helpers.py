@@ -124,15 +124,47 @@ class AssignmentHelper:
         if not items:
             raise ValueError("basic_type rule received empty items list")
 
-        # Handle both built-in type tokens and NAME tokens (for struct types)
-        item = items[0]
-        if hasattr(item, "value"):
-            type_name = item.value
-        elif hasattr(item, "type") and item.type == "NAME":
-            # This is a NAME token representing a user-defined struct type
-            type_name = item.value
+        # Handle union types (basic_type -> union_type -> single_type (PIPE single_type)*)
+        # items should contain a union_type Tree
+        from lark import Tree
+
+        if len(items) == 1 and isinstance(items[0], Tree) and items[0].data == "union_type":
+            union_items = items[0].children
+
+            # Extract type names from union
+            type_names = []
+            for union_item in union_items:
+                if isinstance(union_item, Tree) and union_item.data == "single_type":
+                    # Get the actual type token from single_type
+                    type_token = union_item.children[0]
+                    if hasattr(type_token, "value"):
+                        type_names.append(type_token.value)
+                    elif hasattr(type_token, "type") and type_token.type == "NAME":
+                        type_names.append(type_token.value)
+                    else:
+                        type_names.append(str(type_token))
+                elif hasattr(union_item, "value"):
+                    type_names.append(union_item.value)
+                elif hasattr(union_item, "type") and union_item.type == "NAME":
+                    type_names.append(union_item.value)
+                else:
+                    type_names.append(str(union_item))
+
+            # Join union types with " | "
+            if len(type_names) > 1:
+                type_name = " | ".join(type_names)
+            else:
+                type_name = type_names[0] if type_names else "unknown"
         else:
-            type_name = str(item)
+            # Handle legacy single type (fallback)
+            item = items[0]
+            if hasattr(item, "value"):
+                type_name = item.value
+            elif hasattr(item, "type") and item.type == "NAME":
+                # This is a NAME token representing a user-defined struct type
+                type_name = item.value
+            else:
+                type_name = str(item)
 
         return TypeHint(name=type_name)
 

@@ -148,7 +148,7 @@ def validate_data_quality(data_points: list, feature_name: str) -> dict:
     
     if len(data_points) == 0:
         return {
-            "is_valid": false,
+            "is_valid": False,
             "feature_name": feature_name,
             "issues": ["No data points provided"]
         }
@@ -271,7 +271,12 @@ for scenario in performance_scenarios:
     performance_results.append(result)
     
     perf_data = result.unwrap()
-    status_icon = "✅" if perf_data["status"] == "healthy" else "🚨" if perf_data["status"] == "degraded" else "⚠️"
+    if perf_data["status"] == "healthy":
+        status_icon = "✅"
+    elif perf_data["status"] == "degraded":
+        status_icon = "🚨"
+    else:
+        status_icon = "⚠️"
     status = perf_data["status"]
     mae = perf_data["performance_metrics"]["mae"]
     log(f"   {scenario['name']:15} → {status_icon} {status} (MAE: {mae:.2f})")
@@ -287,11 +292,11 @@ quality_scenarios = [
     },
     {
         "name": "missing_data",
-        "data": [1.0, -999999, 3.0, -999999, 5.0]  # Using -999999 for missing
+        "data": [1.0, -999999, 3.0, -999999, 5.0]
     },
     {
         "name": "outlier_data", 
-        "data": [1.0, 2.0, 100.0, 4.0, 5.0]  # 100.0 is outlier
+        "data": [1.0, 2.0, 100.0, 4.0, 5.0]
     }
 ]
 
@@ -299,7 +304,10 @@ for scenario in quality_scenarios:
     result = validate_data_quality(scenario["data"], f"feature_{scenario['name']}")
     quality_data = result.unwrap()
     
-    status_icon = "✅" if quality_data["is_valid"] else "⚠️"
+    if quality_data["is_valid"]:
+        status_icon = "✅"
+    else:
+        status_icon = "⚠️"
     feature_name = quality_data["feature_name"]
     issues = quality_data["issues"]
     log(f"   {scenario['name']:15} → {status_icon} {feature_name}")

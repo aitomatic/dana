@@ -73,13 +73,13 @@ local:total_revenue = processed_order1.amount + processed_order2.amount
 
         # Verify customer creation
         assert result.final_context is not None
-        customer1 = result.final_context.get("local.customer1")
+        customer1 = result.final_context.get("local:customer1")
         assert isinstance(customer1, StructInstance)
         assert customer1.name == "Alice Smith"
         assert customer1.age == 30
 
         # Verify order processing with method syntax
-        processed_order1 = result.final_context.get("local.processed_order1")
+        processed_order1 = result.final_context.get("local:processed_order1")
         assert isinstance(processed_order1, StructInstance)
         assert processed_order1.status == "processed"
         assert processed_order1.amount == 150.50
@@ -87,7 +87,7 @@ local:total_revenue = processed_order1.amount + processed_order2.amount
         assert processed_order1.customer.name == "Alice Smith"
 
         # Verify simple calculation
-        total_revenue = result.final_context.get("local.total_revenue")
+        total_revenue = result.final_context.get("local:total_revenue")
         assert total_revenue == 225.75  # 150.50 + 75.25
 
     def test_hierarchical_organization_structure(self):
@@ -126,14 +126,14 @@ local:eng_cost = eng_dept.calculate_department_cost()
 
         # Verify department structure
         assert result.final_context is not None
-        eng_dept = result.final_context.get("local.eng_dept")
+        eng_dept = result.final_context.get("local:eng_dept")
         assert isinstance(eng_dept, StructInstance)
         assert eng_dept.name == "Engineering"
         assert isinstance(eng_dept.manager, StructInstance)
         assert eng_dept.manager.name == "Sarah Manager"
 
         # Verify department calculation using method syntax
-        eng_cost = result.final_context.get("local.eng_cost")
+        eng_cost = result.final_context.get("local:eng_cost")
         assert eng_cost == 120000.0
 
     def test_game_system_with_complex_interactions(self):
@@ -173,7 +173,7 @@ local:moved_player = player.move_player(3.0, 2.0)
 
         # Verify player movement using method syntax
         assert result.final_context is not None
-        moved_player = result.final_context.get("local.moved_player")
+        moved_player = result.final_context.get("local:moved_player")
         assert isinstance(moved_player, StructInstance)
         assert moved_player.position.x == 3.0
         assert moved_player.position.y == 2.0
@@ -222,8 +222,8 @@ while count < 100:
         # Verify results
         assert struct_result.final_context is not None
         assert dict_result.final_context is not None
-        struct_points = struct_result.final_context.get("local.points")
-        dict_points = dict_result.final_context.get("local.points")
+        struct_points = struct_result.final_context.get("local:points")
+        dict_points = dict_result.final_context.get("local:points")
 
         assert len(struct_points) == 100
         assert len(dict_points) == 100
@@ -274,7 +274,7 @@ while count < 1000:
 
         # Verify results
         assert struct_result.final_context is not None
-        struct_sum = struct_result.final_context.get("local.sum")
+        struct_sum = struct_result.final_context.get("local:sum")
         assert struct_sum == 30000  # (10 + 20) * 1000
 
 
@@ -316,7 +316,7 @@ local:is_completed = processed_task.completed
 
         # Verify task processing
         assert result.final_context is not None
-        processed_task = result.final_context.get("local.processed_task")
+        processed_task = result.final_context.get("local:processed_task")
         assert isinstance(processed_task, StructInstance)
         assert processed_task.completed is True  # High priority task should be completed
 
@@ -327,18 +327,18 @@ struct Config:
     name: str
     value: int
 
-def safe_get_value(config: Config, default: int = 0) -> int:
-    try:
-        return config.value
-    except:
-        return default
-
 def validate_config(config: Config) -> bool:
     if config.name == "":
         return false
     if config.value < 0:
         return false
     return true
+
+def safe_get_value(config: Config, default: int = 0) -> int:
+    try:
+        return config.value
+    except:
+        return default
 
 # Create valid and invalid configs
 local:valid_config = Config(name="test", value=10)
@@ -355,9 +355,9 @@ local:result3 = valid_config.safe_get_value()
 
         # Verify validation results
         assert result.final_context is not None
-        result1 = result.final_context.get("local.result1")
-        result2 = result.final_context.get("local.result2")
-        result3 = result.final_context.get("local.result3")
+        result1 = result.final_context.get("local:result1")
+        result2 = result.final_context.get("local:result2")
+        result3 = result.final_context.get("local:result3")
 
         assert result1 is True  # Valid config
         assert result2 is False  # Invalid config

@@ -87,12 +87,22 @@ class BaseExecutor(Loggable):
             return None
 
         node_type = type(node)
+
+        # Debug logging for TryBlock
+        if node_type.__name__ == "TryBlock":
+            self.debug(f"DEBUG: BaseExecutor.execute called with TryBlock: {node}")
+            self.debug(f"DEBUG: TryBlock in handlers: {node_type in self._handlers}")
+
         if node_type in self._handlers:
             handler = self._handlers[node_type]
+            if node_type.__name__ == "TryBlock":
+                self.debug(f"DEBUG: Found TryBlock handler: {handler}")
             return handler(node, context)
         else:
             # If this executor can't handle it, try the parent
             if self._parent:
+                if node_type.__name__ == "TryBlock":
+                    self.debug(f"DEBUG: TryBlock not found in {self.__class__.__name__}, delegating to parent")
                 return self._parent.execute(node, context)
             else:
                 raise SandboxError(f"Unsupported node type: {node_type}")

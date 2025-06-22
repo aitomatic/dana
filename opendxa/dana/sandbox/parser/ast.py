@@ -94,6 +94,8 @@ class BinaryOperator(Enum):
     AND = "and"
     OR = "or"
     IN = "in"
+    IS = "is"
+    IS_NOT = "is not"
     ADD = "+"
     SUBTRACT = "-"
     MULTIPLY = "*"

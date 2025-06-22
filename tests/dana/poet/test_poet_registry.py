@@ -7,9 +7,12 @@ MIT License
 
 from pathlib import Path
 
+import pytest
+
 from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
 
 
+@pytest.mark.poet
 class TestPOETRegistry:
     """Test POET function registry and decorator functionality."""
 
@@ -21,6 +24,10 @@ class TestPOETRegistry:
 
     def teardown_method(self):
         """Clean up test environment."""
+        # Clean up sandbox
+        if hasattr(self, "sandbox"):
+            self.sandbox._cleanup()
+
         # Clean up temporary files
         for file in self.tmp_dir.glob("test_poet_*.na"):
             file.unlink()
@@ -44,7 +51,9 @@ assert result == 10
         # Run the file
         result = self.sandbox.run(test_file)
         assert result.success
-        assert result.result == 10
+        # Check the computed result in the final context
+        assert result.final_context is not None
+        assert result.final_context.get("local:result") == 10
 
     def test_poet_function_execution(self):
         """Test execution of registered POET functions"""
@@ -65,7 +74,9 @@ assert result == 10
         # Run the file
         result = self.sandbox.run(test_file)
         assert result.success
-        assert result.result == 10
+        # Check the computed result in the final context
+        assert result.final_context is not None
+        assert result.final_context.get("local:result") == 10
 
     def test_poet_function_with_context(self):
         """Test POET functions with sandbox context"""
@@ -86,7 +97,9 @@ assert result == 10
         # Run the file
         result = self.sandbox.run(test_file)
         assert result.success
-        assert result.result == 10
+        # Check the computed result in the final context
+        assert result.final_context is not None
+        assert result.final_context.get("local:result") == 10
 
     def test_poet_function_namespace(self):
         """Test POET functions with different namespaces"""
@@ -107,7 +120,9 @@ assert result == 10
         # Run the file
         result = self.sandbox.run(test_file)
         assert result.success
-        assert result.result == 10
+        # Check the computed result in the final context
+        assert result.final_context is not None
+        assert result.final_context.get("local:result") == 10
 
     def test_poet_function_overwrite(self):
         """Test overwriting registered POET functions"""
@@ -137,7 +152,9 @@ assert result == 15
         # Run the file
         result = self.sandbox.run(test_file)
         assert result.success
-        assert result.result == 15
+        # Check the computed result in the final context
+        assert result.final_context is not None
+        assert result.final_context.get("local:result") == 15
 
     def test_poet_function_metadata(self):
         """Test POET function metadata preservation"""
@@ -159,7 +176,9 @@ assert result == 10
         # Run the file
         result = self.sandbox.run(test_file)
         assert result.success
-        assert result.result == 10
+        # Check the computed result in the final context
+        assert result.final_context is not None
+        assert result.final_context.get("local:result") == 10
 
     def test_poet_function_error_handling(self):
         """Test error handling in registered POET functions"""
@@ -189,4 +208,6 @@ except ValueError:
         # Run the file
         result = self.sandbox.run(test_file)
         assert result.success
-        assert result.result == 10
+        # Check the computed result in the final context
+        assert result.final_context is not None
+        assert result.final_context.get("local:result") == 10

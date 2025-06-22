@@ -40,10 +40,10 @@ def test_basic_pipe_operation():
 
     pipe_expr = BinaryExpression(left=double_expr, operator=BinaryOperator.PIPE, right=Identifier("stringify"))
 
-    program = Program([Assignment(target=Identifier("local.result"), value=pipe_expr)])
+    program = Program([Assignment(target=Identifier("local:result"), value=pipe_expr)])
 
     interpreter.execute_program(program, context)
-    assert context.get("local.result") == "10"
+    assert context.get("local:result") == "10"
 
 
 def test_pipe_with_context_detection():
@@ -68,12 +68,12 @@ def test_pipe_with_context_detection():
     pipe_expr2 = BinaryExpression(left=LiteralExpression(5), operator=BinaryOperator.PIPE, right=Identifier("without_context"))
 
     program = Program(
-        [Assignment(target=Identifier("local.result1"), value=pipe_expr1), Assignment(target=Identifier("local.result2"), value=pipe_expr2)]
+        [Assignment(target=Identifier("local:result1"), value=pipe_expr1), Assignment(target=Identifier("local:result2"), value=pipe_expr2)]
     )
 
     interpreter.execute_program(program, context)
-    assert context.get("local.result1") == 15  # 5 * 3
-    assert context.get("local.result2") == 15  # 5 + 10
+    assert context.get("local:result1") == 15  # 5 * 3
+    assert context.get("local:result2") == 15  # 5 + 10
 
 
 def test_pipe_with_multiple_args_function():
@@ -108,10 +108,10 @@ def test_pipe_with_multiple_args_function():
 
     pipe3 = BinaryExpression(left=pipe2, operator=BinaryOperator.PIPE, right=Identifier("to_json"))
 
-    program = Program([Assignment(target=Identifier("local.result"), value=pipe3)])
+    program = Program([Assignment(target=Identifier("local:result"), value=pipe3)])
 
     interpreter.execute_program(program, context)
-    result = context.get("local.result")
+    result = context.get("local:result")
 
     # Parse the JSON to verify structure
     import json
@@ -129,18 +129,18 @@ def test_pipe_with_non_callable():
     context = SandboxContext()
 
     # Set a non-callable value
-    context.set("local.not_a_function", 42)
+    context.set("local:not_a_function", 42)
 
     # Create pipe expression: 5 | not_a_function
     pipe_expr = BinaryExpression(left=LiteralExpression(5), operator=BinaryOperator.PIPE, right=Identifier("not_a_function"))
 
-    program = Program([Assignment(target=Identifier("local.result"), value=pipe_expr)])
+    program = Program([Assignment(target=Identifier("local:result"), value=pipe_expr)])
 
     # This should raise an error
     with pytest.raises(Exception) as exc_info:
         interpreter.execute_program(program, context)
 
-    assert "Unknown function type 'data'" in str(exc_info.value)
+    assert "Function 'not_a_function' not found in registry" in str(exc_info.value)
 
 
 def test_pipe_operator_precedence():
@@ -165,10 +165,10 @@ def test_pipe_operator_precedence():
 
     pipe_expr = BinaryExpression(left=add_expr, operator=BinaryOperator.PIPE, right=Identifier("add_one"))
 
-    program = Program([Assignment(target=Identifier("local.result"), value=pipe_expr)])
+    program = Program([Assignment(target=Identifier("local:result"), value=pipe_expr)])
 
     interpreter.execute_program(program, context)
-    assert context.get("local.result") == 6  # (3 + 2) | add_one = 5 | add_one = 6
+    assert context.get("local:result") == 6  # (3 + 2) | add_one = 5 | add_one = 6
 
 
 def test_pipe_left_associativity():
@@ -199,7 +199,7 @@ def test_pipe_left_associativity():
 
     pipe3 = BinaryExpression(left=pipe2, operator=BinaryOperator.PIPE, right=Identifier("subtract_five"))
 
-    program = Program([Assignment(target=Identifier("local.result"), value=pipe3)])
+    program = Program([Assignment(target=Identifier("local:result"), value=pipe3)])
 
     interpreter.execute_program(program, context)
-    assert context.get("local.result") == 17  # ((1+10)*2)-5 = 17
+    assert context.get("local:result") == 17  # ((1+10)*2)-5 = 17

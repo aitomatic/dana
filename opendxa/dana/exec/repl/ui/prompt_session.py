@@ -105,10 +105,10 @@ class PromptSessionManager(Loggable):
             "public",
             "system",
             # Common prefixes
-            "local.",
-            "private.",
-            "public.",
-            "system.",
+            "local:",
+            "private:",
+            "public:",
+            "system:",
             # Keywords
             "if",
             "else",

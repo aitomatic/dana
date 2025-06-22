@@ -8,7 +8,6 @@ MIT License
 from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.sandbox.interpreter.executor.control_flow_executor import ReturnException
 from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -17,7 +16,14 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 class DanaFunction(SandboxFunction, Loggable):
     """A Dana function that can be called with arguments."""
 
-    def __init__(self, body: list[Any], parameters: list[str], context: SandboxContext | None = None, return_type: str | None = None):
+    def __init__(
+        self,
+        body: list[Any],
+        parameters: list[str],
+        context: SandboxContext | None = None,
+        return_type: str | None = None,
+        defaults: dict[str, Any] | None = None,
+    ):
         """Initialize a Dana function.
 
         Args:
@@ -25,24 +31,28 @@ class DanaFunction(SandboxFunction, Loggable):
             parameters: The parameter names
             context: The sandbox context
             return_type: The function's return type annotation
+            defaults: Default values for parameters
         """
         super().__init__(context)
         self.body = body
         self.parameters = parameters
         self.return_type = return_type
-        DXA_LOGGER.debug(f"Created DanaFunction with parameters={parameters}, return_type={return_type}")
+        self.defaults = defaults or {}
+        self.debug(f"Created DanaFunction with parameters={parameters}, return_type={return_type}, defaults={self.defaults}")
 
     def prepare_context(self, context: SandboxContext | Any, args: list[Any], kwargs: dict[str, Any]) -> SandboxContext:
         """
         Prepare context for a Dana function.
 
         For Dana functions:
-        - Creates a clean local scope
+        - Starts with the function's original module context (for access to module variables)
+        - Creates a clean local scope for the function
         - Sets up interpreter if needed
+        - Applies default values for parameters
         - Maps arguments to the local scope
 
         Args:
-            context: The original context or a positional argument
+            context: The current execution context or a positional argument
             args: Positional arguments
             kwargs: Keyword arguments
 
@@ -54,24 +64,35 @@ class DanaFunction(SandboxFunction, Loggable):
             args = [context] + args
             context = self.context.copy() if self.context else SandboxContext()
 
-        # Create a copy of the context to work with
-        prepared_context = context.copy()
-
-        # If the context doesn't have an interpreter, try to get it from the original
-        if not hasattr(prepared_context, "_interpreter") or prepared_context._interpreter is None:
-            if hasattr(context, "_interpreter") and context._interpreter is not None:
-                prepared_context._interpreter = context._interpreter
+        # Start with the function's original module context (for access to module's public/private variables)
+        if self.context is not None:
+            prepared_context = self.context.copy()
+            # Copy interpreter from current execution context if the module context doesn't have one
+            if not hasattr(prepared_context, "_interpreter") or prepared_context._interpreter is None:
+                if hasattr(context, "_interpreter") and context._interpreter is not None:
+                    prepared_context._interpreter = context._interpreter
+        else:
+            # Fallback to current context if no module context available
+            prepared_context = context.copy()
 
         # Store original local scope so we can restore it later
         original_locals = prepared_context.get_scope("local").copy()
         prepared_context._original_locals = original_locals
 
-        # Map positional arguments to parameters in the local scope
+        # Keep existing variables but prepare to add function parameters
+        # Don't clear the local scope - preserve existing variables
+
+        # First, apply default values for all parameters that have them
+        for param_name in self.parameters:
+            if param_name in self.defaults:
+                prepared_context.set(param_name, self.defaults[param_name])
+
+        # Map positional arguments to parameters in the local scope (can override defaults)
         for i, param_name in enumerate(self.parameters):
             if i < len(args):
                 prepared_context.set(param_name, args[i])
 
-        # Map keyword arguments to the local scope
+        # Map keyword arguments to the local scope (can override defaults and positional args)
         for kwarg_name, kwarg_value in kwargs.items():
             if kwarg_name in self.parameters:
                 prepared_context.set(kwarg_name, kwarg_value)
@@ -102,13 +123,13 @@ class DanaFunction(SandboxFunction, Loggable):
         Returns:
             The result of the function execution
         """
-        DXA_LOGGER.debug("DanaFunction.execute called with:")
-        DXA_LOGGER.debug(f"  context: {type(context)}")
-        DXA_LOGGER.debug(f"  args: {args}")
-        DXA_LOGGER.debug(f"  kwargs: {kwargs}")
-        DXA_LOGGER.debug(f"  parameters: {self.parameters}")
-        DXA_LOGGER.debug(f"  body: {self.body}")
-        DXA_LOGGER.debug(f"  return_type: {self.return_type}")
+        self.debug("DanaFunction.execute called with:")
+        self.debug(f"  context: {type(context)}")
+        self.debug(f"  args: {args}")
+        self.debug(f"  kwargs: {kwargs}")
+        self.debug(f"  parameters: {self.parameters}")
+        self.debug(f"  body: {self.body}")
+        self.debug(f"  return_type: {self.return_type}")
 
         try:
             # Prepare the execution context using the existing method
@@ -125,14 +146,14 @@ class DanaFunction(SandboxFunction, Loggable):
                         # Update result with the statement's value if it's not None
                         if stmt_result is not None:
                             result = stmt_result
-                        DXA_LOGGER.debug(f"statement: {statement}, result: {stmt_result}")
+                        self.debug(f"statement: {statement}, result: {stmt_result}")
                     else:
                         raise RuntimeError("No interpreter available in context")
                 except ReturnException as e:
                     # Return statement was encountered - return its value
                     return e.value
                 except Exception as e:
-                    DXA_LOGGER.error(f"Error executing statement: {e}")
+                    self.error(f"Error executing statement: {e}")
                     raise
 
             # Restore the original context if needed
@@ -143,5 +164,5 @@ class DanaFunction(SandboxFunction, Loggable):
             return result
 
         except Exception as e:
-            DXA_LOGGER.error(f"Error executing Dana function: {e}")
+            self.error(f"Error executing Dana function: {e}")
             raise

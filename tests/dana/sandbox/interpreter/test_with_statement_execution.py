@@ -92,7 +92,7 @@ with use("mcp", url="http://test.com") as client:
 
         assert result.success, f"Execution failed: {result.error}"
         # Verify the context has the expected result
-        final_result = self._get_from_context(result, "local.result")
+        final_result = self._get_from_context(result, "local:result")
         assert "Got client: MockMCPResource" in final_result
 
     def test_with_function_call_pattern_with_args(self, mock_use_function):
@@ -109,8 +109,8 @@ with use("mcp", "arg1", "arg2", url="http://test.com", port=8080) as client:
         assert result.success, f"Execution failed: {result.error}"
 
         # Verify arguments were passed correctly
-        args_count = self._get_from_context(result, "local.args_count")
-        kwargs_count = self._get_from_context(result, "local.kwargs_count")
+        args_count = self._get_from_context(result, "local:args_count")
+        kwargs_count = self._get_from_context(result, "local:kwargs_count")
 
         assert args_count == 2  # "arg1", "arg2"
         assert kwargs_count == 2  # url, port
@@ -130,8 +130,8 @@ with mcp_client as client:
         assert result.success, f"Execution failed: {result.error}"
 
         # Verify the context has the expected result
-        final_result = self._get_from_context(result, "local.result")
-        client_name = self._get_from_context(result, "local.client_name")
+        final_result = self._get_from_context(result, "local:result")
+        client_name = self._get_from_context(result, "local:client_name")
 
         assert "Got client: MockMCPResource" in final_result
         assert client_name is not None
@@ -151,7 +151,7 @@ with private:mcp_client as client:
         assert result.success, f"Execution failed: {result.error}"
 
         # Verify the context manager was entered
-        entered_status = self._get_from_context(result, "local.entered_status")
+        entered_status = self._get_from_context(result, "local:entered_status")
         assert entered_status is True, "Context manager should be entered"
 
     def test_context_manager_lifecycle(self, mock_use_function):
@@ -173,9 +173,9 @@ final_exited_status = client_ref.is_exited
         assert result.success, f"Execution failed: {result.error}"
 
         # Verify context manager lifecycle
-        entered_status = self._get_from_context(result, "local.entered_status")
-        exited_status = self._get_from_context(result, "local.exited_status")
-        final_exited_status = self._get_from_context(result, "local.final_exited_status")
+        entered_status = self._get_from_context(result, "local:entered_status")
+        exited_status = self._get_from_context(result, "local:exited_status")
+        final_exited_status = self._get_from_context(result, "local:final_exited_status")
 
         assert entered_status is True, "Context manager should be entered during with block"
         assert exited_status is False, "Context manager should not be exited during with block"
@@ -198,9 +198,9 @@ with mcp_obj as client:
         assert result.success, f"Execution failed: {result.error}"
 
         # Verify we can access context manager attributes
-        client_name = self._get_from_context(result, "local.client_name")
-        client_args = self._get_from_context(result, "local.client_args")
-        is_entered = self._get_from_context(result, "local.is_entered")
+        client_name = self._get_from_context(result, "local:client_name")
+        client_args = self._get_from_context(result, "local:client_args")
+        is_entered = self._get_from_context(result, "local:is_entered")
 
         assert client_name is not None, "Should be able to access client name"
         assert client_args == 0, "Should have no positional args"
@@ -222,7 +222,7 @@ with use("mcp", url="http://outer.com") as outer_client:
         assert result.success, f"Execution failed: {result.error}"
 
         # Verify both context managers work correctly when nested
-        both_entered = self._get_from_context(result, "local.both_entered")
+        both_entered = self._get_from_context(result, "local:both_entered")
 
         assert both_entered is True, "Both nested context managers should be entered"
 
@@ -248,9 +248,9 @@ types_match = client1_type == client2_type
         assert result.success, f"Execution failed: {result.error}"
 
         # Verify both patterns work identically
-        client1_type = self._get_from_context(result, "local.client1_type")
-        client2_type = self._get_from_context(result, "local.client2_type")
-        types_match = self._get_from_context(result, "local.types_match")
+        client1_type = self._get_from_context(result, "local:client1_type")
+        client2_type = self._get_from_context(result, "local:client2_type")
+        types_match = self._get_from_context(result, "local:types_match")
 
         assert client1_type == "MockMCPResource"
         assert client2_type == "MockMCPResource"
@@ -331,10 +331,10 @@ final_name = websearch.name
         assert result.success, f"Execution failed: {result.error}"
 
         # Verify the original variable is preserved
-        original_name = self._get_from_context(result, "local.original_name")
-        client_name = self._get_from_context(result, "local.client_name")
-        websearch_inside_name = self._get_from_context(result, "local.websearch_inside_name")
-        final_name = self._get_from_context(result, "local.final_name")
+        original_name = self._get_from_context(result, "local:original_name")
+        client_name = self._get_from_context(result, "local:client_name")
+        websearch_inside_name = self._get_from_context(result, "local:websearch_inside_name")
+        final_name = self._get_from_context(result, "local:final_name")
 
         # All should refer to the same MockMCPResource
         assert original_name is not None
@@ -363,10 +363,10 @@ good_still_accessible = True
         result = sandbox.eval(code_good)
         assert result.success, f"Good version failed: {result.error}"
 
-        good_original = self._get_from_context(result, "local.good_original_name")
-        good_client = self._get_from_context(result, "local.good_client_name")
-        good_final = self._get_from_context(result, "local.good_final_name")
-        good_accessible = self._get_from_context(result, "local.good_still_accessible")
+        good_original = self._get_from_context(result, "local:good_original_name")
+        good_client = self._get_from_context(result, "local:good_client_name")
+        good_final = self._get_from_context(result, "local:good_final_name")
+        good_accessible = self._get_from_context(result, "local:good_still_accessible")
 
         assert good_original is not None
         assert good_client is not None
@@ -420,5 +420,5 @@ def get_client_info():
         # If execution succeeded, it means the with statement was parsed and executed correctly
         # Verify the function was defined in the context
         assert result.final_context is not None
-        get_client_info = result.final_context.get("local.get_client_info", None)
+        get_client_info = result.final_context.get("local:get_client_info")
         assert get_client_info is not None, "Function should be defined"

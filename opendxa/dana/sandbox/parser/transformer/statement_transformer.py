@@ -110,7 +110,115 @@ class StatementTransformer(BaseTransformer):
                 statements.extend(item.children)
             elif item is not None:
                 statements.append(item)
+
+        # Apply post-processing fix for function boundary parsing bug
+        statements = self._fix_function_boundary_bug(statements)
+
         return Program(statements=statements)
+
+    def _fix_function_boundary_bug(self, statements):
+        """Fix the function boundary parsing bug by moving misplaced assignments to program level.
+
+        This detects when assignments to local: variables have been incorrectly included
+        in function bodies or nested control structures due to indentation parsing bugs,
+        and moves them to program level.
+        """
+        from opendxa.dana.sandbox.parser.ast import FunctionDefinition
+
+        fixed_statements = []
+        extracted_assignments = []
+
+        for stmt in statements:
+            if isinstance(stmt, FunctionDefinition):
+                # Recursively fix function body and nested structures
+                fixed_body, extracted = self._fix_nested_statements(stmt.body)
+                extracted_assignments.extend(extracted)
+
+                # Update function with fixed body
+                stmt.body = fixed_body
+                fixed_statements.append(stmt)
+            else:
+                fixed_statements.append(stmt)
+
+        # Add extracted assignments to the end of the program
+        fixed_statements.extend(extracted_assignments)
+
+        if extracted_assignments:
+            self.debug(f"✅ PARSER BOUNDARY FIX: moved {len(extracted_assignments)} assignments to program level")
+
+        return fixed_statements
+
+    def _fix_nested_statements(self, statements):
+        """Recursively fix nested statements, extracting misplaced local: assignments and function definitions."""
+        from opendxa.dana.sandbox.parser.ast import Assignment, Conditional, ForLoop, FunctionDefinition, TryBlock, WhileLoop
+
+        fixed_statements = []
+        extracted_assignments = []
+        extracted_functions = []
+
+        for stmt in statements:
+            if isinstance(stmt, Assignment) and self._is_local_scoped_assignment(stmt):
+                # This assignment should be at program level
+                self.debug(f"🔧 PARSER BOUNDARY FIX: Moving local assignment '{stmt.target.name}' from nested context to program level")
+                extracted_assignments.append(stmt)
+            elif isinstance(stmt, FunctionDefinition):
+                # Function definitions should not be nested inside other functions (except for closures)
+                # For now, treat all nested function definitions as misplaced due to parser boundary bug
+                self.debug(f"🔧 PARSER BOUNDARY FIX: Moving function definition '{stmt.name.name}' from nested context to program level")
+                extracted_functions.append(stmt)
+            elif isinstance(stmt, Conditional):
+                # Fix conditional body and else_body
+                fixed_if_body, extracted_if = self._fix_nested_statements(stmt.body)
+                fixed_else_body, extracted_else = self._fix_nested_statements(stmt.else_body)
+
+                extracted_assignments.extend(extracted_if)
+                extracted_assignments.extend(extracted_else)
+
+                # Update conditional with fixed bodies
+                stmt.body = fixed_if_body
+                stmt.else_body = fixed_else_body
+                fixed_statements.append(stmt)
+            elif isinstance(stmt, TryBlock):
+                # Fix try body and except blocks
+                fixed_try_body, extracted_try = self._fix_nested_statements(stmt.body)
+                extracted_assignments.extend(extracted_try)
+
+                fixed_except_blocks = []
+                for except_block in stmt.except_blocks:
+                    fixed_except_body, extracted_except = self._fix_nested_statements(except_block.body)
+                    extracted_assignments.extend(extracted_except)
+                    except_block.body = fixed_except_body
+                    fixed_except_blocks.append(except_block)
+
+                # Update try block with fixed bodies
+                stmt.body = fixed_try_body
+                stmt.except_blocks = fixed_except_blocks
+                fixed_statements.append(stmt)
+            elif isinstance(stmt, WhileLoop):
+                # Fix while body
+                fixed_while_body, extracted_while = self._fix_nested_statements(stmt.body)
+                extracted_assignments.extend(extracted_while)
+                stmt.body = fixed_while_body
+                fixed_statements.append(stmt)
+            elif isinstance(stmt, ForLoop):
+                # Fix for body
+                fixed_for_body, extracted_for = self._fix_nested_statements(stmt.body)
+                extracted_assignments.extend(extracted_for)
+                stmt.body = fixed_for_body
+                fixed_statements.append(stmt)
+            else:
+                # Keep other statements as-is
+                fixed_statements.append(stmt)
+
+        return fixed_statements, extracted_assignments + extracted_functions
+
+    def _is_local_scoped_assignment(self, assignment):
+        """Check if an assignment targets a local: scoped variable."""
+        from opendxa.dana.sandbox.parser.ast import Assignment, Identifier
+
+        if isinstance(assignment, Assignment) and isinstance(assignment.target, Identifier):
+            return assignment.target.name.startswith("local:")
+        return False
 
     def statement(self, items):
         """Transform a statement rule (returns the first non-None AST node)."""
@@ -871,16 +979,17 @@ class StatementTransformer(BaseTransformer):
                 module = str(module_path_item)
 
         # Get the imported name (second item)
-        # Structure: [module_path_or_relative, name_token, alias_token_or_none, ...]
+        # Structure: [module_path_or_relative, name_token, AS_token_or_None, alias_token_or_None]
         name = ""
         alias = None
 
         if len(items) >= 2 and isinstance(items[1], Token) and items[1].type == "NAME":
             name = items[1].value
 
-        # Check for alias (third element)
-        if len(items) >= 3 and items[2] is not None and isinstance(items[2], Token) and items[2].type == "NAME":
-            alias = items[2].value
+        # Check for alias (fourth element, after AS token)
+        if len(items) >= 4 and items[2] is not None and isinstance(items[2], Token) and items[2].type == "AS":
+            if isinstance(items[3], Token) and items[3].type == "NAME":
+                alias = items[3].value
 
         return ImportFromStatement(module=module, names=[(name, alias)])
 
@@ -936,13 +1045,11 @@ class StatementTransformer(BaseTransformer):
                 # Find the statements node
                 for child in block.children:
                     if isinstance(child, Tree) and child.data == "statements":
-                        # Process the statements
-                        for stmt in child.children:
-                            if stmt is not None:
-                                result.append(stmt)
+                        # Process the statements with boundary detection
+                        result.extend(self._process_statements_with_boundary_detection(child.children))
                     elif isinstance(child, list):
                         # Direct list of statements
-                        result.extend(child)
+                        result.extend(self._process_statements_with_boundary_detection(child))
             else:
                 # For other trees, process children
                 for child in block.children:
@@ -959,6 +1066,87 @@ class StatementTransformer(BaseTransformer):
 
         return result
 
+    def _process_statements_with_boundary_detection(self, statements):
+        """Process statements but stop at function boundary violations.
+
+        This method detects when statements that should be at program level
+        are incorrectly included in a function body due to indentation parsing bugs.
+        """
+
+        result = []
+        self.debug(f"🔍 Processing {len(statements)} statements for boundary detection")
+
+        for i, stmt in enumerate(statements):
+            if stmt is None:
+                continue
+
+            self.debug(f"🔍 Statement {i}: {type(stmt).__name__} (Tree data: {getattr(stmt, 'data', 'N/A')})")
+
+            # Check if this statement looks like it should be at program level
+            if self._is_program_level_statement(stmt):
+                # Stop processing here - this statement belongs outside the current scope
+                self.debug(f"🛑 Detected program-level statement in block: {type(stmt).__name__}")
+                break
+
+            result.append(stmt)
+
+        self.debug(f"✅ Boundary detection complete: kept {len(result)} statements")
+        return result
+
+    def _is_program_level_statement(self, stmt):
+        """Detect if a statement should be at program level rather than in a block.
+
+        This detects assignments to local: variables that follow function definitions,
+        which are commonly affected by the indentation parsing bug.
+        """
+        from lark import Tree
+
+        # Check for assignment patterns that suggest program-level scope
+        if isinstance(stmt, Tree) and stmt.data == "statement":
+            # Look for simple_stmt -> assignment -> simple_assignment pattern
+            for child in stmt.children:
+                if isinstance(child, Tree) and child.data == "simple_stmt":
+                    for grandchild in child.children:
+                        if isinstance(grandchild, Tree) and grandchild.data == "assignment":
+                            is_local = self._is_assignment_to_local_scope(grandchild)
+                            if is_local:
+                                # Add debug logging to confirm detection
+                                self.debug("🎯 Detected local assignment that should be program-level")
+                            return is_local
+
+        return False
+
+    def _is_assignment_to_local_scope(self, assignment_tree):
+        """Check if an assignment tree assigns to a local: scoped variable."""
+        from lark import Tree
+
+        # Navigate through assignment -> simple_assignment -> target -> atom -> variable -> scoped_var
+        for child in assignment_tree.children:
+            if isinstance(child, Tree) and child.data == "simple_assignment":
+                for grandchild in child.children:
+                    if isinstance(grandchild, Tree) and grandchild.data == "target":
+                        return self._target_uses_local_scope(grandchild)
+
+        return False
+
+    def _target_uses_local_scope(self, target_tree):
+        """Check if a target tree references a local: scoped variable."""
+        from lark import Tree
+
+        # Navigate through target -> atom -> variable -> scoped_var
+        for child in target_tree.children:
+            if isinstance(child, Tree) and child.data == "atom":
+                for grandchild in child.children:
+                    if isinstance(grandchild, Tree) and grandchild.data == "variable":
+                        for ggchild in grandchild.children:
+                            if isinstance(ggchild, Tree) and ggchild.data == "scoped_var":
+                                # Check if scope_prefix is "local"
+                                for gggchild in ggchild.children:
+                                    if hasattr(gggchild, "type") and gggchild.type == "LOCAL":
+                                        return True
+
+        return False
+
     # === Parameter Handling ===
     def parameters(self, items):
         """Transform parameters rule into a list of Parameter objects.
@@ -972,7 +1160,7 @@ class StatementTransformer(BaseTransformer):
                 result.append(item)
             elif isinstance(item, Identifier):
                 # Convert Identifier to Parameter
-                param_name = item.name if "." in item.name else f"local.{item.name}"
+                param_name = item.name if "." in item.name else f"local:{item.name}"
                 result.append(Parameter(name=param_name))
             elif hasattr(item, "data") and item.data == "typed_parameter":
                 # Handle typed_parameter via the typed_parameter method
@@ -1006,10 +1194,10 @@ class StatementTransformer(BaseTransformer):
                 param_name = str(name_item)
 
             # Create an Identifier with the proper local scope
-            return Identifier(name=f"local.{param_name}")
+            return Identifier(name=f"local:{param_name}")
 
         # Fallback
-        return Identifier(name="local.param")
+        return Identifier(name="local:param")
 
     def binary_expr(self, items):
         """Transform a binary expression rule into a BinaryExpression node."""
@@ -1018,10 +1206,10 @@ class StatementTransformer(BaseTransformer):
         right = items[2]
 
         # Handle unscoped variables in binary expressions
-        if isinstance(left, Identifier) and "." not in left.name:
-            left.name = f"local.{left.name}"
-        if isinstance(right, Identifier) and "." not in right.name:
-            right.name = f"local.{right.name}"
+        if isinstance(left, Identifier) and ":" not in left.name:
+            left.name = f"local:{left.name}"
+        if isinstance(right, Identifier) and ":" not in right.name:
+            right.name = f"local:{right.name}"
 
         return BinaryExpression(left=left, operator=operator, right=right)
 
@@ -1172,13 +1360,13 @@ class StatementTransformer(BaseTransformer):
             context_manager = cast(Expression, first_item)
             # Don't add local prefix if the identifier is already scoped (contains ":" or starts with a scope)
             if isinstance(context_manager.name, str) and not (
-                context_manager.name.startswith("local.")
+                context_manager.name.startswith("local:")
                 or ":" in context_manager.name
-                or context_manager.name.startswith("private.")
-                or context_manager.name.startswith("public.")
-                or context_manager.name.startswith("system.")
+                or context_manager.name.startswith("private:")
+                or context_manager.name.startswith("public:")
+                or context_manager.name.startswith("system:")
             ):
-                context_manager = cast(Expression, Identifier(name=f"local.{context_manager.name}"))
+                context_manager = cast(Expression, Identifier(name=f"local:{context_manager.name}"))
         # Handle function call case
         elif isinstance(first_item, Token):
             # Keep the name as a string for function calls

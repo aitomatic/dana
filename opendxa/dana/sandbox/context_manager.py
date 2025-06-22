@@ -106,7 +106,7 @@ class ContextManager:
         if not scope or scope not in self.context._state:
             raise StateError(f"Unknown scope: {scope}")
 
-        # Direct access for private.foo, public.bar, system.baz
+        # Direct access for private:foo, public:bar, system:baz
         if identifier in self.context._state[scope]:
             return self.context._state[scope][identifier]
 

@@ -25,9 +25,9 @@ private:y = "hello"
 private:z = True
 """
     ctx = run_dana_code(code)
-    assert ctx.get("private.x") == 42
-    assert ctx.get("private.y") == "hello"
-    assert ctx.get("private.z") is True
+    assert ctx.get("private:x") == 42
+    assert ctx.get("private:y") == "hello"
+    assert ctx.get("private:z") is True
 
 
 def test_basic_arithmetic():
@@ -41,10 +41,10 @@ private:prod = private:a * private:b
 private:div = private:a / private:b
 """
     ctx = run_dana_code(code)
-    assert ctx.get("private.sum") == 15
-    assert ctx.get("private.diff") == 5
-    assert ctx.get("private.prod") == 50
-    assert ctx.get("private.div") == 2
+    assert ctx.get("private:sum") == 15
+    assert ctx.get("private:diff") == 5
+    assert ctx.get("private:prod") == 50
+    assert ctx.get("private:div") == 2
 
 
 def test_basic_string_operations():
@@ -55,7 +55,7 @@ private:str2 = "World"
 private:concat = private:str1 + " " + private:str2
 """
     ctx = run_dana_code(code)
-    assert ctx.get("private.concat") == "Hello World"
+    assert ctx.get("private:concat") == "Hello World"
 
 
 def test_basic_boolean_operations():
@@ -68,9 +68,9 @@ private:result2 = private:x or private:y
 private:result3 = not private:x
 """
     ctx = run_dana_code(code)
-    assert ctx.get("private.result1") is False
-    assert ctx.get("private.result2") is True
-    assert ctx.get("private.result3") is False
+    assert ctx.get("private:result1") is False
+    assert ctx.get("private:result2") is True
+    assert ctx.get("private:result3") is False
 
 
 def test_function_definition_and_call():
@@ -82,4 +82,4 @@ def add(a, b):
 private:result = add(2, 3)
 """
     ctx = run_dana_code(code)
-    assert ctx.get("private.result") == 5
+    assert ctx.get("private:result") == 5

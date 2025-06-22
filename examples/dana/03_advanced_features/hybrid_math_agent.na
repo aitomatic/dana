@@ -11,11 +11,11 @@ private.weather_tool = "get_weather"
 # Simple calculator validation function
 func simple_calculator_validate(expression):
     # Store the expression for validation
-    local.clean_expr = expression
+    local:clean_expr = expression
     
     # Basic validation - only allow arithmetic characters
     # This is a simplified version - in real implementation you'd use regex
-    local.has_invalid = false
+    local:has_invalid = false
     
     # For demonstration, we'll handle basic cases
     if expression == "25*4+10":
@@ -34,22 +34,22 @@ func extract_final_answer(text):
     # For this demo, we'll use simple pattern matching
     # In a real implementation, you'd use more sophisticated parsing
     
-    local.answer = null
+    local:answer = null
     
     # Look for common patterns like "FINAL ANSWER: 110"
     if "FINAL ANSWER:" in text:
         # Extract the number after "FINAL ANSWER:"
         # This is a simplified extraction
         if "110" in text:
-            local.answer = 110.0
+            local:answer = 110.0
         elif "20" in text:
-            local.answer = 20.0
+            local:answer = 20.0
         elif "45" in text:
-            local.answer = 45.0
+            local:answer = 45.0
         elif "16" in text:
-            local.answer = 16.0
+            local:answer = 16.0
     
-    return local.answer
+    return local:answer
 
 # Main calculator function using LLM with validation
 func calculate_with_llm(expression):
@@ -57,7 +57,7 @@ func calculate_with_llm(expression):
     log.info(f"Calculating expression: {expression}")
     
     # First, let LLM solve it
-    local.prompt = f"""
+    local:prompt = f"""
 Solve this mathematical expression step by step: {expression}
 Show your work and provide the final numerical answer clearly.
 At the end, write "FINAL ANSWER: [number]"
@@ -65,7 +65,7 @@ Expression: {expression}
 """
     
     # Use Dana's built-in reason() function for LLM computation
-    private.llm_response = reason(local.prompt)
+    private:llm_response = reason(local:prompt)
     
     # Try to validate with simple calculator
     private.calc_result = simple_calculator_validate(expression)
@@ -76,11 +76,11 @@ Expression: {expression}
         
         if private.llm_answer != null:
             # Check if answers match (within tolerance)
-            local.diff = private.calc_result - private.llm_answer
-            if local.diff < 0:
-                local.diff = 0 - local.diff  # absolute value
+            local:diff = private:calc_result - private:llm_answer
+            if local:diff < 0:
+                local:diff = 0 - local:diff  # absolute value
                 
-            if local.diff < 0.001:
+            if local:diff < 0.001:
                 private.result = f"✅ **Answer: {private.calc_result}** (Validated)\n\n**LLM Working:**\n{private.llm_response}"
             else:
                 private.result = f"⚠️ **Validation Mismatch:**\n- Calculator: {private.calc_result}\n- LLM: {private.llm_answer}\n\n**LLM Response:**\n{private.llm_response}\n\n*Calculator result is likely more accurate for basic arithmetic.*"
@@ -94,60 +94,60 @@ Expression: {expression}
 
 # Weather function
 func get_weather(location):
-    local.clean_location = location
-    return f"Weather in {local.clean_location}: Sunny, 75°F with light clouds"
+    local:clean_location = location
+    return f"Weather in {local:clean_location}: Sunny, 75°F with light clouds"
 
 # Query parser to determine tool and input
 func parse_query(query):
-    local.query_lower = query
+    local:query_lower = query
     
     # Check for math operations
     if "*" in query or "+" in query or "-" in query or "/" in query or "calculate" in query or "times" in query:
         # Simple pattern matching for math expressions
         if "25 * 4 + 10" in query or "25*4+10" in query:
-            local.tool_name = "calculator"
-            local.tool_input = "25*4+10"
-            return [local.tool_name, local.tool_input]
+            local:tool_name = "calculator"
+            local:tool_input = "25*4+10"
+            return [local:tool_name, local:tool_input]
         elif "25 times 4 plus 10" in query:
-            local.tool_name = "calculator"
-            local.tool_input = "25*4+10"
-            return [local.tool_name, local.tool_input]
+            local:tool_name = "calculator"
+            local:tool_input = "25*4+10"
+            return [local:tool_name, local:tool_input]
         elif "100 divided by 5" in query:
-            local.tool_name = "calculator"
-            local.tool_input = "100/5"
-            return [local.tool_name, local.tool_input]
+            local:tool_name = "calculator"
+            local:tool_input = "100/5"
+            return [local:tool_name, local:tool_input]
         elif "15 plus 30" in query:
-            local.tool_name = "calculator"
-            local.tool_input = "15+30"
-            return [local.tool_name, local.tool_input]
+            local:tool_name = "calculator"
+            local:tool_input = "15+30"
+            return [local:tool_name, local:tool_input]
         elif "2 times 8" in query:
-            local.tool_name = "calculator"
-            local.tool_input = "2*8"
-            return [local.tool_name, local.tool_input]
+            local:tool_name = "calculator"
+            local:tool_input = "2*8"
+            return [local:tool_name, local:tool_input]
     
     # Check for weather
     if "weather" in query:
         # Extract location - simplified extraction
         if "Tokyo" in query:
-            local.tool_name = "weather"
-            local.tool_input = "Tokyo"
-            return [local.tool_name, local.tool_input]
+            local:tool_name = "weather"
+            local:tool_input = "Tokyo"
+            return [local:tool_name, local:tool_input]
         elif "Paris" in query:
-            local.tool_name = "weather"
-            local.tool_input = "Paris"
-            return [local.tool_name, local.tool_input]
+            local:tool_name = "weather"
+            local:tool_input = "Paris"
+            return [local:tool_name, local:tool_input]
         elif "New York" in query:
-            local.tool_name = "weather"
-            local.tool_input = "New York"
-            return [local.tool_name, local.tool_input]
+            local:tool_name = "weather"
+            local:tool_input = "New York"
+            return [local:tool_name, local:tool_input]
         else:
-            local.tool_name = "weather"
-            local.tool_input = "Unknown"
-            return [local.tool_name, local.tool_input]
+            local:tool_name = "weather"
+            local:tool_input = "Unknown"
+            return [local:tool_name, local:tool_input]
     
-    local.no_tool = null
-    local.no_input = null
-    return [local.no_tool, local.no_input]
+    local:no_tool = null
+    local:no_input = null
+    return [local:no_tool, local:no_input]
 
 # Main agent function
 func run_agent(query):
@@ -171,7 +171,7 @@ func run_agent(query):
         return private.result
     
     # Fallback: Ask LLM for help with parsing
-    local.fallback_prompt = f"""
+    local:fallback_prompt = f"""
 Parse this query and respond with exactly: TOOL: INPUT
 Query: {query}
 Tools available:
@@ -180,7 +180,7 @@ Tools available:
 Only respond with the format "TOOL: INPUT" - nothing else.
 Response:"""
     
-    private.llm_response = reason(local.fallback_prompt)
+    private:llm_response = reason(local:fallback_prompt)
     log.info(f"LLM suggested: {private.llm_response}")
     
     # Simple parsing of LLM response

@@ -27,6 +27,7 @@ from opendxa.dana.sandbox.parser.ast import (
     ContinueStatement,
     ForLoop,
     ReturnStatement,
+    TryBlock,
     WhileLoop,
     WithStatement,
 )
@@ -87,6 +88,7 @@ class ControlFlowExecutor(BaseExecutor):
             BreakStatement: self.execute_break_statement,
             ContinueStatement: self.execute_continue_statement,
             ReturnStatement: self.execute_return_statement,
+            TryBlock: self.execute_try_block,
             WithStatement: self.execute_with_stmt,
         }
 
@@ -99,6 +101,9 @@ class ControlFlowExecutor(BaseExecutor):
 
         Returns:
             The result of the last executed statement in the chosen branch
+
+        Raises:
+            ReturnException: If a return statement is encountered in any branch
         """
         # Evaluate the condition
         condition_value = self.parent.execute(node.condition, context)
@@ -107,12 +112,16 @@ class ControlFlowExecutor(BaseExecutor):
         condition = self._coerce_to_bool(condition_value)
 
         # Execute the appropriate branch
-        if condition:
-            result = self._execute_statement_list(node.body, context)
-        elif node.else_body:
-            result = self._execute_statement_list(node.else_body, context)
-        else:
-            result = None
+        try:
+            if condition:
+                result = self._execute_statement_list(node.body, context)
+            elif node.else_body:
+                result = self._execute_statement_list(node.else_body, context)
+            else:
+                result = None
+        except ReturnException:
+            # Re-raise ReturnException to propagate it up to the function level
+            raise
 
         return result
 
@@ -155,6 +164,7 @@ class ControlFlowExecutor(BaseExecutor):
         Raises:
             BreakException: If a break statement is encountered
             ContinueException: If a continue statement is encountered
+            ReturnException: If a return statement is encountered
         """
         result = None
         while True:
@@ -171,6 +181,9 @@ class ControlFlowExecutor(BaseExecutor):
                 break
             except ContinueException:
                 continue
+            except ReturnException:
+                # Re-raise ReturnException to propagate it up to the function level
+                raise
         return result
 
     def execute_for_loop(self, node: ForLoop, context: SandboxContext) -> None:
@@ -186,6 +199,7 @@ class ControlFlowExecutor(BaseExecutor):
         Raises:
             BreakException: If a break statement is encountered
             ContinueException: If a continue statement is encountered
+            ReturnException: If a return statement is encountered
         """
         # Evaluate the iterable
         iterable = self.parent.execute(node.iterable, context)
@@ -202,6 +216,9 @@ class ControlFlowExecutor(BaseExecutor):
                 break
             except ContinueException:
                 continue
+            except ReturnException:
+                # Re-raise ReturnException to propagate it up to the function level
+                raise
 
         return result
 
@@ -268,21 +285,10 @@ class ControlFlowExecutor(BaseExecutor):
             # Enter the context
             context_value = context_manager.__enter__()
 
-            # Bind the context value to the 'as' variable in the appropriate scope
-            # If the context manager was accessed with a scope (e.g., private:mcp_client),
-            # use the same scope for the 'as' variable
-            if hasattr(node.context_manager, "name") and isinstance(node.context_manager.name, str):
-                if ":" in node.context_manager.name:
-                    scope, _ = node.context_manager.name.split(":", 1)
-                    context.set_in_scope(node.as_var, context_value, scope=scope)
-                elif "." in node.context_manager.name:
-                    scope, _ = node.context_manager.name.split(".", 1)
-                    context.set_in_scope(node.as_var, context_value, scope=scope)
-                else:
-                    context.set_in_scope(node.as_var, context_value, scope="local")
-            else:
-                # Default to local scope if no scope specified
-                context.set_in_scope(node.as_var, context_value, scope="local")
+            # Bind the context value to the 'as' variable in the local scope
+            # The 'as' variable should always be in the local scope regardless of
+            # where the context manager came from
+            context.set_in_scope(node.as_var, context_value, scope="local")
 
             # Execute the body
             result = self._execute_statement_list(node.body, context)
@@ -296,18 +302,8 @@ class ControlFlowExecutor(BaseExecutor):
             result = None
         else:
             # Exit without exception
-            # Delete the variable from the appropriate scope
-            if hasattr(node.context_manager, "name") and isinstance(node.context_manager.name, str):
-                if ":" in node.context_manager.name:
-                    scope, _ = node.context_manager.name.split(":", 1)
-                    context.delete_from_scope(node.as_var, scope=scope)
-                elif "." in node.context_manager.name:
-                    scope, _ = node.context_manager.name.split(".", 1)
-                    context.delete_from_scope(node.as_var, scope=scope)
-                else:
-                    context.delete_from_scope(node.as_var, scope="local")
-            else:
-                context.delete_from_scope(node.as_var, scope="local")
+            # Delete the variable from the local scope
+            context.delete_from_scope(node.as_var, scope="local")
             context_manager.__exit__(None, None, None)
 
         return result
@@ -325,7 +321,7 @@ class ControlFlowExecutor(BaseExecutor):
         as_var = node.as_var
 
         # Check if the 'as' variable already exists in the current scope
-        if context.has(f"local.{as_var}"):
+        if context.has(f"local:{as_var}"):
             # For direct context manager pattern, check if it's the same variable being shadowed
             if not isinstance(node.context_manager, str):
                 # Get the variable name being used as context manager
@@ -389,13 +385,87 @@ class ControlFlowExecutor(BaseExecutor):
             node: The return statement to execute
             context: The execution context
 
+        Returns:
+            Never returns normally, raises a ReturnException
+
         Raises:
             ReturnException: With the return value
         """
-        value = None
         if node.value is not None:
             value = self.parent.execute(node.value, context)
+        else:
+            value = None
         raise ReturnException(value)
+
+    def execute_try_block(self, node: TryBlock, context: SandboxContext) -> Any:
+        """Execute a try/except/finally block.
+
+        Args:
+            node: The try block to execute
+            context: The execution context
+
+        Returns:
+            The result of the last executed statement
+
+        Raises:
+            ReturnException: If a return statement is encountered and not caught
+        """
+        self.debug("DEBUG: execute_try_block called")
+        result = None
+        exception_occurred = None
+
+        try:
+            # Execute the try block
+            self.debug("DEBUG: About to execute try block body")
+            result = self._execute_statement_list(node.body, context)
+            self.debug(f"DEBUG: Try block executed, result: {result}")
+        except ReturnException:
+            # ReturnException should propagate through try/catch, not be caught
+            self.debug("DEBUG: ReturnException caught in try block, re-raising")
+            raise
+        except Exception as e:
+            # Store the exception for except block handling
+            self.debug(f"DEBUG: Exception caught in try block: {e}")
+            exception_occurred = e
+
+            # Try to handle the exception with except blocks
+            handled = False
+            for except_block in node.except_blocks:
+                # For now, catch all exceptions (exception_type filtering not implemented yet)
+                # TODO: Add proper exception type matching
+                try:
+                    self.debug("DEBUG: Executing except block")
+                    result = self._execute_statement_list(except_block.body, context)
+                    handled = True
+                    break
+                except ReturnException:
+                    # ReturnException from except block should propagate
+                    self.debug("DEBUG: ReturnException caught in except block, re-raising")
+                    raise
+                except Exception:
+                    # If except block raises another exception, continue to next except block
+                    continue
+
+            # If no except block handled the exception, re-raise it
+            if not handled:
+                self.debug("DEBUG: No except block handled exception, re-raising")
+                raise exception_occurred
+        finally:
+            # Execute finally block if present
+            if node.finally_block:
+                try:
+                    self.debug("DEBUG: Executing finally block")
+                    self._execute_statement_list(node.finally_block, context)
+                except ReturnException:
+                    # ReturnException from finally block should propagate
+                    self.debug("DEBUG: ReturnException caught in finally block, re-raising")
+                    raise
+                except Exception as e:
+                    # Exceptions in finally block are logged but don't override the result
+                    self.warning(f"Exception in finally block: {e}")
+
+        self.debug(f"DEBUG: execute_try_block returning: {result}")
+        return result
 
     def _execute_statement_list(self, statements: list[Any], context: SandboxContext) -> Any:
         """Execute a list of statements.
@@ -406,8 +476,15 @@ class ControlFlowExecutor(BaseExecutor):
 
         Returns:
             The result of the last statement executed
+
+        Raises:
+            ReturnException: If a return statement is encountered
         """
         result = None
         for statement in statements:
-            result = self.parent.execute(statement, context)
+            try:
+                result = self.parent.execute(statement, context)
+            except ReturnException:
+                # Re-raise ReturnException to propagate it up to the function level
+                raise
         return result

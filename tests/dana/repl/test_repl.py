@@ -57,12 +57,12 @@ class TestRepl(unittest.TestCase):
         self.assertEqual(result, 5)
 
         # Verify the variable was set in context
-        self.assertEqual(self.context.get("private.x"), 5)  # Use dot notation for context access
+        self.assertEqual(self.context.get("private:x"), 5)  # Use dot notation for context access
 
     def test_execute_with_initial_context(self):
         """Test executing a program with initial context."""
         # Use dot notation for context setting but colon for Dana code
-        result = self.repl.execute("private:x + 10", initial_context={"private.x": 5})
+        result = self.repl.execute("private:x + 10", initial_context={"private:x": 5})
         self.assertEqual(result, 15)
 
     def test_execute_multi_statement_program(self):

@@ -82,6 +82,10 @@ class StructType:
         if expected_type == "bool":
             return isinstance(value, bool)
 
+        # Handle numeric type coercion (int can be used where float is expected)
+        if expected_type == "float" and isinstance(value, (int, float)):
+            return True
+
         # Basic type validation
         type_mapping = {
             "str": str,
@@ -128,7 +132,12 @@ class StructInstance:
         struct_type.validate_instantiation(values)
 
         self._type = struct_type
-        self._values = values.copy()  # Defensive copy
+        # Apply type coercion during instantiation
+        coerced_values = {}
+        for field_name, value in values.items():
+            field_type = struct_type.fields.get(field_name)
+            coerced_values[field_name] = self._coerce_value(value, field_type)
+        self._values = coerced_values
 
     @property
     def struct_type(self) -> StructType:
@@ -187,6 +196,18 @@ class StructInstance:
         else:
             # Struct type not yet initialized (during __init__)
             super().__setattr__(name, value)
+
+    def _coerce_value(self, value: Any, field_type: str | None) -> Any:
+        """Coerce a value to the expected field type if possible."""
+        if field_type is None:
+            return value
+
+        # Numeric coercion: int → float
+        if field_type == "float" and isinstance(value, int):
+            return float(value)
+
+        # No coercion needed for other types
+        return value
 
     def _find_similar_field(self, name: str, available_fields: list[str]) -> str | None:
         """Find the most similar field name using simple string similarity."""

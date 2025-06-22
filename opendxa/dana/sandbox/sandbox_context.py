@@ -122,7 +122,7 @@ class SandboxContext:
         """Validate a key and extract scope and variable name.
 
         Args:
-            key: The key to validate (scope.variable or scope:variable)
+            key: The key to validate (scope:variable or scope.variable for compatibility)
 
         Returns:
             Tuple of (scope, variable_name)
@@ -130,11 +130,12 @@ class SandboxContext:
         Raises:
             StateError: If key format is invalid or scope is unknown
         """
-        # Handle both dot and colon notation
-        if "." in key:
-            parts = key.split(".", 1)
-        elif ":" in key:
+        # Handle colon notation (preferred)
+        if ":" in key:
             parts = key.split(":", 1)
+        # Handle dot notation for backward compatibility
+        elif "." in key:
+            parts = key.split(".", 1)
         else:
             # Default to local scope for unscoped variables
             return "local", key
@@ -156,9 +157,9 @@ class SandboxContext:
             var_name: The variable name
 
         Returns:
-            A normalized key string using dot notation
+            A normalized key string using colon notation
         """
-        return f"{scope}.{var_name}"
+        return f"{scope}:{var_name}"
 
     def set(self, key: str, value: Any) -> None:
         """Sets a value in the context using dot notation (scope.variable) or colon notation (scope:variable).
@@ -190,7 +191,7 @@ class SandboxContext:
         """Get a value from the context using a scoped key.
 
         Args:
-            key: The scoped key (e.g., 'local.variable' or 'private:test')
+            key: The scoped key (e.g., 'local:variable' or 'private:test')
             default: Default value if key not found
 
         Returns:
@@ -225,7 +226,7 @@ class SandboxContext:
         Returns:
             The current execution status
         """
-        return self.get("system.execution_status", ExecutionStatus.IDLE)
+        return self.get("system:execution_status", ExecutionStatus.IDLE)
 
     def set_execution_status(self, status: ExecutionStatus) -> None:
         """Set the execution status.
@@ -233,7 +234,7 @@ class SandboxContext:
         Args:
             status: The new execution status
         """
-        self.set("system.execution_status", status)
+        self.set("system:execution_status", status)
 
     def add_execution_history(self, entry: dict[str, Any]) -> None:
         """Add an entry to the execution history.
@@ -242,14 +243,14 @@ class SandboxContext:
             entry: The history entry to add
         """
         entry["timestamp"] = datetime.now().isoformat()
-        history = self.get("system.history")
+        history = self.get("system:history")
         history.append(entry)
-        self.set("system.history", history)
+        self.set("system:history", history)
 
     def reset_execution_state(self) -> None:
         """Reset the execution state to IDLE and clear history."""
         self.set_execution_status(ExecutionStatus.IDLE)
-        self.set("system.history", [])
+        self.set("system:history", [])
 
     @classmethod
     def from_dict(cls, data: dict[str, Any], base_context: Optional["SandboxContext"] = None) -> "SandboxContext":
@@ -271,19 +272,19 @@ class SandboxContext:
 
         # Step 2: Set values from data, allowing them to override base context
         for key, value in data.items():
-            if "." in key:
-                # Check if it's a scoped variable (scope.variable)
-                scope, var_name = key.split(".", 1)
+            if ":" in key:
+                # Check if it's a scoped variable (scope:variable) - preferred format
+                scope, var_name = key.split(":", 1)
                 if scope in RuntimeScopes.ALL:
                     context.set(key, value)  # This will handle global scope sharing
                 else:
                     # If not a valid scope, treat as local variable
                     context.set(key, value)
-            elif ":" in key:
-                # Check if it's a scoped variable (scope:variable)
-                scope, var_name = key.split(":", 1)
+            elif "." in key:
+                # Check if it's a scoped variable (scope.variable) - backward compatibility
+                scope, var_name = key.split(".", 1)
                 if scope in RuntimeScopes.ALL:
-                    context.set(f"{scope}:{var_name}", value)  # Use colon format
+                    context.set(key, value)  # This will handle global scope sharing
                 else:
                     # If not a valid scope, treat as local variable
                     context.set(key, value)
@@ -582,12 +583,12 @@ class SandboxContext:
         """
         # Try to get type information from the current assignment context
         # This is set by the assignment executor when processing typed assignments
-        current_assignment_type = self.get("system.__current_assignment_type")
+        current_assignment_type = self.get("system:__current_assignment_type")
         if current_assignment_type:
             return current_assignment_type
 
         # Fallback: Check if there's a type hint in the execution metadata
-        execution_metadata = self.get("system.__execution_metadata")
+        execution_metadata = self.get("system:__execution_metadata")
         if execution_metadata and isinstance(execution_metadata, dict):
             return execution_metadata.get("target_type")
 

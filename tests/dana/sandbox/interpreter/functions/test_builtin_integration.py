@@ -457,13 +457,13 @@ class TestFStringFunctionArguments:
         """Test that f-strings are properly evaluated when passed to print()."""
         # Create a context and set a variable
         context = SandboxContext()
-        context.set("local.message", "Hello world")
+        context.set("local:message", "Hello world")
 
         # Create an interpreter
         interpreter = DanaInterpreter()
 
         # Execute print with f-string
-        interpreter._eval('print(f"{local.message}")', context=context)
+        interpreter._eval('print(f"{local:message}")', context=context)
 
         # Get and check output
         captured = capsys.readouterr()
@@ -473,7 +473,7 @@ class TestFStringFunctionArguments:
         """Test that f-strings are properly evaluated when passed to reason()."""
         # Create a context and set a variable
         context = SandboxContext()
-        context.set("local.query", "What is the capital of France?")
+        context.set("local:query", "What is the capital of France?")
 
         # Create an interpreter
         interpreter = DanaInterpreter()
@@ -487,7 +487,7 @@ class TestFStringFunctionArguments:
 
         try:
             # Execute reason with f-string - this should work without any patching
-            result = interpreter._eval('reason(f"{local.query}")', context=context)
+            result = interpreter._eval('reason(f"{local:query}")', context=context)
 
             # The key test: if f-string evaluation works, the function should execute successfully
             # If f-strings weren't evaluated, we'd get an error about FStringExpression not being a string
@@ -508,7 +508,7 @@ class TestFStringFunctionArguments:
         """Test that print() and reason() behave consistently with f-string arguments."""
         # Create a context and set a variable
         context = SandboxContext()
-        context.set("local.value", 42)
+        context.set("local:value", 42)
 
         # Create an interpreter
         interpreter = DanaInterpreter()
@@ -521,8 +521,8 @@ class TestFStringFunctionArguments:
 
         try:
             # Execute both functions with the same f-string
-            interpreter._eval('print(f"The answer is {local.value}")', context=context)
-            reason_result = interpreter._eval('reason(f"The answer is {local.value}")', context=context)
+            interpreter._eval('print(f"The answer is {local:value}")', context=context)
+            reason_result = interpreter._eval('reason(f"The answer is {local:value}")', context=context)
 
             # Get print output
             captured = capsys.readouterr()
@@ -549,31 +549,31 @@ class TestFStringFunctionArguments:
     def test_fstring_with_builtin_functions(self):
         """Test f-strings work correctly with built-in functions."""
         context = SandboxContext()
-        context.set("local.numbers", [1, 2, 3, 4, 5])
+        context.set("local:numbers", [1, 2, 3, 4, 5])
 
         interpreter = DanaInterpreter()
 
         # Test f-string with len function
-        result = interpreter._eval('f"Length: {len(local.numbers)}"', context=context)
+        result = interpreter._eval('f"Length: {len(local:numbers)}"', context=context)
         assert result == "Length: 5"
 
         # Test f-string with sum function
-        result = interpreter._eval('f"Sum: {sum(local.numbers)}"', context=context)
+        result = interpreter._eval('f"Sum: {sum(local:numbers)}"', context=context)
         assert result == "Sum: 15"
 
         # Test f-string with max function
-        result = interpreter._eval('f"Max: {max(local.numbers)}"', context=context)
+        result = interpreter._eval('f"Max: {max(local:numbers)}"', context=context)
         assert result == "Max: 5"
 
     def test_nested_fstring_function_calls(self):
         """Test nested f-strings with function calls."""
         context = SandboxContext()
-        context.set("local.data", [10, 20, 30])
+        context.set("local:data", [10, 20, 30])
 
         interpreter = DanaInterpreter()
 
         # Test nested function calls in f-string
         result = interpreter._eval(
-            'f"Stats: len={len(local.data)}, sum={sum(local.data)}, avg={sum(local.data)/len(local.data)}"', context=context
+            'f"Stats: len={len(local:data)}, sum={sum(local:data)}, avg={sum(local:data)/len(local:data)}"', context=context
         )
         assert result == "Stats: len=3, sum=60, avg=20.0"
