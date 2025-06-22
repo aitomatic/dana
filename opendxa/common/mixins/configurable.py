@@ -248,13 +248,14 @@ class Configurable(Loggable):
         """
         try:
             value = self.config.get(key)
-            ValidationUtilities.validate_required_field(field_name=key, field_value=value, context="configuration")
+            ValidationUtilities.validate_required_field(value=value, field_name=key, context="configuration")
         except Exception as e:
-            # Use custom error message if provided, otherwise use ValidationUtilities message
+            # Use custom error message if provided, otherwise maintain original format
             if error_msg:
                 raise ConfigurationError(error_msg) from e
             else:
-                raise ConfigurationError(str(e)) from e
+                # Convert ValidationUtilities message to original format for backward compatibility
+                raise ConfigurationError(f"Required configuration '{key}' is missing") from e
 
     def _validate_type(self, key: str, expected_type: type[T], error_msg: str | None = None) -> None:
         """Validate that a configuration value has the expected type.
@@ -273,13 +274,14 @@ class Configurable(Loggable):
         value = self.config.get(key)
         if value is not None:  # Only validate if value exists
             try:
-                ValidationUtilities.validate_type(field_name=key, field_value=value, expected_type=expected_type, context="configuration")
+                ValidationUtilities.validate_type(value=value, expected_type=expected_type, field_name=key, context="configuration")
             except Exception as e:
-                # Use custom error message if provided, otherwise use ValidationUtilities message
+                # Use custom error message if provided, otherwise maintain original format
                 if error_msg:
                     raise ConfigurationError(error_msg) from e
                 else:
-                    raise ConfigurationError(str(e)) from e
+                    # Convert ValidationUtilities message to original format for backward compatibility
+                    raise ConfigurationError(f"Configuration '{key}' must be of type {expected_type.__name__}") from e
 
     def _validate_enum(self, key: str, valid_values: list[Any], error_msg: str | None = None) -> None:
         """Validate that a configuration value is in a list of valid values.
@@ -298,13 +300,14 @@ class Configurable(Loggable):
         value = self.config.get(key)
         if value is not None:  # Only validate if value exists
             try:
-                ValidationUtilities.validate_enum(field_name=key, field_value=value, allowed_values=valid_values, context="configuration")
+                ValidationUtilities.validate_enum(value=value, valid_values=valid_values, field_name=key, context="configuration")
             except Exception as e:
-                # Use custom error message if provided, otherwise use ValidationUtilities message
+                # Use custom error message if provided, otherwise maintain original format
                 if error_msg:
                     raise ConfigurationError(error_msg) from e
                 else:
-                    raise ConfigurationError(str(e)) from e
+                    # Convert ValidationUtilities message to original format for backward compatibility
+                    raise ConfigurationError(f"Configuration '{key}' must be one of {valid_values}") from e
 
     def _validate_path(self, key: str, must_exist: bool = True, error_msg: str | None = None) -> None:
         """Validate that a configuration value is a valid path.
@@ -323,19 +326,14 @@ class Configurable(Loggable):
         path_value = self.config.get(key)
         if path_value is not None:  # Only validate if value exists
             try:
-                ValidationUtilities.validate_path(
-                    field_name=key,
-                    path_value=path_value,
-                    must_exist=must_exist,
-                    path_type=None,  # Allow any path type (file or directory)
-                    context="configuration",
-                )
+                ValidationUtilities.validate_path(path=path_value, must_exist=must_exist, field_name=key, context="configuration")
             except Exception as e:
-                # Use custom error message if provided, otherwise use ValidationUtilities message
+                # Use custom error message if provided, otherwise maintain original format
                 if error_msg:
                     raise ConfigurationError(error_msg) from e
                 else:
-                    raise ConfigurationError(str(e)) from e
+                    # Convert ValidationUtilities message to original format for backward compatibility
+                    raise ConfigurationError(f"Invalid path '{path_value}'") from e
 
     def _validate_config(self) -> None:
         """Validate the current configuration.

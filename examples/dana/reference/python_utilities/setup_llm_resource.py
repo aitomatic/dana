@@ -90,7 +90,9 @@ async def main():
     """
 
     # Parse and execute the program
-    parser = DanaParser()
+    from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+
+    parser = ParserCache.get_parser("dana")
     parse_result = parser.parse(program)
     interpreter = DanaInterpreter()
     interpreter.execute_program(parse_result, context)

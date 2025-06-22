@@ -24,7 +24,7 @@ from opendxa.dana.sandbox.parser.ast import (
     StructField,
     TypeHint,
 )
-from opendxa.dana.sandbox.parser.dana_parser import DanaParser
+from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
 
 
 class TestStructParsing:

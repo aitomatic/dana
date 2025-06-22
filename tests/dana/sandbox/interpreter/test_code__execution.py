@@ -298,7 +298,7 @@ for i in [1, 2, 3, 4, 5]:
 # --- Additional Error Handling ---
 def test_variable_not_found():
     code = "x = y"  # y is not defined
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
     # Disable type checking since it will fail on undefined variable before runtime
     program = parser.parse(code, do_type_check=False, do_transform=True)
     interpreter = DanaInterpreter()
@@ -322,7 +322,7 @@ def test_variable_not_found():
 
 def test_division_by_zero():
     code = "x = 1 / 0"
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
     program = parser.parse(code, do_type_check=True, do_transform=True)
     interpreter = DanaInterpreter()
     try:
@@ -338,7 +338,7 @@ def test_assertion_error():
 x = 5
 assert x == 10, "x should be 10"
 """
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
     program = parser.parse(code, do_type_check=True, do_transform=True)
     interpreter = DanaInterpreter()
     try:
@@ -378,7 +378,7 @@ def test_list_operations():
     code = """
 a = [1, 2, 3]
 """
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
     program = parser.parse(code, do_type_check=False, do_transform=True)
     interpreter = DanaInterpreter()
     context = SandboxContext()
@@ -395,7 +395,7 @@ def test_index_error_handling():
 empty_dict = {}
 has_key = "foo" in empty_dict
 """
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
     program = parser.parse(code, do_type_check=False, do_transform=True)
     interpreter = DanaInterpreter()
     context = SandboxContext()
@@ -414,7 +414,7 @@ private:x = 1
 public:y = 2
 system:z = 3
 """
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
     program = parser.parse(code, do_type_check=False, do_transform=True)
 
     # Create a parent context
@@ -447,7 +447,7 @@ d = not False
 e = not True
 """
     # Disable type checking for these tests
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
     program = parser.parse(code, do_type_check=False, do_transform=True)
     interpreter = DanaInterpreter()
     context = SandboxContext()
@@ -468,7 +468,7 @@ d = {"k1": 10, "k2": 20}
 has_k1 = "k1" in d
 has_k3 = "k3" in d
 """
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
     program = parser.parse(code, do_type_check=False, do_transform=True)
     interpreter = DanaInterpreter()
     context = SandboxContext()
@@ -486,7 +486,7 @@ str1 = "Hello, "
 str2 = "World!"
 greeting = str1 + str2
 """
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
     program = parser.parse(code, do_type_check=False, do_transform=True)
     interpreter = DanaInterpreter()
     context = SandboxContext()
@@ -502,7 +502,7 @@ def test_power_operator():
 squared = 2 ** 2
 cubed = 2 ** 3
 """
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
     program = parser.parse(code, do_type_check=False, do_transform=True)
     interpreter = DanaInterpreter()
     context = SandboxContext()

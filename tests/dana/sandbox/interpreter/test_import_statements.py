@@ -20,7 +20,9 @@ class TestImportStatements:
 
     def setup_method(self):
         """Set up test fixtures."""
-        self.parser = DanaParser()
+        from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+
+        self.parser = ParserCache.get_parser("dana")
         self.interpreter = DanaInterpreter()
         self.sandbox = DanaSandbox()
 

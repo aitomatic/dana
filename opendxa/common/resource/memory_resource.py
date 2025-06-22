@@ -81,6 +81,7 @@ from opendxa.common.db.models import LTMemoryDBModel, MemoryDBModel, PermanentMe
 from opendxa.common.db.storage import MemoryDBStorage
 from opendxa.common.resource.base_resource import BaseResource
 from opendxa.common.types import BaseResponse
+from opendxa.common.utils.validation import ValidationUtilities
 
 ModelType = TypeVar("ModelType", bound=MemoryDBModel)
 StorageType = TypeVar("StorageType", bound=MemoryDBStorage)
@@ -138,36 +139,12 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
         Raises:
             ValueError: If decay parameters are invalid
         """
-        if self._default_decay_rate == 0:
-            # Permanent memory
-            return
-
-        if not 0 < self._default_decay_rate < 1:
-            raise ValueError("Decay rate must be between 0 and 1")
-
-        if self._decay_interval <= 0:
-            raise ValueError("Decay interval must be positive")
-
-        # Calculate expected half-life based on decay rate
-        # Using the formula: t_1/2 = -ln(2) / ln(1 - decay_rate)
-        if self.half_life < float("inf"):
-            expected_interval = self._decay_interval / self.half_life
-        else:
-            expected_interval = 0
-
-        # Warn if the interval seems too long or too short
-        if expected_interval > 10:  # More than 10 intervals to reach half-life
-            self.warning(
-                f"Decay interval ({self._decay_interval}s) seems long relative to decay rate "
-                f"({self._default_decay_rate}). Memory will take {expected_interval:.1f} "
-                "intervals to reach half-life."
-            )
-        elif expected_interval < 0.1:  # Less than 0.1 intervals to reach half-life
-            self.warning(
-                f"Decay interval ({self._decay_interval}s) seems short relative to decay rate "
-                f"({self._default_decay_rate}). Memory will reach half-life in {expected_interval:.1f} "
-                "intervals."
-            )
+        try:
+            # Use centralized validation which handles all the logic including warnings
+            ValidationUtilities.validate_decay_parameters(self._default_decay_rate, self._decay_interval, context=f"resource '{self.name}'")
+        except Exception as e:
+            # Convert ValidationError to ValueError for backward compatibility
+            raise ValueError(str(e)) from e
 
     @property
     def decay_rate(self) -> float:
@@ -184,11 +161,14 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
         Raises:
             ValueError: If the decay rate is not between 0 and 1
         """
-        if not 0 < value < 1:
-            raise ValueError("Decay rate must be between 0 and 1")
-        self._default_decay_rate = value
-        self._validate_decay_parameters()
-        self.info(f"Decay rate updated to {value} for resource [{self.name}]")
+        try:
+            # Validate the new decay rate with current interval
+            ValidationUtilities.validate_decay_parameters(value, self._decay_interval, context=f"resource '{self.name}'")
+            self._default_decay_rate = value
+            self.info(f"Decay rate updated to {value} for resource [{self.name}]")
+        except Exception as e:
+            # Convert ValidationError to ValueError for backward compatibility
+            raise ValueError(str(e)) from e
 
     @property
     def half_life(self) -> float:
@@ -217,11 +197,14 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
         Raises:
             ValueError: If the interval is not positive
         """
-        if value <= 0:
-            raise ValueError("Decay interval must be positive")
-        self._decay_interval = value
-        self._validate_decay_parameters()
-        self.info(f"Decay interval updated to {value} seconds for resource [{self.name}]")
+        try:
+            # Validate the new interval with current decay rate
+            ValidationUtilities.validate_decay_parameters(self._default_decay_rate, value, context=f"resource '{self.name}'")
+            self._decay_interval = value
+            self.info(f"Decay interval updated to {value} seconds for resource [{self.name}]")
+        except Exception as e:
+            # Convert ValidationError to ValueError for backward compatibility
+            raise ValueError(str(e)) from e
 
     def _should_decay(self) -> bool:
         """Check if it's time to run decay.

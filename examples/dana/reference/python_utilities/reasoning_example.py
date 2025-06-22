@@ -40,7 +40,9 @@ async def run_dana_reasoning_example(model: str | None = None, provider: str | N
     print(f"{'-' * 80}\n")
 
     # Parse the DANA code
-    parser = DanaParser()
+    from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+
+    parser = ParserCache.get_parser("dana")
     parse_result = parser.parse(dana_code)
 
     # Create a runtime context
