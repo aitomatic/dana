@@ -9,7 +9,9 @@ def run_dana_code(code: str):
     """Helper function to run Dana code and return the context."""
     # Remove leading/trailing whitespace and normalize line endings
     code = code.strip()
-    parser = DanaParser()
+    from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+
+    parser = ParserCache.get_parser("dana")
     program = parser.parse(code, do_type_check=True, do_transform=True)
     context = SandboxContext()
     interpreter = DanaInterpreter()

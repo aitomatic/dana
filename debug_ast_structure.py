@@ -21,7 +21,9 @@ local:as_int = data.process(as_string=false)
 """
 
 print("Parsing code to examine AST structure...")
-parser = DanaParser()
+from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+
+parser = ParserCache.get_parser("dana")
 result = parser.parse(code)
 
 print(f"Parse successful: {result.success}")

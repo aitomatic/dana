@@ -1,0 +1,49 @@
+# Control flow test - covers if/else, for loops, while loops
+log("Starting control flow test")
+
+# If/else statements
+private:temperature = 25
+private:status = "unknown"
+
+if private:temperature > 30:
+    private:status = "hot"
+elif private:temperature > 20:
+    private:status = "warm"
+elif private:temperature > 10:
+    private:status = "cool"
+else:
+    private:status = "cold"
+
+print(f"Temperature {private:temperature}°C is {private:status}")
+
+# For loop with list (simpler than range)
+private:numbers = [1, 2, 3, 4, 5]
+private:sum_total = 0
+for i in private:numbers:
+    private:sum_total = private:sum_total + i
+
+print(f"Sum of numbers: {private:sum_total}")
+
+# For loop with list
+private:fruits = ["apple", "banana", "orange"]
+for fruit in private:fruits:
+    print(f"Fruit: {fruit}")
+
+# While loop
+private:counter = 0
+private:factorial = 1
+private:n = 5
+
+while private:counter < private:n:
+    private:counter = private:counter + 1
+    private:factorial = private:factorial * private:counter
+
+print(f"Factorial of {private:n}: {private:factorial}")
+
+# Simple conditional in loop
+private:test_numbers = [1, 2, 3, 4, 5, 6]
+for value in private:test_numbers:
+    if value % 2 == 0:
+        print(f"Even: {value}")
+
+log("Control flow test completed") 

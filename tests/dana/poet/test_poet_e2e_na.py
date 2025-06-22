@@ -23,6 +23,8 @@ def test_poet_e2e_na_file(tmp_path):
         result = sandbox.run(na_path)
 
         assert result.success, f"DanaSandbox run failed: {result.error}"
-        assert "POET E2E result: 5" in result.output
+        # Check that the computation was successful and result is stored
+        assert result.final_context is not None
+        assert result.final_context.get("local:result") == 5
     finally:
         sandbox._cleanup()

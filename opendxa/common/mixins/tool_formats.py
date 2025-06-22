@@ -4,8 +4,7 @@ This module provides converters for different tool formats (MCP, OpenAI, etc.)
 that can be used with the ToolCallable mixin.
 """
 
-from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Protocol
 
 from mcp import Tool as McpTool
 
@@ -28,8 +27,8 @@ def _strip_fields(schema: dict[str, Any], fields_to_strip: set[str]) -> dict[str
     return result
 
 
-class ToolFormat(ABC):
-    """Base class for tool format converters."""
+class ToolFormat(Protocol):
+    """Protocol for tool format converters."""
 
     @classmethod
     def parse_tool_name(cls, name: str) -> tuple[str, str, str]:
@@ -74,7 +73,6 @@ class ToolFormat(ABC):
             raise ValueError("Resource name, ID, and tool name cannot contain '__'")
         return f"{resource_name}__{resource_id}__{tool_name}"
 
-    @abstractmethod
     def convert(self, name: str, description: str, schema: dict[str, Any]) -> Any:
         """Convert tool information to the desired format.
 
@@ -86,7 +84,7 @@ class ToolFormat(ABC):
         Returns:
             Tool in the desired format
         """
-        pass
+        ...
 
 
 class McpToolFormat(ToolFormat):

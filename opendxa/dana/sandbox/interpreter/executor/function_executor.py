@@ -107,7 +107,9 @@ class FunctionExecutor(BaseExecutor):
                 return_type = str(node.return_type)
 
         # Create the base DanaFunction with defaults
-        dana_func = DanaFunction(body=node.body, parameters=param_names, context=context, return_type=return_type, defaults=param_defaults)
+        dana_func = DanaFunction(
+            body=node.body, parameters=param_names, context=context, return_type=return_type, defaults=param_defaults, name=node.name.name
+        )
 
         # Apply decorators if present
         if node.decorators:

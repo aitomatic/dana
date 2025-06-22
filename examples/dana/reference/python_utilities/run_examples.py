@@ -57,7 +57,9 @@ def run_example(example_path: str):
 
         # 2. Parse
         print(f"{YELLOW}Parsing...{RESET}")
-        parser = DanaParser()
+        from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+
+        parser = ParserCache.get_parser("dana")
         parse_result = parser.parse(dana_code)
 
         # 3. Setup Runtime

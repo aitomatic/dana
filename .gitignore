@@ -11,6 +11,7 @@ __pycache__/
 .ruff_cache/
 
 # Environment
+.tmp/
 tmp/
 .venv/
 venv/
@@ -24,7 +25,6 @@ pytest.ini
 
 # Logs and data
 .dana/
-tmp/
 .poet/
 logs/
 local_executor/

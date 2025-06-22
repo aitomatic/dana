@@ -17,7 +17,9 @@ class TestIndexingOperations:
 
     def setup_method(self):
         """Set up test environment for each test."""
-        self.parser = DanaParser()
+        from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+
+        self.parser = ParserCache.get_parser("dana")
         self.context = SandboxContext()
         self.interpreter = DanaInterpreter()
 

@@ -21,7 +21,9 @@ def test_division_from_source():
     from opendxa.dana.sandbox.parser.dana_parser import DanaParser
     from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
-    parser = DanaParser()
+    from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+
+    parser = ParserCache.get_parser("dana")
     parse_tree = parser.parser.parse("private:x = 6 / 2\n")
     ast = parser.transform(parse_tree)
     context = SandboxContext()
@@ -31,7 +33,7 @@ def test_division_from_source():
 
 
 def test_parse_simple_division_expression():
-    from opendxa.dana.sandbox.parser.dana_parser import DanaParser
+    from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
 
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
     parser.parser.parse("6 / 2\n")

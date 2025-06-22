@@ -87,7 +87,9 @@ class TestAstValidation:
     @pytest.fixture
     def parser(self):
         """Create a fresh parser instance for each test."""
-        return DanaParser()
+        from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+
+        return ParserCache.get_parser("dana")
 
     @pytest.fixture
     def strict_parser(self):

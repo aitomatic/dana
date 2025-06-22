@@ -147,8 +147,8 @@ update-deps: ## Update dependencies to latest versions
 
 test: ## Run all tests
 	@echo "🧪 Running all tests..."
-	# OPENDXA_MOCK_LLM=true uv run pytest tests/
-	OPENDXA_MOCK_LLM=true uv run pytest tests/ -v -k "not (poet or function_composition or pipe_operator_composition)"
+	#OPENDXA_MOCK_LLM=true uv run pytest tests/ -v -k "not (function_composition or pipe_operator_composition)"
+	OPENDXA_MOCK_LLM=true uv run pytest tests/
 
 test-fast: ## Run fast tests only (excludes live/deep tests)
 	@echo "⚡ Running fast tests..."

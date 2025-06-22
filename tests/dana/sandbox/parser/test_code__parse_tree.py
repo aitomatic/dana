@@ -11,7 +11,9 @@ from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 
 @pytest.fixture(scope="module")
 def dana_parser():
-    return DanaParser()
+    from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+
+    return ParserCache.get_parser("dana")
 
 
 def find_first(tree, data_name):
@@ -564,7 +566,9 @@ a = 5
 result = f"{a}"
 result2 = f"{a} text"
 """
-    parser = DanaParser()
+    from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+
+    parser = ParserCache.get_parser("dana")
     # Force parser to reload grammar
     parser._grammar = None
     parse_tree = parser.parse(code, do_transform=False)

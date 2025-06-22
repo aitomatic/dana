@@ -23,7 +23,9 @@ def main():
 
     # Parse the code
     print(f"Parsing code from {example_file}...\n")
-    parser = DanaParser()
+    from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+
+    parser = ParserCache.get_parser("dana")
     result = parser.parse(code, do_type_check=False)
 
     if not result.is_valid:

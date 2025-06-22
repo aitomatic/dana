@@ -21,6 +21,7 @@ from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.poet.client import POETClient, set_default_client
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
+from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
@@ -77,7 +78,7 @@ class DanaSandbox(Loggable):
         self.debug_mode = debug_mode
         self._context = context or self._create_default_context()
         self._interpreter = DanaInterpreter()
-        self._parser = DanaParser()
+        self._parser = ParserCache.get_parser("dana")
 
         # Set interpreter in context
         self._context.interpreter = self._interpreter

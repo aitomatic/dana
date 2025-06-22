@@ -8,6 +8,7 @@ import pytest
 from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
+from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
 
 
 class TestDanaModuleImports:
@@ -15,7 +16,7 @@ class TestDanaModuleImports:
 
     def setup_method(self):
         """Set up test fixtures."""
-        self.parser = DanaParser()
+        self.parser = ParserCache.get_parser("dana")
         self.interpreter = DanaInterpreter()
         self.sandbox = DanaSandbox()
 

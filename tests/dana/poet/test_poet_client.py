@@ -44,12 +44,12 @@ class TestPOETClient:
     def test_transpile_function(self, mock_api_client):
         """Test function transpilation"""
         mock_api_instance = mock_api_client.return_value
-        mock_api_instance.post.return_value = {"enhanced_code": "def f(): pass"}
+        mock_api_instance.post.return_value = {"enhanced_code": "def f(): return 42"}
 
         client = POETClient()
         code = "def f(): ..."
         config = POETConfig(domain="test")
         result = client.transpile(code, config)
 
-        assert result == {"enhanced_code": "def f(): pass"}
+        assert result == {"enhanced_code": "def f(): return 42"}
         mock_api_instance.post.assert_called_once_with("/poet/transpile", {"code": code, "config": config.dict()})

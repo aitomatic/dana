@@ -73,7 +73,9 @@ class TestUnifiedExecution(unittest.TestCase):
         """Set up the test environment."""
         self.context = SandboxContext()
         self.interpreter = DanaInterpreter()
-        self.parser = DanaParser()
+        from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+
+        self.parser = ParserCache.get_parser("dana")
 
         # Mock the reason function to avoid actual LLM calls
         self.reason_result = "mocked reason result"

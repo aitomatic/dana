@@ -514,7 +514,18 @@ class LLMResource(BaseResource):
         return responses
 
     def _validate_model(self, model_name: str) -> bool:
-        """Checks if the necessary API keys for a given model are available."""
+        """Checks if the necessary API keys for a given model are available.
+
+        This method delegates to the LLMConfigurationManager, which now uses
+        ValidationUtilities.validate_model_availability() for centralized,
+        consistent validation logic across the OpenDXA framework.
+
+        Args:
+            model_name: Name of the model to validate
+
+        Returns:
+            True if the model is available and properly configured, False otherwise
+        """
         return self._config_manager._validate_model(model_name)
 
     def _find_first_available_model(self) -> str | None:

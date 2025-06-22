@@ -293,5 +293,7 @@ def parse_program(program_text: str, do_type_check: bool = ENABLE_TYPE_CHECK) ->
     Returns:
         Program AST node
     """
-    parser = DanaParser()
+    from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+
+    parser = ParserCache.get_parser("dana")
     return parser.parse(program_text, do_transform=True, do_type_check=do_type_check)

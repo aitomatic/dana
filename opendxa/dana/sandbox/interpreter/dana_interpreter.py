@@ -29,6 +29,7 @@ from opendxa.dana.common.error_utils import ErrorUtils
 from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.parser.ast import FunctionDefinition, Program
+from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
 from opendxa.dana.sandbox.sandbox_context import ExecutionStatus, SandboxContext
 
 # Map Dana LogLevel to Python logging levels
@@ -141,9 +142,7 @@ class DanaInterpreter(Loggable):
             Raw execution result
         """
         # Parse the source code
-        from opendxa.dana.sandbox.parser.dana_parser import DanaParser
-
-        parser = DanaParser()
+        parser = ParserCache.get_parser("dana")
         ast = parser.parse(source_code)
 
         # Execute through _execute (convergent path)

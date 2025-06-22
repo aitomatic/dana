@@ -45,24 +45,28 @@ def register_core_functions(registry: FunctionRegistry) -> None:
         try:
             module = importlib.import_module(module_name)
 
-            # Find all functions in the module
-            all_functions = inspect.getmembers(module, inspect.isfunction)
-            all_members = inspect.getmembers(module)  # noqa: F841
+            # Find all functions and POET-decorated functions in the module
+            all_members = inspect.getmembers(module)
 
-            for name, obj in all_functions:
-                # Register functions ending with '_function'
+            # Check all members for functions ending with '_function'
+            for name, obj in all_members:
                 if name.endswith("_function"):
-                    # Remove '_function' suffix for the registry name
-                    dana_func_name = name.replace("_function", "")
+                    # Check if it's a regular function or a POETDecorator
+                    is_function = inspect.isfunction(obj)
+                    is_poet_decorator = hasattr(obj, "__class__") and "POETDecorator" in str(type(obj))
 
-                    # Register in registry (trusted by default for core functions)
-                    registry.register(
-                        name=dana_func_name,
-                        func=obj,
-                        func_type=FunctionType.REGISTRY,
-                        overwrite=True,
-                        trusted_for_context=True,  # Core functions are always trusted
-                    )
+                    if is_function or is_poet_decorator:
+                        # Remove '_function' suffix for the registry name
+                        dana_func_name = name.replace("_function", "")
+
+                        # Register in registry (trusted by default for core functions)
+                        registry.register(
+                            name=dana_func_name,
+                            func=obj,
+                            func_type=FunctionType.REGISTRY,
+                            overwrite=True,
+                            trusted_for_context=True,  # Core functions are always trusted
+                        )
 
         except ImportError:
             # Log import errors but continue with other modules

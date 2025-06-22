@@ -1,0 +1,36 @@
+# Function definitions and calls test
+log("Starting functions test")
+
+# Simple function without parameters
+def greet() -> str:
+    return "Hello from Dana!"
+
+# Function with parameters
+def add_numbers(x: int, y: int) -> int:
+    return x + y
+
+# Function with default parameter
+def multiply(a: int, b: int = 2) -> int:
+    return a * b
+
+# Function with string parameter
+def format_message(name: str, age: int) -> str:
+    return f"Name: {name}, Age: {age}"
+
+# Test function calls
+private:greeting = greet()
+print(f"Greeting: {private:greeting}")
+
+private:sum_result = add_numbers(10, 5)
+print(f"Sum: {private:sum_result}")
+
+private:mult_result = multiply(7)
+print(f"Multiply with default: {private:mult_result}")
+
+private:mult_custom = multiply(7, 3)
+print(f"Multiply with custom: {private:mult_custom}")
+
+private:message = format_message("Alice", 25)
+print(f"Message: {private:message}")
+
+log("Functions test completed") 

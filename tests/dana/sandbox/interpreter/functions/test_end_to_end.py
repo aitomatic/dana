@@ -341,7 +341,15 @@ def test_reason_function_integration():
         # Test 1: Basic reason function call
         result = interpreter.call_function("reason", ["What is 2 + 2?"])
         assert result is not None
-        assert isinstance(result, str | dict)
+
+        # Handle POETResult wrapper if present
+        from opendxa.dana.poet.types import POETResult
+
+        if isinstance(result, POETResult):
+            unwrapped_result = result.unwrap()
+            assert isinstance(unwrapped_result, str | dict)
+        else:
+            assert isinstance(result, str | dict)
 
         # Test 2: Reason function with context variables
         context.set("topic", "mathematics")

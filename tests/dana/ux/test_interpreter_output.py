@@ -41,7 +41,9 @@ def run_and_capture_output(input_code):
 
     context = SandboxContext()
     interpreter = DanaInterpreter()
-    parser = DanaParser()
+    from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+
+    parser = ParserCache.get_parser("dana")
     try:
         try:
             ast = parser.parse(input_code)

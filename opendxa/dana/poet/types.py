@@ -68,11 +68,92 @@ class POETResult:
         """Delegate item assignment to wrapped result"""
         self._result[key] = value
 
-    def __repr__(self) -> str:
-        return f"POETResult({self._result!r})"
+    def __eq__(self, other: Any) -> bool:
+        """Compare POETResult with wrapped value"""
+        return self._result == other
+
+    def __ne__(self, other: Any) -> bool:
+        """Not equal comparison"""
+        return not self.__eq__(other)
+
+    def __hash__(self) -> int:
+        """Make POETResult hashable based on wrapped result"""
+        return hash(self._result)
+
+    def __bool__(self) -> bool:
+        """Boolean evaluation based on wrapped result"""
+        return bool(self._result)
+
+    def __int__(self) -> int:
+        """Integer conversion"""
+        return int(self._result)
+
+    def __float__(self) -> float:
+        """Float conversion"""
+        return float(self._result)
 
     def __str__(self) -> str:
         return str(self._result)
+
+    def __repr__(self) -> str:
+        return f"POETResult({self._result!r})"
+
+    # Arithmetic operations - delegate to wrapped result
+    def __add__(self, other: Any) -> Any:
+        """Addition"""
+        return self._result + other
+
+    def __radd__(self, other: Any) -> Any:
+        """Right addition"""
+        return other + self._result
+
+    def __sub__(self, other: Any) -> Any:
+        """Subtraction"""
+        return self._result - other
+
+    def __rsub__(self, other: Any) -> Any:
+        """Right subtraction"""
+        return other - self._result
+
+    def __mul__(self, other: Any) -> Any:
+        """Multiplication"""
+        return self._result * other
+
+    def __rmul__(self, other: Any) -> Any:
+        """Right multiplication"""
+        return other * self._result
+
+    def __truediv__(self, other: Any) -> Any:
+        """Division"""
+        return self._result / other
+
+    def __rtruediv__(self, other: Any) -> Any:
+        """Right division"""
+        return other / self._result
+
+    def __floordiv__(self, other: Any) -> Any:
+        """Floor division"""
+        return self._result // other
+
+    def __rfloordiv__(self, other: Any) -> Any:
+        """Right floor division"""
+        return other // self._result
+
+    def __mod__(self, other: Any) -> Any:
+        """Modulo"""
+        return self._result % other
+
+    def __rmod__(self, other: Any) -> Any:
+        """Right modulo"""
+        return other % self._result
+
+    def __pow__(self, other: Any) -> Any:
+        """Power"""
+        return self._result**other
+
+    def __rpow__(self, other: Any) -> Any:
+        """Right power"""
+        return other**self._result
 
     def unwrap(self) -> Any:
         """Get the original result without POET wrapper"""

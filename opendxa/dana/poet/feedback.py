@@ -132,18 +132,20 @@ class AlphaFeedbackSystem(Loggable):
         }
 
         # Use LLM to translate feedback into structured learning signals
+        processing_method = "llm"
         try:
             processed = self._translate_feedback_with_llm(feedback_payload, context)
         except Exception as e:
             self.log_warning(f"LLM feedback translation failed: {e}, using basic processing")
             processed = self._basic_feedback_processing(feedback_payload)
+            processing_method = "basic"
 
         # Add metadata
         processed.update(
             {
                 "raw_feedback": feedback_payload,
                 "processed_timestamp": datetime.now().isoformat(),
-                "processing_method": "llm" if "sentiment" in processed else "basic",
+                "processing_method": processing_method,
             }
         )
 
@@ -193,9 +195,17 @@ Return only the JSON object.
             import json
 
             if isinstance(response, dict):
-                # Already parsed - ensure it's serializable
+                # Check if this is a full LLM response structure with 'choices'
+                if "choices" in response and len(response["choices"]) > 0:
+                    # Extract the actual message content from the first choice
+                    message_content = response["choices"][0].get("message", {}).get("content", "")
+                    if message_content:
+                        parsed = json.loads(message_content.strip())
+                        return self._make_serializable(parsed)
+                # Otherwise, assume it's already parsed feedback data
                 return self._make_serializable(response)
             elif isinstance(response, str):
+                # Simple string response - parse as JSON
                 parsed = json.loads(response.strip())
                 return self._make_serializable(parsed)
             else:
@@ -237,18 +247,18 @@ Return only the JSON object.
         import re
 
         text = str(feedback_payload).lower()
-        positive_words = ["good", "great", "excellent", "awesome", "love", "like", "okay", "accurate"]
+        positive_words = ["good", "great", "excellent", "awesome", "love", "like", "accurate"]
         negative_words = ["bad", "wrong", "terrible", "hate", "dislike", "error", "inaccurate"]
 
-        is_positive = any(re.search(r"\\b" + word + r"\\b", text) for word in positive_words)
-        is_negative = any(re.search(r"\\b" + word + r"\\b", text) for word in negative_words)
+        is_positive = any(re.search(r"\b" + word + r"\b", text) for word in positive_words)
+        is_negative = any(re.search(r"\b" + word + r"\b", text) for word in negative_words)
 
         if is_positive and not is_negative:
             processed["sentiment"] = "positive"
-            processed["confidence"] = 0.5
+            processed["confidence"] = 0.6
         elif is_negative and not is_positive:
             processed["sentiment"] = "negative"
-            processed["confidence"] = 0.5
+            processed["confidence"] = 0.6
 
         if "suggestion" in text or "should" in text:
             processed["feedback_type"] = "suggestion"

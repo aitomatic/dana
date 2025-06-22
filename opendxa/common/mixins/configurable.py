@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 from opendxa.common.exceptions import ConfigurationError
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.utils.misc import Misc
+from opendxa.common.utils.validation import ValidationUtilities
 
 # Load environment variables when module is imported
 load_dotenv()
@@ -235,6 +236,9 @@ class Configurable(Loggable):
     def _validate_required(self, key: str, error_msg: str | None = None) -> None:
         """Validate that a required configuration key exists.
 
+        Uses ValidationUtilities for centralized validation logic while maintaining
+        backward compatibility with existing behavior.
+
         Args:
             key: Configuration key to check
             error_msg: Optional custom error message
@@ -242,12 +246,22 @@ class Configurable(Loggable):
         Raises:
             ConfigurationError: If key is missing
         """
-        if key not in self.config:
-            msg = error_msg or f"Required configuration '{key}' is missing"
-            raise ConfigurationError(msg)
+        try:
+            value = self.config.get(key)
+            ValidationUtilities.validate_required_field(value=value, field_name=key, context="configuration")
+        except Exception as e:
+            # Use custom error message if provided, otherwise maintain original format
+            if error_msg:
+                raise ConfigurationError(error_msg) from e
+            else:
+                # Convert ValidationUtilities message to original format for backward compatibility
+                raise ConfigurationError(f"Required configuration '{key}' is missing") from e
 
     def _validate_type(self, key: str, expected_type: type[T], error_msg: str | None = None) -> None:
         """Validate that a configuration value has the expected type.
+
+        Uses ValidationUtilities for centralized validation logic while maintaining
+        backward compatibility with existing behavior.
 
         Args:
             key: Configuration key to check
@@ -258,12 +272,22 @@ class Configurable(Loggable):
             ConfigurationError: If value has wrong type
         """
         value = self.config.get(key)
-        if value is not None and not isinstance(value, expected_type):
-            msg = error_msg or f"Configuration '{key}' must be of type {expected_type.__name__}"
-            raise ConfigurationError(msg)
+        if value is not None:  # Only validate if value exists
+            try:
+                ValidationUtilities.validate_type(value=value, expected_type=expected_type, field_name=key, context="configuration")
+            except Exception as e:
+                # Use custom error message if provided, otherwise maintain original format
+                if error_msg:
+                    raise ConfigurationError(error_msg) from e
+                else:
+                    # Convert ValidationUtilities message to original format for backward compatibility
+                    raise ConfigurationError(f"Configuration '{key}' must be of type {expected_type.__name__}") from e
 
     def _validate_enum(self, key: str, valid_values: list[Any], error_msg: str | None = None) -> None:
         """Validate that a configuration value is in a list of valid values.
+
+        Uses ValidationUtilities for centralized validation logic while maintaining
+        backward compatibility with existing behavior.
 
         Args:
             key: Configuration key to check
@@ -274,12 +298,22 @@ class Configurable(Loggable):
             ConfigurationError: If value is not in valid values
         """
         value = self.config.get(key)
-        if value is not None and value not in valid_values:
-            msg = error_msg or f"Configuration '{key}' must be one of {valid_values}"
-            raise ConfigurationError(msg)
+        if value is not None:  # Only validate if value exists
+            try:
+                ValidationUtilities.validate_enum(value=value, valid_values=valid_values, field_name=key, context="configuration")
+            except Exception as e:
+                # Use custom error message if provided, otherwise maintain original format
+                if error_msg:
+                    raise ConfigurationError(error_msg) from e
+                else:
+                    # Convert ValidationUtilities message to original format for backward compatibility
+                    raise ConfigurationError(f"Configuration '{key}' must be one of {valid_values}") from e
 
     def _validate_path(self, key: str, must_exist: bool = True, error_msg: str | None = None) -> None:
         """Validate that a configuration value is a valid path.
+
+        Uses ValidationUtilities for centralized validation logic while maintaining
+        backward compatibility with existing behavior.
 
         Args:
             key: Configuration key to check
@@ -289,16 +323,17 @@ class Configurable(Loggable):
         Raises:
             ConfigurationError: If path is invalid or doesn't exist
         """
-        path = self.config.get(key)
-        if path is not None:
+        path_value = self.config.get(key)
+        if path_value is not None:  # Only validate if value exists
             try:
-                path = Path(path)
-                if must_exist and not path.exists():
-                    msg = error_msg or f"Path '{path}' does not exist"
-                    raise ConfigurationError(msg)
+                ValidationUtilities.validate_path(path=path_value, must_exist=must_exist, field_name=key, context="configuration")
             except Exception as e:
-                msg = error_msg or f"Invalid path '{path}'"
-                raise ConfigurationError(msg) from e
+                # Use custom error message if provided, otherwise maintain original format
+                if error_msg:
+                    raise ConfigurationError(error_msg) from e
+                else:
+                    # Convert ValidationUtilities message to original format for backward compatibility
+                    raise ConfigurationError(f"Invalid path '{path_value}'") from e
 
     def _validate_config(self) -> None:
         """Validate the current configuration.

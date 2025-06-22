@@ -1,18 +1,17 @@
 """Graph traversal implementations."""
 
-from abc import ABC, abstractmethod
 from collections.abc import Iterator
+from typing import Protocol
 
 from .directed_graph import DirectedGraph, Node, NodeType
 
 
-class TraversalStrategy(ABC):
-    """Base class for graph traversal strategies."""
+class TraversalStrategy(Protocol):
+    """Protocol for graph traversal strategies."""
 
-    @abstractmethod
     def traverse(self, graph: DirectedGraph, start_node: Node) -> Iterator[Node]:
         """Traverse graph starting from given node."""
-        pass
+        ...
 
 
 class BreadthFirstTraversal(TraversalStrategy):

@@ -23,6 +23,7 @@ from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.types import BaseRequest
 from opendxa.dana.common.exceptions import TranscoderError
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser, ParseResult, Program
+from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
 
 try:
     from .templates.common_patterns import get_all_examples
@@ -71,7 +72,7 @@ class Translator:
             llm_resource: LLM resource for translation
         """
         self.llm = llm_resource
-        self.parser = DanaParser()
+        self.parser = ParserCache.get_parser("dana")
 
     async def to_dana(self, natural_language: str) -> tuple[ParseResult, str]:
         """Convert natural language to Dana code.

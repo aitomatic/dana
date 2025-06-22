@@ -24,7 +24,7 @@ from opendxa.dana.sandbox.parser.ast import (
     StructField,
     TypeHint,
 )
-from opendxa.dana.sandbox.parser.dana_parser import DanaParser
+from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
 
 
 class TestStructParsing:
@@ -41,7 +41,7 @@ struct Point:
     x: int
     y: int
 """
-        parser = DanaParser()
+        parser = ParserCache.get_parser("dana")
         ast = parser.parse(code)
 
         # Should have one statement (struct definition)
@@ -77,7 +77,7 @@ struct UserProfile:
     preferences: dict
     tags: list
 """
-        parser = DanaParser()
+        parser = ParserCache.get_parser("dana")
         ast = parser.parse(code)
 
         struct_def = ast.statements[0]
@@ -94,7 +94,7 @@ struct UserProfile:
         """Test parsing struct instantiation (parsed as function call)."""
         code = "Point(x=10, y=20)"
 
-        parser = DanaParser()
+        parser = ParserCache.get_parser("dana")
         ast = parser.parse_expression(code)
 
         # Struct instantiation is parsed as a FunctionCall at parse time
@@ -117,7 +117,7 @@ struct UserProfile:
         """Test struct instantiation with complex field values (parsed as function call)."""
         code = 'UserProfile(user_id="usr_123", is_active=true, preferences={"theme": "dark"})'
 
-        parser = DanaParser()
+        parser = ParserCache.get_parser("dana")
         ast = parser.parse_expression(code)
 
         # Struct instantiation is parsed as a FunctionCall at parse time
@@ -312,7 +312,7 @@ struct Temperature:
     celsius: float
     fahrenheit: float
 """
-        parser = DanaParser()
+        parser = ParserCache.get_parser("dana")
         ast = parser.parse(code)
 
         struct_def = ast.statements[0]
@@ -340,7 +340,7 @@ struct Circle:
         # Note: This test shows the grammar works, but full Circle instantiation
         # with Point as field type will need more implementation in Phase 2
 
-        parser = DanaParser()
+        parser = ParserCache.get_parser("dana")
         ast = parser.parse(code)
 
         assert len(ast.statements) == 2
