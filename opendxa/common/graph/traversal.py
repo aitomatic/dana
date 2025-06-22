@@ -1,7 +1,7 @@
 """Graph traversal implementations."""
 
-from typing import Protocol
 from collections.abc import Iterator
+from typing import Protocol
 
 from .directed_graph import DirectedGraph, Node, NodeType
 
