@@ -1,0 +1,37 @@
+# Simple Weather Expert Module Agent
+# Basic weather analysis agent for Dana multi-agent system
+
+# System variables (required for module agents)
+system:agent_name = "Weather Expert"
+system:agent_description = "Provides weather analysis and forecasts"
+
+# Set up web search resource
+websearch = use("mcp", url="http://localhost:8880/websearch")
+
+# Required solve function for module agents
+def solve(task: str) -> str:
+    """Main solve function - required for module agents"""
+    return get_weather_info(task)
+
+# Helper function for weather information
+def get_weather_info(query: str) -> str:
+    """Get weather information using web search"""
+    search_query = f"weather forecast {query}"
+    result = websearch.search(search_query)
+    return result
+
+# Helper function for weather analysis
+def analyze_weather(location: str) -> str:
+    """Analyze weather conditions for a location"""
+    weather_data = get_weather_info(location)
+    analysis = reason(f"Analyze this weather data for {location}: {weather_data}")
+    return analysis
+
+# Example usage and testing (commented out for production)
+# print("Weather Expert Module Loaded")
+# print(f"Agent Name: {system:agent_name}")
+# print(f"Description: {system:agent_description}")
+
+# Test the solve function
+# test_result = solve("What's the weather forecast for Paris next week?")
+# print(f"Test result: {test_result[:100]}...") 

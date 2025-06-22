@@ -327,7 +327,7 @@ opendxa/
 │               ├── client/                    # A2A Client Implementation
 │               │   ├── __init__.py
 │               │   ├── a2a_client.py          # A2A SDK wrapper
-│               │   ├── a2a_resource.py        # Main A2AResource class
+│               │   ├── a2a_agent.py        # Main A2AResource class
 │               │   ├── agent_selector.py      # Agent selection logic
 │               │   ├── reason_integration.py  # reason() function enhancement
 │               │   └── transport/             # Transport abstractions
@@ -365,7 +365,7 @@ opendxa/
     │           └── a2a/                       # NEW: A2A tests
     │               ├── __init__.py
     │               ├── test_a2a_client.py
-    │               ├── test_a2a_resource.py
+    │               ├── test_a2a_agent.py
     │               ├── test_agent_selector.py
     │               ├── test_reason_integration.py
     │               ├── test_a2a_server.py
@@ -392,7 +392,7 @@ opendxa/
 
 **Client Components:**
 - `a2a_client.py`: Wrapper around `python-a2a` library, handles connection management and protocol communication
-- `a2a_resource.py`: Main resource class implementing BaseResource interface, provides Dana integration
+- `a2a_agent.py`: Main resource class implementing BaseResource interface, provides Dana integration
 - `agent_selector.py`: Intelligent agent selection based on capabilities and question context
 - `reason_integration.py`: Enhancement to reason() function for auto-delegation functionality
 - `transport/`: Transport layer abstractions for different A2A communication methods
@@ -422,7 +422,7 @@ opendxa/
 
 **Unit Tests:**
 - `test_a2a_client.py`: A2A client functionality and SDK integration
-- `test_a2a_resource.py`: Resource interface and method delegation
+- `test_a2a_agent.py`: Resource interface and method delegation
 - `test_agent_selector.py`: Agent selection algorithms and capability matching
 - `test_reason_integration.py`: reason() function enhancement and auto-delegation
 - `test_a2a_server.py`: Server functionality and Dana function export

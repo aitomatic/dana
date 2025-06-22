@@ -1,0 +1,10 @@
+import agent_1
+
+print(agent_1.solve("What is the weather in Tokyo?"))
+
+
+module_agent_1 = agent(module=agent_1)
+
+print(module_agent_1.agent_card)
+
+print(module_agent_1.solve("What is the weather in Tokyo?"))
