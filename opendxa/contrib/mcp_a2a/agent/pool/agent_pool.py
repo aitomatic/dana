@@ -6,7 +6,7 @@ the most appropriate agent for a given task based on skills.
 """
 
 from opendxa.common.resource.base_resource import BaseResource
-from opendxa.contrib.mcp_a2a.resource.a2a.a2a_resource import A2AAgent
+from opendxa.contrib.mcp_a2a.agent.abstract_dana_agent import AbstractDanaAgent
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 from .agent_selector import AgentSelector
@@ -19,7 +19,7 @@ class AgentPool(BaseResource):
         self,
         name: str,
         description: str | None = None,
-        agents: list[A2AAgent] | None = None,
+        agents: list[AbstractDanaAgent] | None = None,
         exclude_self: bool = False,
         context: SandboxContext | None = None,
     ):
@@ -35,7 +35,7 @@ class AgentPool(BaseResource):
             ValueError: If neither agent_configs nor agents is provided
         """
         super().__init__(name, description)
-        self.agents: dict[str, A2AAgent] = {}
+        self.agents: dict[str, AbstractDanaAgent] = {}
         self._selector = None
         self.context = context
         self.exclude_self = exclude_self
@@ -63,7 +63,7 @@ class AgentPool(BaseResource):
         """
         return list(self.agents.keys())
 
-    def get_agent(self, name: str) -> A2AAgent:
+    def get_agent(self, name: str) -> AbstractDanaAgent:
         """Get an agent by name.
 
         Args:
@@ -79,7 +79,7 @@ class AgentPool(BaseResource):
             raise KeyError(f"Agent not found: {name}")
         return self.agents[name]
 
-    def select_agent(self, task: any, strategy: str = "llm", included_resources: list[str | BaseResource] | None = None) -> A2AAgent | None:
+    def select_agent(self, task: any, strategy: str = "llm", included_resources: list[str | BaseResource] | None = None) -> AbstractDanaAgent | None:
         """Select an agent based on task requirements.
 
         Args:
@@ -114,7 +114,7 @@ class AgentPool(BaseResource):
         for agent in self.agents.values():
             agent.refresh_agent_card()
 
-    def add_agent(self, agent: A2AAgent) -> None:
+    def add_agent(self, agent: AbstractDanaAgent) -> None:
         """Add an agent to the pool.
 
         Args:

@@ -93,22 +93,22 @@ def reason_function(
     except Exception as e:
         logger.debug(f"Could not get available resources: {e}")
 
-    # Handle A2A agent integration if agents are provided via options
+    # Handle agent integration if agents are provided via options
     actual_agents = options.get('agents')
     if actual_agents is not None:
         try:
             # Check if agents is an A2AAgent, AgentPool, or list of agents
             from opendxa.contrib.mcp_a2a.agent.pool.agent_pool import AgentPool
-            from opendxa.contrib.mcp_a2a.resource.a2a.a2a_resource import A2AAgent
+            from opendxa.contrib.mcp_a2a.agent import AbstractDanaAgent
             
             agent_pool = None
             
             if isinstance(actual_agents, AgentPool):
                 # Agent pool: use it directly
                 agent_pool = actual_agents
-                logger.info(f"Using A2A agent pool for reasoning with {len(actual_agents.get_agent_cards())} agents")
+                logger.info(f"Using DANA agent pool for reasoning with {len(actual_agents.get_agent_cards())} agents")
                 
-            elif isinstance(actual_agents, A2AAgent):
+            elif isinstance(actual_agents, AbstractDanaAgent):
                 # Single agent: create a temporary pool with just this agent
                 agent_pool = AgentPool(
                     name="temp_pool_single_agent",
@@ -116,23 +116,23 @@ def reason_function(
                     agents=[actual_agents],
                     context=context
                 )
-                logger.info(f"Using single A2A agent for reasoning: {actual_agents}")
+                logger.info(f"Using single DANA agent for reasoning: {actual_agents}")
                 
             elif isinstance(actual_agents, list):
                 # List of agents: create a temporary pool
-                if all(isinstance(agent, A2AAgent) for agent in actual_agents):
+                if all(isinstance(agent, AbstractDanaAgent) for agent in actual_agents):
                     agent_pool = AgentPool(
                         name="temp_pool_multiple_agents",
                         description="Temporary pool for multiple agent reasoning", 
                         agents=actual_agents,
                         context=context
                     )
-                    logger.info(f"Using A2A agent list for reasoning with {len(actual_agents)} agents")
+                    logger.info(f"Using DANA agent list for reasoning with {len(actual_agents)} agents")
                 else:
-                    logger.warning("Invalid agents list: all items must be A2AAgent instances")
+                    logger.warning("Invalid agents list: all items must be AbstractDanaAgent instances")
                     
             else:
-                logger.warning(f"Invalid agents parameter type: {type(actual_agents)}, expected A2AAgent, AgentPool, or list of A2AAgent")
+                logger.warning(f"Invalid agents parameter type: {type(actual_agents)}, expected AbstractDanaAgent, AgentPool, or list of AbstractDanaAgent")
             
             # If we have a valid agent pool, select and use an agent
             if agent_pool:
@@ -159,9 +159,9 @@ def reason_function(
                     logger.debug("Local agent is selected or no suitable agent found in agent pool => using local LLM")
                 
         except ImportError:
-            logger.warning("A2A dependencies not available, falling back to local LLM reasoning")
+            logger.warning("DANA agent dependencies not available, falling back to local LLM reasoning")
         except Exception as e:
-            logger.warning(f"Error using A2A agents for reasoning: {e}, falling back to local LLM")
+            logger.warning(f"Error using DANA agents for reasoning: {e}, falling back to local LLM")
 
     try:
         # Log what's happening

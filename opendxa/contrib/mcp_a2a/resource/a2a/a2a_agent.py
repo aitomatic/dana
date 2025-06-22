@@ -1,11 +1,11 @@
 
 from opendxa.common.mixins import ToolCallable
-from opendxa.common.resource.base_resource import BaseResource
 from opendxa.common.utils import Misc
 from opendxa.contrib.mcp_a2a.resource.a2a.client.a2a_client import BaseA2AClient
+from opendxa.contrib.mcp_a2a.agent.abstract_dana_agent import AbstractDanaAgent
 
 
-class A2AAgent(BaseResource):
+class A2AAgent(AbstractDanaAgent):
     """A2A Resource"""
     def __init__(self, name: str , description: str | None = None, config: dict[str, any] | None = None, 
                  url: str | None = None, headers: dict[str, str] | None = None, 

@@ -421,6 +421,20 @@ class SandboxContext:
         """
         new_context = SandboxContext()
         new_context.set_state(self.get_state())
+        
+        # Also copy resource and agent registrations
+        # This ensures that Dana functions have access to resources from their original module context
+        # Use shallow copy since resources contain objects that can't be deep copied
+        import copy
+        new_context._SandboxContext__resources = copy.copy(self._SandboxContext__resources)
+        new_context._SandboxContext__agents = copy.copy(self._SandboxContext__agents)
+        
+        # Copy the nested dictionaries for each scope
+        for scope in new_context._SandboxContext__resources:
+            new_context._SandboxContext__resources[scope] = copy.copy(self._SandboxContext__resources[scope])
+        for scope in new_context._SandboxContext__agents:
+            new_context._SandboxContext__agents[scope] = copy.copy(self._SandboxContext__agents[scope])
+        
         return new_context
 
     def sanitize(self) -> "SandboxContext":
