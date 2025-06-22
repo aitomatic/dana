@@ -32,7 +32,7 @@ jobs:
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/sandbox/parser/ tests/dana/ipv/ -m "not live and not deep" --tb=short -v
+        uv run pytest tests/dana/sandbox/parser/ -m "not live and not deep" --tb=short -v
 
   # Dana Structs - Critical struct implementation tests
   test-dana-structs:

@@ -12,10 +12,10 @@ async def run_conditional_example(repl: REPL) -> None:
     """Run example with conditional statements."""
     code = """
     # Set initial temperature
-    private.temperature = 25
+    private:temperature = 25
 
     # Check temperature and provide appropriate message
-    if private.temperature > 30:
+    if private:temperature > 30:
         log("Warning: High temperature detected!")
     else:
         log("Temperature is within normal range.")
@@ -26,14 +26,14 @@ async def run_conditional_example(repl: REPL) -> None:
 async def run_nested_context_example(repl: REPL) -> None:
     """Run example with nested context variables."""
     initial_context = {
-        "private.sensor.temperature": 28,
-        "private.sensor.humidity": 65,
-        "private.sensor.location": "Room A",
+        "private:sensor.temperature": 28,
+        "private:sensor.humidity": 65,
+        "private:sensor.location": "Room A",
     }
     code = """
-    log("Sensor readings from {private.sensor.location}:")
-    log("Temperature: {private.sensor.temperature}°C")
-    log("Humidity: {private.sensor.humidity}%")
+    log("Sensor readings from {private:sensor.location}:")
+    log("Temperature: {private:sensor.temperature}°C")
+    log("Humidity: {private:sensor.humidity}%")
     """
     await repl.execute(code, initial_context)
 
@@ -53,9 +53,9 @@ async def run_error_handling_example(repl: REPL) -> None:
 
     # Recovery code with proper scoping
     recovery_code = """
-    private.temperature = 25
-    private.humidity = 60
-    log("Current conditions: {private.temperature}°C, {private.humidity}%")
+    private:temperature = 25
+    private:humidity = 60
+    log("Current conditions: {private:temperature}°C, {private:humidity}%")
     """
     await repl.execute(recovery_code)
 
@@ -77,16 +77,16 @@ async def run_context_persistence_example(repl: REPL) -> None:
     """Run example demonstrating context persistence between executions."""
     # Initialize some values
     init_code = """
-    private.counter = 0
-    private.max_count = 3
-    log("Initialized counter: {private.counter}")
+    private:counter = 0
+    private:max_count = 3
+    log("Initialized counter: {private:counter}")
     """
     await repl.execute(init_code)
 
     # Update and check values
     update_code = """
-    private.counter = private.counter + 1
-    log("Counter: {private.counter} / {private.max_count}")
+    private:counter = private:counter + 1
+    log("Counter: {private:counter} / {private:max_count}")
     """
     await repl.execute(update_code)
 

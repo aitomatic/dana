@@ -25,12 +25,12 @@ def test_underscore_variables_in_fstring_parsing():
     # This was the bug - question_2 was treated as literal instead of identifier
     result = transformer._parse_expression_term("question_2")
     assert isinstance(result, Identifier)
-    assert result.name == "local.question_2"
+    assert result.name == "local:question_2"
 
     # Test a few more underscore cases
     result = transformer._parse_expression_term("_private")
     assert isinstance(result, Identifier)
-    assert result.name == "local._private"
+    assert result.name == "local:_private"
 
 
 def test_underscore_variables_in_fstring_execution():
@@ -47,7 +47,7 @@ result = f"Question: {question_2}"
     program = parser.parse(code, do_transform=True)
     interpreter.execute_program(program, context)
 
-    result = context.get("local.result")
+    result = context.get("local:result")
 
     # The bug: this would output "Question: question_2"
     # The fix: this should output "Question: What is DANA"
@@ -69,7 +69,7 @@ result = f"Hello {name}"
     program = parser.parse(code, do_transform=True)
     interpreter.execute_program(program, context)
 
-    result = context.get("local.result")
+    result = context.get("local:result")
     assert result == "Hello Alice"
 
 
@@ -94,7 +94,7 @@ result = f"Question : {question_2}. Answer : {answer}"
     program = parser.parse(code, do_transform=True)
     interpreter.execute_program(program, context)
 
-    result = context.get("local.result")
+    result = context.get("local:result")
 
     # Verify the fix works
     assert "What is DANA" in result
@@ -109,7 +109,7 @@ def test_common_identifier_utility():
     assert is_valid_identifier("question_2")
     assert is_valid_identifier("_private")
     assert is_valid_identifier("obj.attr")
-    assert is_valid_identifier("local.var")
+    assert is_valid_identifier("local:var")
     assert is_valid_identifier("item_123")
 
     # Invalid identifiers

@@ -112,17 +112,19 @@ class ExpressionExecutor(BaseExecutor):
         name = node.name
 
         # DEBUG: Add logging to understand the issue
-        from opendxa.common.utils.logging import DXA_LOGGER
-
-        DXA_LOGGER.debug(f"DEBUG: Executing identifier '{name}'")
-        DXA_LOGGER.debug(f"DEBUG: Context state keys: {list(context._state.keys())}")
+        self.debug(f"DEBUG: Executing identifier '{name}'")
+        self.debug(f"DEBUG: Context state keys: {list(context._state.keys())}")
         for scope, state in context._state.items():
-            DXA_LOGGER.debug(f"DEBUG: Scope '{scope}' variables: {list(state.keys())}")
+            self.debug(f"DEBUG: Scope '{scope}' variables: {list(state.keys())}")
 
         try:
             result = context.get(name)
-            DXA_LOGGER.debug(f"DEBUG: Successfully found '{name}' via context.get(): {result}")
-            return result
+            self.debug(f"DEBUG: Successfully found '{name}' via context.get(): {result}")
+            # Only return if the result is not None
+            if result is not None:
+                return result
+            else:
+                self.debug(f"DEBUG: Got None from context for '{name}', checking function registry")
         except StateError:
             # If not found in context with the default scoping, try searching across all scopes
             # This is needed for cases like with statements where variables may be in non-local scopes
@@ -137,15 +139,53 @@ class ExpressionExecutor(BaseExecutor):
                     except StateError:
                         continue
 
-            # For variables with scope prefix (e.g., 'local.var_name'), extract the variable name
+            # For variables with scope prefix (e.g., 'local:var_name'), extract the variable name
             # and search for it in other scopes if not found in the specified scope
+            elif ":" in name:
+                parts = name.split(":", 1)
+                if len(parts) == 2 and parts[0] in ["local", "private", "public", "system"]:
+                    specified_scope = parts[0]
+                    var_name = parts[1]
+
+                    # If the variable contains more dots (e.g., 'local:client.attribute'),
+                    # we might need to search for the base variable across scopes
+                    if "." in var_name:
+                        base_var = var_name.split(".", 1)[0]
+                        for scope in ["local", "private", "public", "system"]:
+                            if scope != specified_scope:  # Don't re-search the same scope
+                                try:
+                                    base_value = context.get_from_scope(base_var, scope=scope)
+                                    if base_value is not None:
+                                        # Found the base variable in a different scope
+                                        # Now try to access the attribute(s) on it
+                                        try:
+                                            result = base_value
+                                            for attr in var_name.split(".")[1:]:
+                                                result = getattr(result, attr)
+                                            return result
+                                        except AttributeError:
+                                            continue
+                                except StateError:
+                                    continue
+                    else:
+                        # Simple scoped variable, search for it in other scopes
+                        for scope in ["local", "private", "public", "system"]:
+                            if scope != specified_scope:  # Don't re-search the same scope
+                                try:
+                                    value = context.get_from_scope(var_name, scope=scope)
+                                    if value is not None:
+                                        return value
+                                except StateError:
+                                    continue
+
+            # Handle backward compatibility with dot notation
             elif "." in name:
                 parts = name.split(".", 1)
                 if len(parts) == 2 and parts[0] in ["local", "private", "public", "system"]:
                     specified_scope = parts[0]
                     var_name = parts[1]
 
-                    # If the variable contains more dots (e.g., 'local.client.attribute'),
+                    # If the variable contains more dots (e.g., 'local:client.attribute'),
                     # we might need to search for the base variable across scopes
                     if "." in var_name:
                         base_var = var_name.split(".", 1)[0]
@@ -186,39 +226,39 @@ class ExpressionExecutor(BaseExecutor):
                     pass
 
             try:
-                DXA_LOGGER.debug(f"DEBUG: Trying direct _state access for dotted variable '{name}'")
+                self.debug(f"DEBUG: Trying direct _state access for dotted variable '{name}'")
                 parts = name.split(".")
-                DXA_LOGGER.debug(f"DEBUG: Parts: {parts}")
+                self.debug(f"DEBUG: Parts: {parts}")
                 result = None
                 for i, part in enumerate(parts):
-                    DXA_LOGGER.debug(f"DEBUG: Processing part {i}: '{part}'")
+                    self.debug(f"DEBUG: Processing part {i}: '{part}'")
                     if result is None:
-                        DXA_LOGGER.debug(f"DEBUG: Looking for base variable '{part}' in context._state keys: {list(context._state.keys())}")
+                        self.debug(f"DEBUG: Looking for base variable '{part}' in context._state keys: {list(context._state.keys())}")
                         if part in context._state:
                             result = context._state[part]
-                            DXA_LOGGER.debug(f"DEBUG: Found '{part}' directly in _state: {result}")
+                            self.debug(f"DEBUG: Found '{part}' directly in _state: {result}")
                         else:
-                            DXA_LOGGER.debug(f"DEBUG: '{part}' not found directly, trying scoped access")
+                            self.debug(f"DEBUG: '{part}' not found directly, trying scoped access")
                             # Try to find the variable in any scope
                             for scope in ["local", "private", "public", "system"]:
                                 try:
                                     result = context.get_from_scope(part, scope=scope)
                                     if result is not None:
-                                        DXA_LOGGER.debug(f"DEBUG: Found '{part}' in scope '{scope}': {result}")
+                                        self.debug(f"DEBUG: Found '{part}' in scope '{scope}': {result}")
                                         break
                                 except Exception:
                                     continue
                             if result is None:
-                                DXA_LOGGER.debug(f"DEBUG: Could not find base variable '{part}' anywhere")
+                                self.debug(f"DEBUG: Could not find base variable '{part}' anywhere")
                                 raise Exception(f"Base variable '{part}' not found")
                     else:
-                        DXA_LOGGER.debug(f"DEBUG: Getting field '{part}' from result: {result}")
+                        self.debug(f"DEBUG: Getting field '{part}' from result: {result}")
                         result = Misc.get_field(result, part)
-                        DXA_LOGGER.debug(f"DEBUG: Field access result: {result}")
+                        self.debug(f"DEBUG: Field access result: {result}")
                 if result is not None:
                     return result
             except Exception as e:
-                DXA_LOGGER.debug(f"DEBUG: Direct _state access failed: {e}")
+                self.debug(f"DEBUG: Direct _state access failed: {e}")
                 raise SandboxError(f"Error accessing variable '{name}': Variable '{name}' not found in context") from e
             # If still not found, raise the original error
             raise SandboxError(f"Error accessing variable '{name}': Variable '{name}' not found in context")
@@ -281,6 +321,10 @@ class ExpressionExecutor(BaseExecutor):
                 return bool(left or right)
             elif node.operator == BinaryOperator.IN:
                 return left in right
+            elif node.operator == BinaryOperator.IS:
+                return left is right
+            elif node.operator == BinaryOperator.IS_NOT:
+                return left is not right
             else:
                 raise SandboxError(f"Unsupported binary operator: {node.operator}")
         except (TypeError, ValueError) as e:
@@ -444,15 +488,13 @@ class ExpressionExecutor(BaseExecutor):
         Returns:
             The result of the function call
         """
-        from opendxa.common.utils.logging import DXA_LOGGER
-
         # Get the object and method name
         obj = self.execute(node.object, context)
         method_name = node.method_name
 
-        DXA_LOGGER.debug(f"DEBUG: Executing object function call: {method_name}")
-        DXA_LOGGER.debug(f"DEBUG: Object type: {type(obj)}")
-        DXA_LOGGER.debug(f"DEBUG: Object has __struct_type__: {hasattr(obj, '__struct_type__')}")
+        self.debug(f"DEBUG: Executing object function call: {method_name}")
+        self.debug(f"DEBUG: Object type: {type(obj)}")
+        self.debug(f"DEBUG: Object has __struct_type__: {hasattr(obj, '__struct_type__')}")
 
         # Get the arguments
         args = []
@@ -467,7 +509,7 @@ class ExpressionExecutor(BaseExecutor):
                 if k != "__positional":
                     kwargs[k] = self.execute(v, context)
 
-        DXA_LOGGER.debug(f"DEBUG: Arguments: args={args}, kwargs={kwargs}")
+        self.debug(f"DEBUG: Arguments: args={args}, kwargs={kwargs}")
 
         # If the object is a struct, try to find the method in this order:
         # 1. Look for a function with the method name in the scopes
@@ -475,28 +517,28 @@ class ExpressionExecutor(BaseExecutor):
         # 3. Look for a method on the object itself
         if hasattr(obj, "__struct_type__"):
             struct_type = obj.__struct_type__
-            DXA_LOGGER.debug(f"DEBUG: Object is struct of type {struct_type}")
+            self.debug(f"DEBUG: Object is struct of type {struct_type}")
 
             # First try to find a function with the method name in the scopes
             func = None
             for scope in ["local", "private", "public", "system"]:
                 try:
-                    DXA_LOGGER.debug(f"DEBUG: Looking for function '{method_name}' in scope '{scope}'")
-                    DXA_LOGGER.debug(f"DEBUG: Current context state for scope '{scope}': {context._state.get(scope, {})}")
+                    self.debug(f"DEBUG: Looking for function '{method_name}' in scope '{scope}'")
+                    self.debug(f"DEBUG: Current context state for scope '{scope}': {context._state.get(scope, {})}")
                     func = context.get_from_scope(method_name, scope=scope)
                     if func is not None:
-                        DXA_LOGGER.debug(f"DEBUG: Found function in scope '{scope}'")
+                        self.debug(f"DEBUG: Found function in scope '{scope}'")
                         break
                 except Exception as e:
-                    DXA_LOGGER.debug(f"DEBUG: Error looking in scope '{scope}': {e}")
+                    self.debug(f"DEBUG: Error looking in scope '{scope}': {e}")
                     continue
 
             if func is not None:
-                DXA_LOGGER.debug(f"DEBUG: Found function, type: {type(func)}")
+                self.debug(f"DEBUG: Found function, type: {type(func)}")
                 # Use the function's own context as the base if available
                 base_context = getattr(func, "context", None) or context
                 if hasattr(func, "execute"):
-                    DXA_LOGGER.debug("DEBUG: Using function.execute() with base_context")
+                    self.debug("DEBUG: Using function.execute() with base_context")
                     # Create a new context that inherits from base_context
                     func_context = SandboxContext(parent=base_context)
                     # Ensure the interpreter is available in the new context
@@ -505,69 +547,109 @@ class ExpressionExecutor(BaseExecutor):
                     # Set the object as the first argument
                     return func.execute(func_context, obj, *args, **kwargs)
                 else:
-                    DXA_LOGGER.debug("DEBUG: Using direct function call")
-                    return func(obj, *args, **kwargs)
+                    self.debug("DEBUG: Using direct function call")
+                    result = func(obj, *args, **kwargs)
+                    # If the result is a coroutine, await it
+                    import asyncio
+
+                    if asyncio.iscoroutine(result):
+                        self.debug("DEBUG: Struct function returned coroutine, awaiting it")
+                        try:
+                            return asyncio.run(result)
+                        except RuntimeError as e:
+                            self.warning(f"Cannot await coroutine in current context: {e}")
+                            return result
+                    return result
 
             # If no function found in scopes, try to find a method on the struct type
-            DXA_LOGGER.debug(f"DEBUG: No function found in scopes, trying struct_type.{method_name}")
+            self.debug(f"DEBUG: No function found in scopes, trying struct_type.{method_name}")
             method = getattr(struct_type, method_name, None)
             if method is not None and callable(method):
-                DXA_LOGGER.debug("DEBUG: Found callable method on struct_type")
-                return method(obj, *args, **kwargs)
+                self.debug("DEBUG: Found callable method on struct_type")
+                result = method(obj, *args, **kwargs)
+                # If the result is a coroutine, await it
+                import asyncio
+
+                if asyncio.iscoroutine(result):
+                    self.debug("DEBUG: Struct type method returned coroutine, awaiting it")
+                    try:
+                        return asyncio.run(result)
+                    except RuntimeError as e:
+                        self.warning(f"Cannot await coroutine in current context: {e}")
+                        return result
+                return result
 
             # If no method found on struct type, try to find a method on the object itself
-            DXA_LOGGER.debug(f"DEBUG: No method found on struct_type, trying object.{method_name}")
+            self.debug(f"DEBUG: No method found on struct_type, trying object.{method_name}")
             method = getattr(obj, method_name, None)
             if method is not None and callable(method):
-                DXA_LOGGER.debug("DEBUG: Found callable method on object")
-                return method(*args, **kwargs)
+                self.debug("DEBUG: Found callable method on object")
+                result = method(*args, **kwargs)
+                # If the result is a coroutine, await it
+                import asyncio
+
+                if asyncio.iscoroutine(result):
+                    self.debug("DEBUG: Struct object method returned coroutine, awaiting it")
+                    try:
+                        return asyncio.run(result)
+                    except RuntimeError as e:
+                        self.warning(f"Cannot await coroutine in current context: {e}")
+                        return result
+                return result
 
             # If we get here, no method was found
-            DXA_LOGGER.debug(f"DEBUG: No method found for {method_name}")
+            self.debug(f"DEBUG: No method found for {method_name}")
             # Print all available functions in the local scope
             local_scope = context._state.get("local", {})
-            DXA_LOGGER.debug(f"DEBUG: Local scope keys: {list(local_scope.keys())}")
+            self.debug(f"DEBUG: Local scope keys: {list(local_scope.keys())}")
             for k, v in local_scope.items():
-                DXA_LOGGER.debug(f"DEBUG: Local scope item: {k} -> {type(v)}")
+                self.debug(f"DEBUG: Local scope item: {k} -> {type(v)}")
             raise AttributeError(f"Object of type StructInstance has no method {method_name}")
 
         # For non-struct objects, use getattr on the object itself
-        DXA_LOGGER.debug("DEBUG: Not a struct, trying getattr on object")
+        self.debug("DEBUG: Not a struct, trying getattr on object")
         method = getattr(obj, method_name, None)
         if callable(method):
-            DXA_LOGGER.debug("DEBUG: Found callable method on object")
+            self.debug("DEBUG: Found callable method on object")
+            result = method(*args, **kwargs)
+            # If the result is a coroutine, await it
             import asyncio
-            import inspect
-            from opendxa.common.utils.misc import Misc
-            
-            # Check if method is async and handle accordingly
-            if inspect.iscoroutinefunction(method):
-                DXA_LOGGER.debug("DEBUG: Method is async, using safe_asyncio_run")
-                return Misc.safe_asyncio_run(method, *args, **kwargs)
-            else:
-                DXA_LOGGER.debug("DEBUG: Method is sync, calling directly")
-                return method(*args, **kwargs)
+
+            if asyncio.iscoroutine(result):
+                self.debug("DEBUG: Method returned coroutine, awaiting it")
+                try:
+                    # Try to run the coroutine in a new event loop
+                    return asyncio.run(result)
+                except RuntimeError as e:
+                    # If we're already in an event loop, we can't use asyncio.run()
+                    # This is a limitation - we need a more sophisticated async handling
+                    self.warning(f"Cannot await coroutine in current context: {e}")
+                    self.warning("Returning coroutine object - caller must handle async execution")
+                    return result
+            return result
 
         # If the object is a dict, try to get the method from the dict
         if isinstance(obj, dict):
-            DXA_LOGGER.debug("DEBUG: Object is dict, trying dict lookup")
+            self.debug("DEBUG: Object is dict, trying dict lookup")
             method = obj.get(method_name)
             if callable(method):
-                DXA_LOGGER.debug("DEBUG: Found callable method in dict")
+                self.debug("DEBUG: Found callable method in dict")
+                result = method(*args, **kwargs)
+                # If the result is a coroutine, await it
                 import asyncio
-                import inspect
-                from opendxa.common.utils.misc import Misc
-                
-                # Check if method is async and handle accordingly
-                if inspect.iscoroutinefunction(method):
-                    DXA_LOGGER.debug("DEBUG: Dict method is async, using safe_asyncio_run")
-                    return Misc.safe_asyncio_run(method, *args, **kwargs)
-                else:
-                    DXA_LOGGER.debug("DEBUG: Dict method is sync, calling directly")
-                    return method(*args, **kwargs)
+
+                if asyncio.iscoroutine(result):
+                    self.debug("DEBUG: Dict method returned coroutine, awaiting it")
+                    try:
+                        return asyncio.run(result)
+                    except RuntimeError as e:
+                        self.warning(f"Cannot await coroutine in current context: {e}")
+                        self.warning("Returning coroutine object - caller must handle async execution")
+                        return result
+                return result
 
         # If we get here, the object doesn't have the method
-        DXA_LOGGER.debug(f"DEBUG: No method found for {method_name}")
+        self.debug(f"DEBUG: No method found for {method_name}")
         raise AttributeError(f"Object of type {type(obj).__name__} has no method {method_name}")
 
     def execute_subscript_expression(self, node: SubscriptExpression, context: SandboxContext) -> Any:
@@ -605,7 +687,7 @@ class ExpressionExecutor(BaseExecutor):
                     target_length = self._get_safe_length(target)
                     raise IndexError(
                         f"Index {index} is out of bounds for {type(target).__name__} of length {target_length}. "
-                        f"Valid indices: 0 to {int(target_length)-1 if target_length.isdigit() else 'N-1'}"
+                        f"Valid indices: 0 to {int(target_length) - 1 if target_length.isdigit() else 'N-1'}"
                     )
                 elif isinstance(e, KeyError):
                     if isinstance(target, dict):
@@ -704,9 +786,7 @@ class ExpressionExecutor(BaseExecutor):
         # Check if target supports slicing
         if not hasattr(target, "__getitem__"):
             supported_types = "lists, tuples, strings, dictionaries, or objects with __getitem__ method"
-            raise TypeError(
-                f"Slice operation not supported on {type(target).__name__}. " f"Slicing is only supported on {supported_types}."
-            )
+            raise TypeError(f"Slice operation not supported on {type(target).__name__}. Slicing is only supported on {supported_types}.")
 
         # Validate step is not zero
         if components["step"] == 0:
@@ -743,7 +823,7 @@ class ExpressionExecutor(BaseExecutor):
         # Check for obviously out-of-bounds positive indices
         if start is not None and start >= length:
             raise ValueError(
-                f"Slice start index {start} is out of bounds for sequence of length {length}. " f"Valid range: -{length} to {length-1}"
+                f"Slice start index {start} is out of bounds for sequence of length {length}. Valid range: -{length} to {length - 1}"
             )
 
         if stop is not None and stop > length:
@@ -887,8 +967,35 @@ class ExpressionExecutor(BaseExecutor):
             SandboxError: If the right operand is not callable or function call fails
         """
         from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+        from opendxa.dana.sandbox.parser.ast import Identifier
 
-        # Evaluate the left operand to see what we're working with
+        # Check if this might be function composition (both sides are identifiers that reference functions)
+        if isinstance(left, Identifier) and isinstance(right, Identifier):
+            # Try to resolve both as functions first
+            try:
+                if self.function_registry:
+                    left_func, _, _ = self.function_registry.resolve(left.name, None)
+                    right_func, _, _ = self.function_registry.resolve(right.name, None)
+
+                    # If both resolve to SandboxFunctions, create composition
+                    if isinstance(left_func, SandboxFunction) and isinstance(right_func, SandboxFunction):
+                        return self._create_composed_function_unified(left_func, right, context)
+            except Exception:
+                # If function resolution fails, fall back to data pipeline
+                pass
+
+        # Check if left is an identifier that resolves to a function
+        if isinstance(left, Identifier):
+            try:
+                if self.function_registry:
+                    left_func, _, _ = self.function_registry.resolve(left.name, None)
+                    if isinstance(left_func, SandboxFunction):
+                        return self._create_composed_function_unified(left_func, right, context)
+            except Exception:
+                # If function resolution fails, fall back to data pipeline
+                pass
+
+        # Evaluate the left operand for data pipeline
         left_value = self.parent.execute(left, context)
 
         # If left_value is a SandboxFunction, create a composed function

@@ -38,12 +38,12 @@ def test_basic_function_composition():
     # Create composed function: f = double | stringify
     composition = BinaryExpression(left=Identifier("double"), operator=BinaryOperator.PIPE, right=Identifier("stringify"))
 
-    program = Program([Assignment(target=Identifier("local.f"), value=composition)])
+    program = Program([Assignment(target=Identifier("local:f"), value=composition)])
 
     interpreter.execute_program(program, context)
 
     # Get the composed function
-    composed_func = context.get("local.f")
+    composed_func = context.get("local:f")
     assert hasattr(composed_func, "_is_dana_composed_function")
 
     # Test the composed function
@@ -70,10 +70,10 @@ def test_composed_function_call():
     composition = BinaryExpression(left=Identifier("add_one"), operator=BinaryOperator.PIPE, right=Identifier("multiply_three"))
 
     # Register the composed function in the registry
-    program1 = Program([Assignment(target=Identifier("local.f"), value=composition)])
+    program = Program([Assignment(target=Identifier("local:f"), value=composition)])
 
-    interpreter.execute_program(program1, context)
-    composed_func = context.get("local.f")
+    interpreter.execute_program(program, context)
+    composed_func = context.get("local:f")
 
     # Register the composed function so it can be called by name
     interpreter.function_registry.register("f", composed_func)
@@ -81,12 +81,12 @@ def test_composed_function_call():
     # Create a function call: result = f(7)
     func_call = FunctionCall(name="f", args={"0": LiteralExpression(7)})
 
-    program2 = Program([Assignment(target=Identifier("local.result"), value=func_call)])
+    program = Program([Assignment(target=Identifier("local:result"), value=func_call)])
 
-    interpreter.execute_program(program2, context)
+    interpreter.execute_program(program, context)
 
     # Should be: add_one(7) = 8, multiply_three(8) = 24
-    assert context.get("local.result") == 24
+    assert context.get("local:result") == 24
 
 
 def test_chained_function_composition():
@@ -114,12 +114,12 @@ def test_chained_function_composition():
 
     comp2 = BinaryExpression(left=comp1, operator=BinaryOperator.PIPE, right=Identifier("subtract_five"))
 
-    program = Program([Assignment(target=Identifier("local.f"), value=comp2)])
+    program = Program([Assignment(target=Identifier("local:f"), value=comp2)])
 
     interpreter.execute_program(program, context)
 
     # Get and test the composed function
-    composed_func = context.get("local.f")
+    composed_func = context.get("local:f")
     result = composed_func(context, 1)
 
     # Should be: add_ten(1) = 11, double(11) = 22, subtract_five(22) = 17
@@ -146,14 +146,14 @@ def test_composition_vs_data_pipeline():
 
     # Create data pipeline: result = 3 | f
     # Here f is the composed function, 3 is data
-    data_pipeline = BinaryExpression(left=LiteralExpression(3), operator=BinaryOperator.PIPE, right=composition)
+    pipe3 = BinaryExpression(left=LiteralExpression(3), operator=BinaryOperator.PIPE, right=composition)
 
-    program = Program([Assignment(target=Identifier("local.result"), value=data_pipeline)])
+    program = Program([Assignment(target=Identifier("local:result"), value=pipe3)])
 
     interpreter.execute_program(program, context)
 
     # Should be: add_five(3) = 8, multiply_two(8) = 16
-    assert context.get("local.result") == 16
+    assert context.get("local:result") == 16
 
 
 def test_composed_function_with_different_context_requirements():
@@ -175,12 +175,12 @@ def test_composed_function_with_different_context_requirements():
     # Create composition: f = with_context | without_context
     composition = BinaryExpression(left=Identifier("with_context"), operator=BinaryOperator.PIPE, right=Identifier("without_context"))
 
-    program = Program([Assignment(target=Identifier("local.f"), value=composition)])
+    program = Program([Assignment(target=Identifier("local:f"), value=composition)])
 
     interpreter.execute_program(program, context)
 
     # Test the composed function
-    composed_func = context.get("local.f")
+    composed_func = context.get("local:f")
     result = composed_func(context, 5)
 
     # Should be: with_context(5) = 10, without_context(10) = 20
@@ -217,12 +217,12 @@ def test_composed_function_with_complex_data():
 
     comp2 = BinaryExpression(left=comp1, operator=BinaryOperator.PIPE, right=Identifier("add_coding_skill"))
 
-    program = Program([Assignment(target=Identifier("local.person_builder"), value=comp2)])
+    program = Program([Assignment(target=Identifier("local:person_builder"), value=comp2)])
 
     interpreter.execute_program(program, context)
 
     # Test the composed function
-    person_builder = context.get("local.person_builder")
+    person_builder = context.get("local:person_builder")
     result = person_builder(context, "Alice")
 
     assert result["name"] == "Alice"
@@ -247,14 +247,14 @@ def test_composition_error_handling():
     interpreter.function_registry.register("double", double)
 
     # Create composition: f = double | error_func
-    composition = BinaryExpression(left=Identifier("double"), operator=BinaryOperator.PIPE, right=Identifier("error_func"))
+    pipe1 = BinaryExpression(left=Identifier("double"), operator=BinaryOperator.PIPE, right=Identifier("error_func"))
 
-    program = Program([Assignment(target=Identifier("local.f"), value=composition)])
+    program = Program([Assignment(target=Identifier("local:f"), value=pipe1)])
 
     interpreter.execute_program(program, context)
 
     # Test that error is propagated correctly
-    composed_func = context.get("local.f")
+    composed_func = context.get("local:f")
 
     with pytest.raises(Exception) as exc_info:
         composed_func(context, 5)
@@ -274,15 +274,15 @@ def test_composition_with_non_existent_function():
     interpreter.function_registry.register("double", double)
 
     # Try to compose with non-existent function: f = double | non_existent
-    composition = BinaryExpression(left=Identifier("double"), operator=BinaryOperator.PIPE, right=Identifier("non_existent"))
+    pipe1 = BinaryExpression(left=Identifier("double"), operator=BinaryOperator.PIPE, right=Identifier("non_existent"))
 
-    program = Program([Assignment(target=Identifier("local.f"), value=composition)])
+    program = Program([Assignment(target=Identifier("local:f"), value=pipe1)])
 
     # This should create the composition object (since we're not calling it yet)
     interpreter.execute_program(program, context)
 
     # But calling it should raise an error
-    composed_func = context.get("local.f")
+    composed_func = context.get("local:f")
 
     with pytest.raises(Exception) as exc_info:
         composed_func(context, 5)

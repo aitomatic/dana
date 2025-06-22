@@ -467,7 +467,12 @@ def test_scope_and_indexing(dana_parser):
     assert find_first(tree, "scoped_var") is not None
     trailer = find_first(tree, "trailer")
     assert trailer is not None
-    assert any(child.data == "expr" for child in trailer.children if isinstance(child, Tree))
+    # Updated to match new grammar structure: trailer -> slice_list -> slice_or_index -> expr
+    slice_list = find_first(trailer, "slice_list")
+    assert slice_list is not None
+    slice_or_index = find_first(slice_list, "slice_or_index")
+    assert slice_or_index is not None
+    assert find_first(slice_or_index, "expr") is not None
 
 
 # 8. Try/except/finally

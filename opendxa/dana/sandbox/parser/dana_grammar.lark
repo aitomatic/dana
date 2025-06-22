@@ -77,8 +77,12 @@ parameters: typed_parameter ("," typed_parameter)*
 typed_parameter: NAME [":" basic_type] ["=" expr]
 
 // ===== TYPE ANNOTATIONS =====
-// Basic type annotation support for KISS implementation
-basic_type: INT_TYPE | FLOAT_TYPE | STR_TYPE | BOOL_TYPE | LIST_TYPE | DICT_TYPE | TUPLE_TYPE | SET_TYPE | NONE_TYPE | ANY_TYPE | NAME
+// Basic type annotation support for KISS implementation with union types
+basic_type: union_type
+
+union_type: single_type (PIPE single_type)*
+
+single_type: INT_TYPE | FLOAT_TYPE | STR_TYPE | BOOL_TYPE | LIST_TYPE | DICT_TYPE | TUPLE_TYPE | SET_TYPE | NONE_TYPE | ANY_TYPE | NAME
 
 // Type tokens - must be defined before NAME for precedence
 INT_TYPE: "int"

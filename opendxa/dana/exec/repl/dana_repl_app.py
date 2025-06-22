@@ -165,7 +165,7 @@ class DanaREPLApp(Loggable):
         try:
             input_context = self.input_processor.state.get_input_context()
             if input_context:
-                self.repl.context.set("system.__repl_input_context", input_context)
+                self.repl.context.set("system:__repl_input_context", input_context)
                 self.debug(f"Stored input context: {input_context}")
         except Exception as e:
             self.debug(f"Could not store input context: {e}")

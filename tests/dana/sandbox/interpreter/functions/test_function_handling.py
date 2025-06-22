@@ -432,29 +432,29 @@ def test_assignment_and_execution_comprehensive():
     interpreter = DanaInterpreter()
 
     # Test basic assignment
-    stmt = Assignment(target=Identifier("private.x"), value=LiteralExpression(99))
+    stmt = Assignment(target=Identifier("private:x"), value=LiteralExpression(99))
     result = interpreter.execute_statement(stmt, context)
     assert result == 99
-    assert context.get("private.x") == 99
+    assert context.get("private:x") == 99
 
     # Test assignment with expressions
     from opendxa.dana.sandbox.parser.ast import BinaryExpression, BinaryOperator
 
     expr_stmt = Assignment(
-        target=Identifier("private.y"),
+        target=Identifier("private:y"),
         value=BinaryExpression(left=LiteralExpression(20), operator=BinaryOperator.ADD, right=LiteralExpression(22)),
     )
     result = interpreter.execute_statement(expr_stmt, context)
     assert result == 42
-    assert context.get("private.y") == 42
+    assert context.get("private:y") == 42
 
     # Test assignment to different scopes
-    stmt = Assignment(target=Identifier("public.z"), value=LiteralExpression(123))
+    stmt = Assignment(target=Identifier("public:z"), value=LiteralExpression(123))
     result = interpreter.execute_statement(stmt, context)
     assert result == 123
-    assert context.get("public.z") == 123
+    assert context.get("public:z") == 123
 
-    stmt = Assignment(target=Identifier("local.w"), value=LiteralExpression(456))
+    stmt = Assignment(target=Identifier("local:w"), value=LiteralExpression(456))
     result = interpreter.execute_statement(stmt, context)
     assert result == 456
-    assert context.get("local.w") == 456
+    assert context.get("local:w") == 456

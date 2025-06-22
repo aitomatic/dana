@@ -123,10 +123,10 @@ class TestObjectFunctionCallAST:
         """Test creating ObjectFunctionCall AST nodes directly."""
         # Create an ObjectFunctionCall node
         obj_call = ObjectFunctionCall(
-            object=Identifier(name="local.test_obj"), method_name="add", args={"__positional": [LiteralExpression(value=10)]}
+            object=Identifier(name="local:test_obj"), method_name="add", args={"__positional": [LiteralExpression(value=10)]}
         )
 
-        assert obj_call.object.name == "local.test_obj"
+        assert obj_call.object.name == "local:test_obj"
         assert obj_call.method_name == "add"
         assert obj_call.args["__positional"][0].value == 10
 
@@ -179,7 +179,7 @@ class TestObjectFunctionCallExecution:
 
         # Add test objects to context
         self.test_obj = MockTestObject()
-        self.context.set("local.test_obj", self.test_obj)
+        self.context.set("local:test_obj", self.test_obj)
 
     def test_simple_method_call_no_args(self):
         """Test calling a method with no arguments."""
@@ -222,7 +222,7 @@ class TestWebSearchPattern:
 
         # Add websearch tool to context
         self.websearch = MockWebSearchTool()
-        self.context.set("local.websearch", self.websearch)
+        self.context.set("local:websearch", self.websearch)
 
     def test_websearch_list_tools(self):
         """Test the exact websearch.list_tools() pattern."""
@@ -251,7 +251,7 @@ class TestNestedObjectCalls:
 
         # Add nested object to context
         self.api = MockNestedObject()
-        self.context.set("local.api", self.api)
+        self.context.set("local:api", self.api)
 
     def test_nested_object_method_call(self):
         """Test calling a method on a nested object."""
@@ -273,7 +273,7 @@ class TestObjectFunctionCallEdgeCases:
         self.context = SandboxContext()
 
         self.test_obj = MockTestObject()
-        self.context.set("local.test_obj", self.test_obj)
+        self.context.set("local:test_obj", self.test_obj)
 
     def test_nonexistent_method(self):
         """Test calling a method that doesn't exist."""
@@ -305,7 +305,7 @@ class TestDictMethodCalls:
             return "called"
 
         self.dict_obj = {"method": mock_function, "value": 42}
-        self.context.set("local.dict_obj", self.dict_obj)
+        self.context.set("local:dict_obj", self.dict_obj)
 
     def test_dict_method_call(self):
         """Test calling a method stored in a dictionary."""
@@ -322,7 +322,7 @@ class TestObjectFunctionCallIntegration:
         self.context = SandboxContext()
 
         self.test_obj = MockTestObject()
-        self.context.set("local.test_obj", self.test_obj)
+        self.context.set("local:test_obj", self.test_obj)
 
     def test_object_method_in_assignment(self):
         """Test using object method calls in assignments."""
@@ -330,7 +330,7 @@ class TestObjectFunctionCallIntegration:
         self.interpreter._eval("result = test_obj.add(5)", self.context)
 
         # Check the result
-        result = self.context.get("local.result")
+        result = self.context.get("local:result")
         assert result == 47  # 42 + 5
 
     def test_object_method_in_expression(self):
@@ -358,7 +358,7 @@ class TestAsyncObjectFunctionCalls:
 
         # Add async test object to context
         self.async_obj = MockAsyncObject()
-        self.context.set("local.async_obj", self.async_obj)
+        self.context.set("local:async_obj", self.async_obj)
 
     def test_async_method_call_no_args(self):
         """Test calling an async method with no arguments."""
@@ -386,7 +386,7 @@ class TestAsyncObjectFunctionCalls:
         self.interpreter._eval("result = async_obj.async_add(50)", self.context)
 
         # Check the result
-        result = self.context.get("local.result")
+        result = self.context.get("local:result")
         assert result == 150  # 100 + 50
 
     def test_async_method_in_expression(self):

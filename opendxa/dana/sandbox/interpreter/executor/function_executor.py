@@ -76,11 +76,25 @@ class FunctionExecutor(BaseExecutor):
         # Create a DanaFunction object instead of a raw dict
         from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
 
-        # Extract parameter names from Identifier objects
+        # Extract parameter names and defaults
         param_names = []
+        param_defaults = {}
         for param in node.parameters:
             if hasattr(param, "name"):
-                param_names.append(param.name)
+                param_name = param.name
+                param_names.append(param_name)
+
+                # Extract default value if present
+                if hasattr(param, "default_value") and param.default_value is not None:
+                    # Evaluate the default value expression in the current context
+                    try:
+                        default_value = self._evaluate_expression(param.default_value, context)
+                        param_defaults[param_name] = default_value
+                    except Exception as e:
+                        self.debug(f"Failed to evaluate default value for parameter {param_name}: {e}")
+                        # Could set a fallback default or raise an error
+                        # For now, we'll skip this default
+                        pass
             else:
                 param_names.append(str(param))
 
@@ -92,18 +106,18 @@ class FunctionExecutor(BaseExecutor):
             else:
                 return_type = str(node.return_type)
 
-        # Create the base DanaFunction
-        dana_func = DanaFunction(body=node.body, parameters=param_names, context=context, return_type=return_type)
+        # Create the base DanaFunction with defaults
+        dana_func = DanaFunction(body=node.body, parameters=param_names, context=context, return_type=return_type, defaults=param_defaults)
 
         # Apply decorators if present
         if node.decorators:
             wrapped_func = self._apply_decorators(dana_func, node.decorators, context)
             # Store the decorated function in context
-            context.set(f"local.{node.name.name}", wrapped_func)
+            context.set(f"local:{node.name.name}", wrapped_func)
             return wrapped_func
         else:
             # No decorators, store the DanaFunction as usual
-            context.set(f"local.{node.name.name}", dana_func)
+            context.set(f"local:{node.name.name}", dana_func)
             return dana_func
 
     def _apply_decorators(self, func, decorators, context):
@@ -170,7 +184,7 @@ class FunctionExecutor(BaseExecutor):
 
         # Try local context
         try:
-            local_func = context.get(f"local.{decorator_name}")
+            local_func = context.get(f"local:{decorator_name}")
             if callable(local_func):
                 return local_func
         except Exception:
@@ -525,8 +539,8 @@ class FunctionExecutor(BaseExecutor):
                     if hasattr(obj, "parameters") and hasattr(context, "_state"):
                         # Look for function names in the context state
                         for key in context._state.keys():
-                            if key.startswith("local.") and context._state[key] == obj:
-                                return key.split(".", 1)[1]  # Remove 'local.' prefix
+                            if key.startswith("local:") and context._state[key] == obj:
+                                return key.split(":", 1)[1]  # Remove 'local:' prefix
 
                 # Check if it's function executor with node information
                 elif hasattr(obj, "__class__") and "FunctionExecutor" in str(obj.__class__):
@@ -648,9 +662,9 @@ class FunctionExecutor(BaseExecutor):
             return None
 
         func_name = node.name
-        if "." in func_name:
-            # Handle scoped names like "local.Point" -> "Point"
-            base_name = func_name.split(".")[-1]
+        if ":" in func_name:
+            # Handle scoped names like "local:Point" -> "Point"
+            base_name = func_name.split(":")[1]
         else:
             base_name = func_name
 
@@ -732,7 +746,7 @@ class FunctionExecutor(BaseExecutor):
                         self.debug(f"Function registry lookup failed: {registry_error}")
 
                         # Try context-based function lookup for user-defined functions
-                func_obj = context.get(f"local.{method_name}")
+                func_obj = context.get(f"local:{method_name}")
                 if func_obj is not None:
                     self.debug(f"Found user-defined function in context: {method_name} (type: {type(func_obj)})")
 

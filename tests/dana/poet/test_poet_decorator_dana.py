@@ -11,6 +11,7 @@ import pytest
 from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
 
 
+@pytest.mark.poet
 class TestPOETDecoratorDana:
     """Test POET decorator functionality within Dana language execution."""
 
@@ -19,7 +20,8 @@ class TestPOETDecoratorDana:
         """Create a DanaSandbox instance for testing."""
         sandbox = DanaSandbox()
         sandbox._ensure_initialized()
-        return sandbox
+        yield sandbox
+        sandbox._cleanup()
 
     @pytest.fixture
     def fixtures_dir(self):

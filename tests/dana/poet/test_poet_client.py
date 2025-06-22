@@ -5,10 +5,13 @@ Tests for POET Client functionality
 import os
 from unittest.mock import patch
 
+import pytest
+
 from opendxa.dana.poet.client import POETClient
 from opendxa.dana.poet.types import POETConfig
 
 
+@pytest.mark.poet
 class TestPOETClient:
     """Test POET Client functionality"""
 

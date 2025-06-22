@@ -21,6 +21,7 @@ def create_test_context():
     return context
 
 
+@pytest.mark.poet
 class TestPOETDecoratorPython:
     """Test POET decorator functionality in pure Python context."""
 

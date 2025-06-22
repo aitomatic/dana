@@ -134,11 +134,11 @@ class FunctionRegistry:
                         foo             -> local        foo
             local       foo             -> local        foo
             None        math.sin        -> local        math.sin
-            None        local.bar       -> local        bar
-            None        system.baz      -> system       baz
+            None        local:bar       -> local        bar
+            None        system:baz      -> system       baz
             private     foo             -> private      foo
             private     math.sin        -> private      math.sin
-                        public.x        -> public       x
+                        public:x        -> public       x
             None        foo.bar.baz     -> local        foo.bar.baz
             system      foo.bar         -> system       foo.bar
 

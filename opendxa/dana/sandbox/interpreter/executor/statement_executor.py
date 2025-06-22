@@ -104,7 +104,7 @@ class StatementExecutor(BaseExecutor):
                 target_type = type_mapping.get(type_name)
 
                 # Set the type information for IPV to access
-                context.set("system.__current_assignment_type", target_type)
+                context.set("system:__current_assignment_type", target_type)
 
         try:
             # Evaluate the right side expression
@@ -139,7 +139,7 @@ class StatementExecutor(BaseExecutor):
                 raise SandboxError(f"Unsupported assignment target type: {target_type_name}")
 
             # Store the last value for implicit return
-            context.set("system.__last_value", value)
+            context.set("system:__last_value", value)
 
             # Return the value for expressions
             return value
@@ -147,7 +147,7 @@ class StatementExecutor(BaseExecutor):
         finally:
             # Clean up the type information after assignment
             if target_type:
-                context.set("system.__current_assignment_type", None)
+                context.set("system:__current_assignment_type", None)
 
     def _get_assignment_target_name(self, target) -> str:
         """Get a string representation of the assignment target for error messages.
@@ -270,7 +270,9 @@ class StatementExecutor(BaseExecutor):
                     (
                         f"{s.start}:{s.stop}:{s.step}"
                         if isinstance(s, slice) and s.step
-                        else f"{s.start}:{s.stop}" if isinstance(s, slice) else str(s)
+                        else f"{s.start}:{s.stop}"
+                        if isinstance(s, slice)
+                        else str(s)
                     )
                     for s in evaluated_slices
                 ]
@@ -344,6 +346,71 @@ class StatementExecutor(BaseExecutor):
         except Exception:
             # Initialize the module system if not already done
             initialize_module_system()
+
+    def _create_parent_namespaces(self, context_name: str, module: Any, context: SandboxContext) -> None:
+        """Create parent namespace objects for submodule imports.
+
+        For example, when importing 'utils.text', this creates a namespace object 'utils'
+        that has 'text' as an attribute pointing to the module.
+
+        Args:
+            context_name: The full module name (e.g., 'utils.text')
+            module: The loaded module object
+            context: The execution context
+        """
+
+        # Create a simple namespace class for holding submodules
+        class ModuleNamespace:
+            def __init__(self, name: str):
+                self.__name__ = name
+                self.__dict__.update({"__name__": name})
+
+            def __setattr__(self, name: str, value: Any) -> None:
+                if name == "__name__":
+                    object.__setattr__(self, name, value)
+                else:
+                    self.__dict__[name] = value
+
+            def __getattr__(self, name: str) -> Any:
+                if name in self.__dict__:
+                    return self.__dict__[name]
+                raise AttributeError(f"Module namespace '{self.__name__}' has no attribute '{name}'")
+
+        parts = context_name.split(".")
+
+        # Build up the namespace hierarchy
+        for i in range(len(parts) - 1):  # Don't process the last part (that's the actual module)
+            parent_path = ".".join(parts[: i + 1])
+            child_name = parts[i + 1]
+
+            # Get or create the parent namespace
+            try:
+                parent_ns = context.get_from_scope(parent_path, scope="local")
+                if parent_ns is None:
+                    # Create new namespace
+                    parent_ns = ModuleNamespace(parent_path)
+                    context.set_in_scope(parent_path, parent_ns, scope="local")
+            except Exception:
+                # Create new namespace
+                parent_ns = ModuleNamespace(parent_path)
+                context.set_in_scope(parent_path, parent_ns, scope="local")
+
+            # Set the child in the parent namespace
+            if i == len(parts) - 2:  # This is the direct parent of our module
+                setattr(parent_ns, child_name, module)
+            else:
+                # This is an intermediate parent, set the next namespace level
+                child_path = ".".join(parts[: i + 2])
+                try:
+                    child_ns = context.get_from_scope(child_path, scope="local")
+                    if child_ns is None:
+                        child_ns = ModuleNamespace(child_path)
+                        context.set_in_scope(child_path, child_ns, scope="local")
+                    setattr(parent_ns, child_name, child_ns)
+                except Exception:
+                    child_ns = ModuleNamespace(child_path)
+                    context.set_in_scope(child_path, child_ns, scope="local")
+                    setattr(parent_ns, child_name, child_ns)
 
     def _resolve_relative_import(self, module_name: str, context: SandboxContext) -> str:
         """Resolve relative import to absolute module name.
@@ -426,7 +493,7 @@ class StatementExecutor(BaseExecutor):
         try:
             module = importlib.import_module(import_name)
             # Set the module in the local context
-            context.set(f"local.{context_name}", module)
+            context.set(f"local:{context_name}", module)
             return None
         except ImportError as e:
             raise SandboxError(f"Python module '{import_name}' not found: {e}") from e
@@ -464,6 +531,10 @@ class StatementExecutor(BaseExecutor):
 
             # Set module in context using the context name
             context.set_in_scope(context_name, module, scope="local")
+
+            # For submodule imports like 'utils.text', also create parent namespace
+            if "." in context_name:
+                self._create_parent_namespaces(context_name, module, context)
 
         except Exception as e:
             # Convert to SandboxError for consistency
@@ -506,7 +577,7 @@ class StatementExecutor(BaseExecutor):
             context_name = alias if alias else name
 
             # Set the object in the local context
-            context.set(f"local.{context_name}", obj)
+            context.set(f"local:{context_name}", obj)
 
             # If it's a function, also register it in the function registry for calls
             if callable(obj) and self.function_registry:
@@ -605,9 +676,40 @@ class StatementExecutor(BaseExecutor):
         metadata.doc = f"Imported from {module_name}.{original_name}"
 
         try:
+            # Register the function under the alias name (or original name if no alias)
             self.function_registry.register(
                 name=context_name, func=func, namespace="local", func_type=func_type, metadata=metadata, overwrite=True
             )
+
+            # If there's an alias, also register under the original name for self-references (recursion)
+            if context_name != original_name and isinstance(func, DanaFunction):
+                try:
+                    self.function_registry.register(
+                        name=original_name, func=func, namespace="local", func_type=func_type, metadata=metadata, overwrite=True
+                    )
+                except Exception:
+                    # Non-fatal - the function can still work for non-recursive cases
+                    pass
+
+            # For DanaFunction objects, ensure their execution context has access to the function registry
+            # This enables recursive calls to work properly
+            if isinstance(func, DanaFunction) and func.context is not None:
+                # Set the function registry in the function's execution context
+                if not hasattr(func.context, "_interpreter") or func.context._interpreter is None:
+                    func.context._interpreter = self.parent
+
+                # Ensure the function can find itself for recursive calls
+                # Register in the function's own context as well
+                if hasattr(self.parent, "function_registry") and self.parent.function_registry:
+                    try:
+                        # Register under original name in the function's context
+                        self.parent.function_registry.register(
+                            name=original_name, func=func, namespace="local", func_type=func_type, metadata=metadata, overwrite=True
+                        )
+                    except Exception:
+                        # Non-fatal fallback
+                        pass
+
         except Exception as reg_err:
             # Registration failed, but import to context succeeded
             # This is not fatal - function can still be accessed as module attribute

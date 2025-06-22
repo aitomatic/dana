@@ -76,7 +76,7 @@ class TestASTFactory:
         malformed_literal = MalformedLiteral(tree)
 
         # Create a proper AST structure that incorporates our malformed literal
-        target = Identifier(name="local.x")
+        target = Identifier(name="local:x")
         assignment = Assignment(target=target, value=malformed_literal)
         return Program(statements=[assignment])
 

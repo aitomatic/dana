@@ -247,10 +247,10 @@ class TypeChecker:
         # For arrays/lists, the element type is 'any' unless we can infer more specific types
         element_type = DanaType("any")
 
-        # Register the loop variable with either full scope name or add 'local.' prefix
+        # Register the loop variable with either full scope name or add 'local:' prefix
         var_name = node.target.name
-        if "." not in var_name:
-            var_name = f"local.{var_name}"
+        if ":" not in var_name and "." not in var_name:
+            var_name = f"local:{var_name}"
 
         # Add the loop variable to the environment
         self.environment.register(var_name, element_type)
@@ -289,8 +289,8 @@ class TypeChecker:
             if isinstance(param, Parameter):
                 # Handle Parameter objects with optional type hints
                 param_name = param.name
-                if "." not in param_name:
-                    param_name = f"local.{param_name}"
+                if ":" not in param_name and "." not in param_name:
+                    param_name = f"local:{param_name}"
 
                 # Use type hint if available, otherwise default to 'any'
                 if param.type_hint is not None:
@@ -301,8 +301,8 @@ class TypeChecker:
                 self.environment.set(param_name, param_type)
 
                 # Also add unscoped version for convenience
-                if "." in param_name:
-                    _, name = param_name.split(".", 1)
+                if ":" in param_name:
+                    _, name = param_name.split(":", 1)
                     self.environment.set(name, param_type)
 
             elif isinstance(param, Identifier):
@@ -312,15 +312,19 @@ class TypeChecker:
                     scope, name = param.name.split(":", 1)
                     if scope != "local":
                         raise TypeError(f"Function parameters must use local scope, got {scope}", param)
-                    param_name = f"local.{name}"
+                    param_name = f"local:{name}"
+                elif "." not in param.name:
+                    # For unscoped parameters, add local: prefix
+                    param_name = f"local:{param.name}"
                 else:
-                    # For unscoped parameters, add local. prefix
-                    param_name = f"local.{param.name}"
+                    # Keep dot notation as-is for backward compatibility
+                    param_name = param.name
+
                 # Add parameter to environment with any type
                 self.environment.set(param_name, DanaType("any"))
                 # Also add unscoped version for convenience
-                if "." in param_name:
-                    _, name = param_name.split(".", 1)
+                if ":" in param_name:
+                    _, name = param_name.split(":", 1)
                     self.environment.set(name, DanaType("any"))
 
         # Check the function body
@@ -375,9 +379,16 @@ class TypeChecker:
         """Check an identifier for type errors."""
         # Try with original name first
         type_ = self.environment.get(node.name)
-        if type_ is None and "." not in node.name:
-            # If not found and name is unscoped, try with local scope
-            type_ = self.environment.get(f"local.{node.name}")
+
+        # If not found and name is unscoped, try all scope hierarchies
+        if type_ is None and ":" not in node.name and "." not in node.name:
+            # For unscoped variables, try scope hierarchy: local → private → system → public
+            for scope in ["local", "private", "system", "public"]:
+                scoped_name = f"{scope}:{node.name}"
+                type_ = self.environment.get(scoped_name)
+                if type_ is not None:
+                    break
+
         if type_ is None:
             raise TypeError(f"Undefined variable: {node.name}", node)
         return type_
@@ -387,12 +398,6 @@ class TypeChecker:
 
         Returns bool for comparison operators, otherwise returns the operand type.
         """
-        # Handle unscoped variables in binary expressions
-        if isinstance(node.left, Identifier) and "." not in node.left.name:
-            node.left.name = f"local.{node.left.name}"
-        if isinstance(node.right, Identifier) and "." not in node.right.name:
-            node.right.name = f"local.{node.right.name}"
-
         left_type = self.check_expression(node.left)
         right_type = self.check_expression(node.right)
 

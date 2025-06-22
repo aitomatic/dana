@@ -65,10 +65,10 @@ class ProgramExecutor(BaseExecutor):
                     result = self.parent.execute(sub_statement, context)
                     # Store the result in the context
                     if result is not None:
-                        context.set("system.__last_value", result)
+                        context.set("system:__last_value", result)
             else:
                 result = self.parent.execute(statement, context)
                 # Store the result in the context
                 if result is not None:
-                    context.set("system.__last_value", result)
+                    context.set("system:__last_value", result)
         return result
