@@ -7,14 +7,15 @@ This directory contains the complete design documentation for POET (Perceive →
 ## 🎯 Quick Start
 
 For new developers, start with:
-1. **[poet_design.md](poet_design.md)** - Main 3D design document with complete architecture and immediate next steps
-2. **[supporting_docs/ml_monitoring_examples.md](supporting_docs/ml_monitoring_examples.md)** - Complete ML monitoring use cases showing POET in action
-3. **[supporting_docs/pubsub_design.md](supporting_docs/pubsub_design.md)** - Event-driven architecture and feedback orchestration
+1. **[poet_design_consolidated.md](poet_design_consolidated.md)** - Complete design document with architecture and use cases
+2. **[poet_implementation_progress.md](poet_implementation_progress.md)** - Current implementation status and progress tracking
+3. **[supporting_docs/ml_monitoring_examples.md](supporting_docs/ml_monitoring_examples.md)** - Complete ML monitoring use cases showing POET in action
 
 ## 📁 Document Structure
 
-### 🎨 Main Design Document
-- **[poet_design.md](poet_design.md)** - Main 3D design with complete architecture, implementation plan, and success criteria
+### 🎨 Main Documentation (Consolidated)
+- **[poet_design_consolidated.md](poet_design_consolidated.md)** - Complete design with architecture, use cases, and guidelines
+- **[poet_implementation_progress.md](poet_implementation_progress.md)** - Implementation status, progress tracking, and next steps
 
 ### 📁 Supporting Documentation
 - **[supporting_docs/](supporting_docs/)** - Essential implementation documents:
@@ -114,10 +115,10 @@ def comprehensive_monitor(model_data):
 ```
 
 ### For Developers (Current)
-1. **Review**: [poet_design.md](poet_design.md) for complete architecture and immediate next steps
-2. **Understand**: [supporting_docs/feedback_orchestration.md](supporting_docs/feedback_orchestration.md) for learning systems
+1. **Review**: [poet_design_consolidated.md](poet_design_consolidated.md) for complete architecture and design
+2. **Track**: [poet_implementation_progress.md](poet_implementation_progress.md) for current status and next steps
 3. **Explore**: [supporting_docs/ml_monitoring_examples.md](supporting_docs/ml_monitoring_examples.md) for practical examples
-4. **Implement**: Follow Phase 1 implementation plan with immediate next steps in main design document
+4. **Implement**: Follow the remaining tasks in the implementation progress document
 
 ## 🔗 Key Benefits
 
