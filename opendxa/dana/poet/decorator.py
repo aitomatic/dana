@@ -1,12 +1,16 @@
 """
-POET (Programmable Open-Ended Task) decorator implementation.
+POET (Perceive-Operate-Enforce-Train) decorator implementation.
 
 This module provides the POET decorator for enhancing functions with domain-specific capabilities.
+Functions are enhanced by generating Dana code that implements the P→O→E→T phases and storing
+it locally in .dana/poet/ directories.
 """
 
 import inspect
+import os
 from collections.abc import Callable
 from functools import wraps
+from pathlib import Path
 from typing import Any
 
 from opendxa.dana.poet.types import POETResult
@@ -18,7 +22,7 @@ class POETConfig:
 
     def __init__(
         self,
-        domain: str,
+        domain: str = "computation",
         retries: int = 1,
         timeout: int | None = None,
         optimize_for: str | None = None,
@@ -53,17 +57,18 @@ class POETMetadata:
 
 class POETDecorator:
     """
-    Enhanced POET decorator that provides both callable interface and metadata access.
-
-    This class serves as both a function wrapper and a metadata container,
-    providing the interface that tests expect while maintaining compatibility
-    with Dana's execution system.
+    Enhanced POET decorator that generates and executes Dana-based enhancements.
+    
+    The decorator works by:
+    1. Checking for enhanced Dana code in .dana/poet/{function_name}.na
+    2. Generating the enhanced code if it doesn't exist
+    3. Executing the enhanced code in the Dana sandbox
     """
 
     def __init__(
         self,
         func: Callable,
-        domain: str,
+        domain: str = "computation",
         retries: int = 1,
         timeout: int | None = None,
         optimize_for: str | None = None,
@@ -72,32 +77,9 @@ class POETDecorator:
         fallback_strategy: str = "raise",
         **kwargs,
     ):
-        """Initialize the enhanced POET decorator.
-
-        Args:
-            func: The function to decorate
-            domain: Domain template name (required)
-            retries: Number of retry attempts for reliability
-            timeout: Timeout in seconds for operations
-            optimize_for: Learning target ("accuracy", "user_satisfaction", etc.) - enables TRAIN phase
-            enable_monitoring: Enable performance and execution monitoring
-            cache_strategy: Caching behavior ("auto", "always", "never")
-            fallback_strategy: Error handling ("original", "raise")
-            **kwargs: Additional parameters for backward compatibility
-        """
-        # Initialize without Loggable to avoid DXA_LOGGER dependency in Dana
+        """Initialize the enhanced POET decorator."""
         self.func = func
-        self.domain = domain
-        self.retries = retries
-        self.timeout = timeout
-        self.optimize_for = optimize_for
-        self.enable_monitoring = enable_monitoring
-        self.cache_strategy = cache_strategy
-        self.fallback_strategy = fallback_strategy
-        self.kwargs = kwargs
-
-        # Enhanced metadata for test compatibility
-        config = POETConfig(
+        self.config = POETConfig(
             domain=domain,
             retries=retries,
             timeout=timeout,
@@ -107,267 +89,102 @@ class POETDecorator:
             fallback_strategy=fallback_strategy,
             **kwargs,
         )
-        self.metadata = POETMetadata(func, config)
-
-        # Backward compatibility: store _poet_metadata attribute
-        # Check if function already has POET metadata (for decorator chaining)
-        existing_domains = set()
-        if hasattr(func, "_poet_metadata") and isinstance(func._poet_metadata, dict):
-            existing_domains = func._poet_metadata.get("domains", set())
-            if isinstance(existing_domains, list | tuple):
-                existing_domains = set(existing_domains)
-            elif not isinstance(existing_domains, set):
-                existing_domains = {existing_domains} if existing_domains else set()
-
-        # Merge domains for decorator chaining
-        all_domains = existing_domains | {domain}
-
-        self._poet_metadata = {
-            "domains": all_domains,
-            "retries": retries,
-            "timeout": timeout,
-            "namespace": kwargs.get("namespace", "local"),  # Backward compatibility
-            "overwrite": kwargs.get("overwrite", False),  # Backward compatibility
-            "optimize_for": optimize_for,
-            "enable_monitoring": enable_monitoring,
-            "cache_strategy": cache_strategy,
-            "fallback_strategy": fallback_strategy,
-            "enhanced": True,
-            "supports_learning": optimize_for is not None,
-            **kwargs,
-        }
-
-        # Store original function attributes
+        
+        # Store function metadata
         self.__name__ = func.__name__
         self.__doc__ = func.__doc__
         self.__module__ = getattr(func, "__module__", None)
-        self.__qualname__ = getattr(func, "__qualname__", func.__name__)  # Fallback to __name__ if None
+        self.__qualname__ = getattr(func, "__qualname__", func.__name__)
+        
+        # Determine enhanced file path
+        self.enhanced_path = self._get_enhanced_path()
+        
+        # Create wrapper
+        self._create_wrapper()
 
-        # Create enhanced wrapper using domain system
-        self._enhanced_wrapper = None
-        self._domain_template = None
-
-        # Apply the decorator (for backward compatibility)
-        self._apply_decorator()
-
-    def debug(self, message: str) -> None:
-        """Simple debug logging that works in Dana context"""
-        # Only log if we're not in Dana context
+    def _get_enhanced_path(self) -> Path:
+        """Get the path where the enhanced Dana code should be stored."""
         try:
-            from opendxa.common.utils.logging import DXA_LOGGER
+            # Get the directory where the original function is defined
+            func_file = inspect.getfile(self.func)
+            func_dir = Path(func_file).parent
+        except (TypeError, OSError):
+            # Function might be defined in REPL or dynamically
+            func_dir = Path.cwd()
+        
+        # Enhanced code goes in .dana/poet/{function_name}.na
+        return func_dir / ".dana" / "poet" / f"{self.func.__name__}.na"
 
-            DXA_LOGGER.debug(message)
-        except ImportError:
-            # In Dana context, ignore debug messages
-            pass
+    def _ensure_enhanced_code_exists(self) -> None:
+        """Ensure enhanced Dana code exists, generating if necessary."""
+        if not self.enhanced_path.exists():
+            # Import transpiler and generate code
+            from opendxa.dana.poet.transpiler import POETTranspiler
+            
+            transpiler = POETTranspiler()
+            dana_code = transpiler.transpile(self.func, self.config)
+            
+            # Create directory and write code
+            self.enhanced_path.parent.mkdir(parents=True, exist_ok=True)
+            self.enhanced_path.write_text(dana_code)
 
-    def warning(self, message: str) -> None:
-        """Simple warning logging that works in Dana context"""
-        try:
-            from opendxa.common.utils.logging import DXA_LOGGER
-
-            DXA_LOGGER.warning(message)
-        except ImportError:
-            # In Dana context, use print
-            print(f"WARNING: {message}")
-
-    def error(self, message: str) -> None:
-        """Simple error logging that works in Dana context"""
-        try:
-            from opendxa.common.utils.logging import DXA_LOGGER
-
-            DXA_LOGGER.error(message)
-        except ImportError:
-            # In Dana context, use print
-            print(f"ERROR: {message}")
-
-    def _apply_decorator(self) -> None:
-        """Apply the decorator to the function."""
-        # Check if the function is a DanaFunction or expects context as first parameter
-        is_dana_function = hasattr(self.func, "execute") and hasattr(self.func, "parameters")
-
-        if not is_dana_function:
-            # For regular Python functions, check if they expect a context parameter
-            sig = inspect.signature(self.func)
-            expects_context = "context" in sig.parameters
-
+    def _create_wrapper(self) -> None:
+        """Create the wrapper function that executes enhanced Dana code."""
         @wraps(self.func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            """Wrapper function that adds POET capabilities."""
-            # DEBUG: Log all inputs to understand what's being passed
-            self.debug(f"POET wrapper called with args={args}, kwargs={kwargs}")
-
-            # Get context from kwargs or create new one
+            """Execute the POET-enhanced function."""
+            # Ensure enhanced code exists
+            self._ensure_enhanced_code_exists()
+            
+            # Get or create sandbox context
             context = kwargs.pop("context", None)
-
-            self.debug(f"POET wrapper context from kwargs: {context}")
-            self.debug(f"Context type: {type(context)}")
-            if context is not None:
-                self.debug(f"Context has _interpreter: {hasattr(context, '_interpreter')}")
-                if hasattr(context, "_interpreter"):
-                    self.debug(f"Context _interpreter value: {context._interpreter}")
-
             if context is None:
-                context = SandboxContext()
-                self.debug("Created new SandboxContext")
-
-            # CRITICAL: Ensure context has an interpreter reference
-            # This is essential for Dana function execution
-            if not hasattr(context, "_interpreter") or context._interpreter is None:
-                self.debug("Context missing interpreter - attempting to find one")
-                # Try to get interpreter from:
-                # 1. Parent context if available
-                if hasattr(context, "parent") and context.parent is not None:
-                    if hasattr(context.parent, "_interpreter") and context.parent._interpreter is not None:
-                        context._interpreter = context.parent._interpreter
-                        self.debug("Inherited interpreter from parent context")
-                    else:
-                        self.warning("Parent context found but no interpreter available")
+                # Import sandbox only when needed
+                from opendxa.dana.sandbox import DanaSandbox
+                sandbox = DanaSandbox()
+                context = sandbox.context
+            else:
+                sandbox = context.sandbox if hasattr(context, "sandbox") else None
+            
+            if sandbox is None:
+                # Fallback to original function if no sandbox available
+                if self.config.fallback_strategy == "original":
+                    return self.func(*args, **kwargs)
                 else:
-                    # 2. Try to get from the current execution stack
-                    # When Dana functions are called through the function registry,
-                    # there should be an interpreter in the call stack
-                    try:
-                        import inspect
-
-                        for frame_info in inspect.stack():
-                            frame_locals = frame_info.frame.f_locals
-                            if "_interpreter" in frame_locals:
-                                context._interpreter = frame_locals["_interpreter"]
-                                self.debug("Found interpreter in call stack")
-                                break
-                            elif "self" in frame_locals and hasattr(frame_locals["self"], "_interpreter"):
-                                context._interpreter = frame_locals["self"]._interpreter
-                                self.debug("Found interpreter via self in call stack")
-                                break
-                        else:
-                            self.warning("No interpreter found in call stack for POET function")
-                    except Exception as e:
-                        self.debug(f"Error searching for interpreter in call stack: {e}")
-            else:
-                self.debug("Context already has interpreter")
-
-            # Set POET metadata in context
-            if hasattr(self.func, "_poet_metadata"):
-                context.set("_poet_metadata", self.func._poet_metadata)
-            elif hasattr(self, "metadata"):
-                context.set("_poet_metadata", self.metadata)
-            else:
-                # Fallback metadata
-                context.set("_poet_metadata", {"domains": {self.domain}, "enhanced": True})
-
-            # Execute the function with retries if needed
-            for attempt in range(self.retries):
-                try:
-                    self.debug(f"POET executing function (attempt {attempt + 1})")
-                    if is_dana_function:
-                        # Dana function - call execute method with context as first argument
-                        self.debug(f"Calling Dana function.execute with context={context}")
-                        result = self.func.execute(context, *args, **kwargs)
-                    elif not is_dana_function and expects_context:
-                        # Regular Python function that expects context parameter
-                        # Check if context is already provided as a positional argument
-                        sig = inspect.signature(self.func)
-                        param_names = list(sig.parameters.keys())
-
-                        if len(args) > 0 and len(param_names) > 0 and param_names[0] == "context":
-                            # Context is likely already the first positional argument
-                            result = self.func(*args, **kwargs)
-                        else:
-                            # Context needs to be passed as keyword argument
-                            result = self.func(*args, context=context, **kwargs)
-                    else:
-                        # Regular Python function that doesn't expect context
-                        result = self.func(*args, **kwargs)
-                    self.debug(f"POET function completed with result: {result}")
-
-                    # Generate enhanced file for test compatibility (when mocked transpiler exists)
-                    self._generate_enhanced_files_if_mocked()
-
-                    # Wrap result in POETResult to provide _poet metadata
-                    if not isinstance(result, POETResult):
-                        func_name = getattr(self.func, "__name__", "unknown")
-                        poet_result = POETResult(result, func_name)
-                        return poet_result
-                    else:
-                        return result
-                except Exception as e:
-                    self.error(f"POET function failed on attempt {attempt + 1}: {e}")
-                    if attempt == self.retries - 1:
-                        raise
-                    self.warning(f"Attempt {attempt + 1} failed: {e}. Retrying...")
-
-        # Store the wrapper
+                    raise RuntimeError("Dana sandbox not available for POET execution")
+            
+            try:
+                # Load the enhanced module
+                sandbox.load_file(str(self.enhanced_path))
+                
+                # Prepare arguments as Dana expressions
+                arg_strs = [repr(arg) for arg in args]
+                kwargs_str = ", ".join(f"{k}={repr(v)}" for k, v in kwargs.items())
+                all_args = ", ".join(filter(None, [*arg_strs, kwargs_str]))
+                
+                # Call the enhanced function
+                result = sandbox.eval(f"enhanced_{self.func.__name__}({all_args})")
+                
+                # Wrap in POETResult for metadata access
+                if not isinstance(result, POETResult):
+                    return POETResult(result, self.func.__name__)
+                return result
+                
+            except Exception as e:
+                if self.config.fallback_strategy == "original":
+                    # Fallback to original function
+                    return self.func(*args, **kwargs)
+                else:
+                    raise RuntimeError(f"POET execution failed: {e}") from e
+        
         self.wrapper = wrapper
 
     def __call__(self, *args, **kwargs) -> Any:
-        """Make the decorator callable like a function"""
-        if hasattr(self, "wrapper"):
-            return self.wrapper(*args, **kwargs)
-        else:
-            # Fallback to original function
-            return self.func(*args, **kwargs)
+        """Make the decorator callable like a function."""
+        return self.wrapper(*args, **kwargs)
 
     def __repr__(self) -> str:
-        return f"POETDecorator(func={self.func.__name__}, domain={self.domain}, retries={self.retries})"
-
-    def __str__(self) -> str:
-        return f"<POETDecorator: {self.func.__name__} with domain '{self.domain}'>"
-
-    @property
-    def function_name(self) -> str:
-        """Get the original function name"""
-        return self.func.__name__
-
-    @property
-    def original_function(self) -> Callable:
-        """Get the original unenhanced function"""
-        return self.func
-
-    def _generate_enhanced_files_if_mocked(self) -> None:
-        """Generate enhanced files when transpiler is mocked (for test compatibility)"""
-        try:
-            # Check if transpiler is mocked by trying to import and call it
-            import inspect
-
-            from opendxa.dana.poet.transpiler import PoetTranspiler
-            from opendxa.dana.poet.types import POETConfig
-
-            # Get function source code
-            func_source = inspect.getsource(self.func)
-
-            # Create config object
-            config = POETConfig(
-                domain=self.domain,
-                retries=self.retries,
-                timeout=float(self.timeout) if self.timeout is not None else 30.0,
-                optimize_for=self.optimize_for,
-                enable_training=self.optimize_for is not None,
-            )
-
-            transpiler = PoetTranspiler()
-            result = transpiler.transpile(func_source, config)
-
-            # If we get here, transpiler worked (likely mocked)
-            enhanced_path = self.metadata.enhanced_path
-            enhanced_path.parent.mkdir(parents=True, exist_ok=True)
-
-            # Write enhanced code - check if result has expected structure
-            if "enhanced_code" in result:
-                enhanced_path.write_text(result["enhanced_code"])
-            elif "code" in result:
-                enhanced_path.write_text(result["code"])
-
-            # Write metadata JSON
-            metadata_path = enhanced_path.parent / "metadata.json"
-            import json
-
-            if "metadata" in result:
-                metadata_path.write_text(json.dumps(result["metadata"], indent=2))
-
-        except Exception:
-            # Transpiler not available or failed - ignore for now
-            pass
+        return f"POETDecorator(func={self.func.__name__}, domain={self.config.domain})"
 
 
 def poet(
@@ -381,140 +198,78 @@ def poet(
     **kwargs,
 ) -> Any:
     """
-    Enhanced POET decorator with domain-driven architecture.
-
+    POET decorator that enhances functions with Perceive→Operate→Enforce→Train phases.
+    
+    The decorator generates Dana code implementing the four phases and stores it locally
+    in .dana/poet/{function_name}.na. When the function is called, the enhanced version
+    is executed in the Dana sandbox.
+    
     Args:
-        domain: Domain template name (e.g., "computation", "llm_optimization")
-        retries: Number of retry attempts for reliability
-        timeout: Timeout in seconds for operations
-        optimize_for: Learning target ("accuracy", "user_satisfaction", etc.) - enables TRAIN phase
-        enable_monitoring: Enable performance and execution monitoring
-        cache_strategy: Caching behavior ("auto", "always", "never")
-        fallback_strategy: Error handling ("original", "raise")
-        **kwargs: Additional parameters for backward compatibility
-
+        domain: Domain template (e.g., "mathematical_operations", "llm_optimization")
+        retries: Number of retry attempts (used in Operate phase)
+        timeout: Timeout in seconds (used in Operate phase)
+        optimize_for: Learning target (enables Train phase)
+        enable_monitoring: Enable execution monitoring
+        cache_strategy: Caching behavior for enhanced code
+        fallback_strategy: What to do on error ("raise" or "original")
+        
     Returns:
-        Enhanced function with P→O→E(→T) pattern or POETDecorator instance
-
-    Usage:
-        # POE (Perceive→Operate→Enforce)
-        @poet(domain="computation", retries=2)
+        Enhanced function with P→O→E(→T) capabilities
+        
+    Example:
+        @poet(domain="mathematical_operations")
         def safe_divide(a: float, b: float) -> float:
             return a / b
-
-        # POET (includes Training/Learning)
-        @poet(domain="prompt_optimization", optimize_for="user_satisfaction")
-        def adaptive_llm(prompt: str) -> str:
-            return llm_response(prompt)
-
-        # Domain inheritance
-        @poet(domain="computation:scientific", optimize_for="accuracy")
-        def scientific_calc(data: list[float]) -> float:
-            return complex_calculation(data)
+            
+        # Enhanced function validates inputs, handles errors, and retries
+        result = safe_divide(10, 0)  # Graceful error instead of crash
     """
-    # WORKAROUND: Handle Dana's incorrect decorator application
-    if domain is not None and (callable(domain) or hasattr(domain, "execute")):
-        func = domain  # Dana passed function as domain parameter
-        assert callable(func)  # Ensure func is actually callable
-        # Apply decorator directly with default parameters
-        poet_decorator = POETDecorator(
+    # Handle Dana's decorator application quirk
+    if domain is not None and callable(domain):
+        # Dana passed function as first parameter
+        func = domain
+        return POETDecorator(func)
+    
+    def decorator(func: Callable) -> POETDecorator:
+        """Apply POET enhancement to function."""
+        return POETDecorator(
             func=func,
-            domain="computation",  # Default domain
-            retries=1,
+            domain=domain or "computation",
+            retries=retries,
             timeout=timeout,
             optimize_for=optimize_for,
             enable_monitoring=enable_monitoring,
             cache_strategy=cache_strategy,
             fallback_strategy=fallback_strategy,
+            **kwargs,
         )
-        return poet_decorator
-
-    def decorator(func: Callable) -> Any:
-        """Apply POET enhancement to function"""
-        try:
-            # Use default domain if not specified
-            effective_domain = domain or "computation"  # Default domain for backward compatibility
-
-            # Always validate parameter types
-            if effective_domain is not None and not isinstance(effective_domain, str):
-                raise TypeError(f"domain must be a string, got {type(effective_domain).__name__}")
-            if not isinstance(retries, int) or retries < 0:
-                raise TypeError(f"retries must be a non-negative integer, got {retries}")
-            if timeout is not None and not isinstance(timeout, int | float):
-                raise TypeError(f"timeout must be a number or None, got {type(timeout).__name__}")
-
-            # Create POETDecorator instance with enhanced interface
-            poet_decorator = POETDecorator(
-                func=func,
-                domain=effective_domain,
-                retries=retries,
-                timeout=timeout,
-                optimize_for=optimize_for,
-                enable_monitoring=enable_monitoring,
-                cache_strategy=cache_strategy,
-                fallback_strategy=fallback_strategy,
-                **kwargs,
-            )
-
-            # Return decorator instance that provides both callable and metadata interface
-            return poet_decorator
-
-        except Exception as e:
-            # Re-raise TypeError from parameter validation - these should not fallback
-            if isinstance(e, TypeError):
-                raise
-
-            # Try to log the error if DXA_LOGGER is available
-            try:
-                from opendxa.common.utils.logging import DXA_LOGGER
-
-                DXA_LOGGER.error(f"POET decorator failed for {func.__name__}: {e}")
-            except ImportError:
-                # DXA_LOGGER not available, use print or ignore
-                print(f"POET decorator failed for {func.__name__}: {e}")
-            # Fallback: return original function
-            return func
-
+    
     return decorator
 
 
 def feedback(execution_id: str, content: str | dict | Any, **kwargs) -> bool:
     """Provide feedback for a POET function execution.
-
+    
+    When a function has optimize_for set, this feedback is used by the Train phase
+    to improve future executions.
+    
     Args:
-        execution_id: The execution ID of the POET function call to provide feedback for
-        content: The feedback content (can be any format - string, dict, etc.)
+        execution_id: The execution ID from POETResult._poet.execution_id
+        content: Feedback content (string, dict, or any format)
         **kwargs: Additional feedback parameters
-
+        
     Returns:
-        True if feedback was processed successfully, False otherwise
-
-    Raises:
-        ValueError: If execution_id is not from a POET function result
+        True if feedback was processed, False otherwise
     """
-    # Validate that execution_id is from a POETResult
-    # If it's a plain value (like an integer), it's not a valid POET execution
     try:
-        # Check if this looks like a POET execution ID (should be a UUID or similar)
-        # Plain integers or simple values should be rejected
-        if execution_id in [42, "42"] or (isinstance(execution_id, int)):
-            raise ValueError(f"Invalid execution_id: {execution_id}. Expected a POET function result with execution_id, not a plain value.")
-
-        # Log the feedback for debugging/visibility
-        print(f"POET Feedback received for execution {execution_id}: {content}")
-
-        # For now, just return success for valid execution IDs
-        # In a full implementation, this would:
-        # 1. Validate the execution_id exists in the POET registry
-        # 2. Store the feedback in the learning system
-        # 3. Trigger model updates if needed
-        # 4. Return detailed feedback about processing
-
-        return True
-
-    except Exception as e:
-        print(f"Error processing POET feedback: {e}")
-        # Re-raise ValueError for invalid execution IDs
-        if isinstance(e, ValueError):
-            raise
+        # Import storage to save feedback
+        from opendxa.dana.poet.storage import POETStorage
+        
+        storage = POETStorage()
+        return storage.save_feedback(execution_id, {
+            "content": content,
+            "metadata": kwargs,
+            "timestamp": storage._get_timestamp(),
+        })
+    except Exception:
         return False

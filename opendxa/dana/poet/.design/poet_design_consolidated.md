@@ -1,21 +1,21 @@
 # POET Design Document (Consolidated)
 
-**Version**: 2.0  
+**Version**: 3.0  
 **Date**: 2025-01-22  
-**Status**: Active Design Document
+**Status**: Active Design Document - Local Storage Implementation
 
 ## Table of Contents
 1. [Overview](#overview)
-2. [Architecture](#architecture)
-3. [Core Concepts](#core-concepts)
-4. [Use Cases](#use-cases)
-5. [System Design](#system-design)
-6. [Implementation Guidelines](#implementation-guidelines)
+2. [User Experience](#user-experience)
+3. [Architecture](#architecture)
+4. [Storage Design](#storage-design)
+5. [Implementation Details](#implementation-details)
+6. [Use Cases](#use-cases)
 7. [Future Considerations](#future-considerations)
 
 ## Overview
 
-POET (Perceive-Operate-Enforce-Train) is a function enhancement framework that transforms simple functions into production-ready implementations through a four-phase pipeline. The framework uses domain-specific intelligence to add reliability, monitoring, and learning capabilities to functions with minimal developer effort.
+POET (Perceive-Operate-Enforce-Train) is a function enhancement framework that transforms simple functions into production-ready implementations through a four-phase pipeline. The framework generates Dana code that runs in a secure sandbox, providing enterprise-grade reliability with zero configuration.
 
 ### Vision
 Enable developers to write simple functions and get enterprise-grade reliability, monitoring, and continuous improvement automatically through a single decorator.
@@ -23,311 +23,382 @@ Enable developers to write simple functions and get enterprise-grade reliability
 ### Core Promise
 "From prototype to production in one decorator."
 
+## User Experience
+
+### The POET Journey
+
+#### 1. **Starting Simple**
+Developer writes a basic function:
+```python
+# my_project/calculations.py
+def safe_divide(a: float, b: float) -> float:
+    """Divide two numbers."""
+    return a / b
+```
+
+#### 2. **Adding POET**
+Add one decorator:
+```python
+from opendxa.dana.poet import poet
+
+@poet(domain="mathematical_operations")
+def safe_divide(a: float, b: float) -> float:
+    """Divide two numbers."""
+    return a / b
+```
+
+#### 3. **What Happens Behind the Scenes**
+On first call:
+1. POET generates enhanced Dana code
+2. Stores it locally in `.dana/poet/safe_divide.na`
+3. Executes the enhanced version in Dana sandbox
+
+The generated file structure:
+```
+my_project/
+├── calculations.py
+└── .dana/
+    └── poet/
+        └── safe_divide.na  # Auto-generated enhancement
+```
+
+#### 4. **Using the Enhanced Function**
+Works exactly like before, but now bulletproof:
+```python
+# Normal usage - no changes needed
+result = safe_divide(10, 2)  # Returns 5.0
+
+# Previously crashed, now handles gracefully
+result = safe_divide(10, 0)  
+# Raises: ValueError: POET validation failed: Division by zero: parameter 'b' cannot be zero
+
+# Get detailed execution info
+result = safe_divide(10, 2)
+print(result._poet.execution_id)  # For feedback tracking
+```
+
+#### 5. **Enabling Learning (POET)**
+Add `optimize_for` to enable the Train phase:
+```python
+@poet(domain="prompt_optimization", optimize_for="clarity")
+def generate_prompt(topic: str, audience: str) -> str:
+    return f"Explain {topic} to {audience}"
+
+# Use the function
+prompt = generate_prompt("quantum computing", "5-year-old")
+
+# Provide feedback to improve it
+from opendxa.dana.poet import feedback
+feedback(prompt._poet.execution_id, "too complex for audience")
+```
+
+### Key User Benefits
+
+1. **Zero Learning Curve**: Functions work exactly as before
+2. **Progressive Enhancement**: Start simple, add features as needed
+3. **Transparent Operation**: See generated code in `.dana/poet/`
+4. **Local Development**: No external services required
+5. **Production Ready**: Enterprise features from day one
+
 ## Architecture
 
 ### Core Principles
 
-1. **Progressive Enhancement**
-   - Level 1: `@poet()` - Basic reliability (retries, timeouts)
-   - Level 2: `@poet(domain="...")` - Domain-specific intelligence
-   - Level 3: `@poet(optimize_for="...")` - Learning and adaptation
+1. **Local-First Storage**
+   - Enhanced code lives next to original
+   - No global registry or database
+   - Easy to version control
+   - Simple to understand
 
-2. **Zero Configuration**
-   - Sensible defaults for everything
-   - Override only what you need
-   - Automatic resource management
+2. **Dana-Native Execution**
+   - All enhancements run in Dana sandbox
+   - Secure by default
+   - Full language features available
+   - Consistent execution model
 
-3. **Transparent Operation**
-   - Functions work exactly as before
-   - Enhancement happens behind the scenes
-   - Clear error messages, not stack traces
+3. **Transparent Generation**
+   - Generated code is readable
+   - Easy to debug and inspect
+   - No magic, just code
+   - Can be manually edited if needed
 
 ### Four-Phase Pipeline
 
 ```
-┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
-│ PERCEIVE│───▶│ OPERATE │───▶│ ENFORCE │───▶│  TRAIN  │
-│ (Input) │    │ (Logic) │    │ (Output)│    │(Learning)│
-└─────────┘    └─────────┘    └─────────┘    └─────────┘
-     P              O              E              T
+Original Function → POET Decorator → Dana Code Generation → Sandbox Execution
+                                           ↓
+                                    .dana/poet/{function}.na
 ```
 
-- **Perceive (P)**: Input validation, normalization, and preparation
-- **Operate (O)**: Core logic execution with reliability features
-- **Enforce (E)**: Output validation, business rules, quality assurance
-- **Train (T)**: Learning from feedback (optional, when `optimize_for` is set)
+Each generated file contains four phase functions:
 
-## Core Concepts
+1. **perceive()** - Input validation and preparation
+2. **operate()** - Core logic with reliability features  
+3. **enforce()** - Output validation and quality checks
+4. **train()** - Learning from feedback (if enabled)
 
-### Domain System
-Domains provide specialized enhancement logic for different use cases:
+## Storage Design
+
+### File Organization
+
+```
+project_root/
+├── module_a/
+│   ├── calculations.py      # Contains @poet decorated functions
+│   └── .dana/
+│       └── poet/
+│           ├── safe_divide.na
+│           └── calculate_risk.na
+├── module_b/
+│   ├── api_calls.py
+│   └── .dana/
+│       └── poet/
+│           └── fetch_data.na
+```
+
+### Generated Dana Code Structure
+
+```dana
+# .dana/poet/safe_divide.na
+
+import math
+import time
+
+# State management
+struct POETState {
+    inputs: dict
+    perceive_result: dict
+    operate_result: dict
+    enforce_result: dict
+    metadata: dict
+    errors: list[string]
+    warnings: list[string]
+}
+
+# Phase 1: Input validation
+def perceive(a: float, b: float, state: POETState) -> POETState {
+    # Validation logic
+    if b == 0 {
+        state.errors.append("Division by zero: parameter 'b' cannot be zero")
+    }
+    state.perceive_result = {"valid": len(state.errors) == 0}
+    return state
+}
+
+# Phase 2: Core execution
+def operate(a: float, b: float, state: POETState) -> POETState {
+    # Original logic with enhancements
+    for attempt in range(3) {
+        try {
+            result = a / b  # Original logic embedded
+            state.operate_result = {"success": true, "value": result}
+            break
+        } except Exception as e {
+            # Retry logic
+        }
+    }
+    return state
+}
+
+# Phase 3: Output validation
+def enforce(state: POETState) -> POETState {
+    # Business rules
+    return state
+}
+
+# Phase 4: Learning (if enabled)
+def train(state: POETState, feedback: dict) -> void {
+    # Update parameters based on feedback
+}
+
+# Main orchestrator
+def enhanced_safe_divide(a: float, b: float) -> float {
+    state = POETState(...)
+    state = perceive(a, b, state)
+    state = operate(a, b, state)  
+    state = enforce(state)
+    
+    if not state.enforce_result["valid"] {
+        raise ValueError(f"POET validation failed: {state.errors}")
+    }
+    
+    return state.enforce_result["final_value"]
+}
+```
+
+## Implementation Details
+
+### Decorator Flow
 
 ```python
-@poet(domain="mathematical_operations")  # Math-specific validation
-@poet(domain="llm_optimization")        # LLM retry and quality checks
-@poet(domain="prompt_optimization")     # A/B testing and learning
-@poet(domain="ml_monitoring")          # Drift detection and adaptation
+@poet(domain="...", **options)
+def my_function(...):
+    ...
+
+# When called:
+1. Decorator checks for .dana/poet/my_function.na
+2. If missing, calls transpiler to generate it
+3. Loads file into Dana sandbox
+4. Executes enhanced_my_function()
+5. Returns POETResult with value and metadata
 ```
 
-### Learning Mechanism (POET vs POE)
-- **POE**: Perceive → Operate → Enforce (no learning)
-- **POET**: Adds Train phase when `optimize_for` parameter is specified
+### Transpiler Process
 
-```python
-# POE - Static enhancement
-@poet(domain="computation")
-def calculate(x): return x * 2
+1. **Extract Function Info**
+   - Parse Python AST
+   - Get signature, annotations, body
+   - Extract docstring
 
-# POET - Learning enhancement
-@poet(domain="prompt_optimization", optimize_for="clarity")
-def generate_prompt(topic): return f"Explain {topic}"
-```
+2. **Apply Domain Template**
+   - Get domain-specific enhancements
+   - Generate phase implementations
+   - Add domain intelligence
 
-### Feedback System
-Learning domains collect feedback to improve over time:
+3. **Generate Dana Code**
+   - Convert Python → Dana syntax
+   - Build POETState struct
+   - Create phase functions
+   - Generate orchestrator
 
-```python
-result = my_poet_function(input)
-feedback(result._poet.execution_id, "too complex")  # Function learns
-```
+4. **Write Local File**
+   - Create .dana/poet/ directory
+   - Write {function_name}.na
+   - Make it readable/debuggable
 
-## Use Cases
-
-### Use Case A: Mathematical Operations (POE)
-**Domain**: `mathematical_operations`  
-**Purpose**: Bulletproof math without boilerplate
-
-```python
-@poet(domain="mathematical_operations", retries=2)
-def safe_divide(a: float, b: float) -> float:
-    return a / b
-```
-
-**Enhancements**:
-- Division by zero detection (validation phase, not runtime)
-- NaN/Infinity input checking
-- Numerical stability monitoring
-- Automatic retry logic
-
-### Use Case B: LLM Optimization (POE)
-**Domain**: `llm_optimization`  
-**Purpose**: Reliable LLM interactions
-
-```python
-@poet(domain="llm_optimization", retries=3, timeout=30)
-def reason_about(question: str) -> str:
-    return llm.query(question)
-```
-
-**Enhancements**:
-- Prompt validation and optimization
-- Retry with exponential backoff
-- Token usage monitoring
-- Response quality validation
-
-### Use Case C: Prompt Optimization (POET)
-**Domain**: `prompt_optimization`  
-**Purpose**: Self-improving prompts through A/B testing
-
-```python
-@poet(domain="prompt_optimization", optimize_for="clarity")
-def explain_concept(concept: str, audience: str) -> str:
-    prompt = f"Explain {concept} to {audience}"
-    return llm.query(prompt)
-```
-
-**Enhancements**:
-- Automatic A/B testing of prompt variants
-- Performance tracking (quality, speed, tokens)
-- Learning from user feedback
-- Best variants rise to the top
-
-### Use Case D: ML Monitoring (POET)
-**Domain**: `ml_monitoring`  
-**Purpose**: Self-adjusting ML monitoring
-
-```python
-@poet(domain="ml_monitoring", optimize_for="accuracy")
-def predict_churn(features: list[float]) -> float:
-    return model.predict(features)
-```
-
-**Enhancements**:
-- Input distribution monitoring
-- Drift detection with adaptive thresholds
-- Anomaly detection that learns
-- Retraining recommendations
-
-## System Design
-
-### Storage Architecture
-
-```
-.dana/
-  poet/
-    functions/           # Enhanced function code
-      {function_name}/
-        v{version}/
-          enhanced.na    # Enhanced Dana code
-          metadata.json  # Function metadata
-    cache/              # Generated code cache
-      {function_name}/
-        {source_hash}.json
-    training/           # Learning data
-      {function_name}/
-        history.json    # Performance history
-        feedback.json   # User feedback
-```
-
-### Transpilation Process
-
-```mermaid
-graph TD
-    A[Original Function] --> B[AST Analysis]
-    B --> C[Domain Template]
-    C --> D[P Phase Generation]
-    C --> E[O Phase Generation]
-    C --> F[E Phase Generation]
-    C --> G[T Phase Generation]
-    D --> H[Enhanced Function]
-    E --> H
-    F --> H
-    G --> H
-```
-
-### Learning Flow (POET)
+### Execution Model
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant Function
+    participant Decorator
     participant Storage
-    participant Train
+    participant Transpiler
+    participant Sandbox
     
-    User->>Function: Call enhanced function
-    Function->>Function: Execute P→O→E
-    Function->>User: Return result + execution_id
-    User->>Function: feedback(execution_id, "feedback")
-    Function->>Storage: Store feedback
-    Storage->>Train: Trigger learning
-    Train->>Function: Update parameters
+    User->>Decorator: Call function
+    Decorator->>Storage: Check .dana/poet/
+    
+    alt File exists
+        Storage->>Decorator: Return path
+    else File missing
+        Decorator->>Transpiler: Generate Dana code
+        Transpiler->>Storage: Write .na file
+    end
+    
+    Decorator->>Sandbox: Load .na file
+    Sandbox->>Sandbox: Execute enhanced function
+    Sandbox->>User: Return POETResult
 ```
 
-## Implementation Guidelines
+## Use Cases
 
-### Domain Template Structure
-
+### Use Case A: Mathematical Operations
 ```python
-class DomainTemplate:
-    def generate_perceive(self, func_info: FunctionInfo) -> CodeBlock:
-        """Generate input validation and preparation logic"""
-        
-    def generate_operate(self, func_info: FunctionInfo) -> CodeBlock:
-        """Generate core execution with reliability features"""
-        
-    def generate_enforce(self, func_info: FunctionInfo) -> CodeBlock:
-        """Generate output validation and quality checks"""
-        
-    def generate_train(self, func_info: FunctionInfo) -> CodeBlock:
-        """Generate learning logic (optional)"""
+@poet(domain="mathematical_operations")
+def safe_divide(a: float, b: float) -> float:
+    return a / b
+
+# Generated enhancements:
+# - Division by zero validation
+# - NaN/Infinity checking
+# - Numerical stability
+# - Retry on transient errors
 ```
 
-### Code Generation Patterns
+### Use Case B: LLM Interactions
+```python
+@poet(domain="llm_optimization", retries=3)
+def query_ai(prompt: str) -> str:
+    return llm.complete(prompt)
 
-1. **Input Validation (Perceive)**
-   ```python
-   if not isinstance(param, expected_type):
-       raise TypeError(f"Expected {expected_type}, got {type(param)}")
-   ```
+# Generated enhancements:
+# - Prompt validation
+# - Token monitoring
+# - Response quality checks
+# - Retry with backoff
+```
 
-2. **Retry Logic (Operate)**
-   ```python
-   for attempt in range(max_retries):
-       try:
-           result = original_function(*args)
-           break
-       except Exception as e:
-           if attempt == max_retries - 1:
-               raise
-           time.sleep(backoff_time)
-   ```
+### Use Case C: Prompt Engineering (with Learning)
+```python
+@poet(domain="prompt_optimization", optimize_for="clarity")
+def explain_concept(concept: str, level: str) -> str:
+    return f"Explain {concept} at {level} level"
 
-3. **Output Validation (Enforce)**
-   ```python
-   if not meets_business_rules(result):
-       raise ValueError(f"Result {result} violates constraints")
-   ```
+# Generated enhancements:
+# - A/B testing variants
+# - Performance tracking
+# - Learning from feedback
+# - Automatic optimization
+```
 
-4. **Learning (Train)**
-   ```python
-   feedback_history.append({
-       "execution_id": execution_id,
-       "feedback": user_feedback,
-       "parameters": current_params
-   })
-   update_parameters(feedback_history)
-   ```
+### Use Case D: ML Monitoring (with Learning)
+```python
+@poet(domain="ml_monitoring", optimize_for="accuracy")
+def detect_anomaly(data: list[float]) -> bool:
+    return statistical_test(data)
 
-### Error Handling Philosophy
-
-- **Clear over clever**: User-friendly messages, not stack traces
-- **Early validation**: Catch errors in Perceive phase when possible
-- **Graceful degradation**: Enhanced function should never be worse than original
-- **Actionable feedback**: Tell users what went wrong and how to fix it
+# Generated enhancements:
+# - Adaptive thresholds
+# - Drift detection
+# - Learning baselines
+# - Alert optimization
+```
 
 ## Future Considerations
 
 ### Advanced Features
-1. **Cross-function learning**: Functions learn from each other
-2. **Ensemble domains**: Combine multiple domain intelligences
-3. **Custom domains**: User-defined enhancement patterns
-4. **Visual debugging**: See P→O→E→T execution flow
+1. **Hot Reloading**: Detect changes to .na files
+2. **Version Control**: Track enhancement evolution
+3. **Debugging Tools**: Step through phases
+4. **Performance Profiling**: Phase-level metrics
 
-### Integration Points
-1. **IDE Support**: Real-time enhancement preview
-2. **CI/CD Integration**: Automatic performance regression detection
-3. **Monitoring Dashboards**: Track function performance over time
-4. **A/B Testing Platform**: Built-in experimentation framework
+### Ecosystem Integration
+1. **IDE Support**: Syntax highlighting for .na files
+2. **Testing Framework**: Phase-specific tests
+3. **CI/CD Pipeline**: Enhancement validation
+4. **Documentation**: Auto-generate from phases
 
-### Scalability
-1. **Distributed learning**: Aggregate feedback across deployments
-2. **Edge deployment**: Run enhanced functions at the edge
-3. **Streaming support**: Handle real-time data streams
-4. **Batch optimization**: Process multiple inputs efficiently
+### Scalability Options
+1. **Shared Enhancements**: Reuse across projects
+2. **Template Library**: Common patterns
+3. **Cloud Sync**: Share learnings
+4. **Enterprise Features**: Governance, audit
 
-## Design Decisions
+## Design Philosophy
+
+### Why Local Storage?
+- **Simplicity**: No complex infrastructure
+- **Transparency**: See what's generated
+- **Control**: Edit if needed
+- **Versioning**: Git-friendly
+- **Debugging**: Easy to inspect
+
+### Why Dana?
+- **Security**: Sandboxed execution
+- **Features**: Rich language capabilities
+- **Consistency**: One runtime for all
+- **Integration**: Native to OpenDXA
 
 ### Why Four Phases?
-- **Separation of concerns**: Each phase has a clear responsibility
-- **Composability**: Phases can be mixed and matched
-- **Testability**: Each phase can be tested independently
-- **Extensibility**: New phases can be added without breaking existing ones
-
-### Why Domain-Based?
-- **Specialized knowledge**: Each domain brings specific expertise
-- **Reusability**: Domain logic can be shared across functions
-- **Maintainability**: Domain updates benefit all functions using it
-- **Progressive disclosure**: Start simple, add domains as needed
-
-### Why Optional Learning?
-- **Simplicity first**: Not all functions need learning
-- **Explicit opt-in**: Learning only when `optimize_for` is specified
-- **Resource efficiency**: Avoid unnecessary overhead
-- **Clear mental model**: POE for reliability, POET for adaptation
+- **Separation**: Clear responsibilities
+- **Testability**: Isolate concerns
+- **Extensibility**: Add phases later
+- **Clarity**: Easy to understand
 
 ## Success Metrics
 
 1. **Developer Experience**
-   - Time to enhance first function: < 1 minute
-   - Lines of code saved: 90%+
+   - Time to first enhancement: < 30 seconds
    - Learning curve: Immediate productivity
+   - Debugging time: 50% reduction
 
-2. **System Performance**
-   - Enhancement overhead: < 5ms
-   - Storage footprint: < 1MB per function
-   - Learning convergence: < 100 executions
+2. **System Quality**
+   - Error reduction: 90%+
+   - Performance impact: < 5ms
+   - Code reuse: 80%+
 
-3. **Business Impact**
-   - Production incidents reduced: 80%+
-   - Time to market: 10x faster
-   - Maintenance burden: 90% reduction
+3. **Business Value**
+   - Time to production: 10x faster
+   - Maintenance cost: 70% reduction
+   - Reliability: 99.9%+

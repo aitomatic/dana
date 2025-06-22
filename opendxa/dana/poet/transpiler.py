@@ -1,9 +1,11 @@
 """
-Core POET transpilation logic
+Core POET transpilation logic - generates Dana code
 """
 
 import ast
+import inspect
 import textwrap
+from typing import Callable
 
 from .domains.base import FunctionInfo
 from .domains.computation import ComputationDomain
@@ -12,7 +14,9 @@ from .errors import POETTranspilationError
 from .types import POETConfig
 
 
-class PoetTranspiler:
+class POETTranspiler:
+    """Transpiler that generates Dana code implementing P→O→E→T phases."""
+    
     def __init__(self):
         """Initialize the transpiler with domain registry."""
         self.domain_registry = DomainRegistry()
@@ -23,264 +27,362 @@ class PoetTranspiler:
         # Register POET domains with learning
         from .domains.prompt_optimization import PromptOptimizationDomain
         from .domains.ml_monitoring import MLMonitoringDomain
+        from .domains.llm_optimization import LLMOptimizationDomain
+        
         self.domain_registry.register("prompt_optimization", PromptOptimizationDomain())
         self.domain_registry.register("ml_monitoring", MLMonitoringDomain())
+        self.domain_registry.register("llm_optimization", LLMOptimizationDomain())
     
-    def transpile(self, function_code: str, config: POETConfig, context: dict | None = None) -> dict:
+    def transpile(self, func: Callable, config: POETConfig) -> str:
         """Transpile a Python function to a POET-enhanced Dana function."""
-        function_name, original_code = self._validate_function_code(function_code)
-        return self._generate_enhanced_code(function_name, original_code, config, context)
-
-    def _validate_function_code(self, code: str) -> tuple[str, str]:
-        """Validate function code and extract function name and decorator"""
+        # Extract function information
+        func_info = self._extract_function_info(func, config)
+        
+        # Get domain template
+        domain_template = self._get_domain_template(config.domain)
+        
+        # Generate P→O→E phases
+        perceive_block = domain_template.generate_perceive(func_info)
+        operate_block = domain_template.generate_operate(func_info)
+        enforce_block = domain_template.generate_enforce(func_info)
+        
+        # Generate Train phase if optimize_for is set
+        train_block = None
+        if config.optimize_for:
+            train_block = domain_template.generate_train(func_info)
+        
+        # Build complete Dana code
+        return self._build_dana_code(func_info, config, perceive_block, operate_block, enforce_block, train_block)
+    
+    def _extract_function_info(self, func: Callable, config: POETConfig) -> FunctionInfo:
+        """Extract function information from a callable."""
         try:
-            tree = ast.parse(code)
-            function_def = next((node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)), None)
-
-            if not function_def:
-                raise POETTranspilationError("No function definition found in code")
-
-            decorator_found = any(
-                isinstance(decorator, ast.Call) and isinstance(decorator.func, ast.Name) and decorator.func.id == "poet"
-                for decorator in function_def.decorator_list
+            source_code = inspect.getsource(func)
+            # Remove @poet decorator line if present
+            lines = source_code.split('\n')
+            filtered_lines = [line for line in lines if not line.strip().startswith('@poet')]
+            source_code = '\n'.join(filtered_lines)
+            
+            # Parse to get AST
+            tree = ast.parse(source_code)
+            func_def = next((node for node in tree.body if isinstance(node, ast.FunctionDef)), None)
+            
+            if not func_def:
+                raise POETTranspilationError("No function definition found")
+            
+            # Get signature
+            sig = inspect.signature(func)
+            signature = str(sig)
+            
+            # Get annotations
+            annotations = {}
+            for param_name, param in sig.parameters.items():
+                if param.annotation != inspect.Parameter.empty:
+                    annotations[param_name] = str(param.annotation)
+            if sig.return_annotation != inspect.Signature.empty:
+                annotations["return"] = str(sig.return_annotation)
+            
+            # Get docstring
+            docstring = inspect.getdoc(func)
+            
+            # Get body source (without decorator and docstring)
+            body_lines = []
+            skip_docstring = True
+            for stmt in func_def.body:
+                if skip_docstring and isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Constant):
+                    skip_docstring = False
+                    continue
+                body_lines.append(ast.unparse(stmt))
+            body_source = '\n'.join(body_lines)
+            
+            return FunctionInfo(
+                name=func.__name__,
+                source_code=body_source,
+                signature=signature,
+                docstring=docstring,
+                annotations=annotations,
+                file_path=None,
+                domain=config.domain,
+                retries=config.retries,
+                timeout=config.timeout,
+                optimize_for=config.optimize_for,
+                enable_monitoring=config.enable_monitoring,
+                cache_strategy=config.cache_strategy,
+                fallback_strategy=config.fallback_strategy,
             )
-
-            if not decorator_found:
-                raise POETTranspilationError("Missing @poet decorator")
-
-            return function_def.name, code
-
-        except SyntaxError as e:
-            raise POETTranspilationError(f"Invalid Python code: {e}") from e
-
-    def _generate_enhanced_code(self, function_name: str, original_code: str, config: POETConfig, context: dict | None) -> dict:
-        """Generate enhanced function code with POET phases"""
-        try:
-            tree = ast.parse(original_code)
-            py_func_def = next((node for node in tree.body if isinstance(node, ast.FunctionDef)), None)
-
-            if not py_func_def:
-                raise POETTranspilationError("No function definition found in the provided code.")
-
-            # Extract function information
-            func_info = self._extract_function_info(py_func_def, original_code, config)
-            
-            # Get domain template
-            domain_template = self._get_domain_template(config.domain)
-            
-            # Generate P→O→E phases
-            perceive_block = domain_template.generate_perceive(func_info)
-            operate_block = domain_template.generate_operate(func_info)
-            enforce_block = domain_template.generate_enforce(func_info)
-            
-            # Build enhanced function
-            enhanced_code = self._build_enhanced_function(
-                func_info, config, perceive_block, operate_block, enforce_block
-            )
-            
-            # Generate training code if enabled
-            train_code = None
-            if config.optimize_for or config.enable_training:
-                train_code = self._generate_training_code(function_name, config)
-            
-            return {
-                "enhanced_code": enhanced_code,
-                "train_code": train_code,
-                "metadata": {
-                    "function_name": function_name,
-                    "domain": config.domain,
-                    "optimize_for": config.optimize_for,
-                    "retries": config.retries,
-                    "timeout": config.timeout,
-                    "enable_monitoring": config.enable_monitoring,
-                    "context": context,
-                },
-                "language": "dana",
-            }
         except Exception as e:
-            raise POETTranspilationError(f"Failed to generate enhanced code: {e}") from e
+            raise POETTranspilationError(f"Failed to extract function info: {e}") from e
     
-    def _extract_function_info(self, func_def: ast.FunctionDef, source_code: str, config: POETConfig) -> FunctionInfo:
-        """Extract function information from AST node."""
-        # Get function signature
-        signature = f"({ast.unparse(func_def.args)})"
-        
-        # Get annotations
-        annotations = {}
-        for arg in func_def.args.args:
-            if arg.annotation:
-                annotations[arg.arg] = ast.unparse(arg.annotation)
-        if func_def.returns:
-            annotations["return"] = ast.unparse(func_def.returns)
-        
-        # Get docstring
-        docstring = ast.get_docstring(func_def)
-        
-        # Get original body as source code
-        body_lines = []
-        for stmt in func_def.body:
-            # Skip docstring
-            if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Constant) and isinstance(stmt.value.value, str):
-                continue
-            body_lines.append(ast.unparse(stmt))
-        body_source = "\n".join(body_lines)
-        
-        return FunctionInfo(
-            name=func_def.name,
-            source_code=body_source,
-            signature=signature,
-            docstring=docstring,
-            annotations=annotations,
-            file_path=None,  # Not available in this context
-            domain=config.domain or "general",
-            retries=config.retries,
-            timeout=int(config.timeout) if config.timeout else None,
-            optimize_for=config.optimize_for,
-            enable_monitoring=config.enable_monitoring,
-            cache_strategy="none",  # Default for now
-            fallback_strategy="original"  # Default for now
-        )
-    
-    def _get_domain_template(self, domain: str | None):
+    def _get_domain_template(self, domain: str):
         """Get domain template or use default."""
         if domain and self.domain_registry.has_domain(domain):
             return self.domain_registry.get_domain(domain)
-        # Default to computation domain for now
-        return ComputationDomain()
+        return ComputationDomain()  # Default
     
-    def _build_enhanced_function(self, func_info: FunctionInfo, config: POETConfig, 
-                                perceive_block, operate_block, enforce_block) -> str:
-        """Build the complete enhanced function with P→O→E phases."""
+    def _build_dana_code(self, func_info: FunctionInfo, config: POETConfig,
+                         perceive_block, operate_block, enforce_block, train_block) -> str:
+        """Build complete Dana code with P→O→E→T phases."""
         
-        # Extract parameter list for function signature (remove parentheses as signature already has them)
-        params_str = func_info.signature.strip('()')
+        # Extract parameter info
+        params = self._parse_signature(func_info.signature)
+        param_names = [p['name'] for p in params]
+        param_list = ", ".join(f"{p['name']}: {p['type']}" for p in params)
+        return_type = func_info.annotations.get("return", "any")
         
-        # Extract parameter names from signature
-        param_names = self._extract_param_names(params_str)
-        
-        # Build imports
+        # Build imports (Dana uses 'import' not 'from X import Y')
         imports = set()
-        imports.update(perceive_block.imports)
-        imports.update(operate_block.imports)
-        imports.update(enforce_block.imports)
-        imports_str = "\n".join(sorted(imports))
+        # Convert Python imports to Dana imports
+        for imp in perceive_block.imports | operate_block.imports | enforce_block.imports:
+            if imp.startswith("import "):
+                imports.add(imp)
+            elif imp.startswith("from "):
+                # Convert "from X import Y" to Dana style
+                parts = imp.split()
+                if len(parts) >= 4:  # from module import name
+                    module = parts[1]
+                    # Dana standard library modules
+                    if module in ["math", "time", "json"]:
+                        imports.add(f"import {module}")
         
-        # Build the enhanced function
-        enhanced_function = f'''
-{imports_str}
-
-def {func_info.name}_poet({params_str}):
-    """
-    POET-enhanced version of {func_info.name}.
-    
-    This function implements Plan-Observe-Execute (P→O→E) phases:
-    - Perceive: Input validation and preparation
-    - Operate: Core logic execution with retry and monitoring
-    - Enforce: Output validation and business rules
-    
-    Domain: {config.domain or "general"}
-    """
-    
-    # === PERCEIVE PHASE ===
-    # Validate and prepare inputs
-    try:
-{textwrap.indent(perceive_block.code, "        ")}
-    except Exception as e:
-        log(f"Perceive phase failed: {{e}}")
-        raise ValueError(f"Input validation failed: {{e}}") from e
-    
-    # === OPERATE PHASE ===
-    # Execute core logic with reliability enhancements
-    max_retries = {config.retries}
-    retry_count = 0
-    last_error = None
-    
-    while retry_count <= max_retries:
-        try:
-            # Define original function inline
-            def _original_func({params_str}):
-{textwrap.indent(func_info.source_code, "                ")}
-            
-            # Execute with monitoring
-{textwrap.indent(operate_block.code.replace("func(*args, **kwargs)", 
-            f"_original_func({', '.join(param_names)})"), "            ")}
-            break  # Success, exit retry loop
-            
-        except Exception as e:
-            last_error = e
-            retry_count += 1
-            if retry_count <= max_retries:
-                log(f"Operate phase failed (attempt {{retry_count}}/{{max_retries}}): {{e}}")
-            else:
-                log(f"Operate phase failed after {{max_retries}} retries: {{e}}")
-                raise RuntimeError(f"Operation failed after {{max_retries}} retries: {{e}}") from e
-    
-    # === ENFORCE PHASE ===
-    # Validate output and apply business rules
-    try:
-        final_result = result  # From operate phase
-{textwrap.indent(enforce_block.code, "        ")}
+        imports_str = "\n".join(sorted(imports)) if imports else ""
         
-        return final_result
+        # Generate POETState struct
+        poet_state = self._generate_poet_state(param_names)
         
-    except Exception as e:
-        log(f"Enforce phase failed: {{e}}")
-        raise ValueError(f"Output validation failed: {{e}}") from e
-
-# Alias for backward compatibility
-{func_info.name} = {func_info.name}_poet
-'''
+        # Generate phase functions
+        perceive_func = self._generate_perceive_function(param_list, perceive_block)
+        operate_func = self._generate_operate_function(param_list, operate_block, func_info)
+        enforce_func = self._generate_enforce_function(enforce_block)
+        train_func = self._generate_train_function(train_block) if train_block else ""
         
-        return enhanced_function.strip()
+        # Generate main enhanced function
+        enhanced_func = self._generate_enhanced_function(func_info, param_list, param_names, return_type, config)
+        
+        # Build complete Dana code
+        code_parts = [imports_str] if imports_str else []
+        code_parts.extend([
+            poet_state,
+            perceive_func,
+            operate_func,
+            enforce_func,
+        ])
+        if train_func:
+            code_parts.append(train_func)
+        code_parts.append(enhanced_func)
+        
+        return "\n\n".join(code_parts)
     
-    def _extract_param_names(self, params_str: str) -> list[str]:
-        """Extract parameter names from a parameter string."""
-        if not params_str.strip():
+    def _parse_signature(self, signature: str) -> list[dict]:
+        """Parse function signature to extract parameters."""
+        # Remove parentheses
+        sig = signature.strip("()")
+        if not sig:
             return []
         
         params = []
-        for param in params_str.split(','):
+        for param in sig.split(","):
             param = param.strip()
-            # Remove type annotations and default values
-            if ':' in param:
-                param = param.split(':')[0].strip()
-            if '=' in param:
-                param = param.split('=')[0].strip()
-            if param and not param.startswith('*'):
-                params.append(param)
+            if ":" in param:
+                name, type_str = param.split(":", 1)
+                name = name.strip()
+                type_str = type_str.strip()
+                # Convert Python types to Dana types
+                dana_type = self._python_to_dana_type(type_str)
+                params.append({"name": name, "type": dana_type})
+            else:
+                # No type annotation
+                params.append({"name": param, "type": "any"})
         
         return params
     
-    def _generate_training_code(self, function_name: str, config: POETConfig) -> str:
-        """Generate training code for the enhanced function."""
-        return f'''
-def train_{function_name}(feedback_data: dict):
-    """
-    Training function for {function_name}.
-    Collects feedback and optimizes the POET phases.
-    """
-    log(f"Training {function_name} with feedback: {{feedback_data}}")
+    def _python_to_dana_type(self, py_type: str) -> str:
+        """Convert Python type annotation to Dana type."""
+        type_map = {
+            "int": "int",
+            "float": "float",
+            "str": "string",
+            "bool": "bool",
+            "list": "list",
+            "dict": "dict",
+            "Any": "any",
+            "None": "null",
+        }
+        
+        # Handle generic types
+        for py, dana in type_map.items():
+            if py_type.startswith(py):
+                if "[" in py_type:  # Generic type
+                    inner = py_type[py_type.index("[") + 1:py_type.rindex("]")]
+                    inner_dana = self._python_to_dana_type(inner)
+                    return f"{dana}[{inner_dana}]"
+                return dana
+        
+        return "any"  # Default
     
-    # Extract performance metrics
-    metrics = feedback_data.get("metrics", {{}})
-    errors = feedback_data.get("errors", [])
+    def _generate_poet_state(self, param_names: list[str]) -> str:
+        """Generate POETState struct definition."""
+        return f'''# POET State Management
+struct POETState {{
+    inputs: dict
+    perceive_result: dict
+    operate_result: dict
+    enforce_result: dict
+    metadata: dict
+    errors: list[string]
+    warnings: list[string]
+}}'''
     
-    # Update phase configurations based on feedback
-    if errors:
-        log(f"Errors detected: {{errors}}")
-        # TODO: Adjust validation rules in Perceive phase
-        # TODO: Tune retry strategy in Operate phase
-        # TODO: Update enforcement rules in Enforce phase
+    def _generate_perceive_function(self, param_list: str, perceive_block) -> str:
+        """Generate perceive function."""
+        # Convert perceive block code to Dana syntax
+        dana_code = self._python_to_dana_code(perceive_block.code)
+        
+        return f'''def perceive({param_list}, state: POETState) -> POETState {{
+    # Input validation and preparation
+{textwrap.indent(dana_code, "    ")}
     
-    # Store training data for future optimization
-    training_metadata = {{
-        "function": "{function_name}",
-        "domain": "{config.domain}",
-        "timestamp": feedback_data.get("timestamp"),
-        "metrics": metrics,
-        "errors": errors
+    state.perceive_result = {{
+        "valid": len(state.errors) == 0,
+        "validated": true
+    }}
+    return state
+}}'''
+    
+    def _generate_operate_function(self, param_list: str, operate_block, func_info: FunctionInfo) -> str:
+        """Generate operate function with original logic embedded."""
+        # Convert original function body to Dana
+        original_logic = self._python_to_dana_code(func_info.source_code)
+        
+        return f'''def operate({param_list}, state: POETState) -> POETState {{
+    # Core logic execution with reliability enhancements
+    if not state.perceive_result.get("valid", false) {{
+        state.operate_result = {{"success": false, "error": "Perceive phase failed"}}
+        return state
     }}
     
-    log(f"Training completed for {function_name}")
-    return training_metadata
-'''
+    max_retries = {func_info.retries}
+    for attempt in range(max_retries) {{
+        try {{
+            # Original logic (embedded and potentially enhanced)
+{textwrap.indent(original_logic, "            ")}
+            
+            state.operate_result = {{
+                "success": true,
+                "value": result,  # Assumes original logic sets 'result'
+                "attempts": attempt + 1
+            }}
+            break
+        }} except Exception as e {{
+            if attempt == max_retries - 1 {{
+                state.errors.append(f"Operation failed after {{max_retries}} attempts: {{str(e)}}")
+                state.operate_result = {{"success": false}}
+            }} else {{
+                # Exponential backoff
+                time.sleep(0.1 * (2 ** attempt))
+            }}
+        }}
+    }}
+    
+    return state
+}}'''
+    
+    def _generate_enforce_function(self, enforce_block) -> str:
+        """Generate enforce function."""
+        dana_code = self._python_to_dana_code(enforce_block.code)
+        
+        return f'''def enforce(state: POETState) -> POETState {{
+    # Output validation and business rules
+    if state.operate_result.get("success", false) {{
+{textwrap.indent(dana_code, "        ")}
+        
+        state.enforce_result = {{
+            "valid": len(state.errors) == 0,
+            "final_value": state.operate_result.get("value") if len(state.errors) == 0 else null
+        }}
+    }} else {{
+        state.enforce_result = {{"valid": false}}
+    }}
+    
+    return state
+}}'''
+    
+    def _generate_train_function(self, train_block) -> str:
+        """Generate train function if learning is enabled."""
+        if not train_block:
+            return ""
+        
+        dana_code = self._python_to_dana_code(train_block.code)
+        
+        return f'''def train(state: POETState, feedback: dict) -> void {{
+    # Learning logic - update parameters based on feedback
+    log(f"Training with feedback: {{feedback}}")
+{textwrap.indent(dana_code, "    ")}
+}}'''
+    
+    def _generate_enhanced_function(self, func_info: FunctionInfo, param_list: str, 
+                                   param_names: list[str], return_type: str, config: POETConfig) -> str:
+        """Generate the main enhanced function that orchestrates phases."""
+        param_args = ", ".join(f'"{name}": {name}' for name in param_names)
+        func_args = ", ".join(param_names)
+        
+        train_call = ""
+        if config.optimize_for:
+            train_call = """
+    # Store execution for potential training
+    if state.metadata.get("collect_feedback", false) {
+        # Feedback can be provided later via feedback() function
+        state.metadata["execution_id"] = generate_uuid()
+    }"""
+        
+        return f'''# Main enhanced function
+def enhanced_{func_info.name}({param_list}) -> {return_type} {{
+    # Initialize POET state
+    state = POETState(
+        inputs={{{param_args}}},
+        perceive_result={{}},
+        operate_result={{}},
+        enforce_result={{}},
+        metadata={{"start_time": time.time()}},
+        errors=[],
+        warnings=[]
+    )
+    
+    # Execute P→O→E pipeline
+    state = perceive({func_args}, state)
+    state = operate({func_args}, state)
+    state = enforce(state)
+{train_call}
+    
+    # Handle errors
+    if not state.enforce_result.get("valid", false) {{
+        error_msg = "; ".join(state.errors) if state.errors else "Validation failed"
+        raise ValueError(f"POET validation failed: {{error_msg}}")
+    }}
+    
+    # Return enhanced result
+    return state.enforce_result["final_value"]
+}}'''
+    
+    def _python_to_dana_code(self, python_code: str) -> str:
+        """Convert Python code snippets to Dana syntax."""
+        # This is a simplified conversion - in practice would need full transpilation
+        dana_code = python_code
+        
+        # Basic syntax conversions
+        replacements = [
+            ("isinstance(", "isinstance("),  # Dana has isinstance
+            ("len(", "len("),  # Dana has len
+            ("range(", "range("),  # Dana has range
+            ("str(", "string("),  # Dana uses string() not str()
+            ("True", "true"),
+            ("False", "false"),
+            ("None", "null"),
+            ("elif", "else if"),
+            ("raise ValueError", "raise ValueError"),
+            ("raise TypeError", "raise TypeError"),
+        ]
+        
+        for py, dana in replacements:
+            dana_code = dana_code.replace(py, dana)
+        
+        return dana_code
