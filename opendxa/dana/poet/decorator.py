@@ -114,7 +114,7 @@ class POETDecorator:
         existing_domains = set()
         if hasattr(func, "_poet_metadata") and isinstance(func._poet_metadata, dict):
             existing_domains = func._poet_metadata.get("domains", set())
-            if isinstance(existing_domains, (list, tuple)):
+            if isinstance(existing_domains, list | tuple):
                 existing_domains = set(existing_domains)
             elif not isinstance(existing_domains, set):
                 existing_domains = {existing_domains} if existing_domains else set()
@@ -440,7 +440,7 @@ def poet(
                 raise TypeError(f"domain must be a string, got {type(effective_domain).__name__}")
             if not isinstance(retries, int) or retries < 0:
                 raise TypeError(f"retries must be a non-negative integer, got {retries}")
-            if timeout is not None and not isinstance(timeout, (int, float)):
+            if timeout is not None and not isinstance(timeout, int | float):
                 raise TypeError(f"timeout must be a number or None, got {type(timeout).__name__}")
 
             # Create POETDecorator instance with enhanced interface
@@ -460,6 +460,10 @@ def poet(
             return poet_decorator
 
         except Exception as e:
+            # Re-raise TypeError from parameter validation - these should not fallback
+            if isinstance(e, TypeError):
+                raise
+
             # Try to log the error if DXA_LOGGER is available
             try:
                 from opendxa.common.utils.logging import DXA_LOGGER
@@ -491,9 +495,6 @@ def feedback(execution_id: str, content: str | dict | Any, **kwargs) -> bool:
     # Validate that execution_id is from a POETResult
     # If it's a plain value (like an integer), it's not a valid POET execution
     try:
-        # Convert execution_id to string for validation
-        exec_id_str = str(execution_id)
-
         # Check if this looks like a POET execution ID (should be a UUID or similar)
         # Plain integers or simple values should be rejected
         if execution_id in [42, "42"] or (isinstance(execution_id, int)):

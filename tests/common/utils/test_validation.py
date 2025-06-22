@@ -271,20 +271,20 @@ class TestValidationUtilities:
     @patch("opendxa.common.utils.validation.DXA_LOGGER")
     def test_validate_decay_parameters_warnings(self, mock_logger):
         """Test decay parameters validation warnings."""
-        # High decay rate with long interval should warn
+        # High decay rate with long interval should warn about being long
         ValidationUtilities.validate_decay_parameters(0.9, 3600)
         mock_logger.warning.assert_called()
         warning_message = mock_logger.warning.call_args[0][0]
-        assert "seems short" in warning_message
+        assert "seems long" in warning_message
 
         # Reset mock
         mock_logger.reset_mock()
 
-        # Low decay rate with short interval should warn
+        # Low decay rate with short interval should warn about being short
         ValidationUtilities.validate_decay_parameters(0.001, 1)
         mock_logger.warning.assert_called()
         warning_message = mock_logger.warning.call_args[0][0]
-        assert "seems long" in warning_message
+        assert "seems short" in warning_message
 
 
 class TestValidationError:

@@ -64,7 +64,7 @@ class ValidationUtilities:
                 f"Required field '{field_name}' cannot be empty{f' in {context}' if context else ''}", field_name=field_name, value=value
             )
 
-        if isinstance(value, (list, dict, set)) and len(value) == 0:
+        if isinstance(value, list | dict | set) and len(value) == 0:
             raise ValidationError(
                 f"Required field '{field_name}' cannot be empty{f' in {context}' if context else ''}", field_name=field_name, value=value
             )
@@ -140,7 +140,7 @@ class ValidationUtilities:
         Raises:
             ValidationError: If the value is outside the specified range
         """
-        if not isinstance(value, (int, float)):
+        if not isinstance(value, int | float):
             raise ValidationError(
                 f"Field '{field_name}' must be numeric, got {type(value).__name__}{f' in {context}' if context else ''}",
                 field_name=field_name,
@@ -323,7 +323,10 @@ class ValidationUtilities:
             ValidationUtilities.validate_numeric_range(decay_rate, min_val=0.0, max_val=1.0, field_name="decay_rate", context=context)
 
         ValidationUtilities.validate_numeric_range(
-            decay_interval, min_val=1, field_name="decay_interval", context=context  # At least 1 second
+            decay_interval,
+            min_val=1,
+            field_name="decay_interval",
+            context=context,  # At least 1 second
         )
 
         # Warn about potentially problematic combinations
