@@ -1503,3 +1503,9 @@ class StatementTransformer(BaseTransformer):
         if hasattr(item, "line") and hasattr(item, "column") and item.line is not None and item.column is not None:
             return Location(line=item.line, column=item.column, source="")
         return None
+
+    def statements(self, items):
+        """Transform the statements rule into a list of statements."""
+        # Filter out None values (from comments or empty lines)
+        statements = [item for item in items if item is not None]
+        return statements

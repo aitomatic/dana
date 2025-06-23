@@ -39,7 +39,7 @@ compound_stmt: if_stmt
              | with_stmt
              | struct_def
 
-block: _NL _INDENT statements _DEDENT*
+block: _NL _INDENT statements _DEDENT
 
 // ===== COMPOUND STATEMENT TYPES =====
 // Simplified if statement structure to avoid LALR conflicts
@@ -60,7 +60,7 @@ try_stmt: "try" ":" [COMMENT] block "except" ["(" expr ")"] ":" [COMMENT] block 
 with_stmt: "with" (with_context_manager | (NAME | USE) "(" [mixed_arguments] ")") AS NAME ":" [COMMENT] block
 struct_def: "struct" NAME ":" [COMMENT] struct_block -> struct_definition
 
-struct_block: _NL _INDENT struct_fields _DEDENT*
+struct_block: _NL _INDENT struct_fields _DEDENT
 struct_fields: struct_field+
 struct_field: NAME ":" basic_type ["=" expr] [COMMENT] _NL -> struct_field
 
