@@ -330,6 +330,13 @@ class ModuleLoader(MetaPathFinder, Loader):
             public_vars = context.get_scope("public")
             module.__dict__.update(public_vars)
 
+            # Include system scope variables for agent functionality
+            # This allows modules with system:agent_name and system:agent_description to be used as agents
+            system_vars = context.get_scope("system")
+            for key, value in system_vars.items():
+                # Store system variables with their scope prefix for easy identification
+                module.__dict__[f"system:{key}"] = value
+
             # Handle exports
             if hasattr(context, "_exports"):
                 module.__exports__ = context._exports

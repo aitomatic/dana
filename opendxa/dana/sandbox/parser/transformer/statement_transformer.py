@@ -24,6 +24,8 @@ from typing import Any, cast
 from lark import Token, Tree
 
 from opendxa.dana.sandbox.parser.ast import (
+    AgentPoolStatement,
+    AgentStatement,
     Assignment,
     AttributeAccess,
     BinaryExpression,
@@ -77,6 +79,8 @@ AllowedAssignmentValue = (
     | AttributeAccess
     | FStringExpression
     | UseStatement
+    | AgentStatement
+    | AgentPoolStatement
 )
 
 
@@ -770,6 +774,108 @@ class StatementTransformer(BaseTransformer):
 
         return UseStatement(args=args, kwargs=kwargs)
 
+    def agent_stmt(self, items):
+        """Transform an agent_stmt rule into an AgentStatement node.
+
+        Grammar: agent_stmt: AGENT "(" [mixed_arguments] ")"
+
+        The grammar passes:
+        - items[0] = AGENT token (ignored)
+        - items[1] = result from mixed_arguments (None if no arguments, or list of arguments)
+        """
+        from lark import Tree
+
+        # Initialize collections for arguments
+        args = []  # List[Expression] for positional arguments
+        kwargs = {}  # Dict[str, Expression] for keyword arguments
+
+        # Handle the case where mixed_arguments is present
+        # items[0] is the AGENT token, items[1] is the mixed_arguments result
+        if len(items) > 1 and items[1] is not None:
+            mixed_args_result = items[1]
+
+            # Process mixed_arguments following use_stmt pattern
+            seen_keyword_arg = False  # Track if we've seen any keyword arguments
+
+            if isinstance(mixed_args_result, list):
+                # Process each argument
+                for arg_item in mixed_args_result:
+                    if isinstance(arg_item, Tree) and arg_item.data == "kw_arg":
+                        # Keyword argument: NAME "=" expr
+                        seen_keyword_arg = True
+                        name = arg_item.children[0].value
+                        value = arg_item.children[1]  # Value is already processed
+                        kwargs[name] = value
+                    else:
+                        # Positional argument: expr
+                        if seen_keyword_arg:
+                            # Error: positional argument after keyword argument
+                            raise SyntaxError("Positional argument follows keyword argument in agent statement")
+                        args.append(cast(Expression, arg_item))
+            else:
+                # Single argument
+                if isinstance(mixed_args_result, Tree) and mixed_args_result.data == "kw_arg":
+                    # Keyword argument: NAME "=" expr
+                    name = mixed_args_result.children[0].value
+                    value = self.expression_transformer.expression([mixed_args_result.children[1]])
+                    kwargs[name] = value
+                else:
+                    # Positional argument: expr
+                    args.append(cast(Expression, mixed_args_result))
+
+        return AgentStatement(args=args, kwargs=kwargs)
+
+    def agent_pool_stmt(self, items):
+        """Transform an agent_pool_stmt rule into an AgentPoolStatement node.
+
+        Grammar: agent_pool_stmt: AGENT_POOL "(" [mixed_arguments] ")"
+
+        The grammar passes:
+        - items[0] = AGENT_POOL token (ignored)
+        - items[1] = result from mixed_arguments (None if no arguments, or list of arguments)
+        """
+        from lark import Tree
+
+        # Initialize collections for arguments
+        args = []  # List[Expression] for positional arguments
+        kwargs = {}  # Dict[str, Expression] for keyword arguments
+
+        # Handle the case where mixed_arguments is present
+        # items[0] is the AGENT_POOL token, items[1] is the mixed_arguments result
+        if len(items) > 1 and items[1] is not None:
+            mixed_args_result = items[1]
+
+            # Process mixed_arguments following use_stmt pattern
+            seen_keyword_arg = False  # Track if we've seen any keyword arguments
+
+            if isinstance(mixed_args_result, list):
+                # Process each argument
+                for arg_item in mixed_args_result:
+                    if isinstance(arg_item, Tree) and arg_item.data == "kw_arg":
+                        # Keyword argument: NAME "=" expr
+                        seen_keyword_arg = True
+                        name = arg_item.children[0].value
+                        value = arg_item.children[1]  # Value is already processed
+                        kwargs[name] = value
+                    else:
+                        # Positional argument: expr
+                        if seen_keyword_arg:
+                            # Error: positional argument after keyword argument
+                            raise SyntaxError("Positional argument follows keyword argument in agent_pool statement")
+                        args.append(cast(Expression, arg_item))
+            else:
+                # Single argument
+                if isinstance(mixed_args_result, Tree) and mixed_args_result.data == "kw_arg":
+                    # Keyword argument: NAME "=" expr
+                    name = mixed_args_result.children[0].value
+                    value = self.expression_transformer.expression([mixed_args_result.children[1]])
+                    kwargs[name] = value
+                else:
+                    # Positional argument: expr
+                    args.append(cast(Expression, mixed_args_result))
+
+        return AgentPoolStatement(args=args, kwargs=kwargs)
+
     # === Import Statements ===
     def import_stmt(self, items):
         """Transform an import statement rule into an ImportStatement or ImportFromStatement node."""
@@ -1160,10 +1266,10 @@ class StatementTransformer(BaseTransformer):
         if not isinstance(target, Identifier):
             raise TypeError(f"Assignment target must be Identifier, got {type(target)}")
 
-        # Transform the return_object_stmt (which should be a UseStatement)
+        # Transform the return_object_stmt (which should be UseStatement, AgentStatement, or AgentPoolStatement)
         # The return_object_tree should already be transformed by return_object_stmt method
-        if isinstance(return_object_tree, UseStatement):
-            if return_object_tree.target is None:
+        if isinstance(return_object_tree, (UseStatement, AgentStatement, AgentPoolStatement)):
+            if hasattr(return_object_tree, 'target') and return_object_tree.target is None:
                 # If the target is not set, set it to the target of the assignment
                 return_object_tree.target = target
             value_expr = cast(AllowedAssignmentValue, return_object_tree)
@@ -1175,10 +1281,10 @@ class StatementTransformer(BaseTransformer):
 
     def return_object_stmt(self, items):
         """Transform a return_object_stmt rule into the appropriate object-returning statement."""
-        # Grammar: return_object_stmt: use_stmt
-        # items[0] should be the result of use_stmt transformation
+        # Grammar: return_object_stmt: use_stmt | agent_stmt | agent_pool_stmt
+        # items[0] should be the result of the chosen statement transformation
 
-        # The use_stmt should already be transformed into a UseStatement by use_stmt method
+        # The statement should already be transformed into the appropriate AST node
         if len(items) > 0 and items[0] is not None:
             return items[0]
 

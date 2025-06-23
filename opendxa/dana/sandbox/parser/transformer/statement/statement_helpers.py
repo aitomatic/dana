@@ -82,6 +82,8 @@ class AssignmentHelper:
 
         # Type imports to match the original
         from opendxa.dana.sandbox.parser.ast import (
+            AgentPoolStatement,
+            AgentStatement,
             BinaryExpression,
             DictLiteral,
             FStringExpression,
@@ -108,7 +110,9 @@ class AssignmentHelper:
             | SubscriptExpression
             | AttributeAccess
             | FStringExpression
-            | UseStatement,
+            | UseStatement
+            | AgentStatement
+            | AgentPoolStatement,
             value,
         )
 

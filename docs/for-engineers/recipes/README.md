@@ -16,6 +16,9 @@
 - [Workflow Agent](workflow-agent/README.md) - Multi-step automated processes
 - [API Integration](api-integration/README.md) - Connect external services
 
+### 🤖 Multi-Agent Systems
+- [**Multi-Agent Collaboration**](multi-agent-collaboration/README.md) - **A2A and module agents working together**
+
 ### 📚 Advanced Patterns
 - [**Structs Cookbook**](structs-cookbook.md) - **Real-world struct patterns and examples**
 - [MCP Integration](mcp-integration.md) - Model Context Protocol connections
@@ -130,6 +133,13 @@ Start with simple patterns and combine them:
 | [Configuration Management](structs-cookbook.md#configuration-management) | App config and environment handling | Intermediate |
 | [Error Handling](structs-cookbook.md#error-handling-strategies) | Robust error management | Beginner |
 | [Performance Optimization](structs-cookbook.md#performance-patterns) | Optimizing Dana applications | Advanced |
+
+### Multi-Agent Systems
+| Recipe | Use Case | Complexity |
+|--------|----------|------------|
+| [Multi-Agent Collaboration](multi-agent-collaboration/README.md) | A2A and module agent orchestration | Advanced |
+| [Agent Pool Management](multi-agent-collaboration/README.md#agent-pool-management) | Dynamic agent selection | Intermediate |
+| [Reason Function Integration](multi-agent-collaboration/README.md#reason-function-integration) | AI reasoning with agents | Intermediate |
 
 ### Integration
 | Recipe | Use Case | Complexity |

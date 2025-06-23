@@ -42,6 +42,10 @@ def reason_function(
             - format: Output format ("text" or "json")
         use_mock: Force use of mock responses (True) or real LLM calls (False).
                   If None, defaults to checking OPENDXA_MOCK_LLM environment variable.
+        
+        Note: A2A agents can be provided via options['agents']. This can be an A2AAgent, 
+              AgentPool, or list of A2AAgent instances. If provided, agent selection 
+              will be performed based on the task and available resources.
 
     Returns:
         The LLM's response to the prompt
@@ -51,6 +55,8 @@ def reason_function(
     """
     logger = DXA_LOGGER.getLogger("opendxa.dana.reason")
     options = options or {}
+    
+
 
     if not prompt:
         raise SandboxError("reason function requires a non-empty prompt")
@@ -80,6 +86,83 @@ def reason_function(
         logger.info(f"Using mock LLM response (prompt: {prompt[:100]}{'...' if len(prompt) > 100 else ''})")
         llm_resource = llm_resource.with_mock_llm_call(True)
 
+    # Get resources from context once and reuse throughout the function
+    resources = {}
+    try:
+        resources = context.get_resources(options.get("resources", None)) if context is not None else {}
+    except Exception as e:
+        logger.debug(f"Could not get available resources: {e}")
+
+    # Handle agent integration if agents are provided via options
+    actual_agents = options.get('agents')
+    if actual_agents is not None:
+        try:
+            # Check if agents is an A2AAgent, AgentPool, or list of agents
+            from opendxa.contrib.mcp_a2a.agent.pool.agent_pool import AgentPool
+            from opendxa.contrib.mcp_a2a.agent import AbstractDanaAgent
+            
+            agent_pool = None
+            
+            if isinstance(actual_agents, AgentPool):
+                # Agent pool: use it directly
+                agent_pool = actual_agents
+                logger.info(f"Using DANA agent pool for reasoning with {len(actual_agents.get_agent_cards())} agents")
+                
+            elif isinstance(actual_agents, AbstractDanaAgent):
+                # Single agent: create a temporary pool with just this agent
+                agent_pool = AgentPool(
+                    name="temp_pool_single_agent",
+                    description="Temporary pool for single agent reasoning",
+                    agents=[actual_agents],
+                    context=context
+                )
+                logger.info(f"Using single DANA agent for reasoning: {actual_agents}")
+                
+            elif isinstance(actual_agents, list):
+                # List of agents: create a temporary pool
+                if all(isinstance(agent, AbstractDanaAgent) for agent in actual_agents):
+                    agent_pool = AgentPool(
+                        name="temp_pool_multiple_agents",
+                        description="Temporary pool for multiple agent reasoning", 
+                        agents=actual_agents,
+                        context=context
+                    )
+                    logger.info(f"Using DANA agent list for reasoning with {len(actual_agents)} agents")
+                else:
+                    logger.warning("Invalid agents list: all items must be AbstractDanaAgent instances")
+                    
+            else:
+                logger.warning(f"Invalid agents parameter type: {type(actual_agents)}, expected AbstractDanaAgent, AgentPool, or list of AbstractDanaAgent")
+            
+            # If we have a valid agent pool, select and use an agent
+            if agent_pool:
+                # Select best agent considering available resources (already retrieved above)  
+                selected_agent = agent_pool.select_agent(prompt, included_resources=list(resources.keys()))  # type: ignore
+                
+                if selected_agent:
+                    logger.info(f"Selected agent '{selected_agent.name}' for reasoning task")
+                    try:
+                        import inspect
+                        from opendxa.common.utils.misc import Misc
+                        
+                        # Check if solve method is async
+                        if inspect.iscoroutinefunction(selected_agent.solve):
+                            # Use safe_asyncio_run for better async handling
+                            response = Misc.safe_asyncio_run(selected_agent.solve, prompt)
+                        else:
+                            response = selected_agent.solve(prompt)
+                        logger.debug(f"Agent '{selected_agent.name}' provided response: {str(response)[:100]}{'...' if len(str(response)) > 100 else ''}")
+                        return response
+                    except Exception as e:
+                        logger.warning(f"Agent '{selected_agent.name}' solve() failed: {e}, falling back to local LLM")
+                else:
+                    logger.debug("Local agent is selected or no suitable agent found in agent pool => using local LLM")
+                
+        except ImportError:
+            logger.warning("DANA agent dependencies not available, falling back to local LLM reasoning")
+        except Exception as e:
+            logger.warning(f"Error using DANA agents for reasoning: {e}, falling back to local LLM")
+
     try:
         # Log what's happening
         logger.debug(f"Starting LLM reasoning with prompt: {prompt[:500]}{'...' if len(prompt) > 500 else ''}")
@@ -96,14 +179,8 @@ def reason_function(
             "temperature": options.get("temperature", 0.7),
             "max_tokens": options.get("max_tokens", None),
         }
-        # Get resources from context and filter by included_resources
-        try:
-            resources = context.get_resources(options.get("resources", None)) if context is not None else {}
-        except Exception as e:
-            logger.warning(f"Error getting resources from context: {e}")
-            resources = {}
-
-        # Set query strategy and max iterations to iterative and 5 respectively to ultilize tools calls
+        
+        # Set query strategy and max iterations to iterative and 5 respectively to utilize tool calls
         previous_query_strategy = llm_resource._query_strategy
         previous_query_max_iterations = llm_resource._query_max_iterations
         if resources:
