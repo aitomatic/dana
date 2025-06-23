@@ -6,7 +6,7 @@ system:agent_name = "Travel Planner"
 system:agent_description = "Plans trips and provides travel recommendations"
 
 # Set up web search resource
-websearch = use("mcp", url="http://localhost:8880/websearch")
+websearch = use("mcp", url="https://demo.mcp.aitomatic.com/websearch_v2")
 
 # Required solve function for module agents
 def solve(task: str) -> str:

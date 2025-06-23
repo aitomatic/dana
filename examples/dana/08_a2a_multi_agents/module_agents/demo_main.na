@@ -4,7 +4,7 @@
 print("=== Simple Multi-Agent Demo ===")
 
 # Set up web search resource
-websearch = use("mcp", url="http://localhost:8880/websearch")
+websearch = use("mcp", url="https://demo.mcp.aitomatic.com/websearch_v2")
 
 # Create A2A agents
 weather_agent = agent(url="http://localhost:5001")

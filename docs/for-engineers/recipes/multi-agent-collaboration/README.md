@@ -1,117 +1,70 @@
-# Multi-Agent Collaboration with Dana
+# Module Agents Examples
 
-This directory contains **simple, straightforward examples** of Dana's multi-agent collaboration system. The examples demonstrate both A2A (Agent-to-Agent) protocol agents and Dana module agents working together.
+This directory contains Dana module agent examples that work alongside the A2A agents in the parent directory.
+
+## Files
+
+- **`weather_expert.na`** - Simple weather analysis module agent
+- **`travel_planner.na`** - Simple travel planning module agent  
+- **`demo_main.na`** - Complete demo showing both A2A and module agents working together
 
 ## Quick Start
 
-1. **Start the existing A2A agents** (from `examples/dana/08_a2a_multi_agents/`):
+1. **Start the A2A agents** (run in background):
    ```bash
-   # Terminal 1 - Weather Agent
+   # From the parent directory - all in one terminal
    cd examples/dana/08_a2a_multi_agents/
-   python start_weather_agent.py --port 5001
+   python start_weather_agent.py --port 5001 &
+   python start_planner_agent.py --port 5002 &
+   python start_ticket_agent.py --port 5003 &
    
-   # Terminal 2 - Trip Planner Agent  
-   cd examples/dana/08_a2a_multi_agents/
-   python start_planner_agent.py --port 5002
-   
-   # Terminal 3 - Ticket Agent
-   cd examples/dana/08_a2a_multi_agents/
-   python start_ticket_agent.py --port 5003
+   # Wait for agents to start
+   sleep 3
    ```
 
-2. **Run the complete demo** (now located in examples):
+2. **Run the complete demo** (from this directory):
    ```bash
+   # Method 1: Navigate to this directory (simple)
+   cd examples/dana/08_a2a_multi_agents/module_agents/
+   uv run python -m opendxa.dana.exec.dana demo_main.na
+   
+   # Method 2: Use DANA_PATH from anywhere
+   export DANA_PATH=/path/to/opendxa/examples/dana/08_a2a_multi_agents/module_agents
    uv run python -m opendxa.dana.exec.dana examples/dana/08_a2a_multi_agents/module_agents/demo_main.na
    ```
 
-## Example Files Location
+## Important Notes
 
-The module agent examples have been moved to:
-**`examples/dana/08_a2a_multi_agents/module_agents/`**
+### Import Requirements
+- **Dana module imports only work when running from the directory containing the `.na` files**
+- The `import weather_expert` and `import travel_planner` statements in `demo_main.na` require running from this directory
 
-This includes:
-- `weather_expert.na` - Simple weather analysis module agent
-- `travel_planner.na` - Simple travel planning module agent  
-- `demo_main.na` - Complete demo showing both A2A and module agents
-- `README.md` - Quick start guide for the examples
+### Alternative: Using DANA_PATH
+You can set the `DANA_PATH` environment variable to enable imports from any directory:
 
-## What You'll Learn
+```bash
+# From OpenDXA root directory
+export DANA_PATH=$(pwd)/examples/dana/08_a2a_multi_agents/module_agents
+uv run python -m opendxa.dana.exec.dana examples/dana/08_a2a_multi_agents/module_agents/demo_main.na
 
-### Core Multi-Agent Features
-- **Agent Creation**: Both A2A and module agents
-- **Agent Pools**: Managing multiple agents together  
-- **Agent Selection**: Automatic selection based on task
-- **Reason Integration**: Using agents with the reason function
-- **Resource Filtering**: Controlling which resources agents can use
-
-### Simple Examples Included
-
-#### `demo_main.na` - Complete Demo
-Simple demonstration showing:
-- Creating A2A agents
-- Creating module agents from Dana files
-- Creating mixed agent pools
-- Basic agent usage (both types)
-- Agent pool selection
-- Reason function with agents
-- Resource filtering
-
-#### `weather_expert.na` - Module Agent
-Basic weather analysis agent with:
-- Required system variables
-- Simple solve function
-- Web search integration
-- Helper functions for weather analysis
-
-#### `travel_planner.na` - Module Agent  
-Basic travel planning agent with:
-- Trip planning functionality
-- Accommodation finding
-- Cost estimation
-- Web search integration
-
-## Architecture Overview
-
-Dana's multi-agent system supports two types of agents:
-
-### A2A (Agent-to-Agent) Protocol Agents
-- External agents running as separate services
-- Connected via HTTP/WebSocket
-- Examples: Weather, Trip Planner, Ticket agents
-
-### Dana Module Agents
-- Native Dana modules with agent capabilities
-- Defined in `.na` files with required functions
-- Integrated directly into Dana runtime
-
-### Unified Agent Interface
-Both agent types work seamlessly together:
-- Same `solve()` method interface
-- Compatible with agent pools
-- Work with reason function
-- Support resource filtering
-
-## Key Concepts
-
-### Agent Pools
-```dana
-pool = agent_pool(agents=[agent1, agent2, agent3])
-selected = pool.select_agent("task description")
+# Or inline
+DANA_PATH=$(pwd)/examples/dana/08_a2a_multi_agents/module_agents uv run python -m opendxa.dana.exec.dana examples/dana/08_a2a_multi_agents/module_agents/demo_main.na
 ```
 
-### Reason Function Integration
-```dana
-# With specific agents
-result = reason("task", agents=[weather_agent])
+### MCP Resource Adaptation
+- The examples use `websearch.search()` but **your MCP server may have different methods**
+- Check your MCP server documentation and adapt the resource calls accordingly:
+  ```dana
+  # Adapt to your MCP server's actual methods
+  # result = websearch.query(search_term)
+  # result = websearch.web_search(query)  
+  # result = websearch.search_web(text)
+  ```
 
-# With agent pool  
-result = reason("task", agents=pool)
+## Module Agent Pattern
 
-# With resource filtering
-result = reason("task", agents=[agent], resources=["websearch"])
-```
+Each module agent follows this simple pattern:
 
-### Module Agent Requirements
 ```dana
 # Required system variables
 system:agent_name = "Agent Name"
@@ -122,27 +75,27 @@ def solve(task: str) -> str:
     return process_task(task)
 ```
 
-## Requirements
+## Integration with A2A Agents
 
-- **A2A Agents**: Start the existing agents from `examples/dana/08_a2a_multi_agents/`
-- **MCP Resources**: Web search server at `http://localhost:8880/websearch`
-- **Dana Runtime**: OpenDXA with Dana language support
+The demo shows how module agents and A2A agents work seamlessly together:
+- Mixed agent pools containing both types
+- Same `solve()` interface for both
+- Compatible with reason function
+- Support for resource filtering
 
-## Building on Existing Examples
+## Troubleshooting
 
-These examples build upon the foundation in `examples/dana/08_a2a_multi_agents/`:
-- `use_a2a.na` - Basic A2A agent usage patterns
-- `test_reason_agents.na` - Advanced reason function with agents
-- `test_reason_with_resources.na` - Resource filtering examples
-- `agent_1.na` - Simple module agent pattern
+### Import Errors
+- **Problem**: `ImportError: No module named 'weather_expert'`
+- **Solution 1**: Make sure you're running from this `module_agents/` directory
+- **Solution 2**: Set `DANA_PATH` environment variable: `export DANA_PATH=$(pwd)/examples/dana/08_a2a_multi_agents/module_agents`
 
-The module agent examples in `module_agents/` show how to combine these patterns into complete multi-agent workflows.
+### MCP Resource Errors  
+- **Problem**: `AttributeError: 'MCPResource' object has no attribute 'search'`
+- **Solution**: Update the resource method calls to match your MCP server's API
 
-## Next Steps
+### A2A Connection Errors
+- **Problem**: A2A agents not responding
+- **Solution**: Check agents are running with `ps aux | grep python` and restart if needed
 
-1. **Start with the demo**: Run the demo in `examples/dana/08_a2a_multi_agents/module_agents/demo_main.na`
-2. **Create your own module agents**: Follow the pattern in the example files
-3. **Build agent workflows**: Combine multiple agents for complex tasks
-4. **Explore advanced features**: Check the hands-on guide for detailed examples
-
-Dana's multi-agent system provides a simple yet powerful foundation for building sophisticated AI agent collaborations! 
+This demonstrates Dana's unified multi-agent architecture! 

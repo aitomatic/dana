@@ -6,7 +6,7 @@ system:agent_name = "Weather Expert"
 system:agent_description = "Provides weather analysis and forecasts"
 
 # Set up web search resource
-websearch = use("mcp", url="http://localhost:8880/websearch")
+websearch = use("mcp", url="https://demo.mcp.aitomatic.com/websearch_v2")
 
 # Required solve function for module agents
 def solve(task: str) -> str:
@@ -17,7 +17,7 @@ def solve(task: str) -> str:
 def get_weather_info(query: str) -> str:
     """Get weather information using web search"""
     search_query = f"weather forecast {query}"
-    result = websearch.search(search_query)
+    result = websearch.openai_websearch(query=search_query)
     return result
 
 # Helper function for weather analysis
