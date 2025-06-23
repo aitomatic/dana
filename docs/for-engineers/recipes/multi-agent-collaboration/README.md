@@ -25,7 +25,8 @@ This directory contains Dana module agent examples that work alongside the A2A a
 2. **Run the complete demo** (from this directory):
    ```bash
    # Method 1: Navigate to this directory (simple)
-   cd examples/dana/08_a2a_multi_agents/module_agents/
+   # After starting A2A agents, we are in examples/dana/08_a2a_multi_agents/
+   cd module_agents
    uv run python -m opendxa.dana.exec.dana demo_main.na
    
    # Method 2: Use DANA_PATH from anywhere
@@ -52,7 +53,7 @@ DANA_PATH=$(pwd)/examples/dana/08_a2a_multi_agents/module_agents uv run python -
 ```
 
 ### MCP Resource Adaptation
-- The examples use `websearch.search()` but **your MCP server may have different methods**
+- The examples use `websearch.openai_websearch()` but **your MCP server may have different methods**
 - Check your MCP server documentation and adapt the resource calls accordingly:
   ```dana
   # Adapt to your MCP server's actual methods

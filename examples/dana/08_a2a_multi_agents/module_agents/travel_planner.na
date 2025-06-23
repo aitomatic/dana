@@ -17,7 +17,7 @@ def solve(task: str) -> str:
 def plan_trip(request: str) -> str:
     """Plan a trip based on the request"""
     search_query = f"travel guide {request}"
-    travel_info = websearch.search(search_query)
+    travel_info = websearch.openai_websearch(query=search_query)
     plan = reason(f"Create a travel plan based on: {travel_info}")
     return plan
 
@@ -25,7 +25,7 @@ def plan_trip(request: str) -> str:
 def find_accommodation(location: str) -> str:
     """Find accommodation options"""
     search_query = f"hotels accommodation {location}"
-    results = websearch.search(search_query)
+    results = websearch.openai_websearch(query=search_query)
     return results
 
 # Helper function for cost estimation
