@@ -3,6 +3,7 @@
 import os
 import socket
 import subprocess
+import sys
 import time
 from typing import Any, cast
 
@@ -209,7 +210,7 @@ class APIServiceManager(Loggable):
         try:
             # Use uvicorn to start the FastAPI server with integrated POET routes
             cmd = [
-                "uvicorn",
+                sys.executable, "-m", "uvicorn",
                 "opendxa.api.server:create_app",
                 "--factory",
                 "--host",
