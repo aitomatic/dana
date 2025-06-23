@@ -1,0 +1,43 @@
+# AWS Optimizer Dana Module
+# Provides AI-powered cloud infrastructure optimization
+
+# log_level('DEBUG')
+
+def optimize_infrastructure(combined_data: dict) -> str:
+    """
+    AI-powered cloud infrastructure optimization
+    """
+    cloud_metrics = combined_data.get('cloud_metrics', {})
+    performance_data = combined_data.get('performance_data', {})
+    
+    optimization_context = f"""
+        Recommend cloud infrastructure optimizations to reduce costs while maintaining performance
+
+        Cloud Infrastructure Analysis:
+        - Instances: {len(cloud_metrics['metrics'])} running
+        - Monthly Cost: ${performance_data['cost_data]['monthly_cost']}
+        - Projected Cost: ${performance_data['cost_data']['projected_cost']}
+        
+        Consider optimization strategies for:
+        - Instance rightsizing
+        - Reserved instance opportunities
+        - Auto-scaling configurations
+        - Cost optimization
+    """
+
+    print(optimization_context)
+    
+    return reason(optimization_context)
+
+def calculate_savings(optimization_strategy: str) -> str:
+    """
+    AI-powered savings calculation based on optimization strategy
+    """
+    
+    return reason(f"""
+        Calculate projected cost savings from this optimization strategy
+
+        Strategy: {optimization_strategy}
+        Calculation context: Estimate monthly and annual savings
+    """
+    ) 

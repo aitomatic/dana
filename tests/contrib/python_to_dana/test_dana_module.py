@@ -276,7 +276,7 @@ def test_dana_subprocess_isolation_placeholder():
         patch("opendxa.contrib.python_to_dana.dana_module.SubprocessSandboxInterface") as mock_subprocess,
     ):
         # Test that subprocess isolation is requested but falls back
-        Dana(use_subprocess_isolation=True, debug=True)
+        _dana = Dana(use_subprocess_isolation=True, debug=True)
 
         # Should use in-process due to placeholder
         mock_inprocess.assert_called_once()
