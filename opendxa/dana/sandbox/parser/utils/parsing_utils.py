@@ -65,7 +65,7 @@ def parse_literal(text: Any) -> LiteralExpression:
             return LiteralExpression(value=float(text))
         elif isinstance(text, str):
             return LiteralExpression(value=int(text))
-        elif isinstance(text, int | float):
+        elif isinstance(text, (int, float)):
             return LiteralExpression(value=text)
     except ValueError:
         pass

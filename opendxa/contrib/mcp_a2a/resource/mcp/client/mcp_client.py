@@ -32,13 +32,13 @@ from fastmcp import Client
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.utils.misc import Misc
-from opendxa.contrib.dana_mcp_a2a.common.resource.mcp.client.transport import BaseTransport, MCPHTTPTransport, MCPSSETransport
+from opendxa.contrib.mcp_a2a.resource.mcp.client.transport import BaseTransport, MCPHTTPTransport, MCPSSETransport
 
 
 class MCPMetaclass(type):
     def __call__(cls, *args: Any, **kwds: Any) -> Any:
         transport, unmatched_args, unmatched_kwargs = cls._validate_transport(*args, **kwds)
-        return super().__call__(*unmatched_args, transport=transport, **unmatched_kwargs)
+        return super().__call__(transport=transport, *unmatched_args, **unmatched_kwargs)
 
 
 class MCPClient(Client, Loggable, metaclass=MCPMetaclass):
@@ -59,7 +59,7 @@ class MCPClient(Client, Loggable, metaclass=MCPMetaclass):
     @classmethod
     async def _try_client_with_valid_transport(cls, transport: BaseTransport) -> bool:
         try:
-            async with Client(transport) as test_client:  # type: ignore
+            async with Client(transport=transport) as test_client:
                 await test_client.list_tools()
                 await test_client.list_resources()
                 await test_client.list_prompts()

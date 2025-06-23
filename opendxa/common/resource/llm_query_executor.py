@@ -243,7 +243,19 @@ class LLMQueryExecutor(Loggable):
 
                     # Get responses for all tool calls at once
                     tool_responses = await tool_call_handler(tool_calls)
-                    message_history.extend(cast(list[dict[str, Any]], tool_responses))
+                    tool_responses_messages = []
+                    for response in tool_responses:
+                        if isinstance(response, BaseResponse):
+                            # NOTE : For BaseResponse, we need to get the content which is a message dict. Do not process otherwise.
+                            if Misc.has_field(response, "content"):
+                                content = Misc.get_field(response, "content", None)
+                                if isinstance(content, dict):
+                                    tool_responses_messages.append(content)
+                        elif isinstance(response, dict):
+                            tool_responses_messages.append(response)
+                        else:
+                            self.warning(f"Tool response is not a BaseResponse or dict: {type(response)}")
+                    message_history.extend(cast(list[dict[str, Any]], tool_responses_messages))
                 else:
                     # If LLM is not requesting tools, we're done
                     self.info("LLM is not requesting tools, returning final response")

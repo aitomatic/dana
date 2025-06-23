@@ -89,6 +89,7 @@ class ToolCallable(Registerable, Loggable):
         self._func_model_cache: dict[str, type[BaseModel]] = {}  # cache for function models
         self.__mcp_tool_list_cache: list[McpTool] | None = None  # computed lazily in list_mcp_tools
         self.__openai_function_list_cache: list[OpenAIFunctionCall] | None = None  # computed lazily in list_openai_functions
+        self.__raw_function_list_cache: list[OpenAIFunctionCall] | None = None  # computed lazily in list_openai_functions
         super().__init__()
         self.__post_init__()
 
@@ -282,11 +283,11 @@ class ToolCallable(Registerable, Loggable):
 
     def list_tools(self) -> list[Any]:
         """List all tools available to the agent in raw format."""
-        if self.__openai_function_list_cache is not None:
-            return self.__openai_function_list_cache
+        if self.__raw_function_list_cache is not None:
+            return self.__raw_function_list_cache
 
-        self.__openai_function_list_cache = self._list_tools(RawToolFormat(self.name, self.id))
-        return self.__openai_function_list_cache
+        self.__raw_function_list_cache = self._list_tools(RawToolFormat(self.name, self.id))
+        return self.__raw_function_list_cache
 
     def list_mcp_tools(self) -> list[McpTool]:
         """List all tools available to the agent in MCP format."""

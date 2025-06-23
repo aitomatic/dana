@@ -228,14 +228,14 @@ except ValueError as e:
 ### Run Examples
 
 ```bash
-cd opendxa/contrib/dana_mcp_a2a/common/resource/mcp/client/examples
+cd opendxa/contrib/mcp_a2a/common/resource/mcp/client/examples
 python mcp_client_examples.py
 ```
 
 ### Run Tests
 
 ```bash
-cd opendxa/contrib/dana_mcp_a2a/common/resource/mcp/client
+cd opendxa/contrib/mcp_a2a/common/resource/mcp/client
 pytest tests/test_mcp_client.py -v
 ```
 
