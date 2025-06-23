@@ -118,18 +118,6 @@ This directory contains a comprehensive set of tutorials that demonstrate how to
 **Difficulty**: ⭐⭐⭐ Advanced  
 **Duration**: 10-15 minutes
 
----
-
-### **Tutorial 08: Comprehensive Integration** (`08_comprehensive_integration.py`)
-**What you'll learn**: Real-world integration patterns and best practices
-- Complete application architecture
-- Error handling and debugging strategies
-- Production deployment considerations
-
-**Prerequisites**: All previous tutorials  
-**Difficulty**: ⭐⭐⭐⭐ Expert  
-**Duration**: 10-15 minutes
-
 ## 📁 Directory Structure
 
 ```
@@ -142,12 +130,10 @@ basic/
 ├── 05_data_structures_guide.py       # Structs and data types
 ├── 06_function_pipelines.py          # Function composition
 ├── 07_ai_reasoning_guide.py          # Advanced AI patterns
-├── 08_comprehensive_integration.py   # Complete integration
 └── dana/                             # Dana module files
     ├── ai_reasoning.na               # AI reasoning examples
     ├── data_structures.na            # Struct definitions
-    ├── pipelines.na                  # Pipeline functions
-    └── comprehensive_demo.na         # Complete demo module
+    └── pipelines.na                  # Pipeline functions
 ```
 
 ## 🎯 Learning Path Recommendations

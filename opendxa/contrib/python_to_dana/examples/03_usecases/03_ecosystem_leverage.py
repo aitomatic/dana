@@ -78,7 +78,7 @@ def main():
 
         # Dana provides intelligent insights
         optimization = aws_optimizer.optimize_infrastructure(combined_data)
-        cost_savings = aws_optimizer.calculate_savings(optimization)
+        cost_savings = aws_optimizer.calculate_savings(str(optimization))
 
         print(f"   🎯 Optimization Strategy: {optimization}")
         print(f"   💵 Projected Savings: {cost_savings}")

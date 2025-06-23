@@ -83,9 +83,9 @@ def ai_enhanced_order_analysis(order_data: dict[str, Any], config: RiskMitigatio
             import risk_analyzer  # Dana module for intelligent risk assessment
 
             # AI analysis with timeout protection
-            ai_decision = risk_analyzer.analyze_order_risk(order_data)
-            ai_confidence = risk_analyzer.calculate_confidence(ai_decision, order_data)
-            fraud_indicators = risk_analyzer.detect_fraud_patterns(order_data)
+            ai_decision = str(risk_analyzer.analyze_order_risk(order_data))
+            ai_confidence = float(risk_analyzer.calculate_confidence(ai_decision, order_data))
+            fraud_indicators = str(risk_analyzer.detect_fraud_patterns(order_data))
 
             processing_time = time.time() - start_time
 

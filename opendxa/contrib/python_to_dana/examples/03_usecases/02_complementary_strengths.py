@@ -102,7 +102,7 @@ def main():
 
             # Dana's AI planning capability
             if "high" in risk_level.lower() or "critical" in risk_level.lower():
-                response_plan = agent_logic.plan_response(risk_level, sensor)
+                response_plan = agent_logic.plan_response(str(risk_level), sensor)
                 print(f"   Response Plan: {response_plan}")
 
         # Overall facility assessment using aggregate stats

@@ -10,10 +10,10 @@ Business Value: AI microservice architecture
 
 To run this server:
     pip install fastapi uvicorn
-    python 07_microservice_architecture.py
+    python 05_intelligent_api_server.py
 
 To test endpoints:
-    python 07_microservice_client.py
+    python 05_intelligent_api_client.py
 
 Copyright © 2025 Aitomatic, Inc.
 MIT License
@@ -126,7 +126,7 @@ async def diagnose_equipment(sensor_data: SensorData):
             import quality_agent  # Dana module for intelligent diagnosis
 
             # Dana's AI capabilities
-            diagnosis = quality_agent.diagnose_equipment_issue(sensor_dict)
+            diagnosis = str(quality_agent.diagnose_equipment_issue(sensor_dict))
             print(f"🤖 Diagnosis: {diagnosis}")
             recommendations = quality_agent.recommend_maintenance_actions(diagnosis)
             confidence = quality_agent.calculate_confidence_score(diagnosis, sensor_dict)
@@ -188,15 +188,15 @@ async def batch_diagnose_equipment(batch_request: BatchRequest):
                         raise HTTPException(status_code=400, detail=f"Missing field: {field}")
 
                 # Dana handles each diagnosis intelligently
-                diagnosis = quality_agent.diagnose_equipment_issue(equipment)
-                priority = quality_agent.prioritize_maintenance(diagnosis, equipment)
+                diagnosis = str(quality_agent.diagnose_equipment_issue(equipment))
+                priority = str(quality_agent.prioritize_maintenance(diagnosis, equipment))
 
                 batch_results.append(
                     {"equipment_id": equipment["equipment_id"], "diagnosis": diagnosis, "priority": priority, "processed_at": time.time()}
                 )
 
             # Dana aggregates insights across the batch
-            facility_overview = quality_agent.analyze_facility_health(batch_results)
+            facility_overview = str(quality_agent.analyze_facility_health(batch_results))
 
             response = BatchResponse(
                 batch_size=len(equipment_list),
@@ -239,7 +239,7 @@ def main():
     print()
 
     # Start the server
-    uvicorn.run("07_intelligent_api_server:app", host="127.0.0.1", port=8000, reload=True, log_level="info")
+    uvicorn.run("05_intelligent_api_server:app", host="127.0.0.1", port=8000, reload=True, log_level="info")
 
 
 if __name__ == "__main__":

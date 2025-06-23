@@ -69,16 +69,6 @@ def demo_complex_structs():
         print(f"   Active: {user.active}")
         print(f"   Tags: {user.tags}")
 
-        # ✅ Test UserProfile struct methods
-        print("\n🔧 UserProfile Methods:")
-        print(f"   First name: {user.get_first_name()}")
-        print(f"   Is adult: {user.is_adult()}")
-        print(f"   Display info: {user.get_display_info()}")
-
-        # ✅ Test adding a tag (immutable operation)
-        user_with_tag = user.add_tag("premium_member")
-        print(f"   Original tags: {user.tags}")
-        print(f"   After adding tag: {user_with_tag.tags}")
 
         # ✅ AI-powered analysis of the struct
         analysis = data_structures.analyze_user_profile(user)

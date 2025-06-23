@@ -90,7 +90,7 @@ This directory showcases real-world use cases where Python-to-Dana integration p
 
 ---
 
-#### **Use Case 06: Intelligent API Server** (`06_intelligent_api_server.py`)
+#### **Use Case 06: Intelligent API Server** (`05_intelligent_api_server.py`)
 **Business Value**: Dana modules as intelligent microservices
 - FastAPI endpoints powered by Dana AI capability
 - Scalable AI service architecture
@@ -102,7 +102,7 @@ This directory showcases real-world use cases where Python-to-Dana integration p
 
 ---
 
-#### **Use Case 07: Dana Agent Deployment via A2A Protocol** (`07_dana_agent_deployment_a2a.py`)
+#### **Use Case 07: Dana Agent Deployment via A2A Protocol** (`06_dana_agent_deployment_a2a.py`)
 **Business Value**: Distributed AI agent architecture
 - Enable distributed agent-to-agent communication  
 - Build AI service meshes with specialized Dana agents
@@ -114,7 +114,7 @@ This directory showcases real-world use cases where Python-to-Dana integration p
 
 ---
 
-#### **Use Case 08: Dana Agent Deployment via MCP Protocol** (`08_dana_agent_deployment_mcp.py`)
+#### **Use Case 08: Dana Agent Deployment via MCP Protocol** (`07_dana_agent_deployment_mcp.py`)
 **Business Value**: AI assistant integration
 - Deploy Dana agents as MCP-compatible tools
 - Enable AI assistant integration (Claude, ChatGPT, etc.)
@@ -127,13 +127,13 @@ This directory showcases real-world use cases where Python-to-Dana integration p
 
 ---
 
-#### **Use Case 09: Risk Mitigation** (`09_risk_mitigation.py`)
+#### **Use Case 08: Risk Mitigation** (`08_risk_mitigation.py`)
 **Business Value**: Experiment with AI safely
 - A/B testing AI vs traditional approaches
 - Fallback strategies for AI failures
 - Confidence-based decision making
 
-**Prerequisites**: Use Case 01-08  
+**Prerequisites**: Use Case 01-07  
 **Difficulty**: ⭐⭐⭐ Advanced  
 **Duration**: 10-15 minutes
 
@@ -149,10 +149,10 @@ This directory showcases real-world use cases where Python-to-Dana integration p
 ├── 03_ecosystem_leverage.py            # Python library integration
 ├── 04_enterprise_enhancement.py        # Enterprise system integration
 ├── 05_intelligent_api_client.py        # API client with AI capabilities
-├── 06_intelligent_api_server.py        # FastAPI + Dana intelligence
-├── 07_dana_agent_deployment_a2a.py     # Deploy Dana agents via A2A protocol
-├── 08_dana_agent_deployment_mcp.py     # Deploy Dana agents via MCP protocol
-├── 09_risk_mitigation.py               # Safe AI experimentation
+├── 05_intelligent_api_server.py        # FastAPI + Dana intelligence
+├── 06_dana_agent_deployment_a2a.py     # Deploy Dana agents via A2A protocol
+├── 07_dana_agent_deployment_mcp.py     # Deploy Dana agents via MCP protocol
+├── 08_risk_mitigation.py               # Safe AI experimentation
 └── dana/                               # Supporting Dana modules
     ├── agent_logic.na                  # General agent reasoning
     ├── aws_optimizer.na                # Cloud resource optimization
@@ -165,7 +165,7 @@ This directory showcases real-world use cases where Python-to-Dana integration p
 ## 🎯 Learning Paths
 
 ### **For Business Decision Makers**
-1. Use Case 01 → Use Case 07 → Focus on risk mitigation patterns
+1. Use Case 01 → Use Case 06 → Focus on risk mitigation patterns
 2. Understand gradual adoption and ROI strategies
 3. Learn about fail-safe AI integration approaches
 
@@ -175,12 +175,12 @@ This directory showcases real-world use cases where Python-to-Dana integration p
 3. Plan technical adoption strategies and risk management
 
 ### **For Developers**
-1. Complete all use cases in order (01-09)
+1. Complete all use cases in order (01-08)
 2. Practice with each integration pattern
 3. Adapt examples to your specific domain
 
 ### **For AI/ML Engineers**
-1. Use Case 02 → Use Case 06 → Use Case 07 → Use Case 08 → Use Case 09
+1. Use Case 02 → Use Case 06 → Use Case 07 → Use Case 08
 2. Focus on AI capabilities and reasoning patterns
 3. Explore deployment strategies (A2A/MCP protocols)
 4. Explore neurosymbolic programming opportunities
@@ -264,14 +264,14 @@ python 03_ecosystem_leverage.py
 python 04_enterprise_enhancement.py
 
 # Advanced patterns  
-python 07_risk_mitigation.py
+python 08_risk_mitigation.py
 ```
 
 ### **API Server & Client Demo**
 ```bash
 # Terminal 1: Start the intelligent server
 pip install fastapi uvicorn
-python 06_intelligent_api_server.py
+python 05_intelligent_api_server.py
 
 # Terminal 2: Run the test client
 pip install httpx
