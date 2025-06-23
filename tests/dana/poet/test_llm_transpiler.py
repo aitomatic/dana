@@ -1,273 +1,197 @@
 """
-Tests for LLM-powered POET transpiler
+Tests for POET Dana-to-Dana enhancement system.
+
+This module tests the POET enhancement functionality for Dana code.
 """
 
-import pytest
 from pathlib import Path
-import shutil
-from unittest.mock import Mock, patch
 
-from opendxa.dana.poet import poet
-from opendxa.dana.poet.transpiler_llm import POETTranspilerLLM
+import pytest
+
+from opendxa.dana.poet.enhancer import POETEnhancer
 from opendxa.dana.poet.types import POETConfig
 
 
-class TestLLMTranspiler:
-    """Test LLM-powered code generation"""
+class TestPOETEnhancement:
+    """Test POET Dana-to-Dana enhancement functionality."""
 
     def setup_method(self):
-        """Clean up any existing .dana directories"""
-        poet_dir = Path(".dana/poet")
-        if poet_dir.exists():
-            shutil.rmtree(poet_dir.parent)
+        """Clean up any existing test files"""
+        dana_dir = Path("dana")
+        if dana_dir.exists():
+            for file in dana_dir.glob("*_enhanced.na"):
+                file.unlink()
 
     def teardown_method(self):
         """Clean up after tests"""
-        poet_dir = Path(".dana/poet")
-        if poet_dir.exists():
-            shutil.rmtree(poet_dir.parent)
+        dana_dir = Path("dana")
+        if dana_dir.exists():
+            for file in dana_dir.glob("*_enhanced.na"):
+                file.unlink()
 
-    def test_llm_transpiler_context_extraction(self):
-        """Test that LLM transpiler extracts rich context"""
-        transpiler = POETTranspilerLLM()
-
-        def calculate_compound_interest(principal: float, rate: float, years: int) -> float:
-            """Calculate compound interest for investment."""
-            return principal * (1 + rate) ** years
-
-        config = POETConfig(domain="financial", optimize_for="accuracy")
-
-        # Mock the LLM to test prompt building
-        with patch.object(transpiler, "llm") as mock_llm:
-            mock_response = {"choices": [{"message": {"content": "# Generated Dana code would go here"}}]}
-            mock_llm.query_sync.return_value = mock_response
-
-            result = transpiler.transpile(calculate_compound_interest, config)
-
-            # Verify LLM was called
-            assert mock_llm.query_sync.called
-
-            # Check the prompt includes function details
-            call_args = mock_llm.query_sync.call_args[0][0]
-            messages = call_args["messages"]
-            user_prompt = messages[1]["content"]
-
-            assert "calculate_compound_interest" in user_prompt
-            assert "Calculate compound interest for investment" in user_prompt
-            assert "financial" in user_prompt
-            assert "principal: float, rate: float, years: int" in user_prompt
-
-    def test_llm_domain_specific_prompts(self):
-        """Test that different domains get different prompts"""
-        transpiler = POETTranspilerLLM()
-        
-        # Financial domain - check for general domain analysis
-        financial_prompt = transpiler._get_domain_instructions("financial")
-        assert "Analyze the function's purpose" in financial_prompt
-        assert "bulletproof" in financial_prompt
-        
-        # ML monitoring domain
-        ml_prompt = transpiler._get_domain_instructions("ml_monitoring")
-        assert "drift" in ml_prompt
-        assert "statistical tests" in ml_prompt
-        
-        # API domain - check for general domain analysis
-        api_prompt = transpiler._get_domain_instructions("api")
-        assert "Analyze the function's purpose" in api_prompt
-        assert "bulletproof" in api_prompt
-
-    @patch("opendxa.dana.poet.transpiler_llm.LLMResource")
-    def test_poet_decorator_with_llm(self, mock_llm_class):
-        """Test POET decorator using LLM generation"""
-        # Mock the LLM to return valid Dana code
-        mock_llm = Mock()
-        mock_llm_class.return_value = mock_llm
+    def test_basic_enhancement(self):
+        """Test basic POET enhancement of Dana code."""
+        enhancer = POETEnhancer()
 
         dana_code = """
-struct POETState {
+def calculate_compound_interest(principal: float, rate: float, years: int) -> float:
+    return principal * (1 + rate) ** years
+"""
+
+        config = POETConfig(domain="financial", optimize_for="accuracy")
+        enhanced_code = enhancer.enhance(dana_code, config)
+
+        # Should return enhanced code
+        assert isinstance(enhanced_code, str)
+        assert len(enhanced_code) > len(dana_code)
+        assert "# POET-enhanced Dana code" in enhanced_code
+        assert dana_code.strip() in enhanced_code
+
+    def test_enhancement_with_different_domains(self):
+        """Test enhancement with different domain configurations."""
+        enhancer = POETEnhancer()
+
+        dana_code = """
+def calculate_fee(amount: float, rate: float) -> float:
+    return amount * rate
+"""
+
+        domains = ["financial", "api", "ml_monitoring"]
+
+        for domain in domains:
+            config = POETConfig(domain=domain)
+            enhanced_code = enhancer.enhance(dana_code, config)
+
+            assert isinstance(enhanced_code, str)
+            assert "# POET-enhanced Dana code" in enhanced_code
+            assert dana_code.strip() in enhanced_code
+
+    def test_enhancement_with_complex_structures(self):
+        """Test enhancement with complex Dana code structures."""
+        enhancer = POETEnhancer()
+
+        dana_code = """
+struct POETState:
     inputs: dict
     perceive_result: dict
     operate_result: dict
     enforce_result: dict
-    errors: list[string]
-}
+    errors: list
 
-def perceive(amount: float, rate: float, state: POETState) -> POETState {
-    if amount <= 0 {
+def perceive(amount: float, rate: float, state: POETState) -> POETState:
+    if amount <= 0:
         state.errors.append("Amount must be positive")
-    }
-    if rate < 0 or rate > 1 {
+    if rate < 0 or rate > 1:
         state.errors.append("Rate must be between 0 and 1")
-    }
     state.perceive_result = {"valid": len(state.errors) == 0}
     return state
-}
 
-def operate(amount: float, rate: float, state: POETState) -> POETState {
-    if state.perceive_result["valid"] {
+def operate(amount: float, rate: float, state: POETState) -> POETState:
+    if state.perceive_result["valid"]:
         result = amount * rate
         state.operate_result = {"success": true, "value": result}
-    }
     return state
-}
 
-def enforce(state: POETState) -> POETState {
+def enforce(state: POETState) -> POETState:
     state.enforce_result = {
         "valid": state.operate_result.get("success", false),
         "final_value": state.operate_result.get("value", null)
     }
     return state
-}
+"""
 
-def enhanced_calculate_fee(amount: float, rate: float) -> float {
-    state = POETState(
-        inputs={"amount": amount, "rate": rate},
-        perceive_result={},
-        operate_result={},
-        enforce_result={},
-        errors=[]
-    )
-    
-    state = perceive(amount, rate, state)
-    state = operate(amount, rate, state)
-    state = enforce(state)
-    
-    if not state.enforce_result["valid"] {
-        raise ValueError(f"POET validation failed: {state.errors}")
-    }
-    
-    return state.enforce_result["final_value"]
+        config = POETConfig(domain="financial")
+        enhanced_code = enhancer.enhance(dana_code, config)
+
+        # Should handle complex code without errors
+        assert isinstance(enhanced_code, str)
+        assert "# POET-enhanced Dana code" in enhanced_code
+        assert dana_code.strip() in enhanced_code
+
+    def test_enhancement_error_handling(self):
+        """Test error handling for invalid Dana code."""
+        enhancer = POETEnhancer()
+
+        invalid_dana_code = """
+def invalid_function(x: int) -> int {
+    return x + 1
 }
 """
 
-        mock_llm.query_sync.return_value = {"choices": [{"message": {"content": dana_code}}]}
+        config = POETConfig(domain="test")
 
-        @poet(domain="financial", use_llm=True)
-        def calculate_fee(amount: float, rate: float) -> float:
-            """Calculate transaction fee."""
-            return amount * rate
+        # Should raise error for invalid Dana code
+        with pytest.raises(RuntimeError, match="Invalid Dana code"):
+            enhancer.enhance(invalid_dana_code, config)
 
-        # Check that enhanced file was created
-        enhanced_path = Path(".dana/poet/calculate_fee.na")
-        assert enhanced_path.exists()
+    def test_enhancement_consistency(self):
+        """Test that enhancement is consistent for the same input."""
+        enhancer = POETEnhancer()
 
-        # Verify LLM was called
-        assert mock_llm.query_sync.called
-
-        # Check generated content
-        content = enhanced_path.read_text()
-        assert "perceive" in content
-        assert "Amount must be positive" in content
-        assert "Rate must be between 0 and 1" in content
-
-    def test_llm_understands_business_logic(self):
-        """Test that LLM understands implicit business rules"""
-        transpiler = POETTranspilerLLM()
-
-        # Create a mock that simulates intelligent LLM understanding
-        with patch.object(transpiler, "llm") as mock_llm:
-            # Simulate LLM understanding this is a discount calculation
-            mock_llm.query_sync.return_value = {
-                "choices": [
-                    {
-                        "message": {
-                            "content": """
-def perceive(price: float, discount_percent: float, state: POETState) -> POETState {
-    # LLM understands this is a discount calculation
-    if price <= 0 {
-        state.errors.append("Price must be positive")
-    }
-    if discount_percent < 0 {
-        state.errors.append("Discount cannot be negative")
-    }
-    if discount_percent > 100 {
-        state.errors.append("Discount cannot exceed 100%")
-    }
-    if discount_percent > 50 {
-        state.warnings.append("Large discount applied - may need approval")
-    }
-    return state
-}
+        dana_code = """
+def discount_calculation(price: float, discount_percent: float) -> float:
+    return price * (1 - discount_percent / 100)
 """
-                        }
-                    }
-                ]
-            }
 
-            def calculate_discount(price: float, discount_percent: float) -> float:
-                """Apply discount to price."""
-                return price * (1 - discount_percent / 100)
+        config = POETConfig(domain="financial", retries=3)
 
-            config = POETConfig(domain="financial")
-            result = transpiler.transpile(calculate_discount, config)
+        # Enhance the same code multiple times
+        enhanced1 = enhancer.enhance(dana_code, config)
+        enhanced2 = enhancer.enhance(dana_code, config)
 
-            # LLM should understand percentage constraints
-            assert "cannot exceed 100%" in result
-            assert "Large discount" in result
+        # Should be consistent
+        assert enhanced1 == enhanced2
+        assert isinstance(enhanced1, str)
+        assert "# POET-enhanced Dana code" in enhanced1
 
-    def test_llm_fallback_on_error(self):
-        """Test fallback to template transpiler on LLM error"""
+    def test_enhancement_with_training_enabled(self):
+        """Test enhancement with training enabled."""
+        enhancer = POETEnhancer()
 
-        @poet(domain="computation", use_llm=True, fallback_strategy="original")
-        def divide(a: float, b: float) -> float:
-            return a / b
+        dana_code = """
+def loan_payment_calculation(principal: float, rate: float, months: int) -> float:
+    monthly_rate = rate / 12
+    return principal * (monthly_rate * (1 + monthly_rate) ** months) / ((1 + monthly_rate) ** months - 1)
+"""
 
-        # Even if LLM fails, function should still work
-        result = divide(10, 2)
-        assert result == 5.0
+        config = POETConfig(domain="financial", optimize_for="accuracy", enable_training=True)
 
-    def test_different_domains_generate_different_code(self):
-        """Test that same function gets different enhancements per domain"""
-        transpiler = POETTranspilerLLM()
+        enhanced_code = enhancer.enhance(dana_code, config)
 
-        def fetch_data(key: str) -> dict:
-            """Fetch data by key."""
-            return {"key": key, "data": "value"}
+        assert isinstance(enhanced_code, str)
+        assert "# POET-enhanced Dana code" in enhanced_code
+        assert dana_code.strip() in enhanced_code
 
-        # Mock different responses for different domains
-        with patch.object(transpiler, "llm") as mock_llm:
-            # API domain should add caching
-            api_config = POETConfig(domain="api")
-            mock_llm.query_sync.return_value = {"choices": [{"message": {"content": "# Code with caching logic"}}]}
-            api_result = transpiler.transpile(fetch_data, api_config)
+    def test_enhancement_with_monitoring_enabled(self):
+        """Test enhancement with monitoring enabled."""
+        enhancer = POETEnhancer()
 
-            # Database domain should add connection pooling
-            db_config = POETConfig(domain="database")
-            mock_llm.query_sync.return_value = {"choices": [{"message": {"content": "# Code with connection pooling"}}]}
-            db_result = transpiler.transpile(fetch_data, db_config)
+        dana_code = """
+def data_validation(input_data: dict) -> bool:
+    return len(input_data) > 0
+"""
 
-            # Results should be different
-            assert api_result != db_result
+        config = POETConfig(domain="ml_monitoring", enable_monitoring=True)
 
+        enhanced_code = enhancer.enhance(dana_code, config)
 
-class TestLLMGenerationQuality:
-    """Test the quality of LLM-generated enhancements"""
+        assert isinstance(enhanced_code, str)
+        assert "# POET-enhanced Dana code" in enhanced_code
+        assert dana_code.strip() in enhanced_code
 
-    @pytest.mark.skipif(
-        not Path(".env").exists() or "OPENAI_API_KEY" not in open(".env").read(), reason="Requires API keys for live LLM testing"
-    )
-    def test_live_llm_generation(self):
-        """Test with actual LLM (requires API key)"""
+    def test_enhancement_with_timeout_configuration(self):
+        """Test enhancement with timeout configuration."""
+        enhancer = POETEnhancer()
 
-        @poet(domain="financial", use_llm=True)
-        def calculate_loan_payment(principal: float, rate: float, months: int) -> float:
-            """Calculate monthly loan payment using amortization formula."""
-            monthly_rate = rate / 12 / 100
-            return principal * monthly_rate / (1 - (1 + monthly_rate) ** -months)
+        dana_code = """
+def api_call(endpoint: string, data: dict) -> dict:
+    return {"status": "success", "data": data}
+"""
 
-        # Check generated file
-        enhanced_path = Path(".dana/poet/calculate_loan_payment.na")
-        assert enhanced_path.exists()
+        config = POETConfig(domain="api", timeout=30.0, retries=2)
 
-        content = enhanced_path.read_text()
+        enhanced_code = enhancer.enhance(dana_code, config)
 
-        # LLM should understand this is a loan calculation
-        assert "principal must be positive" in content.lower() or "principal <= 0" in content
-        assert "months" in content.lower()
-        assert "rate" in content.lower()
-
-        # Should have all phases
-        assert "def perceive" in content
-        assert "def operate" in content
-        assert "def enforce" in content
-        assert "def enhanced_calculate_loan_payment" in content
+        assert isinstance(enhanced_code, str)
+        assert "# POET-enhanced Dana code" in enhanced_code
+        assert dana_code.strip() in enhanced_code

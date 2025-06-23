@@ -13,8 +13,8 @@ class POETConfig:
     domain: str | None = None
     optimize_for: str | None = None  # When set, enables Train phase
     enable_training: bool = False  # Explicitly enable training
-    retries: int = 3
-    timeout: float = 30.0
+    retries: int = 1
+    timeout: float | None = None
     enable_monitoring: bool = True
 
     def dict(self) -> dict[str, Any]:

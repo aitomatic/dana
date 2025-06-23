@@ -497,3 +497,8 @@ class DanaSandbox(Loggable):
         with open(file_path, "r", encoding="utf-8") as f:
             source_code = f.read()
         self.eval(source_code, filename=file_path)
+
+    @property
+    def function_registry(self):
+        """Expose the function registry from the internal interpreter."""
+        return self._interpreter.function_registry

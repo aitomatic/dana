@@ -166,33 +166,37 @@ Related Functions:
 - [`log_level()`](#log_level) - Set global logging level
 - [`print()`](#print) - For simple output without log formatting
 
-### `log_level(level: str) -> None` {#log_level}
+### `log_level(level: str, namespace: str = "dana") -> None` {#log_level}
 
-Set the global logging level for the Dana runtime.
+Set the logging level for a specific namespace in the Dana runtime.
 
 Parameters:
 - `level: str` - The log level to set ("debug", "info", "warn", "error")
+- `namespace: str` - The namespace to set the level for (default: "dana")
 
 Returns: `None`
 
 Examples:
 ```dana
-# Set to show all messages
-log_level("debug")
+# Set to show all messages in dana namespace
+log_level("debug", "dana")
 log("This debug message will be shown", "debug")
 
-# Set to show only warnings and errors
-log_level("warn")
+# Set to show only warnings and errors in dana namespace
+log_level("warn", "dana")
 log("This info message will be hidden", "info")
 log("This warning will be shown", "warn")
 
-# Set to show only errors
-log_level("error")
+# Set to show only errors in dana namespace
+log_level("error", "dana")
 log("This warning will be hidden", "warn")
 log("This error will be shown", "error")
 
+# Set level for opendxa namespace (framework code)
+log_level("error", "opendxa")
+
 # Typical usage pattern
-log_level("info") # Set appropriate level for production
+log_level("info", "dana") # Set appropriate level for production
 log("Application started", "info")
 ```
 
@@ -202,10 +206,37 @@ Log Level Hierarchy:
 3. `"warn"` - Shows warn, error (hides debug, info)
 4. `"error"` - Shows only error messages
 
+## Logging Scopes
+
+Dana uses two separate logging scopes to organize log messages:
+
+- **`"dana"`** - User code logs (default scope)
+  - Used for logs from your Dana programs
+  - Default level is "info"
+  - Example: `log("Processing data", "info")`
+
+- **`"opendxa"`** - Framework code logs
+  - Used for internal OpenDXA framework messages
+  - Default level is "warn"
+  - Example: Framework initialization and system messages
+
+```dana
+# Set different levels for different scopes
+log_level("debug", "dana")    # Show all user code logs
+log_level("error", "opendxa") # Show only framework errors
+
+# User code logs (dana scope)
+log("Starting application", "info")
+log("Debug info", "debug")
+
+# Framework logs (opendxa scope) - only errors will show
+```
+
 Best Practices:
-- Use `"debug"` during development for detailed information
-- Use `"info"` for production to see important events
-- Use `"warn"` or `"error"` for production systems where you only want alerts
+- Use `"debug"` for dana scope during development
+- Use `"info"` for dana scope in production
+- Use `"error"` for opendxa scope to reduce framework noise
+- Set appropriate levels for each scope independently
 
 Related Functions:
 - [`log()`](#log) - Log messages at specific levels
@@ -291,7 +322,7 @@ result: dict = analyze_data(user_data, search_query)
 | `reason()` | `(prompt: str, options: dict = {}) -> str` | ✅ Complete | Full LLM integration with options |
 | `print()` | `(*args: any) -> None` | ✅ Complete | Variadic arguments, any types |
 | `log()` | `(message: str, level: str = "info") -> None` | ✅ Complete | Multiple log levels supported |
-| `log_level()` | `(level: str) -> None` | ✅ Complete | Global log level configuration |
+| `log_level()` | `(level: str, namespace: str = "dana") -> None` | ✅ Complete | Global log level configuration and logging scopes |
 📖 For implementation details and examples, see the core function modules in `opendxa/dana/sandbox/interpreter/functions/core/`
 ---
 

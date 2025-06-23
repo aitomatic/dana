@@ -106,7 +106,7 @@ class StatementTransformer(BaseTransformer):
             if isinstance(item, list):
                 statements.extend(item)
             elif hasattr(item, "data") and getattr(item, "data", None) == "statements":
-                # Lark Tree node for 'statements'
+                # Lark Tree node for 'statements' - process children directly
                 statements.extend(item.children)
             elif item is not None:
                 statements.append(item)
