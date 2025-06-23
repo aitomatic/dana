@@ -628,7 +628,8 @@ class StatementTransformer(BaseTransformer):
         else_body = []
 
         # Handle additional clauses (elif/else)
-        # Based on debugging: relevant_items[2] contains the elif list, relevant_items[3] is the final else block
+        # relevant_items[2] contains the list of `elif` statements, each represented as a Conditional object.
+        # relevant_items[3] contains the final `else` block, represented as a block of statements if it exists.
         if len(relevant_items) >= 3 and relevant_items[2] is not None:
             # Check if we have elif statements (should be a list of Conditional objects)
             elif_item = relevant_items[2]
