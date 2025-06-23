@@ -97,6 +97,11 @@ class StatementTransformer(BaseTransformer):
         self.expression_transformer = ExpressionTransformer()
         self.tree_traverser = TreeTraverser()
 
+        # Initialize specialized transformers
+        from opendxa.dana.sandbox.parser.transformer.statement.assignment_transformer import AssignmentTransformer
+
+        self.assignment_transformer = AssignmentTransformer(self)
+
     # === Program and Statement Entry ===
     def program(self, items):
         """Transform the program rule into a Program node."""
@@ -707,7 +712,7 @@ class StatementTransformer(BaseTransformer):
 
         This rule is just a choice, so return the result of whichever was chosen.
         """
-        return items[0]
+        return self.assignment_transformer.assignment(items)
 
     def expr_stmt(self, items):
         """Transform a bare expression statement (expr_stmt) into an Expression AST node."""
@@ -1255,82 +1260,27 @@ class StatementTransformer(BaseTransformer):
     # === Type Hint Support ===
     def basic_type(self, items):
         """Transform a basic_type rule into a TypeHint node."""
-        return AssignmentHelper.create_type_hint(items)
+        return self.assignment_transformer.basic_type(items)
 
     def typed_assignment(self, items):
         """Transform a typed assignment rule into an Assignment node with type hint."""
-        # Grammar: typed_assignment: variable ":" basic_type "=" expr
-        target_tree = items[0]
-        type_hint = items[1]  # Should be a TypeHint from basic_type
-        value_tree = items[2]
-
-        return AssignmentHelper.create_assignment(target_tree, value_tree, self.expression_transformer, VariableTransformer(), type_hint)
+        return self.assignment_transformer.typed_assignment(items)
 
     def simple_assignment(self, items):
         """Transform a simple assignment rule into an Assignment node without type hint."""
-        # Grammar: simple_assignment: variable "=" expr
-        target_tree = items[0]
-        value_tree = items[1]
-
-        return AssignmentHelper.create_assignment(target_tree, value_tree, self.expression_transformer, VariableTransformer())
+        return self.assignment_transformer.simple_assignment(items)
 
     def function_call_assignment(self, items):
         """Transform a function_call_assignment rule into an Assignment node with object-returning statement."""
-        # Grammar: function_call_assignment: target "=" return_object_stmt
-        target_tree = items[0]
-        return_object_tree = items[1]
-
-        # Get target identifier
-        target = VariableTransformer().variable([target_tree])
-        if not isinstance(target, Identifier):
-            raise TypeError(f"Assignment target must be Identifier, got {type(target)}")
-
-        # Transform the return_object_stmt (which should be UseStatement, AgentStatement, or AgentPoolStatement)
-        # The return_object_tree should already be transformed by return_object_stmt method
-        if isinstance(return_object_tree, (UseStatement, AgentStatement, AgentPoolStatement)):
-            if hasattr(return_object_tree, 'target') and return_object_tree.target is None:
-                # If the target is not set, set it to the target of the assignment
-                return_object_tree.target = target
-            value_expr = cast(AllowedAssignmentValue, return_object_tree)
-        else:
-            # Fallback transformation if needed
-            value_expr = cast(AllowedAssignmentValue, return_object_tree)
-
-        return Assignment(target=target, value=value_expr)
+        return self.assignment_transformer.function_call_assignment(items)
 
     def return_object_stmt(self, items):
         """Transform a return_object_stmt rule into the appropriate object-returning statement."""
-        # Grammar: return_object_stmt: use_stmt | agent_stmt | agent_pool_stmt
-        # items[0] should be the result of the chosen statement transformation
-
-        # The statement should already be transformed into the appropriate AST node
-        if len(items) > 0 and items[0] is not None:
-            return items[0]
-
-        # Fallback - this shouldn't happen in normal cases
-        raise ValueError("return_object_stmt received empty or None items")
+        return self.assignment_transformer.return_object_stmt(items)
 
     def typed_parameter(self, items):
         """Transform a typed parameter rule into a Parameter object."""
-
-        # Grammar: typed_parameter: NAME [":" basic_type] ["=" expr]
-        name_item = items[0]
-        param_name = name_item.value if hasattr(name_item, "value") else str(name_item)
-
-        type_hint = None
-        default_value = None
-
-        # Check for type hint and default value
-        for item in items[1:]:
-            if hasattr(item, "name"):  # TypeHint object
-                type_hint = item
-            else:
-                # Assume it's a default value expression
-                default_value = self.expression_transformer.expression([item])
-                if isinstance(default_value, tuple):
-                    raise TypeError(f"Parameter default value cannot be a tuple: {default_value}")
-
-        return Parameter(name=param_name, type_hint=type_hint, default_value=default_value)
+        return self.assignment_transformer.typed_parameter(items)
 
     def mixed_arguments(self, items):
         """Transform mixed_arguments rule into a structured list."""
