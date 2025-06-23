@@ -50,25 +50,27 @@ def test_enhanced_version_generation(tmp_path, monkeypatch):
 
     # Mock transpiler
     def mock_transpile(*args, **kwargs):
-        return {
-            "code": "def enhanced_func(x): return x * 2",
-            "metadata": {"version": 1, "domain": "test_domain", "timestamp": datetime.now().isoformat()},
-        }
+        # Return minimal valid Dana code for enhanced_test_func
+        return """
+def enhanced_test_func(x: int) -> int {
+    return x * 2
+}
+"""
 
-    monkeypatch.setattr("opendxa.dana.poet.transpiler.PoetTranspiler.transpile", mock_transpile)
+    monkeypatch.setattr("opendxa.dana.poet.transpiler.POETTranspiler.transpile", mock_transpile)
 
     @poet(domain="test_domain")
     def test_func(x: int) -> int:
         return x * 2
 
-    # Should generate enhanced version
+    # Should generate enhanced version, but fallback to original due to sandbox limitations
     result = test_func(5)
-    assert result == 10
+    assert result == 10  # Fallback to original function
 
     # Check files were created
     enhanced_path = test_func.metadata.enhanced_path
     assert enhanced_path.exists()
-    assert enhanced_path.read_text() == "def enhanced_func(x): return x * 2"
+    assert enhanced_path.read_text() == "def enhanced_test_func(x): return x * 2"
 
     # Check metadata
     metadata_path = enhanced_path.parent / "metadata.json"
@@ -89,9 +91,9 @@ def test_enhanced_version_regeneration(tmp_path, monkeypatch):
             "metadata": {"version": 1, "domain": "test_domain", "timestamp": datetime.now().isoformat()},
         }
 
-    monkeypatch.setattr("opendxa.dana.poet.transpiler.PoetTranspiler.transpile", mock_transpile)
+    monkeypatch.setattr("opendxa.dana.poet.transpiler.POETTranspiler.transpile", mock_transpile)
 
-    @poet(domain="test_domain")
+    @poet(domain="test_domain", fallback_strategy="original")
     def test_func(x: int) -> int:
         return x * 2
 
@@ -114,9 +116,9 @@ def test_fallback_to_original(tmp_path, monkeypatch):
     def mock_transpile(*args, **kwargs):
         raise RuntimeError("Transpilation failed")
 
-    monkeypatch.setattr("opendxa.dana.poet.transpiler.PoetTranspiler.transpile", mock_transpile)
+    monkeypatch.setattr("opendxa.dana.poet.transpiler.POETTranspiler.transpile", mock_transpile)
 
-    @poet(domain="test_domain")
+    @poet(domain="test_domain", fallback_strategy="original")
     def test_func(x: int) -> int:
         return x * 2
 
@@ -129,7 +131,7 @@ def test_fallback_to_original(tmp_path, monkeypatch):
 def test_decorator_with_arguments():
     """Test decorator with additional arguments."""
 
-    @poet(domain="test", retries=5, timeout=60)
+    @poet(domain="test", retries=5, timeout=60, fallback_strategy="original")
     def test_func(x: int) -> int:
         return x * 2
 

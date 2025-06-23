@@ -10,47 +10,64 @@ from typing import Callable
 
 from opendxa.common.resource.llm_resource import LLMResource
 from .types import POETConfig
+from opendxa.common.types import BaseRequest
 
 
 class POETTranspilerLLM:
     """LLM-powered transpiler that generates intelligent enhancements."""
-    
+
     def __init__(self):
         self.llm = LLMResource()
-    
+
     def transpile(self, func: Callable, config: POETConfig) -> str:
         """Use LLM to generate POET-enhanced Dana code."""
-        
+
         # Extract function information
         source_code = inspect.getsource(func)
         signature = inspect.signature(func)
         docstring = inspect.getdoc(func) or "No description provided"
-        
+
         # Build comprehensive prompt for LLM
         prompt = self._build_generation_prompt(
-            function_name=func.__name__,
-            source_code=source_code,
-            signature=str(signature),
-            docstring=docstring,
-            config=config
+            function_name=func.__name__, source_code=source_code, signature=str(signature), docstring=docstring, config=config
         )
-        
+
         # Generate enhanced Dana code using LLM
-        request = {
-            "messages": [
-                {"role": "system", "content": self._get_system_prompt()},
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.3,  # Low temperature for consistent code generation
-            "max_tokens": 4000
-        }
-        
+        request = BaseRequest(
+            arguments={
+                "messages": [{"role": "system", "content": self._get_system_prompt()}, {"role": "user", "content": prompt}],
+                "temperature": 0.3,  # Low temperature for consistent code generation
+                "max_tokens": 4000,
+            }
+        )
+
         response = self.llm.query_sync(request)
-        dana_code = response["choices"][0]["message"]["content"]
-        
+
+        # Handle BaseResponse object properly
+        if hasattr(response, "content") and response.content:
+            if isinstance(response.content, dict):
+                # If content is a dict, extract the message content
+                if "choices" in response.content and len(response.content["choices"]) > 0:
+                    dana_code = response.content["choices"][0]["message"]["content"]
+                else:
+                    # Fallback: try to get content directly
+                    dana_code = str(response.content)
+            else:
+                # Content is a string or other type
+                dana_code = str(response.content)
+        elif hasattr(response, "__getitem__"):
+            # Handle dictionary-like response
+            try:
+                dana_code = response["choices"][0]["message"]["content"]
+            except (KeyError, TypeError):
+                dana_code = str(response)
+        else:
+            # Fallback for any other response type
+            dana_code = str(response)
+
         # Post-process to ensure valid Dana syntax
         return self._post_process_dana_code(dana_code)
-    
+
     def _get_system_prompt(self) -> str:
         """System prompt that teaches the LLM about POET and Dana."""
         return """You are an expert code generator for the POET framework. POET enhances functions 
@@ -72,13 +89,12 @@ Dana syntax reminders:
 - Blocks use { } not indentation
 - 'else if' not 'elif'
 """
-    
-    def _build_generation_prompt(self, function_name: str, source_code: str, 
-                                 signature: str, docstring: str, config: POETConfig) -> str:
+
+    def _build_generation_prompt(self, function_name: str, source_code: str, signature: str, docstring: str, config: POETConfig) -> str:
         """Build detailed prompt for LLM code generation."""
-        
+
         domain_instructions = self._get_domain_instructions(config.domain)
-        
+
         return f"""Generate POET-enhanced Dana code for this Python function:
 
 Function Name: {function_name}
@@ -106,9 +122,12 @@ Requirements:
 
 Generate complete Dana code with all phases implemented intelligently.
 """
-    
-    def _get_domain_instructions(self, domain: str) -> str:
+
+    def _get_domain_instructions(self, domain: str | None) -> str:
         """Get domain-specific instructions for the LLM."""
+        if not domain:
+            domain = "computation"  # Default domain
+
         domain_prompts = {
             "mathematical_operations": """
 This is a mathematical function. Consider:
@@ -137,14 +156,17 @@ This is an ML monitoring function. Consider:
 - How to detect drift, anomalies, or degradation?
 - What thresholds should adapt based on historical data?
 - How to reduce false positives while maintaining sensitivity?
-"""
+""",
         }
-        
-        return domain_prompts.get(domain, """
+
+        return domain_prompts.get(
+            domain,
+            """
 Analyze the function's purpose and generate appropriate enhancements.
 Think about what could go wrong and how to make it bulletproof.
-""")
-    
+""",
+        )
+
     def _post_process_dana_code(self, dana_code: str) -> str:
         """Clean up and validate generated Dana code."""
         # Remove any markdown code blocks if LLM included them
@@ -152,16 +174,16 @@ Think about what could go wrong and how to make it bulletproof.
             lines = dana_code.split("\n")
             in_code_block = False
             cleaned_lines = []
-            
+
             for line in lines:
                 if line.strip().startswith("```"):
                     in_code_block = not in_code_block
                     continue
                 if in_code_block or not line.strip().startswith("```"):
                     cleaned_lines.append(line)
-            
+
             dana_code = "\n".join(cleaned_lines)
-        
+
         return dana_code.strip()
 
 
