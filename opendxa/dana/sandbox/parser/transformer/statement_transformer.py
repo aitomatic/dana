@@ -628,49 +628,68 @@ class StatementTransformer(BaseTransformer):
         else_body = []
 
         # Handle additional clauses (elif/else)
-        if len(relevant_items) >= 3:
-            third_item = relevant_items[2]
+        # Based on debugging: relevant_items[2] contains the elif list, relevant_items[3] is the final else block
+        if len(relevant_items) >= 3 and relevant_items[2] is not None:
+            # Check if we have elif statements (should be a list of Conditional objects)
+            elif_item = relevant_items[2]
+            if isinstance(elif_item, list) and elif_item and isinstance(elif_item[0], Conditional):
+                # We have elif statements
+                else_body = elif_item
 
-            # Check if it's an elif_stmts node
-            if isinstance(third_item, Tree) and getattr(third_item, "data", None) == "elif_stmts":
-                # Transform elif_stmts into a proper AST node
-                else_body = self.elif_stmts(third_item.children)
-            elif isinstance(third_item, Tree) and getattr(third_item, "data", None) == "block":
-                # It's an else block
-                else_body = self._transform_block(third_item)
+                # Check if we also have a final else block
+                if len(relevant_items) >= 4 and relevant_items[3] is not None:
+                    final_else_block = self._transform_block(relevant_items[3])
 
-        # Handle case with both elif and else
-        if len(relevant_items) >= 4:
-            # The else block would be the 4th item
-            else_block = self._transform_block(relevant_items[3])
-
-            # If else_body contains conditionals from elif blocks,
-            # we need to add the final else block to the last conditional
-            if else_body and isinstance(else_body[-1], Conditional):
-                # Traverse to the last nested conditional
-                last_cond = else_body[-1]
-                while isinstance(last_cond.else_body, list) and last_cond.else_body and isinstance(last_cond.else_body[0], Conditional):
-                    last_cond = last_cond.else_body[0]
-                # Set the else block on the last conditional
-                last_cond.else_body = else_block
-            else:
-                # Otherwise just set it directly
-                else_body = else_block
+                    # Add the final else block to the last elif conditional
+                    if else_body and isinstance(else_body[-1], Conditional):
+                        # Find the deepest nested conditional and set its else_body
+                        last_cond = else_body[-1]
+                        while (
+                            isinstance(last_cond.else_body, list)
+                            and last_cond.else_body
+                            and isinstance(last_cond.else_body[0], Conditional)
+                        ):
+                            last_cond = last_cond.else_body[0]
+                        last_cond.else_body = final_else_block
+            elif isinstance(elif_item, Tree) and getattr(elif_item, "data", None) == "block":
+                # No elif, just a direct else block
+                else_body = self._transform_block(elif_item)
+            elif isinstance(elif_item, Tree) and getattr(elif_item, "data", None) == "elif_stmts":
+                # Transform elif_stmts into a proper AST node (fallback case)
+                else_body = self.elif_stmts(elif_item.children)
 
         return Conditional(condition=cast(Expression, condition), body=if_body, else_body=else_body, line_num=line_num)
 
     def elif_stmts(self, items):
-        """Transform a sequence of elif statements into a list of Conditional nodes."""
-        result = []
+        """Transform a sequence of elif statements into a single nested Conditional structure."""
+        if not items:
+            return []
+
+        # Process elif statements in reverse order to build nested structure from inside out
+        conditionals = []
         for item in items:
             if hasattr(item, "data") and item.data == "elif_stmt":
                 cond = self.elif_stmt(item.children)
-                result.append(cond)
+                conditionals.append(cond)
             elif isinstance(item, Conditional):
-                result.append(item)
+                conditionals.append(item)
             else:
                 self.warning(f"Unexpected elif_stmts item: {item}")
-        return result
+
+        if not conditionals:
+            return []
+
+        # Build nested structure: each elif becomes the else_body of the previous one
+        # Start with the last elif and work backwards
+        result = conditionals[-1]  # Start with the last elif
+
+        # Nest each previous elif as the outer conditional
+        for i in range(len(conditionals) - 2, -1, -1):
+            current_elif = conditionals[i]
+            current_elif.else_body = [result]  # Set the nested conditional as else_body
+            result = current_elif
+
+        return [result]  # Return a single-item list containing the root conditional
 
     def elif_stmt(self, items):
         """Transform a single elif statement into a Conditional node."""
