@@ -22,23 +22,23 @@ Split the massive 1,531-line `StatementTransformer` into focused, maintainable m
 
 ## Phase 2 Modularization Plan
 
-### Task 2.1: Assignment Transformer Module
+### Task 2.1: Assignment Transformer Module ✅ COMPLETE
 **Target**: Extract all assignment-related functionality
-- [ ] Create `AssignmentTransformer` class
-- [ ] Move `assignment()`, `typed_assignment()`, `simple_assignment()`
-- [ ] Move `function_call_assignment()` 
-- [ ] Integrate existing `AssignmentHelper`
-- [ ] Preserve type hint handling
-- [ ] **Test**: All assignment tests pass
+- [x] Create `AssignmentTransformer` class
+- [x] Move `assignment()`, `typed_assignment()`, `simple_assignment()`
+- [x] Move `function_call_assignment()` 
+- [x] Integrate existing `AssignmentHelper`
+- [x] Preserve type hint handling
+- [x] **Test**: All assignment tests pass (16/16 ✅)
 
-### Task 2.2: Control Flow Transformer Module  
+### Task 2.2: Control Flow Transformer Module ✅ COMPLETE
 **Target**: Extract control flow statements
-- [ ] Create `ControlFlowTransformer` class
-- [ ] Move `conditional()`, `if_stmt()`, `elif_stmts()`, `elif_stmt()`
-- [ ] Move `while_stmt()`, `for_stmt()`, `try_stmt()`
-- [ ] Integrate existing `ControlFlowHelper`
-- [ ] Preserve boundary detection logic
-- [ ] **Test**: All control flow tests pass
+- [x] Create `ControlFlowTransformer` class
+- [x] Move `conditional()`, `if_stmt()`, `elif_stmts()`, `elif_stmt()`
+- [x] Move `while_stmt()`, `for_stmt()`, `try_stmt()`
+- [x] Integrate existing `ControlFlowHelper`
+- [x] Preserve boundary detection logic
+- [x] **Test**: All control flow tests pass (17/17 ✅)
 
 ### Task 2.3: Function Definition Transformer Module
 **Target**: Extract function definition handling
