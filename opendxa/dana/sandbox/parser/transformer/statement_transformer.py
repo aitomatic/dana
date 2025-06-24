@@ -662,7 +662,12 @@ class StatementTransformer(BaseTransformer):
         return Conditional(condition=cast(Expression, condition), body=if_body, else_body=else_body, line_num=line_num)
 
     def elif_stmts(self, items):
-        """Transform a sequence of elif statements into a single nested Conditional structure."""
+        """Transform a sequence of elif statements into a single nested Conditional structure.
+        
+        Returns:
+            list: A one-element list containing the root Conditional node that represents
+                  the nested structure of all elif statements.
+        """
         if not items:
             return []
 
