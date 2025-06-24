@@ -7,7 +7,7 @@ MIT License
 
 import pytest
 
-from opendxa.dana.poet.decorator import poet, POETMetadata
+from opendxa.dana.poet.decorator import POETMetadata, poet
 from opendxa.dana.poet.types import POETConfig
 
 

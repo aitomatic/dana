@@ -15,7 +15,6 @@ from opendxa.dana.common.exceptions import DanaError
 from opendxa.dana.io.file_io import read_dana_program
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.log_manager import LogLevel
-from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 # ANSI color codes

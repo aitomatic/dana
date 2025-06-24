@@ -5,14 +5,11 @@ from contextlib import contextmanager
 from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.sandbox.exceptions import SandboxError
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
 from opendxa.dana.sandbox.interpreter.executor.traversal.ast_execution_cache import ASTExecutionCache
 from opendxa.dana.sandbox.interpreter.executor.traversal.recursion_safety import (
-    CircularReferenceDetector,
     RecursionDepthMonitor,
 )
-from opendxa.dana.sandbox.interpreter.executor.traversal.performance_metrics import TraversalPerformanceMetrics
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 class OptimizedASTTraversal(Loggable):
@@ -49,8 +46,8 @@ class OptimizedASTTraversal(Loggable):
 
         if self.enable_recursion_safety:
             from opendxa.dana.sandbox.interpreter.executor.traversal.recursion_safety import (
-                RecursionDepthMonitor,
                 CircularReferenceDetector,
+                RecursionDepthMonitor,
             )
 
             self.recursion_monitor = RecursionDepthMonitor()
@@ -91,7 +88,7 @@ class OptimizedASTTraversal(Loggable):
             else:
                 return self._execute_with_optimizations(node, context, node_type, start_time)
 
-        except Exception as e:
+        except Exception:
             # Record failed execution in metrics
             execution_time = time.time() - start_time
             if self.enable_performance_tracking and self.performance_metrics:
@@ -130,7 +127,7 @@ class OptimizedASTTraversal(Loggable):
 
             return result
 
-        except Exception as e:
+        except Exception:
             # Record failed execution
             execution_time = time.time() - start_time
             if self.enable_performance_tracking and self.performance_metrics:

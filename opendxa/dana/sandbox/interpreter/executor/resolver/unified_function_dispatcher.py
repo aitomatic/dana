@@ -9,7 +9,6 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-import logging
 from typing import Any
 
 from opendxa.common.utils.logging import DXA_LOGGER
@@ -19,9 +18,9 @@ from opendxa.dana.sandbox.interpreter.executor.function_resolver import Resolved
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 from .base_resolver import FunctionResolverInterface, ResolutionAttempt, ResolutionStatus
-from .core_function_resolver import CoreFunctionResolver
-from .context_function_resolver import ContextFunctionResolver
 from .composed_function_resolver import ComposedFunctionResolver
+from .context_function_resolver import ContextFunctionResolver
+from .core_function_resolver import CoreFunctionResolver
 from .fallback_resolver import FallbackResolver
 
 

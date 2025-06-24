@@ -338,7 +338,7 @@ log(f"ML monitoring score: {{performance_score:.2f}}")
     def _generate_train(self, func_info: FunctionInfo) -> CodeBlock | None:
         """Generate comprehensive learning phase for adaptive ML monitoring"""
 
-        train_code = f"""
+        train_code = """
 # === TRAIN PHASE: Adaptive ML Learning ===
 from opendxa.dana.poet.storage import POETStorage
 import time
@@ -349,13 +349,13 @@ if execution_id and final_result:
         poet_storage = POETStorage()
         
         # 1. Update baseline statistics (rolling average)
-        baseline_key = f"{{func_info.name}}_baseline_stats"
-        baseline_data = {{}}
+        baseline_key = f"{func_info.name}_baseline_stats"
+        baseline_data = {}
         if poet_storage.exists(baseline_key):
             baseline_data = poet_storage.load_training_data(baseline_key)
             
         current_stats = validated_inputs["input_stats"]
-        baseline_stats = baseline_data.get("stats", {{}})
+        baseline_stats = baseline_data.get("stats", {})
         
         # Update baselines with exponential moving average
         alpha = 0.1  # Learning rate
@@ -363,14 +363,14 @@ if execution_id and final_result:
             if param_name in baseline_stats:
                 # Blend old and new statistics
                 old_stats = baseline_stats[param_name]
-                baseline_stats[param_name] = {{
+                baseline_stats[param_name] = {
                     "mean": (1 - alpha) * old_stats["mean"] + alpha * new_stats["mean"],
                     "std": (1 - alpha) * old_stats["std"] + alpha * new_stats["std"],
                     "min": min(old_stats["min"], new_stats["min"]),
                     "max": max(old_stats["max"], new_stats["max"]),
                     "median": (1 - alpha) * old_stats["median"] + alpha * new_stats["median"],
                     "count": old_stats["count"] + new_stats["count"]
-                }}
+                }
             else:
                 baseline_stats[param_name] = new_stats
                 
@@ -382,8 +382,8 @@ if execution_id and final_result:
         # 2. Adapt drift thresholds based on false positive rate
         if not validated_inputs["drift_detected"] or performance_score > 0.8:
             # Good performance - can tighten thresholds slightly
-            threshold_key = f"{{func_info.name}}_drift_thresholds"
-            threshold_data = {{}}
+            threshold_key = f"{func_info.name}_drift_thresholds"
+            threshold_data = {}
             if poet_storage.exists(threshold_key):
                 threshold_data = poet_storage.load_training_data(threshold_key)
                 
@@ -409,8 +409,8 @@ if execution_id and final_result:
             
         # 3. Update anomaly thresholds based on result distribution
         if "result_stats" in execution_metadata and not anomaly_detected:
-            anomaly_key = f"{{func_info.name}}_anomaly_thresholds"
-            anomaly_data = {{}}
+            anomaly_key = f"{func_info.name}_anomaly_thresholds"
+            anomaly_data = {}
             if poet_storage.exists(anomaly_key):
                 anomaly_data = poet_storage.load_training_data(anomaly_key)
                 
@@ -441,18 +441,18 @@ if execution_id and final_result:
             
         # 4. Track retraining recommendations
         if needs_retraining:
-            retrain_key = f"{{func_info.name}}_retrain_log"
-            retrain_data = {{}}
+            retrain_key = f"{func_info.name}_retrain_log"
+            retrain_data = {}
             if poet_storage.exists(retrain_key):
                 retrain_data = poet_storage.load_training_data(retrain_key)
                 
             retrain_log = retrain_data.get("log", [])
-            retrain_log.append({{
+            retrain_log.append({
                 "timestamp": time.time(),
                 "execution_id": execution_id,
                 "drift_details": drift_details[:5],  # Keep top 5
                 "performance_score": performance_score
-            }})
+            })
             
             # Keep only recent entries
             retrain_log = retrain_log[-100:]
@@ -466,10 +466,10 @@ if execution_id and final_result:
             retrain_data["last_updated"] = time.time()
             poet_storage.save_training_data(retrain_key, retrain_data)
             
-        log(f"ML adaptive learning: Updated baselines and thresholds (performance: {{performance_score:.2f}})")
+        log(f"ML adaptive learning: Updated baselines and thresholds (performance: {performance_score:.2f})")
         
     except Exception as e:
-        log(f"ML adaptive learning failed: {{e}}")
+        log(f"ML adaptive learning failed: {e}")
 """.strip()
 
         return CodeBlock(

@@ -2,9 +2,10 @@
 
 import logging
 import os
+from pathlib import Path
 
 import pytest
-from pathlib import Path
+
 from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
 
 

@@ -1,13 +1,15 @@
 # GitHub Action to run Pylint code analysis
-# - Runs on Python 3.12
-# - Checks all Python files in the repository
-# - Uses settings from .pylintrc
-# - Fails only if score is below 7.0/10
-# This helps maintain code quality standards
+# 🚨 DEPRECATED: This workflow is being replaced by ruff.yml
+# - This workflow will be removed in a future update
+# - Use Ruff instead for faster, more comprehensive linting
+# - See .github/workflows/ruff.yml for the new approach
+# This workflow is kept temporarily for comparison purposes
 
-name: Pylint
+name: Pylint (DEPRECATED)
 
-on: [push]
+on: 
+  # Disabled - use ruff.yml instead
+  workflow_dispatch:  # Only allow manual triggering
 
 jobs:
   build:
@@ -18,11 +20,18 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5  # Updated version
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install uv
       uses: astral-sh/setup-uv@v6
+    - name: Cache uv dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-
     - name: Install dependencies
       run: uv sync --extra dev
     - name: Analysing the code with pylint

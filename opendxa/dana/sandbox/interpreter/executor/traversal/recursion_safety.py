@@ -1,6 +1,5 @@
 """Recursion Safety and Circular Reference Detection"""
 
-import sys
 from contextlib import contextmanager
 from typing import Any
 

@@ -11,7 +11,7 @@ MIT License
 from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.common.exceptions import SandboxError, StateError
+from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.parser.ast import BinaryExpression, Identifier
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 

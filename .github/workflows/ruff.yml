@@ -1,0 +1,43 @@
+# GitHub Action to run Ruff code analysis and formatting
+# - Runs on Python 3.12
+# - Uses Ruff for fast linting and formatting checks
+# - Follows OpenDXA coding standards from pyproject.toml
+# - Replaces pylint workflow with modern tooling
+# This ensures code quality with 100x faster linting
+
+name: Ruff
+
+on: 
+  push:
+    branches: [main, master, feat/llm-poet]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  ruff-check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Lint with Ruff
+      env:
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run ruff check . --output-format=github
+    - name: Check formatting with Ruff
+      env:
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run ruff format --check .
+    - name: Security check with Ruff (bandit rules)
+      env:
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run ruff check . --select S --output-format=github 

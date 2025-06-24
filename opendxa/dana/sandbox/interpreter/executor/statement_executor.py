@@ -22,27 +22,24 @@ from typing import Any
 from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
-from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.interpreter.executor.statement import (
     AgentHandler,
     AssignmentHandler,
     ImportHandler,
     StatementUtils,
 )
+from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.parser.ast import (
     AgentPoolStatement,
     AgentStatement,
     AssertStatement,
     Assignment,
-    AttributeAccess,
     ExportStatement,
-    Identifier,
     ImportFromStatement,
     ImportStatement,
     PassStatement,
     RaiseStatement,
     StructDefinition,
-    SubscriptExpression,
     UseStatement,
 )
 from opendxa.dana.sandbox.sandbox_context import SandboxContext

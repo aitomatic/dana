@@ -15,7 +15,6 @@ from opendxa.dana.sandbox.parser.ast import (
     ObjectFunctionCall,
     Program,
 )
-from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 

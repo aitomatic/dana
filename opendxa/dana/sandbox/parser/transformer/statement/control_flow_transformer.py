@@ -10,7 +10,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any, cast
+from typing import cast
 
 from lark import Token, Tree
 
@@ -20,12 +20,10 @@ from opendxa.dana.sandbox.parser.ast import (
     Expression,
     ForLoop,
     Identifier,
-    Parameter,
     TryBlock,
     WhileLoop,
 )
 from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
-from opendxa.dana.sandbox.parser.transformer.statement.statement_helpers import ControlFlowHelper
 
 
 class ControlFlowTransformer(BaseTransformer):
@@ -64,7 +62,6 @@ class ControlFlowTransformer(BaseTransformer):
 
     def if_stmt(self, items):
         """Transform an if_stmt rule into a Conditional AST node, handling if/elif/else blocks."""
-        from lark import Tree
 
         from opendxa.dana.sandbox.parser.ast import Conditional
 
@@ -163,9 +160,8 @@ class ControlFlowTransformer(BaseTransformer):
 
     def for_stmt(self, items):
         """Transform a for loop rule into a ForLoop node."""
-        from lark import Tree
 
-        from opendxa.dana.sandbox.parser.ast import Expression, Identifier
+        from opendxa.dana.sandbox.parser.ast import Expression
 
         # Filter out irrelevant items (None, comments, etc.)
         relevant_items = self.main_transformer._filter_relevant_items(items)
