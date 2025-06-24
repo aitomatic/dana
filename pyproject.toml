@@ -17,7 +17,7 @@ build-backend = "setuptools.build_meta"
 name = "opendxa"
 version = "0.4.0"
 description = "Domain-Expert Agent Framework"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 authors = [
     {name = "Christopher Nguyen", email = "ctn@aitomatic.com"},
 ]
@@ -192,12 +192,12 @@ opendxa = ["**/*.py", "**/*.lark"]
 # Code Formatting
 [tool.black]
 line-length = 140
-target-version = ["py310"]  # Align with requires-python
+target-version = ["py312"]  # Align with requires-python
 
 # Linting (Primary)
 [tool.ruff]
 line-length = 140
-target-version = "py310"    # Align with requires-python
+target-version = "py312"    # Align with requires-python
 
 [tool.ruff.lint]
 # Enable these rule categories
@@ -237,7 +237,7 @@ reportAssignmentType = false
 
 # MyPy Configuration
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 warn_redundant_casts = true

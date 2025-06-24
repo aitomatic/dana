@@ -77,7 +77,7 @@ class CommandHandler(Loggable):
 
         # Test each input without progress bar
         for test_input in test_inputs:
-            print(f"\n{self.colors.accent(f'➡️ Test input: \'{test_input}\'')}")
+            print(f"\n{self.colors.accent(f"➡️ Test input: '{test_input}'")}")
             try:
                 result = self.repl.execute(test_input)
                 print(f"{self.colors.bold('✅ Execution result:')}\n{result}")

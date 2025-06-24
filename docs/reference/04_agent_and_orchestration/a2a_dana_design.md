@@ -306,7 +306,7 @@ sequenceDiagram
 **Brief Description**: Implementation follows established MCP pattern with A2A-specific adaptations using the comprehensive `python-a2a` library.
 
 Technical specifications:
-- Language: Python 3.10+ (matching OpenDXA requirements)
+- Language: Python 3.12+ (matching OpenDXA requirements)
 - Dependencies: python-a2a, httpx, asyncio
 - Module structure in `opendxa/contrib/mcp_a2a/resource/a2a/`
 - Future migration path to Google's official `a2a-sdk` when production-ready

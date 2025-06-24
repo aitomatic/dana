@@ -364,7 +364,7 @@ class ModuleLoader(MetaPathFinder, Loader):
             # Finish loading
             self.registry.finish_loading(module.__name__)
 
-    def _setup_module_function_context(self, module: Module, interpreter: "DanaInterpreter", context: "SandboxContext") -> None:
+    def _setup_module_function_context(self, module: Module, interpreter: DanaInterpreter, context: SandboxContext) -> None:
         """Set up function contexts to enable recursive calls within the module.
 
         Args:

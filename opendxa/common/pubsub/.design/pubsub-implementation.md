@@ -228,7 +228,7 @@ Status: Design Phase (Deferred to Beta)
 - Implementation plan created
 
 ### Notes & Decisions
-- Using Python 3.10+ for implementation
+- Using Python 3.12+ for implementation
 - Following OpenDXA coding standards
 - Implementing in phases for better tracking
 

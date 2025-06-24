@@ -19,7 +19,7 @@ Status: [Draft | Review | Final]
 
 ### Technical Requirements
 - **Minimum Requirements**:
-  - Python 3.10+
+  - Python 3.12+
   - [Other requirements]
 - **Recommended Setup**:
   - [Recommended configuration]
