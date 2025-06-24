@@ -1,13 +1,16 @@
 # GitHub Action to run pytest in parallel across logical subsystems
+# - PRIMARY TESTING WORKFLOW: Runs on push and pull requests
 # - Runs on Python 3.12
 # - Parallelizes tests into logical subsystem groups for faster CI/CD
 # - Includes a catch-all job for tests that don't match explicit filters
 # - Each job runs independently to maximize parallelization
 # - For full test coverage, run locally with: uv run pytest -m "not live" tests/
 
-name: PyTest Parallel
+name: PyTest Parallel (Primary)
 
 on: 
+  push:
+    branches: [main, master, feat/llm-poet]
   pull_request:
     branches: [main, master]
   workflow_dispatch:  # Allow manual triggering

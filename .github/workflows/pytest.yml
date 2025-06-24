@@ -1,18 +1,18 @@
-# GitHub Action to run pytest sequentially (for comprehensive testing)
-# - Runs on Python 3.12
-# - Installs the package and its dependencies
+# GitHub Action to run pytest sequentially (for comprehensive weekly testing)
+# - Runs weekly and on manual trigger only
+# - Primary testing is handled by pytest-parallel.yml (faster)
+# - Provides thorough sequential testing for edge case detection
 # - Tests struct implementation comprehensively with mock LLM
-# - Executes fast regression tests only (excludes deep/comprehensive tests)
-# - For parallel testing (faster CI), use pytest-parallel.yml instead
+# - For regular CI/CD, use pytest-parallel.yml instead
 # - For full test coverage, run locally with: uv run pytest -m "not live" tests/
-# This helps catch regressions quickly while keeping CI times reasonable
+# This provides comprehensive testing without slowing down regular development
 
-name: PyTest Sequential
+name: PyTest Sequential (Weekly)
 
 on: 
-  push:
-    branches: [main, master, feat/llm-poet]  # Include feature branch
-  workflow_dispatch:  # Allow manual triggering
+  workflow_dispatch:  # Manual triggering only (use parallel for regular CI)
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly Monday 6 AM UTC for comprehensive testing
 
 jobs:
   test:
