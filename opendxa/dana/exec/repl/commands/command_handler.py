@@ -69,7 +69,7 @@ class CommandHandler(Loggable):
             print(f"  {self.colors.accent('- OPENAI_API_KEY, ANTHROPIC_API_KEY, AZURE_OPENAI_API_KEY, etc.')}")
             return
 
-        print("🧪 Testing NLP transcoder with common examples...")
+        print("Testing NLP transcoder with common examples...")
         test_inputs = ["calculate 10 + 20", "add 42 and 17", "print hello world", "if x is greater than 10 then log success"]
 
         original_mode = self.repl.get_nlp_mode()
@@ -80,8 +80,8 @@ class CommandHandler(Loggable):
             print(f"\n{self.colors.accent(f"➡️ Test input: '{test_input}'")}")
             try:
                 result = self.repl.execute(test_input)
-                print(f"{self.colors.bold('✅ Execution result:')}\n{result}")
+                print(f"{self.colors.bold('Execution result:')}\n{result}")
             except Exception as e:
-                print(f"{self.colors.error('❌ Execution failed:')}\n{e}")
+                print(f"{self.colors.error('Execution failed:')}\n{e}")
 
         self.repl.set_nlp_mode(original_mode)

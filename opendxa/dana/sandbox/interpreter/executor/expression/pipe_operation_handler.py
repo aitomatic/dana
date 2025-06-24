@@ -144,7 +144,7 @@ class PipeOperationHandler(Loggable):
             # First, evaluate the right side if it's a BinaryExpression to see what it actually is
             right_value = right
             if isinstance(right, BinaryExpression):
-                if not self.parent_executor or not hasattr(self.parent_executor, "parent"):
+                if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
                     raise SandboxError("Parent executor not properly initialized")
                 right_value = self.parent_executor.parent.execute(right, context)
 
@@ -194,7 +194,7 @@ class PipeOperationHandler(Loggable):
             # For expressions like (func1 | func2) | func3
             elif not isinstance(left, Identifier):
                 # Evaluate the left side first
-                if not self.parent_executor or not hasattr(self.parent_executor, "parent"):
+                if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
                     raise SandboxError("Parent executor not properly initialized")
                 left_value = self.parent_executor.parent.execute(left, context)
 
@@ -212,7 +212,7 @@ class PipeOperationHandler(Loggable):
             # Case 3: Data pipeline (data | function) - identifier that's not a function or literal data
             else:
                 # Evaluate the left side to get the data
-                if not self.parent_executor or not hasattr(self.parent_executor, "parent"):
+                if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
                     raise SandboxError("Parent executor not properly initialized")
                 data = self.parent_executor.parent.execute(left, context)
                 self._trace_pipe_step(context, right, data)
@@ -324,13 +324,13 @@ class PipeOperationHandler(Loggable):
 
         # If it's a binary expression, evaluate it
         if isinstance(func_expr, BinaryExpression):
-            if not self.parent_executor or not hasattr(self.parent_executor, "parent"):
+            if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
                 raise SandboxError("Parent executor not properly initialized")
             return self.parent_executor.parent.execute(func_expr, context)
 
         # Try to execute it as an expression
         try:
-            if not self.parent_executor or not hasattr(self.parent_executor, "parent"):
+            if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
                 raise SandboxError("Parent executor not properly initialized")
             return self.parent_executor.parent.execute(func_expr, context)
         except Exception as e:
@@ -400,6 +400,7 @@ class PipeOperationHandler(Loggable):
             if (
                 not self.parent_executor
                 or not hasattr(self.parent_executor, "parent")
+                or self.parent_executor.parent is None
                 or not hasattr(self.parent_executor.parent, "_function_executor")
             ):
                 raise SandboxError("Function executor not available")
@@ -407,7 +408,7 @@ class PipeOperationHandler(Loggable):
 
         # Handle binary expressions (nested compositions)
         elif isinstance(func, BinaryExpression):
-            if not self.parent_executor or not hasattr(self.parent_executor, "parent"):
+            if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
                 raise SandboxError("Parent executor not properly initialized")
             evaluated_func = self.parent_executor.parent.execute(func, context)
             return self._call_function(evaluated_func, context, *args, **kwargs)
@@ -460,7 +461,7 @@ class PipeOperationHandler(Loggable):
         """Get a descriptive string for an operand for error messages."""
         try:
             # Try to evaluate and get actual type
-            if not self.parent_executor or not hasattr(self.parent_executor, "parent"):
+            if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
                 return f"{type(operand).__name__}"
 
             try:
