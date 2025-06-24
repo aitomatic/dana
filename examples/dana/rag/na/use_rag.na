@@ -1,5 +1,0 @@
-rag = use("rag", doc_paths=["docs/for-engineers", "docs/for-researchers"], enable_print=False)
-
-print(rag.retrieve("What is DANA ?"))
-
-reason("What is DANA and how does it benefit AI Engineer ?", {"enable_ipv" : False})
