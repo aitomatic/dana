@@ -373,24 +373,24 @@ def test_elif_chain_structure(parser, typecheck_flag):
         else:
             y = "zero"
     """)
-    
+
     program = parser.parse(code, do_type_check=typecheck_flag, do_transform=True)
     conditional = get_conditional(program)
-    
+
     # Verify proper nesting: if -> elif -> elif -> else
     assert isinstance(conditional, Conditional)
     assert conditional.condition.operator == BinaryOperator.GREATER_THAN
-    
+
     # First elif should be in else_body
     first_elif = conditional.else_body[0]
     assert isinstance(first_elif, Conditional)
     assert first_elif.condition.operator == BinaryOperator.GREATER_THAN
-    
+
     # Second elif should be in first elif's else_body
     second_elif = first_elif.else_body[0]
     assert isinstance(second_elif, Conditional)
     assert second_elif.condition.operator == BinaryOperator.GREATER_THAN
-    
+
     # Final else should be in second elif's else_body
     final_else = second_elif.else_body
     assert isinstance(final_else, list)

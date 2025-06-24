@@ -928,16 +928,18 @@ class StatementExecutor(BaseExecutor):
         # Evaluate the arguments
         args = [self.parent.execute(arg, context) for arg in node.args]
         kwargs = {k: self.parent.execute(v, context) for k, v in node.kwargs.items()}
-        
+
         # Remove any user-provided 'name' parameter - agent names come from variable assignment
         if "name" in kwargs:
             provided_name = kwargs["name"]
             del kwargs["name"]
-            self.warning(f"Agent name parameter '{provided_name}' will be overridden with variable name. Agent names are automatically derived from variable assignment.")
-        
+            self.warning(
+                f"Agent name parameter '{provided_name}' will be overridden with variable name. Agent names are automatically derived from variable assignment."
+            )
+
         target = node.target
         if target is not None:
-            target_name = target.name if hasattr(target, 'name') else str(target)
+            target_name = target.name if hasattr(target, "name") else str(target)
             kwargs["_name"] = target_name
 
         # Call the agent function through the registry
@@ -962,16 +964,18 @@ class StatementExecutor(BaseExecutor):
         # Evaluate the arguments
         args = [self.parent.execute(arg, context) for arg in node.args]
         kwargs = {k: self.parent.execute(v, context) for k, v in node.kwargs.items()}
-        
+
         # Remove any user-provided 'name' parameter - agent pool names come from variable assignment
         if "name" in kwargs:
             provided_name = kwargs["name"]
             del kwargs["name"]
-            self.warning(f"Agent pool name parameter '{provided_name}' will be overridden with variable name. Agent pool names are automatically derived from variable assignment.")
-        
+            self.warning(
+                f"Agent pool name parameter '{provided_name}' will be overridden with variable name. Agent pool names are automatically derived from variable assignment."
+            )
+
         target = node.target
         if target is not None:
-            target_name = target.name if hasattr(target, 'name') else str(target)
+            target_name = target.name if hasattr(target, "name") else str(target)
             kwargs["_name"] = target_name
 
         # Call the agent_pool function through the registry

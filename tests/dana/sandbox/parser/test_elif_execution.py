@@ -40,12 +40,12 @@ def test_basic_elif_execution(sandbox):
         result3 = test_elif(3)
         result4 = test_elif(-1)
     """)
-    
+
     result = sandbox.eval(code)
-    
+
     # Verify execution was successful
     assert result.success, f"Execution failed: {result.error}"
-    
+
     # Verify each branch executes correctly
     assert result.final_context.get("result1") == "high"
     assert result.final_context.get("result2") == "medium"
@@ -76,9 +76,9 @@ def test_elif_with_complex_conditions(sandbox):
         result5 = categorize_student(65, 80)  # needs improvement
         result6 = categorize_student(50, 70)  # failing
     """)
-    
+
     result = sandbox.eval(code)
-    
+
     assert result.success, f"Execution failed: {result.error}"
     assert result.final_context.get("result1") == "excellent"
     assert result.final_context.get("result2") == "good"
@@ -111,17 +111,17 @@ def test_elif_with_side_effects(sandbox):
         result3 = test_side_effects(1)
         result4 = test_side_effects(99)
     """)
-    
+
     result = sandbox.eval(code)
-    
+
     assert result.success, f"Execution failed: {result.error}"
-    
+
     # Verify correct results
     result1 = result.final_context.get("result1")
     result2 = result.final_context.get("result2")
     result3 = result.final_context.get("result3")
     result4 = result.final_context.get("result4")
-    
+
     assert result1["result"] == "second"
     assert result1["input"] == 2
     assert result2["result"] == "third"
@@ -163,11 +163,11 @@ def test_nested_elif_chains(sandbox):
         speed_result2 = process_data("speed", 30)
         unknown_result = process_data("pressure", 50)
     """)
-    
+
     result = sandbox.eval(code)
 
     assert result.success, f"Execution failed: {result.error}"
-    
+
     assert result.final_context.get("temp_result1") == "hot"
     assert result.final_context.get("temp_result2") == "cold"
     assert result.final_context.get("speed_result1") == "fast"
@@ -215,29 +215,29 @@ def test_elif_with_variable_assignments(sandbox):
         result_b_plus = calculate_grade(88)
         result_c = calculate_grade(75)
     """)
-    
+
     result = sandbox.eval(code)
 
     assert result.success, f"Execution failed: {result.error}"
-    
+
     # Verify A+ grade
     a_plus = result.final_context.get("result_a_plus")
     assert a_plus["grade"] == "A+"
     assert a_plus["points"] == 4
     assert a_plus["message"] == "Outstanding!"
-    
+
     # Verify A grade
     a_grade = result.final_context.get("result_a")
     assert a_grade["grade"] == "A"
     assert a_grade["points"] == 4
     assert a_grade["message"] == "Excellent work!"
-    
+
     # Verify B+ grade
     b_plus = result.final_context.get("result_b_plus")
     assert b_plus["grade"] == "B+"
     assert b_plus["points"] == 3
     assert b_plus["message"] == "Good work!"
-    
+
     # Verify C grade
     c_grade = result.final_context.get("result_c")
     assert c_grade["grade"] == "C"
@@ -267,15 +267,15 @@ def test_elif_with_early_return(sandbox):
         result1 = test_early_return(2)
         result2 = test_early_return(4)
     """)
-    
+
     result = sandbox.eval(code)
-    
+
     assert result.success, f"Execution failed: {result.error}"
-    
+
     # Verify correct returns
-    result1 = result.final_context.get("result1") 
+    result1 = result.final_context.get("result1")
     result2 = result.final_context.get("result2")
-    
+
     assert result1["result"] == "second"
     assert result1["branch"] == "branch2"
     assert result2["result"] == "default"
@@ -314,11 +314,11 @@ def test_elif_chain_with_loops(sandbox):
         pairs = process_numbers(input_numbers, "sum_pairs")
         unchanged = process_numbers(input_numbers, "unknown")
     """)
-    
+
     result = sandbox.eval(code)
 
     assert result.success, f"Execution failed: {result.error}"
-    
+
     assert result.final_context.get("doubled") == [2, 4, 6, 8, 10, 12]
     assert result.final_context.get("squared") == [1, 4, 9, 16, 25, 36]
     assert result.final_context.get("evens") == [2, 4, 6]
@@ -363,11 +363,11 @@ def test_elif_with_function_calls(sandbox):
         result_power3 = calculate(5, 3, "power")
         result_unknown = calculate(5, 3, "unknown")
     """)
-    
+
     result = sandbox.eval(code)
 
     assert result.success, f"Execution failed: {result.error}"
-    
+
     assert result.final_context.get("result_add") == 8
     assert result.final_context.get("result_multiply") == 15
     assert result.final_context.get("result_subtract") == 2
@@ -411,17 +411,17 @@ def test_elif_execution_order(sandbox):
         result_75 = test_overlapping(75)  # Should be "C", not "B"
         result_65 = test_overlapping(65)  # Should be "F"
     """)
-    
+
     result = sandbox.eval(code)
 
     assert result.success, f"Execution failed: {result.error}"
-    
+
     # Verify order-dependent evaluation
     assert result.final_context.get("result_6") == "greater than 5"
     assert result.final_context.get("result_4") == "greater than 3"
     assert result.final_context.get("result_2") == "greater than 1"
     assert result.final_context.get("result_0") == "1 or less"
-    
+
     # Verify overlapping conditions work correctly
     assert result.final_context.get("result_95") == "A"
     assert result.final_context.get("result_85") == "B"
@@ -430,4 +430,4 @@ def test_elif_execution_order(sandbox):
 
 
 if __name__ == "__main__":
-    pytest.main([__file__]) 
+    pytest.main([__file__])

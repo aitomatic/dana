@@ -4,6 +4,7 @@ Ticket Agent - A2A Protocol Example
 
 Finds and books tickets for events and transportation.
 """
+
 import argparse
 import logging
 
@@ -11,25 +12,18 @@ from python_a2a import A2AServer, agent, run_server, skill
 from python_a2a.models import TaskState, TaskStatus
 
 
-@agent(
-    name="Ticket Agent",
-    description="Finds and books tickets for events and transportation",
-    version="1.0.0"
-)
+@agent(name="Ticket Agent", description="Finds and books tickets for events and transportation", version="1.0.0")
 class TicketAgent(A2AServer):
     """
     A2A Ticket Agent that finds and books tickets for events and transport.
     """
+
     def __init__(self):
         super().__init__()
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.info("Ticket Agent initialized")
 
-    @skill(
-        name="Find Event Tickets",
-        description="Find tickets for events in a location",
-        tags=["tickets", "events", "booking"]
-    )
+    @skill(name="Find Event Tickets", description="Find tickets for events in a location", tags=["tickets", "events", "booking"])
     def find_event_tickets(self, location: str, event: str = "concert") -> str:
         """
         Find tickets for events in a location.
@@ -39,12 +33,12 @@ class TicketAgent(A2AServer):
         Returns:
             Ticket availability string
         """
-        return (f"Tickets for {event.title()} in {location.title()}: Available - $50 each.")
+        return f"Tickets for {event.title()} in {location.title()}: Available - $50 each."
 
     @skill(
         name="Book Transport Ticket",
         description="Book a transport ticket (train, bus, etc.) in a location",
-        tags=["tickets", "transport", "booking"]
+        tags=["tickets", "transport", "booking"],
     )
     def book_transport_ticket(self, location: str, transport: str = "train") -> str:
         """
@@ -55,7 +49,7 @@ class TicketAgent(A2AServer):
         Returns:
             Booking confirmation string
         """
-        return (f"{transport.title()} ticket to {location.title()} booked successfully! Reference: ABC123")
+        return f"{transport.title()} ticket to {location.title()} booked successfully! Reference: ABC123"
 
     def handle_task(self, task) -> object:
         try:
@@ -81,9 +75,9 @@ class TicketAgent(A2AServer):
                             "role": "agent",
                             "content": {
                                 "type": "text",
-                                "text": "Please specify a location for the event tickets. For example: 'Find concert tickets in Berlin.'"
-                            }
-                        }
+                                "text": "Please specify a location for the event tickets. For example: 'Find concert tickets in Berlin.'",
+                            },
+                        },
                     )
                     return task
                 result = self.find_event_tickets(location, event)
@@ -97,9 +91,9 @@ class TicketAgent(A2AServer):
                             "role": "agent",
                             "content": {
                                 "type": "text",
-                                "text": "Please specify a location for the transport ticket. For example: 'Book a train ticket to Paris.'"
-                            }
-                        }
+                                "text": "Please specify a location for the transport ticket. For example: 'Book a train ticket to Paris.'",
+                            },
+                        },
                     )
                     return task
                 result = self.book_transport_ticket(location, transport)
@@ -110,14 +104,12 @@ class TicketAgent(A2AServer):
                         "role": "agent",
                         "content": {
                             "type": "text",
-                            "text": "Please specify if you want event tickets or to book transport, and for which location."
-                        }
-                    }
+                            "text": "Please specify if you want event tickets or to book transport, and for which location.",
+                        },
+                    },
                 )
                 return task
-            task.artifacts = [{
-                "parts": [{"type": "text", "text": result}]
-            }]
+            task.artifacts = [{"parts": [{"type": "text", "text": result}]}]
             task.status = TaskStatus(state=TaskState.COMPLETED)
             self.logger.info("Successfully processed ticket agent query.")
         except Exception as e:
@@ -126,18 +118,16 @@ class TicketAgent(A2AServer):
                 state=TaskState.FAILED,
                 message={
                     "role": "agent",
-                    "content": {
-                        "type": "text",
-                        "text": f"Sorry, I encountered an error processing your ticket agent request: {str(e)}"
-                    }
-                }
+                    "content": {"type": "text", "text": f"Sorry, I encountered an error processing your ticket agent request: {str(e)}"},
+                },
             )
         return task
 
     def _extract_location(self, text: str) -> str:
         import re
+
         # Try to extract location after 'to', 'for', 'in'
-        match = re.search(r'(?:to|for|in) ([a-zA-Z ]+)', text)
+        match = re.search(r"(?:to|for|in) ([a-zA-Z ]+)", text)
         if match:
             return match.group(1).strip()
         # Fallback: last word
@@ -148,25 +138,25 @@ class TicketAgent(A2AServer):
 
     def _extract_event(self, text: str) -> str:
         import re
-        match = re.search(r'(concert|show|event|festival|play)', text)
+
+        match = re.search(r"(concert|show|event|festival|play)", text)
         if match:
             return match.group(1)
         return "concert"
 
     def _extract_transport(self, text: str) -> str:
         import re
-        match = re.search(r'(bus|train|flight|plane|transport)', text)
+
+        match = re.search(r"(bus|train|flight|plane|transport)", text)
         if match:
             return match.group(1)
         return "train"
 
+
 def setup_logging(debug: bool = False) -> None:
     level = logging.DEBUG if debug else logging.INFO
-    logging.basicConfig(
-        level=level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
+    logging.basicConfig(level=level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -179,26 +169,13 @@ Examples:
     python start_ticket_agent.py --port 8083
 
 The agent will be available at http://host:port/a2a
-        """
+        """,
     )
-    parser.add_argument(
-        "--host",
-        type=str,
-        default="localhost",
-        help="Host to bind the server to (default: localhost)"
-    )
-    parser.add_argument(
-        "--port",
-        type=int,
-        default=5003,
-        help="Port to bind the server to (default: 5003)"
-    )
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Enable debug logging"
-    )
+    parser.add_argument("--host", type=str, default="localhost", help="Host to bind the server to (default: localhost)")
+    parser.add_argument("--port", type=int, default=5003, help="Port to bind the server to (default: 5003)")
+    parser.add_argument("--debug", action="store_true", help="Enable debug logging")
     return parser.parse_args()
+
 
 def main():
     args = parse_arguments()
@@ -217,5 +194,6 @@ def main():
         logger.error(f"Error starting Ticket Agent: {e}")
         raise
 
+
 if __name__ == "__main__":
-    main() 
+    main()

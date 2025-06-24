@@ -7,7 +7,7 @@ def extract_text_from_response(response: Message) -> str:
     """Extract text from response"""
     if response and hasattr(response, "content"):
         content_type = getattr(response.content, "type", None)
-        
+
         if content_type == "text":
             return response.content.text
         elif content_type == "error":
@@ -19,7 +19,7 @@ def extract_text_from_response(response: Message) -> str:
             return f"Function call '{response.content.name}' with parameters: {json.dumps(params, indent=2)}"
         elif response.content is not None:
             return str(response.content)
-    
+
     # If text extraction from standard format failed, check for Google A2A format
     if response:
         try:
@@ -31,5 +31,5 @@ def extract_text_from_response(response: Message) -> str:
                         return part["text"]
         except:
             pass
-    
+
     raise ValueError(f"No text response from response: {response}")

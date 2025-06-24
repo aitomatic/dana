@@ -84,7 +84,7 @@ import math
 {constraints}
 
 # Store validated inputs for operation phase
-validated_inputs = {{{', '.join(f'"{p}": {p}' for p in signature_analysis.keys())}}}
+validated_inputs = {{{", ".join(f'"{p}": {p}' for p in signature_analysis.keys())}}}
 """.strip()
 
         return CodeBlock(

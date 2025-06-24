@@ -17,7 +17,7 @@ class ModuleAgent(AbstractDanaAgent):
     def __init__(self, name: str, module: Any, context: Any, **kwargs):
         """
         Initialize module agent.
-        
+
         Args:
             name: Agent name
             module: The Dana module to wrap
@@ -28,22 +28,22 @@ class ModuleAgent(AbstractDanaAgent):
         self.module = module
         self.context = context
         # Note: logger is provided by Loggable mixin, no need to set it
-        
+
         self.debug(f"Created module agent: {self.name}")
 
     @property
     def agent_card(self) -> dict[str, Any]:
         """
         Agent card property to match A2A agent interface.
-        
+
         Uses the module's context to automatically discover all available resources
         and their capabilities, creating a comprehensive agent card.
-        
+
         Returns:
             Dictionary with agent card information including all module resources
         """
         return self.get_agent_card()
-    
+
     @property
     def skills(self) -> list[dict[str, Any]]:
         return self.agent_card.get("skills", [])
@@ -51,11 +51,11 @@ class ModuleAgent(AbstractDanaAgent):
     def get_agent_card(self) -> dict[str, Any]:
         """
         Generate agent card using the module's context to discover all resources.
-        
+
         This method leverages the context's get_self_agent_card() to automatically
         discover all resources (like websearch, databases, APIs, etc.) that are
         available in the module and include their capabilities in the agent card.
-        
+
         Returns:
             Dictionary with comprehensive agent card information
         """
@@ -63,19 +63,14 @@ class ModuleAgent(AbstractDanaAgent):
             # Use the module's context to automatically discover all resources
             # This will include all tools from websearch, databases, APIs, etc.
             context_agent_card = self.context.get_self_agent_card()
-            
+
             # Extract the self agent card
             if "__self__" in context_agent_card:
                 base_card = context_agent_card["__self__"]
             else:
                 # Fallback to basic card structure
-                base_card = {
-                    "name": self.name,
-                    "description": "Module agent",
-                    "skills": [],
-                    "tags": []
-                }
-            
+                base_card = {"name": self.name, "description": "Module agent", "skills": [], "tags": []}
+
             # Enhance with module-specific information
             enhanced_card = {
                 "name": base_card.get("name", self.name),
@@ -86,12 +81,14 @@ class ModuleAgent(AbstractDanaAgent):
                 "skills": base_card.get("skills", []),
                 "tags": base_card.get("tags", []),
                 "resource_count": len(self.context.list_resources()),
-                "available_resources": self.context.list_resources()
+                "available_resources": self.context.list_resources(),
             }
-            
-            self.debug(f"Generated agent card for {self.name} with {len(enhanced_card['skills'])} skills from {enhanced_card['resource_count']} resources")
+
+            self.debug(
+                f"Generated agent card for {self.name} with {len(enhanced_card['skills'])} skills from {enhanced_card['resource_count']} resources"
+            )
             return enhanced_card
-            
+
         except Exception as e:
             self.warning(f"Failed to generate agent card using context resources: {e}")
             # Fallback to basic agent card
@@ -105,7 +102,7 @@ class ModuleAgent(AbstractDanaAgent):
                 "skills": [],
                 "tags": [],
                 "resource_count": 0,
-                "available_resources": []
+                "available_resources": [],
             }
 
     def refresh_agent_card(self) -> None:
@@ -117,23 +114,23 @@ class ModuleAgent(AbstractDanaAgent):
     async def solve(self, task: str) -> str:
         """
         Solve a task using the module's solve function.
-        
+
         Args:
             task: The task to solve
-            
+
         Returns:
             The solution from the module
         """
         try:
             self.debug(f"Module agent {self.name} solving task: {task}")
-            
+
             # Get the solve function from the module
-            solve_func = getattr(self.module, 'solve')
-            
+            solve_func = getattr(self.module, "solve")
+
             # For Dana functions, we need to call them with proper context
             # so they have access to module variables like websearch
             from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
-            
+
             if isinstance(solve_func, DanaFunction):
                 # Call Dana function with its original context
                 # This ensures access to module variables like websearch
@@ -144,12 +141,11 @@ class ModuleAgent(AbstractDanaAgent):
                     result = await solve_func(task)
                 else:
                     result = solve_func(task)
-            
+
             self.debug(f"Module agent {self.name} completed task")
             return str(result)
-            
+
         except Exception as e:
             error_msg = f"Module agent {self.name} failed to solve task: {e}"
             self.error(error_msg)
-            raise RuntimeError(error_msg) from e 
-        
+            raise RuntimeError(error_msg) from e
