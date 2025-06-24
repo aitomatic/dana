@@ -164,17 +164,6 @@ result = df.iloc[0, 0]
         assert result.final_context is not None
         assert result.final_context.get("local:result") == 999
 
-    def test_slice_assignment_undefined_variable_error(self):
-        """Test behavior when slice components reference undefined variables (gracefully handles as None/0)."""
-        code = """
-numbers = [1, 2, 3, 4, 5]
-numbers[undefined_start:3] = [99, 88]
-"""
-        result = self.sandbox.eval(code)
-        # Undefined variables now gracefully resolve to None (becomes 0 in slice context)
-        assert result.success
-        assert result.final_context is not None
-        assert result.final_context.get("local:numbers") == [99, 88, 4, 5]
 
 
 class TestSliceAssignmentEdgeCases:

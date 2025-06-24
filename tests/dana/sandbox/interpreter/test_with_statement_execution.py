@@ -84,7 +84,7 @@ class TestWithStatementExecution:
         """Test basic with statement using function call pattern."""
         code = """
 with use("mcp", url="http://test.com") as client:
-    result = f"Got client: {type(client).__name__}"
+    result = f"Got client: {type(client)}"
 """
 
         sandbox = DanaSandbox()
@@ -120,7 +120,7 @@ with use("mcp", "arg1", "arg2", url="http://test.com", port=8080) as client:
         code = """
 mcp_client = use("mcp", url="http://test.com")
 with mcp_client as client:
-    result = f"Got client: {type(client).__name__}"
+    result = f"Got client: {type(client)}"
     client_name = client.name
 """
 
@@ -231,12 +231,12 @@ with use("mcp", url="http://outer.com") as outer_client:
         code = """
 # Function call pattern
 with use("mcp", url="http://test1.com") as client1:
-    client1_type = type(client1).__name__
+    client1_type = type(client1)
 
 # Direct object pattern  
 client2_obj = use("mcp", url="http://test2.com")
 with client2_obj as client2:
-    client2_type = type(client2).__name__
+    client2_type = type(client2)
     
 # Both should work the same way
 types_match = client1_type == client2_type
@@ -298,7 +298,7 @@ with undefined_variable as client:
 websearch = use("mcp", url="http://localhost:8880/websearch")
 with websearch as websearch:
     # This should trigger an error about variable name shadowing
-    result = type(websearch).__name__
+    result = type(websearch)
 """
 
         sandbox = DanaSandbox()
