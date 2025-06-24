@@ -5,7 +5,7 @@ def analyze_order_risk(order_data: dict) -> str:
     prompt = f"""
         Order Risk Analysis:
         - Order ID: {order_data['order_id']}
-        - Amount: ${order_data.get['amount']}
+        - Amount: ${order_data['amount']}
         - Customer Age: {order_data['customer_age_days']} days
         - Payment Method: {order_data['payment_method']}
         - Country Mismatch: {order_data['shipping_country'] != order_data['billing_country']}

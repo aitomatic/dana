@@ -15,7 +15,7 @@ def optimize_infrastructure(combined_data: dict) -> str:
 
         Cloud Infrastructure Analysis:
         - Instances: {len(cloud_metrics['metrics'])} running
-        - Monthly Cost: ${performance_data['cost_data]['monthly_cost']}
+        - Monthly Cost: ${performance_data['cost_data']['monthly_cost']}
         - Projected Cost: ${performance_data['cost_data']['projected_cost']}
         
         Consider optimization strategies for:
