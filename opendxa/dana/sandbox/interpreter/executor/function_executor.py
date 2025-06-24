@@ -531,7 +531,7 @@ class FunctionExecutor(BaseExecutor):
 
         try:
             # Import ReturnException here to avoid circular imports
-            from opendxa.dana.sandbox.interpreter.executor.control_flow_executor import ReturnException
+            from opendxa.dana.sandbox.interpreter.executor.control_flow.exceptions import ReturnException
 
             for statement in body:
                 result = self.parent.execute(statement, function_context)

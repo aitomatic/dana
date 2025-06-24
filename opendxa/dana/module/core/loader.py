@@ -7,16 +7,23 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
+from __future__ import annotations
+
 from collections.abc import Sequence
 from importlib.abc import Loader, MetaPathFinder
 from importlib.machinery import ModuleSpec as PyModuleSpec
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
 
 from .errors import ImportError, ModuleNotFoundError, SyntaxError
 from .registry import ModuleRegistry
 from .types import Module, ModuleSpec
+
+if TYPE_CHECKING:
+    from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
+    from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 class ModuleLoader(MetaPathFinder, Loader):

@@ -258,7 +258,7 @@ class PipeOperationHandler(Loggable):
                     if self.parent_executor and hasattr(self.parent_executor, "identifier_resolver"):
                         resolved = self.parent_executor.identifier_resolver.resolve_identifier(expr, context)
                         return callable(resolved)
-                except:
+                except Exception:
                     pass
 
                 return False
@@ -307,7 +307,7 @@ class PipeOperationHandler(Loggable):
                     resolved = self.parent_executor.identifier_resolver.resolve_identifier(func_expr, context)
                     if resolved is not None:
                         return resolved
-                except:
+                except Exception:
                     pass
 
             # Try context lookup
@@ -315,7 +315,7 @@ class PipeOperationHandler(Loggable):
                 resolved = context.get(func_expr.name)
                 if resolved is not None:
                     return resolved
-            except:
+            except Exception:
                 pass
 
             # If nothing found, return the identifier itself for deferred resolution
