@@ -217,12 +217,12 @@ def enhanced_{func_info.name}{signature}:
     \"\"\"
     Enhanced version of {func_info.name} with POET domain: {func_info.domain}
     
-    Original docstring: {func_info.docstring or 'None'}
+    Original docstring: {func_info.docstring or "None"}
     
     Enhancement includes:
     - Perceive: Input validation and preprocessing
     - Operate: Enhanced execution with reliability  
-    - Enforce: Output validation and quality assurance{' - Train: Learning from feedback' if train else ''}
+    - Enforce: Output validation and quality assurance{" - Train: Learning from feedback" if train else ""}
     \"\"\"
     import time
     import uuid
@@ -259,7 +259,7 @@ def enhanced_{func_info.name}{signature}:
                 "execution_time": execution_time,
                 "retries_used": getattr(locals(), 'retries_used', 0),
                 "domain": "{func_info.domain}",
-                "phases_executed": ["perceive", "operate", "enforce"{', "train"' if train else ''}]
+                "phases_executed": ["perceive", "operate", "enforce"{', "train"' if train else ""}]
             }}
         )
         
@@ -287,7 +287,7 @@ def enhanced_{func_info.name}{signature}:
             raise RuntimeError(f"POET enhancement failed: {{e}}") from e
 
 # Main enhanced function
-result = enhanced_{func_info.name}({', '.join(f'{p}={p}' for p in self._extract_parameter_names(func_info.signature))})
+result = enhanced_{func_info.name}({", ".join(f"{p}={p}" for p in self._extract_parameter_names(func_info.signature))})
 """.strip()
 
         return orchestrator

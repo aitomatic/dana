@@ -16,6 +16,7 @@ from opendxa.common.utils import Misc
 if TYPE_CHECKING:
     from .agent_pool import AgentPool
 
+
 class AgentSelector(Loggable):
     """Handles agent selection logic."""
 
@@ -64,7 +65,7 @@ class AgentSelector(Loggable):
         # Get agent cards for context
         agent_cards = self.pool.get_agent_cards(included_resources=included_resources)
         self.log_debug(f"Selecting from {len(agent_cards)} agents for task: {str(task)[:60]}{'...' if len(str(task)) > 60 else ''}")
-        
+
         # Create prompt for LLM
         prompt = f"""Task: {task}
 
@@ -99,25 +100,27 @@ Your response must be wrapped in ```json``` tags and contain a valid JSON object
             # Use LLM to select agent
             request = BaseRequest(arguments={"messages": [{"role": "user", "content": prompt}]})
             decision = self._llm.query_sync(request)
-            if decision.content is None or 'choices' not in decision.content or not decision.content['choices']:
+            if decision.content is None or "choices" not in decision.content or not decision.content["choices"]:
                 self.log_error("LLM returned no content or no choices")
                 return None
-            text = decision.content['choices'][0].message.content
+            text = decision.content["choices"][0].message.content
             decision_dict = Misc.text_to_dict(text)
             self.log_debug(f"Agent selection decision: \n{json.dumps(decision_dict, indent=4)}")
             selected_agents = decision_dict.get("selected_agents", [])
-            
+
             if len(selected_agents) == 0:
                 self.log_error(f"LLM selected no agents: {selected_agents}")
                 return None
             selected_id = selected_agents[0]["agent_id"]
-            
+
             # Validate selection
             if selected_id not in agent_cards:
                 self.log_error(f"LLM selected invalid agent: {selected_id}")
                 return None
             selected_agent = self.pool.agents.get(selected_id, None)
-            self.log_info(f"Selected agent '{selected_agent.name if selected_agent else 'None'}' (confidence: {selected_agents[0].get('confidence', 'unknown')}) with reasoning: {selected_agents[0].get('reasoning', 'No reasoning provided')}")
+            self.log_info(
+                f"Selected agent '{selected_agent.name if selected_agent else 'None'}' (confidence: {selected_agents[0].get('confidence', 'unknown')}) with reasoning: {selected_agents[0].get('reasoning', 'No reasoning provided')}"
+            )
             return selected_agent
         except Exception as e:
             self.log_error(f"Error selecting agent: {e}")
@@ -149,13 +152,13 @@ Your response must be wrapped in ```json``` tags and contain a valid JSON object
         for name, card in cards.items():
             formatted.append(f"Agent: {name}")
             formatted.append(f"Description: {card.get('description', 'No description')}")
-            
+
             # Handle skills which can be list of dicts or list of strings
-            skills = card.get('skills') or card.get('capabilities') or []
+            skills = card.get("skills") or card.get("capabilities") or []
             if skills:
                 if isinstance(skills[0], dict):  # type: ignore
                     # Skills are dictionaries with name field
-                    skill_names = [skill.get('name', str(skill)) for skill in skills]
+                    skill_names = [skill.get("name", str(skill)) for skill in skills]
                 else:
                     # Skills are strings
                     skill_names = skills
@@ -174,4 +177,4 @@ Your response must be wrapped in ```json``` tags and contain a valid JSON object
         """
         if agent_name not in self._performance_metrics:
             self._performance_metrics[agent_name] = {}
-        self._performance_metrics[agent_name].update(metrics) 
+        self._performance_metrics[agent_name].update(metrics)

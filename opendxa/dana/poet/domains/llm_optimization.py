@@ -68,7 +68,7 @@ except Exception as e:
 
 # Store validated inputs for operation phase
 validated_inputs = {{
-    {', '.join(f'"{p}": {p}' for p in signature_analysis.keys())},
+    {", ".join(f'"{p}": {p}' for p in signature_analysis.keys())},
     "llm_resource": llm_resource if llm_available else None,
     "optimized_prompt": optimized_prompt,
     "formatted_context": formatted_context if 'context' in locals() else None

@@ -210,7 +210,9 @@ class APIServiceManager(Loggable):
         try:
             # Use uvicorn to start the FastAPI server with integrated POET routes
             cmd = [
-                sys.executable, "-m", "uvicorn",
+                sys.executable,
+                "-m",
+                "uvicorn",
                 "opendxa.api.server:create_app",
                 "--factory",
                 "--host",

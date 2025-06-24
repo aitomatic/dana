@@ -43,7 +43,7 @@ class AgentPool(BaseResource):
         if agents:
             for agent in agents:
                 self.agents[agent.name] = agent
-        
+
         # Ensure at least one agent is provided
         if not self.agents:
             raise ValueError("Must provide at least one agent")
@@ -79,7 +79,9 @@ class AgentPool(BaseResource):
             raise KeyError(f"Agent not found: {name}")
         return self.agents[name]
 
-    def select_agent(self, task: any, strategy: str = "llm", included_resources: list[str | BaseResource] | None = None) -> AbstractDanaAgent | None:
+    def select_agent(
+        self, task: any, strategy: str = "llm", included_resources: list[str | BaseResource] | None = None
+    ) -> AbstractDanaAgent | None:
         """Select an agent based on task requirements.
 
         Args:
@@ -104,7 +106,10 @@ class AgentPool(BaseResource):
         Returns:
             Dictionary mapping agent names to their cards (with skills)
         """
-        agent_cards = {name: {**agent.agent_card, "skills": agent.agent_card.get("skills", agent.agent_card.get("capabilities", []))} for name, agent in self.agents.items()}
+        agent_cards = {
+            name: {**agent.agent_card, "skills": agent.agent_card.get("skills", agent.agent_card.get("capabilities", []))}
+            for name, agent in self.agents.items()
+        }
         if self.context and not self.exclude_self:
             agent_cards.update(self.context.get_self_agent_card(included_resources=included_resources))
         return agent_cards
@@ -138,4 +143,4 @@ class AgentPool(BaseResource):
         """
         if name not in self.agents:
             raise KeyError(f"Agent not found: {name}")
-        del self.agents[name] 
+        del self.agents[name]

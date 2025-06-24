@@ -360,7 +360,45 @@ def test_while_loop(parser, typecheck_flag):
     assert len(stmt.body) == 1
 
 
-# TODO: Add for-loop, minimal/nested blocks, elif, try/except/finally
+def test_elif_chain_structure(parser, typecheck_flag):
+    """Test that elif chains create properly nested Conditional structures."""
+    code = textwrap.dedent("""
+        x = 5
+        if x > 10:
+            y = "high"
+        elif x > 5:
+            y = "medium"
+        elif x > 0:
+            y = "low"
+        else:
+            y = "zero"
+    """)
+
+    program = parser.parse(code, do_type_check=typecheck_flag, do_transform=True)
+    conditional = get_conditional(program)
+
+    # Verify proper nesting: if -> elif -> elif -> else
+    assert isinstance(conditional, Conditional)
+    assert conditional.condition.operator == BinaryOperator.GREATER_THAN
+
+    # First elif should be in else_body
+    first_elif = conditional.else_body[0]
+    assert isinstance(first_elif, Conditional)
+    assert first_elif.condition.operator == BinaryOperator.GREATER_THAN
+
+    # Second elif should be in first elif's else_body
+    second_elif = first_elif.else_body[0]
+    assert isinstance(second_elif, Conditional)
+    assert second_elif.condition.operator == BinaryOperator.GREATER_THAN
+
+    # Final else should be in second elif's else_body
+    final_else = second_elif.else_body
+    assert isinstance(final_else, list)
+    assert len(final_else) == 1
+    assert not isinstance(final_else[0], Conditional)  # Should be assignment, not conditional
+
+
+# TODO: Add for-loop, minimal/nested blocks, try/except/finally
 
 # =========================
 # 6. FUNCTIONS & CALLS

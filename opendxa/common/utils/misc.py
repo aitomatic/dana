@@ -171,7 +171,7 @@ class Misc:
         if isinstance(obj, dict):
             return obj.get(field_name, default)
         return getattr(obj, field_name, default)
-    
+
     @staticmethod
     def has_field(obj: dict | object, field_name: str) -> bool:
         """Check if an object has a field."""
@@ -280,7 +280,7 @@ class Misc:
         if length is not None:
             return hash_key[:length]
         return hash_key
-    
+
     @staticmethod
     def generate_uuid(length: int | None = None) -> str:
         """Generate a UUID with optional length truncation."""
@@ -288,14 +288,15 @@ class Misc:
         if length is not None:
             return uuid_str[:length]
         return uuid_str
-    
+
     @staticmethod
     def text_to_dict(text: str) -> dict[str, Any]:
         """Parse JSON content from LLM text response."""
         import json
         import re
+
         # Check if content is wrapped in ```json``` tags
-        json_match = re.search(r'```json\s*(.*?)\s*```', text, re.DOTALL)
+        json_match = re.search(r"```json\s*(.*?)\s*```", text, re.DOTALL)
         if json_match:
             # Extract and parse the JSON content
             json_content = json_match.group(1)
