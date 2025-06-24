@@ -471,7 +471,7 @@ class TestInProcessSandboxCacheIntegration:
         # Act
         result1 = sandbox.reason("What is 2+2?")
         result2 = sandbox.reason("What is 2+2?")  # Should hit cache
-        sandbox.reason("What is 3+3?")  # Should miss cache
+        _result3 = sandbox.reason("What is 3+3?")  # Should miss cache
 
         # Assert
         assert result1 == "2+2 equals 4"
