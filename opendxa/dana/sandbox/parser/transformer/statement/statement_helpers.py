@@ -72,7 +72,7 @@ class AssignmentHelper:
         # Validate target type
         from opendxa.dana.sandbox.parser.ast import AttributeAccess, Identifier, SubscriptExpression
 
-        if not isinstance(target, (Identifier, SubscriptExpression, AttributeAccess)):
+        if not isinstance(target, Identifier | SubscriptExpression | AttributeAccess):
             raise TypeError(f"Assignment target must be Identifier, SubscriptExpression, or AttributeAccess, got {type(target)}")
 
         # Transform value

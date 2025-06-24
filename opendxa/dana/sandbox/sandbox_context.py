@@ -421,20 +421,21 @@ class SandboxContext:
         """
         new_context = SandboxContext()
         new_context.set_state(self.get_state())
-        
+
         # Also copy resource and agent registrations
         # This ensures that Dana functions have access to resources from their original module context
         # Use shallow copy since resources contain objects that can't be deep copied
         import copy
+
         new_context._SandboxContext__resources = copy.copy(self._SandboxContext__resources)
         new_context._SandboxContext__agents = copy.copy(self._SandboxContext__agents)
-        
+
         # Copy the nested dictionaries for each scope
         for scope in new_context._SandboxContext__resources:
             new_context._SandboxContext__resources[scope] = copy.copy(self._SandboxContext__resources[scope])
         for scope in new_context._SandboxContext__agents:
             new_context._SandboxContext__agents[scope] = copy.copy(self._SandboxContext__agents[scope])
-        
+
         return new_context
 
     def sanitize(self) -> "SandboxContext":
@@ -746,14 +747,14 @@ class SandboxContext:
         Args:
             included_resources: Optional list of resource names to include in the agent card. If None, all resources will be included.
             If provided, only the resources in the list will be included.
-        
+
         Returns:
             Agent card format :
             {
                 "description": agent_card.description,
-                "skills": [{"name": skill.name, "description": skill.description} 
+                "skills": [{"name": skill.name, "description": skill.description}
                         for skill in agent_card.skills[:3]],  # Limit to top 3 skills
-                "tags": list(set(tag for skill in agent_card.skills 
+                "tags": list(set(tag for skill in agent_card.skills
                             for tag in skill.tags[:5]))  # Limit tags, remove duplicates
             }
         """
@@ -766,18 +767,15 @@ class SandboxContext:
             if included_resources is None or name in included_resources:
                 tools.extend(resource.list_tools())
 
-        agent_card = {"name" : "GMA", "description": "General purpose agent", "skills": [], "tags": []}
+        agent_card = {"name": "GMA", "description": "General purpose agent", "skills": [], "tags": []}
         if "agent_name" in self._state["system"]:
             agent_card["name"] = self._state["system"]["agent_name"]
         if "agent_description" in self._state["system"]:
             agent_card["description"] = self._state["system"]["agent_description"]
         for tool in tools:
-            if 'function' in tool:
-                function = tool['function']
-                agent_card["skills"].append({
-                    "name": function.get("name", ""),
-                    "description": function.get("description", "")
-                })
+            if "function" in tool:
+                function = tool["function"]
+                agent_card["skills"].append({"name": function.get("name", ""), "description": function.get("description", "")})
         return {"__self__": agent_card}
 
     def get_other_agent_cards(self, included_agents: list[str | BaseResource] | None = None) -> dict[str, dict[str, Any]]:
@@ -785,7 +783,7 @@ class SandboxContext:
         for name, agent in self.get_agents(included=included_agents).items():
             all_agent_cards[name] = agent.agent_card
         return all_agent_cards
-    
+
     def startup(self) -> None:
         """Initialize context - prepare for execution (no resource creation)"""
         self.reset_execution_state()
