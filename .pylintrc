@@ -24,8 +24,7 @@ disable=wrong-import-order,
         missing-class-docstring,
         missing-function-docstring,
         line-too-long,
-        bad-whitespace,
-        bad-continuation,
+
         no-member,
         unsubscriptable-object,
         unsupported-assignment-operation,
@@ -38,7 +37,7 @@ disable=wrong-import-order,
         unused-argument,
         broad-except,
         fixme,
-        todo,
+
         consider-using-f-string
 
 # Enable specific warnings that are valuable
@@ -48,8 +47,7 @@ enable=useless-suppression
 # Set the output format
 output-format=text
 
-# Include message's id in output
-include-ids=yes
+# Include message's id in output (not needed in recent pylint versions)
 
 # Template used to display messages
 msg-template={path}:{line}:{column}: {msg_id}: {msg} ({symbol})
@@ -153,4 +151,4 @@ deprecated-modules=regsub,TERMIOS,Bastion,rexec
 
 [EXCEPTIONS]
 # Exceptions that will emit a warning when being caught
-overgeneral-exceptions=Exception 
+overgeneral-exceptions=builtins.Exception 
