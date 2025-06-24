@@ -9,8 +9,6 @@ from pathlib import Path
 
 import pytest
 
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
-
 
 @pytest.mark.poet
 class TestPOETRegistry:

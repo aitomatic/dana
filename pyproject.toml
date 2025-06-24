@@ -78,7 +78,6 @@ dependencies = [
 # Development-only dependencies
 [project.optional-dependencies]
 dev = [
-    "black",       # Code formatting
     "ruff",        # Fast Python linter (replaces flake8, isort, etc.)
     "pylint",      # Additional code analysis
     "mypy",        # Static type checking
@@ -151,8 +150,8 @@ opendxa = ["**/*.py", "**/*.lark"]
 # Code quality workflows:
 #   uv run ruff check .                               # Lint code
 #   uv run ruff check --fix .                         # Lint and auto-fix
-#   uv run black .                                    # Format code
-#   uv run black --check .                            # Check formatting
+#   uv run ruff format .                              # Format code
+#   uv run ruff format --check .                      # Check formatting
 #   uv run mypy .                                     # Type checking
 #
 # Documentation workflows (for DevRel team):

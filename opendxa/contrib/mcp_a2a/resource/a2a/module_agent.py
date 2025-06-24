@@ -7,8 +7,8 @@ This module provides the ModuleAgent class for wrapping Dana modules as agents.
 import inspect
 from typing import Any
 
-from opendxa.contrib.mcp_a2a.resource.a2a.common.module_agent_utils import get_module_agent_info
 from opendxa.contrib.mcp_a2a.agent.abstract_dana_agent import AbstractDanaAgent
+from opendxa.contrib.mcp_a2a.resource.a2a.common.module_agent_utils import get_module_agent_info
 
 
 class ModuleAgent(AbstractDanaAgent):
@@ -125,7 +125,7 @@ class ModuleAgent(AbstractDanaAgent):
             self.debug(f"Module agent {self.name} solving task: {task}")
 
             # Get the solve function from the module
-            solve_func = getattr(self.module, "solve")
+            solve_func = self.module.solve
 
             # For Dana functions, we need to call them with proper context
             # so they have access to module variables like websearch

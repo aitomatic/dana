@@ -96,8 +96,8 @@ def reason_function(
     if actual_agents is not None:
         try:
             # Check if agents is an A2AAgent, AgentPool, or list of agents
-            from opendxa.contrib.mcp_a2a.agent.pool.agent_pool import AgentPool
             from opendxa.contrib.mcp_a2a.agent import AbstractDanaAgent
+            from opendxa.contrib.mcp_a2a.agent.pool.agent_pool import AgentPool
 
             agent_pool = None
 
@@ -143,6 +143,7 @@ def reason_function(
                     logger.info(f"Selected agent '{selected_agent.name}' for reasoning task")
                     try:
                         import inspect
+
                         from opendxa.common.utils.misc import Misc
 
                         # Check if solve method is async

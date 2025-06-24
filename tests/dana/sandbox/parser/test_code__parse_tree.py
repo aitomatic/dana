@@ -6,8 +6,6 @@
 import pytest
 from lark import Tree
 
-from opendxa.dana.sandbox.parser.dana_parser import DanaParser
-
 
 @pytest.fixture(scope="module")
 def dana_parser():

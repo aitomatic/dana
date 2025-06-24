@@ -12,10 +12,11 @@ from importlib.abc import Loader, MetaPathFinder
 from importlib.machinery import ModuleSpec as PyModuleSpec
 from pathlib import Path
 
+from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+
 from .errors import ImportError, ModuleNotFoundError, SyntaxError
 from .registry import ModuleRegistry
 from .types import Module, ModuleSpec
-from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
 
 
 class ModuleLoader(MetaPathFinder, Loader):

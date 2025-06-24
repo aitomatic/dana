@@ -13,10 +13,10 @@
         "**/docs/stylesheets": true,
         "**/docs/images": true,
         "**/uv.lock": true,
-        "**/.env": true,
+        "**/-.env": true,
         "**/.vscode": true,
-        "**/pyproject.toml": true,
-        "**/Makefile": true,
+        "**/-pyproject.toml": true,
+        "**/-Makefile": true,
         "**/mkdocs.yml": true,
         "**/pytest.ini": true,
         "**/.env.example": true,
@@ -58,10 +58,10 @@
     ],
 
     // === Editor Formatting ===
-    // Configures automatic code formatting with Black
+    // Configures automatic code formatting with Ruff
     "editor.formatOnSave": true,
-    "editor.defaultFormatter": "ms-python.black-formatter",
-    "editor.defaultFoldingRangeProvider": "ms-python.black-formatter",
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.defaultFoldingRangeProvider": "charliermarsh.ruff",
 
     // === Code Actions ===
     // Sets up Ruff for linting and import organization when explicitly triggered

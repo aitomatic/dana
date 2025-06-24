@@ -472,7 +472,7 @@ If this is a custom function, make sure it's:
 
         for signature in expected_signatures:
             if len(args) == len(signature):
-                if all(isinstance(arg, sig_type) for arg, sig_type in zip(args, signature)):
+                if all(isinstance(arg, sig_type) for arg, sig_type in zip(args, signature, strict=False)):
                     valid_signature = True
                     break
 
