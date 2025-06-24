@@ -1,6 +1,6 @@
 from opendxa.common.resource.base_resource import BaseResource
-from opendxa.contrib.mcp_a2a.agent import AbstractDanaAgent
 from opendxa.common.utils.misc import Misc
+from opendxa.contrib.mcp_a2a.agent import AbstractDanaAgent
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
@@ -44,7 +44,7 @@ def _create_module_agent(context: SandboxContext, name: str, module, **kwargs) -
     module_context = context  # Default fallback
 
     if hasattr(module, "solve"):
-        solve_func = getattr(module, "solve")
+        solve_func = module.solve
         # Check if it's a DanaFunction with its own context
         from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
 

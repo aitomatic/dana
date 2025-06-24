@@ -11,8 +11,6 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any, cast
-
 from lark import Token, Tree
 
 from opendxa.dana.sandbox.parser.ast import (
@@ -309,7 +307,6 @@ class FunctionDefinitionTransformer(BaseTransformer):
 
     def struct_field(self, items):
         """Transform a struct field rule into a StructField node."""
-        from opendxa.dana.sandbox.parser.ast import TypeHint
 
         name_token = items[0]
         type_hint_node = items[1]

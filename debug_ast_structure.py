@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 
 code = """
 struct Data:

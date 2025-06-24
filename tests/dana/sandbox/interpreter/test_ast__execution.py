@@ -549,7 +549,7 @@ def test_print_statement():
 
 
 def test_break_statement():
-    from opendxa.dana.sandbox.interpreter.executor.control_flow_executor import BreakException
+    from opendxa.dana.sandbox.interpreter.executor.control_flow.exceptions import BreakException
     from opendxa.dana.sandbox.parser.ast import BreakStatement
 
     interpreter = DanaInterpreter()
@@ -568,7 +568,7 @@ def test_break_statement():
 
 
 def test_continue_statement():
-    from opendxa.dana.sandbox.interpreter.executor.control_flow_executor import ContinueException
+    from opendxa.dana.sandbox.interpreter.executor.control_flow.exceptions import ContinueException
     from opendxa.dana.sandbox.parser.ast import ContinueStatement
 
     interpreter = DanaInterpreter()
@@ -600,7 +600,7 @@ def test_pass_statement():
 
 
 def test_return_statement():
-    from opendxa.dana.sandbox.interpreter.executor.control_flow_executor import ReturnException
+    from opendxa.dana.sandbox.interpreter.executor.control_flow.exceptions import ReturnException
     from opendxa.dana.sandbox.parser.ast import ReturnStatement
 
     interpreter = DanaInterpreter()

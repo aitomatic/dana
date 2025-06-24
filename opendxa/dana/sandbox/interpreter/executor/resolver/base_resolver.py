@@ -15,7 +15,7 @@ from enum import Enum
 from typing import Any
 
 from opendxa.dana.sandbox.interpreter.executor.function_name_utils import FunctionNameInfo
-from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType, ResolvedFunction
+from opendxa.dana.sandbox.interpreter.executor.function_resolver import ResolvedFunction
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 

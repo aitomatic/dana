@@ -19,7 +19,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any, cast
+from typing import Any
 
 from lark import Token, Tree
 
@@ -30,39 +30,25 @@ from opendxa.dana.sandbox.parser.ast import (
     AttributeAccess,
     BinaryExpression,
     Conditional,
-    Decorator,
     DictLiteral,
-    ExceptBlock,
-    Expression,
     ForLoop,
     FStringExpression,
     FunctionCall,
     FunctionDefinition,
     Identifier,
-    ImportFromStatement,
-    ImportStatement,
     ListLiteral,
     LiteralExpression,
     Location,
-    Parameter,
     Program,
     SetLiteral,
-    StructDefinition,
-    StructField,
     SubscriptExpression,
     TryBlock,
     TupleLiteral,
     UseStatement,
     WhileLoop,
-    WithStatement,
 )
 from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
 from opendxa.dana.sandbox.parser.transformer.expression_transformer import ExpressionTransformer
-from opendxa.dana.sandbox.parser.transformer.statement.statement_helpers import (
-    AssignmentHelper,
-    SimpleStatementHelper,
-)
-from opendxa.dana.sandbox.parser.transformer.variable_transformer import VariableTransformer
 from opendxa.dana.sandbox.parser.utils.tree_utils import TreeTraverser
 
 # Allowed types for Assignment.value
@@ -98,10 +84,10 @@ class StatementTransformer(BaseTransformer):
         self.tree_traverser = TreeTraverser()
 
         # Initialize specialized transformers
+        from opendxa.dana.sandbox.parser.transformer.statement.agent_context_transformer import AgentContextTransformer
         from opendxa.dana.sandbox.parser.transformer.statement.assignment_transformer import AssignmentTransformer
         from opendxa.dana.sandbox.parser.transformer.statement.control_flow_transformer import ControlFlowTransformer
         from opendxa.dana.sandbox.parser.transformer.statement.function_definition_transformer import FunctionDefinitionTransformer
-        from opendxa.dana.sandbox.parser.transformer.statement.agent_context_transformer import AgentContextTransformer
         from opendxa.dana.sandbox.parser.transformer.statement.import_simple_statement_transformer import ImportSimpleStatementTransformer
 
         self.assignment_transformer = AssignmentTransformer(self)
@@ -136,7 +122,6 @@ class StatementTransformer(BaseTransformer):
         in function bodies or nested control structures due to indentation parsing bugs,
         and moves them to program level.
         """
-        from opendxa.dana.sandbox.parser.ast import FunctionDefinition
 
         fixed_statements = []
         extracted_assignments = []
@@ -163,7 +148,6 @@ class StatementTransformer(BaseTransformer):
 
     def _fix_nested_statements(self, statements):
         """Recursively fix nested statements, extracting misplaced local: assignments and function definitions."""
-        from opendxa.dana.sandbox.parser.ast import Assignment, Conditional, ForLoop, FunctionDefinition, TryBlock, WhileLoop
 
         fixed_statements = []
         extracted_assignments = []
@@ -227,7 +211,7 @@ class StatementTransformer(BaseTransformer):
 
     def _is_local_scoped_assignment(self, assignment):
         """Check if an assignment targets a local: scoped variable."""
-        from opendxa.dana.sandbox.parser.ast import Assignment, Identifier
+        from opendxa.dana.sandbox.parser.ast import Identifier
 
         if isinstance(assignment, Assignment) and isinstance(assignment.target, Identifier):
             return assignment.target.name.startswith("local:")

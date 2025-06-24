@@ -1,0 +1,71 @@
+# GitHub Action to run Ruff code analysis and formatting
+# - Runs on Python 3.12 
+# - Uses Ruff for fast linting and formatting checks (non-blocking during development)
+# - Follows OpenDXA coding standards from pyproject.toml
+# - Reports issues but doesn't fail CI to maintain development velocity
+# This provides fast feedback while allowing iterative code improvement
+
+name: Ruff
+
+on: 
+  push:
+    branches: [main, master, feat/llm-poet]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  ruff-check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Critical lint checks (BLOCKING)
+      env:
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        # Block CI for critical issues in core modules only
+        echo "🚫 Running critical lint checks (BLOCKING)..."
+        echo "Checking core modules for: bare except (E722), undefined names (F821)"
+        echo "Excluding contrib/ directory for now"
+        uv run ruff check opendxa/ tests/ --select E722,F821 --exclude opendxa/contrib --output-format=github || {
+          echo "❌ Critical lint violations found in core modules"
+          echo "These must be fixed as they can cause runtime errors or security issues"
+          echo "Run: uv run ruff check opendxa/ tests/ --select E722,F821 --exclude opendxa/contrib"
+          exit 1
+        }
+        echo "✅ Critical lint checks passed for core modules"
+        
+    - name: Important lint checks (WARNING)  
+      env:
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        # Show important issues but don't block CI
+        echo "⚠️ Running important lint checks (non-blocking)..."
+        echo "Checking for: unused variables (F841), assert exceptions (B017)"
+        uv run ruff check opendxa/ tests/ --select F841,B017 --output-format=github || {
+          echo "⚠️ Found important issues - should fix soon but CI continues"
+        }
+        
+    - name: Style and formatting checks (INFO)
+      env:
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        # Show style issues but don't block CI
+        echo "✨ Running style and formatting checks (non-blocking)..."
+        uv run ruff format --check opendxa/ tests/ || {
+          echo "ℹ️ Formatting issues found - run 'uv run ruff format opendxa/ tests/' to fix"
+        }
+        uv run ruff check opendxa/ tests/ --select UP038,B026,E712,E721,B024,B007 --output-format=github || {
+          echo "ℹ️ Style issues found - fix when convenient"
+        } 

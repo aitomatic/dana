@@ -9,7 +9,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from opendxa.dana.sandbox.context.sandbox_context import SandboxContext
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 
 
 def main():

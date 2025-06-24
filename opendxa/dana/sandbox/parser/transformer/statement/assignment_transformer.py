@@ -13,15 +13,11 @@ MIT License
 
 from typing import Any, cast
 
-from lark import Token, Tree
-
 from opendxa.dana.sandbox.parser.ast import (
     AgentPoolStatement,
     AgentStatement,
     Assignment,
-    Expression,
     Identifier,
-    TypeHint,
     UseStatement,
 )
 from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer

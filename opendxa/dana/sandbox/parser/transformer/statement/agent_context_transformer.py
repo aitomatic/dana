@@ -11,7 +11,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any, cast
+from typing import cast
 
 from lark import Token, Tree
 

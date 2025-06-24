@@ -20,11 +20,10 @@ Discord: https://discord.gg/6jGD4PYk
 import logging
 from typing import Any
 
-from opendxa.dana.common.exceptions import FunctionRegistryError, SandboxError
+from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.interpreter.executor.function_error_handling import FunctionExecutionErrorHandler
 from opendxa.dana.sandbox.interpreter.executor.function_name_utils import FunctionNameInfo
-
 from opendxa.dana.sandbox.interpreter.executor.resolver.unified_function_dispatcher import UnifiedFunctionDispatcher
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.parser.ast import (
@@ -532,7 +531,7 @@ class FunctionExecutor(BaseExecutor):
 
         try:
             # Import ReturnException here to avoid circular imports
-            from opendxa.dana.sandbox.interpreter.executor.control_flow_executor import ReturnException
+            from opendxa.dana.sandbox.interpreter.executor.control_flow.exceptions import ReturnException
 
             for statement in body:
                 result = self.parent.execute(statement, function_context)

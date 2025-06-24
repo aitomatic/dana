@@ -8,8 +8,8 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any
 import warnings
+from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.sandbox.parser.ast import Identifier, WithStatement

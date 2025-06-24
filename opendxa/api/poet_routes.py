@@ -7,53 +7,72 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
-from opendxa.dana.poet.errors import POETTranspilationError
-from opendxa.dana.poet.transpiler import POETTranspiler
 from opendxa.dana.poet.types import POETConfig
 
 
-class TranspileRequest(BaseModel):
-    """Request model for function transpilation"""
+class POETRequest(BaseModel):
+    """Request model for POET decorator configuration"""
 
-    code: str = Field(..., description="Complete function code including @poet decorator")
-    config: dict = Field(..., description="POET configuration dictionary")
-
-
-class TranspileResponse(BaseModel):
-    """Response model for function transpilation"""
-
-    poet_implementation: dict[str, Any] = Field(..., description="Generated POET implementation")
-    metadata: dict[str, Any] = Field(..., description="Transpilation metadata")
+    domain: str | None = Field(None, description="Domain context for POET enhancement")
+    retries: int = Field(1, description="Number of retries for failed operations")
+    timeout: float | None = Field(None, description="Timeout for operations in seconds")
+    enable_training: bool = Field(True, description="Enable training phase")
 
 
-router = APIRouter()
-transpiler = POETTranspiler()
+class POETResponse(BaseModel):
+    """Response model for POET configuration"""
+
+    message: str = Field(..., description="Response message")
+    config: dict[str, Any] = Field(..., description="POET configuration applied")
 
 
-@router.post(
-    "/transpile",
-    response_model=TranspileResponse,
-    summary="Transpile Function",
-    description="Transpile a function with POET enhancements",
-)
-async def transpile_function(request: TranspileRequest):
-    """Transpile a function with POET P->O->E->(T) phases"""
+router = APIRouter(prefix="/poet", tags=["POET"])
+
+
+@router.post("/configure", response_model=POETResponse)
+async def configure_poet(request: POETRequest) -> POETResponse:
+    """
+    Configure POET decorator with specified parameters.
+
+    This endpoint creates a POET configuration that can be used
+    to enhance Dana functions with domain-specific intelligence.
+    """
     try:
-        poet_config = POETConfig(**request.config)
-
-        # Create a mock function from the code string for transpilation
-        # This is a temporary workaround - in production, the API should receive actual function objects
-        import types
-
-        mock_func = types.FunctionType(code=compile(request.code, "<string>", "exec"), globals={}, name="mock_function")
-
-        enhanced_implementation = transpiler.transpile(mock_func, poet_config)
-
-        return TranspileResponse(
-            poet_implementation={"code": enhanced_implementation, "language": "dana"},
-            metadata={"status": "success", "transpiler": "POETTranspiler"},
+        # Create POET configuration
+        config = POETConfig(
+            domain=request.domain, retries=request.retries, timeout=request.timeout, enable_training=request.enable_training
         )
-    except POETTranspilationError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+        return POETResponse(
+            message="POET configuration created successfully",
+            config={
+                "domain": config.domain,
+                "retries": config.retries,
+                "timeout": config.timeout,
+                "enable_training": config.enable_training,
+            },
+        )
+
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Internal server error: {e}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Failed to configure POET: {str(e)}")
+
+
+@router.get("/domains")
+async def list_domains() -> dict[str, list[str]]:
+    """
+    List available POET domains.
+
+    Returns predefined domains that can be used with POET decorators
+    for domain-specific enhancements.
+    """
+    return {
+        "domains": [
+            "healthcare",
+            "finance",
+            "manufacturing",
+            "building_management",
+            "text_classification",
+            "mathematical_operations",
+            "data_processing",
+        ]
+    }
