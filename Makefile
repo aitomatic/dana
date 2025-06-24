@@ -179,17 +179,17 @@ lint-fix: ## Auto-fix linting issues
 	@echo "🔧 Auto-fixing linting issues..."
 	uv run ruff check --fix .
 
-format: ## Format code with black
+format: ## Format code with ruff
 	@echo "✨ Formatting code..."
-	uv run black .
+	uv run ruff format .
 
 format-check: ## Check code formatting without changes
 	@echo "📝 Checking code formatting..."
-	uv run black --check .
+	uv run ruff format --check .
 
 typecheck: ## Run type checking
 	@echo "🔍 Running type checks..."
-	uv run pyright .
+	uv run mypy .
 
 check: lint format-check typecheck ## Run all code quality checks
 	@echo "✅ All quality checks completed!"

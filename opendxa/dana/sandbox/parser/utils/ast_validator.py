@@ -19,7 +19,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any, Optional
+from typing import Any
 
 from lark import Tree
 
@@ -131,7 +131,7 @@ class AstValidator(Loggable):
         return is_clean, tree_nodes
 
     @classmethod
-    def validate_and_report(cls, program: Program, logger: Optional[Loggable] = None) -> bool:
+    def validate_and_report(cls, program: Program, logger: Loggable | None = None) -> bool:
         """
         Validate AST and log a detailed report.
 
@@ -152,7 +152,7 @@ class AstValidator(Loggable):
         else:
             log_func(f"❌ AST validation failed: Found {len(tree_nodes)} Lark Tree nodes:")
             for i, (path, tree) in enumerate(tree_nodes[:5]):
-                log_func(f"  {i+1}. {path}: Tree('{tree.data}') with {len(tree.children)} children")
+                log_func(f"  {i + 1}. {path}: Tree('{tree.data}') with {len(tree.children)} children")
             if len(tree_nodes) > 5:
                 log_func(f"  ... and {len(tree_nodes) - 5} more Tree nodes")
             return False

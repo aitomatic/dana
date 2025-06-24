@@ -18,10 +18,8 @@ Discord: https://discord.gg/6jGD4PYk
 
 def test_division_from_source():
     from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-    from opendxa.dana.sandbox.parser.dana_parser import DanaParser
-    from opendxa.dana.sandbox.sandbox_context import SandboxContext
-
     from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+    from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
     parser = ParserCache.get_parser("dana")
     parse_tree = parser.parser.parse("private:x = 6 / 2\n")

@@ -8,7 +8,7 @@ MIT License
 from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.sandbox.interpreter.executor.control_flow_executor import ReturnException
+from opendxa.dana.sandbox.interpreter.executor.control_flow.exceptions import ReturnException
 from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 

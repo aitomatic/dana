@@ -20,7 +20,6 @@ from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.poet.client import POETClient, set_default_client
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -494,7 +493,7 @@ class DanaSandbox(Loggable):
 
     def load_file(self, file_path: str) -> None:
         """Load and evaluate a Dana file in the sandbox context."""
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             source_code = f.read()
         self.eval(source_code, filename=file_path)
 

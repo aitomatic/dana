@@ -75,6 +75,58 @@ class SubprocessSandboxInterface:
 
         return self._delegate.reason(prompt, options)
 
+    def execute_function(self, func_name: str, args: tuple = (), kwargs: dict | None = None) -> Any:
+        """Execute a Dana function with given arguments.
+
+        TODO: Future Implementation
+        - Serialize function call to JSON-RPC format
+        - Send via IPC to Dana subprocess
+        - Handle timeout and retries
+        - Deserialize response from subprocess
+
+        CURRENT: Delegates to in-process implementation
+
+        Args:
+            func_name: Name of the Dana function to execute
+            args: Positional arguments to pass to the function
+            kwargs: Keyword arguments to pass to the function
+
+        Returns:
+            The result of the Dana function execution
+        """
+        # TODO: Replace with IPC communication
+        # Example future implementation:
+        # request = {"method": "execute_function", "params": {"func_name": func_name, "args": args, "kwargs": kwargs}}
+        # response = self._send_ipc_request(request)
+        # return response["result"]
+
+        return self._delegate.execute_function(func_name, args, kwargs)
+
+    def exec_module(self, file_path: str) -> Any:
+        """Execute a Dana module from a file path.
+
+        TODO: Future Implementation
+        - Serialize module execution request to JSON-RPC format
+        - Send file path via IPC to Dana subprocess
+        - Handle timeout and retries
+        - Deserialize response from subprocess
+
+        CURRENT: Delegates to in-process implementation
+
+        Args:
+            file_path: Path to the Dana (.na) file to execute
+
+        Returns:
+            The execution result containing context and any return values
+        """
+        # TODO: Replace with IPC communication
+        # Example future implementation:
+        # request = {"method": "exec_module", "params": {"file_path": file_path}}
+        # response = self._send_ipc_request(request)
+        # return response["result"]
+
+        return self._delegate.exec_module(file_path)
+
     @property
     def is_subprocess_isolated(self) -> bool:
         """Check if running in subprocess-isolated mode."""

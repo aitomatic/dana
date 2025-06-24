@@ -5,7 +5,6 @@ consistent, standardized error messages following the OpenDXA format:
 "[What failed]: [Why it failed]. [What user can do]. [Available alternatives]"
 """
 
-import pytest
 from unittest.mock import patch
 
 from opendxa.common.utils.error_formatting import ErrorFormattingUtilities

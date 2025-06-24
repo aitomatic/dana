@@ -147,6 +147,91 @@ class InProcessSandboxInterface:
                 raise
             raise DanaCallError(f"Failed to execute Dana reasoning: {e}", original_error=e)
 
+    def execute_function(self, func_name: str, args: tuple = (), kwargs: dict | None = None) -> Any:
+        """Execute a Dana function with given arguments.
+
+        Args:
+            func_name: Name of the Dana function to execute
+            args: Positional arguments to pass to the function
+            kwargs: Keyword arguments to pass to the function
+
+        Returns:
+            The result of the Dana function execution
+
+        Raises:
+            DanaCallError: If the Dana function call fails
+        """
+        try:
+            # Build Dana function call
+            if args and kwargs:
+                # Mix of positional and keyword arguments
+                args_str = ", ".join(repr(arg) for arg in args)
+                kwargs_str = ", ".join(f"{k}={repr(v)}" for k, v in kwargs.items())
+                call_str = f"{func_name}({args_str}, {kwargs_str})"
+            elif args:
+                # Only positional arguments
+                args_str = ", ".join(repr(arg) for arg in args)
+                call_str = f"{func_name}({args_str})"
+            elif kwargs:
+                # Only keyword arguments
+                kwargs_str = ", ".join(f"{k}={repr(v)}" for k, v in kwargs.items())
+                call_str = f"{func_name}({kwargs_str})"
+            else:
+                # No arguments
+                call_str = f"{func_name}()"
+
+            if self._debug:
+                print(f"DEBUG: InProcessSandboxInterface executing Dana function call: {call_str}")
+
+            result = self._sandbox.eval(call_str, filename=f"<{func_name}>")
+
+            if not result.success:
+                raise DanaCallError(f"Dana function call failed: {result.error}", original_error=result.error)
+
+            return result.result
+
+        except Exception as e:
+            if isinstance(e, DanaCallError):
+                raise
+            raise DanaCallError(f"Failed to execute Dana function '{func_name}': {e}", original_error=e)
+
+    def exec_module(self, file_path: str) -> Any:
+        """Execute a Dana module from a file path.
+
+        Args:
+            file_path: Path to the Dana (.na) file to execute
+
+        Returns:
+            The execution result containing context and any return values
+
+        Raises:
+            DanaCallError: If the Dana module execution fails
+        """
+        try:
+            if self._debug:
+                print(f"DEBUG: InProcessSandboxInterface executing Dana module from: {file_path}")
+
+            # Read the Dana module file
+            with open(file_path, encoding="utf-8") as f:
+                dana_code = f.read()
+
+            # Execute the module through the sandbox
+            result = self._sandbox.eval(dana_code, filename=file_path)
+
+            if not result.success:
+                raise DanaCallError(f"Dana module execution failed: {result.error}", original_error=result.error)
+
+            return result
+
+        except FileNotFoundError:
+            raise DanaCallError(f"Dana module file not found: {file_path}")
+        except PermissionError:
+            raise DanaCallError(f"Permission denied reading Dana module: {file_path}")
+        except Exception as e:
+            if isinstance(e, DanaCallError):
+                raise
+            raise DanaCallError(f"Failed to execute Dana module from '{file_path}': {e}", original_error=e)
+
     def _format_options_for_dana(self, options: dict) -> str:
         """Format Python options dict as Dana dict syntax.
 

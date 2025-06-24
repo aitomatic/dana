@@ -11,8 +11,6 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any
-
 from lark import Token, Tree
 
 from opendxa.dana.sandbox.parser.ast import (

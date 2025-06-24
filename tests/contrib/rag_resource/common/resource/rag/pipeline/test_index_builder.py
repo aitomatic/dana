@@ -14,15 +14,23 @@ from opendxa.contrib.rag_resource.common.resource.rag.pipeline.index_builder imp
 
 
 # Helper function to check if OpenAI API key is available
-def has_openai_api_key():
+def has_real_openai_api_key():
     """Check if OpenAI API key is available for integration tests."""
-    return bool(os.getenv("OPENAI_API_KEY"))
+    api_key = os.getenv("OPENAI_API_KEY")
+    # Check if we have a real API key, not just the test placeholder
+    return bool(api_key) and api_key != "test-key" and not api_key.startswith("test")
 
 
-# Pytest fixture to skip tests requiring OpenAI API key
+def skip_if_no_real_openai_key():
+    """Skip test if no real OpenAI API key is available."""
+    if not has_real_openai_api_key():
+        pytest.skip("Real OpenAI API key required for integration tests (not test-key)")
+
+
+# Pytest fixture to skip tests requiring OpenAI API key (legacy - kept for compatibility)
 openai_required = pytest.mark.skipif(
-    not has_openai_api_key(),
-    reason="OpenAI API key required for integration tests"
+    not has_real_openai_api_key(),
+    reason="Real OpenAI API key required for integration tests (not test-key)"
 )
 
 
@@ -187,11 +195,11 @@ class TestIndexBuilder:
 class TestIndexBuilderIntegration:
     """Integration tests for IndexBuilder."""
 
-    @openai_required
     @pytest.mark.integration
     @pytest.mark.asyncio
     async def test_real_index_creation(self, sample_documents):
         """Test actual index creation with real LlamaIndex components."""
+        skip_if_no_real_openai_key()
         builder = IndexBuilder()
         
         docs_by_source = {
@@ -212,11 +220,11 @@ class TestIndexBuilderIntegration:
         
         assert len(nodes) >= 0  # Should return some results or empty list
 
-    @openai_required
     @pytest.mark.integration 
     @pytest.mark.asyncio
     async def test_multiple_sources_real_indices(self, sample_documents, long_document):
         """Test creating indices for multiple sources with real LlamaIndex."""
+        skip_if_no_real_openai_key()
         builder = IndexBuilder()
         
         docs_by_source = {

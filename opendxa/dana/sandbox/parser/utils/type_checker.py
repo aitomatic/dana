@@ -31,7 +31,6 @@ from opendxa.dana.sandbox.parser.ast import (
     ContinueStatement,
     DictLiteral,
     ExceptBlock,
-    Expression,
     ForLoop,
     FunctionCall,
     FunctionDefinition,
@@ -342,8 +341,9 @@ class TypeChecker:
         """Check an import from statement for type errors."""
         pass  # No type checking needed
 
-    def check_expression(self, expression: Expression) -> DanaType:
+    def check_expression(self, expression: Any) -> DanaType:
         """Check an expression for type errors."""
+        # Handle Union types from Assignment.value which includes additional types
         if isinstance(expression, LiteralExpression):
             return self.check_literal_expression(expression)
         elif isinstance(expression, Identifier):
@@ -368,6 +368,18 @@ class TypeChecker:
             return self.check_list_literal(expression)
         elif isinstance(expression, UseStatement):
             return self.check_use_statement(expression)
+        elif hasattr(expression, "__class__") and expression.__class__.__name__ == "FStringExpression":
+            # Handle FStringExpression without importing it directly
+            return DanaType("string")
+        elif hasattr(expression, "__class__") and expression.__class__.__name__ == "AgentStatement":
+            # Handle AgentStatement
+            return DanaType("any")  # Agent statements return dynamic objects
+        elif hasattr(expression, "__class__") and expression.__class__.__name__ == "AgentPoolStatement":
+            # Handle AgentPoolStatement
+            return DanaType("any")  # Agent pool statements return dynamic objects
+        elif hasattr(expression, "__class__") and expression.__class__.__name__ == "ObjectFunctionCall":
+            # Handle ObjectFunctionCall
+            return DanaType("any")  # Object function calls return dynamic results
         else:
             raise TypeError(f"Unsupported expression type: {type(expression).__name__}", expression)
 

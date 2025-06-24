@@ -107,8 +107,9 @@ class IdentifierResolver(Loggable):
                 # self._cache_result(cache_key, result)  # DISABLED
                 return result
 
-            # All strategies failed
-            raise StateError(f"Identifier '{name}' not found in any scope or registry")
+            # All strategies failed - gracefully return None for undefined variables
+            self.debug(f"Identifier '{name}' not found - returning None gracefully")
+            return None
 
         except Exception as e:
             # Don't cache exceptions
@@ -323,7 +324,7 @@ class IdentifierResolver(Loggable):
         self.debug(f"Trying dotted attribute access for '{name}'")
 
         result = None
-        for i, part in enumerate(parts):
+        for _i, part in enumerate(parts):
             if result is None:
                 # Look for base variable in context state
                 if part in context._state:

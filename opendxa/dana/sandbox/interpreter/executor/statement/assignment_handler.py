@@ -57,7 +57,7 @@ class AssignmentHandler(Loggable):
             target_type = self._process_type_hint(node, context)
 
             # Evaluate the right side expression
-            if not self.parent_executor or not hasattr(self.parent_executor, "parent"):
+            if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
                 raise SandboxError("Parent executor not properly initialized")
             value = self.parent_executor.parent.execute(node.value, context)
 
@@ -184,7 +184,7 @@ class AssignmentHandler(Loggable):
         from opendxa.dana.sandbox.parser.ast import SliceExpression, SliceTuple
 
         # Get the target object
-        if not self.parent_executor or not hasattr(self.parent_executor, "parent"):
+        if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
             raise SandboxError("Parent executor not properly initialized")
         target_obj = self.parent_executor.parent.execute(target.object, context)
 
@@ -272,7 +272,7 @@ class AssignmentHandler(Loggable):
         """
         try:
             # Get the target object
-            if not self.parent_executor or not hasattr(self.parent_executor, "parent"):
+            if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
                 raise SandboxError("Parent executor not properly initialized")
             target_obj = self.parent_executor.parent.execute(target.object, context)
 

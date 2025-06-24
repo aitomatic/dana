@@ -2,51 +2,58 @@
 Main Dana Module Implementation for Python-to-Dana Integration
 
 Provides the familiar Python API for Dana functions while maintaining
-sandbox security boundaries.
+sandbox security boundaries. Now includes module import capabilities.
 """
 
 from typing import Any
 
 from opendxa.contrib.python_to_dana.core.exceptions import DanaCallError
 from opendxa.contrib.python_to_dana.core.inprocess_sandbox import InProcessSandboxInterface
+from opendxa.contrib.python_to_dana.core.module_importer import install_import_hook, list_available_modules, uninstall_import_hook
 from opendxa.contrib.python_to_dana.core.subprocess_sandbox import SUBPROCESS_ISOLATION_CONFIG, SubprocessSandboxInterface
 from opendxa.contrib.python_to_dana.utils.converter import validate_and_convert
 
 
 class Dana:
     """
-    Main Dana module implementation.
+    Main Dana module implementation with module import capabilities.
 
     This class provides the Python-friendly interface to Dana's capabilities
     while maintaining security boundaries through the sandbox interface.
+    Now supports direct importing of Dana .na files in Python code.
 
     Example usage:
         from opendxa.dana import dana
 
+        # Traditional reasoning
         result = dana.reason("What is 2+2?")
         print(result)
 
-        # With options
-        result = dana.reason("Analyze this text", {
-            "temperature": 0.5,
-            "max_tokens": 100
-        })
+        # Enable module imports
+        dana.enable_module_imports()
 
-        # With subprocess isolation (future)
-        dana_isolated = Dana(use_subprocess_isolation=True)
-        result = dana_isolated.reason("What is 2+2?")
+        # Now you can import Dana modules directly
+        import simple_math
+        result = simple_math.add(5, 3)
+        print(result)
+
+        # List available modules
+        modules = dana.list_modules()
+        print(f"Available Dana modules: {modules}")
     """
 
-    def __init__(self, debug: bool = False, use_subprocess_isolation: bool = False):
+    def __init__(self, debug: bool = False, use_subprocess_isolation: bool = False, enable_imports: bool = False):
         """Initialize the Dana module.
 
         Args:
             debug: Enable debug mode
             use_subprocess_isolation: Use subprocess isolation (placeholder - not implemented yet)
+            enable_imports: Automatically enable module imports on initialization
         """
         self._debug = debug
         self._use_subprocess_isolation = use_subprocess_isolation
         self._call_count = 0
+        self._imports_enabled = False
 
         # TODO: Remove this check when subprocess isolation is implemented
         if use_subprocess_isolation and not SUBPROCESS_ISOLATION_CONFIG["enabled"]:
@@ -59,6 +66,10 @@ class Dana:
             self._sandbox_interface = SubprocessSandboxInterface(debug=debug)
         else:
             self._sandbox_interface = InProcessSandboxInterface(debug=debug)
+
+        # Enable imports if requested
+        if enable_imports:
+            self.enable_module_imports()
 
     def reason(self, prompt: str, options: dict | None = None) -> Any:
         """
@@ -110,6 +121,47 @@ class Dana:
                 raise
             raise DanaCallError(f"Unexpected error in reasoning: {e}", original_error=e)
 
+    def enable_module_imports(self, search_paths: list[str] | None = None) -> None:
+        """Enable importing Dana .na files directly in Python.
+
+        Args:
+            search_paths: Optional list of paths to search for .na files
+
+        Example:
+            dana.enable_module_imports()
+            import simple_math  # This will load simple_math.na
+            result = simple_math.add(5, 3)
+        """
+        if not self._imports_enabled:
+            install_import_hook(search_paths=search_paths, sandbox_interface=self._sandbox_interface, debug=self._debug)
+            self._imports_enabled = True
+            if self._debug:
+                print("DEBUG: Dana module imports enabled")
+
+    def disable_module_imports(self) -> None:
+        """Disable Dana module imports."""
+        if self._imports_enabled:
+            uninstall_import_hook()
+            self._imports_enabled = False
+            if self._debug:
+                print("DEBUG: Dana module imports disabled")
+
+    def list_modules(self, search_paths: list[str] | None = None) -> list[str]:
+        """List all available Dana modules.
+
+        Args:
+            search_paths: Optional list of paths to search
+
+        Returns:
+            List of available module names
+        """
+        return list_available_modules(search_paths)
+
+    @property
+    def imports_enabled(self) -> bool:
+        """Check if module imports are enabled."""
+        return self._imports_enabled
+
     @property
     def debug(self) -> bool:
         """Check if debug mode is enabled."""
@@ -138,6 +190,9 @@ class Dana:
 
     def close(self):
         """Close the Dana instance and cleanup resources."""
+        if self._imports_enabled:
+            self.disable_module_imports()
+
         if hasattr(self._sandbox_interface, "close"):
             self._sandbox_interface.close()
 
@@ -145,7 +200,8 @@ class Dana:
         """String representation of Dana module."""
         debug_status = "debug" if self._debug else "normal"
         isolation_status = "subprocess-isolated" if self.is_subprocess_isolated else "in-process"
-        return f"Dana(mode={debug_status}, isolation={isolation_status}, calls={self._call_count})"
+        imports_status = "imports-enabled" if self._imports_enabled else "imports-disabled"
+        return f"Dana(mode={debug_status}, isolation={isolation_status}, {imports_status}, calls={self._call_count})"
 
     def __enter__(self):
         """Context manager entry."""
@@ -159,3 +215,13 @@ class Dana:
     def __del__(self):
         """Cleanup on deletion."""
         self.close()
+
+    def set_debug(self, debug: bool) -> None:
+        """Set debug mode for Dana instance.
+
+        Args:
+            debug: Enable or disable debug mode
+        """
+        self._debug = debug
+        if hasattr(self._sandbox_interface, "debug"):
+            self._sandbox_interface.debug = debug
