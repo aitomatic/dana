@@ -1,156 +1,137 @@
 """
-POET (Perceive-Operate-Enforce-Train) decorator implementation.
+POET (Perceive-Operate-Enforce-Train) decorator for Dana language.
 
-This module provides the POET decorator for Dana code enhancement.
+This module provides the POET decorator as a native Dana language feature.
+POET works entirely within Dana's execution model with no Python dependencies.
 """
 
-from pathlib import Path
 from typing import Any
 
 from opendxa.dana.poet.types import POETConfig
-from opendxa.dana.sandbox.parser.ast import ImportStatement
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+
+
+def poet(domain: str | None = None, **kwargs) -> Any:
+    """
+    POET decorator for Dana functions - pure Dana language feature.
+
+    This function is registered in Dana's function registry and works
+    as a native Dana decorator that enhances functions during execution.
+
+    In Dana code:
+        @poet(domain="healthcare")
+        def diagnose(symptoms: list) -> dict:
+            # function implementation
+
+    Args:
+        domain: Domain context for enhancement
+        **kwargs: Additional POET configuration (retries, timeout, etc.)
+
+    Returns:
+        A function that wraps the original Dana function with POET phases
+    """
+
+    def dana_decorator(original_func: Any) -> Any:
+        """
+        The actual decorator that receives the Dana function.
+        This works within Dana's function execution context.
+        """
+
+        def poet_enhanced_function(*args, **kwargs):
+            """
+            POET-enhanced function with P->O->E->T phases.
+            This executes entirely within Dana runtime.
+            """
+
+            # Get function name for logging/tracking
+            func_name = getattr(original_func, "__name__", "unknown")
+
+            # PERCEIVE PHASE: Input validation and context preparation
+            # In a real implementation, this would use Dana's native data structures
+            context = {"function_name": func_name, "domain": domain, "args": args, "kwargs": kwargs, "phase": "perceive"}
+
+            # Log perception phase (using Dana's native log function if available)
+            if "log" in kwargs.get("_dana_context", {}):
+                kwargs["_dana_context"]["log"](f"POET({func_name}): Perceive phase")
+
+            # OPERATE PHASE: Execute original function with error handling
+            operation_result = None
+            retry_count = 0
+            max_retries = kwargs.get("retries", 1)
+
+            while retry_count < max_retries:
+                try:
+                    context["phase"] = "operate"
+                    context["retry"] = retry_count
+
+                    # Execute original Dana function
+                    operation_result = original_func(*args, **kwargs)
+                    break  # Success, exit retry loop
+
+                except Exception as e:
+                    retry_count += 1
+                    if retry_count >= max_retries:
+                        # Re-raise after max retries
+                        context["phase"] = "error"
+                        context["error"] = str(e)
+                        raise e
+
+                    # Log retry attempt
+                    if "log" in kwargs.get("_dana_context", {}):
+                        kwargs["_dana_context"]["log"](f"POET({func_name}): Retry {retry_count}/{max_retries}")
+
+            # ENFORCE PHASE: Output validation and result processing
+            context["phase"] = "enforce"
+
+            # In a real implementation, this would apply domain-specific validations
+            # For now, pass through the result
+            enforced_result = operation_result
+
+            # TRAIN PHASE: Learning and improvement (if enabled)
+            if kwargs.get("enable_training", True):
+                context["phase"] = "train"
+                # In a real implementation, this would update domain knowledge
+                # For now, just log the training phase
+                if "log" in kwargs.get("_dana_context", {}):
+                    kwargs["_dana_context"]["log"](f"POET({func_name}): Train phase completed")
+
+            return enforced_result
+
+        # Preserve Dana function metadata
+        poet_enhanced_function.__name__ = getattr(original_func, "__name__", "poet_enhanced")
+        poet_enhanced_function.__doc__ = getattr(original_func, "__doc__", None)
+
+        # Store POET metadata in a way that's accessible to Dana
+        poet_enhanced_function._poet_config = {
+            "domain": domain,
+            "retries": kwargs.get("retries", 1),
+            "timeout": kwargs.get("timeout", None),
+            "enable_training": kwargs.get("enable_training", True),
+        }
+
+        return poet_enhanced_function
+
+    return dana_decorator
 
 
 class POETMetadata:
-    """Metadata container for POET enhanced Dana code"""
+    """Metadata for POET-enhanced functions - used by Dana runtime."""
 
-    def __init__(self, dana_code: str, config: POETConfig):
-        self.dana_code = dana_code
-        self.version = 1
+    def __init__(self, function_name: str, config: POETConfig):
+        self.function_name = function_name
         self.config = config
-        from pathlib import Path
-
-        self.enhanced_path = Path("tmp") / "enhanced.na"
+        self.version = 1
 
     def __getitem__(self, key):
-        if key in ("domains", "domain"):
+        """Dict-like access for compatibility."""
+        if key == "domains":
             return [self.config.domain] if self.config.domain else []
-        if key == "retries":
-            return getattr(self.config, "retries", None)
-        if key == "timeout":
-            return getattr(self.config, "timeout", None)
-        if key == "version":
+        elif key == "retries":
+            return self.config.retries
+        elif key == "timeout":
+            return self.config.timeout
+        elif key == "version":
             return self.version
-        if key == "enhanced_path":
-            return self.enhanced_path
-        if key == "namespace":
+        elif key == "namespace":
             return "local"
-        raise KeyError(key)
-
-
-class POETDecorator:
-    """
-    Enhanced POET decorator that generates and executes Dana-based enhancements.
-
-    The decorator works by:
-    1. Checking for enhanced Dana code in ./dana/{function_name}.na
-    2. Enhancing the Dana code using POETEnhancer
-    3. Executing the enhanced code in the Dana sandbox
-    """
-
-    def __init__(self, dana_code: str, domain: str | None = None, **kwargs):
-        """Initialize the POET decorator.
-
-        Args:
-            dana_code: The Dana code to enhance
-            domain: Domain context for enhancement
-            **kwargs: Additional configuration options
-        """
-        self.dana_code = dana_code
-        self.config = POETConfig(domain=domain, **kwargs)
-        self._poet_metadata = POETMetadata(dana_code, self.config)
-        # Always write enhanced code to ./dana/{domain}_enhanced.na
-        dana_dir = Path("dana")
-        dana_dir.mkdir(exist_ok=True)
-        self.enhanced_path = dana_dir / f"{domain or 'default'}_enhanced.na"
-        self._create_wrapper()
-
-    def _ensure_enhanced_code_exists(self) -> None:
-        if not self.enhanced_path.exists():
-            from opendxa.dana.poet.enhancer import POETEnhancer
-
-            enhancer = POETEnhancer()
-            dana_code = enhancer.enhance(self.dana_code, self.config)
-            self.enhanced_path.write_text(dana_code)
-
-    def _load_enhanced_module(self, sandbox_context: SandboxContext) -> Any:
-        # Use Dana's native import system
-        module_name = self.enhanced_path.stem
-        if hasattr(sandbox_context, "_interpreter") and sandbox_context._interpreter:
-            import_stmt = ImportStatement(module=module_name, alias=None)
-            sandbox_context._interpreter.execute_statement(import_stmt, sandbox_context)
-            return sandbox_context.get_from_scope(module_name, scope="local")
         else:
-            raise RuntimeError("No interpreter available in sandbox context")
-
-    def _create_wrapper(self) -> None:
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            self._ensure_enhanced_code_exists()
-            context = kwargs.pop("context", None)
-            if context is None:
-                from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-                from opendxa.dana.sandbox.sandbox_context import SandboxContext
-
-                context = SandboxContext()
-                context._interpreter = DanaInterpreter()
-            enhanced_module = self._load_enhanced_module(context)
-            enhanced_func_name = f"enhanced_{self.dana_code}"
-            if not hasattr(enhanced_module, enhanced_func_name):
-                raise RuntimeError(f"Enhanced function {enhanced_func_name} not found in module {enhanced_module}")
-            enhanced_func = getattr(enhanced_module, enhanced_func_name)
-            # Call the enhanced function using Dana's context and interpreter
-            if hasattr(enhanced_func, "execute"):
-                return enhanced_func.execute(context, *args, **kwargs)
-            return enhanced_func(*args, **kwargs)
-
-        self.wrapper = wrapper
-
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        return self.wrapper(*args, **kwargs)
-
-    def __repr__(self) -> str:
-        return f"POETDecorator(dana_code={self.dana_code}, domain={self.config.domain}, enable_training={self.config.enable_training})"
-
-    @property
-    def metadata(self) -> POETMetadata:
-        """Get the POET metadata for this decorated function."""
-        return self._poet_metadata
-
-
-def poet(dana_code: str, *, domain: str | None = None, **kwargs) -> Any:
-    """Factory for POETDecorator. Accepts Dana code as a string and returns a POETDecorator instance."""
-    return POETDecorator(dana_code, domain=domain, **kwargs)
-
-
-def feedback(execution_id: str, content: str | dict | Any, **kwargs) -> bool:
-    """Provide feedback for a POET function execution.
-
-    When a function has optimize_for set, this feedback is used by the Train phase
-    to improve future executions. The LLM learns from this feedback to generate
-    better enhancements.
-
-    Args:
-        execution_id: The execution ID from POETResult._poet.execution_id
-        content: Feedback content (string, dict, or any format)
-        **kwargs: Additional feedback parameters
-
-    Returns:
-        True if feedback was processed, False otherwise
-    """
-    try:
-        # Import storage to save feedback
-        from opendxa.dana.poet.storage import POETStorage
-
-        storage = POETStorage()
-        return storage.save_feedback(
-            execution_id,
-            {
-                "content": content,
-                "metadata": kwargs,
-                "timestamp": storage._get_timestamp(),
-            },
-        )
-    except Exception as e:
-        print(f"POET: Failed to save feedback: {e}")
-        return False
+            raise KeyError(key)
