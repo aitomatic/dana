@@ -278,6 +278,11 @@ compile-bytecode = true             # Pre-compile .pyc files for performance
 
 # Future: Custom dependency sources
 [tool.uv.sources]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.2.0",
+]
 # opendxa = { workspace = true }  # For workspace/monorepo setup
 
 # Future: Workspace configuration for multi-package projects

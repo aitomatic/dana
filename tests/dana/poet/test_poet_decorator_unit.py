@@ -1,196 +1,208 @@
 """
-Unit tests for POET decorator implementation.
+Unit tests for POET Dana-to-Dana enhancement implementation.
 
-This module tests the core Python decorator functionality without Dana integration.
+This module tests the core Dana enhancement functionality.
 """
 
-from unittest.mock import Mock
+from pathlib import Path
 
 import pytest
 
-from opendxa.dana.poet.decorator import poet
+from opendxa.dana.poet.decorator import POETDecorator, poet
+from opendxa.dana.poet.enhancer import POETEnhancer
+from opendxa.dana.poet.types import POETConfig
 
 
 @pytest.mark.poet
-class TestPOETDecoratorUnit:
-    """Unit tests for POET decorator core functionality."""
+class TestPOETEnhancer:
+    """Unit tests for POET enhancer core functionality."""
+
+    def test_enhancer_basic_functionality(self):
+        """Test that POETEnhancer can enhance basic Dana code."""
+        enhancer = POETEnhancer()
+
+        # Simple Dana function
+        dana_code = """
+def add(a: int, b: int) -> int:
+    return a + b
+"""
+
+        config = POETConfig(domain="test")
+        enhanced_code = enhancer.enhance(dana_code, config)
+
+        # Should return enhanced code
+        assert isinstance(enhanced_code, str)
+        assert len(enhanced_code) > len(dana_code)
+        assert "# POET-enhanced Dana code" in enhanced_code
+        assert dana_code.strip() in enhanced_code
+
+    def test_enhancer_invalid_dana_code(self):
+        """Test that POETEnhancer raises error for invalid Dana code."""
+        enhancer = POETEnhancer()
+
+        # Invalid Dana code
+        invalid_code = """
+def add(a: int, b: int) -> int {
+    return a + b
+}
+"""
+
+        config = POETConfig(domain="test")
+        with pytest.raises(RuntimeError, match="Invalid Dana code"):
+            enhancer.enhance(invalid_code, config)
+
+    def test_enhancer_with_domain_config(self):
+        """Test that POETEnhancer uses domain configuration."""
+        enhancer = POETEnhancer()
+
+        dana_code = """
+def multiply(x: int, y: int) -> int:
+    return x * y
+"""
+
+        config = POETConfig(domain="mathematical_operations", retries=3, timeout=60.0)
+        enhanced_code = enhancer.enhance(dana_code, config)
+
+        assert isinstance(enhanced_code, str)
+        assert "# POET-enhanced Dana code" in enhanced_code
+
+
+@pytest.mark.poet
+class TestPOETDecorator:
+    """Unit tests for POET decorator with Dana code."""
 
     def test_decorator_basic_application(self):
-        """Test that @poet decorator can be applied to functions."""
+        """Test that poet factory can create POETDecorator with Dana code."""
+        dana_code = """
+def test_func(x: int) -> int:
+    return x * 2
+"""
 
-        @poet(domain="test")
-        def test_func(x: int) -> int:
-            return x * 2
+        decorator = poet(dana_code, domain="test")
 
-        # Should be callable
-        assert callable(test_func)
+        # Should be a POETDecorator instance
+        assert isinstance(decorator, POETDecorator)
 
         # Should have POET metadata
-        assert hasattr(test_func, "_poet_metadata")
+        assert hasattr(decorator, "_poet_metadata")
 
         # Metadata should contain expected values
-        meta = test_func._poet_metadata
-        assert "test" in meta["domains"]
+        meta = decorator._poet_metadata
+        domains = meta["domains"]
+        assert isinstance(domains, list)
+        assert "test" in domains
         assert meta["retries"] == 1  # Default value
         assert meta["timeout"] is None  # Default value
         assert meta["namespace"] == "local"  # Default value
 
     def test_decorator_with_parameters(self):
         """Test POET decorator with various parameters."""
+        dana_code = """
+def test_func(x: int) -> int:
+    return x + 1
+"""
 
-        @poet(domain="custom", retries=3, timeout=60)
-        def test_func(x: int) -> int:
-            return x + 1
+        decorator = poet(dana_code, domain="custom", retries=3, timeout=60)
 
-        meta = test_func._poet_metadata
-        assert "custom" in meta["domains"]
+        meta = decorator._poet_metadata
+        domains = meta["domains"]
+        assert isinstance(domains, list)
+        assert "custom" in domains
         assert meta["retries"] == 3
         assert meta["timeout"] == 60
 
-    def test_decorator_preserves_function_attributes(self):
-        """Test that decorator preserves original function attributes."""
+    def test_decorator_enhanced_file_creation(self):
+        """Test that decorator creates enhanced Dana files."""
+        dana_code = """
+def original_func(x: int, y: string) -> string:
+    return f"{y}: {x}"
+"""
 
-        @poet(domain="test")
-        def original_func(x: int, y: str) -> str:
-            """Original function docstring."""
-            return f"{y}: {x}"
+        decorator = poet(dana_code, domain="test")
 
-        # Function name should be preserved
-        assert original_func.__name__ == "original_func"
+        # Should create enhanced file path
+        assert decorator.enhanced_path == Path("dana") / "test_enhanced.na"
 
-        # Docstring should be preserved
-        assert original_func.__doc__ == "Original function docstring."
+        # Should have wrapper
+        assert hasattr(decorator, "wrapper")
+        assert callable(decorator.wrapper)
 
-        # Should work when called (context handled internally)
-        result = original_func(42, "Answer")
-        assert result == "Answer: 42"
+    def test_decorator_metadata_access(self):
+        """Test that decorator metadata is accessible."""
+        dana_code = """
+def func(x: int) -> int:
+    return x * 2
+"""
 
-    def test_decorator_chaining(self):
-        """Test multiple POET decorators on the same function."""
+        decorator = poet(dana_code, domain="default")
 
-        @poet(domain="domain1")
-        @poet(domain="domain2")
-        def chained_func(x: int) -> int:
-            return x * 3
-
-        meta = chained_func._poet_metadata
-
-        # Should contain both domains
-        assert "domain1" in meta["domains"]
-        assert "domain2" in meta["domains"]
-        assert len(meta["domains"]) == 2
-
-    def test_decorator_without_parameters(self):
-        """Test POET decorator used without parameters."""
-
-        @poet(domain="default")  # Provide a domain parameter since it may be required
-        def no_params_func(x: int) -> int:
-            return x + 5
-
-        meta = no_params_func._poet_metadata
-
-        # Should have default values except for the domain we specified
-        assert "default" in meta["domains"]
+        # Test metadata access
+        meta = decorator._poet_metadata
+        assert meta["domains"] == ["default"]
         assert meta["retries"] == 1
         assert meta["timeout"] is None
         assert meta["namespace"] == "local"
+        assert meta["version"] == 1
 
-    def test_context_handling_with_interpreter(self):
-        """Test that decorator handles context with interpreter correctly."""
+    def test_decorator_repr(self):
+        """Test that decorator has meaningful string representation."""
+        dana_code = """
+def func(x: int) -> int:
+    return x * 2
+"""
 
-        @poet(domain="test")
-        def context_func(x: int) -> int:
-            return x * 2
+        decorator = poet(dana_code, domain="test")
+        repr_str = repr(decorator)
 
-        # POET decorator should handle context internally when function is called
-        result = context_func(5)
-        assert result == 10
+        assert "POETDecorator" in repr_str
+        assert "test" in repr_str
 
-    def test_context_handling_without_interpreter(self):
-        """Test decorator behavior when context lacks interpreter."""
+    def test_decorator_metadata_property(self):
+        """Test that decorator provides metadata property."""
+        dana_code = """
+def func(x: int) -> int:
+    return x * 2
+"""
 
-        @poet(domain="test")
-        def no_interpreter_func(x: int) -> int:
-            return x + 1
+        decorator = poet(dana_code, domain="test")
 
-        # POET decorator should create/manage context internally
-        result = no_interpreter_func(10)
-        assert result == 11
+        # Should have metadata property
+        assert hasattr(decorator, "metadata")
+        meta = decorator.metadata
+        domains = meta["domains"]
+        assert isinstance(domains, list)
+        assert "test" in domains
 
-    def test_retry_functionality(self):
-        """Test that retry logic works correctly."""
 
-        call_count = 0
+@pytest.mark.poet
+class TestPOETIntegration:
+    """Integration tests for POET system."""
 
-        @poet(domain="test", retries=3)
-        def flaky_func(x: int) -> int:
-            nonlocal call_count
-            call_count += 1
-            if call_count < 3:
-                raise ValueError("Temporary failure")
-            return x * 2
+    def test_enhancer_decorator_integration(self):
+        """Test that enhancer and decorator work together."""
+        dana_code = """
+def add(a: int, b: int) -> int:
+    return a + b
+"""
 
-        result = flaky_func(5)
+        # Create decorator
+        decorator = poet(dana_code, domain="math")
 
-        assert result == 10
-        assert call_count == 3  # Should have tried 3 times
+        # Should create enhanced file when called
+        decorator._ensure_enhanced_code_exists()
 
-    @pytest.mark.skip(reason="DanaFunction mock integration issue - Mock execution chain needs debugging")
-    def test_function_execution_with_dana_function(self):
-        """Test decorator with DanaFunction objects."""
-        from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+        # Enhanced file should exist
+        assert decorator.enhanced_path.exists()
 
-        # Create a mock DanaFunction with all required functools.wraps attributes
-        dana_func = Mock(spec=DanaFunction)
-        dana_func.execute.return_value = 42
-        dana_func.__name__ = "test_dana_func"
-        dana_func.__annotations__ = {}  # Add empty annotations dict
-        dana_func.__doc__ = "Mock Dana function"
-        dana_func.__module__ = "test_module"
-        dana_func.__qualname__ = "test_dana_func"
-        # Also set __type_params__ for Python 3.12+ compatibility
-        dana_func.__type_params__ = ()
+        # Enhanced file should contain enhanced code
+        enhanced_content = decorator.enhanced_path.read_text()
+        assert "# POET-enhanced Dana code" in enhanced_content
+        assert dana_code.strip() in enhanced_content
 
-        # Apply decorator
-        decorated = poet(domain="test")(dana_func)
-
-        # Should be callable and preserve metadata
-        assert callable(decorated)
-        assert hasattr(decorated, "_poet_metadata")
-        assert "test" in decorated._poet_metadata["domains"]
-
-        # Should work when called
-        result = decorated(10)
-
-        # The result should be what execute() returns
-        assert result == 42
-        # The execute method should have been called
-        dana_func.execute.assert_called_once()
-
-    def test_error_propagation(self):
-        """Test that errors in decorated functions are properly propagated."""
-
-        @poet(domain="test", retries=1)  # Only one attempt
-        def error_func(x: int) -> int:
-            raise ValueError("Test error")
-
-        with pytest.raises(ValueError, match="Test error"):
-            error_func(5)
-
-    def test_metadata_immutability(self):
-        """Test that metadata can't be accidentally modified."""
-
-        @poet(domain="test", retries=2)
-        def meta_func(x: int) -> int:
-            return x
-
-        meta = meta_func._poet_metadata
-        original_retries = meta["retries"]
-
-        # Try to modify metadata
-        meta["retries"] = 99
-
-        # Should still have original value in function's actual metadata
-        fresh_meta = meta_func._poet_metadata
-        assert fresh_meta["retries"] == original_retries or fresh_meta["retries"] == 99
-        # Note: Exact behavior depends on implementation - this test documents current behavior
+    def test_cleanup_after_test(self):
+        """Clean up any test files created."""
+        # Remove any test files
+        dana_dir = Path("dana")
+        if dana_dir.exists():
+            for file in dana_dir.glob("*_enhanced.na"):
+                file.unlink()

@@ -29,6 +29,7 @@ from opendxa.dana.sandbox.interpreter.executor.expression_executor import Expres
 from opendxa.dana.sandbox.interpreter.executor.function_executor import FunctionExecutor
 from opendxa.dana.sandbox.interpreter.executor.program_executor import ProgramExecutor
 from opendxa.dana.sandbox.interpreter.executor.statement_executor import StatementExecutor
+from opendxa.dana.sandbox.interpreter.executor.traversal import OptimizedASTTraversal
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.interpreter.hooks import HookRegistry, HookType
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -49,17 +50,19 @@ class DanaExecutor(BaseExecutor):
     - Single execution path for all node types
     - Consistent function parameter handling
     - Every node evaluation produces a value
+    - AST traversal optimizations with caching and safety
 
     Usage:
         executor = DanaExecutor(function_registry)
         result = executor.execute(node, context)  # node can be any AST node
     """
 
-    def __init__(self, function_registry: FunctionRegistry | None = None):
+    def __init__(self, function_registry: FunctionRegistry | None = None, enable_optimizations: bool = True):
         """Initialize the executor.
 
         Args:
             function_registry: Optional function registry
+            enable_optimizations: Whether to enable AST traversal optimizations
         """
         super().__init__(parent=None, function_registry=function_registry)  # type: ignore
         self._output_buffer = []  # Buffer for capturing print output
@@ -71,6 +74,9 @@ class DanaExecutor(BaseExecutor):
         self._collection_executor = CollectionExecutor(parent_executor=self)
         self._function_executor = FunctionExecutor(parent_executor=self)
         self._program_executor = ProgramExecutor(parent_executor=self)
+
+        # Initialize AST traversal optimization engine
+        self._optimization_engine = OptimizedASTTraversal(self) if enable_optimizations else None
 
         # Combine all node handlers into a master dispatch table
         self._register_all_handlers()
@@ -128,8 +134,13 @@ class DanaExecutor(BaseExecutor):
         if hasattr(node, "__class__") and node.__class__.__name__ == "FStringExpression":
             return self._collection_executor.execute_fstring_expression(node, context)
 
-        # Use BaseExecutor's dispatch mechanism
-        return super().execute(node, context)
+        # Use optimization engine if available, otherwise fall back to base execution
+        if self._optimization_engine:
+            # Delegate to optimization engine for complex AST nodes
+            return self._optimization_engine.execute_optimized(node, context)
+        else:
+            # Fall back to base execution without optimizations
+            return super().execute(node, context)
 
     def _execute_hook(
         self, hook_type: HookType, node: Any, context: SandboxContext, additional_context: dict[str, Any] | None = None
@@ -181,3 +192,44 @@ class DanaExecutor(BaseExecutor):
 
         # Return the node itself for other types
         return node
+
+    def configure_optimizations(self, **kwargs) -> None:
+        """Configure AST traversal optimizations.
+
+        Args:
+            **kwargs: Configuration options passed to optimization engine
+        """
+        if self._optimization_engine:
+            self._optimization_engine.configure_optimization(**kwargs)
+
+    def get_optimization_statistics(self) -> dict[str, Any] | None:
+        """Get AST traversal optimization statistics.
+
+        Returns:
+            Optimization statistics or None if optimizations are disabled
+        """
+        if self._optimization_engine:
+            return self._optimization_engine.get_optimization_statistics()
+        return None
+
+    def log_optimization_report(self) -> None:
+        """Log comprehensive optimization performance report."""
+        if self._optimization_engine:
+            self._optimization_engine.log_optimization_report()
+        else:
+            self.info("AST traversal optimizations are disabled")
+
+    def clear_optimization_caches(self) -> None:
+        """Clear all optimization caches and reset statistics."""
+        if self._optimization_engine:
+            self._optimization_engine.clear_all_caches()
+
+    def is_optimization_healthy(self) -> bool:
+        """Check if optimization engine is in a healthy state.
+
+        Returns:
+            True if optimizations are healthy or disabled, False if issues detected
+        """
+        if self._optimization_engine:
+            return self._optimization_engine.is_healthy()
+        return True  # Healthy if disabled

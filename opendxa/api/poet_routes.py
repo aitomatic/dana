@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
 from opendxa.dana.poet.errors import POETTranspilationError
-from opendxa.dana.poet.transpiler import PoetTranspiler
+from opendxa.dana.poet.transpiler import POETTranspiler
 from opendxa.dana.poet.types import POETConfig
 
 
@@ -27,7 +27,7 @@ class TranspileResponse(BaseModel):
 
 
 router = APIRouter()
-transpiler = PoetTranspiler()
+transpiler = POETTranspiler()
 
 
 @router.post(
@@ -40,11 +40,18 @@ async def transpile_function(request: TranspileRequest):
     """Transpile a function with POET P->O->E->(T) phases"""
     try:
         poet_config = POETConfig(**request.config)
-        enhanced_implementation = transpiler.transpile(request.code, poet_config)
+
+        # Create a mock function from the code string for transpilation
+        # This is a temporary workaround - in production, the API should receive actual function objects
+        import types
+
+        mock_func = types.FunctionType(code=compile(request.code, "<string>", "exec"), globals={}, name="mock_function")
+
+        enhanced_implementation = transpiler.transpile(mock_func, poet_config)
 
         return TranspileResponse(
-            poet_implementation=enhanced_implementation,
-            metadata=enhanced_implementation["metadata"],
+            poet_implementation={"code": enhanced_implementation, "language": "dana"},
+            metadata={"status": "success", "transpiler": "POETTranspiler"},
         )
     except POETTranspilationError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

@@ -486,3 +486,19 @@ class DanaSandbox(Loggable):
             else:
                 self.error(f"Cleanup error during exception handling: {cleanup_error}")
         # Don't suppress exceptions by returning None (implicit)
+
+    @property
+    def context(self) -> SandboxContext:
+        """Public accessor for the sandbox execution context."""
+        return self._context
+
+    def load_file(self, file_path: str) -> None:
+        """Load and evaluate a Dana file in the sandbox context."""
+        with open(file_path, "r", encoding="utf-8") as f:
+            source_code = f.read()
+        self.eval(source_code, filename=file_path)
+
+    @property
+    def function_registry(self):
+        """Expose the function registry from the internal interpreter."""
+        return self._interpreter.function_registry

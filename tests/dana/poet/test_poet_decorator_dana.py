@@ -1,265 +1,159 @@
 """
-Tests for POET decorator integration with Dana language.
+Tests for POET Dana-to-Dana enhancement system.
 
-This module tests the POET decorator functionality within Dana .na file execution.
+This module tests the POET enhancement functionality for Dana code.
 """
 
 from pathlib import Path
 
 import pytest
 
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
+from opendxa.dana.poet.decorator import POETDecorator, poet
 
 
 @pytest.mark.poet
-class TestPOETDecoratorDana:
-    """Test POET decorator functionality within Dana language execution."""
+class TestPOETDanaEnhancement:
+    """Test POET Dana-to-Dana enhancement functionality."""
 
-    # Using shared fixture from conftest.py instead of creating individual instances
-
-    @pytest.fixture
-    def fixtures_dir(self):
-        """Get the fixtures directory path."""
-        return Path(__file__).parent / "fixtures"
-
-    def get_context(self, result):
-        """Helper function to get the context from an ExecutionResult."""
-        assert result.final_context is not None, f"Execution failed or context missing: {result.error}"
-        return result.final_context
-
-    def test_basic_decorator_execution(self, fresh_sandbox, fixtures_dir):
-        """Test basic POET decorator functionality in Dana."""
-
-        result = fresh_sandbox.run(fixtures_dir / "basic_decorator.na")
-        context = self.get_context(result)
-
-        # Should execute successfully
-        assert result.success
-
-        # Check that functions were decorated and results computed
-        assert context.get("result_add") == 30  # 10 + 20
-        assert context.get("result_multiply") == 30  # 5 * 6
-        assert context.get("result_concat") == "HelloWorld"
-
-        # Check that functions have POET metadata
-        simple_add = context.get("simple_add")
-        assert simple_add is not None
-        assert hasattr(simple_add, "_poet_metadata")
-        assert "test_math" in simple_add._poet_metadata["domains"]
-
-    def test_decorator_with_parameters(self, fresh_sandbox, fixtures_dir):
-        """Test POET decorator with various parameters in Dana."""
-
-        result = fresh_sandbox.run(fixtures_dir / "basic_decorator.na")
-        context = self.get_context(result)
-
-        assert result.success
-
-        # Check function with custom parameters
-        simple_multiply = context.get("simple_multiply")
-        assert simple_multiply is not None
-        assert hasattr(simple_multiply, "_poet_metadata")
-
-        meta = simple_multiply._poet_metadata
-        assert "test_math" in meta["domains"]
-        assert meta["retries"] == 2
-        assert meta["timeout"] == 30
-
-    def test_decorator_chaining(self, fresh_sandbox, fixtures_dir):
-        """Test multiple POET decorators on the same function in Dana."""
-
-        result = fresh_sandbox.run(fixtures_dir / "decorator_chaining.na")
-        context = self.get_context(result)
-
-        assert result.success
-
-        # Check that results are computed correctly
-        assert context.get("result1") == 10  # 5 * 2
-        assert context.get("result2") == 25  # 10 + 15
-
-        # Check that chained function has multiple domains
-        chained_function = context.get("chained_function")
-        assert chained_function is not None
-        assert hasattr(chained_function, "_poet_metadata")
-
-        meta = chained_function._poet_metadata
-        assert "domain1" in meta["domains"]
-        assert "domain2" in meta["domains"]
-        assert len(meta["domains"]) == 2
-
-    def test_function_definition_and_execution(self, fresh_sandbox):
-        """Test that POET decorated functions can be defined and called in Dana."""
-
-        dana_code = '''
-@poet(domain="test_execution")
-def test_func(x: int, y: int) -> int:
-    """Test function for execution."""
-    return x + y
-
-# Call the function
-result = test_func(15, 25)
-'''
-
-        result = fresh_sandbox.eval(dana_code)
-        context = self.get_context(result)
-
-        assert result.success
-        assert context.get("result") == 40  # 15 + 25
-
-    def test_multiple_functions_same_domain(self, fresh_sandbox):
-        """Test multiple functions with the same domain."""
-
+    def test_basic_dana_enhancement(self):
+        """Test basic POET enhancement of Dana code."""
         dana_code = """
-@poet(domain="math_operations")
-def add_func(a: int, b: int) -> int:
+def add(a: int, b: int) -> int:
     return a + b
-
-@poet(domain="math_operations")
-def subtract_func(a: int, b: int) -> int:
-    return a - b
-
-# Test both functions
-sum_result = add_func(10, 5)
-diff_result = subtract_func(10, 5)
 """
 
-        result = fresh_sandbox.eval(dana_code)
-        context = self.get_context(result)
+        # Create POET decorator with Dana code
+        decorator = poet(dana_code, domain="math_operations")
 
-        assert result.success
-        assert context.get("sum_result") == 15
-        assert context.get("diff_result") == 5
+        # Should be a POETDecorator instance
+        assert isinstance(decorator, POETDecorator)
 
-        # Both functions should have the same domain
-        add_func = context.get("add_func")
-        subtract_func = context.get("subtract_func")
+        # Should have metadata
+        assert hasattr(decorator, "_poet_metadata")
+        meta = decorator._poet_metadata
+        domains = meta["domains"]
+        assert isinstance(domains, list)
+        assert "math_operations" in domains
 
-        assert "math_operations" in add_func._poet_metadata["domains"]
-        assert "math_operations" in subtract_func._poet_metadata["domains"]
-
-    def test_function_with_type_annotations(self, fresh_sandbox):
-        """Test POET decorator with Dana functions that have type annotations."""
-
+    def test_enhanced_file_creation(self):
+        """Test that enhanced Dana files are created."""
         dana_code = """
-@poet(domain="typed_functions")
-def typed_function(x: int, y: float, z: str) -> str:
-    return f"{z}: {x + y}"
-
-result = typed_function(10, 5.5, "Sum")
+def multiply(x: int, y: int) -> int:
+    return x * y
 """
 
-        result = fresh_sandbox.eval(dana_code)
-        context = self.get_context(result)
+        decorator = poet(dana_code, domain="test_math")
 
-        assert result.success
-        assert context.get("result") == "Sum: 15.5"
+        # Should create enhanced file when needed
+        decorator._ensure_enhanced_code_exists()
 
-    def test_decorator_metadata_preservation(self, fresh_sandbox):
-        """Test that POET decorator metadata is properly preserved in Dana."""
+        # Enhanced file should exist
+        assert decorator.enhanced_path.exists()
 
-        dana_code = '''
-@poet(domain="metadata_test", retries=5, timeout=120, enable_training=True)
-def metadata_function(x: int) -> int:
-    """Function with comprehensive metadata."""
-    return x * 3
+        # Enhanced file should contain enhanced code
+        enhanced_content = decorator.enhanced_path.read_text()
+        assert "# POET-enhanced Dana code" in enhanced_content
+        assert dana_code.strip() in enhanced_content
 
-# Just define the function, don't need to call it
-test_value = 42
-'''
+    def test_enhancer_with_different_domains(self):
+        """Test POET enhancer with different domain configurations."""
+        dana_code = """
+def divide(a: float, b: float) -> float:
+    return a / b
+"""
 
-        result = fresh_sandbox.eval(dana_code)
-        context = self.get_context(result)
+        # Test with different domains
+        domains = ["mathematical_operations", "financial_calculations", "scientific_computing"]
 
-        assert result.success
+        for domain in domains:
+            decorator = poet(dana_code, domain=domain)
+            meta = decorator._poet_metadata
+            domains_list = meta["domains"]
+            assert isinstance(domains_list, list)
+            assert domain in domains_list
 
-        func = context.get("metadata_function")
-        assert func is not None
-        assert hasattr(func, "_poet_metadata")
+    def test_enhancer_with_custom_parameters(self):
+        """Test POET enhancer with custom configuration parameters."""
+        dana_code = """
+def complex_calculation(x: int, y: int, z: int) -> int:
+    return x * y + z
+"""
 
-        meta = func._poet_metadata
-        assert "metadata_test" in meta["domains"]
+        decorator = poet(dana_code, domain="advanced_math", retries=5, timeout=120.0, enable_training=True)
+
+        meta = decorator._poet_metadata
         assert meta["retries"] == 5
-        assert meta["timeout"] == 120
-        assert meta["enable_training"] is True
+        assert meta["timeout"] == 120.0
+        domains = meta["domains"]
+        assert isinstance(domains, list)
+        assert "advanced_math" in domains
 
-    def test_error_handling_in_dana(self, fresh_sandbox):
-        """Test error handling with POET decorated functions in Dana."""
-
-        # Note: Avoiding division by zero test due to Dana control flow issues
-        # Instead test type-related errors that can be caught
-
+    def test_enhancer_with_complex_dana_code(self):
+        """Test POET enhancer with more complex Dana code structures."""
         dana_code = """
-@poet(domain="error_test", retries=1)
-def error_prone_function(x: int) -> int:
-    # This will work fine
-    return x + 100
+struct Point:
+    x: float
+    y: float
 
-# Call with valid input
-safe_result = error_prone_function(5)
+def distance(p1: Point, p2: Point) -> float:
+    dx = p1.x - p2.x
+    dy = p1.y - p2.y
+    return sqrt(dx * dx + dy * dy)
+
+def midpoint(p1: Point, p2: Point) -> Point:
+    return Point(x=(p1.x + p2.x) / 2, y=(p1.y + p2.y) / 2)
 """
 
-        result = fresh_sandbox.eval(dana_code)
-        context = self.get_context(result)
+        decorator = poet(dana_code, domain="geometry")
 
-        assert result.success
-        assert context.get("safe_result") == 105
+        # Should handle complex code without errors
+        assert isinstance(decorator, POETDecorator)
 
-    @pytest.mark.skip(reason="Dana control flow issue - functions with if statements cause execution to stop")
-    def test_decorator_with_control_flow(self, fresh_sandbox):
-        """Test POET decorator with functions containing control flow."""
+        # Should create enhanced file
+        decorator._ensure_enhanced_code_exists()
+        assert decorator.enhanced_path.exists()
 
-        # This test is skipped due to known Dana issue with if statements
+    def test_enhancer_file_path_management(self):
+        """Test that enhanced file paths are managed correctly."""
         dana_code = """
-@poet(domain="control_flow")
-def conditional_function(x: int) -> str:
-    if x > 10:
-        return "big"
-    else:
-        return "small"
-
-result = conditional_function(15)
-"""
-
-        result = fresh_sandbox.eval(dana_code)
-        context = self.get_context(result)
-
-        assert result.success
-        assert context.get("result") == "big"
-
-    def test_dana_context_integration(self, fresh_sandbox):
-        """Test that POET decorator integrates properly with Dana context."""
-
-        dana_code = """
-@poet(domain="context_test")
-def context_aware_function(x: int) -> int:
-    # Function that works with context
+def test_func(x: int) -> int:
     return x * 2
-
-result = context_aware_function(20)
 """
 
-        result = fresh_sandbox.eval(dana_code)
-        context = self.get_context(result)
+        # Test with different domains
+        decorator1 = poet(dana_code, domain="domain1")
+        decorator2 = poet(dana_code, domain="domain2")
 
-        assert result.success
-        assert context.get("result") == 40
+        # Should have different file paths
+        assert decorator1.enhanced_path != decorator2.enhanced_path
+        assert "domain1_enhanced.na" in str(decorator1.enhanced_path)
+        assert "domain2_enhanced.na" in str(decorator2.enhanced_path)
 
-    def test_complex_parameter_types(self, fresh_sandbox):
-        """Test POET decorator with complex parameter types."""
-
+    def test_enhancer_metadata_consistency(self):
+        """Test that metadata is consistent across different decorator instances."""
         dana_code = """
-@poet(domain="complex_types")
-def complex_function(items: list, multiplier: int) -> int:
-    # Simplified function since list comprehension may not be supported
-    return len(items) * multiplier
-
-test_list = [1, 2, 3, 4]
-result = complex_function(test_list, 3)
+def consistent_func(x: int) -> int:
+    return x + 10
 """
 
-        result = fresh_sandbox.eval(dana_code)
-        context = self.get_context(result)
+        # Create multiple decorators with same configuration
+        decorator1 = poet(dana_code, domain="consistency_test", retries=3)
+        decorator2 = poet(dana_code, domain="consistency_test", retries=3)
 
-        assert result.success
-        expected_result = 12  # 4 items * 3 multiplier
-        assert context.get("result") == expected_result
+        # Metadata should be consistent
+        meta1 = decorator1._poet_metadata
+        meta2 = decorator2._poet_metadata
+
+        assert meta1["domains"] == meta2["domains"]
+        assert meta1["retries"] == meta2["retries"]
+        assert meta1["timeout"] == meta2["timeout"]
+        assert meta1["namespace"] == meta2["namespace"]
+        assert meta1["version"] == meta2["version"]
+
+    def test_cleanup_after_tests(self):
+        """Clean up any test files created."""
+        # Remove any test files
+        dana_dir = Path("dana")
+        if dana_dir.exists():
+            for file in dana_dir.glob("*_enhanced.na"):
+                file.unlink()

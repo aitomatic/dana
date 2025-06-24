@@ -24,7 +24,8 @@ from opendxa.dana.common.exceptions import FunctionRegistryError, SandboxError
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.interpreter.executor.function_error_handling import FunctionExecutionErrorHandler
 from opendxa.dana.sandbox.interpreter.executor.function_name_utils import FunctionNameInfo
-from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionResolver
+
+from opendxa.dana.sandbox.interpreter.executor.resolver.unified_function_dispatcher import UnifiedFunctionDispatcher
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.parser.ast import (
     AttributeAccess,
@@ -53,7 +54,11 @@ class FunctionExecutor(BaseExecutor):
         """
         super().__init__(parent_executor, function_registry)
         self.error_handler = FunctionExecutionErrorHandler(self)
-        self.function_resolver = FunctionResolver(self)
+
+        # Initialize unified function dispatcher (new architecture)
+        # Use self.function_registry property to get registry from parent if needed
+        self.unified_dispatcher = UnifiedFunctionDispatcher(self.function_registry, self)
+
         self.register_handlers()
 
     def register_handlers(self):
@@ -263,21 +268,25 @@ class FunctionExecutor(BaseExecutor):
 
         self.debug("Not a struct instantiation, proceeding with function resolution...")
 
-        # Phase 3: Parse function name and resolve function
+        # Phase 3: Parse function name and resolve function using unified dispatcher
         name_info = FunctionNameInfo.from_node(node)
 
-        resolved_func = self.function_resolver.resolve_function(name_info, context, registry)
+        try:
+            # Use the new unified dispatcher (replaces fragmented resolution)
+            resolved_func = self.unified_dispatcher.resolve_function(name_info, context)
 
-        if resolved_func:
-            # Phase 4: Execute resolved function
-            return self.function_resolver.execute_resolved_function(
-                resolved_func, context, evaluated_args, evaluated_kwargs, name_info.func_name
-            )
-        else:
-            # Phase 5: Function not found - try registry fallback with error handling
-            return self.__execute_via_registry_with_error_handling(
-                node, registry, context, evaluated_args, evaluated_kwargs, name_info.func_name
-            )
+            # Phase 4: Execute resolved function using unified dispatcher
+            return self.unified_dispatcher.execute_function(resolved_func, context, evaluated_args, evaluated_kwargs, name_info.func_name)
+        except Exception as dispatcher_error:
+            # If unified dispatcher fails, provide comprehensive error information
+            self.debug(f"Unified dispatcher failed for function '{name_info.func_name}': {dispatcher_error}")
+
+            # Use error handler for consistent error reporting
+            try:
+                raise self.error_handler.handle_standard_exceptions(dispatcher_error, node)
+            except Exception:
+                # If error handler doesn't handle it, raise original with context
+                raise SandboxError(f"Function '{name_info.func_name}' execution failed: {dispatcher_error}") from dispatcher_error
 
     def __setup_and_validate(self, node: FunctionCall) -> Any:
         """INTERNAL: Phase 1 helper for execute_function_call only.
@@ -404,116 +413,6 @@ class FunctionExecutor(BaseExecutor):
         # Ensure f-strings are fully evaluated to strings
         evaluated_value = self._ensure_fully_evaluated(evaluated_value, context)
         return evaluated_value
-
-    def __execute_via_registry_with_error_handling(
-        self,
-        node: FunctionCall,
-        registry: Any,
-        context: SandboxContext,
-        evaluated_args: list[Any],
-        evaluated_kwargs: dict[str, Any],
-        func_name: str,
-    ) -> Any:
-        """INTERNAL: Phase 5 helper for execute_function_call only.
-
-        Execute via registry with comprehensive error handling.
-
-        Args:
-            node: The function call node
-            registry: The function registry
-            context: The execution context
-            evaluated_args: Evaluated positional arguments
-            evaluated_kwargs: Evaluated keyword arguments
-            func_name: The base function name
-
-        Returns:
-            The function execution result
-
-        Raises:
-            SandboxError: If function execution fails
-        """
-        try:
-            # Try unified registry execution first
-            return self.__execute_via_unified_registry(node, registry, context, evaluated_args, evaluated_kwargs, func_name)
-        except (FunctionRegistryError, KeyError) as e:
-            # Handle standard exceptions
-            raise self.error_handler.handle_standard_exceptions(e, node)
-        except Exception as e:
-            # Try error recovery if possible
-            return self.error_handler.handle_registry_execution_error(
-                e, node, registry, context, evaluated_args, evaluated_kwargs, func_name
-            )
-
-    def __execute_via_unified_registry(
-        self,
-        node: FunctionCall,
-        registry: Any,
-        context: SandboxContext,
-        evaluated_args: list[Any],
-        evaluated_kwargs: dict[str, Any],
-        func_name: str,
-    ) -> Any:
-        """INTERNAL: Execute function via registry using unified approach.
-
-        This method replaces the special case handling with a unified approach
-        that works for all functions through the registry.
-
-        Args:
-            node: The function call node
-            registry: The function registry
-            context: The execution context
-            evaluated_args: Evaluated positional arguments
-            evaluated_kwargs: Evaluated keyword arguments
-            func_name: The base function name
-
-        Returns:
-            The function execution result
-        """
-        # Try to resolve and execute the function directly for better control
-        # Try multiple name variations like the resolver does
-        # Handle both string names and AttributeAccess names
-        if isinstance(node.name, str):
-            names_to_try = [node.name]
-            if "." in node.name:
-                names_to_try.append(func_name)  # Try just the base function name
-        else:
-            # For AttributeAccess, we shouldn't reach this code path since method calls
-            # are handled separately, but provide fallback for safety
-            names_to_try = [str(node.name)]
-
-        for name_to_try in names_to_try:
-            try:
-                func, func_type, metadata = registry.resolve(name_to_try, None)
-
-                # Execute based on function type
-                if callable(func):
-                    from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
-                    from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
-
-                    if isinstance(func, PythonFunction | SandboxFunction):
-                        # Use the function's execute method for proper context handling
-                        raw_result = func.execute(context, *evaluated_args, **evaluated_kwargs)
-                    else:
-                        # Regular callable - call directly
-                        raw_result = func(*evaluated_args, **evaluated_kwargs)
-
-                    return self._assign_and_coerce_result(raw_result, func_name)
-                else:
-                    raise SandboxError(f"Function '{name_to_try}' is not callable")
-
-            except Exception:
-                continue
-
-        # If all direct resolution attempts failed, try registry.call as final fallback
-        for name_to_try in names_to_try:
-            try:
-                raw_result = registry.call(name_to_try, context, None, *evaluated_args, **evaluated_kwargs)
-                return self._assign_and_coerce_result(raw_result, func_name)
-            except Exception:
-                continue
-
-        # If we get here, all attempts failed
-        raise SandboxError(f"Function '{node.name}' not found in registry")
 
     def _get_current_function_context(self, context: SandboxContext) -> str | None:
         """Try to determine the current function being executed for better error messages.
