@@ -188,7 +188,7 @@ class PipeOperationHandler(Loggable):
 
                 left_desc = self._describe_operand(left, context)
                 right_desc = self._describe_operand(right, context)
-                raise SandboxError(f"Invalid pipe operation: right operand must be a function. " f"Got {left_desc} | {right_desc}")
+                raise SandboxError(f"Invalid pipe operation: right operand must be a function. Got {left_desc} | {right_desc}")
 
             # Case 2: Check if left side evaluates to a function (for chained composition)
             # For expressions like (func1 | func2) | func3

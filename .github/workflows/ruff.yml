@@ -12,6 +12,7 @@ on:
     branches: [main, master, feat/llm-poet]
   pull_request:
     branches: [main, master]
+  workflow_dispatch:  # Allow manual triggering
 
 jobs:
   ruff-check:

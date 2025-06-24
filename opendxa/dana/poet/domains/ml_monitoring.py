@@ -156,20 +156,15 @@ validated_inputs = {
             code=validation_code,
             dependencies=["numpy", "opendxa.dana.poet.storage"],
             imports=["import numpy as np", "from opendxa.dana.poet.storage import POETStorage"],
-            metadata={
-                "phase": "perceive",
-                "domain": "ml_monitoring",
-                "drift_detection": True,
-                "adaptive_thresholds": True
-            }
+            metadata={"phase": "perceive", "domain": "ml_monitoring", "drift_detection": True, "adaptive_thresholds": True},
         )
 
     def _generate_operate(self, func_info: FunctionInfo) -> CodeBlock:
         """Generate ML operation with monitoring and adaptation"""
-        
+
         # Call parent for basic retry logic
         parent_block = super()._generate_operate(func_info)
-        
+
         # Add ML-specific monitoring
         enhanced_operation = f"""
 {parent_block.code}
@@ -225,20 +220,15 @@ execution_metadata.update(prediction_metadata)
             code=enhanced_operation,
             dependencies=parent_block.dependencies + ["time", "numpy"],
             imports=parent_block.imports + ["import time", "import numpy as np"],
-            metadata={
-                **parent_block.metadata,
-                "domain": "ml_monitoring",
-                "drift_adaptation": True,
-                "anomaly_detection": True
-            }
+            metadata={**parent_block.metadata, "domain": "ml_monitoring", "drift_adaptation": True, "anomaly_detection": True},
         )
 
     def _generate_enforce(self, func_info: FunctionInfo) -> CodeBlock:
         """Generate ML result validation with adaptive thresholds"""
-        
+
         # Call parent for basic enforcement
         parent_block = super()._generate_enforce(func_info)
-        
+
         # Add ML-specific validation
         ml_enforcement = f"""
 {parent_block.code}
@@ -331,8 +321,8 @@ log(f"ML monitoring score: {{performance_score:.2f}}")
                 "domain": "ml_monitoring",
                 "anomaly_validation": True,
                 "adaptive_thresholds": True,
-                "performance_tracking": True
-            }
+                "performance_tracking": True,
+            },
         )
 
     def _generate_train(self, func_info: FunctionInfo) -> CodeBlock | None:
@@ -475,17 +465,13 @@ if execution_id and final_result:
         return CodeBlock(
             code=train_code,
             dependencies=["opendxa.dana.poet.storage", "time", "numpy"],
-            imports=[
-                "from opendxa.dana.poet.storage import POETStorage",
-                "import time",
-                "import numpy as np"
-            ],
+            imports=["from opendxa.dana.poet.storage import POETStorage", "import time", "import numpy as np"],
             metadata={
                 "phase": "train",
                 "domain": "ml_monitoring",
                 "adaptive_learning": True,
                 "baseline_updating": True,
                 "threshold_adaptation": True,
-                "retraining_detection": True
-            }
+                "retraining_detection": True,
+            },
         )

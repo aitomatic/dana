@@ -324,7 +324,7 @@ class IdentifierResolver(Loggable):
         self.debug(f"Trying dotted attribute access for '{name}'")
 
         result = None
-        for i, part in enumerate(parts):
+        for _i, part in enumerate(parts):
             if result is None:
                 # Look for base variable in context state
                 if part in context._state:

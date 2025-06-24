@@ -30,7 +30,7 @@ class PromptOptimizationDomain(LLMOptimizationDomain):
         """Enhanced perceive phase with prompt history tracking"""
         # Get base LLM perceive logic
         base_perceive = super()._generate_perceive(func_info)
-        
+
         # Add prompt optimization specific logic
         enhanced_perceive = f"""
 {base_perceive.code}
@@ -109,24 +109,19 @@ validated_inputs["selected_variant"] = selected_variant
 validated_inputs["optimized_prompt"] = selected_variant["prompt"]
 validated_inputs["prompt_history"] = prompt_history[:5]  # Keep top 5
 """.strip()
-        
+
         return CodeBlock(
             code=enhanced_perceive,
             dependencies=base_perceive.dependencies + ["opendxa.dana.poet.storage", "time"],
             imports=base_perceive.imports + ["from opendxa.dana.poet.storage import POETStorage", "import time"],
-            metadata={
-                **base_perceive.metadata,
-                "prompt_variants": True,
-                "historical_learning": True,
-                "ab_testing": True
-            }
+            metadata={**base_perceive.metadata, "prompt_variants": True, "historical_learning": True, "ab_testing": True},
         )
 
     def _generate_operate(self, func_info: FunctionInfo) -> CodeBlock:
         """Enhanced operate phase with variant tracking"""
         # Get base LLM operate logic
         base_operate = super()._generate_operate(func_info)
-        
+
         # Add variant tracking
         enhanced_operate = f"""
 {base_operate.code}
@@ -139,22 +134,19 @@ execution_metadata["variant_count"] = len(validated_inputs["prompt_variants"])
 # Measure response time for this variant
 execution_metadata["response_time"] = execution_metadata.get("total_execution_time", 0)
 """.strip()
-        
+
         return CodeBlock(
             code=enhanced_operate,
             dependencies=base_operate.dependencies,
             imports=base_operate.imports,
-            metadata={
-                **base_operate.metadata,
-                "variant_tracking": True
-            }
+            metadata={**base_operate.metadata, "variant_tracking": True},
         )
 
     def _generate_enforce(self, func_info: FunctionInfo) -> CodeBlock:
         """Enhanced enforce phase with effectiveness scoring"""
         # Get base LLM enforce logic
         base_enforce = super()._generate_enforce(func_info)
-        
+
         # Add effectiveness measurement
         enhanced_enforce = f"""
 {base_enforce.code}
@@ -201,15 +193,12 @@ validation_metadata["prompt_variant"] = validated_inputs["selected_variant"]["va
 
 log(f"Prompt effectiveness score: {{effectiveness_score:.2f}}")
 """.strip()
-        
+
         return CodeBlock(
             code=enhanced_enforce,
             dependencies=base_enforce.dependencies,
             imports=base_enforce.imports,
-            metadata={
-                **base_enforce.metadata,
-                "effectiveness_scoring": True
-            }
+            metadata={**base_enforce.metadata, "effectiveness_scoring": True},
         )
 
     def _generate_train(self, func_info: FunctionInfo) -> CodeBlock | None:
@@ -313,8 +302,8 @@ if execution_id and final_result:
             dependencies=["opendxa.dana.poet.feedback", "opendxa.dana.poet.storage", "time"],
             imports=[
                 "from opendxa.dana.poet.feedback import get_feedback_system",
-                "from opendxa.dana.poet.storage import POETStorage", 
-                "import time"
+                "from opendxa.dana.poet.storage import POETStorage",
+                "import time",
             ],
             metadata={
                 "phase": "train",
@@ -322,6 +311,6 @@ if execution_id and final_result:
                 "learning_enabled": True,
                 "feedback_tracking": True,
                 "adaptive_improvement": True,
-                "variant_optimization": True
-            }
+                "variant_optimization": True,
+            },
         )

@@ -40,7 +40,7 @@ def poet_wrapper_{function_name}(*args, **kwargs):
     log(f"POET({function_name}): Starting Perceive phase")
     perceived_context = {{
         "function_name": "{function_name}",
-        "domain": "{config.domain or 'general'}",
+        "domain": "{config.domain or "general"}",
         "args_count": len(args),
         "phase": "perceive"
     }}
@@ -97,7 +97,7 @@ def poet_wrapper_{function_name}(*args, **kwargs):
         # For now, just prepend the original code with a comment
         # In a real implementation, this would parse the AST and inject POET logic
         enhanced_code = f"""# POET-enhanced function
-# Domain: {config.domain or 'general'}
+# Domain: {config.domain or "general"}
 # Retries: {config.retries}
 # Training: {config.enable_training}
 

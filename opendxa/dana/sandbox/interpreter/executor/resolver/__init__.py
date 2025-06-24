@@ -13,6 +13,6 @@ from .unified_function_dispatcher import UnifiedFunctionDispatcher
 
 __all__ = [
     "FunctionResolverInterface",
-    "ResolutionAttempt", 
+    "ResolutionAttempt",
     "UnifiedFunctionDispatcher",
-] 
+]

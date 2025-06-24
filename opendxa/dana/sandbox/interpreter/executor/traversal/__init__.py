@@ -14,7 +14,7 @@ from opendxa.dana.sandbox.interpreter.executor.traversal.recursion_safety import
 
 __all__ = [
     "ASTExecutionCache",
-    "CircularReferenceDetector", 
+    "CircularReferenceDetector",
     "RecursionDepthMonitor",
     "OptimizedASTTraversal",
     "TraversalPerformanceMetrics",

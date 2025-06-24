@@ -23,11 +23,11 @@ class RecursionDepthMonitor(Loggable):
         """Context manager to track execution depth."""
         self._current_depth += 1
         self._call_stack.append(node_description)
-        
+
         # Update maximum depth reached
         if self._current_depth > self._max_depth_reached:
             self._max_depth_reached = self._current_depth
-        
+
         try:
             self.check_depth_safety()
             yield
@@ -44,12 +44,9 @@ class RecursionDepthMonitor(Loggable):
                 f"Current depth: {self._current_depth}. "
                 f"Recent call stack: {stack_trace}"
             )
-        
+
         if self._current_depth >= self._warning_threshold:
-            self.warning(
-                f"High recursion depth: {self._current_depth}/{self._max_depth}. "
-                f"Consider optimizing nested expressions."
-            )
+            self.warning(f"High recursion depth: {self._current_depth}/{self._max_depth}. Consider optimizing nested expressions.")
 
     def get_statistics(self) -> dict[str, Any]:
         """Get recursion depth statistics."""
@@ -79,24 +76,16 @@ class CircularReferenceDetector:
         """Track node visitation for cycle detection."""
         node_id = id(node)
         node_desc = f"{type(node).__name__}({node_id})"
-        
+
         if node_id in self._visiting:
             # Found a cycle - build error message with path
-            cycle_start_idx = next(
-                i for i, (path_id, _) in enumerate(self._visit_path) 
-                if path_id == node_id
-            )
-            cycle_path = " -> ".join(
-                desc for _, desc in self._visit_path[cycle_start_idx:]
-            )
-            raise SandboxError(
-                f"Circular reference detected in AST traversal. "
-                f"Cycle path: {cycle_path} -> {node_desc}"
-            )
-        
+            cycle_start_idx = next(i for i, (path_id, _) in enumerate(self._visit_path) if path_id == node_id)
+            cycle_path = " -> ".join(desc for _, desc in self._visit_path[cycle_start_idx:])
+            raise SandboxError(f"Circular reference detected in AST traversal. Cycle path: {cycle_path} -> {node_desc}")
+
         self._visiting.add(node_id)
         self._visit_path.append((node_id, node_desc))
-        
+
         try:
             yield
         finally:

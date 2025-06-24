@@ -152,7 +152,7 @@ class AstValidator(Loggable):
         else:
             log_func(f"❌ AST validation failed: Found {len(tree_nodes)} Lark Tree nodes:")
             for i, (path, tree) in enumerate(tree_nodes[:5]):
-                log_func(f"  {i+1}. {path}: Tree('{tree.data}') with {len(tree.children)} children")
+                log_func(f"  {i + 1}. {path}: Tree('{tree.data}') with {len(tree.children)} children")
             if len(tree_nodes) > 5:
                 log_func(f"  ... and {len(tree_nodes) - 5} more Tree nodes")
             return False
