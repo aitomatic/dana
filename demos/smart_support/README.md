@@ -31,7 +31,7 @@ This demo showcases sophisticated prompt optimization for customer support scena
 ## 🚀 Running the Demo
 
 ### Prerequisites
-- Python 3.12+
+- Python 3.10+
 - FastAPI and dependencies (included in OpenDXA)
 
 ### Quick Start

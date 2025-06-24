@@ -31,7 +31,7 @@ uv run python -m pytest tests/
 - OpenDXA is a framework for building domain-expert multi-agent systems
 - Built on Dana (Domain-Aware NeuroSymbolic Architecture) language
 - Core components: OpenDXA Framework, Dana Language, DANKE Engine
-- Primary language: Python 3.12+
+- Primary language: Python 3.10+
 - Uses uv for dependency management
 
 ## File Modification Priority
