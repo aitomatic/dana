@@ -8,4 +8,4 @@ the most appropriate agent for a given task.
 from .agent_pool import AgentPool
 from .agent_selector import AgentSelector
 
-__all__ = ["AgentPool", "AgentSelector"] 
+__all__ = ["AgentPool", "AgentSelector"]
