@@ -293,42 +293,51 @@ class ExpressionTransformer(BaseTransformer):
 
         Grammar: factor: (ADD | SUB) factor | atom trailer*
         """
-        # Unary plus/minus or pass-through
+        # Single item case - just pass through
         if len(items) == 1:
-            # Just an atom with possible trailers
             return self.expression([items[0]])
 
-        # If we have a unary operator
-        op_token = items[0]
-        right = None
-
-        # Try to process the second item
-        if len(items) > 1:
-            right = self.expression([items[1]])
-        else:
-            # Fallback for unexpected structure
-            raise ValueError(f"Factor with operator {op_token} has no operand")
-
-        # Explicitly cast right to Expression
-        right_expr = cast(Expression, right)
-
-        # Ensure operator is a string for UnaryExpression
+        # Multiple items - need to determine if it's unary operator or atom with trailers
+        first_item = items[0]
         from lark import Token
 
-        if isinstance(op_token, Token):
-            op_str = op_token.value
-        elif isinstance(op_token, BinaryOperator):
-            # Handle case where token was already transformed to BinaryOperator
-            if op_token == BinaryOperator.ADD:
-                op_str = "+"
-            elif op_token == BinaryOperator.SUBTRACT:
-                op_str = "-"
-            else:
-                op_str = str(op_token.value)
-        else:
-            op_str = str(op_token)
+        # Check if first item is actually a unary operator (+ or -)
+        is_unary_operator = False
+        if isinstance(first_item, Token):
+            if first_item.type in ("ADD", "SUB") or first_item.value in ("+", "-"):
+                is_unary_operator = True
+        elif hasattr(first_item, "data") and first_item.data in ("ADD", "SUB"):
+            is_unary_operator = True
+        elif isinstance(first_item, BinaryOperator) and first_item in (BinaryOperator.ADD, BinaryOperator.SUBTRACT):
+            is_unary_operator = True
 
-        return UnaryExpression(operator=op_str, operand=right_expr)
+        if is_unary_operator:
+            # Case 1: (ADD | SUB) factor - unary operator
+            op_token = first_item
+            if len(items) < 2:
+                raise ValueError(f"Factor with operator {op_token} has no operand")
+            
+            right = self.expression([items[1]])
+            right_expr = cast(Expression, right)
+
+            # Extract operator string
+            if isinstance(op_token, Token):
+                op_str = op_token.value
+            elif isinstance(op_token, BinaryOperator):
+                if op_token == BinaryOperator.ADD:
+                    op_str = "+"
+                elif op_token == BinaryOperator.SUBTRACT:
+                    op_str = "-"
+                else:
+                    op_str = str(op_token.value)
+            else:
+                op_str = str(op_token)
+
+            return UnaryExpression(operator=op_str, operand=right_expr)
+        else:
+            # Case 2: atom trailer* - atom with trailers
+            # Delegate to atom method which handles trailers
+            return self.atom(items)
 
     def power(self, items):
         """
@@ -565,152 +574,90 @@ class ExpressionTransformer(BaseTransformer):
 
         1. Object method calls (obj.method()) -> ObjectFunctionCall
         2. Regular function calls (func()) -> FunctionCall
-        3. Attribute access (obj.attr) -> Identifier with dotted name
+        3. Attribute access (obj.attr) -> AttributeAccess
         4. Indexing operations (obj[key]) -> SubscriptExpression
 
-        Object Method Call Detection:
-        ----------------------------
-        The method uses two strategies to detect object method calls:
-
-        Strategy 1: Dotted identifier analysis
-        - If base is an Identifier with dots (e.g., "local:obj.method")
-        - And trailer is function call arguments
-        - Split the dotted name into object parts and method name
-        - Create ObjectFunctionCall with proper object and method separation
-
-        Strategy 2: Sequential trailer analysis
-        - Process trailers in sequence (e.g., obj -> .method -> ())
-        - When a function call follows attribute access
-        - Create ObjectFunctionCall with the base as object and previous trailer as method
-
-        Examples:
-        ---------
-        - `websearch.list_tools()` -> ObjectFunctionCall(object=Identifier("local:websearch"), method_name="list_tools")
-        - `obj.add(10)` -> ObjectFunctionCall(object=Identifier("local:obj"), method_name="add", args={"__positional": [10]})
-        - `func()` -> FunctionCall(name="func")
-        - `obj.attr` -> Identifier(name="local:obj.attr")
+        METHOD CHAINING SUPPORT:
+        -----------------------
+        This implementation now properly supports method chaining by processing trailers
+        sequentially and building a chain of operations. For example:
+        
+        df.groupby(df.index).mean() becomes:
+        1. df (base)
+        2. .groupby(df.index) -> ObjectFunctionCall
+        3. .mean() -> ObjectFunctionCall on result of step 2
 
         Args:
             items: List containing base expression and trailer elements from parse tree
 
         Returns:
-            AST node (ObjectFunctionCall, FunctionCall, Identifier, or SubscriptExpression)
+            AST node (ObjectFunctionCall, FunctionCall, AttributeAccess, or SubscriptExpression)
         """
-        from opendxa.dana.sandbox.parser.ast import FunctionCall, Identifier, ObjectFunctionCall, SubscriptExpression
+        from opendxa.dana.sandbox.parser.ast import FunctionCall, ObjectFunctionCall, SubscriptExpression
 
         base = items[0]
         trailers = items[1:]
 
-        # Special case: if we have a dotted identifier followed by function call arguments,
-        # this might be an object method call that was parsed as a dotted variable
-        if len(trailers) == 1 and isinstance(base, Identifier) and "." in base.name:
-            # Check if the trailer is either arguments or None (empty arguments)
-            trailer = trailers[0]
-            is_function_call = (
-                hasattr(trailer, "data") and trailer.data == "arguments"
-            ) or trailer is None  # Empty arguments case: obj.method()
-
-            if is_function_call:
-                # Check if this looks like an object method call
-                # Split the dotted name to see if we can separate object from method
-                name_parts = base.name.split(".")
-                if len(name_parts) >= 3:  # e.g., "local:obj.method"
-                    # Extract scope, object parts, and method name
-                    scope = name_parts[0]  # "local"
-                    method_name = name_parts[-1]  # "method"
-                    object_parts = name_parts[1:-1]  # ["obj"] or ["obj", "subobj"]
-
-                    # Create object identifier
-                    object_name = f"{scope}.{'.'.join(object_parts)}"
-                    object_expr = Identifier(name=object_name, location=getattr(base, "location", None))
-
-                    # Create ObjectFunctionCall
-                    if trailer is not None and hasattr(trailer, "children"):
-                        args = self._process_function_arguments(trailer.children)
-                    else:
-                        args = {"__positional": []}  # Empty arguments
-
-                    return ObjectFunctionCall(
-                        object=object_expr, method_name=method_name, args=args, location=getattr(base, "location", None)
-                    )
-
-        # Look ahead for method call patterns: .NAME followed by arguments
-        for i, t in enumerate(trailers):
-            # Check if current trailer is attribute access followed by function call
-            if (
-                hasattr(t, "type")
-                and t.type == "NAME"
-                and i + 1 < len(trailers)
-                and ((hasattr(trailers[i + 1], "data") and trailers[i + 1].data == "arguments") or trailers[i + 1] is None)
-            ):
-                # We have obj.method() pattern - create ObjectFunctionCall directly
-                object_expr = base
-                method_name = t.value
-
-                call_args = trailers[i + 1]
-                if call_args is not None and hasattr(call_args, "children"):
-                    args = self._process_function_arguments(call_args.children)
+        # Process trailers sequentially to handle method chaining
+        current_base = base
+        i = 0
+        
+        while i < len(trailers):
+            trailer = trailers[i]
+            
+            # Case 1: Function call - ( ... ) or empty arguments (None)
+            if (hasattr(trailer, "data") and trailer.data == "arguments") or trailer is None:
+                # Process function arguments
+                if trailer is not None and hasattr(trailer, "children"):
+                    args = self._process_function_arguments(trailer.children)
                 else:
                     args = {"__positional": []}  # Empty arguments
 
-                return ObjectFunctionCall(object=object_expr, method_name=method_name, args=args, location=getattr(base, "location", None))
-
-        # Original logic for other cases (but we need to skip already processed patterns)
-        i = 0
-        while i < len(trailers):
-            t = trailers[i]
-
-            # Skip method call patterns that we already handled above
-            if (
-                hasattr(t, "type")
-                and t.type == "NAME"
-                and i + 1 < len(trailers)
-                and ((hasattr(trailers[i + 1], "data") and trailers[i + 1].data == "arguments") or trailers[i + 1] is None)
-            ):
-                i += 2  # Skip both the .NAME and the arguments
-                continue
-
-            # Function call: ( ... ) or empty arguments (None)
-            if (hasattr(t, "data") and t.data == "arguments") or t is None:
-                # Regular function call on base
-                # For AttributeAccess nodes, create ObjectFunctionCall for method calls
-                # For Identifier nodes, use the name string
-                if isinstance(base, AttributeAccess):
+                # Check if current_base is AttributeAccess (method call pattern)
+                if isinstance(current_base, AttributeAccess):
                     # This is a method call: obj.method() -> ObjectFunctionCall
-                    object_expr = base.object
-                    method_name = base.attribute
-
-                    if t is not None and hasattr(t, "children"):
-                        args = self._process_function_arguments(t.children)
-                    else:
-                        args = {"__positional": []}  # Empty arguments
-
-                    return ObjectFunctionCall(
-                        object=object_expr, method_name=method_name, args=args, location=getattr(base, "location", None)
+                    object_expr = current_base.object
+                    method_name = current_base.attribute
+                    
+                    current_base = ObjectFunctionCall(
+                        object=object_expr,
+                        method_name=method_name,
+                        args=args,
+                        location=getattr(current_base, "location", None)
                     )
                 else:
-                    name = getattr(base, "name", None)
+                    # Regular function call
+                    name = getattr(current_base, "name", None)
                     if not isinstance(name, str):
-                        name = str(base)
+                        name = str(current_base)
 
-                    if t is not None and hasattr(t, "children"):
-                        args = self._process_function_arguments(t.children)
-                    else:
-                        args = {"__positional": []}  # Empty arguments
-
-                    return FunctionCall(name=name, args=args, location=getattr(base, "location", None))
-            # Attribute access: .NAME
-            elif hasattr(t, "type") and t.type == "NAME":
-                # Always create AttributeAccess nodes for proper attribute access execution
-                # This ensures that obj.attr is treated as attribute access, not a dotted variable name
-                base = AttributeAccess(object=base, attribute=t.value, location=getattr(base, "location", None))
-            # Indexing: [ ... ] - trailer is the index expression itself
+                    current_base = FunctionCall(
+                        name=name,
+                        args=args,
+                        location=getattr(current_base, "location", None)
+                    )
+                    
+            # Case 2: Attribute access - .NAME
+            elif hasattr(trailer, "type") and trailer.type == "NAME":
+                # Create AttributeAccess for property access
+                current_base = AttributeAccess(
+                    object=current_base,
+                    attribute=trailer.value, 
+                    location=getattr(current_base, "location", None)
+                )
+                
+            # Case 3: Indexing/Slicing - [ ... ]
             else:
-                # If it's not a function call or attribute access, it must be indexing
-                # The trailer is the index expression (already transformed to AST)
-                base = SubscriptExpression(object=base, index=t, location=getattr(base, "location", None))
-            i += 1  # Move to next trailer
-        return base
+                # Indexing or slicing operation
+                current_base = SubscriptExpression(
+                    object=current_base,
+                    index=trailer,
+                    location=getattr(current_base, "location", None)
+                )
+            
+            i += 1
+            
+        return current_base
 
     def _get_full_attribute_name(self, attr):
         # Recursively extract full dotted name from AttributeAccess chain
