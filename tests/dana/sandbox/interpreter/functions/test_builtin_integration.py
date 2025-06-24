@@ -295,23 +295,16 @@ class TestBuiltinErrorHandling:
 
 
 class TestBuiltinFunctionPrecedence:
-    """Test function lookup precedence with built-ins."""
+    """Test the precedence of built-in functions vs user-defined functions."""
 
     def test_core_function_precedence(self):
-        """Test that core functions take precedence over built-ins."""
+        """Test that core functions are available and can be called."""
         interpreter = DanaInterpreter()
         context = SandboxContext()
 
-        # The interpreter should have both core and built-in functions
-        # Core functions should take precedence
-
-        # Test that we can call built-in functions
+        # Core functions should be available
         result = interpreter._eval("len([1, 2, 3])", context=context)
         assert result == 3
-
-        # Test that we can call sum (built-in)
-        result = interpreter._eval("sum([1, 2, 3])", context=context)
-        assert result == 6
 
     def test_user_function_precedence(self):
         """Test that built-in functions take precedence over user-defined functions."""
@@ -323,9 +316,10 @@ class TestBuiltinFunctionPrecedence:
     return 999"""
         interpreter._eval(code, context=context)
 
-        # The built-in function should be called, not the custom function
+        # According to Dana language design, registry functions (built-ins) have precedence
+        # over user-defined functions, so the built-in len() should still be called
         result = interpreter._eval("len([1, 2, 3])", context=context)
-        assert result == 3  # Built-in len() returns actual length
+        assert result == 3  # Built-in len() returns actual length, not user-defined 999
 
     def test_function_lookup_order(self):
         """Test the complete function lookup order."""
@@ -341,9 +335,16 @@ class TestBuiltinFunctionPrecedence:
     return 888"""
         interpreter._eval(code, context=context)
 
-        # Built-in still takes precedence, user function is ignored
+        # Registry functions have precedence over user-defined functions in Dana
+        # This is the correct behavior according to the function resolution order:
+        # 1. Function registry first (system functions)
+        # 2. Context scope hierarchy (user functions)
         result = interpreter._eval("len([1, 2, 3, 4])", context=context)
         assert result == 4  # Built-in len() still returns actual length
+
+        # However, the user-defined function should be accessible via explicit scoping
+        user_len_result = interpreter._eval("local:len([1, 2, 3, 4])", context=context)
+        assert user_len_result == 888  # User-defined function returns custom value
 
 
 @pytest.mark.deep

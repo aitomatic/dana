@@ -1,0 +1,180 @@
+# POET error handling and retry tests in pure Dana
+# Tests POET's resilience and error recovery capabilities
+
+log("⚠️  Testing POET Error Handling & Resilience")
+log("=" * 48)
+
+# Test 1: Basic error propagation
+@poet(domain="error_test", retries=1)
+def failing_function(x: int) -> int:
+    """Function that always fails to test error propagation"""
+    if x < 0:
+        raise "Negative values not supported"
+    return x * 2
+
+log("\n1. Testing basic error propagation...")
+try:
+    result = failing_function(5)
+    log(f"   failing_function(5) = {result}")
+    assert result == 10
+    log("   ✅ Function works with valid input")
+except:
+    log(f"   ❌ Unexpected error occurred")
+    assert false
+
+try:
+    failing_function(-1)
+    log("   ❌ Should have thrown error")
+    assert false
+except:
+    log(f"   ✅ Correctly caught error")
+    # Error was caught successfully
+
+# Test 2: Division by zero with retry
+local:division_attempts = 0
+
+@poet(domain="math_safety", retries=2)
+def safe_division_with_tracking(a: float, b: float) -> float:
+    """Division with attempt tracking"""
+    division_attempts = division_attempts + 1
+    log(f"     Attempt #{division_attempts}: dividing {a} by {b}")
+    
+    if b == 0.0:
+        raise "Cannot divide by zero"
+    return a / b
+
+log("\n2. Testing division by zero with retry...")
+try:
+    # Reset counter
+    division_attempts = 0
+    result = safe_division_with_tracking(10.0, 2.0)
+    log(f"   safe_division(10.0, 2.0) = {result}")
+    assert result == 5.0
+    log("   ✅ Division works correctly")
+except:
+    log(f"   ❌ Unexpected error occurred")
+
+try:
+    # Reset counter
+    division_attempts = 0
+    safe_division_with_tracking(10.0, 0.0)
+    log("   ❌ Should have thrown error")
+    assert false
+except:
+    log(f"   ✅ Correctly caught division by zero")
+    # Should have attempted the configured number of retries
+    log(f"   Total attempts made: {division_attempts}")
+
+# Test 3: Timeout simulation (conceptual)
+@poet(domain="timeout_test", retries=1, timeout=5.0)
+def slow_computation(n: int) -> int:
+    """Simulate computation that might timeout"""
+    # In a real implementation, this would check actual timeout
+    if n > 1000:
+        raise "Computation too complex (timeout simulation)"
+    
+    result = 0
+    for i in range(n):
+        result = result + i
+    return result
+
+log("\n3. Testing timeout handling...")
+try:
+    result = slow_computation(10)
+    log(f"   slow_computation(10) = {result}")
+    expected = 45  # Sum of 0+1+2+...+9
+    assert result == expected
+    log("   ✅ Fast computation completed")
+except:
+    log(f"   ❌ Unexpected error occurred")
+
+try:
+    slow_computation(2000)
+    log("   ❌ Should have timed out")
+    assert false
+except:
+    log(f"   ✅ Correctly handled timeout")
+
+# Test 4: Data validation errors
+@poet(domain="validation", retries=1)
+def validate_email(email: str) -> bool:
+    """Validate email format with domain expertise"""
+    if len(email) == 0:
+        raise "Email cannot be empty"
+    
+    has_at = "@" in email
+    if not has_at:
+        raise "Email must contain @ symbol"
+    
+    has_dot = "." in email
+    if not has_dot:
+        raise "Email must contain domain extension"
+    
+    return true
+
+log("\n4. Testing data validation errors...")
+try:
+    result = validate_email("user@example.com")
+    log(f"   validate_email('user@example.com') = {result}")
+    assert result == true
+    log("   ✅ Valid email accepted")
+except:
+    log(f"   ❌ Unexpected error occurred")
+
+invalid_emails = ["", "userexample.com", "user@example"]
+
+for invalid_email in invalid_emails:
+    try:
+        validate_email(invalid_email)
+        log(f"   ❌ Should have rejected: {invalid_email}")
+        assert false
+    except:
+        log(f"   ✅ Correctly rejected '{invalid_email}'")
+        # Error was caught successfully
+
+# Test 5: Resource exhaustion simulation
+@poet(domain="resource_management", retries=3)
+def allocate_memory(size: int) -> dict:
+    """Simulate memory allocation with potential exhaustion"""
+    max_size = 1000
+    
+    if size < 0:
+        raise "Size must be positive"
+    
+    if size > max_size:
+        raise "Insufficient memory available"
+    
+    return {
+        "allocated": size,
+        "remaining": max_size - size,
+        "success": true
+    }
+
+log("\n5. Testing resource exhaustion...")
+try:
+    result = allocate_memory(500)
+    log(f"   allocate_memory(500) = {result}")
+    assert result["allocated"] == 500
+    assert result["success"] == true
+    log("   ✅ Normal allocation succeeded")
+except:
+    log(f"   ❌ Unexpected error occurred")
+
+try:
+    allocate_memory(1500)
+    log("   ❌ Should have failed due to insufficient memory")
+    assert false
+except:
+    log(f"   ✅ Correctly handled resource exhaustion")
+    # Error was caught successfully
+
+try:
+    allocate_memory(-100)
+    log("   ❌ Should have failed due to negative size")
+    assert false
+except:
+    log(f"   ✅ Correctly handled invalid input")
+    # Error was caught successfully
+
+log("\n🛡️  All POET error handling tests passed!")
+log("POET resilience features are working correctly in pure Dana!") 

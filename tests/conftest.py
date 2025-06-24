@@ -2,8 +2,11 @@
 
 import logging
 import os
+from pathlib import Path
 
 import pytest
+
+from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
 
 
 def pytest_addoption(parser):
@@ -78,3 +81,54 @@ def configure_llm_mocking(request):
         yield
         if original_value:
             os.environ["OPENDXA_MOCK_LLM"] = original_value
+
+
+# Universal Dana (.na) file test integration
+def pytest_generate_tests(metafunc):
+    """
+    Universal Dana (.na) file test generator.
+
+    This function automatically discovers and creates pytest tests for any .na files
+    in the same directory as the test file. Works across all test directories.
+    """
+    if "dana_test_file" in metafunc.fixturenames:
+        # Get the directory of the current test file
+        test_file_path = Path(metafunc.module.__file__)
+        test_dir = test_file_path.parent
+
+        # Find all .na files in the same directory
+        na_files = list(test_dir.glob("test_*.na"))
+
+        if na_files:
+            # Create test IDs from filenames for better reporting
+            test_ids = [f.stem for f in na_files]
+            metafunc.parametrize("dana_test_file", na_files, ids=test_ids)
+
+
+@pytest.fixture
+def fresh_dana_sandbox():
+    """Provide a fresh DanaSandbox for each test."""
+    sandbox = DanaSandbox()
+    try:
+        yield sandbox
+    finally:
+        sandbox._cleanup()
+
+
+# Universal Dana file test function
+def run_dana_test_file(dana_test_file):
+    """
+    Universal function to run a Dana (.na) test file.
+
+    This can be used in any test directory by creating a simple test function like:
+
+    def test_dana_files(dana_test_file, fresh_dana_sandbox):
+        from tests.conftest import run_dana_test_file
+        run_dana_test_file(dana_test_file, fresh_dana_sandbox)
+    """
+    sandbox = DanaSandbox()
+    try:
+        result = sandbox.run(dana_test_file)
+        assert result.success, f"Dana test {dana_test_file.name} failed: {result.error}"
+    finally:
+        sandbox._cleanup()

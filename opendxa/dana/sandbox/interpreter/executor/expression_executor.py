@@ -19,9 +19,12 @@ Discord: https://discord.gg/6jGD4PYk
 
 from typing import Any
 
-from opendxa.common.utils.misc import Misc
-from opendxa.dana.common.exceptions import SandboxError, StateError
+from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
+from opendxa.dana.sandbox.interpreter.executor.expression.binary_operation_handler import BinaryOperationHandler
+from opendxa.dana.sandbox.interpreter.executor.expression.collection_processor import CollectionProcessor
+from opendxa.dana.sandbox.interpreter.executor.expression.identifier_resolver import IdentifierResolver
+from opendxa.dana.sandbox.interpreter.executor.expression.pipe_operation_handler import PipeOperationHandler
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.parser.ast import (
     AttributeAccess,
@@ -64,6 +67,19 @@ class ExpressionExecutor(BaseExecutor):
             function_registry: Optional function registry (defaults to parent's)
         """
         super().__init__(parent_executor, function_registry)
+
+        # Initialize optimized identifier resolver
+        self.identifier_resolver = IdentifierResolver(function_executor=getattr(parent_executor, "_function_executor", None))
+
+        # Initialize optimized collection processor
+        self.collection_processor = CollectionProcessor(parent_executor=self)
+
+        # Initialize optimized pipe operation handler
+        self.pipe_operation_handler = PipeOperationHandler(parent_executor=self)
+
+        # Initialize optimized binary operation handler
+        self.binary_operation_handler = BinaryOperationHandler(parent_executor=self, pipe_executor=self.pipe_operation_handler)
+
         self.register_handlers()
 
     def register_handlers(self):
@@ -100,7 +116,7 @@ class ExpressionExecutor(BaseExecutor):
         return node.value
 
     def execute_identifier(self, node: Identifier, context: SandboxContext) -> Any:
-        """Execute an identifier.
+        """Execute an identifier using optimized resolution.
 
         Args:
             node: The identifier to execute
@@ -109,159 +125,8 @@ class ExpressionExecutor(BaseExecutor):
         Returns:
             The value of the identifier in the context
         """
-        name = node.name
-
-        # DEBUG: Add logging to understand the issue
-        self.debug(f"DEBUG: Executing identifier '{name}'")
-        self.debug(f"DEBUG: Context state keys: {list(context._state.keys())}")
-        for scope, state in context._state.items():
-            self.debug(f"DEBUG: Scope '{scope}' variables: {list(state.keys())}")
-
-        try:
-            result = context.get(name)
-            self.debug(f"DEBUG: Successfully found '{name}' via context.get(): {result}")
-            # Only return if the result is not None
-            if result is not None:
-                return result
-            else:
-                self.debug(f"DEBUG: Got None from context for '{name}', checking function registry")
-        except StateError:
-            # If not found in context with the default scoping, try searching across all scopes
-            # This is needed for cases like with statements where variables may be in non-local scopes
-
-            # For simple variable names (no dots or colons), search across all scopes
-            if "." not in name and ":" not in name:
-                for scope in ["local", "private", "public", "system"]:
-                    try:
-                        value = context.get_from_scope(name, scope=scope)
-                        if value is not None:
-                            return value
-                    except StateError:
-                        continue
-
-            # For variables with scope prefix (e.g., 'local:var_name'), extract the variable name
-            # and search for it in other scopes if not found in the specified scope
-            elif ":" in name:
-                parts = name.split(":", 1)
-                if len(parts) == 2 and parts[0] in ["local", "private", "public", "system"]:
-                    specified_scope = parts[0]
-                    var_name = parts[1]
-
-                    # If the variable contains more dots (e.g., 'local:client.attribute'),
-                    # we might need to search for the base variable across scopes
-                    if "." in var_name:
-                        base_var = var_name.split(".", 1)[0]
-                        for scope in ["local", "private", "public", "system"]:
-                            if scope != specified_scope:  # Don't re-search the same scope
-                                try:
-                                    base_value = context.get_from_scope(base_var, scope=scope)
-                                    if base_value is not None:
-                                        # Found the base variable in a different scope
-                                        # Now try to access the attribute(s) on it
-                                        try:
-                                            result = base_value
-                                            for attr in var_name.split(".")[1:]:
-                                                result = getattr(result, attr)
-                                            return result
-                                        except AttributeError:
-                                            continue
-                                except StateError:
-                                    continue
-                    else:
-                        # Simple scoped variable, search for it in other scopes
-                        for scope in ["local", "private", "public", "system"]:
-                            if scope != specified_scope:  # Don't re-search the same scope
-                                try:
-                                    value = context.get_from_scope(var_name, scope=scope)
-                                    if value is not None:
-                                        return value
-                                except StateError:
-                                    continue
-
-            # Handle backward compatibility with dot notation
-            elif "." in name:
-                parts = name.split(".", 1)
-                if len(parts) == 2 and parts[0] in ["local", "private", "public", "system"]:
-                    specified_scope = parts[0]
-                    var_name = parts[1]
-
-                    # If the variable contains more dots (e.g., 'local:client.attribute'),
-                    # we might need to search for the base variable across scopes
-                    if "." in var_name:
-                        base_var = var_name.split(".", 1)[0]
-                        for scope in ["local", "private", "public", "system"]:
-                            if scope != specified_scope:  # Don't re-search the same scope
-                                try:
-                                    base_value = context.get_from_scope(base_var, scope=scope)
-                                    if base_value is not None:
-                                        # Found the base variable in a different scope
-                                        # Now try to access the attribute(s) on it
-                                        try:
-                                            result = base_value
-                                            for attr in var_name.split(".")[1:]:
-                                                result = getattr(result, attr)
-                                            return result
-                                        except AttributeError:
-                                            continue
-                                except StateError:
-                                    continue
-                    else:
-                        # Simple scoped variable, search for it in other scopes
-                        for scope in ["local", "private", "public", "system"]:
-                            if scope != specified_scope:  # Don't re-search the same scope
-                                try:
-                                    value = context.get_from_scope(var_name, scope=scope)
-                                    if value is not None:
-                                        return value
-                                except StateError:
-                                    continue
-
-            # If not found in context, try the function registry
-            if self.function_registry:
-                try:
-                    func, func_type, metadata = self.function_registry.resolve(name, None)
-                    if func is not None:
-                        return func
-                except Exception:
-                    pass
-
-            try:
-                self.debug(f"DEBUG: Trying direct _state access for dotted variable '{name}'")
-                parts = name.split(".")
-                self.debug(f"DEBUG: Parts: {parts}")
-                result = None
-                for i, part in enumerate(parts):
-                    self.debug(f"DEBUG: Processing part {i}: '{part}'")
-                    if result is None:
-                        self.debug(f"DEBUG: Looking for base variable '{part}' in context._state keys: {list(context._state.keys())}")
-                        if part in context._state:
-                            result = context._state[part]
-                            self.debug(f"DEBUG: Found '{part}' directly in _state: {result}")
-                        else:
-                            self.debug(f"DEBUG: '{part}' not found directly, trying scoped access")
-                            # Try to find the variable in any scope
-                            for scope in ["local", "private", "public", "system"]:
-                                try:
-                                    result = context.get_from_scope(part, scope=scope)
-                                    if result is not None:
-                                        self.debug(f"DEBUG: Found '{part}' in scope '{scope}': {result}")
-                                        break
-                                except Exception:
-                                    continue
-                            if result is None:
-                                self.debug(f"DEBUG: Could not find base variable '{part}' anywhere")
-                                raise Exception(f"Base variable '{part}' not found")
-                    else:
-                        self.debug(f"DEBUG: Getting field '{part}' from result: {result}")
-                        result = Misc.get_field(result, part)
-                        self.debug(f"DEBUG: Field access result: {result}")
-                if result is not None:
-                    return result
-            except Exception as e:
-                self.debug(f"DEBUG: Direct _state access failed: {e}")
-                raise SandboxError(f"Error accessing variable '{name}': Variable '{name}' not found in context") from e
-            # If still not found, raise the original error
-            raise SandboxError(f"Error accessing variable '{name}': Variable '{name}' not found in context")
+        # Use the optimized identifier resolver
+        return self.identifier_resolver.resolve_identifier(node, context)
 
     def execute_binary_expression(self, node: BinaryExpression, context: SandboxContext) -> Any:
         """Execute a binary expression.
@@ -274,88 +139,14 @@ class ExpressionExecutor(BaseExecutor):
             The result of the binary operation
         """
         try:
-            # Special handling for pipe operator - we need to check for function composition
-            # before evaluating the operands
+            # Special handling for pipe operator - use optimized handler
             if node.operator == BinaryOperator.PIPE:
-                return self._execute_pipe(node.left, node.right, context)
+                return self.pipe_operation_handler.execute_pipe(node.left, node.right, context)
 
-            # For all other operators, evaluate operands normally
-            left_raw = self.parent.execute(node.left, context)
-            right_raw = self.parent.execute(node.right, context)
-
-            # Extract actual values if they're wrapped in LiteralExpression
-            left = self.parent.extract_value(left_raw) if hasattr(self.parent, "extract_value") else left_raw
-            right = self.parent.extract_value(right_raw) if hasattr(self.parent, "extract_value") else right_raw
-
-            # Apply type coercion if enabled
-            left, right = self._apply_binary_coercion(left, right, node.operator.value)
-
-            # Perform the operation
-            if node.operator == BinaryOperator.ADD:
-                return left + right
-            elif node.operator == BinaryOperator.SUBTRACT:
-                return left - right
-            elif node.operator == BinaryOperator.MULTIPLY:
-                return left * right
-            elif node.operator == BinaryOperator.DIVIDE:
-                return left / right
-            elif node.operator == BinaryOperator.MODULO:
-                return left % right
-            elif node.operator == BinaryOperator.POWER:
-                return left**right
-            elif node.operator == BinaryOperator.EQUALS:
-                return left == right
-            elif node.operator == BinaryOperator.NOT_EQUALS:
-                return left != right
-            elif node.operator == BinaryOperator.LESS_THAN:
-                return left < right
-            elif node.operator == BinaryOperator.GREATER_THAN:
-                return left > right
-            elif node.operator == BinaryOperator.LESS_EQUALS:
-                return left <= right
-            elif node.operator == BinaryOperator.GREATER_EQUALS:
-                return left >= right
-            elif node.operator == BinaryOperator.AND:
-                return bool(left and right)
-            elif node.operator == BinaryOperator.OR:
-                return bool(left or right)
-            elif node.operator == BinaryOperator.IN:
-                return left in right
-            elif node.operator == BinaryOperator.IS:
-                return left is right
-            elif node.operator == BinaryOperator.IS_NOT:
-                return left is not right
-            else:
-                raise SandboxError(f"Unsupported binary operator: {node.operator}")
+            # Use the optimized binary operation handler for all operators
+            return self.binary_operation_handler.execute_binary_expression(node, context)
         except (TypeError, ValueError) as e:
             raise SandboxError(f"Error evaluating binary expression with operator '{node.operator}': {e}")
-
-    def _apply_binary_coercion(self, left: Any, right: Any, operator: str) -> tuple:
-        """Apply type coercion to binary operands if enabled.
-
-        Args:
-            left: Left operand
-            right: Right operand
-            operator: Binary operator string
-
-        Returns:
-            Tuple of (potentially coerced left, potentially coerced right)
-        """
-        try:
-            from opendxa.dana.sandbox.interpreter.type_coercion import TypeCoercion
-
-            # Only apply coercion if enabled
-            if TypeCoercion.should_enable_coercion():
-                return TypeCoercion.coerce_binary_operands(left, right, operator)
-
-        except ImportError:
-            # TypeCoercion not available, return original values
-            pass
-        except Exception:
-            # Any error in coercion, return original values
-            pass
-
-        return left, right
 
     def execute_unary_expression(self, node: UnaryExpression, context: SandboxContext) -> Any:
         """Execute a unary expression.
@@ -379,7 +170,7 @@ class ExpressionExecutor(BaseExecutor):
             raise SandboxError(f"Unsupported unary operator: {node.operator}")
 
     def execute_tuple_literal(self, node: TupleLiteral, context: SandboxContext) -> tuple:
-        """Execute a tuple literal.
+        """Execute a tuple literal using optimized processing.
 
         Args:
             node: The tuple literal to execute
@@ -388,10 +179,10 @@ class ExpressionExecutor(BaseExecutor):
         Returns:
             The tuple value
         """
-        return tuple(self.parent.execute(item, context) for item in node.items)
+        return self.collection_processor.execute_tuple_literal(node, context)
 
     def execute_dict_literal(self, node: DictLiteral, context: SandboxContext) -> dict:
-        """Execute a dict literal.
+        """Execute a dict literal using optimized processing.
 
         Args:
             node: The dict literal to execute
@@ -400,10 +191,10 @@ class ExpressionExecutor(BaseExecutor):
         Returns:
             The dict value
         """
-        return {self.parent.execute(k, context): self.parent.execute(v, context) for k, v in node.items}
+        return self.collection_processor.execute_dict_literal(node, context)
 
     def execute_set_literal(self, node: SetLiteral, context: SandboxContext) -> set:
-        """Execute a set literal.
+        """Execute a set literal using optimized processing.
 
         Args:
             node: The set literal to execute
@@ -412,10 +203,10 @@ class ExpressionExecutor(BaseExecutor):
         Returns:
             The set value
         """
-        return {self.parent.execute(item, context) for item in node.items}
+        return self.collection_processor.execute_set_literal(node, context)
 
     def execute_fstring_expression(self, node: FStringExpression, context: SandboxContext) -> str:
-        """Execute a formatted string expression.
+        """Execute a formatted string expression using optimized processing.
 
         Args:
             node: The formatted string expression to execute
@@ -424,36 +215,7 @@ class ExpressionExecutor(BaseExecutor):
         Returns:
             The formatted string
         """
-        # Handle both new-style expression structure (with template and expressions)
-        # and old-style parts structure
-
-        # Check if we have the new structure with template and expressions dictionary
-        if hasattr(node, "template") and node.template and hasattr(node, "expressions") and node.expressions:
-            result = node.template
-
-            # Replace each placeholder with its evaluated value
-            for placeholder, expr in node.expressions.items():
-                # Evaluate the expression within the placeholder
-                value = self.parent.execute(expr, context)
-                # Replace the placeholder with the string representation of the value
-                result = result.replace(placeholder, str(value))
-
-            return result
-
-        # Handle the older style with parts list
-        elif hasattr(node, "parts") and node.parts:
-            result = ""
-            for part in node.parts:
-                if isinstance(part, str):
-                    result += part
-                else:
-                    # Evaluate the expression part
-                    value = self.parent.execute(part, context)
-                    result += str(value)
-            return result
-
-        # If neither format is present, return an empty string as fallback
-        return ""
+        return self.collection_processor.execute_fstring_expression(node, context)
 
     def execute_attribute_access(self, node: AttributeAccess, context: SandboxContext) -> Any:
         """Execute an attribute access expression.
@@ -941,7 +703,7 @@ class ExpressionExecutor(BaseExecutor):
             return "unknown"
 
     def execute_list_literal(self, node: ListLiteral, context: SandboxContext) -> list:
-        """Execute a list literal.
+        """Execute a list literal using optimized processing.
 
         Args:
             node: The list literal to execute
@@ -950,191 +712,4 @@ class ExpressionExecutor(BaseExecutor):
         Returns:
             The list value
         """
-        return [self.parent.execute(item, context) for item in node.items]
-
-    def _execute_pipe(self, left: Any, right: Any, context: SandboxContext) -> Any:
-        """Execute a pipe operator expression - unified for both composition and data pipeline.
-
-        Args:
-            left: The left operand (data to pipe or function to compose)
-            right: The right operand (function to call)
-            context: The execution context
-
-        Returns:
-            The result of calling the function with piped data, or a composed function
-
-        Raises:
-            SandboxError: If the right operand is not callable or function call fails
-        """
-        from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
-        from opendxa.dana.sandbox.parser.ast import Identifier
-
-        # Check if this might be function composition (both sides are identifiers that reference functions)
-        if isinstance(left, Identifier) and isinstance(right, Identifier):
-            # Try to resolve both as functions first
-            try:
-                if self.function_registry:
-                    left_func, _, _ = self.function_registry.resolve(left.name, None)
-                    right_func, _, _ = self.function_registry.resolve(right.name, None)
-
-                    # If both resolve to SandboxFunctions, create composition
-                    if isinstance(left_func, SandboxFunction) and isinstance(right_func, SandboxFunction):
-                        return self._create_composed_function_unified(left_func, right, context)
-            except Exception:
-                # If function resolution fails, fall back to data pipeline
-                pass
-
-        # Check if left is an identifier that resolves to a function
-        if isinstance(left, Identifier):
-            try:
-                if self.function_registry:
-                    left_func, _, _ = self.function_registry.resolve(left.name, None)
-                    if isinstance(left_func, SandboxFunction):
-                        return self._create_composed_function_unified(left_func, right, context)
-            except Exception:
-                # If function resolution fails, fall back to data pipeline
-                pass
-
-        # Evaluate the left operand for data pipeline
-        left_value = self.parent.execute(left, context)
-
-        # If left_value is a SandboxFunction, create a composed function
-        if isinstance(left_value, SandboxFunction):
-            return self._create_composed_function_unified(left_value, right, context)
-
-        # Otherwise, it's data - apply right function to it immediately
-        return self._call_function(right, context, left_value)
-
-    def _create_composed_function_unified(self, left_func: Any, right_func: Any, context: SandboxContext) -> Any:
-        """Create a composed function from two SandboxFunction objects.
-
-        Args:
-            left_func: The first function to apply (should be a SandboxFunction)
-            right_func: The second function to apply (identifier or SandboxFunction)
-            context: The execution context
-
-        Returns:
-            A ComposedFunction that applies right_func(left_func(x))
-        """
-        from opendxa.dana.sandbox.interpreter.functions.composed_function import ComposedFunction
-        from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
-        from opendxa.dana.sandbox.parser.ast import Identifier
-
-        # Ensure left_func is a SandboxFunction
-        if not isinstance(left_func, SandboxFunction):
-            raise SandboxError(f"Left function must be a SandboxFunction, got {type(left_func)}")
-
-        # Handle right_func - support lazy resolution for non-existent functions
-        if isinstance(right_func, Identifier):
-            # For lazy resolution, pass the function name as a string
-            # This allows composition with non-existent functions that will fail at call time
-            try:
-                # Try to resolve immediately first
-                right_func_obj = self.execute_identifier(right_func, context)
-                if isinstance(right_func_obj, SandboxFunction):
-                    right_func = right_func_obj
-                else:
-                    # Not a SandboxFunction, use lazy resolution
-                    right_func = right_func.name
-            except SandboxError:
-                # Function not found, use lazy resolution
-                right_func = right_func.name
-        elif not isinstance(right_func, SandboxFunction):
-            raise SandboxError(f"Right function must be a SandboxFunction or Identifier, got {type(right_func)}")
-
-        # Create and return the composed function
-        return ComposedFunction(left_func, right_func, context)
-
-    def _call_function(self, func: Any, context: SandboxContext, *args, **kwargs) -> Any:
-        """Call a function with proper context detection.
-
-        Args:
-            func: The function to call (can be identifier, callable, or composed function)
-            context: The execution context
-            *args: Positional arguments
-            **kwargs: Keyword arguments
-
-        Returns:
-            The result of calling the function
-        """
-        from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
-        from opendxa.dana.sandbox.parser.ast import BinaryExpression, Identifier
-
-        # Handle function identifiers - delegate to function_executor for consistency
-        if isinstance(func, Identifier):
-            # Create a FunctionCall AST node and delegate to execute_function_call
-            from opendxa.dana.sandbox.parser.ast import FunctionCall
-
-            # Convert positional args to the format expected by FunctionCall
-            function_call_args = {}
-            for i, arg in enumerate(args):
-                function_call_args[str(i)] = arg
-
-            # Add keyword arguments
-            function_call_args.update(kwargs)
-
-            # Create FunctionCall node
-            function_call = FunctionCall(name=func.name, args=function_call_args)
-
-            # Delegate to the function executor's execute_function_call method
-            return self.parent._function_executor.execute_function_call(function_call, context)
-
-        # Handle binary expressions (nested pipe compositions)
-        elif isinstance(func, BinaryExpression):
-            # Evaluate the expression to get the actual function
-            evaluated_func = self.parent.execute(func, context)
-            # Now call the evaluated function
-            return self._call_function(evaluated_func, context, *args, **kwargs)
-
-        # Handle SandboxFunction objects (including ComposedFunction)
-        elif isinstance(func, SandboxFunction):
-            return func.execute(context, *args, **kwargs)
-
-        # Handle direct callables
-        elif callable(func):
-            # For direct callables, delegate to function registry for consistent context handling
-            from opendxa.dana.sandbox.parser.ast import FunctionCall
-
-            # Create a temporary function name for the callable
-            temp_name = f"_temp_callable_{id(func)}"
-
-            # Convert positional args to the format expected by FunctionCall
-            function_call_args = {}
-            for i, arg in enumerate(args):
-                function_call_args[str(i)] = arg
-
-            # Add keyword arguments
-            function_call_args.update(kwargs)
-
-            # Create FunctionCall node
-            function_call = FunctionCall(name=temp_name, args=function_call_args)
-
-            # Temporarily register the callable in the function registry
-            if self.function_registry:
-                self.function_registry._functions["local"][temp_name] = func
-                try:
-                    result = self.parent._function_executor.execute_function_call(function_call, context)
-                    return result
-                finally:
-                    # Clean up the temporary registration
-                    if temp_name in self.function_registry._functions["local"]:
-                        del self.function_registry._functions["local"][temp_name]
-            else:
-                raise SandboxError("No function registry available for callable execution")
-
-        else:
-            raise SandboxError(f"Invalid function operand: {func} (type: {type(func)})")
-
-    def _trace_pipe_step(self, context: SandboxContext, func: Any, input_data: Any) -> None:
-        """Trace a pipe step for future debugging/introspection.
-
-        This is a stub for future implementation of pipe step logging/tracing.
-
-        Args:
-            context: The execution context
-            func: The function being called
-            input_data: The input data being passed to the function
-        """
-        # TODO: Implement proper tracing/logging for pipe steps
-        # For now, this is just a placeholder for future enhancement
-        pass
+        return self.collection_processor.execute_list_literal(node, context)

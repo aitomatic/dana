@@ -1,0 +1,18 @@
+def check(num):
+    if num > 20:
+        return "long"
+    elif num > 15:
+        return "middle"
+    elif num > 10:
+        return reason(f"Convert {num} to string")
+    else:
+        return "short"
+
+def test():
+    return "This is a test function"
+
+print(test())
+print(check(10))
+print(check(15))
+print(check(20))
+print(check(25))

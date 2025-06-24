@@ -22,21 +22,24 @@ from typing import Any
 from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
+from opendxa.dana.sandbox.interpreter.executor.statement import (
+    AgentHandler,
+    AssignmentHandler,
+    ImportHandler,
+    StatementUtils,
+)
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.parser.ast import (
     AgentPoolStatement,
     AgentStatement,
     AssertStatement,
     Assignment,
-    AttributeAccess,
     ExportStatement,
-    Identifier,
     ImportFromStatement,
     ImportStatement,
     PassStatement,
     RaiseStatement,
     StructDefinition,
-    SubscriptExpression,
     UseStatement,
 )
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -61,6 +64,13 @@ class StatementExecutor(BaseExecutor):
             function_registry: Optional function registry (defaults to parent's)
         """
         super().__init__(parent_executor, function_registry)
+
+        # Initialize optimized statement handlers
+        self.assignment_handler = AssignmentHandler(parent_executor=self)
+        self.import_handler = ImportHandler(parent_executor=self, function_registry=self.function_registry)
+        self.agent_handler = AgentHandler(parent_executor=self, function_registry=self.function_registry)
+        self.statement_utils = StatementUtils(parent_executor=self)
+
         self.register_handlers()
 
     def register_handlers(self):
@@ -80,7 +90,7 @@ class StatementExecutor(BaseExecutor):
         }
 
     def execute_assignment(self, node: Assignment, context: SandboxContext) -> Any:
-        """Execute an assignment statement.
+        """Execute an assignment statement using optimized handler.
 
         Args:
             node: The assignment to execute
@@ -89,233 +99,10 @@ class StatementExecutor(BaseExecutor):
         Returns:
             The assigned value
         """
-        # Set type information in context if this is a typed assignment
-        target_type = None
-        if hasattr(node, "type_hint") and node.type_hint:
-            # Convert type hint to Python type for IPV
-            if hasattr(node.type_hint, "name"):
-                type_name = node.type_hint.name.lower()
-                type_mapping = {
-                    "int": int,
-                    "float": float,
-                    "str": str,
-                    "bool": bool,
-                    "list": list,
-                    "dict": dict,
-                    "tuple": tuple,
-                    "set": set,
-                }
-                target_type = type_mapping.get(type_name)
-
-                # Set the type information for IPV to access
-                context.set("system:__current_assignment_type", target_type)
-
-        try:
-            # Evaluate the right side expression
-            value = self.parent.execute(node.value, context)
-
-            # Julia-style: If a type hint is present, coerce the value
-            if target_type is not None:
-                try:
-                    from opendxa.dana.sandbox.interpreter.type_coercion import TypeCoercion
-
-                    value = TypeCoercion.coerce_value(value, target_type)
-                except Exception as e:
-                    target_name = self._get_assignment_target_name(node.target)
-                    raise SandboxError(f"Assignment to '{target_name}' failed: cannot coerce value '{value}' to type '{type_name}': {e}")
-
-            # Handle different types of assignment targets
-            if isinstance(node.target, Identifier):
-                # Simple variable assignment: x = value
-                var_name = node.target.name
-                context.set(var_name, value)
-
-            elif isinstance(node.target, SubscriptExpression):
-                # Subscript assignment: obj[key] = value or obj[slice] = value
-                self._execute_subscript_assignment(node.target, value, context)
-
-            elif isinstance(node.target, AttributeAccess):
-                # Attribute assignment: obj.attr = value
-                self._execute_attribute_assignment(node.target, value, context)
-
-            else:
-                target_type_name = type(node.target).__name__
-                raise SandboxError(f"Unsupported assignment target type: {target_type_name}")
-
-            # Store the last value for implicit return
-            context.set("system:__last_value", value)
-
-            # Return the value for expressions
-            return value
-
-        finally:
-            # Clean up the type information after assignment
-            if target_type:
-                context.set("system:__current_assignment_type", None)
-
-    def _get_assignment_target_name(self, target) -> str:
-        """Get a string representation of the assignment target for error messages.
-
-        Args:
-            target: The assignment target (Identifier, SubscriptExpression, or AttributeAccess)
-
-        Returns:
-            String representation of the target
-        """
-        if isinstance(target, Identifier):
-            return target.name
-        elif isinstance(target, SubscriptExpression):
-            obj_name = self._get_assignment_target_name(target.object)
-            return f"{obj_name}[...]"
-        elif isinstance(target, AttributeAccess):
-            obj_name = self._get_assignment_target_name(target.object)
-            return f"{obj_name}.{target.attribute}"
-        else:
-            return str(target)
-
-    def _execute_subscript_assignment(self, target: "SubscriptExpression", value: Any, context: SandboxContext) -> None:
-        """Execute a subscript assignment (obj[key] = value or obj[slice] = value).
-
-        Args:
-            target: The subscript expression target
-            value: The value to assign
-            context: The execution context
-
-        Raises:
-            SandboxError: If the subscript assignment fails
-        """
-        from opendxa.dana.sandbox.parser.ast import SliceExpression, SliceTuple
-
-        # Get the target object
-        target_obj = self.parent.execute(target.object, context)
-
-        # Handle different types of subscript assignments
-        if isinstance(target.index, SliceExpression):
-            # Single slice assignment: obj[start:stop] = value
-            self._execute_slice_assignment(target_obj, target.index, value, context)
-
-        elif isinstance(target.index, SliceTuple):
-            # Multi-dimensional slice assignment: obj[slice1, slice2] = value
-            self._execute_multidim_slice_assignment(target_obj, target.index, value, context)
-
-        else:
-            # Regular index assignment: obj[key] = value
-            index = self.parent.execute(target.index, context)
-            try:
-                target_obj[index] = value
-            except Exception as e:
-                obj_name = self._get_assignment_target_name(target.object)
-                raise SandboxError(f"Index assignment to {obj_name}[{index}] failed: {e}")
-
-    def _execute_slice_assignment(self, target_obj: Any, slice_expr: Any, value: Any, context: SandboxContext) -> None:
-        """Execute a single-dimensional slice assignment.
-
-        Args:
-            target_obj: The object to assign to
-            slice_expr: The slice expression
-            value: The value to assign
-            context: The execution context
-
-        Raises:
-            SandboxError: If the slice assignment fails
-        """
-        # Evaluate slice components
-        start = self.parent.execute(slice_expr.start, context) if slice_expr.start else None
-        stop = self.parent.execute(slice_expr.stop, context) if slice_expr.stop else None
-        step = self.parent.execute(slice_expr.step, context) if slice_expr.step else None
-
-        # Create Python slice object
-        slice_obj = slice(start, stop, step)
-
-        try:
-            target_obj[slice_obj] = value
-        except Exception as e:
-            slice_repr = f"{start}:{stop}:{step}" if step else f"{start}:{stop}"
-            raise SandboxError(f"Slice assignment [{slice_repr}] failed: {e}")
-
-    def _execute_multidim_slice_assignment(self, target_obj: Any, slice_tuple: Any, value: Any, context: SandboxContext) -> None:
-        """Execute a multi-dimensional slice assignment.
-
-        Args:
-            target_obj: The object to assign to
-            slice_tuple: The SliceTuple containing multiple slice expressions
-            value: The value to assign
-            context: The execution context
-
-        Raises:
-            SandboxError: If the multi-dimensional slice assignment fails
-        """
-        from opendxa.dana.sandbox.parser.ast import SliceExpression
-
-        # Evaluate each slice in the tuple
-        evaluated_slices = []
-        for slice_item in slice_tuple.slices:
-            if isinstance(slice_item, SliceExpression):
-                # Convert SliceExpression to Python slice object
-                start = self.parent.execute(slice_item.start, context) if slice_item.start else None
-                stop = self.parent.execute(slice_item.stop, context) if slice_item.stop else None
-                step = self.parent.execute(slice_item.step, context) if slice_item.step else None
-                slice_obj = slice(start, stop, step)
-                evaluated_slices.append(slice_obj)
-            else:
-                # Regular index - evaluate the expression
-                index = self.parent.execute(slice_item, context)
-                evaluated_slices.append(index)
-
-        # Create tuple of slices for multi-dimensional indexing
-        slice_tuple_obj = tuple(evaluated_slices)
-
-        try:
-            target_obj[slice_tuple_obj] = value
-        except Exception as e:
-            # Create readable representation of the slice tuple
-            slice_repr = ", ".join(
-                [
-                    (
-                        f"{s.start}:{s.stop}:{s.step}"
-                        if isinstance(s, slice) and s.step
-                        else f"{s.start}:{s.stop}"
-                        if isinstance(s, slice)
-                        else str(s)
-                    )
-                    for s in evaluated_slices
-                ]
-            )
-
-            # Check if this is a pandas-specific operation and provide helpful error message
-            if hasattr(target_obj, "iloc") or hasattr(target_obj, "loc"):
-                suggested_fix = "For pandas DataFrames, ensure the assignment is compatible with the target shape and data types"
-            else:
-                suggested_fix = f"Ensure {type(target_obj).__name__} supports multi-dimensional assignment"
-
-            raise SandboxError(
-                f"Multi-dimensional slice assignment [{slice_repr}] failed: {str(e)}. "
-                f"Target: {type(target_obj).__name__}. "
-                f"Suggestion: {suggested_fix}"
-            )
-
-    def _execute_attribute_assignment(self, target: "AttributeAccess", value: Any, context: SandboxContext) -> None:
-        """Execute an attribute assignment (obj.attr = value).
-
-        Args:
-            target: The attribute access target
-            value: The value to assign
-            context: The execution context
-
-        Raises:
-            SandboxError: If the attribute assignment fails
-        """
-        # Get the target object
-        target_obj = self.parent.execute(target.object, context)
-
-        try:
-            setattr(target_obj, target.attribute, value)
-        except Exception as e:
-            obj_name = self._get_assignment_target_name(target.object)
-            raise SandboxError(f"Attribute assignment to {obj_name}.{target.attribute} failed: {e}")
+        return self.assignment_handler.execute_assignment(node, context)
 
     def execute_assert_statement(self, node: AssertStatement, context: SandboxContext) -> None:
-        """Execute an assert statement.
+        """Execute an assert statement using optimized handler.
 
         Args:
             node: The assert statement to execute
@@ -327,94 +114,7 @@ class StatementExecutor(BaseExecutor):
         Raises:
             AssertionError: If assertion fails
         """
-        # Evaluate the condition
-        condition = self.parent.execute(node.condition, context)
-
-        if not condition:
-            # If assertion fails, evaluate and raise the message
-            message = "Assertion failed"
-            if node.message is not None:
-                message = str(self.parent.execute(node.message, context))
-
-            raise AssertionError(message)
-
-        return None
-
-    def _ensure_module_system_initialized(self) -> None:
-        """Ensure the Dana module system is initialized."""
-        from opendxa.dana.module.core import get_module_loader, initialize_module_system
-
-        try:
-            # Try to get the loader (this will raise if not initialized)
-            get_module_loader()
-        except Exception:
-            # Initialize the module system if not already done
-            initialize_module_system()
-
-    def _create_parent_namespaces(self, context_name: str, module: Any, context: SandboxContext) -> None:
-        """Create parent namespace objects for submodule imports.
-
-        For example, when importing 'utils.text', this creates a namespace object 'utils'
-        that has 'text' as an attribute pointing to the module.
-
-        Args:
-            context_name: The full module name (e.g., 'utils.text')
-            module: The loaded module object
-            context: The execution context
-        """
-
-        # Create a simple namespace class for holding submodules
-        class ModuleNamespace:
-            def __init__(self, name: str):
-                self.__name__ = name
-                self.__dict__.update({"__name__": name})
-
-            def __setattr__(self, name: str, value: Any) -> None:
-                if name == "__name__":
-                    object.__setattr__(self, name, value)
-                else:
-                    self.__dict__[name] = value
-
-            def __getattr__(self, name: str) -> Any:
-                if name in self.__dict__:
-                    return self.__dict__[name]
-                raise AttributeError(f"Module namespace '{self.__name__}' has no attribute '{name}'")
-
-        parts = context_name.split(".")
-
-        # Build up the namespace hierarchy
-        for i in range(len(parts) - 1):  # Don't process the last part (that's the actual module)
-            parent_path = ".".join(parts[: i + 1])
-            child_name = parts[i + 1]
-
-            # Get or create the parent namespace
-            try:
-                parent_ns = context.get_from_scope(parent_path, scope="local")
-                if parent_ns is None:
-                    # Create new namespace
-                    parent_ns = ModuleNamespace(parent_path)
-                    context.set_in_scope(parent_path, parent_ns, scope="local")
-            except Exception:
-                # Create new namespace
-                parent_ns = ModuleNamespace(parent_path)
-                context.set_in_scope(parent_path, parent_ns, scope="local")
-
-            # Set the child in the parent namespace
-            if i == len(parts) - 2:  # This is the direct parent of our module
-                setattr(parent_ns, child_name, module)
-            else:
-                # This is an intermediate parent, set the next namespace level
-                child_path = ".".join(parts[: i + 2])
-                try:
-                    child_ns = context.get_from_scope(child_path, scope="local")
-                    if child_ns is None:
-                        child_ns = ModuleNamespace(child_path)
-                        context.set_in_scope(child_path, child_ns, scope="local")
-                    setattr(parent_ns, child_name, child_ns)
-                except Exception:
-                    child_ns = ModuleNamespace(child_path)
-                    context.set_in_scope(child_path, child_ns, scope="local")
-                    setattr(parent_ns, child_name, child_ns)
+        return self.statement_utils.execute_assert_statement(node, context)
 
     def _resolve_relative_import(self, module_name: str, context: SandboxContext) -> str:
         """Resolve relative import to absolute module name.
@@ -720,15 +420,7 @@ class StatementExecutor(BaseExecutor):
             self.warning(f"Failed to register imported function '{context_name}': {reg_err}")
 
     def execute_import_statement(self, node: ImportStatement, context: SandboxContext) -> Any:
-        """Execute an import statement (import module [as alias]).
-
-        Module Resolution Strategy:
-        - Modules ending with .py are treated as Python modules
-        - Modules without .py extension are treated as Dana modules (.na)
-
-        Examples:
-        - import math      → looks for math.na (Dana module)
-        - import math.py   → looks for math (Python module)
+        """Execute an import statement using optimized handler.
 
         Args:
             node: The import statement to execute
@@ -737,36 +429,10 @@ class StatementExecutor(BaseExecutor):
         Returns:
             None (import statements don't return values)
         """
-        module_name = node.module
-
-        # For context naming: use alias if provided, otherwise use clean module name
-        if node.alias:
-            context_name = node.alias
-        else:
-            # Strip .py extension for context naming if present
-            context_name = module_name[:-3] if module_name.endswith(".py") else module_name
-
-        try:
-            if module_name.endswith(".py"):
-                # Explicitly Python module
-                return self._execute_python_import(module_name, context_name, context)
-            else:
-                # Dana module (implicit .na)
-                return self._execute_dana_import(module_name, context_name, context)
-
-        except SandboxError:
-            # Re-raise SandboxErrors directly
-            raise
-        except Exception as e:
-            # Convert other errors to SandboxErrors for consistency
-            raise SandboxError(f"Error importing module '{module_name}': {e}") from e
+        return self.import_handler.execute_import_statement(node, context)
 
     def execute_import_from_statement(self, node: ImportFromStatement, context: SandboxContext) -> Any:
-        """Execute a from-import statement (from module import name [as alias]).
-
-        Module Resolution Strategy:
-        - Modules ending with .py are treated as Python modules
-        - Modules without .py extension are treated as Dana modules (.na)
+        """Execute a from-import statement using optimized handler.
 
         Args:
             node: The from-import statement to execute
@@ -775,25 +441,10 @@ class StatementExecutor(BaseExecutor):
         Returns:
             None (import statements don't return values)
         """
-        module_name = node.module
-
-        try:
-            if module_name.endswith(".py"):
-                # Explicitly Python module
-                return self._execute_python_from_import(module_name, node.names, context)
-            else:
-                # Dana module (implicit .na)
-                return self._execute_dana_from_import(module_name, node.names, context)
-
-        except SandboxError:
-            # Re-raise SandboxErrors directly
-            raise
-        except Exception as e:
-            # Convert other errors to SandboxErrors for consistency
-            raise SandboxError(f"Error importing from module '{module_name}': {e}") from e
+        return self.import_handler.execute_import_from_statement(node, context)
 
     def execute_pass_statement(self, node: PassStatement, context: SandboxContext) -> None:
-        """Execute a pass statement.
+        """Execute a pass statement using optimized handler.
 
         Args:
             node: The pass statement to execute
@@ -802,10 +453,10 @@ class StatementExecutor(BaseExecutor):
         Returns:
             None
         """
-        return None
+        return self.statement_utils.execute_pass_statement(node, context)
 
     def execute_raise_statement(self, node: RaiseStatement, context: SandboxContext) -> None:
-        """Execute a raise statement.
+        """Execute a raise statement using optimized handler.
 
         Args:
             node: The raise statement to execute
@@ -817,29 +468,10 @@ class StatementExecutor(BaseExecutor):
         Raises:
             Exception: The raised exception
         """
-        # Evaluate the exception value
-        if node.value is None:
-            raise RuntimeError("No exception to re-raise")
-
-        value = self.parent.execute(node.value, context)
-
-        # Evaluate from_value if present
-        from_exception = None
-        if node.from_value is not None:
-            from_exception = self.parent.execute(node.from_value, context)
-
-        # Raise the exception
-        if isinstance(value, Exception):
-            if from_exception is not None:
-                raise value from from_exception
-            else:
-                raise value
-        else:
-            # Convert to string and raise as runtime error
-            raise RuntimeError(str(value))
+        return self.statement_utils.execute_raise_statement(node, context)
 
     def execute_use_statement(self, node: UseStatement, context: SandboxContext) -> Any:
-        """Execute a use statement.
+        """Execute a use statement using optimized handler.
 
         Args:
             node: The use statement to execute
@@ -848,25 +480,10 @@ class StatementExecutor(BaseExecutor):
         Returns:
             A resource object that can be used to call methods
         """
-        # Evaluate the arguments
-        args = [self.parent.execute(arg, context) for arg in node.args]
-        kwargs = {k: self.parent.execute(v, context) for k, v in node.kwargs.items()}
-        target = node.target
-        if target is not None:
-            target = target.name
-            target_name = target.split(".")[-1]
-            kwargs["_name"] = target_name
-
-        if self.function_registry is not None:
-            result = self.function_registry.call("use", context, None, *args, **kwargs)
-        else:
-            self.warning(f"No function registry available for {self.__class__.__name__}.execute_use_statement")
-            result = None
-
-        return result
+        return self.agent_handler.execute_use_statement(node, context)
 
     def execute_export_statement(self, node: ExportStatement, context: SandboxContext) -> None:
-        """Execute an export statement.
+        """Execute an export statement using optimized handler.
 
         Args:
             node: The export statement node
@@ -875,26 +492,10 @@ class StatementExecutor(BaseExecutor):
         Returns:
             None
         """
-        # Get the name to export
-        name = node.name
-
-        # Get the value from the local scope
-        try:
-            context.get_from_scope(name, scope="local")
-        except Exception:
-            # If the value doesn't exist yet, that's okay - it might be defined later
-            pass
-
-        # Add to exports
-        if not hasattr(context, "_exports"):
-            context._exports = set()
-        context._exports.add(name)
-
-        # Return None since export statements don't produce a value
-        return None
+        return self.agent_handler.execute_export_statement(node, context)
 
     def execute_struct_definition(self, node: StructDefinition, context: SandboxContext) -> None:
-        """Execute a struct definition statement.
+        """Execute a struct definition statement using optimized handler.
 
         Args:
             node: The struct definition node
@@ -903,20 +504,10 @@ class StatementExecutor(BaseExecutor):
         Returns:
             None (struct definitions don't produce a value, they register a type)
         """
-        # Import here to avoid circular imports
-        from opendxa.dana.sandbox.interpreter.struct_system import register_struct_from_ast
-
-        # Register the struct type in the global registry
-        try:
-            struct_type = register_struct_from_ast(node)
-            self.debug(f"Registered struct type: {struct_type.name}")
-        except Exception as e:
-            raise SandboxError(f"Failed to register struct {node.name}: {e}")
-
-        return None
+        return self.agent_handler.execute_struct_definition(node, context)
 
     def execute_agent_statement(self, node: AgentStatement, context: SandboxContext) -> Any:
-        """Execute an agent statement.
+        """Execute an agent statement using optimized handler.
 
         Args:
             node: The agent statement to execute
@@ -925,34 +516,10 @@ class StatementExecutor(BaseExecutor):
         Returns:
             An A2A agent resource object that can be used to call methods
         """
-        # Evaluate the arguments
-        args = [self.parent.execute(arg, context) for arg in node.args]
-        kwargs = {k: self.parent.execute(v, context) for k, v in node.kwargs.items()}
-
-        # Remove any user-provided 'name' parameter - agent names come from variable assignment
-        if "name" in kwargs:
-            provided_name = kwargs["name"]
-            del kwargs["name"]
-            self.warning(
-                f"Agent name parameter '{provided_name}' will be overridden with variable name. Agent names are automatically derived from variable assignment."
-            )
-
-        target = node.target
-        if target is not None:
-            target_name = target.name if hasattr(target, "name") else str(target)
-            kwargs["_name"] = target_name
-
-        # Call the agent function through the registry
-        if self.function_registry is not None:
-            result = self.function_registry.call("agent", context, None, *args, **kwargs)
-        else:
-            self.warning(f"No function registry available for {self.__class__.__name__}.execute_agent_statement")
-            result = None
-
-        return result
+        return self.agent_handler.execute_agent_statement(node, context)
 
     def execute_agent_pool_statement(self, node: AgentPoolStatement, context: SandboxContext) -> Any:
-        """Execute an agent pool statement.
+        """Execute an agent pool statement using optimized handler.
 
         Args:
             node: The agent pool statement to execute
@@ -961,28 +528,4 @@ class StatementExecutor(BaseExecutor):
         Returns:
             An agent pool resource object that can be used to call methods
         """
-        # Evaluate the arguments
-        args = [self.parent.execute(arg, context) for arg in node.args]
-        kwargs = {k: self.parent.execute(v, context) for k, v in node.kwargs.items()}
-
-        # Remove any user-provided 'name' parameter - agent pool names come from variable assignment
-        if "name" in kwargs:
-            provided_name = kwargs["name"]
-            del kwargs["name"]
-            self.warning(
-                f"Agent pool name parameter '{provided_name}' will be overridden with variable name. Agent pool names are automatically derived from variable assignment."
-            )
-
-        target = node.target
-        if target is not None:
-            target_name = target.name if hasattr(target, "name") else str(target)
-            kwargs["_name"] = target_name
-
-        # Call the agent_pool function through the registry
-        if self.function_registry is not None:
-            result = self.function_registry.call("agent_pool", context, None, *args, **kwargs)
-        else:
-            self.warning(f"No function registry available for {self.__class__.__name__}.execute_agent_pool_statement")
-            result = None
-
-        return result
+        return self.agent_handler.execute_agent_pool_statement(node, context)

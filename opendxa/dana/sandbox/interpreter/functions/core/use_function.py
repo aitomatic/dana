@@ -24,7 +24,7 @@ def use_function(context: SandboxContext, function_name: str, *args, _name: str 
         context.set_resource(_name, resource)
         return resource
     elif function_name.lower() == "rag":
-        from opendxa.contrib.dana_rag.common.resource.rag_resource import RAGResource
+        from opendxa.contrib.rag_resource import RAGResource
 
         resource = RAGResource(*args, name=_name, **kwargs)
         context.set_resource(_name, resource)

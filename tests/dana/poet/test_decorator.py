@@ -1,199 +1,151 @@
 """
-Tests for POET decorator implementation.
+Tests for POET decorator as a pure Dana language feature.
 
 Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-import json
-from datetime import datetime
-
 import pytest
 
-from opendxa.dana.poet.decorator import POETDecorator, POETMetadata, poet
+from opendxa.dana.poet.decorator import POETMetadata, poet
+from opendxa.dana.poet.types import POETConfig
 
 
 @pytest.mark.poet
-def test_poet_decorator_initialization():
-    """Test basic decorator initialization."""
+def test_poet_decorator_factory():
+    """Test POET decorator factory creates proper decorator function."""
+    decorator_func = poet(domain="test_domain")
 
-    @poet(domain="test_domain")
-    def test_func(x: int) -> int:
-        return x * 2
-
-    assert isinstance(test_func, POETDecorator)
-    assert test_func.metadata.config is not None
-    assert test_func.metadata.config.domain == "test_domain"
+    # Should return a callable decorator function
+    assert callable(decorator_func)
 
 
 @pytest.mark.poet
-def test_metadata_initialization(tmp_path):
-    """Test metadata initialization for decorated function."""
+def test_poet_decorator_with_dana_parameters():
+    """Test POET decorator with Dana-relevant parameters."""
+    decorator_func = poet(domain="healthcare", retries=3, enable_training=True)
 
-    @poet(domain="test_domain")
-    def test_func(x: int) -> int:
+    # Should return a callable decorator function
+    assert callable(decorator_func)
+
+
+@pytest.mark.poet
+def test_poet_enhances_dana_function():
+    """Test applying POET decorator to a Dana-like function."""
+
+    # Simulate a Dana function
+    def dana_func(x):
+        """A simulated Dana function."""
         return x * 2
 
-    assert isinstance(test_func, POETDecorator)
-    metadata = test_func.metadata
-    assert isinstance(metadata, POETMetadata)
-    assert metadata.function_name == "test_func"
+    dana_func.__name__ = "calculate"
+
+    # Apply POET decorator
+    decorator = poet(domain="math")
+    enhanced_func = decorator(dana_func)
+
+    # Test enhanced function works
+    result = enhanced_func(5)
+    assert result == 10
+
+    # Check POET metadata is attached
+    assert hasattr(enhanced_func, "_poet_config")
+    assert enhanced_func._poet_config["domain"] == "math"
+    assert enhanced_func._poet_config["retries"] == 1
+    assert enhanced_func._poet_config["enable_training"] == True
+
+
+@pytest.mark.poet
+def test_poet_config_for_dana():
+    """Test POETConfig works for Dana function configuration."""
+    config = POETConfig(domain="data_processing", retries=2, enable_training=True)
+
+    assert config.domain == "data_processing"
+    assert config.retries == 2
+    assert config.enable_training == True
+
+    # Should be serializable for Dana runtime
+    config_dict = config.dict()
+    assert isinstance(config_dict, dict)
+    assert config_dict["domain"] == "data_processing"
+
+
+@pytest.mark.poet
+def test_poet_metadata_for_dana():
+    """Test POETMetadata for Dana function tracking."""
+    config = POETConfig(domain="test_domain", retries=2)
+    metadata = POETMetadata("test_function", config)
+
+    assert metadata.function_name == "test_function"
     assert metadata.version == 1
-    assert metadata.enhanced_path.name == "enhanced.na"
-    assert metadata.config is not None
-    assert metadata.config.domain == "test_domain"
+    assert metadata["domains"] == ["test_domain"]
+    assert metadata["retries"] == 2
 
 
 @pytest.mark.poet
-def test_enhanced_version_generation(tmp_path, monkeypatch):
-    """Test enhanced version generation."""
+def test_poet_phases_in_dana_context():
+    """Test that POET phases execute in Dana function context."""
 
-    # Mock transpiler
-    def mock_transpile(*args, **kwargs):
-        return {
-            "code": "def enhanced_func(x): return x * 2",
-            "metadata": {"version": 1, "domain": "test_domain", "timestamp": datetime.now().isoformat()},
-        }
+    # Track function calls to verify POET phases
+    call_log = []
 
-    monkeypatch.setattr("opendxa.dana.poet.transpiler.PoetTranspiler.transpile", mock_transpile)
+    def dana_func(x):
+        call_log.append(f"dana_function_executed_with_{x}")
+        return x * 3
 
-    @poet(domain="test_domain")
-    def test_func(x: int) -> int:
-        return x * 2
+    dana_func.__name__ = "process_data"
 
-    # Should generate enhanced version
-    result = test_func(5)
-    assert result == 10
+    # Apply POET decorator
+    decorator = poet(domain="data_processing")
+    enhanced_func = decorator(dana_func)
 
-    # Check files were created
-    enhanced_path = test_func.metadata.enhanced_path
-    assert enhanced_path.exists()
-    assert enhanced_path.read_text() == "def enhanced_func(x): return x * 2"
+    # Execute enhanced function
+    result = enhanced_func(4)
 
-    # Check metadata
-    metadata_path = enhanced_path.parent / "metadata.json"
-    assert metadata_path.exists()
-    metadata = json.loads(metadata_path.read_text())
-    assert metadata["domain"] == "test_domain"
-    assert metadata["version"] == 1
+    # Verify correct result
+    assert result == 12
+
+    # Verify original Dana function was called
+    assert "dana_function_executed_with_4" in call_log
+
+    # Verify function metadata preserved
+    assert enhanced_func.__name__ == "process_data"
 
 
 @pytest.mark.poet
-def test_enhanced_version_regeneration(tmp_path, monkeypatch):
-    """Test enhanced version regeneration when original function changes."""
+def test_poet_error_handling_in_dana():
+    """Test POET error handling for Dana functions."""
 
-    # Mock transpiler
-    def mock_transpile(*args, **kwargs):
-        return {
-            "code": "def enhanced_func(x): return x * 2",
-            "metadata": {"version": 1, "domain": "test_domain", "timestamp": datetime.now().isoformat()},
-        }
+    def failing_dana_func(x):
+        raise ValueError("Dana function error")
 
-    monkeypatch.setattr("opendxa.dana.poet.transpiler.PoetTranspiler.transpile", mock_transpile)
+    failing_dana_func.__name__ = "failing_operation"
 
-    @poet(domain="test_domain")
-    def test_func(x: int) -> int:
-        return x * 2
+    decorator = poet(domain="test", retries=1)
+    enhanced_func = decorator(failing_dana_func)
 
-    # Generate initial version
-    test_func(5)
-
-    # Modify original function
-    test_func.func.__code__ = (lambda x: x * 3).__code__
-
-    # Should regenerate enhanced version
-    result = test_func(5)
-    assert result == 15
+    # Should propagate the error after retry logic
+    with pytest.raises(ValueError, match="Dana function error"):
+        enhanced_func(5)
 
 
 @pytest.mark.poet
-def test_fallback_to_original(tmp_path, monkeypatch):
-    """Test fallback to original function when enhancement fails."""
+def test_poet_preserves_dana_function_identity():
+    """Test that POET preserves Dana function identity and metadata."""
 
-    # Mock transpiler to fail
-    def mock_transpile(*args, **kwargs):
-        raise RuntimeError("Transpilation failed")
+    def original_dana_func(a, b):
+        """Original Dana function docstring."""
+        return a + b
 
-    monkeypatch.setattr("opendxa.dana.poet.transpiler.PoetTranspiler.transpile", mock_transpile)
+    original_dana_func.__name__ = "add_numbers"
 
-    @poet(domain="test_domain")
-    def test_func(x: int) -> int:
-        return x * 2
+    # Apply POET decorator
+    decorator = poet(domain="arithmetic")
+    enhanced_func = decorator(original_dana_func)
 
-    # Should fall back to original function
-    result = test_func(5)
-    assert result == 10
+    # Check that Dana function identity is preserved
+    assert enhanced_func.__name__ == "add_numbers"
+    assert enhanced_func.__doc__ == "Original Dana function docstring."
 
-
-@pytest.mark.poet
-def test_decorator_with_arguments():
-    """Test decorator with additional arguments."""
-
-    @poet(domain="test", retries=5, timeout=60)
-    def test_func(x: int) -> int:
-        return x * 2
-
-    # Verify decorator instance
-    assert isinstance(test_func, POETDecorator)
-    assert test_func.metadata.config is not None
-    assert test_func.metadata.config.domain == "test"
-    assert test_func.metadata.config.retries == 5
-    assert test_func.metadata.config.timeout == 60
-    assert test_func.metadata.config.optimize_for is None
-    assert test_func.metadata.config.enable_monitoring is True
-
-    # Test function execution
-    result = test_func(5)
-    assert result == 10
-
-
-@pytest.mark.poet
-def test_decorator_preserves_function_metadata():
-    """Test that decorator preserves function metadata."""
-
-    @poet(domain="test_domain")
-    def test_func(x: int) -> int:
-        """Test function docstring."""
-        return x * 2
-
-    assert test_func.func.__name__ == "test_func"
-    assert test_func.func.__doc__ == "Test function docstring."
-    assert test_func.func.__annotations__ == {"x": int, "return": int}
-
-
-@pytest.mark.poet
-def test_general_decorator_support(fresh_sandbox):
-    """Test that general decorators are applied in bottom-up order."""
-    from pathlib import Path
-
-    # Create a temporary .na file with two decorators
-    test_file = Path("tmp/test_general_decorator.na")
-    test_file.parent.mkdir(exist_ok=True)
-    test_file.write_text(
-        """
-# @log_calls
-# @retry(times=3)
-def foo(x: int) -> int:
-    return x + 1
-
-# Execute the function
-result = foo(5)
-assert result == 6
-"""
-    )
-
-    # Run the file using fresh_sandbox fixture
-    result = fresh_sandbox.run(test_file)
-
-    # Check execution completed successfully
-    assert result.success is True
-    assert result.error is None
-
-    # Check that the wrapped function is registered in the context
-    context = result.final_context
-    assert context is not None
-    foo_func = context.get("local:foo")
-    assert foo_func is not None
-    assert hasattr(foo_func, "__name__")
-    assert foo_func.__name__ == "foo"
-    assert hasattr(foo_func, "execute")  # Verify it's a SandboxFunction
+    # Check POET configuration is accessible
+    assert enhanced_func._poet_config["domain"] == "arithmetic"

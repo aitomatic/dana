@@ -1,0 +1,20 @@
+# Shipping Analyzer Dana Module
+# Demonstrates Dana AI reasoning for shipping decisions
+
+def analyze_shipping(order_data: dict) -> str:
+    order_amount = order_data.get("order_amount", 0)
+    shipping_country = order_data.get("shipping_country", "Unknown")
+    items = order_data.get("items", [])
+    
+    item_count = len(items)
+    
+    # Build item types list manually (no list comprehension in Dana)
+    item_types = []
+    for item in items:
+        product = item.get("product", "unknown")
+        item_types.append(product)
+    
+    # Dana's AI reasoning for shipping analysis
+    prompt = f"Shipping analysis: ${order_amount} order to {shipping_country} with {item_count} items ({item_types}). Determine shipping options: Standard, Express, Restricted, or Prohibited. Consider country regulations and item types."
+    
+    return reason(prompt) 

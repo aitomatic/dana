@@ -1,13 +1,17 @@
 # GitHub Action to run Pylint code analysis
-# - Runs on Python 3.12
-# - Checks all Python files in the repository
-# - Uses settings from .pylintrc
-# - Fails only if score is below 7.0/10
-# This helps maintain code quality standards
+# - Runs on Python 3.12+
+# - Uses Pylint for comprehensive code quality analysis
+# - Uses .pylintrc configuration file for OpenDXA standards
+# - Focuses on critical code quality issues
 
 name: Pylint
 
-on: [push]
+on: 
+  push:
+    branches: [main, master, feat/llm-poet]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:  # Allow manual triggering
 
 jobs:
   build:
@@ -18,11 +22,18 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install uv
       uses: astral-sh/setup-uv@v6
+    - name: Cache uv dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-
     - name: Install dependencies
       run: uv sync --extra dev
     - name: Analysing the code with pylint
@@ -30,4 +41,9 @@ jobs:
         OPENDXA_MOCK_LLM: "true"
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
-      run: uv run pylint --disable=C0103,C0111,E0401 --fail-under=7 $(git ls-files '*.py')
+      run: |
+        echo "🔍 Running Pylint code analysis..."
+        echo "Using .pylintrc configuration"
+        echo "Analyzing core OpenDXA modules..."
+        uv run pylint opendxa/ --fail-under=8.0 --output-format=github
+        echo "✅ Pylint analysis completed" 

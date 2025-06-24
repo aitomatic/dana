@@ -63,7 +63,7 @@ def print_function(
 
     # Join the processed arguments with a space separator
     message = " ".join(processed_args)
-
+    print(message)
     # Try to write to the executor's output buffer if available
     # Get the interpreter from context
     interpreter = getattr(context, "_interpreter", None)
@@ -75,4 +75,3 @@ def print_function(
             return
 
     # Fallback to standard print if no executor available
-    print(message)
