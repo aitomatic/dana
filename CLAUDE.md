@@ -56,6 +56,7 @@ Dana is a Domain-Aware NeuroSymbolic Architecture language for AI-driven automat
 Quick Dana reminders:
 - **Dana modules**: `import math_utils` (no .na), **Python modules**: `import math.py`
 - **Use `log()` for examples/testing output** (preferred for color coding and debugging)
+- **For Dana INFO logging to show**: Use `log_level("INFO", "dana")` (default is WARNING level)
 - **Always use f-strings**: `f"Value: {var}"` not `"Value: " + str(var)`
 - **Type hints required**: `def func(x: int) -> str:` (mandatory)
 - **Named arguments for structs**: `Point(x=5, y=10)` not `Point(5, 10)`

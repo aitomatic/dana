@@ -1,19 +1,19 @@
 
 
-from typing import List, Optional
 
-from opendxa.common.resource.base_resource import BaseResource
 from opendxa.common.mixins.tool_callable import ToolCallable
+from opendxa.common.resource.base_resource import BaseResource
 from opendxa.contrib.rag_resource.common.resource.rag.pipeline.rag_orchestrator import RAGOrchestrator
 from opendxa.contrib.rag_resource.common.resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager
+
 
 class RAGResource(BaseResource):
     """RAG resource for document retrieval."""
 
-    def __init__(self, sources: List[str], name: str = "rag_resource",
+    def __init__(self, sources: list[str], name: str = "rag_resource",
                     cache_dir: str = ".cache/rag",
                     force_reload: bool = False,
-                    description: Optional[str] = None):
+                    description: str | None = None):
         super().__init__(name, description)
         self.sources = sources
         self.force_reload = force_reload

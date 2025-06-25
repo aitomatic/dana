@@ -1,5 +1,7 @@
-from opendxa.common.mixins import Loggable
 from abc import ABC, abstractmethod
+
+from opendxa.common.mixins import Loggable
+
 
 class AbstractCache(ABC, Loggable):
     def __init__(self):
