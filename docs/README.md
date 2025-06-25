@@ -1,8 +1,25 @@
-# OpenDXA Documentation
 
-*Powered by Dana, a Pythonic agentic programming language and secure sandboxed runtime.*
+<iframe src="https://docs.google.com/forms/d/e/1FAIpQLSeRvBda2kHrBW7PDip1nDXzrH-Gd_rsqqdsVxFcvf-lZAQ1Tw/viewform?embedded=true" width="800" height="300" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
 
-## Choose Your Path
+---
+
+> Imagine an AI-powered operating system. What would you want it to do for you?
+
+> Now imagine an AI-powered execution runtime. What do you want to build with it?
+
+# OpenDXA — Domain-Expert Agent Framework
+
+A comprehensive framework for easily coding and deploying domain-expert multi-agent systems. Brought to you by [Aitomatic](https://aitomatic.com/) and other [AI Alliance](https://thealliance.ai/) members.
+
+<div style="display: flex; align-items: center; gap: 10px;">
+  <img src="images/dana-logo.jpg" alt="Dana Logo" width="60">
+  <span>
+    <div style="font-size: 18px; font-style: italic; font-weight: 600; color: #666;">Powered by Dana</div>
+    <div style="font-size: 14px; font-style: italic; color: #666;">an AI-enabled programming language and runtime.</div>
+  </span>
+</div>
+
+## Documentation: Choose Your Path
 
 ### I want to build with OpenDXA
 → **[For Engineers](for-engineers/README.md)** - Practical guides, recipes, and references

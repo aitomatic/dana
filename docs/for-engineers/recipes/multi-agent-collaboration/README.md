@@ -99,4 +99,60 @@ The demo shows how module agents and A2A agents work seamlessly together:
 - **Problem**: A2A agents not responding
 - **Solution**: Check agents are running with `ps aux | grep python` and restart if needed
 
-This demonstrates Dana's unified multi-agent architecture! 
+This demonstrates Dana's unified multi-agent architecture!
+
+## Agent Pool Management
+
+Managing multiple agents efficiently requires careful consideration of:
+
+- **Pool Initialization**: Setting up agent pools with proper resource allocation
+- **Load Balancing**: Distributing tasks across available agents
+- **Health Monitoring**: Checking agent status and handling failures
+- **Dynamic Scaling**: Adding or removing agents based on demand
+
+Example agent pool configuration:
+
+```dana
+struct AgentPool:
+    agents: list
+    max_concurrent_tasks: int
+    health_check_interval: int
+    
+def create_agent_pool(config: dict) -> AgentPool:
+    pool = AgentPool(
+        agents=[],
+        max_concurrent_tasks=config.get("max_concurrent", 10),
+        health_check_interval=config.get("health_interval", 30)
+    )
+    
+    # Initialize agents based on configuration
+    for agent_config in config.get("agents", []):
+        agent = create_agent(agent_config)
+        pool.agents.append(agent)
+    
+    return pool
+```
+
+## Reason Function Integration
+
+The `reason()` function provides seamless integration with multi-agent systems:
+
+- **Agent Selection**: Automatically choose the best agent for a task
+- **Context Sharing**: Share context between agents efficiently
+- **Result Aggregation**: Combine results from multiple agents
+- **Error Handling**: Graceful fallback when agents fail
+
+Example reason function usage with agents:
+
+```dana
+def solve_complex_task(task: str, agents: list) -> str:
+    # Use reason function to coordinate agents
+    result = reason(
+        f"Solve this task using the available agents: {task}",
+        context=[task, agents],
+        agents=agents,
+        strategy="best_match"
+    )
+    
+    return result
+``` 

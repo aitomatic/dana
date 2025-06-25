@@ -477,7 +477,7 @@ def new_function(data, context):
 
 ## Related Documentation
 
-- [POET Architecture Overview](../../design/02_dana_runtime_and_execution/poet_architecture_decisions.md)
+- [POET Architecture Overview](../../../reference/02_dana_runtime_and_execution/poet_architecture_decisions.md)
 - [Domain Plugin Development](../../../design/03_core_capabilities_resources/poet_domain_plugins.md)
 - [POET Usage Guide](../poet-usage-guide.md)
 - [Dana Syntax Reference](../dana-syntax.md) 
