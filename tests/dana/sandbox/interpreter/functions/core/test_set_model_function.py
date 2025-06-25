@@ -137,6 +137,143 @@ class TestSetModelFunction(unittest.TestCase):
         self.assertEqual(updated_llm.name, "custom_llm_name")
         self.assertEqual(updated_llm.model, "openai:gpt-4o")
 
+    def test_fuzzy_matching_gpt4(self):
+        """Test fuzzy matching for GPT-4 variants."""
+        os.environ["OPENAI_API_KEY"] = "test-key"
+
+        # Test partial match "gpt-4" should match "openai:gpt-4o"
+        result = set_model_function(self.context, "gpt-4")
+
+        # Should match to a GPT-4 variant
+        self.assertIn("gpt-4", result.lower())
+        self.assertTrue(result.startswith("openai:"))
+
+    def test_fuzzy_matching_claude(self):
+        """Test fuzzy matching for Claude models."""
+        os.environ["ANTHROPIC_API_KEY"] = "test-key"
+
+        # Test partial match "claude" should match an Anthropic Claude model
+        result = set_model_function(self.context, "claude")
+
+        # Should match to a Claude variant
+        self.assertIn("claude", result.lower())
+        self.assertTrue(result.startswith("anthropic:"))
+
+    def test_fuzzy_matching_gemini(self):
+        """Test fuzzy matching for Gemini models."""
+        os.environ["GOOGLE_API_KEY"] = "test-key"
+
+        # Test partial match "gemini" should match a Google Gemini model
+        result = set_model_function(self.context, "gemini")
+
+        # Should match to a Gemini variant
+        self.assertIn("gemini", result.lower())
+        self.assertTrue(result.startswith("google:"))
+
+    def test_exact_match_only_option(self):
+        """Test exact match only option disables fuzzy matching."""
+        os.environ["OPENAI_API_KEY"] = "test-key"
+
+        # With exact_match_only=True, partial matches should not work
+        result = set_model_function(
+            self.context, "gpt-4", options={"exact_match_only": True}
+        )
+
+        # Should use the input as-is
+        self.assertEqual(result, "gpt-4")
+
+    def test_fuzzy_matching_case_insensitive(self):
+        """Test that fuzzy matching is case insensitive."""
+        os.environ["OPENAI_API_KEY"] = "test-key"
+
+        # Test case insensitive matching
+        result = set_model_function(self.context, "GPT-4O")
+
+        # Should match to the properly cased model
+        self.assertIn("gpt-4o", result.lower())
+
+    def test_fuzzy_matching_no_match(self):
+        """Test fuzzy matching when no close match is found."""
+        os.environ["OPENAI_API_KEY"] = "test-key"
+
+        # Test with a completely unrelated string
+        result = set_model_function(self.context, "completely-unrelated-model")
+
+        # Should use the input as-is when no good match is found
+        self.assertEqual(result, "completely-unrelated-model")
+
+    def test_fuzzy_matching_provider_specific(self):
+        """Test fuzzy matching with provider-specific partial inputs."""
+        os.environ["OPENAI_API_KEY"] = "test-key"
+
+        # Test "openai:gpt" should match to a specific OpenAI GPT model
+        result = set_model_function(self.context, "openai:gpt")
+
+        # Should match to an OpenAI GPT model
+        self.assertTrue(result.startswith("openai:"))
+        self.assertIn("gpt", result.lower())
+
+    def test_fuzzy_matching_returns_different_model(self):
+        """Test that fuzzy matching can return a different model name."""
+        os.environ["OPENAI_API_KEY"] = "test-key"
+
+        # Use a partial match that should resolve to a different full name
+        original_input = "gpt-4o"  # This should match to "openai:gpt-4o"
+        result = set_model_function(self.context, original_input)
+
+        # Result should be different from input (fuzzy matched)
+        self.assertNotEqual(result, original_input)
+        self.assertIn("gpt-4o", result.lower())
+        self.assertTrue(result.startswith("openai:"))
+
+    def test_get_available_model_names_helper(self):
+        """Test the helper function that gets available model names."""
+        from opendxa.dana.sandbox.interpreter.functions.core.set_model_function import (
+            _get_available_model_names,
+        )
+
+        models = _get_available_model_names()
+
+        # Should return a list of model names
+        self.assertIsInstance(models, list)
+        self.assertGreater(len(models), 0)
+
+        # Should contain common models
+        model_str = " ".join(models).lower()
+        self.assertIn("openai", model_str)
+        self.assertIn("gpt", model_str)
+
+    def test_find_closest_model_match_helper(self):
+        """Test the fuzzy matching helper function directly."""
+        from opendxa.dana.sandbox.interpreter.functions.core.set_model_function import (
+            _find_closest_model_match,
+        )
+
+        available_models = [
+            "openai:gpt-4o",
+            "openai:gpt-4o-mini",
+            "anthropic:claude-3-5-sonnet-20241022",
+            "google:gemini-1.5-pro",
+        ]
+
+        # Test exact match
+        result = _find_closest_model_match("openai:gpt-4o", available_models)
+        self.assertEqual(result, "openai:gpt-4o")
+
+        # Test partial match
+        result = _find_closest_model_match("gpt-4", available_models)
+        self.assertIsNotNone(result)
+        if result:
+            self.assertIn("gpt-4", result)
+
+        # Test case insensitive
+        result = _find_closest_model_match("GPT-4O", available_models)
+        self.assertEqual(result, "openai:gpt-4o")
+
+        # Test no match
+        result = _find_closest_model_match("nonexistent", available_models)
+        self.assertIsNone(result)
+
 
 if __name__ == "__main__":
     unittest.main()
