@@ -4,12 +4,12 @@ Unit tests for IndexBuilder class.
 Tests individual index creation, error handling, and integration with documents.
 """
 
-import pytest
 import os
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from typing import Dict, List
+from unittest.mock import Mock, patch
 
-from llama_index.core import Document, VectorStoreIndex
+import pytest
+from llama_index.core import VectorStoreIndex
+
 from opendxa.contrib.rag_resource.common.resource.rag.pipeline.index_builder import IndexBuilder
 
 
@@ -239,7 +239,7 @@ class TestIndexBuilderIntegration:
         assert "long_docs" in result
         
         # Both should be real VectorStoreIndex objects
-        for source_key, index in result.items():
+        for _source_key, index in result.items():
             assert isinstance(index, VectorStoreIndex)
             
         # Verify indices are independent and functional

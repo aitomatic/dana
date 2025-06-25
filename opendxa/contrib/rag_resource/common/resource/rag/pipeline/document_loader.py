@@ -14,22 +14,13 @@ The DocumentLoader class is responsible for:
 """
 
 import asyncio
-import json
-import os
-import re
-from multiprocessing import cpu_count
-from pathlib import Path
-from typing import Dict, List, Tuple, Optional
 
-from llama_index.core import Document, SimpleDirectoryReader
-from opendxa.common.utils.misc import Misc
-from opendxa.contrib.rag_resource.common.utility.web_fetch import fetch_web_content
-from typing import cast
+from llama_index.core import Document
+
 from opendxa.contrib.rag_resource.common.resource.rag.loader.local_loader import LocalLoader
 from opendxa.contrib.rag_resource.common.resource.rag.loader.web_loader import WebLoader
-from functools import reduce
-import asyncio
 from opendxa.contrib.rag_resource.common.resource.rag.pipeline.base_stage import BaseStage
+
 
 class DocumentLoader(BaseStage):
     """Handles document loading and preprocessing only."""
@@ -42,17 +33,17 @@ class DocumentLoader(BaseStage):
         self._local_loader = LocalLoader(self.SUPPORTED_TYPES)
         self._web_loader = WebLoader()
 
-    async def load_sources(self, sources: List[str]) -> Dict[str, List[Document]]:
+    async def load_sources(self, sources: list[str]) -> dict[str, list[Document]]:
         docs_by_source = await self._load_sources(sources)
         return docs_by_source
 
-    async def _load(self, source: str) -> List[Document]:
+    async def _load(self, source: str) -> list[Document]:
         if source.startswith("http"):
             return await self._web_loader.load(source)
         else:
             return await self._local_loader.load(source)
 
-    async def _load_sources(self, sources: List[str]) -> Dict[str, List[Document]]:
+    async def _load_sources(self, sources: list[str]) -> dict[str, list[Document]]:
         tasks = [self._load(source) for source in sources]
         results = await asyncio.gather(*tasks)
-        return {source: result for source, result in zip(sources, results)} 
+        return {source: result for source, result in zip(sources, results, strict=False)} 

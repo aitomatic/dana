@@ -12,14 +12,15 @@ The IndexCombiner class is responsible for:
 """
 
 import asyncio
-from typing import Dict, List, cast
+import json
+from typing import cast
 
 from llama_index.core import VectorStoreIndex, load_index_from_storage
-from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.data_structs import IndexDict
 from llama_index.core.schema import Document
+from llama_index.core.storage.storage_context import StorageContext
+
 from opendxa.contrib.rag_resource.common.resource.rag.pipeline.base_stage import BaseStage
-import json
 
 
 class IndexCombiner(BaseStage):
@@ -35,8 +36,8 @@ class IndexCombiner(BaseStage):
         """
         super().__init__(**kwargs)
 
-    async def combine_indices(self, individual_indices: Dict[str, VectorStoreIndex], 
-                            docs_by_source: Dict[str, List[Document]]) -> VectorStoreIndex:
+    async def combine_indices(self, individual_indices: dict[str, VectorStoreIndex], 
+                            docs_by_source: dict[str, list[Document]]) -> VectorStoreIndex:
         """Create a combined index from individual indices without recomputing embeddings.
 
         This method extracts all nodes from individual indices and creates a new
@@ -60,14 +61,14 @@ class IndexCombiner(BaseStage):
             self.debug("Warning: No nodes collected, falling back to document-based approach")
             # Fallback: create from documents if node extraction fails
             all_documents = []
-            for source_key, documents in docs_by_source.items():
+            for _source_key, documents in docs_by_source.items():
                 all_documents.extend(documents)
             # Run the fallback index creation in a thread
             combined_index = await asyncio.to_thread(VectorStoreIndex.from_documents, all_documents)
 
         return combined_index
 
-    async def _create_combined_vector_store_index(self, individual_indices: Dict[str, VectorStoreIndex]) -> VectorStoreIndex | None:
+    async def _create_combined_vector_store_index(self, individual_indices: dict[str, VectorStoreIndex]) -> VectorStoreIndex | None:
         """Create combined vector store by merging existing vector stores."""
         def _recursive_update_inplace(dict1: dict, dict2: dict):
             for k, v in dict2.items():

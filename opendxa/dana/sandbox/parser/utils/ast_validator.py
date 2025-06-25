@@ -59,7 +59,7 @@ class AstValidator(Loggable):
             return tree_nodes
 
         # Skip basic types that can't contain Tree nodes
-        if isinstance(node, (str, int, float, bool, type(None))):
+        if isinstance(node, str | int | float | bool | type(None)):
             return []
 
         # Add to visited set for complex objects
@@ -67,7 +67,7 @@ class AstValidator(Loggable):
 
         try:
             # Recursively check different object types
-            if isinstance(node, (list, tuple)):
+            if isinstance(node, list | tuple):
                 for i, item in enumerate(node):
                     item_path = f"{path}[{i}]" if path else f"[{i}]"
                     tree_nodes.extend(cls.find_tree_nodes(item, item_path, visited))

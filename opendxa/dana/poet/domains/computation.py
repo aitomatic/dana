@@ -34,7 +34,6 @@ class ComputationDomain(BaseDomainTemplate):
         """Generate comprehensive input validation for mathematical operations"""
 
         # Analyze function signature to determine validation strategy
-        annotations = func_info.annotations
         param_validations = []
 
         # Extract parameter information
@@ -253,7 +252,7 @@ for param_name, param_value in validated_inputs.items():
         """Generate result-specific validation constraints"""
 
         constraints = []
-        return_annotation = func_info.annotations.get("return", "")
+        func_info.annotations.get("return", "")
 
         # Percentage results should be in reasonable range
         if "percent" in func_info.name.lower() or "rate" in func_info.name.lower():

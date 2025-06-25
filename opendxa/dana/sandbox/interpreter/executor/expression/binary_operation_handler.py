@@ -98,7 +98,7 @@ class BinaryOperationHandler(Loggable):
     def _apply_binary_coercion(self, left: Any, right: Any, operator: str) -> tuple:
         """Apply type coercion to binary operands if enabled."""
         try:
-            from opendxa.dana.sandbox.interpreter.type_coercion import TypeCoercion
+            from opendxa.dana.sandbox.interpreter.unified_coercion import TypeCoercion
 
             # Only apply coercion if enabled
             if TypeCoercion.should_enable_coercion():

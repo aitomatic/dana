@@ -68,7 +68,7 @@ class ASTExecutionCache(Loggable):
     def _extract_node_info(self, node: Any) -> tuple:
         """Extract cacheable information from AST node."""
         try:
-            if hasattr(node, "value") and isinstance(node.value, (int, float, str, bool)) or node.value is None:
+            if hasattr(node, "value") and isinstance(node.value, int | float | str | bool) or node.value is None:
                 return ("literal", node.value)
 
             if hasattr(node, "name") and isinstance(node.name, str):
@@ -132,7 +132,7 @@ class ASTExecutionCache(Loggable):
         if hasattr(result, "__len__") and len(result) > 1000:
             return False
 
-        if isinstance(result, (list, dict, set)) and len(result) > 100:
+        if isinstance(result, list | dict | set) and len(result) > 100:
             return False
 
         if hasattr(result, "__dict__") and callable(result):

@@ -81,7 +81,7 @@ class AssignmentTransformer(BaseTransformer):
 
         # Transform the return_object_stmt (which should be UseStatement, AgentStatement, or AgentPoolStatement)
         # The return_object_tree should already be transformed by return_object_stmt method
-        if isinstance(return_object_tree, (UseStatement, AgentStatement, AgentPoolStatement)):
+        if isinstance(return_object_tree, UseStatement | AgentStatement | AgentPoolStatement):
             if hasattr(return_object_tree, "target") and return_object_tree.target is None:
                 # If the target is not set, set it to the target of the assignment
                 return_object_tree.target = target

@@ -1,0 +1,143 @@
+# POET-Enhanced Function Dispatch Tests
+# Tests the context-aware function behavior using type hints
+# Ensures functions adapt their behavior based on expected return types
+
+log("🎭 === POET-ENHANCED FUNCTION DISPATCH TESTS ===")
+
+# Test 1: Context-Aware Boolean Reasoning
+log("📋 Test 1: Context-Aware Boolean Reasoning")
+
+# Should get clear yes/no response, not explanation
+should_invest: bool = reason("Should we invest in renewable energy?")
+assert type(should_invest) == bool
+log(f"✅ Boolean context: {should_invest} (type: {type(should_invest)})")
+
+should_continue: bool = reason("Should we continue with this project?")
+assert type(should_continue) == bool
+log(f"✅ Boolean context: {should_continue} (type: {type(should_continue)})")
+
+log("---")
+
+# Test 2: Context-Aware Integer Reasoning
+log("📋 Test 2: Context-Aware Integer Reasoning")
+
+# Should get numerical value, not explanation
+planet_count: int = reason("How many planets are in our solar system?")
+assert type(planet_count) == int
+assert planet_count == 8
+log(f"✅ Integer context: {planet_count} (type: {type(planet_count)})")
+
+days_in_week: int = reason("How many days in a week?")
+assert type(days_in_week) == int
+assert days_in_week == 7
+log(f"✅ Integer context: {days_in_week} (type: {type(days_in_week)})")
+
+log("---")
+
+# Test 3: Context-Aware Float Reasoning
+log("📋 Test 3: Context-Aware Float Reasoning")
+
+# Should get decimal value, not explanation
+pi_value: float = reason("What is the value of pi to 5 decimal places?")
+assert type(pi_value) == float
+assert 3.14 < pi_value < 3.15  # Pi should be approximately 3.14159
+log(f"✅ Float context: {pi_value} (type: {type(pi_value)})")
+
+body_temp: float = reason("Normal human body temperature in Celsius?")
+assert type(body_temp) == float
+assert 36.0 < body_temp < 38.0  # Should be around 37.0
+log(f"✅ Float context: {body_temp} (type: {type(body_temp)})")
+
+log("---")
+
+# Test 4: Context-Aware String Reasoning (Detailed Response)
+log("📋 Test 4: Context-Aware String Reasoning")
+
+# Should get detailed explanation, not brief answer
+ml_explanation: str = reason("Explain machine learning in one sentence.")
+assert type(ml_explanation) == str
+assert len(ml_explanation) > 20  # Should be detailed
+log(f"✅ String context: {ml_explanation[:50]}... (type: {type(ml_explanation)})")
+
+log("---")
+
+# Test 5: Context-Aware Dict Reasoning (JSON Response)
+log("📋 Test 5: Context-Aware Dict Reasoning")
+
+# Should get JSON object, not text description
+moon_info: dict = reason("Give me information about the Moon including diameter and distance from Earth.")
+assert type(moon_info) == dict
+assert len(moon_info) > 0  # Should have data
+log(f"✅ Dict context: {moon_info} (type: {type(moon_info)})")
+
+planet_data: dict = reason("Mars information including mass and orbital period.")
+assert type(planet_data) == dict
+log(f"✅ Dict context: {planet_data} (type: {type(planet_data)})")
+
+log("---")
+
+# Test 6: Context-Aware List Reasoning (JSON Array Response)
+log("📋 Test 6: Context-Aware List Reasoning")
+
+# Should get JSON array, not text list
+first_planets: list = reason("List the first 4 planets from the sun.")
+assert type(first_planets) == list
+assert len(first_planets) == 4
+log(f"✅ List context: {first_planets} (type: {type(first_planets)})")
+
+primary_colors: list = reason("What are the three primary colors?")
+assert type(primary_colors) == list
+assert len(primary_colors) == 3
+log(f"✅ List context: {primary_colors} (type: {type(primary_colors)})")
+
+log("---")
+
+# Test 7: No Context (Default String Behavior)
+log("📋 Test 7: No Context (Default String Behavior)")
+
+# Without type hint, should behave normally
+general_response = reason("What's the weather like today?")
+assert type(general_response) == str
+log(f"✅ No context: {general_response[:50]}... (type: {type(general_response)})")
+
+log("---")
+
+# Test 8: Context vs No Context Comparison
+log("📋 Test 8: Context vs No Context Comparison")
+
+# Same question, different contexts should produce different results
+question = "What is the value of pi?"
+
+# No context - should be explanatory
+no_context_result = reason(question)
+log(f"📝 No context: {no_context_result[:30]}...")
+
+# Float context - should be numerical
+float_context_result: float = reason(question)
+log(f"🔢 Float context: {float_context_result}")
+
+# String context - should be detailed
+string_context_result: str = reason(question)  
+log(f"📚 String context: {string_context_result[:50]}...")
+
+# Verify they're different types/formats
+assert type(no_context_result) == str
+assert type(float_context_result) == float
+assert type(string_context_result) == str
+
+log("✅ Same question produces different results based on context!")
+
+log("---")
+
+log("🎉 === ALL POET-ENHANCED DISPATCH TESTS PASSED ===")
+log("✅ Boolean context: Gets yes/no decisions")
+log("✅ Integer context: Gets numerical values") 
+log("✅ Float context: Gets decimal values")
+log("✅ String context: Gets detailed explanations")
+log("✅ Dict context: Gets JSON objects")
+log("✅ List context: Gets JSON arrays")
+log("✅ No context: Gets default behavior")
+log("✅ Context adaptation: Same question, different results")
+log("")
+log("🎭 POET-enhanced function dispatch is working perfectly!")
+log("🧠 Functions now intelligently adapt to expected return types!") 

@@ -12,12 +12,14 @@ The DocumentChunker class is responsible for:
 - Maintaining document structure and context
 """
 
-from typing import Dict, List
+import asyncio
+from functools import reduce
+
 from llama_index.core import Document
 from llama_index.core.node_parser import SentenceSplitter
-import asyncio
-from functools import cache, reduce
+
 from opendxa.contrib.rag_resource.common.resource.rag.pipeline.base_stage import BaseStage
+
 
 class DocumentChunker(BaseStage):
     """Handles document chunking strategies only."""
@@ -47,7 +49,7 @@ class DocumentChunker(BaseStage):
                 chunk_overlap=self.chunk_overlap
             )
     
-    async def chunk_documents(self, docs_by_source: Dict[str, List[Document]]) -> Dict[str, List[Document]]:
+    async def chunk_documents(self, docs_by_source: dict[str, list[Document]]) -> dict[str, list[Document]]:
         """Split documents into smaller chunks for better retrieval.
         
         Breaks large documents into overlapping chunks to optimize
@@ -73,7 +75,7 @@ class DocumentChunker(BaseStage):
         
         return chunks_by_source
     
-    async def _chunk_single_document(self, doc: Document) -> List[Document]:
+    async def _chunk_single_document(self, doc: Document) -> list[Document]:
         """Split a single document into chunks.
         
         Args:

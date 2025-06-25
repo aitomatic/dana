@@ -182,7 +182,7 @@ class LoopHandler(Loggable):
 
         # Perform boolean coercion with smart logic
         try:
-            from opendxa.dana.sandbox.interpreter.type_coercion import TypeCoercion
+            from opendxa.dana.sandbox.interpreter.unified_coercion import TypeCoercion
 
             # Use smart boolean coercion if available and enabled
             if TypeCoercion.should_enable_coercion():
@@ -254,7 +254,7 @@ class LoopHandler(Loggable):
             # Test if value is hashable (required for dict keys)
             hash(value)
             # Only cache simple immutable types to avoid memory issues
-            return isinstance(value, (int, float, str, bool, type(None), tuple))
+            return isinstance(value, int | float | str | bool | type(None) | tuple)
         except (TypeError, AttributeError):
             return False
 

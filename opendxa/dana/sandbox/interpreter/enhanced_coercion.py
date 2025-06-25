@@ -9,8 +9,8 @@ MIT License
 """
 
 import re
-from typing import Any, Optional, Union
 from enum import Enum
+from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
 
@@ -73,7 +73,7 @@ class SemanticCoercer(Loggable):
             "percentage": re.compile(r'^(\d+\.?\d*)%$'),
         }
     
-    def coerce_to_bool(self, value: Any, context: Optional[str] = None) -> bool:
+    def coerce_to_bool(self, value: Any, context: str | None = None) -> bool:
         """Enhanced boolean coercion with semantic understanding.
         
         Args:
@@ -92,7 +92,7 @@ class SemanticCoercer(Loggable):
             return value
         
         # Handle numeric values
-        if isinstance(value, (int, float)):
+        if isinstance(value, int | float):
             return value != 0
         
         # Handle strings with semantic patterns
@@ -139,7 +139,7 @@ class SemanticCoercer(Loggable):
     def _is_zero_equivalent(self, text: str) -> bool:
         """Check if text represents zero or false-like values."""
         zero_patterns = {
-            "0", "0.0", "0.00", "0.000", "-0", "-0.0", "-0.00",
+            "0", "0.0", "0.00", "0.000",
             "false", "f", "no", "n", "off",
             "null", "none", "nil", "empty", "blank"
         }
@@ -153,7 +153,7 @@ class SemanticCoercer(Loggable):
         except ValueError:
             return False
     
-    def _apply_contextual_boolean_logic(self, text: str) -> Optional[bool]:
+    def _apply_contextual_boolean_logic(self, text: str) -> bool | None:
         """Apply contextual logic for boolean coercion."""
         # Question-like patterns
         if any(word in text for word in ["yes", "sure", "ok", "fine", "good"]):
@@ -172,12 +172,12 @@ class SemanticCoercer(Loggable):
         
         return None
     
-    def coerce_value(self, value: Any, target_type: str, context: Optional[str] = None) -> Any:
+    def coerce_value(self, value: Any, target_type: str, context: str | None = None) -> Any:
         """Main coercion entry point.
         
         Args:
             value: Value to coerce
-            target_type: Target type name ("bool", "int", "float", "str")
+            target_type: Target type name ("bool", "int", "float", "str", "dict", "list")
             context: Optional context hint
             
         Returns:
@@ -190,19 +190,122 @@ class SemanticCoercer(Loggable):
         
         if target_type == "bool":
             return self.coerce_to_bool(value, context)
-        elif target_type in ["int", "float", "str"]:
-            # For now, fall back to Python's standard coercion for these types
-            if target_type == "int":
-                return int(float(value)) if isinstance(value, str) and '.' in value else int(value)
-            elif target_type == "float":
-                return float(value)
-            elif target_type == "str":
-                return str(value)
+        elif target_type == "int":
+            return int(float(value)) if isinstance(value, str) and '.' in value else int(value)
+        elif target_type == "float":
+            return float(value)
+        elif target_type == "str":
+            return str(value)
+        elif target_type == "dict":
+            return self._coerce_to_dict(value, context)
+        elif target_type == "list":
+            return self._coerce_to_list(value, context)
         else:
             # For unknown types, return as-is
             self.debug(f"Unknown target type '{target_type}', returning value as-is")
             return value
     
+    def _coerce_to_dict(self, value: Any, context: str | None = None) -> dict:
+        """Coerce value to dictionary.
+        
+        Args:
+            value: Value to coerce
+            context: Optional context hint
+            
+        Returns:
+            Dictionary value
+            
+        Raises:
+            ValueError: If coercion is not possible
+        """
+        self.debug(f"Coercing to dict: {repr(value)} (context: {context})")
+        
+        # If already a dict, return as-is
+        if isinstance(value, dict):
+            return value
+        
+        # Try to parse JSON string
+        if isinstance(value, str):
+            import json
+            try:
+                # Clean up markdown code fences if present
+                cleaned_value = self._clean_json_string(value)
+                result = json.loads(cleaned_value)
+                if isinstance(result, dict):
+                    self.debug("Successfully parsed JSON string to dict")
+                    return result
+                else:
+                    raise ValueError(f"JSON parsed to {type(result)} instead of dict")
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Cannot parse string as JSON dict: {e}")
+        
+        # For other types, try to convert if they have dict-like methods
+        if hasattr(value, 'items'):
+            return dict(value)
+        
+        raise ValueError(f"Cannot coerce {type(value).__name__} to dict")
+    
+    def _coerce_to_list(self, value: Any, context: str | None = None) -> list:
+        """Coerce value to list.
+        
+        Args:
+            value: Value to coerce
+            context: Optional context hint
+            
+        Returns:
+            List value
+            
+        Raises:
+            ValueError: If coercion is not possible
+        """
+        self.debug(f"Coercing to list: {repr(value)} (context: {context})")
+        
+        # If already a list, return as-is
+        if isinstance(value, list):
+            return value
+        
+        # Try to parse JSON string
+        if isinstance(value, str):
+            import json
+            try:
+                # Clean up markdown code fences if present
+                cleaned_value = self._clean_json_string(value)
+                result = json.loads(cleaned_value)
+                if isinstance(result, list):
+                    self.debug("Successfully parsed JSON string to list")
+                    return result
+                else:
+                    raise ValueError(f"JSON parsed to {type(result)} instead of list")
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Cannot parse string as JSON list: {e}")
+        
+        # For other iterables (except strings), convert to list
+        if hasattr(value, '__iter__') and not isinstance(value, str | bytes):
+            return list(value)
+        
+        raise ValueError(f"Cannot coerce {type(value).__name__} to list")
+
+    def _clean_json_string(self, value: str) -> str:
+        """Clean JSON string by removing markdown code fences and extra whitespace.
+        
+        Args:
+            value: Raw string that might contain JSON
+            
+        Returns:
+            Cleaned JSON string
+        """
+        import re
+        
+        # Remove markdown code fences (```json ... ``` or ``` ... ```)
+        cleaned = re.sub(r'^```(?:json)?\s*\n?', '', value.strip(), flags=re.IGNORECASE | re.MULTILINE)
+        cleaned = re.sub(r'\n?```\s*$', '', cleaned, flags=re.MULTILINE)
+        
+        # Remove any leading/trailing whitespace
+        cleaned = cleaned.strip()
+        
+        self.debug(f"Cleaned JSON: {repr(value)} → {repr(cleaned)}")
+        return cleaned
+
     def test_semantic_equivalence(self, left: Any, right: Any) -> bool:
         """Test semantic equivalence between values.
         
@@ -229,7 +332,7 @@ class SemanticCoercer(Loggable):
 _global_coercer = SemanticCoercer()
 
 
-def coerce_value(value: Any, target_type: str, context: Optional[str] = None) -> Any:
+def coerce_value(value: Any, target_type: str, context: str | None = None) -> Any:
     """Convenience function for value coercion."""
     return _global_coercer.coerce_value(value, target_type, context)
 

@@ -5,10 +5,11 @@ This file contains common fixtures and configuration for testing
 the RAG pipeline components.
 """
 
-import pytest
-import tempfile
 import shutil
+import tempfile
 from pathlib import Path
+
+import pytest
 
 
 @pytest.fixture(scope="session")

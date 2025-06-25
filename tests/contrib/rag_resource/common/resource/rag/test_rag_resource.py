@@ -2,9 +2,11 @@
 Simple tests for RAGResource class.
 """
 
+from unittest.mock import AsyncMock, Mock
+
 import pytest
-from unittest.mock import Mock, AsyncMock
 from llama_index.core.schema import NodeWithScore
+
 from opendxa.contrib.rag_resource.common.resource.rag.rag_resource import RAGResource
 
 

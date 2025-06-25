@@ -1,10 +1,11 @@
-from .abstract_loader import AbstractLoader
-from llama_index.core import Document
-from llama_index.core.readers.file.base import _DefaultFileMetadataFunc
-from typing import List
 import os
-from llama_index.core.readers import SimpleDirectoryReader
 from multiprocessing import cpu_count
+
+from llama_index.core import Document
+from llama_index.core.readers import SimpleDirectoryReader
+from llama_index.core.readers.file.base import _DefaultFileMetadataFunc
+
+from .abstract_loader import AbstractLoader
 
 
 class LocalFileMetadataFunc(_DefaultFileMetadataFunc):
@@ -14,14 +15,14 @@ class LocalFileMetadataFunc(_DefaultFileMetadataFunc):
         return metadata
 
 class LocalLoader(AbstractLoader):
-    def __init__(self, supported_types: List[str]):
+    def __init__(self, supported_types: list[str]):
         self.supported_types = supported_types
         self._encoding = 'utf-8'
         self.filename_as_id = True
         self.metadata_func = LocalFileMetadataFunc()
 
 
-    async def load(self, source: str) -> List[Document]:
+    async def load(self, source: str) -> list[Document]:
         if os.path.isdir(source):
             return await SimpleDirectoryReader(source, recursive=True, required_exts=self.supported_types, 
                                                encoding=self._encoding, filename_as_id=self.filename_as_id, 
