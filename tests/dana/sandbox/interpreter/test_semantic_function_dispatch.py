@@ -58,10 +58,10 @@ false_string: bool = bool("false")'''
         self.assertIsNotNone(context)
         
         # Current (broken) behavior - all return True
-        self.assertTrue(context.get('zero_string'))  # ISSUE: Should be False
-        self.assertTrue(context.get('zero_decimal'))  # ISSUE: Should be False
-        self.assertTrue(context.get('zero_negative'))  # ISSUE: Should be False
-        self.assertTrue(context.get('false_string'))  # ISSUE: Should be False
+        self.assertFalse(context.get('zero_string'))  # ISSUE: Should be False
+        self.assertFalse(context.get('zero_decimal'))  # ISSUE: Should be False
+        self.assertFalse(context.get('zero_negative'))  # ISSUE: Should be False
+        self.assertFalse(context.get('false_string'))  # ISSUE: Should be False
 
     def test_semantic_equivalence_failures(self):
         """Test that semantically equivalent values don't compare as equal."""
@@ -76,10 +76,9 @@ false_eq_false: bool = ("false" == False)'''
         context = result.final_context
         self.assertIsNotNone(context)
         
-        # Current (broken) behavior - all return False
-        self.assertFalse(context.get('zero_eq_false'))  # ISSUE: Should be True
-        self.assertFalse(context.get('one_eq_true'))    # ISSUE: Should be True  
-        self.assertFalse(context.get('false_eq_false')) # ISSUE: Should be True
+        self.assertTrue(context.get('zero_eq_false'))  # ISSUE: Should be True
+        self.assertTrue(context.get('one_eq_true'))    # ISSUE: Should be True  
+        self.assertTrue(context.get('false_eq_false')) # ISSUE: Should be True
 
     def test_missing_semantic_pattern_recognition(self):
         """Test that conversational patterns are not semantically understood."""
@@ -97,9 +96,9 @@ nope: bool = bool("nope")'''
         
         # Current behavior - all return True (non-empty string)
         self.assertTrue(context.get('yes_please'))      # Correct result, wrong reason
-        self.assertTrue(context.get('no_way'))          # ISSUE: Should be False (semantic)
-        self.assertTrue(context.get('absolutely_not'))  # ISSUE: Should be False (semantic)
-        self.assertTrue(context.get('nope'))            # ISSUE: Should be False (semantic)
+        self.assertFalse(context.get('no_way'))          # ISSUE: Should be False (semantic)
+        self.assertFalse(context.get('absolutely_not'))  # ISSUE: Should be False (semantic)
+        self.assertFalse(context.get('nope'))            # ISSUE: Should be False (semantic)
 
     def test_assignment_coercion_failures(self):
         """Test that type hints don't enable safe coercion."""

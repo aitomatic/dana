@@ -1,5 +1,3 @@
-
-
 from llama_index.core import Document, VectorStoreIndex
 from llama_index.core.schema import NodeWithScore
 
@@ -7,7 +5,8 @@ from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.utils.misc import Misc
 from opendxa.contrib.rag_resource.common.resource.rag.pipeline.document_chunker import DocumentChunker
 from opendxa.contrib.rag_resource.common.resource.rag.pipeline.document_loader import DocumentLoader
-from opendxa.contrib.rag_resource.common.resource.rag.pipeline.index_builder import IndexBuilder, IndexCombiner
+from opendxa.contrib.rag_resource.common.resource.rag.pipeline.index_builder import IndexBuilder
+from opendxa.contrib.rag_resource.common.resource.rag.pipeline.index_combiner import IndexCombiner
 from opendxa.contrib.rag_resource.common.resource.rag.pipeline.retriever import Retriever
 from opendxa.contrib.rag_resource.common.resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager
 
