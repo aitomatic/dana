@@ -183,7 +183,7 @@ patterns = await llm_manager.analyze_feedback_patterns(feedback_history)
 
 ## 🎓 Learning More
 
-- **POET Documentation**: `docs/design/02_dana_runtime_and_execution/poet_functions.md`
+- **POET Documentation**: `docs/reference/02_dana_runtime_and_execution/poet_functions.md`
 - **Plugin Development**: `opendxa/dana/poet/plugins/base.py`
 - **LLM Resource Guide**: `opendxa/common/resource/llm_resource.py`
 

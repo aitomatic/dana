@@ -2,7 +2,7 @@
 
 Dana's function system supports local function definitions, module imports, and a comprehensive function lookup hierarchy. This reference covers function definition, calling conventions, import system, and function resolution.
 
-> **Design Documents**: For detailed architecture and implementation of Dana-Python integration, see the [Python Integration Design Documents](../../../design/02_dana_runtime_and_execution/python_integration.md).
+> **Design Documents**: For detailed architecture and implementation of Dana-Python integration, see the [Python Integration Design Documents](../../../reference/02_dana_runtime_and_execution/python_integration.md).
 
 ## Table of Contents
 - [Overview](#overview)

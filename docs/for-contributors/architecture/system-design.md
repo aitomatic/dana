@@ -16,6 +16,6 @@ This document will provide a comprehensive overview of the OpenDXA system archit
 ## Related Documentation
 
 For now, please refer to:
-- [Design Documentation](../../design/README.md)
-- [Core Concepts](../../design/03_core_capabilities_resources/README.md)
+- [Design Documentation](../../reference/README.md)
+- [Core Concepts](../../reference/03_core_capabilities_resources/README.md)
 - [System Design](../README.md)

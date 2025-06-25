@@ -9,11 +9,7 @@
 1. [Business Domain Models](#business-domain-models)
 2. [Data Processing Pipelines](#data-processing-pipelines)
 3. [Configuration Management](#configuration-management)
-4. [Event-Driven Systems](#event-driven-systems)
-5. [API Integration Patterns](#api-integration-patterns)
-6. [Error Handling Strategies](#error-handling-strategies)
-7. [Testing Patterns](#testing-patterns)
-8. [Performance Patterns](#performance-patterns)
+4. [Summary](#summary)
 
 ---
 

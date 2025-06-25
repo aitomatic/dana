@@ -507,7 +507,7 @@ report = agent.generate_report(analysis)        # May be async internally
 
 ## With Statements (NEW)
 
-> **Design Reference**: For detailed implementation of resource acquisition, see the [Use Statement Design Document](../../.implementation/use_statement.md).
+> **Design Reference**: For detailed implementation of resource acquisition, see the [Use Statement Design Document](../../.design/use_statement.md).
 
 > **⚠️ Current Limitation**: `with` statements currently support only a single `as` clause. 
 > Multiple resources require nested `with` statements:
