@@ -1,0 +1,56 @@
+# Example: Using the set_model function with fuzzy matching in Dana
+# This demonstrates how to change LLM models during program execution
+# with support for fuzzy matching of model names
+
+log("🚀 Starting enhanced set_model example with fuzzy matching")
+
+# === EXACT MATCHING ===
+log("1. Setting model with exact name")
+current_model = set_model("openai:gpt-4o-mini")
+log(f"Current model: {current_model}")
+
+response1 = reason("What is the capital of France?")
+log(f"OpenAI response: {response1}")
+
+# === FUZZY MATCHING EXAMPLES ===
+log("2. Using fuzzy matching - partial model name")
+current_model = set_model("gpt-4")  # Will match to "openai:gpt-4o"
+log(f"Current model (fuzzy matched): {current_model}")
+
+log("3. Using fuzzy matching - provider name only")
+current_model = set_model("claude")  # Will match to "anthropic:claude-3-5-sonnet-20241022"
+log(f"Current model (fuzzy matched): {current_model}")
+
+response2 = reason("What is the capital of Spain?")
+log(f"Claude response: {response2}")
+
+log("4. Using fuzzy matching - case insensitive")
+current_model = set_model("GEMINI")  # Will match to "google:gemini-1.5-pro"
+log(f"Current model (fuzzy matched): {current_model}")
+
+response3 = reason("Explain machine learning in one sentence.")
+log(f"Gemini response: {response3}")
+
+# === PROVIDER-SPECIFIC PARTIAL MATCHING ===
+log("5. Provider-specific partial matching")
+current_model = set_model("openai:gpt")  # Will match to best OpenAI GPT model
+log(f"Current model (provider-specific match): {current_model}")
+
+# === EXACT MATCH ONLY OPTION ===
+log("6. Disabling fuzzy matching with exact_match_only option")
+# Note: In Dana, options are not directly supported in this syntax
+# But the function supports it internally for programmatic use
+
+log("✅ Enhanced set_model example completed successfully!")
+
+log("📝 Fuzzy matching features demonstrated:")
+log("  • Partial model names: 'gpt-4' → 'openai:gpt-4o'")
+log("  • Provider names: 'claude' → 'anthropic:claude-3-5-sonnet'")
+log("  • Case insensitive: 'GEMINI' → 'google:gemini-1.5-pro'")
+log("  • Provider-specific: 'openai:gpt' → specific OpenAI GPT model")
+
+# Note: The actual responses will depend on:
+# 1. Available API keys in your environment
+# 2. Whether you're in mock mode (OPENDXA_MOCK_LLM=true)
+# 3. The specific model capabilities and configurations
+# 4. Available models in your LLM configuration 

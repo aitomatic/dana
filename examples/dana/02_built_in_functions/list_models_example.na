@@ -1,0 +1,80 @@
+# Example: Using the list_models function in Dana
+# This demonstrates how to list available LLM models in preferred order
+
+log("🚀 Starting list_models example")
+
+# === LIST ALL MODELS ===
+log("1. Listing all available models in preferred order:")
+all_models = list_models()
+log(f"Total models available: {len(all_models)}")
+
+log("Top 10 preferred models:")
+max_to_show = 10
+if len(all_models) < max_to_show:
+    max_to_show = len(all_models)
+
+for i in range(max_to_show):
+    model = all_models[i]
+    position = i + 1
+    log(f"  {position:2d}. {model}")
+
+# === FILTER BY PROVIDER ===
+log("2. Filtering models by provider:")
+
+# OpenAI models
+openai_models = list_models({"provider": "openai"})
+log(f"OpenAI models ({len(openai_models)} found):")
+for model in openai_models:
+    log(f"  • {model}")
+
+# Anthropic models  
+anthropic_models = list_models({"provider": "anthropic"})
+log(f"Anthropic models ({len(anthropic_models)} found):")
+for model in anthropic_models:
+    log(f"  • {model}")
+
+# DeepSeek models
+deepseek_models = list_models({"provider": "deepseek"})
+log(f"DeepSeek models ({len(deepseek_models)} found):")
+for model in deepseek_models:
+    log(f"  • {model}")
+
+# === PRACTICAL USAGE ===
+log("3. Practical usage - setting model to top choice:")
+if len(all_models) > 0:
+    top_choice = all_models[0]
+    log(f"Setting model to top preference: {top_choice}")
+    current_model = set_model(top_choice)
+    log(f"✅ Model set to: {current_model}")
+
+# Test the model
+response = reason("What is 2+2?")
+log(f"Response from {current_model}: {response}")
+
+# === PROVIDER-SPECIFIC SELECTION ===
+log("4. Selecting best OpenAI model:")
+if len(openai_models) > 0:
+    best_openai = openai_models[0]
+    log(f"Best OpenAI model: {best_openai}")
+    
+    # This should be equivalent to fuzzy matching with "openai"
+    fuzzy_match = set_model("openai")
+    log(f"Fuzzy match for 'openai': {fuzzy_match}")
+    
+    if best_openai == fuzzy_match:
+        log("✅ Fuzzy matching correctly selects the top preferred model!")
+    else:
+        log(f"⚠️  Mismatch: top={best_openai}, fuzzy={fuzzy_match}")
+
+log("✅ list_models example completed successfully!")
+
+log("📝 Key benefits of list_models:")
+log("  • See all available models in your preferred order")
+log("  • Filter by provider to find specific models")
+log("  • Understand why set_model('openai') picks a specific model")
+log("  • Choose models programmatically based on preferences")
+
+# Note: Model availability depends on:
+# 1. Configuration in opendxa_config.json
+# 2. Available API keys in your environment
+# 3. Whether you're in mock mode (OPENDXA_MOCK_LLM=true) 
