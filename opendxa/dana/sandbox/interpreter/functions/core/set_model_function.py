@@ -135,10 +135,25 @@ def _find_closest_model_match(model_input: str, available_models: list[str]) -> 
             return model
     
     # Try substring match (e.g., "gpt-4" matches "openai:gpt-4o")
-    # Return the first match, which preserves preference order
+    # Prefer matches that align with typical provider-model relationships
+    substring_matches = []
     for model in available_models:
         if model_lower in model.lower() or model.lower() in model_lower:
-            return model
+            substring_matches.append(model)
+    
+    if substring_matches:
+        # If we have multiple substring matches, prefer the most logical provider
+        if len(substring_matches) == 1:
+            return substring_matches[0]
+        
+        # For GPT models, prefer OpenAI over Azure
+        if "gpt" in model_lower:
+            for match in substring_matches:
+                if match.startswith("openai:"):
+                    return match
+        
+        # For other models, return the first match (preserves preference order)
+        return substring_matches[0]
     
     # Use fuzzy matching for close matches
     # Get close matches with a reasonable cutoff (0.6 = 60% similarity)
