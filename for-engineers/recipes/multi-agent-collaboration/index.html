@@ -4273,6 +4273,24 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#agent-pool-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      Agent Pool Management
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reason-function-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Reason Function Integration
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -4385,7 +4403,55 @@
 <li><strong>Problem</strong>: A2A agents not responding</li>
 <li><strong>Solution</strong>: Check agents are running with <code>ps aux | grep python</code> and restart if needed</li>
 </ul>
-<p>This demonstrates Dana's unified multi-agent architecture! </p>
+<p>This demonstrates Dana's unified multi-agent architecture!</p>
+<h2 id="agent-pool-management">Agent Pool Management<a class="headerlink" href="#agent-pool-management" title="Permanent link">&para;</a></h2>
+<p>Managing multiple agents efficiently requires careful consideration of:</p>
+<ul>
+<li><strong>Pool Initialization</strong>: Setting up agent pools with proper resource allocation</li>
+<li><strong>Load Balancing</strong>: Distributing tasks across available agents</li>
+<li><strong>Health Monitoring</strong>: Checking agent status and handling failures</li>
+<li><strong>Dynamic Scaling</strong>: Adding or removing agents based on demand</li>
+</ul>
+<p>Example agent pool configuration:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>struct AgentPool:
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    agents: list
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    max_concurrent_tasks: int
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    health_check_interval: int
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>def create_agent_pool(config: dict) -&gt; AgentPool:
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    pool = AgentPool(
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>        agents=[],
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>        max_concurrent_tasks=config.get(&quot;max_concurrent&quot;, 10),
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>        health_check_interval=config.get(&quot;health_interval&quot;, 30)
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>    )
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>    # Initialize agents based on configuration
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>    for agent_config in config.get(&quot;agents&quot;, []):
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>        agent = create_agent(agent_config)
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>        pool.agents.append(agent)
+</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>
+</span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>    return pool
+</span></code></pre></div>
+<h2 id="reason-function-integration">Reason Function Integration<a class="headerlink" href="#reason-function-integration" title="Permanent link">&para;</a></h2>
+<p>The <code>reason()</code> function provides seamless integration with multi-agent systems:</p>
+<ul>
+<li><strong>Agent Selection</strong>: Automatically choose the best agent for a task</li>
+<li><strong>Context Sharing</strong>: Share context between agents efficiently</li>
+<li><strong>Result Aggregation</strong>: Combine results from multiple agents</li>
+<li><strong>Error Handling</strong>: Graceful fallback when agents fail</li>
+</ul>
+<p>Example reason function usage with agents:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>def solve_complex_task(task: str, agents: list) -&gt; str:
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    # Use reason function to coordinate agents
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    result = reason(
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>        f&quot;Solve this task using the available agents: {task}&quot;,
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>        context=[task, agents],
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>        agents=agents,
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>        strategy=&quot;best_match&quot;
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>    )
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>    return result
+</span></code></pre></div>
 
 
 
