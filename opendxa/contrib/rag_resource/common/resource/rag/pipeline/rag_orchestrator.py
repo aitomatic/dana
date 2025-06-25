@@ -28,6 +28,10 @@ class RAGOrchestrator(Loggable):
         self._retriever_cls = retriever_cls
         self._retriever = None
 
+    def resolve_sources(self, sources: List[str]) -> List[str]:
+        """Resolve sources to absolute paths."""
+        return [self.loader.resolve_single_source(source) for source in sources]
+
     async def _async_preprocess(self, sources: List[str], force_reload: bool = False):
         """Preprocess sources with comprehensive caching strategy.
         
@@ -37,6 +41,7 @@ class RAGOrchestrator(Loggable):
         3. Only processes missing components
         4. Caches newly created components
         """
+        sources = self.resolve_sources(sources)
         self.debug(f"Preprocessing {len(sources)} sources: {sources}")
         
         # Skip all cache checks if force_reload is True
