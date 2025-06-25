@@ -128,7 +128,7 @@ log("📋 Test 7: Complex Mixed Type Operations")
 
 # Verify everything works together
 mixed_result: float = 3.14 + int("2") + float("1.5")
-assert mixed_result == 6.64
+assert abs(mixed_result - 6.64) < 0.0001  # Use approximate equality for floating point
 log(f"✅ Mixed operations: 3.14 + int('2') + float('1.5') = {mixed_result}")
 
 # String building with coercion

@@ -383,13 +383,13 @@ class LLMQueryExecutor(Loggable):
                 raise LLMError(f"LLM query failed: {error_message}") from e
 
     async def mock_llm_query(self, request: dict[str, Any]) -> dict[str, Any]:
-        """Mock LLM query for testing purposes.
+        """Intelligent mock LLM query that understands POET-enhanced prompts.
 
         Args:
             request: Dictionary containing the request parameters
 
         Returns:
-            Dict[str, Any]: Mock response
+            Dict[str, Any]: Mock response with appropriate content based on prompt analysis
         """
         messages = Misc.get_field(request, "messages", [])
         if not messages:
@@ -400,12 +400,110 @@ class LLMQueryExecutor(Loggable):
         if not last_message:
             raise LLMError("No user message found in message history")
 
+        content = last_message['content']
+        
+        # Intelligent response based on prompt analysis
+        mock_content = self._generate_intelligent_mock_response(content)
+
         # Create a mock response
         return {
-            "choices": [{"message": {"role": "assistant", "content": f"Mock response to: {last_message['content']}", "tool_calls": []}}],
+            "choices": [{"message": {"role": "assistant", "content": mock_content, "tool_calls": []}}],
             "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
             "model": "mock-model",
         }
+
+    def _generate_intelligent_mock_response(self, prompt: str) -> str:
+        """Generate intelligent mock responses based on prompt analysis.
+        
+        Args:
+            prompt: The user prompt to analyze
+            
+        Returns:
+            str: Appropriate mock response
+        """
+        prompt_lower = prompt.lower()
+        
+        # Detect POET-enhanced prompts with format instructions (updated patterns)
+        is_boolean_prompt = ("respond with clear yes/no" in prompt_lower or 
+                           "respond only with yes or no" in prompt_lower or
+                           'return format: "yes" or "no"' in prompt_lower)
+        is_integer_prompt = "return only the final integer number" in prompt_lower
+        is_float_prompt = "return only the final numerical value as a decimal" in prompt_lower
+        is_dict_prompt = ("return only a valid json object" in prompt_lower or 
+                         "format your response as a json object" in prompt_lower or
+                         "return a json object" in prompt_lower)
+        is_list_prompt = ("return only a valid json array" in prompt_lower or
+                         "format your response as a json array" in prompt_lower or
+                         "return a json array" in prompt_lower)
+        
+        # Boolean questions with enhanced prompts
+        if is_boolean_prompt:
+            if any(term in prompt_lower for term in ["invest", "renewable", "proceed", "continue", "approve"]):
+                return "yes"
+            else:
+                return "no"
+        
+        # Integer questions with enhanced prompts  
+        if is_integer_prompt:
+            if "planets" in prompt_lower and "solar system" in prompt_lower:
+                return "8"
+            elif "days" in prompt_lower and "week" in prompt_lower:
+                return "7"
+            elif "days" in prompt_lower and ("year" in prompt_lower or "10 years" in prompt):
+                return "365"
+            else:
+                return "42"  # Default integer
+        
+        # Float questions with enhanced prompts
+        if is_float_prompt:
+            if "pi" in prompt_lower:
+                return "3.14159"
+            elif "temperature" in prompt_lower and ("body" in prompt_lower or "human" in prompt_lower):
+                return "37.0"
+            else:
+                return "3.14"  # Default float
+        
+        # Dict questions with enhanced prompts
+        if is_dict_prompt:
+            if "moon" in prompt_lower:
+                return '{"diameter_km": "3474.8", "distance_from_earth_km": "384400"}'
+            elif "mars" in prompt_lower:
+                return '{"diameter_km": "6779", "distance_from_sun_au": "1.52", "orbital_period_days": "687"}'
+            else:
+                return '{"result": "mock_data", "status": "success"}'
+        
+        # List questions with enhanced prompts
+        if is_list_prompt:
+            if "planets" in prompt_lower and ("first 4" in prompt_lower or "4 planets" in prompt_lower):
+                return '["Mercury", "Venus", "Earth", "Mars"]'
+            elif "primary colors" in prompt_lower or "3 primary colors" in prompt_lower:
+                return '["red", "blue", "yellow"]'
+            else:
+                return '["item1", "item2", "item3"]'
+        
+        # Regular questions without POET enhancement
+        if "capital" in prompt_lower and "france" in prompt_lower:
+            return "Paris"
+        elif "2 + 2" in prompt_lower or "2+2" in prompt_lower:
+            return "4"
+        elif "5 * 3" in prompt_lower or "5*3" in prompt_lower:
+            return "15"
+        elif "10 + 20" in prompt_lower or "10+20" in prompt_lower:
+            return "30"
+        elif "pi" in prompt_lower:
+            return "Pi (π) is approximately 3.14159, representing the ratio of a circle's circumference to its diameter."
+        elif "sky" in prompt_lower and "blue" in prompt_lower:
+            return "The sky appears blue due to Rayleigh scattering of light by molecules in Earth's atmosphere."
+        elif "machine learning" in prompt_lower:
+            return "Machine learning is a subset of artificial intelligence that enables computers to learn and improve from experience without being explicitly programmed."
+        elif "weather" in prompt_lower:
+            return "I'm a mock assistant and can't access real weather data, but I hope you're having a pleasant day!"
+        elif "days" in prompt_lower and "year" in prompt_lower:
+            return "There are 365 days in a regular year and 366 days in a leap year."
+        elif any(term in prompt_lower for term in ["invest", "renewable", "proceed", "continue"]):
+            return "Based on the context, I would recommend proceeding with careful consideration of the relevant factors."
+        else:
+            return f"This is a mock response. In a real scenario, I would provide a thoughtful answer to: {prompt[:100]}{'...' if len(prompt) > 100 else ''}"
 
     def _build_default_request_params(self, request: dict[str, Any]) -> dict[str, Any]:
         """Build default request parameters for LLM API call.
