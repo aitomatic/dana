@@ -1,0 +1,38 @@
+# Example: Using the set_model function in Dana
+# This demonstrates how to change LLM models during program execution
+
+log("🚀 Starting set_model example")
+
+# Set initial model to OpenAI GPT-4o-mini
+log("Setting model to OpenAI GPT-4o-mini")
+current_model = set_model("openai:gpt-4o-mini")
+log(f"Current model: {current_model}")
+
+# Test the model with a simple question
+response1 = reason("What is the capital of France?")
+log(f"OpenAI response: {response1}")
+
+# Switch to Anthropic Claude model
+log("Switching to Anthropic Claude model")
+current_model = set_model("anthropic:claude-3-5-sonnet-20241022")
+log(f"Current model: {current_model}")
+
+# Test the same question with the new model
+response2 = reason("What is the capital of France?")
+log(f"Anthropic response: {response2}")
+
+# Switch to Google Gemini model
+log("Switching to Google Gemini model")
+current_model = set_model("google:gemini-1.5-pro")
+log(f"Current model: {current_model}")
+
+# Test with a different question
+response3 = reason("Explain machine learning in one sentence.")
+log(f"Gemini response: {response3}")
+
+log("✅ set_model example completed successfully!")
+
+# Note: The actual responses will depend on:
+# 1. Available API keys in your environment
+# 2. Whether you're in mock mode (OPENDXA_MOCK_LLM=true)
+# 3. The specific model capabilities and configurations 
