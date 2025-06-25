@@ -77,7 +77,19 @@ def _get_available_model_names() -> list[str]:
         ]
         all_models.update(fallback_models)
         
-        return sorted(list(all_models))
+        # Return models preserving preference order, then fallback models
+        # First, get models from config in preference order
+        preference_ordered_models = []
+        for model in preferred_models:
+            model_name = model if isinstance(model, str) else model.get("name")
+            if model_name and model_name in all_models:
+                preference_ordered_models.append(model_name)
+                all_models.remove(model_name)
+        
+        # Add any remaining models (from fallback list) alphabetically
+        remaining_models = sorted(list(all_models))
+        
+        return preference_ordered_models + remaining_models
     except Exception:
         # Return fallback list if config loading fails
         return [
@@ -123,6 +135,7 @@ def _find_closest_model_match(model_input: str, available_models: list[str]) -> 
             return model
     
     # Try substring match (e.g., "gpt-4" matches "openai:gpt-4o")
+    # Return the first match, which preserves preference order
     for model in available_models:
         if model_lower in model.lower() or model.lower() in model_lower:
             return model
