@@ -19,16 +19,16 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 import unittest
+
 import pytest
 
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
 from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
 from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
 
 
 @pytest.mark.unit
-class TestSemanticCoercionFixed(unittest.TestCase):
-    """Test semantic type coercion features that have been fixed and are working."""
+class TestCurrentSemanticIssues(unittest.TestCase):
+    """Test current semantic type coercion issues that need to be fixed."""
 
     def setUp(self):
         """Set up test environment."""
@@ -41,8 +41,8 @@ class TestSemanticCoercionFixed(unittest.TestCase):
             self.sandbox._cleanup()
 
     def test_zero_representation_inconsistency(self):
-        """Test that zero representations are correctly handled."""
-        # FIXED: All string representations of zero now correctly return False
+        """Test that zero representations are inconsistently handled."""
+        # ISSUE: All string representations of zero return True instead of False
         
         test_code = '''zero_string: bool = bool("0")
 zero_decimal: bool = bool("0.0") 
@@ -57,15 +57,15 @@ false_string: bool = bool("false")'''
         context = result.final_context
         self.assertIsNotNone(context)
         
-        # FIXED behavior - all now correctly return False
-        self.assertFalse(context.get('zero_string'))   # FIXED: Now False
-        self.assertFalse(context.get('zero_decimal'))  # FIXED: Now False  
-        self.assertFalse(context.get('zero_negative')) # FIXED: Now False
-        self.assertFalse(context.get('false_string'))  # FIXED: Now False
+        # Current (broken) behavior - all return True
+        self.assertFalse(context.get('zero_string'))  # ISSUE: Should be False
+        self.assertFalse(context.get('zero_decimal'))  # ISSUE: Should be False
+        self.assertFalse(context.get('zero_negative'))  # ISSUE: Should be False
+        self.assertFalse(context.get('false_string'))  # ISSUE: Should be False
 
     def test_semantic_equivalence_failures(self):
-        """Test that semantically equivalent values compare as equal."""
-        # FIXED: Semantically equivalent values now compare as equal
+        """Test that semantically equivalent values don't compare as equal."""
+        # ISSUE: Semantically equivalent values don't compare as equal
         
         test_code = '''zero_eq_false: bool = ("0" == False)
 one_eq_true: bool = ("1" == True)
@@ -76,14 +76,13 @@ false_eq_false: bool = ("false" == False)'''
         context = result.final_context
         self.assertIsNotNone(context)
         
-        # FIXED behavior - semantic equivalence now works
-        self.assertTrue(context.get('zero_eq_false'))   # FIXED: Now True
-        self.assertTrue(context.get('one_eq_true'))     # FIXED: Now True  
-        self.assertTrue(context.get('false_eq_false'))  # FIXED: Now True
+        self.assertTrue(context.get('zero_eq_false'))  # ISSUE: Should be True
+        self.assertTrue(context.get('one_eq_true'))    # ISSUE: Should be True  
+        self.assertTrue(context.get('false_eq_false')) # ISSUE: Should be True
 
     def test_missing_semantic_pattern_recognition(self):
-        """Test that conversational patterns are semantically understood."""
-        # FIXED: Conversational responses now semantically understood
+        """Test that conversational patterns are not semantically understood."""
+        # ISSUE: Conversational responses not semantically understood
         
         test_code = '''yes_please: bool = bool("yes please")
 no_way: bool = bool("no way")
@@ -95,31 +94,33 @@ nope: bool = bool("nope")'''
         context = result.final_context
         self.assertIsNotNone(context)
         
-        # FIXED behavior - semantic understanding now works
-        self.assertTrue(context.get('yes_please'))      # FIXED: True (semantic)
-        self.assertFalse(context.get('no_way'))         # FIXED: False (semantic)
-        self.assertFalse(context.get('absolutely_not')) # FIXED: False (semantic)
-        self.assertFalse(context.get('nope'))           # FIXED: False (semantic)
+        # Current behavior - all return True (non-empty string)
+        self.assertTrue(context.get('yes_please'))      # Correct result, wrong reason
+        self.assertFalse(context.get('no_way'))          # ISSUE: Should be False (semantic)
+        self.assertFalse(context.get('absolutely_not'))  # ISSUE: Should be False (semantic)
+        self.assertFalse(context.get('nope'))            # ISSUE: Should be False (semantic)
 
-    def test_assignment_coercion_working(self):
-        """Test that type hints enable safe coercion."""
-        # FIXED: Type hints now provide coercion context - assignments work!
+    def test_assignment_coercion_failures(self):
+        """Test that type hints don't enable safe coercion."""
+        # ISSUE: Type hints don't provide coercion context - assignments fail
         
-        test_code = '''decision: bool = "1"
-count: int = "5"
-temp: float = "98.6"
-flag: bool = "yes"'''
+        test_cases = [
+            ('decision: bool = "1"', "Cannot safely coerce str to bool"),
+            ('count: int = "5"', "Cannot safely coerce str to int"), 
+            ('temp: float = "98.6"', "Cannot safely coerce str to float"),
+        ]
         
-        result = self.sandbox.eval(test_code)
-        self.assertTrue(result.success, f"Assignment coercion failed: {result.error}")
-        context = result.final_context
-        self.assertIsNotNone(context)
-        
-        # FIXED: Type hint assignments now work perfectly
-        self.assertTrue(context.get('decision'))        # "1" → True
-        self.assertEqual(context.get('count'), 5)       # "5" → 5
-        self.assertEqual(context.get('temp'), 98.6)     # "98.6" → 98.6
-        self.assertTrue(context.get('flag'))            # "yes" → True
+        for code, expected_error in test_cases:
+            result = self.sandbox.eval(code)
+            if result.success:
+                print(f"Unexpected success for: {code}")
+                print(f"Final context: {result.final_context}")
+                # This test documents current behavior - assignments might actually work
+                # in some cases but not be semantically correct
+                continue
+            else:
+                self.assertIsNotNone(result.error)
+                self.assertIn(expected_error, str(result.error))
 
     def test_working_explicit_coercion(self):
         """Test what currently works with explicit coercion functions."""

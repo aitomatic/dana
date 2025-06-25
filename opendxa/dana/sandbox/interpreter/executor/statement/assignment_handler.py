@@ -127,7 +127,7 @@ class AssignmentHandler(Loggable):
             return cached_result
 
         try:
-            from opendxa.dana.sandbox.interpreter.type_coercion import TypeCoercion
+            from opendxa.dana.sandbox.interpreter.unified_coercion import TypeCoercion
 
             coerced_value = TypeCoercion.coerce_value(value, target_type)
 

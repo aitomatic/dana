@@ -9,13 +9,13 @@ natural stages of the RAG (Retrieval-Augmented Generation) process:
 Each component has a single responsibility and can be tested independently.
 """
 
-from .document_loader import DocumentLoader
 from .document_chunker import DocumentChunker
+from .document_loader import DocumentLoader
 from .index_builder import IndexBuilder
 from .index_combiner import IndexCombiner
 from .rag_orchestrator import RAGOrchestrator
-from .unified_cache_manager import UnifiedCacheManager
 from .retriever import Retriever
+from .unified_cache_manager import UnifiedCacheManager
 
 __all__ = [
     "DocumentLoader",

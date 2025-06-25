@@ -137,7 +137,7 @@ class ContextFunctionResolver(FunctionResolverInterface):
             func_type = FunctionType.CALLABLE
         else:
             # Determine function type based on actual type
-            if isinstance(func_data, (DanaFunction, SandboxFunction)):
+            if isinstance(func_data, DanaFunction | SandboxFunction):
                 func_type = FunctionType.DANA
             elif isinstance(func_data, PythonFunction):
                 func_type = FunctionType.PYTHON

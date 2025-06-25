@@ -4,11 +4,10 @@ Unit tests for DocumentLoader class.
 Tests document loading, preprocessing, and error handling functionality.
 """
 
-import pytest
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from typing import Dict, List
+from unittest.mock import patch
 
-from llama_index.core import Document
+import pytest
+
 from opendxa.contrib.rag_resource.common.resource.rag.pipeline.document_loader import DocumentLoader
 
 

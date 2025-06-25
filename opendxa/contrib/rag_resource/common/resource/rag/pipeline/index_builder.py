@@ -12,20 +12,11 @@ The IndexBuilder class is responsible for:
 - Optimizing embedding reuse during index creation
 """
 
-import asyncio
-import hashlib
-from pathlib import Path
-from typing import Dict, List, Tuple
 
 from llama_index.core import VectorStoreIndex
-from llama_index.core.storage.storage_context import StorageContext
-from llama_index.core.storage.docstore.simple_docstore import SimpleDocumentStore
-from llama_index.core.vector_stores.types import BasePydanticVectorStore
-from llama_index.core.vector_stores.simple import SimpleVectorStore
-from llama_index.core.data_structs import IndexDict
-from llama_index.core.schema import BaseNode, Document
+from llama_index.core.schema import Document
+
 from opendxa.contrib.rag_resource.common.resource.rag.pipeline.base_stage import BaseStage
-from opendxa.contrib.rag_resource.common.resource.rag.pipeline.index_combiner import IndexCombiner
 
 
 class IndexBuilder(BaseStage):
@@ -33,7 +24,7 @@ class IndexBuilder(BaseStage):
 
     _NAME = "index_builder"
 
-    def __init__(self, sources_info: List[Tuple[str, bool]] | None = None, **kwargs):
+    def __init__(self, sources_info: list[tuple[str, bool]] | None = None, **kwargs):
         """Initialize IndexBuilder.
 
         Args:
@@ -43,7 +34,7 @@ class IndexBuilder(BaseStage):
         super().__init__(**kwargs)
         self.sources_info = sources_info or []
 
-    async def build_indices(self, docs_by_source: Dict[str, List[Document]]) -> Dict[str, VectorStoreIndex]:
+    async def build_indices(self, docs_by_source: dict[str, list[Document]]) -> dict[str, VectorStoreIndex]:
         """Create separate indices for each source and a combined index.
 
         This method creates individual vector indices for each document source
