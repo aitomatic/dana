@@ -132,6 +132,7 @@ async def start_repl(debug=False):
 
 def main():
     """Main entry point for the DANA CLI."""
+
     try:
         parser = argparse.ArgumentParser(description="DANA Command Line Interface", add_help=False)
         subparsers = parser.add_subparsers(dest="subcommand")
@@ -157,10 +158,10 @@ def main():
 
         # Parse subcommand
         args = parser.parse_args()
-        
+
         if args.subcommand == "deploy":
             return handle_deploy_command(args)
-        
+
         return 0
 
     except KeyboardInterrupt:
@@ -170,8 +171,10 @@ def main():
         print(f"\n{colors.error(f'Unexpected error: {str(e)}')}")
         if args.debug:
             import traceback
+
             traceback.print_exc()
-        return 1 
+        return 1
+
 
 def handle_main_command():
     """Handle main DANA command line behavior (run files or start REPL)."""
@@ -181,9 +184,9 @@ def handle_main_command():
     parser.add_argument("--no-color", action="store_true", help="Disable colored output")
     parser.add_argument("--force-color", action="store_true", help="Force colored output")
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
-    
+
     args = parser.parse_args()
-    
+
     # Handle color settings
     global colors
     if args.no_color:
@@ -207,8 +210,9 @@ def handle_main_command():
         execute_file(args.file, debug=args.debug)
     else:
         asyncio.run(start_repl(debug=args.debug))
-    
+
     return 0
+
 
 def handle_deploy_command(args):
     """Handle the deploy subcommand."""
@@ -216,29 +220,32 @@ def handle_deploy_command(args):
         # Validate the file
         if not validate_na_file(args.file):
             return 1
-            
+
         if not os.path.isfile(args.file):
             print(f"{colors.error(f'Error: File {args.file} does not exist')}")
             return 1
-            
+
         file_path = os.path.abspath(args.file)
-        
+
         if args.protocol == "mcp":
             return deploy_thru_mcp(file_path, args)
         else:
             return deploy_thru_a2a(file_path, args)
-            
+
     except Exception as e:
         print(f"\n{colors.error(f'Deploy command error: {str(e)}')}")
-        if hasattr(args, 'debug') and args.debug:
+        if hasattr(args, "debug") and args.debug:
             import traceback
+
             traceback.print_exc()
         return 1
+
 
 def deploy_thru_mcp(file_path, args):
     """Deploy file using MCP protocol."""
     try:
         from opendxa.dana.exec.deploy.mcp import deploy_dana_agents_thru_mcp
+
         deploy_dana_agents_thru_mcp(file_path, args.host, args.port)
         return 0
     except ImportError:
@@ -251,10 +258,12 @@ def deploy_thru_mcp(file_path, args):
         print(f"  {str(e)}")
         return 1
 
+
 def deploy_thru_a2a(file_path, args):
     """Deploy file using A2A protocol."""
     try:
         from opendxa.dana.exec.deploy.a2a import deploy_dana_agents_thru_a2a
+
         deploy_dana_agents_thru_a2a(file_path, args.host, args.port)
         return 0
     except Exception as e:
@@ -262,11 +271,15 @@ def deploy_thru_a2a(file_path, args):
         print(f"  {str(e)}")
         return 1
 
+
 def configure_debug_logging():
     """Configure debug logging settings."""
     print(f"{colors.accent('Debug logging enabled')}")
     DXA_LOGGER.configure(level=logging.DEBUG, console=True)
     SandboxLogger.set_system_log_level(LogLevel.DEBUG)
+
+
+
 
 def validate_na_file(file_path):
     """Validate that the file exists and has .na extension."""
@@ -276,7 +289,7 @@ def validate_na_file(file_path):
         show_help()
         return False
     return True
-                
+
 
 if __name__ == "__main__":
     try:

@@ -75,6 +75,8 @@ from opendxa.dana.sandbox.log_manager import LogLevel
 LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
 
 
+
+
 class DanaREPLApp(Loggable):
     """Main Dana REPL application."""
 
@@ -213,6 +215,7 @@ class DanaREPLApp(Loggable):
 
 async def main(debug=False):
     """Run the Dana REPL."""
+
     # Check for command line arguments
     import argparse
 
