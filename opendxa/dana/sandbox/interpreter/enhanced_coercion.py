@@ -139,7 +139,7 @@ class SemanticCoercer(Loggable):
     def _is_zero_equivalent(self, text: str) -> bool:
         """Check if text represents zero or false-like values."""
         zero_patterns = {
-            "0", "0.0", "0.00", "0.000",
+            "0", "0.0", "0.00", "0.000", "-0", "-0.0", "-0.00",
             "false", "f", "no", "n", "off",
             "null", "none", "nil", "empty", "blank"
         }

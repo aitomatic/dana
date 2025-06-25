@@ -101,27 +101,25 @@ nope: bool = bool("nope")'''
         self.assertFalse(context.get('absolutely_not')) # FIXED: False (semantic)
         self.assertFalse(context.get('nope'))           # FIXED: False (semantic)
 
-    def test_assignment_coercion_failures(self):
-        """Test that type hints don't enable safe coercion."""
-        # ISSUE: Type hints don't provide coercion context - assignments fail
+    def test_assignment_coercion_working(self):
+        """Test that type hints enable safe coercion."""
+        # FIXED: Type hints now provide coercion context - assignments work!
         
-        test_cases = [
-            ('decision: bool = "1"', "Cannot safely coerce str to bool"),
-            ('count: int = "5"', "Cannot safely coerce str to int"), 
-            ('temp: float = "98.6"', "Cannot safely coerce str to float"),
-        ]
+        test_code = '''decision: bool = "1"
+count: int = "5"
+temp: float = "98.6"
+flag: bool = "yes"'''
         
-        for code, expected_error in test_cases:
-            result = self.sandbox.eval(code)
-            if result.success:
-                print(f"Unexpected success for: {code}")
-                print(f"Final context: {result.final_context}")
-                # This test documents current behavior - assignments might actually work
-                # in some cases but not be semantically correct
-                continue
-            else:
-                self.assertIsNotNone(result.error)
-                self.assertIn(expected_error, str(result.error))
+        result = self.sandbox.eval(test_code)
+        self.assertTrue(result.success, f"Assignment coercion failed: {result.error}")
+        context = result.final_context
+        self.assertIsNotNone(context)
+        
+        # FIXED: Type hint assignments now work perfectly
+        self.assertTrue(context.get('decision'))        # "1" → True
+        self.assertEqual(context.get('count'), 5)       # "5" → 5
+        self.assertEqual(context.get('temp'), 98.6)     # "98.6" → 98.6
+        self.assertTrue(context.get('flag'))            # "yes" → True
 
     def test_working_explicit_coercion(self):
         """Test what currently works with explicit coercion functions."""
