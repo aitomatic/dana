@@ -85,13 +85,15 @@ class LLMConfigurationManager:
             return True
 
         try:
-            # Get available models list and required API keys
-            available_models = self._get_available_models_list()
+            # For model validation, we only check required API keys, not whether 
+            # the model is in the preferred_models list. The preferred_models list
+            # is used for selection priority, not validation restrictions.
             required_env_vars = self._get_required_env_vars_for_model(model_name)
 
             # Use ValidationUtilities for the actual validation
+            # Pass None for available_models to skip that check
             return ValidationUtilities.validate_model_availability(
-                model_name=model_name, available_models=available_models, required_env_vars=required_env_vars, context="LLM configuration"
+                model_name=model_name, available_models=None, required_env_vars=required_env_vars, context="LLM configuration"
             )
 
         except Exception:
@@ -164,6 +166,8 @@ class LLMConfigurationManager:
                 "deepseek": ["DEEPSEEK_API_KEY"],  # Add deepseek support
             }
 
+            # Return required keys for known providers, empty list for unknown providers
+            # This maintains original behavior where unknown providers pass validation
             return required_keys_map.get(provider, [])
 
         except Exception:
