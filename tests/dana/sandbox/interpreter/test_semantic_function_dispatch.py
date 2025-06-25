@@ -27,8 +27,8 @@ from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
 
 
 @pytest.mark.unit
-class TestCurrentSemanticIssues(unittest.TestCase):
-    """Test current semantic type coercion issues that need to be fixed."""
+class TestSemanticCoercionFixed(unittest.TestCase):
+    """Test semantic type coercion features that have been fixed and are working."""
 
     def setUp(self):
         """Set up test environment."""
@@ -41,8 +41,8 @@ class TestCurrentSemanticIssues(unittest.TestCase):
             self.sandbox._cleanup()
 
     def test_zero_representation_inconsistency(self):
-        """Test that zero representations are inconsistently handled."""
-        # ISSUE: All string representations of zero return True instead of False
+        """Test that zero representations are correctly handled."""
+        # FIXED: All string representations of zero now correctly return False
         
         test_code = '''zero_string: bool = bool("0")
 zero_decimal: bool = bool("0.0") 
@@ -57,15 +57,15 @@ false_string: bool = bool("false")'''
         context = result.final_context
         self.assertIsNotNone(context)
         
-        # Current (broken) behavior - all return True
-        self.assertTrue(context.get('zero_string'))  # ISSUE: Should be False
-        self.assertTrue(context.get('zero_decimal'))  # ISSUE: Should be False
-        self.assertTrue(context.get('zero_negative'))  # ISSUE: Should be False
-        self.assertTrue(context.get('false_string'))  # ISSUE: Should be False
+        # FIXED behavior - all now correctly return False
+        self.assertFalse(context.get('zero_string'))   # FIXED: Now False
+        self.assertFalse(context.get('zero_decimal'))  # FIXED: Now False  
+        self.assertFalse(context.get('zero_negative')) # FIXED: Now False
+        self.assertFalse(context.get('false_string'))  # FIXED: Now False
 
     def test_semantic_equivalence_failures(self):
-        """Test that semantically equivalent values don't compare as equal."""
-        # ISSUE: Semantically equivalent values don't compare as equal
+        """Test that semantically equivalent values compare as equal."""
+        # FIXED: Semantically equivalent values now compare as equal
         
         test_code = '''zero_eq_false: bool = ("0" == False)
 one_eq_true: bool = ("1" == True)
@@ -76,14 +76,14 @@ false_eq_false: bool = ("false" == False)'''
         context = result.final_context
         self.assertIsNotNone(context)
         
-        # Current (broken) behavior - all return False
-        self.assertFalse(context.get('zero_eq_false'))  # ISSUE: Should be True
-        self.assertFalse(context.get('one_eq_true'))    # ISSUE: Should be True  
-        self.assertFalse(context.get('false_eq_false')) # ISSUE: Should be True
+        # FIXED behavior - semantic equivalence now works
+        self.assertTrue(context.get('zero_eq_false'))   # FIXED: Now True
+        self.assertTrue(context.get('one_eq_true'))     # FIXED: Now True  
+        self.assertTrue(context.get('false_eq_false'))  # FIXED: Now True
 
     def test_missing_semantic_pattern_recognition(self):
-        """Test that conversational patterns are not semantically understood."""
-        # ISSUE: Conversational responses not semantically understood
+        """Test that conversational patterns are semantically understood."""
+        # FIXED: Conversational responses now semantically understood
         
         test_code = '''yes_please: bool = bool("yes please")
 no_way: bool = bool("no way")
@@ -95,11 +95,11 @@ nope: bool = bool("nope")'''
         context = result.final_context
         self.assertIsNotNone(context)
         
-        # Current behavior - all return True (non-empty string)
-        self.assertTrue(context.get('yes_please'))      # Correct result, wrong reason
-        self.assertTrue(context.get('no_way'))          # ISSUE: Should be False (semantic)
-        self.assertTrue(context.get('absolutely_not'))  # ISSUE: Should be False (semantic)
-        self.assertTrue(context.get('nope'))            # ISSUE: Should be False (semantic)
+        # FIXED behavior - semantic understanding now works
+        self.assertTrue(context.get('yes_please'))      # FIXED: True (semantic)
+        self.assertFalse(context.get('no_way'))         # FIXED: False (semantic)
+        self.assertFalse(context.get('absolutely_not')) # FIXED: False (semantic)
+        self.assertFalse(context.get('nope'))           # FIXED: False (semantic)
 
     def test_assignment_coercion_failures(self):
         """Test that type hints don't enable safe coercion."""
