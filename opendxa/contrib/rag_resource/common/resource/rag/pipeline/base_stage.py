@@ -1,5 +1,6 @@
 from opendxa.common.mixins import Loggable
 
+
 class BaseStage(Loggable):
     """Base class for all stages in the RAG pipeline."""
 

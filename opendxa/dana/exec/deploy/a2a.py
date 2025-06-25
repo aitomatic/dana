@@ -111,7 +111,6 @@ def print_a2a_server_banner(host, port, agent_name, agent_description):
     CYAN = '96'
     YELLOW = '93'
     BOLD = '1'
-    RESET = '0'
     # Banner
     print()
     print(color_text("🚀  ", YELLOW) + color_text("DANA A2A Server", f'{BOLD};{GREEN}'))

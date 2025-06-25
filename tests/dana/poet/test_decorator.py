@@ -52,7 +52,7 @@ def test_poet_enhances_dana_function():
     assert hasattr(enhanced_func, "_poet_config")
     assert enhanced_func._poet_config["domain"] == "math"
     assert enhanced_func._poet_config["retries"] == 1
-    assert enhanced_func._poet_config["enable_training"] == True
+    assert enhanced_func._poet_config["enable_training"]
 
 
 @pytest.mark.poet
@@ -62,7 +62,7 @@ def test_poet_config_for_dana():
 
     assert config.domain == "data_processing"
     assert config.retries == 2
-    assert config.enable_training == True
+    assert config.enable_training
 
     # Should be serializable for Dana runtime
     config_dict = config.dict()

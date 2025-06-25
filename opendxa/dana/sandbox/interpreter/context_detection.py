@@ -9,11 +9,11 @@ MIT License
 """
 
 from dataclasses import dataclass
-from typing import Any, Optional
 from enum import Enum
+from typing import Any
 
-from opendxa.dana.sandbox.parser.ast import Assignment, TypeHint
 from opendxa.common.mixins.loggable import Loggable
+from opendxa.dana.sandbox.parser.ast import Assignment, TypeHint
 
 
 class ContextType(Enum):
@@ -46,7 +46,7 @@ class ContextDetector(Loggable):
         super().__init__()
         self._context_cache: dict[str, TypeContext] = {}
     
-    def detect_assignment_context(self, assignment_node: Assignment) -> Optional[TypeContext]:
+    def detect_assignment_context(self, assignment_node: Assignment) -> TypeContext | None:
         """Detect type context from typed assignment.
         
         Args:
@@ -126,7 +126,7 @@ class ContextDetector(Loggable):
             }
         )
     
-    def infer_context_from_usage(self, variable_name: str, usage_context: str) -> Optional[TypeContext]:
+    def infer_context_from_usage(self, variable_name: str, usage_context: str) -> TypeContext | None:
         """Infer type context from variable usage patterns.
         
         Args:
@@ -163,7 +163,7 @@ class ContextDetector(Loggable):
         
         return None
     
-    def get_cached_context(self, cache_key: str) -> Optional[TypeContext]:
+    def get_cached_context(self, cache_key: str) -> TypeContext | None:
         """Get cached context by key.
         
         Args:
@@ -192,6 +192,89 @@ class ContextDetector(Loggable):
     def get_cache_size(self) -> int:
         """Get the current cache size."""
         return len(self._context_cache)
+    
+    def detect_current_context(self, context: Any) -> TypeContext | None:
+        """Detect type context from current execution environment.
+        
+        Args:
+            context: Execution context (SandboxContext or similar)
+            
+        Returns:
+            TypeContext if detectable, None otherwise
+        """
+        try:
+            # Check for assignment type set by AssignmentHandler
+            if hasattr(context, 'get'):
+                current_assignment_type = context.get("system:__current_assignment_type")
+                if current_assignment_type is not None:
+                    type_name = current_assignment_type.__name__
+                    self.debug(f"Found assignment type in context: {type_name}")
+                    return TypeContext(
+                        expected_type=type_name,
+                        context_type=ContextType.ASSIGNMENT,
+                        confidence=1.0,  # Highest confidence - direct from assignment
+                        source_node=None,
+                        metadata={
+                            "source": "assignment_handler",
+                            "python_type": current_assignment_type
+                        }
+                    )
+            
+            # Try to get current AST node being executed
+            if hasattr(context, 'get_current_node'):
+                current_node = context.get_current_node()
+                if isinstance(current_node, Assignment) and current_node.type_hint:
+                    return self.detect_assignment_context(current_node)
+            
+            # Try to infer from execution context
+            return self._infer_from_execution_context(context)
+            
+        except Exception as e:
+            self.debug(f"Could not detect current context: {e}")
+            return None
+    
+    def _infer_from_execution_context(self, context: Any) -> TypeContext | None:
+        """Infer type context from execution environment.
+        
+        Args:
+            context: Execution context
+            
+        Returns:
+            TypeContext if inferable, None otherwise
+        """
+        try:
+            # Check if we're in an assignment expression
+            if hasattr(context, 'get_execution_stack'):
+                execution_stack = context.get_execution_stack()
+                
+                for frame in reversed(execution_stack):
+                    if hasattr(frame, 'node') and isinstance(frame.node, Assignment):
+                        if hasattr(frame.node, 'type_hint') and frame.node.type_hint:
+                            return self.detect_assignment_context(frame.node)
+            
+            # Check for assignment context in the sandbox state
+            if hasattr(context, '_state') and hasattr(context._state, 'current_assignment'):
+                assignment = context._state.current_assignment
+                if assignment and hasattr(assignment, 'type_hint') and assignment.type_hint:
+                    return self.detect_assignment_context(assignment)
+            
+            # Fallback: Check context metadata
+            if hasattr(context, 'metadata') and isinstance(context.metadata, dict):
+                expected_type = context.metadata.get('expected_type')
+                if expected_type:
+                    self.debug(f"Found expected type in metadata: {expected_type}")
+                    return TypeContext(
+                        expected_type=expected_type,
+                        context_type=ContextType.EXPRESSION,
+                        confidence=0.7,  # Medium confidence for metadata
+                        source_node=None,
+                        metadata={"source": "context_metadata"}
+                    )
+            
+        except Exception as e:
+            self.debug(f"Error inferring from execution context: {e}")
+        
+        return None
 
 
 class ContextAnalyzer(Loggable):
@@ -220,7 +303,7 @@ class ContextAnalyzer(Loggable):
         self.info(f"Analyzed {len(assignments)} assignments, found {len(contexts)} contexts")
         return contexts
     
-    def find_strongest_context(self, contexts: list[TypeContext]) -> Optional[TypeContext]:
+    def find_strongest_context(self, contexts: list[TypeContext]) -> TypeContext | None:
         """Find the context with highest confidence.
         
         Args:
@@ -236,7 +319,7 @@ class ContextAnalyzer(Loggable):
         self.debug(f"Strongest context: {strongest}")
         return strongest
     
-    def merge_contexts(self, contexts: list[TypeContext]) -> Optional[TypeContext]:
+    def merge_contexts(self, contexts: list[TypeContext]) -> TypeContext | None:
         """Merge multiple contexts into a single representative context.
         
         Args:
@@ -286,7 +369,7 @@ class ContextAnalyzer(Loggable):
 
 
 # Convenience functions for easy access
-def detect_assignment_context(assignment_node: Assignment) -> Optional[TypeContext]:
+def detect_assignment_context(assignment_node: Assignment) -> TypeContext | None:
     """Convenience function to detect assignment context."""
     detector = ContextDetector()
     return detector.detect_assignment_context(assignment_node)

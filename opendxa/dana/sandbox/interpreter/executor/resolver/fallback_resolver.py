@@ -208,7 +208,7 @@ class FallbackResolver(FunctionResolverInterface):
         from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
 
         # Determine function type
-        if isinstance(func_data, (DanaFunction, SandboxFunction)):
+        if isinstance(func_data, DanaFunction | SandboxFunction):
             func_type = FunctionType.DANA
         elif isinstance(func_data, PythonFunction):
             func_type = FunctionType.PYTHON

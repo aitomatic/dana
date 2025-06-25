@@ -2,10 +2,12 @@
 Simple tests for IndexCombiner class.
 """
 
-import pytest
 import os
 from unittest.mock import Mock
+
+import pytest
 from llama_index.core import Document, VectorStoreIndex
+
 from opendxa.contrib.rag_resource.common.resource.rag.pipeline.index_combiner import IndexCombiner
 
 

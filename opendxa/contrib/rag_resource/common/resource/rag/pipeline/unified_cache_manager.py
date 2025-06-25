@@ -1,13 +1,14 @@
-from opendxa.contrib.rag_resource.common.cache import JsonFileCache
-from typing import Dict, List, cast, Optional
-from llama_index.core import Document
-from pathlib import Path
 import asyncio
-from llama_index.core import VectorStoreIndex, load_index_from_storage
-from llama_index.core.storage.storage_context import StorageContext
-from opendxa.common.utils.misc import Misc
-from opendxa.common.mixins.loggable import Loggable
 import os
+from pathlib import Path
+from typing import cast
+
+from llama_index.core import Document, VectorStoreIndex, load_index_from_storage
+from llama_index.core.storage.storage_context import StorageContext
+
+from opendxa.common.mixins.loggable import Loggable
+from opendxa.common.utils.misc import Misc
+from opendxa.contrib.rag_resource.common.cache import JsonFileCache
 
 
 class UnifiedCacheManager(Loggable):
@@ -27,32 +28,32 @@ class UnifiedCacheManager(Loggable):
             cache_path.mkdir(parents=True, exist_ok=True)
         return JsonFileCache(str(cache_path))
 
-    async def set_docs_by_source(self, docs_by_source: Dict[str, List[Document]]):
+    async def set_docs_by_source(self, docs_by_source: dict[str, list[Document]]):
         tasks = []
         for source, docs in docs_by_source.items():
             tasks.append(asyncio.to_thread(self.doc_cache.set, source, [doc.to_dict() for doc in docs]))
         await asyncio.gather(*tasks)
 
-    async def get_docs_by_source(self, sources: List[str]) -> Dict[str, Optional[List[Document|None]]]:
+    async def get_docs_by_source(self, sources: list[str]) -> dict[str, list[Document | None] | None]:
         try:
             tasks = []
             for source in sources:
                 tasks.append(asyncio.to_thread(self.doc_cache.get, source))
             results = await asyncio.gather(*tasks)
-            return {source: [Document.from_dict(doc) for doc in docs] if docs is not None else None for source, docs in zip(sources, results)}
+            return {source: [Document.from_dict(doc) for doc in docs] if docs is not None else None for source, docs in zip(sources, results, strict=False)}
         except Exception as e:
             self.error(f"Error getting documents from {sources}: {e}")
             return {source: None for source in sources}
     
     
-    async def set_indicies_by_source(self, indices_by_source: Dict[str, VectorStoreIndex]):
+    async def set_indicies_by_source(self, indices_by_source: dict[str, VectorStoreIndex]):
         tasks = []
         for source, index in indices_by_source.items():
             hash_key = Misc.get_hash(source)
             tasks.append(asyncio.to_thread(index.storage_context.persist, persist_dir=os.path.join(self.indices_cache_path, hash_key)))
         await asyncio.gather(*tasks)
     
-    async def get_indicies_by_source(self, sources: List[str]) -> Dict[str, VectorStoreIndex | None]:
+    async def get_indicies_by_source(self, sources: list[str]) -> dict[str, VectorStoreIndex | None]:
         def _load_index(path: str) -> VectorStoreIndex | None:
             try:
                 if not os.path.exists(path):
@@ -68,17 +69,17 @@ class UnifiedCacheManager(Loggable):
             hash_key = Misc.get_hash(source)
             tasks.append(asyncio.to_thread(_load_index, os.path.join(self.indices_cache_path, hash_key)))
         results = await asyncio.gather(*tasks)
-        return {source: index for source, index in zip(sources, results)}
+        return {source: index for source, index in zip(sources, results, strict=False)}
     
-    def _get_hash_repr_from_sources(self, sources: List[str]) -> str:
+    def _get_hash_repr_from_sources(self, sources: list[str]) -> str:
         sources = tuple(sorted(sources))
         return Misc.get_hash(str(sources))
     
-    async def set_combined_index(self, sources:List[str], index: VectorStoreIndex):
+    async def set_combined_index(self, sources:list[str], index: VectorStoreIndex):
         hash_key = self._get_hash_repr_from_sources(sources)
         await asyncio.to_thread(index.storage_context.persist, persist_dir=os.path.join(self.combined_index_cache_path, hash_key))
     
-    async def get_combined_index(self, sources: List[str]) -> VectorStoreIndex | None:
+    async def get_combined_index(self, sources: list[str]) -> VectorStoreIndex | None:
         try:
             hash_key = self._get_hash_repr_from_sources(sources)
             abs_path = os.path.join(self.combined_index_cache_path, hash_key)

@@ -246,7 +246,7 @@ class FunctionExecutor(BaseExecutor):
         self.debug(f"Executing function call: {node.name}")
 
         # Phase 1: Setup and validation
-        registry = self.__setup_and_validate(node)
+        self.__setup_and_validate(node)
 
         # Phase 2: Process arguments
         evaluated_args, evaluated_kwargs = self.__process_arguments(node, context)
@@ -480,7 +480,7 @@ class FunctionExecutor(BaseExecutor):
             The potentially coerced result
         """
         try:
-            from opendxa.dana.sandbox.interpreter.type_coercion import TypeCoercion
+            from opendxa.dana.sandbox.interpreter.unified_coercion import TypeCoercion
 
             # Only apply LLM coercion if enabled
             if not TypeCoercion.should_enable_llm_coercion():

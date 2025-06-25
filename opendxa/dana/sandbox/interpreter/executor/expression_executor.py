@@ -615,7 +615,7 @@ class ExpressionExecutor(BaseExecutor):
             result = target[slice_obj]
 
             # Validate result makes sense (catch edge cases Python's slice() might miss)
-            if isinstance(target, (list, tuple, str)) and isinstance(result, type(target)):
+            if isinstance(target, list | tuple | str) and isinstance(result, type(target)):
                 # For sequences, validate we got a reasonable result
                 if step is not None and step < 0 and len(result) == 0:
                     # Empty result from reverse slice might indicate user error

@@ -438,11 +438,11 @@ def test_import_statements(parser, typecheck_flag):
 
 
 def test_import_alias():
-    parser = ParserCache.get_parser("dana")
+    ParserCache.get_parser("dana")
 
 
 def test_multiple_imports():
-    parser = ParserCache.get_parser("dana")
+    ParserCache.get_parser("dana")
 
 
 # =========================
@@ -766,16 +766,16 @@ def test_with_direct_object():
 
 
 def test_fstring_nested_expressions():
-    parser = ParserCache.get_parser("dana")
+    ParserCache.get_parser("dana")
 
 
 def test_fstring_mixed_content():
-    parser = ParserCache.get_parser("dana")
+    ParserCache.get_parser("dana")
 
 
 def test_identifier_with_underscore():
-    parser = ParserCache.get_parser("dana")
+    ParserCache.get_parser("dana")
 
 
 def test_binary_expression_operator_precedence():
-    parser = ParserCache.get_parser("dana")
+    ParserCache.get_parser("dana")

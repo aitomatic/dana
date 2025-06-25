@@ -83,7 +83,7 @@ class StructType:
             return isinstance(value, bool)
 
         # Handle numeric type coercion (int can be used where float is expected)
-        if expected_type == "float" and isinstance(value, (int, float)):
+        if expected_type == "float" and isinstance(value, int | float):
             return True
 
         # Basic type validation
