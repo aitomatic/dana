@@ -54,6 +54,10 @@ class TypeCoercion:
             except (ValueError, TypeError):
                 return False
 
+        # Enhanced semantic coercion: string to bool
+        if target_type is bool and isinstance(value, str):
+            return True  # We can always attempt semantic boolean coercion
+
         return False
 
     @staticmethod
@@ -89,6 +93,11 @@ class TypeCoercion:
                 return target_type(value)
             except (ValueError, TypeError) as e:
                 raise TypeError(f"Cannot convert string '{value}' to {target_type.__name__}: {e}")
+
+        # Enhanced semantic coercion: string to bool
+        if target_type is bool and isinstance(value, str):
+            from opendxa.dana.sandbox.interpreter.enhanced_coercion import semantic_bool
+            return semantic_bool(value)
 
         raise TypeError(f"No coercion rule for {type(value).__name__} to {target_type.__name__}")
 

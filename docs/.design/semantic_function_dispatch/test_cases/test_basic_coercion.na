@@ -1,0 +1,124 @@
+# Working Type Coercion Tests - Demonstrates Current Issues
+# These tests show actual current behavior vs what should happen
+
+log("=== TYPE COERCION CURRENT BEHAVIOR ANALYSIS ===")
+
+# Test 1: Zero representation inconsistencies (MAJOR ISSUE)
+log("Test 1: Zero Representation Inconsistencies")
+log("ISSUE: All string representations of zero return True instead of False")
+
+zero_string: bool = bool("0")
+log(f"bool('0'): {zero_string}")  # ACTUAL: True, EXPECTED: False
+
+zero_decimal: bool = bool("0.0")
+log(f"bool('0.0'): {zero_decimal}")  # ACTUAL: True, EXPECTED: False
+
+zero_negative: bool = bool("-0")
+log(f"bool('-0'): {zero_negative}")  # ACTUAL: True, EXPECTED: False
+
+false_string: bool = bool("false")
+log(f"bool('false'): {false_string}")  # ACTUAL: True, EXPECTED: False
+
+log("CONCLUSION: Dana treats non-empty strings as True, ignoring semantic meaning")
+log("---")
+
+# Test 2: Semantic equivalence failures (MAJOR ISSUE)
+log("Test 2: Semantic Equivalence Issues")
+log("ISSUE: Semantically equivalent values don't compare as equal")
+
+zero_eq_false: bool = ("0" == False)
+log(f"'0' == False: {zero_eq_false}")  # ACTUAL: False, EXPECTED: True
+
+one_eq_true: bool = ("1" == True)
+log(f"'1' == True: {one_eq_true}")  # ACTUAL: False, EXPECTED: True
+
+false_eq_false: bool = ("false" == False)
+log(f"'false' == False: {false_eq_false}")  # ACTUAL: False, EXPECTED: True
+
+log("CONCLUSION: Dana doesn't recognize semantic equivalence between types")
+log("---")
+
+# Test 3: Partial semantic pattern matching missing (ENHANCEMENT NEEDED)
+log("Test 3: Missing Semantic Pattern Recognition")
+log("ISSUE: Conversational responses not semantically understood")
+
+yes_please: bool = bool("yes please")
+log(f"bool('yes please'): {yes_please}")  # ACTUAL: True (non-empty), EXPECTED: True (semantic)
+
+no_way: bool = bool("no way")
+log(f"bool('no way'): {no_way}")  # ACTUAL: True (non-empty), EXPECTED: False (semantic)
+
+absolutely_not: bool = bool("absolutely not")
+log(f"bool('absolutely not'): {absolutely_not}")  # ACTUAL: True (non-empty), EXPECTED: False (semantic)
+
+nope: bool = bool("nope")
+log(f"bool('nope'): {nope}")  # ACTUAL: True (non-empty), EXPECTED: False (semantic)
+
+log("CONCLUSION: Dana doesn't understand conversational boolean patterns")
+log("---")
+
+# Test 4: Assignment coercion failures (CRITICAL ISSUE)
+log("Test 4: Assignment Coercion Failures")
+log("ISSUE: Type hints don't enable safe coercion")
+
+# These currently fail with coercion errors:
+log("bool_direct: bool = '1'  # FAILS: Cannot safely coerce str to bool")
+log("int_direct: int = '1'    # FAILS: Cannot safely coerce str to int")
+log("float_direct: float = '1' # FAILS: Cannot safely coerce str to float")
+
+log("CONCLUSION: Type hints don't provide coercion context - assignments fail")
+log("---")
+
+# Test 5: Working coercion examples
+log("Test 5: What Currently Works")
+
+# String to numeric with explicit functions
+num_string: int = int("5")
+log(f"int('5'): {num_string}")  # Works
+
+float_string: float = float("3.14")
+log(f"float('3.14'): {float_string}")  # Works
+
+# Boolean function with strings
+empty_string: bool = bool("")
+log(f"bool(''): {empty_string}")  # Works (False)
+
+true_string: bool = bool("anything")
+log(f"bool('anything'): {true_string}")  # Works (True for non-empty)
+
+log("CONCLUSION: Explicit coercion functions work, but lack semantic understanding")
+log("---")
+
+# Test 6: Demonstration of needed semantic function dispatch
+log("Test 6: Semantic Function Dispatch Need")
+log("PROBLEM: Functions don't adapt behavior to expected return type")
+
+# Currently impossible - would need LLM calls that return same string
+# Then fail on type coercion for different expected types
+log("Example needed:")
+log("  pi: float = reason('what is pi?')  # Should return 3.14159...")
+log("  pi: int = reason('what is pi?')    # Should return 3")
+log("  pi: str = reason('what is pi?')    # Should return explanation")
+log("  pi: bool = reason('what is pi?')   # Should return True")
+
+log("CURRENT: reason() always returns same string, then coercion fails")
+log("NEEDED: reason() adapts behavior based on expected return type")
+log("---")
+
+log("=== SUMMARY OF ISSUES ===")
+log("1. Zero strings ('0', 'false') treated as True instead of False")
+log("2. No semantic equivalence ('0' == False should be True)")
+log("3. No conversational pattern recognition ('nope' should be False)")
+log("4. Type hint assignments fail instead of enabling coercion")
+log("5. Functions don't adapt behavior to expected return type context")
+log("6. Missing semantic understanding in type coercion system")
+
+log("=== PROPOSED SOLUTION ===")
+log("Implement Semantic Function Dispatch:")
+log("- Functions receive expected return type context")
+log("- Adapt behavior/prompts based on context")
+log("- Enhanced semantic type coercion")
+log("- Consistent zero handling")
+log("- Conversational pattern recognition")
+
+log("=== END ANALYSIS ===") 

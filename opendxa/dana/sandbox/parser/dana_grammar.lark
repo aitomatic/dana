@@ -82,7 +82,13 @@ basic_type: union_type
 
 union_type: single_type (PIPE single_type)*
 
-single_type: INT_TYPE | FLOAT_TYPE | STR_TYPE | BOOL_TYPE | LIST_TYPE | DICT_TYPE | TUPLE_TYPE | SET_TYPE | NONE_TYPE | ANY_TYPE | NAME
+single_type: generic_type | simple_type
+
+generic_type: simple_type "[" type_argument_list "]"
+
+simple_type: INT_TYPE | FLOAT_TYPE | STR_TYPE | BOOL_TYPE | LIST_TYPE | DICT_TYPE | TUPLE_TYPE | SET_TYPE | NONE_TYPE | ANY_TYPE | NAME
+
+type_argument_list: basic_type ("," basic_type)*
 
 // Type tokens - must be defined before NAME for precedence
 INT_TYPE: "int"
