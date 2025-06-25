@@ -359,6 +359,116 @@ class StructTypeRegistry:
 
         return StructInstance(struct_type, values)
 
+    @classmethod
+    def get_schema(cls, struct_name: str) -> dict[str, Any]:
+        """Get JSON schema for a struct type.
+        
+        Args:
+            struct_name: Name of the struct type
+            
+        Returns:
+            JSON schema dictionary for the struct
+            
+        Raises:
+            ValueError: If struct type not found
+        """
+        struct_type = cls.get(struct_name)
+        if struct_type is None:
+            available_types = cls.list_types()
+            raise ValueError(f"Unknown struct type '{struct_name}'. Available types: {available_types}")
+        
+        # Generate JSON schema
+        properties = {}
+        required = []
+        
+        for field_name in struct_type.field_order:
+            field_type = struct_type.fields[field_name]
+            properties[field_name] = cls._type_to_json_schema(field_type)
+            required.append(field_name)
+        
+        return {
+            "type": "object",
+            "properties": properties,
+            "required": required,
+            "additionalProperties": False,
+            "title": struct_name,
+            "description": f"Schema for {struct_name} struct"
+        }
+    
+    @classmethod
+    def _type_to_json_schema(cls, type_name: str) -> dict[str, Any]:
+        """Convert Dana type name to JSON schema type definition."""
+        type_mapping = {
+            "str": {"type": "string"},
+            "int": {"type": "integer"},
+            "float": {"type": "number"},
+            "bool": {"type": "boolean"},
+            "list": {"type": "array"},
+            "dict": {"type": "object"},
+            "any": {},  # Accept any type
+        }
+        
+        # Check for built-in types first
+        if type_name in type_mapping:
+            return type_mapping[type_name]
+        
+        # Check for registered struct types
+        if cls.exists(type_name):
+            return {
+                "type": "object",
+                "description": f"Reference to {type_name} struct",
+                "$ref": f"#/definitions/{type_name}"
+            }
+        
+        # Unknown type - treat as any
+        return {"description": f"Unknown type: {type_name}"}
+    
+    @classmethod
+    def validate_json(cls, json_data: dict[str, Any], struct_name: str) -> bool:
+        """Validate JSON data against struct schema.
+        
+        Args:
+            json_data: JSON data to validate
+            struct_name: Name of the struct type to validate against
+            
+        Returns:
+            True if valid
+            
+        Raises:
+            ValueError: If validation fails or struct type not found
+        """
+        struct_type = cls.get(struct_name)
+        if struct_type is None:
+            available_types = cls.list_types()
+            raise ValueError(f"Unknown struct type '{struct_name}'. Available types: {available_types}")
+        
+        # Use existing struct validation
+        try:
+            struct_type.validate_instantiation(json_data)
+            return True
+        except ValueError as e:
+            raise ValueError(f"JSON validation failed for struct '{struct_name}': {e}")
+    
+    @classmethod
+    def create_instance_from_json(cls, json_data: dict[str, Any], struct_name: str) -> StructInstance:
+        """Create struct instance from validated JSON data.
+        
+        Args:
+            json_data: JSON data to convert
+            struct_name: Name of the struct type
+            
+        Returns:
+            StructInstance created from JSON data
+            
+        Raises:
+            ValueError: If validation fails or struct type not found
+        """
+        # Validate first
+        cls.validate_json(json_data, struct_name)
+        
+        # Create instance
+        return cls.create_instance(struct_name, json_data)
+
 
 def create_struct_type_from_ast(struct_def) -> StructType:
     """Create a StructType from a StructDefinition AST node."""
