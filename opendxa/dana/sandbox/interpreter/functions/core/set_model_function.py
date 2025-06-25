@@ -33,8 +33,11 @@ def _get_available_model_names() -> list[str]:
         # Get models from both preferred_models and all_models
         all_models = set()
         
-        # Add from preferred_models
-        preferred_models = config.get("llm", {}).get("preferred_models", [])
+        # Add from preferred_models (check both root level and llm sublevel)
+        preferred_models = config.get("preferred_models", [])
+        if not preferred_models:
+            preferred_models = config.get("llm", {}).get("preferred_models", [])
+        
         for model in preferred_models:
             if isinstance(model, str):
                 all_models.add(model)
@@ -42,7 +45,10 @@ def _get_available_model_names() -> list[str]:
                 all_models.add(model["name"])
         
         # Add from all_models list
-        all_models_list = config.get("llm", {}).get("all_models", [])
+        all_models_list = config.get("all_models", [])
+        if not all_models_list:
+            all_models_list = config.get("llm", {}).get("all_models", [])
+        
         for model in all_models_list:
             if isinstance(model, str):
                 all_models.add(model)
@@ -59,6 +65,15 @@ def _get_available_model_names() -> list[str]:
             "cohere:command-r-plus",
             "mistral:mistral-large-latest",
             "groq:llama-3.1-70b-versatile",
+            "deepseek:deepseek-chat",
+            "deepseek:deepseek-coder",
+            "ollama:llama3.1",
+            "ollama:mixtral",
+            "together:meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+            "together:mistralai/Mixtral-8x7B-Instruct-v0.1",
+            "huggingface:microsoft/DialoGPT-medium",
+            "azure:gpt-4o",
+            "azure:gpt-35-turbo",
         ]
         all_models.update(fallback_models)
         
@@ -76,6 +91,15 @@ def _get_available_model_names() -> list[str]:
             "cohere:command-r-plus",
             "mistral:mistral-large-latest",
             "groq:llama-3.1-70b-versatile",
+            "deepseek:deepseek-chat",
+            "deepseek:deepseek-coder",
+            "ollama:llama3.1",
+            "ollama:mixtral",
+            "together:meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+            "together:mistralai/Mixtral-8x7B-Instruct-v0.1",
+            "huggingface:microsoft/DialoGPT-medium",
+            "azure:gpt-4o",
+            "azure:gpt-35-turbo",
         ]
 
 

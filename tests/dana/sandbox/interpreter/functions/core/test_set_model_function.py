@@ -170,6 +170,17 @@ class TestSetModelFunction(unittest.TestCase):
         self.assertIn("gemini", result.lower())
         self.assertTrue(result.startswith("google:"))
 
+    def test_fuzzy_matching_deepseek(self):
+        """Test fuzzy matching for DeepSeek models."""
+        os.environ["DEEPSEEK_API_KEY"] = "test-key"
+
+        # Test partial match "deepseek" should match a DeepSeek model
+        result = set_model_function(self.context, "deepseek")
+
+        # Should match to a DeepSeek variant
+        self.assertIn("deepseek", result.lower())
+        self.assertTrue(result.startswith("deepseek:"))
+
     def test_exact_match_only_option(self):
         """Test exact match only option disables fuzzy matching."""
         os.environ["OPENAI_API_KEY"] = "test-key"
