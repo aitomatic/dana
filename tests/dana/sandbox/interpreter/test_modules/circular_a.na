@@ -1,6 +1,0 @@
-# circular_a.na - Part of circular dependency test
-
-def function_a() -> str:
-    return "A function"
-
-public:MESSAGE_A = "From module A" 

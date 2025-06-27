@@ -96,11 +96,15 @@ def calculate_debt_to_income_ratio(income: Income, liabilities: Liabilities) -> 
     total_monthly_income = (income.annual_salary + income.additional_income) / 12.0
     
     # Estimate monthly debt payments (simplified calculation)
+    # 3% minimum payment for credit cards
+    # 2% monthly payment for auto loans
+    # 1% monthly payment for student loans
+    # 0.5% monthly payment for mortgage
     monthly_debt = (
-        liabilities.credit_card_debt * 0.03 +  # 3% minimum payment
-        liabilities.auto_loans * 0.02 +        # 2% monthly payment
-        liabilities.student_loans * 0.01 +     # 1% monthly payment
-        liabilities.mortgage_balance * 0.005   # 0.5% monthly payment
+        liabilities.credit_card_debt * 0.03 +
+        liabilities.auto_loans * 0.02 +
+        liabilities.student_loans * 0.01 +
+        liabilities.mortgage_balance * 0.005
     )
     
     if total_monthly_income > 0:
@@ -178,13 +182,13 @@ def assess_credit_risk(application: LoanApplication) -> RiskAssessment:
     # Overall risk determination
     high_risk_count = 0
     if credit_score_risk == "high":
-        high_risk_count += 1
+        high_risk_count = high_risk_count + 1
     if income_stability_risk == "high":
-        high_risk_count += 1
+        high_risk_count = high_risk_count + 1
     if debt_to_income_risk == "high":
-        high_risk_count += 1
+        high_risk_count = high_risk_count + 1
     if loan_to_value_risk == "high":
-        high_risk_count += 1
+        high_risk_count = high_risk_count + 1
     
     overall_risk_level = "low"
     recommendation = "approve"
@@ -298,19 +302,19 @@ def make_loan_decision(application: LoanApplication, risk_assessment: RiskAssess
     risk_adjustment = 0.0
     
     if risk_assessment.credit_score_risk == "high":
-        risk_adjustment += 2.0
+        risk_adjustment = risk_adjustment + 2.0
     elif risk_assessment.credit_score_risk == "medium":
-        risk_adjustment += 1.0
+        risk_adjustment = risk_adjustment + 1.0
     
     if risk_assessment.debt_to_income_risk == "high":
-        risk_adjustment += 1.5
+        risk_adjustment = risk_adjustment + 1.5
     elif risk_assessment.debt_to_income_risk == "medium":
-        risk_adjustment += 0.5
+        risk_adjustment = risk_adjustment + 0.5
     
     if risk_assessment.loan_to_value_risk == "high":
-        risk_adjustment += 1.0
+        risk_adjustment = risk_adjustment + 1.0
     elif risk_assessment.loan_to_value_risk == "medium":
-        risk_adjustment += 0.5
+        risk_adjustment = risk_adjustment + 0.5
     
     final_rate = base_rate + risk_adjustment
     

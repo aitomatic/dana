@@ -252,9 +252,9 @@ def calculate_department_payroll(company: Company, dept_name: str) -> dict:
     for emp_id in dept.employees:
         employee = find_employee_by_id(company, emp_id)
         if employee != null and employee.active:
-            total_base += employee.salary.base
-            total_bonus += employee.salary.bonus
-            employee_count += 1
+            total_base = total_base + employee.salary.base
+            total_bonus = total_bonus + employee.salary.bonus
+            employee_count = employee_count + 1
             
             salary_breakdown.append({
                 "name": employee.name,
@@ -264,13 +264,18 @@ def calculate_department_payroll(company: Company, dept_name: str) -> dict:
                 "total": employee.salary.base + employee.salary.bonus
             })
     
+    # Calculate average salary safely
+    average_salary = 0.0
+    if employee_count > 0:
+        average_salary = (total_base + total_bonus) / employee_count
+    
     return {
         "department": dept_name,
         "employee_count": employee_count,
         "total_base_salary": total_base,
         "total_bonus": total_bonus,
         "total_payroll": total_base + total_bonus,
-        "average_salary": (total_base + total_bonus) / employee_count if employee_count > 0 else 0.0,
+        "average_salary": average_salary,
         "budget_utilization": ((total_base + total_bonus) / dept.budget) * 100.0,
         "breakdown": salary_breakdown
     }
@@ -305,18 +310,21 @@ def get_project_team_analysis(company: Company, project_id: str) -> dict:
             
             # Collect all skills
             for skill in employee.skills:
-                if skill not in all_skills:
+                if not (skill in all_skills):
                     all_skills.append(skill)
             
-            total_team_cost += employee.salary.base + employee.salary.bonus
+            total_team_cost = total_team_cost + employee.salary.base + employee.salary.bonus
     
     # Check skill coverage
     missing_skills = []
     for required_skill in project.required_skills:
-        if required_skill not in all_skills:
+        if not (required_skill in all_skills):
             missing_skills.append(required_skill)
     
-    skill_coverage = ((len(project.required_skills) - len(missing_skills)) / len(project.required_skills)) * 100.0 if len(project.required_skills) > 0 else 100.0
+    # Calculate skill coverage safely
+    skill_coverage = 100.0
+    if len(project.required_skills) > 0:
+        skill_coverage = ((len(project.required_skills) - len(missing_skills)) / len(project.required_skills)) * 100.0
     
     return {
         "project_name": project.name,

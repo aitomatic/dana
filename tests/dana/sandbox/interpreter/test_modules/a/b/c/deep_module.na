@@ -1,6 +1,0 @@
-# deep_module.na - Test module at 4-level depth
-
-def deep_function() -> str:
-    return "Hello from deep module!"
-
-public:DEEP_CONSTANT = "Deep level constant" 
