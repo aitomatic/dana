@@ -4,6 +4,8 @@
 
 > **What if your code could learn, adapt, and improve itself in production—without you?**
 
+OpenDXA bridges the gap between AI coding assistance and autonomous agents through agent-native programming: native `agent` primitives, context-aware `reason()` calls that adapt output types automatically, self-improving pipelines with compositional `|` operators, and functions that evolve through POET feedback loops.
+
 # OpenDXA — Domain-Expert Agent Framework
 
 An agent-native framework for easily coding and deploying domain-expert multi-agent systems. Brought to you by [Aitomatic](https://aitomatic.com/) and other [AI Alliance](https://thealliance.ai/) members.

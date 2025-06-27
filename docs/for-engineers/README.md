@@ -3,6 +3,8 @@
 ## OpenDXA
 Get from zero to working agent in 15 minutes with the agent-native framework.
 
+The next evolution beyond AI coding assistants and traditional agents: write `agent` instead of `class`, use context-aware `reason()` that adapts output types automatically, and deploy self-improving functions.
+
 - [5-Minute Setup](setup/installation.md) - Install and verify OpenDXA
 - [Build Your First Agent](recipes/first-agent.md) - Working code in 10 minutes
 - [Dana Language Basics](reference/dana-syntax.md) - Essential syntax reference
@@ -34,15 +36,53 @@ Quick lookup for syntax, functions, and commands.
 
 ## What Makes OpenDXA Different
 
-OpenDXA's agent-native architecture transforms AI development from brittle, unpredictable systems to reliable, auditable automations:
+OpenDXA's agent-native architecture represents the convergence of AI coding assistance and autonomous systems:
 
 - Transparent: Every step is visible and debuggable
 - Reliable: Built-in verification and error correction
 - Fast: Dramatically reduced development time
 - Collaborative: Share and reuse working solutions
 - Agent-Native: Purpose-built for multi-agent systems with first-class agent primitives
+- Context-Aware: `reason()` calls that intelligently adapt their output types
+- Self-Improving: Functions that learn and optimize through POET
 
 ## Core Concepts for Engineers
+
+### Agent-Native Programming
+Write agents as first-class primitives, not classes:
+
+```dana
+# Traditional approach
+class DataProcessor:
+    def analyze(self, data):
+        return static_analysis(data)
+
+# OpenDXA: Native agent that improves over time
+agent DataProcessor:
+    def analyze(self, data):
+        insights: dict = reason("analyze patterns", context=data)  # Type adapts automatically
+        return insights  # Function learns via POET
+```
+
+### Context-Aware Execution
+Same reasoning, different output types based on usage:
+
+```dana
+# Intelligence adapts to what you need
+risk_score: float = reason("assess portfolio risk", context=portfolio)
+risk_details: dict = reason("assess portfolio risk", context=portfolio) 
+risk_report: str = reason("assess portfolio risk", context=portfolio)
+```
+
+### Self-Improving Pipelines
+Compositional operations that optimize themselves:
+
+```dana
+# Pipeline that gets smarter over time
+portfolio | risk_assessment | recommendation_engine | reporting
+
+# Each stage learns and improves via POET
+```
 
 ### Dana Language
 Dana is the heart of OpenDXA - an agent-native language designed specifically for AI automation:

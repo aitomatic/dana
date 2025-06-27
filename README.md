@@ -12,6 +12,8 @@ An agent-native framework for easily coding and deploying domain-expert multi-ag
 ---
 > **What if your code could learn, adapt, and improve itself in production—without you?**
 
+AI coding assistants help write better code. Agentic AI systems execute tasks autonomously. OpenDXA represents the convergence: agent-native programming where you write `agent` instead of `class`, use context-aware `reason()` calls that intelligently adapt their output types, compose self-improving pipelines with `|` operators, and deploy functions that learn from production through POET.
+
 ## TL;DR - Get Running in 30 Seconds! 🚀
 
 ```bash

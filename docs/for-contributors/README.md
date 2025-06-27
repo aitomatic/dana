@@ -1,6 +1,6 @@
 # OpenDXA for Contributors
 
-Whether you're looking to contribute code, extend functionality, or deeply understand OpenDXA's agent-native architecture, this guide provides everything you need to become an effective contributor to the OpenDXA ecosystem.
+Whether you're looking to contribute code, extend functionality, or deeply understand OpenDXA's agent-native architecture that bridges AI coding assistance with autonomous systems, this guide provides everything you need to become an effective contributor to the OpenDXA ecosystem.
 
 ---
 
@@ -19,6 +19,12 @@ make dev
 Note: Use `uv run` before commands or activate the venv: `source .venv/bin/activate`
 
 ### 2. Understand the Agent-Native Architecture and Codebase
+OpenDXA represents the convergence of development-time AI assistance and runtime autonomy through:
+- Native `agent` primitives (not classes with AI bolted on)
+- Context-aware execution that adapts `reason()` output types automatically  
+- Self-improving pipeline composition with `|` operators
+- POET-enabled adaptive functions that learn from production
+
 - [Architecture Overview](architecture/README.md)
 - [System Design](architecture/system-design.md)
 - [Codebase](codebase/README.md)
@@ -31,7 +37,7 @@ Note: Use `uv run` before commands or activate the venv: `source .venv/bin/activ
 
 ## Overview
 
-OpenDXA is built on an agent-native, modular, extensible architecture with clear separation of concerns:
+OpenDXA is built on an agent-native, modular, extensible architecture that represents the convergence of AI coding assistance and autonomous execution:
 
 ```
 ┌──────────────────────────────────────────────────────────┐
