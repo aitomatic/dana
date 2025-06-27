@@ -1,21 +1,18 @@
-
 <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSeRvBda2kHrBW7PDip1nDXzrH-Gd_rsqqdsVxFcvf-lZAQ1Tw/viewform?embedded=true" width="800" height="300" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
 
 ---
 
-> Imagine an AI-powered operating system. What would you want it to do for you?
-
-> Now imagine an AI-powered execution runtime. What do you want to build with it?
+> **What if your code could learn, adapt, and improve itself in production—without you?**
 
 # OpenDXA — Domain-Expert Agent Framework
 
-A comprehensive framework for easily coding and deploying domain-expert multi-agent systems. Brought to you by [Aitomatic](https://aitomatic.com/) and other [AI Alliance](https://thealliance.ai/) members.
+An agent-native framework for easily coding and deploying domain-expert multi-agent systems. Brought to you by [Aitomatic](https://aitomatic.com/) and other [AI Alliance](https://thealliance.ai/) members.
 
 <div style="display: flex; align-items: center; gap: 10px;">
   <img src="images/dana-logo.jpg" alt="Dana Logo" width="60">
   <span>
     <div style="font-size: 18px; font-style: italic; font-weight: 600; color: #666;">Powered by Dana</div>
-    <div style="font-size: 14px; font-style: italic; color: #666;">an AI-enabled programming language and runtime.</div>
+    <div style="font-size: 14px; font-style: italic; color: #666;">an agent-native programming language and runtime.</div>
   </span>
 </div>
 
@@ -93,7 +90,7 @@ Contact: [investors@aitomatic.com](mailto:investors@aitomatic.com)
 
 ## What is OpenDXA?
 
-OpenDXA (Domain-eXpert Agent) Framework transforms AI development from brittle, unpredictable systems to reliable, auditable automations. Built on the Dana language - a neurosymbolic programming environment - OpenDXA enables intelligent multi-agent systems with domain expertise.
+OpenDXA (Domain-eXpert Agent) Framework transforms AI development from brittle, unpredictable systems to reliable, auditable automations. Built on the Dana language - an agent-native neurosymbolic programming environment - OpenDXA enables intelligent multi-agent systems with domain expertise.
 
 ### ✨ Key Benefits
 - Transparent: Every step is visible and debuggable through imperative programming
@@ -101,10 +98,11 @@ OpenDXA (Domain-eXpert Agent) Framework transforms AI development from brittle, 
 - ⚡ Fast: 10x faster development cycles with clear control flow
 - 🤝 Collaborative: Share and reuse working solutions across domains
 - Domain-Aware: Seamless integration of specialized knowledge and expertise
+- 🤖 Agent-Native: Purpose-built for multi-agent systems with first-class agent primitives
 
 ### Core Innovation: Dana Language & DANKE Engine
 
-Dana (Domain-Aware NeuroSymbolic Architecture) provides an imperative programming model for agent reasoning:
+Dana (Domain-Aware NeuroSymbolic Architecture) provides an agent-native imperative programming model for agent reasoning:
 
 ```dana
 # Traditional AI: Opaque, brittle
@@ -130,7 +128,7 @@ use("tools.report.generate", input=public:result)
 
 ### Architecture Overview
 
-OpenDXA combines declarative knowledge with imperative execution for maintainable, reliable AI systems:
+OpenDXA combines declarative knowledge with imperative execution through agent-native architecture for maintainable, reliable AI systems:
 
 ```mermaid
 graph TD

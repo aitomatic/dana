@@ -6,12 +6,13 @@
 
 ## Executive Summary
 
-OpenDXA transforms AI development from unpredictable, brittle systems to reliable, auditable automations. For teams evaluating AI solutions, OpenDXA offers:
+OpenDXA's agent-native architecture transforms AI development from unpredictable, brittle systems to reliable, auditable automations. For teams evaluating AI solutions, OpenDXA offers:
 
 - Predictable ROI: Measurable productivity gains and reduced maintenance costs
 - Risk Mitigation: Transparent, debuggable systems with built-in verification
 - Team Velocity: 10x faster development cycles with reusable patterns
 - Enterprise Ready: Production-grade reliability with clear audit trails
+- Agent-Native: Purpose-built for multi-agent systems with first-class agent primitives
 
 ---
 
@@ -19,7 +20,7 @@ OpenDXA transforms AI development from unpredictable, brittle systems to reliabl
 
 ### 30-Second Assessment
 - Problem: Are you struggling with brittle AI automations, debugging black-box failures, or slow AI development cycles?
-- Solution: OpenDXA provides transparent, reliable AI automation with dramatic productivity improvements
+- Solution: OpenDXA provides transparent, reliable AI automation through agent-native architecture with dramatic productivity improvements
 - Proof: [Run the 5-minute demo](proof-of-concept/quick-demo.md) to see immediate results
 
 ### 5-Minute Deep Dive
@@ -60,6 +61,7 @@ OpenDXA transforms AI development from unpredictable, brittle systems to reliabl
 ### vs. Traditional LLM Frameworks
 | Feature | LangChain/Similar | OpenDXA |
 |---------|------------------|---------|
+| **Architecture** | Retrofitted for agents | Agent-native from ground up |
 | **Transparency** | Black box execution | Full visibility and audit trails |
 | **Reliability** | Brittle, hard to debug | Built-in verification and retry |
 | **Development Speed** | Weeks of integration | Days to working solution |
@@ -68,6 +70,7 @@ OpenDXA transforms AI development from unpredictable, brittle systems to reliabl
 ### vs. Custom AI Solutions
 | Aspect | Custom Development | OpenDXA |
 |--------|-------------------|---------|
+| **Architecture** | Built from scratch | Agent-native platform |
 | **Time to Value** | 6-12 months | 1-4 weeks |
 | **Risk** | High technical risk | Proven, production-ready |
 | **Expertise Required** | AI specialists | Regular developers |
