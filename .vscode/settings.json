@@ -4,6 +4,7 @@
     "files.exclude": {
 	"**/.dana": true,
 	"**/.poet": true,
+	"**/.qodo": true,
         "**/tmp": true,
         "**/bin": true,
         "**/docs/.ai-only": true,

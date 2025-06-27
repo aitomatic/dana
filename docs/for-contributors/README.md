@@ -1,6 +1,22 @@
+<div style="display: flex; align-items: center; gap: 10px;">
+  <img src="../images/dana-logo.jpg" alt="Dana Logo" width="60">
+  <span>
+    <div style="font-size: 18px; font-style: italic; font-weight: 600; color: #666;">Agent-native programming language and runtime</div>
+    <div style="font-size: 12px; font-style: italic; color: #999;">powered by OpenDXA</div>
+  </span>
+</div>
+
+# Dana — The Agent-Native Evolution of AI Development
+*Beyond AI coding assistants: Write agents that learn, adapt, and improve themselves in production*
+
+---
+> **What if your code could learn, adapt, and improve itself in production—without you?**
+
+Welcome to the contributor guide for Dana! This is your comprehensive resource for understanding the architecture, extending capabilities, and contributing to the agent-native programming ecosystem.
+
 # OpenDXA for Contributors
 
-Whether you're looking to contribute code, extend functionality, or deeply understand OpenDXA's agent-native architecture, this guide provides everything you need to become an effective contributor to the OpenDXA ecosystem.
+Whether you're looking to contribute code, extend functionality, or deeply understand OpenDXA's agent-native architecture that bridges AI coding assistance with autonomous systems, this guide provides everything you need to become an effective contributor to the OpenDXA ecosystem.
 
 ---
 
@@ -19,6 +35,12 @@ make dev
 Note: Use `uv run` before commands or activate the venv: `source .venv/bin/activate`
 
 ### 2. Understand the Agent-Native Architecture and Codebase
+OpenDXA represents the convergence of development-time AI assistance and runtime autonomy through:
+- Native `agent` primitives (not classes with AI bolted on)
+- Context-aware execution that adapts `reason()` output types automatically  
+- Self-improving pipeline composition with `|` operators
+- POET-enabled adaptive functions that learn from production
+
 - [Architecture Overview](architecture/README.md)
 - [System Design](architecture/system-design.md)
 - [Codebase](codebase/README.md)
@@ -31,7 +53,7 @@ Note: Use `uv run` before commands or activate the venv: `source .venv/bin/activ
 
 ## Overview
 
-OpenDXA is built on an agent-native, modular, extensible architecture with clear separation of concerns:
+OpenDXA is built on an agent-native, modular, extensible architecture that represents the convergence of AI coding assistance and autonomous execution:
 
 ```
 ┌──────────────────────────────────────────────────────────┐

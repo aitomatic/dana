@@ -1,17 +1,35 @@
+<div style="display: flex; align-items: center; gap: 10px;">
+  <img src="../images/dana-logo.jpg" alt="Dana Logo" width="60">
+  <span>
+    <div style="font-size: 18px; font-style: italic; font-weight: 600; color: #666;">Agent-native programming language and runtime</div>
+    <div style="font-size: 12px; font-style: italic; color: #999;">powered by OpenDXA</div>
+  </span>
+</div>
+
+# Dana — The Agent-Native Evolution of AI Development
+*Beyond AI coding assistants: Write agents that learn, adapt, and improve themselves in production*
+
+---
+> **What if your code could learn, adapt, and improve itself in production—without you?**
+
+Dana opens new research frontiers in agent-native neurosymbolic AI, bridging the gap between development assistance and autonomous execution through transparent, auditable reasoning systems.
+
+Welcome to the research guide for Dana! This resource covers theoretical foundations, research opportunities, and collaboration frameworks for advancing agent-native programming.
+
 # OpenDXA for Researchers
 
-*Exploring the theoretical foundations, research implications, and academic opportunities in agent-native neurosymbolic AI*
+*Exploring the theoretical foundations, research implications, and academic opportunities in agent-native neurosymbolic AI at the convergence of development assistance and autonomous execution*
 
 ---
 
 ## Research Overview
 
-OpenDXA represents a significant advancement in neurosymbolic computing through its agent-native architecture, bridging the gap between symbolic reasoning and neural computation. For researchers, OpenDXA offers:
+OpenDXA represents a significant advancement in neurosymbolic computing through its agent-native architecture, bridging the gap between symbolic reasoning and neural computation while converging AI coding assistance with autonomous execution. For researchers, OpenDXA offers:
 
-- Novel Architecture: A practical implementation of agent-native neurosymbolic principles
-- Research Platform: Tools for studying human-AI collaboration and cognitive architectures
-- Theoretical Foundations: New approaches to reliability, transparency, and verification in AI systems
-- Empirical Opportunities: Real-world data on AI system behavior and performance
+- Novel Architecture: A practical implementation of agent-native neurosymbolic principles that unifies development and runtime
+- Research Platform: Tools for studying the convergence of human-AI collaboration in development and autonomous agent behavior
+- Theoretical Foundations: New approaches to reliability, transparency, and verification in self-improving AI systems
+- Empirical Opportunities: Real-world data on AI system behavior across development and production phases
 
 ### Foundational Research: DANA Paper
 
@@ -55,7 +73,7 @@ OpenDXA enables new research in collaborative intelligence:
 
 ### The Dana Language Paradigm
 
-Dana represents a new paradigm in programming languages designed specifically for agent-native AI automation:
+Dana represents a new paradigm in programming languages designed specifically for agent-native AI automation that bridges development assistance with autonomous execution:
 
 ```python
 # Traditional approach: Opaque, brittle
@@ -78,7 +96,7 @@ Key Innovations:
 
 ### Neurosymbolic Integration Model
 
-OpenDXA implements a novel agent-native approach to neurosymbolic integration:
+OpenDXA implements a novel agent-native approach to neurosymbolic integration that unifies development-time assistance with runtime autonomy:
 
 ```
 Symbolic Layer (Dana Language)
@@ -112,6 +130,36 @@ The CORRAL framework represents a systematic approach to domain knowledge manage
 6. **Learn**: Feedback integration and knowledge refinement
 
 [Detailed Theoretical Framework](manifesto/vision.md)
+
+### Research Opportunities at the Convergence
+
+### Development-Runtime Continuity
+
+OpenDXA's unified model enables new research into continuous AI systems:
+
+Research Questions:
+- How do AI systems maintain consistency when transitioning from development assistance to autonomous execution?
+- What are the optimal boundaries between human-guided development and machine learning?
+- How can we ensure reliability across the development-to-production pipeline?
+
+Experimental Opportunities:
+- Longitudinal studies of agent evolution from development to deployment
+- Analysis of human-AI collaboration patterns in agent-native development
+- Performance studies of context-aware execution across different domains
+
+### Adaptive Function Research
+
+OpenDXA's POET-enabled self-improvement provides unique research opportunities:
+
+Research Questions:
+- How do functions optimize themselves while maintaining reliability guarantees?
+- What are the convergence properties of self-improving compositional pipelines?
+- How can we verify the behavior of adaptive systems over time?
+
+Research Directions:
+- Formal verification of self-modifying agent systems
+- Stability analysis of POET learning loops
+- Meta-learning approaches for agent-native development
 
 ---
 

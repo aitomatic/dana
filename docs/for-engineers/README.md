@@ -1,7 +1,25 @@
-# OpenDXA for Engineers
+<div style="display: flex; align-items: center; gap: 10px;">
+  <img src="../images/dana-logo.jpg" alt="Dana Logo" width="60">
+  <span>
+    <div style="font-size: 18px; font-style: italic; font-weight: 600; color: #666;">Agent-native programming language and runtime</div>
+    <div style="font-size: 12px; font-style: italic; color: #999;">powered by OpenDXA</div>
+  </span>
+</div>
+
+# Dana — The Agent-Native Evolution of AI Development
+*Beyond AI coding assistants: Write agents that learn, adapt, and improve themselves in production*
+
+---
+> **What if your code could learn, adapt, and improve itself in production—without you?**
+
+AI coding assistants help write better code. Agentic AI systems execute tasks autonomously. Dana represents the convergence: agent-native programming where you write `agent` instead of `class`, use context-aware `reason()` calls that intelligently adapt their output types, compose self-improving pipelines with `|` operators, and deploy functions that learn from production through POET.
+
+Welcome to the engineering guide for Dana! This is your comprehensive resource for building agent-native applications, from quick 5-minute demos to production enterprise deployments.
 
 ## OpenDXA
 Get from zero to working agent in 15 minutes with the agent-native framework.
+
+The next evolution beyond AI coding assistants and traditional agents: write `agent` instead of `class`, use context-aware `reason()` that adapts output types automatically, and deploy self-improving functions.
 
 - [5-Minute Setup](setup/installation.md) - Install and verify OpenDXA
 - [Build Your First Agent](recipes/first-agent.md) - Working code in 10 minutes
@@ -34,15 +52,53 @@ Quick lookup for syntax, functions, and commands.
 
 ## What Makes OpenDXA Different
 
-OpenDXA's agent-native architecture transforms AI development from brittle, unpredictable systems to reliable, auditable automations:
+OpenDXA's agent-native architecture represents the convergence of AI coding assistance and autonomous systems:
 
 - Transparent: Every step is visible and debuggable
 - Reliable: Built-in verification and error correction
 - Fast: Dramatically reduced development time
 - Collaborative: Share and reuse working solutions
 - Agent-Native: Purpose-built for multi-agent systems with first-class agent primitives
+- Context-Aware: `reason()` calls that intelligently adapt their output types
+- Self-Improving: Functions that learn and optimize through POET
 
 ## Core Concepts for Engineers
+
+### Agent-Native Programming
+Write agents as first-class primitives, not classes:
+
+```dana
+# Traditional approach
+class DataProcessor:
+    def analyze(self, data):
+        return static_analysis(data)
+
+# OpenDXA: Native agent that improves over time
+agent DataProcessor:
+    def analyze(self, data):
+        insights: dict = reason("analyze patterns", context=data)  # Type adapts automatically
+        return insights  # Function learns via POET
+```
+
+### Context-Aware Execution
+Same reasoning, different output types based on usage:
+
+```dana
+# Intelligence adapts to what you need
+risk_score: float = reason("assess portfolio risk", context=portfolio)
+risk_details: dict = reason("assess portfolio risk", context=portfolio) 
+risk_report: str = reason("assess portfolio risk", context=portfolio)
+```
+
+### Self-Improving Pipelines
+Compositional operations that optimize themselves:
+
+```dana
+# Pipeline that gets smarter over time
+portfolio | risk_assessment | recommendation_engine | reporting
+
+# Each stage learns and improves via POET
+```
 
 ### Dana Language
 Dana is the heart of OpenDXA - an agent-native language designed specifically for AI automation:
