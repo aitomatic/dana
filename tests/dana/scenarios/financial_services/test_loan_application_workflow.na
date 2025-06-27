@@ -1,0 +1,431 @@
+# Test: Complete Loan Application Workflow
+# =======================================
+# PURPOSE: Test end-to-end financial services workflow with POET integration
+# SCOPE: Multi-step loan processing, risk assessment, compliance, decision making
+# REAL-WORLD: Bank loan processing, credit evaluation, regulatory compliance
+
+log("🏦 Testing Complete Loan Application Workflow")
+
+# Define comprehensive financial data structures
+struct CreditHistory:
+    score: int
+    history_length_years: int
+    missed_payments: int
+    bankruptcies: int
+    credit_utilization: float
+    open_accounts: int
+    recent_inquiries: int
+
+struct Income:
+    annual_salary: float
+    employment_type: str
+    years_employed: float
+    employer: str
+    additional_income: float
+    income_verification: str
+
+struct Assets:
+    savings: float
+    checking: float
+    investments: float
+    real_estate_value: float
+    vehicles: float
+    other_assets: float
+
+struct Liabilities:
+    credit_card_debt: float
+    auto_loans: float
+    student_loans: float
+    mortgage_balance: float
+    other_debt: float
+
+struct LoanApplication:
+    application_id: str
+    applicant_name: str
+    ssn: str
+    date_of_birth: str
+    email: str
+    phone: str
+    requested_amount: float
+    loan_purpose: str
+    loan_term_months: int
+    property_address: str
+    property_value: float
+    down_payment: float
+    credit_history: CreditHistory
+    income: Income
+    assets: Assets
+    liabilities: Liabilities
+    application_date: str
+    status: str
+
+struct RiskAssessment:
+    credit_score_risk: str
+    income_stability_risk: str
+    debt_to_income_risk: str
+    loan_to_value_risk: str
+    overall_risk_level: str
+    risk_factors: list
+    mitigating_factors: list
+    recommendation: str
+
+struct ComplianceCheck:
+    identity_verified: bool
+    income_verified: bool
+    employment_verified: bool
+    credit_report_pulled: bool
+    anti_money_laundering_clear: bool
+    regulatory_compliance: bool
+    compliance_notes: list
+    required_documents: list
+
+struct LoanDecision:
+    application_id: str
+    decision: str
+    approved_amount: float
+    interest_rate: float
+    loan_term: int
+    conditions: list
+    reason: str
+    decision_date: str
+    underwriter: str
+
+# Helper functions for loan processing
+def calculate_debt_to_income_ratio(income: Income, liabilities: Liabilities) -> float:
+    """Calculate debt-to-income ratio"""
+    total_monthly_income = (income.annual_salary + income.additional_income) / 12.0
+    
+    # Estimate monthly debt payments (simplified calculation)
+    monthly_debt = (
+        liabilities.credit_card_debt * 0.03 +  # 3% minimum payment
+        liabilities.auto_loans * 0.02 +        # 2% monthly payment
+        liabilities.student_loans * 0.01 +     # 1% monthly payment
+        liabilities.mortgage_balance * 0.005   # 0.5% monthly payment
+    )
+    
+    if total_monthly_income > 0:
+        return (monthly_debt / total_monthly_income) * 100.0
+    return 0.0
+
+def calculate_loan_to_value_ratio(requested_amount: float, down_payment: float, property_value: float) -> float:
+    """Calculate loan-to-value ratio"""
+    loan_amount = requested_amount - down_payment
+    if property_value > 0:
+        return (loan_amount / property_value) * 100.0
+    return 0.0
+
+# POET-enhanced risk assessment function
+@poet(domain="financial_services", retries=2, timeout=30.0)
+def assess_credit_risk(application: LoanApplication) -> RiskAssessment:
+    """
+    Comprehensive credit risk assessment using POET financial services domain.
+    POET automatically adds: regulatory compliance, audit trails, data validation
+    """
+    
+    risk_factors = []
+    mitigating_factors = []
+    
+    # Credit score analysis
+    credit_score_risk = "low"
+    if application.credit_history.score < 580:
+        credit_score_risk = "high"
+        risk_factors.append("Low credit score")
+    elif application.credit_history.score < 650:
+        credit_score_risk = "medium"
+        risk_factors.append("Below-average credit score")
+    else:
+        mitigating_factors.append("Good credit score")
+    
+    # Income stability analysis
+    income_stability_risk = "low"
+    if application.income.years_employed < 2.0:
+        income_stability_risk = "medium"
+        risk_factors.append("Short employment history")
+    elif application.income.employment_type == "contract":
+        income_stability_risk = "medium"
+        risk_factors.append("Contract employment")
+    else:
+        mitigating_factors.append("Stable employment")
+    
+    # Debt-to-income analysis
+    dti_ratio = calculate_debt_to_income_ratio(application.income, application.liabilities)
+    debt_to_income_risk = "low"
+    if dti_ratio > 43.0:
+        debt_to_income_risk = "high"
+        risk_factors.append(f"High debt-to-income ratio: {dti_ratio:.1f}%")
+    elif dti_ratio > 36.0:
+        debt_to_income_risk = "medium"
+        risk_factors.append(f"Elevated debt-to-income ratio: {dti_ratio:.1f}%")
+    else:
+        mitigating_factors.append(f"Manageable debt-to-income ratio: {dti_ratio:.1f}%")
+    
+    # Loan-to-value analysis
+    ltv_ratio = calculate_loan_to_value_ratio(
+        application.requested_amount,
+        application.down_payment,
+        application.property_value
+    )
+    loan_to_value_risk = "low"
+    if ltv_ratio > 90.0:
+        loan_to_value_risk = "high"
+        risk_factors.append(f"High loan-to-value ratio: {ltv_ratio:.1f}%")
+    elif ltv_ratio > 80.0:
+        loan_to_value_risk = "medium"
+        risk_factors.append(f"Moderate loan-to-value ratio: {ltv_ratio:.1f}%")
+    else:
+        mitigating_factors.append(f"Conservative loan-to-value ratio: {ltv_ratio:.1f}%")
+    
+    # Overall risk determination
+    high_risk_count = 0
+    if credit_score_risk == "high":
+        high_risk_count += 1
+    if income_stability_risk == "high":
+        high_risk_count += 1
+    if debt_to_income_risk == "high":
+        high_risk_count += 1
+    if loan_to_value_risk == "high":
+        high_risk_count += 1
+    
+    overall_risk_level = "low"
+    recommendation = "approve"
+    
+    if high_risk_count >= 2:
+        overall_risk_level = "high"
+        recommendation = "decline"
+    elif high_risk_count == 1 or (credit_score_risk == "medium" and debt_to_income_risk == "medium"):
+        overall_risk_level = "medium"
+        recommendation = "conditional_approval"
+    
+    return RiskAssessment(
+        credit_score_risk=credit_score_risk,
+        income_stability_risk=income_stability_risk,
+        debt_to_income_risk=debt_to_income_risk,
+        loan_to_value_risk=loan_to_value_risk,
+        overall_risk_level=overall_risk_level,
+        risk_factors=risk_factors,
+        mitigating_factors=mitigating_factors,
+        recommendation=recommendation
+    )
+
+# POET-enhanced compliance checking
+@poet(domain="financial_services", timeout=20.0)
+def perform_compliance_check(application: LoanApplication) -> ComplianceCheck:
+    """
+    Regulatory compliance checking with POET automation.
+    POET automatically adds: FCRA compliance, audit logging, documentation requirements
+    """
+    
+    compliance_notes = []
+    required_documents = []
+    
+    # Identity verification (simplified)
+    identity_verified = true
+    if len(application.ssn) != 11:  # Format: XXX-XX-XXXX
+        identity_verified = false
+        compliance_notes.append("SSN format validation failed")
+    
+    # Income verification
+    income_verified = true
+    if application.income.income_verification != "verified":
+        income_verified = false
+        required_documents.append("Pay stubs (last 2 months)")
+        required_documents.append("Tax returns (last 2 years)")
+    
+    # Employment verification
+    employment_verified = true
+    if application.income.years_employed < 2.0:
+        employment_verified = false
+        required_documents.append("Employment verification letter")
+    
+    # Credit report requirements
+    credit_report_pulled = true
+    if application.credit_history.score == 0:
+        credit_report_pulled = false
+        compliance_notes.append("Credit report not yet obtained")
+    
+    # Anti-money laundering (simplified check)
+    anti_money_laundering_clear = true
+    if application.requested_amount > 500000.0:
+        required_documents.append("Source of funds documentation")
+        compliance_notes.append("Large loan amount requires enhanced due diligence")
+    
+    # Overall regulatory compliance
+    regulatory_compliance = (
+        identity_verified and
+        income_verified and
+        employment_verified and
+        credit_report_pulled and
+        anti_money_laundering_clear
+    )
+    
+    return ComplianceCheck(
+        identity_verified=identity_verified,
+        income_verified=income_verified,
+        employment_verified=employment_verified,
+        credit_report_pulled=credit_report_pulled,
+        anti_money_laundering_clear=anti_money_laundering_clear,
+        regulatory_compliance=regulatory_compliance,
+        compliance_notes=compliance_notes,
+        required_documents=required_documents
+    )
+
+# POET-enhanced loan decision engine
+@poet(domain="financial_services", retries=3, enable_training=true)
+def make_loan_decision(application: LoanApplication, risk_assessment: RiskAssessment, compliance: ComplianceCheck) -> LoanDecision:
+    """
+    Final loan decision with POET business intelligence.
+    POET automatically adds: decision audit trails, regulatory documentation, learning optimization
+    """
+    
+    conditions = []
+    
+    # Check compliance first
+    if not compliance.regulatory_compliance:
+        return LoanDecision(
+            application_id=application.application_id,
+            decision="declined",
+            approved_amount=0.0,
+            interest_rate=0.0,
+            loan_term=0,
+            conditions=[],
+            reason="Regulatory compliance requirements not met",
+            decision_date="2024-01-15",
+            underwriter="POET_SYSTEM"
+        )
+    
+    # Base interest rate calculation
+    base_rate = 4.5  # Current market rate
+    risk_adjustment = 0.0
+    
+    if risk_assessment.credit_score_risk == "high":
+        risk_adjustment += 2.0
+    elif risk_assessment.credit_score_risk == "medium":
+        risk_adjustment += 1.0
+    
+    if risk_assessment.debt_to_income_risk == "high":
+        risk_adjustment += 1.5
+    elif risk_assessment.debt_to_income_risk == "medium":
+        risk_adjustment += 0.5
+    
+    if risk_assessment.loan_to_value_risk == "high":
+        risk_adjustment += 1.0
+    elif risk_assessment.loan_to_value_risk == "medium":
+        risk_adjustment += 0.5
+    
+    final_rate = base_rate + risk_adjustment
+    
+    # Decision logic based on risk assessment
+    if risk_assessment.recommendation == "decline":
+        return LoanDecision(
+            application_id=application.application_id,
+            decision="declined",
+            approved_amount=0.0,
+            interest_rate=0.0,
+            loan_term=0,
+            conditions=[],
+            reason=f"High risk profile: {', '.join(risk_assessment.risk_factors)}",
+            decision_date="2024-01-15",
+            underwriter="POET_SYSTEM"
+        )
+    
+    elif risk_assessment.recommendation == "conditional_approval":
+        # Add conditions for medium risk
+        if risk_assessment.debt_to_income_risk == "medium":
+            conditions.append("Debt consolidation required before closing")
+        
+        if risk_assessment.loan_to_value_risk == "medium":
+            conditions.append("Private mortgage insurance required")
+        
+        if risk_assessment.income_stability_risk == "medium":
+            conditions.append("Employment verification required at closing")
+        
+        # Reduce loan amount for high LTV
+        approved_amount = application.requested_amount
+        ltv = calculate_loan_to_value_ratio(application.requested_amount, application.down_payment, application.property_value)
+        if ltv > 85.0:
+            # Reduce to 85% LTV
+            max_loan = (application.property_value * 0.85) + application.down_payment
+            approved_amount = min(application.requested_amount, max_loan)
+            conditions.append(f"Loan amount reduced to maintain 85% LTV ratio")
+        
+        return LoanDecision(
+            application_id=application.application_id,
+            decision="conditional_approval",
+            approved_amount=approved_amount,
+            interest_rate=final_rate,
+            loan_term=application.loan_term_months,
+            conditions=conditions,
+            reason=f"Conditional approval with {len(conditions)} conditions",
+            decision_date="2024-01-15",
+            underwriter="POET_SYSTEM"
+        )
+    
+    else:  # Full approval
+        return LoanDecision(
+            application_id=application.application_id,
+            decision="approved",
+            approved_amount=application.requested_amount,
+            interest_rate=final_rate,
+            loan_term=application.loan_term_months,
+            conditions=conditions,
+            reason="Application meets all approval criteria",
+            decision_date="2024-01-15",
+            underwriter="POET_SYSTEM"
+        )
+
+# Create test loan applications
+log("\n--- Creating Test Loan Applications ---")
+
+# Test Case 1: High-quality applicant (should approve)
+excellent_applicant = LoanApplication(
+    application_id="LOAN001",
+    applicant_name="John Smith",
+    ssn="123-45-6789",
+    date_of_birth="1985-03-15",
+    email="john.smith@email.com",
+    phone="555-1234",
+    requested_amount=400000.0,
+    loan_purpose="home_purchase",
+    loan_term_months=360,
+    property_address="123 Main St, Anytown, CA",
+    property_value=500000.0,
+    down_payment=100000.0,
+    credit_history=CreditHistory(
+        score=780,
+        history_length_years=15,
+        missed_payments=0,
+        bankruptcies=0,
+        credit_utilization=0.15,
+        open_accounts=8,
+        recent_inquiries=1
+    ),
+    income=Income(
+        annual_salary=120000.0,
+        employment_type="full_time",
+        years_employed=8.0,
+        employer="Tech Corp",
+        additional_income=5000.0,
+        income_verification="verified"
+    ),
+    assets=Assets(
+        savings=50000.0,
+        checking=15000.0,
+        investments=75000.0,
+        real_estate_value=0.0,
+        vehicles=25000.0,
+        other_assets=10000.0
+    ),
+    liabilities=Liabilities(
+        credit_card_debt=5000.0,
+        auto_loans=15000.0,
+        student_loans=20000.0,
+        mortgage_balance=0.0,
+        other_debt=0.0
+    ),
+    application_date="2024-01-10",
+    status="pending"
+)
+
+log("✅ Created excellent applicant test case")
+
+log("🎉 Complete Loan Application Workflow test structure created successfully!") 

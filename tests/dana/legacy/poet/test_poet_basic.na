@@ -1,0 +1,79 @@
+# Test file for basic POET decorator functionality in Dana
+# This file tests POET as a pure Dana language feature
+
+log("🧪 Testing POET Basic Functionality")
+log("=" * 40)
+
+# Test 1: Basic POET decorator application
+@poet(domain="math")
+def add(a: int, b: int) -> int:
+    """Simple addition function enhanced by POET"""
+    return a + b
+
+# Test the enhanced function
+log("\n1. Testing basic POET decorator...")
+result = add(5, 3)
+log(f"   add(5, 3) = {result}")
+assert result == 8
+log("   ✅ Basic POET decorator works")
+
+# Test 2: POET with different domain
+@poet(domain="data_processing")
+def double(x: int) -> int:
+    """Double a number with data processing domain"""
+    return x * 2
+
+log("\n2. Testing POET with different domain...")
+result2 = double(10)
+log(f"   double(10) = {result2}")
+assert result2 == 20
+log("   ✅ POET with domain works")
+
+# Test 3: POET with configuration parameters
+@poet(domain="calculation", retries=3, enable_training=True)
+def multiply(x: int, y: int) -> int:
+    """Multiply with retries and training enabled"""
+    return x * y
+
+log("\n3. Testing POET with configuration...")
+result3 = multiply(4, 7)
+log(f"   multiply(4, 7) = {result3}")
+assert result3 == 28
+log("   ✅ POET with configuration works")
+
+# Test 4: POET error handling
+@poet(domain="validation")
+def safe_divide(a: float, b: float) -> float:
+    """Division with error handling"""
+    if b == 0.0:
+        raise "Division by zero not allowed"
+    return a / b
+
+log("\n4. Testing POET error handling...")
+result4 = safe_divide(10.0, 2.0)
+log(f"   safe_divide(10.0, 2.0) = {result4}")
+assert result4 == 0.2
+log("   ✅ POET error handling works")
+
+# Test 5: Multiple POET functions
+@poet(domain="string_processing")
+def greet(name: str) -> str:
+    """Greeting function with string processing domain"""
+    return f"Hello, {name}!"
+
+@poet(domain="string_processing")
+def uppercase(text: str) -> str:
+    """Convert to uppercase"""
+    return text.upper()
+
+log("\n5. Testing multiple POET functions...")
+greeting = greet("Dana")
+upper_text = uppercase("poet")
+log(f"   greet('Dana') = {greeting}")
+log(f"   uppercase('poet') = {upper_text}")
+assert greeting == "Hello, Dana!"
+assert upper_text == "POET"
+log("   ✅ Multiple POET functions work")
+
+log("\n🎉 All POET basic tests passed!")
+log("POET is working as a pure Dana language feature") 

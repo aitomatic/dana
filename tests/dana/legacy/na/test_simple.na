@@ -1,0 +1,21 @@
+# Very simple DANA program with just prints
+print("Welcome to DANA!")
+print("This is a simple test.")
+
+# Use reason function and store in a variable
+private:result = reason("What is the capital of France?")
+
+# Print the result
+print("The capital of France is:")
+print(private:result)
+
+# Days in a year example
+private:days = reason("How many days are in a year? Return only the number.")
+print("Days in 10 years:")
+print(private:days * 10)
+
+print(type(42))         # Should print "int"
+print(type("hello"))    # Should print "str"
+print(type([1,2,3]))    # Should print "list"
+print(type({"a": 1}))   # Should print "dict"
+print(type(None))       # Should print "NoneType"

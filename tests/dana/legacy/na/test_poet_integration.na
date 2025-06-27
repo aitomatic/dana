@@ -1,0 +1,16 @@
+# POET integration test - covers @poet decorator usage
+log("Starting POET integration test")
+
+# Test with reason function (already POET-decorated)
+private:llm_result = reason("What is 2 + 2?")
+print(f"LLM reasoning result: {private:llm_result}")
+
+# Test arithmetic with POET result
+private:calculation = reason("Calculate 5 * 3")
+print(f"POET calculation result: {private:calculation}")
+
+# Test POET result in expressions
+private:math_result = reason("What is 10 + 20?")
+print(f"Math result from POET: {private:math_result}")
+
+log("POET integration test completed") 

@@ -1,0 +1,481 @@
+# Test: Company Employee Management System
+# ======================================
+# PURPOSE: Test complex data structure operations in a real-world business context
+# SCOPE: Nested structs, list operations, business logic, data relationships
+# REAL-WORLD: HR systems, project management, organizational analytics
+
+log("🏢 Testing Company Employee Management System")
+
+# Define comprehensive business data structures
+struct Address:
+    street: str
+    city: str
+    state: str
+    zip_code: str
+    country: str
+
+struct Contact:
+    email: str
+    phone: str
+    emergency_contact: str
+    address: Address
+
+struct Salary:
+    base: float
+    bonus: float
+    currency: str
+    effective_date: str
+
+struct Employee:
+    employee_id: str
+    name: str
+    title: str
+    department: str
+    hire_date: str
+    salary: Salary
+    contact: Contact
+    skills: list
+    active: bool
+    manager_id: str
+    direct_reports: list
+
+struct Project:
+    project_id: str
+    name: str
+    description: str
+    budget: float
+    start_date: str
+    end_date: str
+    status: str
+    assigned_employees: list
+    required_skills: list
+    client_contact: Contact
+    milestones: list
+
+struct Department:
+    dept_id: str
+    name: str
+    budget: float
+    manager_id: str
+    employees: list
+    projects: list
+
+struct Company:
+    company_id: str
+    name: str
+    headquarters: Address
+    departments: list
+    all_employees: list
+    all_projects: list
+    total_revenue: float
+    fiscal_year: str
+
+# Helper functions for creating complex structures
+def create_address(street: str, city: str, state: str, zip_code: str, country: str = "USA") -> Address:
+    return Address(
+        street=street,
+        city=city,
+        state=state,
+        zip_code=zip_code,
+        country=country
+    )
+
+def create_employee(id: str, name: str, title: str, dept: str, hire_date: str, base_salary: float) -> Employee:
+    default_address = create_address("123 Main St", "Anytown", "CA", "12345")
+    default_contact = Contact(
+        email=f"{name.lower().replace(' ', '.')}@company.com",
+        phone="555-0100",
+        emergency_contact="555-0200",
+        address=default_address
+    )
+    default_salary = Salary(
+        base=base_salary,
+        bonus=0.0,
+        currency="USD",
+        effective_date=hire_date
+    )
+    
+    return Employee(
+        employee_id=id,
+        name=name,
+        title=title,
+        department=dept,
+        hire_date=hire_date,
+        salary=default_salary,
+        contact=default_contact,
+        skills=[],
+        active=true,
+        manager_id="",
+        direct_reports=[]
+    )
+
+# Create test company with complex hierarchy
+log("\n--- Creating Test Company Structure ---")
+
+# Create headquarters
+hq_address = create_address("100 Corporate Blvd", "Tech City", "CA", "94000")
+
+# Create employees
+ceo = create_employee("EMP001", "Alice Johnson", "CEO", "Executive", "2020-01-01", 250000.0)
+ceo.skills = ["leadership", "strategy", "finance"]
+
+eng_manager = create_employee("EMP002", "Bob Smith", "Engineering Manager", "Engineering", "2020-03-01", 150000.0)
+eng_manager.skills = ["management", "software", "architecture"]
+eng_manager.manager_id = "EMP001"
+
+senior_dev = create_employee("EMP003", "Carol Davis", "Senior Developer", "Engineering", "2021-01-15", 120000.0)
+senior_dev.skills = ["python", "javascript", "databases", "api_design"]
+senior_dev.manager_id = "EMP002"
+
+junior_dev = create_employee("EMP004", "David Wilson", "Junior Developer", "Engineering", "2023-06-01", 80000.0)
+junior_dev.skills = ["python", "git", "testing"]
+junior_dev.manager_id = "EMP002"
+
+hr_manager = create_employee("EMP005", "Eve Brown", "HR Manager", "Human Resources", "2020-05-01", 100000.0)
+hr_manager.skills = ["recruitment", "compliance", "employee_relations"]
+hr_manager.manager_id = "EMP001"
+
+sales_manager = create_employee("EMP006", "Frank Miller", "Sales Manager", "Sales", "2021-03-01", 110000.0)
+sales_manager.skills = ["sales", "negotiation", "crm"]
+sales_manager.manager_id = "EMP001"
+
+# Set up management hierarchy
+ceo.direct_reports = ["EMP002", "EMP005", "EMP006"]
+eng_manager.direct_reports = ["EMP003", "EMP004"]
+
+# Create departments
+engineering_dept = Department(
+    dept_id="DEPT001",
+    name="Engineering",
+    budget=500000.0,
+    manager_id="EMP002",
+    employees=["EMP002", "EMP003", "EMP004"],
+    projects=[]
+)
+
+hr_dept = Department(
+    dept_id="DEPT002",
+    name="Human Resources",
+    budget=200000.0,
+    manager_id="EMP005",
+    employees=["EMP005"],
+    projects=[]
+)
+
+sales_dept = Department(
+    dept_id="DEPT003",
+    name="Sales",
+    budget=300000.0,
+    manager_id="EMP006",
+    employees=["EMP006"],
+    projects=[]
+)
+
+# Create projects
+project1 = Project(
+    project_id="PROJ001",
+    name="Customer Portal Redesign",
+    description="Modernize customer-facing web portal",
+    budget=150000.0,
+    start_date="2024-01-01",
+    end_date="2024-06-30",
+    status="active",
+    assigned_employees=["EMP002", "EMP003", "EMP004"],
+    required_skills=["python", "javascript", "api_design"],
+    client_contact=Contact(
+        email="client@external.com",
+        phone="555-9999",
+        emergency_contact="555-8888",
+        address=create_address("200 Client St", "Client City", "NY", "10001")
+    ),
+    milestones=["Requirements", "Design", "Development", "Testing", "Deployment"]
+)
+
+project2 = Project(
+    project_id="PROJ002",
+    name="HR System Integration",
+    description="Integrate new HR management system",
+    budget=75000.0,
+    start_date="2024-02-01",
+    end_date="2024-04-30",
+    status="planning",
+    assigned_employees=["EMP005", "EMP003"],
+    required_skills=["databases", "integration", "compliance"],
+    client_contact=hr_manager.contact,
+    milestones=["Analysis", "Integration", "Testing", "Training"]
+)
+
+# Update department projects
+engineering_dept.projects = ["PROJ001", "PROJ002"]
+hr_dept.projects = ["PROJ002"]
+
+# Create company
+test_company = Company(
+    company_id="COMP001",
+    name="TechCorp Solutions",
+    headquarters=hq_address,
+    departments=[engineering_dept, hr_dept, sales_dept],
+    all_employees=[ceo, eng_manager, senior_dev, junior_dev, hr_manager, sales_manager],
+    all_projects=[project1, project2],
+    total_revenue=2500000.0,
+    fiscal_year="2024"
+)
+
+log(f"Created company: {test_company.name} with {len(test_company.all_employees)} employees")
+
+# Complex business logic functions
+def find_employee_by_id(company: Company, employee_id: str) -> Employee:
+    """Find employee by ID with null safety"""
+    for employee in company.all_employees:
+        if employee.employee_id == employee_id:
+            return employee
+    return null
+
+def get_department_by_name(company: Company, dept_name: str) -> Department:
+    """Find department by name"""
+    for dept in company.departments:
+        if dept.name == dept_name:
+            return dept
+    return null
+
+def calculate_department_payroll(company: Company, dept_name: str) -> dict:
+    """Calculate comprehensive payroll statistics for a department"""
+    dept = get_department_by_name(company, dept_name)
+    if dept == null:
+        return {"error": f"Department {dept_name} not found"}
+    
+    total_base = 0.0
+    total_bonus = 0.0
+    employee_count = 0
+    salary_breakdown = []
+    
+    for emp_id in dept.employees:
+        employee = find_employee_by_id(company, emp_id)
+        if employee != null and employee.active:
+            total_base += employee.salary.base
+            total_bonus += employee.salary.bonus
+            employee_count += 1
+            
+            salary_breakdown.append({
+                "name": employee.name,
+                "title": employee.title,
+                "base": employee.salary.base,
+                "bonus": employee.salary.bonus,
+                "total": employee.salary.base + employee.salary.bonus
+            })
+    
+    return {
+        "department": dept_name,
+        "employee_count": employee_count,
+        "total_base_salary": total_base,
+        "total_bonus": total_bonus,
+        "total_payroll": total_base + total_bonus,
+        "average_salary": (total_base + total_bonus) / employee_count if employee_count > 0 else 0.0,
+        "budget_utilization": ((total_base + total_bonus) / dept.budget) * 100.0,
+        "breakdown": salary_breakdown
+    }
+
+def get_project_team_analysis(company: Company, project_id: str) -> dict:
+    """Analyze project team composition and skills coverage"""
+    project = null
+    for proj in company.all_projects:
+        if proj.project_id == project_id:
+            project = proj
+            break
+    
+    if project == null:
+        return {"error": f"Project {project_id} not found"}
+    
+    team_members = []
+    all_skills = []
+    total_team_cost = 0.0
+    
+    for emp_id in project.assigned_employees:
+        employee = find_employee_by_id(company, emp_id)
+        if employee != null:
+            member_info = {
+                "id": employee.employee_id,
+                "name": employee.name,
+                "title": employee.title,
+                "department": employee.department,
+                "skills": employee.skills,
+                "annual_cost": employee.salary.base + employee.salary.bonus
+            }
+            team_members.append(member_info)
+            
+            # Collect all skills
+            for skill in employee.skills:
+                if skill not in all_skills:
+                    all_skills.append(skill)
+            
+            total_team_cost += employee.salary.base + employee.salary.bonus
+    
+    # Check skill coverage
+    missing_skills = []
+    for required_skill in project.required_skills:
+        if required_skill not in all_skills:
+            missing_skills.append(required_skill)
+    
+    skill_coverage = ((len(project.required_skills) - len(missing_skills)) / len(project.required_skills)) * 100.0 if len(project.required_skills) > 0 else 100.0
+    
+    return {
+        "project_name": project.name,
+        "project_budget": project.budget,
+        "team_size": len(team_members),
+        "team_members": team_members,
+        "total_team_cost": total_team_cost,
+        "budget_remaining": project.budget - total_team_cost,
+        "required_skills": project.required_skills,
+        "available_skills": all_skills,
+        "missing_skills": missing_skills,
+        "skill_coverage_percent": skill_coverage,
+        "status": project.status
+    }
+
+def find_employees_by_skill(company: Company, skill: str) -> list:
+    """Find all employees with a specific skill"""
+    matching_employees = []
+    for employee in company.all_employees:
+        if employee.active and skill in employee.skills:
+            matching_employees.append({
+                "id": employee.employee_id,
+                "name": employee.name,
+                "title": employee.title,
+                "department": employee.department,
+                "all_skills": employee.skills
+            })
+    return matching_employees
+
+def get_organizational_hierarchy(company: Company) -> dict:
+    """Build organizational hierarchy structure"""
+    hierarchy = {}
+    
+    # Find CEO (no manager)
+    ceo_emp = null
+    for employee in company.all_employees:
+        if employee.manager_id == "" and employee.active:
+            ceo_emp = employee
+            break
+    
+    if ceo_emp == null:
+        return {"error": "No CEO found"}
+    
+    def build_hierarchy_node(emp: Employee) -> dict:
+        node = {
+            "id": emp.employee_id,
+            "name": emp.name,
+            "title": emp.title,
+            "department": emp.department,
+            "direct_reports": []
+        }
+        
+        # Add direct reports
+        for report_id in emp.direct_reports:
+            report_emp = find_employee_by_id(company, report_id)
+            if report_emp != null and report_emp.active:
+                node["direct_reports"].append(build_hierarchy_node(report_emp))
+        
+        return node
+    
+    return {
+        "company": company.name,
+        "organization": build_hierarchy_node(ceo_emp)
+    }
+
+# Test complex business operations
+log("\n--- Testing Complex Business Operations ---")
+
+# Test 1: Department payroll analysis
+eng_payroll = calculate_department_payroll(test_company, "Engineering")
+log(f"Engineering payroll: ${eng_payroll['total_payroll']:,.2f} for {eng_payroll['employee_count']} employees")
+assert eng_payroll["employee_count"] == 3
+assert eng_payroll["total_payroll"] == 350000.0  # 150k + 120k + 80k
+assert eng_payroll["average_salary"] == 116666.67  # Approximately
+
+# Test 2: Project team analysis
+project_analysis = get_project_team_analysis(test_company, "PROJ001")
+log(f"Project team analysis: {project_analysis['team_size']} members, {project_analysis['skill_coverage_percent']:.1f}% skill coverage")
+assert project_analysis["team_size"] == 3
+assert len(project_analysis["missing_skills"]) == 0  # All required skills covered
+assert project_analysis["skill_coverage_percent"] == 100.0
+
+# Test 3: Skill-based employee search
+python_devs = find_employees_by_skill(test_company, "python")
+log(f"Python developers: {len(python_devs)} found")
+assert len(python_devs) == 2  # Carol and David
+
+javascript_devs = find_employees_by_skill(test_company, "javascript")
+log(f"JavaScript developers: {len(javascript_devs)} found")
+assert len(javascript_devs) == 1  # Only Carol
+
+# Test 4: Organizational hierarchy
+org_hierarchy = get_organizational_hierarchy(test_company)
+log(f"Organizational structure built for {org_hierarchy['company']}")
+assert org_hierarchy["organization"]["name"] == "Alice Johnson"
+assert len(org_hierarchy["organization"]["direct_reports"]) == 3
+
+# Test 5: Complex data updates and relationships
+log("\n--- Testing Data Updates and Relationships ---")
+
+# Add bonus to senior developer
+senior_dev.salary.bonus = 10000.0
+log(f"Added bonus to {senior_dev.name}: ${senior_dev.salary.bonus}")
+
+# Recalculate payroll after bonus
+updated_payroll = calculate_department_payroll(test_company, "Engineering")
+log(f"Updated engineering payroll: ${updated_payroll['total_payroll']:,.2f}")
+assert updated_payroll["total_payroll"] == 360000.0  # Original + 10k bonus
+
+# Add new skill to junior developer
+junior_dev.skills.append("react")
+log(f"Added 'react' skill to {junior_dev.name}")
+
+# Check updated skill coverage
+updated_project_analysis = get_project_team_analysis(test_company, "PROJ001")
+assert "react" in updated_project_analysis["available_skills"]
+
+# Test employee transfer between departments
+log("\n--- Testing Employee Transfer ---")
+original_dept = junior_dev.department
+junior_dev.department = "Sales"
+
+# Update department employee lists
+engineering_dept.employees.remove("EMP004")
+sales_dept.employees.append("EMP004")
+
+log(f"Transferred {junior_dev.name} from {original_dept} to {junior_dev.department}")
+
+# Verify transfer impact
+eng_payroll_after_transfer = calculate_department_payroll(test_company, "Engineering")
+sales_payroll_after_transfer = calculate_department_payroll(test_company, "Sales")
+
+log(f"Engineering payroll after transfer: ${eng_payroll_after_transfer['total_payroll']:,.2f}")
+log(f"Sales payroll after transfer: ${sales_payroll_after_transfer['total_payroll']:,.2f}")
+
+assert eng_payroll_after_transfer["employee_count"] == 2
+assert sales_payroll_after_transfer["employee_count"] == 2
+
+log("✅ All company employee management tests passed!")
+
+# Test edge cases and error handling
+log("\n--- Testing Edge Cases ---")
+
+# Test with non-existent employee
+missing_employee = find_employee_by_id(test_company, "NONEXISTENT")
+assert missing_employee == null
+
+# Test with non-existent department
+missing_dept_payroll = calculate_department_payroll(test_company, "NonExistent")
+assert "error" in missing_dept_payroll
+
+# Test with non-existent project
+missing_project_analysis = get_project_team_analysis(test_company, "NONEXISTENT")
+assert "error" in missing_project_analysis
+
+# Test with empty skill search
+rare_skill_employees = find_employees_by_skill(test_company, "quantum_computing")
+assert len(rare_skill_employees) == 0
+
+log("✅ All edge case tests passed!")
+
+log("🎉 Company Employee Management System test completed successfully!") 

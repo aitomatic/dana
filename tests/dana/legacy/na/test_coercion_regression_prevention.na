@@ -1,0 +1,101 @@
+# Coercion Regression Prevention Tests
+# Critical tests to prevent regression to old inferior type coercion behavior
+# These test the exact issues that were broken in the old system
+
+log("🛡️ === COERCION REGRESSION PREVENTION TESTS ===")
+
+# REGRESSION TEST 1: Float to Int Assignment
+# OLD BEHAVIOR: Would fail with "Cannot safely coerce float to int"
+# NEW BEHAVIOR: Should work with truncation
+log("🔍 Regression Test 1: Float to Int Assignment")
+regression_1: int = 3.9832958235
+assert regression_1 == 3
+log(f"✅ FIXED: float → int assignment now works: {regression_1}")
+
+# REGRESSION TEST 2: Semantic Zero Handling 
+# OLD BEHAVIOR: "0" would be True (non-empty string logic)
+# NEW BEHAVIOR: "0" should be False (semantic zero)
+log("🔍 Regression Test 2: Semantic Zero Handling")
+regression_2: bool = "0"
+assert regression_2 == False
+log(f"✅ FIXED: '0' now correctly evaluates to: {regression_2}")
+
+# REGRESSION TEST 3: Conversational Pattern Recognition
+# OLD BEHAVIOR: "no way" would be True (non-empty string logic)  
+# NEW BEHAVIOR: "no way" should be False (semantic understanding)
+log("🔍 Regression Test 3: Conversational Pattern Recognition")
+regression_3: bool = "no way"
+assert regression_3 == False
+log(f"✅ FIXED: 'no way' now correctly evaluates to: {regression_3}")
+
+# REGRESSION TEST 4: String to Type Assignment Failures
+# OLD BEHAVIOR: These would fail with coercion errors
+# NEW BEHAVIOR: Should work with enhanced coercion
+log("🔍 Regression Test 4: String to Type Assignment Failures")
+
+regression_4a: bool = "1"
+assert regression_4a == True
+log(f"✅ FIXED: bool = '1' now works: {regression_4a}")
+
+regression_4b: int = "5"  
+assert regression_4b == 5
+log(f"✅ FIXED: int = '5' now works: {regression_4b}")
+
+regression_4c: float = "98.6"
+assert regression_4c == 98.6
+log(f"✅ FIXED: float = '98.6' now works: {regression_4c}")
+
+# REGRESSION TEST 5: Boolean to String Format
+# OLD BEHAVIOR: Would return "True"/"False" (Python default)
+# NEW BEHAVIOR: Should return "true"/"false" (Dana standard)
+log("🔍 Regression Test 5: Boolean to String Format")
+regression_5a: str = True
+assert regression_5a == "true"
+log(f"✅ FIXED: True → '{regression_5a}' (lowercase)")
+
+regression_5b: str = False
+assert regression_5b == "false"
+log(f"✅ FIXED: False → '{regression_5b}' (lowercase)")
+
+# REGRESSION TEST 6: Semantic False Patterns
+# OLD BEHAVIOR: All non-empty strings would be True
+# NEW BEHAVIOR: Semantic patterns should be False
+log("🔍 Regression Test 6: Semantic False Patterns")
+
+patterns = ["false", "nope", "never", "0.0", "no"]
+for pattern in patterns:
+    result: bool = pattern
+    assert result == False
+    log(f"✅ FIXED: '{pattern}' → {result}")
+
+# REGRESSION TEST 7: Enhanced vs Old Coercion Comparison
+log("🔍 Regression Test 7: Enhanced vs Old System Comparison")
+
+log("Cases that would fail or behave incorrectly in old system:")
+
+# Test int coercion that would fail in old system
+result_int: int = "42"
+log(f"✅ '42' → int: {result_int}")
+
+# Test bool coercion that would be wrong in old system
+result_bool1: bool = "0"
+log(f"✅ '0' → bool: {result_bool1}")
+
+result_bool2: bool = "no way"
+log(f"✅ 'no way' → bool: {result_bool2}")
+
+result_bool3: bool = "false"
+log(f"✅ 'false' → bool: {result_bool3}")
+
+log("---")
+
+log("🎉 === ALL REGRESSION TESTS PASSED ===")
+log("🛡️ The enhanced coercion system prevents all old system issues:")
+log("   ❌→✅ Float to int assignment failures")  
+log("   ❌→✅ Semantic zero misunderstanding")
+log("   ❌→✅ Conversational pattern ignorance")
+log("   ❌→✅ String to type assignment errors")
+log("   ❌→✅ Inconsistent boolean string formatting")
+log("")
+log("🚀 Enhanced coercion system successfully prevents regression!")
+log("⚠️  If any of these tests fail, the old inferior behavior has returned!") 

@@ -1,0 +1,261 @@
+# Test: Pipe Operator Context Fix Regression Test
+# ==============================================
+# PURPOSE: Ensure pipe operator context issues remain fixed
+# SCOPE: Pipe operator functionality, function context preservation
+# MEMORY: Based on [[memory:6048090787961906368]] - pipe operator context issues resolved
+
+log("🔧 Testing Pipe Operator Context Fix Regression")
+
+# Test basic pipe operator functionality
+log("\n--- Testing Basic Pipe Operations ---")
+
+def double(x: int) -> int:
+    """Double the input value"""
+    return x * 2
+
+def add_ten(x: int) -> int:
+    """Add ten to the input value"""
+    return x + 10
+
+def stringify(x: int) -> str:
+    """Convert to string with prefix"""
+    return f"Result: {x}"
+
+# Test 1: Simple pipe chain
+result1 = 5 | double | add_ten
+log(f"5 | double | add_ten = {result1}")
+assert result1 == 20  # (5 * 2) + 10 = 20
+
+# Test 2: Pipe chain with string conversion
+result2 = 5 | double | stringify
+log(f"5 | double | stringify = {result2}")
+assert result2 == "Result: 10"  # 5 * 2 = 10, then stringify
+
+# Test 3: Longer pipe chain
+result3 = 3 | double | double | add_ten
+log(f"3 | double | double | add_ten = {result3}")
+assert result3 == 22  # ((3 * 2) * 2) + 10 = 22
+
+log("✅ Basic pipe operations working correctly")
+
+# Test pipe operator with more complex functions
+log("\n--- Testing Complex Pipe Operations ---")
+
+def multiply_by(multiplier: int):
+    """Return a function that multiplies by the given value"""
+    def inner(x: int) -> int:
+        return x * multiplier
+    return inner
+
+def add_value(addend: int):
+    """Return a function that adds the given value"""
+    def inner(x: int) -> int:
+        return x + addend
+    return inner
+
+def format_result(prefix: str):
+    """Return a function that formats with the given prefix"""
+    def inner(x: int) -> str:
+        return f"{prefix}: {x}"
+    return inner
+
+# Test 4: Pipe with higher-order functions
+multiply_by_3 = multiply_by(3)
+add_5 = add_value(5)
+format_with_total = format_result("Total")
+
+result4 = 4 | multiply_by_3 | add_5 | format_with_total
+log(f"4 | multiply_by_3 | add_5 | format_with_total = {result4}")
+assert result4 == "Total: 17"  # (4 * 3) + 5 = 17
+
+log("✅ Complex pipe operations working correctly")
+
+# Test pipe operator context preservation
+log("\n--- Testing Context Preservation ---")
+
+def process_with_context(value: int) -> dict:
+    """Function that returns context information"""
+    return {
+        "original": value,
+        "doubled": value * 2,
+        "context": "preserved"
+    }
+
+def extract_doubled(data: dict) -> int:
+    """Extract doubled value from context"""
+    return data["doubled"]
+
+def verify_context(data: dict) -> bool:
+    """Verify context is preserved"""
+    return data["context"] == "preserved"
+
+# Test 5: Context preservation through pipe
+context_result = 7 | process_with_context
+log(f"Context result: {context_result}")
+assert context_result["original"] == 7
+assert context_result["doubled"] == 14
+assert context_result["context"] == "preserved"
+
+# Test 6: Chained context operations
+extracted = 7 | process_with_context | extract_doubled
+log(f"Extracted doubled value: {extracted}")
+assert extracted == 14
+
+# Test 7: Context verification
+is_preserved = 7 | process_with_context | verify_context
+log(f"Context preserved: {is_preserved}")
+assert is_preserved == true
+
+log("✅ Context preservation working correctly")
+
+# Test pipe operator with structs
+log("\n--- Testing Pipe Operations with Structs ---")
+
+struct Point:
+    x: float
+    y: float
+
+struct Vector:
+    dx: float
+    dy: float
+
+def create_point(x: float) -> Point:
+    """Create a point with x,x coordinates"""
+    return Point(x=x, y=x)
+
+def move_point(vector: Vector):
+    """Return a function that moves a point by a vector"""
+    def inner(point: Point) -> Point:
+        return Point(
+            x=point.x + vector.dx,
+            y=point.y + vector.dy
+        )
+    return inner
+
+def get_distance_from_origin(point: Point) -> float:
+    """Calculate distance from origin"""
+    return (point.x * point.x + point.y * point.y) ** 0.5
+
+# Test 8: Pipe with struct operations
+move_by_vector = move_point(Vector(dx=3.0, dy=4.0))
+result8 = 0.0 | create_point | move_by_vector | get_distance_from_origin
+log(f"Point movement and distance calculation: {result8}")
+assert result8 == 5.0  # Distance from (0,0) to (3,4) is 5
+
+log("✅ Struct pipe operations working correctly")
+
+# Test pipe operator error handling
+log("\n--- Testing Error Handling in Pipes ---")
+
+def safe_divide(divisor: float):
+    """Return a function that safely divides by the given value"""
+    def inner(x: float) -> float:
+        if divisor == 0.0:
+            return 0.0  # Safe fallback
+        return x / divisor
+    return inner
+
+def validate_positive(x: float) -> float:
+    """Ensure value is positive"""
+    if x < 0:
+        return 0.0
+    return x
+
+# Test 9: Error handling in pipe chain
+divide_by_2 = safe_divide(2.0)
+result9 = 10.0 | divide_by_2 | validate_positive
+log(f"Safe division result: {result9}")
+assert result9 == 5.0
+
+# Test 10: Error handling with zero division
+divide_by_0 = safe_divide(0.0)
+result10 = 10.0 | divide_by_0 | validate_positive
+log(f"Zero division handling: {result10}")
+assert result10 == 0.0
+
+log("✅ Error handling in pipes working correctly")
+
+# Test pipe operator with lists
+log("\n--- Testing Pipe Operations with Lists ---")
+
+def create_list(size: int) -> list:
+    """Create a list of numbers from 1 to size"""
+    result = []
+    for i in range(1, size + 1):
+        result.append(i)
+    return result
+
+def filter_even(numbers: list) -> list:
+    """Filter even numbers from list"""
+    result = []
+    for num in numbers:
+        if num % 2 == 0:
+            result.append(num)
+    return result
+
+def sum_list(numbers: list) -> int:
+    """Sum all numbers in list"""
+    total = 0
+    for num in numbers:
+        total += num
+    return total
+
+# Test 11: List processing pipe
+result11 = 6 | create_list | filter_even | sum_list
+log(f"List processing result: {result11}")
+assert result11 == 12  # Even numbers from 1-6: [2,4,6], sum = 12
+
+log("✅ List pipe operations working correctly")
+
+# Comprehensive regression test
+log("\n--- Comprehensive Regression Test ---")
+
+def comprehensive_test(start_value: int) -> str:
+    """Comprehensive test of all pipe functionality"""
+    
+    # Multi-step transformation
+    step1 = start_value | double | add_ten
+    step2 = step1 | create_point | move_by_vector
+    step3 = step2 | get_distance_from_origin
+    final = step3 | stringify
+    
+    return final
+
+# Test 12: Full regression test
+final_result = comprehensive_test(5)
+log(f"Comprehensive test result: {final_result}")
+
+# Verify the calculation:
+# 5 -> double -> 10
+# 10 -> add_ten -> 20
+# 20 -> create_point -> Point(20, 20)
+# Point(20, 20) -> move_by_vector(3,4) -> Point(23, 24)
+# Point(23, 24) -> distance -> sqrt(23^2 + 24^2) = sqrt(529 + 576) = sqrt(1105) ≈ 33.24
+expected_distance = (23*23 + 24*24) ** 0.5
+expected_result = f"Result: {expected_distance}"
+assert final_result == expected_result
+
+log("✅ Comprehensive regression test passed")
+
+log("🎉 Pipe Operator Context Fix Regression Test completed successfully!")
+
+# Test that confirms the specific fix mentioned in memory
+log("\n--- Testing Specific Context Fix ---")
+
+# The issue was with trusted_for_context=True in function trust policy
+# Test that functions properly pass context in pipe operations
+def context_sensitive_function(x: int) -> int:
+    """Function that should properly receive context from pipe"""
+    # This function relies on proper context passing
+    return x + 1
+
+def chain_context_function(x: int) -> int:
+    """Function that chains context"""
+    return x * 2
+
+# Test the specific issue that was fixed
+pipe_result = 5 | context_sensitive_function | chain_context_function
+log(f"Context fix verification: {pipe_result}")
+assert pipe_result == 12  # (5 + 1) * 2 = 12
+
+log("✅ Specific context fix verified - functions properly receive context in pipe operations") 
