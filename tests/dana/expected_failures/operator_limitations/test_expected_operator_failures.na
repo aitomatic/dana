@@ -1,0 +1,173 @@
+# Test: Expected Operator Failures Documentation
+# ==============================================
+# PURPOSE: Document operator features that seem natural but aren't supported
+# SCOPE: Advanced operators, operator overloading, membership operators
+# STATUS: Documents potential future enhancements
+
+log("🧪 Testing Expected Operator Failures Documentation - These Features Don't Work")
+
+# =============================================================================
+# MEMBERSHIP AND IDENTITY OPERATORS
+# =============================================================================
+log("\n--- Membership and Identity Operators (Not Supported) ---")
+
+# Test 1: 'not in' operator (we know this fails)
+log("❌ 'not in' operator: if 6 not in items:")
+log("   Reason: Dana doesn't support 'not in' operator")
+log("   Workaround: Use 'not (6 in items)'")
+log("   Future consideration: Could improve readability")
+
+# Test 2: 'is not' operator
+log("❌ 'is not' operator: if a is not b:")
+log("   Reason: 'is not' might not work in Dana")
+log("   Workaround: Use 'not (a is b)'")
+log("   Future consideration: Could improve identity checking")
+
+# Test 3: Complex membership operations
+log("❌ List comprehensions in membership: if value in [item for sublist in collections for item in sublist]:")
+log("   Reason: List comprehensions not supported in Dana")
+log("   Workaround: Use loops and explicit checks")
+log("   Future consideration: Could enable powerful membership testing")
+
+# =============================================================================
+# ARITHMETIC OPERATOR EDGE CASES
+# =============================================================================
+log("\n--- Arithmetic Operator Edge Cases (Not Supported) ---")
+
+# Test 4: Floor division operator
+log("❌ Floor division operator: result = 17 // 3")
+log("   Reason: Dana might not support // operator")
+log("   Workaround: Use int(17 / 3)")
+log("   Future consideration: Could be useful for integer division")
+
+# Test 5: Matrix multiplication operator
+log("❌ Matrix multiplication operator: result = a @ b")
+log("   Reason: Dana doesn't support @ operator")
+log("   Workaround: Implement matrix multiplication functions")
+log("   Future consideration: Could enable numpy-like operations")
+
+# Test 6: Unary operators on custom types
+log("❌ Unary operators on structs: negative_p = -p")
+log("   Reason: Unary operators on structs not supported")
+log("   Workaround: Implement explicit negation methods")
+log("   Future consideration: Could enable operator overloading")
+
+# =============================================================================
+# BITWISE OPERATORS
+# =============================================================================
+log("\n--- Bitwise Operators (Not Supported) ---")
+
+# Test 7: Bitwise AND
+log("❌ Bitwise AND: result = 12 & 7")
+log("   Reason: Dana might not support bitwise operations")
+log("   Workaround: Use logical operations or bit manipulation functions")
+log("   Future consideration: Could be useful for low-level operations")
+
+# Test 8: Bitwise OR
+log("❌ Bitwise OR: result = 12 | 7")
+log("   Reason: Might conflict with pipe operator")
+log("   Workaround: Use logical operations or bit manipulation functions")
+log("   Future consideration: Could require context-sensitive parsing")
+
+# Test 9: Bitwise XOR
+log("❌ Bitwise XOR: result = 12 ^ 7")
+log("   Reason: Dana might not support XOR operator")
+log("   Workaround: Implement XOR function")
+log("   Future consideration: Could be useful for cryptographic operations")
+
+# Test 10: Bit shifting
+log("❌ Bit shifting: left_shift = 5 << 2, right_shift = 20 >> 2")
+log("   Reason: Bit shifting operators might not work")
+log("   Workaround: Use multiplication/division by powers of 2")
+log("   Future consideration: Could enable efficient bit manipulation")
+
+# =============================================================================
+# OPERATOR OVERLOADING
+# =============================================================================
+log("\n--- Operator Overloading (Not Supported) ---")
+
+# Test 11: Addition operator overloading
+log("❌ Struct addition: def __add__(self, other: Vector) -> Vector:")
+log("   Reason: Operator overloading not supported in Dana")
+log("   Workaround: Use explicit methods like add()")
+log("   Future consideration: Could enable natural mathematical operations")
+
+# Test 12: Comparison operator overloading
+log("❌ Struct comparison: def __eq__(self, other: Person) -> bool:")
+log("   Reason: Operator overloading not supported in Dana")
+log("   Workaround: Use explicit comparison methods")
+log("   Future consideration: Could enable natural comparison syntax")
+
+# =============================================================================
+# ADVANCED COMPARISON CHAINS
+# =============================================================================
+log("\n--- Advanced Comparison Chains (Limitations) ---")
+
+# Test 13: Complex chained comparisons
+log("❌ Complex comparison chains: if 0 < x <= 10 != 5:")
+log("   Reason: Complex mixed comparison chains might have issues")
+log("   Workaround: Break into separate conditions")
+log("   Future consideration: Could improve condition readability")
+
+# Test 14: Comparison with different types
+log("❌ Mixed type comparisons: if '5' < 10:")
+log("   Reason: String vs int comparison might fail")
+log("   Workaround: Explicit type conversion")
+log("   Future consideration: Could add type coercion rules")
+
+# =============================================================================
+# OPERATOR PRECEDENCE EDGE CASES
+# =============================================================================
+log("\n--- Operator Precedence Edge Cases (Limitations) ---")
+
+# Test 15: Complex precedence with pipe operator
+log("❌ Complex pipe precedence: result = 5 + 3 | double | add_one")
+log("   Reason: Precedence confusion between arithmetic and pipe operators")
+log("   Workaround: Use parentheses: (5 + 3) | double | add_one")
+log("   Future consideration: Could clarify operator precedence rules")
+
+# Test 16: Mixed logical and arithmetic operators
+log("❌ Mixed precedence: complex_result = a + b * c | double if a > 0 else b | add_one")
+log("   Reason: Complex precedence with conditional expressions and pipes")
+log("   Workaround: Use parentheses and separate statements")
+log("   Future consideration: Could improve expression parsing")
+
+# =============================================================================
+# AUGMENTED ASSIGNMENT WITH OPERATORS
+# =============================================================================
+log("\n--- Augmented Assignment with Operators (Not Supported) ---")
+
+# Test 17: Modulo assignment
+log("❌ Modulo assignment: value %= 5")
+log("   Reason: Dana doesn't support %= operator")
+log("   Workaround: value = value % 5")
+log("   Future consideration: Could be added for convenience")
+
+# Test 18: Power assignment
+log("❌ Power assignment: value **= 3")
+log("   Reason: Dana doesn't support **= operator")
+log("   Workaround: value = value ** 3")
+log("   Future consideration: Could be added for mathematical operations")
+
+# Test 19: Floor division assignment
+log("❌ Floor division assignment: value //= 3")
+log("   Reason: Dana doesn't support //= operator")
+log("   Workaround: value = int(value / 3)")
+log("   Future consideration: Could be added if // operator is supported")
+
+# Test 20: Bitwise assignment operators
+log("❌ Bitwise assignment: value &= 7")
+log("   Reason: Dana doesn't support &= operator")
+log("   Workaround: Use explicit bitwise functions")
+log("   Future consideration: Could be added with bitwise operators")
+
+# =============================================================================
+# SUMMARY
+# =============================================================================
+log("\n🎯 Expected Operator Failures Documentation Summary:")
+log("   📊 Total documented limitations: 20")
+log("   🔧 Categories covered: 6 (membership, arithmetic, bitwise, overloading, precedence, assignment)")
+log("   💡 All limitations have documented workarounds")
+log("   🚀 All limitations are potential future enhancements")
+
+log("🎉 Expected Operator Failures documentation completed successfully!") 

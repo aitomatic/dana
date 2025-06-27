@@ -1,0 +1,173 @@
+# Test: Expected Syntax Failures Documentation
+# =============================================
+# PURPOSE: Document Dana syntax features that seem natural but aren't supported
+# SCOPE: Compound assignments, conditional expressions, advanced string operations
+# STATUS: Documents potential future enhancements
+
+log("🧪 Testing Expected Syntax Failures Documentation - These Features Don't Work")
+
+# =============================================================================
+# COMPOUND ASSIGNMENT OPERATORS
+# =============================================================================
+log("\n--- Compound Assignment Operators (Not Supported) ---")
+
+# Test 1: Addition assignment operator
+log("❌ += operator: total += 5")
+log("   Reason: Dana doesn't support compound assignment operators")
+log("   Workaround: total = total + 5")
+log("   Future consideration: Could be added for convenience")
+
+# Test 2: Multiplication assignment operator  
+log("❌ *= operator: value *= 4")
+log("   Reason: Dana doesn't support compound assignment operators")
+log("   Workaround: value = value * 4")
+log("   Future consideration: Could be added for convenience")
+
+# Test 3: String concatenation assignment
+log("❌ String += operator: message += ' World'")
+log("   Reason: Dana doesn't support compound assignment operators")
+log("   Workaround: message = message + ' World'")
+log("   Future consideration: Could be added for string operations")
+
+# Test 4: List append assignment
+log("❌ List += operator: items += [4, 5]")
+log("   Reason: Dana doesn't support compound assignment operators")
+log("   Workaround: Use list concatenation: items = items + [4, 5]")
+log("   Future consideration: Could be added for list operations")
+
+# =============================================================================
+# CONDITIONAL EXPRESSIONS (TERNARY OPERATOR)
+# =============================================================================
+log("\n--- Conditional Expressions (Not Supported) ---")
+
+# Test 5: Simple conditional expression
+log("❌ Conditional expression: result = 'positive' if x > 0 else 'non-positive'")
+log("   Reason: Dana doesn't support ternary operator syntax")
+log("   Workaround: Use if-else statements")
+log("   Future consideration: Could improve code conciseness")
+
+# Test 6: Nested conditional expression
+log("❌ Nested conditional: grade = 'A' if score >= 90 else 'B' if score >= 80 else 'C'")
+log("   Reason: Dana doesn't support ternary operator syntax")
+log("   Workaround: Use nested if-elif-else statements")
+log("   Future consideration: Could be useful for complex conditions")
+
+# Test 7: Conditional with function call
+log("❌ Conditional in function: return 'active' if active else 'inactive'")
+log("   Reason: Dana doesn't support ternary operator syntax")
+log("   Workaround: Use if-else return statements")
+log("   Future consideration: Could improve function brevity")
+
+# =============================================================================
+# ADVANCED STRING OPERATIONS
+# =============================================================================
+log("\n--- Advanced String Operations (Not Supported) ---")
+
+# Test 8: String formatting with % operator
+log("❌ % string formatting: 'Hello %s, you are %d years old' % ('Alice', 25)")
+log("   Reason: Dana doesn't support % formatting operator")
+log("   Workaround: Use f-strings: f'Hello {name}, you are {age} years old'")
+log("   Future consideration: Could add for legacy compatibility")
+
+# Test 9: String multiplication
+log("❌ String multiplication: 'abc' * 3")
+log("   Reason: Dana might not support string multiplication")
+log("   Workaround: Use loops or concatenation")
+log("   Future consideration: Could be useful for pattern generation")
+
+# Test 10: String method chaining
+log("❌ Method chaining: text.strip().lower().replace(' ', '_')")
+log("   Reason: Method chaining might have issues in Dana")
+log("   Workaround: Use separate method calls")
+log("   Future consideration: Could improve code readability")
+
+# =============================================================================
+# SLICE ASSIGNMENT
+# =============================================================================
+log("\n--- Slice Assignment (Not Supported) ---")
+
+# Test 11: List slice assignment
+log("❌ List slice assignment: numbers[1:3] = [10, 20]")
+log("   Reason: Slice assignment might not work in Dana")
+log("   Workaround: Use index-based assignment or list reconstruction")
+log("   Future consideration: Could be useful for list modification")
+
+# Test 12: String slice assignment
+log("❌ String slice assignment: text[1:3] = 'XY'")
+log("   Reason: Strings are immutable, slice assignment not supported")
+log("   Workaround: String reconstruction")
+log("   Future consideration: Not recommended (strings should be immutable)")
+
+# =============================================================================
+# MULTIPLE ASSIGNMENT PATTERNS
+# =============================================================================
+log("\n--- Multiple Assignment Patterns (Not Supported) ---")
+
+# Test 13: Tuple unpacking assignment
+log("❌ Tuple unpacking: a, b, c = (1, 2, 3)")
+log("   Reason: Tuple unpacking might not work in Dana")
+log("   Workaround: Individual assignments")
+log("   Future consideration: Could improve code elegance")
+
+# Test 14: Starred expressions
+log("❌ Starred expressions: first, *middle, last = [1, 2, 3, 4, 5]")
+log("   Reason: Starred expressions not supported in Dana")
+log("   Workaround: Manual slicing and assignment")
+log("   Future consideration: Could be useful for flexible unpacking")
+
+# Test 15: Chained assignment
+log("❌ Chained assignment: a = b = c = 42")
+log("   Reason: Chained assignment might not work in Dana")
+log("   Workaround: Individual assignments")
+log("   Future consideration: Could be convenient for initialization")
+
+# =============================================================================
+# ADVANCED CONTROL FLOW
+# =============================================================================
+log("\n--- Advanced Control Flow (Not Supported) ---")
+
+# Test 16: Walrus operator (assignment expressions)
+log("❌ Walrus operator: if (n := len(numbers)) > 3:")
+log("   Reason: Assignment expressions not supported in Dana")
+log("   Workaround: Separate assignment and condition")
+log("   Future consideration: Could reduce code duplication")
+
+# Test 17: Match/case statements
+log("❌ Match/case statements: match value: case 1: ...")
+log("   Reason: Match statements might not be supported in Dana")
+log("   Workaround: Use if-elif-else chains")
+log("   Future consideration: Could improve pattern matching")
+
+# =============================================================================
+# ADVANCED FUNCTION FEATURES
+# =============================================================================
+log("\n--- Advanced Function Features (Not Supported) ---")
+
+# Test 18: Keyword-only arguments
+log("❌ Keyword-only args: def func(a, *, b, c):")
+log("   Reason: Keyword-only arguments might not work in Dana")
+log("   Workaround: Use regular parameters with documentation")
+log("   Future consideration: Could improve API design")
+
+# Test 19: Positional-only arguments
+log("❌ Positional-only args: def func(a, b, /, c):")
+log("   Reason: Positional-only arguments might not work in Dana")
+log("   Workaround: Use regular parameters with documentation")
+log("   Future consideration: Could improve API flexibility")
+
+# Test 20: Function annotations with complex types
+log("❌ Complex annotations: def func(items: list[dict[str, int]]) -> dict[str, list[int]]:")
+log("   Reason: Complex type annotations might not be supported")
+log("   Workaround: Use simpler type hints or comments")
+log("   Future consideration: Could improve type safety")
+
+# =============================================================================
+# SUMMARY
+# =============================================================================
+log("\n🎯 Expected Syntax Failures Documentation Summary:")
+log("   📊 Total documented limitations: 20")
+log("   🔧 Categories covered: 6 (operators, expressions, strings, assignment, control flow, functions)")
+log("   💡 All limitations have documented workarounds")
+log("   🚀 All limitations are potential future enhancements")
+
+log("🎉 Expected Syntax Failures documentation completed successfully!") 
