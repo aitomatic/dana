@@ -1,7 +1,7 @@
 # OpenDXA for Engineers
 
 ## OpenDXA
-Get from zero to working agent in 15 minutes.
+Get from zero to working agent in 15 minutes with the agent-native framework.
 
 - [5-Minute Setup](setup/installation.md) - Install and verify OpenDXA
 - [Build Your First Agent](recipes/first-agent.md) - Working code in 10 minutes
@@ -34,17 +34,18 @@ Quick lookup for syntax, functions, and commands.
 
 ## What Makes OpenDXA Different
 
-OpenDXA transforms AI development from brittle, unpredictable systems to reliable, auditable automations:
+OpenDXA's agent-native architecture transforms AI development from brittle, unpredictable systems to reliable, auditable automations:
 
 - Transparent: Every step is visible and debuggable
 - Reliable: Built-in verification and error correction
 - Fast: Dramatically reduced development time
 - Collaborative: Share and reuse working solutions
+- Agent-Native: Purpose-built for multi-agent systems with first-class agent primitives
 
 ## Core Concepts for Engineers
 
 ### Dana Language
-Dana is the heart of OpenDXA - a simple, powerful language for AI automation:
+Dana is the heart of OpenDXA - an agent-native language designed specifically for AI automation:
 
 ```dana
 # Load data and analyze
@@ -66,7 +67,7 @@ risk = customer.assess_risk()  # Method syntax sugar
 ```
 
 ### Agent Architecture
-Build structured agents with clear capabilities:
+Build structured agents with clear capabilities using agent-native design patterns:
 
 ```python
 # Define agent with specific capabilities

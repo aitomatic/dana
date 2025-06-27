@@ -1,6 +1,6 @@
 # OpenDXA for Contributors
 
-Whether you're looking to contribute code, extend functionality, or deeply understand OpenDXA's architecture, this guide provides everything you need to become an effective contributor to the OpenDXA ecosystem.
+Whether you're looking to contribute code, extend functionality, or deeply understand OpenDXA's agent-native architecture, this guide provides everything you need to become an effective contributor to the OpenDXA ecosystem.
 
 ---
 
@@ -18,7 +18,7 @@ make dev
 
 Note: Use `uv run` before commands or activate the venv: `source .venv/bin/activate`
 
-### 2. Understand the Architecture and Codebase
+### 2. Understand the Agent-Native Architecture and Codebase
 - [Architecture Overview](architecture/README.md)
 - [System Design](architecture/system-design.md)
 - [Codebase](codebase/README.md)
@@ -31,7 +31,7 @@ Note: Use `uv run` before commands or activate the venv: `source .venv/bin/activ
 
 ## Overview
 
-OpenDXA is built on a modular, extensible architecture with clear separation of concerns:
+OpenDXA is built on an agent-native, modular, extensible architecture with clear separation of concerns:
 
 ```
 ┌──────────────────────────────────────────────────────────┐

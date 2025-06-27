@@ -1,14 +1,14 @@
 # OpenDXA for Researchers
 
-*Exploring the theoretical foundations, research implications, and academic opportunities in neurosymbolic AI*
+*Exploring the theoretical foundations, research implications, and academic opportunities in agent-native neurosymbolic AI*
 
 ---
 
 ## Research Overview
 
-OpenDXA represents a significant advancement in neurosymbolic computing, bridging the gap between symbolic reasoning and neural computation. For researchers, OpenDXA offers:
+OpenDXA represents a significant advancement in neurosymbolic computing through its agent-native architecture, bridging the gap between symbolic reasoning and neural computation. For researchers, OpenDXA offers:
 
-- Novel Architecture: A practical implementation of neurosymbolic principles
+- Novel Architecture: A practical implementation of agent-native neurosymbolic principles
 - Research Platform: Tools for studying human-AI collaboration and cognitive architectures
 - Theoretical Foundations: New approaches to reliability, transparency, and verification in AI systems
 - Empirical Opportunities: Real-world data on AI system behavior and performance
@@ -55,7 +55,7 @@ OpenDXA enables new research in collaborative intelligence:
 
 ### The Dana Language Paradigm
 
-Dana represents a new paradigm in programming languages designed specifically for AI automation:
+Dana represents a new paradigm in programming languages designed specifically for agent-native AI automation:
 
 ```python
 # Traditional approach: Opaque, brittle
@@ -78,7 +78,7 @@ Key Innovations:
 
 ### Neurosymbolic Integration Model
 
-OpenDXA implements a novel approach to neurosymbolic integration:
+OpenDXA implements a novel agent-native approach to neurosymbolic integration:
 
 ```
 Symbolic Layer (Dana Language)

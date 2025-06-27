@@ -1,6 +1,6 @@
 # For Investors
 
-**The AI coding ecosystem just created multiple $1B+ companies in 24 months. OpenDXA extends this proven model into autonomous enterprise operations—a market 10x larger.**
+**The AI coding ecosystem just created multiple $1B+ companies in 24 months. OpenDXA extends this proven model into autonomous enterprise operations through agent-native architecture—a market 10x larger.**
 
 ## OpenDXA's Multi-Layer Value Creation
 
@@ -41,7 +41,8 @@ The AI coding ecosystem explosion validates our path forward:
 ### Revolutionary Differentiators (Competitive Moats)
 
 - **Self-Learning Functions**: Code that improves its own performance through production usage
-**AI-Powered Runtime**: First execution environment designed for autonomous AI operations
+- **Agent-Native Runtime**: First execution environment designed specifically for autonomous AI operations
+- **Multi-Agent Architecture**: Purpose-built for orchestrating complex agent interactions
 
 ## Feature Positioning vs AI Coding Ecosystem
 
@@ -49,6 +50,7 @@ The AI coding ecosystem explosion validates our path forward:
 |------------|----------------|---------|---------------|
 | **Code Generation** | ✅ Advanced AI assistance | ✅ Advanced AI assistance | **Parity** - Proven demand |
 | **Familiar Language** | ✅ Popular languages | ✅ Pythonic Dana + Python interop | **Parity** - Zero adoption friction |
+| **Agent-Native Architecture** | ❌ Traditional execution | ✅ Purpose-built for agents | **Breakthrough** - Architectural advantage |
 | **Self-Learning Functions** | ❌ Static generated code | ✅ Functions optimize themselves | **Breakthrough** - Compound value |
 | **AI-Powered Runtime** | ❌ Traditional execution | ✅ Native AI integration | **Breakthrough** - Enterprise reliability |
 
@@ -159,6 +161,12 @@ The natural evolution beyond code generation:
 
 ## Defensible Platform Advantages
 
+### Agent-Native Architecture Moats
+
+- **First-Mover Advantage**: Purpose-built agent architecture vs retrofitted frameworks
+- **Multi-Agent Orchestration**: Native support for complex agent interactions
+- **Domain-Expert Specialization**: Agents designed for specific business domains
+
 ### Open-Source Developer Ecosystem
 
 - **Pythonic Dana Language**: Instant adoption by millions of Python developers
@@ -197,7 +205,7 @@ The natural evolution beyond code generation:
 
 ## The Platform Play of the AI Era
 
-**This is the Databricks moment for enterprise AI.** Just as Databricks created massive value by establishing the unified analytics platform, OpenDXA is positioned to lead the autonomous enterprise runtime ecosystem.
+**This is the Databricks moment for enterprise AI.** Just as Databricks created massive value by establishing the unified analytics platform, OpenDXA is positioned to lead the agent-native autonomous enterprise runtime ecosystem.
 
 **Investment Thesis**:
 

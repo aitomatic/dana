@@ -1,6 +1,6 @@
-# Dana Recipes - Practical Patterns and Examples
+# Dana Recipes - Agent-Native Patterns and Examples
 
-*Real-world solutions for common development tasks using Dana and OpenDXA*
+*Real-world solutions for common development tasks using Dana's agent-native architecture and OpenDXA*
 
 ---
 
@@ -8,7 +8,7 @@
 
 ### 🚀 Getting Started
 - [First Agent](first-agent.md) - Build your first working agent in 10 minutes
-- [Dana Language Basics](../reference/dana-syntax.md) - Essential syntax reference
+- [Dana Language Basics](../reference/dana-syntax.md) - Essential agent-native syntax reference
 
 ### 🏗️ Application Patterns
 - [Chatbot Development](chatbot/README.md) - Customer service, FAQ, conversational AI
@@ -19,7 +19,7 @@
 ### 🤖 Multi-Agent Systems
 - [**Multi-Agent Collaboration**](multi-agent-collaboration/README.md) - **A2A and module agents working together**
 
-### 📚 Advanced Patterns
+### 📚 Advanced Agent-Native Patterns
 - [**Structs Cookbook**](structs-cookbook.md) - **Real-world struct patterns and examples**
 - [MCP Integration](mcp-integration.md) - Model Context Protocol connections
 
@@ -28,7 +28,7 @@
 ## Recipe Categories
 
 ### Data Modeling & Business Logic
-Use Dana's struct system to model your domain clearly and add AI-powered behavior:
+Use Dana's agent-native struct system to model your domain clearly and add AI-powered behavior:
 
 ```dana
 struct Customer:
@@ -48,7 +48,7 @@ engagement = customer.analyze_engagement()
 **See**: [Structs Cookbook](structs-cookbook.md) for complete business domain examples
 
 ### AI Integration Patterns
-Seamlessly integrate AI reasoning into your application logic:
+Seamlessly integrate AI reasoning into your application logic using agent-native features:
 
 ```dana
 # Document analysis
