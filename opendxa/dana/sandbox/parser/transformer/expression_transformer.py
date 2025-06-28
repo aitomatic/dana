@@ -569,22 +569,17 @@ class ExpressionTransformer(BaseTransformer):
         """
         Handles function calls, attribute access, and indexing after an atom.
 
-        This method is responsible for detecting object method calls and creating the
-        appropriate AST nodes. It distinguishes between:
-
-        1. Object method calls (obj.method()) -> ObjectFunctionCall
-        2. Regular function calls (func()) -> FunctionCall
-        3. Attribute access (obj.attr) -> AttributeAccess
-        4. Indexing operations (obj[key]) -> SubscriptExpression
+        This method now uses the TrailerProcessor to handle method chaining with
+        improved separation of concerns, error handling, and performance monitoring.
 
         METHOD CHAINING SUPPORT:
         -----------------------
-        This implementation now properly supports method chaining by processing trailers
-        sequentially and building a chain of operations. For example:
+        The TrailerProcessor implements sequential trailer processing to properly
+        support method chaining. For example:
         
         df.groupby(df.index).mean() becomes:
         1. df (base)
-        2. .groupby(df.index) -> ObjectFunctionCall
+        2. .groupby(df.index) -> ObjectFunctionCall  
         3. .mean() -> ObjectFunctionCall on result of step 2
 
         Args:
@@ -592,72 +587,21 @@ class ExpressionTransformer(BaseTransformer):
 
         Returns:
             AST node (ObjectFunctionCall, FunctionCall, AttributeAccess, or SubscriptExpression)
+            
+        Raises:
+            SandboxError: If trailer processing fails or chain is too long
         """
-        from opendxa.dana.sandbox.parser.ast import FunctionCall, ObjectFunctionCall, SubscriptExpression
-
+        from opendxa.dana.sandbox.parser.transformer.trailer_processor import TrailerProcessor
+        
+        # Initialize trailer processor if not already done
+        if not hasattr(self, '_trailer_processor'):
+            self._trailer_processor = TrailerProcessor(self)
+        
         base = items[0]
         trailers = items[1:]
-
-        # Process trailers sequentially to handle method chaining
-        current_base = base
-        i = 0
         
-        while i < len(trailers):
-            trailer = trailers[i]
-            
-            # Case 1: Function call - ( ... ) or empty arguments (None)
-            if (hasattr(trailer, "data") and trailer.data == "arguments") or trailer is None:
-                # Process function arguments
-                if trailer is not None and hasattr(trailer, "children"):
-                    args = self._process_function_arguments(trailer.children)
-                else:
-                    args = {"__positional": []}  # Empty arguments
-
-                # Check if current_base is AttributeAccess (method call pattern)
-                if isinstance(current_base, AttributeAccess):
-                    # This is a method call: obj.method() -> ObjectFunctionCall
-                    object_expr = current_base.object
-                    method_name = current_base.attribute
-                    
-                    current_base = ObjectFunctionCall(
-                        object=object_expr,
-                        method_name=method_name,
-                        args=args,
-                        location=getattr(current_base, "location", None)
-                    )
-                else:
-                    # Regular function call
-                    name = getattr(current_base, "name", None)
-                    if not isinstance(name, str):
-                        name = str(current_base)
-
-                    current_base = FunctionCall(
-                        name=name,
-                        args=args,
-                        location=getattr(current_base, "location", None)
-                    )
-                    
-            # Case 2: Attribute access - .NAME
-            elif hasattr(trailer, "type") and trailer.type == "NAME":
-                # Create AttributeAccess for property access
-                current_base = AttributeAccess(
-                    object=current_base,
-                    attribute=trailer.value, 
-                    location=getattr(current_base, "location", None)
-                )
-                
-            # Case 3: Indexing/Slicing - [ ... ]
-            else:
-                # Indexing or slicing operation
-                current_base = SubscriptExpression(
-                    object=current_base,
-                    index=trailer,
-                    location=getattr(current_base, "location", None)
-                )
-            
-            i += 1
-            
-        return current_base
+        # Use the trailer processor to handle the chain
+        return self._trailer_processor.process_trailers(base, trailers)
 
     def _get_full_attribute_name(self, attr):
         # Recursively extract full dotted name from AttributeAccess chain
