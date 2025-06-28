@@ -36,7 +36,8 @@ UV_CMD = $(shell command -v uv 2>/dev/null || echo ~/.local/bin/uv)
 	docs-build docs-serve docs-check docs-validate docs-deploy \
 	security validate-config release-check \
 	install-cursor install-vscode install-vim uninstall-cursor uninstall-vscode uninstall-vim install-editors uninstall-editors \
-	install-ollama update-ollama uninstall-ollama
+	install-ollama update-ollama uninstall-ollama \
+	install-vllm update-vllm uninstall-vllm
 
 # =============================================================================
 # Help & Information
@@ -73,6 +74,9 @@ help: ## Show this help message with available commands
 	@echo ""
 	@echo "\033[1mOllama Management:\033[0m"
 	@awk 'BEGIN {FS = ":.*?## "} /^(install-ollama|update-ollama|uninstall-ollama).*:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo ""
+	@echo "\033[1mvLLM Management:\033[0m"
+	@awk 'BEGIN {FS = ":.*?## "} /^(install-vllm|update-vllm|uninstall-vllm).*:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "\033[33mTip: New to OpenDXA? Start with 'make quickstart' or 'make onboard'\033[0m"
 	@echo ""
@@ -612,6 +616,132 @@ install-ollama-windows: # Install Ollama on Windows (instructions only)
 	@echo "   Then run OllamaSetup.exe"
 
 update-ollama-windows: install-ollama-windows # Update Ollama on Windows (same as install)
+
+# =============================================================================
+# vLLM Management
+# =============================================================================
+
+install-vllm: ## Install vLLM on current platform
+ifeq ($(DETECTED_OS),Darwin)
+	@$(MAKE) install-vllm-macos
+else ifeq ($(DETECTED_OS),Linux)
+	@$(MAKE) install-vllm-linux
+else ifeq ($(DETECTED_OS),Windows)
+	@$(MAKE) install-vllm-windows
+else
+	@echo "❌ Unsupported platform: $(DETECTED_OS)"
+	@echo "Please visit https://docs.vllm.ai/ for manual installation"
+endif
+
+update-vllm: ## Update vLLM on current platform
+ifeq ($(DETECTED_OS),Darwin)
+	@$(MAKE) update-vllm-macos
+else ifeq ($(DETECTED_OS),Linux)
+	@$(MAKE) update-vllm-linux
+else ifeq ($(DETECTED_OS),Windows)
+	@$(MAKE) update-vllm-windows
+else
+	@echo "❌ Unsupported platform: $(DETECTED_OS)"
+	@echo "Please visit https://docs.vllm.ai/ for manual update"
+endif
+
+uninstall-vllm: ## Uninstall vLLM on current platform
+ifeq ($(DETECTED_OS),Darwin)
+	@$(MAKE) uninstall-vllm-macos
+else ifeq ($(DETECTED_OS),Linux)
+	@$(MAKE) uninstall-vllm-linux
+else ifeq ($(DETECTED_OS),Windows)
+	@$(MAKE) uninstall-vllm-windows
+else
+	@echo "❌ Unsupported platform: $(DETECTED_OS)"
+endif
+
+# Platform-specific vLLM targets
+
+install-vllm-macos: # Install vLLM on macOS using our custom script
+	@echo "🦄 Installing vLLM on macOS..."
+	@if [ -f ./bin/vllm/install.sh ]; then \
+		./bin/vllm/install.sh; \
+		echo "✅ vLLM installed successfully"; \
+	else \
+		echo "❌ vLLM install script not found at ./bin/vllm/install.sh"; \
+		echo "Please ensure the script exists and is executable"; \
+	fi
+
+update-vllm-macos: # Update vLLM on macOS
+	@echo "⬆️  Updating vLLM on macOS..."
+	@if [ -d ~/vllm ]; then \
+		echo "📥 Updating vLLM source repository..."; \
+		cd ~/vllm && git pull origin main; \
+		if [ -d ~/vllm_env ]; then \
+			echo "🔨 Rebuilding vLLM..."; \
+			source ~/vllm_env/bin/activate; \
+			VLLM_TARGET_DEVICE=cpu pip install -e .; \
+			echo "✅ vLLM updated successfully"; \
+		else \
+			echo "❌ vLLM virtual environment not found at ~/vllm_env"; \
+			echo "Please run 'make install-vllm' to install vLLM first"; \
+		fi; \
+	else \
+		echo "❌ vLLM source not found at ~/vllm"; \
+		echo "Please run 'make install-vllm' to install vLLM first"; \
+	fi
+
+uninstall-vllm-macos: # Uninstall vLLM on macOS
+	@echo "🗑️  Uninstalling vLLM on macOS..."
+	@echo "🗂️  Removing vLLM virtual environment..."
+	@rm -rf ~/vllm_env || true
+	@echo "🗂️  Removing vLLM source code..."
+	@rm -rf ~/vllm || true
+	@echo "✅ vLLM uninstalled successfully"
+	@echo "💡 Note: Any custom environments with different names need manual removal"
+
+install-vllm-linux: # Install vLLM on Linux using custom script
+	@echo "🐧 Installing vLLM on Linux..."
+	@if [ -f ./bin/vllm/install.sh ]; then \
+		./bin/vllm/install.sh; \
+		echo "✅ vLLM installed successfully"; \
+	else \
+		echo "❌ vLLM install script not found at ./bin/vllm/install.sh"; \
+		echo "Please ensure the script exists and is executable"; \
+	fi
+
+update-vllm-linux: update-vllm-macos # Update vLLM on Linux (same process as macOS)
+
+uninstall-vllm-linux: uninstall-vllm-macos # Uninstall vLLM on Linux (same process as macOS)
+
+install-vllm-windows: # Install vLLM on Windows using custom script
+	@echo "🪟 Installing vLLM on Windows..."
+	@if [ -f ./bin/vllm/install.bat ]; then \
+		./bin/vllm/install.bat; \
+	else \
+		echo "❌ vLLM install script not found at ./bin/vllm/install.bat"; \
+		echo "Please ensure the script exists"; \
+		echo ""; \
+		echo "📝 Manual installation steps for Windows:"; \
+		echo "   1. Install Python 3.8+ from https://www.python.org/downloads/"; \
+		echo "   2. Install Git from https://git-scm.com/download/win"; \
+		echo "   3. Install Visual Studio Build Tools"; \
+		echo "   4. Run: python -m venv vllm_env"; \
+		echo "   5. Run: vllm_env\\Scripts\\activate"; \
+		echo "   6. Run: git clone https://github.com/vllm-project/vllm.git"; \
+		echo "   7. Run: cd vllm && pip install -e ."; \
+	fi
+
+update-vllm-windows: # Update vLLM on Windows
+	@echo "⬆️  Updating vLLM on Windows..."
+	@echo "📝 Manual update steps for Windows:"
+	@echo "   1. Activate environment: vllm_env\\Scripts\\activate"
+	@echo "   2. Update source: cd vllm && git pull origin main"
+	@echo "   3. Reinstall: pip install -e ."
+	@echo "   4. Test: python -c \"import vllm; print('vLLM updated!')\""
+
+uninstall-vllm-windows: # Uninstall vLLM on Windows
+	@echo "🗑️  Uninstalling vLLM on Windows..."
+	@echo "📝 Manual uninstall steps for Windows:"
+	@echo "   1. Remove virtual environment: rmdir /s vllm_env"
+	@echo "   2. Remove source code: rmdir /s vllm"
+	@echo "   3. That's it! No other system modifications were made"
 
 # =============================================================================
 # Documentation (legacy placeholder kept for compatibility)
