@@ -1,0 +1,375 @@
+# User-Defined Method Chaining Tests
+# ===================================
+# PURPOSE: Test method chaining with user-defined Dana structs and functions
+# AUDIENCE: Developers creating chainable APIs and fluent interfaces in Dana
+# LEARNING: How to create and use custom structs with functions that support method chaining
+# ===================================
+
+log("=== User-Defined Method Chaining Tests ===")
+
+# FLUENT BUILDER PATTERN WITH STRUCTS
+# ===================================
+log("Testing fluent builder pattern with structs...")
+
+# Define a struct for string building
+struct FluentStringBuilder:
+    parts: list
+
+# Functions that operate on FluentStringBuilder and return modified instances
+def create_builder() -> FluentStringBuilder:
+    """Create a new FluentStringBuilder"""
+    return FluentStringBuilder(parts=[])
+
+def add(builder: FluentStringBuilder, text: str) -> FluentStringBuilder:
+    """Add text to the builder"""
+    builder.parts.append(text)
+    return builder
+
+def add_upper(builder: FluentStringBuilder, text: str) -> FluentStringBuilder:
+    """Add uppercased text to the builder"""
+    builder.parts.append(text.upper())
+    return builder
+
+def add_lower(builder: FluentStringBuilder, text: str) -> FluentStringBuilder:
+    """Add lowercased text to the builder"""
+    builder.parts.append(text.lower())
+    return builder
+
+def add_separator(builder: FluentStringBuilder, sep: str = ", ") -> FluentStringBuilder:
+    """Add a separator to the builder"""
+    if len(builder.parts) > 0:  # Only add separator if there are parts
+        builder.parts.append(sep)
+    return builder
+
+def build(builder: FluentStringBuilder) -> str:
+    """Build the final string"""
+    return "".join(builder.parts)
+
+def clear_builder(builder: FluentStringBuilder) -> FluentStringBuilder:
+    """Clear the builder"""
+    builder.parts = []
+    return builder
+
+# Test fluent builder with method chaining syntax
+builder = create_builder()
+result1 = builder.add("Hello").add_separator().add_upper("world").add_separator().add_lower("DANA").build()
+assert result1 == "Hello, WORLD, dana"
+log(f"✅ Fluent builder chaining: {result1}")
+
+# Test builder clearing and reuse
+result2 = builder.clear_builder().add("New").add_separator("-").add("Chain").build()
+assert result2 == "New-Chain"
+log(f"✅ Builder clear and reuse: {result2}")
+
+# MATHEMATICAL OPERATIONS WITH STRUCT CHAINING
+# ============================================
+log("\nTesting mathematical operations with struct chaining...")
+
+# Define a calculator struct
+struct FluentCalculator:
+    value: float
+
+# Calculator functions
+def create_calculator(initial_value: float = 0.0) -> FluentCalculator:
+    """Create a new calculator"""
+    return FluentCalculator(value=initial_value)
+
+def add_calc(calc: FluentCalculator, n: float) -> FluentCalculator:
+    """Add a number to the calculator"""
+    calc.value = calc.value + n
+    return calc
+
+def multiply_calc(calc: FluentCalculator, n: float) -> FluentCalculator:
+    """Multiply the calculator value"""
+    calc.value = calc.value * n
+    return calc
+
+def subtract_calc(calc: FluentCalculator, n: float) -> FluentCalculator:
+    """Subtract from the calculator value"""
+    calc.value = calc.value - n
+    return calc
+
+def divide_calc(calc: FluentCalculator, n: float) -> FluentCalculator:
+    """Divide the calculator value"""
+    if n != 0:
+        calc.value = calc.value / n
+    return calc
+
+def get_result(calc: FluentCalculator) -> float:
+    """Get the calculator result"""
+    return calc.value
+
+def reset_calc(calc: FluentCalculator, new_value: float = 0.0) -> FluentCalculator:
+    """Reset the calculator"""
+    calc.value = new_value
+    return calc
+
+# Test mathematical chaining using struct.method() syntax
+calc = create_calculator(10.0)
+result3 = calc.add_calc(5).multiply_calc(2).subtract_calc(5).get_result()
+assert result3 == 25.0  # (10 + 5) * 2 - 5 = 25
+log(f"✅ Mathematical chaining: 10 + 5 * 2 - 5 = {result3}")
+
+# Test chaining with reset
+result4 = calc.reset_calc(3).add_calc(1).multiply_calc(3).get_result()
+assert result4 == 12.0  # (3 + 1) * 3 = 12
+log(f"✅ Calculator reset and chain: (3 + 1) * 3 = {result4}")
+
+# DATA TRANSFORMATION WITH STRUCT CHAINING
+# ========================================
+log("\nTesting data transformation with struct chaining...")
+
+# Define a data processor struct
+struct FluentDataProcessor:
+    data: list
+
+# Data processing functions
+def create_processor(initial_data: list) -> FluentDataProcessor:
+    """Create a new data processor"""
+    return FluentDataProcessor(data=initial_data[:])  # Make a copy
+
+def filter_even_data(processor: FluentDataProcessor) -> FluentDataProcessor:
+    """Filter to keep only even numbers"""
+    filtered = []
+    for item in processor.data:
+        if item % 2 == 0:
+            filtered.append(item)
+    processor.data = filtered
+    return processor
+
+def filter_odd_data(processor: FluentDataProcessor) -> FluentDataProcessor:
+    """Filter to keep only odd numbers"""
+    filtered = []
+    for item in processor.data:
+        if item % 2 == 1:
+            filtered.append(item)
+    processor.data = filtered
+    return processor
+
+def double_data(processor: FluentDataProcessor) -> FluentDataProcessor:
+    """Double all values"""
+    doubled = []
+    for item in processor.data:
+        doubled.append(item * 2)
+    processor.data = doubled
+    return processor
+
+def add_value_to_data(processor: FluentDataProcessor, value: int) -> FluentDataProcessor:
+    """Add a value to all elements"""
+    result = []
+    for item in processor.data:
+        result.append(item + value)
+    processor.data = result
+    return processor
+
+def take_first_n(processor: FluentDataProcessor, n: int) -> FluentDataProcessor:
+    """Take first n elements"""
+    processor.data = processor.data[:n]
+    return processor
+
+def sort_data(processor: FluentDataProcessor) -> FluentDataProcessor:
+    """Sort the data"""
+    processor.data.sort()
+    return processor
+
+def get_data(processor: FluentDataProcessor) -> list:
+    """Get the processed data"""
+    return processor.data
+
+def get_sum_data(processor: FluentDataProcessor) -> int:
+    """Get the sum of the data"""
+    return sum(processor.data)
+
+# Test data processing chaining
+processor = create_processor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+result5 = processor.filter_even_data().double_data().take_first_n(3).get_data()
+assert result5 == [4, 8, 12]  # Even numbers: [2,4,6,8,10] -> doubled: [4,8,12,16,20] -> first 3: [4,8,12]
+log(f"✅ Data processing chain: [1-10] -> filter even -> double -> take 3 = {result5}")
+
+# Test another data processing chain
+processor2 = create_processor([5, 1, 9, 3, 7])
+result6 = processor2.filter_odd_data().add_value_to_data(10).sort_data().get_sum_data()
+assert result6 == 75  # [5,1,9,3,7] -> all odd -> +10 each: [15,11,19,13,17] -> sorted: [11,13,15,17,19] -> sum = 75
+log(f"✅ Data processing with sum: [5,1,9,3,7] -> odd -> +10 -> sort -> sum = {result6}")
+
+# STRING MANIPULATION WITH STRUCT CHAINING
+# ========================================
+log("\nTesting string manipulation with struct chaining...")
+
+# Define a string processor struct
+struct FluentStringProcessor:
+    text: str
+
+# String processing functions
+def create_string_processor(initial_text: str) -> FluentStringProcessor:
+    """Create a new string processor"""
+    return FluentStringProcessor(text=initial_text)
+
+def upper_text(processor: FluentStringProcessor) -> FluentStringProcessor:
+    """Convert text to uppercase"""
+    processor.text = processor.text.upper()
+    return processor
+
+def lower_text(processor: FluentStringProcessor) -> FluentStringProcessor:
+    """Convert text to lowercase"""
+    processor.text = processor.text.lower()
+    return processor
+
+def replace_text(processor: FluentStringProcessor, old: str, new: str) -> FluentStringProcessor:
+    """Replace text"""
+    processor.text = processor.text.replace(old, new)
+    return processor
+
+def strip_text(processor: FluentStringProcessor) -> FluentStringProcessor:
+    """Strip whitespace"""
+    processor.text = processor.text.strip()
+    return processor
+
+def add_prefix_text(processor: FluentStringProcessor, prefix: str) -> FluentStringProcessor:
+    """Add prefix to text"""
+    processor.text = prefix + processor.text
+    return processor
+
+def add_suffix_text(processor: FluentStringProcessor, suffix: str) -> FluentStringProcessor:
+    """Add suffix to text"""
+    processor.text = processor.text + suffix
+    return processor
+
+def get_text(processor: FluentStringProcessor) -> str:
+    """Get the processed text"""
+    return processor.text
+
+def get_text_length(processor: FluentStringProcessor) -> int:
+    """Get the length of the text"""
+    return len(processor.text)
+
+# Test string processing chaining
+str_proc = create_string_processor("  hello world  ")
+result7 = str_proc.strip_text().upper_text().replace_text(" ", "_").add_prefix_text("GREETING_").add_suffix_text("_END").get_text()
+assert result7 == "GREETING_HELLO_WORLD_END"
+log(f"✅ String processing chain: '  hello world  ' -> {result7}")
+
+# CONFIGURATION BUILDER WITH STRUCT CHAINING
+# ===========================================
+log("\nTesting configuration builder with struct chaining...")
+
+# Define a config struct
+struct FluentConfig:
+    config: dict
+
+# Config functions
+def create_config() -> FluentConfig:
+    """Create a new configuration"""
+    return FluentConfig(config={})
+
+def set_host(config: FluentConfig, host: str) -> FluentConfig:
+    """Set the host"""
+    config.config["host"] = host
+    return config
+
+def set_port(config: FluentConfig, port: int) -> FluentConfig:
+    """Set the port"""
+    config.config["port"] = port
+    return config
+
+def set_timeout(config: FluentConfig, timeout: int) -> FluentConfig:
+    """Set the timeout"""
+    config.config["timeout"] = timeout
+    return config
+
+def enable_ssl(config: FluentConfig) -> FluentConfig:
+    """Enable SSL"""
+    config.config["ssl"] = true
+    return config
+
+def add_header(config: FluentConfig, key: str, value: str) -> FluentConfig:
+    """Add a header"""
+    if "headers" in config.config:
+        config.config["headers"][key] = value
+    else:
+        config.config["headers"] = {key: value}
+    return config
+
+def build_config(config: FluentConfig) -> dict:
+    """Build the final configuration"""
+    return config.config
+
+# Test configuration builder
+config = create_config()
+result8 = config.set_host("api.example.com").set_port(443).enable_ssl().set_timeout(30).add_header("User-Agent", "Dana/1.0").build_config()
+expected_config = {
+    "host": "api.example.com",
+    "port": 443,
+    "ssl": true,
+    "timeout": 30,
+    "headers": {"User-Agent": "Dana/1.0"}
+}
+assert result8 == expected_config
+log(f"✅ Configuration builder chain: {result8}")
+
+# ERROR HANDLING WITH STRUCT CHAINING
+# ===================================
+log("\nTesting error handling with struct chaining...")
+
+# Define a safe calculator struct
+struct SafeFluentCalculator:
+    value: float
+    error: str
+
+# Safe calculator functions
+def create_safe_calculator(initial_value: float = 0.0) -> SafeFluentCalculator:
+    """Create a new safe calculator"""
+    return SafeFluentCalculator(value=initial_value, error="")
+
+def safe_add(calc: SafeFluentCalculator, n: float) -> SafeFluentCalculator:
+    """Safely add a number"""
+    if calc.error == "":
+        calc.value = calc.value + n
+    return calc
+
+def safe_divide(calc: SafeFluentCalculator, n: float) -> SafeFluentCalculator:
+    """Safely divide"""
+    if calc.error == "":
+        if n == 0:
+            calc.error = "Division by zero"
+        else:
+            calc.value = calc.value / n
+    return calc
+
+def safe_multiply(calc: SafeFluentCalculator, n: float) -> SafeFluentCalculator:
+    """Safely multiply"""
+    if calc.error == "":
+        calc.value = calc.value * n
+    return calc
+
+def get_safe_result(calc: SafeFluentCalculator) -> float:
+    """Get the safe result"""
+    if calc.error == "":
+        return calc.value
+    else:
+        return -1.0  # Error indicator
+
+def get_safe_error(calc: SafeFluentCalculator) -> str:
+    """Get the error message"""
+    return calc.error
+
+def is_safe_valid(calc: SafeFluentCalculator) -> bool:
+    """Check if the calculation is valid"""
+    return calc.error == ""
+
+# Test error handling
+safe_calc = create_safe_calculator(10.0)
+result10 = safe_calc.safe_add(5).safe_divide(0).safe_multiply(2).get_safe_result()
+assert result10 == -1.0  # Should be -1.0 due to division by zero
+assert safe_calc.get_safe_error() == "Division by zero"
+log(f"✅ Error handling in chain: division by zero handled gracefully")
+
+# Test successful chain
+safe_calc2 = create_safe_calculator(10.0)
+result11 = safe_calc2.safe_add(5).safe_divide(3).safe_multiply(2).get_safe_result()
+expected_result = (10.0 + 5.0) / 3.0 * 2.0  # = 10.0
+assert abs(result11 - expected_result) < 0.0001
+assert safe_calc2.is_safe_valid() == true
+log(f"✅ Successful safe calculation chain: {result11}")
+
+log("\n=== All User-Defined Method Chaining Tests Passed! ===") 
