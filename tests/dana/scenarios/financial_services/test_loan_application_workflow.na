@@ -352,7 +352,8 @@ def make_loan_decision(application: LoanApplication, risk_assessment: RiskAssess
         ltv = calculate_loan_to_value_ratio(application.requested_amount, application.down_payment, application.property_value)
         if ltv > 85.0:
             # Reduce to 85% LTV
-            max_loan = (application.property_value * 0.85) + application.down_payment
+            # FIXED: max_loan should be 85% of property value, NOT plus down_payment
+            max_loan = application.property_value * 0.85
             approved_amount = min(application.requested_amount, max_loan)
             conditions.append(f"Loan amount reduced to maintain 85% LTV ratio")
         
