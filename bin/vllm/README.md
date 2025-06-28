@@ -32,6 +32,18 @@ Quick installation scripts for **vLLM** (Very Large Language Models) inference e
 bin\vllm\install.bat
 ```
 
+**Interactive mode (recommended):**
+```cmd
+bin\vllm\install.bat
+```
+
+**Direct installation methods:**
+```cmd
+bin\vllm\install.bat --wsl        # WSL installation (recommended)
+bin\vllm\install.bat --native     # Native Windows (experimental)
+bin\vllm\install.bat --pip        # pip installation (limited)
+```
+
 ## 📋 Prerequisites
 
 ### macOS
@@ -52,15 +64,79 @@ brew install python
 # https://www.python.org/downloads/
 ```
 
+### Windows
+**Note**: vLLM does not officially support native Windows. Multiple installation methods available:
+
+#### WSL Installation (Recommended):
+- **Windows 10 version 2004+ or Windows 11** (required)
+- **WSL (Windows Subsystem for Linux)** (auto-installed by script)
+- **Ubuntu in WSL** (auto-configured)
+- **Administrator access** (for WSL installation)
+
+#### Native Windows (Experimental):
+- **Visual Studio 2019+ with C++ build tools** (required)
+- **CUDA Toolkit** (for GPU support)
+- **Python 3.12** (recommended for community fork)
+- **Git for Windows** (required)
+- **Advanced development knowledge** (troubleshooting required)
+
+#### pip Installation (Limited):
+- **Python 3.8+** (required)
+- **Windows 10/11** (required)
+- **No GPU support** (CPU-only)
+- **May fail** (not officially supported)
+
+### Install Prerequisites (Windows)
+
+#### For WSL Installation (Recommended):
+```cmd
+# The install script will handle WSL installation automatically
+# Just run: bin\vllm\install.bat --wsl
+```
+
+#### For Native Windows (Advanced):
+```cmd
+# Install Visual Studio Community with C++ build tools
+# Download from: https://visualstudio.microsoft.com/vs/community/
+
+# Install CUDA Toolkit (for GPU support)  
+# Download from: https://developer.nvidia.com/cuda-downloads
+
+# Install Python 3.12
+# Download from: https://www.python.org/downloads/
+
+# Install Git for Windows
+# Download from: https://git-scm.com/download/win
+```
+
+#### For pip Installation:
+```cmd
+# Install Python 3.8+ with pip
+# Download from: https://www.python.org/downloads/
+# Make sure to check "Add Python to PATH" during installation
+```
+
 ## ✨ What You Get
 
 After installation:
-- ✅ Complete vLLM installation from source
+- ✅ Complete vLLM installation from source (or WSL/community fork on Windows)
 - ✅ Isolated Python virtual environment
-- ✅ CPU-optimized build for macOS
+- ✅ CPU-optimized build (macOS/Linux) or WSL environment (Windows)
 - ✅ All required dependencies
 - ✅ Installation verification
+- ✅ **Convenience start script** (`bin/start_vllm.sh` / `bin/start_vllm.bat`)
 - ✅ Helpful usage instructions
+
+### 🛠️ Convenience Start Script Features
+
+The `bin/start_vllm.sh` script provides:
+- **🚀 One-command startup**: No need to remember activation commands
+- **⚙️ Configurable options**: Model, host, port, environment name
+- **🔍 Environment validation**: Checks vLLM installation and dependencies  
+- **📋 Port conflict detection**: Warns if port is already in use
+- **💡 Helpful error messages**: Clear guidance when things go wrong
+- **📖 Built-in help**: `--help` flag shows all options
+- **🔌 Auto-activation**: Handles environment activation automatically
 
 ## 🔧 Installation Details
 
@@ -87,12 +163,24 @@ The script performs these steps:
 
 ## 🚀 Usage After Installation
 
-### 1. Activate Environment
+### 1. Quick Start (Recommended)
+```bash
+# Start vLLM server with defaults
+./bin/start_vllm.sh
+
+# Start with custom model and port
+./bin/start_vllm.sh --model microsoft/DialoGPT-medium --port 8080
+
+# See all options
+./bin/start_vllm.sh --help
+```
+
+### 2. Manual Activation
 ```bash
 source ~/vllm_env/bin/activate
 ```
 
-### 2. Basic vLLM Usage
+### 3. Basic vLLM Usage
 ```python
 from vllm import LLM, SamplingParams
 
@@ -112,12 +200,46 @@ for output in outputs:
     print(f"Prompt: {prompt!r}, Generated text: {generated_text!r}")
 ```
 
-### 3. Command Line Usage
+### 4. Command Line Usage
+
+**Using the convenience script (recommended):**
+
+**macOS/Linux:**
+```bash
+# Start server with defaults (facebook/opt-125m on localhost:8000)
+./bin/start_vllm.sh
+
+# Start with different model
+./bin/start_vllm.sh --model microsoft/DialoGPT-medium
+
+# Start on different port
+./bin/start_vllm.sh --port 8080
+
+# Combine options
+./bin/start_vllm.sh --model huggingface/CodeBERTa-small-v1 --port 8080 --host 0.0.0.0
+```
+
+**Windows (WSL/Native):**
+```cmd
+# Start server with defaults (facebook/opt-125m on localhost:8000)
+bin\start_vllm.bat
+
+# Start with different model  
+bin\start_vllm.bat --model microsoft/DialoGPT-medium
+
+# Start on different port
+bin\start_vllm.bat --port 8080
+
+# Combine options
+bin\start_vllm.bat --model huggingface/CodeBERTa-small-v1 --port 8080 --host 0.0.0.0
+```
+
+**Manual server startup:**
 ```bash
 # Activate environment first
 source ~/vllm_env/bin/activate
 
-# Run vLLM server
+# Run vLLM server manually
 python -m vllm.entrypoints.openai.api_server \
     --model facebook/opt-125m \
     --host localhost \
@@ -132,10 +254,21 @@ python -m vllm.entrypoints.openai.api_server \
 - **Memory**: May require significant RAM for larger models
 - **Data Types**: Only FP32 and FP16 supported
 
+### Windows Specific
+- **WSL Required**: Recommended installation runs in WSL (Linux subsystem)
+- **Native Build**: Experimental, community-maintained, may not support latest features  
+- **GPU Support**: Available in WSL with proper CUDA setup
+- **Performance**: WSL performance close to native Linux
+
 ### Recommended Alternatives for Apple Silicon
 - **[MLX](https://github.com/ml-explore/mlx)**: Native Apple Silicon GPU support
 - **[llama.cpp](https://github.com/ggerganov/llama.cpp)**: Optimized for Apple Silicon
 - **[Ollama](https://ollama.com/)**: Easy local LLM management
+
+### Recommended Alternatives for Windows
+- **[Ollama](https://ollama.com/)**: Native Windows support with easy management
+- **[llama.cpp](https://github.com/ggerganov/llama.cpp)**: Good Windows compatibility
+- **[Text Generation WebUI](https://github.com/oobabooga/text-generation-webui)**: Windows-friendly interface
 
 ## 🐛 Troubleshooting
 
@@ -162,6 +295,32 @@ python -m vllm.entrypoints.openai.api_server \
 - Ensure virtual environment is activated
 - Check installation logs for errors
 - Try reinstalling in clean environment
+
+### Windows-Specific Issues
+
+**"WSL not found/installation failed"**:
+- Ensure Windows 10 version 2004+ or Windows 11
+- Run PowerShell as Administrator
+- Manually run: `wsl --install`
+- Restart computer after installation
+
+**"vLLM not found in WSL"**:
+- Open WSL terminal: `wsl`
+- Check if environment exists: `ls ~/vllm_env/`
+- Re-run installation if needed
+- Ensure Ubuntu/Linux packages are installed
+
+**"start_vllm.bat fails"**:
+- Ensure WSL is running: `wsl --status`
+- Check vLLM installation in WSL
+- Try manual WSL command execution
+- Verify port is not in use on Windows
+
+**"Native Windows build fails"**:
+- This is expected - use WSL instead
+- If persisting, ensure all Visual Studio components installed
+- Check CUDA toolkit compatibility
+- Review community fork documentation
 
 ### Getting Help
 
