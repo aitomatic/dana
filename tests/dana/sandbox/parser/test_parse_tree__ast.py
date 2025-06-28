@@ -106,7 +106,7 @@ def test_fstring_with_identifier():
     assert isinstance(fexpr, FStringExpression)
     assert fexpr.parts[0] == "Hello, "
     assert isinstance(fexpr.parts[1], Identifier)
-    assert fexpr.parts[1].name == "local:foo"  # Automatic local: prefix
+    assert fexpr.parts[1].name == "foo"  # Same as regular expressions - no automatic prefix
 
 
 def test_fstring_with_binary_expression():
@@ -120,9 +120,9 @@ def test_fstring_with_binary_expression():
     assert isinstance(bexpr, BinaryExpression)
     assert bexpr.operator == BinaryOperator.ADD
     assert isinstance(bexpr.left, Identifier)
-    assert bexpr.left.name == "local:x"  # Automatic local: prefix
+    assert bexpr.left.name == "x"  # Same as regular expressions - no automatic prefix
     assert isinstance(bexpr.right, Identifier)
-    assert bexpr.right.name == "local:y"  # Automatic local: prefix
+    assert bexpr.right.name == "y"  # Same as regular expressions - no automatic prefix
 
 
 def test_fstring_unbalanced_braces():
@@ -177,7 +177,7 @@ def test_fstring_starts_with_expression():
     fexpr = result.value
     assert isinstance(fexpr, FStringExpression)
     assert isinstance(fexpr.parts[0], Identifier)
-    assert fexpr.parts[0].name == "local:a"  # Automatic local: prefix
+    assert fexpr.parts[0].name == "a"  # Same as regular expressions - no automatic prefix
 
     # Test with expression followed by text
     token2 = make_token("F_STRING", 'f"{a} text"')
@@ -185,7 +185,7 @@ def test_fstring_starts_with_expression():
     fexpr2 = result2.value
     assert isinstance(fexpr2, FStringExpression)
     assert isinstance(fexpr2.parts[0], Identifier)
-    assert fexpr2.parts[0].name == "local:a"  # Automatic local: prefix
+    assert fexpr2.parts[0].name == "a"  # Same as regular expressions - no automatic prefix
     assert fexpr2.parts[1] == " text"
 
 

@@ -1,0 +1,83 @@
+# Test file for current semantic coercion issues in Dana
+# This file demonstrates specific problems that need to be fixed
+
+log("=== SEMANTIC COERCION CURRENT ISSUES ===")
+
+# Test 1: Zero representation inconsistencies (MAJOR ISSUE)
+log("Test 1: Zero Representation Inconsistencies")
+log("ISSUE: All string representations of zero return True instead of False")
+
+zero_string: bool = bool("0")
+log(f"bool('0'): {zero_string}")  # ACTUAL: True, EXPECTED: False
+
+zero_decimal: bool = bool("0.0")
+log(f"bool('0.0'): {zero_decimal}")  # ACTUAL: True, EXPECTED: False
+
+false_string: bool = bool("false")
+log(f"bool('false'): {false_string}")  # ACTUAL: True, EXPECTED: False
+
+log("ISSUE: Dana treats non-empty strings as True, ignoring semantic meaning")
+log("---")
+
+# Test 2: Semantic equivalence failures (MAJOR ISSUE)
+log("Test 2: Semantic Equivalence Issues")
+log("ISSUE: Semantically equivalent values don't compare as equal")
+
+zero_eq_false: bool = ("0" == False)
+log(f"'0' == False: {zero_eq_false}")  # ACTUAL: False, EXPECTED: True
+
+one_eq_true: bool = ("1" == True)
+log(f"'1' == True: {one_eq_true}")  # ACTUAL: False, EXPECTED: True
+
+false_eq_false: bool = ("false" == False)
+log(f"'false' == False: {false_eq_false}")  # ACTUAL: False, EXPECTED: True
+
+log("ISSUE: Dana doesn't recognize semantic equivalence between types")
+log("---")
+
+# Test 3: Conversational pattern recognition missing
+log("Test 3: Missing Semantic Pattern Recognition")
+log("ISSUE: Conversational responses not semantically understood")
+
+yes_please: bool = bool("yes please")
+log(f"bool('yes please'): {yes_please}")  # ACTUAL: True (correct, but wrong reason)
+
+no_way: bool = bool("no way")
+log(f"bool('no way'): {no_way}")  # ACTUAL: True (wrong), EXPECTED: False
+
+nope: bool = bool("nope")
+log(f"bool('nope'): {nope}")  # ACTUAL: True (wrong), EXPECTED: False
+
+log("ISSUE: Dana doesn't understand conversational boolean patterns")
+log("---")
+
+# Test 4: What currently works
+log("Test 4: What Currently Works")
+
+# String to numeric with explicit functions
+num_string: int = int("5")
+log(f"int('5'): {num_string}")  # Works
+
+float_string: float = float("3.14")
+log(f"float('3.14'): {float_string}")  # Works
+
+# Boolean function with strings
+empty_string: bool = bool("")
+log(f"bool(''): {empty_string}")  # Works (False)
+
+true_string: bool = bool("anything")
+log(f"bool('anything'): {true_string}")  # Works (True for non-empty)
+
+log("CONCLUSION: Explicit coercion functions work, but lack semantic understanding")
+log("---")
+
+log("=== SUMMARY OF ISSUES ===")
+log("1. Zero strings ('0', 'false') treated as True instead of False")
+log("2. No semantic equivalence ('0' == False should be True)")
+log("3. No conversational pattern recognition ('nope' should be False)")
+log("4. Type hint assignments fail instead of enabling coercion")
+log("5. Missing semantic understanding in type coercion system")
+
+log("=== END CURRENT ISSUES TEST ===")
+
+ 

@@ -1,10 +1,11 @@
-from opendxa.contrib.rag_resource.common.cache.base_cache import AbstractCache
-from opendxa.common.utils.misc import Misc
-import os
-import hashlib
-import pickle
 import json
+import os
+import pickle
 from typing import override
+
+from opendxa.common.utils.misc import Misc
+from opendxa.contrib.rag_resource.common.cache.base_cache import AbstractCache
+
 
 class AbstractFileCache(AbstractCache):
     def __init__(self, cache_folder: str):
@@ -55,7 +56,7 @@ class JsonFileCache(AbstractFileCache):
         try:
             cache_file_path = self._get_cache_file_path(key)
             if os.path.exists(cache_file_path):
-                with open(cache_file_path, "r") as file:
+                with open(cache_file_path) as file:
                     return json.load(file)
         except Exception as e:
             self.logger.error(f"Error getting cache for key {key}: {e}")

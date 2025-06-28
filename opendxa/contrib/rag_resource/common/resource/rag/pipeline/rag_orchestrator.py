@@ -1,24 +1,23 @@
-
-from opendxa.contrib.rag_resource.common.resource.rag.pipeline.document_loader import DocumentLoader
-from opendxa.contrib.rag_resource.common.resource.rag.pipeline.document_chunker import DocumentChunker
-from opendxa.contrib.rag_resource.common.resource.rag.pipeline.index_builder import IndexBuilder
-from opendxa.contrib.rag_resource.common.resource.rag.pipeline.index_builder import IndexCombiner
-from opendxa.contrib.rag_resource.common.resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager
-from opendxa.contrib.rag_resource.common.resource.rag.pipeline.retriever import Retriever
+from llama_index.core import Document, VectorStoreIndex
 from llama_index.core.schema import NodeWithScore
-from llama_index.core import VectorStoreIndex, Document
-from typing import Optional, List, Dict
-from opendxa.common.utils.misc import Misc
-from typing import Type
+
 from opendxa.common.mixins.loggable import Loggable
+from opendxa.common.utils.misc import Misc
+from opendxa.contrib.rag_resource.common.resource.rag.pipeline.document_chunker import DocumentChunker
+from opendxa.contrib.rag_resource.common.resource.rag.pipeline.document_loader import DocumentLoader
+from opendxa.contrib.rag_resource.common.resource.rag.pipeline.index_builder import IndexBuilder
+from opendxa.contrib.rag_resource.common.resource.rag.pipeline.index_combiner import IndexCombiner
+from opendxa.contrib.rag_resource.common.resource.rag.pipeline.retriever import Retriever
+from opendxa.contrib.rag_resource.common.resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager
+
 
 class RAGOrchestrator(Loggable):
-    def __init__(self, loader: Optional[DocumentLoader] = None, 
-                 chunker: Optional[DocumentChunker] = None, 
-                 index_builder: Optional[IndexBuilder] = None, 
-                 index_combiner: Optional[IndexCombiner] = None, 
-                 cache_manager: Optional[UnifiedCacheManager] = None,
-                 retriever_cls: Type[Retriever] = Retriever):
+    def __init__(self, loader: DocumentLoader | None = None, 
+                 chunker: DocumentChunker | None = None, 
+                 index_builder: IndexBuilder | None = None, 
+                 index_combiner: IndexCombiner | None = None, 
+                 cache_manager: UnifiedCacheManager | None = None,
+                 retriever_cls: type[Retriever] = Retriever):
         super().__init__()
         self.loader = loader if loader else DocumentLoader()
         self.chunker = chunker if chunker else DocumentChunker()
@@ -28,7 +27,11 @@ class RAGOrchestrator(Loggable):
         self._retriever_cls = retriever_cls
         self._retriever = None
 
-    async def _async_preprocess(self, sources: List[str], force_reload: bool = False):
+    def resolve_sources(self, sources: list[str]) -> list[str]:
+        """Resolve sources to absolute paths."""
+        return [self.loader.resolve_single_source(source) for source in sources]
+
+    async def _async_preprocess(self, sources: list[str], force_reload: bool = False):
         """Preprocess sources with comprehensive caching strategy.
         
         This method implements a cache-first approach that:
@@ -37,6 +40,7 @@ class RAGOrchestrator(Loggable):
         3. Only processes missing components
         4. Caches newly created components
         """
+        sources = self.resolve_sources(sources)
         self.debug(f"Preprocessing {len(sources)} sources: {sources}")
         
         # Skip all cache checks if force_reload is True
@@ -58,8 +62,8 @@ class RAGOrchestrator(Loggable):
             cached_indices_by_source = {source: None for source in sources}
         
         # Filter out None values and convert to proper types
-        docs_by_source: Dict[str, List[Document]] = {}
-        indices_by_source: Dict[str, VectorStoreIndex] = {}
+        docs_by_source: dict[str, list[Document]] = {}
+        indices_by_source: dict[str, VectorStoreIndex] = {}
         
         # Initialize what needs to be loaded/processed
         sources_needing_docs = list(sources)  # Start with all sources
@@ -133,7 +137,7 @@ class RAGOrchestrator(Loggable):
         self._retriever = self._retriever_cls.from_index(combined_index)
         self.debug("Preprocessing completed successfully")
 
-    def _preprocess(self, sources: List[str], force_reload: bool = False):
+    def _preprocess(self, sources: list[str], force_reload: bool = False):
         """Preprocess sources with optional cache bypass.
         
         Args:
@@ -145,7 +149,7 @@ class RAGOrchestrator(Loggable):
         
         Misc.safe_asyncio_run(self._async_preprocess, sources, force_reload)
         
-    async def retrieve(self, query: str, num_results: int = 10) -> List[NodeWithScore]:
+    async def retrieve(self, query: str, num_results: int = 10) -> list[NodeWithScore]:
         """Retrieve relevant documents for the given query.
         
         Args:

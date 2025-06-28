@@ -1,0 +1,319 @@
+# Test: Nested Conditionals with Structs
+# =====================================
+# PURPOSE: Test complex conditional logic combined with struct operations
+# SCOPE: Multi-level if/else statements with struct field access and validation
+# REAL-WORLD: User permission systems, data validation workflows
+
+log("🧪 Testing Nested Conditionals with Structs")
+
+# Define complex data structures
+struct User:
+    id: str
+    name: str
+    email: str
+    role: str
+    active: bool
+    permissions: list
+    profile: dict
+
+struct AccessRequest:
+    user_id: str
+    resource: str
+    action: str
+    timestamp: str
+    context: dict
+
+struct AccessResult:
+    granted: bool
+    reason: str
+    level: str
+    expires: str
+
+# Create test data
+test_user = User(
+    id="user123",
+    name="John Doe",
+    email="john@company.com",
+    role="manager",
+    active=true,
+    permissions=["read", "write", "admin"],
+    profile={"department": "engineering", "clearance": "high"}
+)
+
+test_request = AccessRequest(
+    user_id="user123",
+    resource="sensitive_data",
+    action="read",
+    timestamp="2024-01-15T10:30:00Z",
+    context={"ip": "192.168.1.100", "location": "office"}
+)
+
+# Complex nested conditional function
+def evaluate_access_request(user: User, request: AccessRequest) -> AccessResult:
+    """
+    Complex access control logic with nested conditionals and struct access.
+    Tests multiple levels of conditional logic with struct field validation.
+    """
+    
+    # Level 1: Basic user validation
+    if not user.active:
+        return AccessResult(
+            granted=false,
+            reason="User account is inactive",
+            level="denied",
+            expires="never"
+        )
+    
+    # Level 2: Role-based access control
+    if user.role == "admin":
+        # Admins get access but with different logic
+        if request.action in ["read", "write", "delete"]:
+            if user.profile["clearance"] == "high":
+                return AccessResult(
+                    granted=true,
+                    reason="Admin with high clearance",
+                    level="full",
+                    expires="24h"
+                )
+            else:
+                return AccessResult(
+                    granted=true,
+                    reason="Admin with standard clearance",
+                    level="limited",
+                    expires="8h"
+                )
+        else:
+            return AccessResult(
+                granted=false,
+                reason="Unknown action for admin",
+                level="denied",
+                expires="never"
+            )
+    
+    elif user.role == "manager":
+        # Managers have conditional access
+        if request.resource == "sensitive_data":
+            if "admin" in user.permissions:
+                if request.context["location"] == "office":
+                    return AccessResult(
+                        granted=true,
+                        reason="Manager with admin permissions from office",
+                        level="full",
+                        expires="12h"
+                    )
+                else:
+                    return AccessResult(
+                        granted=true,
+                        reason="Manager with admin permissions remote",
+                        level="limited",
+                        expires="4h"
+                    )
+            elif "write" in user.permissions:
+                if user.profile["department"] == "engineering":
+                    return AccessResult(
+                        granted=true,
+                        reason="Engineering manager with write access",
+                        level="department",
+                        expires="8h"
+                    )
+                else:
+                    return AccessResult(
+                        granted=false,
+                        reason="Non-engineering manager insufficient permissions",
+                        level="denied",
+                        expires="never"
+                    )
+            else:
+                return AccessResult(
+                    granted=false,
+                    reason="Manager without required permissions",
+                    level="denied",
+                    expires="never"
+                )
+        else:
+            # Different resource, different logic
+            if "read" in user.permissions:
+                return AccessResult(
+                    granted=true,
+                    reason="Manager read access to standard resource",
+                    level="read_only",
+                    expires="24h"
+                )
+            else:
+                return AccessResult(
+                    granted=false,
+                    reason="Manager without read permissions",
+                    level="denied",
+                    expires="never"
+                )
+    
+    elif user.role == "employee":
+        # Employees have most restricted access
+        if request.resource == "sensitive_data":
+            return AccessResult(
+                granted=false,
+                reason="Employees cannot access sensitive data",
+                level="denied",
+                expires="never"
+            )
+        else:
+            if "read" in user.permissions:
+                if request.context["location"] == "office":
+                    return AccessResult(
+                        granted=true,
+                        reason="Employee read access from office",
+                        level="read_only",
+                        expires="8h"
+                    )
+                else:
+                    return AccessResult(
+                        granted=false,
+                        reason="Employee remote access denied",
+                        level="denied",
+                        expires="never"
+                    )
+            else:
+                return AccessResult(
+                    granted=false,
+                    reason="Employee without read permissions",
+                    level="denied",
+                    expires="never"
+                )
+    
+    else:
+        # Unknown role
+        return AccessResult(
+            granted=false,
+            reason=f"Unknown user role: {user.role}",
+            level="denied",
+            expires="never"
+        )
+
+# Test the complex nested logic
+log("\n--- Testing Complex Access Control Logic ---")
+
+# Test 1: Manager with admin permissions from office
+result1 = evaluate_access_request(test_user, test_request)
+log(f"Manager access result: {result1.granted} - {result1.reason}")
+assert result1.granted == true
+assert result1.level == "full"
+assert result1.expires == "12h"
+
+# Test 2: Modify user to employee role
+test_user.role = "employee"
+result2 = evaluate_access_request(test_user, test_request)
+log(f"Employee access result: {result2.granted} - {result2.reason}")
+assert result2.granted == false
+assert result2.level == "denied"
+
+# Test 3: Employee accessing non-sensitive data from office
+test_request.resource = "public_data"
+result3 = evaluate_access_request(test_user, test_request)
+log(f"Employee public access: {result3.granted} - {result3.reason}")
+assert result3.granted == true
+assert result3.level == "read_only"
+
+# Test 4: Employee remote access (should be denied)
+test_request.context["location"] = "remote"
+result4 = evaluate_access_request(test_user, test_request)
+log(f"Employee remote access: {result4.granted} - {result4.reason}")
+assert result4.granted == false
+
+# Test 5: Inactive user
+test_user.active = false
+result5 = evaluate_access_request(test_user, test_request)
+log(f"Inactive user access: {result5.granted} - {result5.reason}")
+assert result5.granted == false
+assert result5.reason == "User account is inactive"
+
+# Test 6: Admin user with high clearance
+admin_user = User(
+    id="admin456",
+    name="Admin User",
+    email="admin@company.com",
+    role="admin",
+    active=true,
+    permissions=["read", "write", "delete", "admin"],
+    profile={"department": "security", "clearance": "high"}
+)
+
+admin_request = AccessRequest(
+    user_id="admin456",
+    resource="top_secret",
+    action="delete",
+    timestamp="2024-01-15T11:00:00Z",
+    context={"ip": "192.168.1.1", "location": "secure_room"}
+)
+
+result6 = evaluate_access_request(admin_user, admin_request)
+log(f"Admin delete access: {result6.granted} - {result6.reason}")
+assert result6.granted == true
+assert result6.level == "full"
+assert result6.expires == "24h"
+
+log("✅ All nested conditional with struct tests passed!")
+
+# Test struct field access in nested conditions
+log("\n--- Testing Complex Struct Field Access ---")
+
+def analyze_user_profile(user: User) -> dict:
+    """Test complex struct field access patterns"""
+    recommendations = []
+    
+    # Nested field access with conditionals
+    risk_level = "unknown"
+    access_tier = "none"
+    
+    if user.active:
+        if user.profile["clearance"] == "high":
+            if "admin" in user.permissions:
+                risk_level = "low"
+                access_tier = "tier1"
+                recommendations.append("Full system access")
+            elif len(user.permissions) >= 3:
+                risk_level = "medium"
+                access_tier = "tier2"
+                recommendations.append("Department access")
+            else:
+                risk_level = "high"
+                access_tier = "tier3"
+                recommendations.append("Limited access only")
+        else:
+            if user.role == "admin":
+                risk_level = "medium"
+                access_tier = "tier2"
+                recommendations.append("Upgrade clearance level")
+            else:
+                risk_level = "high"
+                access_tier = "tier3"
+                recommendations.append("Standard user access")
+    else:
+        risk_level = "critical"
+        access_tier = "none"
+        recommendations.append("Account reactivation required")
+    
+    analysis = {
+        "risk_level": risk_level,
+        "access_tier": access_tier,
+        "recommendations": recommendations
+    }
+    
+    return analysis
+
+# Test complex field access
+profile_analysis = analyze_user_profile(admin_user)
+log(f"Admin profile analysis: {profile_analysis}")
+assert profile_analysis["risk_level"] == "low"
+assert profile_analysis["access_tier"] == "tier1"
+
+# Test with modified user
+test_user.active = true
+test_user.role = "manager"
+test_user.profile["clearance"] = "standard"
+profile_analysis2 = analyze_user_profile(test_user)
+log(f"Manager profile analysis: {profile_analysis2}")
+# Manager with standard clearance should get "high" risk, "tier3" access
+assert profile_analysis2["risk_level"] == "high"
+assert profile_analysis2["access_tier"] == "tier3"
+
+log("🎉 Nested Conditionals with Structs test completed successfully!") 

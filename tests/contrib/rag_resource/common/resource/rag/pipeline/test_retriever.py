@@ -2,10 +2,12 @@
 Simple tests for Retriever class.
 """
 
-import pytest
 from unittest.mock import Mock
+
+import pytest
 from llama_index.core import VectorStoreIndex
 from llama_index.core.schema import NodeWithScore
+
 from opendxa.contrib.rag_resource.common.resource.rag.pipeline.retriever import Retriever
 
 

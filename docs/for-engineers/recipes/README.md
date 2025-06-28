@@ -1,6 +1,6 @@
-# Dana Recipes - Practical Patterns and Examples
+# Dana Recipes - Agent-Native Convergence Patterns
 
-*Real-world solutions for common development tasks using Dana and OpenDXA*
+*Real-world solutions demonstrating the convergence of AI development assistance with autonomous execution using Dana's agent-native architecture and OpenDXA*
 
 ---
 
@@ -8,9 +8,9 @@
 
 ### 🚀 Getting Started
 - [First Agent](first-agent.md) - Build your first working agent in 10 minutes
-- [Dana Language Basics](../reference/dana-syntax.md) - Essential syntax reference
+- [Dana Language Basics](../reference/dana-syntax.md) - Essential agent-native syntax reference
 
-### 🏗️ Application Patterns
+### 🏗️ Convergence Application Patterns
 - [Chatbot Development](chatbot/README.md) - Customer service, FAQ, conversational AI
 - [Document Processor](document-processor/README.md) - Extract, analyze, transform content
 - [Workflow Agent](workflow-agent/README.md) - Multi-step automated processes
@@ -19,7 +19,7 @@
 ### 🤖 Multi-Agent Systems
 - [**Multi-Agent Collaboration**](multi-agent-collaboration/README.md) - **A2A and module agents working together**
 
-### 📚 Advanced Patterns
+### 📚 Advanced Agent-Native Convergence Patterns
 - [**Structs Cookbook**](structs-cookbook.md) - **Real-world struct patterns and examples**
 - [MCP Integration](mcp-integration.md) - Model Context Protocol connections
 
@@ -27,8 +27,26 @@
 
 ## Recipe Categories
 
+### Agent-Native Programming Patterns
+Write agents as first-class primitives with context-aware intelligence:
+
+```dana
+# Traditional approach: Static classes
+class CustomerAnalyzer:
+    def assess_risk(self, customer):
+        return static_analysis(customer)
+
+# Convergence approach: Adaptive agent with context-aware execution
+agent CustomerAnalyzer:
+    def assess_risk(self, customer):
+        # Context-aware execution - same reasoning, different output types
+        risk_score: float = reason("assess customer risk", context=customer)
+        risk_details: dict = reason("assess customer risk", context=customer)
+        return risk_score, risk_details  # Function learns via POET
+```
+
 ### Data Modeling & Business Logic
-Use Dana's struct system to model your domain clearly and add AI-powered behavior:
+Use Dana's agent-native struct system to model your domain clearly and add AI-powered behavior:
 
 ```dana
 struct Customer:
@@ -47,8 +65,33 @@ engagement = customer.analyze_engagement()
 
 **See**: [Structs Cookbook](structs-cookbook.md) for complete business domain examples
 
+### Self-Improving Pipeline Patterns
+Compositional operations that optimize themselves through POET:
+
+```dana
+# Traditional pipeline: Manual orchestration
+def process_data(data):
+    step1_result = analyze(data)
+    step2_result = filter(step1_result) 
+    step3_result = transform(step2_result)
+    return step3_result
+
+# Convergence pipeline: Self-improving composition
+data | analyze | filter | transform  # Each stage learns and optimizes via POET
+```
+
+### Context-Aware Execution Patterns
+Intelligence that adapts output types based on usage context:
+
+```dana
+# Same reasoning adapts to what you need
+customer_insights: dict = reason("analyze customer behavior", context=customer_data)
+customer_score: float = reason("analyze customer behavior", context=customer_data)
+customer_report: str = reason("analyze customer behavior", context=customer_data)
+```
+
 ### AI Integration Patterns
-Seamlessly integrate AI reasoning into your application logic:
+Seamlessly integrate AI reasoning into your application logic using agent-native features:
 
 ```dana
 # Document analysis

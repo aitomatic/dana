@@ -85,13 +85,15 @@ class LLMConfigurationManager:
             return True
 
         try:
-            # Get available models list and required API keys
-            available_models = self._get_available_models_list()
+            # For model validation, we only check required API keys, not whether 
+            # the model is in the preferred_models list. The preferred_models list
+            # is used for selection priority, not validation restrictions.
             required_env_vars = self._get_required_env_vars_for_model(model_name)
 
             # Use ValidationUtilities for the actual validation
+            # Pass None for available_models to skip that check
             return ValidationUtilities.validate_model_availability(
-                model_name=model_name, available_models=available_models, required_env_vars=required_env_vars, context="LLM configuration"
+                model_name=model_name, available_models=None, required_env_vars=required_env_vars, context="LLM configuration"
             )
 
         except Exception:
@@ -106,7 +108,15 @@ class LLMConfigurationManager:
         """
         try:
             config = self.config_loader.get_default_config()
-            preferred_models = config.get("llm", {}).get("preferred_models", [])
+            
+            # Handle both new structure (llm.preferred_models) and legacy structure (root preferred_models)
+            # This matches the logic in LLMResource for consistency
+            if "llm" in config and "preferred_models" in config["llm"]:
+                preferred_models = config["llm"]["preferred_models"]
+            elif "preferred_models" in config:
+                preferred_models = config["preferred_models"]
+            else:
+                preferred_models = []
 
             # Extract model names from both string and dict formats
             model_names = []
@@ -127,7 +137,15 @@ class LLMConfigurationManager:
         try:
             # First try to find model in preferred_models config for required_api_keys
             config = self.config_loader.get_default_config()
-            preferred_models = config.get("llm", {}).get("preferred_models", [])
+            
+            # Handle both new structure (llm.preferred_models) and legacy structure (root preferred_models)
+            # This matches the logic in LLMResource for consistency
+            if "llm" in config and "preferred_models" in config["llm"]:
+                preferred_models = config["llm"]["preferred_models"]
+            elif "preferred_models" in config:
+                preferred_models = config["preferred_models"]
+            else:
+                preferred_models = []
 
             # Check if preferred_models has the model with required_api_keys
             for model_config in preferred_models:
@@ -145,8 +163,11 @@ class LLMConfigurationManager:
                 "cohere": ["COHERE_API_KEY"],
                 "mistral": ["MISTRAL_API_KEY"],
                 "groq": ["GROQ_API_KEY"],
+                "deepseek": ["DEEPSEEK_API_KEY"],  # Add deepseek support
             }
 
+            # Return required keys for known providers, empty list for unknown providers
+            # This maintains original behavior where unknown providers pass validation
             return required_keys_map.get(provider, [])
 
         except Exception:
@@ -156,15 +177,21 @@ class LLMConfigurationManager:
         """Find the first available model from preferred list."""
         try:
             config = self.config_loader.get_default_config()
-            preferred_models = config.get("llm", {}).get(
-                "preferred_models",
-                [
+            
+            # Handle both new structure (llm.preferred_models) and legacy structure (root preferred_models)
+            # This matches the logic in LLMResource for consistency
+            if "llm" in config and "preferred_models" in config["llm"]:
+                preferred_models = config["llm"]["preferred_models"]
+            elif "preferred_models" in config:
+                preferred_models = config["preferred_models"]
+            else:
+                # Only use hardcoded fallback if no config found at all
+                preferred_models = [
                     "openai:gpt-4o",
                     "openai:gpt-4o-mini",
                     "anthropic:claude-3-5-sonnet-20241022",
                     "google:gemini-1.5-pro",
-                ],
-            )
+                ]
 
             for model in preferred_models:
                 # Handle both string format and dict format

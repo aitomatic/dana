@@ -90,7 +90,6 @@ def print_mcp_server_banner(host, port, agent_name):
     CYAN = '96'
     YELLOW = '93'
     BOLD = '1'
-    RESET = '0'
     # Banner
     print()
     print(color_text("🚀  ", YELLOW) + color_text("DANA MCP Server", f'{BOLD};{GREEN}'))

@@ -25,12 +25,12 @@ def test_underscore_variables_in_fstring_parsing():
     # This was the bug - question_2 was treated as literal instead of identifier
     result = transformer._parse_expression_term("question_2")
     assert isinstance(result, Identifier)
-    assert result.name == "local:question_2"
+    assert result.name == "question_2"  # Same as regular expressions - no automatic prefix
 
     # Test a few more underscore cases
     result = transformer._parse_expression_term("_private")
     assert isinstance(result, Identifier)
-    assert result.name == "local:_private"
+    assert result.name == "_private"  # Same as regular expressions - no automatic prefix
 
 
 def test_underscore_variables_in_fstring_execution():

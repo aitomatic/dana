@@ -277,7 +277,7 @@ config = reason("Set timeout to 30 seconds, retries to 3, debug mode on") -> dic
 ## Integration Patterns (Dana-centric View)
 
 This section focuses on how Dana engineers interact with POV-enabled functions and contribute to the POV lifecycle, primarily through Dana code.
-For details on the POV architecture itself, see the [POV Execution Model documentation](../../design/02_dana_runtime_and_execution/poet_functions.md).
+For details on the POV architecture itself, see the [POV Execution Model documentation](../../reference/02_dana_runtime_and_execution/poet_functions.md).
 
 ### 1. Using POET-enabled Functions (e.g., `reason()`)
 
@@ -331,7 +331,7 @@ local:final_result = process_complex_text("Some initial text.")
 
 Dana functions used in `Perceive` and `Encode` stages (and potentially `Operate` if structured to receive it) can access the `poet_status` dictionary. This allows for adaptive logic based on retry attempts, last failure reasons, perceived input, and the expected output type.
 
-See the `pov_status` structure in the [POV Execution Model documentation](../../design/02_dana_runtime_and_execution/poet_functions.md#pov_status-in-dana).
+See the `pov_status` structure in the [POV Execution Model documentation](../../reference/02_dana_runtime_and_execution/poet_functions.md#pov_status-in-dana).
 
 ## 🎨 Best Practices for Dana Engineers with POET
 

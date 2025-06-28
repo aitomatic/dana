@@ -17,11 +17,16 @@ Claude AI Configuration and Guidelines
 ```bash
 # Core development workflow
 uv run ruff check . && uv run ruff format .    # Lint and format
-uv run pytest tests/ -v                        # Run tests with verbose output
-uv run python -m opendxa.dana.exec.repl        # Dana REPL for testing
+uv run pytest tests/ -v                        # Run tests with verbose output (includes .na files)
 
-# Dana execution testing
-uv run python -m opendxa.dana.exec.dana examples/dana/na/basic_math_pipeline.na
+# Dana execution - PREFER .na files for Dana functionality testing
+dana examples/dana/na/basic_math_pipeline.na                              # Direct dana command (recommended)
+dana --debug examples/dana/na/basic_math_pipeline.na                      # With debug output
+uv run python -m opendxa.dana.exec.dana examples/dana/na/basic_math_pipeline.na  # Alternative
+
+# Interactive development
+dana                                            # Start Dana REPL (recommended)
+uv run python -m opendxa.dana.exec.repl       # Alternative REPL entry point
 
 # Alternative test execution
 uv run python -m pytest tests/
@@ -50,10 +55,12 @@ Dana is a Domain-Aware NeuroSymbolic Architecture language for AI-driven automat
 
 Quick Dana reminders:
 - **Dana modules**: `import math_utils` (no .na), **Python modules**: `import math.py`
-- **Use `log()` instead of `print()`** for debugging Dana code
+- **Use `log()` for examples/testing output** (preferred for color coding and debugging)
+- **For Dana INFO logging to show**: Use `log_level("INFO", "dana")` (default is WARNING level)
 - **Always use f-strings**: `f"Value: {var}"` not `"Value: " + str(var)`
 - **Type hints required**: `def func(x: int) -> str:` (mandatory)
 - **Named arguments for structs**: `Point(x=5, y=10)` not `Point(5, 10)`
+- **Prefer `.na` (Dana) test files over `.py`** for Dana-specific functionality
 
 ## 3D Methodology (Design-Driven Development)
 
@@ -209,12 +216,15 @@ Requirements:
 ## Context-Aware Development Guide
 
 ### When Working on Dana Code
-- Always test with `.na` files in `examples/dana/na/`
-- Use DanaSandbox for execution testing
+- **🎯 ALWAYS create `.na` test files** for Dana functionality (not `.py` files)
+- **🎯 Use `dana filename.na`** as the primary execution method
+- Test with existing `.na` files in `examples/dana/na/`
+- Use DanaSandbox for execution testing in Python when needed
 - Validate against grammar in `opendxa/dana/sandbox/parser/dana_grammar.lark`
-- Use `log()` function instead of `print()` for debugging
-- Test Dana code in REPL: `uv run python -m opendxa.dana.exec.repl`
+- **Use `log()` for examples/testing output** (preferred for color coding)
+- Test Dana code in REPL: `dana` or `uv run python -m opendxa.dana.exec.repl`
 - Check AST output: Enable debug logging in transformer
+- Run through pytest: Copy `test_dana_files.py` to test directory
 
 ### When Working on Agent Framework
 - Test with agent examples in `examples/02_core_concepts/`
@@ -239,18 +249,69 @@ Requirements:
 - Use IO utilities from `opendxa.common.io`
 
 ## Testing & Security Essentials
-- Write unit tests for all new code (pytest)
+- **Prefer `.na` (Dana) test files** over `.py` for Dana-specific functionality
+- Write unit tests for all new code (pytest automatically discovers `test_*.na` files)
 - Test coverage above 80%
 - **Never commit API keys or secrets**
 - Use environment variables for configuration
 - Validate all inputs
 
+## Dana Test File Guidelines
+- **Create `test_*.na` files** for Dana functionality testing
+- Use `log()` statements for test output and debugging (provides color coding)
+- pytest automatically discovers and runs `.na` test files
+- Run `.na` files directly: `dana test_example.na` or `uv run python -m opendxa.dana.exec.dana test_example.na`
+
+## Dana Execution Quick Guide
+**Always prefer `.na` test files for Dana functionality testing**
+
+### 📁 **Create `.na` Test Files**
+```dana
+# test_my_feature.na
+log("🧪 Testing My Feature")
+
+# Test basic functionality
+result = my_function(5)
+assert result == 10
+log("✅ Basic test passed")
+
+log("🎉 All tests passed!")
+```
+
+### 🏃 **Multiple Ways to Run `.na` Files**
+```bash
+# 1. Direct dana command (recommended)
+dana test_my_feature.na
+
+# 2. With debug output
+dana --debug test_my_feature.na
+
+# 3. Via Python module
+uv run python -m opendxa.dana.exec.dana test_my_feature.na
+
+# 4. Interactive REPL for development
+dana                                    # Start REPL
+uv run python -m opendxa.dana.exec.repl # Direct REPL access
+
+# 5. Through pytest (automatic discovery)
+pytest tests/my_directory/test_dana_files.py -v  # Runs all test_*.na files
+```
+
+### ✅ **When to Use Each Method**
+- **`.na` files**: For Dana-specific functionality, examples, and testing
+- **`.py` files**: Only for Python-specific testing (imports, integrations)
+- **pytest**: Automated testing and CI/CD pipelines
+- **dana command**: Direct execution and development
+- **REPL**: Interactive development and debugging
+
 ## Dana-Specific Debugging & Validation
-- **Use `log()` function instead of `print()` for debugging**
+- **Use `log()` for examples/testing output** (provides color coding and better debugging)
+- **Prefer creating `.na` test files** over `.py` for Dana functionality
 - Test Dana code in REPL: `uv run python -m opendxa.dana.exec.repl`
 - Check AST output: Enable debug logging in transformer
 - Validate against grammar: `opendxa/dana/sandbox/parser/dana_grammar.lark`
 - Test with existing `.na` files in `examples/dana/na/`
+- Execute `.na` files: `dana filename.na` or `uv run python -m opendxa.dana.exec.dana filename.na`
 
 ## Security & Performance
 - **DanaSandbox Security**: Never expose DanaSandbox instances to untrusted code

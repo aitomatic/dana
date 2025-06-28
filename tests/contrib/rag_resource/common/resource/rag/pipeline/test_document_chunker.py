@@ -2,9 +2,11 @@
 Simple tests for DocumentChunker class.
 """
 
-import pytest
 import os
+
+import pytest
 from llama_index.core import Document
+
 from opendxa.contrib.rag_resource.common.resource.rag.pipeline.document_chunker import DocumentChunker
 
 

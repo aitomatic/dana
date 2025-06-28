@@ -61,9 +61,9 @@ class PythonicFunctionFactory:
         },
         "float": {"func": float, "types": [str, int, bool], "doc": "Convert a value to a float", "signatures": [(str,), (int,), (bool,)]},
         "bool": {
-            "func": bool,
+            "func": lambda v: PythonicFunctionFactory._semantic_bool_wrapper(v),
             "types": [str, int, float, list, dict],
-            "doc": "Convert a value to a boolean",
+            "doc": "Convert a value to a boolean with semantic understanding",
             "signatures": [(str,), (int,), (float,), (list,), (dict,)],
         },
         "type": {
@@ -305,6 +305,16 @@ class PythonicFunctionFactory:
             "alternative": "Use Dana's composition and trait system",
         },
     }
+
+    @classmethod
+    def _semantic_bool_wrapper(cls, value):
+        """Enhanced boolean conversion with semantic understanding."""
+        try:
+            from opendxa.dana.sandbox.interpreter.enhanced_coercion import semantic_bool
+            return semantic_bool(value)
+        except ImportError:
+            # Fallback to standard bool if enhanced coercion is not available
+            return bool(value)
 
     @classmethod
     def create_function(cls, name: str):

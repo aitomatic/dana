@@ -1,0 +1,190 @@
+# Advanced Struct Type Coercion Test Cases
+# This file demonstrates the revolutionary struct type hint capabilities
+
+log("🚀 Advanced Struct Type Coercion Tests")
+log("=========================================")
+
+# ===== BASIC STRUCT DEFINITIONS =====
+log("\n📋 Defining Test Structs")
+
+struct Person:
+    name: str
+    age: int
+    email: str
+
+struct Address:
+    street: str
+    city: str
+    zipcode: str
+    country: str
+
+struct Company:
+    name: str
+    address: Address
+    employees: list
+    founded_year: int
+    revenue: float
+
+struct Task:
+    title: str
+    priority: int  # 1-10 scale
+    estimated_hours: float
+    assignee: Person
+
+struct Project:
+    name: str
+    description: str
+    tasks: list
+    budget: float
+    deadline: str
+
+log("✅ Struct definitions complete")
+
+# ===== TEST 1: SIMPLE STRUCT CREATION =====
+log("\n🧪 Test 1: Simple Struct Creation")
+log("Expected: LLM should return properly structured Person instance")
+
+# This should work with struct type coercion
+# person: Person = reason("Create a software engineer named Alice who is 28 years old with email alice@tech.com")
+# log(f"Created person: {person.name}, {person.age}, {person.email}")
+
+log("⏸️  Waiting for implementation...")
+
+# ===== TEST 2: COMPLEX NESTED STRUCTS =====  
+log("\n🧪 Test 2: Complex Nested Structs")
+log("Expected: LLM should create Company with nested Address and list of Persons")
+
+# company: Company = reason("Create a tech startup called 'AI Innovations' in San Francisco with 3 software engineers, founded in 2020, revenue 2.5M")
+# log(f"Company: {company.name}")
+# log(f"Address: {company.address.city}, {company.address.country}")
+# log(f"Employees: {len(company.employees)} people")
+# log(f"Revenue: ${company.revenue}M")
+
+log("⏸️  Waiting for implementation...")
+
+# ===== TEST 3: LIST OF STRUCTS =====
+log("\n🧪 Test 3: List of Custom Structs")
+log("Expected: LLM should return list of Task instances with proper structure")
+
+# tasks: list = reason("Create a project plan for building a mobile app with 5 tasks, include priorities and time estimates")
+# for i, task in enumerate(tasks):
+#     log(f"Task {i+1}: {task.title} (Priority: {task.priority}, Hours: {task.estimated_hours})")
+
+log("⏸️  Waiting for implementation...")
+
+# ===== TEST 4: FUNCTION RETURN TYPE CONTEXT =====
+log("\n🧪 Test 4: Function Return Type Context")
+log("Expected: Functions with type hints should guide LLM responses")
+
+def create_team(size: int, department: str) -> list:
+    query = f"Create {size} people for {department} department with realistic names, ages 25-45, and company emails"
+    # return reason(query)  # Should automatically return list of Person structs
+    log(f"Query: {query}")
+    log("⏸️  Would return list with proper Person structure")
+    return []
+
+def plan_project(name: str, duration_weeks: int) -> Project:
+    query = f"Plan a {name} project that takes {duration_weeks} weeks with realistic tasks and budget"
+    # return reason(query)  # Should automatically return Project instance
+    log(f"Query: {query}")
+    log("⏸️  Would return Project with nested tasks and proper structure")
+    return Project(name="placeholder", description="", tasks=[], budget=0.0, deadline="")
+
+def estimate_budget(project_type: str) -> float:
+    query = f"Estimate realistic budget for {project_type} project"
+    # return reason(query)  # Should automatically return float
+    log(f"Query: {query}")
+    log("⏸️  Would return float like 125000.0")
+    return 0.0
+
+# Test function calls
+log("Testing function return type context:")
+team = create_team(3, "Engineering") 
+project = plan_project("Mobile App Development", 12)
+budget = estimate_budget("E-commerce website")
+
+# ===== TEST 5: AUTOMATIC TYPE COERCION MAGIC =====
+log("\n🧪 Test 5: Automatic Type Coercion Magic")
+log("Expected: Direct assignment should trigger intelligent coercion")
+
+def parse_person(json_text: str) -> Person:
+    # This should magically parse JSON string into Person struct
+    return json_text
+
+def extract_number(text: str) -> float:
+    # This should magically extract numeric value from text
+    return text
+
+def smart_bool(response: str) -> bool:
+    # This should understand conversational boolean responses
+    return response
+
+log("Testing automatic coercion:")
+# person_json = '{"name": "Bob", "age": 30, "email": "bob@example.com"}'
+# parsed_person = parse_person(person_json)
+# log(f"Parsed person: {parsed_person.name}")
+
+# price_text = "The estimated cost is approximately $45,000 for this project"  
+# extracted_price = extract_number(price_text)
+# log(f"Extracted price: ${extracted_price}")
+
+# decision_text = "Yes, absolutely, let's proceed with the plan!"
+# decision = smart_bool(decision_text)
+# log(f"Decision: {decision}")
+
+log("⏸️  Waiting for magic coercion implementation...")
+
+# ===== TEST 6: CONTEXT-AWARE PROMPTING =====
+log("\n🧪 Test 6: Context-Aware Prompting")
+log("Expected: LLM should receive rich context about expected return types")
+
+def analyze_requirements(description: str) -> list:
+    """
+    This function should demonstrate context injection:
+    - Current line: return reason(f"Break down requirements: {description}")
+    - Current function: The entire analyze_requirements function definition
+    - Expected type: list of Task structs with Task struct schema
+    - Context: Function is analyzing requirements and needs structured tasks
+    """
+    query = f"Break down these requirements into specific tasks: {description}"
+    log(f"Context-aware query: {query}")
+    log("Expected context injection:")
+    log("  - Function signature: analyze_requirements(description: str) -> list of Task")
+    log("  - Task schema: {title: str, priority: int, estimated_hours: float, assignee: Person}")
+    log("  - Current operation: Requirements analysis")
+    
+    # return reason(query)  # Would receive enhanced context
+    log("⏸️  Would return properly structured list of Task structs")
+    return []
+
+requirements = "Build a customer portal with user authentication, dashboard, and reporting features"
+tasks = analyze_requirements(requirements)
+
+# ===== EXPECTED VS ACTUAL BEHAVIOR =====
+log("\n📊 Expected vs Actual Behavior Summary")
+log("=====================================")
+
+log("✅ EXPECTED (Post-Implementation):")
+log("  • person: Person = reason('Create Alice') → Person(name='Alice', age=28, email='alice@tech.com')")
+log("  • tasks: list = reason('Plan project') → [Task(...), Task(...), Task(...)]")  
+log("  • company: Company = reason('Create startup') → Company(name='AI Co', address=Address(...), employees=[...])")
+log("  • Functions with return types automatically optimize LLM prompts")
+log("  • JSON strings magically parse into struct instances")
+log("  • Context injection provides rich prompt enhancement")
+
+log("\n❌ ACTUAL (Current State):")
+log("  • No struct type coercion implemented")
+log("  • reason() function returns strings only")
+log("  • No context injection for function return types")
+log("  • No automatic JSON parsing")
+log("  • No schema validation")
+
+log("\n🎯 IMPLEMENTATION NEEDED:")
+log("  1. Struct type detection and schema generation")
+log("  2. JSON parsing and validation against schemas")
+log("  3. Context injection for LLM functions")
+log("  4. Enhanced prompt generation with type awareness")
+log("  5. Automatic type coercion for direct assignments")
+
+log("\n🚀 This would make Dana the most advanced AI-native language!")
+log("   Imagine: Natural language → Structured data → Working code") 

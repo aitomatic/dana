@@ -47,7 +47,7 @@ nav:
       - Contributors: for-contributors/README.md
       - Investors: for-investors/README.md
     - More:
-      - Design: design/README.md
+      - Design: reference/README.md
       - Roadmap: ROADMAP.md
   - For Engineers:
     - Overview: for-engineers/README.md
@@ -118,53 +118,53 @@ nav:
   - For Investors:
     - Overview: for-investors/README.md
   - Design:
-    - Overview: design/README.md
+    - Overview: reference/README.md
     - Dana Philosophy:
-      - Design Principles: design/00_dana_philosophy/design-principles.md
-      - Manifesto: design/00_dana_philosophy/manifesto.md
+      - Design Principles: reference/00_dana_philosophy/design-principles.md
+      - Manifesto: reference/00_dana_philosophy/manifesto.md
     - Dana Language Specification:
-      - Overview: design/01_dana_language_specification/overview.md
-      - Syntax: design/01_dana_language_specification/syntax.md
-      - Grammar: design/01_dana_language_specification/grammar.md
-      - Data Types and Structs: design/01_dana_language_specification/data_types_and_structs.md
-      - Functions and Polymorphism: design/01_dana_language_specification/functions_and_polymorphism.md
-      - State and Scopes: design/01_dana_language_specification/state_and_scopes.md
-      - Error Handling: design/01_dana_language_specification/error_handling.md
+      - Overview: reference/01_dana_language_specification/overview.md
+      - Syntax: reference/01_dana_language_specification/syntax.md
+      - Grammar: reference/01_dana_language_specification/grammar.md
+      - Data Types and Structs: reference/01_dana_language_specification/data_types_and_structs.md
+      - Functions and Polymorphism: reference/01_dana_language_specification/functions_and_polymorphism.md
+      - State and Scopes: reference/01_dana_language_specification/state_and_scopes.md
+      - Error Handling: reference/01_dana_language_specification/error_handling.md
     - Dana Runtime and Execution:
-      - Execution Model: design/02_dana_runtime_and_execution/execution_model.md
-      - Interpreter: design/02_dana_runtime_and_execution/interpreter.md
-      - Sandbox: design/02_dana_runtime_and_execution/sandbox.md
-      - REPL: design/02_dana_runtime_and_execution/repl.md
-      - Code Context Analyzer: design/02_dana_runtime_and_execution/code_context_analyzer.md
-      - POET Functions: design/02_dana_runtime_and_execution/poet_functions.md
-      - Type System and Casting: design/02_dana_runtime_and_execution/type_system_and_casting.md
-      - Concurrency Model: design/02_dana_runtime_and_execution/concurrency_model.md
-      - External Interfaces: design/02_dana_runtime_and_execution/external_interfaces.md
-      - Python Integration: design/02_dana_runtime_and_execution/python_integration.md
-      - Security Considerations: design/02_dana_runtime_and_execution/security_considerations.md
-      - Debugging and Profiling: design/02_dana_runtime_and_execution/debugging_profiling.md
+      - Execution Model: reference/02_dana_runtime_and_execution/execution_model.md
+      - Interpreter: reference/02_dana_runtime_and_execution/interpreter.md
+      - Sandbox: reference/02_dana_runtime_and_execution/sandbox.md
+      - REPL: reference/02_dana_runtime_and_execution/repl.md
+      - Code Context Analyzer: reference/02_dana_runtime_and_execution/code_context_analyzer.md
+      - POET Functions: reference/02_dana_runtime_and_execution/poet_functions.md
+      - Type System and Casting: reference/02_dana_runtime_and_execution/type_system_and_casting.md
+      - Concurrency Model: reference/02_dana_runtime_and_execution/concurrency_model.md
+      - External Interfaces: reference/02_dana_runtime_and_execution/external_interfaces.md
+      - Python Integration: reference/02_dana_runtime_and_execution/python_integration.md
+      - Security Considerations: reference/02_dana_runtime_and_execution/security_considerations.md
+      - Debugging and Profiling: reference/02_dana_runtime_and_execution/debugging_profiling.md
     - Core Capabilities and Resources:
-      - Overview: design/03_core_capabilities_resources/README.md
-      - Capabilities Overview: design/03_core_capabilities_resources/capabilities_overview.md
-      - Resource Model: design/03_core_capabilities_resources/resource_model.md
-      - System Resources: design/03_core_capabilities_resources/system_resources.md
-      - User-defined Resources: design/03_core_capabilities_resources/user_defined_resources.md
-      - Capability Invocation: design/03_core_capabilities_resources/capability_invocation.md
+      - Overview: reference/03_core_capabilities_resources/README.md
+      - Capabilities Overview: reference/03_core_capabilities_resources/capabilities_overview.md
+      - Resource Model: reference/03_core_capabilities_resources/resource_model.md
+      - System Resources: reference/03_core_capabilities_resources/system_resources.md
+      - User-defined Resources: reference/03_core_capabilities_resources/user_defined_resources.md
+      - Capability Invocation: reference/03_core_capabilities_resources/capability_invocation.md
     - Agent and Orchestration:
-      - Overview: design/04_agent_and_orchestration/README.md
-      - Agent Model: design/04_agent_and_orchestration/agent_model.md
-      - Task Orchestration: design/04_agent_and_orchestration/task_orchestration.md
-      - Workflow Patterns: design/04_agent_and_orchestration/workflow_patterns.md
-      - Inter-Agent Communication: design/04_agent_and_orchestration/inter_agent_communication.md
-      - Human-in-the-Loop: design/04_agent_and_orchestration/human_in_the_loop.md
+      - Overview: reference/04_agent_and_orchestration/README.md
+      - Agent Model: reference/04_agent_and_orchestration/agent_model.md
+      - Task Orchestration: reference/04_agent_and_orchestration/task_orchestration.md
+      - Workflow Patterns: reference/04_agent_and_orchestration/workflow_patterns.md
+      - Inter-Agent Communication: reference/04_agent_and_orchestration/inter_agent_communication.md
+      - Human-in-the-Loop: reference/04_agent_and_orchestration/human_in_the_loop.md
     - Tooling and Developer Experience:
-      - Overview: design/05_tooling_and_dev_experience/README.md
-      - IDE Integration (VSCode): design/05_tooling_and_dev_experience/ide_integration_vscode.md
-      - REPL Enhancements: design/05_tooling_and_dev_experience/repl_enhancements.md
-      - Debugging Tools: design/05_tooling_and_dev_experience/debugging_tools.md
-      - Testing Framework: design/05_tooling_and_dev_experience/testing_framework.md
-      - Documentation Generation: design/05_tooling_and_dev_experience/documentation_generation.md
-      - Packaging and Distribution: design/05_tooling_and_dev_experience/packaging_distribution.md
+      - Overview: reference/05_tooling_and_dev_experience/README.md
+      - IDE Integration (VSCode): reference/05_tooling_and_dev_experience/ide_integration_vscode.md
+      - REPL Enhancements: reference/05_tooling_and_dev_experience/repl_enhancements.md
+      - Debugging Tools: reference/05_tooling_and_dev_experience/debugging_tools.md
+      - Testing Framework: reference/05_tooling_and_dev_experience/testing_framework.md
+      - Documentation Generation: reference/05_tooling_and_dev_experience/documentation_generation.md
+      - Packaging and Distribution: reference/05_tooling_and_dev_experience/packaging_distribution.md
 
 # Plugins
 plugins:

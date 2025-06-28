@@ -415,9 +415,12 @@ class TestTypeConversionFunctions:
         bool_func = factory.create_function("bool")
         context = SandboxContext()
 
-        # String to bool
+        # String to bool (enhanced semantic coercion)
         assert bool_func(context, "hello")
-        assert bool_func(context, "false")  # Non-empty string is True
+        assert bool_func(context, "yes")    # Enhanced: semantic true
+        assert not bool_func(context, "false")  # Enhanced: semantic false
+        assert not bool_func(context, "no")     # Enhanced: semantic false
+        assert not bool_func(context, "0")      # Enhanced: zero equivalent false
         assert not bool_func(context, "")
 
         # Int to bool

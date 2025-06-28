@@ -1,8 +1,9 @@
+import asyncio
 import subprocess
 import sys
+
 import requests
-import asyncio
-from pathlib import Path
+
 
 def _ensure_playwright_installed():
     """Ensure Playwright and its dependencies are installed."""

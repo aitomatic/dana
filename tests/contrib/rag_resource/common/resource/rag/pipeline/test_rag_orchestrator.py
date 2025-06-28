@@ -2,9 +2,10 @@
 Simple tests for RAGOrchestrator class.
 """
 
+from unittest.mock import AsyncMock, Mock
+
 import pytest
-from unittest.mock import Mock, AsyncMock
-from llama_index.core import Document
+
 from opendxa.contrib.rag_resource.common.resource.rag.pipeline.rag_orchestrator import RAGOrchestrator
 
 
@@ -36,7 +37,6 @@ class TestRAGOrchestrator:
         orchestrator = RAGOrchestrator()
         
         # Mock the retriever
-        from unittest.mock import AsyncMock
         mock_retriever = Mock()
         mock_retriever.aretrieve = AsyncMock(return_value=[])
         orchestrator._retriever = mock_retriever
