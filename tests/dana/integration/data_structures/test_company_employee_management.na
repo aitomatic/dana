@@ -82,8 +82,13 @@ def create_address(street: str, city: str, state: str, zip_code: str, country: s
 
 def create_employee(id: str, name: str, title: str, dept: str, hire_date: str, base_salary: float) -> Employee:
     default_address = create_address("123 Main St", "Anytown", "CA", "12345")
+    # Create email from name (Dana doesn't support method chaining)
+    lowercase_name = name.lower()
+    email_name = lowercase_name.replace(' ', '.')
+    email_address = f"{email_name}@company.com"
+    
     default_contact = Contact(
-        email=f"{name.lower().replace(' ', '.')}@company.com",
+        email=email_address,
         phone="555-0100",
         emergency_contact="555-0200",
         address=default_address
@@ -354,6 +359,27 @@ def find_employees_by_skill(company: Company, skill: str) -> list:
             })
     return matching_employees
 
+def build_hierarchy_node(emp: Employee, company: Company) -> dict:
+    """Build hierarchy node for an employee (moved outside for Dana compatibility)"""
+    # Create separate list for direct reports (Dana dict doesn't support append)
+    direct_reports_list = []
+    
+    # Add direct reports
+    for report_id in emp.direct_reports:
+        report_emp = find_employee_by_id(company, report_id)
+        if report_emp != null and report_emp.active:
+            direct_reports_list.append(build_hierarchy_node(report_emp, company))
+    
+    node = {
+        "id": emp.employee_id,
+        "name": emp.name,
+        "title": emp.title,
+        "department": emp.department,
+        "direct_reports": direct_reports_list
+    }
+    
+    return node
+
 def get_organizational_hierarchy(company: Company) -> dict:
     """Build organizational hierarchy structure"""
     hierarchy = {}
@@ -368,26 +394,9 @@ def get_organizational_hierarchy(company: Company) -> dict:
     if ceo_emp == null:
         return {"error": "No CEO found"}
     
-    def build_hierarchy_node(emp: Employee) -> dict:
-        node = {
-            "id": emp.employee_id,
-            "name": emp.name,
-            "title": emp.title,
-            "department": emp.department,
-            "direct_reports": []
-        }
-        
-        # Add direct reports
-        for report_id in emp.direct_reports:
-            report_emp = find_employee_by_id(company, report_id)
-            if report_emp != null and report_emp.active:
-                node["direct_reports"].append(build_hierarchy_node(report_emp))
-        
-        return node
-    
     return {
         "company": company.name,
-        "organization": build_hierarchy_node(ceo_emp)
+        "organization": build_hierarchy_node(ceo_emp, company)
     }
 
 # Test complex business operations
@@ -395,14 +404,21 @@ log("\n--- Testing Complex Business Operations ---")
 
 # Test 1: Department payroll analysis
 eng_payroll = calculate_department_payroll(test_company, "Engineering")
-log(f"Engineering payroll: ${eng_payroll['total_payroll']:,.2f} for {eng_payroll['employee_count']} employees")
+# Extract values for logging (Dana doesn't support dict access in f-strings)
+eng_total = eng_payroll["total_payroll"]
+eng_count = eng_payroll["employee_count"]
+log(f"Engineering payroll: ${eng_total} for {eng_count} employees")
 assert eng_payroll["employee_count"] == 3
 assert eng_payroll["total_payroll"] == 350000.0  # 150k + 120k + 80k
-assert eng_payroll["average_salary"] == 116666.67  # Approximately
+# Check average salary is approximately correct (floating point precision)
+avg_salary = eng_payroll["average_salary"]
+assert avg_salary > 116666.0 and avg_salary < 116667.0  # Approximately 116666.67
 
 # Test 2: Project team analysis
 project_analysis = get_project_team_analysis(test_company, "PROJ001")
-log(f"Project team analysis: {project_analysis['team_size']} members, {project_analysis['skill_coverage_percent']:.1f}% skill coverage")
+team_size = project_analysis["team_size"]
+skill_coverage = project_analysis["skill_coverage_percent"]
+log(f"Project team analysis: {team_size} members, {skill_coverage}% skill coverage")
 assert project_analysis["team_size"] == 3
 assert len(project_analysis["missing_skills"]) == 0  # All required skills covered
 assert project_analysis["skill_coverage_percent"] == 100.0
@@ -418,7 +434,8 @@ assert len(javascript_devs) == 1  # Only Carol
 
 # Test 4: Organizational hierarchy
 org_hierarchy = get_organizational_hierarchy(test_company)
-log(f"Organizational structure built for {org_hierarchy['company']}")
+company_name = org_hierarchy["company"]
+log(f"Organizational structure built for {company_name}")
 assert org_hierarchy["organization"]["name"] == "Alice Johnson"
 assert len(org_hierarchy["organization"]["direct_reports"]) == 3
 
@@ -431,7 +448,8 @@ log(f"Added bonus to {senior_dev.name}: ${senior_dev.salary.bonus}")
 
 # Recalculate payroll after bonus
 updated_payroll = calculate_department_payroll(test_company, "Engineering")
-log(f"Updated engineering payroll: ${updated_payroll['total_payroll']:,.2f}")
+updated_total = updated_payroll["total_payroll"]
+log(f"Updated engineering payroll: ${updated_total}")
 assert updated_payroll["total_payroll"] == 360000.0  # Original + 10k bonus
 
 # Add new skill to junior developer
@@ -457,8 +475,11 @@ log(f"Transferred {junior_dev.name} from {original_dept} to {junior_dev.departme
 eng_payroll_after_transfer = calculate_department_payroll(test_company, "Engineering")
 sales_payroll_after_transfer = calculate_department_payroll(test_company, "Sales")
 
-log(f"Engineering payroll after transfer: ${eng_payroll_after_transfer['total_payroll']:,.2f}")
-log(f"Sales payroll after transfer: ${sales_payroll_after_transfer['total_payroll']:,.2f}")
+# Extract values for logging (Dana doesn't support complex f-string formatting)
+eng_total_after = eng_payroll_after_transfer["total_payroll"]
+sales_total_after = sales_payroll_after_transfer["total_payroll"]
+log(f"Engineering payroll after transfer: ${eng_total_after}")
+log(f"Sales payroll after transfer: ${sales_total_after}")
 
 assert eng_payroll_after_transfer["employee_count"] == 2
 assert sales_payroll_after_transfer["employee_count"] == 2

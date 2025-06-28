@@ -209,8 +209,8 @@ jobs:
           --ignore=tests/dana/sandbox/parser/ \
           --ignore=tests/dana/sandbox/interpreter/
 
-  # Dana Integration - REPL, transcoder, module system, .na files
-  test-dana-integration:
+  # Dana Components - REPL, translator, module system, .na files, UX
+  test-dana-components:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -232,13 +232,75 @@ jobs:
           uv-${{ runner.os }}-
     - name: Install dependencies
       run: uv sync --extra dev
-    - name: Test Dana Integration (REPL, modules, na files)
+    - name: Test Dana Components (REPL, translator, modules, na files, UX)
       env:
         OPENDXA_MOCK_LLM: "true"
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/repl/ tests/dana/integration/ tests/dana/module/ tests/dana/na/ tests/dana/ux/ -m "not live and not deep" --tb=short -v
+        uv run pytest tests/dana/repl/ tests/dana/translator/ tests/dana/module/ tests/dana/na/ tests/dana/ux/ -m "not live and not deep" --tb=short -v
+
+  # Dana Integrated Tests - New comprehensive integration and scenario tests
+  test-dana-integrated:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5  # Updated version
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Cache uv dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Dana Integrated (comprehensive real-world scenarios)
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        uv run pytest tests/dana/integration/ tests/dana/scenarios/ tests/dana/regression/ -m "not live and not deep" --tb=short -v
+
+  # Dana Expected Failures - Language limitation documentation tests
+  test-dana-expected-failures:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5  # Updated version
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Cache uv dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Dana Expected Failures (language limitations)
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        uv run pytest tests/dana/expected_failures/ -m "not live and not deep" --tb=short -v
 
   # Common Utilities - Graph, I/O, mixins, resources, logging
   test-common-utilities:
@@ -416,7 +478,7 @@ jobs:
 
   # Summary job that depends on all test jobs
   test-summary:
-    needs: [test-dana-parser, test-dana-structs, test-dana-functions, test-dana-imports, test-dana-execution, test-dana-sandbox, test-dana-integration, test-common-utilities, test-agent-framework, test-poet-framework, test-execution-engine, test-miscellaneous]
+    needs: [test-dana-parser, test-dana-structs, test-dana-functions, test-dana-imports, test-dana-execution, test-dana-sandbox, test-dana-components, test-dana-integrated, test-dana-expected-failures, test-common-utilities, test-agent-framework, test-poet-framework, test-execution-engine, test-miscellaneous]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -428,7 +490,9 @@ jobs:
               "${{ needs.test-dana-imports.result }}" == "failure" || 
               "${{ needs.test-dana-execution.result }}" == "failure" || 
               "${{ needs.test-dana-sandbox.result }}" == "failure" || 
-              "${{ needs.test-dana-integration.result }}" == "failure" || 
+              "${{ needs.test-dana-components.result }}" == "failure" || 
+              "${{ needs.test-dana-integrated.result }}" == "failure" || 
+              "${{ needs.test-dana-expected-failures.result }}" == "failure" || 
               "${{ needs.test-common-utilities.result }}" == "failure" || 
               "${{ needs.test-agent-framework.result }}" == "failure" || 
               "${{ needs.test-poet-framework.result }}" == "failure" || 
