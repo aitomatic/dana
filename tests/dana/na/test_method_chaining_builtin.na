@@ -14,31 +14,31 @@ log("Testing string method chaining...")
 # Basic string chaining
 text = "  Hello World  "
 result1 = text.strip().lower()
-assert result1 == "hello world"
+assert (result1 == "hello world")
 log(f"✅ Basic string chaining: '{text}' -> '{result1}'")
 
 # Triple string chaining
 result2 = text.strip().lower().replace(" ", "_")
-assert result2 == "hello_world"
+assert (result2 == "hello_world")
 log(f"✅ Triple string chaining: '{text}' -> '{result2}'")
 
 # Complex string chaining with multiple operations
 text2 = "The Quick Brown Fox"
 result3 = text2.lower().replace(" ", "-").replace("fox", "wolf")
-assert result3 == "the-quick-brown-wolf"
+assert (result3 == "the-quick-brown-wolf")
 log(f"✅ Complex string chaining: '{text2}' -> '{result3}'")
 
 # String chaining with method arguments
 text3 = "apple,banana,cherry"
 result4 = text3.upper().split(",")
 expected4 = ["APPLE", "BANANA", "CHERRY"]
-assert result4 == expected4
+assert (result4 == expected4)
 log(f"✅ String chaining with arguments: '{text3}' -> {result4}")
 
 # String chaining returning different types
 text4 = "hello world"
 result5 = text4.replace("world", "dana").endswith("dana")
-assert result5 == true
+assert (result5 == true)
 log(f"✅ String chaining returning boolean: '{text4}' -> {result5}")
 
 # DICTIONARY METHOD CHAINING
@@ -48,13 +48,13 @@ log("\nTesting dictionary method chaining...")
 # Dictionary get method chaining
 data = {"name": "john", "age": 30}
 result6 = data.get("name").upper()
-assert result6 == "JOHN"
+assert (result6 == "JOHN")
 log(f"✅ Dictionary get chaining: {data} -> '{result6}'")
 
 # Complex dictionary and string chaining
 data2 = {"items": "apple,banana,cherry"}
 result7 = data2.get("items").split(",")[1].upper()
-assert result7 == "BANANA"
+assert (result7 == "BANANA")
 log(f"✅ Complex dict+string+indexing chaining: {data2} -> '{result7}'")
 
 # LIST METHOD CHAINING WITH STRINGS
@@ -64,12 +64,12 @@ log("\nTesting list method chaining...")
 # String join method with list
 words = ["apple", "banana", "cherry"]
 result8 = ", ".join(words)
-assert result8 == "apple, banana, cherry"
+assert (result8 == "apple, banana, cherry")
 log(f"✅ String join with list: {words} -> '{result8}'")
 
 # Different separator
 result9 = " - ".join(words).upper()
-assert result9 == "APPLE - BANANA - CHERRY"
+assert (result9 == "APPLE - BANANA - CHERRY")
 log(f"✅ Join with chaining: {words} -> '{result9}'")
 
 # INDEXING AND SLICING WITH METHOD CHAINING
@@ -79,14 +79,14 @@ log("\nTesting indexing/slicing with method chaining...")
 # Chaining with indexing
 text5 = "hello,world,test"
 result10 = text5.split(",")[1].upper()
-assert result10 == "WORLD"
+assert (result10 == "WORLD")
 log(f"✅ Split and index chaining: '{text5}' -> '{result10}'")
 
 # Multiple indexing operations
 text6 = "a b c d"
 parts = text6.split(" ")
 result11 = parts[0].upper() + parts[1].upper()
-assert result11 == "AB"
+assert (result11 == "AB")
 log(f"✅ Multiple indexing with chaining: '{text6}' -> '{result11}'")
 
 # NUMERIC OPERATIONS IN CHAINING
@@ -96,13 +96,13 @@ log("\nTesting numeric operations in chaining...")
 # Length in chaining
 text7 = "hello,world,test"
 result12 = len(text7.split(","))
-assert result12 == 3
+assert (result12 == 3)
 log(f"✅ Length with method chaining: '{text7}' -> {result12}")
 
 # Find method chaining
 text8 = "hello"
 result13 = text8.find("l") >= 0
-assert result13 == true
+assert (result13 == true)
 log(f"✅ Find method chaining: '{text8}' -> {result13}")
 
 # CONDITIONAL CHAINING RESULTS
@@ -112,7 +112,7 @@ log("\nTesting conditional chaining results...")
 # Boolean results from chaining
 text9 = "123"
 result14 = text9.strip().isdigit()
-assert result14 == true
+assert (result14 == true)
 log(f"✅ Boolean result chaining: '{text9}' -> {result14}")
 
 # LONG METHOD CHAINS
@@ -122,7 +122,7 @@ log("\nTesting long method chains...")
 # Very long chain
 text10 = "  THE QUICK BROWN FOX JUMPS  "
 result15 = text10.strip().lower().replace(" ", "_").replace("fox", "wolf").upper()
-assert result15 == "THE_QUICK_BROWN_WOLF_JUMPS"
+assert (result15 == "THE_QUICK_BROWN_WOLF_JUMPS")
 log(f"✅ Long method chain: '{text10}' -> '{result15}'")
 
 # EMPTY STRING HANDLING
@@ -132,13 +132,13 @@ log("\nTesting edge cases...")
 # Empty string chaining
 empty_text = ""
 result16 = empty_text.strip().upper()
-assert result16 == ""
+assert (result16 == "")
 log(f"✅ Empty string chaining: '{empty_text}' -> '{result16}'")
 
 # Special characters
 special_text = "hello@world#test"
 result17 = special_text.replace("@", "_").replace("#", "_").upper()
-assert result17 == "HELLO_WORLD_TEST"
+assert (result17 == "HELLO_WORLD_TEST")
 log(f"✅ Special characters chaining: '{special_text}' -> '{result17}'")
 
 log("\n=== All Built-in Method Chaining Tests Passed! ===") 

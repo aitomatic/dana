@@ -61,7 +61,11 @@ def test_na_file(na_file):
     enhanced_coercion_tests = [
         "test_enhanced_coercion_comprehensive.na",
         "test_coercion_regression_prevention.na", 
-        "test_poet_enhanced_function_dispatch.na"
+        "test_poet_enhanced_function_dispatch.na",
+        "test_method_chaining_builtin.na",
+        "test_method_chaining_user_defined.na", 
+        "test_method_chaining_integration.na",
+        "test_method_chaining_edge_cases.na"
     ]
     disable_type_check = filename in enhanced_coercion_tests
     

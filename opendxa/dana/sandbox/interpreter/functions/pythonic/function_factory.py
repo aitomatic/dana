@@ -67,6 +67,7 @@ class PythonicFunctionFactory:
             "signatures": [(str,), (int,), (float,), (list,), (dict,)],
         },
         "type": {
+            # Security: Return string name instead of type object to prevent introspection
             "func": lambda v: type(v).__name__,
             "types": [object],
             "doc": "Return the type name of a value as a string (e.g., 'int', 'list', 'dict').",
