@@ -12,12 +12,13 @@ from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
 
 
 # Test files that are expected to fail due to language limitations
+# Each entry is (subdirectory, filename) relative to tests/dana/expected_failures/
 EXPECTED_FAILURE_FILES = [
-    "test_expected_syntax_failures.na",
-    "test_expected_data_structure_failures.na", 
-    "test_expected_function_failures.na",
-    "test_expected_operator_failures.na",
-    "test_expected_fstring_limitations.na",  # F-string expression limitations
+    ("syntax_limitations", "test_expected_syntax_failures.na"),
+    ("data_structure_limitations", "test_expected_data_structure_failures.na"), 
+    ("function_limitations", "test_expected_function_failures.na"),
+    ("operator_limitations", "test_expected_operator_failures.na"),
+    # NOTE: test_expected_fstring_limitations.na removed - f-strings now work correctly
 ]
 
 
@@ -32,21 +33,21 @@ class TestDanaLanguageLimitations:
         
         These tests are marked as expected failures (xfail) to:
         1. Document current Dana language limitations
-        2. Track which features need implementation
+        2. Track which features need implementation  
         3. Provide regression tests for future improvements
         4. Pass CI/CD while documenting gaps
+        
+        When these tests unexpectedly pass, pytest will report as xpass,
+        indicating a limitation has been resolved.
         """
-        test_path = Path(__file__).parent / test_file
+        subdirectory, filename = test_file
+        test_path = Path(__file__).parent.parent / subdirectory / filename
         
         if not test_path.exists():
-            pytest.skip(f"Test file {test_file} not found")
+            pytest.skip(f"Test file {subdirectory}/{filename} not found")
         
-        # Execute the Dana file - these are expected to demonstrate limitations
+        # Execute the Dana file - let pytest handle xfail/xpass naturally
         with DanaSandbox() as sandbox:
-            try:
-                result = sandbox.execute_file(str(test_path))
-                # If execution succeeds, the limitations may have been resolved
-                assert result is not None, f"Expected failure test {test_file} executed successfully"
-            except Exception as e:
-                # Expected - these tests document current limitations
-                pytest.fail(f"Expected failure in {test_file}: {str(e)}") 
+            result = sandbox.execute_file(str(test_path))
+            # If we reach here, the execution succeeded
+            # pytest.xfail will automatically handle this as xpass (unexpected pass) 
