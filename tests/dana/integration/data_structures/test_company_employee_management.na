@@ -261,13 +261,13 @@ def calculate_department_payroll(company: Company, dept_name: str) -> dict:
             total_bonus = total_bonus + employee.salary.bonus
             employee_count = employee_count + 1
             
-            salary_breakdown.append({
+            salary_breakdown = salary_breakdown + [{
                 "name": employee.name,
                 "title": employee.title,
                 "base": employee.salary.base,
                 "bonus": employee.salary.bonus,
                 "total": employee.salary.base + employee.salary.bonus
-            })
+            }]
     
     # Calculate average salary safely
     average_salary = 0.0
@@ -311,12 +311,12 @@ def get_project_team_analysis(company: Company, project_id: str) -> dict:
                 "skills": employee.skills,
                 "annual_cost": employee.salary.base + employee.salary.bonus
             }
-            team_members.append(member_info)
+            team_members = team_members + [member_info]
             
             # Collect all skills
             for skill in employee.skills:
                 if not (skill in all_skills):
-                    all_skills.append(skill)
+                    all_skills = all_skills + [skill]
             
             total_team_cost = total_team_cost + employee.salary.base + employee.salary.bonus
     
@@ -324,7 +324,7 @@ def get_project_team_analysis(company: Company, project_id: str) -> dict:
     missing_skills = []
     for required_skill in project.required_skills:
         if not (required_skill in all_skills):
-            missing_skills.append(required_skill)
+            missing_skills = missing_skills + [required_skill]
     
     # Calculate skill coverage safely
     skill_coverage = 100.0
@@ -350,25 +350,25 @@ def find_employees_by_skill(company: Company, skill: str) -> list:
     matching_employees = []
     for employee in company.all_employees:
         if employee.active and skill in employee.skills:
-            matching_employees.append({
+            matching_employees = matching_employees + [{
                 "id": employee.employee_id,
                 "name": employee.name,
                 "title": employee.title,
                 "department": employee.department,
                 "all_skills": employee.skills
-            })
+            }]
     return matching_employees
 
 def build_hierarchy_node(emp: Employee, company: Company) -> dict:
     """Build hierarchy node for an employee (moved outside for Dana compatibility)"""
-    # Create separate list for direct reports (Dana dict doesn't support append)
+    # Create separate list for direct reports using Dana-compatible list operations
     direct_reports_list = []
     
     # Add direct reports
     for report_id in emp.direct_reports:
         report_emp = find_employee_by_id(company, report_id)
         if report_emp != null and report_emp.active:
-            direct_reports_list.append(build_hierarchy_node(report_emp, company))
+            direct_reports_list = direct_reports_list + [build_hierarchy_node(report_emp, company)]
     
     node = {
         "id": emp.employee_id,
@@ -452,8 +452,8 @@ updated_total = updated_payroll["total_payroll"]
 log(f"Updated engineering payroll: ${updated_total}")
 assert updated_payroll["total_payroll"] == 360000.0  # Original + 10k bonus
 
-# Add new skill to junior developer
-junior_dev.skills.append("react")
+# Add new skill to junior developer using Dana-compatible list concatenation
+junior_dev.skills = junior_dev.skills + ["react"]
 log(f"Added 'react' skill to {junior_dev.name}")
 
 # Check updated skill coverage
@@ -465,9 +465,16 @@ log("\n--- Testing Employee Transfer ---")
 original_dept = junior_dev.department
 junior_dev.department = "Sales"
 
-# Update department employee lists
-engineering_dept.employees.remove("EMP004")
-sales_dept.employees.append("EMP004")
+# Update department employee lists using Dana-compatible operations
+# Remove EMP004 from engineering department using filtering
+eng_employees_filtered = []
+for emp_id in engineering_dept.employees:
+    if emp_id != "EMP004":
+        eng_employees_filtered = eng_employees_filtered + [emp_id]
+engineering_dept.employees = eng_employees_filtered
+
+# Add EMP004 to sales department using list concatenation
+sales_dept.employees = sales_dept.employees + ["EMP004"]
 
 log(f"Transferred {junior_dev.name} from {original_dept} to {junior_dev.department}")
 
