@@ -299,6 +299,7 @@ class TestLLMToolCallManagerIntegration(unittest.TestCase):
         from opendxa.common.resource.llm_resource import LLMResource
 
         # Set up API key
+        previous_key = os.environ.get("OPENAI_API_KEY")
         os.environ["OPENAI_API_KEY"] = "test-key"
 
         try:
@@ -321,6 +322,8 @@ class TestLLMToolCallManagerIntegration(unittest.TestCase):
             # Clean up
             if "OPENAI_API_KEY" in os.environ:
                 del os.environ["OPENAI_API_KEY"]
+            if previous_key:
+                os.environ["OPENAI_API_KEY"] = previous_key
 
     def test_tool_call_manager_logging(self):
         """Test that tool call manager properly inherits logging."""

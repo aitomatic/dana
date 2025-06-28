@@ -1,0 +1,333 @@
+# Method Chaining Integration Tests
+# =================================
+# PURPOSE: Test method chaining integration with other Dana features
+# AUDIENCE: Developers using method chaining with functions, structs, and control flow
+# LEARNING: How method chaining integrates with the broader Dana language features
+# =================================
+
+log("=== Method Chaining Integration Tests ===")
+
+# METHOD CHAINING IN FUNCTION DEFINITIONS
+# =======================================
+log("Testing method chaining in function definitions...")
+
+def process_name(full_name: str) -> str:
+    """Function that uses method chaining internally"""
+    return full_name.strip().lower().replace(" ", "_")
+
+def format_greeting(name: str, title: str = "Mr.") -> str:
+    """Function using method chaining with parameters"""
+    clean_name = process_name(name)
+    return f"{title} {clean_name}".title().replace("_", " ")
+
+# Test functions with method chaining
+test_name = "  John DOE  "
+result1 = process_name(test_name)
+assert result1 == "john_doe"
+log(f"✅ Function with chaining: process_name('{test_name}') = '{result1}'")
+
+greeting = format_greeting(test_name, "Dr.")
+assert greeting == "Dr. John Doe"
+log(f"✅ Complex function chaining: format_greeting = '{greeting}'")
+
+# METHOD CHAINING AS FUNCTION ARGUMENTS
+# =====================================
+log("\nTesting method chaining as function arguments...")
+
+def combine_strings(s1: str, s2: str, separator: str = " ") -> str:
+    """Function that takes processed strings as arguments"""
+    return f"{s1}{separator}{s2}"
+
+text1 = "  hello  "
+text2 = "  WORLD  "
+result2 = combine_strings(
+    text1.strip().upper(),
+    text2.strip().lower(),
+    " + "
+)
+assert result2 == "HELLO + world"
+log(f"✅ Method chaining as function args: '{result2}'")
+
+# METHOD CHAINING WITH VARIABLES AND ASSIGNMENTS
+# ==============================================
+log("\nTesting method chaining with variables...")
+
+# Chain assignment patterns
+original_text = "The Quick Brown Fox"
+step1 = original_text.lower()
+step2 = step1.replace(" ", "_")
+step3 = step2.replace("fox", "wolf")
+final_result = step3.upper()
+
+assert final_result == "THE_QUICK_BROWN_WOLF"
+log(f"✅ Step-by-step chaining: '{original_text}' -> '{final_result}'")
+
+# Direct chaining assignment
+direct_result = original_text.lower().replace(" ", "_").replace("fox", "wolf").upper()
+assert direct_result == final_result
+assert direct_result == "THE_QUICK_BROWN_WOLF"
+log(f"✅ Direct chaining assignment: '{direct_result}'")
+
+# METHOD CHAINING IN CONDITIONAL STATEMENTS
+# =========================================
+log("\nTesting method chaining in conditionals...")
+
+def validate_and_process(input_text: str) -> str:
+    """Process text based on conditions using method chaining"""
+    cleaned = input_text.strip()
+    
+    if cleaned.lower().startswith("error"):
+        return cleaned.upper().replace("ERROR", "WARNING")
+    elif len(cleaned.split()) > 3:
+        return cleaned.lower().replace(" ", "_")
+    else:
+        return cleaned.title()
+
+# Test conditional method chaining
+test_cases = [
+    "error: something went wrong",
+    "this is a longer message with many words",
+    "short text"
+]
+
+expected_results = [
+    "WARNING: SOMETHING WENT WRONG",
+    "this_is_a_longer_message_with_many_words", 
+    "Short Text"
+]
+
+for test_case in test_cases:
+    result = validate_and_process(test_case)
+    # Find the index of this test case to get expected result
+    test_index = -1
+    for idx in range(len(test_cases)):
+        if test_cases[idx] == test_case:
+            test_index = idx
+            break
+    
+    expected = expected_results[test_index]
+    assert result == expected
+    log(f"✅ Conditional chaining: '{test_case}' -> '{result}'")
+
+# METHOD CHAINING IN LOOPS
+# ========================
+log("\nTesting method chaining in loops...")
+
+# Process list of strings with method chaining
+raw_names = ["  alice  ", "  BOB SMITH  ", "  charlie BROWN  "]
+processed_names = []
+
+for name in raw_names:
+    cleaned = name.strip().title().replace("  ", " ")
+    processed_names.append(cleaned)
+
+expected_names = ["Alice", "Bob Smith", "Charlie Brown"]
+assert processed_names == expected_names
+log(f"✅ Loop with method chaining: {raw_names} -> {processed_names}")
+
+# Loop-based list processing with method chaining
+compact_names = []
+for name in raw_names:
+    compact_name = name.strip().lower().replace(" ", "_")
+    compact_names.append(compact_name)
+expected_compact = ["alice", "bob_smith", "charlie_brown"]
+assert compact_names == expected_compact
+log(f"✅ List processing chaining: {compact_names}")
+
+# METHOD CHAINING WITH DICTIONARY OPERATIONS
+# ==========================================
+log("\nTesting method chaining with dictionaries...")
+
+# Dictionary values processing
+data = {
+    "name": "  John Doe  ",
+    "title": "  SOFTWARE ENGINEER  ",
+    "company": "  tech corp  "
+}
+
+# Process dictionary values with method chaining
+processed_data = {}
+for key in data:
+    value = data[key]
+    processed_data[key] = value.strip().title()
+
+expected_processed = {
+    "name": "John Doe",
+    "title": "Software Engineer", 
+    "company": "Tech Corp"
+}
+assert processed_data == expected_processed
+log(f"✅ Dictionary processing with chaining: {processed_data}")
+
+# Dictionary processing with method chaining
+compact_data = {}
+for key in data:
+    value = data[key]
+    compact_data[key] = value.strip().lower().replace(" ", "_")
+expected_compact_data = {
+    "name": "john_doe",
+    "title": "software_engineer",
+    "company": "tech_corp"
+}
+assert compact_data == expected_compact_data
+log(f"✅ Dict processing chaining: {compact_data}")
+
+# METHOD CHAINING WITH RETURN STATEMENTS
+# ======================================
+log("\nTesting method chaining in return statements...")
+
+def get_processed_filename(raw_filename: str) -> str:
+    """Return processed filename using method chaining"""
+    return raw_filename.strip().lower().replace(" ", "_").replace("-", "_")
+
+def get_file_info(filename: str) -> dict:
+    """Return file information with processed names"""
+    base_name = filename.split(".")[0]
+    
+    # Handle extension
+    if "." in filename:
+        extension = filename.split(".")[-1]
+    else:
+        extension = ""
+    
+    return {
+        "original": filename,
+        "processed": get_processed_filename(base_name),
+        "extension": extension
+    }
+
+filename_test = "  My-Document File.txt  "
+file_info = get_file_info(filename_test.strip())
+expected_info = {
+    "original": "My-Document File.txt",
+    "processed": "my_document_file",
+    "extension": "txt"
+}
+assert file_info == expected_info
+log(f"✅ Return statement chaining: {file_info}")
+
+# METHOD CHAINING WITH STRING FORMATTING
+# ======================================
+log("\nTesting method chaining with string formatting...")
+
+def create_email_signature(name: str, title: str, company: str) -> str:
+    """Create email signature using method chaining and f-strings"""
+    clean_name = name.strip().title()
+    clean_title = title.strip().title()
+    clean_company = company.strip().title()
+    
+    signature = f"{clean_name}\n{clean_title}\n{clean_company}"
+    return signature.replace("\n", " | ")
+
+signature = create_email_signature("  john doe  ", "  software engineer  ", "  tech corp  ")
+expected_signature = "John Doe | Software Engineer | Tech Corp"
+assert signature == expected_signature
+log(f"✅ String formatting with chaining: '{signature}'")
+
+# METHOD CHAINING WITH ASSERTIONS AND VALIDATION
+# ==============================================
+log("\nTesting method chaining with validation...")
+
+def validate_email(email: str) -> bool:
+    """Validate email using method chaining"""
+    cleaned = email.strip().lower()
+    return "@" in cleaned and "." in cleaned.split("@")[-1]
+
+def process_user_input(user_data: dict) -> dict:
+    """Process user input with validation and method chaining"""
+    result = {}
+    
+    # Process name
+    if "name" in user_data:
+        name = user_data["name"].strip().title()
+        if len(name) > 0:
+            result["name"] = name
+        else:
+            result["name"] = "Unknown"
+    
+    # Process email
+    if "email" in user_data:
+        email = user_data["email"].strip().lower()
+        if validate_email(email):
+            result["email"] = email
+        else:
+            result["email"] = "invalid@example.com"
+    
+    # Process phone (remove non-digits)
+    if "phone" in user_data:
+        phone_digits = []
+        for c in user_data["phone"]:
+            if c.isdigit():
+                phone_digits.append(c)
+        phone = "".join(phone_digits)
+        if len(phone) >= 10:
+            result["phone"] = phone
+        else:
+            result["phone"] = "0000000000"
+    
+    return result
+
+test_user_data = {
+    "name": "  alice  johnson  ",
+    "email": "  ALICE@EXAMPLE.COM  ",
+    "phone": "123-456-7890"
+}
+
+processed_user = process_user_input(test_user_data)
+expected_user = {
+    "name": "Alice  Johnson",
+    "email": "alice@example.com",
+    "phone": "1234567890"
+}
+assert processed_user == expected_user
+log(f"✅ User input processing with validation: {processed_user}")
+
+# METHOD CHAINING WITH OPERATION SEQUENCES
+# =======================================
+log("\nTesting method chaining with operation sequences...")
+
+def safe_string_processing(text: str, operations: list) -> str:
+    """Safely apply string operations with method chaining"""
+    result = text.strip()
+    
+    for operation in operations:
+        if operation == "upper":
+            result = result.upper()
+        elif operation == "lower":
+            result = result.lower()
+        elif operation == "title":
+            result = result.title()
+        elif operation[0] == "replace":
+            old = operation[1]
+            new = operation[2]
+            result = result.replace(old, new)
+    
+    return result
+
+operations_test = ["lower", ("replace", " ", "_"), "upper"]
+text_test = "  Hello World  "
+safe_result = safe_string_processing(text_test, operations_test)
+assert safe_result == "HELLO_WORLD"
+log(f"✅ Operation sequence with chaining: '{text_test}' -> '{safe_result}'")
+
+# METHOD CHAINING WITH SIMPLE DATA TYPES
+# =======================================
+log("\nTesting method chaining with simple types...")
+
+def process_string_list(strings: list) -> list:
+    """Process a list of strings using method chaining"""
+    result = []
+    
+    for item in strings:
+        processed = item.strip().title().replace(" ", "_")
+        result.append(processed)
+    
+    return result
+
+simple_test_data = ["  hello world  ", "  alice smith  ", "  john doe  "]
+simple_result = process_string_list(simple_test_data)
+expected_simple = ["Hello_World", "Alice_Smith", "John_Doe"]
+assert simple_result == expected_simple
+log(f"✅ Simple data type processing: {simple_result}")
+
+log("\n=== All Method Chaining Integration Tests Passed! ===") 

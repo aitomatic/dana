@@ -1,0 +1,269 @@
+# Method Chaining Edge Cases Tests
+# ================================
+# PURPOSE: Test edge cases and boundary conditions for method chaining
+# AUDIENCE: Developers ensuring robust method chaining implementation
+# LEARNING: Edge cases, boundary conditions, and complex chaining scenarios
+# ================================
+
+log("=== Method Chaining Edge Cases Tests ===")
+
+# CHAINING WITH COMPLEX INDEXING
+# ==============================
+log("Testing complex indexing with method chaining...")
+
+# Multiple indexing operations
+data_matrix = [
+    ["hello", "world"],
+    ["dana", "language"],
+    ["method", "chaining"]
+]
+
+result1 = data_matrix[1][0].upper().replace("A", "X")
+assert result1 == "DXNX"
+log(f"✅ Matrix indexing with chaining: {result1}")
+
+# Dictionary with list values
+complex_data = {
+    "users": [
+        {"name": "  alice  ", "roles": ["admin", "user"]},
+        {"name": "  bob  ", "roles": ["user"]}
+    ]
+}
+
+result2 = complex_data["users"][0]["name"].strip().title()
+assert result2 == "Alice"
+log(f"✅ Complex dict/list indexing with chaining: {result2}")
+
+result3 = complex_data["users"][0]["roles"][0].upper().replace("ADMIN", "ADMINISTRATOR")
+assert result3 == "ADMINISTRATOR"
+log(f"✅ Nested list indexing with chaining: {result3}")
+
+# CHAINING WITH FUNCTION CALL RESULTS
+# ===================================
+log("\nTesting chaining with function call results...")
+
+def get_user_data() -> dict:
+    """Return user data dictionary"""
+    return {"name": "  John Doe  ", "email": "john@example.com"}
+
+def get_message() -> str:
+    """Return a test message"""
+    return "  This is a test message  "
+
+# Chain methods on function return values
+result4 = get_user_data()["name"].strip().title()
+assert result4 == "John Doe"
+log(f"✅ Function return chaining: {result4}")
+
+result5 = get_message().strip().upper().replace(" ", "_")
+assert result5 == "THIS_IS_A_TEST_MESSAGE"
+log(f"✅ Function call chaining: {result5}")
+
+# VERY LONG METHOD CHAINS
+# =======================
+log("\nTesting very long method chains...")
+
+# Extremely long chain
+long_text = "  THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG  "
+result6 = long_text.strip().lower().replace("fox", "wolf").replace("dog", "cat").replace(" ", "_").upper().replace("THE", "A").replace("_", "-")
+assert result6 == "A-QUICK-BROWN-WOLF-JUMPS-OVER-A-LAZY-CAT"
+log(f"✅ Very long method chain: {result6}")
+
+# Chain with many similar operations
+chain_text = "abcdefghijk"
+result7 = chain_text.replace("a", "1").replace("b", "2").replace("c", "3").replace("d", "4").replace("e", "5").upper()
+assert result7 == "12345FGHIJK"
+log(f"✅ Many replacement chain: {result7}")
+
+# CHAINING WITH MIXED RETURN TYPES
+# ================================
+log("\nTesting chaining with mixed return types...")
+
+# Methods that return different types
+mixed_text = "hello,world,test,data"
+result8 = len(mixed_text.split(","))  # list -> int
+assert result8 == 4
+log(f"✅ Chain returning different type: {result8}")
+
+result9 = mixed_text.split(",")[0].upper()  # list -> str -> str
+assert result9 == "HELLO"
+log(f"✅ Mixed type chain: {result9}")
+
+# Boolean returns in chains
+bool_text = "hello123"
+result10 = bool_text.replace("123", "").isalpha()  # str -> str -> bool
+assert result10 == true
+log(f"✅ Chain returning boolean: {result10}")
+
+# CHAINING WITH EMPTY AND NULL VALUES
+# ===================================
+log("\nTesting chaining with empty/null values...")
+
+# Empty string chaining
+empty_test = ""
+result11 = empty_test.strip().upper().replace("X", "Y")
+assert result11 == ""
+log(f"✅ Empty string chaining: '{result11}'")
+
+# Single character chaining
+single_char = "a"
+result12 = single_char.upper().replace("A", "ALPHA")
+assert result12 == "ALPHA"
+log(f"✅ Single character chaining: {result12}")
+
+# CHAINING WITH SPECIAL CHARACTERS
+# ================================
+log("\nTesting chaining with special characters...")
+
+special_text = "hello@world#test"
+result13 = special_text.replace("@", "_").replace("#", "_").upper()
+assert result13 == "HELLO_WORLD_TEST"
+log(f"✅ Special character chaining: {result13}")
+
+# Simple character replacement
+simple_text = "test-string"
+result14 = simple_text.replace("-", "_").upper()
+assert result14 == "TEST_STRING"
+log(f"✅ Simple character chaining: {result14}")
+
+# BOUNDARY CONDITIONS
+# ===================
+log("\nTesting boundary conditions...")
+
+# Chain length test
+boundary_text = "test"
+result15 = boundary_text.upper().lower().upper()
+assert result15 == "TEST"
+log(f"✅ Moderate chain length: {result15}")
+
+# Whitespace handling
+whitespace_text = "   "
+result16 = whitespace_text.strip()
+if result16 == "":
+    result16 = "EMPTY"
+assert result16 == "EMPTY"
+log(f"✅ Whitespace handling: '{result16}'")
+
+# NESTED DICTIONARY AND LIST ACCESS
+# =================================
+log("\nTesting nested data structure access...")
+
+nested_structure = {
+    "level1": {
+        "level2": {
+            "level3": ["  first  ", "  second  ", "  third  "]
+        }
+    }
+}
+
+result17 = nested_structure["level1"]["level2"]["level3"][1].strip().upper()
+assert result17 == "SECOND"
+log(f"✅ Deep nested access with chaining: {result17}")
+
+# CHAINING WITH NUMERIC CONVERSIONS
+# =================================
+log("\nTesting chaining with numeric conversions...")
+
+numeric_text = "  42.5  "
+result18 = numeric_text.strip().replace(".", "_")
+assert result18 == "42_5"
+log(f"✅ Numeric string chaining: {result18}")
+
+# PERFORMANCE TEST (SIMPLE)
+# =========================
+log("\nTesting simple performance scenarios...")
+
+# Simple chain test
+stress_text = "hello"
+result19 = stress_text.upper().replace("H", "J").lower()
+assert result19 == "jello"
+log(f"✅ Simple chain test: {result19}")
+
+# Basic split operation
+list_text = "one,two,three"
+parts = list_text.split(",")
+result20 = parts[1].upper()
+assert result20 == "TWO"
+log(f"✅ Split operation chaining: {result20}")
+
+# MULTI-LINE FLUENT SYNTAX TESTS
+# ==============================
+log("\nTesting multi-line fluent syntax...")
+
+# Test 1: Multi-line method chaining with parentheses (WORKS)
+text_multiline = "  hello fluent world  "
+result_multiline = (text_multiline
+    .strip()
+    .upper()
+    .replace(" ", "_")
+    .replace("FLUENT", "CHAINED"))
+assert result_multiline == "HELLO_CHAINED_WORLD"
+log(f"✅ Multi-line fluent syntax with parentheses: {result_multiline}")
+
+# Test 2: Complex multi-line chain with various operations
+data_text = "  Test-Data_String  "
+complex_result = (
+    data_text
+    .strip()
+    .lower()
+    .replace("-", " ")
+    .replace("_", " ")
+    .title()
+    .replace(" ", "")
+)
+assert complex_result == "TestDataString"
+log(f"✅ Complex multi-line transformation: {complex_result}")
+
+# Test 3: Multi-line with mixed data types
+numbers_text = "1,2,3,4,5"
+list_result = (numbers_text
+    .split(",")
+    [0:3])  # First 3 elements
+assert len(list_result) == 3
+assert list_result[0] == "1"
+log(f"✅ Multi-line chaining with list operations: {len(list_result)} elements")
+
+# Test 4: Very long multi-line chain
+long_text = "  the quick brown fox jumps over lazy dog  "
+long_chain_result = (
+    long_text
+    .strip()
+    .upper()
+    .replace(" ", "_")
+    .replace("THE", "A")
+    .replace("LAZY", "SLEEPY")
+    .replace("_", "-")
+)
+expected_long = "A-QUICK-BROWN-FOX-JUMPS-OVER-SLEEPY-DOG"
+assert long_chain_result == expected_long
+log(f"✅ Very long multi-line method chain: {long_chain_result}")
+
+# Test 5: Multi-line with user-defined structs
+struct FluentCounter:
+    value: int
+
+def increment(counter: FluentCounter, amount: int) -> FluentCounter:
+    return FluentCounter(value=counter.value + amount)
+
+def multiply(counter: FluentCounter, factor: int) -> FluentCounter:
+    return FluentCounter(value=counter.value * factor)
+
+def get_value(counter: FluentCounter) -> int:
+    return counter.value
+
+# Multi-line fluent interface with structs
+counter = FluentCounter(value=5)
+final_value = (counter
+    .increment(3)
+    .multiply(2)
+    .increment(1)
+    .get_value())
+assert final_value == 17  # ((5+3)*2)+1 = 17
+log(f"✅ Multi-line fluent syntax with user-defined structs: {final_value}")
+
+# Note: The following syntax does NOT work in Dana (parser limitation):
+# obj.method()
+#     .another_method()  # <- This fails with parser error
+# Always use parentheses for multi-line method chaining!
+
+log("\n=== All Method Chaining Edge Cases Tests Passed! ===") 
