@@ -125,6 +125,8 @@ class FStringTransformer(BaseTransformer):
         - Attribute access: obj.attr.method()
         - All binary/unary operators
         - Complex nested expressions
+        
+        F-string expressions now behave EXACTLY like regular Dana expressions.
         """
         try:
             # Use the same proven parser infrastructure as the rest of Dana
@@ -137,16 +139,25 @@ class FStringTransformer(BaseTransformer):
             return ast_node
             
         except Exception as e:
-            # Fallback: treat as simple identifier with local scope
+            # Fallback: treat as simple identifier (no scope prefix - same as main parser)
             self.debug(f"F-string expression parsing failed for '{expr_text}': {e}")
-            self.debug("Falling back to identifier with local scope")
+            self.debug("Falling back to simple identifier")
             
             # Clean the expression text for use as identifier
             clean_text = expr_text.strip()
             if is_valid_identifier(clean_text):
-                return Identifier(name=f"local:{clean_text}")
+                return Identifier(name=clean_text)  # No automatic local: prefix
             else:
                 # Last resort: return as literal expression  
                 return LiteralExpression(value=expr_text)
+
+    def _parse_expression_term(self, term: str) -> Any:
+        """
+        Parse a single term in an f-string expression.
+        
+        Delegates to the main parsing logic for consistency.
+        F-string expressions behave exactly like regular Dana expressions.
+        """
+        return self._parse_expression_in_fstring(term)
 
 
