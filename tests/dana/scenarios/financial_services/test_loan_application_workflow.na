@@ -112,10 +112,14 @@ def calculate_debt_to_income_ratio(income: Income, liabilities: Liabilities) -> 
     return 0.0
 
 def calculate_loan_to_value_ratio(requested_amount: float, down_payment: float, property_value: float) -> float:
-    """Calculate loan-to-value ratio"""
-    loan_amount = requested_amount - down_payment
+    """Calculate loan-to-value ratio
+    
+    LTV = (Loan Amount / Property Value) * 100
+    The loan amount should be the requested_amount (amount being borrowed)
+    NOT requested_amount - down_payment (which would be incorrect)
+    """
     if property_value > 0:
-        return (loan_amount / property_value) * 100.0
+        return (requested_amount / property_value) * 100.0
     return 0.0
 
 # POET-enhanced risk assessment function

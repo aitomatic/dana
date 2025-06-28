@@ -52,6 +52,7 @@ def run_dana_file(dana_file_path):
 dana_files = discover_dana_test_files()
 
 @pytest.mark.parametrize("dana_file", dana_files, ids=[f.stem for f in dana_files])
+@pytest.mark.xfail(reason="Expected failure: Documents unsupported Dana data structure features for future consideration")
 def test_expected_data_structure_failures(dana_file):
     """
     Test expected data structure failures in Dana language.
@@ -64,9 +65,6 @@ def test_expected_data_structure_failures(dana_file):
     2. Catch the failures and log success messages
     3. Return successfully, indicating all expected failures occurred
     """
-    # Mark as expected failure - these document unsupported features
-    pytest.xfail("Expected failure: Documents unsupported Dana data structure features for future consideration")
-    
     success, output = run_dana_file(dana_file)
     
     # Print output for debugging
