@@ -41,10 +41,11 @@ Example:
     >>> config = ConfigManager().load_config("agent_config.yaml")
 """
 
-from opendxa.common.capability import (
-    BaseCapability,
-    Capable,
-)
+# Capability imports removed - module deprecated
+# from opendxa.common.capability import (
+#     BaseCapability,
+#     Capable,
+# )
 from opendxa.common.config import (
     ConfigLoader,
 )
@@ -71,20 +72,21 @@ from opendxa.common.exceptions import (
     ValidationError,
     WebSocketError,
 )
-from opendxa.common.graph import (
-    BreadthFirstTraversal,
-    Cursor,
-    DepthFirstTraversal,
-    DirectedGraph,
-    Edge,
-    GraphFactory,
-    GraphSerializer,
-    GraphVisualizer,
-    Node,
-    NodeType,
-    TopologicalTraversal,
-    TraversalStrategy,
-)
+# Graph imports removed - module deprecated
+# from opendxa.common.graph import (
+#     BreadthFirstTraversal,
+#     Cursor,
+#     DepthFirstTraversal,
+#     DirectedGraph,
+#     Edge,
+#     GraphFactory,
+#     GraphSerializer,
+#     GraphVisualizer,
+#     Node,
+#     NodeType,
+#     TopologicalTraversal,
+#     TraversalStrategy,
+# )
 
 # Note: IO imports removed to break circular dependency
 # BaseIO extends BaseResource, so importing IO here creates circular imports
@@ -149,9 +151,9 @@ __all__ = [
     "JsonType",
     "BaseRequest",
     "BaseResponse",
-    # Capability (from capability/)
-    "BaseCapability",
-    "Capable",
+    # Capability (from capability/) - DEPRECATED
+    # "BaseCapability",
+    # "Capable",
     # Config (from config/)
     "ConfigLoader",
     # DB (from db/)
@@ -161,19 +163,19 @@ __all__ = [
     "MemoryDBModel",
     "KnowledgeDBStorage",
     "MemoryDBStorage",
-    # Graph (from graph/)
-    "Node",
-    "Edge",
-    "NodeType",
-    "DirectedGraph",
-    "Cursor",
-    "TraversalStrategy",
-    "BreadthFirstTraversal",
-    "DepthFirstTraversal",
-    "TopologicalTraversal",
-    "GraphVisualizer",
-    "GraphSerializer",
-    "GraphFactory",
+    # Graph (from graph/) - DEPRECATED
+    # "Node",
+    # "Edge",
+    # "NodeType",
+    # "DirectedGraph",
+    # "Cursor",
+    # "TraversalStrategy",
+    # "BreadthFirstTraversal",
+    # "DepthFirstTraversal",
+    # "TopologicalTraversal",
+    # "GraphVisualizer",
+    # "GraphSerializer",
+    # "GraphFactory",
     # IO classes removed to break circular dependency
     # Mixins (from mixins/)
     "Loggable",
