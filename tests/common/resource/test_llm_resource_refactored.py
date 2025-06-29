@@ -150,10 +150,12 @@ class TestLLMResourceRefactored(unittest.TestCase):
         """Test integration with preferred models from configuration."""
         # Mock configuration with preferred models
         mock_config = {
-            "preferred_models": [
-                {"name": "openai:gpt-4", "required_api_keys": ["OPENAI_API_KEY"]},
-                {"name": "anthropic:claude-3", "required_api_keys": ["ANTHROPIC_API_KEY"]},
-            ]
+            "llm": {
+                "preferred_models": [
+                    {"name": "openai:gpt-4", "required_api_keys": ["OPENAI_API_KEY"]},
+                    {"name": "anthropic:claude-3", "required_api_keys": ["ANTHROPIC_API_KEY"]},
+                ]
+            }
         }
         mock_config_loader.return_value.get_default_config.return_value = mock_config
 
@@ -162,7 +164,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
         llm = LLMResource(name="test_llm")  # No explicit model
 
         # Should have preferred_models from config
-        self.assertEqual(llm.preferred_models, mock_config["preferred_models"])
+        self.assertEqual(llm.preferred_models, mock_config["llm"]["preferred_models"])
 
         # Config manager should be initialized with this info
         self.assertIsNotNone(llm._config_manager)

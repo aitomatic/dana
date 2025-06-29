@@ -145,7 +145,8 @@ class TestConfigLoader(unittest.TestCase):
                     result = loader.get_default_config()
                     assert isinstance(result, dict), "Should load from library default"
                     # Verify it has expected structure (based on current config)
-                    assert "preferred_models" in result, "Default config should have preferred_models"
+                    assert "llm" in result, "Default config should have llm section"
+                    assert "preferred_models" in result["llm"], "Default config should have preferred_models under llm"
 
     def test_get_default_config_no_file_found(self):
         """Test error when no config file found anywhere (corrupted installation)."""

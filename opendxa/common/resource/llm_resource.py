@@ -155,10 +155,6 @@ class LLMResource(BaseResource):
         elif "llm" in base_config and "preferred_models" in base_config["llm"]:
             self.preferred_models = base_config["llm"]["preferred_models"]
             self.debug("Using preferred_models from config file (llm section).")
-        elif "preferred_models" in base_config:
-            # Fallback for backward compatibility
-            self.preferred_models = base_config["preferred_models"]
-            self.debug("Using preferred_models from config file (root level - legacy).")
         else:
             self.preferred_models = []
             self.warning("No preferred_models list found in config or arguments.")

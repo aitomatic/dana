@@ -33,10 +33,8 @@ def _get_available_model_names() -> list[str]:
         # Get models from both preferred_models and all_models
         all_models = set()
         
-        # Add from preferred_models (check both root level and llm sublevel)
-        preferred_models = config.get("preferred_models", [])
-        if not preferred_models:
-            preferred_models = config.get("llm", {}).get("preferred_models", [])
+        # Add from preferred_models (only check llm sublevel)
+        preferred_models = config.get("llm", {}).get("preferred_models", [])
         
         for model in preferred_models:
             if isinstance(model, str):
@@ -44,10 +42,8 @@ def _get_available_model_names() -> list[str]:
             elif isinstance(model, dict) and model.get("name"):
                 all_models.add(model["name"])
         
-        # Add from all_models list
-        all_models_list = config.get("all_models", [])
-        if not all_models_list:
-            all_models_list = config.get("llm", {}).get("all_models", [])
+        # Add from all_models list (only check llm sublevel)
+        all_models_list = config.get("llm", {}).get("all_models", [])
         
         for model in all_models_list:
             if isinstance(model, str):

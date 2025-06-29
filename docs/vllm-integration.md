@@ -40,17 +40,17 @@ client = ai.Client(provider_configs=provider_configs)
 Update `opendxa/opendxa_config.json`:
 ```json
 {
+  "llm": {
     "preferred_models": [
-        {"name": "vllm:local-model", "required_api_keys": []}
+      {"name": "vllm:local-model", "required_api_keys": []}
     ],
-    "llm": {
-        "provider_configs": {
-            "vllm": {
-                "base_url": "http://localhost:8000/v1",
-                "api_key": "not-needed"
-            }
-        }
+    "provider_configs": {
+      "vllm": {
+        "base_url": "http://localhost:8000/v1",
+        "api_key": "not-needed"
+      }
     }
+  }
 }
 ```
 

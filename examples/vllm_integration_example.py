@@ -207,10 +207,10 @@ client = ai.Client(provider_configs=provider_configs)
     print("\n3️⃣ OpenDXA Config (opendxa_config.json):")
     print("""
 {
-    "preferred_models": [
-        {"name": "vllm:local-model", "required_api_keys": []}
-    ],
     "llm": {
+        "preferred_models": [
+            {"name": "vllm:local-model", "required_api_keys": []}
+        ],
         "provider_configs": {
             "vllm": {
                 "base_url": "http://localhost:8000/v1",

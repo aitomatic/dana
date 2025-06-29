@@ -45,13 +45,13 @@ class AgentConfig(BaseModel, Loggable):
         # Apply overrides
         config.update(overrides)
 
-        # Extract preferred_models from llm section if present
+        # Extract preferred_models from llm section
         if "llm" in config and "preferred_models" in config["llm"]:
             config["preferred_models"] = config["llm"]["preferred_models"]
             self.debug("Using preferred_models from config file (llm section).")
-        elif "preferred_models" not in config:
+        else:
             config["preferred_models"] = []
-            self.debug("No preferred_models found, using empty list.")
+            self.debug("No preferred_models found in llm section, using empty list.")
 
         # Initialize parent class with config
         super().__init__(**config)
