@@ -29,7 +29,7 @@ def old_reason_function(
     use_mock: bool | None = None,
 ) -> Any:
     """Execute the original reason function to generate a response using an LLM.
-    
+
     This is the legacy implementation preserved for inspection and fallback.
 
     Args:
@@ -261,6 +261,7 @@ def old_reason_function(
 # POET-Enhanced Reason Function (New Primary Implementation)
 # ============================================================================
 
+
 def reason_function(
     context: SandboxContext,
     prompt: str,
@@ -268,7 +269,7 @@ def reason_function(
     use_mock: bool | None = None,
 ) -> Any:
     """Execute the POET-enhanced reason function with automatic prompt optimization.
-    
+
     This is the new primary implementation that provides context-aware prompt
     enhancement and semantic coercion based on expected return types.
 
@@ -287,21 +288,21 @@ def reason_function(
     from opendxa.dana.sandbox.interpreter.context_detection import ContextDetector
     from opendxa.dana.sandbox.interpreter.enhanced_coercion import SemanticCoercer
     from opendxa.dana.sandbox.interpreter.prompt_enhancement import enhance_prompt_for_type
-    
+
     logger = DXA_LOGGER.getLogger("opendxa.dana.reason.poet")
     logger.debug(f"POET-enhanced reason called with prompt: '{prompt[:50]}...'")
-    
+
     try:
         # Phase 1: Detect expected return type context
         context_detector = ContextDetector()
         type_context = context_detector.detect_current_context(context)
-        
+
         if type_context:
             logger.debug(f"Detected type context: {type_context}")
-            
+
             # Phase 2: Enhance prompt based on expected type
             enhanced_prompt = enhance_prompt_for_type(prompt, type_context)
-            
+
             if enhanced_prompt != prompt:
                 logger.debug(f"Enhanced prompt from {len(prompt)} to {len(enhanced_prompt)} chars")
                 logger.debug(f"Enhancement for type: {type_context.expected_type}")
@@ -310,32 +311,30 @@ def reason_function(
         else:
             logger.debug("No type context detected, using original prompt")
             enhanced_prompt = prompt
-        
+
         # Phase 3: Execute with enhanced prompt using original function
         result = old_reason_function(context, enhanced_prompt, options, use_mock)
-        
+
         # Phase 4: Apply semantic coercion if type context is available
         if type_context and type_context.expected_type and result is not None:
             try:
                 semantic_coercer = SemanticCoercer()
                 coerced_result = semantic_coercer.coerce_value(
-                    result, 
-                    type_context.expected_type,
-                    context=f"reason_function_{type_context.expected_type}"
+                    result, type_context.expected_type, context=f"reason_function_{type_context.expected_type}"
                 )
-                
+
                 if coerced_result != result:
                     logger.debug(f"Applied semantic coercion: {type(result)} → {type(coerced_result)}")
-                
+
                 return coerced_result
-                
+
             except Exception as coercion_error:
                 logger.debug(f"Semantic coercion failed: {coercion_error}, returning original result")
                 # Fall back to original result if coercion fails
                 return result
-        
+
         return result
-        
+
     except Exception as e:
         logger.debug(f"POET enhancement failed: {e}, falling back to original function")
         # Fallback to original function on any error

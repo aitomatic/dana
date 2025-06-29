@@ -12,7 +12,15 @@ from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.sandbox.parser.ast import AgentPoolStatement, AgentStatement, ExportStatement, StructDefinition, UseStatement
+from opendxa.dana.sandbox.parser.ast import (
+    AgentDefinition,
+    AgentPoolStatement,
+    AgentStatement,
+    ExportStatement,
+    FunctionDefinition,
+    StructDefinition,
+    UseStatement,
+)
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
@@ -28,6 +36,8 @@ class AgentHandler(Loggable):
         self.parent_executor = parent_executor
         self.function_registry = function_registry
         self._resource_count = 0
+        # Track the last agent definition for method association
+        self._last_agent_type: Any = None
 
     def execute_agent_statement(self, node: AgentStatement, context: SandboxContext) -> Any:
         """Execute an agent statement with optimized processing.
@@ -212,6 +222,152 @@ class AgentHandler(Loggable):
             raise SandboxError(f"Failed to register struct {node.name}: {e}")
 
         return None
+
+    def execute_agent_definition(self, node: AgentDefinition, context: SandboxContext) -> None:
+        """Execute an agent definition statement with optimized processing.
+
+        Args:
+            node: The agent definition node
+            context: The execution context
+
+        Returns:
+            None (agent definitions don't produce a value, they register a type)
+        """
+        # Import here to avoid circular imports
+        from opendxa.dana.agent.agent_system import AgentType, register_agent_type
+
+        # Create and register the agent type
+        try:
+            agent_type = AgentType(node)
+            register_agent_type(agent_type)
+            self.debug(f"Registered agent type: {agent_type.name}")
+
+            # Store reference to this agent type for method association
+            self._last_agent_type = agent_type
+
+            # Register agent constructor function in the context
+            # This allows `inspector = SemiconductorInspector(...)` syntax
+            def agent_constructor(**kwargs):
+                return agent_type.create_instance(context=context, **kwargs)
+
+            context.set(f"local:{node.name}", agent_constructor)
+
+            # Trace agent registration
+            self._trace_resource_operation("agent_definition", node.name, len(node.fields), 0)
+
+        except Exception as e:
+            raise SandboxError(f"Failed to register agent {node.name}: {e}")
+
+        return None
+
+    def execute_function_definition(self, node: FunctionDefinition, context: SandboxContext) -> Any:
+        """Execute a function definition, potentially associating it with the last agent type.
+
+        Args:
+            node: The function definition to execute
+            context: The execution context
+
+        Returns:
+            The defined function
+        """
+        # Create the DanaFunction object
+        from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+
+        # Extract parameter names and defaults
+        param_names = []
+        param_defaults = {}
+        for param in node.parameters:
+            if hasattr(param, "name"):
+                param_name = param.name
+                param_names.append(param_name)
+
+                # Extract default value if present
+                if hasattr(param, "default_value") and param.default_value is not None:
+                    # Evaluate the default value expression in the current context
+                    try:
+                        default_value = self.parent_executor.parent.execute(param.default_value, context)
+                        param_defaults[param_name] = default_value
+                    except Exception as e:
+                        self.debug(f"Failed to evaluate default value for parameter {param_name}: {e}")
+                        pass
+            else:
+                param_names.append(str(param))
+
+        # Extract return type if present
+        return_type = None
+        if hasattr(node, "return_type") and node.return_type is not None:
+            if hasattr(node.return_type, "name"):
+                return_type = node.return_type.name
+            else:
+                return_type = str(node.return_type)
+
+        # Create the base DanaFunction with defaults
+        dana_func = DanaFunction(
+            body=node.body, parameters=param_names, context=context, return_type=return_type, defaults=param_defaults, name=node.name.name
+        )
+
+        # Check if this function should be associated with the last agent type
+        # Look for agent parameter as first parameter (e.g., def plan(inspector: SemiconductorInspector, ...))
+        if (self._last_agent_type is not None and 
+            len(param_names) > 0 and 
+            param_names[0] == "inspector"):
+            
+            # This looks like an agent method - associate it with the agent type
+            method_name = node.name.name
+            self._last_agent_type.add_method(method_name, dana_func)
+            self.debug(f"Associated method '{method_name}' with agent type '{self._last_agent_type.name}'")
+            self.info(f"🔧 ASSOCIATED METHOD: {method_name} with {self._last_agent_type.name}")
+        else:
+            self.debug(f"Function '{node.name.name}' not associated with agent type (first param: {param_names[0] if param_names else 'none'})")
+
+        # Apply decorators if present
+        if node.decorators:
+            wrapped_func = self._apply_decorators(dana_func, node.decorators, context)
+            # Store the decorated function in context
+            context.set(f"local:{node.name.name}", wrapped_func)
+            return wrapped_func
+        else:
+            # No decorators, store the DanaFunction as usual
+            context.set(f"local:{node.name.name}", dana_func)
+            return dana_func
+
+    def _apply_decorators(self, func, decorators, context):
+        """Apply decorators to a function, handling both simple and parameterized decorators."""
+        result = func
+        # Apply decorators in reverse order (innermost first)
+        for decorator in reversed(decorators):
+            decorator_func = self._resolve_decorator(decorator, context)
+
+            # Check if decorator has arguments (factory pattern)
+            if decorator.args or decorator.kwargs:
+                # Evaluate arguments to Python values
+                evaluated_args = []
+                evaluated_kwargs = {}
+
+                for arg_expr in decorator.args:
+                    evaluated_args.append(self.parent_executor.parent.execute(arg_expr, context))
+
+                for key, value_expr in decorator.kwargs.items():
+                    evaluated_kwargs[key] = self.parent_executor.parent.execute(value_expr, context)
+
+                # Call the decorator factory with arguments
+                actual_decorator = decorator_func(*evaluated_args, **evaluated_kwargs)
+                result = actual_decorator(result)
+            else:
+                # Simple decorator (no arguments)
+                result = decorator_func(result)
+
+        return result
+
+    def _resolve_decorator(self, decorator, context):
+        """Resolve a decorator to a callable function."""
+        # If it's a function call, resolve it
+        if hasattr(decorator, "func") and hasattr(decorator, "args"):
+            decorator_func = self.parent_executor.parent.execute(decorator.func, context)
+            return decorator_func
+        else:
+            # Simple identifier
+            return self.parent_executor.parent.execute(decorator, context)
 
     def _trace_resource_operation(self, operation_type: str, resource_name: str, arg_count: int, kwarg_count: int) -> None:
         """Trace resource operations for debugging when enabled.

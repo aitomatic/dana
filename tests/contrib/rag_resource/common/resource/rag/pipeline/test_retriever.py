@@ -26,14 +26,14 @@ class TestRetriever:
         mock_index = Mock(spec=VectorStoreIndex)
         mock_index_retriever = Mock()
         mock_index.as_retriever.return_value = mock_index_retriever
-        
+
         # Mock retrieval result
         mock_node = Mock(spec=NodeWithScore)
         mock_index_retriever.retrieve.return_value = [mock_node]
-        
+
         retriever = Retriever(mock_index)
         result = retriever.retrieve("test query", num_results=5)
-        
+
         # Should return the mock result
         assert result == [mock_node]
         mock_index.as_retriever.assert_called_once_with(similarity_top_k=5)
@@ -46,16 +46,17 @@ class TestRetriever:
         mock_index = Mock(spec=VectorStoreIndex)
         mock_index_retriever = Mock()
         mock_index.as_retriever.return_value = mock_index_retriever
-        
+
         # Mock async retrieval result - need AsyncMock for async method
         from unittest.mock import AsyncMock
+
         mock_node = Mock(spec=NodeWithScore)
         mock_index_retriever.aretrieve = AsyncMock(return_value=[mock_node])
-        
+
         retriever = Retriever(mock_index)
         result = await retriever.aretrieve("test query", num_results=3)
-        
+
         # Should return the mock result
         assert result == [mock_node]
         mock_index.as_retriever.assert_called_once_with(similarity_top_k=3)
-        mock_index_retriever.aretrieve.assert_called_once_with("test query") 
+        mock_index_retriever.aretrieve.assert_called_once_with("test query")

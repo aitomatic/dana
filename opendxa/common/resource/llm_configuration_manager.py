@@ -85,7 +85,7 @@ class LLMConfigurationManager:
             return True
 
         try:
-            # For model validation, we only check required API keys, not whether 
+            # For model validation, we only check required API keys, not whether
             # the model is in the preferred_models list. The preferred_models list
             # is used for selection priority, not validation restrictions.
             required_env_vars = self._get_required_env_vars_for_model(model_name)
@@ -108,7 +108,7 @@ class LLMConfigurationManager:
         """
         try:
             config = self.config_loader.get_default_config()
-            
+
             # Handle both new structure (llm.preferred_models) and legacy structure (root preferred_models)
             # This matches the logic in LLMResource for consistency
             if "llm" in config and "preferred_models" in config["llm"]:
@@ -137,7 +137,7 @@ class LLMConfigurationManager:
         try:
             # First try to find model in preferred_models config for required_api_keys
             config = self.config_loader.get_default_config()
-            
+
             # Handle both new structure (llm.preferred_models) and legacy structure (root preferred_models)
             # This matches the logic in LLMResource for consistency
             if "llm" in config and "preferred_models" in config["llm"]:
@@ -177,7 +177,7 @@ class LLMConfigurationManager:
         """Find the first available model from preferred list."""
         try:
             config = self.config_loader.get_default_config()
-            
+
             # Handle both new structure (llm.preferred_models) and legacy structure (root preferred_models)
             # This matches the logic in LLMResource for consistency
             if "llm" in config and "preferred_models" in config["llm"]:

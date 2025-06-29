@@ -10,10 +10,11 @@ class AbstractCache(ABC, Loggable):
     @abstractmethod
     def get(self, key):
         pass
-    
+
     @abstractmethod
     def set(self, key, value):
         pass
+
 
 class BaseCache(AbstractCache):
     def __init__(self):
@@ -22,7 +23,7 @@ class BaseCache(AbstractCache):
 
     def get(self, key):
         return self._cache.get(key)
-    
+
     def set(self, key, value):
         if value is None:
             return

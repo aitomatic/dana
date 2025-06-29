@@ -36,8 +36,9 @@ class IndexCombiner(BaseStage):
         """
         super().__init__(**kwargs)
 
-    async def combine_indices(self, individual_indices: dict[str, VectorStoreIndex], 
-                            docs_by_source: dict[str, list[Document]]) -> VectorStoreIndex:
+    async def combine_indices(
+        self, individual_indices: dict[str, VectorStoreIndex], docs_by_source: dict[str, list[Document]]
+    ) -> VectorStoreIndex:
         """Create a combined index from individual indices without recomputing embeddings.
 
         This method extracts all nodes from individual indices and creates a new
@@ -70,6 +71,7 @@ class IndexCombiner(BaseStage):
 
     async def _create_combined_vector_store_index(self, individual_indices: dict[str, VectorStoreIndex]) -> VectorStoreIndex | None:
         """Create combined vector store by merging existing vector stores."""
+
         def _recursive_update_inplace(dict1: dict, dict2: dict):
             for k, v in dict2.items():
                 if k in dict1:
@@ -79,7 +81,7 @@ class IndexCombiner(BaseStage):
                         dict1[k] = v
                 else:
                     dict1[k] = v
-        
+
         combined_storage_context_dict = {}
         storage_context_cls = None
         combined_index_struct_dict = {}
@@ -108,10 +110,10 @@ class IndexCombiner(BaseStage):
                 combined_index_store_data[index_store_id] = index_store_data
                 combined_index_id = index_store_id
             else:
-                combined_data = json.loads(combined_index_store_data[combined_index_id]['__data__'])
-                index_store_nodes_dict = json.loads(index_store_data['__data__'])['nodes_dict']
-                combined_data['nodes_dict'].update(index_store_nodes_dict)
-                combined_index_store_data[combined_index_id]['__data__'] = json.dumps(combined_data)
+                combined_data = json.loads(combined_index_store_data[combined_index_id]["__data__"])
+                index_store_nodes_dict = json.loads(index_store_data["__data__"])["nodes_dict"]
+                combined_data["nodes_dict"].update(index_store_nodes_dict)
+                combined_index_store_data[combined_index_id]["__data__"] = json.dumps(combined_data)
 
         if combined_index_store_data:
             combined_storage_context_dict["index_store"]["index_store/data"] = combined_index_store_data

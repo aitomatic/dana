@@ -482,26 +482,26 @@ class LLMResource(BaseResource):
         model = request.get("model", self.model or "unknown")
         temperature = request.get("temperature", 0.7)
         max_tokens = request.get("max_tokens", "unspecified")
-        
+
         self.info(f"🤖 LLM Request to {model} (temp={temperature}, max_tokens={max_tokens})")
-        
+
         # Log each message in the conversation
         for i, message in enumerate(messages):
             role = message.get("role", "unknown")
             content = message.get("content", "")
-            
+
             # Truncate very long content for readability
             if isinstance(content, str) and len(content) > 300:
                 content_preview = content[:300] + "... [truncated]"
             else:
                 content_preview = content
-                
-            self.info(f"  [{i+1}] {role.upper()}: {content_preview}")
-            
+
+            self.info(f"  [{i + 1}] {role.upper()}: {content_preview}")
+
             # Log tool calls if present
             if "tool_calls" in message and message["tool_calls"]:
                 self.info(f"    Tool calls: {len(message['tool_calls'])} tools requested")
-        
+
         # Keep debug level for full request details
         self.debug("LLM request (full): %s", json.dumps(request, indent=2))
 
@@ -515,19 +515,19 @@ class LLMResource(BaseResource):
         choices = response.choices if hasattr(response, "choices") else []
         usage = response.usage if hasattr(response, "usage") else None
         model = response.model if hasattr(response, "model") else "unknown"
-        
+
         if choices and len(choices) > 0:
             message = choices[0].message
             role = message.role if hasattr(message, "role") else "assistant"
             content = message.content if hasattr(message, "content") else ""
             tool_calls = message.tool_calls if hasattr(message, "tool_calls") else None
-            
+
             # Log response summary
             prompt_tokens = usage.prompt_tokens if usage and hasattr(usage, "prompt_tokens") else 0
             completion_tokens = usage.completion_tokens if usage and hasattr(usage, "completion_tokens") else 0
-            
+
             self.info(f"📝 LLM Response from {model} ({prompt_tokens} + {completion_tokens} tokens)")
-            
+
             # Log content if present
             if content:
                 # Truncate very long content for readability
@@ -536,14 +536,16 @@ class LLMResource(BaseResource):
                 else:
                     content_preview = content
                 self.info(f"  {role.upper()}: {content_preview}")
-            
+
             # Log tool calls if present
             if tool_calls:
                 self.info(f"  🔧 Tool calls: {len(tool_calls)} tools requested")
                 for i, tool_call in enumerate(tool_calls):
-                    function_name = tool_call.function.name if hasattr(tool_call, "function") and hasattr(tool_call.function, "name") else "unknown"
-                    self.info(f"    [{i+1}] {function_name}")
-        
+                    function_name = (
+                        tool_call.function.name if hasattr(tool_call, "function") and hasattr(tool_call.function, "name") else "unknown"
+                    )
+                    self.info(f"    [{i + 1}] {function_name}")
+
         # Keep debug level for full response details
         self.debug("LLM response (full): %s", str(response))
 

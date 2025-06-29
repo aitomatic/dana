@@ -73,7 +73,10 @@ class TestLLMQueryExecutor(unittest.IsolatedAsyncioTestCase):
         self.assertIn("choices", response)
         self.assertEqual(len(response["choices"]), 1)
         self.assertEqual(response["choices"][0]["message"]["role"], "assistant")
-        self.assertIn("This is a mock response. In a real scenario, I would provide a thoughtful answer to: Hello, how are you?", response["choices"][0]["message"]["content"])
+        self.assertIn(
+            "This is a mock response. In a real scenario, I would provide a thoughtful answer to: Hello, how are you?",
+            response["choices"][0]["message"]["content"],
+        )
         self.assertEqual(response["model"], "mock-model")
 
     async def test_mock_llm_query_no_messages(self):

@@ -279,8 +279,6 @@ def configure_debug_logging():
     SandboxLogger.set_system_log_level(LogLevel.DEBUG)
 
 
-
-
 def validate_na_file(file_path):
     """Validate that the file exists and has .na extension."""
     if not file_path.endswith(".na"):

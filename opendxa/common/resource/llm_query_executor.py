@@ -400,8 +400,8 @@ class LLMQueryExecutor(Loggable):
         if not last_message:
             raise LLMError("No user message found in message history")
 
-        content = last_message['content']
-        
+        content = last_message["content"]
+
         # Intelligent response based on prompt analysis
         mock_content = self._generate_intelligent_mock_response(content)
 
@@ -414,36 +414,42 @@ class LLMQueryExecutor(Loggable):
 
     def _generate_intelligent_mock_response(self, prompt: str) -> str:
         """Generate intelligent mock responses based on prompt analysis.
-        
+
         Args:
             prompt: The user prompt to analyze
-            
+
         Returns:
             str: Appropriate mock response
         """
         prompt_lower = prompt.lower()
-        
+
         # Detect POET-enhanced prompts with format instructions (updated patterns)
-        is_boolean_prompt = ("respond with clear yes/no" in prompt_lower or 
-                           "respond only with yes or no" in prompt_lower or
-                           'return format: "yes" or "no"' in prompt_lower)
+        is_boolean_prompt = (
+            "respond with clear yes/no" in prompt_lower
+            or "respond only with yes or no" in prompt_lower
+            or 'return format: "yes" or "no"' in prompt_lower
+        )
         is_integer_prompt = "return only the final integer number" in prompt_lower
         is_float_prompt = "return only the final numerical value as a decimal" in prompt_lower
-        is_dict_prompt = ("return only a valid json object" in prompt_lower or 
-                         "format your response as a json object" in prompt_lower or
-                         "return a json object" in prompt_lower)
-        is_list_prompt = ("return only a valid json array" in prompt_lower or
-                         "format your response as a json array" in prompt_lower or
-                         "return a json array" in prompt_lower)
-        
+        is_dict_prompt = (
+            "return only a valid json object" in prompt_lower
+            or "format your response as a json object" in prompt_lower
+            or "return a json object" in prompt_lower
+        )
+        is_list_prompt = (
+            "return only a valid json array" in prompt_lower
+            or "format your response as a json array" in prompt_lower
+            or "return a json array" in prompt_lower
+        )
+
         # Boolean questions with enhanced prompts
         if is_boolean_prompt:
             if any(term in prompt_lower for term in ["invest", "renewable", "proceed", "continue", "approve"]):
                 return "yes"
             else:
                 return "no"
-        
-        # Integer questions with enhanced prompts  
+
+        # Integer questions with enhanced prompts
         if is_integer_prompt:
             if "planets" in prompt_lower and "solar system" in prompt_lower:
                 return "8"
@@ -453,7 +459,7 @@ class LLMQueryExecutor(Loggable):
                 return "365"
             else:
                 return "42"  # Default integer
-        
+
         # Float questions with enhanced prompts
         if is_float_prompt:
             if "pi" in prompt_lower:
@@ -462,7 +468,7 @@ class LLMQueryExecutor(Loggable):
                 return "37.0"
             else:
                 return "3.14"  # Default float
-        
+
         # Dict questions with enhanced prompts
         if is_dict_prompt:
             if "moon" in prompt_lower:
@@ -471,7 +477,7 @@ class LLMQueryExecutor(Loggable):
                 return '{"diameter_km": "6779", "distance_from_sun_au": "1.52", "orbital_period_days": "687"}'
             else:
                 return '{"result": "mock_data", "status": "success"}'
-        
+
         # List questions with enhanced prompts
         if is_list_prompt:
             if "planets" in prompt_lower and ("first 4" in prompt_lower or "4 planets" in prompt_lower):
@@ -480,7 +486,7 @@ class LLMQueryExecutor(Loggable):
                 return '["red", "blue", "yellow"]'
             else:
                 return '["item1", "item2", "item3"]'
-        
+
         # Regular questions without POET enhancement
         if "capital" in prompt_lower and "france" in prompt_lower:
             return "Paris"
@@ -537,22 +543,22 @@ class LLMQueryExecutor(Loggable):
         model = request_params.get("model", "unknown")
         temperature = request_params.get("temperature", 0.7)
         max_tokens = request_params.get("max_tokens", "unspecified")
-        
+
         self.info(f"🤖 LLM Request to {model} (temp={temperature}, max_tokens={max_tokens})")
-        
+
         # Log each message in the conversation
         for i, message in enumerate(messages):
             role = message.get("role", "unknown")
             content = message.get("content", "")
-            
+
             # Truncate very long content for readability
             if isinstance(content, str) and len(content) > 500:
                 content_preview = content[:500] + "... [truncated]"
             else:
                 content_preview = content
-                
-            self.info(f"  [{i+1}] {role.upper()}: {content_preview}")
-            
+
+            self.info(f"  [{i + 1}] {role.upper()}: {content_preview}")
+
             # Log tool calls if present
             if "tool_calls" in message and message["tool_calls"]:
                 self.info(f"    Tool calls: {len(message['tool_calls'])} tools requested")
@@ -567,19 +573,19 @@ class LLMQueryExecutor(Loggable):
         choices = response.choices if hasattr(response, "choices") else []
         usage = response.usage if hasattr(response, "usage") else None
         model = response.model if hasattr(response, "model") else "unknown"
-        
+
         if choices and len(choices) > 0:
             message = choices[0].message
             role = message.role if hasattr(message, "role") else "assistant"
             content = message.content if hasattr(message, "content") else ""
             tool_calls = message.tool_calls if hasattr(message, "tool_calls") else None
-            
+
             # Log response summary
             prompt_tokens = usage.prompt_tokens if usage and hasattr(usage, "prompt_tokens") else 0
             completion_tokens = usage.completion_tokens if usage and hasattr(usage, "completion_tokens") else 0
-            
+
             self.info(f"📝 LLM Response from {model} ({prompt_tokens} + {completion_tokens} tokens)")
-            
+
             # Log content if present
             if content:
                 # Truncate very long content for readability
@@ -588,13 +594,15 @@ class LLMQueryExecutor(Loggable):
                 else:
                     content_preview = content
                 self.info(f"  {role.upper()}: {content_preview}")
-            
+
             # Log tool calls if present
             if tool_calls:
                 self.info(f"  🔧 Tool calls: {len(tool_calls)} tools requested")
                 for i, tool_call in enumerate(tool_calls):
-                    function_name = tool_call.function.name if hasattr(tool_call, "function") and hasattr(tool_call.function, "name") else "unknown"
-                    self.info(f"    [{i+1}] {function_name}")
-        
+                    function_name = (
+                        tool_call.function.name if hasattr(tool_call, "function") and hasattr(tool_call.function, "name") else "unknown"
+                    )
+                    self.info(f"    [{i + 1}] {function_name}")
+
         # Also keep the debug level logging for full details
         self.debug("LLM response (full): %s", str(response))
