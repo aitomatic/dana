@@ -224,7 +224,7 @@ if not errorlevel 1 (
     echo %MODEL% | findstr /C:"vision" /C:"VL" /C:"Scout" >nul
     if not errorlevel 1 set "EXTRA_ARGS=--limit-mm-per-prompt {\"image\": 5}"
     
-    wsl bash -c "cd ~/vllm && source bin/activate && python -m vllm.entrypoints.openai.api_server --model '%MODEL%' --host '%HOST%' --port '%PORT%' --dtype float16 --max-model-len 2048 --disable-frontend-multiprocessing %EXTRA_ARGS%"
+    wsl bash -c "source ~/vllm_env/bin/activate && python -m vllm.entrypoints.openai.api_server --model '%MODEL%' --host '%HOST%' --port '%PORT%' --dtype float16 --max-model-len 2048 --disable-frontend-multiprocessing %EXTRA_ARGS%"
 ) else (
     echo 🔌 Using Native Windows vLLM installation...
     

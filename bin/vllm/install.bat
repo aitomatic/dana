@@ -147,7 +147,7 @@ if /i not "%continue%"=="y" if not "%continue%"=="" goto :wsl_manual
 
 echo.
 echo 🚀 Executing installation in WSL...
-wsl bash -c "sudo apt update && sudo apt upgrade -y && sudo apt install -y python3 python3-pip python3-venv git build-essential && python3 -m venv ~/vllm_env && source ~/vllm_env/bin/activate && git clone https://github.com/vllm-project/vllm.git ~/vllm && cd ~/vllm && pip install -r requirements-cpu.txt && pip install -e ."
+wsl bash -c "sudo apt update && sudo apt upgrade -y && sudo apt install -y python3 python3-pip python3-venv git build-essential && python3 -m venv ~/vllm_env && source ~/vllm_env/bin/activate && git clone https://github.com/vllm-project/vllm.git ~/vllm && cd ~/vllm && git checkout v0.9.1 && pip install -r requirements-cpu.txt && VLLM_TARGET_DEVICE=cpu pip install -e ."
 
 if errorlevel 1 (
     echo.
@@ -172,8 +172,9 @@ echo    python3 -m venv ~/vllm_env
 echo    source ~/vllm_env/bin/activate
 echo    git clone https://github.com/vllm-project/vllm.git ~/vllm
 echo    cd ~/vllm
+echo    git checkout v0.9.1
 echo    pip install -r requirements-cpu.txt
-echo    pip install -e .
+echo    VLLM_TARGET_DEVICE=cpu pip install -e .
 echo.
 echo 3. Test installation:
 echo    python -c "import vllm; print('vLLM is ready in WSL!')"
@@ -281,7 +282,7 @@ echo echo 📖 API docs will be at: http://%%HOST%%:%%PORT%%/docs
 echo echo 🛑 Press Ctrl+C to stop the server
 echo echo.
 echo.
-echo wsl bash -c "source ~/%%ENV_NAME%%/bin/activate && python -m vllm.entrypoints.openai.api_server --model %%MODEL%% --host %%HOST%% --port %%PORT%% --dtype float16 --max-model-len 2048"
+echo wsl bash -c "source ~/%%ENV_NAME%%/bin/activate && python -m vllm.entrypoints.openai.api_server --model %%MODEL%% --host %%HOST%% --port %%PORT%% --dtype float16 --max-model-len 2048 --disable-frontend-multiprocessing"
 ) > "%START_SCRIPT%"
 
 echo ✅ Created start script: %START_SCRIPT%
@@ -300,9 +301,11 @@ echo 3. Test vLLM manually in WSL:
 echo    wsl bash -c "source ~/vllm_env/bin/activate && python -c 'import vllm; print(\"vLLM is ready!\")'"
 echo.
 echo 💡 Important Notes:
-echo • vLLM runs in WSL Ubuntu environment
+echo • vLLM runs in WSL Ubuntu environment using stable version v0.9.1
 echo • GPU acceleration available if CUDA is configured in WSL
 echo • Windows applications can access the server at localhost:8000
+echo • Multiprocessing disabled to prevent import errors on WSL
+echo • Enhanced reliability with stability fixes included
 echo.
 goto :end
 
@@ -463,7 +466,7 @@ echo     exit /b 1
 echo ^)
 echo.
 echo call vllm_env_windows\Scripts\activate.bat
-echo python -m vllm.entrypoints.openai.api_server --model facebook/opt-125m --host localhost --port 8000 --dtype float16 --max-model-len 2048
+echo python -m vllm.entrypoints.openai.api_server --model facebook/opt-125m --host localhost --port 8000 --dtype float16 --max-model-len 2048 --disable-frontend-multiprocessing
 ) > "%START_SCRIPT%"
 
 echo ✅ Created start script: %START_SCRIPT%

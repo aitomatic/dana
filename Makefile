@@ -37,7 +37,7 @@ UV_CMD = $(shell command -v uv 2>/dev/null || echo ~/.local/bin/uv)
 	security validate-config release-check \
 	install-cursor install-vscode install-vim uninstall-cursor uninstall-vscode uninstall-vim install-editors uninstall-editors \
 	install-ollama update-ollama uninstall-ollama \
-	install-vllm update-vllm uninstall-vllm
+	install-vllm update-vllm uninstall-vllm start-vllm chat-vllm
 
 # =============================================================================
 # Help & Information
@@ -76,7 +76,7 @@ help: ## Show this help message with available commands
 	@awk 'BEGIN {FS = ":.*?## "} /^(install-ollama|update-ollama|uninstall-ollama).*:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "\033[1mvLLM Management:\033[0m"
-	@awk 'BEGIN {FS = ":.*?## "} /^(install-vllm|update-vllm|uninstall-vllm).*:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## "} /^(install-vllm|update-vllm|uninstall-vllm|start-vllm|chat-vllm).*:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "\033[33mTip: New to OpenDXA? Start with 'make quickstart' or 'make onboard'\033[0m"
 	@echo ""
@@ -742,6 +742,14 @@ uninstall-vllm-windows: # Uninstall vLLM on Windows
 	@echo "   1. Remove virtual environment: rmdir /s vllm_env"
 	@echo "   2. Remove source code: rmdir /s vllm"
 	@echo "   3. That's it! No other system modifications were made"
+
+start-vllm: ## Start vLLM server with interactive model selection
+	@echo "🚀 Starting vLLM server..."
+	@./bin/vllm/start$(SCRIPT_EXT)
+
+chat-vllm: ## Start interactive chat with vLLM server
+	@echo "💬 Starting vLLM chat interface..."
+	@./bin/vllm/chat$(SCRIPT_EXT)
 
 # =============================================================================
 # Documentation (legacy placeholder kept for compatibility)

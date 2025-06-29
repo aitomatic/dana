@@ -7,7 +7,7 @@ echo Uninstalling Dana Language Support from Cursor...
 
 REM Get the directory of this script and find the VSCode uninstall script
 set "SCRIPT_DIR=%~dp0"
-set "VSCODE_SCRIPT=%SCRIPT_DIR%..\vscode\uninstall.sh"
+set "VSCODE_SCRIPT=%SCRIPT_DIR%..\vscode\uninstall.bat"
 
 REM Check if VSCode uninstall script exists
 if not exist "%VSCODE_SCRIPT%" (
