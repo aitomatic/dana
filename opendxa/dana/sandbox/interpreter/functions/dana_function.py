@@ -45,6 +45,12 @@ class DanaFunction(SandboxFunction, Loggable):
             f"Created DanaFunction with name={self.__name__}, parameters={parameters}, return_type={return_type}, defaults={self.defaults}"
         )
 
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        """Call the function with the given arguments.
+        """
+        return self.execute(self.context, *args, **kwargs)
+
+
     def prepare_context(self, context: SandboxContext | Any, args: list[Any], kwargs: dict[str, Any]) -> SandboxContext:
         """
         Prepare context for a Dana function.

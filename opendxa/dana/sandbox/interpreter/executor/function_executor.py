@@ -115,42 +115,21 @@ class FunctionExecutor(BaseExecutor):
             body=node.body, parameters=param_names, context=context, return_type=return_type, defaults=param_defaults, name=node.name.name
         )
 
-        # Check if this function should be associated with an agent type
-        # Import here to avoid circular imports
-        try:
-            from opendxa.dana.agent.agent_system import get_agent_type
-            
-            # Check if there's a recently defined agent type that this function might belong to
-            # Look for agent parameter as first parameter (e.g., def plan(inspector: SemiconductorInspector, ...))
-            if (len(param_names) > 0 and 
-                param_names[0] == "inspector"):
-                
-                # Try to find the agent type from the context or recent definitions
-                # For now, we'll check if there's a SemiconductorInspector in the context
-                agent_constructor = context.get("local:SemiconductorInspector")
-                if agent_constructor and hasattr(agent_constructor, "__closure__") and agent_constructor.__closure__:
-                    # Extract the agent type from the closure
-                    for cell in agent_constructor.__closure__:
-                        if hasattr(cell.cell_contents, 'name') and cell.cell_contents.name == "SemiconductorInspector":
-                            agent_type = cell.cell_contents
-                            # This looks like an agent method - associate it with the agent type
-                            method_name = node.name.name
-                            agent_type.add_method(method_name, dana_func)
-                            self.debug(f"Associated method '{method_name}' with agent type '{agent_type.name}'")
-                            self.info(f"🔧 ASSOCIATED METHOD: {method_name} with {agent_type.name}")
-                            break
-        except Exception as e:
-            self.debug(f"Agent method association failed: {e}")
-
         # Apply decorators if present
         if node.decorators:
             wrapped_func = self._apply_decorators(dana_func, node.decorators, context)
             # Store the decorated function in context
             context.set(f"local:{node.name.name}", wrapped_func)
+            # Register as agent method if appropriate
+            from opendxa.dana.agent.agent_system import register_agent_method_from_function_def
+            register_agent_method_from_function_def(node, wrapped_func)
             return wrapped_func
         else:
             # No decorators, store the DanaFunction as usual
             context.set(f"local:{node.name.name}", dana_func)
+            # Register as agent method if appropriate
+            from opendxa.dana.agent.agent_system import register_agent_method_from_function_def
+            register_agent_method_from_function_def(node, dana_func)
             return dana_func
 
     def _apply_decorators(self, func, decorators, context):
@@ -716,7 +695,7 @@ class FunctionExecutor(BaseExecutor):
             except Exception as dana_method_error:
                 self.debug(f"Dana method transformation failed: {dana_method_error}")
 
-            # Step 3: Fallback to Python object method calls
+            # Step 4: Fallback to Python object method calls
             if hasattr(target_object, method_name):
                 method = getattr(target_object, method_name)
                 self.debug(f"Found Python method: {method}")

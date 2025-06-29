@@ -234,21 +234,22 @@ class AgentHandler(Loggable):
             None (agent definitions don't produce a value, they register a type)
         """
         # Import here to avoid circular imports
-        from opendxa.dana.agent.agent_system import AgentType, register_agent_type
+        from opendxa.dana.agent.agent_system import register_agent_from_ast, AgentTypeRegistry
 
-        # Create and register the agent type
+        # Create and register the agent type using the new struct-like system
         try:
-            agent_type = AgentType(node)
-            register_agent_type(agent_type)
-            self.debug(f"Registered agent type: {agent_type.name}")
+            agent_type = register_agent_from_ast(node)
+            print(f"[DEBUG] Registered agent type: {agent_type.name}")
+            from opendxa.dana.agent.agent_system import AgentTypeRegistry
+            print(f"[DEBUG] AgentTypeRegistry.list_types(): {AgentTypeRegistry.list_types()}")
 
             # Store reference to this agent type for method association
             self._last_agent_type = agent_type
 
             # Register agent constructor function in the context
-            # This allows `inspector = SemiconductorInspector(...)` syntax
+            # This allows `agent_instance = TestAgent(name="test")` syntax
             def agent_constructor(**kwargs):
-                return agent_type.create_instance(context=context, **kwargs)
+                return AgentTypeRegistry.create_instance(agent_type.name, kwargs, context=context)
 
             context.set(f"local:{node.name}", agent_constructor)
 
@@ -261,6 +262,7 @@ class AgentHandler(Loggable):
         return None
 
     def execute_function_definition(self, node: FunctionDefinition, context: SandboxContext) -> Any:
+        print(f"[DEBUG] execute_function_definition called for: {getattr(node.name, 'name', node.name)}")
         """Execute a function definition, potentially associating it with the last agent type.
 
         Args:
@@ -306,19 +308,8 @@ class AgentHandler(Loggable):
             body=node.body, parameters=param_names, context=context, return_type=return_type, defaults=param_defaults, name=node.name.name
         )
 
-        # Check if this function should be associated with the last agent type
-        # Look for agent parameter as first parameter (e.g., def plan(inspector: SemiconductorInspector, ...))
-        if (self._last_agent_type is not None and 
-            len(param_names) > 0 and 
-            param_names[0] == "inspector"):
-            
-            # This looks like an agent method - associate it with the agent type
-            method_name = node.name.name
-            self._last_agent_type.add_method(method_name, dana_func)
-            self.debug(f"Associated method '{method_name}' with agent type '{self._last_agent_type.name}'")
-            self.info(f"🔧 ASSOCIATED METHOD: {method_name} with {self._last_agent_type.name}")
-        else:
-            self.debug(f"Function '{node.name.name}' not associated with agent type (first param: {param_names[0] if param_names else 'none'})")
+        # Remove all agent method association logic here. Only register the function in the context and handle decorators.
+        # (No code for agent method association remains in this function.)
 
         # Apply decorators if present
         if node.decorators:

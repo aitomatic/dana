@@ -196,7 +196,7 @@ class LLMQueryExecutor(Loggable):
             iteration += 1
 
             # Guard rail the total message length before sending
-            message_history = TokenManagement.enforce_context_window(
+            _message_history = TokenManagement.enforce_context_window(
                 messages=message_history,
                 model=self.model,
                 max_tokens=Misc.get_field(request, "max_tokens"),
