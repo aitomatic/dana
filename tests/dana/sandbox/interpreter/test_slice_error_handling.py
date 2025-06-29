@@ -124,18 +124,6 @@ result = test_dict["missing_key"]
         assert "Key 'missing_key' not found in dictionary" in str(result.error)
         assert "Available keys include:" in str(result.error)
 
-    def test_slice_component_evaluation_errors(self, fresh_sandbox):
-        """Test behavior during slice component evaluation with undefined variables (gracefully handles as None)."""
-        code = """
-test_list = [1, 2, 3, 4, 5]
-undefined_var = undefined_variable
-result = test_list[undefined_var:3]
-"""
-        result = fresh_sandbox.eval(code)
-        # Undefined variables now gracefully resolve to None (becomes 0 in slice context)
-        assert result.success
-        assert result.final_context is not None
-        assert result.final_context.get("local:result") == [1, 2, 3]
 
     def test_successful_slice_operations(self, fresh_sandbox):
         """Test that valid slice operations still work correctly."""

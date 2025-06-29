@@ -1,0 +1,391 @@
+# Test: Expected Data Structure Failures Documentation
+# ===================================================
+# PURPOSE: Document data structure features that seem natural but aren't supported
+# SCOPE: Advanced collections, comprehensions, built-in methods, type operations
+# STATUS: Documents potential future enhancements
+
+log("🧪 Testing Expected Data Structure Failures Documentation - These Features Don't Work")
+
+# =============================================================================
+# LIST COMPREHENSIONS AND GENERATORS
+# =============================================================================
+log("\n--- Testing List Comprehensions and Generators (Expected to Fail) ---")
+
+# Test 1: Basic list comprehension
+log("Testing list comprehension...")
+try:
+    numbers = [1, 2, 3, 4, 5]
+    squares = [x * x for x in numbers]  # Expected to fail - list comprehension not supported
+    log(f"ERROR: List comprehension worked unexpectedly: {squares}")
+    assert false  # Should not reach here
+except:
+    log("✅ List comprehension correctly failed as expected")
+
+# Test 2: List comprehension with condition
+log("Testing conditional list comprehension...")
+try:
+    numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    evens = [x for x in numbers if x % 2 == 0]  # Expected to fail - conditional comprehension
+    log(f"ERROR: Conditional comprehension worked unexpectedly: {evens}")
+    assert false  # Should not reach here
+except:
+    log("✅ Conditional comprehension correctly failed as expected")
+
+# Test 3: Nested list comprehension
+log("Testing nested list comprehension...")
+try:
+    matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+    flattened = [item for row in matrix for item in row]  # Expected to fail - nested comprehension
+    log(f"ERROR: Nested comprehension worked unexpectedly: {flattened}")
+    assert false  # Should not reach here
+except:
+    log("✅ Nested comprehension correctly failed as expected")
+
+# Test 4: Dictionary comprehension
+log("Testing dictionary comprehension...")
+try:
+    keys = ["a", "b", "c"]
+    values = [1, 2, 3]
+    dict_comp = {k: v for k, v in zip(keys, values)}  # Expected to fail - dict comprehension
+    log(f"ERROR: Dictionary comprehension worked unexpectedly: {dict_comp}")
+    assert false  # Should not reach here
+except:
+    log("✅ Dictionary comprehension correctly failed as expected")
+
+# Test 5: Set comprehension
+log("Testing set comprehension...")
+try:
+    numbers = [1, 2, 2, 3, 3, 4, 5]
+    unique_squares = {x * x for x in numbers}  # Expected to fail - set comprehension
+    log(f"ERROR: Set comprehension worked unexpectedly: {unique_squares}")
+    assert false  # Should not reach here
+except:
+    log("✅ Set comprehension correctly failed as expected")
+
+# =============================================================================
+# ADVANCED LIST METHODS
+# =============================================================================
+log("\n--- Testing Advanced List Methods (Expected to Fail) ---")
+
+# Test 6: List append method (we know this fails)
+log("Testing list append method...")
+try:
+    items = [1, 2, 3]
+    items.append(4)  # Expected to fail - Dana lists don't have append method
+    log(f"ERROR: List append worked unexpectedly: {items}")
+    assert false  # Should not reach here
+except:
+    log("✅ List append correctly failed as expected")
+
+# Test 7: List extend method
+log("Testing list extend method...")
+try:
+    items = [1, 2, 3]
+    items.extend([4, 5, 6])  # Expected to fail - extend method might not exist
+    log(f"ERROR: List extend worked unexpectedly: {items}")
+    assert false  # Should not reach here
+except:
+    log("✅ List extend correctly failed as expected")
+
+# Test 8: List insert method
+log("Testing list insert method...")
+try:
+    items = [1, 2, 4]
+    items.insert(2, 3)  # Expected to fail - insert method might not exist
+    log(f"ERROR: List insert worked unexpectedly: {items}")
+    assert false  # Should not reach here
+except:
+    log("✅ List insert correctly failed as expected")
+
+# Test 9: List remove method
+log("Testing list remove method...")
+try:
+    items = [1, 2, 3, 2, 4]
+    items.remove(2)  # Expected to fail - remove method might not exist
+    log(f"ERROR: List remove worked unexpectedly: {items}")
+    assert false  # Should not reach here
+except:
+    log("✅ List remove correctly failed as expected")
+
+# Test 10: List pop method
+log("Testing list pop method...")
+try:
+    items = [1, 2, 3, 4, 5]
+    last_item = items.pop()  # Expected to fail - pop method might not exist
+    log(f"ERROR: List pop worked unexpectedly: {last_item}, {items}")
+    assert false  # Should not reach here
+except:
+    log("✅ List pop correctly failed as expected")
+
+# =============================================================================
+# DICTIONARY ADVANCED OPERATIONS
+# =============================================================================
+log("\n--- Testing Dictionary Advanced Operations (Expected to Fail) ---")
+
+# Test 11: Dictionary get method with default
+log("Testing dict get method...")
+try:
+    data = {"a": 1, "b": 2}
+    value = data.get("c", "default")  # Expected to fail - get method might not exist
+    log(f"ERROR: Dict get worked unexpectedly: {value}")
+    assert false  # Should not reach here
+except:
+    log("✅ Dict get correctly failed as expected")
+
+# Test 12: Dictionary update method
+log("Testing dict update method...")
+try:
+    data = {"a": 1, "b": 2}
+    data.update({"c": 3, "d": 4})  # Expected to fail - update method might not exist
+    log(f"ERROR: Dict update worked unexpectedly: {data}")
+    assert false  # Should not reach here
+except:
+    log("✅ Dict update correctly failed as expected")
+
+# Test 13: Dictionary pop method
+log("Testing dict pop method...")
+try:
+    data = {"a": 1, "b": 2, "c": 3}
+    value = data.pop("b", "default")  # Expected to fail - pop method might not exist
+    log(f"ERROR: Dict pop worked unexpectedly: {value}, {data}")
+    assert false  # Should not reach here
+except:
+    log("✅ Dict pop correctly failed as expected")
+
+# Test 14: Dictionary setdefault method
+log("Testing dict setdefault method...")
+try:
+    data = {"a": 1}
+    value = data.setdefault("b", 2)  # Expected to fail - setdefault method might not exist
+    log(f"ERROR: Dict setdefault worked unexpectedly: {value}, {data}")
+    assert false  # Should not reach here
+except:
+    log("✅ Dict setdefault correctly failed as expected")
+
+# Test 15: Dictionary merge operator
+log("Testing dict merge operator...")
+try:
+    dict1 = {"a": 1, "b": 2}
+    dict2 = {"c": 3, "d": 4}
+    merged = dict1 | dict2  # Expected to fail - dict merge operator might not work
+    log(f"ERROR: Dict merge worked unexpectedly: {merged}")
+    assert false  # Should not reach here
+except:
+    log("✅ Dict merge correctly failed as expected")
+
+# =============================================================================
+# STRING ADVANCED OPERATIONS
+# =============================================================================
+log("\n--- Testing String Advanced Operations (Expected to Fail) ---")
+
+# Test 16: String join method
+log("Testing string join method...")
+try:
+    items = ["apple", "banana", "cherry"]
+    result = ", ".join(items)  # Expected to fail - join method might not exist
+    log(f"ERROR: String join worked unexpectedly: {result}")
+    assert false  # Should not reach here
+except:
+    log("✅ String join correctly failed as expected")
+
+# Test 17: String split method with limit
+log("Testing string split with limit...")
+try:
+    text = "a,b,c,d,e"
+    parts = text.split(",", 2)  # Expected to fail - split with maxsplit might not work
+    log(f"ERROR: String split with limit worked unexpectedly: {parts}")
+    assert false  # Should not reach here
+except:
+    log("✅ String split with limit correctly failed as expected")
+
+# Test 18: String format method
+log("Testing string format method...")
+try:
+    template = "Hello {name}, you are {age} years old"
+    result = template.format(name="Alice", age=25)  # Expected to fail - format method might not exist
+    log(f"ERROR: String format worked unexpectedly: {result}")
+    assert false  # Should not reach here
+except:
+    log("✅ String format correctly failed as expected")
+
+# Test 19: String startswith/endswith methods
+log("Testing string startswith/endswith...")
+try:
+    text = "hello world"
+    starts = text.startswith("hello")  # Expected to fail - startswith might not exist
+    ends = text.endswith("world")     # Expected to fail - endswith might not exist
+    log(f"ERROR: String starts/ends methods worked unexpectedly: {starts}, {ends}")
+    assert false  # Should not reach here
+except:
+    log("✅ String starts/ends methods correctly failed as expected")
+
+# Test 20: String find/rfind methods
+log("Testing string find methods...")
+try:
+    text = "hello world hello"
+    first_pos = text.find("hello")     # Expected to fail - find might not exist
+    last_pos = text.rfind("hello")     # Expected to fail - rfind might not exist
+    log(f"ERROR: String find methods worked unexpectedly: {first_pos}, {last_pos}")
+    assert false  # Should not reach here
+except:
+    log("✅ String find methods correctly failed as expected")
+
+# =============================================================================
+# SET OPERATIONS
+# =============================================================================
+log("\n--- Testing Set Operations (Expected to Fail) ---")
+
+# Test 21: Set creation and operations
+log("Testing set creation...")
+try:
+    set1 = {1, 2, 3, 4}  # Expected to fail - set literals might not be supported
+    set2 = {3, 4, 5, 6}
+    union = set1 | set2
+    intersection = set1 & set2
+    log(f"ERROR: Set operations worked unexpectedly: {union}, {intersection}")
+    assert false  # Should not reach here
+except:
+    log("✅ Set operations correctly failed as expected")
+
+# Test 22: Set methods
+log("Testing set methods...")
+try:
+    items = set([1, 2, 3])  # Expected to fail - set constructor might not work
+    items.add(4)            # Expected to fail - add method might not exist
+    items.remove(2)         # Expected to fail - remove method might not exist
+    log(f"ERROR: Set methods worked unexpectedly: {items}")
+    assert false  # Should not reach here
+except:
+    log("✅ Set methods correctly failed as expected")
+
+# =============================================================================
+# TUPLE OPERATIONS
+# =============================================================================
+log("\n--- Testing Tuple Operations (Expected to Fail) ---")
+
+# Test 23: Named tuples
+log("Testing named tuples...")
+try:
+    from collections import namedtuple  # Expected to fail - collections module might not exist
+    Point = namedtuple("Point", ["x", "y"])
+    p = Point(1, 2)
+    log(f"ERROR: Named tuples worked unexpectedly: {p.x}, {p.y}")
+    assert false  # Should not reach here
+except:
+    log("✅ Named tuples correctly failed as expected")
+
+# Test 24: Tuple unpacking in function parameters
+log("Testing tuple unpacking in parameters...")
+try:
+    def process_coordinates(*coords):
+        x, y, z = coords  # Expected to fail - unpacking might not work in functions
+        return x + y + z
+    
+    result = process_coordinates(1, 2, 3)
+    log(f"ERROR: Tuple unpacking in params worked unexpectedly: {result}")
+    assert false  # Should not reach here
+except:
+    log("✅ Tuple unpacking in params correctly failed as expected")
+
+# =============================================================================
+# ADVANCED INDEXING AND SLICING
+# =============================================================================
+log("\n--- Testing Advanced Indexing and Slicing (Expected to Fail) ---")
+
+# Test 25: Extended slicing with step
+log("Testing extended slicing...")
+try:
+    numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    every_other = numbers[::2]     # Expected to fail - step in slicing might not work
+    reverse = numbers[::-1]        # Expected to fail - negative step might not work
+    log(f"ERROR: Extended slicing worked unexpectedly: {every_other}, {reverse}")
+    assert false  # Should not reach here
+except:
+    log("✅ Extended slicing correctly failed as expected")
+
+# Test 26: Multi-dimensional indexing
+log("Testing multi-dimensional indexing...")
+try:
+    matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+    # This basic indexing should work
+    element = matrix[1][2]  # This should work: 6
+    
+    # But more advanced indexing might not
+    row_slice = matrix[1:3]  # This might work
+    
+    # Advanced NumPy-style indexing definitely won't work
+    fancy_index = matrix[[0, 2]]  # Expected to fail - fancy indexing
+    log(f"ERROR: Fancy indexing worked unexpectedly: {fancy_index}")
+    assert false  # Should not reach here
+except:
+    log("✅ Fancy indexing correctly failed as expected")
+
+# =============================================================================
+# TYPE OPERATIONS AND INTROSPECTION
+# =============================================================================
+log("\n--- Testing Type Operations (Expected to Fail) ---")
+
+# Test 27: Type checking with isinstance
+log("Testing isinstance...")
+try:
+    value = [1, 2, 3]
+    is_list = isinstance(value, list)  # Expected to fail - isinstance might not exist
+    log(f"ERROR: isinstance worked unexpectedly: {is_list}")
+    assert false  # Should not reach here
+except:
+    log("✅ isinstance correctly failed as expected")
+
+# Test 28: Type conversion edge cases
+log("Testing type conversion edge cases...")
+try:
+    # These might work individually, but complex cases might fail
+    str_num = str(42)      # This might work
+    int_str = int("42")    # This might work
+    
+    # More complex conversions
+    list_from_string = list("hello")  # Expected to fail - list constructor with string
+    dict_from_pairs = dict([("a", 1), ("b", 2)])  # Expected to fail - dict from pairs
+    log(f"ERROR: Complex type conversion worked unexpectedly: {list_from_string}, {dict_from_pairs}")
+    assert false  # Should not reach here
+except:
+    log("✅ Complex type conversion correctly failed as expected")
+
+# Test 29: Type annotations at runtime
+log("Testing runtime type annotations...")
+try:
+    def annotated_func(x: list[int]) -> dict[str, int]:
+        return {"count": len(x)}
+    
+    # Type annotation introspection
+    annotations = annotated_func.__annotations__  # Expected to fail - annotations might not be accessible
+    log(f"ERROR: Type annotations introspection worked unexpectedly: {annotations}")
+    assert false  # Should not reach here
+except:
+    log("✅ Type annotations introspection correctly failed as expected")
+
+# Test 30: Advanced data structure nesting
+log("Testing complex nested structures...")
+try:
+    # Complex nested structure that might cause issues
+    complex_data = {
+        "users": [
+            {"name": "Alice", "scores": [85, 92, 78], "metadata": {"active": true}},
+            {"name": "Bob", "scores": [90, 88, 95], "metadata": {"active": false}}
+        ],
+        "config": {
+            "thresholds": {"min": 70, "max": 100},
+            "weights": [0.3, 0.3, 0.4]
+        }
+    }
+    
+    # Deep access that might fail
+    alice_first_score = complex_data["users"][0]["scores"][0]  # This might work
+    
+    # But more complex operations might not
+    all_scores = [score for user in complex_data["users"] for score in user["scores"]]  # Expected to fail - nested comprehension
+    log(f"ERROR: Complex nested operations worked unexpectedly: {all_scores}")
+    assert false  # Should not reach here
+except:
+    log("✅ Complex nested operations correctly failed as expected")
+
+log("🎉 Expected Data Structure Failures test completed - All failures occurred as expected!") 

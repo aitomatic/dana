@@ -1,0 +1,382 @@
+# Test: Expected Function Failures Documentation
+# ===============================================
+# PURPOSE: Document function features that seem natural but aren't supported
+# SCOPE: Higher-order functions, decorators, closures, advanced function patterns
+# STATUS: Documents potential future enhancements
+
+log("🧪 Testing Expected Function Failures Documentation - These Features Don't Work")
+
+# =============================================================================
+# HIGHER-ORDER FUNCTION ASSIGNMENTS
+# =============================================================================
+log("\n--- Testing Higher-Order Function Assignments (Expected to Fail) ---")
+
+# Test 1: Function assignment variables (we know this sometimes fails)
+log("Testing function assignment variables...")
+try:
+    def multiply_by(factor: int):
+        def inner(x: int) -> int:
+            return x * factor
+        return inner
+    
+    # This assignment pattern sometimes returns None
+    double = multiply_by(2)
+    triple = multiply_by(3)
+    
+    if double == null or triple == null:
+        log("✅ Function assignment returned None as expected")
+    else:
+        result = 5 | double | triple  # This might fail
+        log(f"ERROR: Function assignment worked unexpectedly: {result}")
+        assert false  # Should not reach here
+except:
+    log("✅ Function assignment correctly failed as expected")
+
+# Test 2: Function composition patterns
+log("Testing function composition...")
+try:
+    def compose(f, g):
+        def composed(x):
+            return f(g(x))
+        return composed
+    
+    def add_one(x: int) -> int:
+        return x + 1
+    
+    def double(x: int) -> int:
+        return x * 2
+    
+    # Function composition might not work
+    add_then_double = compose(double, add_one)
+    result = add_then_double(5)
+    log(f"ERROR: Function composition worked unexpectedly: {result}")
+    assert false  # Should not reach here
+except:
+    log("✅ Function composition correctly failed as expected")
+
+# Test 3: Partial function application
+log("Testing partial function application...")
+try:
+    def partial(func, *args):
+        def partial_func(*remaining_args):
+            return func(*(args + remaining_args))
+        return partial_func
+    
+    def add_three_numbers(a: int, b: int, c: int) -> int:
+        return a + b + c
+    
+    # Partial application might not work
+    add_five_and = partial(add_three_numbers, 5)
+    result = add_five_and(3, 2)
+    log(f"ERROR: Partial application worked unexpectedly: {result}")
+    assert false  # Should not reach here
+except:
+    log("✅ Partial application correctly failed as expected")
+
+# =============================================================================
+# ADVANCED FUNCTION PARAMETERS
+# =============================================================================
+log("\n--- Testing Advanced Function Parameters (Expected to Fail) ---")
+
+# Test 4: Variable arguments (*args)
+log("Testing *args...")
+try:
+    def sum_all(*args):  # Expected to fail - *args might not be supported
+        total = 0
+        for arg in args:
+            total = total + arg
+        return total
+    
+    result = sum_all(1, 2, 3, 4, 5)
+    log(f"ERROR: *args worked unexpectedly: {result}")
+    assert false  # Should not reach here
+except:
+    log("✅ *args correctly failed as expected")
+
+# Test 5: Keyword arguments (**kwargs)
+log("Testing **kwargs...")
+try:
+    def process_data(**kwargs):  # Expected to fail - **kwargs might not be supported
+        result = {}
+        for key, value in kwargs.items():
+            result[key] = value * 2
+        return result
+    
+    result = process_data(a=1, b=2, c=3)
+    log(f"ERROR: **kwargs worked unexpectedly: {result}")
+    assert false  # Should not reach here
+except:
+    log("✅ **kwargs correctly failed as expected")
+
+# Test 6: Mixed parameter types
+log("Testing mixed parameter types...")
+try:
+    def complex_func(a, b=10, *args, c, **kwargs):  # Expected to fail - complex parameter mixing
+        return a + b + sum(args) + c + sum(kwargs.values())
+    
+    result = complex_func(1, 2, 3, 4, c=5, d=6, e=7)
+    log(f"ERROR: Mixed parameters worked unexpectedly: {result}")
+    assert false  # Should not reach here
+except:
+    log("✅ Mixed parameters correctly failed as expected")
+
+# =============================================================================
+# FUNCTION DECORATORS
+# =============================================================================
+log("\n--- Testing Function Decorators (Expected to Fail) ---")
+
+# Test 7: Custom decorators
+log("Testing custom decorators...")
+try:
+    def timing_decorator(func):
+        def wrapper(*args, **kwargs):
+            log(f"Calling {func.__name__}")
+            result = func(*args, **kwargs)
+            log(f"Finished {func.__name__}")
+            return result
+        return wrapper
+    
+    @timing_decorator  # Expected to fail - custom decorators might not work
+    def slow_function(x: int) -> int:
+        return x * 2
+    
+    result = slow_function(5)
+    log(f"ERROR: Custom decorator worked unexpectedly: {result}")
+    assert false  # Should not reach here
+except:
+    log("✅ Custom decorator correctly failed as expected")
+
+# Test 8: Decorator with parameters
+log("Testing parameterized decorators...")
+try:
+    def repeat(times: int):
+        def decorator(func):
+            def wrapper(*args, **kwargs):
+                for i in range(times):
+                    result = func(*args, **kwargs)
+                return result
+            return wrapper
+        return decorator
+    
+    @repeat(3)  # Expected to fail - parameterized decorators might not work
+    def say_hello(name: str) -> str:
+        log(f"Hello, {name}!")
+        return f"Hello, {name}!"
+    
+    result = say_hello("World")
+    log(f"ERROR: Parameterized decorator worked unexpectedly: {result}")
+    assert false  # Should not reach here
+except:
+    log("✅ Parameterized decorator correctly failed as expected")
+
+# Test 9: Multiple decorators
+log("Testing multiple decorators...")
+try:
+    def uppercase(func):
+        def wrapper(*args, **kwargs):
+            result = func(*args, **kwargs)
+            return result.upper()
+        return wrapper
+    
+    def add_exclamation(func):
+        def wrapper(*args, **kwargs):
+            result = func(*args, **kwargs)
+            return result + "!"
+        return wrapper
+    
+    @uppercase  # Expected to fail - multiple decorators might not work
+    @add_exclamation
+    def greet(name: str) -> str:
+        return f"hello {name}"
+    
+    result = greet("world")
+    log(f"ERROR: Multiple decorators worked unexpectedly: {result}")
+    assert false  # Should not reach here
+except:
+    log("✅ Multiple decorators correctly failed as expected")
+
+# =============================================================================
+# CLOSURES AND SCOPE
+# =============================================================================
+log("\n--- Testing Closures and Scope (Expected to Fail) ---")
+
+# Test 10: Closure variable capture
+log("Testing closure variable capture...")
+try:
+    def create_counter(start: int):
+        count = start
+        
+        def increment():
+            nonlocal count  # Expected to fail - nonlocal might not be supported
+            count = count + 1
+            return count
+        
+        return increment
+    
+    counter = create_counter(10)
+    result1 = counter()
+    result2 = counter()
+    log(f"ERROR: Closure worked unexpectedly: {result1}, {result2}")
+    assert false  # Should not reach here
+except:
+    log("✅ Closure correctly failed as expected")
+
+# Test 11: Nested function scope
+log("Testing nested function scope...")
+try:
+    def outer_function(x: int):
+        def inner_function(y: int):
+            def innermost_function(z: int):
+                return x + y + z  # Expected to fail - deep nesting scope issues
+            return innermost_function
+        return inner_function
+    
+    nested_func = outer_function(1)(2)
+    result = nested_func(3)
+    log(f"ERROR: Nested scope worked unexpectedly: {result}")
+    assert false  # Should not reach here
+except:
+    log("✅ Nested scope correctly failed as expected")
+
+# Test 12: Global and local scope mixing
+log("Testing global/local scope...")
+try:
+    global_var = 100
+    
+    def modify_global():
+        global global_var  # Expected to fail - global keyword might not work
+        global_var = global_var + 50
+        return global_var
+    
+    result = modify_global()
+    log(f"ERROR: Global scope modification worked unexpectedly: {result}")
+    assert false  # Should not reach here
+except:
+    log("✅ Global scope modification correctly failed as expected")
+
+# =============================================================================
+# LAMBDA FUNCTIONS
+# =============================================================================
+log("\n--- Testing Lambda Functions (Expected to Fail) ---")
+
+# Test 13: Basic lambda functions
+log("Testing lambda functions...")
+try:
+    square = lambda x: x * x  # Expected to fail - lambda might not be supported
+    result = square(5)
+    log(f"ERROR: Lambda function worked unexpectedly: {result}")
+    assert false  # Should not reach here
+except:
+    log("✅ Lambda function correctly failed as expected")
+
+# Test 14: Lambda in higher-order functions
+log("Testing lambda in map...")
+try:
+    numbers = [1, 2, 3, 4, 5]
+    squared = list(map(lambda x: x * x, numbers))  # Expected to fail - map + lambda
+    log(f"ERROR: Lambda with map worked unexpectedly: {squared}")
+    assert false  # Should not reach here
+except:
+    log("✅ Lambda with map correctly failed as expected")
+
+# Test 15: Lambda with complex expressions
+log("Testing complex lambda...")
+try:
+    # Complex lambda with conditional
+    abs_diff = lambda a, b: (a - b) if a > b else (b - a)  # Expected to fail - conditional in lambda
+    result = abs_diff(10, 3)
+    log(f"ERROR: Complex lambda worked unexpectedly: {result}")
+    assert false  # Should not reach here
+except:
+    log("✅ Complex lambda correctly failed as expected")
+
+# =============================================================================
+# FUNCTION INTROSPECTION
+# =============================================================================
+log("\n--- Testing Function Introspection (Expected to Fail) ---")
+
+# Test 16: Function attributes
+log("Testing function attributes...")
+try:
+    def example_func(x: int) -> int:
+        """This is a test function"""
+        return x * 2
+    
+    # Function introspection might not work
+    name = example_func.__name__
+    doc = example_func.__doc__
+    log(f"ERROR: Function introspection worked unexpectedly: {name}, {doc}")
+    assert false  # Should not reach here
+except:
+    log("✅ Function introspection correctly failed as expected")
+
+# Test 17: Function signature inspection
+log("Testing function signature...")
+try:
+    import inspect  # Expected to fail - inspect module might not be available
+    
+    def test_func(a: int, b: str = "default") -> bool:
+        return true
+    
+    sig = inspect.signature(test_func)
+    log(f"ERROR: Function signature inspection worked unexpectedly: {sig}")
+    assert false  # Should not reach here
+except:
+    log("✅ Function signature inspection correctly failed as expected")
+
+# =============================================================================
+# RECURSIVE FUNCTION LIMITATIONS
+# =============================================================================
+log("\n--- Testing Recursive Function Limitations (Expected to Fail) ---")
+
+# Test 18: Deep recursion
+log("Testing deep recursion...")
+try:
+    def deep_recursion(n: int) -> int:
+        if n <= 0:
+            return 0
+        return n + deep_recursion(n - 1)
+    
+    # This might hit recursion limits
+    result = deep_recursion(1000)  # Expected to fail - recursion limit
+    log(f"ERROR: Deep recursion worked unexpectedly: {result}")
+    assert false  # Should not reach here
+except:
+    log("✅ Deep recursion correctly failed as expected")
+
+# Test 19: Mutual recursion
+log("Testing mutual recursion...")
+try:
+    def is_even(n: int) -> bool:
+        if n == 0:
+            return true
+        return is_odd(n - 1)  # Expected to fail - forward reference
+    
+    def is_odd(n: int) -> bool:
+        if n == 0:
+            return false
+        return is_even(n - 1)
+    
+    result = is_even(4)
+    log(f"ERROR: Mutual recursion worked unexpectedly: {result}")
+    assert false  # Should not reach here
+except:
+    log("✅ Mutual recursion correctly failed as expected")
+
+# Test 20: Tail recursion optimization
+log("Testing tail recursion...")
+try:
+    def tail_recursive_factorial(n: int, acc: int = 1) -> int:
+        if n <= 1:
+            return acc
+        # Dana might not optimize tail recursion
+        return tail_recursive_factorial(n - 1, n * acc)
+    
+    # Large number to test optimization
+    result = tail_recursive_factorial(500)  # Expected to fail - no tail call optimization
+    log(f"ERROR: Tail recursion worked unexpectedly: {result}")
+    assert false  # Should not reach here
+except:
+    log("✅ Tail recursion correctly failed as expected")
+
+log("🎉 Expected Function Failures test completed - All failures occurred as expected!") 

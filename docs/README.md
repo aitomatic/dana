@@ -1,27 +1,29 @@
-
 <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSeRvBda2kHrBW7PDip1nDXzrH-Gd_rsqqdsVxFcvf-lZAQ1Tw/viewform?embedded=true" width="800" height="300" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
 
 ---
 
-> Imagine an AI-powered operating system. What would you want it to do for you?
-
-> Now imagine an AI-powered execution runtime. What do you want to build with it?
-
-# OpenDXA — Domain-Expert Agent Framework
-
-A comprehensive framework for easily coding and deploying domain-expert multi-agent systems. Brought to you by [Aitomatic](https://aitomatic.com/) and other [AI Alliance](https://thealliance.ai/) members.
-
 <div style="display: flex; align-items: center; gap: 10px;">
   <img src="images/dana-logo.jpg" alt="Dana Logo" width="60">
   <span>
-    <div style="font-size: 18px; font-style: italic; font-weight: 600; color: #666;">Powered by Dana</div>
-    <div style="font-size: 14px; font-style: italic; color: #666;">an AI-enabled programming language and runtime.</div>
+    <div style="font-size: 18px; font-style: italic; font-weight: 600; color: #666;">Agent-native programming language and runtime</div>
+    <div style="font-size: 12px; font-style: italic; color: #999;">powered by OpenDXA</div>
   </span>
 </div>
 
+# Dana — The Agent-Native Evolution of AI Development
+*Beyond AI coding assistants: Write agents that learn, adapt, and improve themselves in production*
+
+*Brought to you by [Aitomatic](https://aitomatic.com/) and other [AI Alliance](https://thealliance.ai/) members.*
+
+---
+
+> **What if your code could learn, adapt, and improve itself in production—without you?**
+
+Dana bridges the gap between AI coding assistance and autonomous agents through agent-native programming: native `agent` primitives, context-aware `reason()` calls that adapt output types automatically, self-improving pipelines with compositional `|` operators, and functions that evolve through POET feedback loops.
+
 ## Documentation: Choose Your Path
 
-### I want to build with OpenDXA
+### I want to build with Dana
 → **[For Engineers](for-engineers/README.md)** - Practical guides, recipes, and references
 *Perfect for developers who want to get working quickly*
 
@@ -35,7 +37,7 @@ Start here: [Getting Started](for-engineers/README.md#getting-started-paths)
 
 ---
 
-### I'm evaluating OpenDXA for my team
+### I'm evaluating Dana for my team
 → **[For Evaluators](for-evaluators/README.md)** - Comparisons, ROI analysis, and proof of concepts
 *Perfect for technical leads and decision makers*
 
@@ -49,7 +51,7 @@ Start here: [Evaluation Guide](for-evaluators/README.md)
 
 ---
 
-### I want to contribute or extend OpenDXA
+### I want to contribute or extend Dana
 → **[For Contributors](for-contributors/README.md)** - Architecture, codebase, and development guides
 *Perfect for developers who want to modify or extend the system*
 
@@ -78,33 +80,35 @@ Start here: [Research Overview](for-researchers/README.md#research-overview)
 ---
 
 ### I'm interested in investment opportunities
-→ **[For Investors](for-investors/README.md)** - The first true runtime for the AI era
+→ **[For Investors](for-investors/README.md)** - The agent-native evolution of AI development
 *For accredited investors and principals only (no agents or intermediaries)*
 
 What you'll find:
-- How adaptive functions transform critical domains like semiconductor manufacturing and financial trading
-- Technical foundation that enables self-learning systems with deterministic control
-- $30B+ immediately addressable market in enterprise AI infrastructure
-- Applications in regulated, mission-critical industries
+- How Dana captures the convergence of AI coding assistants and autonomous agents
+- Market opportunity at the intersection of two validated $B+ markets
+- Agent-native programming advantages over retrofitted frameworks
+- Production validation across enterprise deployments
 
 Contact: [investors@aitomatic.com](mailto:investors@aitomatic.com)
 
 ---
 
-## What is OpenDXA?
+## Why Dana?
 
-OpenDXA (Domain-eXpert Agent) Framework transforms AI development from brittle, unpredictable systems to reliable, auditable automations. Built on the Dana language - a neurosymbolic programming environment - OpenDXA enables intelligent multi-agent systems with domain expertise.
+Dana transforms AI development from brittle, unpredictable systems to reliable, auditable automations through agent-native architecture:
 
-### ✨ Key Benefits
-- Transparent: Every step is visible and debuggable through imperative programming
-- 🛡️ Reliable: Built-in verification and error correction with structured state management
-- ⚡ Fast: 10x faster development cycles with clear control flow
-- 🤝 Collaborative: Share and reuse working solutions across domains
-- Domain-Aware: Seamless integration of specialized knowledge and expertise
+- **🔍 Transparent**: Every step is visible and debuggable through imperative programming
+- **🛡️ Reliable**: Built-in verification and error correction with structured state management
+- **⚡ Fast**: 10x faster development cycles with clear control flow
+- **🤖 Agent-Native**: Purpose-built for multi-agent systems with first-class agent primitives
+- **🧠 Context-Aware**: `reason()` calls that adapt output types automatically based on usage
+- **🔄 Self-Improving**: Functions that learn and optimize through POET in production
+- **🤝 Collaborative**: Share and reuse working solutions across domains
+- **🌐 Domain-Expert**: Seamless integration of specialized knowledge and expertise
 
-### Core Innovation: Dana Language & DANKE Engine
+## Core Innovation: Agent-Native Programming
 
-Dana (Domain-Aware NeuroSymbolic Architecture) provides an imperative programming model for agent reasoning:
+Dana provides an agent-native imperative programming model that bridges development assistance with autonomous execution:
 
 ```dana
 # Traditional AI: Opaque, brittle
@@ -120,84 +124,23 @@ public:result = analysis
 use("tools.report.generate", input=public:result)
 ```
 
-**DANKE** (Domain-Aware NeuroSymbolic Knowledge Engine) implements the CORRAL methodology:
-- Collect: Gather and ingest domain knowledge
-- Organize: Structure and index knowledge
-- Retrieve: Access and search for relevant knowledge
-- Reason: Infer, contextualize, and generate insights
-- Act: Apply knowledge to take actions and solve problems
-- Learn: Integrate feedback and improve knowledge over time
-
-### Architecture Overview
-
-OpenDXA combines declarative knowledge with imperative execution for maintainable, reliable AI systems:
-
-```mermaid
-graph TD
-    subgraph "Application Layer"
-        UI["User Interface & API Gateway"]
-        DomainApps["Domain Applications (Manufacturing, Finance, etc.)"]
-    end
-
-    subgraph "Agent Workflow Layer"
-        AgentMgmt["Agent Management & Planning"]
-        Capabilities["Capabilities System (Extensible)"]
-        ResourcesMgmt["Resources Management (Tools & LLMs)"]
-    end
-
-    subgraph "Dana Execution Layer"
-        Parser["Parser (AST) & Grammar Engine"]
-        Interpreter["Interpreter (Executor) & Reasoning Integration"]
-        StateMgmt["State Management (4-Scope Context: private|public|system|local)"]
-    end
-
-    subgraph "DANKE Knowledge Engine"
-        CollectLearn["Collect & Learn (CORRAL)"]
-        OrganizeStructure["Organize & Structure (Indexing)"]
-        RetrieveReasonAct["Retrieve, Reason & Act (Domain Context)"]
-    end
-
-    subgraph "Resource & Communication Layer"
-        LLMIntegration["LLM Resource Integration (Multi-Model)"]
-        KBManagement["Knowledge Base Management"]
-        ExternalTools["External Tools & Services (MCP, APIs)"]
-    end
-
-    UI --> AgentMgmt
-    DomainApps --> AgentMgmt
-    AgentMgmt --> Parser
-    Capabilities --> Interpreter
-    ResourcesMgmt --> Interpreter
-    Parser --> Interpreter
-    Interpreter --> StateMgmt
-    StateMgmt --> CollectLearn
-    CollectLearn --> OrganizeStructure
-    OrganizeStructure --> RetrieveReasonAct
-    RetrieveReasonAct --> LLMIntegration
-    RetrieveReasonAct --> KBManagement
-    RetrieveReasonAct --> ExternalTools
+**Context-Aware Intelligence**: Same reasoning, different output types based on usage:
+```dana
+risk_score: float = reason("assess portfolio risk", context=portfolio)
+risk_details: dict = reason("assess portfolio risk", context=portfolio) 
+risk_report: str = reason("assess portfolio risk", context=portfolio)
 ```
 
-### Execution Flow
-
+**Self-Improving Pipelines**: Compositional operations that optimize themselves:
+```dana
+portfolio | risk_assessment | recommendation_engine | reporting  # Gets smarter via POET
 ```
-User Request/Domain Problem
- ↓
-Agent Planning Layer → Dana Program Generation
- ↓
-Dana Parser → AST Generation
- ↓
-Dana Interpreter with 4-Scope State Management
- ↓
-Statement Execution + LLM Reasoning Integration
- ↓
-DANKE Knowledge Engine → CORRAL Methodology
- ↓
-Tool/Resource Access → External System Integration
- ↓
-State Updates & Response Generation
- ↓
-Auditable Results & Learning Integration
+
+**Agent-Native Programming**: Write agents as first-class primitives:
+```dana
+agent FinancialAnalyst:
+    def assess_portfolio(self, data):
+        return reason("analyze risk factors", context=data)  # Function learns over time
 ```
 
 ---
@@ -236,7 +179,7 @@ Auditable Results & Learning Integration
 >
 > — Sarah K., Lead AI Engineer at FinTech Solutions
 
-> *"OpenDXA's transparency was a game-changer for our compliance requirements. We can audit every decision, understand every step, and trust our AI systems in production. The ROI was evident within the first month."*
+> *"Dana's transparency was a game-changer for our compliance requirements. We can audit every decision, understand every step, and trust our AI systems in production. The ROI was evident within the first month."*
 >
 > — Michael R., CTO at Healthcare Analytics
 
@@ -252,7 +195,7 @@ opendxa demo chatbot
 [Try the demo →](for-engineers/README.md#path-1-quick-demo-5-minutes)
 
 ### Learn the Concepts
-1. [What makes OpenDXA different](for-engineers/README.md#what-makes-opendxa-different)
+1. [What makes Dana different](for-engineers/README.md#what-makes-opendxa-different)
 2. [Dana language basics](for-engineers/reference/dana-syntax.md)
 3. [Agent architecture overview](for-contributors/architecture/system-design.md)
 4. [DANKE knowledge engine](for-researchers/research/README.md)
@@ -337,7 +280,7 @@ The `.ai-only/` directory contains reference materials and maintenance procedure
 
 ---
 
-*Ready to transform your AI development? Choose your path above and start building transparent, reliable AI automations with OpenDXA.*
+*Ready to transform your AI development? Choose your path above and start building transparent, reliable AI automations with Dana.*
 
 <p align="center">
 Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">MIT License</a>.

@@ -67,9 +67,15 @@ class PythonicFunctionFactory:
             "signatures": [(str,), (int,), (float,), (list,), (dict,)],
         },
         "type": {
+            # SECURITY: Dana's type() function is NOT the same as Python's type() function.
+            # Returns string name instead of type object to prevent introspection attacks.
+            # This is a deliberate sandbox security choice to prevent malicious code from
+            # accessing type internals, performing isinstance checks, or gaining access
+            # to class hierarchies and internal Python type system details.
+            # Dana: type(obj) -> "str", Python: type(obj).__name__ -> "str"
             "func": lambda v: type(v).__name__,
             "types": [object],
-            "doc": "Return the type name of a value as a string (e.g., 'int', 'list', 'dict').",
+            "doc": "Return the type name of a value as a string (e.g., 'int', 'list', 'dict'). SECURITY NOTE: Unlike Python's type(), this returns a string for sandbox security.",
             "signatures": [(object,)],
         },
         # Collection functions
