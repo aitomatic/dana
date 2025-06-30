@@ -36,7 +36,7 @@ UV_CMD = $(shell command -v uv 2>/dev/null || echo ~/.local/bin/uv)
 	docs-build docs-serve docs-check docs-validate docs-deploy \
 	security validate-config release-check \
 	install-cursor install-vscode install-vim uninstall-cursor uninstall-vscode uninstall-vim install-editors uninstall-editors \
-	install-ollama update-ollama uninstall-ollama ollama-start ollama-chat ollama-stop \
+	install-ollama update-ollama uninstall-ollama start-ollama chat-ollama stop-ollama \
 	install-vllm update-vllm uninstall-vllm start-vllm chat-vllm stop-vllm status-vllm test-vllm vllm-models
 
 # =============================================================================
@@ -73,7 +73,7 @@ help: ## Show this help message with available commands
 	@awk 'BEGIN {FS = ":.*?## "} /^(install-cursor|install-vscode|install-vim|uninstall-cursor|uninstall-vscode|uninstall-vim|install-editors|uninstall-editors).*:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "\033[1mOllama Management:\033[0m"
-	@awk 'BEGIN {FS = ":.*?## "} /^(install-ollama|update-ollama|uninstall-ollama|ollama-start|ollama-chat|ollama-stop).*:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## "} /^(install-ollama|update-ollama|uninstall-ollama|start-ollama|chat-ollama|stop-ollama).*:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "\033[1mvLLM Management:\033[0m"
 	@awk 'BEGIN {FS = ":.*?## "} /^(install-vllm|update-vllm|uninstall-vllm|start-vllm|chat-vllm|stop-vllm|status-vllm|test-vllm|vllm-models).*:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -448,7 +448,7 @@ uninstall-vim: ## Uninstall Vim/Neovim integration
 install-ollama: ## Install Ollama for local model inference
 	@./bin/ollama/install$(SCRIPT_EXT)
 
-ollama-start: ## Start Ollama and configure environment for OpenDXA
+start-ollama: ## Start Ollama and configure environment for OpenDXA
 ifeq ($(DETECTED_OS),Windows)
 	@start cmd /k "bin\ollama\start.bat"
 else
@@ -456,13 +456,13 @@ else
 	@echo "You must 'source' this script to apply environment variables to your shell."
 endif
 
-ollama-chat: ## Start an interactive chat session with Ollama
+chat-ollama: ## Start an interactive chat session with Ollama
 	@./bin/ollama/chat$(SCRIPT_EXT)
 
 uninstall-ollama: ## Uninstall Ollama and clean up
 	@./bin/ollama/uninstall$(SCRIPT_EXT)
 
-ollama-stop: uninstall-ollama ## Alias to stop and uninstall Ollama
+stop-ollama: uninstall-ollama ## Alias to stop and uninstall Ollama
 
 update-ollama: ## Check for Ollama updates
 	@echo "Checking for Ollama updates..."
