@@ -1,7 +1,7 @@
 <div style="display: flex; align-items: center; gap: 10px;">
   <img src="docs/images/dana-logo.jpg" alt="Dana Logo" width="60">
   <span>
-    <div style="font-size: 18px; font-style: italic; font-weight: 600; color: #666;">Agent-native programming language and runtime</div>
+    <div style="font-size: 18px; font-style: italic; font-weight: 600; color: #666;">Agent-Native Programming Language</div>
     <div style="font-size: 12px; font-style: italic; color: #999;">powered by OpenDXA</div>
   </span>
 </div>
