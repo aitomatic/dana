@@ -15,7 +15,7 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Default configuration
-DEFAULT_MODEL="facebook/opt-125m"
+DEFAULT_MODEL="microsoft/Phi-3.5-mini-instruct"
 DEFAULT_HOST="localhost"
 DEFAULT_PORT="8000"
 DEFAULT_ENV_NAME="vllm_env"
@@ -94,7 +94,7 @@ show_model_menu() {
     echo ""
     echo -e "${BLUE}⚙️  Custom Options${NC}"
     echo "  18) Enter custom model name"
-    echo "  19) Use default (facebook/opt-125m - testing only)"
+    echo "  19) Use default (microsoft/Phi-3.5-mini-instruct)"
     echo ""
     echo -e "${RED}❌ Exit${NC}"
     echo "   0) Exit without starting"
@@ -262,10 +262,18 @@ if command -v lsof >/dev/null && lsof -i ":$PORT" >/dev/null 2>&1; then
     fi
 fi
 
-echo -e "${GREEN}🌐 Starting vLLM OpenAI-compatible API server...${NC}"
-echo -e "${BLUE}💡 Server will be available at: http://$HOST:$PORT${NC}"
-echo -e "${YELLOW}📖 API docs will be at: http://$HOST:$PORT/docs${NC}"
-echo -e "${YELLOW}🛑 Press Ctrl+C to stop the server${NC}"
+echo "✅ vLLM environment activated successfully."
+echo "🌐 Starting vLLM OpenAI-compatible API server..."
+echo "💡 Server will be available at: http://${HOST}:${PORT}"
+echo "📖 API docs will be at: http://${HOST}:${PORT}/docs"
+echo "🛑 Press Ctrl+C to stop the server"
+echo ""
+
+# Export environment variables for OpenDXA to consume
+export LOCAL_LLM_URL="http://${HOST}:${PORT}/v1"
+export LOCAL_LLM_NAME="${MODEL}"
+echo "🔑 Exported LOCAL_LLM_URL=${LOCAL_LLM_URL}"
+echo "🔑 Exported LOCAL_LLM_NAME=${LOCAL_LLM_NAME}"
 echo ""
 
 # Adjust parameters based on model type

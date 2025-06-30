@@ -6,7 +6,7 @@ REM Usage: bin\start_vllm.bat [OPTIONS]
 setlocal enabledelayedexpansion
 
 REM Default configuration
-set "DEFAULT_MODEL=facebook/opt-125m"
+set "DEFAULT_MODEL=microsoft/Phi-3.5-mini-instruct"
 set "DEFAULT_HOST=localhost"
 set "DEFAULT_PORT=8000"
 set "DEFAULT_ENV_NAME=vllm_env"
@@ -94,7 +94,7 @@ echo   17) meta-llama/Llama-3.1-8B-Instruct - Reliable choice
 echo.
 echo ⚙️  Custom Options
 echo   18) Enter custom model name
-echo   19) Use default (facebook/opt-125m - testing only)
+echo   19) Use default (microsoft/Phi-3.5-mini-instruct)
 echo.
 echo ❌ Exit
 echo    0) Exit without starting
@@ -209,46 +209,52 @@ if not errorlevel 1 echo 💡 This is a multimodal model - supports both text an
 echo %MODEL% | findstr /C:"coder" /C:"starcoder" >nul
 if not errorlevel 1 echo 💡 This model is specialized for code generation and programming
 
-REM Check if running in WSL
-wsl --status >nul 2>&1
-if not errorlevel 1 (
-    echo 🔌 Using WSL vLLM installation...
-    echo 🌐 Starting vLLM OpenAI-compatible API server in WSL...
-    echo 💡 Server will be available at: http://%HOST%:%PORT%
-    echo 📖 API docs will be at: http://%HOST%:%PORT%/docs
-    echo 🛑 Press Ctrl+C to stop the server
-    echo.
-    
-    REM Adjust parameters for multimodal models
-    set "EXTRA_ARGS="
-    echo %MODEL% | findstr /C:"vision" /C:"VL" /C:"Scout" >nul
-    if not errorlevel 1 set "EXTRA_ARGS=--limit-mm-per-prompt {\"image\": 5}"
-    
-    wsl bash -c "source ~/vllm_env/bin/activate && python -m vllm.entrypoints.openai.api_server --model '%MODEL%' --host '%HOST%' --port '%PORT%' --dtype float16 --max-model-len 2048 --disable-frontend-multiprocessing %EXTRA_ARGS%"
-) else (
-    echo 🔌 Using Native Windows vLLM installation...
-    
-    REM Check if Python vLLM environment exists
-    if not exist "%USERPROFILE%\%ENV_NAME%" (
-        echo ❌ Error: vLLM environment not found
-        echo 💡 Please install vLLM first using: bin\vllm\install.bat
-        pause
-        exit /b 1
-    )
-    
-    echo 🌐 Starting vLLM OpenAI-compatible API server...
-    echo 💡 Server will be available at: http://%HOST%:%PORT%
-    echo 📖 API docs will be at: http://%HOST%:%PORT%/docs
-    echo 🛑 Press Ctrl+C to stop the server
-    echo.
-    
-    REM Activate environment and start server
-    call "%USERPROFILE%\%ENV_NAME%\Scripts\activate.bat"
-    
-    REM Adjust parameters for multimodal models
-    set "EXTRA_ARGS="
-    echo %MODEL% | findstr /C:"vision" /C:"VL" /C:"Scout" >nul
-    if not errorlevel 1 set "EXTRA_ARGS=--limit-mm-per-prompt {\"image\": 5}"
-    
-    python -m vllm.entrypoints.openai.api_server --model "%MODEL%" --host "%HOST%" --port "%PORT%" --dtype float16 --max-model-len 2048 --disable-frontend-multiprocessing %EXTRA_ARGS%
-) 
+REM Check if Python vLLM environment exists
+if not exist "%USERPROFILE%\%ENV_NAME%" (
+    echo  [93m💡 The vLLM environment may be corrupted. Try reinstalling: [0m
+    echo    .\bin\vllm\install.bat
+    exit /b 1
+)
+
+rem Check if activation script exists
+set "ACTIVATE_SCRIPT=%VENV_PATH%\Scripts\activate.bat"
+if not exist "!ACTIVATE_SCRIPT!" (
+    echo [91m❌ Error: vLLM activation script not found at !ACTIVATE_SCRIPT![0m
+    echo ❌ Please install vLLM first using: bin\vllm\install.bat
+    pause
+    exit /b 1
+)
+
+echo  [94m🔌 Activating vLLM environment... [0m
+call !ACTIVATE_SCRIPT!
+
+rem Verify vLLM is available
+python -c "import vllm" 2>nul
+if errorlevel 1 (
+    echo  [91m❌ Error: 'vllm' module not found after activation. [0m
+    echo  [93m💡 The vLLM environment may be corrupted. Try reinstalling: [0m
+    echo    .\bin\vllm\install.bat
+    exit /b 1
+)
+
+echo  [92m✅ vLLM environment activated successfully. [0m
+echo  [94m🌐 Starting vLLM OpenAI-compatible API server... [0m
+echo  [94m💡 Server will be available at: http://%HOST%:%PORT% [0m
+echo  [94m📖 API docs will be at: http://%HOST%:%PORT%/docs [0m
+echo  [94m🛑 Press Ctrl+C to stop the server [0m
+echo.
+
+rem Export environment variables for OpenDXA to consume
+set "LOCAL_LLM_URL=http://%HOST%:%PORT%/v1"
+set "LOCAL_LLM_NAME=%MODEL%"
+echo  [90m🔑 Set LOCAL_LLM_URL=!LOCAL_LLM_URL! [0m
+echo  [90m🔑 Set LOCAL_LLM_NAME=!LOCAL_LLM_NAME! [0m
+echo.
+
+rem Adjust parameters for multimodal models
+set "EXTRA_ARGS="
+echo %MODEL% | findstr /C:"vision" /C:"VL" /C:"Scout" >nul
+if not errorlevel 1 set "EXTRA_ARGS=--limit-mm-per-prompt "{\\"image\\": 5}""
+
+rem Start the server
+python -m vllm.entrypoints.openai.api_server --model "%MODEL%" --host "%HOST%" --port "%PORT%" --dtype float16 --max-model-len 2048 --disable-frontend-multiprocessing %EXTRA_ARGS% 

@@ -344,14 +344,20 @@ class LLMQueryExecutor(Loggable):
         else:
             request_params = self._build_default_request_params(request)
 
+        # Check for local vLLM override for the model parameter
+        vllm_override_model = os.getenv("VLLM_API_MODEL_NAME")
+        if vllm_override_model and request_params.get("model") == "openai:vllm-local-model":
+            self.debug(f"Overriding model with VLLM_API_MODEL_NAME: {vllm_override_model}")
+            request_params["model"] = vllm_override_model
+
         # Log the LLM request at INFO level
         self._log_llm_request(request_params)
 
         # Make the API call
         try:
-            response = self._client.chat.completions.create(**request_params)
+            response = await self._client.chat.completions.create(**request_params)
             self._log_llm_response(response)
-            return response
+            return response.model_dump()
         except Exception as e:
             error_message = str(e)
             self.error("LLM query failed: %s", error_message)
