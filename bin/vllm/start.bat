@@ -217,9 +217,9 @@ if not exist "%USERPROFILE%\%ENV_NAME%" (
 )
 
 rem Check if activation script exists
-set "ACTIVATE_SCRIPT=%VENV_PATH%\Scripts\activate.bat"
+set "ACTIVATE_SCRIPT=%USERPROFILE%\%ENV_NAME%\Scripts\activate.bat"
 if not exist "!ACTIVATE_SCRIPT!" (
-    echo [91m❌ Error: vLLM activation script not found at !ACTIVATE_SCRIPT![0m
+    echo  [91m❌ Error: vLLM activation script not found at !ACTIVATE_SCRIPT! [0m
     echo ❌ Please install vLLM first using: bin\vllm\install.bat
     pause
     exit /b 1
