@@ -13,6 +13,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any, cast
 
 import aisuite as ai
+from openai import APIStatusError, AuthenticationError, RateLimitError
 from openai.types.chat import ChatCompletion
 
 from opendxa.common.exceptions import (
@@ -344,43 +345,40 @@ class LLMQueryExecutor(Loggable):
         else:
             request_params = self._build_default_request_params(request)
 
+        # Check for local vLLM override for the model parameter
+        vllm_override_model = os.getenv("VLLM_API_MODEL_NAME")
+        if vllm_override_model and request_params.get("model") == "openai:vllm-local-model":
+            self.debug(f"Overriding model with VLLM_API_MODEL_NAME: {vllm_override_model}")
+            request_params["model"] = vllm_override_model
+
         # Log the LLM request at INFO level
         self._log_llm_request(request_params)
 
         # Make the API call
         try:
-            response = self._client.chat.completions.create(**request_params)
+            # Make the actual API call
+            response: ChatCompletion = await self.client.chat.completions.create(
+                **request_params,
+            )
+            self.info("LLM query successful")
             self._log_llm_response(response)
-            return response
+            return response.model_dump()
+
+        except AuthenticationError as e:
+            provider = self.model.split(":", 1)[0] if self.model else "unknown"
+            self.error(f"LLM authentication failed for provider '{provider}': {e}")
+            raise LLMAuthenticationError(provider, e.status_code, str(e)) from e
+        except RateLimitError as e:
+            provider = self.model.split(":", 1)[0] if self.model else "unknown"
+            self.error(f"LLM rate limit exceeded for provider '{provider}': {e}")
+            raise LLMRateLimitError(provider, e.status_code, str(e)) from e
+        except APIStatusError as e:
+            provider = self.model.split(":", 1)[0] if self.model else "unknown"
+            self.error(f"LLM API error for provider '{provider}': {e.message}")
+            raise LLMProviderError(provider, e.status_code, str(e.message)) from e
         except Exception as e:
-            error_message = str(e)
-            self.error("LLM query failed: %s", error_message)
-
-            # Determine the provider from the model
-            provider = "unknown"
-            if self.model and ":" in self.model:
-                provider = self.model.split(":", 1)[0]
-
-            # Extract HTTP status code if available
-            status_code = None
-            status_match = re.search(r"status[\s_]*code[:\s]+(\d+)", error_message, re.IGNORECASE)
-            if status_match:
-                status_code = int(status_match.group(1))
-
-            # Classify the error based on message patterns and status codes
-            if any(term in error_message.lower() for term in ["context length", "token limit", "too many tokens", "maximum context"]):
-                raise LLMContextLengthError(provider, status_code, error_message) from e
-            elif any(term in error_message.lower() for term in ["rate limit", "ratelimit", "too many requests", "429"]):
-                raise LLMRateLimitError(provider, status_code, error_message) from e
-            elif any(
-                term in error_message.lower() for term in ["authenticate", "authentication", "unauthorized", "auth", "api key", "401"]
-            ):
-                raise LLMAuthenticationError(provider, status_code, error_message) from e
-            elif "invalid_request_error" in error_message.lower() or "bad request" in error_message.lower():
-                raise LLMProviderError(provider, status_code, error_message) from e
-            else:
-                # Default case - generic LLM error
-                raise LLMError(f"LLM query failed: {error_message}") from e
+            self.error(f"An unexpected error occurred during LLM query: {e}")
+            raise LLMError(f"An unexpected error occurred: {e}") from e
 
     async def mock_llm_query(self, request: dict[str, Any]) -> dict[str, Any]:
         """Intelligent mock LLM query that understands POET-enhanced prompts.
@@ -506,7 +504,7 @@ class LLMQueryExecutor(Loggable):
             return f"This is a mock response. In a real scenario, I would provide a thoughtful answer to: {prompt[:100]}{'...' if len(prompt) > 100 else ''}"
 
     def _build_default_request_params(self, request: dict[str, Any]) -> dict[str, Any]:
-        """Build default request parameters for LLM API call.
+        """Build request parameters for LLM API call.
 
         Args:
             request: Dictionary containing request parameters
@@ -514,20 +512,35 @@ class LLMQueryExecutor(Loggable):
         Returns:
             Dict[str, Any]: Dictionary of request parameters
         """
-        params = {
-            "messages": Misc.get_field(request, "messages", []),
+        logical_model_name = self.model
+        final_model_name_for_api = logical_model_name
+
+        # Handle vLLM provider and model name translation
+        if logical_model_name and logical_model_name.startswith("vllm:"):
+            self.debug(f"Handling vLLM model: {logical_model_name}")
+            # Default to using openai provider for aisuite compatibility
+            final_model_name_for_api = logical_model_name.replace("vllm:", "openai:", 1)
+
+            # Check if the start script provided a specific physical model name
+            physical_model_override = os.getenv("VLLM_API_MODEL_NAME")
+            if physical_model_override:
+                # The final name for aisuite is "openai:" + the physical name
+                final_model_name_for_api = f"openai:{physical_model_override}"
+                self.debug(f"Overriding with physical model from VLLM_API_MODEL_NAME: {final_model_name_for_api}")
+
+        request_params = {
+            "model": final_model_name_for_api,
+            "messages": Misc.get_field(request, "messages", [{"role": "user", "content": "Hello"}]),
             "temperature": Misc.get_field(request, "temperature", 0.7),
-            "max_tokens": Misc.get_field(request, "max_tokens"),
         }
+        # Only include max_tokens if it's actually provided in the request
+        if "max_tokens" in request and request["max_tokens"] is not None:
+            request_params["max_tokens"] = request["max_tokens"]
 
-        # Only add model if it's available
-        if self.model:
-            params["model"] = self.model
-
-        return params
+        return request_params
 
     def _log_llm_request(self, request_params: dict[str, Any]) -> None:
-        """Log LLM request at INFO level.
+        """Log the LLM request details.
 
         Args:
             request_params: Dictionary containing request parameters

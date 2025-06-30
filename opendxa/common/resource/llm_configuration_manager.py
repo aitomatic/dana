@@ -109,12 +109,9 @@ class LLMConfigurationManager:
         try:
             config = self.config_loader.get_default_config()
             
-            # Handle both new structure (llm.preferred_models) and legacy structure (root preferred_models)
-            # This matches the logic in LLMResource for consistency
+            # Load preferred_models from llm section
             if "llm" in config and "preferred_models" in config["llm"]:
                 preferred_models = config["llm"]["preferred_models"]
-            elif "preferred_models" in config:
-                preferred_models = config["preferred_models"]
             else:
                 preferred_models = []
 
@@ -138,12 +135,9 @@ class LLMConfigurationManager:
             # First try to find model in preferred_models config for required_api_keys
             config = self.config_loader.get_default_config()
             
-            # Handle both new structure (llm.preferred_models) and legacy structure (root preferred_models)
-            # This matches the logic in LLMResource for consistency
+            # Load preferred_models from llm section
             if "llm" in config and "preferred_models" in config["llm"]:
                 preferred_models = config["llm"]["preferred_models"]
-            elif "preferred_models" in config:
-                preferred_models = config["preferred_models"]
             else:
                 preferred_models = []
 
@@ -178,12 +172,9 @@ class LLMConfigurationManager:
         try:
             config = self.config_loader.get_default_config()
             
-            # Handle both new structure (llm.preferred_models) and legacy structure (root preferred_models)
-            # This matches the logic in LLMResource for consistency
+            # Load preferred_models from llm section
             if "llm" in config and "preferred_models" in config["llm"]:
                 preferred_models = config["llm"]["preferred_models"]
-            elif "preferred_models" in config:
-                preferred_models = config["preferred_models"]
             else:
                 # Only use hardcoded fallback if no config found at all
                 preferred_models = [

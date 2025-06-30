@@ -113,8 +113,8 @@ class TestLLMQueryExecutor(unittest.IsolatedAsyncioTestCase):
         params = self.query_executor._build_default_request_params(request)
 
         self.assertEqual(params["temperature"], 0.7)  # Default temperature
-        self.assertIsNone(params["max_tokens"])  # Default max_tokens
-        self.assertNotIn("model", params)  # No model set
+        self.assertNotIn("max_tokens", params)  # Default max_tokens should not be set
+        self.assertIsNone(params["model"])  # No model set
 
     @patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "false"})
     async def test_query_once_no_client(self):
@@ -182,13 +182,17 @@ class TestLLMQueryExecutor(unittest.IsolatedAsyncioTestCase):
     async def test_query_once_success(self):
         """Test successful query_once execution."""
         # Set up mock client
-        mock_client = MagicMock()
-        mock_response = {
+        mock_client = AsyncMock()
+        mock_response_dict = {
             "choices": [{"message": {"role": "assistant", "content": "Test response"}}],
             "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
             "model": "openai:gpt-4",
         }
-        mock_client.chat.completions.create.return_value = mock_response
+        # Create a mock object that has a model_dump method
+        mock_response_obj = MagicMock()
+        mock_response_obj.model_dump.return_value = mock_response_dict
+
+        mock_client.chat.completions.create = AsyncMock(return_value=mock_response_obj)
 
         self.query_executor.client = mock_client
         self.query_executor.model = "openai:gpt-4"
@@ -201,8 +205,7 @@ class TestLLMQueryExecutor(unittest.IsolatedAsyncioTestCase):
         request = {"messages": [{"role": "user", "content": "test"}]}
         response = await self.query_executor.query_once(request, build_request_params)
 
-        # Since mock_response is a dict (not BaseResponse), query_once returns it directly
-        self.assertEqual(response, mock_response)
+        self.assertEqual(response, mock_response_dict)
         mock_client.chat.completions.create.assert_called_once()
         build_request_params.assert_called_once_with(request)
 

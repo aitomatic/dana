@@ -51,8 +51,9 @@ import logging
 import os
 import sys
 
-# Adjust path to import from the opendxa package root
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
+# This script is intended to be run via `uv run`, which handles the PYTHONPATH.
+# No manual sys.path manipulation is needed.
+# For example, to run the REPL: uv run python -m opendxa.dana.exec.repl
 
 from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.terminal_utils import ColorScheme, print_header, supports_color
@@ -112,7 +113,7 @@ def execute_file(file_path, debug=False):
 async def start_repl(debug=False):
     """Start the DANA REPL.
 
-    ARCHITECTURAL NOTE: This function delegates to the full-featured interactive REPL application.
+    ARCHITURAL NOTE: This function delegates to the full-featured interactive REPL application.
     It does NOT implement REPL logic itself - it imports and launches dana_repl_app.py which
     provides the complete interactive experience with commands, colors, multiline support, etc.
     """
@@ -277,8 +278,6 @@ def configure_debug_logging():
     print(f"{colors.accent('Debug logging enabled')}")
     DXA_LOGGER.configure(level=logging.DEBUG, console=True)
     SandboxLogger.set_system_log_level(LogLevel.DEBUG)
-
-
 
 
 def validate_na_file(file_path):

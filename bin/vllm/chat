@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+# bin/vllm/chat - Interactive chat client for vLLM OpenAI-compatible API
+# Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
+
+import argparse
+import os
+import sys
+from openai import OpenAI
+import requests
+from requests.exceptions import ConnectionError
+
+# --- ANSI Color Codes ---
+class Colors:
+    """A class for ANSI color codes for terminal output."""
+    RED = '\033[0;31m'
+    GREEN = '\033[0;32m'
+    YELLOW = '\033[1;33m'
+    BLUE = '\033[0;34m'
+    PURPLE = '\033[0;35m'
+    CYAN = '\033[0;36m'
+    NC = '\033[0m'  # No Color
+
+def check_server_status(url: str) -> bool:
+    """Checks if the vLLM server is running and accessible."""
+    try:
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+        if "data" in data and isinstance(data["data"], list):
+            return True
+        else:
+            print(f"{Colors.YELLOW}⚠️  Warning: Server at {url} is up but doesn't look like a vLLM models endpoint.{Colors.NC}", file=sys.stderr)
+            return True  # Assume it's okay if it responds
+    except ConnectionError:
+        print(f"{Colors.RED}❌ Error: Connection to vLLM server failed.{Colors.NC}", file=sys.stderr)
+        print(f"Please make sure the vLLM server is running.", file=sys.stderr)
+        print(f"You can start it with: {Colors.CYAN}./bin/start_vllm.sh{Colors.NC} (or .bat on Windows)", file=sys.stderr)
+        return False
+    except requests.RequestException as e:
+        print(f"{Colors.RED}❌ Error: Could not connect to vLLM server: {e}{Colors.NC}", file=sys.stderr)
+        return False
+    return True
+
+def main():
+    """Main function to run the interactive chat client."""
+    parser = argparse.ArgumentParser(
+        description="Interactive chat with a vLLM model via OpenAI-compatible API.",
+        formatter_class=argparse.RawTextHelpFormatter
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default=None,
+        help="The model to chat with. If not specified, the script uses the first model available on the server."
+    )
+    parser.add_argument("--host", type=str, default="localhost", help="The host of the vLLM API server.")
+    parser.add_argument("--port", type=int, default=8000, help="The port of the vLLM API server.")
+    parser.add_argument("--system-prompt", type=str, default="You are a helpful assistant.", help="The system prompt to set the context for the conversation.")
+    parser.add_argument("--temp", type=float, default=0.7, help="The temperature for sampling.")
+
+    args = parser.parse_args()
+    base_url = f"http://{args.host}:{args.port}/v1"
+    models_url = f"{base_url}/models"
+
+    if not check_server_status(models_url):
+        sys.exit(1)
+
+    try:
+        client = OpenAI(base_url=base_url, api_key="not-required")
+    except Exception as e:
+        print(f"{Colors.RED}❌ Error initializing OpenAI client: {e}{Colors.NC}", file=sys.stderr)
+        sys.exit(1)
+
+    model_to_use = args.model
+    if not model_to_use:
+        try:
+            models = client.models.list().data
+            if not models:
+                print(f"{Colors.RED}❌ Error: No models found on the server.{Colors.NC}", file=sys.stderr)
+                sys.exit(1)
+            model_to_use = models[0].id
+            print(f"{Colors.YELLOW}Model not specified. Using the first available model: {Colors.CYAN}{model_to_use}{Colors.NC}")
+        except Exception as e:
+            print(f"{Colors.RED}❌ Error fetching models from the server: {e}{Colors.NC}", file=sys.stderr)
+            sys.exit(1)
+
+    print(f"\n{Colors.GREEN}✅ Connected to vLLM server. Chatting with {Colors.CYAN}{model_to_use}{Colors.NC}.")
+    print(f"{Colors.YELLOW}Type 'exit' or 'quit' or press Ctrl+C to end the chat.{Colors.NC}\n")
+    messages = [{"role": "system", "content": args.system_prompt}]
+
+    try:
+        while True:
+            prompt = input(f"{Colors.BLUE}You: {Colors.NC}")
+            if prompt.lower() in ["exit", "quit"]:
+                print(f"\n{Colors.YELLOW}👋 Goodbye!{Colors.NC}")
+                break
+            messages.append({"role": "user", "content": prompt})
+            print(f"{Colors.PURPLE}Assistant: {Colors.NC}", end="", flush=True)
+            full_response = ""
+            try:
+                stream = client.chat.completions.create(model=model_to_use, messages=messages, temperature=args.temp, stream=True)
+                for chunk in stream:
+                    content = chunk.choices[0].delta.content
+                    if content:
+                        print(content, end="", flush=True)
+                        full_response += content
+                print()
+            except Exception as e:
+                print(f"\n{Colors.RED}❌ An error occurred during streaming: {e}{Colors.NC}")
+                messages.pop()
+                continue
+            if full_response:
+                messages.append({"role": "assistant", "content": full_response})
+    except KeyboardInterrupt:
+        print(f"\n{Colors.YELLOW}👋 Chat interrupted. Goodbye!{Colors.NC}")
+    except Exception as e:
+        print(f"\n{Colors.RED}❌ An unexpected error occurred: {e}{Colors.NC}")
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main() 

@@ -1,17 +1,34 @@
 {
-    "preferred_models": [
-        { "name": "openai:gpt-4.1-mini", "required_api_keys": ["OPENAI_API_KEY"] },
-        { "name": "openai:gpt-4.1", "required_api_keys": ["OPENAI_API_KEY"] },
-        { "name": "openai:o4-mini", "required_api_keys": ["OPENAI_API_KEY"] },
-        { "name": "deepseek:deepseek-chat", "required_api_keys": ["DEEPSEEK_API_KEY"] },
-        { "name": "deepseek:deepseek-coder", "required_api_keys": ["DEEPSEEK_API_KEY"] },
-        { "name": "anthropic:claude-3-opus-20240229", "required_api_keys": ["ANTHROPIC_API_KEY"] },
-        { "name": "anthropic:claude-3-sonnet-20240229", "required_api_keys": ["ANTHROPIC_API_KEY"] },
-        { "name": "openai:gpt-3.5-turbo", "required_api_keys": ["OPENAI_API_KEY"] },
-        { "name": "groq:deepseek-r1-distill-llama-70b", "required_api_keys": ["GROQ_API_KEY"] },
-        { "name": "groq:meta-llama/llama-4-maverick-17b-128e-instruct", "required_api_keys": ["GROQ_API_KEY"] },
-        { "name": "azure:gpt-4", "required_api_keys": ["AZURE_OPENAI_API_KEY", "AZURE_OPENAI_ENDPOINT"] }
-    ],
-    "temperature": 0.7,
-    "max_tokens": 2000
+    "llm": {
+        "preferred_models": [
+            { "name": "local", "required_api_keys": [] },
+            { "name": "openai:gpt-4o-mini", "required_api_keys": ["OPENAI_API_KEY"] },
+            { "name": "openai:gpt-4o", "required_api_keys": ["OPENAI_API_KEY"] },
+            { "name": "anthropic:claude-3-5-sonnet-20240620", "required_api_keys": ["ANTHROPIC_API_KEY"] },
+            { "name": "groq:llama3-70b-8192", "required_api_keys": ["GROQ_API_KEY"] },
+            { "name": "mistral:mistral-large-latest", "required_api_keys": ["MISTRAL_API_KEY"] },
+            { "name": "google:gemini-1.5-pro-latest", "required_api_keys": ["GOOGLE_API_KEY"] },
+            { "name": "deepseek:deepseek-chat", "required_api_keys": ["DEEPSEEK_API_KEY"] },
+            { "name": "cohere:command-r-plus", "required_api_keys": ["COHERE_API_KEY"] },
+            { "name": "azure:gpt-4o", "required_api_keys": ["AZURE_OPENAI_API_KEY", "AZURE_OPENAI_ENDPOINT"] }
+        ],
+        "temperature": 0.7,
+        "max_tokens": 2000,
+        "model_configs": {
+            "default": { "temperature": 0.7, "max_tokens": 4096, "timeout": 60.0, "retries": 3 }
+        },
+        "provider_configs": {
+            "openai": { "api_key": "env:OPENAI_API_KEY" },
+            "anthropic": { "api_key": "env:ANTHROPIC_API_KEY" },
+            "groq": { "api_key": "env:GROQ_API_KEY" },
+            "mistral": { "api_key": "env:MISTRAL_API_KEY" },
+            "google": { "api_key": "env:GOOGLE_API_KEY" },
+            "deepseek": { "api_key": "env:DEEPSEEK_API_KEY" },
+            "cohere": { "api_key": "env:COHERE_API_KEY" },
+            "azure": { "api_key": "env:AZURE_OPENAI_API_KEY", "base_url": "env:AZURE_OPENAI_ENDPOINT" }
+        }
+    },
+    "dana": {
+        "reason_default_model": "local"
+    }
 }

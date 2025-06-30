@@ -66,14 +66,15 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(params["tools"], list)
 
     def test_build_request_params_defaults(self):
-        """Test request parameter building with defaults."""
+        """Test building default request parameters with defaults."""
         request = {"messages": []}
 
-        params = self.tool_manager.build_request_params(request)
+        self.tool_manager.model = "test-model"
+        params = self.tool_manager.build_request_params(request, model="test-model")
 
         self.assertEqual(params["temperature"], 0.7)  # Default temperature
-        self.assertIsNone(params["max_tokens"])  # Default max_tokens
-        self.assertNotIn("model", params)  # No model provided
+        self.assertNotIn("max_tokens", params)  # Default max_tokens should not be set
+        self.assertEqual(params["model"], "test-model")
 
     def test_get_openai_functions(self):
         """Test getting OpenAI functions from resources."""
