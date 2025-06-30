@@ -17,7 +17,8 @@ def solve(gma : GMA, problem : str) -> str:
     pool = agent_pool(agents=gma.agents)
     available_agents = pool.get_agent_cards()
     print(available_agents)
-    steps : list = reason(f"Create a plan to solve the problem: {problem} using these agents: {available_agents}. Maximum 5 steps.")
+    steps : list = gma.plan(f"Create a plan to solve the problem: {problem} using these agents: {available_agents}. Maximum 5 steps")
+    # return steps
     context = []
     for step in steps:
         print("="*100)

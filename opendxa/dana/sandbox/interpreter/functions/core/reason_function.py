@@ -293,8 +293,10 @@ def reason_function(
     logger.debug(f"POET-enhanced reason called with prompt: '{prompt[:50]}...'")
 
     try:
+
         # Phase 1: Detect expected return type context
         context_detector = ContextDetector()
+        
         type_context = context_detector.detect_current_context(context)
 
         if type_context:

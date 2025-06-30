@@ -1,4 +1,4 @@
-sensor = use("mcp", url="https://demo.mcp.aitomatic.com/sensors")
+sensor = use("mcp", url="http://localhost:8880/sensors")
 kb = use("rag", sources=["knowledge_base/vacuum_system_agent.json"])
 
 agent VacuumSystemAgent:
@@ -8,7 +8,8 @@ agent VacuumSystemAgent:
 
 
 def solve(vacuum_system_agent : VacuumSystemAgent, problem : str) -> str:
-    answer : str = reason(f"Your goal is to solve this problem {problem}. Think step by step until you are sure with the answer.", resources=vacuum_system_agent.resources)
+    print("CALL VACUUM SYSTEM AGENT")
+    answer : str = reason(f"Your goal is to solve this problem {problem}. Think step by step until you are sure with the answer. Provide numbers that support your answer.", resources=vacuum_system_agent.resources)
     return answer
 
 

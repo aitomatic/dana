@@ -21,6 +21,9 @@ def default_plan_method(context: SandboxContext, agent_instance: "AgentInstance"
     if user_context:
         context_info = f"\nAdditional context: {user_context}"
     
+
+    # Use a simple, clear prompt - let the POET-enhanced reason_function handle type-specific enhancements
+    # The type hint information is already set by AssignmentHandler when processing typed assignments
     prompt = f"""You are {agent_instance.agent_type.name}, a specialized AI agent.
 Agent configuration: {agent_fields}{context_info}
 
@@ -40,6 +43,8 @@ def default_solve_method(context: SandboxContext, agent_instance: "AgentInstance
     if user_context:
         context_info = f"\nAdditional context: {user_context}"
     
+    # Use a simple, clear prompt - let the POET-enhanced reason_function handle type-specific enhancements
+    # The type hint information is already set by AssignmentHandler when processing typed assignments
     prompt = f"""You are {agent_instance.agent_type.name}, a specialized AI agent.
 Agent configuration: {agent_fields}{context_info}
 
@@ -185,6 +190,47 @@ class AgentInstance(AbstractDanaAgent):
                 kwargs['user_context'] = context_value
             
             return method(self._context, self, *args, **kwargs)
+    
+    def _call_method_with_current_context(self, method, *args, **kwargs):
+        """Execute a method using the current execution context if available."""
+        # Try to get the current execution context
+        current_context = self._get_current_execution_context()
+        if current_context:
+
+            # We have current context with type hint info, but we need resources from stored context
+            # Copy type hint information from current context to stored context
+            type_hint = current_context.get("system:__current_assignment_type")
+            if type_hint is not None:
+
+                self._context.set("system:__current_assignment_type", type_hint)
+            
+            try:
+                # Use the stored context (which has resources) now with type hint information
+                if hasattr(method, 'execute'):
+                    return method.execute(self._context, self, *args, **kwargs)
+                else:
+                    return method(self._context, self, *args, **kwargs)
+            finally:
+                # Clean up the type hint from stored context to avoid contamination
+                if type_hint is not None:
+                    self._context.set("system:__current_assignment_type", None)
+        else:
+
+            # Fallback to the original method
+            return self._call_method(method, *args, **kwargs)
+    
+    def _get_current_execution_context(self):
+        """Try to get the current execution context from the interpreter."""
+        try:
+            # Access the current interpreter and context through thread-local storage or similar
+            # This is a bit of a hack, but necessary since agent methods need current context
+            import threading
+            current_thread = threading.current_thread()
+            if hasattr(current_thread, 'dana_context'):
+                return current_thread.dana_context
+        except Exception:
+            pass
+        return None
 
     def __getattr__(self, name: str) -> Any:
         if name in self._type.fields:
@@ -192,7 +238,7 @@ class AgentInstance(AbstractDanaAgent):
         if self._type.has_method(name):
             method = self._type.get_method(name)
             if method is not None:
-                return lambda *args, **kwargs: self._call_method(method, *args, **kwargs)
+                return lambda *args, **kwargs: self._call_method_with_current_context(method, *args, **kwargs)
         raise AttributeError(f"Agent '{self._type.name}' has no field or method '{name}'")
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -274,6 +320,8 @@ def register_agent_from_ast(agent_def) -> AgentType:
     agent_type = create_agent_type_from_ast(agent_def)
     AgentTypeRegistry.register(agent_type)
     return agent_type
+
+
 
 def create_agent_instance(agent_name: str, context: SandboxContext, **kwargs) -> AgentInstance:
     return AgentTypeRegistry.create_instance(agent_name, kwargs, context=context)
