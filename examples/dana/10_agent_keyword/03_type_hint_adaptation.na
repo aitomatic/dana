@@ -16,7 +16,6 @@ agent DataAnalyst:
     domain: str = "manufacturing"
     expertise_level: str = "senior"
     analysis_type: str = "statistical"
-    visualization_preference: str = "charts"
 
 log("✅ Agent type 'DataAnalyst' defined")
 
@@ -31,8 +30,7 @@ log("-" * 30)
 analyst = DataAnalyst(
     domain="semiconductor",
     expertise_level="expert",
-    analysis_type="predictive",
-    visualization_preference="dashboards"
+    analysis_type="predictive"
 )
 
 log(f"✅ Created analyst: {analyst}")
@@ -43,9 +41,7 @@ default_plan = analyst.plan(
     "Analyze production yield data for Q1 2024",
     context={
         "data_source": "production_database",
-        "time_period": "Q1_2024",
-        "metrics": ["yield_rate", "defect_rate", "throughput"],
-        "complexity": "high"
+        "time_period": "Q1_2024"
     }
 )
 
@@ -58,7 +54,6 @@ default_solve = analyst.solve(
     "Declining yield trend in etching process",
     context={
         "trend_period": "3_months",
-        "affected_products": ["wafer_A", "wafer_B"],
         "severity": "moderate"
     }
 )
@@ -79,8 +74,7 @@ plan_steps: list = analyst.plan(
     "Optimize manufacturing process parameters",
     context={
         "process_type": "plasma_etching",
-        "optimization_goal": "reduce_defects",
-        "constraints": ["cost", "time", "quality"]
+        "optimization_goal": "reduce_defects"
     }
 )
 
@@ -93,8 +87,7 @@ solve_steps: list = analyst.solve(
     "Root cause analysis for equipment failures",
     context={
         "failure_pattern": "intermittent",
-        "affected_equipment": ["ETCH-001", "ETCH-002"],
-        "timeframe": "last_30_days"
+        "affected_equipment": ["ETCH-001", "ETCH-002"]
     }
 )
 
@@ -114,8 +107,7 @@ plan_dict: dict = analyst.plan(
     "Comprehensive data analysis workflow",
     context={
         "analysis_scope": "full_production_line",
-        "data_volume": "large",
-        "reporting_requirements": ["executive_summary", "technical_details", "recommendations"]
+        "data_volume": "large"
     }
 )
 
@@ -127,9 +119,8 @@ log("\n🔍 Testing solve() with explicit dict type hint:")
 solve_dict: dict = analyst.solve(
     "Statistical process control implementation",
     context={
-        "control_charts": ["xbar_r", "p_chart", "c_chart"],
-        "sample_size": 30,
-        "confidence_level": 0.95
+        "control_charts": ["xbar_r", "p_chart"],
+        "sample_size": 30
     }
 )
 
@@ -137,45 +128,10 @@ log(f"💡 Dict Solve Result: {solve_dict}")
 log(f"📊 Dict Solve Type: {type(solve_dict)}")
 
 # ============================================================================
-# 5. COMPLEX TYPE HINTS - NESTED STRUCTURES
+# 5. TYPE HINT DETECTION AND ADAPTATION
 # ============================================================================
 
-log("\n🏗️ 5. Complex Type Hints - Nested Structures")
-log("-" * 30)
-
-# Complex type hint with nested structure
-log("\n📋 Testing plan() with complex type hint:")
-complex_plan: dict[str, list[str]] = analyst.plan(
-    "Multi-phase analysis project",
-    context={
-        "phases": ["data_collection", "analysis", "reporting"],
-        "stakeholders": ["engineering", "management", "quality"],
-        "timeline": "6_weeks"
-    }
-)
-
-log(f"📝 Complex Plan Result: {complex_plan}")
-log(f"📊 Complex Plan Type: {type(complex_plan)}")
-
-# List of dicts type hint
-log("\n🔍 Testing solve() with list of dicts type hint:")
-detailed_solutions: list[dict] = analyst.solve(
-    "Multi-factor optimization problem",
-    context={
-        "factors": ["temperature", "pressure", "time", "concentration"],
-        "objectives": ["maximize_yield", "minimize_cost", "maintain_quality"],
-        "constraints": ["equipment_limits", "safety_requirements"]
-    }
-)
-
-log(f"💡 Detailed Solutions Result: {detailed_solutions}")
-log(f"📊 Detailed Solutions Type: {type(detailed_solutions)}")
-
-# ============================================================================
-# 6. TYPE HINT DETECTION AND ADAPTATION
-# ============================================================================
-
-log("\n🎯 6. Type Hint Detection and Adaptation")
+log("\n🎯 5. Type Hint Detection and Adaptation")
 log("-" * 30)
 
 # Test different variable assignments to see type adaptation
@@ -193,49 +149,11 @@ dict_result = analyst.plan("Detailed analysis task")
 log(f"📝 Dict Assignment Result: {dict_result}")
 log(f"📊 Dict Assignment Type: {type(dict_result)}")
 
-# Assignment to mixed variable
-log("\n📋 Assignment to mixed variable:")
-mixed_result = analyst.solve("Complex problem")
-log(f"📝 Mixed Assignment Result: {mixed_result}")
-log(f"📊 Mixed Assignment Type: {type(mixed_result)}")
-
 # ============================================================================
-# 7. CONTEXT-AWARE TYPE ADAPTATION
+# 6. TYPE HINT BEST PRACTICES
 # ============================================================================
 
-log("\n🧠 7. Context-Aware Type Adaptation")
-log("-" * 30)
-
-# Test how context influences response format
-log("\n📋 Testing context-aware adaptation:")
-
-# Simple context - should return list
-simple_context = {
-    "complexity": "low",
-    "detail_level": "basic"
-}
-
-simple_result = analyst.plan("Basic task", context=simple_context)
-log(f"📝 Simple Context Result: {simple_result}")
-log(f"📊 Simple Context Type: {type(simple_result)}")
-
-# Complex context - should return dict
-complex_context = {
-    "complexity": "high",
-    "detail_level": "comprehensive",
-    "stakeholders": ["executive", "technical", "operational"],
-    "reporting_requirements": ["summary", "details", "recommendations", "action_items"]
-}
-
-complex_result = analyst.plan("Complex task", context=complex_context)
-log(f"📝 Complex Context Result: {complex_result}")
-log(f"📊 Complex Context Type: {type(complex_result)}")
-
-# ============================================================================
-# 8. TYPE HINT BEST PRACTICES
-# ============================================================================
-
-log("\n💡 8. Type Hint Best Practices")
+log("\n💡 6. Type Hint Best Practices")
 log("-" * 30)
 
 log("""
@@ -245,88 +163,30 @@ log("""
    ✅ plan_steps: list = agent.plan("task")
    ✅ analysis: dict = agent.solve("problem")
 
-2. **Context-Driven Adaptation**: Let context determine format
-   ✅ result = agent.plan("task", context={"detail_level": "high"})
-
-3. **Consistent Naming**: Use descriptive variable names
+2. **Consistent Naming**: Use descriptive variable names
    ✅ plan_steps: list = agent.plan("task")
    ✅ plan_details: dict = agent.plan("task")
 
-4. **Type Safety**: Leverage Dana's type system
+3. **Type Safety**: Leverage Dana's type system
    ✅ detailed_analysis: dict[str, list[str]] = agent.plan("task")
 
-5. **Adaptive Responses**: Use when format doesn't matter
+4. **Adaptive Responses**: Use when format doesn't matter
    ✅ result = agent.plan("task")  # Agent chooses best format
-
-6. **Performance Considerations**: 
-   - List responses: Faster, simpler
-   - Dict responses: More detailed, structured
-   - Choose based on your needs
 """)
 
 # ============================================================================
-# 9. REAL-WORLD TYPE ADAPTATION SCENARIOS
+# 7. SUMMARY
 # ============================================================================
 
-log("\n🌍 9. Real-World Type Adaptation Scenarios")
-log("-" * 30)
-
-# Scenario 1: Executive reporting (dict format)
-log("\n📊 Scenario 1: Executive Reporting (Dict Format)")
-executive_plan: dict = analyst.plan(
-    "Q1 2024 Manufacturing Performance Review",
-    context={
-        "audience": "executive",
-        "format": "executive_summary",
-        "key_metrics": ["revenue_impact", "cost_savings", "efficiency_gains"],
-        "presentation_style": "high_level"
-    }
-)
-
-log(f"📝 Executive Plan: {executive_plan}")
-
-# Scenario 2: Technical implementation (list format)
-log("\n📋 Scenario 2: Technical Implementation (List Format)")
-technical_steps: list = analyst.plan(
-    "Implement Statistical Process Control System",
-    context={
-        "audience": "technical",
-        "format": "step_by_step",
-        "implementation_level": "detailed",
-        "include_code": true
-    }
-)
-
-log(f"📝 Technical Steps: {technical_steps}")
-
-# Scenario 3: Operational workflow (mixed format)
-log("\n🔄 Scenario 3: Operational Workflow (Mixed Format)")
-workflow_solution = analyst.solve(
-    "Production Line Bottleneck Analysis",
-    context={
-        "audience": "operational",
-        "format": "actionable",
-        "urgency": "high",
-        "resource_constraints": ["time", "budget", "personnel"]
-    }
-)
-
-log(f"💡 Workflow Solution: {workflow_solution}")
-
-# ============================================================================
-# 10. SUMMARY AND NEXT STEPS
-# ============================================================================
-
-log("\n🎯 10. Summary and Next Steps")
+log("\n🎯 7. Summary")
 log("-" * 30)
 
 log("""
 ✅ What we've learned:
 - Default response behavior (list for plan, dict for solve)
 - Explicit type hint adaptation
-- Context-aware response formatting
-- Complex type hint patterns
-- Real-world adaptation scenarios
+- Type hint detection and adaptation
+- Best practices for type hints
 
 🚀 Key Benefits:
 - Flexible response formats based on needs
@@ -335,10 +195,8 @@ log("""
 - Consistent API with adaptive behavior
 
 🚀 Next steps:
-- Learn advanced memory systems (04_memory_systems.na)
-- Real-world applications (05_real_world_manufacturing.na)
-- Advanced integration patterns (06_advanced_integration.na)
+- Learn memory systems (04_memory_systems.na)
 """)
 
 log("\n🎉 Type Hint Adaptation Example Complete!")
-log("Agents now adapt their responses based on your type hints and context!") 
+log("Agents now adapt their responses based on your type hints!") 

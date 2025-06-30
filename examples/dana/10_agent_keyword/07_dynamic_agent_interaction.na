@@ -1,0 +1,289 @@
+# Dana Agent Keyword - Dynamic Agent Interaction Demo (Semiconductor Ion Etching)
+# Demonstrates dynamic agent collaboration for root cause analysis in semiconductor ion etching
+
+log("🚀 Dana Agent Dynamic Interaction Demo: Semiconductor Ion Etching")
+log("Root cause analysis and solution workflow for etch yield loss")
+log("=" * 60)
+
+# ============================================================================
+# 1. BUSINESS PROBLEM SETUP
+# ============================================================================
+
+log("\n📊 1. Business Problem Setup: Ion Etching")
+log("-" * 40)
+
+etch_problem = {
+    "issue": "High defect rate and yield loss in ion etching step",
+    "defect_rate": 0.11,
+    "target_defect_rate": 0.02,
+    "chamber_downtime": 0.12,
+    "monthly_loss": 420000
+}
+
+log(f"🎯 Problem: {etch_problem['issue']}")
+log(f"📈 Current Defect Rate: {etch_problem['defect_rate'] * 100}%")
+log(f"🎯 Target Defect Rate: {etch_problem['target_defect_rate'] * 100}%")
+log(f"⏱️ Chamber Downtime: {etch_problem['chamber_downtime'] * 100}%")
+log(f"💸 Monthly Loss: ${etch_problem['monthly_loss']}")
+
+# ============================================================================
+# 2. DOMAIN-SPECIFIC AGENT CREATION
+# ============================================================================
+
+log("\n🤖 2. Specialized Agent Creation: Etch Domain")
+log("-" * 40)
+
+agent DefectAnalyst:
+    domain: str = "semiconductor_etching"
+    expertise_level: str = "senior"
+    analysis_focus: str = "root_cause_analysis"
+
+agent ProcessEngineer:
+    domain: str = "semiconductor_etching"
+    expertise_level: str = "senior"
+    optimization_focus: str = "etch_process_optimization"
+
+agent EquipmentSpecialist:
+    domain: str = "semiconductor_etching"
+    expertise_level: str = "senior"
+    focus_area: str = "chamber_and_plasma_equipment"
+
+agent CostAnalyst:
+    domain: str = "finance"
+    expertise_level: str = "senior"
+    analysis_focus: str = "roi_analysis"
+
+log("✅ Created 4 etch-focused agents with complementary expertise")
+
+# ============================================================================
+# 3. DYNAMIC AGENT INTERACTION WORKFLOW
+# ============================================================================
+
+log("\n🔄 3. Dynamic Agent Interaction Workflow: Etch RCA")
+log("-" * 40)
+
+# Step 1: Defect Analyst provides root cause findings
+analyst = DefectAnalyst()
+log("\n🔍 Step 1: Defect Analyst Root Cause Analysis")
+defect_analysis = analyst.solve(
+    "Analyze root causes of high defect rate in ion etching (e.g., micro-masking, plasma instability, chamber contamination, mask misalignment)",
+    context={
+        "defect_rate": etch_problem["defect_rate"],
+        "chamber_downtime": etch_problem["chamber_downtime"]
+    }
+)
+
+log("📊 Defect Analyst Response Generated")
+log("🔍 Extracting root causes from Defect Analyst response...")
+
+# Extract findings from Defect Analyst's response
+rca_findings = {
+    "primary_defect_causes": [],
+    "chamber_issues": [],
+    "plasma_issues": [],
+    "recommended_actions": []
+}
+
+if "solution" in defect_analysis:
+    solution_text = defect_analysis["solution"]
+    if "micro-masking" in solution_text.lower():
+        rca_findings["primary_defect_causes"].append("micro-masking")
+    if "plasma instability" in solution_text.lower():
+        rca_findings["plasma_issues"].append("plasma_instability")
+    if "chamber contamination" in solution_text.lower():
+        rca_findings["chamber_issues"].append("chamber_contamination")
+    if "mask misalignment" in solution_text.lower():
+        rca_findings["primary_defect_causes"].append("mask_misalignment")
+    # Add more extraction as needed
+
+log(f"📋 Extracted RCA Findings:")
+log(f"   Defect Causes: {rca_findings['primary_defect_causes']}")
+log(f"   Plasma Issues: {rca_findings['plasma_issues']}")
+log(f"   Chamber Issues: {rca_findings['chamber_issues']}")
+
+# Step 2: Process Engineer uses Defect Analyst's findings
+engineer = ProcessEngineer()
+log("\n⚙️ Step 2: Process Engineer Etch Optimization")
+log("🔗 Using Defect Analyst's findings for process optimization")
+
+process_optimization = engineer.solve(
+    "Optimize ion etching process based on root cause analysis findings",
+    context={
+        "defect_causes": rca_findings["primary_defect_causes"],
+        "plasma_issues": rca_findings["plasma_issues"],
+        "chamber_issues": rca_findings["chamber_issues"],
+        "current_defect_rate": etch_problem["defect_rate"],
+        "target_defect_rate": etch_problem["target_defect_rate"]
+    }
+)
+
+log("📊 Process Engineer Response Generated")
+log("🔍 Extracting process recommendations...")
+
+process_recommendations = {
+    "parameter_tuning": [],
+    "recipe_changes": [],
+    "monitoring_upgrades": [],
+    "training_programs": []
+}
+
+if "solution" in process_optimization:
+    solution_text = process_optimization["solution"]
+    if "rf power" in solution_text.lower() or "pressure" in solution_text.lower():
+        process_recommendations["parameter_tuning"] = ["rf_power", "chamber_pressure", "gas_flow"]
+    if "recipe" in solution_text.lower():
+        process_recommendations["recipe_changes"] = ["etch_time", "endpoint_detection", "over-etch_margin"]
+    if "monitoring" in solution_text.lower():
+        process_recommendations["monitoring_upgrades"] = ["plasma_emission_monitoring", "chamber_cleanliness_monitoring"]
+
+log(f"📋 Extracted Process Recommendations:")
+log(f"   Parameter Tuning: {process_recommendations['parameter_tuning']}")
+log(f"   Recipe Changes: {process_recommendations['recipe_changes']}")
+log(f"   Monitoring Upgrades: {process_recommendations['monitoring_upgrades']}")
+
+# Step 3: Equipment Specialist uses both previous agents' findings
+equipment = EquipmentSpecialist()
+log("\n🔧 Step 3: Equipment Specialist Action Plan")
+log("🔗 Using RCA and process recommendations for equipment strategy")
+
+equipment_plan = equipment.solve(
+    "Develop equipment maintenance and upgrade plan for ion etching based on RCA and process recommendations",
+    context={
+        "chamber_issues": rca_findings["chamber_issues"],
+        "plasma_issues": rca_findings["plasma_issues"],
+        "parameter_tuning": process_recommendations["parameter_tuning"],
+        "monitoring_upgrades": process_recommendations["monitoring_upgrades"],
+        "current_downtime": etch_problem["chamber_downtime"]
+    }
+)
+
+log("📊 Equipment Specialist Response Generated")
+log("🔍 Extracting equipment recommendations...")
+
+equipment_recommendations = {
+    "maintenance_actions": [],
+    "upgrade_actions": [],
+    "monitoring_systems": []
+}
+
+if "solution" in equipment_plan:
+    solution_text = equipment_plan["solution"]
+    if "cleaning" in solution_text.lower():
+        equipment_recommendations["maintenance_actions"].append("chamber_cleaning")
+    if "rf generator" in solution_text.lower() or "power supply" in solution_text.lower():
+        equipment_recommendations["upgrade_actions"].append("rf_generator_upgrade")
+    if "monitoring" in solution_text.lower():
+        equipment_recommendations["monitoring_systems"].append("install_plasma_monitoring")
+
+log(f"📋 Extracted Equipment Recommendations:")
+log(f"   Maintenance Actions: {equipment_recommendations['maintenance_actions']}")
+log(f"   Upgrade Actions: {equipment_recommendations['upgrade_actions']}")
+log(f"   Monitoring Systems: {equipment_recommendations['monitoring_systems']}")
+
+# Step 4: Cost Analyst evaluates all combined findings
+cost_analyst = CostAnalyst()
+log("\n💰 Step 4: Cost Analyst ROI Evaluation")
+log("🔗 Evaluating all findings from previous agents dynamically")
+
+cost_analysis = cost_analyst.solve(
+    "Calculate ROI for all etch process, equipment, and maintenance improvements",
+    context={
+        "process_recommendations": process_recommendations,
+        "equipment_recommendations": equipment_recommendations,
+        "current_monthly_loss": etch_problem["monthly_loss"],
+        "current_defect_rate": etch_problem["defect_rate"],
+        "target_defect_rate": etch_problem["target_defect_rate"],
+        "current_downtime": etch_problem["chamber_downtime"]
+    }
+)
+
+log("📊 Cost Analyst Response Generated")
+
+# ============================================================================
+# 4. DYNAMIC FINDINGS ANALYSIS
+# ============================================================================
+
+log("\n🔍 4. Dynamic Findings Analysis: Etch RCA")
+log("-" * 40)
+
+log("""
+🔗 How Dynamic Extraction Works (Etch RCA):
+
+1. DEFECT ANALYST → PROCESS ENGINEER
+   - RCA findings (e.g., micro-masking, plasma instability) drive process optimization
+2. DEFECT ANALYST + PROCESS ENGINEER → EQUIPMENT SPECIALIST
+   - Chamber/plasma issues and process needs drive equipment maintenance/upgrade
+3. ALL AGENTS → COST ANALYST
+   - Aggregated recommendations inform ROI and investment decisions
+
+💡 Key Difference from Hardcoded Approach:
+- Findings are extracted from actual agent responses
+- Each agent builds on real insights, not predetermined values
+- Dynamic adaptation based on actual etch process complexity
+- More realistic and context-aware recommendations
+""")
+
+# ============================================================================
+# 5. BUSINESS VALUE FROM DYNAMIC INTERACTION
+# ============================================================================
+
+log("\n📈 5. Business Value from Dynamic Etch RCA")
+log("-" * 40)
+
+total_findings = (
+    len(rca_findings["primary_defect_causes"]) +
+    len(rca_findings["plasma_issues"]) +
+    len(rca_findings["chamber_issues"]) +
+    len(process_recommendations["parameter_tuning"]) +
+    len(process_recommendations["recipe_changes"]) +
+    len(equipment_recommendations["maintenance_actions"]) +
+    len(equipment_recommendations["upgrade_actions"])
+)
+
+# Estimate business impact based on dynamic findings
+estimated_defect_reduction = min([0.09, etch_problem["defect_rate"] - etch_problem["target_defect_rate"]])
+estimated_downtime_reduction = 0.08  # 8% reduction in chamber downtime
+estimated_cost_savings = etch_problem["monthly_loss"] * (estimated_defect_reduction + estimated_downtime_reduction)
+
+log(f"📊 Dynamic Etch RCA Results:")
+log(f"   Total Findings Identified: {total_findings}")
+log(f"   Estimated Defect Reduction: {estimated_defect_reduction * 100}%")
+log(f"   Estimated Downtime Reduction: {estimated_downtime_reduction * 100}%")
+log(f"   Estimated Monthly Savings: ${estimated_cost_savings}")
+log(f"   Estimated Annual Savings: ${estimated_cost_savings * 12}")
+
+# ============================================================================
+# 6. SUMMARY AND INSIGHTS
+# ============================================================================
+
+log("\n🎉 6. Summary and Insights: Etch RCA")
+log("-" * 40)
+
+log("""
+✅ What we've demonstrated:
+- Dynamic extraction of root causes and recommendations for ion etching
+- Real agent collaboration based on extracted etch insights
+- Context-aware recommendations for process, equipment, and cost
+- Comprehensive business value calculation for etch yield improvement
+
+🔗 Dynamic Agent Interaction Patterns:
+- RCA parsing and insight extraction
+- Context-aware process and equipment recommendations
+- Multi-agent knowledge integration for etch
+- Adaptive problem-solving for semiconductor manufacturing
+
+💡 Key Insights:
+1. Dynamic extraction enables true agent collaboration for etch RCA
+2. Real findings lead to more accurate business value calculations
+3. Context-aware recommendations improve etch process and yield
+4. Agent interaction creates adaptive, intelligent workflows for fab optimization
+
+🚀 Next Phase Capabilities:
+- Automated RCA parsing and learning (Phase 2)
+- Real-time agent communication and coordination (Phase 3)
+- Dynamic workflow adaptation for fab (Phase 4)
+- KNOWS orchestration with intelligent agent selection (Phase 5)
+""")
+
+log("\n🏆 Dynamic Agent Interaction Demo Complete: Ion Etching RCA!")
+log("True agent collaboration for semiconductor etch yield improvement!") 

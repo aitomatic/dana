@@ -9,13 +9,20 @@ from dataclasses import dataclass
 from typing import Any
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 from opendxa.dana.sandbox.interpreter.functions.core.reason_function import reason_function
+from .abstract_dana_agent import AbstractDanaAgent
 
 # --- Default Method Implementations ---
-def default_plan_method(context: SandboxContext, agent_instance: "AgentInstance", task: str) -> Any:
+def default_plan_method(context: SandboxContext, agent_instance: "AgentInstance", task: str, user_context: dict | None = None) -> Any:
     """Default plan method that uses AI reasoning with type hint adaptation."""
     agent_fields = ", ".join(f"{k}: {v}" for k, v in agent_instance.to_dict().items())
+    
+    # Include user context in the prompt if provided
+    context_info = ""
+    if user_context:
+        context_info = f"\nAdditional context: {user_context}"
+    
     prompt = f"""You are {agent_instance.agent_type.name}, a specialized AI agent.
-Agent configuration: {agent_fields}
+Agent configuration: {agent_fields}{context_info}
 
 Task: {task}
 
@@ -24,11 +31,17 @@ Create a detailed plan to accomplish this task. Consider your specialized knowle
     return reason_function(context, prompt)
 
 
-def default_solve_method(context: SandboxContext, agent_instance: "AgentInstance", problem: str) -> Any:
+def default_solve_method(context: SandboxContext, agent_instance: "AgentInstance", problem: str, user_context: dict | None = None) -> Any:
     """Default solve method that uses AI reasoning with type hint adaptation."""
     agent_fields = ", ".join(f"{k}: {v}" for k, v in agent_instance.to_dict().items())
+    
+    # Include user context in the prompt if provided
+    context_info = ""
+    if user_context:
+        context_info = f"\nAdditional context: {user_context}"
+    
     prompt = f"""You are {agent_instance.agent_type.name}, a specialized AI agent.
-Agent configuration: {agent_fields}
+Agent configuration: {agent_fields}{context_info}
 
 Problem: {problem}
 
@@ -50,10 +63,10 @@ class AgentType:
             self._custom_methods = {}
         if self.defaults is None:
             self.defaults = {}
-
+    
     def add_method(self, method_name: str, method_func: Any) -> None:
         self._custom_methods[method_name] = method_func
-
+    
     def get_method(self, method_name: str) -> Any | None:
         if method_name in self._custom_methods:
             return self._custom_methods[method_name]
@@ -62,15 +75,33 @@ class AgentType:
         elif method_name == "solve":
             return default_solve_method
         return None
-
+    
     def has_method(self, method_name: str) -> bool:
         return method_name in self._custom_methods or method_name in ["plan", "solve"]
 
 # --- AgentInstance: Like StructInstance ---
-class AgentInstance:
+class AgentInstance(AbstractDanaAgent):
     def __init__(self, agent_type: AgentType, values: dict[str, Any], context: SandboxContext):
-        # Apply defaults, then provided values
-        final_values = agent_type.defaults.copy()
+        # Apply defaults, evaluating complex expressions if needed
+        final_values = {}
+        for field_name, default_value in agent_type.defaults.items():
+            if isinstance(default_value, (str, int, float, bool, list, dict)):
+                # Already evaluated simple value
+                final_values[field_name] = default_value
+            else:
+                # AST node that needs evaluation
+                try:
+                    if hasattr(context, '_interpreter') and context._interpreter:
+                        evaluated_value = context._interpreter.execute_statement(default_value, context)
+                        final_values[field_name] = evaluated_value
+                    else:
+                        # No interpreter available - this shouldn't happen in normal execution
+                        raise ValueError(f"Cannot evaluate default value for field '{field_name}': no interpreter available")
+                except Exception as e:
+                    # If evaluation fails, provide more specific error
+                    raise ValueError(f"Failed to evaluate default value for field '{field_name}': {e}")
+        
+        # Apply provided values (overriding defaults)
         final_values.update(values)
         
         # Simple validation
@@ -83,15 +114,76 @@ class AgentInstance:
         self._context = context
 
     @property
+    def agent_card(self) -> dict[str, Any]:
+        resources = self._values.get("resources", [])
+        tools = []
+        for resource in resources:
+            tools.extend(resource.list_tools())
+        skills = []
+        for tool in tools:
+            if "function" in tool:
+                function = tool["function"]
+                skills.append({"name": function.get("name", ""), "description": function.get("description", "")})
+        return {
+            "name": self._values.get("name", "General Purpose Agent"),
+            "description": self._values.get("description", "General Purpose Agent"),
+            "skills": skills
+        }
+    
+    @property
+    def skills(self) -> list[dict[str, Any]]:
+        return self.agent_card.get("skills", [])
+
+    @property
     def agent_type(self) -> AgentType:
         return self._type
+    
+    async def solve(self, task: str) -> str:
+        """Solve a problem by delegating to the agent."""
+        # Use the internal method resolution to avoid recursion
+        method = self._type.get_method("solve")
+        if method is not None:
+            result = self._call_method(method, task)
+            return str(result)
+        return "No solve method available"
+
+    def plan(self, task: str, user_context: dict | None = None) -> Any:
+        return self.__getattr__("plan")(task, user_context)
 
     def _call_method(self, method, *args, **kwargs):
         """Helper to call method with correct parameters."""
         from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+        
+        # Handle 'context' kwarg conflict for both DanaFunction and Python functions
+        context_value = None
+        if 'context' in kwargs:
+            context_value = kwargs.pop('context')
+        
         if isinstance(method, DanaFunction):
+            # For DanaFunction, handle parameter mapping
+            if context_value is not None:
+                # Check if the function actually has a 'context' parameter
+                if hasattr(method, 'parameters') and 'context' in method.parameters:
+                    # The function expects 'context', so we need to pass it correctly
+                    # We'll add it to args in the right position
+                    param_index = method.parameters.index('context')
+                    # Adjust for the agent instance parameter (first param after execution context)
+                    user_param_index = param_index - 1  # -1 because agent instance is first user param
+                    
+                    if user_param_index == len(args):
+                        # Context should be the next positional argument
+                        args = list(args) + [context_value]
+                    elif user_param_index < len(args):
+                        # Insert context at the right position
+                        args = list(args)
+                        args.insert(user_param_index, context_value)
+            
             return method.execute(self._context, self, *args, **kwargs)
         else:
+            # For Python functions (default methods), pass context_value as user_context kwarg
+            if context_value is not None:
+                kwargs['user_context'] = context_value
+            
             return method(self._context, self, *args, **kwargs)
 
     def __getattr__(self, name: str) -> Any:
@@ -167,10 +259,14 @@ def create_agent_type_from_ast(agent_def) -> AgentType:
         fields[field.name] = field.type_hint.name
         field_order.append(field.name)
         
-        # Simple default value extraction
+        # Extract default value if present
         if hasattr(field, 'default_value') and field.default_value is not None:
             if hasattr(field.default_value, 'value'):
+                # Simple literal value (StringLiteral, NumberLiteral, etc.)
                 defaults[field.name] = field.default_value.value
+            else:
+                # Complex expression - store AST node for later evaluation
+                defaults[field.name] = field.default_value
     
     return AgentType(name=agent_def.name, fields=fields, field_order=field_order, defaults=defaults)
 

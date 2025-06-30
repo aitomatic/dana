@@ -88,6 +88,44 @@ steps: list = inspector.plan("optimize production")  # Returns list
 plan_dict: dict = inspector.plan("optimize production")  # Returns dict
 ```
 
+### [`05_business_transformation_demo.na`](05_business_transformation_demo.na) ⭐⭐⭐ **AMAZING DEMO**
+**Estimated Time:** 30 minutes
+
+**What You'll Learn:**
+- **Integrated workflow**: Inspection → Optimization → Cost Analysis
+- **Real business value**: $2.7M annual savings with 1700% ROI
+- **Time transformation**: 18 weeks → 30 seconds (97% reduction)
+- **Cost transformation**: $150K → $0 development cost
+- **Relationship between planning, problem-solving, and cost analysis**
+
+**Key Concepts:**
+```dana
+# Business problem setup
+business_problem = {
+    "issue": "High defect rate in wafer etching process",
+    "current_defect_rate": 0.08,
+    "target_defect_rate": 0.02,
+    "monthly_loss": 300000
+}
+
+# Specialized agents working together
+agent WaferInspector: process_type: str = "etching"
+agent ProcessOptimizer: domain: str = "semiconductor"
+agent CostAnalyzer: budget_threshold: float = 500000
+
+# Integrated workflow
+inspection_plan = inspector.plan("Analyze root causes")
+optimization_solution = optimizer.solve("Optimize process")
+cost_analysis = analyzer.solve("Calculate ROI")
+```
+
+**Business Impact:**
+- **Annual Savings**: $2.7M
+- **ROI**: 1700%
+- **Payback Period**: 0.67 months
+- **Time Reduction**: 97%
+- **Cost Reduction**: 100%
+
 ### [`04_memory_systems.na`](04_memory_systems.na) ⭐⭐⭐
 **Estimated Time:** 30 minutes
 
@@ -108,58 +146,6 @@ history = inspector.get_conversation_history()
 memory_keys = inspector.get_memory_keys()
 ```
 
-### [`05_real_world_manufacturing.na`](05_real_world_manufacturing.na) ⭐⭐⭐
-**Estimated Time:** 35 minutes
-
-**What You'll Learn:**
-- Real-world semiconductor manufacturing scenarios
-- Multi-agent coordination patterns
-- Complex domain-specific reasoning
-- Production line optimization workflows
-
-**Key Concepts:**
-```dana
-# Specialized manufacturing agents
-agent WaferInspector:
-    inspection_mode: str = "automatic"
-    defect_threshold: float = 0.015
-
-agent ProcessEngineer:
-    expertise: str = "plasma_etch"
-    optimization_level: str = "aggressive"
-
-# Multi-agent coordination
-inspector = WaferInspector()
-engineer = ProcessEngineer()
-
-inspection_plan = inspector.plan("batch WB-2024-001 inspection")
-optimization = engineer.solve("reduce defect rate by 50%")
-```
-
-### [`06_advanced_integration.na`](06_advanced_integration.na) ⭐⭐⭐⭐
-**Estimated Time:** 40 minutes
-
-**What You'll Learn:**
-- Agent integration with Dana pipelines
-- Struct composition with agents
-- Function polymorphism with agent types
-- Complex workflow orchestration
-
-**Key Concepts:**
-```dana
-# Agent in pipeline
-def process_with_agent(data: RawData, agent: ManufacturingAgent) -> ProcessedData:
-    plan = agent.plan("process data efficiently")
-    return data | apply_plan(plan)
-
-# Struct composition
-struct ProductionLine:
-    name: str
-    inspector: WaferInspector
-    engineer: ProcessEngineer
-    status: str
-```
-
 ## 🚀 Quick Start
 
 1. **Start with basic concepts:**
@@ -167,11 +153,16 @@ struct ProductionLine:
    dana examples/dana/10_agent_keyword/01_basic_agent.na
    ```
 
-2. **Progress through examples in order:**
+2. **See the amazing business transformation demo:**
+   ```bash
+   dana examples/dana/10_agent_keyword/05_business_transformation_demo.na
+   ```
+
+3. **Progress through examples in order:**
    - Each builds on concepts from previous examples
    - Pay attention to the AI-powered responses vs custom overrides
 
-3. **Experiment with modifications:**
+4. **Experiment with modifications:**
    - Add new fields to existing agents
    - Create custom method overrides
    - Try different type hints and observe response changes
