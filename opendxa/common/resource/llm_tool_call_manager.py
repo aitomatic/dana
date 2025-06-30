@@ -10,6 +10,7 @@ MIT License
 
 import json
 from typing import Any, cast
+import os
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.mixins.registerable import Registerable
@@ -17,6 +18,7 @@ from opendxa.common.mixins.tool_callable import OpenAIFunctionCall, ToolCallable
 from opendxa.common.mixins.tool_formats import ToolFormat
 from opendxa.common.resource.base_resource import BaseResource
 from opendxa.common.types import BaseRequest, BaseResponse
+from opendxa.common.exceptions import LLMError
 
 # To avoid accidentally sending too much data to the LLM,
 # we limit the total length of tool-call responses.
@@ -53,15 +55,26 @@ class LLMToolCallManager(Loggable):
         params = {
             "messages": Misc.get_field(request, "messages", []),
             "temperature": Misc.get_field(request, "temperature", 0.7),
-            "max_tokens": Misc.get_field(request, "max_tokens"),
         }
 
-        if not available_resources:
-            available_resources = Misc.get_field(request, "available_resources", {})
+        if Misc.has_field(request, "max_tokens"):
+            params["max_tokens"] = Misc.get_field(request, "max_tokens")
 
-        # Only add model if it's available
-        if model:
-            params["model"] = model
+        final_model_name_for_api = model
+        # If the model is 'local', resolve it to the physical model name
+        # from the environment variable.
+        if model == "local":
+            self.debug("Model is 'local', resolving from LOCAL_LLM_NAME environment variable.")
+            local_name = os.getenv("LOCAL_LLM_NAME")
+            if not local_name:
+                raise LLMError(
+                    "Model is 'local' but LOCAL_LLM_NAME environment variable is not set."
+                )
+            final_model_name_for_api = local_name
+            self.debug(f"Resolved 'local' to physical model: {final_model_name_for_api}")
+
+        if final_model_name_for_api:
+            params["model"] = final_model_name_for_api
 
         if available_resources:
             params["tools"] = self.get_openai_functions(available_resources)

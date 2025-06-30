@@ -18,7 +18,7 @@ Features:
 import json
 import os
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 import aisuite as ai
 from openai.types.chat import ChatCompletion
@@ -27,6 +27,7 @@ from opendxa.common.config import ConfigLoader
 from opendxa.common.exceptions import (
     ConfigurationError,
     LLMError,
+    ResourceError,
 )
 from opendxa.common.mixins.tool_callable import OpenAIFunctionCall
 from opendxa.common.resource.base_resource import BaseResource
@@ -286,24 +287,52 @@ class LLMResource(BaseResource):
         """Initialize the AISuite client etc."""
         if not self._client:
             self.debug("Initializing AISuite client...")
-            # Handle backward compatibility for top-level api_key
-            if "api_key" in self.config and "openai" not in self.provider_configs:
-                self.debug("Using top-level api_key for OpenAI provider")
-                self.provider_configs["openai"] = {"api_key": self.config["api_key"]}
 
-            self.debug(f"Creating AISuite client with provider configs: {self.provider_configs}")
-            self._client = ai.Client(provider_configs=self.provider_configs)
+            # Prepare provider configs for aisuite
+            final_provider_configs = self.provider_configs.copy()
 
-            # Set client on query executor
-            self._query_executor.client = self._client
-            self._query_executor.model = self.model
+            # If 'local' model is configured, check for environment variables.
+            # If they exist, point the 'openai' provider to the local server.
+            # Otherwise, log a warning and continue, allowing fallback to other models.
+            preferred_model_names = [p.get("name") for p in self.config.get("preferred_models", [])]
+            if "local" in preferred_model_names:
+                self.debug("Local LLM detected in preferences, checking environment variables...")
+                local_url = os.getenv("LOCAL_LLM_URL")
+                local_name = os.getenv("LOCAL_LLM_NAME")
 
-            # Only log if we have a model
-            if self.model:
-                self.info("LLM client initialized successfully for model: %s", self.model)
-                self._is_available = True
-            else:
-                self.warning("LLM client initialized without a model")
+                if local_url and local_name:
+                    # If env vars are set, re-route the openai provider to the local URL.
+                    self.debug(f"Local LLM environment variables found. Re-routing 'openai' provider to {local_url}")
+                    if "openai" not in final_provider_configs:
+                        final_provider_configs["openai"] = {}
+                    final_provider_configs["openai"]["base_url"] = local_url
+                    # Explicitly set api_key to empty to prevent sending AUTH headers to local server
+                    final_provider_configs["openai"]["api_key"] = ""
+                else:
+                    # If env vars are not set, just log a warning. The 'local' model
+                    # will be skipped later in the availability check.
+                    self.warning(
+                        "Local LLM is configured, but 'LOCAL_LLM_URL' or 'LOCAL_LLM_NAME' is missing. "
+                        "The 'local' model will be unavailable."
+                    )
+
+            try:
+                self._client = ai.Client(provider_configs=final_provider_configs)
+                self.debug("AISuite client initialized successfully.")
+
+                # Set client on query executor
+                self._query_executor.client = self._client
+                self._query_executor.model = self.model
+
+                # Only log if we have a model
+                if self.model:
+                    self.info("LLM client initialized successfully for model: %s", self.model)
+                    self._is_available = True
+                else:
+                    self.warning("LLM client initialized without a model")
+                    self._is_available = False
+            except Exception as e:
+                self.error(f"Failed to initialize AISuite client: {e}")
                 self._is_available = False
 
     async def cleanup(self) -> None:
@@ -607,3 +636,38 @@ class LLMResource(BaseResource):
         available = self._config_manager.get_available_models()
         self.debug(f"Available models based on API keys: {available}")
         return available
+
+    def _is_model_available(self, model_info: dict[str, Any]) -> bool:
+        """Check if a given model is available based on required API keys."""
+        model_name = model_info.get("name")
+        if not model_name:
+            return False
+
+        # Special handling for the 'local' model
+        if model_name == "local":
+            local_url = os.getenv("LOCAL_LLM_URL")
+            local_name = os.getenv("LOCAL_LLM_NAME")
+            if local_url and local_name:
+                self.debug("Found 'local' model with required environment variables.")
+                return True
+            self.debug("Skipping 'local' model as environment variables are not set.")
+            return False
+
+        # Standard handling for other models
+        try:
+            provider, _ = model_name.split(":", 1)
+        except ValueError:
+            self.warning(f"Invalid model format: {model_name}")
+            return False
+
+        # Check if the provider is available
+        if provider not in self.provider_configs:
+            self.warning(f"Provider {provider} not found in provider_configs")
+            return False
+
+        # Check if the model is available
+        if model_name not in self.provider_configs[provider]:
+            self.warning(f"Model {model_name} not found in provider_configs")
+            return False
+
+        return True

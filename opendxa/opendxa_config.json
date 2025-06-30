@@ -1,7 +1,7 @@
 {
     "llm": {
         "preferred_models": [
-            { "name": "openai:vllm-local-model", "required_api_keys": [] },
+            { "name": "local", "required_api_keys": [] },
             { "name": "openai:gpt-4o-mini", "required_api_keys": ["OPENAI_API_KEY"] },
             { "name": "openai:gpt-4o", "required_api_keys": ["OPENAI_API_KEY"] },
             { "name": "anthropic:claude-3-5-sonnet-20240620", "required_api_keys": ["ANTHROPIC_API_KEY"] },
@@ -15,17 +15,20 @@
         "temperature": 0.7,
         "max_tokens": 2000,
         "model_configs": {
-            "default": { "temperature": 0.7, "max_tokens": 4096, "timeout": 60.0, "retries": 3 },
-            "openai:vllm-local-model": { "temperature": 0.2, "max_tokens": 8000, "timeout": 120.0 }
+            "default": { "temperature": 0.7, "max_tokens": 4096, "timeout": 60.0, "retries": 3 }
         },
         "provider_configs": {
-            "openai": { "base_url": "https://api.openai.com/v1", "api_key": "${OPENAI_API_KEY}" },
-            "anthropic": { "base_url": "https://api.anthropic.com/v1", "api_key": "${ANTHROPIC_API_KEY}" },
-            "groq": { "base_url": "https://api.groq.com/openai/v1", "api_key": "${GROQ_API_KEY}" },
-            "mistral": { "base_url": "https://api.mistral.ai/v1", "api_key": "${MISTRAL_API_KEY}" },
-            "deepseek": { "base_url": "https://api.deepseek.com/v1", "api_key": "${DEEPSEEK_API_KEY}" },
-            "google": { "api_key": "${GOOGLE_API_KEY}" }, "cohere": { "api_key": "${COHERE_API_KEY}" },
-            "azure": { "endpoint": "${AZURE_OPENAI_ENDPOINT}", "api_key": "${AZURE_OPENAI_API_KEY}" }
+            "openai": { "api_key": "env:OPENAI_API_KEY" },
+            "anthropic": { "api_key": "env:ANTHROPIC_API_KEY" },
+            "groq": { "api_key": "env:GROQ_API_KEY" },
+            "mistral": { "api_key": "env:MISTRAL_API_KEY" },
+            "google": { "api_key": "env:GOOGLE_API_KEY" },
+            "deepseek": { "api_key": "env:DEEPSEEK_API_KEY" },
+            "cohere": { "api_key": "env:COHERE_API_KEY" },
+            "azure": { "api_key": "env:AZURE_OPENAI_API_KEY", "base_url": "env:AZURE_OPENAI_ENDPOINT" }
         }
+    },
+    "dana": {
+        "reason_default_model": "local"
     }
 }
