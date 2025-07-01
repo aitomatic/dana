@@ -53,8 +53,8 @@ class TestLLMConfigurationManager(unittest.TestCase):
         os.environ["ANTHROPIC_API_KEY"] = "test-key"
         self.assertTrue(config_manager._validate_model("anthropic:claude-3"))
 
-        # Test unknown provider (should return True)
-        self.assertTrue(config_manager._validate_model("unknown:model"))
+        # Test unknown provider (should return False since provider not in config)
+        self.assertFalse(config_manager._validate_model("unknown:model"))
 
     def test_selected_model_property(self):
         """Test the selected_model property with validation."""
@@ -75,6 +75,7 @@ class TestLLMConfigurationManager(unittest.TestCase):
             config_manager.selected_model = "anthropic:claude-3"  # No ANTHROPIC_API_KEY
 
     @patch("opendxa.common.resource.llm_configuration_manager.ConfigLoader")
+    @patch.dict(os.environ, {}, clear=True)  # Clear all environment variables for this test
     def test_find_first_available_model(self, mock_config_loader):
         """Test finding the first available model from configuration."""
         # Mock configuration
@@ -84,7 +85,21 @@ class TestLLMConfigurationManager(unittest.TestCase):
                     "anthropic:claude-3",  # No API key
                     "openai:gpt-4",  # Will have API key
                     "google:gemini-1.5-pro",  # No API key
-                ]
+                ],
+                "provider_configs": {
+                    "anthropic": {
+                        "api_key": "env:ANTHROPIC_API_KEY",
+                        "api_type": "anthropic"
+                    },
+                    "openai": {
+                        "api_key": "env:OPENAI_API_KEY",
+                        "api_type": "openai"
+                    },
+                    "google": {
+                        "api_key": "env:GOOGLE_API_KEY",
+                        "api_type": "openai"
+                    }
+                }
             }
         }
         mock_config_loader.return_value.get_default_config.return_value = mock_config
@@ -94,15 +109,24 @@ class TestLLMConfigurationManager(unittest.TestCase):
 
         config_manager = LLMConfigurationManager()
 
-        # Should find the first available model (openai:gpt-4)
+        # Should find the first available model from preferred_models list
         result = config_manager._find_first_available_model()
+        # With OPENAI_API_KEY set, openai:gpt-4 is the first available model in the list
         self.assertEqual(result, "openai:gpt-4")
 
     @patch("opendxa.common.resource.llm_configuration_manager.ConfigLoader")
+    @patch.dict(os.environ, {}, clear=True)  # Clear all environment variables for this test
     def test_find_first_available_model_none_available(self, mock_config_loader):
         """Test when no models are available."""
-        # Mock configuration with models that need API keys
-        mock_config = {"llm": {"preferred_models": ["anthropic:claude-3", "google:gemini-1.5-pro"]}}
+        # Mock configuration with models that need API keys we don't have
+        mock_config = {
+            "llm": {
+                "preferred_models": ["someprovider:nonexistent-model", "anotherprovider:missing-model"],
+                "provider_configs": {
+                    # Note: someprovider and anotherprovider are intentionally not in the config
+                }
+            }
+        }
         mock_config_loader.return_value.get_default_config.return_value = mock_config
 
         config_manager = LLMConfigurationManager()
@@ -112,10 +136,22 @@ class TestLLMConfigurationManager(unittest.TestCase):
         self.assertIsNone(result)
 
     @patch("opendxa.common.resource.llm_configuration_manager.ConfigLoader")
+    @patch.dict(os.environ, {}, clear=True)  # Clear all environment variables for this test
     def test_get_available_models(self, mock_config_loader):
         """Test getting list of available models."""
-        # Mock configuration
-        mock_config = {"llm": {"all_models": ["openai:gpt-4o", "openai:gpt-4o-mini", "anthropic:claude-3", "google:gemini-1.5-pro"]}}
+        # Mock configuration including provider_configs
+        mock_config = {
+            "llm": {
+                "preferred_models": ["openai:gpt-4o", "openai:gpt-4o-mini", "someprovider:unavailable-model", "anotherprovider:missing-model"],
+                "provider_configs": {
+                    "openai": {
+                        "api_key": "env:OPENAI_API_KEY",
+                        "api_type": "openai"
+                    }
+                    # Note: someprovider and anotherprovider are intentionally not in the config
+                }
+            }
+        }
         mock_config_loader.return_value.get_default_config.return_value = mock_config
 
         # Set up only OpenAI API key
@@ -125,11 +161,11 @@ class TestLLMConfigurationManager(unittest.TestCase):
 
         available_models = config_manager.get_available_models()
 
-        # Should only return OpenAI models
+        # Should only return OpenAI models (models with available API keys)
         self.assertIn("openai:gpt-4o", available_models)
         self.assertIn("openai:gpt-4o-mini", available_models)
-        self.assertNotIn("anthropic:claude-3", available_models)
-        self.assertNotIn("google:gemini-1.5-pro", available_models)
+        self.assertNotIn("someprovider:unavailable-model", available_models)
+        self.assertNotIn("anotherprovider:missing-model", available_models)
 
     @patch("opendxa.common.resource.llm_configuration_manager.ConfigLoader")
     def test_get_model_config(self, mock_config_loader):
@@ -151,9 +187,22 @@ class TestLLMConfigurationManager(unittest.TestCase):
         self.assertEqual(default_config["temperature"], 0.7)
 
     @patch("opendxa.common.resource.llm_configuration_manager.ConfigLoader")
+    @patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "false", "OPENAI_API_KEY": "test-key"}, clear=True)
     def test_determine_model_explicit(self, mock_config_loader):
         """Test model determination with explicit model."""
-        os.environ["OPENAI_API_KEY"] = "test-key"
+        # Mock configuration with provider configs
+        mock_config = {
+            "llm": {
+                "preferred_models": ["openai:gpt-4"],
+                "provider_configs": {
+                    "openai": {
+                        "api_key": "env:OPENAI_API_KEY",
+                        "api_type": "openai"
+                    }
+                }
+            }
+        }
+        mock_config_loader.return_value.get_default_config.return_value = mock_config
 
         config_manager = LLMConfigurationManager(explicit_model="openai:gpt-4")
 
@@ -162,10 +211,26 @@ class TestLLMConfigurationManager(unittest.TestCase):
         self.assertEqual(model, "openai:gpt-4")
 
     @patch("opendxa.common.resource.llm_configuration_manager.ConfigLoader")
-    @patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "false"})
+    @patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "false"}, clear=True)  # Clear all env vars and disable mock mode
     def test_determine_model_explicit_unavailable(self, mock_config_loader):
         """Test model determination with unavailable explicit model."""
-        config_manager = LLMConfigurationManager(explicit_model="anthropic:claude-3")
+        # Mock configuration 
+        mock_config = {
+            "llm": {
+                "preferred_models": ["openai:gpt-4"],
+                "provider_configs": {
+                    "openai": {
+                        "api_key": "env:OPENAI_API_KEY",
+                        "api_type": "openai"
+                    }
+                    # Note: someprovider is intentionally not in the config
+                }
+            }
+        }
+        mock_config_loader.return_value.get_default_config.return_value = mock_config
+        
+        # Use a model that requires an API key we don't have
+        config_manager = LLMConfigurationManager(explicit_model="someprovider:unavailable-model")
 
         # Should raise error for unavailable explicit model
         with self.assertRaises(LLMError) as context:
@@ -174,13 +239,23 @@ class TestLLMConfigurationManager(unittest.TestCase):
         self.assertIn("not available", str(context.exception))
 
     @patch("opendxa.common.resource.llm_configuration_manager.ConfigLoader")
+    @patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "false", "OPENAI_API_KEY": "test-key"}, clear=True)
     def test_determine_model_auto_selection(self, mock_config_loader):
         """Test model determination with auto-selection."""
         # Mock configuration
-        mock_config = {"llm": {"preferred_models": ["openai:gpt-4"], "default_model": "openai:gpt-4o-mini"}}
+        mock_config = {
+            "llm": {
+                "preferred_models": ["openai:gpt-4"], 
+                "default_model": "openai:gpt-4o-mini",
+                "provider_configs": {
+                    "openai": {
+                        "api_key": "env:OPENAI_API_KEY",
+                        "api_type": "openai"
+                    }
+                }
+            }
+        }
         mock_config_loader.return_value.get_default_config.return_value = mock_config
-
-        os.environ["OPENAI_API_KEY"] = "test-key"
 
         config_manager = LLMConfigurationManager()  # No explicit model
 

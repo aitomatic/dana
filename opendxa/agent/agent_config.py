@@ -77,27 +77,27 @@ class AgentConfig(BaseModel, Loggable):
         return ConfigLoader().get_default_config()
 
     def _find_first_available_model(self) -> str | None:
-        """Find the first available model based on API keys.
+        """Find the first available model based on environment variables.
 
         Returns:
-            Name of the first model that has all required API keys available, or None if no models are available
+            Name of the first model that has all required environment variables available, or None if no models are available
         """
-        self.debug("Checking available API keys for model selection...")
+        self.debug("Checking available environment variables for model selection...")
         for model_config in self.preferred_models:
             model_name = model_config["name"]
-            required_keys = model_config["required_api_keys"]
-            self.debug(f"Checking model {model_name} with required keys: {required_keys}")
+            required_vars = model_config["required_env_vars"]
+            self.debug(f"Checking model {model_name} with required vars: {required_vars}")
 
-            # Check if all required API keys are available
-            available_keys = {key: bool(os.getenv(key)) for key in required_keys}
-            self.debug(f"Available keys: {available_keys}")
+            # Check if all required environment variables are available
+            available_vars = {var: bool(os.getenv(var)) for var in required_vars}
+            self.debug(f"Available vars: {available_vars}")
 
-            if all(available_keys.values()):
+            if all(available_vars.values()):
                 self.debug(f"Found available model: {model_name}")
                 return model_name
 
         # If we get here, no models are available - return None
-        self.warning("No models found with available API keys")
+        self.warning("No models found with available environment variables")
         return None
 
     def _load_from_file(self, config_path: str) -> None:

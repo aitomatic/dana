@@ -356,8 +356,8 @@ class LLMQueryExecutor(Loggable):
 
         # Make the API call
         try:
-            # Make the actual API call
-            response: ChatCompletion = await self.client.chat.completions.create(
+            # Make the actual API call (aisuite is synchronous)
+            response: ChatCompletion = self._client.chat.completions.create(
                 **request_params,
             )
             self.info("LLM query successful")
@@ -512,32 +512,56 @@ class LLMQueryExecutor(Loggable):
         Returns:
             Dict[str, Any]: Dictionary of request parameters
         """
-        logical_model_name = self.model
-        final_model_name_for_api = logical_model_name
-
-        # Handle vLLM provider and model name translation
-        if logical_model_name and logical_model_name.startswith("vllm:"):
-            self.debug(f"Handling vLLM model: {logical_model_name}")
-            # Default to using openai provider for aisuite compatibility
-            final_model_name_for_api = logical_model_name.replace("vllm:", "openai:", 1)
-
-            # Check if the start script provided a specific physical model name
-            physical_model_override = os.getenv("VLLM_API_MODEL_NAME")
-            if physical_model_override:
-                # The final name for aisuite is "openai:" + the physical name
-                final_model_name_for_api = f"openai:{physical_model_override}"
-                self.debug(f"Overriding with physical model from VLLM_API_MODEL_NAME: {final_model_name_for_api}")
-
+        # Start with basic parameters
         request_params = {
-            "model": final_model_name_for_api,
+            "model": self.model,
             "messages": Misc.get_field(request, "messages", [{"role": "user", "content": "Hello"}]),
             "temperature": Misc.get_field(request, "temperature", 0.7),
         }
+        
         # Only include max_tokens if it's actually provided in the request
         if "max_tokens" in request and request["max_tokens"] is not None:
             request_params["max_tokens"] = request["max_tokens"]
 
+        # Handle Anthropic-specific system message transformation
+        if self.model and self.model.startswith("anthropic:"):
+            request_params = self._transform_anthropic_system_messages(request_params)
+
         return request_params
+
+    def _transform_anthropic_system_messages(self, request_params: dict[str, Any]) -> dict[str, Any]:
+        """Transform system messages for Anthropic models.
+        
+        Anthropic expects system messages as a top-level 'system' parameter,
+        not in the messages array.
+        
+        Args:
+            request_params: Original request parameters
+            
+        Returns:
+            Dict[str, Any]: Transformed request parameters
+        """
+        messages = request_params.get("messages", [])
+        system_messages = []
+        non_system_messages = []
+        
+        # Separate system messages from other messages
+        for message in messages:
+            if message.get("role") == "system":
+                content = message.get("content", "")
+                system_messages.append(content)  # Include all system messages, even empty ones
+            else:
+                non_system_messages.append(message)
+        
+        # Update request parameters
+        result = request_params.copy()
+        result["messages"] = non_system_messages
+        
+        # Add system parameter if we have system messages
+        if system_messages:
+            result["system"] = "\n".join(system_messages)
+            
+        return result
 
     def _log_llm_request(self, request_params: dict[str, Any]) -> None:
         """Log the LLM request details.

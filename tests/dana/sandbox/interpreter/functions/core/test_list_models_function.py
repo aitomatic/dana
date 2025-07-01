@@ -116,10 +116,11 @@ class TestListModelsFunction(unittest.TestCase):
         result = list_models_function(self.context)
 
         # The first model should be the top preferred model from the config
-        self.assertEqual(result[0], "local")
+        # Based on opendxa_config.json, "openai:gpt-4o-mini" is the first preferred model
+        self.assertEqual(result[0], "openai:gpt-4o-mini")
         
         # Check that another preferred model is also present
-        self.assertIn("openai:gpt-4o-mini", result)
+        self.assertIn("local", result)
 
     def test_openai_models_preference_order(self):
         """Test that OpenAI models are in the correct preference order."""

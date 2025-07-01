@@ -85,6 +85,16 @@ class LLMConfigurationManager:
             return True
 
         try:
+            # Check if the provider exists in configuration
+            provider = self._get_provider_from_model(model_name)
+            if provider:
+                config = self.config_loader.get_default_config()
+                provider_configs = config.get("llm", {}).get("provider_configs", {})
+                
+                # If provider is not in config, model is invalid
+                if provider not in provider_configs:
+                    return False
+            
             # For model validation, we only check required API keys, not whether 
             # the model is in the preferred_models list. The preferred_models list
             # is used for selection priority, not validation restrictions.
@@ -130,42 +140,46 @@ class LLMConfigurationManager:
             return None
 
     def _get_required_env_vars_for_model(self, model_name: str) -> list[str]:
-        """Get required environment variables for a specific model."""
+        """Get required environment variables for a specific model based on provider configs."""
         try:
-            # First try to find model in preferred_models config for required_api_keys
+            # Get configuration
             config = self.config_loader.get_default_config()
             
-            # Load preferred_models from llm section
-            if "llm" in config and "preferred_models" in config["llm"]:
-                preferred_models = config["llm"]["preferred_models"]
+            # Load provider_configs from llm section
+            if "llm" in config and "provider_configs" in config["llm"]:
+                provider_configs = config["llm"]["provider_configs"]
             else:
-                preferred_models = []
+                return []
 
-            # Check if preferred_models has the model with required_api_keys
-            for model_config in preferred_models:
-                if isinstance(model_config, dict) and model_config.get("name") == model_name:
-                    return model_config.get("required_api_keys", [])
-
-            # Fallback to legacy hardcoded validation for models not in config
-            provider = model_name.split(":")[0] if ":" in model_name else "openai"
-
-            # Legacy hardcoded API key requirements
-            required_keys_map = {
-                "openai": ["OPENAI_API_KEY"],
-                "anthropic": ["ANTHROPIC_API_KEY"],
-                "google": ["GOOGLE_API_KEY"],
-                "cohere": ["COHERE_API_KEY"],
-                "mistral": ["MISTRAL_API_KEY"],
-                "groq": ["GROQ_API_KEY"],
-                "deepseek": ["DEEPSEEK_API_KEY"],  # Add deepseek support
-            }
-
-            # Return required keys for known providers, empty list for unknown providers
-            # This maintains original behavior where unknown providers pass validation
-            return required_keys_map.get(provider, [])
+            # Determine provider from model name
+            provider = self._get_provider_from_model(model_name)
+            
+            if not provider or provider not in provider_configs:
+                return []
+            
+            # Get provider config
+            provider_config = provider_configs[provider]
+            
+            # Extract required environment variables from provider config
+            required_vars = []
+            for key, value in provider_config.items():
+                if isinstance(value, str) and value.startswith("env:"):
+                    env_var = value[4:]  # Remove "env:" prefix
+                    required_vars.append(env_var)
+            
+            return required_vars
 
         except Exception:
             return []
+
+    def _get_provider_from_model(self, model_name: str) -> str | None:
+        """Extract provider name from model name."""
+        if model_name == "local":
+            return "local"
+        elif ":" in model_name:
+            return model_name.split(":", 1)[0]
+        else:
+            return None
 
     def _find_first_available_model(self) -> str | None:
         """Find the first available model from preferred list."""
@@ -176,17 +190,19 @@ class LLMConfigurationManager:
             if "llm" in config and "preferred_models" in config["llm"]:
                 preferred_models = config["llm"]["preferred_models"]
             else:
-                # Only use hardcoded fallback if no config found at all
-                preferred_models = [
-                    "openai:gpt-4o",
-                    "openai:gpt-4o-mini",
-                    "anthropic:claude-3-5-sonnet-20241022",
-                    "google:gemini-1.5-pro",
-                ]
+                # No preferred models configured
+                return None
 
             for model in preferred_models:
-                # Handle both string format and dict format
-                model_name = model if isinstance(model, str) else model.get("name")
+                # Handle string format (new streamlined approach)
+                if isinstance(model, str):
+                    model_name = model
+                # Handle dict format (backward compatibility)
+                elif isinstance(model, dict):
+                    model_name = model.get("name")
+                else:
+                    continue
+                
                 if model_name and self._validate_model(model_name):
                     return model_name
 
@@ -199,23 +215,39 @@ class LLMConfigurationManager:
         """Get list of all available models."""
         try:
             config = self.config_loader.get_default_config()
-            all_models = config.get("llm", {}).get(
-                "all_models",
-                [
-                    "openai:gpt-4o",
-                    "openai:gpt-4o-mini",
-                    "openai:gpt-4-turbo",
-                    "anthropic:claude-3-5-sonnet-20241022",
-                    "anthropic:claude-3-5-haiku-20241022",
-                    "google:gemini-1.5-pro",
-                    "google:gemini-1.5-flash",
-                    "cohere:command-r-plus",
-                    "mistral:mistral-large-latest",
-                    "groq:llama-3.1-70b-versatile",
-                ],
-            )
+            
+            # Get models from preferred_models (new streamlined approach)
+            preferred_models = config.get("llm", {}).get("preferred_models", [])
+            preferred_model_names = []
+            
+            for model in preferred_models:
+                # Handle string format (new streamlined approach)
+                if isinstance(model, str):
+                    preferred_model_names.append(model)
+                # Handle dict format (backward compatibility)
+                elif isinstance(model, dict) and model.get("name"):
+                    preferred_model_names.append(model["name"])
+            
+            # Also get models from all_models if it exists (backward compatibility)
+            all_models = config.get("llm", {}).get("all_models", [])
+            
+            # Combine both lists, removing duplicates while preserving order
+            combined_models = []
+            seen_models = set()
+            
+            # Add preferred models first (they have priority)
+            for model in preferred_model_names:
+                if model not in seen_models:
+                    combined_models.append(model)
+                    seen_models.add(model)
+            
+            # Add all_models that aren't already included
+            for model in all_models:
+                if model not in seen_models:
+                    combined_models.append(model)
+                    seen_models.add(model)
 
-            return [model for model in all_models if self._validate_model(model)]
+            return [model for model in combined_models if self._validate_model(model)]
 
         except Exception:
             return []

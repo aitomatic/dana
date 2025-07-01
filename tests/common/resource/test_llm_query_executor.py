@@ -181,8 +181,8 @@ class TestLLMQueryExecutor(unittest.IsolatedAsyncioTestCase):
     @patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "false"})
     async def test_query_once_success(self):
         """Test successful query_once execution."""
-        # Set up mock client
-        mock_client = AsyncMock()
+        # Set up mock client (aisuite is synchronous)
+        mock_client = MagicMock()
         mock_response_dict = {
             "choices": [{"message": {"role": "assistant", "content": "Test response"}}],
             "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
@@ -192,7 +192,7 @@ class TestLLMQueryExecutor(unittest.IsolatedAsyncioTestCase):
         mock_response_obj = MagicMock()
         mock_response_obj.model_dump.return_value = mock_response_dict
 
-        mock_client.chat.completions.create = AsyncMock(return_value=mock_response_obj)
+        mock_client.chat.completions.create = MagicMock(return_value=mock_response_obj)
 
         self.query_executor.client = mock_client
         self.query_executor.model = "openai:gpt-4"

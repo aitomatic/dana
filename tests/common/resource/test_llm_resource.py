@@ -100,30 +100,41 @@ class TestLLMResource(unittest.TestCase):
         ]
         mock_estimate.return_value = 50  # Mock token count per message
 
-        # Set up LLMResource with a mock for _query_once
+        # Set up LLMResource
         llm_resource = LLMResource(name="test_llm", model="openai:gpt-4")
         llm_resource._is_available = True
-        llm_resource._query_executor.client = AsyncMock()  # Mock the client
-        llm_resource._query_once = AsyncMock(return_value={"choices": [{"message": {"role": "assistant", "content": "Yes, I can!"}}]})
-
+        
         async def test_context_window():
-            # Call _query_iterative with our long messages
-            request = {"user_messages": messages, "max_tokens": 1000}
-            result = await llm_resource._query_iterative(request)
+            # Mock the actual client call instead of the higher level method
+            with patch.object(llm_resource._query_executor, '_client') as mock_client:
+                # Mock the chat completions create method
+                mock_response = {
+                    "choices": [{"message": {"role": "assistant", "content": "Yes, I can!"}}],
+                    "usage": {"total_tokens": 100}
+                }
+                mock_client.chat.completions.create.return_value.model_dump.return_value = mock_response
 
-            # Verify TokenManagement.enforce_context_window was called
-            mock_enforce.assert_called_once()
+                # Call query_iterative which will trigger token management
+                request = {
+                    "messages": messages, 
+                    "max_tokens": 1000,
+                    "temperature": 0.7
+                }
+                result = await llm_resource._query_executor.query_iterative(request)
 
-            # Verify the parameters passed to enforce_context_window
-            call_args = mock_enforce.call_args[1]  # Get keyword arguments
-            self.assertEqual(call_args["max_tokens"], 1000)
-            self.assertTrue(call_args["preserve_system_messages"])
+                # Verify TokenManagement.enforce_context_window was called
+                mock_enforce.assert_called_once()
 
-            # Check that the token estimation was called
-            self.assertTrue(mock_estimate.called)
+                # Verify the parameters passed to enforce_context_window
+                call_args = mock_enforce.call_args[1]  # Get keyword arguments
+                self.assertEqual(call_args["max_tokens"], 1000)
+                self.assertTrue(call_args["preserve_system_messages"])
 
-            # Check that the result contains the expected response
-            self.assertIn("choices", result)
+                # Check that the token estimation was called
+                self.assertTrue(mock_estimate.called)
+
+                # Check that the result contains the expected response
+                self.assertIn("choices", result)
 
         asyncio.run(test_context_window())
 
