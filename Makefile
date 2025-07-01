@@ -36,8 +36,8 @@ UV_CMD = $(shell command -v uv 2>/dev/null || echo ~/.local/bin/uv)
 	docs-build docs-serve docs-check docs-validate docs-deploy \
 	security validate-config release-check \
 	install-cursor install-vscode install-vim uninstall-cursor uninstall-vscode uninstall-vim install-editors uninstall-editors \
-	install-ollama update-ollama uninstall-ollama \
-	install-vllm update-vllm uninstall-vllm start-vllm chat-vllm
+	install-ollama update-ollama uninstall-ollama start-ollama chat-ollama stop-ollama \
+	install-vllm update-vllm uninstall-vllm start-vllm chat-vllm stop-vllm status-vllm test-vllm vllm-models
 
 # =============================================================================
 # Help & Information
@@ -73,10 +73,10 @@ help: ## Show this help message with available commands
 	@awk 'BEGIN {FS = ":.*?## "} /^(install-cursor|install-vscode|install-vim|uninstall-cursor|uninstall-vscode|uninstall-vim|install-editors|uninstall-editors).*:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "\033[1mOllama Management:\033[0m"
-	@awk 'BEGIN {FS = ":.*?## "} /^(install-ollama|update-ollama|uninstall-ollama).*:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## "} /^(install-ollama|update-ollama|uninstall-ollama|start-ollama|chat-ollama|stop-ollama).*:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "\033[1mvLLM Management:\033[0m"
-	@awk 'BEGIN {FS = ":.*?## "} /^(install-vllm|update-vllm|uninstall-vllm|start-vllm|chat-vllm).*:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## "} /^(install-vllm|update-vllm|uninstall-vllm|start-vllm|chat-vllm|stop-vllm|status-vllm|test-vllm|vllm-models).*:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "\033[33mTip: New to OpenDXA? Start with 'make quickstart' or 'make onboard'\033[0m"
 	@echo ""
@@ -151,7 +151,7 @@ update-deps: ## Update dependencies to latest versions
 
 test: ## Run all tests
 	@echo "🧪 Running all tests..."
-	#OPENDXA_MOCK_LLM=true uv run pytest tests/ -v -k "not (function_composition or pipe_operator_composition)"
+	@#OPENDXA_MOCK_LLM=true uv run pytest tests/ -v -k "not (function_composition or pipe_operator_composition)"
 	OPENDXA_MOCK_LLM=true uv run pytest tests/
 
 test-fast: ## Run fast tests only (excludes live/deep tests)
@@ -420,218 +420,58 @@ release-check: clean verify docs-validate security validate-config ## Complete p
 	@echo ""
 
 # =============================================================================
-# Editor Integration
+# Editor & Local LLM Integration
 # =============================================================================
 
-install-cursor: ## Install Dana extension for Cursor
-	@echo "🔧 Installing Dana extension for Cursor ($(DETECTED_OS))..."
-	@if [ -f ./bin/cursor/install$(SCRIPT_EXT) ]; then \
-		./bin/cursor/install$(SCRIPT_EXT); \
-	else \
-		echo "❌ Cursor install script not found for $(DETECTED_OS)"; \
-	fi
+# --- Editor Integration ---
 
-install-vscode: ## Install Dana extension for VS Code
-	@echo "🔧 Installing Dana extension for VS Code ($(DETECTED_OS))..."
-	@if [ -f ./bin/vscode/install$(SCRIPT_EXT) ]; then \
-		./bin/vscode/install$(SCRIPT_EXT); \
-	else \
-		echo "❌ VS Code install script not found for $(DETECTED_OS)"; \
-	fi
+install-editors: install-cursor install-vscode install-vim ## Install all editor integrations
+uninstall-editors: uninstall-cursor uninstall-vscode uninstall-vim ## Uninstall all editor integrations
 
-install-vim: ## Install Dana syntax for Vim/Neovim (Unix only)
+install-cursor: ## Install Cursor.sh integration
+	@./bin/cursor/install$(SCRIPT_EXT)
+uninstall-cursor: ## Uninstall Cursor.sh integration
+	@echo "Uninstall not yet implemented for Cursor"
+
+install-vscode: ## Install VSCode integration
+	@./bin/vscode/install$(SCRIPT_EXT)
+uninstall-vscode: ## Uninstall VSCode integration
+	@echo "Uninstall not yet implemented for VSCode"
+
+install-vim: ## Install Vim/Neovim integration
+	@./bin/vim/install$(SCRIPT_EXT)
+uninstall-vim: ## Uninstall Vim/Neovim integration
+	@echo "Uninstall not yet implemented for Vim"
+
+# --- Ollama Management ---
+
+install-ollama: ## Install Ollama for local model inference
+	@./bin/ollama/install$(SCRIPT_EXT)
+
+start-ollama: ## Start Ollama and configure environment for OpenDXA
 ifeq ($(DETECTED_OS),Windows)
-	@echo "❌ Vim integration not available on Windows"
+	@start cmd /k "bin\ollama\start.bat"
 else
-	@echo "🔧 Installing Dana syntax for Vim/Neovim..."
-	@if [ -f ./bin/vim/install.sh ]; then \
-		./bin/vim/install.sh; \
-	else \
-		echo "❌ Vim install script not found"; \
-	fi
+	@echo "source ./bin/ollama/start.sh"
+	@echo "You must 'source' this script to apply environment variables to your shell."
 endif
 
-uninstall-cursor: ## Remove Dana extension from Cursor
-	@echo "🗑️  Removing Dana extension from Cursor ($(DETECTED_OS))..."
-	@if [ -f ./bin/cursor/uninstall$(SCRIPT_EXT) ]; then \
-		./bin/cursor/uninstall$(SCRIPT_EXT); \
-	else \
-		echo "❌ Cursor uninstall script not found for $(DETECTED_OS)"; \
-	fi
+chat-ollama: ## Start an interactive chat session with Ollama
+	@./bin/ollama/chat$(SCRIPT_EXT)
 
-uninstall-vscode: ## Remove Dana extension from VS Code
-	@echo "🗑️  Removing Dana extension from VS Code ($(DETECTED_OS))..."
-	@if [ -f ./bin/vscode/uninstall$(SCRIPT_EXT) ]; then \
-		./bin/vscode/uninstall$(SCRIPT_EXT); \
-	else \
-		echo "❌ VS Code uninstall script not found for $(DETECTED_OS)"; \
-	fi
+uninstall-ollama: ## Uninstall Ollama and clean up
+	@./bin/ollama/uninstall$(SCRIPT_EXT)
 
-uninstall-vim: ## Remove Dana syntax from Vim/Neovim (Unix only)
-ifeq ($(DETECTED_OS),Windows)
-	@echo "❌ Vim integration not available on Windows"
-else
-	@echo "🗑️  Removing Dana syntax from Vim/Neovim..."
-	@if [ -f ./bin/vim/uninstall.sh ]; then \
-		./bin/vim/uninstall.sh; \
-	else \
-		echo "❌ Vim uninstall script not found"; \
-	fi
-endif
+stop-ollama: uninstall-ollama ## Alias to stop and uninstall Ollama
 
-install-editors: ## Install Dana support for all available editors
-	@echo "🚀 Installing Dana support for all available editors..."
-	@echo "📍 Step 1/3: Installing Cursor extension..."
-	@$(MAKE) install-cursor
-	@echo "📍 Step 2/3: Installing VS Code extension..."
-	@$(MAKE) install-vscode
-ifneq ($(DETECTED_OS),Windows)
-	@echo "📍 Step 3/3: Installing Vim syntax..."
-	@$(MAKE) install-vim
-else
-	@echo "📍 Step 3/3: Skipping Vim (Windows not supported)"
-endif
-	@echo "✅ Editor integration complete!"
+update-ollama: ## Check for Ollama updates
+	@echo "Checking for Ollama updates..."
+	@ollama pull ollama/ollama
 
-uninstall-editors: ## Remove Dana support from all editors
-	@echo "🗑️  Removing Dana support from all editors..."
-	@echo "📍 Step 1/3: Removing Cursor extension..."
-	@$(MAKE) uninstall-cursor
-	@echo "📍 Step 2/3: Removing VS Code extension..."
-	@$(MAKE) uninstall-vscode
-ifneq ($(DETECTED_OS),Windows)
-	@echo "📍 Step 3/3: Removing Vim syntax..."
-	@$(MAKE) uninstall-vim
-else
-	@echo "📍 Step 3/3: Skipping Vim (Windows not supported)"
-endif
-	@echo "✅ Editor cleanup complete!"
+# --- vLLM Management ---
 
-# =============================================================================
-# Ollama Management
-# =============================================================================
-
-install-ollama: ## Install Ollama on current platform
-ifeq ($(DETECTED_OS),Darwin)
-	@$(MAKE) install-ollama-macos
-else ifeq ($(DETECTED_OS),Linux)
-	@$(MAKE) install-ollama-linux
-else ifeq ($(DETECTED_OS),Windows)
-	@$(MAKE) install-ollama-windows
-else
-	@echo "❌ Unsupported platform: $(DETECTED_OS)"
-	@echo "Please visit https://ollama.com/download for manual installation"
-endif
-
-update-ollama: ## Update Ollama on current platform
-ifeq ($(DETECTED_OS),Darwin)
-	@$(MAKE) update-ollama-macos
-else ifeq ($(DETECTED_OS),Linux)
-	@$(MAKE) update-ollama-linux
-else ifeq ($(DETECTED_OS),Windows)
-	@$(MAKE) update-ollama-windows
-else
-	@echo "❌ Unsupported platform: $(DETECTED_OS)"
-	@echo "Please visit https://ollama.com/download for manual update"
-endif
-
-uninstall-ollama: ## Uninstall Ollama on current platform
-ifeq ($(DETECTED_OS),Darwin)
-	@$(MAKE) uninstall-ollama-macos
-else ifeq ($(DETECTED_OS),Linux)
-	@$(MAKE) uninstall-ollama-linux
-else ifeq ($(DETECTED_OS),Windows)
-	@echo "🗑️  To uninstall Ollama on Windows:"
-	@echo "   1. Go to Settings > Apps"
-	@echo "   2. Search for 'Ollama'"
-	@echo "   3. Click Uninstall"
-else
-	@echo "❌ Unsupported platform: $(DETECTED_OS)"
-endif
-
-# Platform-specific Ollama targets
-
-install-ollama-macos: # Install Ollama on macOS using Homebrew
-	@echo "🦄 Installing Ollama on macOS..."
-	@if command -v brew >/dev/null 2>&1; then \
-		brew install ollama || brew upgrade ollama; \
-		echo "✅ Ollama installed/updated successfully"; \
-	else \
-		echo "❌ Homebrew not found. Please install Homebrew first:"; \
-		echo "   /bin/bash -c \"\$$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""; \
-		echo "   Then run: make install-ollama-macos"; \
-	fi
-
-update-ollama-macos: # Update Ollama on macOS using Homebrew
-	@echo "⬆️  Updating Ollama on macOS..."
-	@if command -v brew >/dev/null 2>&1; then \
-		brew update; \
-		brew upgrade ollama; \
-		echo "✅ Ollama updated successfully"; \
-	else \
-		echo "❌ Homebrew not found"; \
-	fi
-
-uninstall-ollama-macos: # Uninstall Ollama on macOS using Homebrew
-	@echo "🗑️  Uninstalling Ollama on macOS..."
-	@if command -v brew >/dev/null 2>&1; then \
-		brew uninstall ollama; \
-		echo "✅ Ollama uninstalled successfully"; \
-	else \
-		echo "❌ Homebrew not found"; \
-	fi
-
-install-ollama-linux: # Install Ollama on Linux using official script
-	@echo "🐧 Installing Ollama on Linux..."
-	@echo "📥 Downloading and running official install script..."
-	@curl -fsSL https://ollama.com/install.sh | sh
-	@echo "✅ Ollama installed successfully"
-
-update-ollama-linux: install-ollama-linux # Update Ollama on Linux (same as install)
-
-uninstall-ollama-linux: # Uninstall Ollama on Linux
-	@echo "🗑️  Uninstalling Ollama on Linux..."
-	@if command -v systemctl >/dev/null 2>&1; then \
-		sudo systemctl stop ollama || true; \
-		sudo systemctl disable ollama || true; \
-		sudo rm -f /etc/systemd/system/ollama.service; \
-		sudo systemctl daemon-reload; \
-	fi
-	@sudo rm -f /usr/local/bin/ollama
-	@sudo rm -rf /usr/share/ollama
-	@sudo userdel ollama 2>/dev/null || true
-	@sudo groupdel ollama 2>/dev/null || true
-	@echo "✅ Ollama uninstalled successfully"
-	@echo "💡 Note: Model files in ~/.ollama may remain. Remove manually if desired."
-
-install-ollama-windows: # Install Ollama on Windows (instructions only)
-	@echo "🪟 Installing Ollama on Windows..."
-	@echo "📝 Please follow these steps:"
-	@echo "   1. Download OllamaSetup.exe from https://ollama.com/download"
-	@echo "   2. Run the installer as administrator"
-	@echo "   3. Follow the setup wizard"
-	@echo ""
-	@echo "💡 Alternative - using PowerShell:"
-	@echo "   Start-BitsTransfer -Source 'https://ollama.com/download/OllamaSetup.exe' -Destination 'OllamaSetup.exe'"
-	@echo "   Then run OllamaSetup.exe"
-
-update-ollama-windows: install-ollama-windows # Update Ollama on Windows (same as install)
-
-# =============================================================================
-# vLLM Management
-# =============================================================================
-
-install-vllm: ## Install vLLM on current platform
-ifeq ($(DETECTED_OS),Darwin)
-	@$(MAKE) install-vllm-macos
-else ifeq ($(DETECTED_OS),Linux)
-	@$(MAKE) install-vllm-linux
-else ifeq ($(DETECTED_OS),Windows)
-	@$(MAKE) install-vllm-windows
-else
-	@echo "❌ Unsupported platform: $(DETECTED_OS)"
-	@echo "Please visit https://docs.vllm.ai/ for manual installation"
-endif
+install-vllm: ## Install vLLM for local model inference
+	@./bin/vllm/install$(SCRIPT_EXT)
 
 update-vllm: ## Update vLLM on current platform
 ifeq ($(DETECTED_OS),Darwin)
@@ -750,6 +590,57 @@ start-vllm: ## Start vLLM server with interactive model selection
 chat-vllm: ## Start interactive chat with vLLM server
 	@echo "💬 Starting vLLM chat interface..."
 	@./bin/vllm/chat$(SCRIPT_EXT)
+
+stop-vllm: ## Stop running vLLM server
+	@echo "🛑 Stopping vLLM server..."
+	@if pgrep -f "vllm.entrypoints.openai.api_server" >/dev/null 2>&1; then \
+		pkill -f "vllm.entrypoints.openai.api_server"; \
+		echo "✅ vLLM server stopped"; \
+	else \
+		echo "⚠️  No vLLM server process found"; \
+	fi
+
+status-vllm: ## Check vLLM server status
+	@echo "🔍 Checking vLLM server status..."
+	@if pgrep -f "vllm.entrypoints.openai.api_server" >/dev/null 2>&1; then \
+		echo "✅ vLLM server is running"; \
+		echo "📊 Process details:"; \
+		ps aux | grep -E "vllm.entrypoints.openai.api_server" | grep -v grep; \
+	else \
+		echo "❌ vLLM server is not running"; \
+		echo "💡 Run 'make start-vllm' to start the server"; \
+	fi
+
+test-vllm: ## Test vLLM server with a sample request
+	@echo "🧪 Testing vLLM server..."
+	@if curl -s http://localhost:8000/v1/models >/dev/null 2>&1; then \
+		echo "✅ vLLM server is responding"; \
+		echo "📋 Available models:"; \
+		curl -s http://localhost:8000/v1/models | python3 -m json.tool; \
+	else \
+		echo "❌ vLLM server is not responding"; \
+		echo "💡 Make sure the server is running with 'make start-vllm'"; \
+	fi
+
+vllm-models: ## List available models for vLLM
+	@echo "🤖 Popular vLLM-compatible models:"
+	@echo ""
+	@echo "Small models (< 3GB):"
+	@echo "  • microsoft/phi-2                    (2.7B parameters)"
+	@echo "  • stabilityai/stablelm-2-1_6b        (1.6B parameters)"
+	@echo ""
+	@echo "Medium models (3-10GB):"
+	@echo "  • mistralai/Mistral-7B-Instruct-v0.2 (7B parameters)"
+	@echo "  • meta-llama/Llama-2-7b-chat-hf      (7B parameters)"
+	@echo "  • google/gemma-7b                     (7B parameters)"
+	@echo ""
+	@echo "Large models (> 10GB):"
+	@echo "  • meta-llama/Llama-2-13b-chat-hf     (13B parameters)"
+	@echo "  • mistralai/Mixtral-8x7B-Instruct-v0.1 (46.7B parameters)"
+	@echo ""
+	@echo "💡 To use a model, start vLLM with:"
+	@echo "   make start-vllm"
+	@echo "   Then select your model from the interactive menu"
 
 # =============================================================================
 # Documentation (legacy placeholder kept for compatibility)
