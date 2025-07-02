@@ -6,7 +6,7 @@ import aisuite as ai
 def test_individual_providers():
     """Test each provider individually to find the problematic one."""
     print("Testing individual AISuite providers...")
-    
+
     providers_to_test = {
         "openai": {"api_key": "test-openai-key"},
         "anthropic": {"api_key": "test-anthropic-key"},
@@ -14,9 +14,9 @@ def test_individual_providers():
         "deepseek": {"api_key": "test-deepseek-key"},
         "cohere": {"api_key": "test-cohere-key"},
         "mistral": {"api_key": "test-mistral-key"},
-        "google": {"api_key": "test-google-key"}
+        "google": {"api_key": "test-google-key"},
     }
-    
+
     for provider_name, config in providers_to_test.items():
         try:
             provider_configs = {provider_name: config}
@@ -29,4 +29,4 @@ def test_individual_providers():
 
 
 if __name__ == "__main__":
-    test_individual_providers() 
+    test_individual_providers()

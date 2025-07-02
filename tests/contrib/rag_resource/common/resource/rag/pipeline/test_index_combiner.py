@@ -18,10 +18,7 @@ def has_openai_api_key():
 
 
 # Pytest fixture to skip tests requiring OpenAI API key
-openai_required = pytest.mark.skipif(
-    not has_openai_api_key(),
-    reason="OpenAI API key required for integration tests"
-)
+openai_required = pytest.mark.skipif(not has_openai_api_key(), reason="OpenAI API key required for integration tests")
 
 
 class TestIndexCombiner:
@@ -36,12 +33,10 @@ class TestIndexCombiner:
     async def test_combine_indices_empty(self):
         """Test combining empty indices falls back to creating new index."""
         combiner = IndexCombiner()
-        
+
         individual_indices = {}
-        docs_by_source = {
-            "test.txt": [Document(text="Test document")]
-        }
-        
+        docs_by_source = {"test.txt": [Document(text="Test document")]}
+
         # Should fallback to creating new index from documents
         # This may fail due to internal complexity, which is OK for simple tests
         try:
@@ -56,18 +51,16 @@ class TestIndexCombiner:
     async def test_combine_indices_with_existing(self):
         """Test combining existing indices."""
         combiner = IndexCombiner()
-        
+
         # Create mock indices with proper typing
         from typing import cast
+
         mock_index1 = cast(VectorStoreIndex, Mock(spec=VectorStoreIndex))
         mock_index2 = cast(VectorStoreIndex, Mock(spec=VectorStoreIndex))
-        
-        individual_indices = {
-            "source1": mock_index1,
-            "source2": mock_index2
-        }
+
+        individual_indices = {"source1": mock_index1, "source2": mock_index2}
         docs_by_source = {}
-        
+
         # Should attempt to combine existing indices
         # This will likely fail due to mocking complexity, but that's OK for simple tests
         try:
@@ -76,4 +69,4 @@ class TestIndexCombiner:
             assert result is not None
         except Exception:
             # If it fails due to mocking, that's expected and OK
-            pass 
+            pass

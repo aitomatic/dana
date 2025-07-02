@@ -26,84 +26,80 @@ _PATCH_APPLIED = False
 
 def apply_aisuite_patch() -> bool:
     """Apply the AISuite/Anthropic compatibility patch.
-    
+
     Returns:
         bool: True if patch was applied successfully, False otherwise
     """
     global _PATCH_APPLIED
-    
+
     if _PATCH_APPLIED:
         return True
-    
+
     try:
         import anthropic
         from anthropic import Anthropic
-        
+
         # Store the original __init__ method
         original_init = Anthropic.__init__
-        
+
         def patched_init(self, **kwargs):
             """Patched __init__ that filters out problematic parameters."""
             # Filter out problematic parameters
-            problematic_params = ['proxies', 'model_name', 'api_type', 'http_client']
-            filtered_kwargs = {
-                k: v for k, v in kwargs.items() 
-                if k not in problematic_params
-            }
+            problematic_params = ["proxies", "model_name", "api_type", "http_client"]
+            filtered_kwargs = {k: v for k, v in kwargs.items() if k not in problematic_params}
             return original_init(self, **filtered_kwargs)
-        
+
         # Apply the patch
         Anthropic.__init__ = patched_init
-        
+
         # Patch the base client if possible
         try:
             from anthropic._base_client import BaseClient
+
             original_base_init = BaseClient.__init__
-            
+
             def patched_base_init(self, **kwargs):
                 """Patched BaseClient __init__ that provides defaults for required parameters."""
                 # Filter out problematic parameters but provide defaults for required ones
-                problematic_params = ['model_name', 'api_type', 'http_client']
-                filtered_kwargs = {
-                    k: v for k, v in kwargs.items() 
-                    if k not in problematic_params
-                }
-                
+                problematic_params = ["model_name", "api_type", "http_client"]
+                filtered_kwargs = {k: v for k, v in kwargs.items() if k not in problematic_params}
+
                 # Provide default for proxies if not present (since it's required)
-                if 'proxies' not in filtered_kwargs:
-                    filtered_kwargs['proxies'] = None
-                
+                if "proxies" not in filtered_kwargs:
+                    filtered_kwargs["proxies"] = None
+
                 return original_base_init(self, **filtered_kwargs)
-            
+
             # Apply the patch
             BaseClient.__init__ = patched_base_init
-            
+
         except ImportError:
             # BaseClient patch is optional
             pass
-        
+
         # Patch SyncHttpxClientWrapper to filter proxies
         try:
             from anthropic._base_client import SyncHttpxClientWrapper
+
             original_sync_init = SyncHttpxClientWrapper.__init__
-            
+
             def patched_sync_init(self, **kwargs):
                 """Patched SyncHttpxClientWrapper __init__ that filters out proxies."""
                 # Remove proxies from kwargs
-                if 'proxies' in kwargs:
-                    del kwargs['proxies']
+                if "proxies" in kwargs:
+                    del kwargs["proxies"]
                 return original_sync_init(self, **kwargs)
-            
+
             # Apply the patch
             SyncHttpxClientWrapper.__init__ = patched_sync_init
-            
+
         except ImportError:
             # SyncHttpxClientWrapper patch is optional
             pass
-        
+
         _PATCH_APPLIED = True
         return True
-        
+
     except Exception as e:
         print(f"Warning: Failed to apply AISuite patch: {e}")
         return False
@@ -111,7 +107,7 @@ def apply_aisuite_patch() -> bool:
 
 def is_patch_applied() -> bool:
     """Check if the AISuite patch has been applied.
-    
+
     Returns:
         bool: True if patch is applied, False otherwise
     """
@@ -119,4 +115,4 @@ def is_patch_applied() -> bool:
 
 
 # Auto-apply patch when module is imported
-apply_aisuite_patch() 
+apply_aisuite_patch()

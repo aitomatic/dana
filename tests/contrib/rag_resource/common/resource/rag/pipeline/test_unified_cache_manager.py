@@ -30,11 +30,9 @@ class TestUnifiedCacheManager:
     async def test_cache_documents_basic(self, temp_cache_dir):
         """Test basic document caching."""
         manager = UnifiedCacheManager(temp_cache_dir)
-        
-        docs_by_source = {
-            "test.txt": [Document(text="Test document")]
-        }
-        
+
+        docs_by_source = {"test.txt": [Document(text="Test document")]}
+
         # Should not raise an error
         await manager.set_docs_by_source(docs_by_source)
 
@@ -42,7 +40,7 @@ class TestUnifiedCacheManager:
     async def test_get_documents_empty(self, temp_cache_dir):
         """Test getting documents when cache is empty."""
         manager = UnifiedCacheManager(temp_cache_dir)
-        
+
         result = await manager.get_docs_by_source(["test.txt"])
         assert result == {"test.txt": None}
 
@@ -50,7 +48,7 @@ class TestUnifiedCacheManager:
     async def test_get_indices_empty(self, temp_cache_dir):
         """Test getting indices when cache is empty."""
         manager = UnifiedCacheManager(temp_cache_dir)
-        
+
         result = await manager.get_indicies_by_source(["test.txt"])
         assert result == {"test.txt": None}
 
@@ -58,6 +56,6 @@ class TestUnifiedCacheManager:
     async def test_get_combined_index_empty(self, temp_cache_dir):
         """Test getting combined index when cache is empty."""
         manager = UnifiedCacheManager(temp_cache_dir)
-        
+
         result = await manager.get_combined_index(["test.txt"])
-        assert result is None 
+        assert result is None

@@ -203,13 +203,16 @@ class LLMResource(BaseResource):
         )
         # Initialize the LLM client
         self._client = None
-        # Load provider configs from base config
+
+        # Load provider configs from base_config
         if "llm" in base_config and "provider_configs" in base_config["llm"]:
-            self.provider_configs = base_config["llm"]["provider_configs"].copy()
-            self.debug("Using provider_configs from config file (llm section).")
+            raw_provider_configs = base_config["llm"]["provider_configs"]
+            self.debug(f"Raw provider_configs from config: {raw_provider_configs}")
+            self.provider_configs = self._resolve_env_vars_in_provider_configs(raw_provider_configs)
+            self.debug(f"Resolved provider_configs: {self.provider_configs}")
         else:
             self.provider_configs = {}
-            self.warning("No provider_configs found in config file.")
+            self.debug("No provider_configs found in config file, using empty dict.")
 
         # Merge provider_configs from kwargs (allows overriding config file settings)
         if "provider_configs" in kwargs:
@@ -240,22 +243,6 @@ class LLMResource(BaseResource):
 
         # Mocking setup
         self._mock_llm_call: bool | Callable[[dict[str, Any]], dict[str, Any]] | None = None
-
-        # Initialize the LLM client
-        self._client = None
-
-        # Load provider configs from base_config
-        if "llm" in base_config and "provider_configs" in base_config["llm"]:
-            raw_provider_configs = base_config["llm"]["provider_configs"]
-            self.debug(f"Raw provider_configs from config: {raw_provider_configs}")
-            self.provider_configs = self._resolve_env_vars_in_provider_configs(raw_provider_configs)
-            self.debug(f"Resolved provider_configs: {self.provider_configs}")
-        else:
-            self.provider_configs = {}
-            self.debug("No provider_configs found in config file, using empty dict.")
-
-        self._started = False
-        # Don't auto-initialize - use lazy initialization
 
     @property
     def model(self) -> str | None:
@@ -496,9 +483,7 @@ class LLMResource(BaseResource):
 
         # Delegate to query executor
         # Let query executor handle request parameter building (including Anthropic transformation)
-        return await self._query_executor.query_iterative(
-            request, tool_call_handler=self._call_requested_tools
-        )
+        return await self._query_executor.query_iterative(request, tool_call_handler=self._call_requested_tools)
 
     async def _query_once(self, request: dict[str, Any]) -> dict[str, Any]:
         """Make a single call to the LLM with the given request.
@@ -519,7 +504,7 @@ class LLMResource(BaseResource):
         if self._mock_llm_call is not None:
             self._query_executor.set_mock_llm_call(self._mock_llm_call)
 
-        # Delegate to query executor  
+        # Delegate to query executor
         # Let query executor handle request parameter building (including Anthropic transformation)
         return await self._query_executor.query_once(request)
 

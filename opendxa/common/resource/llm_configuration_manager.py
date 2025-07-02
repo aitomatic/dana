@@ -90,12 +90,12 @@ class LLMConfigurationManager:
             if provider:
                 config = self.config_loader.get_default_config()
                 provider_configs = config.get("llm", {}).get("provider_configs", {})
-                
+
                 # If provider is not in config, model is invalid
                 if provider not in provider_configs:
                     return False
-            
-            # For model validation, we only check required API keys, not whether 
+
+            # For model validation, we only check required API keys, not whether
             # the model is in the preferred_models list. The preferred_models list
             # is used for selection priority, not validation restrictions.
             required_env_vars = self._get_required_env_vars_for_model(model_name)
@@ -118,7 +118,7 @@ class LLMConfigurationManager:
         """
         try:
             config = self.config_loader.get_default_config()
-            
+
             # Load preferred_models from llm section
             if "llm" in config and "preferred_models" in config["llm"]:
                 preferred_models = config["llm"]["preferred_models"]
@@ -144,7 +144,7 @@ class LLMConfigurationManager:
         try:
             # Get configuration
             config = self.config_loader.get_default_config()
-            
+
             # Load provider_configs from llm section
             if "llm" in config and "provider_configs" in config["llm"]:
                 provider_configs = config["llm"]["provider_configs"]
@@ -153,20 +153,20 @@ class LLMConfigurationManager:
 
             # Determine provider from model name
             provider = self._get_provider_from_model(model_name)
-            
+
             if not provider or provider not in provider_configs:
                 return []
-            
+
             # Get provider config
             provider_config = provider_configs[provider]
-            
+
             # Extract required environment variables from provider config
             required_vars = []
             for key, value in provider_config.items():
                 if isinstance(value, str) and value.startswith("env:"):
                     env_var = value[4:]  # Remove "env:" prefix
                     required_vars.append(env_var)
-            
+
             return required_vars
 
         except Exception:
@@ -185,7 +185,7 @@ class LLMConfigurationManager:
         """Find the first available model from preferred list."""
         try:
             config = self.config_loader.get_default_config()
-            
+
             # Load preferred_models from llm section
             if "llm" in config and "preferred_models" in config["llm"]:
                 preferred_models = config["llm"]["preferred_models"]
@@ -202,7 +202,7 @@ class LLMConfigurationManager:
                     model_name = model.get("name")
                 else:
                     continue
-                
+
                 if model_name and self._validate_model(model_name):
                     return model_name
 
@@ -215,11 +215,11 @@ class LLMConfigurationManager:
         """Get list of all available models."""
         try:
             config = self.config_loader.get_default_config()
-            
+
             # Get models from preferred_models (new streamlined approach)
             preferred_models = config.get("llm", {}).get("preferred_models", [])
             preferred_model_names = []
-            
+
             for model in preferred_models:
                 # Handle string format (new streamlined approach)
                 if isinstance(model, str):
@@ -227,20 +227,20 @@ class LLMConfigurationManager:
                 # Handle dict format (backward compatibility)
                 elif isinstance(model, dict) and model.get("name"):
                     preferred_model_names.append(model["name"])
-            
+
             # Also get models from all_models if it exists (backward compatibility)
             all_models = config.get("llm", {}).get("all_models", [])
-            
+
             # Combine both lists, removing duplicates while preserving order
             combined_models = []
             seen_models = set()
-            
+
             # Add preferred models first (they have priority)
             for model in preferred_model_names:
                 if model not in seen_models:
                     combined_models.append(model)
                     seen_models.add(model)
-            
+
             # Add all_models that aren't already included
             for model in all_models:
                 if model not in seen_models:

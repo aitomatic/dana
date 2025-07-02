@@ -103,23 +103,16 @@ class TestLLMResource(unittest.TestCase):
         # Set up LLMResource
         llm_resource = LLMResource(name="test_llm", model="openai:gpt-4")
         llm_resource._is_available = True
-        
+
         async def test_context_window():
             # Mock the actual client call instead of the higher level method
-            with patch.object(llm_resource._query_executor, '_client') as mock_client:
+            with patch.object(llm_resource._query_executor, "_client") as mock_client:
                 # Mock the chat completions create method
-                mock_response = {
-                    "choices": [{"message": {"role": "assistant", "content": "Yes, I can!"}}],
-                    "usage": {"total_tokens": 100}
-                }
+                mock_response = {"choices": [{"message": {"role": "assistant", "content": "Yes, I can!"}}], "usage": {"total_tokens": 100}}
                 mock_client.chat.completions.create.return_value.model_dump.return_value = mock_response
 
                 # Call query_iterative which will trigger token management
-                request = {
-                    "messages": messages, 
-                    "max_tokens": 1000,
-                    "temperature": 0.7
-                }
+                request = {"messages": messages, "max_tokens": 1000, "temperature": 0.7}
                 result = await llm_resource._query_executor.query_iterative(request)
 
                 # Verify TokenManagement.enforce_context_window was called

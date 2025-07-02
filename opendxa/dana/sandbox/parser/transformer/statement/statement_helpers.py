@@ -160,7 +160,7 @@ class AssignmentHelper:
     def _extract_type_name_from_single_type(single_type_item):
         """Extract type name from single_type grammar rule."""
         from lark import Tree
-        
+
         if not isinstance(single_type_item, Tree) or single_type_item.data != "single_type":
             # Handle direct token case (legacy)
             if hasattr(single_type_item, "value"):
@@ -169,37 +169,37 @@ class AssignmentHelper:
                 return single_type_item.value
             else:
                 return str(single_type_item)
-        
+
         # single_type can be either generic_type or simple_type
         child = single_type_item.children[0]
-        
+
         if isinstance(child, Tree):
             if child.data == "generic_type":
                 # Handle generic_type: simple_type "[" type_argument_list "]"
                 simple_type_tree = child.children[0]  # First child is simple_type
                 base_type = AssignmentHelper._extract_type_name_from_simple_type(simple_type_tree)
-                
+
                 # For now, just return the base type (e.g., "list" from "list[str]")
                 # In future phases, we'll parse the full generic type
                 return base_type
             elif child.data == "simple_type":
                 # Handle simple_type directly
                 return AssignmentHelper._extract_type_name_from_simple_type(child)
-        
+
         # Fallback
         return str(child)
-    
-    @staticmethod 
+
+    @staticmethod
     def _extract_type_name_from_simple_type(simple_type_tree):
         """Extract type name from simple_type grammar rule."""
         from lark import Tree
-        
+
         if not isinstance(simple_type_tree, Tree) or simple_type_tree.data != "simple_type":
             return str(simple_type_tree)
-        
+
         # simple_type contains a single token (INT_TYPE, STR_TYPE, NAME, etc.)
         type_token = simple_type_tree.children[0]
-        
+
         if hasattr(type_token, "value"):
             return type_token.value
         elif hasattr(type_token, "type") and type_token.type == "NAME":

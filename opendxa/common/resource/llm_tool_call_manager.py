@@ -54,7 +54,7 @@ class LLMToolCallManager(Loggable):
 
         # Get original messages
         original_messages = Misc.get_field(request, "messages", [])
-        
+
         # Let AISuite handle system message transformation completely
         # Just pass messages as-is - AISuite will transform them correctly for each provider
         params = {

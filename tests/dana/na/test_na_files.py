@@ -34,7 +34,7 @@ def test_na_file(na_file):
     """Test that a .na file can be parsed and executed without errors."""
     # Clear struct registry to ensure test isolation
     StructTypeRegistry.clear()
-    
+
     # Check if we should skip tests that need real LLM
     skip_llm_tests = os.environ.get("OPENDXA_SKIP_NA_LLM_TESTS", "").lower() == "true"
 
@@ -64,15 +64,15 @@ def test_na_file(na_file):
     filename = Path(na_file).name
     enhanced_coercion_tests = [
         "test_enhanced_coercion_comprehensive.na",
-        "test_coercion_regression_prevention.na", 
+        "test_coercion_regression_prevention.na",
         "test_poet_enhanced_function_dispatch.na",
         "test_method_chaining_builtin.na",
-        "test_method_chaining_user_defined.na", 
+        "test_method_chaining_user_defined.na",
         "test_method_chaining_integration.na",
-        "test_method_chaining_edge_cases.na"
+        "test_method_chaining_edge_cases.na",
     ]
     disable_type_check = filename in enhanced_coercion_tests
-    
+
     program = parse_program(program_text, do_type_check=not disable_type_check)
     assert program is not None, f"Failed to parse {na_file}"
 

@@ -87,19 +87,10 @@ class TestLLMConfigurationManager(unittest.TestCase):
                     "google:gemini-1.5-pro",  # No API key
                 ],
                 "provider_configs": {
-                    "anthropic": {
-                        "api_key": "env:ANTHROPIC_API_KEY",
-                        "api_type": "anthropic"
-                    },
-                    "openai": {
-                        "api_key": "env:OPENAI_API_KEY",
-                        "api_type": "openai"
-                    },
-                    "google": {
-                        "api_key": "env:GOOGLE_API_KEY",
-                        "api_type": "openai"
-                    }
-                }
+                    "anthropic": {"api_key": "env:ANTHROPIC_API_KEY", "api_type": "anthropic"},
+                    "openai": {"api_key": "env:OPENAI_API_KEY", "api_type": "openai"},
+                    "google": {"api_key": "env:GOOGLE_API_KEY", "api_type": "openai"},
+                },
             }
         }
         mock_config_loader.return_value.get_default_config.return_value = mock_config
@@ -124,7 +115,7 @@ class TestLLMConfigurationManager(unittest.TestCase):
                 "preferred_models": ["someprovider:nonexistent-model", "anotherprovider:missing-model"],
                 "provider_configs": {
                     # Note: someprovider and anotherprovider are intentionally not in the config
-                }
+                },
             }
         }
         mock_config_loader.return_value.get_default_config.return_value = mock_config
@@ -142,14 +133,16 @@ class TestLLMConfigurationManager(unittest.TestCase):
         # Mock configuration including provider_configs
         mock_config = {
             "llm": {
-                "preferred_models": ["openai:gpt-4o", "openai:gpt-4o-mini", "someprovider:unavailable-model", "anotherprovider:missing-model"],
+                "preferred_models": [
+                    "openai:gpt-4o",
+                    "openai:gpt-4o-mini",
+                    "someprovider:unavailable-model",
+                    "anotherprovider:missing-model",
+                ],
                 "provider_configs": {
-                    "openai": {
-                        "api_key": "env:OPENAI_API_KEY",
-                        "api_type": "openai"
-                    }
+                    "openai": {"api_key": "env:OPENAI_API_KEY", "api_type": "openai"}
                     # Note: someprovider and anotherprovider are intentionally not in the config
-                }
+                },
             }
         }
         mock_config_loader.return_value.get_default_config.return_value = mock_config
@@ -194,12 +187,7 @@ class TestLLMConfigurationManager(unittest.TestCase):
         mock_config = {
             "llm": {
                 "preferred_models": ["openai:gpt-4"],
-                "provider_configs": {
-                    "openai": {
-                        "api_key": "env:OPENAI_API_KEY",
-                        "api_type": "openai"
-                    }
-                }
+                "provider_configs": {"openai": {"api_key": "env:OPENAI_API_KEY", "api_type": "openai"}},
             }
         }
         mock_config_loader.return_value.get_default_config.return_value = mock_config
@@ -214,21 +202,18 @@ class TestLLMConfigurationManager(unittest.TestCase):
     @patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "false"}, clear=True)  # Clear all env vars and disable mock mode
     def test_determine_model_explicit_unavailable(self, mock_config_loader):
         """Test model determination with unavailable explicit model."""
-        # Mock configuration 
+        # Mock configuration
         mock_config = {
             "llm": {
                 "preferred_models": ["openai:gpt-4"],
                 "provider_configs": {
-                    "openai": {
-                        "api_key": "env:OPENAI_API_KEY",
-                        "api_type": "openai"
-                    }
+                    "openai": {"api_key": "env:OPENAI_API_KEY", "api_type": "openai"}
                     # Note: someprovider is intentionally not in the config
-                }
+                },
             }
         }
         mock_config_loader.return_value.get_default_config.return_value = mock_config
-        
+
         # Use a model that requires an API key we don't have
         config_manager = LLMConfigurationManager(explicit_model="someprovider:unavailable-model")
 
@@ -245,14 +230,9 @@ class TestLLMConfigurationManager(unittest.TestCase):
         # Mock configuration
         mock_config = {
             "llm": {
-                "preferred_models": ["openai:gpt-4"], 
+                "preferred_models": ["openai:gpt-4"],
                 "default_model": "openai:gpt-4o-mini",
-                "provider_configs": {
-                    "openai": {
-                        "api_key": "env:OPENAI_API_KEY",
-                        "api_type": "openai"
-                    }
-                }
+                "provider_configs": {"openai": {"api_key": "env:OPENAI_API_KEY", "api_type": "openai"}},
             }
         }
         mock_config_loader.return_value.get_default_config.return_value = mock_config

@@ -38,7 +38,7 @@ def list_models_function(
     Example:
         # List all models in Dana code
         models = list_models()
-        
+
         # Filter by provider
         openai_models = list_models({"provider": "openai"})
     """
@@ -50,7 +50,7 @@ def list_models_function(
     try:
         # Get all available models in preferred order
         all_models = _get_available_model_names()
-        
+
         # Filter by provider if specified
         provider_filter = options.get("provider")
         if provider_filter:
@@ -67,12 +67,11 @@ def list_models_function(
         else:
             models = all_models
 
-        logger.info(f"Listed {len(models)} available models" + 
-                   (f" (filtered by provider: {provider_filter})" if provider_filter else ""))
-        
+        logger.info(f"Listed {len(models)} available models" + (f" (filtered by provider: {provider_filter})" if provider_filter else ""))
+
         return models
 
     except Exception as e:
         error_msg = f"Unexpected error listing models: {e}"
         logger.error(error_msg)
-        raise SandboxError(error_msg) from e 
+        raise SandboxError(error_msg) from e

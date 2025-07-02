@@ -23,17 +23,19 @@ class TestDeepDanaREPLModelSwitching(unittest.TestCase):
         """Set up test environment."""
         # Clean environment and set required API keys
         self.original_env = os.environ.copy()
-        
+
         # Set API keys for all providers to enable testing
-        os.environ.update({
-            "OPENAI_API_KEY": "test-openai-key",
-            "ANTHROPIC_API_KEY": "test-anthropic-key", 
-            "GROQ_API_KEY": "test-groq-key",
-            "DEEPSEEK_API_KEY": "test-deepseek-key",
-            # Enable mock mode for testing
-            "OPENDXA_MOCK_LLM": "true"
-        })
-        
+        os.environ.update(
+            {
+                "OPENAI_API_KEY": "test-openai-key",
+                "ANTHROPIC_API_KEY": "test-anthropic-key",
+                "GROQ_API_KEY": "test-groq-key",
+                "DEEPSEEK_API_KEY": "test-deepseek-key",
+                # Enable mock mode for testing
+                "OPENDXA_MOCK_LLM": "true",
+            }
+        )
+
         # Create sandbox instance
         self.sandbox = DanaSandbox()
 
@@ -41,14 +43,14 @@ class TestDeepDanaREPLModelSwitching(unittest.TestCase):
         """Clean up test environment."""
         os.environ.clear()
         os.environ.update(self.original_env)
-        
-        if hasattr(self, 'sandbox'):
+
+        if hasattr(self, "sandbox"):
             self.sandbox._cleanup()
 
     def test_basic_model_switching_openai_to_anthropic(self):
         """Test basic model switching from OpenAI to Anthropic."""
         # Start with OpenAI
-        code = '''log("=== Testing OpenAI -> Anthropic Model Switch ===")
+        code = """log("=== Testing OpenAI -> Anthropic Model Switch ===")
 
 # Set OpenAI model
 set_model("openai:gpt-4")
@@ -70,21 +72,21 @@ log(f"Anthropic result: {anthropic_result}")
 assert openai_result is not None, "OpenAI call should succeed"
 assert anthropic_result is not None, "Anthropic call should succeed"
 
-log("✅ OpenAI -> Anthropic switch successful")'''
-        
+log("✅ OpenAI -> Anthropic switch successful")"""
+
         result = self.sandbox.eval(code)
-        
+
         # Debug the result if it failed
         if not result.success:
             print(f"FAILED: {result.error}")
             print(f"Output: {result.output}")
             print(f"Context: {result.final_context}")
-        
+
         # Debug output format
         print(f"Result success: {result.success}")
         print(f"Result output: '{result.output}'")
         print(f"Result output type: {type(result.output)}")
-        
+
         self.assertTrue(result.success, f"Dana execution failed: {result.error}")
         # For now, just check that it succeeded - the log output shows it works
         # We'll adjust the assertion once we understand the output format
@@ -107,7 +109,7 @@ log("✅ OpenAI -> Anthropic switch successful")'''
     @unittest.skip("Complex error recovery tests need Dana syntax improvements")
     def test_model_switching_error_recovery(self):
         """Test error recovery when switching to invalid models."""
-        code = '''
+        code = """
         log("=== Testing Model Switch Error Recovery ===")
         
         # Start with a valid model
@@ -146,8 +148,8 @@ log("✅ OpenAI -> Anthropic switch successful")'''
         
         assert success_count >= 2, f"Expected at least 2 valid results, got {success_count}"
         log("✅ Error recovery testing successful")
-        '''
-        
+        """
+
         result = self.sandbox.eval(code)
         self.assertTrue(result.success)
         self.assertIn("Error recovery testing successful", str(result.output))
@@ -155,7 +157,7 @@ log("✅ OpenAI -> Anthropic switch successful")'''
     @unittest.skip("Complex local model tests need Dana syntax improvements")
     def test_model_switching_with_local_models(self):
         """Test switching between cloud and local models."""
-        code = '''
+        code = """
         log("=== Testing Cloud <-> Local Model Switching ===")
         
         # Start with cloud model
@@ -190,8 +192,8 @@ log("✅ OpenAI -> Anthropic switch successful")'''
         
         assert len(valid_results) >= 2, f"Expected at least 2 cloud results, got {len(valid_results)}"
         log("✅ Cloud/Local model switching test successful")
-        '''
-        
+        """
+
         result = self.sandbox.eval(code)
         self.assertTrue(result.success)
         self.assertIn("Cloud/Local model switching test successful", str(result.output))
@@ -199,7 +201,7 @@ log("✅ OpenAI -> Anthropic switch successful")'''
     @unittest.skip("Complex comprehensive tests need Dana syntax improvements")
     def test_comprehensive_provider_switching(self):
         """Test comprehensive switching across all supported providers."""
-        code = '''
+        code = """
         log("=== Comprehensive Provider Switching Test ===")
         
         # Define test providers and models
@@ -263,8 +265,8 @@ log("✅ OpenAI -> Anthropic switch successful")'''
         assert "anthropic" in successful_providers, "Anthropic should work"
         
         log("✅ Comprehensive provider switching successful")
-        '''
-        
+        """
+
         result = self.sandbox.eval(code)
         self.assertTrue(result.success)
         self.assertIn("Comprehensive provider switching successful", str(result.output))
@@ -272,7 +274,7 @@ log("✅ OpenAI -> Anthropic switch successful")'''
     @unittest.skip("Complex state persistence tests need Dana syntax improvements")
     def test_model_switching_state_persistence(self):
         """Test that model switching doesn't affect other Dana state."""
-        code = '''
+        code = """
         log("=== Testing State Persistence During Model Switching ===")
         
         # Set up some Dana state
@@ -312,8 +314,8 @@ log("✅ OpenAI -> Anthropic switch successful")'''
         
         assert success_count >= 2, f"Expected at least 2 successful calls, got {success_count}"
         log("✅ State persistence during model switching verified")
-        '''
-        
+        """
+
         result = self.sandbox.eval(code)
         self.assertTrue(result.success)
         self.assertIn("State persistence during model switching verified", str(result.output))
@@ -321,7 +323,7 @@ log("✅ OpenAI -> Anthropic switch successful")'''
     @unittest.skip("Complex concurrent tests need Dana syntax improvements")
     def test_concurrent_model_usage_patterns(self):
         """Test patterns that might cause conflicts in model usage."""
-        code = '''
+        code = """
         log("=== Testing Concurrent Model Usage Patterns ===")
         
         # Test rapid successive calls without switching
@@ -370,8 +372,8 @@ log("✅ OpenAI -> Anthropic switch successful")'''
         
         assert success_rate >= 0.8, f"Expected 80%+ success rate, got {success_rate:.1%}"
         log(f"✅ Concurrent usage patterns successful ({success_rate:.1%} success rate)")
-        '''
-        
+        """
+
         result = self.sandbox.eval(code)
         self.assertTrue(result.success)
         self.assertIn("Concurrent usage patterns successful", str(result.output))

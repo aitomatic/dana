@@ -54,18 +54,16 @@
                 "base_url": "https://your-company.openai.azure.com/",
                 "api_type": "openai"
             },
-	    "provider_configs": {
-		"ibm_watsonx": {
-		    "api_key": "env:WATSONX_API_KEY",
-		    "apiBase": "https://us-south.ml.cloud.ibm.com",
-		    "projectId": "env:WATSONX_PROJECT_ID",
-		    "model_name": "ibm/granite-20b-multilingual",
-		    "provider": "watsonx",
-		    "api_type": "watsonx",
-		    "deploymentId": "env:WATSONX_DEPLOYMENT_ID",
-		    "apiVersion": "2024-03-14"
-		}
-	    }
+            "ibm_watsonx": {
+                "api_key": "env:WATSONX_API_KEY",
+                "apiBase": "https://us-south.ml.cloud.ibm.com",
+                "projectId": "env:WATSONX_PROJECT_ID",
+                "model_name": "ibm/granite-20b-multilingual",
+                "provider": "watsonx",
+                "api_type": "watsonx",
+                "deploymentId": "env:WATSONX_DEPLOYMENT_ID",
+                "apiVersion": "2024-03-14"
+            }
         },
         "query_strategy": "iterative",
         "query_max_iterations": 5

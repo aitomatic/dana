@@ -154,10 +154,7 @@ class LLMQueryExecutor(Loggable):
         user_messages = Misc.get_field(request, "user_messages", Misc.get_field(request, "messages", ["Hello, how are you?"]))
 
         # Check if user messages already contain system messages
-        has_user_system_messages = any(
-            isinstance(msg, dict) and msg.get("role") == "system"
-            for msg in user_messages
-        )
+        has_user_system_messages = any(isinstance(msg, dict) and msg.get("role") == "system" for msg in user_messages)
 
         # Only add default system prompt if user hasn't provided their own
         if not has_user_system_messages:
@@ -369,7 +366,7 @@ class LLMQueryExecutor(Loggable):
             )
             self.info("LLM query successful")
             self._log_llm_response(response)
-            
+
             # Convert AISuite response to dictionary format
             # AISuite returns ChatCompletionResponse which doesn't have model_dump()
             return self._convert_response_to_dict(response)
@@ -611,7 +608,7 @@ class LLMQueryExecutor(Loggable):
         """
         functions = []
         for _, resource in resources.items():
-            if hasattr(resource, 'list_openai_functions'):
+            if hasattr(resource, "list_openai_functions"):
                 functions.extend(resource.list_openai_functions())
         return functions
 
@@ -692,65 +689,65 @@ class LLMQueryExecutor(Loggable):
 
     def _convert_response_to_dict(self, response) -> dict[str, Any]:
         """Convert AISuite response object to dictionary format.
-        
+
         AISuite returns ChatCompletionResponse objects that don't have model_dump().
         This method manually converts them to the expected dictionary format.
-        
+
         Args:
             response: AISuite ChatCompletionResponse or OpenAI ChatCompletion object
-            
+
         Returns:
             Dict[str, Any]: Dictionary representation of the response
         """
         # If it's already a dict (from mock), return as-is
         if isinstance(response, dict):
             return response
-            
+
         # If it has model_dump (OpenAI SDK), use it
-        if hasattr(response, 'model_dump'):
+        if hasattr(response, "model_dump"):
             return response.model_dump()
-            
+
         # For AISuite ChatCompletionResponse, manually convert
         result = {}
-        
+
         # Handle choices
-        if hasattr(response, 'choices') and response.choices:
+        if hasattr(response, "choices") and response.choices:
             choices = []
             for choice in response.choices:
                 choice_dict = {}
-                if hasattr(choice, 'message'):
+                if hasattr(choice, "message"):
                     message_dict = {}
-                    if hasattr(choice.message, 'role'):
-                        message_dict['role'] = choice.message.role
-                    if hasattr(choice.message, 'content'):
-                        message_dict['content'] = choice.message.content
-                    if hasattr(choice.message, 'tool_calls'):
-                        message_dict['tool_calls'] = choice.message.tool_calls
-                    choice_dict['message'] = message_dict
-                if hasattr(choice, 'finish_reason'):
-                    choice_dict['finish_reason'] = choice.finish_reason
+                    if hasattr(choice.message, "role"):
+                        message_dict["role"] = choice.message.role
+                    if hasattr(choice.message, "content"):
+                        message_dict["content"] = choice.message.content
+                    if hasattr(choice.message, "tool_calls"):
+                        message_dict["tool_calls"] = choice.message.tool_calls
+                    choice_dict["message"] = message_dict
+                if hasattr(choice, "finish_reason"):
+                    choice_dict["finish_reason"] = choice.finish_reason
                 choices.append(choice_dict)
-            result['choices'] = choices
-            
+            result["choices"] = choices
+
         # Handle usage
-        if hasattr(response, 'usage'):
+        if hasattr(response, "usage"):
             if isinstance(response.usage, dict):
-                result['usage'] = response.usage
+                result["usage"] = response.usage
             else:
                 usage_dict = {}
-                if hasattr(response.usage, 'prompt_tokens'):
-                    usage_dict['prompt_tokens'] = response.usage.prompt_tokens
-                if hasattr(response.usage, 'completion_tokens'):
-                    usage_dict['completion_tokens'] = response.usage.completion_tokens
-                if hasattr(response.usage, 'total_tokens'):
-                    usage_dict['total_tokens'] = response.usage.total_tokens
-                result['usage'] = usage_dict
-                
+                if hasattr(response.usage, "prompt_tokens"):
+                    usage_dict["prompt_tokens"] = response.usage.prompt_tokens
+                if hasattr(response.usage, "completion_tokens"):
+                    usage_dict["completion_tokens"] = response.usage.completion_tokens
+                if hasattr(response.usage, "total_tokens"):
+                    usage_dict["total_tokens"] = response.usage.total_tokens
+                result["usage"] = usage_dict
+
         # Handle model
-        if hasattr(response, 'model'):
-            result['model'] = response.model
+        if hasattr(response, "model"):
+            result["model"] = response.model
         elif self.model:
             # Fallback to current model if response doesn't have it
-            result['model'] = self.model
-            
+            result["model"] = self.model
+
         return result

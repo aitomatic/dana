@@ -186,9 +186,7 @@ class TestSetModelFunction(unittest.TestCase):
         os.environ["OPENAI_API_KEY"] = "test-key"
 
         # With exact_match_only=True, partial matches should not work
-        result = set_model_function(
-            self.context, "gpt-4", options={"exact_match_only": True}
-        )
+        result = set_model_function(self.context, "gpt-4", options={"exact_match_only": True})
 
         # Should use the input as-is
         self.assertEqual(result, "gpt-4")

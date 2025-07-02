@@ -1,4 +1,3 @@
-
 from llama_index.core import Document
 
 from opendxa.contrib.rag_resource.common.utility.web_fetch import fetch_web_content

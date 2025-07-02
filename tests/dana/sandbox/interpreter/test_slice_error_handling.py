@@ -124,7 +124,6 @@ result = test_dict["missing_key"]
         assert "Key 'missing_key' not found in dictionary" in str(result.error)
         assert "Available keys include:" in str(result.error)
 
-
     def test_successful_slice_operations(self, fresh_sandbox):
         """Test that valid slice operations still work correctly."""
         # Test basic slice

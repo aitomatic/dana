@@ -22,37 +22,37 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 def _get_available_model_names() -> list[str]:
     """Get list of available model names from configuration.
-    
+
     Returns:
         List of available model names from the LLM configuration.
     """
     try:
         config_loader = ConfigLoader()
         config = config_loader.get_default_config()
-        
+
         # Get models from both preferred_models and all_models
         all_models = set()
-        
+
         # Add from preferred_models (only check llm sublevel)
         preferred_models = config.get("llm", {}).get("preferred_models", [])
-        
+
         for model in preferred_models:
             if isinstance(model, str):
                 all_models.add(model)
             elif isinstance(model, dict) and model.get("name"):
                 all_models.add(model["name"])
-        
+
         # Add from all_models list (only check llm sublevel)
         all_models_list = config.get("llm", {}).get("all_models", [])
-        
+
         for model in all_models_list:
             if isinstance(model, str):
                 all_models.add(model)
-        
+
         # Add common model names as fallback
         fallback_models = [
             "openai:gpt-4o",
-            "openai:gpt-4o-mini", 
+            "openai:gpt-4o-mini",
             "openai:gpt-4-turbo",
             "anthropic:claude-3-5-sonnet-20241022",
             "anthropic:claude-3-5-haiku-20241022",
@@ -72,7 +72,7 @@ def _get_available_model_names() -> list[str]:
             "azure:gpt-35-turbo",
         ]
         all_models.update(fallback_models)
-        
+
         # Return models preserving preference order, then fallback models
         # First, get models from config in preference order
         preference_ordered_models = []
@@ -81,16 +81,16 @@ def _get_available_model_names() -> list[str]:
             if model_name and model_name in all_models:
                 preference_ordered_models.append(model_name)
                 all_models.remove(model_name)
-        
+
         # Add any remaining models (from fallback list) alphabetically
         remaining_models = sorted(list(all_models))
-        
+
         return preference_ordered_models + remaining_models
     except Exception:
         # Return fallback list if config loading fails
         return [
             "openai:gpt-4o",
-            "openai:gpt-4o-mini", 
+            "openai:gpt-4o-mini",
             "openai:gpt-4-turbo",
             "anthropic:claude-3-5-sonnet-20241022",
             "anthropic:claude-3-5-haiku-20241022",
@@ -113,63 +113,63 @@ def _get_available_model_names() -> list[str]:
 
 def _find_closest_model_match(model_input: str, available_models: list[str]) -> str | None:
     """Find the closest matching model name using fuzzy matching.
-    
+
     Args:
         model_input: The user-provided model string
         available_models: List of available model names
-        
+
     Returns:
         The closest matching model name, or None if no good match found.
     """
     if not model_input or not available_models:
         return None
-    
+
     # Try exact match first (case insensitive)
     model_lower = model_input.lower()
     for model in available_models:
         if model.lower() == model_lower:
             return model
-    
+
     # Try substring match (e.g., "gpt-4" matches "openai:gpt-4o")
     # Prefer matches that align with typical provider-model relationships
     substring_matches = []
     for model in available_models:
         if model_lower in model.lower() or model.lower() in model_lower:
             substring_matches.append(model)
-    
+
     if substring_matches:
         # If we have multiple substring matches, prefer the most logical provider
         if len(substring_matches) == 1:
             return substring_matches[0]
-        
+
         # For GPT models, prefer OpenAI over Azure
         if "gpt" in model_lower:
             for match in substring_matches:
                 if match.startswith("openai:"):
                     return match
-        
+
         # For other models, return the first match (preserves preference order)
         return substring_matches[0]
-    
+
     # Use fuzzy matching for close matches
     # Get close matches with a reasonable cutoff (0.6 = 60% similarity)
     close_matches = difflib.get_close_matches(
-        model_input, 
-        available_models, 
+        model_input,
+        available_models,
         n=1,  # Return only the best match
-        cutoff=0.6  # 60% similarity threshold
+        cutoff=0.6,  # 60% similarity threshold
     )
-    
+
     if close_matches:
         return close_matches[0]
-    
+
     # Try matching just the model name part (after the colon)
     model_name_part = model_input.split(":")[-1] if ":" in model_input else model_input
     for model in available_models:
         model_part = model.split(":")[-1] if ":" in model else model
         if model_name_part.lower() in model_part.lower():
             return model
-    
+
     return None
 
 
@@ -200,7 +200,7 @@ def set_model_function(
     Example:
         # Exact match
         set_model("openai:gpt-4o")
-        
+
         # Fuzzy match examples
         set_model("gpt-4")          # matches "openai:gpt-4o"
         set_model("claude")         # matches "anthropic:claude-3-5-sonnet-20241022"
@@ -219,7 +219,7 @@ def set_model_function(
 
     # Check if exact matching is requested
     exact_match_only = options.get("exact_match_only", False)
-    
+
     # Store the original input for logging
     original_input = model
 
@@ -228,13 +228,13 @@ def set_model_function(
         if not exact_match_only:
             available_models = _get_available_model_names()
             matched_model = _find_closest_model_match(model, available_models)
-            
+
             if matched_model and matched_model != model:
                 logger.info(f"Fuzzy matched '{original_input}' to '{matched_model}'")
                 model = matched_model
             elif not matched_model:
                 logger.warning(f"No close match found for '{original_input}', trying as-is")
-        
+
         # Get the current LLM resource from context
         llm_resource = context.get("system:llm_resource")
 
@@ -252,7 +252,7 @@ def set_model_function(
             logger.info(f"Successfully set LLM model to: {model} (matched from '{original_input}')")
         else:
             logger.info(f"Successfully set LLM model to: {model}")
-        
+
         return model
 
     except LLMError as e:

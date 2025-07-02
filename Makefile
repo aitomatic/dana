@@ -457,7 +457,7 @@ else
 endif
 
 chat-ollama: ## Start an interactive chat session with Ollama
-	@./bin/ollama/chat
+	@./bin/ollama/chat$(SCRIPT_EXT)
 
 uninstall-ollama: ## Uninstall Ollama and clean up
 	@./bin/ollama/uninstall$(SCRIPT_EXT)
@@ -589,7 +589,7 @@ start-vllm: ## Start vLLM server with interactive model selection
 
 chat-vllm: ## Start interactive chat with vLLM server
 	@echo "💬 Starting vLLM chat interface..."
-	@./bin/vllm/chat
+	@./bin/vllm/chat$(SCRIPT_EXT)
 
 stop-vllm: ## Stop running vLLM server
 	@echo "🛑 Stopping vLLM server..."

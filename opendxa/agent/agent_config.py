@@ -83,9 +83,18 @@ class AgentConfig(BaseModel, Loggable):
             Name of the first model that has all required environment variables available, or None if no models are available
         """
         self.debug("Checking available environment variables for model selection...")
+
+        # Handle both old format (list of dicts) and new format (list of strings)
         for model_config in self.preferred_models:
-            model_name = model_config["name"]
-            required_vars = model_config["required_env_vars"]
+            if isinstance(model_config, dict):
+                # Old format: list of dictionaries
+                model_name = model_config["name"]
+                required_vars = model_config.get("required_env_vars", [])
+            else:
+                # New format: list of strings
+                model_name = model_config
+                required_vars = self._get_required_env_vars_for_model(model_name)
+
             self.debug(f"Checking model {model_name} with required vars: {required_vars}")
 
             # Check if all required environment variables are available
@@ -99,6 +108,37 @@ class AgentConfig(BaseModel, Loggable):
         # If we get here, no models are available - return None
         self.warning("No models found with available environment variables")
         return None
+
+    def _get_required_env_vars_for_model(self, model_name: str) -> list[str]:
+        """Get required environment variables for a model based on its provider.
+
+        Args:
+            model_name: Model name in format "provider:model" or just "provider"
+
+        Returns:
+            List of required environment variable names
+        """
+        # Extract provider from model name
+        if ":" in model_name:
+            provider = model_name.split(":")[0]
+        else:
+            provider = model_name
+
+        # Map providers to their required environment variables
+        provider_env_map = {
+            "openai": ["OPENAI_API_KEY"],
+            "anthropic": ["ANTHROPIC_API_KEY"],
+            "groq": ["GROQ_API_KEY"],
+            "mistral": ["MISTRAL_API_KEY"],
+            "google": ["GOOGLE_API_KEY"],
+            "deepseek": ["DEEPSEEK_API_KEY"],
+            "cohere": ["COHERE_API_KEY"],
+            "azure": ["AZURE_OPENAI_API_KEY"],
+            "ibm_watsonx": ["WATSONX_API_KEY", "WATSONX_PROJECT_ID"],
+            "local": ["LOCAL_API_KEY"],  # Optional for local models
+        }
+
+        return provider_env_map.get(provider, [])
 
     def _load_from_file(self, config_path: str) -> None:
         """Load configuration from JSON file.

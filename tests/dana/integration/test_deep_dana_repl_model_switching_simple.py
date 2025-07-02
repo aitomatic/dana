@@ -14,22 +14,18 @@ class TestSimpleModelSwitching(unittest.TestCase):
     def setUp(self):
         """Set up test environment."""
         self.original_env = os.environ.copy()
-        
+
         # Set API keys and enable mock mode
-        os.environ.update({
-            "OPENAI_API_KEY": "test-openai-key",
-            "ANTHROPIC_API_KEY": "test-anthropic-key", 
-            "OPENDXA_MOCK_LLM": "true"
-        })
-        
+        os.environ.update({"OPENAI_API_KEY": "test-openai-key", "ANTHROPIC_API_KEY": "test-anthropic-key", "OPENDXA_MOCK_LLM": "true"})
+
         self.sandbox = DanaSandbox()
 
     def tearDown(self):
         """Clean up test environment."""
         os.environ.clear()
         os.environ.update(self.original_env)
-        
-        if hasattr(self, 'sandbox'):
+
+        if hasattr(self, "sandbox"):
             self.sandbox._cleanup()
 
     def test_basic_model_switching_openai_to_anthropic(self):
@@ -37,14 +33,14 @@ class TestSimpleModelSwitching(unittest.TestCase):
         # Test OpenAI
         result = self.sandbox.eval('set_model("openai:gpt-4")')
         self.assertTrue(result.success)
-        
+
         result = self.sandbox.eval('reason("What is 2+2?")')
         self.assertTrue(result.success)
-        
+
         # Test Anthropic
         result = self.sandbox.eval('set_model("anthropic:claude-3-5-sonnet-20240620")')
         self.assertTrue(result.success)
-        
+
         result = self.sandbox.eval('reason("What is 3+3?")')
         self.assertTrue(result.success)
 
