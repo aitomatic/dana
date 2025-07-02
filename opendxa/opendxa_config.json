@@ -10,7 +10,7 @@
             "google:gemini-1.5-pro-latest",
             "deepseek:deepseek-chat",
             "cohere:command",
-	    "ibm_watsonx:ibm/granite-20b-multilingual",
+            "ibm_watsonx:ibm/granite-20b-multilingual",
             "azure:gpt-4"
         ],
         "provider_configs": {

@@ -46,6 +46,9 @@
 
 ### 1. CURATE: Knowledge Requirements
 
+**Input**: Use case (topic + procedure) + existing knowledge sources  
+**Output**: Knowledge requirements + storage structure decisions + knowledge content
+
 #### Topical Knowledge Needed - WHY These Are Critical
 
 **Product Specifications (Prior + Topical)**
@@ -124,6 +127,9 @@
 
 ### 2. ORGANIZE: Knowledge Structure
 
+**Input**: Knowledge requirements + storage decisions + knowledge content  
+**Output**: Structured knowledge units in appropriate storage systems
+
 #### Knowledge Units to Create
 ```
 KUnit 1: PMIC-2000 Medical Device Implementation Guide
@@ -162,6 +168,9 @@ KUnit 4: Customer Interaction Patterns for Medical Inquiries
 - **Time Series Store**: Customer interaction history, implementation success rates
 
 ### 3. RETRIEVE: Knowledge Selection
+
+**Input**: Current task + knowledge base  
+**Output**: Optimized context window of relevant knowledge
 
 #### Context Window Optimization
 **Current Task**: Respond to medical device customer inquiry about PMIC-2000 implementation for patient monitoring system
@@ -219,54 +228,185 @@ KUnit 4: Customer Interaction Patterns for Medical Inquiries
 
 ### 4. REASON: Knowledge Composition
 
-#### Structured Reasoning
-**Problem**: Provide comprehensive guidance for PMIC-2000 in medical device
+**Input**: Retrieved knowledge + task context  
+**Output**: Composed insights and actionable intelligence
 
-**Knowledge Composition**:
-1. **Start with implementation guide** (Documentary + Procedural)
-2. **Add regulatory requirements** (Documentary + Topical)
-3. **Include optimization techniques** (Experiential + Procedural)
-4. **Apply customer interaction patterns** (Experiential + Procedural)
-5. **Reference similar implementations** (Experiential + Topical)
+#### Knowledge Composition Strategy
+
+**Primary Composition Pattern**: Procedural + Topical Integration
+- **Base Workflow**: Medical device implementation guide (Documentary + Procedural)
+- **Compliance Layer**: Regulatory requirements (Documentary + Topical)
+- **Optimization Layer**: Battery life techniques (Experiential + Procedural)
+- **Interaction Layer**: Customer engagement patterns (Experiential + Procedural)
+
+#### Structured Reasoning Process
+
+**Step 1: Implementation Planning**
+```
+Base: PMIC-2000 medical implementation guide
++ Adapt: Patient monitoring device requirements
++ Optimize: 72+ hour battery life techniques
++ Validate: FDA/CE compliance requirements
+= Composed implementation plan
+```
+
+**Step 2: Response Strategy Composition**
+```
+Technical Guidance: Based on implementation guide
+Regulatory Compliance: Based on medical device requirements
+Customer Interaction: Based on medical customer patterns
+Risk Assessment: Based on similar implementations
+```
+
+**Step 3: Uncertainty Management**
+```
+High Risk: Novel medical device requirements
+Medium Risk: Battery life optimization in harsh environment
+Low Risk: Standard PMIC-2000 implementation
+Mitigation: Escalation procedures for complex requirements
+```
 
 #### Uncertainty Handling
-- **Confidence Assessment**: Implementation guide (0.85) + Regulatory requirements (0.9) = High confidence response
-- **Conflict Resolution**: Regulatory requirements override general guidelines
-- **Fallback Options**: Escalate to engineering team for novel requirements
+
+**Confidence Assessment**
+- **Implementation Confidence**: Medical guide (0.85) × Regulatory requirements (0.9) = 0.77
+- **Optimization Confidence**: Battery techniques (0.8) × Similar implementations (0.7) = 0.56
+- **Interaction Confidence**: Customer patterns (0.75) × Medical experience (0.8) = 0.60
+- **Overall Confidence**: Weighted average = 0.68 (Medium-High)
+
+**Conflict Resolution Strategy**
+1. **Regulatory Requirements** override technical optimizations
+2. **Patient Safety** override cost/performance preferences
+3. **Medical Standards** override general guidelines
+4. **Fallback**: Engineering team escalation for novel requirements
+
+**Uncertainty Indicators**
+- **High Uncertainty**: Novel medical device applications
+- **Medium Uncertainty**: Battery life optimization in harsh environments
+- **Low Uncertainty**: Standard PMIC-2000 implementation procedures
 
 ### 5. ACT: Knowledge Application
 
-#### Response Strategy
-1. **Initial Response**: Acknowledge inquiry and provide high-level guidance (same-day)
-2. **Detailed Analysis**: Compose comprehensive response using retrieved knowledge
-3. **Follow-up Questions**: Use interaction patterns to identify additional requirements
-4. **Documentation**: Create customer-specific implementation plan
+**Input**: Composed knowledge + task  
+**Output**: Task execution + performance feedback
+
+#### Response Execution Strategy
+
+**Phase 1: Initial Response (30-60 minutes)**
+- **Action**: Acknowledge inquiry and provide high-level guidance
+- **Knowledge Applied**: Customer interaction patterns (Vector)
+- **Content**: Confirmation of medical device requirements, initial feasibility assessment
+- **Success Criteria**: Customer acknowledges receipt and confirms requirements
+
+**Phase 2: Detailed Analysis (2-3 hours)**
+- **Action**: Compose comprehensive technical response
+- **Knowledge Applied**: Implementation guide + regulatory requirements (Semi-structured + Relational)
+- **Content**: Step-by-step implementation plan, compliance checklist, optimization recommendations
+- **Success Criteria**: All customer requirements addressed with technical accuracy
+
+**Phase 3: Follow-up Engagement (1-2 hours)**
+- **Action**: Proactive questioning to identify additional requirements
+- **Knowledge Applied**: Customer interaction patterns + implementation history (Vector + Time Series)
+- **Content**: Targeted questions about environment, timeline, compliance needs
+- **Success Criteria**: Complete requirement capture, no missing critical details
+
+**Phase 4: Implementation Planning (30-60 minutes)**
+- **Action**: Create customer-specific implementation roadmap
+- **Knowledge Applied**: Battery optimization + similar implementations (Vector)
+- **Content**: Timeline, milestones, risk mitigation, escalation procedures
+- **Success Criteria**: Customer has clear implementation path with confidence
 
 #### Performance Tracking
-- **Response Time**: Target <4 hours for initial response (vs. current 24-48 hours)
-- **Completeness**: 95%+ of customer requirements addressed in first response
-- **Customer Satisfaction**: Measured through follow-up surveys
-- **Knowledge Capture**: Document new insights and customer requirements
+
+**Real-time Metrics**
+- **Response Time**: Track actual vs. target (4 hours total)
+- **Completeness Score**: Measure % of customer requirements addressed
+- **Customer Satisfaction**: Immediate feedback and follow-up surveys
+- **Knowledge Usage**: Log which knowledge units were most effective
+
+**Quality Gates**
+- **Gate 1**: Initial response sent within 1 hour
+- **Gate 2**: Technical response addresses all stated requirements
+- **Gate 3**: Follow-up questions identify any missing requirements
+- **Gate 4**: Implementation plan is actionable and complete
+
+**Risk Mitigation**
+- **Escalation Triggers**: Novel requirements, regulatory uncertainty, technical complexity
+- **Fallback Procedures**: Engineering team consultation, regulatory expert review
+- **Documentation**: Record all customer interactions and technical guidance provided
 
 ### 6. LEARN: Knowledge Evolution
 
-#### Feedback Integration
-- **Success Metrics**: Customer satisfaction, implementation success, regulatory compliance
-- **Knowledge Updates**:
-  - New medical device implementation patterns
-  - Updated regulatory requirements
-  - Customer interaction improvements
-  - Technical solution refinements
+**Input**: Performance feedback + outcomes  
+**Output**: Improved knowledge base + new synthetic knowledge
 
-#### Knowledge Promotion
-- **Experiential → Documentary**: Successful implementation patterns become standard guides
-- **Documentary → Prior**: Proven approaches become reference implementations
-- **Pattern Recognition**: Similar medical device inquiries can use adapted responses
+#### Outcome Analysis
 
-#### Continuous Improvement
-- **Usage Tracking**: Monitor which knowledge units are most effective
-- **Performance Correlation**: Link knowledge usage to customer satisfaction
-- **Knowledge Gaps**: Identify areas needing additional documentation or training
+**Success Metrics Evaluation**
+- **Response Time**: Actual 3.5 hours vs. target 4 hours (12.5% improvement)
+- **Completeness**: 98% of requirements addressed vs. target 95%
+- **Customer Satisfaction**: 4.8/5 vs. target 4.5/5
+- **Knowledge Effectiveness**: All retrieved knowledge units contributed to success
+
+**Performance Insights**
+- **High-Performing Knowledge**: Implementation guide (100% accuracy), regulatory requirements (100% compliance)
+- **Medium-Performing Knowledge**: Battery optimization (90% relevance), customer patterns (85% effectiveness)
+- **Knowledge Gaps**: Minor gaps in harsh environment optimization techniques
+
+#### Knowledge Updates and Promotion
+
+**New Knowledge Units Created**
+```
+KUnit: "Medical Device PMIC Implementation Best Practices"
+- Phase: Experiential → Documentary
+- Type: Procedural
+- Content: Optimized implementation workflow for medical device PMIC applications
+- Confidence: 0.9 (validated through successful customer implementation)
+- Usage: Template for all medical device PMIC implementations
+
+KUnit: "Medical Customer Interaction Framework"
+- Phase: Experiential → Documentary
+- Type: Procedural
+- Content: Effective questioning and response strategies for medical device customers
+- Confidence: 0.85 (proven effective across multiple interactions)
+- Usage: Standard approach for medical device customer support
+```
+
+**Knowledge Promotion Strategy**
+1. **Experiential → Documentary**: Successful medical device patterns become standard procedures
+2. **Documentary → Prior**: Proven medical device approaches become reference implementations
+3. **Pattern Recognition**: Medical device customer support becomes a recognized workflow type
+
+#### Synthetic Knowledge Generation
+
+**Pattern-Based Synthesis**
+- **Pattern**: Medical device + PMIC-2000 + battery optimization + regulatory compliance
+- **Synthesis**: "Universal medical device power management implementation framework"
+- **Confidence**: 0.85 (based on successful pattern recognition)
+- **Application**: Similar medical device projects can use this synthesized approach
+
+**Interaction Synthesis**
+- **Pattern**: Multiple successful medical device customer interactions
+- **Synthesis**: "Optimal customer engagement strategy for regulated medical applications"
+- **Confidence**: 0.8 (based on consistent success across interactions)
+- **Application**: Future medical device customers can benefit from optimized engagement
+
+#### Continuous Improvement Loop
+
+**Usage Analytics**
+- **Knowledge Access Patterns**: Track which knowledge units are most frequently accessed
+- **Success Correlation**: Link knowledge usage to customer satisfaction scores
+- **Efficiency Metrics**: Measure time savings from knowledge reuse
+
+**Knowledge Health Monitoring**
+- **Confidence Decay**: Monitor knowledge confidence over time
+- **Usage Frequency**: Identify underutilized or obsolete knowledge
+- **Performance Trends**: Track knowledge effectiveness across multiple customer interactions
+
+**Gap Identification**
+- **Emerging Requirements**: Identify new medical device requirements not covered by existing knowledge
+- **Failure Analysis**: Analyze unsuccessful interactions to identify knowledge gaps
+- **Regulatory Evolution**: Track changes in medical device regulations requiring knowledge updates
 
 ## Expected Outcomes
 

@@ -41,6 +41,9 @@
 
 ### 1. CURATE: Knowledge Requirements
 
+**Input**: Use case (topic + procedure) + existing knowledge sources  
+**Output**: Knowledge requirements + storage structure decisions + knowledge content
+
 #### Topical Knowledge Needed - WHY These Are Critical
 
 **Equipment Specifications (Prior + Topical)**
@@ -119,6 +122,9 @@
 
 ### 2. ORGANIZE: Knowledge Structure
 
+**Input**: Knowledge requirements + storage decisions + knowledge content  
+**Output**: Structured knowledge units in appropriate storage systems
+
 #### Knowledge Units to Create
 ```
 KUnit 1: Customer Fiducial Pattern Specifications
@@ -150,6 +156,9 @@ KUnit 3: Lighting Optimization for High-Tg FR4
 - **Time Series Store**: Calibration attempts, accuracy measurements
 
 ### 3. RETRIEVE: Knowledge Selection
+
+**Input**: Current task + knowledge base  
+**Output**: Optimized context window of relevant knowledge
 
 #### Context Window Optimization
 **Current Task**: Vision system calibration for customer BGA package with non-standard fiducial pattern
@@ -206,52 +215,184 @@ KUnit 3: Lighting Optimization for High-Tg FR4
 
 ### 4. REASON: Knowledge Composition
 
-#### Structured Reasoning
-**Problem**: Calibrate vision system for non-standard fiducial pattern
+**Input**: Retrieved knowledge + task context  
+**Output**: Composed insights and actionable intelligence
 
-**Knowledge Composition**:
-1. **Start with standard procedure** (Documentary + Procedural)
-2. **Adapt for customer specifications** (Documentary + Topical)
-3. **Apply learned optimization techniques** (Experiential + Procedural)
-4. **Validate against accuracy requirements** (Prior + Topical)
+#### Knowledge Composition Strategy
+
+**Primary Composition Pattern**: Procedural + Topical Integration
+- **Base Workflow**: Standard calibration procedure (Documentary + Procedural)
+- **Parameter Adaptation**: Customer specifications (Documentary + Topical)
+- **Optimization Layer**: Learned techniques (Experiential + Procedural)
+- **Validation Framework**: Accuracy standards (Prior + Topical)
+
+#### Structured Reasoning Process
+
+**Step 1: Workflow Composition**
+```
+Base: Standard calibration procedure
++ Adapt: Customer fiducial specifications
++ Optimize: High-Tg FR4 material settings
++ Validate: ±0.1mm accuracy requirements
+= Composed calibration workflow
+```
+
+**Step 2: Parameter Optimization**
+```
+Equipment Settings: Based on equipment capabilities
+Lighting Configuration: Based on High-Tg FR4 optical properties
+Contrast Thresholds: Based on fiducial pattern characteristics
+Validation Criteria: Based on accuracy requirements
+```
+
+**Step 3: Risk Assessment**
+```
+High Risk: Non-standard pattern recognition
+Medium Risk: Material-specific lighting setup
+Low Risk: Standard calibration workflow
+Mitigation: Troubleshooting procedures ready
+```
 
 #### Uncertainty Handling
-- **Confidence Assessment**: Standard procedure (0.8) + Customer specs (0.9) = High confidence approach
-- **Conflict Resolution**: Customer specifications override standard patterns
-- **Fallback Options**: Vendor support contact if calibration fails
+
+**Confidence Assessment**
+- **Workflow Confidence**: Standard procedure (0.8) × Customer specs (0.9) = 0.72
+- **Material Confidence**: High-Tg FR4 properties (0.7) × Similar experiences (0.75) = 0.53
+- **Overall Confidence**: Weighted average = 0.65 (Medium-High)
+
+**Conflict Resolution Strategy**
+1. **Customer Requirements** override standard procedures
+2. **Safety Standards** override optimization preferences
+3. **Equipment Limitations** override customer preferences
+4. **Fallback**: Vendor support for unresolved conflicts
+
+**Uncertainty Indicators**
+- **High Uncertainty**: Material-specific lighting settings
+- **Medium Uncertainty**: Non-standard pattern recognition
+- **Low Uncertainty**: Standard calibration workflow
 
 ### 5. ACT: Knowledge Application
 
-#### Implementation Steps
-1. **Setup Phase**: Apply standard calibration procedure with customer specifications
-2. **Optimization Phase**: Use learned lighting/contrast settings for High-Tg FR4
-3. **Validation Phase**: Test placement accuracy with sample substrates
-4. **Documentation Phase**: Record successful calibration parameters
+**Input**: Composed knowledge + task  
+**Output**: Task execution + performance feedback
+
+#### Execution Strategy
+
+**Phase 1: Equipment Setup (1-2 hours)**
+- **Action**: Configure vision system based on equipment capabilities
+- **Knowledge Applied**: Equipment specifications (Relational)
+- **Validation**: System self-test and parameter verification
+- **Success Criteria**: Vision system ready for calibration
+
+**Phase 2: Material Configuration (1-2 hours)**
+- **Action**: Apply High-Tg FR4 lighting and contrast settings
+- **Knowledge Applied**: Material properties + optimization techniques (Vector)
+- **Validation**: Fiducial pattern recognition test
+- **Success Criteria**: Clear fiducial detection with >90% confidence
+
+**Phase 3: Calibration Execution (2-3 hours)**
+- **Action**: Execute composed calibration workflow
+- **Knowledge Applied**: Calibration workflow + customer specifications (Semi-structured)
+- **Validation**: Step-by-step accuracy verification
+- **Success Criteria**: ±0.1mm accuracy achieved
+
+**Phase 4: Final Validation (30-60 minutes)**
+- **Action**: Comprehensive accuracy testing with sample substrates
+- **Knowledge Applied**: Calibration standards (Prior + Topical)
+- **Validation**: Multiple test runs with statistical analysis
+- **Success Criteria**: 95%+ accuracy across test samples
 
 #### Performance Tracking
-- **Setup Time**: Target <6 hours (vs. current 2-3 days)
-- **Accuracy**: Achieve ±0.1mm placement accuracy
-- **Success Rate**: 95%+ first-time calibration success
-- **Knowledge Capture**: Document all calibration parameters and settings
+
+**Real-time Metrics**
+- **Setup Time**: Track actual vs. target (6 hours)
+- **Accuracy Measurements**: Continuous monitoring during calibration
+- **Success Rate**: Track each calibration attempt
+- **Knowledge Usage**: Log which knowledge units were accessed
+
+**Quality Gates**
+- **Gate 1**: Equipment setup complete and verified
+- **Gate 2**: Material configuration achieves >90% fiducial detection
+- **Gate 3**: Calibration achieves ±0.1mm accuracy
+- **Gate 4**: Final validation passes all acceptance criteria
+
+**Risk Mitigation**
+- **Escalation Triggers**: Accuracy >±0.15mm, setup time >8 hours
+- **Fallback Procedures**: Vendor support contact, alternative equipment
+- **Documentation**: Record all decisions and parameter settings
 
 ### 6. LEARN: Knowledge Evolution
 
-#### Feedback Integration
-- **Success Metrics**: Setup time reduced to 4 hours, accuracy achieved
-- **Knowledge Updates**: 
-  - Calibration parameters for this customer pattern
-  - Lighting settings for High-Tg FR4 substrates
-  - Troubleshooting steps for similar non-standard patterns
+**Input**: Performance feedback + outcomes  
+**Output**: Improved knowledge base + new synthetic knowledge
 
-#### Knowledge Promotion
-- **Experiential → Documentary**: Successful calibration procedure becomes standard
-- **Documentary → Prior**: Customer fiducial specifications become reference
-- **Pattern Recognition**: Similar non-standard patterns can use adapted procedure
+#### Outcome Analysis
 
-#### Continuous Improvement
-- **Usage Tracking**: Monitor how often this knowledge is accessed
-- **Performance Correlation**: Link knowledge usage to setup success rates
-- **Knowledge Gaps**: Identify areas needing additional documentation or training
+**Success Metrics Evaluation**
+- **Setup Time**: Actual 4.5 hours vs. target 6 hours (25% improvement)
+- **Accuracy**: Achieved ±0.08mm vs. requirement ±0.1mm (20% margin)
+- **Success Rate**: 100% first-time success vs. target 95%
+- **Knowledge Effectiveness**: All retrieved knowledge units contributed to success
+
+**Performance Insights**
+- **High-Performing Knowledge**: Equipment specifications (100% accuracy), calibration workflow (100% success)
+- **Medium-Performing Knowledge**: Material properties (90% accuracy), optimization techniques (85% success)
+- **Knowledge Gaps**: None identified for this specific use case
+
+#### Knowledge Updates and Promotion
+
+**New Knowledge Units Created**
+```
+KUnit: "High-Tg FR4 Vision Calibration Parameters"
+- Phase: Experiential → Documentary
+- Type: Procedural
+- Content: Optimized lighting/contrast settings for High-Tg FR4 substrates
+- Confidence: 0.9 (validated through successful implementation)
+- Usage: Applicable to all High-Tg FR4 calibration projects
+
+KUnit: "Non-Standard Fiducial Calibration Workflow"
+- Phase: Experiential → Documentary
+- Type: Procedural
+- Content: Adapted calibration procedure for non-standard patterns
+- Confidence: 0.85 (proven effective)
+- Usage: Template for similar non-standard pattern calibrations
+```
+
+**Knowledge Promotion Strategy**
+1. **Experiential → Documentary**: Successful calibration parameters become standard procedures
+2. **Documentary → Prior**: Customer specifications become reference for similar projects
+3. **Pattern Recognition**: Non-standard pattern calibration becomes a recognized workflow type
+
+#### Synthetic Knowledge Generation
+
+**Pattern-Based Synthesis**
+- **Pattern**: Non-standard fiducial + High-Tg FR4 + ±0.1mm accuracy
+- **Synthesis**: "Universal calibration approach for non-standard patterns on high-performance substrates"
+- **Confidence**: 0.8 (based on successful pattern recognition)
+- **Application**: Similar projects can use this synthesized approach
+
+**Optimization Synthesis**
+- **Pattern**: Multiple successful High-Tg FR4 calibrations
+- **Synthesis**: "Optimal lighting configuration for high-performance substrates"
+- **Confidence**: 0.85 (based on consistent success across projects)
+- **Application**: Future High-Tg FR4 projects can use optimized settings
+
+#### Continuous Improvement Loop
+
+**Usage Analytics**
+- **Knowledge Access Patterns**: Track which knowledge units are most frequently accessed
+- **Success Correlation**: Link knowledge usage to project success rates
+- **Efficiency Metrics**: Measure time savings from knowledge reuse
+
+**Knowledge Health Monitoring**
+- **Confidence Decay**: Monitor knowledge confidence over time
+- **Usage Frequency**: Identify underutilized or obsolete knowledge
+- **Performance Trends**: Track knowledge effectiveness across multiple projects
+
+**Gap Identification**
+- **Emerging Requirements**: Identify new customer requirements not covered by existing knowledge
+- **Failure Analysis**: Analyze failed attempts to identify knowledge gaps
+- **Technology Evolution**: Track equipment and material changes requiring knowledge updates
 
 ## Expected Outcomes
 
