@@ -58,9 +58,9 @@ Dana is built on cognitive computing principles that mirror human reasoning:
 
 ### Domain-Aware Processing
 
-The CORRAL lifecycle (Collect, Organize, Retrieve, Reason, Act, Learn) represents a fundamental approach to domain knowledge management:
+The CORRAL lifecycle (Curate, Organize, Retrieve, Reason, Act, Learn) represents a fundamental approach to domain knowledge management:
 
-- Collect: Systematic knowledge acquisition
+- Curate: Systematic knowledge acquisition from diverse sources, including human interviews and synthesis
 - Organize: Structured representation and storage
 - Retrieve: Context-aware knowledge access
 - Reason: Inference and decision-making
