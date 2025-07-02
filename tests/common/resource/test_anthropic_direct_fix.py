@@ -11,7 +11,7 @@ class TestAnthropicDirectFix:
     """Direct unit test for the Anthropic system message fix."""
 
     def test_anthropic_system_message_transformation(self):
-        """Test that Anthropic models get system messages moved to top-level parameter."""
+        """Test that Anthropic models keep system messages in messages array for AISuite."""
         # Create LLMQueryExecutor with Anthropic model
         executor = LLMQueryExecutor(model="anthropic:claude-3-5-sonnet-20240620")
         
@@ -27,14 +27,14 @@ class TestAnthropicDirectFix:
         # Call the method we fixed
         result = executor._build_default_request_params(request)
         
-        # Verify Anthropic-specific transformations
-        assert "system" in result, "Expected top-level 'system' parameter for Anthropic"
-        assert result["system"] == "You are a helpful AI assistant. Respond concisely and accurately."
+        # Verify NO manual system parameter is added (AISuite handles this)
+        assert "system" not in result, "No manual system parameter should be added to avoid conflicts"
         
-        # Verify no system messages in messages array
+        # Verify system messages remain in messages array for AISuite to handle
         messages = result["messages"]
         system_messages = [msg for msg in messages if msg.get("role") == "system"]
-        assert len(system_messages) == 0, "Expected no system messages in messages array for Anthropic"
+        assert len(system_messages) == 1, "System messages should remain in messages array for AISuite"
+        assert system_messages[0]["content"] == "You are a helpful AI assistant. Respond concisely and accurately."
         
         # Verify user message is preserved
         user_messages = [msg for msg in messages if msg.get("role") == "user"]
@@ -45,8 +45,8 @@ class TestAnthropicDirectFix:
         assert result["model"] == "anthropic:claude-3-5-sonnet-20240620"
         assert result["temperature"] == 0.7
 
-    def test_anthropic_multiple_system_messages_combined(self):
-        """Test that multiple system messages are combined for Anthropic."""
+    def test_anthropic_multiple_system_messages_preserved(self):
+        """Test that multiple system messages are preserved for AISuite to handle."""
         executor = LLMQueryExecutor(model="anthropic:claude-3-haiku-20240307")
         
         request = {
@@ -59,14 +59,15 @@ class TestAnthropicDirectFix:
         
         result = executor._build_default_request_params(request)
         
-        # Multiple system messages should be combined with newlines
-        expected_system = "You are a helpful AI assistant.\nRespond concisely and accurately."
-        assert result["system"] == expected_system
+        # No manual system parameter should be created
+        assert "system" not in result, "No manual system parameter should be created"
         
-        # No system messages should remain in messages array
+        # All system messages should remain in messages array for AISuite
         messages = result["messages"]
         system_messages = [msg for msg in messages if msg.get("role") == "system"]
-        assert len(system_messages) == 0
+        assert len(system_messages) == 2, "All system messages should remain for AISuite"
+        assert system_messages[0]["content"] == "You are a helpful AI assistant."
+        assert system_messages[1]["content"] == "Respond concisely and accurately."
 
     def test_openai_system_message_unchanged(self):
         """Test that OpenAI models keep system messages in messages array."""
@@ -132,8 +133,8 @@ class TestAnthropicDirectFix:
         assert len(messages) == 1
         assert messages[0]["role"] == "user"
 
-    def test_anthropic_empty_system_message_excluded(self):
-        """Test that empty system messages are excluded from the system parameter."""
+    def test_anthropic_empty_system_message_preserved(self):
+        """Test that empty system messages are preserved for AISuite to handle."""
         executor = LLMQueryExecutor(model="anthropic:claude-3-sonnet-20240229")
         
         request = {
@@ -146,7 +147,12 @@ class TestAnthropicDirectFix:
         
         result = executor._build_default_request_params(request)
         
-        # Empty system message content should still be included (joined with newline)
-        # This maintains consistency with the implementation
-        expected_system = "\nYou are a helpful AI assistant."
-        assert result["system"] == expected_system 
+        # No manual system parameter should be created
+        assert "system" not in result, "No manual system parameter should be created"
+        
+        # All system messages (including empty ones) should be preserved
+        messages = result["messages"]
+        system_messages = [msg for msg in messages if msg.get("role") == "system"]
+        assert len(system_messages) == 2, "All system messages should be preserved"
+        assert system_messages[0]["content"] == ""
+        assert system_messages[1]["content"] == "You are a helpful AI assistant." 
