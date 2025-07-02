@@ -495,8 +495,9 @@ class LLMResource(BaseResource):
             self._query_executor.set_mock_llm_call(self._mock_llm_call)
 
         # Delegate to query executor
+        # Let query executor handle request parameter building (including Anthropic transformation)
         return await self._query_executor.query_iterative(
-            request, tool_call_handler=self._call_requested_tools, build_request_params=self._build_request_params
+            request, tool_call_handler=self._call_requested_tools
         )
 
     async def _query_once(self, request: dict[str, Any]) -> dict[str, Any]:
@@ -518,8 +519,9 @@ class LLMResource(BaseResource):
         if self._mock_llm_call is not None:
             self._query_executor.set_mock_llm_call(self._mock_llm_call)
 
-        # Delegate to query executor
-        return await self._query_executor.query_once(request, build_request_params=self._build_request_params)
+        # Delegate to query executor  
+        # Let query executor handle request parameter building (including Anthropic transformation)
+        return await self._query_executor.query_once(request)
 
     async def _mock_llm_query(self, request: dict[str, Any]) -> dict[str, Any]:
         """Mock LLM query for testing purposes.
@@ -544,8 +546,8 @@ class LLMResource(BaseResource):
         Returns:
             Dict[str, Any]: Dictionary of request parameters
         """
-        # Note: AISuite automatically handles Anthropic system message transformation,
-        # so we don't need to do it manually. This avoids conflicts.
+        # CRITICAL DISCOVERY: AISuite automatically handles Anthropic system message transformation
+        # but creates conflicts if we also add system parameters. Let AISuite handle it.
         return self._tool_call_manager.build_request_params(request, self.aisuite_model_name, available_resources)
 
     def _get_openai_functions(self, resources: dict[str, BaseResource]) -> list[OpenAIFunctionCall]:

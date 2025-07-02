@@ -52,8 +52,13 @@ class LLMToolCallManager(Loggable):
         """
         from opendxa.common.utils.misc import Misc
 
+        # Get original messages
+        original_messages = Misc.get_field(request, "messages", [])
+        
+        # Let AISuite handle system message transformation completely
+        # Just pass messages as-is - AISuite will transform them correctly for each provider
         params = {
-            "messages": Misc.get_field(request, "messages", []),
+            "messages": original_messages,
             "temperature": Misc.get_field(request, "temperature", 0.7),
         }
 
