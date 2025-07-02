@@ -38,7 +38,7 @@ class TestListModelsFunction(unittest.TestCase):
         # Should return a list of strings
         self.assertIsInstance(result, list)
         self.assertGreater(len(result), 0)
-        
+
         # All items should be strings
         for model in result:
             self.assertIsInstance(model, str)
@@ -67,7 +67,7 @@ class TestListModelsFunction(unittest.TestCase):
         # Should return only OpenAI models
         self.assertIsInstance(result, list)
         self.assertGreater(len(result), 0)
-        
+
         for model in result:
             self.assertTrue(model.startswith("openai:"), f"Model {model} should start with 'openai:'")
 
@@ -78,7 +78,7 @@ class TestListModelsFunction(unittest.TestCase):
         # Should return only Anthropic models
         self.assertIsInstance(result, list)
         self.assertGreater(len(result), 0)
-        
+
         for model in result:
             self.assertTrue(model.startswith("anthropic:"), f"Model {model} should start with 'anthropic:'")
 
@@ -89,7 +89,7 @@ class TestListModelsFunction(unittest.TestCase):
         # Should return only DeepSeek models
         self.assertIsInstance(result, list)
         self.assertGreater(len(result), 0)
-        
+
         for model in result:
             self.assertTrue(model.startswith("deepseek:"), f"Model {model} should start with 'deepseek:'")
 
@@ -116,10 +116,11 @@ class TestListModelsFunction(unittest.TestCase):
         result = list_models_function(self.context)
 
         # The first model should be the top preferred model from the config
-        self.assertEqual(result[0], "local")
-        
+        # Based on opendxa_config.json, "openai:gpt-4o-mini" is the first preferred model
+        self.assertEqual(result[0], "openai:gpt-4o-mini")
+
         # Check that another preferred model is also present
-        self.assertIn("openai:gpt-4o-mini", result)
+        self.assertIn("local", result)
 
     def test_openai_models_preference_order(self):
         """Test that OpenAI models are in the correct preference order."""
@@ -127,19 +128,19 @@ class TestListModelsFunction(unittest.TestCase):
 
         # Should have multiple OpenAI models
         self.assertGreater(len(result), 1)
-        
+
         # The first OpenAI model should be the most preferred one
         self.assertEqual(result[0], "openai:gpt-4o-mini")
 
     def test_function_error_handling(self):
         """Test error handling in the function."""
         # Mock _get_available_model_names to raise an exception
-        with patch('opendxa.dana.sandbox.interpreter.functions.core.list_models_function._get_available_model_names') as mock_get_models:
+        with patch("opendxa.dana.sandbox.interpreter.functions.core.list_models_function._get_available_model_names") as mock_get_models:
             mock_get_models.side_effect = Exception("Test error")
-            
+
             with self.assertRaises(SandboxError) as context:
                 list_models_function(self.context)
-            
+
             self.assertIn("Unexpected error listing models", str(context.exception))
 
     def test_unknown_option_ignored(self):
@@ -152,4 +153,4 @@ class TestListModelsFunction(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

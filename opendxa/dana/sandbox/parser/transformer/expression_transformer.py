@@ -316,7 +316,7 @@ class ExpressionTransformer(BaseTransformer):
             op_token = first_item
             if len(items) < 2:
                 raise ValueError(f"Factor with operator {op_token} has no operand")
-            
+
             right = self.expression([items[1]])
             right_expr = cast(Expression, right)
 
@@ -576,10 +576,10 @@ class ExpressionTransformer(BaseTransformer):
         -----------------------
         The TrailerProcessor implements sequential trailer processing to properly
         support method chaining. For example:
-        
+
         df.groupby(df.index).mean() becomes:
         1. df (base)
-        2. .groupby(df.index) -> ObjectFunctionCall  
+        2. .groupby(df.index) -> ObjectFunctionCall
         3. .mean() -> ObjectFunctionCall on result of step 2
 
         Args:
@@ -587,19 +587,19 @@ class ExpressionTransformer(BaseTransformer):
 
         Returns:
             AST node (ObjectFunctionCall, FunctionCall, AttributeAccess, or SubscriptExpression)
-            
+
         Raises:
             SandboxError: If trailer processing fails or chain is too long
         """
         from opendxa.dana.sandbox.parser.transformer.trailer_processor import TrailerProcessor
-        
+
         # Initialize trailer processor if not already done
-        if not hasattr(self, '_trailer_processor'):
+        if not hasattr(self, "_trailer_processor"):
             self._trailer_processor = TrailerProcessor(self)
-        
+
         base = items[0]
         trailers = items[1:]
-        
+
         # Use the trailer processor to handle the chain
         return self._trailer_processor.process_trailers(base, trailers)
 

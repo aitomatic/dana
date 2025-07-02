@@ -18,7 +18,14 @@ Features:
 import json
 import os
 from collections.abc import Callable
-from typing import Any, cast
+from typing import Any
+
+# Apply AISuite/Anthropic compatibility patch
+from opendxa.common.utils.aisuite_patch import apply_aisuite_patch, is_patch_applied
+
+# Ensure patch is applied
+if not is_patch_applied():
+    apply_aisuite_patch()
 
 import aisuite as ai
 from openai.types.chat import ChatCompletion
@@ -27,7 +34,6 @@ from opendxa.common.config import ConfigLoader
 from opendxa.common.exceptions import (
     ConfigurationError,
     LLMError,
-    ResourceError,
 )
 from opendxa.common.mixins.tool_callable import OpenAIFunctionCall
 from opendxa.common.resource.base_resource import BaseResource
@@ -40,6 +46,10 @@ from opendxa.common.utils.misc import Misc
 # To avoid accidentally sending too much data to the LLM,
 # we limit the total length of tool-call responses.
 MAX_TOOL_CALL_RESPONSE_LENGTH = 10000
+
+# AISuite compatibility constants - KISS approach to eliminate duplication
+AISUITE_UNSUPPORTED_PARAMS = {"proxies", "model_name", "api_type"}
+AISUITE_SUPPORTED_PARAMS = {"api_key", "base_url", "organization", "project", "timeout", "max_retries", "default_headers", "default_query"}
 
 
 class LLMResource(BaseResource):
@@ -59,7 +69,7 @@ class LLMResource(BaseResource):
     Attributes:
         model: The selected LLM model name (can be set explicitly or determined automatically).
         preferred_models: List of preferred models used for automatic selection.
-                          Format: `[{"name": "provider:model_name", "required_api_keys": ["ENV_VAR_NAME"]}]`
+                          Format: `[{"name": "provider:model_name", "required_env_vars": ["ENV_VAR_NAME"]}]`
         config: The final configuration dictionary used for LLM calls, incorporating
                 defaults from ConfigLoader and constructor overrides.
 
@@ -90,8 +100,8 @@ class LLMResource(BaseResource):
         # Uses a custom list for automatic selection, ignoring the list in the config.
         # Requires API keys for models in *this* list.
         custom_models = [
-            {"name": "anthropic:claude-3-opus", "required_api_keys": ["ANTHROPIC_API_KEY"]},
-            {"name": "groq:llama3-70b", "required_api_keys": ["GROQ_API_KEY"]}
+            {"name": "anthropic:claude-3-opus", "required_env_vars": ["ANTHROPIC_API_KEY"]},
+            {"name": "groq:llama3-70b", "required_env_vars": ["GROQ_API_KEY"]}
         ]
         llm = LLMResource(name="custom_selection_llm", preferred_models=custom_models)
         ```
@@ -112,7 +122,7 @@ class LLMResource(BaseResource):
         ```
 
     **Important:** For automatic model selection (`_find_first_available_model`)
-    to work correctly, the environment variables listed in `required_api_keys`
+    to work correctly, the environment variables listed in `required_env_vars`
     for the models in the effective `preferred_models` list must be set.
     """
 
@@ -129,7 +139,7 @@ class LLMResource(BaseResource):
             model: Explicitly sets the model to use, overriding automatic selection.
             preferred_models: Overrides the preferred models list from the config file.
                               Used for automatic model selection if `model` is not set.
-                              Format: `[{"name": "p:m", "required_api_keys": ["K"]}]`
+                              Format: `[{"name": "p:m", "required_env_vars": ["K"]}]`
             **kwargs: Additional configuration parameters (e.g., temperature, max_tokens)
                       that override values from the config file.
         """
@@ -191,6 +201,35 @@ class LLMResource(BaseResource):
             query_strategy=self.get_query_strategy(),
             query_max_iterations=self.get_query_max_iterations(),
         )
+        # Initialize the LLM client
+        self._client = None
+
+        # Load provider configs from base_config
+        if "llm" in base_config and "provider_configs" in base_config["llm"]:
+            raw_provider_configs = base_config["llm"]["provider_configs"]
+            self.debug(f"Raw provider_configs from config: {raw_provider_configs}")
+            self.provider_configs = self._resolve_env_vars_in_provider_configs(raw_provider_configs)
+            self.debug(f"Resolved provider_configs: {self.provider_configs}")
+        else:
+            self.provider_configs = {}
+            self.debug("No provider_configs found in config file, using empty dict.")
+
+        # Merge provider_configs from kwargs (allows overriding config file settings)
+        if "provider_configs" in kwargs:
+            self.debug("Merging provider_configs from constructor arguments.")
+            for provider, config in kwargs["provider_configs"].items():
+                if provider in self.provider_configs:
+                    # Update existing provider config with new values
+                    self.provider_configs[provider].update(config)
+                    self.debug(f"Updated provider config for '{provider}' with constructor values.")
+                else:
+                    # Add new provider config
+                    self.provider_configs[provider] = config
+                    self.debug(f"Added new provider config for '{provider}' from constructor.")
+
+        self._started = False
+        # Don't auto-initialize - use lazy initialization
+
         # --- Build final configuration ---
         # Priority: kwargs -> base_config
         self.config = base_config.copy()  # Start with base config
@@ -205,30 +244,60 @@ class LLMResource(BaseResource):
         # Mocking setup
         self._mock_llm_call: bool | Callable[[dict[str, Any]], dict[str, Any]] | None = None
 
-        # Initialize the LLM client
-        self._client = None
-        self.provider_configs = {}
-        self._started = False
-        # Don't auto-initialize - use lazy initialization
-
     @property
     def model(self) -> str | None:
         """The currently selected LLM model name."""
         return self._model
 
+    @property
+    def physical_model_name(self) -> str | None:
+        """The physical model name to send to AISuite."""
+        if self._model == "local":
+            # For local models, get the actual model name from provider config
+            local_config = self.provider_configs.get("local", {})
+            return local_config.get("model_name", "local")
+        elif self._model and self._model.startswith("vllm:"):
+            # Handle vLLM model name transformation
+            base_name = self._model.replace("vllm:", "openai:", 1)
+            # Check for environment variable override
+            physical_override = os.getenv("VLLM_API_MODEL_NAME")
+            if physical_override:
+                return f"openai:{physical_override}"
+            return base_name
+        return self._model
+
+    @property
+    def aisuite_model_name(self) -> str | None:
+        """The model name to send to AISuite in API calls."""
+        if self._model == "local":
+            # For local models, use api_type from config (default to "openai")
+            local_config = self.provider_configs.get("local", {})
+            api_type = local_config.get("api_type", "openai")
+            physical_model = local_config.get("model_name", "local")
+            return f"{api_type}:{physical_model}"
+        elif self._model and self._model.startswith("vllm:"):
+            # Handle vLLM model name transformation
+            base_name = self._model.replace("vllm:", "openai:", 1)
+            # Check for environment variable override
+            physical_override = os.getenv("VLLM_API_MODEL_NAME")
+            if physical_override:
+                return f"openai:{physical_override}"
+            return base_name
+        return self._model
+
     @model.setter
     def model(self, value: str) -> None:
-        """Sets the LLM model, validating its availability."""
-        try:
+        """Set the model and force reinitialization with new provider config."""
+        if value != self._model:
             self._config_manager.selected_model = value
-            self._model = value  # Keep backward compatibility
-            self.config["model"] = value  # Keep config in sync
-            self.info(f"LLM model set to: {self._model}")
-        except Exception as e:
-            self.warning(f"Setting model to '{value}', but validation failed: {e}")
-            # Still set it for backward compatibility
             self._model = value
             self.config["model"] = value
+            self.info(f"LLM model set to: {self._model}")
+
+            # Force reinitialization when model changes
+            self._client = None
+            self._started = False
+            self._is_available = False
 
     def query_sync(self, request: BaseRequest) -> BaseResponse:
         """Query the LLM synchronously.
@@ -284,47 +353,34 @@ class LLMResource(BaseResource):
             return BaseResponse(success=False, content={"error": str(e)}, error=str(e))
 
     async def initialize(self) -> None:
-        """Initialize the AISuite client etc."""
+        """Initialize the AISuite client with the current model's provider configuration."""
         if not self._client:
             self.debug("Initializing AISuite client...")
 
-            # Prepare provider configs for aisuite
-            final_provider_configs = self.provider_configs.copy()
+            # Get provider configuration for current model
+            provider_configs = self._get_provider_config_for_current_model()
 
-            # If 'local' model is configured, check for environment variables.
-            # If they exist, point the 'openai' provider to the local server.
-            # Otherwise, log a warning and continue, allowing fallback to other models.
-            preferred_model_names = [p.get("name") for p in self.config.get("preferred_models", [])]
-            if "local" in preferred_model_names:
-                self.debug("Local LLM detected in preferences, checking environment variables...")
-                local_url = os.getenv("LOCAL_LLM_URL")
-                local_name = os.getenv("LOCAL_LLM_NAME")
-
-                if local_url and local_name:
-                    # If env vars are set, re-route the openai provider to the local URL.
-                    self.debug(f"Local LLM environment variables found. Re-routing 'openai' provider to {local_url}")
-                    if "openai" not in final_provider_configs:
-                        final_provider_configs["openai"] = {}
-                    final_provider_configs["openai"]["base_url"] = local_url
-                    # Explicitly set api_key to empty to prevent sending AUTH headers to local server
-                    final_provider_configs["openai"]["api_key"] = ""
-                else:
-                    # If env vars are not set, just log a warning. The 'local' model
-                    # will be skipped later in the availability check.
-                    self.warning(
-                        "Local LLM is configured, but 'LOCAL_LLM_URL' or 'LOCAL_LLM_NAME' is missing. "
-                        "The 'local' model will be unavailable."
-                    )
+            if not provider_configs:
+                self.error("No valid provider configuration found for current model")
+                self._is_available = False
+                return
 
             try:
-                self._client = ai.Client(provider_configs=final_provider_configs)
+                # Workaround for AISuite 0.1.11 proxies bug
+                # Filter out problematic parameters that AISuite might add internally
+                cleaned_provider_configs = self._clean_provider_configs_for_aisuite(provider_configs)
+
+                self.debug(f"Initializing AISuite client with provider_configs: {cleaned_provider_configs}")
+                # Check for any unexpected keys in provider_configs
+                for provider, config in cleaned_provider_configs.items():
+                    self.debug(f"Provider {provider} config keys: {list(config.keys())}")
+                    if "proxies" in config:
+                        self.warning(f"Found 'proxies' key in {provider} config: {config['proxies']}")
+
+                self._client = ai.Client(provider_configs=cleaned_provider_configs)
                 self.debug("AISuite client initialized successfully.")
-
-                # Set client on query executor
                 self._query_executor.client = self._client
-                self._query_executor.model = self.model
-
-                # Only log if we have a model
+                self._query_executor.model = self.aisuite_model_name  # Use AISuite-compatible model name
                 if self.model:
                     self.info("LLM client initialized successfully for model: %s", self.model)
                     self._is_available = True
@@ -334,6 +390,34 @@ class LLMResource(BaseResource):
             except Exception as e:
                 self.error(f"Failed to initialize AISuite client: {e}")
                 self._is_available = False
+
+    def _clean_provider_configs_for_aisuite(self, provider_configs: dict[str, Any]) -> dict[str, Any]:
+        """Clean provider configs to work around AISuite 0.1.11 compatibility issues.
+
+        This method filters out problematic parameters that cause issues with
+        AISuite 0.1.11 and its dependencies, particularly the 'proxies' parameter
+        that causes conflicts with the underlying HTTP client.
+
+        Args:
+            provider_configs: Original provider configurations
+
+        Returns:
+            Cleaned provider configurations safe for AISuite
+        """
+        cleaned_configs = {}
+
+        for provider, config in provider_configs.items():
+            cleaned_config = {}
+            for key, value in config.items():
+                if key not in AISUITE_UNSUPPORTED_PARAMS:
+                    cleaned_config[key] = value
+                else:
+                    self.debug(f"Filtering out problematic parameter '{key}' for provider '{provider}' (AISuite compatibility)")
+
+            if cleaned_config:  # Only add provider if it has valid config
+                cleaned_configs[provider] = cleaned_config
+
+        return cleaned_configs
 
     async def cleanup(self) -> None:
         """Cleanup resources."""
@@ -389,7 +473,7 @@ class LLMResource(BaseResource):
             Dict[str, Any]: The final LLM response after all tool calls are complete
         """
         # Update query executor with current settings
-        self._query_executor.model = self.model
+        self._query_executor.model = self.aisuite_model_name  # Use AISuite-compatible model name
         self._query_executor.query_strategy = self.get_query_strategy()
         self._query_executor.query_max_iterations = self.get_query_max_iterations()
 
@@ -398,9 +482,8 @@ class LLMResource(BaseResource):
             self._query_executor.set_mock_llm_call(self._mock_llm_call)
 
         # Delegate to query executor
-        return await self._query_executor.query_iterative(
-            request, tool_call_handler=self._call_requested_tools, build_request_params=self._build_request_params
-        )
+        # Let query executor handle request parameter building (including Anthropic transformation)
+        return await self._query_executor.query_iterative(request, tool_call_handler=self._call_requested_tools)
 
     async def _query_once(self, request: dict[str, Any]) -> dict[str, Any]:
         """Make a single call to the LLM with the given request.
@@ -414,7 +497,7 @@ class LLMResource(BaseResource):
             Dict[str, Any]: The LLM response object
         """
         # Update query executor with current settings
-        self._query_executor.model = self.model
+        self._query_executor.model = self.aisuite_model_name  # Use AISuite-compatible model name
         self._query_executor.client = self._client
 
         # Set mock if configured
@@ -422,7 +505,8 @@ class LLMResource(BaseResource):
             self._query_executor.set_mock_llm_call(self._mock_llm_call)
 
         # Delegate to query executor
-        return await self._query_executor.query_once(request, build_request_params=self._build_request_params)
+        # Let query executor handle request parameter building (including Anthropic transformation)
+        return await self._query_executor.query_once(request)
 
     async def _mock_llm_query(self, request: dict[str, Any]) -> dict[str, Any]:
         """Mock LLM query for testing purposes.
@@ -447,7 +531,9 @@ class LLMResource(BaseResource):
         Returns:
             Dict[str, Any]: Dictionary of request parameters
         """
-        return self._tool_call_manager.build_request_params(request, self.model, available_resources)
+        # CRITICAL DISCOVERY: AISuite automatically handles Anthropic system message transformation
+        # but creates conflicts if we also add system parameters. Let AISuite handle it.
+        return self._tool_call_manager.build_request_params(request, self.aisuite_model_name, available_resources)
 
     def _get_openai_functions(self, resources: dict[str, BaseResource]) -> list[OpenAIFunctionCall]:
         """Get OpenAI functions from available resources.
@@ -507,26 +593,26 @@ class LLMResource(BaseResource):
         model = request.get("model", self.model or "unknown")
         temperature = request.get("temperature", 0.7)
         max_tokens = request.get("max_tokens", "unspecified")
-        
+
         self.info(f"🤖 LLM Request to {model} (temp={temperature}, max_tokens={max_tokens})")
-        
+
         # Log each message in the conversation
         for i, message in enumerate(messages):
             role = message.get("role", "unknown")
             content = message.get("content", "")
-            
+
             # Truncate very long content for readability
             if isinstance(content, str) and len(content) > 300:
                 content_preview = content[:300] + "... [truncated]"
             else:
                 content_preview = content
-                
-            self.info(f"  [{i+1}] {role.upper()}: {content_preview}")
-            
+
+            self.info(f"  [{i + 1}] {role.upper()}: {content_preview}")
+
             # Log tool calls if present
             if "tool_calls" in message and message["tool_calls"]:
                 self.info(f"    Tool calls: {len(message['tool_calls'])} tools requested")
-        
+
         # Keep debug level for full request details
         self.debug("LLM request (full): %s", json.dumps(request, indent=2))
 
@@ -540,19 +626,19 @@ class LLMResource(BaseResource):
         choices = response.choices if hasattr(response, "choices") else []
         usage = response.usage if hasattr(response, "usage") else None
         model = response.model if hasattr(response, "model") else "unknown"
-        
+
         if choices and len(choices) > 0:
             message = choices[0].message
             role = message.role if hasattr(message, "role") else "assistant"
             content = message.content if hasattr(message, "content") else ""
             tool_calls = message.tool_calls if hasattr(message, "tool_calls") else None
-            
+
             # Log response summary
             prompt_tokens = usage.prompt_tokens if usage and hasattr(usage, "prompt_tokens") else 0
             completion_tokens = usage.completion_tokens if usage and hasattr(usage, "completion_tokens") else 0
-            
+
             self.info(f"📝 LLM Response from {model} ({prompt_tokens} + {completion_tokens} tokens)")
-            
+
             # Log content if present
             if content:
                 # Truncate very long content for readability
@@ -561,14 +647,16 @@ class LLMResource(BaseResource):
                 else:
                     content_preview = content
                 self.info(f"  {role.upper()}: {content_preview}")
-            
+
             # Log tool calls if present
             if tool_calls:
                 self.info(f"  🔧 Tool calls: {len(tool_calls)} tools requested")
                 for i, tool_call in enumerate(tool_calls):
-                    function_name = tool_call.function.name if hasattr(tool_call, "function") and hasattr(tool_call.function, "name") else "unknown"
-                    self.info(f"    [{i+1}] {function_name}")
-        
+                    function_name = (
+                        tool_call.function.name if hasattr(tool_call, "function") and hasattr(tool_call.function, "name") else "unknown"
+                    )
+                    self.info(f"    [{i + 1}] {function_name}")
+
         # Keep debug level for full response details
         self.debug("LLM response (full): %s", str(response))
 
@@ -618,7 +706,7 @@ class LLMResource(BaseResource):
         """Finds the first available model from the preferred_models list.
 
         Iterates through `self.preferred_models` and returns the name of the
-        first model for which all `required_api_keys` are set as environment vars.
+        first model for which all `required_env_vars` are set as environment vars.
 
         Returns:
             The name of the first available model, or None if none are available.
@@ -637,37 +725,133 @@ class LLMResource(BaseResource):
         self.debug(f"Available models based on API keys: {available}")
         return available
 
+    def _resolve_env_vars_in_provider_configs(self, provider_configs: dict[str, Any]) -> dict[str, Any]:
+        """Resolve environment variable references in provider configs.
+
+        Converts values like "env:ANTHROPIC_API_KEY" to the actual environment variable value.
+
+        Args:
+            provider_configs: Provider configuration dictionary
+
+        Returns:
+            Provider configuration with environment variables resolved
+        """
+        resolved_configs = {}
+
+        for provider, config in provider_configs.items():
+            resolved_config = {}
+            for key, value in config.items():
+                if isinstance(value, str) and value.startswith("env:"):
+                    # Extract environment variable name
+                    env_var_name = value[4:]  # Remove "env:" prefix
+                    env_value = os.getenv(env_var_name)
+                    if env_value:
+                        resolved_config[key] = env_value
+                        self.debug(f"Resolved {provider}.{key} from environment variable {env_var_name}")
+                    else:
+                        self.debug(f"Environment variable {env_var_name} not set for {provider}.{key}")
+                        # Don't include the key if env var is not set
+                        continue
+                else:
+                    resolved_config[key] = value
+
+            if resolved_config:  # Only include provider if it has valid config
+                resolved_configs[provider] = resolved_config
+
+        return resolved_configs
+
+    def _get_provider_config_for_current_model(self) -> dict[str, Any]:
+        """Get the provider configuration for the current model."""
+        # Determine provider from model name
+        if not self._model:
+            self.warning("No model set")
+            return {}
+
+        provider = self._get_provider_from_model(self._model)
+
+        if not provider:
+            self.warning(f"Could not determine provider for model: {self._model}")
+            return {}
+
+        # Get provider config from configuration
+        provider_config = self.provider_configs.get(provider, {})
+
+        if not provider_config:
+            self.warning(f"No provider configuration found for provider: {provider}")
+            return {}
+
+        # Resolve environment variables in provider config
+        resolved_config = self._resolve_provider_config(provider_config)
+
+        if not resolved_config:
+            self.warning(f"No valid configuration after resolving environment variables for provider: {provider}")
+            return {}
+
+        # Use the consolidated helper method for all model-specific transformations
+        return self._get_aisuite_config_for_model(self._model, resolved_config)
+
     def _is_model_available(self, model_info: dict[str, Any]) -> bool:
         """Check if a given model is available based on required API keys."""
         model_name = model_info.get("name")
         if not model_name:
             return False
 
-        # Special handling for the 'local' model
+        # Delegate to the configuration manager for validation
+        return self._validate_model(model_name)
+
+    def _get_provider_from_model(self, model_name: str) -> str | None:
+        """Extract provider name from model name."""
         if model_name == "local":
-            local_url = os.getenv("LOCAL_LLM_URL")
-            local_name = os.getenv("LOCAL_LLM_NAME")
-            if local_url and local_name:
-                self.debug("Found 'local' model with required environment variables.")
-                return True
-            self.debug("Skipping 'local' model as environment variables are not set.")
-            return False
+            return "local"
+        elif ":" in model_name:
+            return model_name.split(":", 1)[0]
+        else:
+            return None
 
-        # Standard handling for other models
-        try:
-            provider, _ = model_name.split(":", 1)
-        except ValueError:
-            self.warning(f"Invalid model format: {model_name}")
-            return False
+    def _resolve_provider_config(self, provider_config: dict[str, Any]) -> dict[str, Any]:
+        """Resolve environment variables in a single provider config."""
+        resolved_config = {}
 
-        # Check if the provider is available
-        if provider not in self.provider_configs:
-            self.warning(f"Provider {provider} not found in provider_configs")
-            return False
+        for key, value in provider_config.items():
+            # Filter out unsupported parameters using constants
+            if key not in AISUITE_SUPPORTED_PARAMS:
+                self.debug(f"Filtering out unsupported parameter {key} (not supported by aisuite)")
+                continue
 
-        # Check if the model is available
-        if model_name not in self.provider_configs[provider]:
-            self.warning(f"Model {model_name} not found in provider_configs")
-            return False
+            if isinstance(value, str) and value.startswith("env:"):
+                # Extract environment variable name
+                env_var = value[4:]  # Remove "env:" prefix
+                env_value = os.getenv(env_var)
+                if env_value:
+                    resolved_config[key] = env_value
+                    self.debug(f"Resolved {key} from environment variable {env_var}")
+                else:
+                    # Don't include the config if env var is not set
+                    self.debug(f"Environment variable {env_var} not set for {key}, skipping")
+                    continue
+            else:
+                # Use value as-is
+                resolved_config[key] = value
 
-        return True
+        return resolved_config
+
+    def _get_aisuite_config_for_model(self, model_name: str, provider_config: dict[str, Any]) -> dict[str, Any]:
+        """Single method to handle all model-specific AISuite config transformation."""
+        if model_name == "local":
+            # Local models use the api_type from config (default to "openai")
+            api_type = provider_config.get("api_type", "openai")
+            filtered_config = self._filter_aisuite_params(provider_config)
+            return {api_type: filtered_config}
+        elif model_name and model_name.startswith("vllm:"):
+            # vLLM models use OpenAI provider in AISuite
+            filtered_config = self._filter_aisuite_params(provider_config)
+            return {"openai": filtered_config}
+        else:
+            # Standard provider:model format
+            provider = model_name.split(":", 1)[0] if ":" in model_name else "openai"
+            filtered_config = self._filter_aisuite_params(provider_config)
+            return {provider: filtered_config}
+
+    def _filter_aisuite_params(self, config: dict[str, Any]) -> dict[str, Any]:
+        """Filter config parameters for AISuite compatibility using constants."""
+        return {k: v for k, v in config.items() if k in AISUITE_SUPPORTED_PARAMS}

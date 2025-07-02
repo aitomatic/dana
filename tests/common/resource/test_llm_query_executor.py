@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from opendxa.common.exceptions import LLMError
 from opendxa.common.mixins.queryable import QueryStrategy
 from opendxa.common.resource.llm_query_executor import LLMQueryExecutor
+from opendxa.common.utils.misc import Misc
 
 
 class TestLLMQueryExecutor(unittest.IsolatedAsyncioTestCase):
@@ -73,7 +74,10 @@ class TestLLMQueryExecutor(unittest.IsolatedAsyncioTestCase):
         self.assertIn("choices", response)
         self.assertEqual(len(response["choices"]), 1)
         self.assertEqual(response["choices"][0]["message"]["role"], "assistant")
-        self.assertIn("This is a mock response. In a real scenario, I would provide a thoughtful answer to: Hello, how are you?", response["choices"][0]["message"]["content"])
+        self.assertIn(
+            "This is a mock response. In a real scenario, I would provide a thoughtful answer to: Hello, how are you?",
+            response["choices"][0]["message"]["content"],
+        )
         self.assertEqual(response["model"], "mock-model")
 
     async def test_mock_llm_query_no_messages(self):
@@ -181,8 +185,8 @@ class TestLLMQueryExecutor(unittest.IsolatedAsyncioTestCase):
     @patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "false"})
     async def test_query_once_success(self):
         """Test successful query_once execution."""
-        # Set up mock client
-        mock_client = AsyncMock()
+        # Set up mock client (aisuite is synchronous)
+        mock_client = MagicMock()
         mock_response_dict = {
             "choices": [{"message": {"role": "assistant", "content": "Test response"}}],
             "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
@@ -192,7 +196,7 @@ class TestLLMQueryExecutor(unittest.IsolatedAsyncioTestCase):
         mock_response_obj = MagicMock()
         mock_response_obj.model_dump.return_value = mock_response_dict
 
-        mock_client.chat.completions.create = AsyncMock(return_value=mock_response_obj)
+        mock_client.chat.completions.create = MagicMock(return_value=mock_response_obj)
 
         self.query_executor.client = mock_client
         self.query_executor.model = "openai:gpt-4"
@@ -350,6 +354,179 @@ class TestLLMQueryExecutorIntegration(unittest.TestCase):
         self.assertTrue(hasattr(query_executor, "error"))
         self.assertTrue(hasattr(query_executor, "debug"))
         self.assertTrue(hasattr(query_executor, "info"))
+
+
+class TestLLMQueryExecutorAnthropicIntegration(unittest.TestCase):
+    """Integration tests for Anthropic-specific functionality in LLMQueryExecutor."""
+
+    def setUp(self):
+        """Set up test environment."""
+        self.executor = LLMQueryExecutor(model="anthropic:claude-3-5-sonnet-20240620")
+
+    @patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "false"}, clear=False)
+    @patch("aisuite.Client")
+    def test_anthropic_system_message_transformation_in_query_executor(self, mock_client_class):
+        """Test that LLMQueryExecutor preserves system messages for AISuite to handle."""
+        # Mock AISuite client
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+
+        # Mock response with proper model_dump method
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = "Test response"
+        mock_response.choices[0].message.role = "assistant"
+        mock_response.choices[0].message.tool_calls = None
+        mock_response.usage.prompt_tokens = 10
+        mock_response.usage.completion_tokens = 5
+        mock_response.model = "claude-3-5-sonnet-20240620"
+
+        # Properly mock the model_dump method that's called in query_once
+        mock_response.model_dump.return_value = {
+            "choices": [{"message": {"content": "Test response", "role": "assistant"}}],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+            "model": "claude-3-5-sonnet-20240620",
+        }
+
+        # Since query_once calls .create synchronously, not async
+        mock_client.chat.completions.create = MagicMock(return_value=mock_response)
+        self.executor.client = mock_client
+        self.executor._is_initialized = True  # Mark as initialized to skip auto-init
+        self.executor._mock_llm_call = None  # Disable mock to use our mocked client
+
+        # Create request with system messages
+        request = {
+            "messages": [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": "what is pi?"}],
+            "temperature": 0.7,
+        }
+
+        # Execute query
+        result = Misc.safe_asyncio_run(self.executor.query_once, request)
+
+        # Verify the call was made
+        self.assertTrue(mock_client.chat.completions.create.called)
+        call_args = mock_client.chat.completions.create.call_args
+        request_params = call_args.kwargs if call_args.kwargs else call_args.args[0]
+
+        # Verify system messages remain in messages array for AISuite to handle
+        messages = request_params.get("messages", [])
+        system_messages_in_array = [msg for msg in messages if msg.get("role") == "system"]
+
+        # System messages should remain for AISuite to transform automatically
+        self.assertEqual(len(system_messages_in_array), 1, "System messages should remain in messages array for AISuite to handle")
+        self.assertEqual(system_messages_in_array[0]["content"], "You are a helpful assistant.")
+
+        # Verify NO manual system parameter is created (prevents conflicts)
+        self.assertNotIn("system", request_params, "No manual system parameter should be created to avoid conflicts with AISuite")
+
+        # Verify user message is preserved
+        user_messages = [msg for msg in messages if msg.get("role") == "user"]
+        self.assertEqual(len(user_messages), 1)
+        self.assertEqual(user_messages[0]["content"], "what is pi?")
+
+    def test_build_default_request_params_anthropic_system_transformation(self):
+        """Test that _build_default_request_params preserves system messages for AISuite to handle."""
+        # Set up executor with Anthropic model
+        executor = LLMQueryExecutor(model="anthropic:claude-3-5-sonnet-20240620")
+
+        # Create request with system messages
+        request = {
+            "messages": [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "system", "content": "Always be accurate."},
+                {"role": "user", "content": "test question"},
+            ],
+            "temperature": 0.7,
+        }
+
+        # Call the method that should preserve messages for AISuite
+        result_params = executor._build_default_request_params(request)
+
+        # Verify NO manual system parameter is created (AISuite handles this)
+        self.assertNotIn("system", result_params, "No manual system parameter should be created")
+
+        # Verify system messages remain in messages array for AISuite to transform
+        messages = result_params.get("messages", [])
+        system_in_messages = [msg for msg in messages if msg.get("role") == "system"]
+        self.assertEqual(len(system_in_messages), 2, "System messages should remain in messages array for AISuite")
+        self.assertEqual(system_in_messages[0]["content"], "You are a helpful assistant.")
+        self.assertEqual(system_in_messages[1]["content"], "Always be accurate.")
+
+        # Verify user message is preserved
+        user_messages = [msg for msg in messages if msg.get("role") == "user"]
+        self.assertEqual(len(user_messages), 1)
+
+    def test_build_default_request_params_openai_unchanged(self):
+        """Test that OpenAI models don't get system message transformation."""
+        # Set up executor with OpenAI model
+        executor = LLMQueryExecutor(model="openai:gpt-4")
+
+        # Create request with system messages
+        request = {
+            "messages": [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": "test question"}],
+            "temperature": 0.7,
+        }
+
+        # Call the method
+        result_params = executor._build_default_request_params(request)
+
+        # For OpenAI, system messages should remain in messages array
+        messages = result_params.get("messages", [])
+        system_messages = [msg for msg in messages if msg.get("role") == "system"]
+        self.assertEqual(len(system_messages), 1)
+
+        # Should NOT have top-level system parameter
+        self.assertNotIn("system", result_params)
+
+    def test_build_default_request_params_vllm_unchanged(self):
+        """Test that vLLM models don't get system message transformation."""
+        # Set up executor with vLLM model (should be treated like OpenAI)
+        executor = LLMQueryExecutor(model="vllm:llama3.2")
+
+        # Create request with system messages
+        request = {
+            "messages": [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": "test question"}],
+            "temperature": 0.7,
+        }
+
+        # Call the method
+        result_params = executor._build_default_request_params(request)
+
+        # Check that vLLM translation happened correctly
+        self.assertEqual(result_params["model"], "openai:llama3.2")
+
+        # For vLLM (OpenAI-compatible), system messages should remain in messages array
+        messages = result_params.get("messages", [])
+        system_messages = [msg for msg in messages if msg.get("role") == "system"]
+        self.assertEqual(len(system_messages), 1)
+
+        # Should NOT have top-level system parameter for vLLM
+        self.assertNotIn("system", result_params)
+
+    def test_anthropic_system_message_edge_cases_in_query_executor(self):
+        """Test edge cases for Anthropic system message transformation in query executor."""
+        executor = LLMQueryExecutor(model="anthropic:claude-3-5-sonnet-20240620")
+
+        # Test with empty system message
+        request = {"messages": [{"role": "system", "content": ""}, {"role": "user", "content": "test"}]}
+
+        result_params = executor._build_default_request_params(request)
+
+        # Empty system messages should be excluded
+        self.assertNotIn("system", result_params)
+
+        # Test with only user messages (no system messages)
+        request = {"messages": [{"role": "user", "content": "test"}]}
+
+        result_params = executor._build_default_request_params(request)
+
+        # Should not have system parameter
+        self.assertNotIn("system", result_params)
+
+        # Should preserve user message
+        messages = result_params.get("messages", [])
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(messages[0]["role"], "user")
 
 
 if __name__ == "__main__":

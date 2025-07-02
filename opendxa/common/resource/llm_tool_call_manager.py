@@ -52,29 +52,21 @@ class LLMToolCallManager(Loggable):
         """
         from opendxa.common.utils.misc import Misc
 
+        # Get original messages
+        original_messages = Misc.get_field(request, "messages", [])
+
+        # Let AISuite handle system message transformation completely
+        # Just pass messages as-is - AISuite will transform them correctly for each provider
         params = {
-            "messages": Misc.get_field(request, "messages", []),
+            "messages": original_messages,
             "temperature": Misc.get_field(request, "temperature", 0.7),
         }
 
         if Misc.has_field(request, "max_tokens"):
             params["max_tokens"] = Misc.get_field(request, "max_tokens")
 
-        final_model_name_for_api = model
-        # If the model is 'local', resolve it to the physical model name
-        # from the environment variable.
-        if model == "local":
-            self.debug("Model is 'local', resolving from LOCAL_LLM_NAME environment variable.")
-            local_name = os.getenv("LOCAL_LLM_NAME")
-            if not local_name:
-                raise LLMError(
-                    "Model is 'local' but LOCAL_LLM_NAME environment variable is not set."
-                )
-            final_model_name_for_api = local_name
-            self.debug(f"Resolved 'local' to physical model: {final_model_name_for_api}")
-
-        if final_model_name_for_api:
-            params["model"] = final_model_name_for_api
+        if model:
+            params["model"] = model
 
         if available_resources:
             params["tools"] = self.get_openai_functions(available_resources)

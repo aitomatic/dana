@@ -47,8 +47,8 @@ class DocumentLoader(BaseStage):
     async def _load_sources(self, sources: list[str]) -> dict[str, list[Document]]:
         tasks = [self._load(source) for source in sources]
         results = await asyncio.gather(*tasks)
-        return {source: result for source, result in zip(sources, results)} 
-    
+        return {source: result for source, result in zip(sources, results)}
+
     @staticmethod
     def resolve_single_source(source: str) -> str:
         if source.startswith("http"):

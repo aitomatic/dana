@@ -12,12 +12,15 @@ from opendxa.contrib.rag_resource.common.resource.rag.pipeline.unified_cache_man
 
 
 class RAGOrchestrator(Loggable):
-    def __init__(self, loader: DocumentLoader | None = None, 
-                 chunker: DocumentChunker | None = None, 
-                 index_builder: IndexBuilder | None = None, 
-                 index_combiner: IndexCombiner | None = None, 
-                 cache_manager: UnifiedCacheManager | None = None,
-                 retriever_cls: type[Retriever] = Retriever):
+    def __init__(
+        self,
+        loader: DocumentLoader | None = None,
+        chunker: DocumentChunker | None = None,
+        index_builder: IndexBuilder | None = None,
+        index_combiner: IndexCombiner | None = None,
+        cache_manager: UnifiedCacheManager | None = None,
+        retriever_cls: type[Retriever] = Retriever,
+    ):
         super().__init__()
         self.loader = loader if loader else DocumentLoader()
         self.chunker = chunker if chunker else DocumentChunker()
@@ -33,7 +36,7 @@ class RAGOrchestrator(Loggable):
 
     async def _async_preprocess(self, sources: list[str], force_reload: bool = False):
         """Preprocess sources with comprehensive caching strategy.
-        
+
         This method implements a cache-first approach that:
         1. Checks for cached combined index first
         2. Uses cached documents and indices when available
@@ -42,7 +45,7 @@ class RAGOrchestrator(Loggable):
         """
         sources = self.resolve_sources(sources)
         self.debug(f"Preprocessing {len(sources)} sources: {sources}")
-        
+
         # Skip all cache checks if force_reload is True
         if not force_reload:
             # First check if we have a cached combined index for these exact sources
@@ -60,15 +63,15 @@ class RAGOrchestrator(Loggable):
             self.debug("Force reload: bypassing all cache checks")
             cached_docs_by_source = {source: None for source in sources}
             cached_indices_by_source = {source: None for source in sources}
-        
+
         # Filter out None values and convert to proper types
         docs_by_source: dict[str, list[Document]] = {}
         indices_by_source: dict[str, VectorStoreIndex] = {}
-        
+
         # Initialize what needs to be loaded/processed
         sources_needing_docs = list(sources)  # Start with all sources
         sources_needing_indices = list(sources)  # Start with all sources
-        
+
         # Process cached documents (skip if force_reload)
         if not force_reload:
             for source in sources:
@@ -80,7 +83,7 @@ class RAGOrchestrator(Loggable):
                     # Remove from sources needing docs since we have valid cached docs
                     if source in sources_needing_docs:
                         sources_needing_docs.remove(source)
-        
+
         # Process cached indices (skip if force_reload)
         if not force_reload:
             for source in sources:
@@ -90,10 +93,10 @@ class RAGOrchestrator(Loggable):
                     # Remove from sources needing indices since we have valid cached index
                     if source in sources_needing_indices:
                         sources_needing_indices.remove(source)
-        
+
         self.debug(f"Sources needing docs: {sources_needing_docs}")
         self.debug(f"Sources needing indices: {sources_needing_indices}")
-        
+
         # Load missing documents
         if sources_needing_docs:
             self.debug(f"Loading documents for {len(sources_needing_docs)} sources")
@@ -101,17 +104,16 @@ class RAGOrchestrator(Loggable):
             docs_by_source.update(new_docs_by_source)
             # Cache newly loaded documents
             await self.cache_manager.set_docs_by_source(new_docs_by_source)
-        
+
         # Process documents through chunker
         # NOTE: We don't need to chunk documents because LlamaIndex does it automatically under the hood.
         # if docs_by_source:
         #     self.debug(f"Chunking documents for {len(docs_by_source)} sources")
         #     docs_by_source = await self.chunker.chunk_documents(docs_by_source)
-        
+
         # Build missing indices
         if sources_needing_indices:
-            docs_for_indexing = {s: docs_by_source[s] for s in sources_needing_indices 
-                               if s in docs_by_source}
+            docs_for_indexing = {s: docs_by_source[s] for s in sources_needing_indices if s in docs_by_source}
             if docs_for_indexing:
                 self.debug(f"Building indices for {len(docs_for_indexing)} sources")
                 try:
@@ -122,48 +124,46 @@ class RAGOrchestrator(Loggable):
                 indices_by_source.update(new_indices_by_source)
                 # Cache newly built indices
                 await self.cache_manager.set_indicies_by_source(new_indices_by_source)
-        
+
         if not indices_by_source:
             raise RuntimeError("No valid indices available for any source")
-        
+
         # Combine indices
         self.debug(f"Combining {len(indices_by_source)} indices")
         combined_index = await self.index_combiner.combine_indices(indices_by_source, docs_by_source)
-        
+
         # Cache combined index (always cache, even with force_reload)
         await self.cache_manager.set_combined_index(sources, combined_index)
-        
+
         # Create retriever
         self._retriever = self._retriever_cls.from_index(combined_index)
         self.debug("Preprocessing completed successfully")
 
     def _preprocess(self, sources: list[str], force_reload: bool = False):
         """Preprocess sources with optional cache bypass.
-        
+
         Args:
-            sources: List of source identifiers  
+            sources: List of source identifiers
             force_reload: If True, bypass all caches and reprocess everything
         """
         if force_reload:
             self.debug("Force reload requested - bypassing caches")
-        
+
         Misc.safe_asyncio_run(self._async_preprocess, sources, force_reload)
-        
+
     async def retrieve(self, query: str, num_results: int = 10) -> list[NodeWithScore]:
         """Retrieve relevant documents for the given query.
-        
+
         Args:
             query: Search query string
             num_results: Maximum number of results to return
-            
+
         Returns:
             List of NodeWithScore objects containing relevant documents
-            
+
         Raises:
             ValueError: If retriever is not initialized (call _preprocess first)
         """
         if self._retriever is None:
             raise ValueError("Retriever not initialized. Call _preprocess() with sources first.")
         return await self._retriever.aretrieve(query, num_results)
-    
-            

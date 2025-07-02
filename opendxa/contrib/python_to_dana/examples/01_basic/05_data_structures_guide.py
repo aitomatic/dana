@@ -69,7 +69,6 @@ def demo_complex_structs():
         print(f"   Active: {user.active}")
         print(f"   Tags: {user.tags}")
 
-
         # ✅ AI-powered analysis of the struct
         analysis = data_structures.analyze_user_profile(user)
         print("\n🧠 AI Analysis:")

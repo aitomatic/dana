@@ -108,17 +108,17 @@ class DXALogger:
 
     def _configure_third_party_logging(self) -> None:
         """Configure third-party library logging to reduce noise.
-        
+
         This suppresses verbose logging from libraries commonly used in OpenDXA
         that produce excessive output at INFO level.
         """
         # HTTP client libraries
         for logger_name in ["httpx", "httpcore", "h11", "openai", "urllib3"]:
             logging.getLogger(logger_name).setLevel(logging.WARNING)
-        
+
         # Suppress httpx._client specifically as it's particularly verbose
         logging.getLogger("httpx._client").setLevel(logging.WARNING)
-        
+
         # Other commonly noisy libraries
         for logger_name in ["asyncio", "filelock"]:
             logging.getLogger(logger_name).setLevel(logging.WARNING)

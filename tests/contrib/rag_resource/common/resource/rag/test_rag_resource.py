@@ -25,14 +25,14 @@ class TestRAGResource:
         """Test basic initialization."""
         sources = ["test.txt"]
         resource = RAGResource(sources=sources)
-        
+
         # Mock the orchestrator
         mock_orchestrator = Mock()
         mock_orchestrator._preprocess = Mock()
         resource._orchestrator = mock_orchestrator
-        
+
         await resource.initialize()
-        
+
         assert resource._is_ready is True
         mock_orchestrator._preprocess.assert_called_once_with(sources, False)
 
@@ -42,18 +42,18 @@ class TestRAGResource:
         sources = ["test.txt"]
         resource = RAGResource(sources=sources)
         resource._is_ready = True
-        
+
         # Mock orchestrator response
         mock_node = Mock(spec=NodeWithScore)
         mock_node.node = Mock()
         mock_node.node.get_content.return_value = "Test content"
-        
+
         mock_orchestrator = Mock()
         mock_orchestrator.retrieve = AsyncMock(return_value=[mock_node])
         resource._orchestrator = mock_orchestrator
-        
+
         result = await resource.query("test query")
-        
+
         # RAGResource returns a string, not a list
         assert result == "Test content"
-        mock_orchestrator.retrieve.assert_called_once_with("test query", 10) 
+        mock_orchestrator.retrieve.assert_called_once_with("test query", 10)

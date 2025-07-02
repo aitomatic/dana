@@ -12,7 +12,6 @@ The IndexBuilder class is responsible for:
 - Optimizing embedding reuse during index creation
 """
 
-
 from llama_index.core import VectorStoreIndex
 from llama_index.core.schema import Document
 
@@ -62,7 +61,7 @@ class IndexBuilder(BaseStage):
 
         # Create individual source indices in parallel
         individual_indices = {}
-        
+
         for source_key, documents in docs_by_source.items():
             if not documents:
                 self.debug(f"Warning: No documents for source {source_key}, skipping")

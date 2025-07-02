@@ -17,10 +17,7 @@ def has_openai_api_key():
 
 
 # Pytest fixture to skip tests requiring OpenAI API key
-openai_required = pytest.mark.skipif(
-    not has_openai_api_key(),
-    reason="OpenAI API key required for integration tests"
-)
+openai_required = pytest.mark.skipif(not has_openai_api_key(), reason="OpenAI API key required for integration tests")
 
 
 class TestDocumentChunker:
@@ -44,11 +41,9 @@ class TestDocumentChunker:
     async def test_chunk_documents_disabled(self):
         """Test that chunking disabled returns original documents."""
         chunker = DocumentChunker(use_chunking=False)
-        
-        docs_by_source = {
-            "test.txt": [Document(text="Test document")]
-        }
-        
+
+        docs_by_source = {"test.txt": [Document(text="Test document")]}
+
         result = await chunker.chunk_documents(docs_by_source)
         assert result == docs_by_source
 
@@ -64,21 +59,19 @@ class TestDocumentChunker:
     async def test_real_chunking(self):
         """Test actual chunking with real SentenceSplitter."""
         chunker = DocumentChunker(chunk_size=50, chunk_overlap=10, use_chunking=True)
-        
+
         # Long text that will definitely be chunked
         long_text = "This is a sentence. " * 20
-        docs_by_source = {
-            "test.txt": [Document(text=long_text, metadata={"source": "test.txt"})]
-        }
-        
+        docs_by_source = {"test.txt": [Document(text=long_text, metadata={"source": "test.txt"})]}
+
         result = await chunker.chunk_documents(docs_by_source)
-        
+
         # Should have chunks
         chunks = result["test.txt"]
         assert len(chunks) >= 1
-        
+
         # Each chunk should have metadata
         for chunk in chunks:
             assert "chunk_index" in chunk.metadata
             assert "total_chunks" in chunk.metadata
-            assert chunk.metadata["source"] == "test.txt" 
+            assert chunk.metadata["source"] == "test.txt"

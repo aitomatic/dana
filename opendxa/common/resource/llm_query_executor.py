@@ -8,7 +8,6 @@ MIT License
 """
 
 import os
-import re
 from collections.abc import Awaitable, Callable
 from typing import Any, cast
 
@@ -18,7 +17,6 @@ from openai.types.chat import ChatCompletion
 
 from opendxa.common.exceptions import (
     LLMAuthenticationError,
-    LLMContextLengthError,
     LLMError,
     LLMProviderError,
     LLMRateLimitError,
@@ -153,21 +151,27 @@ class LLMQueryExecutor(Loggable):
         else:
             max_iterations = 1
 
-        # Add a system prompt that encourages resource use if not provided
-        system_messages = Misc.get_field(
-            request,
-            "system_messages",
-            [
-                "You are an assistant. Use tools when necessary to complete tasks. "
-                "After receiving tool results, you can request additional tools if needed."
-            ],
-        )
-
         user_messages = Misc.get_field(request, "user_messages", Misc.get_field(request, "messages", ["Hello, how are you?"]))
+
+        # Check if user messages already contain system messages
+        has_user_system_messages = any(isinstance(msg, dict) and msg.get("role") == "system" for msg in user_messages)
+
+        # Only add default system prompt if user hasn't provided their own
+        if not has_user_system_messages:
+            system_messages = Misc.get_field(
+                request,
+                "system_messages",
+                [
+                    "You are an assistant. Use tools when necessary to complete tasks. "
+                    "After receiving tool results, you can request additional tools if needed."
+                ],
+            )
+        else:
+            system_messages = Misc.get_field(request, "system_messages", [])
 
         # Initialize message history with system and user messages
         message_history: list[dict[str, Any]] = []
-        if system_messages:
+        if system_messages and not has_user_system_messages:
             # Ensure system messages are strings before joining
             system_content = "\n".join([str(msg) for msg in system_messages])
             message_history.append({"role": "system", "content": system_content})
@@ -356,13 +360,16 @@ class LLMQueryExecutor(Loggable):
 
         # Make the API call
         try:
-            # Make the actual API call
-            response: ChatCompletion = await self.client.chat.completions.create(
+            # Make the actual API call (aisuite is synchronous)
+            response: ChatCompletion = self._client.chat.completions.create(
                 **request_params,
             )
             self.info("LLM query successful")
             self._log_llm_response(response)
-            return response.model_dump()
+
+            # Convert AISuite response to dictionary format
+            # AISuite returns ChatCompletionResponse which doesn't have model_dump()
+            return self._convert_response_to_dict(response)
 
         except AuthenticationError as e:
             provider = self.model.split(":", 1)[0] if self.model else "unknown"
@@ -398,8 +405,8 @@ class LLMQueryExecutor(Loggable):
         if not last_message:
             raise LLMError("No user message found in message history")
 
-        content = last_message['content']
-        
+        content = last_message["content"]
+
         # Intelligent response based on prompt analysis
         mock_content = self._generate_intelligent_mock_response(content)
 
@@ -412,36 +419,42 @@ class LLMQueryExecutor(Loggable):
 
     def _generate_intelligent_mock_response(self, prompt: str) -> str:
         """Generate intelligent mock responses based on prompt analysis.
-        
+
         Args:
             prompt: The user prompt to analyze
-            
+
         Returns:
             str: Appropriate mock response
         """
         prompt_lower = prompt.lower()
-        
+
         # Detect POET-enhanced prompts with format instructions (updated patterns)
-        is_boolean_prompt = ("respond with clear yes/no" in prompt_lower or 
-                           "respond only with yes or no" in prompt_lower or
-                           'return format: "yes" or "no"' in prompt_lower)
+        is_boolean_prompt = (
+            "respond with clear yes/no" in prompt_lower
+            or "respond only with yes or no" in prompt_lower
+            or 'return format: "yes" or "no"' in prompt_lower
+        )
         is_integer_prompt = "return only the final integer number" in prompt_lower
         is_float_prompt = "return only the final numerical value as a decimal" in prompt_lower
-        is_dict_prompt = ("return only a valid json object" in prompt_lower or 
-                         "format your response as a json object" in prompt_lower or
-                         "return a json object" in prompt_lower)
-        is_list_prompt = ("return only a valid json array" in prompt_lower or
-                         "format your response as a json array" in prompt_lower or
-                         "return a json array" in prompt_lower)
-        
+        is_dict_prompt = (
+            "return only a valid json object" in prompt_lower
+            or "format your response as a json object" in prompt_lower
+            or "return a json object" in prompt_lower
+        )
+        is_list_prompt = (
+            "return only a valid json array" in prompt_lower
+            or "format your response as a json array" in prompt_lower
+            or "return a json array" in prompt_lower
+        )
+
         # Boolean questions with enhanced prompts
         if is_boolean_prompt:
             if any(term in prompt_lower for term in ["invest", "renewable", "proceed", "continue", "approve"]):
                 return "yes"
             else:
                 return "no"
-        
-        # Integer questions with enhanced prompts  
+
+        # Integer questions with enhanced prompts
         if is_integer_prompt:
             if "planets" in prompt_lower and "solar system" in prompt_lower:
                 return "8"
@@ -451,7 +464,7 @@ class LLMQueryExecutor(Loggable):
                 return "365"
             else:
                 return "42"  # Default integer
-        
+
         # Float questions with enhanced prompts
         if is_float_prompt:
             if "pi" in prompt_lower:
@@ -460,7 +473,7 @@ class LLMQueryExecutor(Loggable):
                 return "37.0"
             else:
                 return "3.14"  # Default float
-        
+
         # Dict questions with enhanced prompts
         if is_dict_prompt:
             if "moon" in prompt_lower:
@@ -469,7 +482,7 @@ class LLMQueryExecutor(Loggable):
                 return '{"diameter_km": "6779", "distance_from_sun_au": "1.52", "orbital_period_days": "687"}'
             else:
                 return '{"result": "mock_data", "status": "success"}'
-        
+
         # List questions with enhanced prompts
         if is_list_prompt:
             if "planets" in prompt_lower and ("first 4" in prompt_lower or "4 planets" in prompt_lower):
@@ -478,7 +491,7 @@ class LLMQueryExecutor(Loggable):
                 return '["red", "blue", "yellow"]'
             else:
                 return '["item1", "item2", "item3"]'
-        
+
         # Regular questions without POET enhancement
         if "capital" in prompt_lower and "france" in prompt_lower:
             return "Paris"
@@ -528,16 +541,76 @@ class LLMQueryExecutor(Loggable):
                 final_model_name_for_api = f"openai:{physical_model_override}"
                 self.debug(f"Overriding with physical model from VLLM_API_MODEL_NAME: {final_model_name_for_api}")
 
+        # Build basic request parameters
         request_params = {
             "model": final_model_name_for_api,
             "messages": Misc.get_field(request, "messages", [{"role": "user", "content": "Hello"}]),
             "temperature": Misc.get_field(request, "temperature", 0.7),
         }
+
         # Only include max_tokens if it's actually provided in the request
         if "max_tokens" in request and request["max_tokens"] is not None:
             request_params["max_tokens"] = request["max_tokens"]
 
+        # Include tools if available_resources are provided
+        available_resources = Misc.get_field(request, "available_resources", None)
+        if available_resources:
+            request_params["tools"] = self._get_openai_functions_from_resources(available_resources)
+
+        # Let AISuite handle Anthropic system message transformation automatically
+        # Manual transformation causes "multiple values for keyword argument 'system'" error
+        # because AISuite also transforms system messages internally
+
         return request_params
+
+    def _transform_anthropic_system_messages(self, request_params: dict[str, Any]) -> dict[str, Any]:
+        """Transform system messages for Anthropic models.
+
+        Anthropic expects system messages as a top-level 'system' parameter,
+        not in the messages array.
+
+        Args:
+            request_params: Original request parameters
+
+        Returns:
+            Dict[str, Any]: Transformed request parameters
+        """
+        messages = request_params.get("messages", [])
+        system_messages = []
+        non_system_messages = []
+
+        # Separate system messages from other messages
+        for message in messages:
+            if message.get("role") == "system":
+                content = message.get("content", "")
+                system_messages.append(content)  # Include all system messages, even empty ones
+            else:
+                non_system_messages.append(message)
+
+        # Update request parameters
+        result = request_params.copy()
+        result["messages"] = non_system_messages
+
+        # Add system parameter if we have system messages
+        if system_messages:
+            result["system"] = "\n".join(system_messages)
+
+        return result
+
+    def _get_openai_functions_from_resources(self, resources: dict[str, Any]) -> list[dict[str, Any]]:
+        """Get OpenAI functions from available resources.
+
+        Args:
+            resources: Dictionary of available resources
+
+        Returns:
+            List[dict[str, Any]]: List of tool definitions
+        """
+        functions = []
+        for _, resource in resources.items():
+            if hasattr(resource, "list_openai_functions"):
+                functions.extend(resource.list_openai_functions())
+        return functions
 
     def _log_llm_request(self, request_params: dict[str, Any]) -> None:
         """Log the LLM request details.
@@ -550,22 +623,22 @@ class LLMQueryExecutor(Loggable):
         model = request_params.get("model", "unknown")
         temperature = request_params.get("temperature", 0.7)
         max_tokens = request_params.get("max_tokens", "unspecified")
-        
+
         self.info(f"🤖 LLM Request to {model} (temp={temperature}, max_tokens={max_tokens})")
-        
+
         # Log each message in the conversation
         for i, message in enumerate(messages):
             role = message.get("role", "unknown")
             content = message.get("content", "")
-            
+
             # Truncate very long content for readability
             if isinstance(content, str) and len(content) > 500:
                 content_preview = content[:500] + "... [truncated]"
             else:
                 content_preview = content
-                
-            self.info(f"  [{i+1}] {role.upper()}: {content_preview}")
-            
+
+            self.info(f"  [{i + 1}] {role.upper()}: {content_preview}")
+
             # Log tool calls if present
             if "tool_calls" in message and message["tool_calls"]:
                 self.info(f"    Tool calls: {len(message['tool_calls'])} tools requested")
@@ -580,19 +653,19 @@ class LLMQueryExecutor(Loggable):
         choices = response.choices if hasattr(response, "choices") else []
         usage = response.usage if hasattr(response, "usage") else None
         model = response.model if hasattr(response, "model") else "unknown"
-        
+
         if choices and len(choices) > 0:
             message = choices[0].message
             role = message.role if hasattr(message, "role") else "assistant"
             content = message.content if hasattr(message, "content") else ""
             tool_calls = message.tool_calls if hasattr(message, "tool_calls") else None
-            
+
             # Log response summary
             prompt_tokens = usage.prompt_tokens if usage and hasattr(usage, "prompt_tokens") else 0
             completion_tokens = usage.completion_tokens if usage and hasattr(usage, "completion_tokens") else 0
-            
+
             self.info(f"📝 LLM Response from {model} ({prompt_tokens} + {completion_tokens} tokens)")
-            
+
             # Log content if present
             if content:
                 # Truncate very long content for readability
@@ -601,13 +674,80 @@ class LLMQueryExecutor(Loggable):
                 else:
                     content_preview = content
                 self.info(f"  {role.upper()}: {content_preview}")
-            
+
             # Log tool calls if present
             if tool_calls:
                 self.info(f"  🔧 Tool calls: {len(tool_calls)} tools requested")
                 for i, tool_call in enumerate(tool_calls):
-                    function_name = tool_call.function.name if hasattr(tool_call, "function") and hasattr(tool_call.function, "name") else "unknown"
-                    self.info(f"    [{i+1}] {function_name}")
-        
+                    function_name = (
+                        tool_call.function.name if hasattr(tool_call, "function") and hasattr(tool_call.function, "name") else "unknown"
+                    )
+                    self.info(f"    [{i + 1}] {function_name}")
+
         # Also keep the debug level logging for full details
         self.debug("LLM response (full): %s", str(response))
+
+    def _convert_response_to_dict(self, response) -> dict[str, Any]:
+        """Convert AISuite response object to dictionary format.
+
+        AISuite returns ChatCompletionResponse objects that don't have model_dump().
+        This method manually converts them to the expected dictionary format.
+
+        Args:
+            response: AISuite ChatCompletionResponse or OpenAI ChatCompletion object
+
+        Returns:
+            Dict[str, Any]: Dictionary representation of the response
+        """
+        # If it's already a dict (from mock), return as-is
+        if isinstance(response, dict):
+            return response
+
+        # If it has model_dump (OpenAI SDK), use it
+        if hasattr(response, "model_dump"):
+            return response.model_dump()
+
+        # For AISuite ChatCompletionResponse, manually convert
+        result = {}
+
+        # Handle choices
+        if hasattr(response, "choices") and response.choices:
+            choices = []
+            for choice in response.choices:
+                choice_dict = {}
+                if hasattr(choice, "message"):
+                    message_dict = {}
+                    if hasattr(choice.message, "role"):
+                        message_dict["role"] = choice.message.role
+                    if hasattr(choice.message, "content"):
+                        message_dict["content"] = choice.message.content
+                    if hasattr(choice.message, "tool_calls"):
+                        message_dict["tool_calls"] = choice.message.tool_calls
+                    choice_dict["message"] = message_dict
+                if hasattr(choice, "finish_reason"):
+                    choice_dict["finish_reason"] = choice.finish_reason
+                choices.append(choice_dict)
+            result["choices"] = choices
+
+        # Handle usage
+        if hasattr(response, "usage"):
+            if isinstance(response.usage, dict):
+                result["usage"] = response.usage
+            else:
+                usage_dict = {}
+                if hasattr(response.usage, "prompt_tokens"):
+                    usage_dict["prompt_tokens"] = response.usage.prompt_tokens
+                if hasattr(response.usage, "completion_tokens"):
+                    usage_dict["completion_tokens"] = response.usage.completion_tokens
+                if hasattr(response.usage, "total_tokens"):
+                    usage_dict["total_tokens"] = response.usage.total_tokens
+                result["usage"] = usage_dict
+
+        # Handle model
+        if hasattr(response, "model"):
+            result["model"] = response.model
+        elif self.model:
+            # Fallback to current model if response doesn't have it
+            result["model"] = self.model
+
+        return result

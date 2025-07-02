@@ -11,13 +11,14 @@ from .abstract_loader import AbstractLoader
 class LocalFileMetadataFunc(_DefaultFileMetadataFunc):
     def __call__(self, file_path: str) -> dict:
         metadata = super().__call__(file_path)
-        metadata['source'] = file_path
+        metadata["source"] = file_path
         return metadata
+
 
 class LocalLoader(AbstractLoader):
     def __init__(self, supported_types: list[str]):
         self.supported_types = supported_types
-        self._encoding = 'utf-8'
+        self._encoding = "utf-8"
         self.filename_as_id = True
         self.metadata_func = LocalFileMetadataFunc()
 

@@ -4,6 +4,7 @@ import os
 import unittest
 from unittest.mock import patch
 
+from opendxa.common.exceptions import LLMError
 from opendxa.common.resource.llm_configuration_manager import LLMConfigurationManager
 from opendxa.common.resource.llm_resource import LLMResource
 
@@ -68,20 +69,16 @@ class TestLLMResourceRefactored(unittest.TestCase):
         # Verify backward compatibility
         self.assertEqual(llm._model, "anthropic:claude-3-5-sonnet-20241022")
 
+    @patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}, clear=True)  # Only have OpenAI key
     def test_model_property_setter_error_handling(self):
         """Test model property setter error handling."""
-        os.environ["OPENAI_API_KEY"] = "test-key"
-
         llm = LLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
-        # Try to set unavailable model (no ANTHROPIC_API_KEY)
-        with patch.object(llm, "warning") as mock_warning:
-            llm.model = "anthropic:claude-3"
+        # Try to set unavailable model (no API key for someprovider)
+        with self.assertRaises(LLMError) as context:
+            llm.model = "someprovider:unavailable-model"
 
-            # Should log warning but still set for backward compatibility
-            mock_warning.assert_called_once()
-            self.assertEqual(llm._model, "anthropic:claude-3")
-            self.assertEqual(llm.config["model"], "anthropic:claude-3")
+        self.assertIn("Invalid or unavailable model", str(context.exception))
 
     def test_validate_model_uses_config_manager(self):
         """Test that _validate_model uses configuration manager."""

@@ -317,6 +317,7 @@ class PythonicFunctionFactory:
         """Enhanced boolean conversion with semantic understanding."""
         try:
             from opendxa.dana.sandbox.interpreter.enhanced_coercion import semantic_bool
+
             return semantic_bool(value)
         except ImportError:
             # Fallback to standard bool if enhanced coercion is not available

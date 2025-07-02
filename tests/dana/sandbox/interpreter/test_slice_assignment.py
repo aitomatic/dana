@@ -165,7 +165,6 @@ result = df.iloc[0, 0]
         assert result.final_context.get("local:result") == 999
 
 
-
 class TestSliceAssignmentEdgeCases:
     """Test edge cases in slice assignment operations."""
 

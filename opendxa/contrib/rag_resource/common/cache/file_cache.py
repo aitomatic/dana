@@ -13,21 +13,22 @@ class AbstractFileCache(AbstractCache):
         self.cache_folder = cache_folder
         os.makedirs(self.cache_folder, exist_ok=True)
 
-    def _get_cache_file_path(self, key:str):
+    def _get_cache_file_path(self, key: str):
         hash_key = Misc.get_hash(key)
         return os.path.join(self.cache_folder, f"{hash_key}.cache")
 
-    def __contains__(self, key:str):
+    def __contains__(self, key: str):
         cache_file_path = self._get_cache_file_path(key)
         return os.path.exists(cache_file_path)
-    
+
     def clear(self):
         for file in os.listdir(self.cache_folder):
             os.remove(os.path.join(self.cache_folder, file))
-    
+
+
 class PickleFileCache(AbstractFileCache):
     @override
-    def get(self, key:str):
+    def get(self, key: str):
         try:
             cache_file_path = self._get_cache_file_path(key)
             if os.path.exists(cache_file_path):
@@ -36,9 +37,9 @@ class PickleFileCache(AbstractFileCache):
         except Exception as e:
             self.logger.error(f"Error getting cache for key {key}: {e}")
         return None
-    
+
     @override
-    def set(self, key:str, value):
+    def set(self, key: str, value):
         if value is None:
             return
         try:
@@ -49,10 +50,9 @@ class PickleFileCache(AbstractFileCache):
             self.logger.error(f"Error setting cache for key {key}: {e}")
 
 
-
 class JsonFileCache(AbstractFileCache):
     @override
-    def get(self, key:str):
+    def get(self, key: str):
         try:
             cache_file_path = self._get_cache_file_path(key)
             if os.path.exists(cache_file_path):
@@ -61,9 +61,9 @@ class JsonFileCache(AbstractFileCache):
         except Exception as e:
             self.logger.error(f"Error getting cache for key {key}: {e}")
         return None
-    
+
     @override
-    def set(self, key:str, value):
+    def set(self, key: str, value):
         if value is None:
             return
         try:
