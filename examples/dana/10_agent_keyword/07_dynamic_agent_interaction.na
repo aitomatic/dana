@@ -66,11 +66,7 @@ log("-" * 40)
 analyst = DefectAnalyst()
 log("\n🔍 Step 1: Defect Analyst Root Cause Analysis")
 defect_analysis = analyst.solve(
-    "Analyze root causes of high defect rate in ion etching (e.g., micro-masking, plasma instability, chamber contamination, mask misalignment)",
-    context={
-        "defect_rate": etch_problem["defect_rate"],
-        "chamber_downtime": etch_problem["chamber_downtime"]
-    }
+    "Analyze root causes of high defect rate in ion etching (e.g., micro-masking, plasma instability, chamber contamination, mask misalignment)"
 )
 
 log("📊 Defect Analyst Response Generated")
@@ -107,14 +103,7 @@ log("\n⚙️ Step 2: Process Engineer Etch Optimization")
 log("🔗 Using Defect Analyst's findings for process optimization")
 
 process_optimization = engineer.solve(
-    "Optimize ion etching process based on root cause analysis findings",
-    context={
-        "defect_causes": rca_findings["primary_defect_causes"],
-        "plasma_issues": rca_findings["plasma_issues"],
-        "chamber_issues": rca_findings["chamber_issues"],
-        "current_defect_rate": etch_problem["defect_rate"],
-        "target_defect_rate": etch_problem["target_defect_rate"]
-    }
+    "Optimize ion etching process based on root cause analysis findings"
 )
 
 log("📊 Process Engineer Response Generated")
@@ -147,14 +136,7 @@ log("\n🔧 Step 3: Equipment Specialist Action Plan")
 log("🔗 Using RCA and process recommendations for equipment strategy")
 
 equipment_plan = equipment.solve(
-    "Develop equipment maintenance and upgrade plan for ion etching based on RCA and process recommendations",
-    context={
-        "chamber_issues": rca_findings["chamber_issues"],
-        "plasma_issues": rca_findings["plasma_issues"],
-        "parameter_tuning": process_recommendations["parameter_tuning"],
-        "monitoring_upgrades": process_recommendations["monitoring_upgrades"],
-        "current_downtime": etch_problem["chamber_downtime"]
-    }
+    "Develop equipment maintenance and upgrade plan for ion etching based on RCA and process recommendations"
 )
 
 log("📊 Equipment Specialist Response Generated")
@@ -186,15 +168,7 @@ log("\n💰 Step 4: Cost Analyst ROI Evaluation")
 log("🔗 Evaluating all findings from previous agents dynamically")
 
 cost_analysis = cost_analyst.solve(
-    "Calculate ROI for all etch process, equipment, and maintenance improvements",
-    context={
-        "process_recommendations": process_recommendations,
-        "equipment_recommendations": equipment_recommendations,
-        "current_monthly_loss": etch_problem["monthly_loss"],
-        "current_defect_rate": etch_problem["defect_rate"],
-        "target_defect_rate": etch_problem["target_defect_rate"],
-        "current_downtime": etch_problem["chamber_downtime"]
-    }
+    "Calculate ROI for all etch process, equipment, and maintenance improvements"
 )
 
 log("📊 Cost Analyst Response Generated")

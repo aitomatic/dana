@@ -27,7 +27,7 @@ log("\n🔧 2. Custom Method Overrides")
 log("-" * 30)
 
 # Override the built-in plan() method with custom logic
-def plan(inspector: QualityInspector, objective: str, context: dict) -> list[str]:
+def plan(inspector: QualityInspector, objective: str) -> list[str]:
     log(f"🔧 Using CUSTOM plan() method for objective: {objective}")
     
     # Custom planning logic based on inspector configuration
@@ -44,7 +44,7 @@ def plan(inspector: QualityInspector, objective: str, context: dict) -> list[str
     return custom_steps
 
 # Override the built-in solve() method with custom logic
-def solve(inspector: QualityInspector, problem: str, context: dict) -> dict:
+def solve(inspector: QualityInspector, problem: str) -> dict:
     log(f"🔧 Using CUSTOM solve() method for problem: {problem}")
     
     # Custom problem-solving logic
@@ -84,25 +84,13 @@ log(f"✅ Created inspector: {inspector}")
 
 # Call plan() - should use CUSTOM method, not built-in AI
 log("\n📋 Testing plan() method (should use CUSTOM):")
-plan_result = inspector.plan(
-    "Inspect wafer batch WB-2024-001",
-    context={
-        "batch_id": "WB-2024-001",
-        "wafer_count": 25
-    }
-)
+plan_result = inspector.plan("Inspect wafer batch WB-2024-001")
 
 log(f"📝 Plan Result: {plan_result}")
 
 # Call solve() - should use CUSTOM method, not built-in AI
 log("\n🔍 Testing solve() method (should use CUSTOM):")
-solve_result = inspector.solve(
-    "High defect rate in etching process",
-    context={
-        "defect_rate": 0.08,
-        "acceptable_threshold": 0.015
-    }
-)
+solve_result = inspector.solve("High defect rate in etching process")
 
 log(f"💡 Solve Result: {solve_result}")
 
@@ -123,25 +111,13 @@ log("✅ Created inspector_builtin for comparison")
 
 # Call plan() on built-in inspector (should use AI)
 log("\n📋 Testing plan() on built-in inspector (should use AI):")
-builtin_plan = inspector_builtin.plan(
-    "Inspect wafer batch WB-2024-001",
-    context={
-        "batch_id": "WB-2024-001",
-        "wafer_count": 25
-    }
-)
+builtin_plan = inspector_builtin.plan("Inspect wafer batch WB-2024-001")
 
 log(f"📝 Built-in Plan Result: {builtin_plan}")
 
 # Call solve() on built-in inspector (should use AI)
 log("\n🔍 Testing solve() on built-in inspector (should use AI):")
-builtin_solve = inspector_builtin.solve(
-    "High defect rate in etching process",
-    context={
-        "defect_rate": 0.08,
-        "acceptable_threshold": 0.015
-    }
-)
+builtin_solve = inspector_builtin.solve("High defect rate in etching process")
 
 log(f"💡 Built-in Solve Result: {builtin_solve}")
 
@@ -177,12 +153,13 @@ log("""
    ❌ def plan(agent: QualityInspector, ...)
 
 2. **Type Hints**: Always include proper type hints
-   ✅ def solve(inspector: QualityInspector, problem: str, context: dict) -> dict
+   ✅ def solve(inspector: QualityInspector, problem: str) -> dict
    ❌ def solve(inspector, problem, context)
 
 3. **Return Types**: Match expected return types
    - plan() typically returns list[str]
    - solve() typically returns dict
+   - No context parameter needed in method signatures
 """)
 
 # ============================================================================

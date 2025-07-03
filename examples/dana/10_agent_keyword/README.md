@@ -61,7 +61,7 @@ solution = inspector.solve("High defect rate in batch A-2024-001")
 **Key Concepts:**
 ```dana
 # Define custom plan method
-def plan(inspector: ManufacturingInspector, objective: str, context: dict) -> list[str]:
+def plan(inspector: ManufacturingInspector, objective: str) -> list[str]:
     return [f"Custom plan for {objective}"]
 
 # Agent uses custom method instead of built-in AI
@@ -184,7 +184,7 @@ solution = inspector.solve("defect analysis")  # AI-powered problem solving
 ### **Method Override Pattern**
 ```dana
 # Custom behavior while keeping built-in capabilities
-def plan(inspector: QualityInspector, objective: str, context: dict) -> list[str]:
+def plan(inspector: QualityInspector, objective: str) -> list[str]:
     # Custom logic here
     return [f"Custom plan: {objective}"]
 

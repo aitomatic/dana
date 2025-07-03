@@ -49,24 +49,12 @@ log("-" * 30)
 
 # Use the built-in AI-powered planning capability
 log("📋 Planning for assembly inspector:")
-assembly_plan = inspector_assembly.plan(
-    "Inspect production line for quality defects",
-    context={
-        "batch_id": "A-2024-001",
-        "product_type": "automotive_parts"
-    }
-)
+assembly_plan = inspector_assembly.plan("Inspect production line for quality defects")
 
 log(f"📝 Assembly Plan Result: {assembly_plan}")
 
 log("\n📋 Planning for welding inspector:")
-welding_plan = inspector_welding.plan(
-    "Optimize welding process parameters",
-    context={
-        "material": "stainless_steel",
-        "thickness": "3mm"
-    }
-)
+welding_plan = inspector_welding.plan("Optimize welding process parameters")
 
 log(f"📝 Welding Plan Result: {welding_plan}")
 
@@ -79,24 +67,12 @@ log("-" * 30)
 
 # Use the built-in AI-powered problem-solving capability
 log("🔍 Solving problem with assembly inspector:")
-assembly_solution = inspector_assembly.solve(
-    "High defect rate in batch A-2024-001",
-    context={
-        "defect_rate": 0.08,
-        "acceptable_threshold": 0.02
-    }
-)
+assembly_solution = inspector_assembly.solve("High defect rate in batch A-2024-001")
 
 log(f"💡 Assembly Solution: {assembly_solution}")
 
 log("\n🔍 Solving problem with welding inspector:")
-welding_solution = inspector_welding.solve(
-    "Inconsistent weld penetration depth",
-    context={
-        "penetration_variation": "±0.5mm",
-        "required_penetration": "2.0mm"
-    }
-)
+welding_solution = inspector_welding.solve("Inconsistent weld penetration depth")
 
 log(f"💡 Welding Solution: {welding_solution}")
 

@@ -37,26 +37,14 @@ log(f"✅ Created analyst: {analyst}")
 
 # Default plan() behavior (returns list)
 log("\n📋 Testing default plan() behavior:")
-default_plan = analyst.plan(
-    "Analyze production yield data for Q1 2024",
-    context={
-        "data_source": "production_database",
-        "time_period": "Q1_2024"
-    }
-)
+default_plan = analyst.plan("Analyze production yield data for Q1 2024")
 
 log(f"📝 Default Plan Result: {default_plan}")
 log(f"📊 Default Plan Type: {type(default_plan)}")
 
 # Default solve() behavior (returns dict)
 log("\n🔍 Testing default solve() behavior:")
-default_solve = analyst.solve(
-    "Declining yield trend in etching process",
-    context={
-        "trend_period": "3_months",
-        "severity": "moderate"
-    }
-)
+default_solve = analyst.solve("Declining yield trend in etching process")
 
 log(f"💡 Default Solve Result: {default_solve}")
 log(f"📊 Default Solve Type: {type(default_solve)}")
@@ -70,26 +58,14 @@ log("-" * 30)
 
 # Explicit list type hint for plan()
 log("\n📋 Testing plan() with explicit list type hint:")
-plan_steps: list = analyst.plan(
-    "Optimize manufacturing process parameters",
-    context={
-        "process_type": "plasma_etching",
-        "optimization_goal": "reduce_defects"
-    }
-)
+plan_steps: list = analyst.plan("Optimize manufacturing process parameters")
 
 log(f"📝 List Plan Result: {plan_steps}")
 log(f"📊 List Plan Type: {type(plan_steps)}")
 
 # Explicit list type hint for solve()
 log("\n🔍 Testing solve() with explicit list type hint:")
-solve_steps: list = analyst.solve(
-    "Root cause analysis for equipment failures",
-    context={
-        "failure_pattern": "intermittent",
-        "affected_equipment": ["ETCH-001", "ETCH-002"]
-    }
-)
+solve_steps: list = analyst.solve("Root cause analysis for equipment failures")
 
 log(f"💡 List Solve Result: {solve_steps}")
 log(f"📊 List Solve Type: {type(solve_steps)}")
@@ -103,26 +79,14 @@ log("-" * 30)
 
 # Explicit dict type hint for plan()
 log("\n📋 Testing plan() with explicit dict type hint:")
-plan_dict: dict = analyst.plan(
-    "Comprehensive data analysis workflow",
-    context={
-        "analysis_scope": "full_production_line",
-        "data_volume": "large"
-    }
-)
+plan_dict: dict = analyst.plan("Comprehensive data analysis workflow")
 
 log(f"📝 Dict Plan Result: {plan_dict}")
 log(f"📊 Dict Plan Type: {type(plan_dict)}")
 
 # Explicit dict type hint for solve()
 log("\n🔍 Testing solve() with explicit dict type hint:")
-solve_dict: dict = analyst.solve(
-    "Statistical process control implementation",
-    context={
-        "control_charts": ["xbar_r", "p_chart"],
-        "sample_size": 30
-    }
-)
+solve_dict: dict = analyst.solve("Statistical process control implementation")
 
 log(f"💡 Dict Solve Result: {solve_dict}")
 log(f"📊 Dict Solve Type: {type(solve_dict)}")
