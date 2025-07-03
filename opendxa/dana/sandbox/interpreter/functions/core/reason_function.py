@@ -97,7 +97,7 @@ def old_reason_function(
     if actual_agents is not None:
         try:
             # Check if agents is an A2AAgent, AgentPool, or list of agents
-            from opendxa.contrib.mcp_a2a.agent import AbstractDanaAgent
+            from opendxa.dana.agent.abstract_dana_agent import AbstractDanaAgent
             from opendxa.contrib.mcp_a2a.agent.pool.agent_pool import AgentPool
 
             agent_pool = None
@@ -293,6 +293,7 @@ def reason_function(
     logger.debug(f"POET-enhanced reason called with prompt: '{prompt[:50]}...'")
 
     try:
+
         # Phase 1: Detect expected return type context
         context_detector = ContextDetector()
         type_context = context_detector.detect_current_context(context)

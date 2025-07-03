@@ -120,10 +120,16 @@ class FunctionExecutor(BaseExecutor):
             wrapped_func = self._apply_decorators(dana_func, node.decorators, context)
             # Store the decorated function in context
             context.set(f"local:{node.name.name}", wrapped_func)
+            # Register as agent method if appropriate
+            from opendxa.dana.agent.agent_system import register_agent_method_from_function_def
+            register_agent_method_from_function_def(node, wrapped_func)
             return wrapped_func
         else:
             # No decorators, store the DanaFunction as usual
             context.set(f"local:{node.name.name}", dana_func)
+            # Register as agent method if appropriate
+            from opendxa.dana.agent.agent_system import register_agent_method_from_function_def
+            register_agent_method_from_function_def(node, dana_func)
             return dana_func
 
     def _apply_decorators(self, func, decorators, context):
@@ -689,7 +695,7 @@ class FunctionExecutor(BaseExecutor):
             except Exception as dana_method_error:
                 self.debug(f"Dana method transformation failed: {dana_method_error}")
 
-            # Step 3: Fallback to Python object method calls
+            # Step 4: Fallback to Python object method calls
             if hasattr(target_object, method_name):
                 method = getattr(target_object, method_name)
                 self.debug(f"Found Python method: {method}")

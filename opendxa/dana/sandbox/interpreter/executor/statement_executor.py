@@ -30,11 +30,13 @@ from opendxa.dana.sandbox.interpreter.executor.statement import (
 )
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.parser.ast import (
+    AgentDefinition,
     AgentPoolStatement,
     AgentStatement,
     AssertStatement,
     Assignment,
     ExportStatement,
+    FunctionDefinition,
     ImportFromStatement,
     ImportStatement,
     PassStatement,
@@ -76,17 +78,19 @@ class StatementExecutor(BaseExecutor):
     def register_handlers(self):
         """Register handlers for statement node types."""
         self._handlers = {
+            AgentDefinition: self.execute_agent_definition,
             AgentStatement: self.execute_agent_statement,
             AgentPoolStatement: self.execute_agent_pool_statement,
             Assignment: self.execute_assignment,
             AssertStatement: self.execute_assert_statement,
+            ExportStatement: self.execute_export_statement,
+            FunctionDefinition: self.execute_function_definition,
             ImportFromStatement: self.execute_import_from_statement,
             ImportStatement: self.execute_import_statement,
             PassStatement: self.execute_pass_statement,
             RaiseStatement: self.execute_raise_statement,
             StructDefinition: self.execute_struct_definition,
             UseStatement: self.execute_use_statement,
-            ExportStatement: self.execute_export_statement,
         }
 
     def execute_assignment(self, node: Assignment, context: SandboxContext) -> Any:
@@ -506,6 +510,18 @@ class StatementExecutor(BaseExecutor):
         """
         return self.agent_handler.execute_struct_definition(node, context)
 
+    def execute_agent_definition(self, node: AgentDefinition, context: SandboxContext) -> None:
+        """Execute an agent definition statement using optimized handler.
+
+        Args:
+            node: The agent definition node
+            context: The execution context
+
+        Returns:
+            None (agent definitions don't produce a value, they register a type)
+        """
+        return self.agent_handler.execute_agent_definition(node, context)
+
     def execute_agent_statement(self, node: AgentStatement, context: SandboxContext) -> Any:
         """Execute an agent statement using optimized handler.
 
@@ -529,3 +545,17 @@ class StatementExecutor(BaseExecutor):
             An agent pool resource object that can be used to call methods
         """
         return self.agent_handler.execute_agent_pool_statement(node, context)
+
+    def execute_function_definition(self, node: "FunctionDefinition", context: SandboxContext) -> Any:
+        """Execute a function definition, routing to agent handler if appropriate.
+
+        Args:
+            node: The function definition to execute
+            context: The execution context
+
+        Returns:
+            The defined function
+        """
+        # Route to agent handler which can associate methods with agent types
+        self.debug(f"Routing function definition '{node.name.name}' to agent handler")
+        return self.agent_handler.execute_function_definition(node, context)

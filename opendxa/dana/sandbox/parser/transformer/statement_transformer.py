@@ -299,6 +299,14 @@ class StatementTransformer(BaseTransformer):
         """Transform a struct field rule into a StructField node."""
         return self.function_definition_transformer.struct_field(items)
 
+    def agent_definition(self, items):
+        """Transform an agent definition rule into an AgentDefinition node."""
+        return self.function_definition_transformer.agent_definition(items)
+
+    def agent_field(self, items):
+        """Transform an agent field rule into an AgentField node."""
+        return self.function_definition_transformer.agent_field(items)
+
     def try_stmt(self, items):
         """Transform a try-except-finally statement into a TryBlock node."""
         return self.control_flow_transformer.try_stmt(items)

@@ -398,7 +398,7 @@ result = websearch.call_tool("search", query="Dana language")
 ### 2. Context Manager Pattern
 ```dana
 # Scoped resource usage with automatic cleanup
-with use("mcp", url="http://localhost:8880/sensors") as sensors:
+with use("mcp", url="https://demo.mcp.aitomatic.com/sensors") as sensors:
     sensor_list = sensors.list_tools()
     data = sensors.call_tool("read_sensor", id="temp_01")
     print(f"Temperature: {data.value}")

@@ -98,6 +98,8 @@ class DanaInterpreter(Loggable):
         # Register all core functions automatically
         register_core_functions(self._function_registry)
 
+
+
         self.debug("Function registry initialized")
 
     @property
@@ -216,8 +218,20 @@ class DanaInterpreter(Loggable):
         Returns:
             The result of executing the statement
         """
-        # All execution goes through the unified executor
-        return self._executor.execute(statement, context)
+        # Set the current context in thread-local storage for agent methods
+        import threading
+        current_thread = threading.current_thread()
+        old_context = getattr(current_thread, 'dana_context', None)
+        current_thread.dana_context = context
+        try:
+            # All execution goes through the unified executor
+            return self._executor.execute(statement, context)
+        finally:
+            # Restore the previous context
+            if old_context is not None:
+                current_thread.dana_context = old_context
+            elif hasattr(current_thread, 'dana_context'):
+                delattr(current_thread, 'dana_context')
 
     def get_and_clear_output(self) -> str:
         """Retrieve and clear the output buffer from the executor."""

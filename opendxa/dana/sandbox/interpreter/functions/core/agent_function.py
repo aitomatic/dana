@@ -1,6 +1,6 @@
 from opendxa.common.resource.base_resource import BaseResource
 from opendxa.common.utils.misc import Misc
-from opendxa.contrib.mcp_a2a.agent import AbstractDanaAgent
+from opendxa.dana.agent.abstract_dana_agent import AbstractDanaAgent
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
