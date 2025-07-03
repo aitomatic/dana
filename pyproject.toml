@@ -114,7 +114,7 @@ docs = [
 
 # Command-line entry points for end users
 [project.scripts]
-dana = "opendxa.dana.exec.dana:main"
+dana = "dana.core.repl.dana:main"
 
 # =============================================================================
 # Package Configuration
@@ -124,11 +124,12 @@ dana = "opendxa.dana.exec.dana:main"
 # Use find_packages to automatically discover all subpackages
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["opendxa*"]
+include = ["opendxa*", "dana*"]
 exclude = ["tests*", "examples*", "docs*", "tmp*"]
 
 [tool.setuptools.package-data]
 opendxa = ["**/*.py", "**/*.lark"]
+dana = ["**/*.py", "**/*.lark"]
 
 # =============================================================================
 # Development Tools & Scripts (uv-specific)
@@ -173,8 +174,8 @@ opendxa = ["**/*.py", "**/*.lark"]
 #   uv remove <package>                               # Remove dependency
 #
 # Dana-specific commands:
-#   uv run python -m opendxa.dana.exec.dana examples/dana/debug_tests/test_basic.na
-#   uv run python -m opendxa.dana.exec.repl.repl
+#   uv run python -m dana.core.repl.dana examples/dana/debug_tests/test_basic.na
+#   uv run python -m dana.core.repl.repl.repl
 #
 # When native task support is added, these will become:
 # [tool.uv.tasks]
@@ -249,7 +250,7 @@ module = "tests.*"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "opendxa.dana.sandbox.interpreter.*"
+module = "dana.core.lang.interpreter.*"
 disallow_untyped_defs = true  # Strict checking for core interpreter
 
 # =============================================================================

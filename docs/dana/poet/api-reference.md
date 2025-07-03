@@ -286,7 +286,7 @@ def monitored_function(input: str) -> str:
 
 ### POET Error Types
 ```python
-from opendxa.dana.poet.errors import (
+from dana.frameworks.poet.errors import (
     POETError,           # Base POET error
     PerceiveError,      # P-stage errors
     OperateError,       # O-stage errors (includes retries exhausted)

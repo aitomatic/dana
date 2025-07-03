@@ -24,6 +24,8 @@ Then:
 
 See the full documentation at: [https://aitomatic.github.io/opendxa/](https://aitomatic.github.io/opendxa/)
 
+> **📦 New Import Structure**: Dana now uses a cleaner import structure. Use `from dana.frameworks.poet import poet` instead of `from opendxa.dana.poet import poet`. Old imports continue to work for compatibility.
+
 ---
 
 ## Why Dana?

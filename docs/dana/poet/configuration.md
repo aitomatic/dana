@@ -566,7 +566,7 @@ def new_function(data: dict) -> dict:
 ### 2. Use Environment-Specific Profiles
 ```dana
 # Create reusable configuration profiles
-from opendxa.poet.config import EnvironmentProfile
+from dana.frameworks.poet.config import EnvironmentProfile
 
 dev_profile = EnvironmentProfile.development()
 prod_profile = EnvironmentProfile.production()

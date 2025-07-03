@@ -9,9 +9,9 @@ from unittest.mock import Mock
 
 import pytest
 
-from opendxa.common.types import BaseResponse
-from opendxa.dana.poet.feedback import AlphaFeedbackSystem, BasicAlphaTrainer
-from opendxa.dana.poet.types import POETFeedbackError, POETResult
+from dana.common.types import BaseResponse
+from dana.frameworks.poet.feedback import AlphaFeedbackSystem, BasicAlphaTrainer
+from dana.frameworks.poet.types import POETFeedbackError, POETResult
 
 
 @pytest.mark.poet

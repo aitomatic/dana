@@ -220,10 +220,10 @@ total += value
 ### **Imports**
 ```dana
 # Dana - importing Python modules
-import opendxa.dana.poet.decorator.py as poet_module
+import dana.frameworks.poet.decorator.py as poet_module
 
 # Python (for comparison)
-from opendxa.dana.poet.decorator import feedback
+from dana.frameworks.poet.decorator import feedback
 ```
 
 ## 🛠️ Architecture Behind the Examples

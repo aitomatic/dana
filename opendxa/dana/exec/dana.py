@@ -51,14 +51,17 @@ import logging
 import os
 import sys
 
-# This script is intended to be run via `uv run`, which handles the PYTHONPATH.
-# No manual sys.path manipulation is needed.
-# For example, to run the REPL: uv run python -m opendxa.dana.exec.repl
+# Set up compatibility layer first
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
 
-from opendxa.common.utils.logging import DXA_LOGGER
+from dana.compat import setup_migration_compatibility
+setup_migration_compatibility()
+
+from dana.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.terminal_utils import ColorScheme, print_header, supports_color
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
-from opendxa.dana.sandbox.log_manager import LogLevel, SandboxLogger
+from dana.core.lang.dana_sandbox import DanaSandbox
+from dana.core.lang.log_manager import LogLevel, SandboxLogger
 
 # Initialize color scheme
 colors = ColorScheme(supports_color())
@@ -119,7 +122,7 @@ async def start_repl(debug=False):
     """
     # Import the REPL application module
     try:
-        from opendxa.dana.exec.repl.dana_repl_app import main as repl_main
+        from dana.core.repl.repl.dana_repl_app import main as repl_main
 
         # Pass debug flag to repl_main
         await repl_main(debug=debug)
@@ -245,7 +248,7 @@ def handle_deploy_command(args):
 def deploy_thru_mcp(file_path, args):
     """Deploy file using MCP protocol."""
     try:
-        from opendxa.dana.exec.deploy.mcp import deploy_dana_agents_thru_mcp
+        from dana.core.repl.deploy.mcp import deploy_dana_agents_thru_mcp
 
         deploy_dana_agents_thru_mcp(file_path, args.host, args.port)
         return 0
@@ -263,7 +266,7 @@ def deploy_thru_mcp(file_path, args):
 def deploy_thru_a2a(file_path, args):
     """Deploy file using A2A protocol."""
     try:
-        from opendxa.dana.exec.deploy.a2a import deploy_dana_agents_thru_a2a
+        from dana.core.repl.deploy.a2a import deploy_dana_agents_thru_a2a
 
         deploy_dana_agents_thru_a2a(file_path, args.host, args.port)
         return 0

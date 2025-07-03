@@ -1,0 +1,63 @@
+name: Code Planning
+description: >
+  Plan for writing, executing, and debugging code. Good for tasks requiring
+  computational precision, data processing at scale, or algorithmic consistency
+  where deterministic execution is essential - situations beyond an LLM's direct
+  computational capabilities.
+
+nodes:
+  - id: GENERATE_CODE
+    description: Generate Python code for a given task.
+
+  - id: RUN_CODE
+    description: Execute the code and its return output.
+
+  # - id: DEBUG_CODE
+  #   description:
+  #     Debug code for a given task, previously attempted code, and error logs.
+
+prompts:
+  GENERATE_CODE: |
+    I need Python code to solve the following task: {{task}}
+
+    Follow these guidelines when writing your solution:
+
+    - First, break down the problem into clear components and explain your planned approach.
+    - Include a full explanation of the code you will write, including the imports, functions, and classes you will use.
+    - Write clean, Pythonic code following PEP 8 style guidelines, wrapped in a ```python``` block.
+    - Use meaningful variable and function names that clearly convey their purpose
+    - Include efficient docstrings that describe the purpose of the function, class, or module
+    - Add inline comments only where necessary to explain complex logic
+    - Handle potential edge cases and exceptions with appropriate try/except blocks
+    - Use built-in Python functions and standard library modules when applicable
+    - Structure the code with proper organization (imports at the top, constants, functions, classes, main execution)
+    - Provide a complete, working solution (not just snippets)
+    - Include type hints where appropriate for better code readability
+    - After the code, provide a brief explanation of how to use it with a sample execution
+    - Suggest any potential improvements or alternative approaches that could be considered
+
+    Provide a complete solution that is efficient, readable, and properly handles edge cases.
+
+  RUN_CODE: |
+    Run the Python code from the following response:
+    {{GENERATE_CODE}}
+
+  # DEBUG_CODE: |
+  #   I have buggy Python code that was written to solve this task: {{task}}
+
+  #   The buggy code is as follows:
+  #   {{RUN_CODE.content.code}}
+
+  #   When I run this code, I'm getting the following error(s):
+  #   {{RUN_CODE.error}}
+
+  #   Identify where and why the errors occur, describe your approach to fixing
+  #   them, and provide corrected Python code.
+
+  #   Follow these guidelines when writing your solution:
+
+  #   - Maintain the same function/class names and overall structure
+  #   - Keep the same docstrings and comments
+  #   - Fix all errors that appear in the error logs
+  #   - Make minimal changes necessary to make the code work correctly
+  #   - Ensure the solution still accomplishes the original task

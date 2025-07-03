@@ -1,5 +1,5 @@
-site_name: OpenDXA with Dana
-site_description: Comprehensive documentation for OpenDXA - Domain-Aware NeuroSymbolic Architecture
+site_name: Dana - Domain-Aware NeuroSymbolic Architecture
+site_description: Comprehensive documentation for Dana - Domain-Aware NeuroSymbolic Architecture with OpenDXA frameworks
 site_url: https://opendxa.readthedocs.io/
 repo_url: https://github.com/aitomatic/opendxa
 repo_name: aitomatic/opendxa

@@ -11,9 +11,9 @@ import asyncio
 import os
 from typing import Any
 
-from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.common.resource.llm_resource import LLMResource
+from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 async def run_dana_reasoning_example(model: str | None = None, provider: str | None = None) -> None:
@@ -39,7 +39,7 @@ async def run_dana_reasoning_example(model: str | None = None, provider: str | N
     print(f"{'-' * 80}\n")
 
     # Parse the DANA code
-    from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+    from dana.core.lang.parser.utils.parsing_utils import ParserCache
 
     parser = ParserCache.get_parser("dana")
     parse_result = parser.parse(dana_code)
