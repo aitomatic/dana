@@ -1,0 +1,267 @@
+{
+  "historical_record": {
+    "session_id": "SESSION_SOT23_SolderPaste_20240318",
+    "input_specification": {
+      "product_id": "SOT_23_3PIN_2.9X1.6_RevA",
+      "substrate_material": "FR4_HASL_Finish",
+      "coating_material": "SolderPaste-SAC305",
+      "nozzle_type": "Needle_150um",
+      "layout": {
+        "type": "SOT23", 
+        "size_mm": [2.9, 1.6],
+        "pad_count": 3,
+        "dispensing_pattern": "individual_pads"
+      },
+      "target_specification": {
+        "paste_volume_nl": [15, 25],
+        "pad_coverage": ">90%",
+        "paste_height_um": [80, 120],
+        "target_yield": 0.97,
+        "max_cycle_time_sec": 3
+      }
+    },
+    "execution_trials": [
+      {
+        "trial_number": 1,
+        "execution_id": "EXEC_SOT23_SolderPaste_20240318_T01",
+        "timestamp": "2024-03-18T14:00:00Z",
+        "operator": "Jennifer_SMT",
+        "parameter_recipe": {
+          "recipe_id": "SolderPaste_SOT23_v1.0_baseline",
+          "recipe_version": "1.0",
+          "adjustment_notes": "Standard SAC305 parameters for small pads",
+          "parameters": {
+            "vision": {
+              "lighting_level": 98,
+              "match_threshold": 0.95,
+              "camera_gain": 15
+            },
+            "motion": {
+              "z_height_mm": 0.08,
+              "xy_speed_mmps": 12.0,
+              "pattern_mode": "dot_per_pad"
+            },
+            "dispensing": {
+              "valve_open_time_ms": 25,
+              "air_pressure_psi": 8.5,
+              "pressure_delay_ms": 5,
+              "purge_time_ms": 800
+            }
+          }
+        },
+        "execution_results": {
+          "status": "FAILURE",
+          "execution_timestamp": "2024-03-18T14:00:45Z",
+          "cycle_time_sec": 1.8,
+          "quality_metrics": {
+            "paste_volume_nl": 8,
+            "pad_coverage_percent": 73,
+            "paste_height_um": 45,
+            "yield": 0.68
+          },
+          "environmental": {
+            "temperature_celsius": 24.8,
+            "humidity_percent": 35,
+            "material_age_hours": 2.5
+          }
+        }
+      },
+      {
+        "trial_number": 2,
+        "execution_id": "EXEC_SOT23_SolderPaste_20240318_T02",
+        "timestamp": "2024-03-18T14:15:00Z",
+        "operator": "Jennifer_SMT",
+        "parameter_recipe": {
+          "recipe_id": "SolderPaste_SOT23_v1.1_adjustment1",
+          "recipe_version": "1.1",
+          "adjustment_notes": "Increased valve time and pressure for more volume",
+          "parameters": {
+            "vision": {
+              "lighting_level": 98,
+              "match_threshold": 0.95,
+              "camera_gain": 15
+            },
+            "motion": {
+              "z_height_mm": 0.06,
+              "xy_speed_mmps": 10.0,
+              "pattern_mode": "dot_per_pad"
+            },
+            "dispensing": {
+              "valve_open_time_ms": 45,
+              "air_pressure_psi": 11.0,
+              "pressure_delay_ms": 3,
+              "purge_time_ms": 800
+            }
+          }
+        },
+        "execution_results": {
+          "status": "FAILURE",
+          "execution_timestamp": "2024-03-18T14:15:30Z",
+          "cycle_time_sec": 2.2,
+          "quality_metrics": {
+            "paste_volume_nl": 33,
+            "pad_coverage_percent": 95,
+            "paste_height_um": 165,
+            "yield": 0.74
+          },
+          "environmental": {
+            "temperature_celsius": 25.1,
+            "humidity_percent": 34,
+            "material_age_hours": 3.0
+          }
+        }
+      },
+      {
+        "trial_number": 3,
+        "execution_id": "EXEC_SOT23_SolderPaste_20240318_T03",
+        "timestamp": "2024-03-18T14:30:00Z",
+        "operator": "Jennifer_SMT",
+        "parameter_recipe": {
+          "recipe_id": "SolderPaste_SOT23_v1.2_adjustment2",
+          "recipe_version": "1.2",
+          "adjustment_notes": "Balanced valve time and optimized Z-height",
+          "parameters": {
+            "vision": {
+              "lighting_level": 98,
+              "match_threshold": 0.95,
+              "camera_gain": 15
+            },
+            "motion": {
+              "z_height_mm": 0.05,
+              "xy_speed_mmps": 11.0,
+              "pattern_mode": "dot_per_pad"
+            },
+            "dispensing": {
+              "valve_open_time_ms": 35,
+              "air_pressure_psi": 9.8,
+              "pressure_delay_ms": 4,
+              "purge_time_ms": 800
+            }
+          }
+        },
+        "execution_results": {
+          "status": "PARTIAL_SUCCESS",
+          "execution_timestamp": "2024-03-18T14:30:25Z",
+          "cycle_time_sec": 2.0,
+          "quality_metrics": {
+            "paste_volume_nl": 23,
+            "pad_coverage_percent": 92,
+            "paste_height_um": 105,
+            "yield": 0.91
+          },
+          "environmental": {
+            "temperature_celsius": 25.3,
+            "humidity_percent": 33,
+            "material_age_hours": 3.5
+          }
+        }
+      },
+      {
+        "trial_number": 4,
+        "execution_id": "EXEC_SOT23_SolderPaste_20240318_T04",
+        "timestamp": "2024-03-18T14:45:00Z",
+        "operator": "Jennifer_SMT",
+        "parameter_recipe": {
+          "recipe_id": "SolderPaste_SOT23_v1.3_adjustment3",
+          "recipe_version": "1.3",
+          "adjustment_notes": "Fine-tuned pressure delay for consistent dispensing",
+          "parameters": {
+            "vision": {
+              "lighting_level": 98,
+              "match_threshold": 0.95,
+              "camera_gain": 15
+            },
+            "motion": {
+              "z_height_mm": 0.05,
+              "xy_speed_mmps": 11.5,
+              "pattern_mode": "dot_per_pad"
+            },
+            "dispensing": {
+              "valve_open_time_ms": 32,
+              "air_pressure_psi": 9.5,
+              "pressure_delay_ms": 3,
+              "purge_time_ms": 800
+            }
+          }
+        },
+        "execution_results": {
+          "status": "MINOR_DEVIATION",
+          "execution_timestamp": "2024-03-18T14:45:20Z",
+          "cycle_time_sec": 1.9,
+          "quality_metrics": {
+            "paste_volume_nl": 20,
+            "pad_coverage_percent": 94,
+            "paste_height_um": 95,
+            "yield": 0.95
+          },
+          "environmental": {
+            "temperature_celsius": 25.5,
+            "humidity_percent": 32,
+            "material_age_hours": 4.0
+          }
+        }
+      },
+      {
+        "trial_number": 5,
+        "execution_id": "EXEC_SOT23_SolderPaste_20240318_T05",
+        "timestamp": "2024-03-18T15:00:00Z",
+        "operator": "Jennifer_SMT",
+        "parameter_recipe": {
+          "recipe_id": "SolderPaste_SOT23_v2.0_optimized",
+          "recipe_version": "2.0",
+          "adjustment_notes": "Optimized valve time for target volume range",
+          "parameters": {
+            "vision": {
+              "lighting_level": 98,
+              "match_threshold": 0.95,
+              "camera_gain": 15
+            },
+            "motion": {
+              "z_height_mm": 0.05,
+              "xy_speed_mmps": 12.0,
+              "pattern_mode": "dot_per_pad"
+            },
+            "dispensing": {
+              "valve_open_time_ms": 30,
+              "air_pressure_psi": 9.2,
+              "pressure_delay_ms": 3,
+              "purge_time_ms": 800
+            }
+          }
+        },
+        "execution_results": {
+          "status": "SUCCESS",
+          "execution_timestamp": "2024-03-18T15:00:18Z",
+          "cycle_time_sec": 1.8,
+          "quality_metrics": {
+            "paste_volume_nl": 18,
+            "pad_coverage_percent": 95,
+            "paste_height_um": 88,
+            "yield": 0.98
+          },
+          "environmental": {
+            "temperature_celsius": 25.8,
+            "humidity_percent": 31,
+            "material_age_hours": 4.5
+          }
+        }
+      }
+    ],
+    "optimization_summary": {
+      "total_trials": 5,
+      "optimization_duration_hours": 1.0,
+      "parameter_evolution": {
+        "air_pressure_psi": [8.5, 11.0, 9.8, 9.5, 9.2],
+        "valve_open_time_ms": [25, 45, 35, 32, 30],
+        "z_height_mm": [0.08, 0.06, 0.05, 0.05, 0.05],
+        "xy_speed_mmps": [12.0, 10.0, 11.0, 11.5, 12.0],
+        "pressure_delay_ms": [5, 3, 4, 3, 3]
+      },
+      "paste_volume_progression_nl": [8, 33, 23, 20, 18],
+      "pad_coverage_progression_percent": [73, 95, 92, 94, 95],
+      "paste_height_progression_um": [45, 165, 105, 95, 88],
+      "cycle_time_progression_sec": [1.8, 2.2, 2.0, 1.9, 1.8],
+      "yield_progression": [0.68, 0.74, 0.91, 0.95, 0.98]
+    }
+  }
+} 

@@ -1,0 +1,898 @@
+{
+  "testset_metadata": {
+    "name": "Semiconductor Dispensing Recipe Tuning Testset",
+    "description": "Test cases for AI agents analyzing failed trials and recommending parameter adjustments based on expert tuning strategies",
+    "version": "1.0",
+    "created_date": "2024-01-25",
+    "test_count": 8,
+    "domain": "semiconductor_manufacturing",
+    "application": "dispensing_recipe_tuning_optimization",
+    "use_case": "Use Case 2: Recipe Tuning & Optimization"
+  },
+  "test_cases": [
+    {
+      "test_id": "TEST_UC2_BGA256_CONDUCTIVITY_TUNING_001",
+      "description": "BGA EMI shield poor conductivity - need increased material deposition",
+      "input": {
+        "product_specification": {
+          "product_id": "BGA_256PIN_17X17_RevA",
+          "substrate_material": "FR4_Substrate",
+          "coating_material": "EMIShield-Ag8000",
+          "nozzle_type": "Needle_250um",
+          "layout": {
+            "type": "BGA", 
+            "size_mm": [17.0, 17.0],
+            "shield_area_mm": [15.5, 15.5],
+            "dispensing_pattern": "perimeter_enclosure"
+          },
+          "target_specification": {
+            "conductivity_ohm_per_sq": [0.15, 0.8],
+            "shield_continuity": ">95%",
+            "bead_height_mm": [0.8, 1.2],
+            "target_yield": 0.95,
+            "max_cycle_time_sec": 15
+          }
+        },
+        "failed_trial_results": {
+          "status": "FAILURE",
+          "cycle_time_sec": 11.8,
+          "quality_metrics": {
+            "conductivity_ohm_per_sq": 1.2,
+            "shield_continuity_percent": 89,
+            "bead_height_mm": 0.62,
+            "yield": 0.73
+          },
+          "environmental": {
+            "temperature_celsius": 23.8,
+            "humidity_percent": 38,
+            "material_age_hours": 4.0
+          }
+        }
+      },
+      "last_parameter_recipe": {
+        "recipe_id": "EMIShield_17x17_v1.0_baseline",
+        "recipe_version": "1.0",
+        "parameters": {
+          "vision": {
+            "lighting_level": 95,
+            "match_threshold": 0.90,
+            "camera_gain": 20
+          },
+          "motion": {
+            "z_height_mm": 0.30,
+            "xy_speed_mmps": 5.0,
+            "pattern_mode": "continuous_perimeter"
+          },
+          "dispensing": {
+            "valve_open_time_ms": 180,
+            "air_pressure_psi": 28.0,
+            "pressure_delay_ms": 20,
+            "purge_time_ms": 2500
+          }
+        }
+      },
+      "expected_output": {
+        "tuning_strategy": "increase_material_deposition",
+        "parameter_adjustments": {
+          "air_pressure_psi": {
+            "adjustment": "increase",
+            "from": 28.0,
+            "to": 32.0,
+            "direction": "+14%",
+            "reasoning": "Higher pressure needed to push more silver-filled material through nozzle for better conductivity"
+          },
+          "valve_open_time_ms": {
+            "adjustment": "increase", 
+            "from": 180,
+            "to": 220,
+            "direction": "+22%",
+            "reasoning": "Longer valve open time increases material volume for thicker bead and better electrical contact"
+          },
+          "z_height_mm": {
+            "adjustment": "decrease",
+            "from": 0.30,
+            "to": 0.25,
+            "direction": "-17%",
+            "reasoning": "Lower Z-height reduces material spread, concentrates deposition for better conductivity"
+          },
+          "xy_speed_mmps": {
+            "adjustment": "decrease",
+            "from": 5.0,
+            "to": 3.5,
+            "direction": "-30%",
+            "reasoning": "Slower movement allows more material per unit length, improving bead height and continuity"
+          },
+          "pressure_delay_ms": {
+            "adjustment": "decrease",
+            "from": 20,
+            "to": 15,
+            "direction": "-25%",
+            "reasoning": "Reduced delay allows faster material flow start, improving bead consistency"
+          }
+        },
+        "physics_rationale": "Poor conductivity indicates insufficient silver particle density. Increasing pressure and valve time while reducing height and speed will deposit more conductive material per unit area, improving electrical properties.",
+        "expected_improvement": "Target conductivity 0.4-0.6 ohm/sq, continuity >95%, bead height 1.0-1.3mm"
+      }
+    },
+    {
+      "test_id": "TEST_UC2_CSP15_FLOW_INSUFFICIENT_002", 
+      "description": "CSP underfill insufficient flow distance - need enhanced flow dynamics",
+      "input": {
+        "product_specification": {
+          "product_id": "CSP_15X15_RevB",
+          "substrate_material": "BT_Resin",
+          "coating_material": "SilFlow-2K",
+          "nozzle_type": "Needle_150um",
+          "layout": {
+            "type": "CSP", 
+            "size_mm": [15.0, 15.0],
+            "die_size_mm": [12.8, 12.8],
+            "gap_height_um": 28,
+            "dispensing_pattern": "edge_underfill"
+          },
+          "target_specification": {
+            "flow_distance_mm": [5.8, 6.4],
+            "fill_percentage": [92, 98],
+            "void_count_max": 3,
+            "fillet_height_mm": [0.10, 0.15],
+            "target_yield": 0.96,
+            "max_cycle_time_sec": 25
+          }
+        },
+        "failed_trial_results": {
+          "status": "FAILURE",
+          "cycle_time_sec": 18.7,
+          "quality_metrics": {
+            "flow_distance_mm": 4.2,
+            "fill_percentage": 78,
+            "void_count": 8,
+            "fillet_height_mm": 0.08,
+            "yield": 0.72
+          },
+          "environmental": {
+            "temperature_celsius": 21.8,
+            "humidity_percent": 52,
+            "material_age_hours": 2.0
+          }
+        },
+        "performance_gap_analysis": {
+          "flow_distance_deficit": "-28% below minimum (4.2 vs 5.8 min)",
+          "fill_percentage_gap": "-15% below target (78% vs 92% min)",
+          "excessive_voids": "+167% above limit (8 vs 3 max)",
+          "primary_issue": "Insufficient underfill flow due to high viscosity and low driving pressure"
+        }
+      },
+      "last_parameter_recipe": {
+        "recipe_id": "SilFlow2K_15x15_v1.0_baseline",
+        "recipe_version": "1.0",
+        "parameters": {
+          "vision": {
+            "lighting_level": 90,
+            "match_threshold": 0.85,
+            "camera_gain": 15
+          },
+          "motion": {
+            "z_height_mm": 0.08,
+            "xy_speed_mmps": 2.5,
+            "pattern_mode": "L_shape_edge"
+          },
+          "dispensing": {
+            "valve_open_time_ms": 450,
+            "air_pressure_psi": 3.2,
+            "pressure_delay_ms": 200,
+            "purge_time_ms": 2500
+          },
+          "material": {
+            "temperature_celsius": 22.0,
+            "pot_life_hours": 4.5,
+            "viscosity_cps": 8500
+          }
+        }
+      },
+      "expected_output": {
+        "tuning_strategy": "enhance_flow_dynamics",
+        "parameter_adjustments": {
+          "air_pressure_psi": {
+            "adjustment": "increase",
+            "from": 3.2,
+            "to": 4.1,
+            "direction": "+28%",
+            "reasoning": "Higher pressure overcomes capillary resistance and drives material further under chip"
+          },
+          "valve_open_time_ms": {
+            "adjustment": "increase",
+            "from": 450,
+            "to": 520,
+            "direction": "+16%",
+            "reasoning": "More material volume needed to achieve complete fill and eliminate voids"
+          },
+          "temperature_celsius": {
+            "adjustment": "increase",
+            "from": 22.0,
+            "to": 25.0,
+            "direction": "+14%",
+            "reasoning": "Higher temperature reduces viscosity from 8500 to ~7800 cps, improving flow characteristics"
+          },
+          "pressure_delay_ms": {
+            "adjustment": "maintain",
+            "from": 200,
+            "to": 200,
+            "direction": "0%",
+            "reasoning": "Current delay appropriate for underfill application - maintain for flow control"
+          }
+        },
+        "physics_rationale": "Insufficient flow indicates high viscosity and inadequate driving force. Increasing pressure provides more driving force, higher temperature reduces viscosity, and longer valve time ensures sufficient material volume for complete underfill.",
+        "expected_improvement": "Target flow distance 5.8-6.2mm, fill percentage 85-92%, void count 3-5, fillet height 0.15-0.18mm"
+      }
+    },
+    {
+      "test_id": "TEST_UC2_DFN8_ADHESION_LOW_003",
+      "description": "DFN adhesive low bond strength - need increased material volume and contact",
+      "input": {
+        "product_specification": {
+          "product_id": "DFN_8PIN_3X3_RevB",
+          "substrate_material": "Ceramic_Substrate",
+          "coating_material": "StructuralAdhesive-EP4000",
+          "nozzle_type": "Needle_350um",
+          "layout": {
+            "type": "DFN", 
+            "size_mm": [3.0, 3.0],
+            "bond_area_mm": [2.5, 2.5],
+            "dispensing_pattern": "corner_anchors"
+          },
+          "target_specification": {
+            "adhesion_strength_mpa": [12, 18],
+            "bond_coverage": ">85%",
+            "curing_uniformity": "±10%",
+            "target_yield": 0.93,
+            "max_cycle_time_sec": 8
+          }
+        },
+        "failed_trial_results": {
+          "status": "FAILURE",
+          "cycle_time_sec": 5.8,
+          "quality_metrics": {
+            "adhesion_strength_mpa": 8.5,
+            "bond_coverage_percent": 68.2,
+            "curing_uniformity_percent": 18.5,
+            "yield": 0.72
+          },
+          "environmental": {
+            "temperature_celsius": 23.2,
+            "humidity_percent": 41,
+            "material_age_hours": 15.0
+          }
+        },
+        "performance_gap_analysis": {
+          "adhesion_deficit": "-29% below minimum (8.5 vs 12 min MPa)",
+          "coverage_gap": "-20% below target (68% vs >85%)",
+          "uniformity_issue": "+85% worse than spec (18.5% vs ±10%)",
+          "primary_issue": "Insufficient adhesive volume and poor surface contact causing weak bonds"
+        }
+      },
+      "last_parameter_recipe": {
+        "recipe_id": "StructuralAdhesive_3x3_v1.0_baseline",
+        "recipe_version": "1.0",
+        "parameters": {
+          "vision": {
+            "lighting_level": 88,
+            "match_threshold": 0.89,
+            "camera_gain": 24
+          },
+          "motion": {
+            "z_height_mm": 0.12,
+            "xy_speed_mmps": 6.0,
+            "pattern_mode": "four_corner_dots"
+          },
+          "dispensing": {
+            "valve_open_time_ms": 80,
+            "air_pressure_psi": 19.0,
+            "pressure_delay_ms": 15,
+            "purge_time_ms": 1800
+          }
+        }
+      },
+      "expected_output": {
+        "tuning_strategy": "increase_bond_volume_and_contact",
+        "parameter_adjustments": {
+          "air_pressure_psi": {
+            "adjustment": "increase",
+            "from": 19.0,
+            "to": 22.5,
+            "direction": "+18%",
+            "reasoning": "Higher pressure needed to push viscous adhesive through larger nozzle for better coverage"
+          },
+          "valve_open_time_ms": {
+            "adjustment": "increase",
+            "from": 80,
+            "to": 110,
+            "direction": "+38%",
+            "reasoning": "Significantly longer valve time increases adhesive volume per dot for stronger bonds"
+          },
+          "z_height_mm": {
+            "adjustment": "decrease",
+            "from": 0.12,
+            "to": 0.10,
+            "direction": "-17%",
+            "reasoning": "Lower height improves surface contact and adhesive wet-out for better bonding"
+          },
+          "xy_speed_mmps": {
+            "adjustment": "decrease",
+            "from": 6.0,
+            "to": 4.5,
+            "direction": "-25%",
+            "reasoning": "Slower movement allows better dot formation and surface contact at each corner"
+          },
+          "pressure_delay_ms": {
+            "adjustment": "decrease",
+            "from": 15,
+            "to": 12,
+            "direction": "-20%",
+            "reasoning": "Shorter delay improves flow consistency for uniform dot sizes across all corners"
+          }
+        },
+        "physics_rationale": "Low adhesion strength indicates insufficient adhesive volume and poor surface wetting. Increased pressure and valve time provide more material, while lower Z-height and slower speed improve surface contact and uniformity.",
+        "expected_improvement": "Target adhesion strength 14-17 MPa, coverage 88-95%, uniformity 12-18%"
+      }
+    },
+    {
+      "test_id": "TEST_UC2_LED_CURE_TIME_HIGH_004",
+      "description": "LED UV coating slow cure time - need optimized coating thickness",
+      "input": {
+        "product_specification": {
+          "product_id": "LED_ARRAY_5050_12X12_RevA",
+          "substrate_material": "Aluminum_PCB",
+          "coating_material": "UVCoating-Clear365",
+          "nozzle_type": "Needle_600um",
+          "layout": {
+            "type": "LED_ARRAY", 
+            "size_mm": [12.0, 12.0],
+            "led_count": 9,
+            "dispensing_pattern": "lens_encapsulation"
+          },
+          "target_specification": {
+            "cure_time_sec": [5, 12],
+            "optical_clarity": ">95%",
+            "coating_hardness_shore_d": [70, 80],
+            "target_yield": 0.91,
+            "max_cycle_time_sec": 20
+          }
+        },
+        "failed_trial_results": {
+          "status": "FAILURE",
+          "cycle_time_sec": 16.8,
+          "quality_metrics": {
+            "cure_time_sec": 18.5,
+            "optical_clarity_percent": 87.2,
+            "coating_hardness_shore_d": 65,
+            "yield": 0.69
+          },
+          "environmental": {
+            "temperature_celsius": 22.8,
+            "humidity_percent": 44,
+            "material_age_hours": 6.0
+          }
+        },
+        "performance_gap_analysis": {
+          "cure_time_excess": "+54% above maximum (18.5 vs 12 max sec)",
+          "clarity_deficit": "-8% below target (87.2% vs >95%)",
+          "hardness_low": "-7% below minimum (65 vs 70 min Shore D)",
+          "primary_issue": "Excessive coating thickness preventing efficient UV penetration and cure"
+        }
+      },
+      "last_parameter_recipe": {
+        "recipe_id": "UVCoating_12x12_v1.0_baseline",
+        "recipe_version": "1.0",
+        "parameters": {
+          "vision": {
+            "lighting_level": 80,
+            "match_threshold": 0.86,
+            "camera_gain": 30
+          },
+          "motion": {
+            "z_height_mm": 0.35,
+            "xy_speed_mmps": 2.0,
+            "pattern_mode": "dome_coverage"
+          },
+          "dispensing": {
+            "valve_open_time_ms": 450,
+            "air_pressure_psi": 12.0,
+            "pressure_delay_ms": 60,
+            "purge_time_ms": 5000
+          }
+        }
+      },
+      "expected_output": {
+        "tuning_strategy": "optimize_coating_thickness_for_cure",
+        "parameter_adjustments": {
+          "air_pressure_psi": {
+            "adjustment": "increase",
+            "from": 12.0,
+            "to": 14.5,
+            "direction": "+21%",
+            "reasoning": "Higher pressure spreads coating thinner over LED dome for faster UV penetration"
+          },
+          "valve_open_time_ms": {
+            "adjustment": "decrease",
+            "from": 450,
+            "to": 380,
+            "direction": "-16%",
+            "reasoning": "Reduced valve time decreases material volume to achieve thinner, faster-curing coating"
+          },
+          "z_height_mm": {
+            "adjustment": "decrease",
+            "from": 0.35,
+            "to": 0.28,
+            "direction": "-20%",
+            "reasoning": "Lower Z-height helps spread material thinner while maintaining dome coverage"
+          },
+          "xy_speed_mmps": {
+            "adjustment": "decrease",
+            "from": 2.0,
+            "to": 1.5,
+            "direction": "-25%",
+            "reasoning": "Slower movement compensates for higher pressure, ensures complete dome coverage"
+          },
+          "pressure_delay_ms": {
+            "adjustment": "decrease",
+            "from": 60,
+            "to": 50,
+            "direction": "-17%",
+            "reasoning": "Shorter delay improves flow control for consistent thin coating application"
+          }
+        },
+        "physics_rationale": "Slow cure time indicates coating too thick for UV light penetration. Higher pressure with reduced material volume and lower Z-height creates thinner coating with faster cure while maintaining optical properties.",
+        "expected_improvement": "Target cure time 6-9 sec, clarity 90-94%, hardness 68-75 Shore D"
+      }
+    },
+    {
+      "test_id": "TEST_UC2_QFN32_DOT_SIZE_SMALL_005",
+      "description": "QFN thermal gel dot too small - need increased material volume",
+      "input": {
+        "product_specification": {
+          "product_id": "QFN_32PIN_5X5_RevA",
+          "substrate_material": "Copper_Leadframe",
+          "coating_material": "ThermalGel-HC200",
+          "nozzle_type": "Needle_300um",
+          "layout": {
+            "type": "QFN", 
+            "size_mm": [5.0, 5.0],
+            "thermal_pad_mm": [3.2, 3.2],
+            "dispensing_pattern": "single_dot_center"
+          },
+          "target_specification": {
+            "dot_diameter_mm": [2.8, 3.4],
+            "dot_height_mm": [0.15, 0.25],
+            "circular_uniformity": "±8%",
+            "target_yield": 0.94,
+            "max_cycle_time_sec": 8
+          }
+        },
+        "failed_trial_results": {
+          "status": "FAILURE",
+          "cycle_time_sec": 5.2,
+          "quality_metrics": {
+            "dot_diameter_mm": 2.1,
+            "dot_height_mm": 0.12,
+            "circular_uniformity_percent": 15.2,
+            "yield": 0.71
+          },
+          "environmental": {
+            "temperature_celsius": 22.8,
+            "humidity_percent": 45,
+            "material_age_hours": 6.0
+          }
+        },
+        "performance_gap_analysis": {
+          "diameter_deficit": "-25% below minimum (2.1 vs 2.8 min mm)",
+          "height_deficit": "-20% below minimum (0.12 vs 0.15 min mm)",
+          "uniformity_poor": "+90% worse than spec (15.2% vs ±8%)",
+          "primary_issue": "Insufficient thermal gel volume causing poor thermal interface coverage"
+        }
+      },
+      "last_parameter_recipe": {
+        "recipe_id": "ThermalGel_5x5_v1.0_baseline",
+        "recipe_version": "1.0",
+        "parameters": {
+          "vision": {
+            "lighting_level": 75,
+            "match_threshold": 0.88,
+            "camera_gain": 18
+          },
+          "motion": {
+            "z_height_mm": 0.20,
+            "xy_speed_mmps": 8.0,
+            "pattern_mode": "dot_center"
+          },
+          "dispensing": {
+            "valve_open_time_ms": 80,
+            "air_pressure_psi": 12.0,
+            "pressure_delay_ms": 50,
+            "purge_time_ms": 1500
+          }
+        }
+      },
+      "expected_output": {
+        "tuning_strategy": "increase_dot_volume_controlled",
+        "parameter_adjustments": {
+          "air_pressure_psi": {
+            "adjustment": "increase",
+            "from": 12.0,
+            "to": 15.5,
+            "direction": "+29%",
+            "reasoning": "Higher pressure pushes more viscous thermal gel through nozzle for larger dot"
+          },
+          "valve_open_time_ms": {
+            "adjustment": "increase",
+            "from": 80,
+            "to": 120,
+            "direction": "+50%",
+            "reasoning": "Significantly longer valve time needed to achieve target dot diameter and height"
+          },
+          "z_height_mm": {
+            "adjustment": "maintain",
+            "from": 0.20,
+            "to": 0.20,
+            "direction": "0%",
+            "reasoning": "Current height appropriate - changes would affect dot shape and uniformity"
+          },
+          "xy_speed_mmps": {
+            "adjustment": "maintain",
+            "from": 8.0,
+            "to": 8.0,
+            "direction": "0%",
+            "reasoning": "Speed not critical for single dot application - maintain for cycle time"
+          },
+          "pressure_delay_ms": {
+            "adjustment": "maintain",
+            "from": 50,
+            "to": 50,
+            "direction": "0%",
+            "reasoning": "Current delay provides good flow control for thermal gel viscosity"
+          }
+        },
+        "physics_rationale": "Small dot size indicates insufficient material volume. Increased pressure and valve time provide more thermal gel while maintaining Z-height preserves dot shape and uniformity for optimal thermal interface.",
+        "expected_improvement": "Target dot diameter 3.0-3.6mm, height 0.18-0.28mm, uniformity 10-18%"
+      }
+    },
+    {
+      "test_id": "TEST_UC2_BGA256_OVERFLOW_CORRECTION_006",
+      "description": "BGA EMI shield excessive bead height - need controlled material reduction",
+      "input": {
+        "product_specification": {
+          "product_id": "BGA_256PIN_17X17_RevA",
+          "substrate_material": "FR4_Substrate",
+          "coating_material": "EMIShield-Ag8000",
+          "nozzle_type": "Needle_250um",
+          "layout": {
+            "type": "BGA", 
+            "size_mm": [17.0, 17.0],
+            "shield_area_mm": [15.5, 15.5],
+            "dispensing_pattern": "perimeter_enclosure"
+          },
+          "target_specification": {
+            "conductivity_ohm_per_sq": [0.15, 0.8],
+            "shield_continuity": ">95%",
+            "bead_height_mm": [0.8, 1.2],
+            "target_yield": 0.95,
+            "max_cycle_time_sec": 15
+          }
+        },
+        "failed_trial_results": {
+          "status": "FAILURE",
+          "cycle_time_sec": 14.5,
+          "quality_metrics": {
+            "conductivity_ohm_per_sq": 0.95,
+            "shield_continuity_percent": 93,
+            "bead_height_mm": 1.35,
+            "yield": 0.81
+          },
+          "environmental": {
+            "temperature_celsius": 24.2,
+            "humidity_percent": 37,
+            "material_age_hours": 5.0
+          }
+        },
+        "performance_gap_analysis": {
+          "conductivity_acceptable": "Within range but approaching high limit",
+          "continuity_gap": "-2% below target (93% vs >95%)",
+          "height_excess": "+13% above maximum (1.35 vs 1.2 max mm)",
+          "primary_issue": "Excessive material causing bead overflow and component clearance issues"
+        }
+      },
+      "last_parameter_recipe": {
+        "recipe_id": "EMIShield_17x17_v1.1_adjustment1",
+        "recipe_version": "1.1",
+        "parameters": {
+          "vision": {
+            "lighting_level": 95,
+            "match_threshold": 0.90,
+            "camera_gain": 20
+          },
+          "motion": {
+            "z_height_mm": 0.25,
+            "xy_speed_mmps": 3.5,
+            "pattern_mode": "continuous_perimeter"
+          },
+          "dispensing": {
+            "valve_open_time_ms": 220,
+            "air_pressure_psi": 32.0,
+            "pressure_delay_ms": 15,
+            "purge_time_ms": 2500
+          }
+        }
+      },
+      "expected_output": {
+        "tuning_strategy": "controlled_material_reduction",
+        "parameter_adjustments": {
+          "air_pressure_psi": {
+            "adjustment": "decrease",
+            "from": 32.0,
+            "to": 30.0,
+            "direction": "-6%",
+            "reasoning": "Moderate pressure reduction to decrease material flow while maintaining adequate conductivity"
+          },
+          "valve_open_time_ms": {
+            "adjustment": "decrease",
+            "from": 220,
+            "to": 200,
+            "direction": "-9%",
+            "reasoning": "Shorter valve time reduces material volume to control bead height within specification"
+          },
+          "z_height_mm": {
+            "adjustment": "decrease",
+            "from": 0.25,
+            "to": 0.22,
+            "direction": "-12%",
+            "reasoning": "Lower Z-height improves material control and bead formation consistency"
+          },
+          "xy_speed_mmps": {
+            "adjustment": "increase",
+            "from": 3.5,
+            "to": 4.0,
+            "direction": "+14%",
+            "reasoning": "Slightly faster speed reduces material per unit length, controlling bead height"
+          },
+          "pressure_delay_ms": {
+            "adjustment": "increase",
+            "from": 15,
+            "to": 18,
+            "direction": "+20%",
+            "reasoning": "Longer delay improves flow control and material distribution uniformity"
+          }
+        },
+        "physics_rationale": "Excessive bead height from overcorrection in previous trial. Balanced reduction in pressure and valve time with controlled speed increase maintains conductivity while achieving target height range.",
+        "expected_improvement": "Target conductivity 0.4-0.6 ohm/sq, continuity >95%, bead height 1.0-1.1mm"
+      }
+    },
+    {
+      "test_id": "TEST_UC2_CSP15_OVERFLOW_CONTROL_007",
+      "description": "CSP underfill excessive flow causing overflow - need flow control",
+      "input": {
+        "product_specification": {
+          "product_id": "CSP_15X15_RevB",
+          "substrate_material": "BT_Resin",
+          "coating_material": "SilFlow-2K",
+          "nozzle_type": "Needle_150um",
+          "layout": {
+            "type": "CSP", 
+            "size_mm": [15.0, 15.0],
+            "die_size_mm": [12.8, 12.8],
+            "gap_height_um": 28,
+            "dispensing_pattern": "edge_underfill"
+          },
+          "target_specification": {
+            "flow_distance_mm": [5.8, 6.4],
+            "fill_percentage": [92, 98],
+            "void_count_max": 3,
+            "fillet_height_mm": [0.10, 0.15],
+            "target_yield": 0.96,
+            "max_cycle_time_sec": 25
+          }
+        },
+        "failed_trial_results": {
+          "status": "FAILURE",
+          "cycle_time_sec": 21.3,
+          "quality_metrics": {
+            "flow_distance_mm": 7.1,
+            "fill_percentage": 89,
+            "void_count": 2,
+            "fillet_height_mm": 0.18,
+            "yield": 0.65
+          },
+          "environmental": {
+            "temperature_celsius": 22.2,
+            "humidity_percent": 51,
+            "material_age_hours": 3.5
+          }
+        },
+        "performance_gap_analysis": {
+          "flow_distance_excess": "+11% above maximum (7.1 vs 6.4 max mm)",
+          "fill_percentage_low": "-3% below target (89% vs 92% min)",
+          "void_count_good": "Within specification (2 vs 3 max)",
+          "fillet_excess": "+20% above maximum (0.18 vs 0.15 max mm)",
+          "primary_issue": "Excessive material causing overflow beyond die edge while leaving internal voids"
+        }
+      },
+      "last_parameter_recipe": {
+        "recipe_id": "SilFlow2K_15x15_v1.1_adjustment1",
+        "recipe_version": "1.1",
+        "parameters": {
+          "vision": {
+            "lighting_level": 90,
+            "match_threshold": 0.85,
+            "camera_gain": 15
+          },
+          "motion": {
+            "z_height_mm": 0.08,
+            "xy_speed_mmps": 2.5,
+            "pattern_mode": "L_shape_edge"
+          },
+          "dispensing": {
+            "valve_open_time_ms": 520,
+            "air_pressure_psi": 4.1,
+            "pressure_delay_ms": 200,
+            "purge_time_ms": 2500
+          },
+          "material": {
+            "temperature_celsius": 25.0,
+            "pot_life_hours": 4.0,
+            "viscosity_cps": 7800
+          }
+        }
+      },
+      "expected_output": {
+        "tuning_strategy": "controlled_flow_optimization",
+        "parameter_adjustments": {
+          "air_pressure_psi": {
+            "adjustment": "decrease",
+            "from": 4.1,
+            "to": 3.6,
+            "direction": "-12%",
+            "reasoning": "Reduce pressure to control excessive flow while maintaining adequate fill"
+          },
+          "valve_open_time_ms": {
+            "adjustment": "decrease",
+            "from": 520,
+            "to": 480,
+            "direction": "-8%",
+            "reasoning": "Less material volume to prevent overflow while maintaining underfill coverage"
+          },
+          "xy_speed_mmps": {
+            "adjustment": "decrease",
+            "from": 2.5,
+            "to": 2.2,
+            "direction": "-12%",
+            "reasoning": "Slower speed allows better material distribution and reduces flow velocity"
+          },
+          "temperature_celsius": {
+            "adjustment": "decrease",
+            "from": 25.0,
+            "to": 23.5,
+            "direction": "-6%",
+            "reasoning": "Slightly higher viscosity (7800→8200 cps) to control flow rate"
+          },
+          "pressure_delay_ms": {
+            "adjustment": "decrease",
+            "from": 200,
+            "to": 180,
+            "direction": "-10%",
+            "reasoning": "Shorter delay for more controlled material release and better flow control"
+          }
+        },
+        "physics_rationale": "Excessive flow indicates overcorrection from previous trial. Balanced reduction in pressure, material volume, and temperature increases viscosity for controlled flow within target range while maintaining adequate fill.",
+        "expected_improvement": "Target flow distance 6.0-6.3mm, fill percentage 92-95%, fillet height 0.12-0.14mm"
+      }
+    },
+    {
+      "test_id": "TEST_UC2_QFN32_DOT_OVERSIZED_008",
+      "description": "QFN thermal gel dot too large - need precision volume control",
+      "input": {
+        "product_specification": {
+          "product_id": "QFN_32PIN_5X5_RevA",
+          "substrate_material": "Copper_Leadframe",
+          "coating_material": "ThermalGel-HC200",
+          "nozzle_type": "Needle_300um",
+          "layout": {
+            "type": "QFN", 
+            "size_mm": [5.0, 5.0],
+            "thermal_pad_mm": [3.2, 3.2],
+            "dispensing_pattern": "single_dot_center"
+          },
+          "target_specification": {
+            "dot_diameter_mm": [2.8, 3.4],
+            "dot_height_mm": [0.15, 0.25],
+            "circular_uniformity": "±8%",
+            "target_yield": 0.94,
+            "max_cycle_time_sec": 8
+          }
+        },
+        "failed_trial_results": {
+          "status": "FAILURE",
+          "cycle_time_sec": 6.1,
+          "quality_metrics": {
+            "dot_diameter_mm": 4.2,
+            "dot_height_mm": 0.31,
+            "circular_uniformity_percent": 22.8,
+            "yield": 0.58
+          },
+          "environmental": {
+            "temperature_celsius": 23.8,
+            "humidity_percent": 41,
+            "material_age_hours": 6.5
+          }
+        },
+        "performance_gap_analysis": {
+          "diameter_excess": "+24% above maximum (4.2 vs 3.4 max mm)",
+          "height_excess": "+24% above maximum (0.31 vs 0.25 max mm)",
+          "uniformity_poor": "+185% worse than spec (22.8% vs ±8%)",
+          "primary_issue": "Excessive thermal gel volume causing overflow beyond thermal pad boundaries"
+        }
+      },
+      "last_parameter_recipe": {
+        "recipe_id": "ThermalGel_5x5_v1.1_adjustment1",
+        "recipe_version": "1.1",
+        "parameters": {
+          "vision": {
+            "lighting_level": 75,
+            "match_threshold": 0.88,
+            "camera_gain": 18
+          },
+          "motion": {
+            "z_height_mm": 0.20,
+            "xy_speed_mmps": 8.0,
+            "pattern_mode": "dot_center"
+          },
+          "dispensing": {
+            "valve_open_time_ms": 120,
+            "air_pressure_psi": 15.5,
+            "pressure_delay_ms": 50,
+            "purge_time_ms": 1500
+          }
+        }
+      },
+      "expected_output": {
+        "tuning_strategy": "precision_volume_reduction",
+        "parameter_adjustments": {
+          "air_pressure_psi": {
+            "adjustment": "decrease",
+            "from": 15.5,
+            "to": 13.2,
+            "direction": "-15%",
+            "reasoning": "Lower pressure reduces material flow rate for controlled dot size"
+          },
+          "valve_open_time_ms": {
+            "adjustment": "decrease",
+            "from": 120,
+            "to": 95,
+            "direction": "-21%",
+            "reasoning": "Shorter valve time significantly reduces material volume to target range"
+          },
+          "z_height_mm": {
+            "adjustment": "decrease",
+            "from": 0.20,
+            "to": 0.18,
+            "direction": "-10%",
+            "reasoning": "Slightly lower height for better material control and dot formation"
+          },
+          "xy_speed_mmps": {
+            "adjustment": "decrease",
+            "from": 8.0,
+            "to": 6.0,
+            "direction": "-25%",
+            "reasoning": "Slower positioning improves dot placement accuracy and uniformity"
+          },
+          "pressure_delay_ms": {
+            "adjustment": "decrease",
+            "from": 50,
+            "to": 40,
+            "direction": "-20%",
+            "reasoning": "Shorter delay provides better flow control for consistent dot formation"
+          }
+        },
+        "physics_rationale": "Oversized dot from excessive material volume. Coordinated reduction in pressure and valve time with improved positioning control achieves target dot size while maintaining thermal interface effectiveness.",
+        "expected_improvement": "Target dot diameter 3.0-3.3mm, height 0.18-0.22mm, uniformity 8-12%"
+      }
+    }
+  ]
+} 

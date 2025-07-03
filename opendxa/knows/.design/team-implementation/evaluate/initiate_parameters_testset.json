@@ -1,0 +1,526 @@
+{
+  "testset_metadata": {
+    "name": "Semiconductor Dispensing Optimization Testset",
+    "description": "Test cases for dispensing parameter optimization based on historical manufacturing records",
+    "version": "1.0",
+    "created_date": "2024-01-25",
+    "test_count": 10,
+    "domain": "semiconductor_manufacturing",
+    "application": "dispensing_process_optimization"
+  },
+  "test_cases": [
+    {
+      "test_id": "TEST_BGA256_EMI_SHIELD_001",
+      "description": "BGA 256-pin EMI shielding optimization",
+      "input": {
+        "product_id": "BGA_256PIN_17X17_RevA",
+        "substrate_material": "FR4_Substrate",
+        "coating_material": "EMIShield-Ag8000",
+        "nozzle_type": "Needle_250um",
+        "layout": {
+          "type": "BGA", 
+          "size_mm": [17.0, 17.0],
+          "shield_area_mm": [15.5, 15.5],
+          "dispensing_pattern": "perimeter_enclosure"
+        },
+        "target_specification": {
+          "conductivity_ohm_per_sq": [0.15, 0.8],
+          "shield_continuity": ">95%",
+          "bead_height_mm": [0.8, 1.2],
+          "target_yield": 0.95,
+          "max_cycle_time_sec": 15
+        }
+      },
+      "expected_output": {
+        "optimized_parameters": {
+          "vision": {
+            "lighting_level": 95,
+            "match_threshold": 0.90,
+            "camera_gain": 20
+          },
+          "motion": {
+            "z_height_mm": 0.20,
+            "xy_speed_mmps": 4.5,
+            "pattern_mode": "continuous_perimeter"
+          },
+          "dispensing": {
+            "valve_open_time_ms": 190,
+            "air_pressure_psi": 29.2,
+            "pressure_delay_ms": 12,
+            "purge_time_ms": 2500
+          }
+        },
+        "quality_metrics": {
+          "conductivity_ohm_per_sq": 0.28,
+          "shield_continuity_percent": 98,
+          "bead_height_mm": 0.98,
+          "yield": 0.96,
+          "cycle_time_sec": 12.2
+        }
+      }
+    },
+    {
+      "test_id": "TEST_DFN8_ADHESIVE_BOND_002",
+      "description": "DFN 8-pin structural adhesive bonding optimization",
+      "input": {
+        "product_id": "DFN_8PIN_3X3_RevB",
+        "substrate_material": "Ceramic_Substrate",
+        "coating_material": "StructuralAdhesive-EP4000",
+        "nozzle_type": "Needle_350um",
+        "layout": {
+          "type": "DFN", 
+          "size_mm": [3.0, 3.0],
+          "bond_area_mm": [2.5, 2.5],
+          "dispensing_pattern": "corner_anchors"
+        },
+        "target_specification": {
+          "adhesion_strength_mpa": [12, 18],
+          "bond_coverage": ">85%",
+          "curing_uniformity": "±10%",
+          "target_yield": 0.93,
+          "max_cycle_time_sec": 8
+        }
+      },
+      "expected_output": {
+        "optimized_parameters": {
+          "vision": {
+            "lighting_level": 88,
+            "match_threshold": 0.89,
+            "camera_gain": 24
+          },
+          "motion": {
+            "z_height_mm": 0.08,
+            "xy_speed_mmps": 5.8,
+            "pattern_mode": "four_corner_dots"
+          },
+          "dispensing": {
+            "valve_open_time_ms": 92,
+            "air_pressure_psi": 20.8,
+            "pressure_delay_ms": 8,
+            "purge_time_ms": 1800
+          }
+        },
+        "quality_metrics": {
+          "adhesion_strength_mpa": 15.5,
+          "bond_coverage_percent": 89.2,
+          "curing_uniformity_percent": 8.8,
+          "yield": 0.94,
+          "cycle_time_sec": 5.7
+        }
+      }
+    },
+    {
+      "test_id": "TEST_CSP15_UNDERFILL_FLOW_003",
+      "description": "CSP 15x15 underfill flow optimization",
+      "input": {
+        "product_id": "CSP_15X15_RevB",
+        "substrate_material": "BT_Resin",
+        "coating_material": "SilFlow-2K",
+        "nozzle_type": "Needle_150um",
+        "layout": {
+          "type": "CSP", 
+          "size_mm": [15.0, 15.0],
+          "die_size_mm": [12.8, 12.8],
+          "gap_height_um": 28,
+          "dispensing_pattern": "edge_underfill"
+        },
+        "target_specification": {
+          "flow_distance_mm": [5.8, 6.4],
+          "fill_percentage": [92, 98],
+          "void_count_max": 3,
+          "fillet_height_mm": [0.10, 0.15],
+          "target_yield": 0.96,
+          "max_cycle_time_sec": 25
+        }
+      },
+      "expected_output": {
+        "optimized_parameters": {
+          "vision": {
+            "lighting_level": 90,
+            "match_threshold": 0.85,
+            "camera_gain": 15
+          },
+          "motion": {
+            "z_height_mm": 0.070,
+            "xy_speed_mmps": 1.8,
+            "pattern_mode": "L_shape_edge"
+          },
+          "dispensing": {
+            "valve_open_time_ms": 490,
+            "air_pressure_psi": 3.4,
+            "pressure_delay_ms": 150,
+            "purge_time_ms": 2500
+          },
+          "material": {
+            "temperature_celsius": 23.8,
+            "pot_life_hours": 4.1,
+            "viscosity_cps": 8000
+          }
+        },
+        "quality_metrics": {
+          "flow_distance_mm": 6.2,
+          "fill_percentage": 96,
+          "void_count": 2,
+          "fillet_height_mm": 0.12,
+          "yield": 0.97,
+          "cycle_time_sec": 24.5
+        }
+      }
+    },
+    {
+      "test_id": "TEST_LED_UV_COATING_004",
+      "description": "LED array UV coating cure optimization",
+      "input": {
+        "product_id": "LED_ARRAY_5050_12X12_RevA",
+        "substrate_material": "Aluminum_PCB",
+        "coating_material": "UVCoating-Clear365",
+        "nozzle_type": "Needle_600um",
+        "layout": {
+          "type": "LED_ARRAY", 
+          "size_mm": [12.0, 12.0],
+          "led_count": 9,
+          "dispensing_pattern": "lens_encapsulation"
+        },
+        "target_specification": {
+          "cure_time_sec": [5, 12],
+          "optical_clarity": ">95%",
+          "coating_hardness_shore_d": [70, 80],
+          "target_yield": 0.91,
+          "max_cycle_time_sec": 20
+        }
+      },
+      "expected_output": {
+        "optimized_parameters": {
+          "vision": {
+            "lighting_level": 80,
+            "match_threshold": 0.86,
+            "camera_gain": 30
+          },
+          "motion": {
+            "z_height_mm": 0.31,
+            "xy_speed_mmps": 2.1,
+            "pattern_mode": "dome_coverage"
+          },
+          "dispensing": {
+            "valve_open_time_ms": 390,
+            "air_pressure_psi": 12.5,
+            "pressure_delay_ms": 40,
+            "purge_time_ms": 5000
+          }
+        },
+        "quality_metrics": {
+          "cure_time_sec": 11.8,
+          "optical_clarity_percent": 96.2,
+          "coating_hardness_shore_d": 75,
+          "yield": 0.92,
+          "cycle_time_sec": 16.8
+        }
+      }
+    },
+    {
+      "test_id": "TEST_SOT23_SOLDER_PASTE_005",
+      "description": "SOT-23 solder paste volume optimization",
+      "input": {
+        "product_id": "SOT_23_3PIN_2.9X1.6_RevA",
+        "substrate_material": "FR4_HASL_Finish",
+        "coating_material": "SolderPaste-SAC305",
+        "nozzle_type": "Needle_150um",
+        "layout": {
+          "type": "SOT23", 
+          "size_mm": [2.9, 1.6],
+          "pad_count": 3,
+          "dispensing_pattern": "individual_pads"
+        },
+        "target_specification": {
+          "paste_volume_nl": [15, 25],
+          "pad_coverage": ">90%",
+          "paste_height_um": [80, 120],
+          "target_yield": 0.97,
+          "max_cycle_time_sec": 3
+        }
+      },
+      "expected_output": {
+        "optimized_parameters": {
+          "vision": {
+            "lighting_level": 98,
+            "match_threshold": 0.95,
+            "camera_gain": 15
+          },
+          "motion": {
+            "z_height_mm": 0.05,
+            "xy_speed_mmps": 12.0,
+            "pattern_mode": "dot_per_pad"
+          },
+          "dispensing": {
+            "valve_open_time_ms": 30,
+            "air_pressure_psi": 9.2,
+            "pressure_delay_ms": 3,
+            "purge_time_ms": 800
+          }
+        },
+        "quality_metrics": {
+          "paste_volume_nl": 18,
+          "pad_coverage_percent": 95,
+          "paste_height_um": 88,
+          "yield": 0.98,
+          "cycle_time_sec": 1.8
+        }
+      }
+    },
+    {
+      "test_id": "TEST_QFN32_THERMAL_GEL_006",
+      "description": "QFN 32-pin thermal gel dot diameter optimization",
+      "input": {
+        "product_id": "QFN_32PIN_5X5_RevA",
+        "substrate_material": "Copper_Leadframe",
+        "coating_material": "ThermalGel-HC200",
+        "nozzle_type": "Needle_300um",
+        "layout": {
+          "type": "QFN", 
+          "size_mm": [5.0, 5.0],
+          "thermal_pad_mm": [3.2, 3.2],
+          "dispensing_pattern": "single_dot_center"
+        },
+        "target_specification": {
+          "dot_diameter_mm": [2.8, 3.4],
+          "dot_height_mm": [0.15, 0.25],
+          "circular_uniformity": "±8%",
+          "target_yield": 0.94,
+          "max_cycle_time_sec": 8
+        }
+      },
+      "expected_output": {
+        "optimized_parameters": {
+          "vision": {
+            "lighting_level": 75,
+            "match_threshold": 0.88,
+            "camera_gain": 18
+          },
+          "motion": {
+            "z_height_mm": 0.16,
+            "xy_speed_mmps": 5.8,
+            "pattern_mode": "dot_center"
+          },
+          "dispensing": {
+            "valve_open_time_ms": 85,
+            "air_pressure_psi": 12.8,
+            "pressure_delay_ms": 32,
+            "purge_time_ms": 1500
+          }
+        },
+        "quality_metrics": {
+          "dot_diameter_mm": 3.2,
+          "dot_height_mm": 0.21,
+          "circular_uniformity_percent": 5.8,
+          "yield": 0.95,
+          "cycle_time_sec": 7.3
+        }
+      }
+    },
+    {
+      "test_id": "TEST_PCB_CONFORMAL_COAT_007",
+      "description": "PCB conformal coating coverage optimization",
+      "input": {
+        "product_id": "PCB_MAIN_BOARD_50X80_RevB",
+        "substrate_material": "FR4_Green_Soldermask",
+        "coating_material": "ConformalCoat-AC2500",
+        "nozzle_type": "Needle_500um",
+        "layout": {
+          "type": "PCB", 
+          "size_mm": [50.0, 80.0],
+          "coating_area_mm": [45.0, 75.0],
+          "dispensing_pattern": "area_coverage"
+        },
+        "target_specification": {
+          "coating_thickness_um": [25, 50],
+          "coverage_uniformity": "±20%",
+          "edge_definition": ">95%",
+          "target_yield": 0.88,
+          "max_cycle_time_sec": 45
+        }
+      },
+      "expected_output": {
+        "optimized_parameters": {
+          "vision": {
+            "lighting_level": 85,
+            "match_threshold": 0.87,
+            "camera_gain": 28
+          },
+          "motion": {
+            "z_height_mm": 0.28,
+            "xy_speed_mmps": 5.5,
+            "pattern_mode": "raster_scan"
+          },
+          "dispensing": {
+            "valve_open_time_ms": 350,
+            "air_pressure_psi": 16.5,
+            "pressure_delay_ms": 30,
+            "purge_time_ms": 4000
+          }
+        },
+        "quality_metrics": {
+          "coating_thickness_um": 35,
+          "coverage_uniformity_percent": 14.2,
+          "edge_definition_percent": 96.1,
+          "yield": 0.89,
+          "cycle_time_sec": 44.8
+        }
+      }
+    },
+    {
+      "test_id": "TEST_LGA775_THERMAL_PAD_008",
+      "description": "LGA 775 thermal pad coverage optimization",
+      "input": {
+        "product_id": "LGA_775_SOCKET_37.5X37.5_RevC",
+        "substrate_material": "Ceramic_Base",
+        "coating_material": "ThermalPad-TP5000",
+        "nozzle_type": "Needle_400um",
+        "layout": {
+          "type": "LGA", 
+          "size_mm": [37.5, 37.5],
+          "heat_spreader_mm": [30.0, 30.0],
+          "dispensing_pattern": "grid_coverage"
+        },
+        "target_specification": {
+          "coverage_percentage": [88, 96],
+          "thermal_resistance": "<0.05 K/W",
+          "gap_uniformity": "±15%",
+          "target_yield": 0.90,
+          "max_cycle_time_sec": 25
+        }
+      },
+      "expected_output": {
+        "optimized_parameters": {
+          "vision": {
+            "lighting_level": 90,
+            "match_threshold": 0.85,
+            "camera_gain": 25
+          },
+          "motion": {
+            "z_height_mm": 0.16,
+            "xy_speed_mmps": 3.0,
+            "pattern_mode": "grid_8x8"
+          },
+          "dispensing": {
+            "valve_open_time_ms": 210,
+            "air_pressure_psi": 23.8,
+            "pressure_delay_ms": 25,
+            "purge_time_ms": 3000
+          }
+        },
+        "quality_metrics": {
+          "coverage_percentage": 93,
+          "thermal_resistance_k_per_w": 0.043,
+          "gap_uniformity_percent": 11.5,
+          "yield": 0.92,
+          "cycle_time_sec": 24.2
+        }
+      }
+    },
+    {
+      "test_id": "TEST_SOIC16_DIE_PASTE_009",
+      "description": "SOIC 16-pin die paste bond line optimization",
+      "input": {
+        "product_id": "SOIC_16PIN_7.5X10.3_RevB",
+        "substrate_material": "FR4_Substrate",
+        "coating_material": "DiePaste-SP1000",
+        "nozzle_type": "Needle_200um",
+        "layout": {
+          "type": "SOIC", 
+          "size_mm": [7.5, 10.3],
+          "die_area_mm": [4.2, 5.8],
+          "dispensing_pattern": "die_attach_coverage"
+        },
+        "target_specification": {
+          "bond_line_thickness_um": [50, 80],
+          "coverage_percentage": [85, 95],
+          "void_fraction": "<5%",
+          "target_yield": 0.92,
+          "max_cycle_time_sec": 12
+        }
+      },
+      "expected_output": {
+        "optimized_parameters": {
+          "vision": {
+            "lighting_level": 85,
+            "match_threshold": 0.92,
+            "camera_gain": 22
+          },
+          "motion": {
+            "z_height_mm": 0.08,
+            "xy_speed_mmps": 2.5,
+            "pattern_mode": "parallel_lines"
+          },
+          "dispensing": {
+            "valve_open_time_ms": 145,
+            "air_pressure_psi": 16.2,
+            "pressure_delay_ms": 12,
+            "purge_time_ms": 2000
+          }
+        },
+        "quality_metrics": {
+          "bond_line_thickness_um": 62,
+          "coverage_percentage": 92,
+          "void_fraction_percent": 3.8,
+          "yield": 0.93,
+          "cycle_time_sec": 11.5
+        }
+      }
+    },
+    {
+      "test_id": "TEST_QFN25_UV_UNDERFILL_010",
+      "description": "QFN 25x25 UV underfill bead height optimization",
+      "input": {
+        "product_id": "QFN_25X25_V3",
+        "substrate_material": "Rogers_4350B",
+        "coating_material": "UV-250_Underfill",
+        "nozzle_type": "Needle_150um",
+        "layout": {
+          "type": "QFN", 
+          "size_mm": [25.0, 25.0],
+          "pad_pitch_mm": 0.4,
+          "dispensing_pattern": "L_shape_corner_fill"
+        },
+        "target_specification": {
+          "bead_width_mm": [0.30, 0.40],
+          "bead_height_mm": [0.08, 0.12],
+          "flow_distance_mm": [18.0, 20.0],
+          "target_yield": 0.96,
+          "max_cycle_time_sec": 85
+        }
+      },
+      "expected_output": {
+        "optimized_parameters": {
+          "vision": {
+            "lighting_level": 90,
+            "match_threshold": 0.85,
+            "camera_gain": 15
+          },
+          "motion": {
+            "z_height_mm": 0.17,
+            "xy_speed_mmps": 2.4,
+            "pattern_mode": "L_shape"
+          },
+          "dispensing": {
+            "valve_open_time_ms": 310,
+            "air_pressure_psi": 2.3,
+            "pressure_delay_ms": 115,
+            "purge_time_ms": 2500
+          },
+          "material": {
+            "temperature_celsius": 25.0,
+            "viscosity_cps": 1200
+          }
+        },
+        "quality_metrics": {
+          "bead_width_mm": 0.36,
+          "bead_height_mm": 0.105,
+          "flow_distance_mm": 19.2,
+          "dispensed_volume_ul": 4.2,
+          "yield": 0.97,
+          "cycle_time_sec": 68.5
+        }
+      }
+    }
+  ]
+} 
