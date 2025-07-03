@@ -1,0 +1,11 @@
+incident_id,date,severity,category,description,assigned_to,status,resolution_time_hours
+INC-001,2024-01-15,High,Network,Database server connectivity lost,john.doe@company.com,Resolved,2.5
+INC-002,2024-01-15,Medium,Application,Web application slow response times,jane.smith@company.com,In Progress,
+INC-003,2024-01-14,Low,Hardware,Server fan noise reported,mike.johnson@company.com,Resolved,0.5
+INC-004,2024-01-14,High,Security,Unauthorized access attempt detected,security@company.com,Investigating,
+INC-005,2024-01-13,Medium,Network,VPN connection issues for remote users,network@company.com,Resolved,4.0
+INC-006,2024-01-13,Critical,Database,Primary database corruption detected,dba@company.com,Resolved,8.5
+INC-007,2024-01-12,Low,Application,Minor UI display issue in dashboard,dev@company.com,Closed,1.0
+INC-008,2024-01-12,Medium,Hardware,Backup drive capacity warning,storage@company.com,Resolved,0.25
+INC-009,2024-01-11,High,Network,Internet gateway failover triggered,network@company.com,Resolved,1.5
+INC-010,2024-01-11,Medium,Application,Email service intermittent failures,email@company.com,Monitoring, 

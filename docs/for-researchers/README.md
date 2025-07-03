@@ -122,7 +122,7 @@ Integration Mechanisms
 
 The CORRAL framework represents a systematic approach to domain knowledge management:
 
-1. **Collect**: Systematic knowledge acquisition from diverse sources
+1. **Curate**: Systematic knowledge acquisition from diverse sources, including human interviews and synthesis
 2. **Organize**: Structured representation and categorization
 3. **Retrieve**: Context-aware knowledge access and selection
 4. **Reason**: Inference and decision-making processes
