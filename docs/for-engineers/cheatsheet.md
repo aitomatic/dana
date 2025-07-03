@@ -30,7 +30,7 @@ summary = reason("Summarize", context=documents, temperature=0.7)
 
 # Resource loading
 websearch = use("mcp", url="http://localhost:8880/websearch")
-rag = use("rag", doc_paths=["docs/"], enable_print=False)
+rag = use("rag", sources=["docs/"])
 
 # State setting
 set("system:agent_status", "ready")
@@ -156,7 +156,7 @@ tools = websearch.list_openai_functions()
 results = websearch.search("query")
 
 # RAG services
-rag = use("rag", doc_paths=["docs/"], enable_print=False)
+rag = use("rag", sources=["docs/"])
 answer = rag.retrieve("What is DANA?")
 
 # With statements
@@ -164,6 +164,7 @@ with use("mcp", url="http://localhost:8080/sse") as mcp:
     functions = mcp.list_openai_functions()
 
 # Python library objects
+import pandas.py as pd
 df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
 filtered = df[df["A"] > 1]              # Pandas filtering
 first_row = df.iloc[0]                  # Row selection
