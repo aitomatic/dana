@@ -214,6 +214,16 @@ class ActPhase:
     def _simulate_overall_execution(self, composed_knowledge: dict[str, Any], action_results: list[dict[str, Any]]) -> dict[str, Any]:
         """Simulate overall task execution outcome."""
 
+        # Handle empty action_results case
+        if not action_results:
+            return {
+                "success": False,
+                "accuracy": "±0.00mm",
+                "setup_time": 0.0,
+                "success_rate": 0.0,
+                "critical_actions_completed": 0,
+            }
+
         # Determine overall success based on action results
         successful_actions = [r for r in action_results if r["status"] == "completed"]
         success_rate = len(successful_actions) / len(action_results)
@@ -240,6 +250,18 @@ class ActPhase:
 
     def _calculate_performance_metrics(self, action_results: list[dict[str, Any]], overall_result: dict[str, Any]) -> dict[str, Any]:
         """Calculate performance metrics from execution results."""
+
+        # Handle empty action_results case
+        if not action_results:
+            return {
+                "overall_success_rate": 0.0,
+                "average_accuracy": "±0.00mm",
+                "total_setup_time": 0.0,
+                "actions_completed": 0,
+                "actions_failed": 0,
+                "average_action_time": 0.0,
+                "optimization_effectiveness": 0.0,
+            }
 
         metrics = {
             "overall_success_rate": overall_result["success_rate"],
