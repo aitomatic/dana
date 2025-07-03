@@ -296,7 +296,6 @@ def reason_function(
 
         # Phase 1: Detect expected return type context
         context_detector = ContextDetector()
-        
         type_context = context_detector.detect_current_context(context)
 
         if type_context:

@@ -72,7 +72,9 @@ def configure_llm_mocking(request):
     if not request.config.getoption("--run-llm"):
         os.environ["OPENDXA_MOCK_LLM"] = "true"
         yield
-        del os.environ["OPENDXA_MOCK_LLM"]
+        # Only delete if it exists
+        if "OPENDXA_MOCK_LLM" in os.environ:
+            del os.environ["OPENDXA_MOCK_LLM"]
     else:
         # When running live tests, ensure mock mode is disabled
         original_value = os.environ.get("OPENDXA_MOCK_LLM")

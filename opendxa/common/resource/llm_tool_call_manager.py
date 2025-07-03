@@ -10,6 +10,7 @@ MIT License
 
 import json
 from typing import Any, cast
+import os
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.mixins.registerable import Registerable
@@ -17,6 +18,7 @@ from opendxa.common.mixins.tool_callable import OpenAIFunctionCall, ToolCallable
 from opendxa.common.mixins.tool_formats import ToolFormat
 from opendxa.common.resource.base_resource import BaseResource
 from opendxa.common.types import BaseRequest, BaseResponse
+from opendxa.common.exceptions import LLMError
 
 # To avoid accidentally sending too much data to the LLM,
 # we limit the total length of tool-call responses.
@@ -50,16 +52,19 @@ class LLMToolCallManager(Loggable):
         """
         from opendxa.common.utils.misc import Misc
 
+        # Get original messages
+        original_messages = Misc.get_field(request, "messages", [])
+
+        # Let AISuite handle system message transformation completely
+        # Just pass messages as-is - AISuite will transform them correctly for each provider
         params = {
-            "messages": Misc.get_field(request, "messages", []),
+            "messages": original_messages,
             "temperature": Misc.get_field(request, "temperature", 0.7),
-            "max_tokens": Misc.get_field(request, "max_tokens"),
         }
 
-        if not available_resources:
-            available_resources = Misc.get_field(request, "available_resources", {})
+        if Misc.has_field(request, "max_tokens"):
+            params["max_tokens"] = Misc.get_field(request, "max_tokens")
 
-        # Only add model if it's available
         if model:
             params["model"] = model
 

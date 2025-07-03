@@ -26,13 +26,12 @@ authors = [
 dependencies = [
     # AI/LLM Integration - Core functionality for agent reasoning
     "google-cloud-aiplatform",
+    # "google-genai<1.20.0",  # Temporarily disabled to test httpx compatibility
     "aisuite[openai,anthropic,azure,groq,huggingface,ollama]>=0.1.11",
-    "openai",
     "mcp",
-    "fastmcp>=2.6.1",
+    # "fastmcp>=2.6.1,<2.9.0",  # Temporarily disabled to test httpx compatibility
     "llm-code-executor",
     "llama-index",
-    
     # Data Processing - Required for agent data handling
     "pandas",
     "matplotlib",
@@ -43,6 +42,7 @@ dependencies = [
     "aiohttp",
     "aioconsole",
     "websockets",
+    "httpx==0.27.2",  # Pin to fix AISuite/Anthropic compatibility issue
     # Configuration & Utilities
     "nest_asyncio",
     "python-dotenv",
@@ -53,10 +53,8 @@ dependencies = [
     # Interactive Features - REPL and user interface
     "prompt-toolkit",
     "pygments",
-
     # Webcrawler
     "playwright",
-    
     # Testing - Core testing framework (needed for Dana runtime)
     "pytest",
     "pytest-asyncio",
@@ -70,9 +68,9 @@ dependencies = [
     "mkdocs-git-revision-date-localized-plugin>=1.4.7",
     "pymdown-extensions[extra]>=10.15",
     "python-a2a>=0.5.9",
-    
     # API Server - Required for Dana sandbox operations
     "fastapi",
+    "openai>=1.55.3",
 ]
 
 # Development-only dependencies

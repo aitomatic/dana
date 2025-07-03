@@ -8,16 +8,15 @@ MIT License
 """
 
 import os
-import re
 from collections.abc import Awaitable, Callable
 from typing import Any, cast
 
 import aisuite as ai
+from openai import APIStatusError, AuthenticationError, RateLimitError
 from openai.types.chat import ChatCompletion
 
 from opendxa.common.exceptions import (
     LLMAuthenticationError,
-    LLMContextLengthError,
     LLMError,
     LLMProviderError,
     LLMRateLimitError,
@@ -152,21 +151,27 @@ class LLMQueryExecutor(Loggable):
         else:
             max_iterations = 1
 
-        # Add a system prompt that encourages resource use if not provided
-        system_messages = Misc.get_field(
-            request,
-            "system_messages",
-            [
-                "You are an assistant. Use tools when necessary to complete tasks. "
-                "After receiving tool results, you can request additional tools if needed."
-            ],
-        )
-
         user_messages = Misc.get_field(request, "user_messages", Misc.get_field(request, "messages", ["Hello, how are you?"]))
+
+        # Check if user messages already contain system messages
+        has_user_system_messages = any(isinstance(msg, dict) and msg.get("role") == "system" for msg in user_messages)
+
+        # Only add default system prompt if user hasn't provided their own
+        if not has_user_system_messages:
+            system_messages = Misc.get_field(
+                request,
+                "system_messages",
+                [
+                    "You are an assistant. Use tools when necessary to complete tasks. "
+                    "After receiving tool results, you can request additional tools if needed."
+                ],
+            )
+        else:
+            system_messages = Misc.get_field(request, "system_messages", [])
 
         # Initialize message history with system and user messages
         message_history: list[dict[str, Any]] = []
-        if system_messages:
+        if system_messages and not has_user_system_messages:
             # Ensure system messages are strings before joining
             system_content = "\n".join([str(msg) for msg in system_messages])
             message_history.append({"role": "system", "content": system_content})
@@ -344,43 +349,43 @@ class LLMQueryExecutor(Loggable):
         else:
             request_params = self._build_default_request_params(request)
 
+        # Check for local vLLM override for the model parameter
+        vllm_override_model = os.getenv("VLLM_API_MODEL_NAME")
+        if vllm_override_model and request_params.get("model") == "openai:vllm-local-model":
+            self.debug(f"Overriding model with VLLM_API_MODEL_NAME: {vllm_override_model}")
+            request_params["model"] = vllm_override_model
+
         # Log the LLM request at INFO level
         self._log_llm_request(request_params)
 
         # Make the API call
         try:
-            response = self._client.chat.completions.create(**request_params)
+            # Make the actual API call (aisuite is synchronous)
+            response: ChatCompletion = self._client.chat.completions.create(
+                **request_params,
+            )
+            self.info("LLM query successful")
             self._log_llm_response(response)
-            return response
+
+            # Convert AISuite response to dictionary format
+            # AISuite returns ChatCompletionResponse which doesn't have model_dump()
+            return self._convert_response_to_dict(response)
+
+        except AuthenticationError as e:
+            provider = self.model.split(":", 1)[0] if self.model else "unknown"
+            self.error(f"LLM authentication failed for provider '{provider}': {e}")
+            raise LLMAuthenticationError(provider, e.status_code, str(e)) from e
+        except RateLimitError as e:
+            provider = self.model.split(":", 1)[0] if self.model else "unknown"
+            self.error(f"LLM rate limit exceeded for provider '{provider}': {e}")
+            raise LLMRateLimitError(provider, e.status_code, str(e)) from e
+        except APIStatusError as e:
+            provider = self.model.split(":", 1)[0] if self.model else "unknown"
+            self.error(f"LLM API error for provider '{provider}': {e.message}")
+            raise LLMProviderError(provider, e.status_code, str(e.message)) from e
         except Exception as e:
-            error_message = str(e)
-            self.error("LLM query failed: %s", error_message)
-
-            # Determine the provider from the model
-            provider = "unknown"
-            if self.model and ":" in self.model:
-                provider = self.model.split(":", 1)[0]
-
-            # Extract HTTP status code if available
-            status_code = None
-            status_match = re.search(r"status[\s_]*code[:\s]+(\d+)", error_message, re.IGNORECASE)
-            if status_match:
-                status_code = int(status_match.group(1))
-
-            # Classify the error based on message patterns and status codes
-            if any(term in error_message.lower() for term in ["context length", "token limit", "too many tokens", "maximum context"]):
-                raise LLMContextLengthError(provider, status_code, error_message) from e
-            elif any(term in error_message.lower() for term in ["rate limit", "ratelimit", "too many requests", "429"]):
-                raise LLMRateLimitError(provider, status_code, error_message) from e
-            elif any(
-                term in error_message.lower() for term in ["authenticate", "authentication", "unauthorized", "auth", "api key", "401"]
-            ):
-                raise LLMAuthenticationError(provider, status_code, error_message) from e
-            elif "invalid_request_error" in error_message.lower() or "bad request" in error_message.lower():
-                raise LLMProviderError(provider, status_code, error_message) from e
-            else:
-                # Default case - generic LLM error
-                raise LLMError(f"LLM query failed: {error_message}") from e
+            self.error(f"An unexpected error occurred during LLM query: {e}")
+            raise LLMError(f"An unexpected error occurred: {e}") from e
 
     async def mock_llm_query(self, request: dict[str, Any]) -> dict[str, Any]:
         """Intelligent mock LLM query that understands POET-enhanced prompts.
@@ -512,7 +517,7 @@ class LLMQueryExecutor(Loggable):
             return f"This is a mock response. In a real scenario, I would provide a thoughtful answer to: {prompt[:100]}{'...' if len(prompt) > 100 else ''}"
 
     def _build_default_request_params(self, request: dict[str, Any]) -> dict[str, Any]:
-        """Build default request parameters for LLM API call.
+        """Build request parameters for LLM API call.
 
         Args:
             request: Dictionary containing request parameters
@@ -520,20 +525,95 @@ class LLMQueryExecutor(Loggable):
         Returns:
             Dict[str, Any]: Dictionary of request parameters
         """
-        params = {
-            "messages": Misc.get_field(request, "messages", []),
+        logical_model_name = self.model
+        final_model_name_for_api = logical_model_name
+
+        # Handle vLLM provider and model name translation
+        if logical_model_name and logical_model_name.startswith("vllm:"):
+            self.debug(f"Handling vLLM model: {logical_model_name}")
+            # Default to using openai provider for aisuite compatibility
+            final_model_name_for_api = logical_model_name.replace("vllm:", "openai:", 1)
+
+            # Check if the start script provided a specific physical model name
+            physical_model_override = os.getenv("VLLM_API_MODEL_NAME")
+            if physical_model_override:
+                # The final name for aisuite is "openai:" + the physical name
+                final_model_name_for_api = f"openai:{physical_model_override}"
+                self.debug(f"Overriding with physical model from VLLM_API_MODEL_NAME: {final_model_name_for_api}")
+
+        # Build basic request parameters
+        request_params = {
+            "model": final_model_name_for_api,
+            "messages": Misc.get_field(request, "messages", [{"role": "user", "content": "Hello"}]),
             "temperature": Misc.get_field(request, "temperature", 0.7),
-            "max_tokens": Misc.get_field(request, "max_tokens"),
         }
 
-        # Only add model if it's available
-        if self.model:
-            params["model"] = self.model
+        # Only include max_tokens if it's actually provided in the request
+        if "max_tokens" in request and request["max_tokens"] is not None:
+            request_params["max_tokens"] = request["max_tokens"]
 
-        return params
+        # Include tools if available_resources are provided
+        available_resources = Misc.get_field(request, "available_resources", None)
+        if available_resources:
+            request_params["tools"] = self._get_openai_functions_from_resources(available_resources)
+
+        # Let AISuite handle Anthropic system message transformation automatically
+        # Manual transformation causes "multiple values for keyword argument 'system'" error
+        # because AISuite also transforms system messages internally
+
+        return request_params
+
+    def _transform_anthropic_system_messages(self, request_params: dict[str, Any]) -> dict[str, Any]:
+        """Transform system messages for Anthropic models.
+
+        Anthropic expects system messages as a top-level 'system' parameter,
+        not in the messages array.
+
+        Args:
+            request_params: Original request parameters
+
+        Returns:
+            Dict[str, Any]: Transformed request parameters
+        """
+        messages = request_params.get("messages", [])
+        system_messages = []
+        non_system_messages = []
+
+        # Separate system messages from other messages
+        for message in messages:
+            if message.get("role") == "system":
+                content = message.get("content", "")
+                system_messages.append(content)  # Include all system messages, even empty ones
+            else:
+                non_system_messages.append(message)
+
+        # Update request parameters
+        result = request_params.copy()
+        result["messages"] = non_system_messages
+
+        # Add system parameter if we have system messages
+        if system_messages:
+            result["system"] = "\n".join(system_messages)
+
+        return result
+
+    def _get_openai_functions_from_resources(self, resources: dict[str, Any]) -> list[dict[str, Any]]:
+        """Get OpenAI functions from available resources.
+
+        Args:
+            resources: Dictionary of available resources
+
+        Returns:
+            List[dict[str, Any]]: List of tool definitions
+        """
+        functions = []
+        for _, resource in resources.items():
+            if hasattr(resource, "list_openai_functions"):
+                functions.extend(resource.list_openai_functions())
+        return functions
 
     def _log_llm_request(self, request_params: dict[str, Any]) -> None:
-        """Log LLM request at INFO level.
+        """Log the LLM request details.
 
         Args:
             request_params: Dictionary containing request parameters
@@ -606,3 +686,68 @@ class LLMQueryExecutor(Loggable):
 
         # Also keep the debug level logging for full details
         self.debug("LLM response (full): %s", str(response))
+
+    def _convert_response_to_dict(self, response) -> dict[str, Any]:
+        """Convert AISuite response object to dictionary format.
+
+        AISuite returns ChatCompletionResponse objects that don't have model_dump().
+        This method manually converts them to the expected dictionary format.
+
+        Args:
+            response: AISuite ChatCompletionResponse or OpenAI ChatCompletion object
+
+        Returns:
+            Dict[str, Any]: Dictionary representation of the response
+        """
+        # If it's already a dict (from mock), return as-is
+        if isinstance(response, dict):
+            return response
+
+        # If it has model_dump (OpenAI SDK), use it
+        if hasattr(response, "model_dump"):
+            return response.model_dump()
+
+        # For AISuite ChatCompletionResponse, manually convert
+        result = {}
+
+        # Handle choices
+        if hasattr(response, "choices") and response.choices:
+            choices = []
+            for choice in response.choices:
+                choice_dict = {}
+                if hasattr(choice, "message"):
+                    message_dict = {}
+                    if hasattr(choice.message, "role"):
+                        message_dict["role"] = choice.message.role
+                    if hasattr(choice.message, "content"):
+                        message_dict["content"] = choice.message.content
+                    if hasattr(choice.message, "tool_calls"):
+                        message_dict["tool_calls"] = choice.message.tool_calls
+                    choice_dict["message"] = message_dict
+                if hasattr(choice, "finish_reason"):
+                    choice_dict["finish_reason"] = choice.finish_reason
+                choices.append(choice_dict)
+            result["choices"] = choices
+
+        # Handle usage
+        if hasattr(response, "usage"):
+            if isinstance(response.usage, dict):
+                result["usage"] = response.usage
+            else:
+                usage_dict = {}
+                if hasattr(response.usage, "prompt_tokens"):
+                    usage_dict["prompt_tokens"] = response.usage.prompt_tokens
+                if hasattr(response.usage, "completion_tokens"):
+                    usage_dict["completion_tokens"] = response.usage.completion_tokens
+                if hasattr(response.usage, "total_tokens"):
+                    usage_dict["total_tokens"] = response.usage.total_tokens
+                result["usage"] = usage_dict
+
+        # Handle model
+        if hasattr(response, "model"):
+            result["model"] = response.model
+        elif self.model:
+            # Fallback to current model if response doesn't have it
+            result["model"] = self.model
+
+        return result
