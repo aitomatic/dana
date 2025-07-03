@@ -239,9 +239,7 @@ class AgentHandler(Loggable):
         # Create and register the agent type using the new struct-like system
         try:
             agent_type = register_agent_from_ast(node)
-            print(f"[DEBUG] Registered agent type: {agent_type.name}")
             from opendxa.dana.agent.agent_system import AgentTypeRegistry
-            print(f"[DEBUG] AgentTypeRegistry.list_types(): {AgentTypeRegistry.list_types()}")
 
             # Store reference to this agent type for method association
             self._last_agent_type = agent_type
@@ -262,7 +260,6 @@ class AgentHandler(Loggable):
         return None
 
     def execute_function_definition(self, node: FunctionDefinition, context: SandboxContext) -> Any:
-        print(f"[DEBUG] execute_function_definition called for: {getattr(node.name, 'name', node.name)}")
         """Execute a function definition, potentially associating it with the last agent type.
 
         Args:
