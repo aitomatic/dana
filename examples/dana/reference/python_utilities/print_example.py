@@ -4,11 +4,11 @@ import os
 import sys
 from pathlib import Path
 
-# Add the parent directory to the path so we can import opendxa
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+# Add the parent directory to the path so we can import dana
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent))
 
-from opendxa.dana.sandbox.context.sandbox_context import SandboxContext
-from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
+from dana.core.lang.sandbox_context import SandboxContext
+from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
 
 def main():
@@ -22,7 +22,7 @@ def main():
 
     # Parse the code
     print(f"Parsing code from {example_file}...\n")
-    from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+    from dana.core.lang.parser.utils.parsing_utils import ParserCache
 
     parser = ParserCache.get_parser("dana")
     result = parser.parse(code, do_type_check=False)

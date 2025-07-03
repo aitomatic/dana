@@ -20,10 +20,10 @@ By the end of this guide, you'll understand:
 ### Quick Environment Check
 ```bash
 # Verify POET is available
-uv run python -c "from opendxa.dana.poet import poet; print('POET ready!')"
+uv run python -c "from dana.frameworks.poet import poet; print('POET ready!')"
 
 # Test Dana execution
-uv run python -m opendxa.dana.exec.repl
+uv run python -m dana.core.repl.dana
 ```
 
 ## 🏗️ Understanding POET Architecture

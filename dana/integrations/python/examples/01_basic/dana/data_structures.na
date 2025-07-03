@@ -1,0 +1,101 @@
+# DANA Data Structures Demo
+# Demonstrates: struct definitions, custom types, field access
+
+# Simple 2D Point struct with methods
+struct Point:
+    x: int
+    y: int
+    
+# Method to translate the point by dx, dy
+def translate(self: Point, dx: int, dy: int) -> Point:
+    return Point(x=self.x + dx, y=self.y + dy)
+
+# Method to calculate distance from origin
+def magnitude(self: Point) -> float:
+    return ((self.x * self.x) + (self.y * self.y)) ** 0.5
+
+# Method to get string representation
+def to_string(self: Point) -> str:
+    return f"Point({self.x}, {self.y})"
+
+# Method to check if point is in first quadrant
+def is_in_first_quadrant(self: Point) -> bool:
+    return self.x > 0 and self.y > 0
+
+# User profile with mixed field types and methods
+struct UserProfile:
+    name: str
+    age: int
+    email: str
+    active: bool
+    tags: list
+    
+# Method to get user's first name
+def get_first_name(self: UserProfile) -> str:
+    parts = self.name.split(" ")
+    result = ""
+    if len(parts) > 0:
+        result = parts[0]
+    
+    return result
+
+# Method to check if user is adult
+def is_adult(self: UserProfile) -> bool:
+    return self.age >= 18
+
+# Method to add a tag
+def add_tag(self: UserProfile, tag: str) -> UserProfile:
+    new_tags = self.tags + [tag]
+    return UserProfile(
+        name=self.name,
+        age=self.age,
+        email=self.email,
+        active=self.active,
+        tags=new_tags
+    )
+
+# Method to get display info
+def get_display_info(self: UserProfile) -> str:
+    if self.active:
+        status = "Active"
+    else:
+        status = "Inactive"
+    return f"{self.name} ({self.age}) - {status}"
+
+# Analysis result struct
+struct Analysis:
+    data: dict
+    confidence: float
+    recommendations: list
+
+# Create a Point instance
+def create_point(x: int, y: int) -> Point:
+    return Point(x=x, y=y)
+
+# Calculate distance between two points
+def calculate_distance(p1: Point, p2: Point) -> float:
+    dx = p1.x - p2.x
+    dy = p1.y - p2.y
+    distance = ((dx * dx) + (dy * dy)) ** 0.5
+    return distance
+
+# Create a UserProfile instance
+def create_user_profile(name: str, age: int, email: str) -> UserProfile:
+    return UserProfile(
+        name=name,
+        age=age,
+        email=email,
+        active=true,
+        tags=["new_user", "active"]
+    )
+
+# AI-powered user profile analysis
+def analyze_user_profile(user: UserProfile) -> Analysis:
+    # Use DANA's built-in AI reasoning
+    ai_insights = reason(f"Analyze this user profile: Name {user.name}, Age {user.age}, Email {user.email}. Provide insights about user segment and recommendations.")
+    
+    return Analysis(
+        data={"user_segment": "young_professional", "engagement_level": "high"},
+        confidence=0.85,
+        recommendations=["premium_features", "tech_content"]
+    )

@@ -164,7 +164,7 @@ test-live: ## Run live tests (requires API keys)
 
 test-cov: ## Run tests with coverage report
 	@echo "📊 Running tests with coverage..."
-	OPENDXA_MOCK_LLM=true uv run pytest --cov=opendxa --cov-report=html --cov-report=term tests/
+	OPENDXA_MOCK_LLM=true uv run pytest --cov=opendxa --cov=dana --cov-report=html --cov-report=term tests/
 	@echo "📈 Coverage report generated in htmlcov/"
 
 test-watch: ## Run tests in watch mode (reruns on file changes)
@@ -216,7 +216,7 @@ run: dana ## Alias for 'dana' command
 
 opendxa-server: ## Start the OpenDXA API server (includes POET service)
 	@echo "🌐 Starting OpenDXA API server on http://localhost:8080"
-	uv run python -m opendxa.api.server --host localhost --port 8080
+	uv run python -m dana.api.server --host localhost --port 8080
 
 # =============================================================================
 # Maintenance & Cleanup
@@ -381,8 +381,8 @@ docs-deploy: docs-build ## Deploy documentation to GitHub Pages
 security: ## Run security checks
 	@echo "🔒 Running security checks..."
 	@if command -v bandit >/dev/null 2>&1; then \
-		uv run bandit -r opendxa/ -f json -o security-report.json || echo "⚠️  Security issues found - check security-report.json"; \
-		uv run bandit -r opendxa/; \
+		uv run bandit -r opendxa/ dana/ -f json -o security-report.json || echo "⚠️  Security issues found - check security-report.json"; \
+		uv run bandit -r opendxa/ dana/; \
 	else \
 		echo "❌ bandit not available. Install with: uv add bandit"; \
 	fi
