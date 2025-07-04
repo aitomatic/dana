@@ -5,8 +5,8 @@ from typing import Any
 import psycopg2
 from psycopg2.extras import Json
 
-from opendxa.knows.core.knowledge_orgs.base import KnowledgeOrganization, StorageError
-from opendxa.knows.core.knowledge_orgs.config import RelationalSettings
+from dana.frameworks.knows.core.knowledge_orgs.base import KnowledgeOrganization, StorageError
+from dana.frameworks.knows.core.knowledge_orgs.config import RelationalSettings
 
 
 class RelationalStore(KnowledgeOrganization):

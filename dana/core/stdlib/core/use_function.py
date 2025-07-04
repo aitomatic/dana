@@ -1,6 +1,6 @@
-from opendxa.common.resource.base_resource import BaseResource
-from opendxa.common.utils.misc import Misc
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.common.resource.base_resource import BaseResource
+from dana.common.utils.misc import Misc
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 def use_function(context: SandboxContext, function_name: str, *args, _name: str | None = None, **kwargs) -> BaseResource:

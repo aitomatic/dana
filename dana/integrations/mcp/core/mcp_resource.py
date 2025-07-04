@@ -10,11 +10,11 @@ from mcp import Tool as McpTool
 from mcp.client.sse import sse_client
 from mcp.client.stdio import get_default_environment, stdio_client
 
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.resource.base_resource import BaseResource, ResourceError
-from opendxa.common.resource.mcp.mcp_config import HttpTransportParams, McpConfig, McpConfigError, StdioTransportParams
-from opendxa.common.types import BaseRequest, BaseResponse
-from opendxa.common.utils.misc import Misc
+from dana.common.mixins.loggable import Loggable
+from dana.common.resource.base_resource import BaseResource, ResourceError
+from dana.common.resource.mcp.mcp_config import HttpTransportParams, McpConfig, McpConfigError, StdioTransportParams
+from dana.common.types import BaseRequest, BaseResponse
+from dana.common.utils.misc import Misc
 
 T = TypeVar("T")
 

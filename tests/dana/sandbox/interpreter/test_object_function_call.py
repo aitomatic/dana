@@ -7,15 +7,15 @@ MIT License
 
 import pytest
 
-from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-from opendxa.dana.sandbox.parser.ast import (
+from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana.core.lang.parser.ast import (
     Assignment,
     Identifier,
     LiteralExpression,
     ObjectFunctionCall,
     Program,
 )
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class MockTestObject:
@@ -131,7 +131,7 @@ class TestObjectFunctionCallAST:
 
     def test_parser_creates_object_function_call(self):
         """Test that the parser creates ObjectFunctionCall nodes correctly."""
-        from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+        from dana.core.lang.parser.utils.parsing_utils import ParserCache
 
         parser = ParserCache.get_parser("dana")
 
@@ -154,7 +154,7 @@ class TestObjectFunctionCallAST:
 
     def test_parser_handles_empty_arguments(self):
         """Test that the parser handles empty argument lists correctly."""
-        from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+        from dana.core.lang.parser.utils.parsing_utils import ParserCache
 
         parser = ParserCache.get_parser("dana")
 

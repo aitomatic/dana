@@ -5,8 +5,8 @@ import unittest
 from unittest.mock import patch
 
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.sandbox.interpreter.functions.core.list_models_function import list_models_function
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.interpreter.functions.core.list_models_function import list_models_function
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class TestListModelsFunction(unittest.TestCase):

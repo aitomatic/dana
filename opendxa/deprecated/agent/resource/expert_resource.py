@@ -14,7 +14,7 @@ Features:
     - Automatic system prompt generation
 
 Example:
-    from opendxa.agent.capability.domain_expertise import DomainExpertise
+    from dana.frameworks.agent.capability.domain_expertise import DomainExpertise
 
     expertise = DomainExpertise(
         name="Mathematics",
@@ -39,13 +39,13 @@ Example:
 from typing import Any, ClassVar
 
 # Local imports
-from opendxa.agent.capability.domain_expertise import DomainExpertise
+from dana.frameworks.agent.capability.domain_expertise import DomainExpertise
 
 # First-party imports
-from opendxa.common.io import IOFactory
-from opendxa.common.mixins import ToolCallable
-from opendxa.common.resource import BaseResource
-from opendxa.common.types import BaseRequest, BaseResponse
+from dana.common.io import IOFactory
+from dana.common.mixins import ToolCallable
+from dana.common.resource import BaseResource
+from dana.common.types import BaseRequest, BaseResponse
 
 
 class ExpertResponse(BaseResponse):
@@ -127,13 +127,13 @@ class ExpertResource(BaseResource):
 
         # Ensure we pass a proper BaseRequest with prompt
         if request is None:
-            from opendxa.common.types import BaseRequest
+            from dana.common.types import BaseRequest
 
             request = BaseRequest(arguments={"prompt": ""})
         else:
             # Ensure the request has a prompt argument
             if not hasattr(request, "arguments") or "prompt" not in request.arguments:
-                from opendxa.common.types import BaseRequest
+                from dana.common.types import BaseRequest
 
                 request = BaseRequest(arguments={"prompt": str(request)})
 

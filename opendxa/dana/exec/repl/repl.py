@@ -49,13 +49,13 @@ Discord: https://discord.gg/6jGD4PYk
 
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.common.utils import Misc
+from dana.common.mixins.loggable import Loggable
+from dana.common.resource.llm_resource import LLMResource
+from dana.common.utils import Misc
 from opendxa.dana.common.error_utils import DanaError
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
-from opendxa.dana.sandbox.log_manager import LogLevel, SandboxLogger
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.dana_sandbox import DanaSandbox
+from dana.core.lang.log_manager import LogLevel, SandboxLogger
+from dana.core.lang.sandbox_context import SandboxContext
 from opendxa.dana.translator.translator import Translator
 
 

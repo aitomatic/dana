@@ -7,8 +7,8 @@ This module handles parsing different document formats and extracting structured
 import json
 import re
 from typing import Dict, Any, List
-from opendxa.common.utils.logging import DXA_LOGGER
-from opendxa.knows.core.base import Document, ParsedDocument, ProcessorBase
+from dana.common.utils.logging import DXA_LOGGER
+from dana.frameworks.knows.core.base import Document, ParsedDocument, ProcessorBase
 
 
 class DocumentParser(ProcessorBase):

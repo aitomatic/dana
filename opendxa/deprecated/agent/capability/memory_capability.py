@@ -26,8 +26,8 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 # First-party imports
-from opendxa.common.capability.base_capability import BaseCapability
-from opendxa.common.exceptions import DXAMemoryError, OpenDXAError
+from dana.common.capability.base_capability import BaseCapability
+from dana.common.exceptions import DXAMemoryError, OpenDXAError
 
 
 class MemoryEntry(BaseModel):

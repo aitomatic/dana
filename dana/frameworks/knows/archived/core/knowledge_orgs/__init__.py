@@ -1,6 +1,6 @@
 """Knowledge Organizations module for OpenDXA KNOWS framework."""
 
-from opendxa.knows.core.knowledge_orgs.base import (
+from dana.frameworks.knows.core.knowledge_orgs.base import (
     KnowledgeOrganization,
     KnowledgeType,
     QueryError,
@@ -8,8 +8,8 @@ from opendxa.knows.core.knowledge_orgs.base import (
     StorageError,
     ValidationError,
 )
-from opendxa.knows.core.knowledge_orgs.config import RedisSettings, RelationalSettings, TimeSeriesSettings, VectorStoreSettings
-from opendxa.knows.core.knowledge_orgs.dana import (
+from dana.frameworks.knows.core.knowledge_orgs.config import RedisSettings, RelationalSettings, TimeSeriesSettings, VectorStoreSettings
+from dana.frameworks.knows.core.knowledge_orgs.dana import (
     KnowledgeStoreTypes,
     close_stores,
     convert_dana_to_python,
@@ -22,10 +22,10 @@ from opendxa.knows.core.knowledge_orgs.dana import (
     retrieve_value,
     store_value,
 )
-from opendxa.knows.core.knowledge_orgs.relational import RelationalStore
-from opendxa.knows.core.knowledge_orgs.semi_structured import SemiStructuredStore
-from opendxa.knows.core.knowledge_orgs.time_series import TimeSeriesStore
-from opendxa.knows.core.knowledge_orgs.vector import VectorStore
+from dana.frameworks.knows.core.knowledge_orgs.relational import RelationalStore
+from dana.frameworks.knows.core.knowledge_orgs.semi_structured import SemiStructuredStore
+from dana.frameworks.knows.core.knowledge_orgs.time_series import TimeSeriesStore
+from dana.frameworks.knows.core.knowledge_orgs.vector import VectorStore
 
 __all__ = [
     # Base classes and protocols

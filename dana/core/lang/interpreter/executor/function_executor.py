@@ -21,18 +21,18 @@ import logging
 from typing import Any
 
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
-from opendxa.dana.sandbox.interpreter.executor.function_error_handling import FunctionExecutionErrorHandler
-from opendxa.dana.sandbox.interpreter.executor.function_name_utils import FunctionNameInfo
-from opendxa.dana.sandbox.interpreter.executor.resolver.unified_function_dispatcher import UnifiedFunctionDispatcher
-from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
-from opendxa.dana.sandbox.parser.ast import (
+from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
+from dana.core.lang.interpreter.executor.function_error_handling import FunctionExecutionErrorHandler
+from dana.core.lang.interpreter.executor.function_name_utils import FunctionNameInfo
+from dana.core.lang.interpreter.executor.resolver.unified_function_dispatcher import UnifiedFunctionDispatcher
+from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+from dana.core.lang.parser.ast import (
     AttributeAccess,
     FStringExpression,
     FunctionCall,
     FunctionDefinition,
 )
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class FunctionExecutor(BaseExecutor):
@@ -78,7 +78,7 @@ class FunctionExecutor(BaseExecutor):
             The defined function
         """
         # Create a DanaFunction object instead of a raw dict
-        from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
 
         # Extract parameter names and defaults
         param_names = []
@@ -163,7 +163,7 @@ class FunctionExecutor(BaseExecutor):
                 return result
             else:
                 # Fallback for simple expressions
-                from opendxa.dana.sandbox.parser.ast import LiteralExpression
+                from dana.core.lang.parser.ast import LiteralExpression
 
                 if isinstance(expr, LiteralExpression):
                     return expr.value
@@ -255,7 +255,7 @@ class FunctionExecutor(BaseExecutor):
         # Phase 2.5: Check for struct instantiation
         self.debug("Checking for struct instantiation...")
         # Phase 2.5: Handle method calls (AttributeAccess) before other processing
-        from opendxa.dana.sandbox.parser.ast import AttributeAccess
+        from dana.core.lang.parser.ast import AttributeAccess
 
         if isinstance(node.name, AttributeAccess):
             return self.__execute_method_call(node, context, evaluated_args, evaluated_kwargs)
@@ -480,7 +480,7 @@ class FunctionExecutor(BaseExecutor):
             The potentially coerced result
         """
         try:
-            from opendxa.dana.sandbox.interpreter.unified_coercion import TypeCoercion
+            from dana.core.lang.interpreter.unified_coercion import TypeCoercion
 
             # Only apply LLM coercion if enabled
             if not TypeCoercion.should_enable_llm_coercion():
@@ -531,7 +531,7 @@ class FunctionExecutor(BaseExecutor):
 
         try:
             # Import ReturnException here to avoid circular imports
-            from opendxa.dana.sandbox.interpreter.executor.control_flow.exceptions import ReturnException
+            from dana.core.lang.interpreter.executor.control_flow.exceptions import ReturnException
 
             for statement in body:
                 result = self.parent.execute(statement, function_context)
@@ -553,7 +553,7 @@ class FunctionExecutor(BaseExecutor):
             StructInstance if this is a struct instantiation, None otherwise
         """
         # Import here to avoid circular imports
-        from opendxa.dana.sandbox.interpreter.struct_system import StructTypeRegistry, create_struct_instance
+        from dana.core.lang.interpreter.struct_system import StructTypeRegistry, create_struct_instance
 
         # Extract the base struct name (remove scope prefix if present)
         # Only check for struct instantiation with string function names
@@ -651,7 +651,7 @@ class FunctionExecutor(BaseExecutor):
                     self.debug(f"Found user-defined function in context: {method_name} (type: {type(func_obj)})")
 
                     # Check if it's a DanaFunction object
-                    from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+                    from dana.core.lang.interpreter.functions.dana_function import DanaFunction
 
                     if isinstance(func_obj, DanaFunction):
                         result = func_obj.execute(context, *transformed_args, **evaluated_kwargs)
@@ -672,7 +672,7 @@ class FunctionExecutor(BaseExecutor):
                         self.debug(f"Found user-defined function in {scope} scope: {method_name} (type: {type(func_obj)})")
 
                         # Check if it's a DanaFunction object
-                        from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+                        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
 
                         if isinstance(func_obj, DanaFunction):
                             result = func_obj.execute(context, *transformed_args, **evaluated_kwargs)

@@ -9,10 +9,10 @@ from unittest.mock import patch
 
 import pytest
 
-from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-from opendxa.dana.sandbox.interpreter.functions.core.log_function import log_function
-from opendxa.dana.sandbox.interpreter.functions.core.print_function import print_function
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana.core.lang.interpreter.functions.core.log_function import log_function
+from dana.core.lang.interpreter.functions.core.print_function import print_function
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 @pytest.mark.deep
@@ -100,8 +100,8 @@ class TestPrintVsLogFunctions:
 
     def test_core_function_registration_compatibility(self):
         """Test that both functions are registered correctly by the core registration system."""
-        from opendxa.dana.sandbox.interpreter.functions.core.register_core_functions import register_core_functions
-        from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
+        from dana.core.lang.interpreter.functions.core.register_core_functions import register_core_functions
+        from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 
         registry = FunctionRegistry()
         register_core_functions(registry)
@@ -120,7 +120,7 @@ class TestPrintVsLogFunctions:
     @patch("opendxa.dana.sandbox.log_manager.DXA_LOGGER.log")
     def test_sandbox_logger_incorrect_call_signature(self, mock_dxa_log):
         """Test that SandboxLogger.log calls DXA_LOGGER.log with incorrect signature."""
-        from opendxa.dana.sandbox.log_manager import SandboxLogger
+        from dana.core.lang.log_manager import SandboxLogger
 
         # This will demonstrate the bug: SandboxLogger.log passes 'scope' but DXA_LOGGER.log doesn't accept it
         mock_dxa_log.side_effect = TypeError("log() got an unexpected keyword argument 'scope'")
@@ -140,7 +140,7 @@ class TestPrintVsLogFunctions:
 
         import inspect
 
-        from opendxa.common.utils.logging.dxa_logger import DXA_LOGGER
+        from dana.common.utils.logging.dxa_logger import DXA_LOGGER
 
         # Get the actual signature of DXA_LOGGER.log
         dxa_log_sig = inspect.signature(DXA_LOGGER.log)
@@ -154,8 +154,8 @@ class TestPrintVsLogFunctions:
         """Demonstrate the signature differences between print and log functions."""
         import inspect
 
-        from opendxa.dana.sandbox.interpreter.functions.core.log_function import log_function
-        from opendxa.dana.sandbox.interpreter.functions.core.print_function import print_function
+        from dana.core.lang.interpreter.functions.core.log_function import log_function
+        from dana.core.lang.interpreter.functions.core.print_function import print_function
 
         print_sig = inspect.signature(print_function)
         log_sig = inspect.signature(log_function)
@@ -183,7 +183,7 @@ class TestLogFunctionFix:
 
         # Proposed fix: change SandboxLogger.log to call DXA_LOGGER.log correctly
         with patch("opendxa.dana.sandbox.log_manager.DXA_LOGGER.log") as mock_dxa_log:
-            from opendxa.dana.sandbox.log_manager import LogLevel
+            from dana.core.lang.log_manager import LogLevel
 
             # Fixed call should be:
             message = "Test message"
@@ -199,7 +199,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_basic(self):
         """Test basic log_level function functionality."""
-        from opendxa.dana.sandbox.interpreter.functions.core.log_level_function import log_level_function
+        from dana.core.lang.interpreter.functions.core.log_level_function import log_level_function
 
         context = SandboxContext()
 
@@ -209,7 +209,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_valid_levels(self):
         """Test log_level function with different valid levels."""
-        from opendxa.dana.sandbox.interpreter.functions.core.log_level_function import log_level_function
+        from dana.core.lang.interpreter.functions.core.log_level_function import log_level_function
 
         context = SandboxContext()
 
@@ -223,7 +223,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_invalid_level(self):
         """Test log_level function with invalid level."""
-        from opendxa.dana.sandbox.interpreter.functions.core.log_level_function import log_level_function
+        from dana.core.lang.interpreter.functions.core.log_level_function import log_level_function
 
         context = SandboxContext()
 
@@ -232,7 +232,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_case_insensitive(self):
         """Test log_level function handles case insensitivity."""
-        from opendxa.dana.sandbox.interpreter.functions.core.log_level_function import log_level_function
+        from dana.core.lang.interpreter.functions.core.log_level_function import log_level_function
 
         context = SandboxContext()
 
@@ -247,7 +247,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_with_options(self):
         """Test log_level function with options parameter."""
-        from opendxa.dana.sandbox.interpreter.functions.core.log_level_function import log_level_function
+        from dana.core.lang.interpreter.functions.core.log_level_function import log_level_function
 
         context = SandboxContext()
 
@@ -258,8 +258,8 @@ class TestLogLevelFunction:
 
     def test_log_level_function_registration(self):
         """Test that log_level function is registered correctly."""
-        from opendxa.dana.sandbox.interpreter.functions.core.register_core_functions import register_core_functions
-        from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
+        from dana.core.lang.interpreter.functions.core.register_core_functions import register_core_functions
+        from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 
         registry = FunctionRegistry()
         register_core_functions(registry)
@@ -280,8 +280,8 @@ class TestDynamicHelp:
         import sys
         from io import StringIO
 
-        from opendxa.dana.exec.repl.dana_repl_app import DanaREPLApp
-        from opendxa.dana.sandbox.log_manager import LogLevel
+        from dana.core.repl.repl.dana_repl_app import DanaREPLApp
+        from dana.core.lang.log_manager import LogLevel
 
         # Create REPL app
         app = DanaREPLApp(log_level=LogLevel.INFO)
@@ -314,8 +314,8 @@ class TestDynamicHelp:
         import sys
         from io import StringIO
 
-        from opendxa.dana.exec.repl.dana_repl_app import DanaREPLApp
-        from opendxa.dana.sandbox.log_manager import LogLevel
+        from dana.core.repl.repl.dana_repl_app import DanaREPLApp
+        from dana.core.lang.log_manager import LogLevel
 
         # Create REPL app
         app = DanaREPLApp(log_level=LogLevel.INFO)
@@ -353,8 +353,8 @@ class TestDynamicHelp:
 
     def test_tab_completion_includes_core_functions(self):
         """Test that tab completion includes all registered core functions."""
-        from opendxa.dana.exec.repl.dana_repl_app import DanaREPLApp
-        from opendxa.dana.sandbox.log_manager import LogLevel
+        from dana.core.repl.repl.dana_repl_app import DanaREPLApp
+        from dana.core.lang.log_manager import LogLevel
 
         # Create REPL app
         app = DanaREPLApp(log_level=LogLevel.INFO)
@@ -380,10 +380,10 @@ class TestDynamicHelp:
         from io import StringIO
         from unittest.mock import patch
 
-        from opendxa.common.resource.llm_resource import LLMResource
+        from dana.common.resource.llm_resource import LLMResource
         from opendxa.dana.common.terminal_utils import ColorScheme
-        from opendxa.dana.exec.repl.commands.command_handler import CommandHandler
-        from opendxa.dana.exec.repl.repl import REPL
+        from dana.core.repl.repl.commands.command_handler import CommandHandler
+        from dana.core.repl.repl.repl import REPL
 
         # Create a REPL with normal setup
         repl = REPL(llm_resource=LLMResource())
@@ -421,9 +421,9 @@ class TestPrintFunctionWithFStrings:
     def test_print_function_fstring_basic(self, capsys):
         """Test basic f-string evaluation in print function."""
 
-        from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
-        from opendxa.dana.sandbox.interpreter.functions.core.print_function import print_function
-        from opendxa.dana.sandbox.parser.ast import FStringExpression, Identifier
+        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
+        from dana.core.lang.interpreter.functions.core.print_function import print_function
+        from dana.core.lang.parser.ast import FStringExpression, Identifier
 
         # Create a context with variables
         context = SandboxContext()
@@ -449,9 +449,9 @@ class TestPrintFunctionWithFStrings:
     def test_print_function_fstring_complex(self, capsys):
         """Test complex f-string evaluation in print function."""
 
-        from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
-        from opendxa.dana.sandbox.interpreter.functions.core.print_function import print_function
-        from opendxa.dana.sandbox.parser.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier, LiteralExpression
+        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
+        from dana.core.lang.interpreter.functions.core.print_function import print_function
+        from dana.core.lang.parser.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier, LiteralExpression
 
         # Create a context with variables
         context = SandboxContext()
@@ -477,9 +477,9 @@ class TestPrintFunctionWithFStrings:
 
     def test_print_function_fstring_multiple_variables(self, capsys):
         """Test f-string with multiple variables in print function."""
-        from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
-        from opendxa.dana.sandbox.interpreter.functions.core.print_function import print_function
-        from opendxa.dana.sandbox.parser.ast import FStringExpression, Identifier
+        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
+        from dana.core.lang.interpreter.functions.core.print_function import print_function
+        from dana.core.lang.parser.ast import FStringExpression, Identifier
 
         # Create a context with multiple variables
         context = SandboxContext()
@@ -505,9 +505,9 @@ class TestPrintFunctionWithFStrings:
 
     def test_print_function_fstring_with_expressions(self, capsys):
         """Test f-string with complex expressions in print function."""
-        from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
-        from opendxa.dana.sandbox.interpreter.functions.core.print_function import print_function
-        from opendxa.dana.sandbox.parser.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier
+        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
+        from dana.core.lang.interpreter.functions.core.print_function import print_function
+        from dana.core.lang.parser.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier
 
         # Create a context with variables
         context = SandboxContext()
@@ -547,9 +547,9 @@ class TestPrintFunctionWithFStrings:
 
     def test_print_function_fstring_template_style(self, capsys):
         """Test f-string with template and expressions style."""
-        from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
-        from opendxa.dana.sandbox.interpreter.functions.core.print_function import print_function
-        from opendxa.dana.sandbox.parser.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier
+        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
+        from dana.core.lang.interpreter.functions.core.print_function import print_function
+        from dana.core.lang.parser.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier
 
         # Create a context with variables
         context = SandboxContext()
@@ -580,9 +580,9 @@ class TestPrintFunctionWithFStrings:
 
     def test_print_function_fstring_error_handling(self, capsys):
         """Test print function error handling with invalid f-strings."""
-        from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
-        from opendxa.dana.sandbox.interpreter.functions.core.print_function import print_function
-        from opendxa.dana.sandbox.parser.ast import FStringExpression, Identifier
+        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
+        from dana.core.lang.interpreter.functions.core.print_function import print_function
+        from dana.core.lang.parser.ast import FStringExpression, Identifier
 
         # Create a context without the required variable
         context = SandboxContext()
@@ -608,9 +608,9 @@ class TestPrintFunctionWithFStrings:
 
     def test_print_function_mixed_args_with_fstrings(self, capsys):
         """Test print function with mixed regular and f-string arguments."""
-        from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
-        from opendxa.dana.sandbox.interpreter.functions.core.print_function import print_function
-        from opendxa.dana.sandbox.parser.ast import FStringExpression, Identifier
+        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
+        from dana.core.lang.interpreter.functions.core.print_function import print_function
+        from dana.core.lang.parser.ast import FStringExpression, Identifier
 
         # Create a context with variables
         context = SandboxContext()

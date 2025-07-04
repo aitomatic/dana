@@ -27,8 +27,8 @@ import os
 from pathlib import Path
 from typing import Any
 
-from opendxa.common.exceptions import ConfigurationError
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.exceptions import ConfigurationError
+from dana.common.mixins.loggable import Loggable
 
 
 class ConfigLoader(Loggable):

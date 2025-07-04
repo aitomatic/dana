@@ -10,10 +10,10 @@ MIT License
 
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.mixins.loggable import Loggable
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.sandbox.parser.ast import ImportFromStatement, ImportStatement
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.parser.ast import ImportFromStatement, ImportStatement
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class ModuleNamespace:
@@ -179,7 +179,7 @@ class ImportHandler(Loggable):
             return
 
         # Get the module loader
-        from opendxa.dana.module.core import get_module_loader
+        from dana.core.runtime.modules.core import get_module_loader
 
         loader = get_module_loader()
 
@@ -277,7 +277,7 @@ class ImportHandler(Loggable):
             module = self._module_cache[cache_key]
         else:
             # Get the module loader
-            from opendxa.dana.module.core import get_module_loader
+            from dana.core.runtime.modules.core import get_module_loader
 
             loader = get_module_loader()
 
@@ -335,8 +335,8 @@ class ImportHandler(Loggable):
 
         try:
             # Import here to avoid circular imports
-            from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
-            from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
+            from dana.core.lang.interpreter.executor.function_resolver import FunctionType
+            from dana.core.lang.interpreter.functions.python_function import PythonFunction
 
             # Wrap the function in a PythonFunction wrapper for Dana compatibility
             wrapped_func = PythonFunction(
@@ -367,7 +367,7 @@ class ImportHandler(Loggable):
         if self._module_loader_initialized:
             return
 
-        from opendxa.dana.module.core import get_module_loader, initialize_module_system
+        from dana.core.runtime.modules.core import get_module_loader, initialize_module_system
 
         try:
             # Try to get the loader (this will raise if not initialized)

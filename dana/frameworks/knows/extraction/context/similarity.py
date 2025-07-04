@@ -10,8 +10,8 @@ from typing import Dict, Any, List, Optional, Tuple, Union
 from dataclasses import dataclass
 from collections import defaultdict
 
-from opendxa.common.utils.logging import DXA_LOGGER
-from opendxa.knows.core.base import KnowledgePoint, ProcessorBase
+from dana.common.utils.logging import DXA_LOGGER
+from dana.frameworks.knows.core.base import KnowledgePoint, ProcessorBase
 
 
 @dataclass

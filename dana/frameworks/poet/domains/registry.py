@@ -13,7 +13,7 @@ import difflib
 import importlib.util
 from pathlib import Path
 
-from opendxa.common.utils.logging import DXA_LOGGER
+from dana.common.utils.logging import DXA_LOGGER
 
 from .base import DomainTemplate
 

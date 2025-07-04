@@ -9,8 +9,8 @@ from unittest.mock import patch
 
 import pytest
 
-from opendxa.common.config.config_loader import ConfigLoader
-from opendxa.common.exceptions import ConfigurationError
+from dana.common.config.config_loader import ConfigLoader
+from dana.common.exceptions import ConfigurationError
 
 
 class TestConfigLoader(unittest.TestCase):

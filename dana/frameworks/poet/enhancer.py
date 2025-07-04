@@ -2,7 +2,7 @@
 POET Enhancement Logic - Pure Dana language enhancement
 """
 
-from opendxa.dana.poet.types import POETConfig
+from dana.frameworks.poet.types import POETConfig
 
 
 class POETEnhancer:

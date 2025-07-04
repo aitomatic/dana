@@ -5,8 +5,8 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from opendxa.dana.poet.phases.operate import OperatePhase
-from opendxa.dana.poet.types import POETConfig
+from dana.frameworks.poet.phases.operate import OperatePhase
+from dana.frameworks.poet.types import POETConfig
 
 
 def dummy_func(x, y):

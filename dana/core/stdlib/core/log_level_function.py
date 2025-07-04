@@ -10,8 +10,8 @@ This module provides the log_level function, which handles setting log levels in
 
 from typing import Any
 
-from opendxa.dana.sandbox.log_manager import LogLevel, SandboxLogger
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.log_manager import LogLevel, SandboxLogger
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 def log_level_function(

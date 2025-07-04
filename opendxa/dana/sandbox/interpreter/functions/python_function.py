@@ -5,7 +5,7 @@ import logging
 from collections.abc import Callable
 from typing import Any
 
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.sandbox_context import SandboxContext
 
 from .sandbox_function import SandboxFunction
 

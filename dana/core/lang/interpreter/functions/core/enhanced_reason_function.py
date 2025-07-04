@@ -10,11 +10,11 @@ MIT License
 
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.sandbox.interpreter.context_detection import ContextDetector
-from opendxa.dana.sandbox.interpreter.enhanced_coercion import SemanticCoercer
-from opendxa.dana.sandbox.interpreter.prompt_enhancement import enhance_prompt_for_type
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.common.mixins.loggable import Loggable
+from dana.core.lang.interpreter.context_detection import ContextDetector
+from dana.core.lang.interpreter.enhanced_coercion import SemanticCoercer
+from dana.core.lang.interpreter.prompt_enhancement import enhance_prompt_for_type
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class POETEnhancedReasonFunction(Loggable):
@@ -108,7 +108,7 @@ class POETEnhancedReasonFunction(Loggable):
         """Execute fallback reason function when original is not available."""
         try:
             # Import the original reason function
-            from opendxa.dana.sandbox.interpreter.functions.core.reason_function import reason_function
+            from dana.core.lang.interpreter.functions.core.reason_function import reason_function
 
             self.debug("Using fallback reason function")
             return reason_function(context, prompt, options, use_mock)

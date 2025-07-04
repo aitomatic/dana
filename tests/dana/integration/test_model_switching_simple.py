@@ -2,7 +2,7 @@
 
 import os
 import unittest
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
+from dana.core.lang.dana_sandbox import DanaSandbox
 
 
 class TestSimpleModelSwitching(unittest.TestCase):

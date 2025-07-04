@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from opendxa.dana.module.core.loader import ModuleLoader
-from opendxa.dana.module.core.registry import ModuleRegistry
+from dana.core.runtime.modules.core.loader import ModuleLoader
+from dana.core.runtime.modules.core.registry import ModuleRegistry
 
 
 @pytest.fixture

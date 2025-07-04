@@ -20,16 +20,16 @@ Discord: https://discord.gg/6jGD4PYk
 from typing import Any
 
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
-from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
-from opendxa.dana.sandbox.interpreter.executor.statement import (
+from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
+from dana.core.lang.interpreter.executor.function_resolver import FunctionType
+from dana.core.lang.interpreter.executor.statement import (
     AgentHandler,
     AssignmentHandler,
     ImportHandler,
     StatementUtils,
 )
-from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
-from opendxa.dana.sandbox.parser.ast import (
+from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+from dana.core.lang.parser.ast import (
     AgentPoolStatement,
     AgentStatement,
     AssertStatement,
@@ -42,7 +42,7 @@ from opendxa.dana.sandbox.parser.ast import (
     StructDefinition,
     UseStatement,
 )
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class StatementExecutor(BaseExecutor):
@@ -216,7 +216,7 @@ class StatementExecutor(BaseExecutor):
         absolute_module_name = self._resolve_relative_import(module_name, context)
 
         # Get the module loader
-        from opendxa.dana.module.core import get_module_loader
+        from dana.core.runtime.modules.core import get_module_loader
 
         loader = get_module_loader()
 
@@ -301,7 +301,7 @@ class StatementExecutor(BaseExecutor):
         absolute_module_name = self._resolve_relative_import(module_name, context)
 
         # Get the module loader
-        from opendxa.dana.module.core import get_module_loader
+        from dana.core.runtime.modules.core import get_module_loader
 
         loader = get_module_loader()
 
@@ -363,8 +363,8 @@ class StatementExecutor(BaseExecutor):
             return
 
         # Detect function type and set appropriate metadata
-        from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
-        from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionMetadata
+        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+        from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata
 
         func_type = FunctionType.PYTHON
         context_aware = False

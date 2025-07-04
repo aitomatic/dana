@@ -10,10 +10,10 @@ MIT License
 
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.mixins.loggable import Loggable
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.sandbox.parser.ast import AgentPoolStatement, AgentStatement, ExportStatement, StructDefinition, UseStatement
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.parser.ast import AgentPoolStatement, AgentStatement, ExportStatement, StructDefinition, UseStatement
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class AgentHandler(Loggable):
@@ -198,7 +198,7 @@ class AgentHandler(Loggable):
             None (struct definitions don't produce a value, they register a type)
         """
         # Import here to avoid circular imports
-        from opendxa.dana.sandbox.interpreter.struct_system import register_struct_from_ast
+        from dana.core.lang.interpreter.struct_system import register_struct_from_ast
 
         # Register the struct type in the global registry
         try:

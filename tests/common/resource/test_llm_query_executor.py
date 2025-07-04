@@ -4,10 +4,10 @@ import os
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from opendxa.common.exceptions import LLMError
-from opendxa.common.mixins.queryable import QueryStrategy
-from opendxa.common.resource.llm_query_executor import LLMQueryExecutor
-from opendxa.common.utils.misc import Misc
+from dana.common.exceptions import LLMError
+from dana.common.mixins.queryable import QueryStrategy
+from dana.common.resource.llm_query_executor import LLMQueryExecutor
+from dana.common.utils.misc import Misc
 
 
 class TestLLMQueryExecutor(unittest.IsolatedAsyncioTestCase):

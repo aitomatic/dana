@@ -14,8 +14,8 @@ MIT License
 
 from lark import Token
 
-from opendxa.dana.sandbox.parser.ast import Identifier, LiteralExpression
-from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
+from dana.core.lang.parser.ast import Identifier, LiteralExpression
+from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
 
 
 class LiteralTransformer(BaseTransformer):
@@ -81,7 +81,7 @@ class LiteralTransformer(BaseTransformer):
             # F-string handling
             if item.type == "F_STRING_TOKEN":
                 # Pass to the FStringTransformer
-                from opendxa.dana.sandbox.parser.transformer.fstring_transformer import FStringTransformer
+                from dana.core.lang.parser.transformer.fstring_transformer import FStringTransformer
 
                 fstring_transformer = FStringTransformer()
                 return fstring_transformer.fstring([item])

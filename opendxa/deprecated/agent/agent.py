@@ -20,9 +20,9 @@ Discord: https://discord.gg/6jGD4PYk
 from typing import Any
 
 # Sorted first-party imports
-from opendxa.agent.agent_config import AgentConfig
-from opendxa.agent.agent_runtime import AgentRuntime
-from opendxa.agent.dummy import (
+from dana.frameworks.agent.agent_config import AgentConfig
+from dana.frameworks.agent.agent_runtime import AgentRuntime
+from dana.frameworks.agent.dummy import (
     AgentState,
     ExecutionSignal,
     ExecutionSignalType,
@@ -34,12 +34,12 @@ from opendxa.agent.dummy import (
     ReasoningStrategy,
     RuntimeContext,
 )
-from opendxa.common.capability import BaseCapability
-from opendxa.common.io import BaseIO, IOFactory
-from opendxa.common.mixins.tool_callable import ToolCallable
-from opendxa.common.resource import BaseResource, LLMResource
-from opendxa.common.types import BaseRequest, BaseResponse
-from opendxa.common.utils.misc import Misc
+from dana.common.capability import BaseCapability
+from dana.common.io import BaseIO, IOFactory
+from dana.common.mixins.tool_callable import ToolCallable
+from dana.common.resource import BaseResource, LLMResource
+from dana.common.types import BaseRequest, BaseResponse
+from dana.common.utils.misc import Misc
 
 # from opendxa.dana.runtime.runtime_context import RuntimeContext
 # from opendxa.dana.state import AgentState

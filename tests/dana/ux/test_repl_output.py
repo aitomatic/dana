@@ -38,8 +38,8 @@ def format_user_error(e, user_input):
 
 
 def run_repl_and_capture_output(input_code):
-    from opendxa.dana.exec.repl.repl import REPL
-    from opendxa.dana.sandbox.sandbox_context import SandboxContext
+    from dana.core.repl.repl.repl import REPL
+    from dana.core.lang.sandbox_context import SandboxContext
 
     repl = REPL(context=SandboxContext())
     old_stdout = sys.stdout

@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 
 # Explicitly import all public symbols from submodules
 # This makes them available in the top-level namespace
-from opendxa.common.resource import (
+from dana.common.resource import (
     # Exceptions
     AgentError,
     CommunicationError,

@@ -9,7 +9,7 @@ MIT License
 """
 
 from typing import Any, Dict, List, Optional, Union
-from opendxa.dana.sandbox.parser.ast import (
+from dana.core.lang.parser.ast import (
     AttributeAccess,
     Expression,
     FunctionCall,
@@ -17,8 +17,8 @@ from opendxa.dana.sandbox.parser.ast import (
     ObjectFunctionCall,
     SubscriptExpression,
 )
-from opendxa.dana.sandbox.exceptions import SandboxError
-from opendxa.common.utils.logging import DXA_LOGGER
+from dana.core.lang.exceptions import SandboxError
+from dana.common.utils.logging import DXA_LOGGER
 
 
 class TrailerValidationError(SandboxError):

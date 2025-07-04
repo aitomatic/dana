@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from opendxa.common.utils.validation import ValidationError, ValidationUtilities
+from dana.common.utils.validation import ValidationError, ValidationUtilities
 
 
 class TestValidationUtilities:
@@ -307,7 +307,7 @@ class TestValidationError:
     def test_validation_error_inheritance(self):
         """Test that ValidationError properly inherits from OpenDXAError."""
         error = ValidationError("Test message")
-        from opendxa.common.exceptions import OpenDXAError
+        from dana.common.exceptions import OpenDXAError
 
         assert isinstance(error, OpenDXAError)
         assert isinstance(error, Exception)

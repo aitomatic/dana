@@ -11,11 +11,11 @@ MIT License
 
 from typing import Any
 
-from opendxa.common.utils.logging import DXA_LOGGER
-from opendxa.dana.sandbox.exceptions import SandboxError
-from opendxa.dana.sandbox.interpreter.executor.function_name_utils import FunctionNameInfo
-from opendxa.dana.sandbox.interpreter.executor.function_resolver import ResolvedFunction
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.common.utils.logging import DXA_LOGGER
+from dana.core.lang.exceptions import SandboxError
+from dana.core.lang.interpreter.executor.function_name_utils import FunctionNameInfo
+from dana.core.lang.interpreter.executor.function_resolver import ResolvedFunction
+from dana.core.lang.sandbox_context import SandboxContext
 
 from .base_resolver import FunctionResolverInterface, ResolutionAttempt, ResolutionStatus
 from .composed_function_resolver import ComposedFunctionResolver
@@ -165,7 +165,7 @@ class UnifiedFunctionDispatcher:
         self.logger.debug(f"Executing {resolved_func.func_type.value} function: {func_name}")
 
         # Import here to avoid circular imports
-        from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
+        from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 
         if resolved_func.func_type == FunctionType.REGISTRY:
             return self._execute_registry_function(resolved_func, context, evaluated_args, evaluated_kwargs, func_name)

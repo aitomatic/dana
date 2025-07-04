@@ -8,9 +8,9 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from opendxa.dana.sandbox.interpreter.executor.function_name_utils import FunctionNameInfo
-from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType, ResolvedFunction
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.interpreter.executor.function_name_utils import FunctionNameInfo
+from dana.core.lang.interpreter.executor.function_resolver import FunctionType, ResolvedFunction
+from dana.core.lang.sandbox_context import SandboxContext
 
 from .base_resolver import FunctionResolverInterface
 

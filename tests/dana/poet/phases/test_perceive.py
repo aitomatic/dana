@@ -5,8 +5,8 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from opendxa.dana.poet.phases.perceive import PerceivePhase, PerceiveResult
-from opendxa.dana.poet.types import POETConfig
+from dana.frameworks.poet.phases.perceive import PerceivePhase, PerceiveResult
+from dana.frameworks.poet.types import POETConfig
 
 
 def test_perceive_phase_initialization():

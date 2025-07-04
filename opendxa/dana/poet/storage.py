@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.mixins.loggable import Loggable
 
 
 class POETStorage(Loggable):

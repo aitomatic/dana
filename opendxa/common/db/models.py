@@ -11,7 +11,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy import JSON, Column, DateTime, Float, Index, String
 
-from opendxa.common.db.base_model import BaseDBModel
+from dana.common.db.base_model import BaseDBModel
 
 
 class KnowledgeDBModel(BaseDBModel):

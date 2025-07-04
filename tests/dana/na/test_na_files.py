@@ -10,11 +10,11 @@ from pathlib import Path
 
 import pytest
 
-from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-from opendxa.dana.sandbox.interpreter.struct_system import StructTypeRegistry
-from opendxa.dana.sandbox.parser.dana_parser import parse_program
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.common.resource.llm_resource import LLMResource
+from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+from dana.core.lang.parser.dana_parser import parse_program
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 def get_na_files():

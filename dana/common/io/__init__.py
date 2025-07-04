@@ -6,7 +6,7 @@ This package provides various I/O resource implementations, including:
 
 Example:
     ```python
-    from opendxa.common.io import ConsoleIO, WebSocketIO
+    from dana.common.io import ConsoleIO, WebSocketIO
 
     # Using console I/O
     async with ConsoleIO() as io:
@@ -18,9 +18,9 @@ Example:
     ```
 """
 
-from opendxa.common.io.base_io import BaseIO
-from opendxa.common.io.console_io import ConsoleIO
-from opendxa.common.io.io_factory import IOFactory
-from opendxa.common.io.websocket_io import WebSocketIO
+from dana.common.io.base_io import BaseIO
+from dana.common.io.console_io import ConsoleIO
+from dana.common.io.io_factory import IOFactory
+from dana.common.io.websocket_io import WebSocketIO
 
 __all__ = ["BaseIO", "ConsoleIO", "WebSocketIO", "IOFactory"]

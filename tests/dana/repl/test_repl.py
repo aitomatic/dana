@@ -20,9 +20,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from opendxa.dana.common.error_utils import DanaError
-from opendxa.dana.exec.repl.repl import REPL
-from opendxa.dana.sandbox.log_manager import LogLevel
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.repl.repl.repl import REPL
+from dana.core.lang.log_manager import LogLevel
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 @pytest.mark.unit

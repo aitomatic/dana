@@ -12,7 +12,7 @@ from typing import cast
 
 from lark import Token, Tree
 
-from opendxa.dana.sandbox.parser.ast import (
+from dana.core.lang.parser.ast import (
     AssertStatement,
     Assignment,
     BreakStatement,
@@ -70,7 +70,7 @@ class AssignmentHelper:
             target = variable_transformer.variable([target_tree])
 
         # Validate target type
-        from opendxa.dana.sandbox.parser.ast import AttributeAccess, Identifier, SubscriptExpression
+        from dana.core.lang.parser.ast import AttributeAccess, Identifier, SubscriptExpression
 
         if not isinstance(target, Identifier | SubscriptExpression | AttributeAccess):
             raise TypeError(f"Assignment target must be Identifier, SubscriptExpression, or AttributeAccess, got {type(target)}")
@@ -81,7 +81,7 @@ class AssignmentHelper:
             raise TypeError(f"Assignment value cannot be a tuple: {value}")
 
         # Type imports to match the original
-        from opendxa.dana.sandbox.parser.ast import (
+        from dana.core.lang.parser.ast import (
             AgentPoolStatement,
             AgentStatement,
             BinaryExpression,

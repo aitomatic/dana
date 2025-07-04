@@ -1,5 +1,5 @@
-from opendxa.common.resource.base_resource import BaseResource
-from opendxa.common.mixins.tool_callable import ToolCallable
+from dana.common.resource.base_resource import BaseResource
+from dana.common.mixins.tool_callable import ToolCallable
 import os, glob
 
 class FileReaderResource(BaseResource):

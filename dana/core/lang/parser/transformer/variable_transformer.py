@@ -14,8 +14,8 @@ Follows the style and best practices of StatementTransformer and ExpressionTrans
 from lark import Token, Tree
 
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
-from opendxa.dana.sandbox.parser.ast import Identifier
-from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
+from dana.core.lang.parser.ast import Identifier
+from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
 
 
 class VariableTransformer(BaseTransformer):
@@ -91,7 +91,7 @@ class VariableTransformer(BaseTransformer):
             foo.bar -> AttributeAccess(object=Identifier(name='local:foo'), attribute='bar')
             public.var -> SyntaxError (should be public:var)
         """
-        from opendxa.dana.sandbox.parser.ast import AttributeAccess
+        from dana.core.lang.parser.ast import AttributeAccess
 
         # Extract all parts
         base_name = self._extract_name(items[0])

@@ -12,8 +12,8 @@ from dataclasses import dataclass
 
 # Import the real POET framework
 try:
-    from opendxa.dana.poet.plugins import PLUGIN_REGISTRY
-    from opendxa.dana.poet.poet import poet
+    from dana.frameworks.poet.plugins import PLUGIN_REGISTRY
+    from dana.frameworks.poet.poet import poet
 
     # Initialize the plugin registry to discover building management plugin
     PLUGIN_REGISTRY.discover_plugins()

@@ -1,7 +1,7 @@
-from opendxa.common.resource.base_resource import BaseResource
-from opendxa.common.utils.misc import Misc
+from dana.common.resource.base_resource import BaseResource
+from dana.common.utils.misc import Misc
 from opendxa.contrib.mcp_a2a.agent import AbstractDanaAgent
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 def agent_function(context: SandboxContext, *args, _name: str | None = None, **kwargs) -> AbstractDanaAgent:
@@ -46,7 +46,7 @@ def _create_module_agent(context: SandboxContext, name: str, module, **kwargs) -
     if hasattr(module, "solve"):
         solve_func = module.solve
         # Check if it's a DanaFunction with its own context
-        from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
 
         if isinstance(solve_func, DanaFunction) and solve_func.context is not None:
             # Use the module's original context for resource discovery

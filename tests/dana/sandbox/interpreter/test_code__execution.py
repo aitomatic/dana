@@ -36,9 +36,9 @@ Discord: https://discord.gg/6jGD4PYk
 
 import pytest
 
-from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana.core.lang.parser.utils.parsing_utils import ParserCache
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 def run_dana_code(code, parser=None, do_type_check=True):

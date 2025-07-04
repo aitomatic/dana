@@ -2,8 +2,8 @@
 
 import pytest
 
-from opendxa.common.mixins.queryable import Queryable, QueryStrategy
-from opendxa.common.types import BaseResponse
+from dana.common.mixins.queryable import Queryable, QueryStrategy
+from dana.common.types import BaseResponse
 
 
 # pylint: disable=missing-function-docstring

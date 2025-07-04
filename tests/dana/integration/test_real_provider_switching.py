@@ -7,7 +7,7 @@ Run with: pytest -m real_api tests/dana/integration/test_real_provider_switching
 import os
 import pytest
 from dotenv import load_dotenv
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
+from dana.core.lang.dana_sandbox import DanaSandbox
 
 
 @pytest.mark.real_api

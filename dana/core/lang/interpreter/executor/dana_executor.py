@@ -20,19 +20,19 @@ Discord: https://discord.gg/6jGD4PYk
 
 from typing import Any
 
-from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
-from opendxa.dana.sandbox.interpreter.executor.collection_executor import CollectionExecutor
-from opendxa.dana.sandbox.interpreter.executor.control_flow_executor import (
+from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
+from dana.core.lang.interpreter.executor.collection_executor import CollectionExecutor
+from dana.core.lang.interpreter.executor.control_flow_executor import (
     ControlFlowExecutor,
 )
-from opendxa.dana.sandbox.interpreter.executor.expression_executor import ExpressionExecutor
-from opendxa.dana.sandbox.interpreter.executor.function_executor import FunctionExecutor
-from opendxa.dana.sandbox.interpreter.executor.program_executor import ProgramExecutor
-from opendxa.dana.sandbox.interpreter.executor.statement_executor import StatementExecutor
-from opendxa.dana.sandbox.interpreter.executor.traversal import OptimizedASTTraversal
-from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
-from opendxa.dana.sandbox.interpreter.hooks import HookRegistry, HookType
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.interpreter.executor.expression_executor import ExpressionExecutor
+from dana.core.lang.interpreter.executor.function_executor import FunctionExecutor
+from dana.core.lang.interpreter.executor.program_executor import ProgramExecutor
+from dana.core.lang.interpreter.executor.statement_executor import StatementExecutor
+from dana.core.lang.interpreter.executor.traversal import OptimizedASTTraversal
+from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+from dana.core.lang.interpreter.hooks import HookRegistry, HookType
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class DanaExecutor(BaseExecutor):

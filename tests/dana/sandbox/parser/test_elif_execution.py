@@ -13,7 +13,7 @@ import textwrap
 
 import pytest
 
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
+from dana.core.lang.dana_sandbox import DanaSandbox
 
 
 @pytest.fixture

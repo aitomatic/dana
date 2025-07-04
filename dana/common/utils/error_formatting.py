@@ -9,7 +9,7 @@ Classes:
     ErrorFormattingUtilities: Static utility class for formatting standardized error messages
 
 Example:
-    >>> from opendxa.common.utils.error_formatting import ErrorFormattingUtilities
+    >>> from dana.common.utils.error_formatting import ErrorFormattingUtilities
     >>>
     >>> # Resource error
     >>> error_msg = ErrorFormattingUtilities.format_resource_error(
@@ -24,7 +24,7 @@ Example:
 
 from typing import Any
 
-from opendxa.common.utils.logging import DXA_LOGGER
+from dana.common.utils.logging import DXA_LOGGER
 
 
 class ErrorFormattingUtilities:

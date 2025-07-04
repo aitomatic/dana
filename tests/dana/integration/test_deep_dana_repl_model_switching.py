@@ -9,7 +9,7 @@ import os
 import unittest
 from unittest.mock import MagicMock, patch
 
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
+from dana.core.lang.dana_sandbox import DanaSandbox
 
 
 # These tests are complex and have issues with Dana syntax

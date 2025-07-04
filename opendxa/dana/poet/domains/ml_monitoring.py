@@ -31,7 +31,7 @@ class MLMonitoringDomain(BaseDomainTemplate):
         validation_code = """
 import numpy as np
 from typing import Any
-from opendxa.dana.poet.storage import POETStorage
+from dana.frameworks.poet.storage import POETStorage
 
 # === ML Input Validation ===
 # Basic validation for ML inputs
@@ -155,7 +155,7 @@ validated_inputs = {
         return CodeBlock(
             code=validation_code,
             dependencies=["numpy", "opendxa.dana.poet.storage"],
-            imports=["import numpy as np", "from opendxa.dana.poet.storage import POETStorage"],
+            imports=["import numpy as np", "from dana.frameworks.poet.storage import POETStorage"],
             metadata={"phase": "perceive", "domain": "ml_monitoring", "drift_detection": True, "adaptive_thresholds": True},
         )
 
@@ -234,7 +234,7 @@ execution_metadata.update(prediction_metadata)
 {parent_block.code}
 
 # === ML Result Validation ===
-from opendxa.dana.poet.storage import POETStorage
+from dana.frameworks.poet.storage import POETStorage
 
 # Load adaptive anomaly thresholds
 poet_storage = POETStorage()
@@ -315,7 +315,7 @@ log(f"ML monitoring score: {{performance_score:.2f}}")
         return CodeBlock(
             code=ml_enforcement,
             dependencies=parent_block.dependencies + ["opendxa.dana.poet.storage"],
-            imports=parent_block.imports + ["from opendxa.dana.poet.storage import POETStorage"],
+            imports=parent_block.imports + ["from dana.frameworks.poet.storage import POETStorage"],
             metadata={
                 **parent_block.metadata,
                 "domain": "ml_monitoring",
@@ -330,7 +330,7 @@ log(f"ML monitoring score: {{performance_score:.2f}}")
 
         train_code = """
 # === TRAIN PHASE: Adaptive ML Learning ===
-from opendxa.dana.poet.storage import POETStorage
+from dana.frameworks.poet.storage import POETStorage
 import time
 import numpy as np
 
@@ -465,7 +465,7 @@ if execution_id and final_result:
         return CodeBlock(
             code=train_code,
             dependencies=["opendxa.dana.poet.storage", "time", "numpy"],
-            imports=["from opendxa.dana.poet.storage import POETStorage", "import time", "import numpy as np"],
+            imports=["from dana.frameworks.poet.storage import POETStorage", "import time", "import numpy as np"],
             metadata={
                 "phase": "train",
                 "domain": "ml_monitoring",

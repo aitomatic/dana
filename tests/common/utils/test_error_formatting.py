@@ -7,7 +7,7 @@ consistent, standardized error messages following the OpenDXA format:
 
 from unittest.mock import patch
 
-from opendxa.common.utils.error_formatting import ErrorFormattingUtilities
+from dana.common.utils.error_formatting import ErrorFormattingUtilities
 
 
 class TestErrorFormattingUtilities:

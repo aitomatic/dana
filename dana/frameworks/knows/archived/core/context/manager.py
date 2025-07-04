@@ -4,8 +4,8 @@ import threading
 from datetime import datetime, timedelta
 from typing import Any
 
-from opendxa.knows.core.context.base import Context, ContextError, ContextSyncError, ContextType
-from opendxa.knows.core.context.config import ContextSettings
+from dana.frameworks.knows.core.context.base import Context, ContextError, ContextSyncError, ContextType
+from dana.frameworks.knows.core.context.config import ContextSettings
 
 
 class ContextManager:

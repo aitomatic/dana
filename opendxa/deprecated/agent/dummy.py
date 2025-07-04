@@ -35,10 +35,10 @@ from collections.abc import Callable
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from opendxa.common.resource import LLMResource
+from dana.common.resource import LLMResource
 
 if TYPE_CHECKING:
-    from opendxa.agent.agent import Agent
+    from dana.frameworks.agent.agent import Agent
 
 PlanStrategy = Enum("PlanStrategy", ["DEFAULT", "RECURSIVE", "ITERATIVE", "HYBRID"])
 ReasoningStrategy = Enum("ReasoningStrategy", ["DEFAULT", "RECURSIVE", "ITERATIVE", "HYBRID"])

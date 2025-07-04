@@ -50,14 +50,14 @@ Example:
 from typing import TYPE_CHECKING, Any
 
 # Local imports
-from opendxa.agent.dummy import ExecutionState, Plan, Planner, PlanStrategy, Reasoner, ReasoningStrategy, RuntimeContext, WorldState
+from dana.frameworks.agent.dummy import ExecutionState, Plan, Planner, PlanStrategy, Reasoner, ReasoningStrategy, RuntimeContext, WorldState
 
 # First-party imports
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.resource import LLMResource
+from dana.common.mixins.loggable import Loggable
+from dana.common.resource import LLMResource
 
 if TYPE_CHECKING:
-    from opendxa.agent.agent import Agent
+    from dana.frameworks.agent.agent import Agent
 
 
 class AgentRuntime(Loggable):

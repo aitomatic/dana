@@ -5,7 +5,7 @@ from llm_pyexecutor.code import is_standard_package
 from llm_pyexecutor.local_executor import LLMPythonCodeExecutor
 
 from opendxa.base.resource import BaseResource, ResourceResponse
-from opendxa.common.mixins.queryable import ToolCallable
+from dana.common.mixins.queryable import ToolCallable
 
 
 class CodeResource(BaseResource):

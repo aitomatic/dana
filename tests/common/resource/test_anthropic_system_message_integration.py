@@ -8,8 +8,8 @@ import os
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.common.types import BaseRequest
+from dana.common.resource.llm_resource import LLMResource
+from dana.common.types import BaseRequest
 
 
 class TestAnthropicSystemMessageIntegration(unittest.TestCase):

@@ -7,7 +7,7 @@ POET works entirely within Dana's execution model with no Python dependencies.
 
 from typing import Any
 
-from opendxa.dana.poet.types import POETConfig
+from dana.frameworks.poet.types import POETConfig
 
 
 def poet(domain: str | None = None, **kwargs) -> Any:

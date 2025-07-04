@@ -4,8 +4,8 @@ Tests for Phase 4: Struct method syntax transformation.
 This module tests the transformation of method calls (obj.method()) to function calls (method(obj)).
 """
 
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox, ExecutionResult
-from opendxa.dana.sandbox.interpreter.struct_system import (
+from dana.core.lang.dana_sandbox import DanaSandbox, ExecutionResult
+from dana.core.lang.interpreter.struct_system import (
     StructInstance,
     StructTypeRegistry,
 )

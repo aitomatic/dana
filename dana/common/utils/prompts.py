@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from opendxa.common.utils.misc import Misc
+from dana.common.utils.misc import Misc
 
 
 class Prompts:

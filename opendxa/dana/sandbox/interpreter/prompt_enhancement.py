@@ -10,8 +10,8 @@ MIT License
 
 from enum import Enum
 
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.sandbox.interpreter.context_detection import ContextType, TypeContext
+from dana.common.mixins.loggable import Loggable
+from dana.core.lang.interpreter.context_detection import ContextType, TypeContext
 
 
 class PromptStyle(Enum):
@@ -186,7 +186,7 @@ Return raw JSON only.""",
         Returns:
             Preview of enhanced prompt
         """
-        from opendxa.dana.sandbox.interpreter.context_detection import ContextType, TypeContext
+        from dana.core.lang.interpreter.context_detection import ContextType, TypeContext
 
         # Create mock context for preview
         mock_context = TypeContext(

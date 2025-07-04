@@ -30,8 +30,8 @@ from typing import Any
 
 from fastmcp import Client
 
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.utils.misc import Misc
+from dana.common.mixins.loggable import Loggable
+from dana.common.utils.misc import Misc
 from opendxa.contrib.mcp_a2a.resource.mcp.client.transport import BaseTransport, MCPHTTPTransport, MCPSSETransport
 
 

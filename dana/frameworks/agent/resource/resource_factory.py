@@ -3,10 +3,10 @@
 from typing import Any
 
 # Local imports
-from opendxa.agent.resource.expert_resource import ExpertResource
+from dana.frameworks.agent.resource.expert_resource import ExpertResource
 
 # First-party imports
-from opendxa.common.resource import BaseResource, LLMResource
+from dana.common.resource import BaseResource, LLMResource
 
 
 class ResourceFactory:

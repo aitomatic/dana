@@ -5,9 +5,9 @@ This module provides the AgentPool class for managing multiple A2A agents and se
 the most appropriate agent for a given task based on skills.
 """
 
-from opendxa.common.resource.base_resource import BaseResource
+from dana.common.resource.base_resource import BaseResource
 from opendxa.contrib.mcp_a2a.agent.abstract_dana_agent import AbstractDanaAgent
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.sandbox_context import SandboxContext
 
 from .agent_selector import AgentSelector
 

@@ -22,9 +22,9 @@ import logging
 from enum import Enum
 from typing import Any
 
-from opendxa.dana.sandbox.exceptions import SandboxError
-from opendxa.dana.sandbox.interpreter.executor.function_name_utils import FunctionNameInfo
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.exceptions import SandboxError
+from dana.core.lang.interpreter.executor.function_name_utils import FunctionNameInfo
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class FunctionType(Enum):
@@ -174,9 +174,9 @@ class FunctionResolver:
 
     def _create_resolved_function_from_context(self, func_data: Any, name_info: FunctionNameInfo) -> ResolvedFunction:
         """Create a ResolvedFunction from context data."""
-        from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
-        from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
-        from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+        from dana.core.lang.interpreter.functions.python_function import PythonFunction
+        from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
 
         # DEBUG: Log what we're dealing with
         self.logger.debug(f"DEBUG: Creating resolved function for '{name_info.full_key}'")
@@ -234,9 +234,9 @@ class FunctionResolver:
             return None
 
         # Determine function type and create resolved function
-        from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
-        from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
-        from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+        from dana.core.lang.interpreter.functions.python_function import PythonFunction
+        from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
 
         if isinstance(func_data, (DanaFunction | SandboxFunction)):
             return ResolvedFunction(func_data, FunctionType.DANA, "scoped_context")
@@ -338,7 +338,7 @@ class FunctionResolver:
 
         # Get functions from registry
         try:
-            from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
+            from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 
             for func_name in FunctionRegistry.list_functions():
                 if namespace is None or namespace == "registry":

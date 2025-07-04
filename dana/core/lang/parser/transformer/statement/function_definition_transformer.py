@@ -13,7 +13,7 @@ MIT License
 
 from lark import Token, Tree
 
-from opendxa.dana.sandbox.parser.ast import (
+from dana.core.lang.parser.ast import (
     Decorator,
     FunctionDefinition,
     Identifier,
@@ -22,7 +22,7 @@ from opendxa.dana.sandbox.parser.ast import (
     StructField,
     TypeHint,
 )
-from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
+from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
 
 
 class FunctionDefinitionTransformer(BaseTransformer):
@@ -128,7 +128,7 @@ class FunctionDefinitionTransformer(BaseTransformer):
             item = relevant_items[current_index]
 
             if not isinstance(item, list):
-                from opendxa.dana.sandbox.parser.ast import TypeHint
+                from dana.core.lang.parser.ast import TypeHint
 
                 if isinstance(item, Tree) and item.data == "basic_type":
                     return_type = self.main_transformer.assignment_transformer.basic_type(item.children)

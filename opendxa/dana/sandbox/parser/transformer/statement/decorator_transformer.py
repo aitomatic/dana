@@ -11,7 +11,7 @@ from typing import Any
 
 from lark import Tree
 
-from opendxa.dana.sandbox.parser.ast import Decorator
+from dana.core.lang.parser.ast import Decorator
 
 
 class DecoratorTransformer:
@@ -44,7 +44,7 @@ class DecoratorTransformer:
 
     def transform_decorator_from_items(self, items: list[Any]) -> Decorator:
         """Transform decorator items into a Decorator node."""
-        from opendxa.dana.sandbox.parser.transformer.statement.statement_utils import StatementTransformationUtils
+        from dana.core.lang.parser.transformer.statement.statement_utils import StatementTransformationUtils
 
         relevant_items = StatementTransformationUtils.filter_relevant_items(items)
         if not relevant_items:

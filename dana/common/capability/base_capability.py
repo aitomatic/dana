@@ -3,9 +3,9 @@
 from abc import ABC
 from typing import Any
 
-from opendxa.common.mixins.configurable import Configurable
-from opendxa.common.mixins.tool_callable import ToolCallable
-from opendxa.common.types import BaseRequest, BaseResponse
+from dana.common.mixins.configurable import Configurable
+from dana.common.mixins.tool_callable import ToolCallable
+from dana.common.types import BaseRequest, BaseResponse
 
 
 class CapabilityApplicationResult(BaseResponse):

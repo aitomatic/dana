@@ -6,7 +6,7 @@ and their configurations.
 """
 
 from typing import Dict, Type, Any, List
-from opendxa.common.utils.logging import DXA_LOGGER
+from dana.common.utils.logging import DXA_LOGGER
 
 
 class KORegistry:

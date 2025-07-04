@@ -7,8 +7,8 @@ Agents are pure data containers; all method logic is handled externally and boun
 
 from dataclasses import dataclass
 from typing import Any
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
-from opendxa.dana.sandbox.interpreter.functions.core.reason_function import reason_function
+from dana.core.lang.sandbox_context import SandboxContext
+from dana.core.lang.interpreter.functions.core.reason_function import reason_function
 from .abstract_dana_agent import AbstractDanaAgent
 
 # --- Default Method Implementations ---
@@ -157,7 +157,7 @@ class AgentInstance(AbstractDanaAgent):
 
     def _call_method(self, method, *args, **kwargs):
         """Helper to call method with correct parameters."""
-        from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
         
         # Handle 'context' kwarg conflict for both DanaFunction and Python functions
         context_value = None

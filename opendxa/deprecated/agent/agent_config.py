@@ -7,8 +7,8 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field
 
-from opendxa.common.config.config_loader import ConfigLoader
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.config.config_loader import ConfigLoader
+from dana.common.mixins.loggable import Loggable
 
 
 class AgentConfig(BaseModel, Loggable):

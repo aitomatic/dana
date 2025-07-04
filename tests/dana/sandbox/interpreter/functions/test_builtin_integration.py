@@ -8,8 +8,8 @@ through the Dana interpreter with actual Dana code execution.
 import pytest
 
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 @pytest.mark.deep

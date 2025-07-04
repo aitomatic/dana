@@ -8,9 +8,9 @@ import logging
 
 import pytest
 
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.utils.logging import DXA_LOGGER
-from opendxa.dana.sandbox.log_manager import LogLevel, SandboxLogger
+from dana.common.mixins.loggable import Loggable
+from dana.common.utils.logging import DXA_LOGGER
+from dana.core.lang.log_manager import LogLevel, SandboxLogger
 
 
 class TestLoggingIntegrationSimple:

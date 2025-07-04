@@ -10,8 +10,8 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List
-from opendxa.common.utils.logging import DXA_LOGGER
-from opendxa.knows.core.base import Document, DocumentBase
+from dana.common.utils.logging import DXA_LOGGER
+from dana.frameworks.knows.core.base import Document, DocumentBase
 
 
 class DocumentLoader(DocumentBase):

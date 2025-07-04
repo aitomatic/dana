@@ -9,14 +9,14 @@ MIT License
 
 import pytest
 
-from opendxa.dana.sandbox.interpreter.struct_system import (
+from dana.core.lang.interpreter.struct_system import (
     StructInstance,
     StructTypeRegistry,
     create_struct_instance,
     create_struct_type_from_ast,
     register_struct_from_ast,
 )
-from opendxa.dana.sandbox.parser.ast import (
+from dana.core.lang.parser.ast import (
     DictLiteral,
     FunctionCall,
     LiteralExpression,
@@ -24,7 +24,7 @@ from opendxa.dana.sandbox.parser.ast import (
     StructField,
     TypeHint,
 )
-from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+from dana.core.lang.parser.utils.parsing_utils import ParserCache
 
 
 class TestStructParsing:

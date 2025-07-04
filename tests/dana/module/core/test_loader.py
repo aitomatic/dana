@@ -2,10 +2,10 @@
 
 import pytest
 
-from opendxa.dana.module.core.errors import (
+from dana.core.runtime.modules.core.errors import (
     SyntaxError,
 )
-from opendxa.dana.module.core.types import Module, ModuleSpec
+from dana.core.runtime.modules.core.types import Module, ModuleSpec
 
 
 def test_loader_find_spec(loader, sample_module, search_paths):

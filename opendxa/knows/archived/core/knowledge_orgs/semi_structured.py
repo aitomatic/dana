@@ -7,8 +7,8 @@ import redis
 from psycopg2.extras import Json
 from redis.exceptions import RedisError
 
-from opendxa.knows.core.knowledge_orgs.base import KnowledgeOrganization, QueryError, StorageError
-from opendxa.knows.core.knowledge_orgs.config import RedisSettings
+from dana.frameworks.knows.core.knowledge_orgs.base import KnowledgeOrganization, QueryError, StorageError
+from dana.frameworks.knows.core.knowledge_orgs.config import RedisSettings
 
 
 class SemiStructuredStore(KnowledgeOrganization):

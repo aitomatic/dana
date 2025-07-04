@@ -5,9 +5,9 @@ This module provides the HelpFormatter class that generates
 help messages and displays available functions.
 """
 
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.mixins.loggable import Loggable
 from opendxa.dana.common.terminal_utils import ColorScheme, print_header
-from opendxa.dana.exec.repl.repl import REPL
+from dana.core.repl.repl.repl import REPL
 
 
 class HelpFormatter(Loggable):

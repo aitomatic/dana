@@ -11,10 +11,10 @@ import pytest
 from datetime import datetime
 from pathlib import Path
 
-from opendxa.knows.core.base import Document, ParsedDocument
-from opendxa.knows.document.loader import DocumentLoader
-from opendxa.knows.document.parser import DocumentParser
-from opendxa.knows.document.extractor import TextExtractor
+from dana.frameworks.knows.core.base import Document, ParsedDocument
+from dana.frameworks.knows.document.loader import DocumentLoader
+from dana.frameworks.knows.document.parser import DocumentParser
+from dana.frameworks.knows.document.extractor import TextExtractor
 
 
 class TestDocumentLoader:

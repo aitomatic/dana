@@ -22,8 +22,8 @@ Log level management for Dana runtime.
 import logging
 from enum import Enum
 
-from opendxa.common.utils.logging.dxa_logger import DXA_LOGGER
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.common.utils.logging.dxa_logger import DXA_LOGGER
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class LogLevel(Enum):

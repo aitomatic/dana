@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from opendxa.common.utils.logging import DXA_LOGGER
+from dana.common.utils.logging import DXA_LOGGER
 
 
 @dataclass
@@ -226,7 +226,7 @@ def enhanced_{func_info.name}{signature}:
     \"\"\"
     import time
     import uuid
-    from opendxa.dana.poet.types import POETResult
+    from dana.frameworks.poet.types import POETResult
     
     # Generate execution ID for tracking
     execution_id = str(uuid.uuid4())

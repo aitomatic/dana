@@ -15,18 +15,18 @@ import aisuite as ai
 from openai import APIStatusError, AuthenticationError, RateLimitError
 from openai.types.chat import ChatCompletion
 
-from opendxa.common.exceptions import (
+from dana.common.exceptions import (
     LLMAuthenticationError,
     LLMError,
     LLMProviderError,
     LLMRateLimitError,
 )
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.mixins.queryable import QueryStrategy
-from opendxa.common.mixins.tool_callable import OpenAIFunctionCall
-from opendxa.common.types import BaseResponse
-from opendxa.common.utils.misc import Misc
-from opendxa.common.utils.token_management import TokenManagement
+from dana.common.mixins.loggable import Loggable
+from dana.common.mixins.queryable import QueryStrategy
+from dana.common.mixins.tool_callable import OpenAIFunctionCall
+from dana.common.types import BaseResponse
+from dana.common.utils.misc import Misc
+from dana.common.utils.token_management import TokenManagement
 
 
 class LLMQueryExecutor(Loggable):

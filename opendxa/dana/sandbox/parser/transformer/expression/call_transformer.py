@@ -12,7 +12,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from opendxa.dana.sandbox.parser.ast import (
+from dana.core.lang.parser.ast import (
     AttributeAccess,
     FunctionCall,
     Identifier,
@@ -20,7 +20,7 @@ from opendxa.dana.sandbox.parser.ast import (
     SliceExpression,
     SubscriptExpression,
 )
-from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
+from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
 
 
 class CallTransformer(BaseTransformer):
@@ -236,7 +236,7 @@ class CallTransformer(BaseTransformer):
             return items[0]
         else:
             # Multi-dimensional - return a SliceTuple
-            from opendxa.dana.sandbox.parser.ast import SliceTuple
+            from dana.core.lang.parser.ast import SliceTuple
 
             return SliceTuple(slices=items)
 

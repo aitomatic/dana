@@ -8,8 +8,8 @@ with various input types, edge cases, and error conditions.
 import pytest
 
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.sandbox.interpreter.functions.pythonic.function_factory import PythonicFunctionFactory
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.interpreter.functions.pythonic.function_factory import PythonicFunctionFactory
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 @pytest.mark.deep

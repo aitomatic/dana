@@ -4,9 +4,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from opendxa.common.capability.base_capability import BaseCapability, CapabilityApplicationResult
-from opendxa.common.mixins.tool_callable import ToolCallable
-from opendxa.common.types import BaseRequest
+from dana.common.capability.base_capability import BaseCapability, CapabilityApplicationResult
+from dana.common.mixins.tool_callable import ToolCallable
+from dana.common.types import BaseRequest
 
 
 class CapabilityError(Exception):

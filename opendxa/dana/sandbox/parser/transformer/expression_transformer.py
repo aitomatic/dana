@@ -31,7 +31,7 @@ from typing import Any, cast
 
 from lark import Token, Tree
 
-from opendxa.dana.sandbox.parser.ast import (
+from dana.core.lang.parser.ast import (
     AttributeAccess,
     BinaryExpression,
     BinaryOperator,
@@ -49,8 +49,8 @@ from opendxa.dana.sandbox.parser.ast import (
     TupleLiteral,
     UnaryExpression,
 )
-from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
-from opendxa.dana.sandbox.parser.transformer.expression.expression_helpers import OperatorHelper
+from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
+from dana.core.lang.parser.transformer.expression.expression_helpers import OperatorHelper
 
 ValidExprType = LiteralExpression | Identifier | BinaryExpression | FunctionCall
 
@@ -268,7 +268,7 @@ class ExpressionTransformer(BaseTransformer):
                 operand = LiteralExpression(value=None)
 
             # Explicitly cast to Expression
-            from opendxa.dana.sandbox.parser.ast import Expression
+            from dana.core.lang.parser.ast import Expression
 
             operand_expr = cast(Expression, operand)
             return UnaryExpression(operator="not", operand=operand_expr)
@@ -407,7 +407,7 @@ class ExpressionTransformer(BaseTransformer):
                 return LiteralExpression(value=None)
             if item.data == "collection" and len(item.children) == 1:
                 child = item.children[0]
-                from opendxa.dana.sandbox.parser.ast import DictLiteral, SetLiteral, TupleLiteral
+                from dana.core.lang.parser.ast import DictLiteral, SetLiteral, TupleLiteral
 
                 if isinstance(child, DictLiteral | TupleLiteral | SetLiteral):
                     return child
@@ -505,7 +505,7 @@ class ExpressionTransformer(BaseTransformer):
         return result
 
     def tuple(self, items):
-        from opendxa.dana.sandbox.parser.ast import Expression, TupleLiteral
+        from dana.core.lang.parser.ast import Expression, TupleLiteral
 
         flat_items = self.flatten_items(items)
         # Ensure each item is properly cast to Expression type
@@ -520,7 +520,7 @@ class ExpressionTransformer(BaseTransformer):
         """
         Transform a list literal into a ListLiteral AST node.
         """
-        from opendxa.dana.sandbox.parser.ast import Expression
+        from dana.core.lang.parser.ast import Expression
 
         flat_items = self.flatten_items(items)
         # Ensure each item is properly cast to Expression type
@@ -540,13 +540,13 @@ class ExpressionTransformer(BaseTransformer):
             elif hasattr(item, "data") and item.data == "key_value_pair":
                 pair = self.key_value_pair(item.children)
                 pairs.append(pair)
-        from opendxa.dana.sandbox.parser.ast import DictLiteral
+        from dana.core.lang.parser.ast import DictLiteral
 
         return DictLiteral(items=pairs)
 
     def set(self, items):
         flat_items = self.flatten_items(items)
-        from opendxa.dana.sandbox.parser.ast import Expression, SetLiteral
+        from dana.core.lang.parser.ast import Expression, SetLiteral
 
         # Ensure each item is properly cast to Expression type
         set_items: list[Expression] = []
@@ -591,7 +591,7 @@ class ExpressionTransformer(BaseTransformer):
         Raises:
             SandboxError: If trailer processing fails or chain is too long
         """
-        from opendxa.dana.sandbox.parser.transformer.trailer_processor import TrailerProcessor
+        from dana.core.lang.parser.transformer.trailer_processor import TrailerProcessor
 
         # Initialize trailer processor if not already done
         if not hasattr(self, "_trailer_processor"):
@@ -636,7 +636,7 @@ class ExpressionTransformer(BaseTransformer):
                 return LiteralExpression(value)
             elif item.type == "F_STRING_TOKEN":
                 # Pass to the fstring_transformer
-                from opendxa.dana.sandbox.parser.transformer.fstring_transformer import FStringTransformer
+                from dana.core.lang.parser.transformer.fstring_transformer import FStringTransformer
 
                 fstring_transformer = FStringTransformer()
                 return fstring_transformer.fstring([item])
@@ -751,7 +751,7 @@ class ExpressionTransformer(BaseTransformer):
             # F-string handling
             if item.type == "F_STRING_TOKEN":
                 # Pass to the FStringTransformer
-                from opendxa.dana.sandbox.parser.transformer.fstring_transformer import FStringTransformer
+                from dana.core.lang.parser.transformer.fstring_transformer import FStringTransformer
 
                 fstring_transformer = FStringTransformer()
                 return fstring_transformer.fstring([item])
@@ -827,7 +827,7 @@ class ExpressionTransformer(BaseTransformer):
             return items[0]
         else:
             # Multi-dimensional - return a SliceTuple
-            from opendxa.dana.sandbox.parser.ast import SliceTuple
+            from dana.core.lang.parser.ast import SliceTuple
 
             return SliceTuple(slices=items)
 

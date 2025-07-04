@@ -1,10 +1,10 @@
 """Context Management module for OpenDXA KNOWS framework."""
 
-from opendxa.knows.core.context.base import Context, ContextError, ContextSyncError, ContextType, ContextValidationError
-from opendxa.knows.core.context.config import ContextSettings
+from dana.frameworks.knows.core.context.base import Context, ContextError, ContextSyncError, ContextType, ContextValidationError
+from dana.frameworks.knows.core.context.config import ContextSettings
 
 # Import Dana functions for easy access
-from opendxa.knows.core.context.dana import (
+from dana.frameworks.knows.core.context.dana import (
     context_clear,
     context_clear_all,
     context_configure,
@@ -30,7 +30,7 @@ from opendxa.knows.core.context.dana import (
     from_context_dict,
     to_context_dict,
 )
-from opendxa.knows.core.context.manager import ContextManager
+from dana.frameworks.knows.core.context.manager import ContextManager
 
 __all__ = [
     # Core classes

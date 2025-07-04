@@ -12,7 +12,7 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-from opendxa.common.utils.logging import DXA_LOGGER
+from dana.common.utils.logging import DXA_LOGGER
 
 
 @dataclass

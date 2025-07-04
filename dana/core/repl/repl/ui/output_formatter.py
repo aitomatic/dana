@@ -5,7 +5,7 @@ This module provides the OutputFormatter class that handles
 formatting of execution results and error messages.
 """
 
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.mixins.loggable import Loggable
 from opendxa.dana.common.error_utils import ErrorContext, ErrorHandler
 from opendxa.dana.common.terminal_utils import ColorScheme
 

@@ -6,7 +6,7 @@ This module provides validation logic to determine if a Dana module can be used 
 
 from typing import Any
 
-from opendxa.common.utils.logging import DXA_LOGGER
+from dana.common.utils.logging import DXA_LOGGER
 
 
 class ModuleAgentError(Exception):

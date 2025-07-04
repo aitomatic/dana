@@ -1,6 +1,6 @@
 """Tests for OpenDXA common exceptions."""
 
-from opendxa.common.exceptions import (
+from dana.common.exceptions import (
     AgentError,
     CommunicationError,
     ConfigurationError,

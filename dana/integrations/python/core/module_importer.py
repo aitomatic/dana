@@ -20,7 +20,7 @@ from typing import Any
 from opendxa.contrib.python_to_dana.core.exceptions import DanaCallError
 from opendxa.contrib.python_to_dana.core.inprocess_sandbox import InProcessSandboxInterface
 from opendxa.contrib.python_to_dana.core.sandbox_interface import SandboxInterface
-from opendxa.dana.module.core import initialize_module_system
+from dana.core.runtime.modules.core import initialize_module_system
 
 
 class DanaModuleWrapper:

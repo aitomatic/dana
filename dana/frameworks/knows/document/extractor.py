@@ -6,8 +6,8 @@ This module handles extracting clean, structured text from parsed documents.
 
 import re
 from typing import Dict, Any, List
-from opendxa.common.utils.logging import DXA_LOGGER
-from opendxa.knows.core.base import ParsedDocument, ProcessorBase
+from dana.common.utils.logging import DXA_LOGGER
+from dana.frameworks.knows.core.base import ParsedDocument, ProcessorBase
 
 
 class TextExtractor(ProcessorBase):

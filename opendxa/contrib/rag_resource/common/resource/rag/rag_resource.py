@@ -1,5 +1,5 @@
-from opendxa.common.mixins.tool_callable import ToolCallable
-from opendxa.common.resource.base_resource import BaseResource
+from dana.common.mixins.tool_callable import ToolCallable
+from dana.common.resource.base_resource import BaseResource
 from opendxa.contrib.rag_resource.common.resource.rag.pipeline.rag_orchestrator import RAGOrchestrator
 from opendxa.contrib.rag_resource.common.resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager
 

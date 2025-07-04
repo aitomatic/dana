@@ -23,13 +23,13 @@ Discord: https://discord.gg/6jGD4PYk
 
 import logging
 from typing import Any
-from opendxa.dana.sandbox.parser.ast import (
+from dana.core.lang.parser.ast import (
     FStringExpression,
     Identifier,
     LiteralExpression,
 )
-from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
-from opendxa.dana.sandbox.parser.utils.identifier_utils import is_valid_identifier
+from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
+from dana.core.lang.parser.utils.identifier_utils import is_valid_identifier
 
 
 class FStringTransformer(BaseTransformer):
@@ -130,7 +130,7 @@ class FStringTransformer(BaseTransformer):
         """
         try:
             # Use the same proven parser infrastructure as the rest of Dana
-            from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+            from dana.core.lang.parser.utils.parsing_utils import ParserCache
 
             parser = ParserCache.get_parser("dana")
             ast_node = parser.parse_expression(expr_text)

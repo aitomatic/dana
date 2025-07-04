@@ -9,13 +9,13 @@ NOTE: These tests are fully independent of OPENAI_API_KEY.
 
 import pytest
 
-from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
-from opendxa.dana.sandbox.parser.ast import Identifier
-from opendxa.dana.sandbox.parser.transformer.fstring_transformer import FStringTransformer
-from opendxa.dana.sandbox.parser.utils.identifier_utils import is_valid_identifier
-from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana.core.lang.interpreter.executor.function_resolver import FunctionType
+from dana.core.lang.parser.ast import Identifier
+from dana.core.lang.parser.transformer.fstring_transformer import FStringTransformer
+from dana.core.lang.parser.utils.identifier_utils import is_valid_identifier
+from dana.core.lang.parser.utils.parsing_utils import ParserCache
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 def test_underscore_variables_in_fstring_parsing():

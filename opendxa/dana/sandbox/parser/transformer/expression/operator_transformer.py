@@ -13,12 +13,12 @@ MIT License
 
 from lark import Token, Tree
 
-from opendxa.dana.sandbox.parser.ast import (
+from dana.core.lang.parser.ast import (
     BinaryExpression,
     BinaryOperator,
     UnaryExpression,
 )
-from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
+from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
 
 
 class OperatorTransformer(BaseTransformer):

@@ -7,8 +7,8 @@ import sys
 import time
 from typing import Any, cast
 
-from opendxa.common.config import ConfigLoader
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.config import ConfigLoader
+from dana.common.mixins.loggable import Loggable
 
 from .client import APIClient
 

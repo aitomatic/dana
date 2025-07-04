@@ -5,9 +5,9 @@ This module provides the CommandHandler class that processes
 special commands and coordinates with the help formatter.
 """
 
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.mixins.loggable import Loggable
 from opendxa.dana.common.terminal_utils import ColorScheme
-from opendxa.dana.exec.repl.repl import REPL
+from dana.core.repl.repl.repl import REPL
 
 from .help_formatter import HelpFormatter
 

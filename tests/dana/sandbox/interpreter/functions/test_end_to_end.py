@@ -10,9 +10,9 @@ together correctly, including:
 5. Error handling
 """
 
-from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana.core.lang.interpreter.executor.function_resolver import FunctionType
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 def test_mixed_dana_and_python_functions():
@@ -157,7 +157,7 @@ def test_unified_interpreter_execution_comprehensive():
     Migrated from tests/dana/sandbox/test_fixed_functions.py::test_unified_interpreter_execution()
     Enhanced with additional execution scenarios and comprehensive testing.
     """
-    from opendxa.dana.sandbox.parser.ast import Assignment, BinaryExpression, BinaryOperator, Identifier, LiteralExpression, Program
+    from dana.core.lang.parser.ast import Assignment, BinaryExpression, BinaryOperator, Identifier, LiteralExpression, Program
 
     context = SandboxContext()
     interpreter = DanaInterpreter()
@@ -216,8 +216,8 @@ def test_fstring_evaluation_comprehensive():
     Migrated from tests/dana/sandbox/test_fixed_functions.py::test_fstring_evaluation()
     Enhanced with additional f-string scenarios and edge cases.
     """
-    from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
-    from opendxa.dana.sandbox.parser.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier, LiteralExpression
+    from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
+    from dana.core.lang.parser.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier, LiteralExpression
 
     context = SandboxContext()
     executor = DanaExecutor()
@@ -343,7 +343,7 @@ def test_reason_function_integration():
         assert result is not None
 
         # Handle POETResult wrapper if present
-        from opendxa.dana.poet.types import POETResult
+        from dana.frameworks.poet.types import POETResult
 
         if isinstance(result, POETResult):
             unwrapped_result = result.unwrap()

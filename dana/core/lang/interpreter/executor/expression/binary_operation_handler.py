@@ -10,10 +10,10 @@ MIT License
 
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.mixins.loggable import Loggable
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.sandbox.parser.ast import BinaryExpression, BinaryOperator
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.parser.ast import BinaryExpression, BinaryOperator
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class BinaryOperationHandler(Loggable):
@@ -98,7 +98,7 @@ class BinaryOperationHandler(Loggable):
     def _apply_binary_coercion(self, left: Any, right: Any, operator: str) -> tuple:
         """Apply type coercion to binary operands if enabled."""
         try:
-            from opendxa.dana.sandbox.interpreter.unified_coercion import TypeCoercion
+            from dana.core.lang.interpreter.unified_coercion import TypeCoercion
 
             # Only apply coercion if enabled
             if TypeCoercion.should_enable_coercion():

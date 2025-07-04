@@ -12,7 +12,7 @@ import re
 from enum import Enum
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.mixins.loggable import Loggable
 
 
 class CoercionStrategy(Enum):

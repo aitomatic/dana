@@ -15,15 +15,15 @@ from importlib.machinery import ModuleSpec as PyModuleSpec
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+from dana.core.lang.parser.utils.parsing_utils import ParserCache
 
 from .errors import ImportError, ModuleNotFoundError, SyntaxError
 from .registry import ModuleRegistry
 from .types import Module, ModuleSpec
 
 if TYPE_CHECKING:
-    from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-    from opendxa.dana.sandbox.sandbox_context import SandboxContext
+    from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+    from dana.core.lang.sandbox_context import SandboxContext
 
 
 class ModuleLoader(MetaPathFinder, Loader):
@@ -313,8 +313,8 @@ class ModuleLoader(MetaPathFinder, Loader):
                 raise SyntaxError(str(e), module.__name__, module.__file__, line_number, source_line)
 
             # Execute
-            from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-            from opendxa.dana.sandbox.sandbox_context import SandboxContext
+            from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+            from dana.core.lang.sandbox_context import SandboxContext
 
             interpreter = DanaInterpreter()
             context = SandboxContext()
@@ -372,8 +372,8 @@ class ModuleLoader(MetaPathFinder, Loader):
             interpreter: The interpreter used for execution
             context: The execution context
         """
-        from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
-        from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionMetadata, FunctionType
+        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+        from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata, FunctionType
 
         # Find all DanaFunction objects in the module
         dana_functions = {}

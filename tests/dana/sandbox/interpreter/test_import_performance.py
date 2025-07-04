@@ -13,8 +13,8 @@ from pathlib import Path
 
 import pytest
 
-from opendxa.dana.module.core import initialize_module_system, reset_module_system
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
+from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
+from dana.core.lang.dana_sandbox import DanaSandbox
 
 
 @pytest.mark.deep

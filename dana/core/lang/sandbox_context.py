@@ -21,14 +21,14 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional
 
-from opendxa.common.resource.base_resource import BaseResource
+from dana.common.resource.base_resource import BaseResource
 from opendxa.dana.common.exceptions import StateError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
-from opendxa.dana.sandbox.parser.utils.scope_utils import extract_scope_and_name
+from dana.core.lang.parser.utils.scope_utils import extract_scope_and_name
 
 if TYPE_CHECKING:
-    from opendxa.dana.sandbox.context_manager import ContextManager
-    from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
+    from dana.core.lang.context_manager import ContextManager
+    from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
 
 class ExecutionStatus(Enum):

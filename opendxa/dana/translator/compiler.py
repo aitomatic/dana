@@ -20,8 +20,8 @@ Discord: https://discord.gg/6jGD4PYk
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
-    from opendxa.dana.sandbox.parser.ast import Program
-    from opendxa.dana.sandbox.sandbox_context import SandboxContext
+    from dana.core.lang.parser.ast import Program
+    from dana.core.lang.sandbox_context import SandboxContext
 
 
 class CompilerInterface(Protocol):
@@ -35,7 +35,7 @@ class CompilerInterface(Protocol):
 
 
 # Example Placeholder Implementation (e.g., using an LLM)
-# from opendxa.agent.resource import LLMResource # Assuming LLMResource exists
+# from dana.frameworks.agent.resource import LLMResource # Assuming LLMResource exists
 # from ..language.parser import parse_program # Assuming a parser exists
 
 # class LLMCompiler(CompilerInterface):

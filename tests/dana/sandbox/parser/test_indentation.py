@@ -1,6 +1,6 @@
 """Test indentation handling in DANA parser."""
 
-from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+from dana.core.lang.parser.utils.parsing_utils import ParserCache
 
 
 def test_basic_indentation():

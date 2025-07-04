@@ -23,11 +23,11 @@ Example:
 
 from typing import Any, TypeVar
 
-from opendxa.common.mixins import ToolCallable
-from opendxa.common.mixins.configurable import Configurable
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.mixins.queryable import Queryable
-from opendxa.common.types import BaseRequest, BaseResponse
+from dana.common.mixins import ToolCallable
+from dana.common.mixins.configurable import Configurable
+from dana.common.mixins.loggable import Loggable
+from dana.common.mixins.queryable import Queryable
+from dana.common.types import BaseRequest, BaseResponse
 
 from ..utils.misc import Misc
 

@@ -8,7 +8,7 @@ failures to document known Dana language limitations.
 
 import pytest
 from pathlib import Path
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
+from dana.core.lang.dana_sandbox import DanaSandbox
 
 
 # Test files that are expected to fail due to language limitations

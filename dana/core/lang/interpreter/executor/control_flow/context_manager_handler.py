@@ -11,9 +11,9 @@ MIT License
 import warnings
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.sandbox.parser.ast import Identifier, WithStatement
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.common.mixins.loggable import Loggable
+from dana.core.lang.parser.ast import Identifier, WithStatement
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class ContextManagerHandler(Loggable):

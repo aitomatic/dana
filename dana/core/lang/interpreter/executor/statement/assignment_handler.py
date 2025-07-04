@@ -10,10 +10,10 @@ MIT License
 
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.mixins.loggable import Loggable
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.sandbox.parser.ast import Assignment, AttributeAccess, Identifier, SubscriptExpression
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.parser.ast import Assignment, AttributeAccess, Identifier, SubscriptExpression
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class AssignmentHandler(Loggable):
@@ -127,7 +127,7 @@ class AssignmentHandler(Loggable):
             return cached_result
 
         try:
-            from opendxa.dana.sandbox.interpreter.unified_coercion import TypeCoercion
+            from dana.core.lang.interpreter.unified_coercion import TypeCoercion
 
             coerced_value = TypeCoercion.coerce_value(value, target_type)
 
@@ -181,7 +181,7 @@ class AssignmentHandler(Loggable):
             value: The value to assign
             context: The execution context
         """
-        from opendxa.dana.sandbox.parser.ast import SliceExpression, SliceTuple
+        from dana.core.lang.parser.ast import SliceExpression, SliceTuple
 
         # Get the target object
         if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
@@ -237,7 +237,7 @@ class AssignmentHandler(Loggable):
             value: The value to assign
             context: The execution context
         """
-        from opendxa.dana.sandbox.parser.ast import SliceExpression
+        from dana.core.lang.parser.ast import SliceExpression
 
         try:
             # Evaluate each slice in the tuple

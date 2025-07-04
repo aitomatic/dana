@@ -12,7 +12,7 @@ import numpy as np
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from opendxa.common.db.base_model import BaseDBModel
+from dana.common.db.base_model import BaseDBModel
 
 M = TypeVar("M", bound=BaseDBModel)  # Model type
 

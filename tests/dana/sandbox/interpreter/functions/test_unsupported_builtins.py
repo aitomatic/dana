@@ -8,15 +8,15 @@ appropriate error messages and security rationales.
 import pytest
 
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
-from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
-from opendxa.dana.sandbox.interpreter.functions.pythonic.function_factory import (
+from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana.core.lang.interpreter.executor.function_resolver import FunctionType
+from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+from dana.core.lang.interpreter.functions.pythonic.function_factory import (
     PythonicFunctionFactory,
     UnsupportedReason,
     register_pythonic_builtins,
 )
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class TestUnsupportedFunctions:
@@ -278,7 +278,7 @@ class TestUnsupportedFunctionRegistry:
         def safe_eval(context, expr):
             return f"Safe evaluation of: {expr}"
 
-        from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
+        from dana.core.lang.interpreter.functions.python_function import PythonFunction
 
         registry.register("eval", PythonFunction(safe_eval, trusted_for_context=True), func_type=FunctionType.PYTHON, overwrite=True)
 

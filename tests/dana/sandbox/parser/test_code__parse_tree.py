@@ -9,7 +9,7 @@ from lark import Tree
 
 @pytest.fixture(scope="module")
 def dana_parser():
-    from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+    from dana.core.lang.parser.utils.parsing_utils import ParserCache
 
     return ParserCache.get_parser("dana")
 
@@ -564,7 +564,7 @@ a = 5
 result = f"{a}"
 result2 = f"{a} text"
 """
-    from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+    from dana.core.lang.parser.utils.parsing_utils import ParserCache
 
     parser = ParserCache.get_parser("dana")
     # Force parser to reload grammar

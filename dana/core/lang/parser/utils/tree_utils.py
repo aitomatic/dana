@@ -22,7 +22,7 @@ from typing import Any, TypeVar
 
 from lark import Token, Tree
 
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.mixins.loggable import Loggable
 
 # Type variable for generic AST node
 T = TypeVar("T")

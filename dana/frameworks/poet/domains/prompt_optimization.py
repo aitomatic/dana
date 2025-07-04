@@ -36,7 +36,7 @@ class PromptOptimizationDomain(LLMOptimizationDomain):
 {base_perceive.code}
 
 # === Prompt History & Optimization ===
-from opendxa.dana.poet.storage import POETStorage
+from dana.frameworks.poet.storage import POETStorage
 
 # Load prompt history and performance metrics
 poet_storage = POETStorage()
@@ -113,7 +113,7 @@ validated_inputs["prompt_history"] = prompt_history[:5]  # Keep top 5
         return CodeBlock(
             code=enhanced_perceive,
             dependencies=base_perceive.dependencies + ["opendxa.dana.poet.storage", "time"],
-            imports=base_perceive.imports + ["from opendxa.dana.poet.storage import POETStorage", "import time"],
+            imports=base_perceive.imports + ["from dana.frameworks.poet.storage import POETStorage", "import time"],
             metadata={**base_perceive.metadata, "prompt_variants": True, "historical_learning": True, "ab_testing": True},
         )
 
@@ -206,8 +206,8 @@ log(f"Prompt effectiveness score: {{effectiveness_score:.2f}}")
 
         train_code = """
 # === TRAIN PHASE: Prompt Learning ===
-from opendxa.dana.poet.feedback import get_feedback_system
-from opendxa.dana.poet.storage import POETStorage
+from dana.frameworks.poet.feedback import get_feedback_system
+from dana.frameworks.poet.storage import POETStorage
 
 if execution_id and final_result:
     try:
@@ -301,8 +301,8 @@ if execution_id and final_result:
             code=train_code,
             dependencies=["opendxa.dana.poet.feedback", "opendxa.dana.poet.storage", "time"],
             imports=[
-                "from opendxa.dana.poet.feedback import get_feedback_system",
-                "from opendxa.dana.poet.storage import POETStorage",
+                "from dana.frameworks.poet.feedback import get_feedback_system",
+                "from dana.frameworks.poet.storage import POETStorage",
                 "import time",
             ],
             metadata={

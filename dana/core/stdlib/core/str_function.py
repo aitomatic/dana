@@ -8,7 +8,7 @@ String conversion function for Dana.
 
 from typing import Any
 
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 def str_function(

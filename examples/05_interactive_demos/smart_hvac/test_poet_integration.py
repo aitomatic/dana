@@ -21,7 +21,7 @@ async def test_poet_imports():
     print("🧪 Testing POET framework imports...")
 
     try:
-        from opendxa.dana.poet.poet import POETConfig, POETExecutor, poet
+        from dana.frameworks.poet.poet import POETConfig, POETExecutor, poet
 
         print("✅ POET core framework imported successfully")
     except ImportError as e:
@@ -29,7 +29,7 @@ async def test_poet_imports():
         return False
 
     try:
-        from opendxa.dana.poet.plugins import PLUGIN_REGISTRY
+        from dana.frameworks.poet.plugins import PLUGIN_REGISTRY
 
         print("✅ POET plugin registry imported successfully")
     except ImportError as e:
@@ -37,7 +37,7 @@ async def test_poet_imports():
         return False
 
     try:
-        from opendxa.common.resource.llm_resource import LLMResource
+        from dana.common.resource.llm_resource import LLMResource
 
         print("✅ LLM resource imported successfully")
     except ImportError as e:
@@ -52,7 +52,7 @@ async def test_plugin_discovery():
     print("\n🔍 Testing plugin discovery...")
 
     try:
-        from opendxa.dana.poet.plugins import PLUGIN_REGISTRY
+        from dana.frameworks.poet.plugins import PLUGIN_REGISTRY
 
         # Discover plugins
         plugin_count = PLUGIN_REGISTRY.discover_plugins()
@@ -106,7 +106,7 @@ async def test_llm_setup():
     print(f"✅ Found API keys for: {', '.join(available_keys)}")
 
     try:
-        from opendxa.common.resource.llm_resource import LLMResource
+        from dana.common.resource.llm_resource import LLMResource
 
         # Create LLM resource
         llm = LLMResource(name="test_llm")
@@ -131,7 +131,7 @@ async def test_poet_decorator():
     try:
         from hvac_systems import HVACCommand
 
-        from opendxa.dana.poet.poet import poet
+        from dana.frameworks.poet.poet import poet
 
         # Create a simple test function with POET decorator
         @poet(domain="building_management", enable_training=True)

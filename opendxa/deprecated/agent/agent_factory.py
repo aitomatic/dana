@@ -19,8 +19,8 @@ Discord: https://discord.gg/6jGD4PYk
 
 from typing import Any
 
-from opendxa.agent.agent import Agent
-from opendxa.agent.agent_config import AgentConfig
+from dana.frameworks.agent.agent import Agent
+from dana.frameworks.agent.agent_config import AgentConfig
 
 
 class AgentFactory:

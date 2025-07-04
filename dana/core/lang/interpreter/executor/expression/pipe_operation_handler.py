@@ -10,10 +10,10 @@ MIT License
 
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.mixins.loggable import Loggable
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.sandbox.parser.ast import BinaryExpression, Identifier
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.parser.ast import BinaryExpression, Identifier
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class ComposedFunction:
@@ -58,7 +58,7 @@ class ComposedFunction:
 
     def _call_function(self, func: Any, context: SandboxContext, *args, **kwargs) -> Any:
         """Call a function with proper context handling."""
-        from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+        from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
 
         # Handle unresolved identifiers (deferred resolution)
         if isinstance(func, Identifier):
@@ -375,7 +375,7 @@ class PipeOperationHandler(Loggable):
 
     def _call_function(self, func: Any, context: SandboxContext, *args, **kwargs) -> Any:
         """Call a function with proper context detection and optimization."""
-        from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+        from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
 
         # Handle SandboxFunction objects (including ComposedFunction)
         if isinstance(func, SandboxFunction):
@@ -387,7 +387,7 @@ class PipeOperationHandler(Loggable):
 
         # Handle identifiers - delegate to function executor for consistency
         if isinstance(func, Identifier):
-            from opendxa.dana.sandbox.parser.ast import FunctionCall
+            from dana.core.lang.parser.ast import FunctionCall
 
             # Convert arguments to FunctionCall format
             function_call_args = {}

@@ -15,8 +15,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from opendxa.common.utils.logging import DXA_LOGGER
-from opendxa.dana.poet.types import POETConfig
+from dana.common.utils.logging import DXA_LOGGER
+from dana.frameworks.poet.types import POETConfig
 
 
 @dataclass

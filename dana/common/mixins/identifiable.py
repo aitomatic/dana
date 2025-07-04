@@ -1,6 +1,6 @@
 """Mixin for identifiable objects."""
 
-from opendxa.common.utils.misc import Misc
+from dana.common.utils.misc import Misc
 
 
 class Identifiable:

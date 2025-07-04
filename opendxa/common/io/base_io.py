@@ -8,9 +8,9 @@ input/output operations while extending BaseResource functionality.
 from abc import abstractmethod
 from typing import Any
 
-from opendxa.common.mixins import ToolCallable
-from opendxa.common.resource import BaseResource
-from opendxa.common.types import BaseRequest, BaseResponse
+from dana.common.mixins import ToolCallable
+from dana.common.resource import BaseResource
+from dana.common.types import BaseRequest, BaseResponse
 
 
 class BaseIO(BaseResource):

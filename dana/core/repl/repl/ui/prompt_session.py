@@ -17,9 +17,9 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.styles import Style
 
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.mixins.loggable import Loggable
 from opendxa.dana.common.terminal_utils import ColorScheme, get_dana_lexer
-from opendxa.dana.exec.repl.repl import REPL
+from dana.core.repl.repl.repl import REPL
 
 # Constants
 HISTORY_FILE = os.path.expanduser("~/.dana_history")

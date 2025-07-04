@@ -27,9 +27,9 @@ knowledge management features in the DXA system.
 
 from typing import Any
 
-from opendxa.common.db.storage import KnowledgeDBStorage
-from opendxa.common.resource.base_resource import BaseResource
-from opendxa.common.types import BaseResponse
+from dana.common.db.storage import KnowledgeDBStorage
+from dana.common.resource.base_resource import BaseResource
+from dana.common.types import BaseResponse
 
 
 class KBResource(BaseResource):

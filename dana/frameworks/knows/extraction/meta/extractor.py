@@ -9,10 +9,10 @@ import uuid
 from typing import Dict, Any, List, Optional
 from dataclasses import asdict
 
-from opendxa.common.utils.logging import DXA_LOGGER
-from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.common.types import BaseRequest
-from opendxa.knows.core.base import Document, KnowledgePoint, ProcessorBase
+from dana.common.utils.logging import DXA_LOGGER
+from dana.common.resource.llm_resource import LLMResource
+from dana.common.types import BaseRequest
+from dana.frameworks.knows.core.base import Document, KnowledgePoint, ProcessorBase
 
 
 class MetaKnowledgeExtractor(ProcessorBase):

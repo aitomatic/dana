@@ -2,12 +2,12 @@
 
 from typing import Any
 
-from opendxa.knows.core.knowledge_orgs.base import KnowledgeOrganization, QueryError, RetrievalError, StorageError
-from opendxa.knows.core.knowledge_orgs.config import RedisSettings, RelationalSettings, TimeSeriesSettings, VectorStoreSettings
-from opendxa.knows.core.knowledge_orgs.relational import RelationalStore
-from opendxa.knows.core.knowledge_orgs.semi_structured import SemiStructuredStore
-from opendxa.knows.core.knowledge_orgs.time_series import TimeSeriesStore
-from opendxa.knows.core.knowledge_orgs.vector import VectorStore
+from dana.frameworks.knows.core.knowledge_orgs.base import KnowledgeOrganization, QueryError, RetrievalError, StorageError
+from dana.frameworks.knows.core.knowledge_orgs.config import RedisSettings, RelationalSettings, TimeSeriesSettings, VectorStoreSettings
+from dana.frameworks.knows.core.knowledge_orgs.relational import RelationalStore
+from dana.frameworks.knows.core.knowledge_orgs.semi_structured import SemiStructuredStore
+from dana.frameworks.knows.core.knowledge_orgs.time_series import TimeSeriesStore
+from dana.frameworks.knows.core.knowledge_orgs.vector import VectorStore
 
 # Global store registry
 _stores: dict[str, KnowledgeOrganization] = {}

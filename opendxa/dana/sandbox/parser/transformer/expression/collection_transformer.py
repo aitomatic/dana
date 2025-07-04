@@ -14,14 +14,14 @@ MIT License
 
 from typing import cast
 
-from opendxa.dana.sandbox.parser.ast import (
+from dana.core.lang.parser.ast import (
     DictLiteral,
     Expression,
     ListLiteral,
     SetLiteral,
     TupleLiteral,
 )
-from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
+from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
 
 
 class CollectionTransformer(BaseTransformer):

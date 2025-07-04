@@ -3,8 +3,8 @@
 from contextlib import contextmanager
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.sandbox.exceptions import SandboxError
+from dana.common.mixins.loggable import Loggable
+from dana.core.lang.exceptions import SandboxError
 
 
 class RecursionDepthMonitor(Loggable):

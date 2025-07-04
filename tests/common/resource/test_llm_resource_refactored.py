@@ -4,9 +4,9 @@ import os
 import unittest
 from unittest.mock import patch
 
-from opendxa.common.exceptions import LLMError
-from opendxa.common.resource.llm_configuration_manager import LLMConfigurationManager
-from opendxa.common.resource.llm_resource import LLMResource
+from dana.common.exceptions import LLMError
+from dana.common.resource.llm_configuration_manager import LLMConfigurationManager
+from dana.common.resource.llm_resource import LLMResource
 
 
 class TestLLMResourceRefactored(unittest.TestCase):
@@ -170,8 +170,8 @@ class TestLLMResourceRefactored(unittest.TestCase):
         """Verify that the refactoring actually reduced code complexity."""
         import inspect
 
-        from opendxa.common.resource.llm_configuration_manager import LLMConfigurationManager
-        from opendxa.common.resource.llm_resource import LLMResource
+        from dana.common.resource.llm_configuration_manager import LLMConfigurationManager
+        from dana.common.resource.llm_resource import LLMResource
 
         # Get method source code lengths for verification
         llm_validate_lines = len(inspect.getsource(LLMResource._validate_model).split("\n"))

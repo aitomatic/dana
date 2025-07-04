@@ -48,9 +48,9 @@ from typing import Any, TypeVar
 from mcp import Tool as McpTool
 from pydantic import BaseModel, ValidationError, create_model
 
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.mixins.registerable import Registerable
-from opendxa.common.mixins.tool_formats import McpToolFormat, OpenAIToolFormat, RawToolFormat, ToolFormat
+from dana.common.mixins.loggable import Loggable
+from dana.common.mixins.registerable import Registerable
+from dana.common.mixins.tool_formats import McpToolFormat, OpenAIToolFormat, RawToolFormat, ToolFormat
 
 # Type variable for the decorated function
 F = TypeVar("F", bound=Callable[..., Any])

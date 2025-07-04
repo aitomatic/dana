@@ -1,4 +1,4 @@
-from opendxa.common.resource.base_resource import BaseResource
+from dana.common.resource.base_resource import BaseResource
 
 
 class FeedbackResource(BaseResource):

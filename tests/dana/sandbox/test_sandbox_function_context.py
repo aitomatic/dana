@@ -8,9 +8,9 @@ SandboxContext arguments passed to functions.
 
 from typing import Any
 
-from opendxa.dana.sandbox.context_manager import ContextManager
-from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.context_manager import ContextManager
+from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class MockSandboxFunction(SandboxFunction):

@@ -7,8 +7,8 @@ MIT License
 
 import pytest
 
-from opendxa.dana.poet.phases.enforce import EnforcePhase, EnforceResult
-from opendxa.dana.poet.types import POETConfig
+from dana.frameworks.poet.phases.enforce import EnforcePhase, EnforceResult
+from dana.frameworks.poet.types import POETConfig
 
 
 @pytest.fixture

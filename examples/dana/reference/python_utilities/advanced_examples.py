@@ -3,9 +3,9 @@
 import asyncio
 import logging
 
-from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.dana.exec.repl.repl import REPL
-from opendxa.dana.sandbox.log_manager import LogLevel
+from dana.common.resource.llm_resource import LLMResource
+from dana.core.repl.repl.repl import REPL
+from dana.core.lang.log_manager import LogLevel
 
 
 async def run_conditional_example(repl: REPL) -> None:

@@ -6,10 +6,10 @@ import inspect
 from typing import Any
 
 from mcp.types import Tool as McpTool
-from opendxa.common.mixins.tool_formats import OpenAIToolFormat
-from opendxa.common.resource.base_resource import BaseResource
-from opendxa.common.types import BaseRequest, BaseResponse
-from opendxa.common.utils.misc import Misc
+from dana.common.mixins.tool_formats import OpenAIToolFormat
+from dana.common.resource.base_resource import BaseResource
+from dana.common.types import BaseRequest, BaseResponse
+from dana.common.utils.misc import Misc
 from opendxa.contrib.mcp_a2a.resource.mcp.client.mcp_client import MCPClient
 
 

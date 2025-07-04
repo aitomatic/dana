@@ -129,7 +129,7 @@ class ModuleAgent(AbstractDanaAgent):
 
             # For Dana functions, we need to call them with proper context
             # so they have access to module variables like websearch
-            from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+            from dana.core.lang.interpreter.functions.dana_function import DanaFunction
 
             if isinstance(solve_func, DanaFunction):
                 # Call Dana function with its original context

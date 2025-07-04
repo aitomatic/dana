@@ -22,7 +22,7 @@ from typing import Any
 
 from opendxa.dana.common.exceptions import StateError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class ContextManager:

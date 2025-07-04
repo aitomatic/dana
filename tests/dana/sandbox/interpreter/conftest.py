@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
+from dana.core.lang.dana_sandbox import DanaSandbox
 
 logger = logging.getLogger(__name__)
 

@@ -12,8 +12,8 @@ import os
 from pathlib import Path
 from typing import Any, TypeVar
 
-from opendxa.common.exceptions import OpenDXAError
-from opendxa.common.utils.logging import DXA_LOGGER
+from dana.common.exceptions import OpenDXAError
+from dana.common.utils.logging import DXA_LOGGER
 
 T = TypeVar("T")
 

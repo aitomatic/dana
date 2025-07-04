@@ -7,10 +7,10 @@ MIT License
 
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.sandbox.interpreter.executor.control_flow.exceptions import ReturnException
-from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.common.mixins.loggable import Loggable
+from dana.core.lang.interpreter.executor.control_flow.exceptions import ReturnException
+from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class DanaFunction(SandboxFunction, Loggable):

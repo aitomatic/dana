@@ -10,10 +10,10 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from opendxa.common.types import BaseResponse
-from opendxa.knows.core.base import Document, KnowledgePoint
-from opendxa.knows.extraction.meta.categorizer import CategoryRelationship, KnowledgeCategorizer
-from opendxa.knows.extraction.meta.extractor import MetaKnowledgeExtractor
+from dana.common.types import BaseResponse
+from dana.frameworks.knows.core.base import Document, KnowledgePoint
+from dana.frameworks.knows.extraction.meta.categorizer import CategoryRelationship, KnowledgeCategorizer
+from dana.frameworks.knows.extraction.meta.extractor import MetaKnowledgeExtractor
 
 
 class TestMetaKnowledgeExtractor:

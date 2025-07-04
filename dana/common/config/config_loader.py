@@ -1,14 +1,14 @@
-"""Configuration loading and management for OpenDXA.
+"""Configuration loading and management for Dana.
 
 This module provides centralized configuration management using the ConfigLoader
 class. It supports loading configuration from 'opendxa_config.json' with a
-defined search order and allows overriding via the OPENDXA_CONFIG environment
+defined search order and allows overriding via the DANA_CONFIG environment
 variable.
 
 Features:
 - Singleton pattern for consistent config access
 - Standardized path resolution for config files
-- Search order for 'opendxa_config.json': OPENDXA_CONFIG env var -> CWD -> Project Root
+- Search order for 'opendxa_config.json': DANA_CONFIG env var -> CWD -> Project Root
 - Clear error handling for config loading failures
 
 Example:
@@ -16,8 +16,8 @@ Example:
     loader = ConfigLoader()
     config = loader.get_default_config()
 
-    # If OPENDXA_CONFIG is set, it overrides the search order:
-    # export OPENDXA_CONFIG=/path/to/my_config.json
+    # If DANA_CONFIG is set, it overrides the search order:
+    # export DANA_CONFIG=/path/to/my_config.json
     # python my_script.py
     # Now loader.get_default_config() will load from /path/to/my_config.json
 """
@@ -27,8 +27,8 @@ import os
 from pathlib import Path
 from typing import Any
 
-from opendxa.common.exceptions import ConfigurationError
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.exceptions import ConfigurationError
+from dana.common.mixins.loggable import Loggable
 
 
 class ConfigLoader(Loggable):
@@ -38,11 +38,11 @@ class ConfigLoader(Loggable):
     from 'opendxa_config.json' based on a search hierarchy that allows user overrides.
 
     Search Hierarchy for 'opendxa_config.json' (used by get_default_config):
-    1. Path specified by the OPENDXA_CONFIG environment variable.
+    1. Path specified by the DANA_CONFIG environment variable.
     2. 'opendxa_config.json' in the Current Working Directory (CWD) - user override.
     3. 'opendxa_config.json' in the opendxa library directory - default config.
 
-    This design allows users of the OpenDXA library to override the default configuration
+    This design allows users of the Dana library to override the default configuration
     by placing their own opendxa_config.json in their project directory, while falling
     back to the library's default configuration if no user override is found.
 
@@ -52,7 +52,7 @@ class ConfigLoader(Loggable):
 
     Example:
         >>> loader = ConfigLoader()
-        >>> # Loads config based on OPENDXA_CONFIG, CWD, or library default
+        >>> # Loads config based on DANA_CONFIG, CWD, or library default
         >>> config = loader.get_default_config()
 
         >>> # Load a specific, non-default config file from the library directory
@@ -124,7 +124,7 @@ class ConfigLoader(Loggable):
         """Gets the default configuration following the search hierarchy.
 
         Searches for and loads 'opendxa_config.json' based on the following order:
-        1. Path specified by the OPENDXA_CONFIG environment variable.
+        1. Path specified by the DANA_CONFIG environment variable.
         2. 'opendxa_config.json' in the Current Working Directory (CWD) - user override.
         3. 'opendxa_config.json' in the opendxa library directory - default config.
 
@@ -138,17 +138,17 @@ class ConfigLoader(Loggable):
             ConfigurationError: If no configuration file is found in any of the
                                 specified locations or if loading/parsing fails.
         """
-        config_path_env = os.getenv("OPENDXA_CONFIG")
+        config_path_env = os.getenv("DANA_CONFIG")
 
         # 1. Check Environment Variable
         if config_path_env:
             env_path = Path(config_path_env).resolve()
-            self.debug(f"Attempting to load config from OPENDXA_CONFIG: {env_path}")
+            self.debug(f"Attempting to load config from DANA_CONFIG: {env_path}")
             try:
                 return self._load_config_from_path(env_path)
             except ConfigurationError as e:
                 # Raise specific error if env var path fails
-                raise ConfigurationError(f"Failed to load config from OPENDXA_CONFIG ({env_path}): {e}")
+                raise ConfigurationError(f"Failed to load config from DANA_CONFIG ({env_path}): {e}")
 
         # 2. Check Current Working Directory
         cwd_path = Path.cwd() / self.DEFAULT_CONFIG_FILENAME
@@ -157,7 +157,7 @@ class ConfigLoader(Loggable):
             # No try-except here, let _load_config_from_path handle errors
             return self._load_config_from_path(cwd_path)
 
-        # 3. Check OpenDXA Library Directory (default config)
+        # 3. Check Dana Library Directory (default config)
         lib_path = self.config_dir / self.DEFAULT_CONFIG_FILENAME
         if lib_path.is_file():
             self.debug(f"Attempting to load config from library directory: {lib_path}")
@@ -168,9 +168,9 @@ class ConfigLoader(Loggable):
         raise ConfigurationError(
             f"Default config '{self.DEFAULT_CONFIG_FILENAME}' not found.\n"
             f"Checked locations:\n"
-            f"- OPENDXA_CONFIG environment variable: (not set or failed)\n"
+            f"- DANA_CONFIG environment variable: (not set or failed)\n"
             f"- Current Working Directory: {cwd_path}\n"
-            f"- OpenDXA Library Directory: {lib_path}"
+            f"- Dana Library Directory: {lib_path}"
         )
 
     def load_config(self, config_name: str) -> dict[str, Any]:

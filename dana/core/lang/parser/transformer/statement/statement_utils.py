@@ -11,7 +11,7 @@ from typing import Any
 
 from lark import Token, Tree
 
-from opendxa.dana.sandbox.parser.utils.tree_utils import TreeTraverser
+from dana.core.lang.parser.utils.tree_utils import TreeTraverser
 
 
 class StatementTransformationUtils:

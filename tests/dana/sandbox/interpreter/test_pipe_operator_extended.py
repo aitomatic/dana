@@ -7,8 +7,8 @@ MIT License
 
 import pytest
 
-from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-from opendxa.dana.sandbox.parser.ast import (
+from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana.core.lang.parser.ast import (
     Assignment,
     BinaryExpression,
     BinaryOperator,
@@ -16,7 +16,7 @@ from opendxa.dana.sandbox.parser.ast import (
     LiteralExpression,
     Program,
 )
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 def test_pipe_with_none_values():
@@ -92,7 +92,7 @@ def test_pipe_with_different_data_types():
     interpreter.function_registry.register("add_ten", add_ten)
 
     # Test list: [1,2,3] | list_length | add_ten | string_upper
-    from opendxa.dana.sandbox.parser.ast import ListLiteral
+    from dana.core.lang.parser.ast import ListLiteral
 
     list_expr = ListLiteral([LiteralExpression(1), LiteralExpression(2), LiteralExpression(3)])
 

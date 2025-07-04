@@ -2,9 +2,9 @@
 
 from typing import Any
 
-from opendxa.knows.core.context.base import ContextType
-from opendxa.knows.core.context.config import ContextSettings
-from opendxa.knows.core.context.manager import ContextManager
+from dana.frameworks.knows.core.context.base import ContextType
+from dana.frameworks.knows.core.context.config import ContextSettings
+from dana.frameworks.knows.core.context.manager import ContextManager
 
 # Global context manager instance
 _context_manager: ContextManager | None = None

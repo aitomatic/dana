@@ -10,10 +10,10 @@ MIT License
 
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.mixins.loggable import Loggable
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.sandbox.parser.ast import AssertStatement, PassStatement, RaiseStatement
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.parser.ast import AssertStatement, PassStatement, RaiseStatement
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class StatementUtils(Loggable):

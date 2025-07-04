@@ -7,7 +7,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
-from opendxa.dana.poet.types import POETConfig
+from dana.frameworks.poet.types import POETConfig
 
 
 class POETRequest(BaseModel):

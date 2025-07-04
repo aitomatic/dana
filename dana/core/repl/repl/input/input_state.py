@@ -7,7 +7,7 @@ and manages the input buffer.
 
 from collections import deque
 
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.mixins.loggable import Loggable
 
 
 class InputState(Loggable):

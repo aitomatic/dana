@@ -76,41 +76,41 @@ def convert_imports_in_file(file_path: Path, dry_run: bool = False) -> int:
     # Import mapping from old paths to new paths
     import_mappings = {
         # Core Dana Language
-        "from opendxa.dana.sandbox.parser": "from dana.core.lang.parser",
-        "from opendxa.dana.sandbox.interpreter": "from dana.core.lang.interpreter", 
-        "from opendxa.dana.sandbox.dana_sandbox": "from dana.core.lang.dana_sandbox",
-        "from opendxa.dana.sandbox": "from dana.core.lang",
-        "import opendxa.dana.sandbox": "import dana.core.lang",
+        "from dana.core.lang.parser": "from dana.core.lang.parser",
+        "from dana.core.lang.interpreter": "from dana.core.lang.interpreter", 
+        "from dana.core.lang.dana_sandbox": "from dana.core.lang.dana_sandbox",
+        "from dana.core.lang": "from dana.core.lang",
+        "import dana.core.lang": "import dana.core.lang",
         
         # Runtime and Module System
-        "from opendxa.dana.module": "from dana.core.runtime.modules",
-        "from opendxa.dana.exec": "from dana.core.repl",
-        "import opendxa.dana.module": "import dana.core.runtime.modules",
-        "import opendxa.dana.exec": "import dana.core.repl",
+        "from dana.core.runtime.modules": "from dana.core.runtime.modules",
+        "from dana.core.repl": "from dana.core.repl",
+        "import dana.core.runtime.modules": "import dana.core.runtime.modules",
+        "import dana.core.repl": "import dana.core.repl",
         
         # Standard Library Functions
-        "from opendxa.dana.sandbox.interpreter.functions": "from dana.core.stdlib",
-        "import opendxa.dana.sandbox.interpreter.functions": "import dana.core.stdlib",
+        "from dana.core.lang.interpreter.functions": "from dana.core.stdlib",
+        "import dana.core.lang.interpreter.functions": "import dana.core.stdlib",
         
         # Common Utilities
-        "from opendxa.common": "from dana.common",
-        "import opendxa.common": "import dana.common",
+        "from dana.common": "from dana.common",
+        "import dana.common": "import dana.common",
         
         # POET Framework
-        "from opendxa.dana.poet": "from dana.frameworks.poet",
-        "import opendxa.dana.poet": "import dana.frameworks.poet",
+        "from dana.frameworks.poet": "from dana.frameworks.poet",
+        "import dana.frameworks.poet": "import dana.frameworks.poet",
         
         # KNOWS Framework
-        "from opendxa.knows": "from dana.frameworks.knows",
-        "import opendxa.knows": "import dana.frameworks.knows",
+        "from dana.frameworks.knows": "from dana.frameworks.knows",
+        "import dana.frameworks.knows": "import dana.frameworks.knows",
         
         # Agent Framework
-        "from opendxa.agent": "from dana.frameworks.agent",
-        "import opendxa.agent": "import dana.frameworks.agent",
+        "from dana.frameworks.agent": "from dana.frameworks.agent",
+        "import dana.frameworks.agent": "import dana.frameworks.agent",
         
         # Integrations
-        "from opendxa.integrations": "from dana.integrations",
-        "import opendxa.integrations": "import dana.integrations",
+        "from dana.integrations": "from dana.integrations",
+        "import dana.integrations": "import dana.integrations",
     }
     
     try:

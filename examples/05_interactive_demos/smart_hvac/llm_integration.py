@@ -8,8 +8,8 @@ enabling real POET functionality with LLM-based reasoning and learning.
 import os
 from typing import Any
 
-from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.common.types import BaseRequest
+from dana.common.resource.llm_resource import LLMResource
+from dana.common.types import BaseRequest
 
 
 class HVACLLMManager:

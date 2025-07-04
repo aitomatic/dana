@@ -12,13 +12,13 @@ import json
 from typing import Any, cast
 import os
 
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.mixins.registerable import Registerable
-from opendxa.common.mixins.tool_callable import OpenAIFunctionCall, ToolCallable
-from opendxa.common.mixins.tool_formats import ToolFormat
-from opendxa.common.resource.base_resource import BaseResource
-from opendxa.common.types import BaseRequest, BaseResponse
-from opendxa.common.exceptions import LLMError
+from dana.common.mixins.loggable import Loggable
+from dana.common.mixins.registerable import Registerable
+from dana.common.mixins.tool_callable import OpenAIFunctionCall, ToolCallable
+from dana.common.mixins.tool_formats import ToolFormat
+from dana.common.resource.base_resource import BaseResource
+from dana.common.types import BaseRequest, BaseResponse
+from dana.common.exceptions import LLMError
 
 # To avoid accidentally sending too much data to the LLM,
 # we limit the total length of tool-call responses.
@@ -50,7 +50,7 @@ class LLMToolCallManager(Loggable):
         Returns:
             Dict[str, Any]: Dictionary of request parameters with tools
         """
-        from opendxa.common.utils.misc import Misc
+        from dana.common.utils.misc import Misc
 
         # Get original messages
         original_messages = Misc.get_field(request, "messages", [])
@@ -208,7 +208,7 @@ class LLMToolCallManager(Loggable):
         Returns:
             Dict[str, Any]: Formatted message for conversation history
         """
-        from opendxa.common.utils.misc import Misc
+        from dana.common.utils.misc import Misc
 
         return {
             "role": Misc.get_field(response_message, "role"),
@@ -225,7 +225,7 @@ class LLMToolCallManager(Loggable):
         Returns:
             bool: True if the message contains valid tool calls
         """
-        from opendxa.common.utils.misc import Misc
+        from dana.common.utils.misc import Misc
 
         tool_calls: list[OpenAIFunctionCall] = Misc.get_field(response_message, "tool_calls")
         return bool(tool_calls and isinstance(tool_calls, list))

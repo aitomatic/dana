@@ -18,15 +18,15 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 # Public API - Primary entry points for users
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox, ExecutionResult
+from dana.core.lang.dana_sandbox import DanaSandbox, ExecutionResult
 
 # Convenience functions for quick usage
 run = DanaSandbox.quick_run
 eval = DanaSandbox.quick_eval
 
 # Internal API - Advanced/tooling usage (import explicitly if needed)
-# from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-# from opendxa.dana.sandbox.sandbox_context import SandboxContext
+# from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+# from dana.core.lang.sandbox_context import SandboxContext
 
 
 # Python-to-Dana Integration - Natural Python API with lazy loading

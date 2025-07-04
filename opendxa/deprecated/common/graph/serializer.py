@@ -5,8 +5,8 @@ from typing import Any, TextIO
 
 import yaml
 
-from opendxa.common.graph.directed_graph import DirectedGraph, Edge, Node, NodeType
-from opendxa.common.utils.misc import Misc
+from dana.common.graph.directed_graph import DirectedGraph, Edge, Node, NodeType
+from dana.common.utils.misc import Misc
 
 
 class GraphSerializer:

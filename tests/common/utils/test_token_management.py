@@ -2,7 +2,7 @@
 
 import unittest
 
-from opendxa.common.utils.token_management import TokenManagement
+from dana.common.utils.token_management import TokenManagement
 
 
 class TestTokenManagement(unittest.TestCase):

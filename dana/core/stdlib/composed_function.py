@@ -11,8 +11,8 @@ MIT License
 from typing import Any
 
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class ComposedFunction(SandboxFunction):

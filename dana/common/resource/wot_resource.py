@@ -4,9 +4,9 @@ from typing import Any
 
 import aiohttp
 
-from opendxa.common.mixins.tool_callable import ToolCallable
-from opendxa.common.resource.base_resource import BaseResource
-from opendxa.common.types import BaseRequest, BaseResponse
+from dana.common.mixins.tool_callable import ToolCallable
+from dana.common.resource.base_resource import BaseResource
+from dana.common.types import BaseRequest, BaseResponse
 
 
 class WoTResource(BaseResource):

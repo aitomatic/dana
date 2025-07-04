@@ -16,7 +16,7 @@ import os
 import time
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.mixins.loggable import Loggable
 
 # Import support data structures from the main module
 try:
@@ -44,9 +44,9 @@ except ImportError:
 print("🎧 Loading POET-enhanced customer support agent")
 
 try:
-    from opendxa.common.resource.llm_resource import LLMRequest, LLMResource
-    from opendxa.dana.poet.plugins.enhanced_llm_optimization_plugin import EnhancedLLMOptimizationPlugin
-    from opendxa.dana.poet.poet import poet
+    from dana.common.resource.llm_resource import LLMRequest, LLMResource
+    from dana.frameworks.poet.plugins.enhanced_llm_optimization_plugin import EnhancedLLMOptimizationPlugin
+    from dana.frameworks.poet.poet import poet
 
     # Initialize LLM resource for customer support
     llm_resource = LLMResource()

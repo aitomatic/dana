@@ -11,10 +11,10 @@ in preferred order from the configuration.
 
 from typing import Any
 
-from opendxa.common.utils.logging import DXA_LOGGER
+from dana.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.sandbox.interpreter.functions.core.set_model_function import _get_available_model_names
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.interpreter.functions.core.set_model_function import _get_available_model_names
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 def list_models_function(

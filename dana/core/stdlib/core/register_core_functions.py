@@ -12,9 +12,9 @@ import importlib
 import inspect
 from pathlib import Path
 
-from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
-from opendxa.dana.sandbox.interpreter.functions.core.decorators import log_calls, log_with_prefix, repeat, validate_args
-from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
+from dana.core.lang.interpreter.executor.function_resolver import FunctionType
+from dana.core.lang.interpreter.functions.core.decorators import log_calls, log_with_prefix, repeat, validate_args
+from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 
 
 def register_core_functions(registry: FunctionRegistry) -> None:
@@ -75,7 +75,7 @@ def register_core_functions(registry: FunctionRegistry) -> None:
     # Register Pythonic built-in functions AFTER core functions
     # This ensures core functions have higher priority than built-ins
     try:
-        from opendxa.dana.sandbox.interpreter.functions.pythonic.function_factory import register_pythonic_builtins
+        from dana.core.lang.interpreter.functions.pythonic.function_factory import register_pythonic_builtins
 
         register_pythonic_builtins(registry)
     except ImportError:
@@ -90,7 +90,7 @@ def register_core_functions(registry: FunctionRegistry) -> None:
 
     # Register POET decorator
     try:
-        from opendxa.dana.poet.decorator import poet
+        from dana.frameworks.poet.decorator import poet
 
         registry.register("poet", poet, namespace="core", func_type=FunctionType.PYTHON, trusted_for_context=True)
     except ImportError:

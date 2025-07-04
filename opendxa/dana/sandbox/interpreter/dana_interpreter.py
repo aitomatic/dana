@@ -24,13 +24,13 @@ import re
 from pathlib import Path
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.mixins.loggable import Loggable
 from opendxa.dana.common.error_utils import ErrorUtils
-from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
-from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
-from opendxa.dana.sandbox.parser.ast import FunctionDefinition, Program
-from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
-from opendxa.dana.sandbox.sandbox_context import ExecutionStatus, SandboxContext
+from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
+from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+from dana.core.lang.parser.ast import FunctionDefinition, Program
+from dana.core.lang.parser.utils.parsing_utils import ParserCache
+from dana.core.lang.sandbox_context import ExecutionStatus, SandboxContext
 
 # Map Dana LogLevel to Python logging levels
 Dana_TO_PYTHON_LOG_LEVELS = {
@@ -86,8 +86,8 @@ class DanaInterpreter(Loggable):
 
     def _init_function_registry(self):
         """Initialize the function registry."""
-        from opendxa.dana.sandbox.interpreter.functions.core.register_core_functions import register_core_functions
-        from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
+        from dana.core.lang.interpreter.functions.core.register_core_functions import register_core_functions
+        from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 
         self._function_registry = FunctionRegistry()
 

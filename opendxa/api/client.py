@@ -4,7 +4,7 @@ from typing import Any, cast
 
 import httpx
 
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.mixins.loggable import Loggable
 
 
 class APIClientError(Exception):

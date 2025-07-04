@@ -21,7 +21,7 @@ Discord: https://discord.gg/6jGD4PYk
 from abc import ABC, abstractmethod
 from typing import Any
 
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class SandboxFunction(ABC):

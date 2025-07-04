@@ -1,14 +1,14 @@
 """Tests for basic Dana code execution."""
 
-from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 def run_dana_code(code: str):
     """Helper function to run Dana code and return the context."""
     # Remove leading/trailing whitespace and normalize line endings
     code = code.strip()
-    from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+    from dana.core.lang.parser.utils.parsing_utils import ParserCache
 
     parser = ParserCache.get_parser("dana")
     program = parser.parse(code, do_type_check=True, do_transform=True)

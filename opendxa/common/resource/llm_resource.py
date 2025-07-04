@@ -21,7 +21,7 @@ from collections.abc import Callable
 from typing import Any
 
 # Apply AISuite/Anthropic compatibility patch
-from opendxa.common.utils.aisuite_patch import apply_aisuite_patch, is_patch_applied
+from dana.common.utils.aisuite_patch import apply_aisuite_patch, is_patch_applied
 
 # Ensure patch is applied
 if not is_patch_applied():
@@ -30,18 +30,18 @@ if not is_patch_applied():
 import aisuite as ai
 from openai.types.chat import ChatCompletion
 
-from opendxa.common.config import ConfigLoader
-from opendxa.common.exceptions import (
+from dana.common.config import ConfigLoader
+from dana.common.exceptions import (
     ConfigurationError,
     LLMError,
 )
-from opendxa.common.mixins.tool_callable import OpenAIFunctionCall
-from opendxa.common.resource.base_resource import BaseResource
-from opendxa.common.resource.llm_configuration_manager import LLMConfigurationManager
-from opendxa.common.resource.llm_query_executor import LLMQueryExecutor
-from opendxa.common.resource.llm_tool_call_manager import LLMToolCallManager
-from opendxa.common.types import BaseRequest, BaseResponse
-from opendxa.common.utils.misc import Misc
+from dana.common.mixins.tool_callable import OpenAIFunctionCall
+from dana.common.resource.base_resource import BaseResource
+from dana.common.resource.llm_configuration_manager import LLMConfigurationManager
+from dana.common.resource.llm_query_executor import LLMQueryExecutor
+from dana.common.resource.llm_tool_call_manager import LLMToolCallManager
+from dana.common.types import BaseRequest, BaseResponse
+from dana.common.utils.misc import Misc
 
 # To avoid accidentally sending too much data to the LLM,
 # we limit the total length of tool-call responses.

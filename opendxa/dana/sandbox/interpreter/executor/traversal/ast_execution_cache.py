@@ -5,8 +5,8 @@ import time
 from collections import OrderedDict
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.common.mixins.loggable import Loggable
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class ASTExecutionCache(Loggable):

@@ -11,7 +11,7 @@ import os
 import pytest
 from unittest.mock import patch, MagicMock
 
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
+from dana.core.lang.dana_sandbox import DanaSandbox
 
 
 class TestAnthropicProxiesError:

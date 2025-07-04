@@ -1,6 +1,6 @@
 from abc import ABC
 
-from opendxa.common.utils.misc import Misc, ParsedArgKwargsResults
+from dana.common.utils.misc import Misc, ParsedArgKwargsResults
 
 
 class BaseTransport(ABC):

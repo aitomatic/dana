@@ -4,9 +4,9 @@ import asyncio
 import unittest
 from unittest.mock import AsyncMock, patch
 
-from opendxa.common.exceptions import LLMAuthenticationError, LLMContextLengthError, LLMError, LLMProviderError, LLMRateLimitError
-from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.common.types import BaseRequest, BaseResponse
+from dana.common.exceptions import LLMAuthenticationError, LLMContextLengthError, LLMError, LLMProviderError, LLMRateLimitError
+from dana.common.resource.llm_resource import LLMResource
+from dana.common.types import BaseRequest, BaseResponse
 
 
 class TestLLMResource(unittest.TestCase):

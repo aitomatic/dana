@@ -9,9 +9,9 @@ import json
 from typing import TYPE_CHECKING, Any
 
 from opendxa import BaseRequest
-from opendxa.common.mixins import Loggable
-from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.common.utils import Misc
+from dana.common.mixins import Loggable
+from dana.common.resource.llm_resource import LLMResource
+from dana.common.utils import Misc
 
 if TYPE_CHECKING:
     from .agent_pool import AgentPool

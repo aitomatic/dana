@@ -325,7 +325,7 @@ class TestInProcessSandboxInterface:
 
     def test_initialization_with_context(self):
         """Test initialization with custom context."""
-        from opendxa.dana.sandbox.sandbox_context import SandboxContext
+        from dana.core.lang.sandbox_context import SandboxContext
 
         context = SandboxContext()
         sandbox = InProcessSandboxInterface(debug=False, context=context)
@@ -518,7 +518,7 @@ class TestInProcessSandboxInterface:
         assert underlying_sandbox is not None
 
         # Should be the actual DanaSandbox instance
-        from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
+        from dana.core.lang.dana_sandbox import DanaSandbox
 
         assert isinstance(underlying_sandbox, DanaSandbox)
 

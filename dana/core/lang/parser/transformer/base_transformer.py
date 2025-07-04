@@ -4,15 +4,15 @@ from typing import Any
 
 from lark import Token, Transformer, Tree
 
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.sandbox.parser.ast import ASTNode, Location
-from opendxa.dana.sandbox.parser.utils.parsing_utils import create_literal, parse_literal
-from opendxa.dana.sandbox.parser.utils.scope_utils import insert_local_scope
-from opendxa.dana.sandbox.parser.utils.transformer_utils import flatten_items as utils_flatten_items
-from opendxa.dana.sandbox.parser.utils.transformer_utils import get_leaf_node as utils_get_leaf_node
-from opendxa.dana.sandbox.parser.utils.transformer_utils import unwrap_single_child_tree as utils_unwrap_single
-from opendxa.dana.sandbox.parser.utils.tree_utils import TreeTraverser
-from opendxa.dana.sandbox.parser.utils.tree_utils import unwrap_single_child_tree as utils_unwrap
+from dana.common.mixins.loggable import Loggable
+from dana.core.lang.parser.ast import ASTNode, Location
+from dana.core.lang.parser.utils.parsing_utils import create_literal, parse_literal
+from dana.core.lang.parser.utils.scope_utils import insert_local_scope
+from dana.core.lang.parser.utils.transformer_utils import flatten_items as utils_flatten_items
+from dana.core.lang.parser.utils.transformer_utils import get_leaf_node as utils_get_leaf_node
+from dana.core.lang.parser.utils.transformer_utils import unwrap_single_child_tree as utils_unwrap_single
+from dana.core.lang.parser.utils.tree_utils import TreeTraverser
+from dana.core.lang.parser.utils.tree_utils import unwrap_single_child_tree as utils_unwrap
 
 
 class BaseTransformer(Loggable, Transformer):

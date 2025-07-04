@@ -3,7 +3,7 @@ import os
 import pickle
 from typing import override
 
-from opendxa.common.utils.misc import Misc
+from dana.common.utils.misc import Misc
 from opendxa.contrib.rag_resource.common.cache.base_cache import AbstractCache
 
 

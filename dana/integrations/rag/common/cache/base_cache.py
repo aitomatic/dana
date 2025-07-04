@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from opendxa.common.mixins import Loggable
+from dana.common.mixins import Loggable
 
 
 class AbstractCache(ABC, Loggable):

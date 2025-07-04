@@ -5,11 +5,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.common.types import BaseResponse
+from dana.common.resource.llm_resource import LLMResource
+from dana.common.types import BaseResponse
 from opendxa.dana.common.exceptions import ParseError, TranscoderError
-from opendxa.dana.sandbox.parser.ast import Program
-from opendxa.dana.sandbox.parser.dana_parser import ParseResult
+from dana.core.lang.parser.ast import Program
+from dana.core.lang.parser.dana_parser import ParseResult
 from opendxa.dana.translator.translator import Translator
 
 

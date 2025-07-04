@@ -8,8 +8,8 @@ from unittest.mock import patch
 
 import pytest
 
-from opendxa.common.resource.base_resource import BaseResource
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
+from dana.common.resource.base_resource import BaseResource
+from dana.core.lang.dana_sandbox import DanaSandbox
 
 
 class MockMCPResource(BaseResource):
@@ -55,14 +55,14 @@ def mock_use_function():
 
     # Instead of patching at module level, we'll patch the function registry's resolve method
     # to return our mock function when 'use' is requested
-    from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
+    from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 
     original_resolve = FunctionRegistry.resolve
 
     def mock_resolve(self, name, namespace=None):
         if name == "use":
-            from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionMetadata
-            from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
+            from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata
+            from dana.core.lang.interpreter.functions.python_function import PythonFunction
 
             return PythonFunction(mock_use), "python", FunctionMetadata()
         else:

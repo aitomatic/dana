@@ -14,7 +14,7 @@ from typing import cast
 
 from lark import Token, Tree
 
-from opendxa.dana.sandbox.parser.ast import (
+from dana.core.lang.parser.ast import (
     Conditional,
     ExceptBlock,
     Expression,
@@ -23,7 +23,7 @@ from opendxa.dana.sandbox.parser.ast import (
     TryBlock,
     WhileLoop,
 )
-from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
+from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
 
 
 class ControlFlowTransformer(BaseTransformer):
@@ -63,7 +63,7 @@ class ControlFlowTransformer(BaseTransformer):
     def if_stmt(self, items):
         """Transform an if_stmt rule into a Conditional AST node, handling if/elif/else blocks."""
 
-        from opendxa.dana.sandbox.parser.ast import Conditional
+        from dana.core.lang.parser.ast import Conditional
 
         relevant_items = self.main_transformer._filter_relevant_items(items)
 
@@ -161,7 +161,7 @@ class ControlFlowTransformer(BaseTransformer):
     def for_stmt(self, items):
         """Transform a for loop rule into a ForLoop node."""
 
-        from opendxa.dana.sandbox.parser.ast import Expression
+        from dana.core.lang.parser.ast import Expression
 
         # Filter out irrelevant items (None, comments, etc.)
         relevant_items = self.main_transformer._filter_relevant_items(items)

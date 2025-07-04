@@ -10,8 +10,8 @@ This module provides the log function, which handles logging in the Dana interpr
 
 from typing import Any
 
-from opendxa.dana.sandbox.log_manager import SandboxLogger
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.log_manager import SandboxLogger
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 def log_function(

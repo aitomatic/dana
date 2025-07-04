@@ -13,8 +13,8 @@ import textwrap
 
 import pytest
 
-from opendxa.dana.sandbox.parser.ast import BinaryOperator, Conditional
-from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+from dana.core.lang.parser.ast import BinaryOperator, Conditional
+from dana.core.lang.parser.utils.parsing_utils import ParserCache
 
 
 @pytest.fixture

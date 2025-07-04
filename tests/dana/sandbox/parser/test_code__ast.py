@@ -20,7 +20,7 @@ import textwrap
 import pytest
 from lark import Tree
 
-from opendxa.dana.sandbox.parser.ast import (
+from dana.core.lang.parser.ast import (
     Assignment,
     AttributeAccess,
     BinaryExpression,
@@ -44,7 +44,7 @@ from opendxa.dana.sandbox.parser.ast import (
     WhileLoop,
     WithStatement,
 )
-from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+from dana.core.lang.parser.utils.parsing_utils import ParserCache
 
 
 # === Helper Functions ===

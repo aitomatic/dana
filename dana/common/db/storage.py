@@ -11,8 +11,8 @@ are accessed via Capabilities and other keywords.
 
 from typing import TypeVar
 
-from opendxa.common.db.base_storage import SqlDBStorage, VectorDBStorage
-from opendxa.common.db.models import KnowledgeDBModel, MemoryDBModel
+from dana.common.db.base_storage import SqlDBStorage, VectorDBStorage
+from dana.common.db.models import KnowledgeDBModel, MemoryDBModel
 
 M = TypeVar("M", bound=MemoryDBModel)
 

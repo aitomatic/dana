@@ -12,14 +12,14 @@ import json
 import os
 from typing import Any
 
-from opendxa.common.mixins.queryable import QueryStrategy
-from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.common.types import BaseRequest
-from opendxa.common.utils.logging import DXA_LOGGER
+from dana.common.mixins.queryable import QueryStrategy
+from dana.common.resource.llm_resource import LLMResource
+from dana.common.types import BaseRequest
+from dana.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.exceptions import SandboxError
 
 # Import POET decorator
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 def old_reason_function(
@@ -145,7 +145,7 @@ def old_reason_function(
                     try:
                         import inspect
 
-                        from opendxa.common.utils.misc import Misc
+                        from dana.common.utils.misc import Misc
 
                         # Check if solve method is async
                         if inspect.iscoroutinefunction(selected_agent.solve):
@@ -285,9 +285,9 @@ def reason_function(
     Raises:
         SandboxError: If the function execution fails or parameters are invalid
     """
-    from opendxa.dana.sandbox.interpreter.context_detection import ContextDetector
-    from opendxa.dana.sandbox.interpreter.enhanced_coercion import SemanticCoercer
-    from opendxa.dana.sandbox.interpreter.prompt_enhancement import enhance_prompt_for_type
+    from dana.core.lang.interpreter.context_detection import ContextDetector
+    from dana.core.lang.interpreter.enhanced_coercion import SemanticCoercer
+    from dana.core.lang.interpreter.prompt_enhancement import enhance_prompt_for_type
 
     logger = DXA_LOGGER.getLogger("opendxa.dana.reason.poet")
     logger.debug(f"POET-enhanced reason called with prompt: '{prompt[:50]}...'")

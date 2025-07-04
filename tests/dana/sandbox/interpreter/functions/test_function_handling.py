@@ -10,12 +10,12 @@ These tests focus on:
 
 from unittest.mock import MagicMock, patch
 
-from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
-from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
-from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionMetadata, FunctionRegistry
-from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana.core.lang.interpreter.executor.function_resolver import FunctionType
+from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata, FunctionRegistry
+from dana.core.lang.interpreter.functions.python_function import PythonFunction
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 def test_dana_to_dana_function_call():
@@ -334,8 +334,8 @@ def test_enhanced_function_call_evaluation():
     Migrated from tests/dana/sandbox/test_fixed_functions.py::test_evaluate_function_call()
     Enhanced with additional function call scenarios.
     """
-    from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
-    from opendxa.dana.sandbox.parser.ast import FunctionCall, LiteralExpression
+    from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
+    from dana.core.lang.parser.ast import FunctionCall, LiteralExpression
 
     context = SandboxContext()
 
@@ -375,8 +375,8 @@ def test_expression_evaluation_comprehensive():
     Migrated from tests/dana/sandbox/test_fixed_functions.py::test_evaluate_expressions()
     Enhanced with additional expression types and edge cases.
     """
-    from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
-    from opendxa.dana.sandbox.parser.ast import BinaryExpression, BinaryOperator, Identifier, LiteralExpression
+    from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
+    from dana.core.lang.parser.ast import BinaryExpression, BinaryOperator, Identifier, LiteralExpression
 
     context = SandboxContext()
     executor = DanaExecutor()
@@ -426,7 +426,7 @@ def test_assignment_and_execution_comprehensive():
     Migrated from tests/dana/sandbox/test_fixed_functions.py::test_assignment_and_print()
     Enhanced with additional assignment patterns and execution scenarios.
     """
-    from opendxa.dana.sandbox.parser.ast import Assignment, Identifier, LiteralExpression
+    from dana.core.lang.parser.ast import Assignment, Identifier, LiteralExpression
 
     context = SandboxContext()
     interpreter = DanaInterpreter()
@@ -438,7 +438,7 @@ def test_assignment_and_execution_comprehensive():
     assert context.get("private:x") == 99
 
     # Test assignment with expressions
-    from opendxa.dana.sandbox.parser.ast import BinaryExpression, BinaryOperator
+    from dana.core.lang.parser.ast import BinaryExpression, BinaryOperator
 
     expr_stmt = Assignment(
         target=Identifier("private:y"),

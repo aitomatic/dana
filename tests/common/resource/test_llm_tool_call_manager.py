@@ -4,8 +4,8 @@ import json
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from opendxa.common.resource.base_resource import BaseResource
-from opendxa.common.resource.llm_tool_call_manager import LLMToolCallManager
+from dana.common.resource.base_resource import BaseResource
+from dana.common.resource.llm_tool_call_manager import LLMToolCallManager
 
 
 class MockToolCall:
@@ -297,7 +297,7 @@ class TestLLMToolCallManagerIntegration(unittest.TestCase):
         """Test that LLMResource properly uses LLMToolCallManager."""
         import os
 
-        from opendxa.common.resource.llm_resource import LLMResource
+        from dana.common.resource.llm_resource import LLMResource
 
         # Set up API key
         previous_key = os.environ.get("OPENAI_API_KEY")

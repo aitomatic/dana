@@ -3,7 +3,7 @@
 import logging
 from typing import Any
 
-from opendxa.common.utils.logging.dxa_logger import DXA_LOGGER
+from dana.common.utils.logging.dxa_logger import DXA_LOGGER
 
 
 class Loggable:

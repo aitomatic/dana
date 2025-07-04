@@ -19,10 +19,10 @@ Discord: https://discord.gg/6jGD4PYk
 
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.mixins.loggable import Loggable
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class BaseExecutor(Loggable):

@@ -28,15 +28,15 @@ For detailed documentation, see:
 - Agent Documentation: https://github.com/aitomatic/opendxa/blob/main/opendxa/agent/README.md
 
 Example:
-    >>> from opendxa.agent import Agent
+    >>> from dana.frameworks.agent import Agent
     >>> agent = Agent()
     >>> response = agent.ask("What is quantum computing?")
 """
 
-from opendxa.agent.agent import Agent, AgentResponse
-from opendxa.agent.agent_factory import AgentFactory
-from opendxa.agent.capability import CapabilityFactory, DomainExpertise, MemoryCapability
-from opendxa.agent.resource import AgentResource, ExpertResource, ExpertResponse, ResourceFactory
+from dana.frameworks.agent.agent import Agent, AgentResponse
+from dana.frameworks.agent.agent_factory import AgentFactory
+from dana.frameworks.agent.capability import CapabilityFactory, DomainExpertise, MemoryCapability
+from dana.frameworks.agent.resource import AgentResource, ExpertResource, ExpertResponse, ResourceFactory
 
 __all__ = [
     "Agent",

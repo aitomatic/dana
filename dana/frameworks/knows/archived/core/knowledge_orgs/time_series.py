@@ -6,8 +6,8 @@ from typing import Any
 import psycopg2
 from psycopg2.extras import Json
 
-from opendxa.knows.core.knowledge_orgs.base import KnowledgeOrganization, QueryError, StorageError
-from opendxa.knows.core.knowledge_orgs.config import TimeSeriesSettings
+from dana.frameworks.knows.core.knowledge_orgs.base import KnowledgeOrganization, QueryError, StorageError
+from dana.frameworks.knows.core.knowledge_orgs.config import TimeSeriesSettings
 
 
 class TimeSeriesStore(KnowledgeOrganization):

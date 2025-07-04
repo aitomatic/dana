@@ -12,10 +12,10 @@ from typing import Any, ClassVar, TypeVar
 import yaml
 from dotenv import load_dotenv
 
-from opendxa.common.exceptions import ConfigurationError
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.utils.misc import Misc
-from opendxa.common.utils.validation import ValidationUtilities
+from dana.common.exceptions import ConfigurationError
+from dana.common.mixins.loggable import Loggable
+from dana.common.utils.misc import Misc
+from dana.common.utils.validation import ValidationUtilities
 
 # Load environment variables when module is imported
 load_dotenv()

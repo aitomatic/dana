@@ -3,8 +3,8 @@
 from enum import Enum, auto
 from typing import Any
 
-from opendxa.common.mixins.tool_callable import ToolCallable
-from opendxa.common.types import BaseRequest, BaseResponse
+from dana.common.mixins.tool_callable import ToolCallable
+from dana.common.types import BaseRequest, BaseResponse
 
 
 class QueryStrategy(Enum):

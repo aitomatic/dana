@@ -11,7 +11,7 @@ same API that will be used for true subprocess isolation in the future.
 from typing import Any
 
 from opendxa.contrib.python_to_dana.core.inprocess_sandbox import InProcessSandboxInterface
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class SubprocessSandboxInterface:

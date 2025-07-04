@@ -5,8 +5,8 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
-from opendxa.common.exceptions import ConfigurationError
-from opendxa.common.mixins.configurable import Configurable
+from dana.common.exceptions import ConfigurationError
+from dana.common.mixins.configurable import Configurable
 
 
 # pylint: disable=missing-function-docstring

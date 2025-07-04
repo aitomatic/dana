@@ -7,8 +7,8 @@ MIT License
 
 import pytest
 
-from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-from opendxa.dana.sandbox.parser.ast import (
+from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana.core.lang.parser.ast import (
     Assignment,
     BinaryExpression,
     BinaryOperator,
@@ -16,7 +16,7 @@ from opendxa.dana.sandbox.parser.ast import (
     LiteralExpression,
     Program,
 )
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 def test_basic_pipe_operation():

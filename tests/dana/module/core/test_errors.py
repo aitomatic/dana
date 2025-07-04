@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from opendxa.dana.module.core.errors import (
+from dana.core.runtime.modules.core.errors import (
     CircularImportError,
     CompileError,
     ImportError,

@@ -54,7 +54,7 @@ def check_poet_availability():
     """Check if POET framework is available."""
     try:
         # Just import the module to check availability
-        import opendxa.dana.poet
+        import dana.frameworks.poet
 
         print("✅ POET framework is available")
         return True

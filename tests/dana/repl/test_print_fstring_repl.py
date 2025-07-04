@@ -4,7 +4,7 @@ Test f-string handling in the Dana REPL.
 These tests verify that f-strings are properly evaluated and printed in the REPL environment.
 """
 
-from opendxa.dana.exec.repl.repl import REPL
+from dana.core.repl.repl.repl import REPL
 
 
 def test_print_direct_value_in_repl():

@@ -36,19 +36,19 @@ For detailed documentation on specific components, refer to the README files
 within the respective subdirectories (e.g., `opendxa/common/graph/README.md`).
 
 Example:
-    >>> from opendxa.common import DXA_LOGGER, ConfigManager
+    >>> from dana.common import DXA_LOGGER, ConfigManager
     >>> DXA_LOGGER.configure(level=DXA_LOGGER.DEBUG, console=True)
     >>> config = ConfigManager().load_config("agent_config.yaml")
 """
 
-from opendxa.common.capability import (
+from dana.common.capability import (
     BaseCapability,
     Capable,
 )
-from opendxa.common.config import (
+from dana.common.config import (
     ConfigLoader,
 )
-from opendxa.common.db import (
+from dana.common.db import (
     BaseDBModel,
     BaseDBStorage,
     KnowledgeDBModel,
@@ -56,7 +56,7 @@ from opendxa.common.db import (
     MemoryDBModel,
     MemoryDBStorage,
 )
-from opendxa.common.exceptions import (
+from dana.common.exceptions import (
     AgentError,
     CommunicationError,
     ConfigurationError,
@@ -71,7 +71,7 @@ from opendxa.common.exceptions import (
     ValidationError,
     WebSocketError,
 )
-from opendxa.common.graph import (
+from dana.common.graph import (
     BreadthFirstTraversal,
     Cursor,
     DepthFirstTraversal,
@@ -89,7 +89,7 @@ from opendxa.common.graph import (
 # Note: IO imports removed to break circular dependency
 # BaseIO extends BaseResource, so importing IO here creates circular imports
 # Import IO classes directly where needed instead
-from opendxa.common.mixins import (
+from dana.common.mixins import (
     Configurable,
     Identifiable,
     Loggable,
@@ -103,31 +103,31 @@ from opendxa.common.mixins import (
 )
 
 # Import resource exceptions from base_resource module
-from opendxa.common.resource.base_resource import BaseResource, ResourceUnavailableError
-from opendxa.common.resource.human_resource import HumanResource
-from opendxa.common.resource.kb_resource import KBResource
-from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.common.resource.mcp import (
+from dana.common.resource.base_resource import BaseResource, ResourceUnavailableError
+from dana.common.resource.human_resource import HumanResource
+from dana.common.resource.kb_resource import KBResource
+from dana.common.resource.llm_resource import LLMResource
+from dana.common.resource.mcp import (
     BaseMcpService,
     HttpTransportParams,
     McpEchoService,
     McpResource,
     StdioTransportParams,
 )
-from opendxa.common.resource.memory_resource import (
+from dana.common.resource.memory_resource import (
     LTMemoryResource,
     MemoryResource,
     PermMemoryResource,
     STMemoryResource,
 )
-from opendxa.common.resource.wot_resource import WoTResource
-from opendxa.common.types import (
+from dana.common.resource.wot_resource import WoTResource
+from dana.common.types import (
     BaseRequest,
     BaseResponse,
     JsonPrimitive,
     JsonType,
 )
-from opendxa.common.utils import DXA_LOGGER, DXALogger, Misc
+from dana.common.utils import DXA_LOGGER, DXALogger, Misc
 
 __all__ = [
     # Exceptions (from exceptions.py)

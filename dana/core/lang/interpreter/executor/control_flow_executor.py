@@ -19,14 +19,14 @@ Discord: https://discord.gg/6jGD4PYk
 
 from typing import Any
 
-from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
-from opendxa.dana.sandbox.interpreter.executor.control_flow.conditional_handler import ConditionalHandler
-from opendxa.dana.sandbox.interpreter.executor.control_flow.context_manager_handler import ContextManagerHandler
-from opendxa.dana.sandbox.interpreter.executor.control_flow.control_flow_utils import ControlFlowUtils
-from opendxa.dana.sandbox.interpreter.executor.control_flow.exception_handler import ExceptionHandler
-from opendxa.dana.sandbox.interpreter.executor.control_flow.loop_handler import LoopHandler
-from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
-from opendxa.dana.sandbox.parser.ast import (
+from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
+from dana.core.lang.interpreter.executor.control_flow.conditional_handler import ConditionalHandler
+from dana.core.lang.interpreter.executor.control_flow.context_manager_handler import ContextManagerHandler
+from dana.core.lang.interpreter.executor.control_flow.control_flow_utils import ControlFlowUtils
+from dana.core.lang.interpreter.executor.control_flow.exception_handler import ExceptionHandler
+from dana.core.lang.interpreter.executor.control_flow.loop_handler import LoopHandler
+from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+from dana.core.lang.parser.ast import (
     BreakStatement,
     Conditional,
     ContinueStatement,
@@ -36,7 +36,7 @@ from opendxa.dana.sandbox.parser.ast import (
     WhileLoop,
     WithStatement,
 )
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class ControlFlowExecutor(BaseExecutor):

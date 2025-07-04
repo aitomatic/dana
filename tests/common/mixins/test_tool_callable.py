@@ -2,8 +2,8 @@
 
 import pytest
 
-from opendxa.common.mixins.tool_callable import ToolCallable
-from opendxa.common.mixins.tool_formats import ToolFormat
+from dana.common.mixins.tool_callable import ToolCallable
+from dana.common.mixins.tool_formats import ToolFormat
 
 
 # pylint: disable=missing-function-docstring

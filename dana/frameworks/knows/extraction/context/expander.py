@@ -9,9 +9,9 @@ import json
 from typing import Dict, Any, List, Optional, Union
 from dataclasses import dataclass
 
-from opendxa.common.utils.logging import DXA_LOGGER
-from opendxa.common.resource.llm_resource import LLMResource, BaseRequest, BaseResponse
-from opendxa.knows.core.base import KnowledgePoint, ProcessorBase
+from dana.common.utils.logging import DXA_LOGGER
+from dana.common.resource.llm_resource import LLMResource, BaseRequest, BaseResponse
+from dana.frameworks.knows.core.base import KnowledgePoint, ProcessorBase
 
 
 @dataclass

@@ -23,7 +23,7 @@ from typing import Any
 
 from lark import Token, Tree
 
-from opendxa.dana.sandbox.parser.ast import (
+from dana.core.lang.parser.ast import (
     AgentPoolStatement,
     AgentStatement,
     Assignment,
@@ -47,9 +47,9 @@ from opendxa.dana.sandbox.parser.ast import (
     UseStatement,
     WhileLoop,
 )
-from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
-from opendxa.dana.sandbox.parser.transformer.expression_transformer import ExpressionTransformer
-from opendxa.dana.sandbox.parser.utils.tree_utils import TreeTraverser
+from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
+from dana.core.lang.parser.transformer.expression_transformer import ExpressionTransformer
+from dana.core.lang.parser.utils.tree_utils import TreeTraverser
 
 # Allowed types for Assignment.value
 AllowedAssignmentValue = (
@@ -84,11 +84,11 @@ class StatementTransformer(BaseTransformer):
         self.tree_traverser = TreeTraverser()
 
         # Initialize specialized transformers
-        from opendxa.dana.sandbox.parser.transformer.statement.agent_context_transformer import AgentContextTransformer
-        from opendxa.dana.sandbox.parser.transformer.statement.assignment_transformer import AssignmentTransformer
-        from opendxa.dana.sandbox.parser.transformer.statement.control_flow_transformer import ControlFlowTransformer
-        from opendxa.dana.sandbox.parser.transformer.statement.function_definition_transformer import FunctionDefinitionTransformer
-        from opendxa.dana.sandbox.parser.transformer.statement.import_simple_statement_transformer import ImportSimpleStatementTransformer
+        from dana.core.lang.parser.transformer.statement.agent_context_transformer import AgentContextTransformer
+        from dana.core.lang.parser.transformer.statement.assignment_transformer import AssignmentTransformer
+        from dana.core.lang.parser.transformer.statement.control_flow_transformer import ControlFlowTransformer
+        from dana.core.lang.parser.transformer.statement.function_definition_transformer import FunctionDefinitionTransformer
+        from dana.core.lang.parser.transformer.statement.import_simple_statement_transformer import ImportSimpleStatementTransformer
 
         self.assignment_transformer = AssignmentTransformer(self)
         self.control_flow_transformer = ControlFlowTransformer(self)
@@ -211,7 +211,7 @@ class StatementTransformer(BaseTransformer):
 
     def _is_local_scoped_assignment(self, assignment):
         """Check if an assignment targets a local: scoped variable."""
-        from opendxa.dana.sandbox.parser.ast import Identifier
+        from dana.core.lang.parser.ast import Identifier
 
         if isinstance(assignment, Assignment) and isinstance(assignment.target, Identifier):
             return assignment.target.name.startswith("local:")

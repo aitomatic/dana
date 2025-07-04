@@ -10,8 +10,8 @@ This module provides the print function, which handles printing in the Dana inte
 
 from typing import Any
 
-from opendxa.common.utils.logging import DXA_LOGGER
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.common.utils.logging import DXA_LOGGER
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 def print_function(

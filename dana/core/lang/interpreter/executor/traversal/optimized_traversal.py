@@ -4,12 +4,12 @@ import time
 from contextlib import contextmanager
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.sandbox.interpreter.executor.traversal.ast_execution_cache import ASTExecutionCache
-from opendxa.dana.sandbox.interpreter.executor.traversal.recursion_safety import (
+from dana.common.mixins.loggable import Loggable
+from dana.core.lang.interpreter.executor.traversal.ast_execution_cache import ASTExecutionCache
+from dana.core.lang.interpreter.executor.traversal.recursion_safety import (
     RecursionDepthMonitor,
 )
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class OptimizedASTTraversal(Loggable):
@@ -38,14 +38,14 @@ class OptimizedASTTraversal(Loggable):
 
         # Initialize optimization components
         if self.enable_caching:
-            from opendxa.dana.sandbox.interpreter.executor.traversal.ast_execution_cache import ASTExecutionCache
+            from dana.core.lang.interpreter.executor.traversal.ast_execution_cache import ASTExecutionCache
 
             self.execution_cache = ASTExecutionCache()
         else:
             self.execution_cache = None
 
         if self.enable_recursion_safety:
-            from opendxa.dana.sandbox.interpreter.executor.traversal.recursion_safety import (
+            from dana.core.lang.interpreter.executor.traversal.recursion_safety import (
                 CircularReferenceDetector,
                 RecursionDepthMonitor,
             )
@@ -61,7 +61,7 @@ class OptimizedASTTraversal(Loggable):
             self.circular_detector = None
 
         if self.enable_performance_tracking:
-            from opendxa.dana.sandbox.interpreter.executor.traversal.performance_metrics import TraversalPerformanceMetrics
+            from dana.core.lang.interpreter.executor.traversal.performance_metrics import TraversalPerformanceMetrics
 
             self.performance_metrics = TraversalPerformanceMetrics()
         else:
@@ -112,7 +112,7 @@ class OptimizedASTTraversal(Loggable):
 
             # Phase 3: Execute using BaseExecutor's execute method to avoid infinite recursion
             # This bypasses the optimized execution to prevent calling ourselves again
-            from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
+            from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
 
             result = BaseExecutor.execute(self.base_executor, node, context)
 

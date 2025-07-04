@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from opendxa.dana.module.core.loader import ModuleLoader
+    from dana.core.runtime.modules.core.loader import ModuleLoader
 
 
 @dataclass

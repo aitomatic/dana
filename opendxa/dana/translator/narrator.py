@@ -19,7 +19,7 @@ Discord: https://discord.gg/6jGD4PYk
 
 from typing import Protocol
 
-from opendxa.dana.sandbox.parser.ast import Program
+from dana.core.lang.parser.ast import Program
 
 
 class NarratorInterface(Protocol):

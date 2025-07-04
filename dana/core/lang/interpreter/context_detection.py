@@ -12,8 +12,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.sandbox.parser.ast import Assignment, TypeHint
+from dana.common.mixins.loggable import Loggable
+from dana.core.lang.parser.ast import Assignment, TypeHint
 
 
 class ContextType(Enum):

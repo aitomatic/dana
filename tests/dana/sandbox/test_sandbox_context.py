@@ -5,7 +5,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 def test_sandbox_context_dot_notation():

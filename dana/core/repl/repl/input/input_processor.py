@@ -5,7 +5,7 @@ This module provides the InputProcessor class that coordinates
 input state management and completeness checking.
 """
 
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.mixins.loggable import Loggable
 
 from .completeness_checker import InputCompleteChecker
 from .input_state import InputState

@@ -2,12 +2,12 @@
 
 import pytest
 
-from opendxa.dana.module.core.errors import (
+from dana.core.runtime.modules.core.errors import (
     CircularImportError,
     ModuleNotFoundError,
 )
-from opendxa.dana.module.core.registry import ModuleRegistry
-from opendxa.dana.module.core.types import Module, ModuleSpec
+from dana.core.runtime.modules.core.registry import ModuleRegistry
+from dana.core.runtime.modules.core.types import Module, ModuleSpec
 
 
 def test_registry_singleton():

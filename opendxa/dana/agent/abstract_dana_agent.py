@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from opendxa.common.resource.base_resource import BaseResource
+from dana.common.resource.base_resource import BaseResource
 
 
 class AbstractDanaAgent(BaseResource, ABC):

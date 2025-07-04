@@ -8,10 +8,10 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 
-from opendxa.common.resource.llm_resource import BaseResponse
-from opendxa.knows.core.base import KnowledgePoint
-from opendxa.knows.extraction.context.expander import ContextExpander, ContextExpansion, ContextValidation
-from opendxa.knows.extraction.context.similarity import SemanticMatch, SimilarityResult, SimilaritySearcher
+from dana.common.resource.llm_resource import BaseResponse
+from dana.frameworks.knows.core.base import KnowledgePoint
+from dana.frameworks.knows.extraction.context.expander import ContextExpander, ContextExpansion, ContextValidation
+from dana.frameworks.knows.extraction.context.similarity import SemanticMatch, SimilarityResult, SimilaritySearcher
 
 
 class TestSimilaritySearcher:

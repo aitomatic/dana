@@ -8,9 +8,9 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from opendxa.dana.sandbox.interpreter.executor.function_name_utils import FunctionNameInfo
-from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType, ResolvedFunction
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.interpreter.executor.function_name_utils import FunctionNameInfo
+from dana.core.lang.interpreter.executor.function_resolver import FunctionType, ResolvedFunction
+from dana.core.lang.sandbox_context import SandboxContext
 
 from .base_resolver import FunctionResolverInterface
 
@@ -125,9 +125,9 @@ class ContextFunctionResolver(FunctionResolverInterface):
             ResolvedFunction with appropriate type and metadata
         """
         # Import here to avoid circular imports
-        from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
-        from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
-        from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+        from dana.core.lang.interpreter.functions.python_function import PythonFunction
+        from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
 
         self.logger.debug(f"Creating resolved function for '{name_info.full_key}', type: {type(func_data)}")
 

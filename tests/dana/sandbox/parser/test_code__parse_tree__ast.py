@@ -19,8 +19,8 @@ import textwrap
 
 import pytest
 
-from opendxa.dana.sandbox.parser.ast import Conditional, FunctionCall, FunctionDefinition, Program, TryBlock, WhileLoop
-from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+from dana.core.lang.parser.ast import Conditional, FunctionCall, FunctionDefinition, Program, TryBlock, WhileLoop
+from dana.core.lang.parser.utils.parsing_utils import ParserCache
 
 CODE_SAMPLES = {
     "nested_if_elif_else": """

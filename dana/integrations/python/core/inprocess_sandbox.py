@@ -9,8 +9,8 @@ from typing import Any
 
 from opendxa.contrib.python_to_dana.core.exceptions import DanaCallError
 from opendxa.contrib.python_to_dana.core.reasoning_cache import ReasoningCache
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.dana_sandbox import DanaSandbox
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class InProcessSandboxInterface:

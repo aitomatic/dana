@@ -8,8 +8,8 @@ Classes:
     HumanResponse: Response type for human resource
 """
 
-from opendxa.common.resource.base_resource import BaseResource
-from opendxa.common.types import BaseRequest, BaseResponse
+from dana.common.resource.base_resource import BaseResource
+from dana.common.types import BaseRequest, BaseResponse
 
 
 class HumanResource(BaseResource):

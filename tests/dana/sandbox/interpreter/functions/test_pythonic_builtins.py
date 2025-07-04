@@ -8,14 +8,14 @@ and registers built-in functions with proper type validation and execution.
 import pytest
 
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
-from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
-from opendxa.dana.sandbox.interpreter.functions.pythonic.function_factory import (
+from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana.core.lang.interpreter.executor.function_resolver import FunctionType
+from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+from dana.core.lang.interpreter.functions.pythonic.function_factory import (
     PythonicFunctionFactory,
     register_pythonic_builtins,
 )
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 def test_pythonic_function_factory_basic():
@@ -162,7 +162,7 @@ def test_function_lookup_order():
     def custom_len(context, obj):
         return 999  # Custom implementation
 
-    from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
+    from dana.core.lang.interpreter.functions.python_function import PythonFunction
 
     registry.register("len", PythonFunction(custom_len, trusted_for_context=True), func_type=FunctionType.PYTHON, overwrite=True)
 

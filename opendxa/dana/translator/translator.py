@@ -19,11 +19,11 @@ Discord: https://discord.gg/6jGD4PYk
 
 import re
 
-from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.common.types import BaseRequest
+from dana.common.resource.llm_resource import LLMResource
+from dana.common.types import BaseRequest
 from opendxa.dana.common.exceptions import TranscoderError
-from opendxa.dana.sandbox.parser.dana_parser import ParseResult, Program
-from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+from dana.core.lang.parser.dana_parser import ParseResult, Program
+from dana.core.lang.parser.utils.parsing_utils import ParserCache
 
 try:
     from .templates.common_patterns import get_all_examples

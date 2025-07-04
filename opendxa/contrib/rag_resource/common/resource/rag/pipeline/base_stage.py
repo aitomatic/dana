@@ -1,4 +1,4 @@
-from opendxa.common.mixins import Loggable
+from dana.common.mixins import Loggable
 
 
 class BaseStage(Loggable):

@@ -8,7 +8,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from opendxa.dana.sandbox.parser.ast import FunctionCall
+from dana.core.lang.parser.ast import FunctionCall
 
 
 class FunctionNameInfo:
@@ -59,7 +59,7 @@ class FunctionNameInfo:
             Parsed function name information. For method calls (AttributeAccess), returns special
             method call info. For regular function calls, handles namespace parsing.
         """
-        from opendxa.dana.sandbox.parser.ast import AttributeAccess
+        from dana.core.lang.parser.ast import AttributeAccess
 
         # Handle AttributeAccess method calls (obj.method())
         if isinstance(node.name, AttributeAccess):

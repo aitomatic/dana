@@ -11,9 +11,9 @@ MIT License
 import os
 from typing import Any
 
-from opendxa.common.config.config_loader import ConfigLoader
-from opendxa.common.exceptions import LLMError
-from opendxa.common.utils.validation import ValidationUtilities
+from dana.common.config.config_loader import ConfigLoader
+from dana.common.exceptions import LLMError
+from dana.common.utils.validation import ValidationUtilities
 
 
 class LLMConfigurationManager:

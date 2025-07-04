@@ -7,7 +7,7 @@ on POET-enhanced function results directly from Dana code.
 
 from typing import Any
 
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 def feedback_function(
@@ -40,14 +40,14 @@ def feedback_function(
         feedback(result, {"correct": false, "expected": "positive", "reason": "Context missing"})
     """
     # Import the actual feedback implementation
-    from opendxa.dana.poet.decorator import feedback as poet_feedback
+    from dana.frameworks.poet.decorator import feedback as poet_feedback
 
     try:
         # Call the POET feedback system
         poet_feedback(result, feedback_payload)
     except Exception as e:
         # Log error but don't fail Dana execution
-        from opendxa.common.utils.logging import DXA_LOGGER
+        from dana.common.utils.logging import DXA_LOGGER
 
         DXA_LOGGER.error(f"Feedback processing failed: {e}")
         # Re-raise to inform user

@@ -11,7 +11,7 @@ from collections.abc import Callable
 from typing import Any
 
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class ArgumentProcessor:

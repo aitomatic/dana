@@ -4,7 +4,7 @@ This test directly tests the _build_default_request_params method
 to verify that the fix correctly transforms system messages for Anthropic.
 """
 
-from opendxa.common.resource.llm_query_executor import LLMQueryExecutor
+from dana.common.resource.llm_query_executor import LLMQueryExecutor
 
 
 class TestAnthropicDirectFix:

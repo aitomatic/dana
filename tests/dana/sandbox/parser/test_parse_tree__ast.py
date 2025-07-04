@@ -7,7 +7,7 @@ from typing import cast
 
 import pytest
 
-from opendxa.dana.sandbox.parser.ast import (
+from dana.core.lang.parser.ast import (
     Assignment,
     AttributeAccess,
     BinaryExpression,
@@ -21,10 +21,10 @@ from opendxa.dana.sandbox.parser.ast import (
     Statement,
     UnaryExpression,
 )
-from opendxa.dana.sandbox.parser.transformer.expression_transformer import ExpressionTransformer
-from opendxa.dana.sandbox.parser.transformer.fstring_transformer import FStringTransformer
-from opendxa.dana.sandbox.parser.transformer.statement_transformer import StatementTransformer
-from opendxa.dana.sandbox.parser.transformer.variable_transformer import VariableTransformer
+from dana.core.lang.parser.transformer.expression_transformer import ExpressionTransformer
+from dana.core.lang.parser.transformer.fstring_transformer import FStringTransformer
+from dana.core.lang.parser.transformer.statement_transformer import StatementTransformer
+from dana.core.lang.parser.transformer.variable_transformer import VariableTransformer
 
 # 1. VariableTransformer tests
 

@@ -50,21 +50,21 @@ def test_old_imports():
     print("\nTesting old import paths (with compatibility)...")
     
     try:
-        from opendxa.dana.sandbox.parser import DanaParser
+        from dana.core.lang.parser import DanaParser
         print("✅ opendxa.dana.sandbox.parser.DanaParser")
     except ImportError as e:
         print(f"❌ opendxa.dana.sandbox.parser.DanaParser: {e}")
         return False
     
     try:
-        from opendxa.dana.sandbox.interpreter import DanaInterpreter
+        from dana.core.lang.interpreter import DanaInterpreter
         print("✅ opendxa.dana.sandbox.interpreter.DanaInterpreter")
     except ImportError as e:
         print(f"❌ opendxa.dana.sandbox.interpreter.DanaInterpreter: {e}")
         return False
     
     try:
-        from opendxa.dana.sandbox import DanaSandbox
+        from dana.core.lang import DanaSandbox
         print("✅ opendxa.dana.sandbox.DanaSandbox")
     except ImportError as e:
         print(f"❌ opendxa.dana.sandbox.DanaSandbox: {e}")

@@ -14,10 +14,10 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from opendxa.dana.common.exceptions import FunctionRegistryError, SandboxError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
-from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
+from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 
 if TYPE_CHECKING:
-    from opendxa.dana.sandbox.sandbox_context import SandboxContext
+    from dana.core.lang.sandbox_context import SandboxContext
 
 
 @dataclass
@@ -99,8 +99,8 @@ class FunctionRegistry:
         """
         if self._arg_processor is None:
             # Import here to avoid circular imports
-            from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
-            from opendxa.dana.sandbox.interpreter.functions.argument_processor import ArgumentProcessor
+            from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
+            from dana.core.lang.interpreter.functions.argument_processor import ArgumentProcessor
 
             # Create a DanaExecutor
             executor = DanaExecutor(function_registry=self)
@@ -196,8 +196,8 @@ class FunctionRegistry:
             raise ValueError(f"Function '{name}' already exists in namespace '{ns}'. Use overwrite=True to force.")
 
         # Auto-wrap raw callables
-        from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
-        from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+        from dana.core.lang.interpreter.functions.python_function import PythonFunction
+        from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
 
         if not isinstance(func, SandboxFunction):
             # It's a raw callable, wrap it
@@ -405,8 +405,8 @@ class FunctionRegistry:
                 raise PermissionError(f"Function '{name}' is private and cannot be called from this context")
 
         # Special handling for PythonFunctions in test cases
-        from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
-        from opendxa.dana.sandbox.sandbox_context import SandboxContext
+        from dana.core.lang.interpreter.functions.python_function import PythonFunction
+        from dana.core.lang.sandbox_context import SandboxContext
 
         if isinstance(func, PythonFunction) and func_type == FunctionType.PYTHON and hasattr(func, "func"):
             # Get the wrapped function
@@ -503,7 +503,7 @@ class FunctionRegistry:
             return func.execute(context, *positional_args, **func_kwargs)
         else:
             # Check if it's a DanaFunction and call via execute method
-            from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+            from dana.core.lang.interpreter.functions.dana_function import DanaFunction
 
             if isinstance(func, DanaFunction):
                 # DanaFunction objects have an execute method that needs context

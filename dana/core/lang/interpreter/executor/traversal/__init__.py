@@ -4,10 +4,10 @@ This package provides performance optimizations for AST traversal in the Dana in
 including result memoization, recursion safety, and execution monitoring.
 """
 
-from opendxa.dana.sandbox.interpreter.executor.traversal.ast_execution_cache import ASTExecutionCache
-from opendxa.dana.sandbox.interpreter.executor.traversal.optimized_traversal import OptimizedASTTraversal
-from opendxa.dana.sandbox.interpreter.executor.traversal.performance_metrics import TraversalPerformanceMetrics
-from opendxa.dana.sandbox.interpreter.executor.traversal.recursion_safety import (
+from dana.core.lang.interpreter.executor.traversal.ast_execution_cache import ASTExecutionCache
+from dana.core.lang.interpreter.executor.traversal.optimized_traversal import OptimizedASTTraversal
+from dana.core.lang.interpreter.executor.traversal.performance_metrics import TraversalPerformanceMetrics
+from dana.core.lang.interpreter.executor.traversal.recursion_safety import (
     CircularReferenceDetector,
     RecursionDepthMonitor,
 )

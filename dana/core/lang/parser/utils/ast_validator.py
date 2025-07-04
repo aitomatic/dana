@@ -23,8 +23,8 @@ from typing import Any
 
 from lark import Tree
 
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.sandbox.parser.ast import Program
+from dana.common.mixins.loggable import Loggable
+from dana.core.lang.parser.ast import Program
 
 
 class AstValidator(Loggable):

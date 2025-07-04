@@ -77,11 +77,11 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import Any, Generic, TypeVar
 
-from opendxa.common.db.models import LTMemoryDBModel, MemoryDBModel, PermanentMemoryDBModel, STMemoryDBModel
-from opendxa.common.db.storage import MemoryDBStorage
-from opendxa.common.resource.base_resource import BaseResource
-from opendxa.common.types import BaseResponse
-from opendxa.common.utils.validation import ValidationUtilities
+from dana.common.db.models import LTMemoryDBModel, MemoryDBModel, PermanentMemoryDBModel, STMemoryDBModel
+from dana.common.db.storage import MemoryDBStorage
+from dana.common.resource.base_resource import BaseResource
+from dana.common.types import BaseResponse
+from dana.common.utils.validation import ValidationUtilities
 
 ModelType = TypeVar("ModelType", bound=MemoryDBModel)
 StorageType = TypeVar("StorageType", bound=MemoryDBStorage)

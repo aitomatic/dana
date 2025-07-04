@@ -12,7 +12,7 @@ from typing import Any
 
 from lark import Token
 
-from opendxa.dana.sandbox.parser.ast import LiteralExpression
+from dana.core.lang.parser.ast import LiteralExpression
 
 
 class ParserCache:
@@ -32,7 +32,7 @@ class ParserCache:
         """
         if parser_type not in cls._instances:
             # Import here to avoid circular dependencies
-            from opendxa.dana.sandbox.parser.dana_parser import DanaParser
+            from dana.core.lang.parser.dana_parser import DanaParser
 
             cls._instances[parser_type] = DanaParser()
 

@@ -11,8 +11,8 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.resource.llm_resource import LLMResource
+from dana.common.mixins.loggable import Loggable
+from dana.common.resource.llm_resource import LLMResource
 
 from .types import POETFeedbackError, POETResult
 
@@ -175,7 +175,7 @@ Return only the JSON object.
 
         try:
             # Create request for LLMResource
-            from opendxa.common.types import BaseRequest
+            from dana.common.types import BaseRequest
 
             request = BaseRequest(
                 arguments={

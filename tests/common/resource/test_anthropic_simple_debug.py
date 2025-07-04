@@ -1,7 +1,7 @@
 """Simple test to debug the provider_configs loading."""
 
 import os
-from opendxa.common.resource.llm_resource import LLMResource
+from dana.common.resource.llm_resource import LLMResource
 
 
 def test_simple_provider_configs_debug():

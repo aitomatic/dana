@@ -41,7 +41,7 @@ class LLMOptimizationDomain(BaseDomainTemplate):
         validation_code = f"""
 import json
 import re
-from opendxa.common.resource.llm_resource import LLMResource
+from dana.common.resource.llm_resource import LLMResource
 
 # === Prompt Validation ===
 {self._generate_prompt_validation(signature_analysis)}
@@ -78,7 +78,7 @@ validated_inputs = {{
         return CodeBlock(
             code=validation_code,
             dependencies=["json", "re", "opendxa.common.resource.llm_resource"],
-            imports=["import json", "import re", "from opendxa.common.resource.llm_resource import LLMResource"],
+            imports=["import json", "import re", "from dana.common.resource.llm_resource import LLMResource"],
             metadata={
                 "phase": "perceive",
                 "domain": "llm_optimization",

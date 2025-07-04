@@ -10,8 +10,8 @@ MIT License
 
 import pytest
 
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
-from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
+from dana.core.lang.dana_sandbox import DanaSandbox
+from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
 
 class TestImportStatements:
@@ -19,7 +19,7 @@ class TestImportStatements:
 
     def setup_method(self):
         """Set up test fixtures."""
-        from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+        from dana.core.lang.parser.utils.parsing_utils import ParserCache
 
         self.parser = ParserCache.get_parser("dana")
         self.interpreter = DanaInterpreter()

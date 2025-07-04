@@ -8,9 +8,9 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from opendxa.dana.sandbox.interpreter.executor.function_name_utils import FunctionNameInfo
-from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType, ResolvedFunction
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.interpreter.executor.function_name_utils import FunctionNameInfo
+from dana.core.lang.interpreter.executor.function_resolver import FunctionType, ResolvedFunction
+from dana.core.lang.sandbox_context import SandboxContext
 
 from .base_resolver import FunctionResolverInterface
 
@@ -203,9 +203,9 @@ class FallbackResolver(FunctionResolverInterface):
             ResolvedFunction with fallback metadata
         """
         # Import here to avoid circular imports
-        from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
-        from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
-        from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+        from dana.core.lang.interpreter.functions.python_function import PythonFunction
+        from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
 
         # Determine function type
         if isinstance(func_data, DanaFunction | SandboxFunction):

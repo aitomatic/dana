@@ -13,10 +13,10 @@ from typing import TYPE_CHECKING, Any
 
 from opendxa.dana.common.exceptions import FunctionRegistryError, SandboxError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
-from opendxa.dana.sandbox.parser.ast import FunctionCall
+from dana.core.lang.parser.ast import FunctionCall
 
 if TYPE_CHECKING:
-    from opendxa.dana.sandbox.interpreter.executor.function_executor import FunctionExecutor
+    from dana.core.lang.interpreter.executor.function_executor import FunctionExecutor
 
 
 class FunctionExecutionErrorHandler:

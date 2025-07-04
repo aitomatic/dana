@@ -1,6 +1,6 @@
 """Tests for the Identifiable mixin."""
 
-from opendxa.common.mixins.identifiable import Identifiable
+from dana.common.mixins.identifiable import Identifiable
 
 
 # pylint: disable=missing-function-docstring

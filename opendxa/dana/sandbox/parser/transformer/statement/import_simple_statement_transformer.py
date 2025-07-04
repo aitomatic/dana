@@ -13,12 +13,12 @@ MIT License
 
 from lark import Token, Tree
 
-from opendxa.dana.sandbox.parser.ast import (
+from dana.core.lang.parser.ast import (
     ImportFromStatement,
     ImportStatement,
 )
-from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
-from opendxa.dana.sandbox.parser.transformer.statement.statement_helpers import SimpleStatementHelper
+from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
+from dana.core.lang.parser.transformer.statement.statement_helpers import SimpleStatementHelper
 
 
 class ImportSimpleStatementTransformer(BaseTransformer):

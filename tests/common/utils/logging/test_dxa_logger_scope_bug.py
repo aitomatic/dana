@@ -3,7 +3,7 @@
 import logging
 import unittest
 
-from opendxa.common.utils.logging.dxa_logger import DXALogger
+from dana.common.utils.logging.dxa_logger import DXALogger
 
 
 class TestDXALoggerScopeIsolation(unittest.TestCase):

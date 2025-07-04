@@ -62,14 +62,14 @@ import asyncio
 import logging
 import sys
 
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.resource.llm_resource import LLMResource
+from dana.common.mixins.loggable import Loggable
+from dana.common.resource.llm_resource import LLMResource
 from opendxa.dana.common.terminal_utils import ColorScheme, supports_color
-from opendxa.dana.exec.repl.commands import CommandHandler
-from opendxa.dana.exec.repl.input import InputProcessor
-from opendxa.dana.exec.repl.repl import REPL
-from opendxa.dana.exec.repl.ui import OutputFormatter, PromptSessionManager, WelcomeDisplay
-from opendxa.dana.sandbox.log_manager import LogLevel
+from dana.core.repl.repl.commands import CommandHandler
+from dana.core.repl.repl.input import InputProcessor
+from dana.core.repl.repl.repl import REPL
+from dana.core.repl.repl.ui import OutputFormatter, PromptSessionManager, WelcomeDisplay
+from dana.core.lang.log_manager import LogLevel
 
 # Map Dana LogLevel to Python logging levels
 LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}

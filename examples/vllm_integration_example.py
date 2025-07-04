@@ -20,8 +20,8 @@ from pathlib import Path
 
 import aisuite as ai
 
-from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.common.types import BaseRequest, BaseResponse
+from dana.common.resource.llm_resource import LLMResource
+from dana.common.types import BaseRequest, BaseResponse
 
 
 class LocalvLLMDemo:

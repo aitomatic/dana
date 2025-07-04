@@ -8,8 +8,8 @@ with enhanced semantic coercion capabilities while maintaining backward compatib
 import os
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.sandbox.interpreter.enhanced_coercion import CoercionStrategy, SemanticCoercer
+from dana.common.mixins.loggable import Loggable
+from dana.core.lang.interpreter.enhanced_coercion import CoercionStrategy, SemanticCoercer
 
 
 class UnifiedTypeCoercion(Loggable):

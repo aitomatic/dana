@@ -1,5 +1,5 @@
-from opendxa.common.mixins import ToolCallable
-from opendxa.common.utils import Misc
+from dana.common.mixins import ToolCallable
+from dana.common.utils import Misc
 from opendxa.dana.agent.abstract_dana_agent import AbstractDanaAgent
 from opendxa.contrib.mcp_a2a.resource.a2a.client.a2a_client import BaseA2AClient
 

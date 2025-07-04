@@ -10,10 +10,10 @@ MIT License
 
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.sandbox.interpreter.executor.control_flow.exceptions import ReturnException
-from opendxa.dana.sandbox.parser.ast import Conditional
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.common.mixins.loggable import Loggable
+from dana.core.lang.interpreter.executor.control_flow.exceptions import ReturnException
+from dana.core.lang.parser.ast import Conditional
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class ConditionalHandler(Loggable):
@@ -113,7 +113,7 @@ class ConditionalHandler(Loggable):
 
         # Perform boolean coercion with smart logic
         try:
-            from opendxa.dana.sandbox.interpreter.unified_coercion import TypeCoercion
+            from dana.core.lang.interpreter.unified_coercion import TypeCoercion
 
             # Use smart boolean coercion if available and enabled
             if TypeCoercion.should_enable_coercion():

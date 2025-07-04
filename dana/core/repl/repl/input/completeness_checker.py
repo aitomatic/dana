@@ -5,7 +5,7 @@ This module provides the InputCompleteChecker class that determines
 whether Dana code input is complete or needs continuation.
 """
 
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.mixins.loggable import Loggable
 
 
 class InputCompleteChecker(Loggable):

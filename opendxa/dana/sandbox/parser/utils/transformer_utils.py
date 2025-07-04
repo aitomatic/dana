@@ -12,7 +12,7 @@ from typing import Any
 
 from lark import Token, Tree
 
-from opendxa.dana.sandbox.parser.ast import ASTNode
+from dana.core.lang.parser.ast import ASTNode
 
 
 def get_leaf_node(item: Tree | Token | ASTNode) -> Token | ASTNode:

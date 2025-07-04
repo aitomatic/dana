@@ -1,6 +1,6 @@
 """Objects that have a registry for other objects"""
 
-from opendxa.common.mixins.identifiable import Identifiable
+from dana.common.mixins.identifiable import Identifiable
 
 
 class Registerable(Identifiable):

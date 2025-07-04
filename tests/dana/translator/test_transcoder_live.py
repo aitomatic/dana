@@ -4,7 +4,7 @@ import os
 
 import pytest
 
-from opendxa.common.resource.llm_resource import LLMResource
+from dana.common.resource.llm_resource import LLMResource
 from opendxa.dana.translator.translator import Translator
 
 

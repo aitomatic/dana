@@ -32,11 +32,11 @@ from typing import Any, NamedTuple, cast
 from lark import Lark, Tree
 from lark.indenter import PythonIndenter
 
-from opendxa.common.mixins.loggable import Loggable
+from dana.common.mixins.loggable import Loggable
 from opendxa.dana.common.exceptions import ParseError
-from opendxa.dana.sandbox.parser.ast import Identifier, Program
-from opendxa.dana.sandbox.parser.transformer.dana_transformer import DanaTransformer
-from opendxa.dana.sandbox.parser.utils.type_checker import TypeChecker, TypeEnvironment
+from dana.core.lang.parser.ast import Identifier, Program
+from dana.core.lang.parser.transformer.dana_transformer import DanaTransformer
+from dana.core.lang.parser.utils.type_checker import TypeChecker, TypeEnvironment
 
 # Lark is already imported at line 32, this block is redundant
 LARK_AVAILABLE = True
@@ -293,7 +293,7 @@ def parse_program(program_text: str, do_type_check: bool = ENABLE_TYPE_CHECK) ->
     Returns:
         Program AST node
     """
-    from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+    from dana.core.lang.parser.utils.parsing_utils import ParserCache
 
     parser = ParserCache.get_parser("dana")
     return parser.parse(program_text, do_transform=True, do_type_check=do_type_check)

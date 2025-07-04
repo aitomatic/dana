@@ -7,13 +7,13 @@ from typing import TYPE_CHECKING, Any, Optional, TextIO
 
 from pydantic import BaseModel, Field
 
-from opendxa.common.mixins.configurable import Configurable
-from opendxa.common.utils.misc import Misc
+from dana.common.mixins.configurable import Configurable
+from dana.common.utils.misc import Misc
 
 if TYPE_CHECKING:
-    from opendxa.common.graph.serializer import GraphSerializer
-    from opendxa.common.graph.traversal import Cursor, TopologicalTraversal, TraversalStrategy
-    from opendxa.common.graph.visualizer import GraphVisualizer
+    from dana.common.graph.serializer import GraphSerializer
+    from dana.common.graph.traversal import Cursor, TopologicalTraversal, TraversalStrategy
+    from dana.common.graph.visualizer import GraphVisualizer
 _CURSOR_CLASS_NAME = "opendxa.common.graph.traversal.Cursor"
 
 

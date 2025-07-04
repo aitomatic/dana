@@ -13,16 +13,16 @@ MIT License
 
 from typing import Any, cast
 
-from opendxa.dana.sandbox.parser.ast import (
+from dana.core.lang.parser.ast import (
     AgentPoolStatement,
     AgentStatement,
     Assignment,
     Identifier,
     UseStatement,
 )
-from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
-from opendxa.dana.sandbox.parser.transformer.statement.statement_helpers import AssignmentHelper
-from opendxa.dana.sandbox.parser.transformer.variable_transformer import VariableTransformer
+from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
+from dana.core.lang.parser.transformer.statement.statement_helpers import AssignmentHelper
+from dana.core.lang.parser.transformer.variable_transformer import VariableTransformer
 
 # Allowed types for Assignment.value
 AllowedAssignmentValue = Any  # Using Any for now to avoid circular imports - will be properly typed later
@@ -112,7 +112,7 @@ class AssignmentTransformer(BaseTransformer):
 
     def typed_parameter(self, items):
         """Transform a typed parameter rule into a Parameter object."""
-        from opendxa.dana.sandbox.parser.ast import Parameter
+        from dana.core.lang.parser.ast import Parameter
 
         # Grammar: typed_parameter: NAME [":" basic_type] ["=" expr]
         name_item = items[0]

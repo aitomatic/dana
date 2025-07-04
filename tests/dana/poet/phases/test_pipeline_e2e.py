@@ -5,10 +5,10 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from opendxa.dana.poet.phases.enforce import EnforcePhase
-from opendxa.dana.poet.phases.operate import OperatePhase
-from opendxa.dana.poet.phases.perceive import PerceivePhase
-from opendxa.dana.poet.types import POETConfig
+from dana.frameworks.poet.phases.enforce import EnforcePhase
+from dana.frameworks.poet.phases.operate import OperatePhase
+from dana.frameworks.poet.phases.perceive import PerceivePhase
+from dana.frameworks.poet.types import POETConfig
 
 
 def dummy_func(x, y):

@@ -8,9 +8,9 @@ Lark Tree nodes remaining in transformed ASTs.
 import pytest
 from lark import Token, Tree
 
-from opendxa.dana.sandbox.parser.ast import Assignment, Identifier, LiteralExpression, Program
-from opendxa.dana.sandbox.parser.dana_parser import DanaParser
-from opendxa.dana.sandbox.parser.utils.ast_validator import AstValidator, find_tree_nodes, validate_ast
+from dana.core.lang.parser.ast import Assignment, Identifier, LiteralExpression, Program
+from dana.core.lang.parser.dana_parser import DanaParser
+from dana.core.lang.parser.utils.ast_validator import AstValidator, find_tree_nodes, validate_ast
 
 
 class TestAstValidator:

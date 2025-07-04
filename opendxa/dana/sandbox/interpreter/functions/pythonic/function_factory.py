@@ -12,9 +12,9 @@ from enum import Enum
 from typing import Any
 
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
-from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionMetadata, FunctionRegistry
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from dana.core.lang.interpreter.executor.function_resolver import FunctionType
+from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata, FunctionRegistry
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class UnsupportedReason(Enum):
@@ -316,7 +316,7 @@ class PythonicFunctionFactory:
     def _semantic_bool_wrapper(cls, value):
         """Enhanced boolean conversion with semantic understanding."""
         try:
-            from opendxa.dana.sandbox.interpreter.enhanced_coercion import semantic_bool
+            from dana.core.lang.interpreter.enhanced_coercion import semantic_bool
 
             return semantic_bool(value)
         except ImportError:
