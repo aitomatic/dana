@@ -1,11 +1,11 @@
-# OpenDXA - Domain-Expert Agent Framework
+# Dana - Domain-Aware Neurosymbolic Architecture
 
 Claude AI Configuration and Guidelines
 
 ## Quick Reference - Critical Rules
 🚨 **MUST FOLLOW IMMEDIATELY**
-- Use `DXA_LOGGER` for Python logging: `from opendxa.common.utils.logging import DXA_LOGGER`
-- Apply the Loggable mixin to Python classes needing easy OpenDXA logging
+- Use `DANA_LOGGER` for Python logging: `from dana.common.utils.logging import DANA_LOGGER`
+- Apply the Loggable mixin to Python classes needing easy Dana logging
 - Always use f-strings: `f"Value: {var}"` not `"Value: " + str(var)`
 - Dana modules: `import math_utils` (no .na), Python modules: `import math.py`
 - **ALL temporary development files go in `tmp/` directory**
@@ -22,20 +22,20 @@ uv run pytest tests/ -v                        # Run tests with verbose output (
 # Dana execution - PREFER .na files for Dana functionality testing
 dana examples/dana/na/basic_math_pipeline.na                              # Direct dana command (recommended)
 dana --debug examples/dana/na/basic_math_pipeline.na                      # With debug output
-uv run python -m opendxa.dana.exec.dana examples/dana/na/basic_math_pipeline.na  # Alternative
+uv run python -m dana.dana.exec.dana examples/dana/na/basic_math_pipeline.na  # Alternative
 
 # Interactive development
 dana                                            # Start Dana REPL (recommended)
-uv run python -m opendxa.dana.exec.repl       # Alternative REPL entry point
+uv run python -m dana.dana.exec.repl       # Alternative REPL entry point
 
 # Alternative test execution
 uv run python -m pytest tests/
 ```
 
 ## Project Context
-- OpenDXA is a framework for building domain-expert multi-agent systems
+- Dana is a framework for building domain-expert multi-agent systems
 - Built on Dana (Domain-Aware NeuroSymbolic Architecture) language
-- Core components: OpenDXA Framework, Dana Language, DANKE Engine
+- Core components: Dana Framework, Dana Language
 - Primary language: Python 3.12+
 - Uses uv for dependency management
 
@@ -208,7 +208,7 @@ Requirements:
 - **ALL temporary files go in `tmp/` directory**
 - Never create test files in project root
 - Use meaningful prefixes: `tmp_test_`, `tmp_debug_`
-- Core framework code: `opendxa/`
+- Core framework code: `dana/`
 - Tests: `tests/` (matching source structure)
 - Examples: `examples/`
 - Documentation: `docs/`
@@ -220,16 +220,16 @@ Requirements:
 - **🎯 Use `dana filename.na`** as the primary execution method
 - Test with existing `.na` files in `examples/dana/na/`
 - Use DanaSandbox for execution testing in Python when needed
-- Validate against grammar in `opendxa/dana/sandbox/parser/dana_grammar.lark`
+- Validate against grammar in `dana/dana/sandbox/parser/dana_grammar.lark`
 - **Use `log()` for examples/testing output** (preferred for color coding)
-- Test Dana code in REPL: `dana` or `uv run python -m opendxa.dana.exec.repl`
+- Test Dana code in REPL: `dana` or `uv run python -m dana.dana.exec.repl`
 - Check AST output: Enable debug logging in transformer
 - Run through pytest: Copy `test_dana_files.py` to test directory
 
 ### When Working on Agent Framework
 - Test with agent examples in `examples/02_core_concepts/`
-- Use capability mixins from `opendxa/common/mixins/`
-- Follow resource patterns in `opendxa/common/resource/`
+- Use capability mixins from `dana/common/mixins/`
+- Follow resource patterns in `dana/common/resource/`
 
 ### When Working on Common Utilities
 - Keep utilities generic and reusable
@@ -238,15 +238,15 @@ Requirements:
 - Implement proper error handling
 
 ## Common Tasks Quick Guide
-- **Adding new Dana function**: See `opendxa/dana/sandbox/interpreter/functions/core/`
-- **Creating agent capability**: Inherit from `opendxa/common/capability/base_capability.py`
-- **Adding LLM integration**: Use `opendxa/common/resource/llm_resource.py`
+- **Adding new Dana function**: See `dana/dana/sandbox/interpreter/functions/core/`
+- **Creating agent capability**: Inherit from `dana/common/capability/base_capability.py`
+- **Adding LLM integration**: Use `dana/common/resource/llm_resource.py`
 
 ## Common Methods and Utilities
-- **Use DXA_LOGGER for Python logging**: `from opendxa.common.utils.logging import DXA_LOGGER`
-- Use configuration from `opendxa.common.config`
-- Use graph operations from `opendxa.common.graph`
-- Use IO utilities from `opendxa.common.io`
+- **Use DANA_LOGGER for Python logging**: `from dana.common.utils.logging import DANA_LOGGER`
+- Use configuration from `dana.common.config`
+- Use graph operations from `dana.common.graph`
+- Use IO utilities from `dana.common.io`
 
 ## Testing & Security Essentials
 - **Prefer `.na` (Dana) test files** over `.py` for Dana-specific functionality
@@ -260,7 +260,7 @@ Requirements:
 - **Create `test_*.na` files** for Dana functionality testing
 - Use `log()` statements for test output and debugging (provides color coding)
 - pytest automatically discovers and runs `.na` test files
-- Run `.na` files directly: `dana test_example.na` or `uv run python -m opendxa.dana.exec.dana test_example.na`
+- Run `.na` files directly: `dana test_example.na` or `uv run python -m dana.dana.exec.dana test_example.na`
 
 ## Dana Execution Quick Guide
 **Always prefer `.na` test files for Dana functionality testing**
@@ -287,11 +287,11 @@ dana test_my_feature.na
 dana --debug test_my_feature.na
 
 # 3. Via Python module
-uv run python -m opendxa.dana.exec.dana test_my_feature.na
+uv run python -m dana.dana.exec.dana test_my_feature.na
 
 # 4. Interactive REPL for development
 dana                                    # Start REPL
-uv run python -m opendxa.dana.exec.repl # Direct REPL access
+uv run python -m dana.dana.exec.repl # Direct REPL access
 
 # 5. Through pytest (automatic discovery)
 pytest tests/my_directory/test_dana_files.py -v  # Runs all test_*.na files
@@ -307,11 +307,11 @@ pytest tests/my_directory/test_dana_files.py -v  # Runs all test_*.na files
 ## Dana-Specific Debugging & Validation
 - **Use `log()` for examples/testing output** (provides color coding and better debugging)
 - **Prefer creating `.na` test files** over `.py` for Dana functionality
-- Test Dana code in REPL: `uv run python -m opendxa.dana.exec.repl`
+- Test Dana code in REPL: `uv run python -m dana.dana.exec.repl`
 - Check AST output: Enable debug logging in transformer
-- Validate against grammar: `opendxa/dana/sandbox/parser/dana_grammar.lark`
+- Validate against grammar: `dana/dana/sandbox/parser/dana_grammar.lark`
 - Test with existing `.na` files in `examples/dana/na/`
-- Execute `.na` files: `dana filename.na` or `uv run python -m opendxa.dana.exec.dana filename.na`
+- Execute `.na` files: `dana filename.na` or `uv run python -m dana.dana.exec.dana filename.na`
 
 ## Security & Performance
 - **DanaSandbox Security**: Never expose DanaSandbox instances to untrusted code

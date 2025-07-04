@@ -10,8 +10,6 @@ from pathlib import Path
 
 import pytest
 
-from dana.core.lang.dana_sandbox import DanaSandbox
-
 # Test files that are expected to fail due to language limitations
 # Each entry is (subdirectory, filename) relative to tests/dana/expected_failures/
 EXPECTED_FAILURE_FILES = [
@@ -28,7 +26,7 @@ class TestDanaLanguageLimitations:
 
     @pytest.mark.parametrize("test_file", EXPECTED_FAILURE_FILES)
     @pytest.mark.xfail(reason="Expected language limitation - documents current Dana parser constraints")
-    def test_expected_failures(self, test_file):
+    def test_expected_failures(self, test_file, fresh_dana_sandbox):
         """
         Execute expected failure .na files to document language limitations.
 
@@ -47,8 +45,7 @@ class TestDanaLanguageLimitations:
         if not test_path.exists():
             pytest.skip(f"Test file {subdirectory}/{filename} not found")
 
-        # Execute the Dana file - let pytest handle xfail/xpass naturally
-        with DanaSandbox() as sandbox:
-            result = sandbox.execute_file(str(test_path))
-            # If we reach here, the execution succeeded
-            # pytest.xfail will automatically handle this as xpass (unexpected pass)
+        # Execute the Dana file using a fresh sandbox (with shared API server)
+        result = fresh_dana_sandbox.run(str(test_path))
+        # If we reach here, the execution succeeded
+        # pytest.xfail will automatically handle this as xpass (unexpected pass)

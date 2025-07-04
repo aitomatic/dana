@@ -34,7 +34,7 @@ class TestTranscoder(IsolatedAsyncioTestCase):
         self.llm.query.return_value = llm_response
 
         # Mock parse to succeed
-        with patch("opendxa.dana.sandbox.parser.dana_parser.DanaParser.parse", return_value=ParseResult(program=mock_program, errors=[])):
+        with patch("dana.core.lang.parser.dana_parser.DanaParser.parse", return_value=ParseResult(program=mock_program, errors=[])):
             result, code = await self.transcoder.to_dana(natural_language)
             self.assertTrue(result.is_valid)
             self.assertEqual(result.program, mock_program)
@@ -61,7 +61,7 @@ class TestTranscoder(IsolatedAsyncioTestCase):
 
         # Mock parse to fail
         with patch(
-            "opendxa.dana.sandbox.parser.dana_parser.DanaParser.parse",
+            "dana.core.lang.parser.dana_parser.DanaParser.parse",
             return_value=ParseResult(program=Program([]), errors=[ParseError("Invalid syntax")]),
         ):
             with self.assertRaises(TranscoderError) as cm:

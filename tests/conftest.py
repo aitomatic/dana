@@ -107,9 +107,37 @@ def pytest_generate_tests(metafunc):
             metafunc.parametrize("dana_test_file", na_files, ids=test_ids)
 
 
+@pytest.fixture(scope="session", autouse=True)
+def api_server():
+    """Session-scoped fixture that starts a single API server for the entire test session."""
+    logger = logging.getLogger(__name__)
+    logger.info("Starting session-wide API server")
+
+    # Set environment variable for API server URL
+    os.environ["AITOMATIC_API_URL"] = "http://localhost:12345"
+    logger.info("Set AITOMATIC_API_URL to http://localhost:12345")
+
+    # Import and start the API server
+    from dana.api.server.server import APIServiceManager
+
+    # Create and start the API service
+    api_service = APIServiceManager()
+    api_service.startup()
+
+    logger.info("Session-wide API server ready")
+    yield api_service
+
+    logger.info("Session ending - shutting down API server")
+    api_service.shutdown()
+
+    # Clean up environment variable
+    if "AITOMATIC_API_URL" in os.environ:
+        del os.environ["AITOMATIC_API_URL"]
+
+
 @pytest.fixture
-def fresh_dana_sandbox():
-    """Provide a fresh DanaSandbox for each test."""
+def fresh_dana_sandbox(api_server):
+    """Provide a fresh DanaSandbox for each test, using the shared API server."""
     sandbox = DanaSandbox()
     try:
         yield sandbox

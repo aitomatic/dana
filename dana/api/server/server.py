@@ -7,10 +7,9 @@ import sys
 import time
 from typing import Any, cast
 
+from dana.api.client import APIClient
 from dana.common.config import ConfigLoader
 from dana.common.mixins.loggable import Loggable
-
-from dana.api.client import APIClient
 
 
 def create_app():
@@ -213,7 +212,7 @@ class APIServiceManager(Loggable):
                 sys.executable,
                 "-m",
                 "uvicorn",
-                "Dana.api.server:create_app",
+                "dana.api.server.server:create_app",
                 "--factory",
                 "--host",
                 "127.0.0.1",

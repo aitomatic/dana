@@ -13,8 +13,8 @@ AI coding assistants help write better code. Agentic AI systems execute tasks au
 ## TL;DR - Get Running in 30 Seconds! 🚀
 
 ```bash
-git clone https://github.com/aitomatic/opendxa.git
-cd opendxa
+git clone https://github.com/aitomatic/dana.git
+cd dana
 make  # This installs everything and creates your .env file
 ```
 
@@ -22,9 +22,7 @@ Then:
 1. Add your API key to `.env` 
 2. Run `make dana` to start the Dana REPL (interactive shell)
 
-See the full documentation at: [https://aitomatic.github.io/opendxa/](https://aitomatic.github.io/opendxa/)
-
-> **📦 New Import Structure**: Dana now uses a cleaner import structure. Use `from dana.frameworks.poet import poet` instead of `from opendxa.dana.poet import poet`. Old imports continue to work for compatibility.
+See the full documentation at: [https://aitomatic.github.io/dana/](https://aitomatic.github.io/dana/)
 
 ---
 
@@ -134,9 +132,9 @@ make docs-serve   # Live preview docs during development
 ## 📞 Community & Support
 
 ### 💬 Get Help & Discuss
-- **Technical Questions**: [GitHub Discussions](https://github.com/aitomatic/opendxa/discussions)
-- **Bug Reports**: [GitHub Issues](https://github.com/aitomatic/opendxa/issues)
-- **Real-time Chat**: [Discord Community](https://discord.gg/opendxa)
+- **Technical Questions**: [GitHub Discussions](https://github.com/aitomatic/dana/discussions)
+- **Bug Reports**: [GitHub Issues](https://github.com/aitomatic/dana/issues)
+- **Real-time Chat**: [Discord Community](https://discord.gg/dana)
 
 ### 🤝 Get Involved
 - **Contribute Code**: See [Contributor Guide](docs/for-contributors/README.md)

@@ -1,8 +1,8 @@
-# Makefile - OpenDXA Development Commands
+# Makefile - Dana Development Commands
 # Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
 
 # =============================================================================
-# OpenDXA Development Makefile
+# Dana Development Makefile
 # =============================================================================
 # Modern Python development with uv package manager
 # Requires uv to be installed: https://docs.astral.sh/uv/
@@ -29,7 +29,7 @@ UV_CMD = $(shell command -v uv 2>/dev/null || echo ~/.local/bin/uv)
 	test test-fast test-live test-cov test-watch \
 	lint lint-fix format format-check typecheck \
 	check fix verify \
-	dana run opendxa-server \
+	dana run dana-server \
 	clean clean-all clean-cache \
 	dev update-deps sync \
 	onboard env-check env-setup examples demo-basic demo-reasoning jupyter \
@@ -45,7 +45,7 @@ UV_CMD = $(shell command -v uv 2>/dev/null || echo ~/.local/bin/uv)
 
 help: ## Show this help message with available commands
 	@echo ""
-	@echo "\033[1m\033[34mOpenDXA Development Commands\033[0m"
+	@echo "\033[1m\033[34mDana Development Commands\033[0m"
 	@echo "\033[1m=====================================\033[0m"
 	@echo ""
 	@echo "\033[1mGetting Started:\033[0m"
@@ -78,7 +78,7 @@ help: ## Show this help message with available commands
 	@echo "\033[1mvLLM Management:\033[0m"
 	@awk 'BEGIN {FS = ":.*?## "} /^(install-vllm|update-vllm|uninstall-vllm|start-vllm|chat-vllm|stop-vllm|status-vllm|test-vllm|vllm-models).*:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
-	@echo "\033[33mTip: New to OpenDXA? Start with 'make quickstart' or 'make onboard'\033[0m"
+	@echo "\033[33mTip: New to Dana? Start with 'make quickstart' or 'make onboard'\033[0m"
 	@echo ""
 
 # =============================================================================
@@ -95,9 +95,9 @@ check-uv:
 		echo "✅ uv already available"; \
 	fi
 
-quickstart: check-uv ## 🚀 QUICK START: Get OpenDXA running in 30 seconds!
+quickstart: check-uv ## 🚀 QUICK START: Get Dana running in 30 seconds!
 	@echo ""
-	@echo "🚀 \033[1m\033[32mOpenDXA Quick Start\033[0m"
+	@echo "🚀 \033[1m\033[32mDana Quick Start\033[0m"
 	@echo "==================="
 	@echo ""
 	@echo "📦 Installing dependencies..."
@@ -151,12 +151,12 @@ update-deps: ## Update dependencies to latest versions
 
 test: ## Run all tests
 	@echo "🧪 Running all tests..."
-	@#OPENDXA_MOCK_LLM=true uv run pytest tests/ -v -k "not (function_composition or pipe_operator_composition)"
-	OPENDXA_MOCK_LLM=true uv run pytest tests/
+	@#DANA_MOCK_LLM=true uv run pytest tests/ -v -k "not (function_composition or pipe_operator_composition)"
+	DANA_MOCK_LLM=true uv run pytest tests/
 
 test-fast: ## Run fast tests only (excludes live/deep tests)
 	@echo "⚡ Running fast tests..."
-	OPENDXA_MOCK_LLM=true uv run pytest -m "not live and not deep" tests/
+	DANA_MOCK_LLM=true uv run pytest -m "not live and not deep" tests/
 
 test-live: ## Run live tests (requires API keys)
 	@echo "🌐 Running live tests (requires API keys)..."
@@ -164,7 +164,7 @@ test-live: ## Run live tests (requires API keys)
 
 test-cov: ## Run tests with coverage report
 	@echo "📊 Running tests with coverage..."
-	OPENDXA_MOCK_LLM=true uv run pytest --cov=opendxa --cov=dana --cov-report=html --cov-report=term tests/
+	DANA_MOCK_LLM=true uv run pytest --cov=dana --cov-report=html --cov-report=term tests/
 	@echo "📈 Coverage report generated in htmlcov/"
 
 test-watch: ## Run tests in watch mode (reruns on file changes)
@@ -214,8 +214,8 @@ dana: ## Start the Dana REPL
 
 run: dana ## Alias for 'dana' command
 
-opendxa-server: ## Start the OpenDXA API server (includes POET service)
-	@echo "🌐 Starting OpenDXA API server on http://localhost:8080"
+dana-server: ## Start the Dana API server (includes POET service)
+	@echo "🌐 Starting Dana API server on http://localhost:8080"
 	uv run python -m dana.api.server --host localhost --port 8080
 
 # =============================================================================
@@ -261,7 +261,7 @@ dev: setup-dev verify ## Complete development setup and verification
 
 onboard: setup-dev env-check examples ## 🎯 Complete developer onboarding (setup + demos)
 	@echo ""
-	@echo "🎉 \033[1m\033[32mWelcome to OpenDXA!\033[0m"
+	@echo "🎉 \033[1m\033[32mWelcome to Dana!\033[0m"
 	@echo "======================"
 	@echo ""
 	@echo "✅ Development environment configured"
@@ -381,8 +381,8 @@ docs-deploy: docs-build ## Deploy documentation to GitHub Pages
 security: ## Run security checks
 	@echo "🔒 Running security checks..."
 	@if command -v bandit >/dev/null 2>&1; then \
-		uv run bandit -r opendxa/ dana/ -f json -o security-report.json || echo "⚠️  Security issues found - check security-report.json"; \
-		uv run bandit -r opendxa/ dana/; \
+		uv run bandit -r dana/ -f json -o security-report.json || echo "⚠️  Security issues found - check security-report.json"; \
+		uv run bandit -r dana/; \
 	else \
 		echo "❌ bandit not available. Install with: uv add bandit"; \
 	fi
@@ -396,9 +396,9 @@ validate-config: ## Validate project configuration files
 	@echo "⚙️  Validating configuration..."
 	@echo "📝 Checking pyproject.toml..."
 	@python3 -c "import tomllib; tomllib.load(open('pyproject.toml','rb')); print('✅ pyproject.toml is valid')"
-	@if [ -f opendxa_config.json ]; then \
-		echo "📝 Checking opendxa_config.json..."; \
-		python3 -c "import json; json.load(open('opendxa_config.json')); print('✅ opendxa_config.json is valid')"; \
+	@if [ -f dana_config.json ]; then \
+		echo "📝 Checking dana_config.json..."; \
+		python3 -c "import json; json.load(open('dana_config.json')); print('✅ dana_config.json is valid')"; \
 	fi
 	@if [ -f mkdocs.yml ]; then \
 		echo "📝 Checking mkdocs.yml..."; \
@@ -448,7 +448,7 @@ uninstall-vim: ## Uninstall Vim/Neovim integration
 install-ollama: ## Install Ollama for local model inference
 	@./bin/ollama/install$(SCRIPT_EXT)
 
-start-ollama: ## Start Ollama and configure environment for OpenDXA
+start-ollama: ## Start Ollama and configure environment for Dana
 ifeq ($(DETECTED_OS),Windows)
 	@start cmd /k "bin\ollama\start.bat"
 else

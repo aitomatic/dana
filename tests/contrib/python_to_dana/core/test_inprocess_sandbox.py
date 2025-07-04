@@ -354,7 +354,7 @@ class TestInProcessSandboxInterface:
             assert result.endswith(test_case["ends_with"])
 
     @pytest.mark.parametrize("test_case", temperature_validation_params, ids=lambda x: x["name"])
-    @patch("dana.integrations.python.core.inprocess_sandbox.DanaSandbox")
+    @patch("dana.integrations.python.to_dana.core.inprocess_sandbox.DanaSandbox")
     def test_option_validation_temperature(self, mock_dana_sandbox, test_case):
         """Test option validation for temperature values."""
         # Setup mock
@@ -379,7 +379,7 @@ class TestInProcessSandboxInterface:
             mock_sandbox_instance.eval.assert_called_once()
 
     @pytest.mark.parametrize("test_case", max_tokens_validation_params, ids=lambda x: x["name"])
-    @patch("dana.integrations.python.core.inprocess_sandbox.DanaSandbox")
+    @patch("dana.integrations.python.to_dana.core.inprocess_sandbox.DanaSandbox")
     def test_option_validation_max_tokens(self, mock_dana_sandbox, test_case):
         """Test option validation for max_tokens values."""
         # Setup mock
@@ -402,7 +402,7 @@ class TestInProcessSandboxInterface:
             mock_sandbox_instance.eval.assert_called_once()
 
     @pytest.mark.parametrize("test_case", format_validation_params, ids=lambda x: x["name"])
-    @patch("dana.integrations.python.core.inprocess_sandbox.DanaSandbox")
+    @patch("dana.integrations.python.to_dana.core.inprocess_sandbox.DanaSandbox")
     def test_option_validation_format(self, mock_dana_sandbox, test_case):
         """Test option validation for format values."""
         # Setup mock
@@ -451,7 +451,7 @@ class TestInProcessSandboxInterface:
         with pytest.raises(DanaCallError, match=test_case["error_message"]):
             sandbox.reason("test", test_case["options"])
 
-    @patch("dana.integrations.python.core.inprocess_sandbox.DanaSandbox")
+    @patch("dana.integrations.python.to_dana.core.inprocess_sandbox.DanaSandbox")
     def test_successful_reason_call(self, mock_dana_sandbox):
         """Test successful reason call with mocked sandbox."""
         # Setup mock
@@ -478,7 +478,7 @@ class TestInProcessSandboxInterface:
         assert "What is 2+2?" in dana_code
         assert '"temperature": 0.5' in dana_code
 
-    @patch("dana.integrations.python.core.inprocess_sandbox.DanaSandbox")
+    @patch("dana.integrations.python.to_dana.core.inprocess_sandbox.DanaSandbox")
     def test_sandbox_execution_failure(self, mock_dana_sandbox):
         """Test handling of sandbox execution failures."""
         # Setup mock for failure case
@@ -531,7 +531,7 @@ class TestInProcessSandboxInterface:
         assert sandbox1._sandbox is not sandbox2._sandbox
         assert sandbox1._debug != sandbox2._debug
 
-    @patch("dana.integrations.python.core.inprocess_sandbox.DanaSandbox")
+    @patch("dana.integrations.python.to_dana.core.inprocess_sandbox.DanaSandbox")
     def test_debug_mode_logging(self, mock_dana_sandbox, capsys):
         """Test debug mode logging output."""
         # Setup mock

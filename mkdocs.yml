@@ -1,8 +1,8 @@
 site_name: Dana - Domain-Aware NeuroSymbolic Architecture
-site_description: Comprehensive documentation for Dana - Domain-Aware NeuroSymbolic Architecture with OpenDXA frameworks
-site_url: https://opendxa.readthedocs.io/
-repo_url: https://github.com/aitomatic/opendxa
-repo_name: aitomatic/opendxa
+site_description: Comprehensive documentation for Dana - Domain-Aware NeuroSymbolic Architecture
+site_url: https://dana.readthedocs.io/
+repo_url: https://github.com/aitomatic/dana
+repo_name: aitomatic/dana
 
 # Documentation and theme
 theme:
@@ -69,7 +69,7 @@ nav:
         - Scoping: for-engineers/reference/api/scoping.md
         - Sandbox Security: for-engineers/reference/api/sandbox-security.md
         - Dana Sandbox: for-engineers/reference/api/dana-sandbox.md
-        - OpenDXA Common: for-engineers/reference/api/opendxa-common.md
+        - Dana Common: for-engineers/reference/api/dana-common.md
     - Recipes:
       - Overview: for-engineers/recipes/README.md
       - First Agent: for-engineers/recipes/first-agent.md
@@ -211,7 +211,7 @@ markdown_extensions:
   - pymdownx.magiclink:
       repo_url_shorthand: true
       user: aitomatic
-      repo: opendxa
+      repo: dana
   - pymdownx.mark
   - pymdownx.smartsymbols
   - pymdownx.snippets
@@ -230,9 +230,9 @@ markdown_extensions:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/aitomatic/opendxa
+      link: https://github.com/aitomatic/dana
     - icon: fontawesome/brands/python
-      link: https://pypi.org/project/opendxa/
+      link: https://pypi.org/project/dana/
 
 # Documentation directory
 docs_dir: docs

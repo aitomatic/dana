@@ -1,4 +1,4 @@
-# pyproject.toml - OpenDXA Project Configuration
+# pyproject.toml - Dana Project Configuration
 # Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
 
 # =============================================================================
@@ -14,7 +14,7 @@ build-backend = "setuptools.build_meta"
 # =============================================================================
 
 [project]
-name = "opendxa"
+name = "dana"
 version = "0.4.0"
 description = "Domain-Expert Agent Framework"
 requires-python = ">=3.12"
@@ -124,11 +124,10 @@ dana = "dana.core.repl.dana:main"
 # Use find_packages to automatically discover all subpackages
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["opendxa*", "dana*"]
+include = ["dana*"]
 exclude = ["tests*", "examples*", "docs*", "tmp*"]
 
 [tool.setuptools.package-data]
-opendxa = ["**/*.py", "**/*.lark"]
 dana = ["**/*.py", "**/*.lark"]
 
 # =============================================================================
@@ -144,7 +143,7 @@ dana = ["**/*.py", "**/*.lark"]
 #   uv run pytest tests/                              # Run all tests
 #   uv run pytest -m 'not live and not deep' tests/   # Fast tests only
 #   uv run pytest -m 'live' tests/                    # Live/integration tests
-#   uv run pytest --cov=opendxa --cov-report=html tests/  # With coverage
+#   uv run pytest --cov-report=html tests/  # With coverage
 #
 # Code quality workflows:
 #   uv run ruff check .                               # Lint code
@@ -161,7 +160,7 @@ dana = ["**/*.py", "**/*.lark"]
 #   uv run mkdocs gh-deploy --force                   # Build and deploy to GitHub Pages
 #
 # Documentation validation (catch staleness):
-#   uv run pytest --doctest-modules opendxa/          # Test code examples in docstrings
+#   uv run pytest --doctest-modules dana/             # Test code examples in docstrings
 #   uv run python -m linkcheckmd docs/                # Check all markdown links (fast async)  
 #   uv run doc8 docs/                                 # Documentation style checking
 #   uv run python -m mkdocs build --strict            # Validate complete build
@@ -224,7 +223,7 @@ exclude = [
     "*.na",              # Dana language files (not Python)
     ".git",              # Version control
     ".venv",             # Virtual environment
-    "opendxa.egg-info",  # Build artifacts
+    "dana.egg-info",  # Build artifacts
 ]
 
 # Type Checking
@@ -281,8 +280,8 @@ compile-bytecode = true             # Pre-compile .pyc files for performance
 dev = [
     "pre-commit>=4.2.0",
 ]
-# opendxa = { workspace = true }  # For workspace/monorepo setup
+# dana = { workspace = true }  # For workspace/monorepo setup
 
 # Future: Workspace configuration for multi-package projects
 # [tool.uv.workspace]  
-# members = ["opendxa", "extensions/*"]
+# members = ["dana", "extensions/*"]

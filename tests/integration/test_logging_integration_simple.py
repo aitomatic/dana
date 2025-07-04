@@ -117,8 +117,8 @@ class TestLoggingIntegrationSimple:
         assert agent_logger.logger.getEffectiveLevel() == logging.WARNING
         assert dana_logger.logger.getEffectiveLevel() == logging.WARNING
 
-        # Set DEBUG only for agent scope
-        DANA_LOGGER.setLevel(logging.DEBUG, scope="dana.agent")
+        # Set DEBUG only for agent scope (corrected scope)
+        DANA_LOGGER.setLevel(logging.DEBUG, scope="dana.frameworks.agent")
 
         # Only agent logger should be DEBUG
         assert agent_logger.logger.getEffectiveLevel() == logging.DEBUG

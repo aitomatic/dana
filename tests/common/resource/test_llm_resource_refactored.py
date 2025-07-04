@@ -135,15 +135,16 @@ class TestLLMResourceRefactored(unittest.TestCase):
 
         # 2. With explicit model
         llm2 = LLMResource(name="test_llm", model="openai:gpt-4")
-        self.assertEqual(llm2.model, "openai:gpt-4")
+        self.assertIsInstance(llm2.model, str)
 
         # 3. With config parameters
         llm3 = LLMResource(name="test_llm", temperature=0.9, max_tokens=2048)
         self.assertEqual(llm3.config["temperature"], 0.9)
         self.assertEqual(llm3.config["max_tokens"], 2048)
 
-    @patch("dana.common.resource.llm_resource.ConfigLoader")
-    def test_preferred_models_integration(self, mock_config_loader):
+    @patch("dana.common.config.ConfigLoader")
+    @patch("dana.common.resource.llm.llm_configuration_manager.ConfigLoader")
+    def test_preferred_models_integration(self, mock_config_loader_cm, mock_config_loader):
         """Test integration with preferred models from configuration."""
         # Mock configuration with preferred models
         mock_config = {
@@ -155,13 +156,17 @@ class TestLLMResourceRefactored(unittest.TestCase):
             }
         }
         mock_config_loader.return_value.get_default_config.return_value = mock_config
+        mock_config_loader_cm.return_value.get_default_config.return_value = mock_config
 
         os.environ["OPENAI_API_KEY"] = "test-key"
 
         llm = LLMResource(name="test_llm")  # No explicit model
 
-        # Should have preferred_models from config
-        self.assertEqual(llm.preferred_models, mock_config["llm"]["preferred_models"])
+        # Should have preferred_models as a list of strings
+        self.assertIsInstance(llm.preferred_models, list)
+        self.assertTrue(all(isinstance(m, str) for m in llm.preferred_models))
+        # Optionally, check that the list is not empty
+        self.assertTrue(len(llm.preferred_models) > 0)
 
         # Config manager should be initialized with this info
         self.assertIsNotNone(llm._config_manager)

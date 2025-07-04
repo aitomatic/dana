@@ -31,54 +31,74 @@ class TestLLMResource(unittest.TestCase):
         asyncio.run(run_test())
 
     def test_error_classification(self):
-        """Test LLM error classification using direct function call."""
-        # Create a resource instance for testing
-        LLMResource(name="test_llm", model="openai:gpt-4")
+        """Test error classification and handling."""
+        from dana.common.types import BaseRequest
 
-        # Define some error messages
-        rate_limit_error = "rate limit exceeded"
-        auth_error = "authentication failed"
-        context_length_error = "maximum context length exceeded"
-        provider_error = "invalid_request_error"
-        generic_error = "some other error"
+        # Create LLMResource and make it available
+        llm = LLMResource(name="test_llm", model="openai:gpt-4")
+        llm._is_available = True  # Make the resource available
+        llm._started = True  # Mark as started to skip initialization
 
-        # Mock the error function to directly test classification logic
-        def check_error_type(error_msg, expected_type):
-            try:
-                # Extract provider and call the error classification logic directly
-                provider = "openai"
-                status_code = None
+        # Test rate limit error
+        rate_limit_error = "Rate limit exceeded"
+        with patch.object(llm._query_executor, "query_once") as mock_query_once:
+            mock_query_once.side_effect = LLMRateLimitError("openai", 429, rate_limit_error)
 
-                # Simulate the error classification from _query_once
-                if any(term in error_msg.lower() for term in ["context length", "token limit", "too many tokens", "maximum context"]):
-                    raised_error = LLMContextLengthError(provider, status_code, error_msg)
-                elif any(term in error_msg.lower() for term in ["rate limit", "ratelimit", "too many requests", "429"]):
-                    raised_error = LLMRateLimitError(provider, status_code, error_msg)
-                elif any(
-                    term in error_msg.lower() for term in ["authenticate", "authentication", "unauthorized", "auth", "api key", "401"]
-                ):
-                    raised_error = LLMAuthenticationError(provider, status_code, error_msg)
-                elif "invalid_request_error" in error_msg.lower() or "bad request" in error_msg.lower():
-                    raised_error = LLMProviderError(provider, status_code, error_msg)
-                else:
-                    raised_error = LLMError(f"LLM query failed: {error_msg}")
+            request = BaseRequest(arguments={"messages": [{"role": "user", "content": "test"}]})
 
-                # Check if the error type matches expected
-                self.assertIsInstance(raised_error, expected_type)
+            # The error should be caught and returned in the BaseResponse
+            response = llm.query_sync(request)
+            self.assertFalse(response.success)
+            self.assertIsNotNone(response.error)
+            self.assertIn(rate_limit_error, str(response.error))
 
-                # Also check that the message is preserved
-                self.assertIn(error_msg, str(raised_error))
+        # Test authentication error
+        auth_error = "Invalid API key"
+        with patch.object(llm._query_executor, "query_once") as mock_query_once:
+            mock_query_once.side_effect = LLMAuthenticationError("openai", 401, auth_error)
 
-                return True
-            except AssertionError:
-                return False
+            request = BaseRequest(arguments={"messages": [{"role": "user", "content": "test"}]})
 
-        # Test each error type
-        self.assertTrue(check_error_type(rate_limit_error, LLMRateLimitError))
-        self.assertTrue(check_error_type(auth_error, LLMAuthenticationError))
-        self.assertTrue(check_error_type(context_length_error, LLMContextLengthError))
-        self.assertTrue(check_error_type(provider_error, LLMProviderError))
-        self.assertTrue(check_error_type(generic_error, LLMError))
+            response = llm.query_sync(request)
+            self.assertFalse(response.success)
+            self.assertIsNotNone(response.error)
+            self.assertIn(auth_error, str(response.error))
+
+        # Test context length error
+        context_length_error = "Context length exceeded"
+        with patch.object(llm._query_executor, "query_once") as mock_query_once:
+            mock_query_once.side_effect = LLMContextLengthError("openai", None, context_length_error)
+
+            request = BaseRequest(arguments={"messages": [{"role": "user", "content": "test"}]})
+
+            response = llm.query_sync(request)
+            self.assertFalse(response.success)
+            self.assertIsNotNone(response.error)
+            self.assertIn(context_length_error, str(response.error))
+
+        # Test provider error
+        provider_error = "Provider error"
+        with patch.object(llm._query_executor, "query_once") as mock_query_once:
+            mock_query_once.side_effect = LLMProviderError("openai", None, provider_error)
+
+            request = BaseRequest(arguments={"messages": [{"role": "user", "content": "test"}]})
+
+            response = llm.query_sync(request)
+            self.assertFalse(response.success)
+            self.assertIsNotNone(response.error)
+            self.assertIn(provider_error, str(response.error))
+
+        # Test generic error
+        generic_error = "Generic error"
+        with patch.object(llm._query_executor, "query_once") as mock_query_once:
+            mock_query_once.side_effect = LLMError(f"LLM query failed: {generic_error}")
+
+            request = BaseRequest(arguments={"messages": [{"role": "user", "content": "test"}]})
+
+            response = llm.query_sync(request)
+            self.assertFalse(response.success)
+            self.assertIsNotNone(response.error)
+            self.assertIn(generic_error, str(response.error))
 
     @patch("dana.common.utils.token_management.TokenManagement.enforce_context_window")
     @patch("dana.common.utils.token_management.TokenManagement.estimate_message_tokens")
