@@ -31,7 +31,6 @@ from dana.core.lang.interpreter.executor.function_executor import FunctionExecut
 from dana.core.lang.interpreter.executor.program_executor import ProgramExecutor
 from dana.core.lang.interpreter.executor.statement_executor import StatementExecutor
 
-# Explicit exports
 __all__ = [
     "BaseExecutor",
     "CollectionExecutor",
@@ -45,6 +44,3 @@ __all__ = [
     "ProgramExecutor",
     "StatementExecutor",
 ]
-
-# For backward compatibility
-Executor = DanaExecutor

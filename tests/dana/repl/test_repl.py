@@ -19,10 +19,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from dana.common.error_utils import DanaError
 from dana.core.lang.log_manager import LogLevel
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.repl.repl.repl import REPL
-from dana.common.error_utils import DanaError
+from dana.core.repl.repl import REPL
 
 
 @pytest.mark.unit
@@ -135,7 +135,7 @@ private:result
                 mock_eval.return_value = mock_result
 
                 # Execute with NLP input - this should use the mocked safe_asyncio_run
-                with patch("dana.dana.exec.repl.repl.Misc.safe_asyncio_run", mock_safe_asyncio_run):
+                with patch("dana.common.utils.Misc.safe_asyncio_run", mock_safe_asyncio_run):
                     result = repl.execute("set x to 5")
 
                     # Verify expected behavior - safe_asyncio_run may be called multiple times
@@ -167,7 +167,7 @@ private:result
         repl = REPL(log_level=initial_level)
 
         # Change log level
-        with patch("dana.dana.sandbox.log_manager.SandboxLogger.set_system_log_level") as mock_set_level:
+        with patch("dana.core.lang.log_manager.SandboxLogger.set_system_log_level") as mock_set_level:
             repl.set_log_level(LogLevel.DEBUG)
             # Verify log level was set
             mock_set_level.assert_called_once_with(LogLevel.DEBUG, repl.context)

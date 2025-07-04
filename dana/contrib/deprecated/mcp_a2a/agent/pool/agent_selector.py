@@ -9,7 +9,7 @@ import json
 from typing import TYPE_CHECKING, Any
 
 from dana.common.mixins import Loggable
-from dana.common.resource.llm_resource import LLMResource
+from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.utils import Misc
 from dana.common.types import BaseRequest
 

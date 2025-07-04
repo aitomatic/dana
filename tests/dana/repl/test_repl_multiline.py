@@ -8,7 +8,7 @@ import unittest
 
 import pytest
 
-from dana.core.repl.repl.input.completeness_checker import InputCompleteChecker
+from dana.core.repl.input.completeness_checker import InputCompleteChecker
 
 
 @pytest.mark.unit
@@ -112,7 +112,7 @@ else:
 
     def test_orphaned_else_detection(self):
         """Test orphaned else statement detection."""
-        from dana.core.repl.repl.input.input_processor import InputProcessor
+        from dana.core.repl.input.input_processor import InputProcessor
 
         processor = InputProcessor()
 

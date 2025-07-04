@@ -196,7 +196,7 @@ class TestMetaKnowledgeExtractor:
             assert kp.confidence == 0.5
             assert kp.type == "fact"
 
-    @patch("dana.knows.extraction.meta.extractor.MetaKnowledgeExtractor._extract_with_llm")
+    @patch("dana.frameworks.knows.extraction.meta.extractor.MetaKnowledgeExtractor._extract_with_llm")
     def test_process_success(self, mock_extract):
         """Test successful processing of document."""
         # Mock LLM extraction
@@ -210,7 +210,7 @@ class TestMetaKnowledgeExtractor:
         assert len(result) == 1
         assert result[0].content == "Temperature monitoring process"
 
-    @patch("dana.knows.extraction.meta.extractor.MetaKnowledgeExtractor._extract_with_llm")
+    @patch("dana.frameworks.knows.extraction.meta.extractor.MetaKnowledgeExtractor._extract_with_llm")
     def test_process_with_filtering(self, mock_extract):
         """Test processing with confidence filtering."""
         # Mock extraction with mixed confidence scores
@@ -226,7 +226,7 @@ class TestMetaKnowledgeExtractor:
         assert len(result) == 1
         assert result[0].content == "High confidence"
 
-    @patch("dana.knows.extraction.meta.extractor.MetaKnowledgeExtractor._extract_with_llm")
+    @patch("dana.frameworks.knows.extraction.meta.extractor.MetaKnowledgeExtractor._extract_with_llm")
     def test_process_with_limit(self, mock_extract):
         """Test processing with knowledge point limit."""
         # Mock extraction with many points
@@ -246,7 +246,7 @@ class TestMetaKnowledgeExtractor:
         with pytest.raises(ValueError, match="Invalid document provided"):
             self.extractor.process("not a document")
 
-    @patch("dana.knows.extraction.meta.extractor.MetaKnowledgeExtractor._extract_with_llm")
+    @patch("dana.frameworks.knows.extraction.meta.extractor.MetaKnowledgeExtractor._extract_with_llm")
     def test_process_llm_failure_fallback(self, mock_extract):
         """Test fallback when LLM extraction fails."""
         # Mock LLM failure

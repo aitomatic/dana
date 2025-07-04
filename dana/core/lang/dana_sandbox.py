@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from dana.common.mixins.loggable import Loggable
-from dana.common.resource.llm_resource import LLMResource
+from dana.common.resource.llm.llm_resource import LLMResource
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
 from dana.core.lang.sandbox_context import SandboxContext

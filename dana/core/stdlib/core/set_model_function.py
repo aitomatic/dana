@@ -14,7 +14,7 @@ from typing import Any
 
 from dana.common.config.config_loader import ConfigLoader
 from dana.common.exceptions import LLMError
-from dana.common.resource.llm_resource import LLMResource
+from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.utils.logging import DANA_LOGGER
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.common.exceptions import SandboxError

@@ -35,7 +35,7 @@ Example:
 
 from .agent import Agent, AgentResponse
 from .agent_factory import AgentFactory
-from .capability import CapabilityFactory, DomainExpertise, MemoryCapability
+from .deprecated.capability import CapabilityFactory, DomainExpertise, MemoryCapability
 from .resource import AgentResource, ExpertResource, ExpertResponse, ResourceFactory
 
 __all__ = [

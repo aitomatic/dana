@@ -8,7 +8,7 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 
-from dana.common.resource.llm_resource import BaseResponse
+from dana.common.resource.llm.llm_resource import BaseResponse
 from dana.frameworks.knows.core.base import KnowledgePoint
 from dana.frameworks.knows.extraction.context.expander import ContextExpander, ContextExpansion, ContextValidation
 from dana.frameworks.knows.extraction.context.similarity import SemanticMatch, SimilarityResult, SimilaritySearcher

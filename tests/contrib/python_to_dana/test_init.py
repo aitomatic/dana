@@ -72,19 +72,19 @@ dana_property_params = [
 stable_api_params = [
     {
         "name": "main_dana_instance",
-        "import_path": "dana.contrib.python_to_dana",
+        "import_path": "dana.integrations.python.to_dana",
         "component_name": "dana",
         "expected_not_none": True,
     },
     {
         "name": "dana_call_error",
-        "import_path": "dana.contrib.python_to_dana.core",
+        "import_path": "dana.integrations.python.to_dana.core",
         "component_name": "DanaCallError",
         "expected_not_none": True,
     },
     {
         "name": "dana_class",
-        "import_path": "dana.contrib.python_to_dana.dana_module",
+        "import_path": "dana.integrations.python.to_dana.dana_module",
         "component_name": "Dana",
         "expected_not_none": True,
     },
@@ -103,7 +103,7 @@ class TestPackageImports:
     @pytest.mark.parametrize("test_case", core_import_params, ids=lambda x: x["name"])
     def test_core_imports(self, test_case):
         """Test that core components can be imported."""
-        from dana.integrations.python.core import (
+        from dana.integrations.python.to_dana.core import (
             DanaCallError,
             DanaType,
             InProcessSandboxInterface,
@@ -137,7 +137,7 @@ class TestPackageImports:
 
     def test_utils_imports(self):
         """Test that utils can be imported."""
-        from dana.integrations.python.utils import BasicTypeConverter
+        from dana.integrations.python.to_dana.utils import BasicTypeConverter
 
         assert BasicTypeConverter is not None
 
@@ -194,7 +194,7 @@ class TestInitializationOrder:
 
     def test_core_before_gateway(self):
         """Test that core components can be imported before gateway."""
-        from dana.integrations.python.core import SandboxInterface
+        from dana.integrations.python.to_dana.core import SandboxInterface
         from dana.integrations.python.to_dana.dana_module import Dana
 
         # Both should work
@@ -205,7 +205,7 @@ class TestInitializationOrder:
 class TestDefaultDanaConfiguration:
     """Test the default configuration of the dana instance."""
 
-    @patch("dana.contrib.python_to_dana.dana_module.InProcessSandboxInterface")
+    @patch("dana.integrations.python.to_dana.dana_module.InProcessSandboxInterface")
     def test_default_dana_is_not_debug_mode(self, mock_sandbox_class):
         """Test that default dana instance is not in debug mode."""
         # Import after patching to ensure clean state
@@ -217,7 +217,7 @@ class TestDefaultDanaConfiguration:
     def test_default_dana_uses_inprocess_sandbox(self):
         """Test that default dana uses in-process sandbox."""
         from dana.integrations.python.to_dana import dana
-        from dana.integrations.python.core.inprocess_sandbox import InProcessSandboxInterface
+        from dana.integrations.python.to_dana.core.inprocess_sandbox import InProcessSandboxInterface
 
         # Verify that the dana instance uses InProcessSandboxInterface
         assert isinstance(dana._sandbox_interface, InProcessSandboxInterface)
@@ -271,7 +271,7 @@ class TestExampleCompatibility:
     def test_core_access_pattern(self):
         """Test that direct core access pattern works."""
         # For advanced users who want direct core access
-        from dana.integrations.python.core import InProcessSandboxInterface
+        from dana.integrations.python.to_dana.core import InProcessSandboxInterface
 
         # Should be able to create sandbox directly
         sandbox = InProcessSandboxInterface(debug=False)

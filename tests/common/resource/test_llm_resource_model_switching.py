@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from dana.common.resource.llm_resource import LLMResource
+from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 
 

@@ -1,6 +1,6 @@
 from dana.common.mixins import ToolCallable
 from dana.common.utils import Misc
-from dana.integrations.mcp.a2a.resource.a2a.client.a2a_client import BaseA2AClient
+from dana.integrations.a2a.resource.a2a.client.a2a_client import BaseA2AClient
 from dana.agent.abstract_dana_agent import AbstractDanaAgent
 
 

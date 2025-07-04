@@ -15,7 +15,7 @@ The IndexBuilder class is responsible for:
 from llama_index.core import VectorStoreIndex
 from llama_index.core.schema import Document
 
-from dana.contrib.rag_resource.common.resource.rag.pipeline.base_stage import BaseStage
+from dana.common.resource.rag.pipeline.base_stage import BaseStage
 
 
 class IndexBuilder(BaseStage):

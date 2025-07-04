@@ -14,7 +14,7 @@ Features:
     - Automatic system prompt generation
 
 Example:
-    from dana.frameworks.agent.capability.domain_expertise import DomainExpertise
+    from dana.frameworks.agent.deprecated.capability.domain_expertise import DomainExpertise
 
     expertise = DomainExpertise(
         name="Mathematics",
@@ -45,7 +45,7 @@ from dana.common.resource import BaseResource
 from dana.common.types import BaseRequest, BaseResponse
 
 # Local imports
-from dana.frameworks.agent.capability.domain_expertise import DomainExpertise
+from dana.frameworks.agent.deprecated.capability.domain_expertise import DomainExpertise
 
 
 class ExpertResponse(BaseResponse):

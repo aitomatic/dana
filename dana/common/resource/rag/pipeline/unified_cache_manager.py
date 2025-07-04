@@ -8,7 +8,7 @@ from llama_index.core.storage.storage_context import StorageContext
 
 from dana.common.mixins.loggable import Loggable
 from dana.common.utils.misc import Misc
-from dana.contrib.rag_resource.common.cache import JsonFileCache
+from dana.common.resource.rag.cache import JsonFileCache
 
 
 class UnifiedCacheManager(Loggable):

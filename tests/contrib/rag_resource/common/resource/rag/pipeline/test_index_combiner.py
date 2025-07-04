@@ -8,7 +8,7 @@ from unittest.mock import Mock
 import pytest
 from llama_index.core import Document, VectorStoreIndex
 
-from dana.integrations.rag.common.resource.rag.pipeline.index_combiner import IndexCombiner
+from dana.common.resource.rag.pipeline.index_combiner import IndexCombiner
 
 
 # Helper function to check if OpenAI API key is available

@@ -18,7 +18,7 @@ from functools import reduce
 from llama_index.core import Document
 from llama_index.core.node_parser import SentenceSplitter
 
-from dana.contrib.rag_resource.common.resource.rag.pipeline.base_stage import BaseStage
+from dana.common.resource.rag.pipeline.base_stage import BaseStage
 
 
 class DocumentChunker(BaseStage):

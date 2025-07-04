@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from dana.common.resource.llm_resource import LLMResource
+from dana.common.resource.llm.llm_resource import LLMResource
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.interpreter.struct_system import StructTypeRegistry
 from dana.core.lang.parser.dana_parser import parse_program

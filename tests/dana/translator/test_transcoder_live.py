@@ -4,8 +4,8 @@ import os
 
 import pytest
 
-from dana.common.resource.llm_resource import LLMResource
-from dana.translator.translator import Translator
+from dana.common.resource.llm.llm_resource import LLMResource
+from dana.core.lang.translator.translator import Translator
 
 
 # Register the live marker

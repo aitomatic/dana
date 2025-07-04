@@ -8,7 +8,7 @@ import os
 import unittest
 from unittest.mock import patch
 
-from dana.common.resource.llm_resource import LLMResource
+from dana.common.resource.llm.llm_resource import LLMResource
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.stdlib.core.reason_function import reason_function

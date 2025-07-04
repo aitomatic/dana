@@ -4,7 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from dana.common.capability.base_capability import BaseCapability, CapabilityApplicationResult
+from dana.common.deprecated.capability.base_capability import BaseCapability, CapabilityApplicationResult
 from dana.common.mixins.tool_callable import ToolCallable
 from dana.common.types import BaseRequest
 

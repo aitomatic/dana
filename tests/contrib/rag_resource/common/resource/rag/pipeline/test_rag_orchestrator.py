@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from dana.integrations.rag.common.resource.rag.pipeline.rag_orchestrator import RAGOrchestrator
+from dana.common.resource.rag.pipeline.rag_orchestrator import RAGOrchestrator
 
 
 class TestRAGOrchestrator:

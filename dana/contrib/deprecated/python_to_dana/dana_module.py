@@ -7,11 +7,11 @@ sandbox security boundaries. Now includes module import capabilities.
 
 from typing import Any
 
-from dana.contrib.python_to_dana.core.exceptions import DanaCallError
-from dana.contrib.python_to_dana.core.inprocess_sandbox import InProcessSandboxInterface
-from dana.contrib.python_to_dana.core.module_importer import install_import_hook, list_available_modules, uninstall_import_hook
-from dana.contrib.python_to_dana.core.subprocess_sandbox import SUBPROCESS_ISOLATION_CONFIG, SubprocessSandboxInterface
-from dana.contrib.python_to_dana.utils.converter import validate_and_convert
+from dana.integrations.python.to_dana.core.exceptions import DanaCallError
+from dana.integrations.python.to_dana.core.inprocess_sandbox import InProcessSandboxInterface
+from dana.integrations.python.to_dana.core.module_importer import install_import_hook, list_available_modules, uninstall_import_hook
+from dana.integrations.python.to_dana.core.subprocess_sandbox import SUBPROCESS_ISOLATION_CONFIG, SubprocessSandboxInterface
+from dana.integrations.python.to_dana.utils.converter import validate_and_convert
 
 
 class Dana:

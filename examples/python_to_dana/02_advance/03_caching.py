@@ -12,7 +12,7 @@ Duration: 15-20 minutes
 
 import time
 
-from dana.contrib.python_to_dana.core.inprocess_sandbox import InProcessSandboxInterface
+from dana.integrations.python.to_dana.core.inprocess_sandbox import InProcessSandboxInterface
 
 
 def demo_basic_caching_setup():

@@ -5,25 +5,25 @@ This module contains the core protocols, interfaces, and foundational components
 for the Python-to-Dana bridge.
 """
 
-from dana.contrib.python_to_dana.core.exceptions import (
+from dana.integrations.python.to_dana.core.exceptions import (
     DanaCallError,
     ResourceError,
     TypeConversionError,
 )
-from dana.contrib.python_to_dana.core.inprocess_sandbox import InProcessSandboxInterface
-from dana.contrib.python_to_dana.core.module_importer import (
+from dana.integrations.python.to_dana.core.inprocess_sandbox import InProcessSandboxInterface
+from dana.integrations.python.to_dana.core.module_importer import (
     DanaModuleLoader,
     DanaModuleWrapper,
     install_import_hook,
     list_available_modules,
     uninstall_import_hook,
 )
-from dana.contrib.python_to_dana.core.sandbox_interface import SandboxInterface
-from dana.contrib.python_to_dana.core.subprocess_sandbox import (
+from dana.integrations.python.to_dana.core.sandbox_interface import SandboxInterface
+from dana.integrations.python.to_dana.core.subprocess_sandbox import (
     SUBPROCESS_ISOLATION_CONFIG,
     SubprocessSandboxInterface,
 )
-from dana.contrib.python_to_dana.core.types import DanaType, TypeConverter
+from dana.integrations.python.to_dana.core.types import DanaType, TypeConverter
 
 __all__ = [
     "SandboxInterface",

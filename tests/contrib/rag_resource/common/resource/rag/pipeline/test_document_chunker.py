@@ -7,7 +7,7 @@ import os
 import pytest
 from llama_index.core import Document
 
-from dana.integrations.rag.common.resource.rag.pipeline.document_chunker import DocumentChunker
+from dana.common.resource.rag.pipeline.document_chunker import DocumentChunker
 
 
 # Helper function to check if OpenAI API key is available

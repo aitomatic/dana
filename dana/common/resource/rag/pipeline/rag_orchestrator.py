@@ -3,12 +3,12 @@ from llama_index.core.schema import NodeWithScore
 
 from dana.common.mixins.loggable import Loggable
 from dana.common.utils.misc import Misc
-from dana.contrib.rag_resource.common.resource.rag.pipeline.document_chunker import DocumentChunker
-from dana.contrib.rag_resource.common.resource.rag.pipeline.document_loader import DocumentLoader
-from dana.contrib.rag_resource.common.resource.rag.pipeline.index_builder import IndexBuilder
-from dana.contrib.rag_resource.common.resource.rag.pipeline.index_combiner import IndexCombiner
-from dana.contrib.rag_resource.common.resource.rag.pipeline.retriever import Retriever
-from dana.contrib.rag_resource.common.resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager
+from dana.common.resource.rag.pipeline.document_chunker import DocumentChunker
+from dana.common.resource.rag.pipeline.document_loader import DocumentLoader
+from dana.common.resource.rag.pipeline.index_builder import IndexBuilder
+from dana.common.resource.rag.pipeline.index_combiner import IndexCombiner
+from dana.common.resource.rag.pipeline.retriever import Retriever
+from dana.common.resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager
 
 
 class RAGOrchestrator(Loggable):

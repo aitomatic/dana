@@ -9,9 +9,9 @@ from typing import get_type_hints
 
 import pytest
 
-from dana.integrations.python.core.inprocess_sandbox import InProcessSandboxInterface
-from dana.integrations.python.core.sandbox_interface import SandboxInterface
-from dana.integrations.python.core.subprocess_sandbox import SubprocessSandboxInterface
+from dana.integrations.python.to_dana.core.inprocess_sandbox import InProcessSandboxInterface
+from dana.integrations.python.to_dana.core.sandbox_interface import SandboxInterface
+from dana.integrations.python.to_dana.core.subprocess_sandbox import SubprocessSandboxInterface
 
 # Table-driven test parameters for interface implementations
 interface_implementation_params = [
@@ -290,17 +290,17 @@ class TestModuleIntegration:
 
     def test_protocol_accessible_from_core_module(self):
         """Test that protocol is accessible from core module."""
-        from dana.integrations.python.core import SandboxInterface as CoreSandboxInterface
+        from dana.integrations.python.to_dana.core import SandboxInterface as CoreSandboxInterface
 
         # Should be the same interface
         assert CoreSandboxInterface is SandboxInterface
 
     def test_implementations_accessible_from_core_module(self):
         """Test that implementations are accessible from core module."""
-        from dana.integrations.python.core import (
+        from dana.integrations.python.to_dana.core import (
             InProcessSandboxInterface as CoreInProcess,
         )
-        from dana.integrations.python.core import (
+        from dana.integrations.python.to_dana.core import (
             SubprocessSandboxInterface as CoreSubprocess,
         )
 

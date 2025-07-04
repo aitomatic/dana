@@ -63,7 +63,7 @@ import logging
 import sys
 
 from dana.common.mixins.loggable import Loggable
-from dana.common.resource.llm_resource import LLMResource
+from dana.common.resource.llm.llm_resource import LLMResource
 from dana.core.lang.log_manager import LogLevel
 from dana.core.repl.commands import CommandHandler
 from dana.core.repl.input import InputProcessor

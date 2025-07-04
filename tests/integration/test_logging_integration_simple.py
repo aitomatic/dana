@@ -33,8 +33,8 @@ class TestLoggingIntegrationSimple:
         DANA_LOGGER.configure(level=logging.WARNING)
 
         # Create loggers for different Dana modules
-        agent_logger = DANA_LOGGER.getLogger("dana.agent.TestAgent")
-        dana_logger = DANA_LOGGER.getLogger("dana.dana.TestDana")
+        agent_logger = DANA_LOGGER.getLogger("dana.frameworks.agent.TestAgent")
+        dana_logger = DANA_LOGGER.getLogger("dana.TestDana")
 
         # Check initial effective levels (child loggers inherit from dana parent)
         assert agent_logger.logger.getEffectiveLevel() == logging.WARNING
@@ -110,8 +110,8 @@ class TestLoggingIntegrationSimple:
         DANA_LOGGER.configure(level=logging.WARNING)
 
         # Create loggers in different scopes
-        agent_logger = DANA_LOGGER.getLogger("dana.agent.SpecificAgent")
-        dana_logger = DANA_LOGGER.getLogger("dana.dana.SpecificDana")
+        agent_logger = DANA_LOGGER.getLogger("dana.frameworks.agent.SpecificAgent")
+        dana_logger = DANA_LOGGER.getLogger("dana.SpecificDana")
 
         # Both start at WARNING
         assert agent_logger.logger.getEffectiveLevel() == logging.WARNING
@@ -151,7 +151,7 @@ class TestLoggingIntegrationSimple:
         # Create REPL-like component
         class REPLComponent(Loggable):
             def __init__(self):
-                super().__init__(logger_name="dana.dana.exec.repl.TestREPL")
+                super().__init__(logger_name="dana.core.lang.repl.TestREPL")
 
         # Create component before log level change
         repl_component = REPLComponent()

@@ -9,8 +9,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from dana.integrations.python.core.exceptions import DanaCallError
-from dana.integrations.python.core.inprocess_sandbox import InProcessSandboxInterface
+from dana.integrations.python.to_dana.core.exceptions import DanaCallError
+from dana.integrations.python.to_dana.core.inprocess_sandbox import InProcessSandboxInterface
 
 # Table-driven test parameters for option formatting
 format_options_params = [

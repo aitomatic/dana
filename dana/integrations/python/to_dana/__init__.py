@@ -55,13 +55,9 @@ def list_dana_modules(search_paths: list[str] | None = None) -> list[str]:
     return dana.list_modules(search_paths)
 
 
-# For convenience, also expose Dana class as DanaModule
-DanaModule = Dana
-
 __all__ = [
     "dana",
     "Dana",
-    "DanaModule",
     "enable_dana_imports",
     "disable_dana_imports",
     "list_dana_modules",

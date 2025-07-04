@@ -1,7 +1,7 @@
 from dana.common.mixins.tool_callable import ToolCallable
 from dana.common.resource.base_resource import BaseResource
-from dana.contrib.rag_resource.common.resource.rag.pipeline.rag_orchestrator import RAGOrchestrator
-from dana.contrib.rag_resource.common.resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager
+from dana.common.resource.rag.pipeline.rag_orchestrator import RAGOrchestrator
+from dana.common.resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager
 
 
 class RAGResource(BaseResource):

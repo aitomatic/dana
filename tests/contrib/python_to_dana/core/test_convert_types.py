@@ -4,7 +4,7 @@ Tests for core.types module - Type System for Python-to-Dana Integration
 
 import pytest
 
-from dana.integrations.python.core.types import (
+from dana.integrations.python.to_dana.core.types import (
     DANA_TO_PYTHON_TYPES,
     PYTHON_TO_DANA_TYPES,
     DanaType,

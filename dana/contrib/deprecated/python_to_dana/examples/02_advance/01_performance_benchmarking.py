@@ -10,8 +10,8 @@ Difficulty: ⭐⭐⭐ Advanced
 Duration: 5-10 minutes
 """
 
-from dana.contrib.python_to_dana.utils.decorator import benchmark, monitor_performance
-from dana.dana import dana
+from dana.integrations.python.to_dana.dana_module import dana
+from dana.integrations.python.to_dana.utils.decorator import benchmark, monitor_performance
 
 
 class DanaPerformanceAnalyzer:

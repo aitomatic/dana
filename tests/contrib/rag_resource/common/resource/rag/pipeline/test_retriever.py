@@ -8,7 +8,7 @@ import pytest
 from llama_index.core import VectorStoreIndex
 from llama_index.core.schema import NodeWithScore
 
-from dana.integrations.rag.common.resource.rag.pipeline.retriever import Retriever
+from dana.common.resource.rag.pipeline.retriever import Retriever
 
 
 class TestRetriever:

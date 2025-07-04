@@ -1,10 +1,10 @@
 """
-Dana Common Utilities - Shared functionality for the Dana framework
+Dana Common Resource Module
+
+This module provides base classes and implementations for resources used across the Dana framework.
 
 Copyright © 2025 Aitomatic, Inc.
 MIT License
-
-This module aggregates common components used across the Dana framework, including exceptions, types, configuration, database, graph, IO, mixins, resources, and utilities.
 
 Community Values:
     1. Attribution: Please maintain attribution to Aitomatic and Dana/Dana in derivative works.
@@ -21,10 +21,8 @@ including:
 
 - Exceptions: Custom error types for DXA.
 - Types: Core data structures like BaseRequest, BaseResponse.
-- Capability: Base classes for agent capabilities (BaseCapability, Capable).
 - Config: Configuration loading (ConfigLoader).
 - DB: Database models and storage abstractions (BaseDBModel, BaseDBStorage, etc.).
-- Graph: Graph data structures and algorithms (DirectedGraph, TraversalStrategy).
 - IO: Input/Output handling (BaseIO, ConsoleIO, WebSocketIO).
 - Mixins: Reusable functionality (Loggable, ToolCallable, Configurable, etc.).
 - Resource: Base classes and implementations for resources (BaseResource, LLMResource, etc.).
@@ -33,7 +31,7 @@ including:
 Symbols listed in `__all__` are considered the public API of this common module.
 
 For detailed documentation on specific components, refer to the README files
-within the respective subdirectories (e.g., `dana/common/graph/README.md`).
+within the respective subdirectories.
 
 Example:
     >>> from dana.common import DANA_LOGGER, ConfigManager
@@ -41,10 +39,6 @@ Example:
     >>> config = ConfigManager().load_config("agent_config.yaml")
 """
 
-from dana.common.capability import (
-    BaseCapability,
-    Capable,
-)
 from dana.common.config import (
     ConfigLoader,
 )
@@ -61,29 +55,15 @@ from dana.common.exceptions import (
     CommunicationError,
     ConfigurationError,
     DanaContextError,
+    DanaError,
     DanaMemoryError,
     LLMError,
     NetworkError,
-    DanaError,
     ReasoningError,
     ResourceError,
     StateError,
     ValidationError,
     WebSocketError,
-)
-from dana.common.graph import (
-    BreadthFirstTraversal,
-    Cursor,
-    DepthFirstTraversal,
-    DirectedGraph,
-    Edge,
-    GraphFactory,
-    GraphSerializer,
-    GraphVisualizer,
-    Node,
-    NodeType,
-    TopologicalTraversal,
-    TraversalStrategy,
 )
 
 # Note: IO imports removed to break circular dependency
@@ -106,21 +86,13 @@ from dana.common.mixins import (
 from dana.common.resource.base_resource import BaseResource, ResourceUnavailableError
 from dana.common.resource.human_resource import HumanResource
 from dana.common.resource.kb_resource import KBResource
-from dana.common.resource.llm_resource import LLMResource
-from dana.common.resource.mcp import (
-    BaseMcpService,
-    HttpTransportParams,
-    McpEchoService,
-    McpResource,
-    StdioTransportParams,
-)
+from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.resource.memory_resource import (
     LTMemoryResource,
     MemoryResource,
     PermMemoryResource,
     STMemoryResource,
 )
-from dana.common.resource.wot_resource import WoTResource
 from dana.common.types import (
     BaseRequest,
     BaseResponse,
@@ -128,6 +100,10 @@ from dana.common.types import (
     JsonType,
 )
 from dana.common.utils import DANA_LOGGER, DanaLogger, Misc
+from dana.integrations.mcp.base_mcp_service import BaseMcpService
+from dana.integrations.mcp.mcp_config import HttpTransportParams, StdioTransportParams
+from dana.integrations.mcp.mcp_echo_service import McpEchoService
+from dana.integrations.mcp.mcp_resource import McpResource
 
 __all__ = [
     # Exceptions (from exceptions.py)
@@ -149,9 +125,6 @@ __all__ = [
     "JsonType",
     "BaseRequest",
     "BaseResponse",
-    # Capability (from capability/)
-    "BaseCapability",
-    "Capable",
     # Config (from config/)
     "ConfigLoader",
     # DB (from db/)
@@ -161,19 +134,6 @@ __all__ = [
     "MemoryDBModel",
     "KnowledgeDBStorage",
     "MemoryDBStorage",
-    # Graph (from graph/)
-    "Node",
-    "Edge",
-    "NodeType",
-    "DirectedGraph",
-    "Cursor",
-    "TraversalStrategy",
-    "BreadthFirstTraversal",
-    "DepthFirstTraversal",
-    "TopologicalTraversal",
-    "GraphVisualizer",
-    "GraphSerializer",
-    "GraphFactory",
     # IO classes removed to break circular dependency
     # Mixins (from mixins/)
     "Loggable",
@@ -191,19 +151,19 @@ __all__ = [
     "ResourceUnavailableError",
     "LLMResource",
     "HumanResource",
-    "McpResource",
-    "StdioTransportParams",
-    "HttpTransportParams",
-    "BaseMcpService",
-    "McpEchoService",
-    "WoTResource",
     "KBResource",
     "MemoryResource",
     "LTMemoryResource",
     "STMemoryResource",
     "PermMemoryResource",
+    # MCP Services (from integrations/mcp/)
+    "BaseMcpService",
+    "McpEchoService",
+    "HttpTransportParams",
+    "StdioTransportParams",
     # Utils (from utils/)
     "Misc",
     "DanaLogger",
     "DANA_LOGGER",
+    "McpResource",
 ]

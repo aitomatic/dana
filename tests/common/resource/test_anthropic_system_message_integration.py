@@ -8,7 +8,7 @@ import os
 import unittest
 from unittest.mock import MagicMock, patch
 
-from dana.common.resource.llm_resource import LLMResource
+from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 
 

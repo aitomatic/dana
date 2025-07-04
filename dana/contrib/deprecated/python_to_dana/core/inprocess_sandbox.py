@@ -9,8 +9,8 @@ from typing import Any
 
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.contrib.python_to_dana.core.exceptions import DanaCallError
-from dana.contrib.python_to_dana.core.reasoning_cache import ReasoningCache
+from dana.integrations.python.to_dana.core.exceptions import DanaCallError
+from dana.integrations.python.to_dana.core.reasoning_cache import ReasoningCache
 
 
 class InProcessSandboxInterface:

@@ -26,7 +26,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 # First-party imports
-from dana.common.capability.base_capability import BaseCapability
+from dana.common.deprecated.capability.base_capability import BaseCapability
 from dana.common.exceptions import DanaMemoryError, DanaError
 
 

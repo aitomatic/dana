@@ -19,7 +19,7 @@ Discord: https://discord.gg/6jGD4PYk
 
 from typing import Any
 
-from dana.common.capability import BaseCapability
+from dana.common.deprecated.capability import BaseCapability
 from dana.common.io import BaseIO, IOFactory
 from dana.common.mixins.tool_callable import ToolCallable
 from dana.common.resource import BaseResource, LLMResource

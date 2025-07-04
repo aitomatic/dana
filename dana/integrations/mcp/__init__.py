@@ -2,8 +2,8 @@
 
 # Import core MCP resource
 # Import A2A (Agent-to-Agent) components
-from .a2a.resource.a2a.a2a_agent import A2AAgent
-from .core.mcp_resource import McpResource
+from dana.integrations.a2a.resource.a2a.a2a_agent import A2AAgent
+from dana.integrations.mcp.mcp_resource import McpResource
 
 __all__ = [
     # Core MCP

@@ -4,9 +4,9 @@ import os
 import unittest
 from unittest.mock import patch
 
-from dana.core.stdlib.core.list_models_function import list_models_function
-from dana.core.lang.sandbox_context import SandboxContext
 from dana.common.exceptions import SandboxError
+from dana.core.lang.sandbox_context import SandboxContext
+from dana.core.stdlib.core.list_models_function import list_models_function
 
 
 class TestListModelsFunction(unittest.TestCase):
@@ -135,7 +135,7 @@ class TestListModelsFunction(unittest.TestCase):
     def test_function_error_handling(self):
         """Test error handling in the function."""
         # Mock _get_available_model_names to raise an exception
-        with patch("dana.dana.sandbox.interpreter.functions.core.list_models_function._get_available_model_names") as mock_get_models:
+        with patch("dana.core.stdlib.core.list_models_function._get_available_model_names") as mock_get_models:
             mock_get_models.side_effect = Exception("Test error")
 
             with self.assertRaises(SandboxError) as context:

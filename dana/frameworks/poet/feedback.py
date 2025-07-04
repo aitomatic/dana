@@ -12,7 +12,7 @@ from typing import Any
 from uuid import uuid4
 
 from dana.common.mixins.loggable import Loggable
-from dana.common.resource.llm_resource import LLMResource
+from dana.common.resource.llm.llm_resource import LLMResource
 
 from .types import POETFeedbackError, POETResult
 

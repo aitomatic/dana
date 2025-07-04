@@ -8,7 +8,7 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
-from dana.common.resource.llm_resource import BaseRequest, BaseResponse, LLMResource
+from dana.common.resource.llm.llm_resource import BaseRequest, BaseResponse, LLMResource
 from dana.common.utils.logging import DANA_LOGGER
 from dana.frameworks.knows.core.base import KnowledgePoint, ProcessorBase
 

@@ -4,10 +4,10 @@ import os
 import unittest
 from unittest.mock import patch
 
-from dana.common.resource.llm_resource import LLMResource
-from dana.core.stdlib.core.set_model_function import set_model_function
-from dana.core.lang.sandbox_context import SandboxContext
 from dana.common.exceptions import SandboxError
+from dana.common.resource.llm.llm_resource import LLMResource
+from dana.core.lang.sandbox_context import SandboxContext
+from dana.core.stdlib.core.set_model_function import set_model_function
 
 
 class TestSetModelFunction(unittest.TestCase):
@@ -109,7 +109,7 @@ class TestSetModelFunction(unittest.TestCase):
 
         self.assertEqual(result, "openai:gpt-4o")
 
-    @patch("dana.dana.sandbox.interpreter.functions.core.set_model_function.LLMResource")
+    @patch("dana.core.stdlib.core.set_model_function.LLMResource")
     def test_set_model_llm_resource_creation_error(self, mock_llm_resource):
         """Test error handling when LLMResource creation fails."""
         # Mock LLMResource to raise an exception

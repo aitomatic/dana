@@ -5,12 +5,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from dana.common.resource.llm_resource import LLMResource
+from dana.common.exceptions import ParseError, TranscoderError
+from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseResponse
 from dana.core.lang.parser.ast import Program
 from dana.core.lang.parser.dana_parser import ParseResult
-from dana.common.exceptions import ParseError, TranscoderError
-from dana.translator.translator import Translator
+from dana.core.lang.translator.translator import Translator
 
 
 @pytest.mark.asyncio
@@ -34,7 +34,7 @@ class TestTranscoder(IsolatedAsyncioTestCase):
         self.llm.query.return_value = llm_response
 
         # Mock parse to succeed
-        with patch("dana.dana.sandbox.parser.dana_parser.DanaParser.parse", return_value=ParseResult(program=mock_program, errors=[])):
+        with patch("opendxa.dana.sandbox.parser.dana_parser.DanaParser.parse", return_value=ParseResult(program=mock_program, errors=[])):
             result, code = await self.transcoder.to_dana(natural_language)
             self.assertTrue(result.is_valid)
             self.assertEqual(result.program, mock_program)
@@ -61,7 +61,7 @@ class TestTranscoder(IsolatedAsyncioTestCase):
 
         # Mock parse to fail
         with patch(
-            "dana.dana.sandbox.parser.dana_parser.DanaParser.parse",
+            "opendxa.dana.sandbox.parser.dana_parser.DanaParser.parse",
             return_value=ParseResult(program=Program([]), errors=[ParseError("Invalid syntax")]),
         ):
             with self.assertRaises(TranscoderError) as cm:

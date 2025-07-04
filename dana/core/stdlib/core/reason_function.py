@@ -13,7 +13,7 @@ import os
 from typing import Any
 
 from dana.common.mixins.queryable import QueryStrategy
-from dana.common.resource.llm_resource import LLMResource
+from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.logging import DANA_LOGGER
 
@@ -97,8 +97,8 @@ def old_reason_function(
     if actual_agents is not None:
         try:
             # Check if agents is an A2AAgent, AgentPool, or list of agents
-            from dana.integrations.mcp.a2a.agent import AbstractDanaAgent
-            from dana.integrations.mcp.a2a.agent.pool.agent_pool import AgentPool
+            from dana.integrations.a2a.agent import AbstractDanaAgent
+            from dana.integrations.a2a.agent.pool.agent_pool import AgentPool
 
             agent_pool = None
 

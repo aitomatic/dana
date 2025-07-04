@@ -9,8 +9,8 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from dana.contrib.python_to_dana.core.module_importer import install_import_hook, list_available_modules, uninstall_import_hook
-from dana.contrib.python_to_dana.dana_module import Dana
+from dana.integrations.python.to_dana.core.module_importer import install_import_hook, list_available_modules, uninstall_import_hook
+from dana.integrations.python.to_dana.dana_module import Dana
 
 # Create the main dana instance that will be imported
 dana = Dana()

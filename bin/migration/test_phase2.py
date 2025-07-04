@@ -49,7 +49,7 @@ def test_repl_imports():
         return False
     
     try:
-        from dana.core.repl.dana import main
+        from dana.core.cli.dana import main
         print("✅ dana.core.repl.dana.main")
     except ImportError as e:
         print(f"❌ dana.core.repl.dana.main: {e}")

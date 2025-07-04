@@ -6,7 +6,7 @@ This implementation uses the official MCP Python SDK streamable HTTP client for 
 
 from fastmcp.client.transports import StreamableHttpTransport
 
-from dana.integrations.mcp.a2a.resource.mcp.client.transport.base_transport import BaseTransport
+from dana.integrations.mcp.resource.mcp.client.transport.base_transport import BaseTransport
 
 
 class MCPHTTPTransport(StreamableHttpTransport, BaseTransport):

@@ -10,7 +10,7 @@ from dana.common.resource.base_resource import BaseResource
 from dana.common.types import BaseRequest, BaseResponse
 from dana.common.utils.misc import Misc
 from mcp.types import Tool as McpTool
-from dana.integrations.mcp.a2a.resource.mcp.client.mcp_client import MCPClient
+from dana.integrations.mcp.resource.mcp.client.mcp_client import MCPClient
 
 
 class MCPResource(BaseResource):

@@ -1,6 +1,6 @@
 from llama_index.core import Document
 
-from dana.contrib.rag_resource.common.utility.web_fetch import fetch_web_content
+from dana.common.resource.rag.utility.web_fetch import fetch_web_content
 
 from .abstract_loader import AbstractLoader
 

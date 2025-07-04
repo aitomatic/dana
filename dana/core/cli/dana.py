@@ -59,10 +59,10 @@ sys.path.insert(0, project_root)
 
 # Compatibility layer removed - direct Dana imports only
 
+from dana.common.terminal_utils import ColorScheme, print_header, supports_color
 from dana.common.utils.logging import DANA_LOGGER
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.core.lang.log_manager import LogLevel, SandboxLogger
-from dana.common.terminal_utils import ColorScheme, print_header, supports_color
 
 # Initialize color scheme
 colors = ColorScheme(supports_color())

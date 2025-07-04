@@ -25,7 +25,7 @@ import pytest
 
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.repl.repl.repl import REPL
+from dana.core.repl.repl import REPL
 
 
 @pytest.mark.deep

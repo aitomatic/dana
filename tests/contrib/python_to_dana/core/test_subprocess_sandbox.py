@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from dana.integrations.python.core.subprocess_sandbox import (
+from dana.integrations.python.to_dana.core.subprocess_sandbox import (
     SUBPROCESS_ISOLATION_CONFIG,
     DanaSubprocessWorker,
     SubprocessSandboxInterface,
@@ -148,7 +148,7 @@ class TestSubprocessSandboxInterface:
         assert sandbox._restart_on_failure is test_case["expected_restart_on_failure"]
         assert sandbox._delegate is not None
 
-    @patch("dana.contrib.python_to_dana.core.subprocess_sandbox.InProcessSandboxInterface")
+    @patch("dana.integrations.python.to_dana.core.subprocess_sandbox.InProcessSandboxInterface")
     def test_reason_delegates_to_inprocess_sandbox(self, mock_inprocess_sandbox):
         """Test that reason() calls delegate to InProcessSandboxInterface."""
         # Setup mock

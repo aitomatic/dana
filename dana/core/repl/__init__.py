@@ -6,6 +6,18 @@ MIT License
 
 This package provides the REPL (Read-Eval-Print Loop) for Dana in Dana.
 
+ARCHITECTURE:
+    - __main__.py: Clear entry point for module execution
+    - dana_repl_app.py: Interactive UI implementation
+    - repl.py: Core execution engine
+    - commands/: Command processing
+    - input/: Input handling and multiline support
+    - ui/: User interface components
+
+USAGE:
+    python -m dana.core.repl          # Start interactive REPL
+    from dana.core.repl import dana_repl  # Import for programmatic use
+
 Community Values:
     1. Attribution: Please maintain attribution to Aitomatic and Dana/Dana in derivative works.
     2. Contributions: If you find Dana/Dana valuable, consider contributing improvements back rather than creating separate, similar implementations.
@@ -18,7 +30,7 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 # Import main REPL components
-from .dana import main as dana_main
+from ..cli.dana import main as dana_main
 from .dana_repl_app import main as dana_repl
 
-__all__ = ['dana_main', 'dana_repl']
+__all__ = ["dana_main", "dana_repl"]

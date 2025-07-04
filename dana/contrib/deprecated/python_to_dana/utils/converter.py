@@ -7,8 +7,8 @@ and error reporting.
 
 from typing import Any
 
-from dana.contrib.python_to_dana.core.exceptions import TypeConversionError
-from dana.contrib.python_to_dana.core.types import (
+from dana.integrations.python.to_dana.core.exceptions import TypeConversionError
+from dana.integrations.python.to_dana.core.types import (
     DanaType,
     format_type_error,
     get_dana_type,

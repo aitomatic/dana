@@ -32,7 +32,7 @@ from fastmcp import Client
 
 from dana.common.mixins.loggable import Loggable
 from dana.common.utils.misc import Misc
-from dana.integrations.mcp.a2a.resource.mcp.client.transport import BaseTransport, MCPHTTPTransport, MCPSSETransport
+from dana.integrations.mcp.resource.mcp.client.transport import BaseTransport, MCPHTTPTransport, MCPSSETransport
 
 
 class MCPMetaclass(type):

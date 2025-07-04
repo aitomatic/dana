@@ -18,9 +18,9 @@ import os
 
 from llama_index.core import Document
 
-from dana.contrib.rag_resource.common.resource.rag.loader.local_loader import LocalLoader
-from dana.contrib.rag_resource.common.resource.rag.loader.web_loader import WebLoader
-from dana.contrib.rag_resource.common.resource.rag.pipeline.base_stage import BaseStage
+from dana.common.resource.rag.loader.local_loader import LocalLoader
+from dana.common.resource.rag.loader.web_loader import WebLoader
+from dana.common.resource.rag.pipeline.base_stage import BaseStage
 
 
 class DocumentLoader(BaseStage):

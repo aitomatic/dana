@@ -12,7 +12,7 @@ from mcp.client.stdio import get_default_environment, stdio_client
 
 from dana.common.mixins.loggable import Loggable
 from dana.common.resource.base_resource import BaseResource, ResourceError
-from dana.common.resource.mcp.mcp_config import HttpTransportParams, McpConfig, McpConfigError, StdioTransportParams
+from dana.integrations.mcp.mcp_config import HttpTransportParams, McpConfig, McpConfigError, StdioTransportParams
 from dana.common.types import BaseRequest, BaseResponse
 from dana.common.utils.misc import Misc
 

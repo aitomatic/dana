@@ -20,7 +20,7 @@ from llama_index.core.data_structs import IndexDict
 from llama_index.core.schema import Document
 from llama_index.core.storage.storage_context import StorageContext
 
-from dana.contrib.rag_resource.common.resource.rag.pipeline.base_stage import BaseStage
+from dana.common.resource.rag.pipeline.base_stage import BaseStage
 
 
 class IndexCombiner(BaseStage):
