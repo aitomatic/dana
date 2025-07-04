@@ -10,7 +10,7 @@ from .repl import dana_main, dana_repl
 from .runtime import errors, loader, registry, types
 
 # Standard library components
-from .stdlib import DanaFunction, FunctionRegistry, register_core_functions
+from .lang.interpreter.functions import DanaFunction, FunctionRegistry, register_core_functions
 
 __all__ = [
     # Language
