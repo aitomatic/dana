@@ -15,11 +15,11 @@ This package provides implementations of core Dana functions including:
 - Math and utility functions
 """
 
-# Import main components
-from .dana_function import DanaFunction
+# Import core function registration
 from .core.register_core_functions import register_core_functions
 
-# Import function registry from interpreter infrastructure
+# Import infrastructure components from interpreter
+from ..lang.interpreter.functions.dana_function import DanaFunction
 from ..lang.interpreter.functions.function_registry import FunctionRegistry
 
 __all__ = ['FunctionRegistry', 'DanaFunction', 'register_core_functions']

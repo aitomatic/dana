@@ -14,5 +14,7 @@ This package provides the core infrastructure for function handling:
 # Import infrastructure components only
 from .dana_function import DanaFunction
 from .function_registry import FunctionRegistry
+from .argument_processor import ArgumentProcessor
+from .composed_function import ComposedFunction
 
-__all__ = ['FunctionRegistry', 'DanaFunction']
+__all__ = ['FunctionRegistry', 'DanaFunction', 'ArgumentProcessor', 'ComposedFunction']
