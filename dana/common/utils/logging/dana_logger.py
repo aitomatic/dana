@@ -250,7 +250,7 @@ class DanaLogger:
         Returns:
             DanaLogger instance
         """
-        return DanaLogger(f"{for_class.__module__}.{for_class.__name__}", prefix)
+        return cls(f"{for_class.__module__}.{for_class.__name__}", prefix)
 
     @contextmanager
     def with_level(self, level: int) -> Generator[None, None, None]:
@@ -314,4 +314,4 @@ DANA_LOGGER._configure_third_party_logging()
 
 # For backward compatibility, also create DanaLogger as alias
 # Legacy alias for backward compatibility
-DanaLogger = DANA_LOGGER
+DanaLoggerSingleton = DANA_LOGGER
