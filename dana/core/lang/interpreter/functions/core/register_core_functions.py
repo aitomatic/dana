@@ -41,7 +41,7 @@ def register_core_functions(registry: FunctionRegistry) -> None:
 
     # Import each module and register any functions ending with '_function'
     for py_file in python_files:
-        module_name = f"dana.sandbox.interpreter.functions.core.{py_file.stem}"
+        module_name = f"dana.core.lang.interpreter.functions.core.{py_file.stem}"
         try:
             module = importlib.import_module(module_name)
 

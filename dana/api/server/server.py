@@ -31,7 +31,7 @@ def create_app():
 
     # Register POET routes
     try:
-        from Dana.api.poet_routes import router as poet_router
+        from dana.api.poet_routes import router as poet_router
 
         app.include_router(poet_router, prefix="/poet", tags=["POET"])
     except ImportError:
@@ -176,7 +176,7 @@ class APIServiceManager(Loggable):
 
     def _init_api_client(self) -> None:
         """Initialize API client with configuration."""
-        from Dana.api.client import APIClient
+        from dana.api.client import APIClient
 
         if not self.service_uri:
             raise ValueError("Service URI must be set before initializing API client")
