@@ -4,7 +4,7 @@ import os
 import unittest
 from unittest.mock import patch
 
-from dana.core.lang.interpreter.functions.core.list_models_function import list_models_function
+from dana.core.stdlib.core.list_models_function import list_models_function
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.common.exceptions import SandboxError
 

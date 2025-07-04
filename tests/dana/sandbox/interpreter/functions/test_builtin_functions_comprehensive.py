@@ -7,7 +7,7 @@ with various input types, edge cases, and error conditions.
 
 import pytest
 
-from dana.core.lang.interpreter.functions.pythonic.function_factory import PythonicFunctionFactory
+from dana.core.stdlib.pythonic.function_factory import PythonicFunctionFactory
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.common.exceptions import SandboxError
 

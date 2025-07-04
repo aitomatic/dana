@@ -13,8 +13,8 @@ import inspect
 from pathlib import Path
 
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
-from dana.core.lang.interpreter.functions.core.decorators import log_calls, log_with_prefix, repeat, validate_args
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+from dana.core.stdlib.core.decorators import log_calls, log_with_prefix, repeat, validate_args
 
 
 def register_core_functions(registry: FunctionRegistry) -> None:
@@ -41,7 +41,7 @@ def register_core_functions(registry: FunctionRegistry) -> None:
 
     # Import each module and register any functions ending with '_function'
     for py_file in python_files:
-        module_name = f"dana.core.lang.interpreter.functions.core.{py_file.stem}"
+        module_name = f"dana.core.stdlib.core.{py_file.stem}"
         try:
             module = importlib.import_module(module_name)
 
@@ -75,7 +75,7 @@ def register_core_functions(registry: FunctionRegistry) -> None:
     # Register Pythonic built-in functions AFTER core functions
     # This ensures core functions have higher priority than built-ins
     try:
-        from dana.core.lang.interpreter.functions.pythonic.function_factory import register_pythonic_builtins
+        from dana.core.stdlib.pythonic.function_factory import register_pythonic_builtins
 
         register_pythonic_builtins(registry)
     except ImportError:

@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 
 from dana.common.resource.llm_resource import LLMResource
-from dana.core.lang.interpreter.functions.core.set_model_function import set_model_function
+from dana.core.stdlib.core.set_model_function import set_model_function
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.common.exceptions import SandboxError
 
@@ -236,7 +236,7 @@ class TestSetModelFunction(unittest.TestCase):
 
     def test_get_available_model_names_helper(self):
         """Test the helper function that gets available model names."""
-        from dana.core.lang.interpreter.functions.core.set_model_function import (
+        from dana.core.stdlib.core.set_model_function import (
             _get_available_model_names,
         )
 
@@ -253,7 +253,7 @@ class TestSetModelFunction(unittest.TestCase):
 
     def test_find_closest_model_match_helper(self):
         """Test the fuzzy matching helper function directly."""
-        from dana.core.lang.interpreter.functions.core.set_model_function import (
+        from dana.core.stdlib.core.set_model_function import (
             _find_closest_model_match,
         )
 

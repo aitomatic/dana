@@ -86,7 +86,7 @@ class DanaInterpreter(Loggable):
 
     def _init_function_registry(self):
         """Initialize the function registry."""
-        from dana.core.lang.interpreter.functions.core.register_core_functions import register_core_functions
+        from dana.core.stdlib.core.register_core_functions import register_core_functions
         from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 
         self._function_registry = FunctionRegistry()

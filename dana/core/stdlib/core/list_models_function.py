@@ -11,10 +11,10 @@ in preferred order from the configuration.
 
 from typing import Any
 
-from dana.common.utils.logging import DANA_LOGGER
-from dana.core.lang.interpreter.functions.core.set_model_function import _get_available_model_names
-from dana.core.lang.sandbox_context import SandboxContext
 from dana.common.exceptions import SandboxError
+from dana.common.utils.logging import DANA_LOGGER
+from dana.core.lang.sandbox_context import SandboxContext
+from dana.core.stdlib.core.set_model_function import _get_available_model_names
 
 
 def list_models_function(

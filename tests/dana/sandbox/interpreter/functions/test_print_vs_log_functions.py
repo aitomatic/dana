@@ -10,8 +10,8 @@ from unittest.mock import patch
 import pytest
 
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.interpreter.functions.core.log_function import log_function
-from dana.core.lang.interpreter.functions.core.print_function import print_function
+from dana.core.stdlib.core.log_function import log_function
+from dana.core.stdlib.core.print_function import print_function
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -100,7 +100,7 @@ class TestPrintVsLogFunctions:
 
     def test_core_function_registration_compatibility(self):
         """Test that both functions are registered correctly by the core registration system."""
-        from dana.core.lang.interpreter.functions.core.register_core_functions import register_core_functions
+        from dana.core.stdlib.core.register_core_functions import register_core_functions
         from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 
         registry = FunctionRegistry()
@@ -154,8 +154,8 @@ class TestPrintVsLogFunctions:
         """Demonstrate the signature differences between print and log functions."""
         import inspect
 
-        from dana.core.lang.interpreter.functions.core.log_function import log_function
-        from dana.core.lang.interpreter.functions.core.print_function import print_function
+        from dana.core.stdlib.core.log_function import log_function
+        from dana.core.stdlib.core.print_function import print_function
 
         print_sig = inspect.signature(print_function)
         log_sig = inspect.signature(log_function)
@@ -199,7 +199,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_basic(self):
         """Test basic log_level function functionality."""
-        from dana.core.lang.interpreter.functions.core.log_level_function import log_level_function
+        from dana.core.stdlib.core.log_level_function import log_level_function
 
         context = SandboxContext()
 
@@ -209,7 +209,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_valid_levels(self):
         """Test log_level function with different valid levels."""
-        from dana.core.lang.interpreter.functions.core.log_level_function import log_level_function
+        from dana.core.stdlib.core.log_level_function import log_level_function
 
         context = SandboxContext()
 
@@ -223,7 +223,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_invalid_level(self):
         """Test log_level function with invalid level."""
-        from dana.core.lang.interpreter.functions.core.log_level_function import log_level_function
+        from dana.core.stdlib.core.log_level_function import log_level_function
 
         context = SandboxContext()
 
@@ -232,7 +232,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_case_insensitive(self):
         """Test log_level function handles case insensitivity."""
-        from dana.core.lang.interpreter.functions.core.log_level_function import log_level_function
+        from dana.core.stdlib.core.log_level_function import log_level_function
 
         context = SandboxContext()
 
@@ -247,7 +247,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_with_options(self):
         """Test log_level function with options parameter."""
-        from dana.core.lang.interpreter.functions.core.log_level_function import log_level_function
+        from dana.core.stdlib.core.log_level_function import log_level_function
 
         context = SandboxContext()
 
@@ -258,7 +258,7 @@ class TestLogLevelFunction:
 
     def test_log_level_function_registration(self):
         """Test that log_level function is registered correctly."""
-        from dana.core.lang.interpreter.functions.core.register_core_functions import register_core_functions
+        from dana.core.stdlib.core.register_core_functions import register_core_functions
         from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 
         registry = FunctionRegistry()
@@ -422,7 +422,7 @@ class TestPrintFunctionWithFStrings:
         """Test basic f-string evaluation in print function."""
 
         from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-        from dana.core.lang.interpreter.functions.core.print_function import print_function
+        from dana.core.stdlib.core.print_function import print_function
         from dana.core.lang.parser.ast import FStringExpression, Identifier
 
         # Create a context with variables
@@ -450,7 +450,7 @@ class TestPrintFunctionWithFStrings:
         """Test complex f-string evaluation in print function."""
 
         from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-        from dana.core.lang.interpreter.functions.core.print_function import print_function
+        from dana.core.stdlib.core.print_function import print_function
         from dana.core.lang.parser.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier, LiteralExpression
 
         # Create a context with variables
@@ -478,7 +478,7 @@ class TestPrintFunctionWithFStrings:
     def test_print_function_fstring_multiple_variables(self, capsys):
         """Test f-string with multiple variables in print function."""
         from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-        from dana.core.lang.interpreter.functions.core.print_function import print_function
+        from dana.core.stdlib.core.print_function import print_function
         from dana.core.lang.parser.ast import FStringExpression, Identifier
 
         # Create a context with multiple variables
@@ -506,7 +506,7 @@ class TestPrintFunctionWithFStrings:
     def test_print_function_fstring_with_expressions(self, capsys):
         """Test f-string with complex expressions in print function."""
         from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-        from dana.core.lang.interpreter.functions.core.print_function import print_function
+        from dana.core.stdlib.core.print_function import print_function
         from dana.core.lang.parser.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier
 
         # Create a context with variables
@@ -548,7 +548,7 @@ class TestPrintFunctionWithFStrings:
     def test_print_function_fstring_template_style(self, capsys):
         """Test f-string with template and expressions style."""
         from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-        from dana.core.lang.interpreter.functions.core.print_function import print_function
+        from dana.core.stdlib.core.print_function import print_function
         from dana.core.lang.parser.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier
 
         # Create a context with variables
@@ -581,7 +581,7 @@ class TestPrintFunctionWithFStrings:
     def test_print_function_fstring_error_handling(self, capsys):
         """Test print function error handling with invalid f-strings."""
         from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-        from dana.core.lang.interpreter.functions.core.print_function import print_function
+        from dana.core.stdlib.core.print_function import print_function
         from dana.core.lang.parser.ast import FStringExpression, Identifier
 
         # Create a context without the required variable
@@ -609,7 +609,7 @@ class TestPrintFunctionWithFStrings:
     def test_print_function_mixed_args_with_fstrings(self, capsys):
         """Test print function with mixed regular and f-string arguments."""
         from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-        from dana.core.lang.interpreter.functions.core.print_function import print_function
+        from dana.core.stdlib.core.print_function import print_function
         from dana.core.lang.parser.ast import FStringExpression, Identifier
 
         # Create a context with variables

@@ -108,7 +108,7 @@ class POETEnhancedReasonFunction(Loggable):
         """Execute fallback reason function when original is not available."""
         try:
             # Import the original reason function
-            from dana.core.lang.interpreter.functions.core.reason_function import reason_function
+            from dana.core.stdlib.core.reason_function import reason_function
 
             self.debug("Using fallback reason function")
             return reason_function(context, prompt, options, use_mock)

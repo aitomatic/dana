@@ -11,7 +11,7 @@ from unittest.mock import patch
 from dana.common.resource.llm_resource import LLMResource
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
-from dana.core.lang.interpreter.functions.core.reason_function import reason_function
+from dana.core.stdlib.core.reason_function import reason_function
 from dana.core.lang.sandbox_context import SandboxContext
 
 
