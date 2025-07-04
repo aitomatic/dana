@@ -1,14 +1,14 @@
 """Configuration loading and management for Dana.
 
 This module provides centralized configuration management using the ConfigLoader
-class. It supports loading configuration from 'opendxa_config.json' with a
+class. It supports loading configuration from 'dana_config.json' with a
 defined search order and allows overriding via the DANA_CONFIG environment
 variable.
 
 Features:
 - Singleton pattern for consistent config access
 - Standardized path resolution for config files
-- Search order for 'opendxa_config.json': DANA_CONFIG env var -> CWD -> Project Root
+- Search order for 'dana_config.json': DANA_CONFIG env var -> CWD -> Project Root
 - Clear error handling for config loading failures
 
 Example:
@@ -35,15 +35,15 @@ class ConfigLoader(Loggable):
     """Centralized configuration loader with environment variable support and search order.
 
     Implements the singleton pattern for consistent access. Loads configuration
-    from 'opendxa_config.json' based on a search hierarchy that allows user overrides.
+    from 'dana_config.json' based on a search hierarchy that allows user overrides.
 
-    Search Hierarchy for 'opendxa_config.json' (used by get_default_config):
+    Search Hierarchy for 'dana_config.json' (used by get_default_config):
     1. Path specified by the DANA_CONFIG environment variable.
-    2. 'opendxa_config.json' in the Current Working Directory (CWD) - user override.
-    3. 'opendxa_config.json' in the opendxa library directory - default config.
+    2. 'dana_config.json' in the Current Working Directory (CWD) - user override.
+    3. 'dana_config.json' in the dana library directory - default config.
 
     This design allows users of the Dana library to override the default configuration
-    by placing their own opendxa_config.json in their project directory, while falling
+    by placing their own dana_config.json in their project directory, while falling
     back to the library's default configuration if no user override is found.
 
     Attributes:
@@ -60,7 +60,7 @@ class ConfigLoader(Loggable):
     """
 
     _instance = None
-    DEFAULT_CONFIG_FILENAME = "opendxa_config.json"
+    DEFAULT_CONFIG_FILENAME = "dana_config.json"
 
     def __new__(cls):
         """Ensure only one instance exists (singleton pattern)."""
@@ -80,19 +80,19 @@ class ConfigLoader(Loggable):
 
     @property
     def config_dir(self) -> Path:
-        """Get the opendxa library directory (where default config is stored).
+        """Get the dana library directory (where default config is stored).
 
         Returns:
-            Path object pointing to the opendxa library directory.
+            Path object pointing to the dana library directory.
 
         Example:
             >>> loader = ConfigLoader()
             >>> lib_dir = loader.config_dir
             >>> print(lib_dir) # doctest: +SKIP
-            /path/to/opendxa
+            /path/to/dana
         """
-        # Assumes this file is in opendxa/common/config/
-        # Go up 2 levels: config -> common -> opendxa
+        # Assumes this file is in dana/common/config/
+        # Go up 2 levels: config -> common -> dana
         return Path(__file__).parent.parent.parent
 
     def _load_config_from_path(self, path: Path) -> dict[str, Any]:
@@ -123,13 +123,13 @@ class ConfigLoader(Loggable):
     def get_default_config(self) -> dict[str, Any]:
         """Gets the default configuration following the search hierarchy.
 
-        Searches for and loads 'opendxa_config.json' based on the following order:
+        Searches for and loads 'dana_config.json' based on the following order:
         1. Path specified by the DANA_CONFIG environment variable.
-        2. 'opendxa_config.json' in the Current Working Directory (CWD) - user override.
-        3. 'opendxa_config.json' in the opendxa library directory - default config.
+        2. 'dana_config.json' in the Current Working Directory (CWD) - user override.
+        3. 'dana_config.json' in the dana library directory - default config.
 
         This allows users to override the library's default configuration by placing
-        their own opendxa_config.json in their project directory.
+        their own dana_config.json in their project directory.
 
         Returns:
             A dictionary containing the loaded default configuration.
@@ -174,10 +174,10 @@ class ConfigLoader(Loggable):
         )
 
     def load_config(self, config_name: str) -> dict[str, Any]:
-        """Loads a specific configuration file relative to the opendxa library directory.
+        """Loads a specific configuration file relative to the dana library directory.
 
         This method is intended for loading secondary configuration files,
-        not the main 'opendxa_config.json' (use get_default_config for that).
+        not the main 'dana_config.json' (use get_default_config for that).
 
         Args:
             config_name: The name of the configuration file (e.g., 'tool_settings.json').
@@ -190,7 +190,7 @@ class ConfigLoader(Loggable):
 
         Example:
             >>> loader = ConfigLoader()
-            >>> tool_config = loader.load_config("tool_settings.json") # Looks for opendxa/tool_settings.json
+            >>> tool_config = loader.load_config("tool_settings.json") # Looks for dana/tool_settings.json
         """
         config_path = self.config_dir / config_name
         return self._load_config_from_path(config_path)

@@ -6,11 +6,11 @@
 
 [Project Overview](../README.md) | [Main Documentation](../docs/README.md)
 
-# OpenDXA Test Suite
+# Dana Test Suite
 
-## opendxa.tests Module
+## dana.tests Module
 
-Comprehensive test coverage for the OpenDXA framework.
+Comprehensive test coverage for the Dana framework.
 
 ## Test Organization
 
@@ -78,7 +78,7 @@ pytest tests/execution/test_pipeline.py
 pytest tests/execution/test_pipeline.py::TestPipeline::test_placeholder
 
 # Run with coverage
-pytest --cov=opendxa
+pytest --cov=dana
 
 # Run with verbose output
 pytest -v
@@ -94,7 +94,7 @@ pytest -v
 
 ## CI/CD Integration
 
-OpenDXA uses a parallelized testing strategy to optimize CI/CD performance:
+Dana uses a parallelized testing strategy to optimize CI/CD performance:
 - **Parallel CI Runtime**: ~6-8 minutes (all fast tests across 6 jobs)
 - **Sequential CI Runtime**: ~15-20 minutes (single job)
 - **Full Suite**: ~78 seconds (all tests including deep)
@@ -133,7 +133,7 @@ The script automatically identifies tests that should be marked as "deep" based 
 
 ```python
 import pytest
-from opendxa.common.exceptions import SandboxError
+from dana.common.exceptions import SandboxError
 
 class TestBasicFunctionality:
     """Fast regression tests for basic functionality."""

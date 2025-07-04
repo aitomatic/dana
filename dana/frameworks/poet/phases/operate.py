@@ -15,7 +15,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from dana.common.utils.logging import DXA_LOGGER
+from dana.common.utils.logging import DANA_LOGGER
 from dana.frameworks.poet.types import POETConfig
 
 
@@ -40,7 +40,7 @@ class OperatePhase:
 
     def __init__(self, config: POETConfig):
         self.config = config
-        self.logger = DXA_LOGGER.getLogger(__name__)
+        self.logger = DANA_LOGGER.getLogger(__name__)
 
     def operate(self, func: Callable, args: tuple[Any, ...], kwargs: dict[str, Any], context: dict[str, Any]) -> OperateResult:
         """

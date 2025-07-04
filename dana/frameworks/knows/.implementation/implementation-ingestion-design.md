@@ -1,4 +1,4 @@
-# Implementation Design Document: OpenDXA KNOWS - Knowledge Ingestion System
+# Implementation Design Document: Dana KNOWS - Knowledge Ingestion System
 
 <!-- text markdown -->
 Author: William Nguyen (via AI Assistant collaboration)
@@ -18,7 +18,7 @@ Status: Implementation Phase
   - Enable accurate knowledge capture
   - Ensure knowledge quality and correctness
   - Support context-rich knowledge storage
-- **Context**: Part of OpenDXA KNOWS Framework's intelligent knowledge management system
+- **Context**: Part of Dana KNOWS Framework's intelligent knowledge management system
 
 ## Goals
 **Brief Description**: Create a robust knowledge ingestion system that extracts, validates, and stores knowledge with proper context and validation.

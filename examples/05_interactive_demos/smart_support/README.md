@@ -32,7 +32,7 @@ This demo showcases sophisticated prompt optimization for customer support scena
 
 ### Prerequisites
 - Python 3.12+
-- FastAPI and dependencies (included in OpenDXA)
+- FastAPI and dependencies (included in Dana)
 
 ### Quick Start
 ```bash

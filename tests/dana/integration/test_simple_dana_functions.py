@@ -2,6 +2,7 @@
 
 import os
 import unittest
+
 from dana.core.lang.dana_sandbox import DanaSandbox
 
 
@@ -21,7 +22,7 @@ class TestSimpleDanaFunctions(unittest.TestCase):
                 "GROQ_API_KEY": "test-groq-key",
                 "DEEPSEEK_API_KEY": "test-deepseek-key",
                 # Enable mock mode for testing
-                "OPENDXA_MOCK_LLM": "true",
+                "DANA_MOCK_LLM": "true",
             }
         )
 

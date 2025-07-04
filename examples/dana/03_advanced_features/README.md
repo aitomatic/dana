@@ -15,7 +15,7 @@ By completing these examples, you'll master:
 
 ### 1. **reason_demo.na** - AI Reasoning Introduction
 ```bash
-uv run python -m opendxa.dana.exec.dana reason_demo.na
+uv run python -m dana.dana.exec.dana reason_demo.na
 ```
 **What you'll learn:**
 - Basic `reason()` function usage
@@ -27,7 +27,7 @@ uv run python -m opendxa.dana.exec.dana reason_demo.na
 
 ### 2. **reasoning_example.na** - Practical AI Applications
 ```bash
-uv run python -m opendxa.dana.exec.dana reasoning_example.na
+uv run python -m dana.dana.exec.dana reasoning_example.na
 ```
 **What you'll learn:**
 - Real-world reasoning scenarios
@@ -38,7 +38,7 @@ uv run python -m opendxa.dana.exec.dana reasoning_example.na
 
 ### 3. **hybrid_math_agent.na** ⭐ **FLAGSHIP EXAMPLE**
 ```bash
-uv run python -m opendxa.dana.exec.dana hybrid_math_agent.na
+uv run python -m dana.dana.exec.dana hybrid_math_agent.na
 ```
 **What you'll learn:**
 - Complete AI agent architecture
@@ -51,7 +51,7 @@ uv run python -m opendxa.dana.exec.dana hybrid_math_agent.na
 
 ### 4. **temperature_monitor.na** - Real-World Automation
 ```bash
-uv run python -m opendxa.dana.exec.dana temperature_monitor.na
+uv run python -m dana.dana.exec.dana temperature_monitor.na
 ```
 **What you'll learn:**
 - Monitoring and alerting patterns
@@ -64,9 +64,9 @@ uv run python -m opendxa.dana.exec.dana temperature_monitor.na
 ### 5. **function_composition_demo*.na** - Advanced Patterns
 ```bash
 # Try different composition examples
-uv run python -m opendxa.dana.exec.dana function_composition_demo.na
-uv run python -m opendxa.dana.exec.dana function_composition_demo_simple.na
-uv run python -m opendxa.dana.exec.dana function_composition_demo_working.na
+uv run python -m dana.dana.exec.dana function_composition_demo.na
+uv run python -m dana.dana.exec.dana function_composition_demo_simple.na
+uv run python -m dana.dana.exec.dana function_composition_demo_working.na
 ```
 **What you'll learn:**
 - Function composition techniques
@@ -81,13 +81,13 @@ uv run python -m opendxa.dana.exec.dana function_composition_demo_working.na
 cd examples/dana/03_advanced_features/
 
 # Start with AI reasoning basics
-uv run python -m opendxa.dana.exec.dana reason_demo.na
+uv run python -m dana.dana.exec.dana reason_demo.na
 
 # See a complete AI agent in action
-uv run python -m opendxa.dana.exec.dana hybrid_math_agent.na
+uv run python -m dana.dana.exec.dana hybrid_math_agent.na
 
 # Explore real-world patterns  
-uv run python -m opendxa.dana.exec.dana temperature_monitor.na
+uv run python -m dana.dana.exec.dana temperature_monitor.na
 ```
 
 ## 🤖 AI Reasoning Patterns

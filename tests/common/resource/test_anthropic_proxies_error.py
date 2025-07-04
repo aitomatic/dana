@@ -8,8 +8,6 @@ After fix: Test should work correctly
 """
 
 import os
-import pytest
-from unittest.mock import patch, MagicMock
 
 from dana.core.lang.dana_sandbox import DanaSandbox
 
@@ -52,7 +50,7 @@ class TestAnthropicProxiesError:
     def test_reproduce_proxies_error_no_mock(self):
         """Try to reproduce the proxies error with mocking explicitly disabled."""
         # Explicitly disable mocking
-        os.environ["OPENDXA_MOCK_LLM"] = "false"
+        os.environ["DANA_MOCK_LLM"] = "false"
         os.environ["ANTHROPIC_API_KEY"] = "test-anthropic-key"
 
         try:
@@ -81,15 +79,15 @@ class TestAnthropicProxiesError:
 
         finally:
             # Clean up
-            if "OPENDXA_MOCK_LLM" in os.environ:
-                del os.environ["OPENDXA_MOCK_LLM"]
+            if "DANA_MOCK_LLM" in os.environ:
+                del os.environ["DANA_MOCK_LLM"]
             if "ANTHROPIC_API_KEY" in os.environ:
                 del os.environ["ANTHROPIC_API_KEY"]
 
     def test_anthropic_with_mock_should_work(self):
         """Test that Anthropic works correctly with mocking enabled."""
         # Enable mock mode to bypass actual API calls
-        os.environ["OPENDXA_MOCK_LLM"] = "true"
+        os.environ["DANA_MOCK_LLM"] = "true"
         os.environ["ANTHROPIC_API_KEY"] = "test-anthropic-key"
 
         try:
@@ -105,7 +103,7 @@ class TestAnthropicProxiesError:
 
         finally:
             # Clean up
-            if "OPENDXA_MOCK_LLM" in os.environ:
-                del os.environ["OPENDXA_MOCK_LLM"]
+            if "DANA_MOCK_LLM" in os.environ:
+                del os.environ["DANA_MOCK_LLM"]
             if "ANTHROPIC_API_KEY" in os.environ:
                 del os.environ["ANTHROPIC_API_KEY"]

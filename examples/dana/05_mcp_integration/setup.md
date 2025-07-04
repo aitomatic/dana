@@ -46,7 +46,7 @@ Both servers provide the same three test tools:
 ### Step 1: Install Dependencies
 ```bash
 # Navigate to the project root
-cd /path/to/opendxa
+cd /path/to/dana
 
 # Install FastMCP
 pip install fastmcp

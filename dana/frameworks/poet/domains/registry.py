@@ -13,7 +13,7 @@ import difflib
 import importlib.util
 from pathlib import Path
 
-from dana.common.utils.logging import DXA_LOGGER
+from dana.common.utils.logging import DANA_LOGGER
 
 from .base import DomainTemplate
 
@@ -44,12 +44,12 @@ class DomainRegistry:
         # Search paths for plugins (order matters - first found wins)
         self._search_paths = [
             Path(__file__).parent,  # Built-in domains
-            Path.home() / ".opendxa" / "poet" / "domains",  # User home plugins
+            Path.home() / ".dana" / "poet" / "domains",  # User home plugins
             Path.cwd() / ".poet" / "domains",  # Project-local plugins
         ]
 
         # Add any paths from environment variables
-        poet_plugin_path = Path.cwd() / "opendxa" / "dana" / "poet" / "domains" / "plugins"
+        poet_plugin_path = Path.cwd() / "dana" / "poet" / "domains" / "plugins"
         if poet_plugin_path.exists():
             self._search_paths.append(poet_plugin_path)
 
@@ -97,7 +97,7 @@ class DomainRegistry:
 
     def _load_domain(self, name: str) -> None:
         """Load a domain on first access"""
-        DXA_LOGGER.debug(f"Loading domain '{name}'")
+        DANA_LOGGER.debug(f"Loading domain '{name}'")
 
         # Load built-ins first if not already loaded
         if not self._builtin_loaded:
@@ -112,7 +112,7 @@ class DomainRegistry:
         if self._builtin_loaded:
             return
 
-        DXA_LOGGER.debug("Loading built-in domains")
+        DANA_LOGGER.debug("Loading built-in domains")
 
         try:
             # Import built-in domain modules
@@ -127,10 +127,10 @@ class DomainRegistry:
             self._domains["ml_monitoring"] = MLMonitoringDomain()
             self._domains["prompt_optimization"] = PromptOptimizationDomain()
 
-            DXA_LOGGER.debug(f"Loaded {len(self._domains)} built-in domains")
+            DANA_LOGGER.debug(f"Loaded {len(self._domains)} built-in domains")
 
         except ImportError as e:
-            DXA_LOGGER.warning(f"Failed to load some built-in domains: {e}")
+            DANA_LOGGER.warning(f"Failed to load some built-in domains: {e}")
 
         self._builtin_loaded = True
 
@@ -163,7 +163,7 @@ class DomainRegistry:
     def _load_plugin_file(self, plugin_file: Path, name: str) -> None:
         """Load a domain from a single Python file"""
         try:
-            DXA_LOGGER.debug(f"Loading plugin from file: {plugin_file}")
+            DANA_LOGGER.debug(f"Loading plugin from file: {plugin_file}")
 
             spec = importlib.util.spec_from_file_location(f"poet_domain_{name}", plugin_file)
             if spec is None or spec.loader is None:
@@ -176,15 +176,15 @@ class DomainRegistry:
             domain_class = self._find_domain_class_in_module(module, name)
             if domain_class:
                 self._domains[name] = domain_class()
-                DXA_LOGGER.info(f"Loaded plugin domain '{name}' from {plugin_file}")
+                DANA_LOGGER.info(f"Loaded plugin domain '{name}' from {plugin_file}")
 
         except Exception as e:
-            DXA_LOGGER.warning(f"Failed to load plugin {plugin_file}: {e}")
+            DANA_LOGGER.warning(f"Failed to load plugin {plugin_file}: {e}")
 
     def _load_plugin_module(self, plugin_dir: Path, name: str) -> None:
         """Load a domain from a Python package directory"""
         try:
-            DXA_LOGGER.debug(f"Loading plugin from package: {plugin_dir}")
+            DANA_LOGGER.debug(f"Loading plugin from package: {plugin_dir}")
 
             spec = importlib.util.spec_from_file_location(f"poet_domain_{name}", plugin_dir / "__init__.py")
             if spec is None or spec.loader is None:
@@ -197,10 +197,10 @@ class DomainRegistry:
             domain_class = self._find_domain_class_in_module(module, name)
             if domain_class:
                 self._domains[name] = domain_class()
-                DXA_LOGGER.info(f"Loaded plugin domain '{name}' from {plugin_dir}")
+                DANA_LOGGER.info(f"Loaded plugin domain '{name}' from {plugin_dir}")
 
         except Exception as e:
-            DXA_LOGGER.warning(f"Failed to load plugin package {plugin_dir}: {e}")
+            DANA_LOGGER.warning(f"Failed to load plugin package {plugin_dir}: {e}")
 
     def _find_domain_class_in_module(self, module, name: str) -> type[DomainTemplate] | None:
         """Find the domain class in a loaded module"""
@@ -271,7 +271,7 @@ class DomainRegistry:
     def register_domain(self, name: str, domain: DomainTemplate) -> None:
         """Register a domain programmatically"""
         self._domains[name] = domain
-        DXA_LOGGER.info(f"Registered domain '{name}': {type(domain).__name__}")
+        DANA_LOGGER.info(f"Registered domain '{name}': {type(domain).__name__}")
 
     def has_domain(self, name: str) -> bool:
         """Check if a domain exists without loading it"""

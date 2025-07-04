@@ -1,12 +1,13 @@
 """
-Text extractor for OpenDXA KNOWS system.
+Text extractor for Dana KNOWS system.
 
 This module handles extracting clean, structured text from parsed documents.
 """
 
 import re
-from typing import Dict, Any, List
-from dana.common.utils.logging import DXA_LOGGER
+from typing import Any
+
+from dana.common.utils.logging import DANA_LOGGER
 from dana.frameworks.knows.core.base import ParsedDocument, ProcessorBase
 
 
@@ -27,7 +28,7 @@ class TextExtractor(ProcessorBase):
         self.preserve_structure = preserve_structure
         self.include_metadata = include_metadata
         self.max_text_length = max_text_length
-        DXA_LOGGER.info(f"Initialized TextExtractor (structure: {preserve_structure}, metadata: {include_metadata})")
+        DANA_LOGGER.info(f"Initialized TextExtractor (structure: {preserve_structure}, metadata: {include_metadata})")
     
     def process(self, parsed_doc: ParsedDocument) -> str:
         """Extract clean text from parsed document.
@@ -59,13 +60,13 @@ class TextExtractor(ProcessorBase):
             # Apply length limit if specified
             if self.max_text_length and len(extracted_text) > self.max_text_length:
                 extracted_text = extracted_text[:self.max_text_length] + "..."
-                DXA_LOGGER.info(f"Truncated text to {self.max_text_length} characters")
+                DANA_LOGGER.info(f"Truncated text to {self.max_text_length} characters")
             
-            DXA_LOGGER.info(f"Successfully extracted text from document {parsed_doc.document.id} ({len(extracted_text)} chars)")
+            DANA_LOGGER.info(f"Successfully extracted text from document {parsed_doc.document.id} ({len(extracted_text)} chars)")
             return extracted_text
             
         except Exception as e:
-            DXA_LOGGER.error(f"Failed to extract text from document {parsed_doc.document.id}: {str(e)}")
+            DANA_LOGGER.error(f"Failed to extract text from document {parsed_doc.document.id}: {str(e)}")
             raise ValueError(f"Text extraction failed: {str(e)}")
     
     def validate_input(self, parsed_doc: ParsedDocument) -> bool:
@@ -78,15 +79,15 @@ class TextExtractor(ProcessorBase):
             True if document is valid for extraction
         """
         if not isinstance(parsed_doc, ParsedDocument):
-            DXA_LOGGER.error("Input must be a ParsedDocument object")
+            DANA_LOGGER.error("Input must be a ParsedDocument object")
             return False
         
         if not parsed_doc.text_content:
-            DXA_LOGGER.error("ParsedDocument has no text content")
+            DANA_LOGGER.error("ParsedDocument has no text content")
             return False
         
         if not parsed_doc.structured_data:
-            DXA_LOGGER.error("ParsedDocument has no structured data")
+            DANA_LOGGER.error("ParsedDocument has no structured data")
             return False
         
         return True
@@ -252,7 +253,7 @@ class TextExtractor(ProcessorBase):
         
         return text
     
-    def _json_to_text(self, data: Any, indent: int = 0) -> List[str]:
+    def _json_to_text(self, data: Any, indent: int = 0) -> list[str]:
         """Convert JSON data to readable text format.
         
         Args:
@@ -304,7 +305,7 @@ class TextExtractor(ProcessorBase):
         
         return text
     
-    def _format_metadata(self, metadata: Dict[str, Any]) -> str:
+    def _format_metadata(self, metadata: dict[str, Any]) -> str:
         """Format metadata for text inclusion.
         
         Args:

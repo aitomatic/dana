@@ -1,9 +1,9 @@
 """Dana external integrations."""
 
 # Import key integrations
+from .mcp import McpResource
 from .python import DanaModule
 from .rag import RAGResource
-from .mcp import McpResource
 
 __all__ = [
     # Python Integration

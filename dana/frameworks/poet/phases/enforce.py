@@ -14,7 +14,7 @@ MIT License
 from dataclasses import dataclass
 from typing import Any
 
-from dana.common.utils.logging import DXA_LOGGER
+from dana.common.utils.logging import DANA_LOGGER
 from dana.frameworks.poet.types import POETConfig
 
 
@@ -41,7 +41,7 @@ class EnforcePhase:
     def __init__(self, config: POETConfig):
         """Initialize Enforce phase with configuration."""
         self.config = config
-        self.logger = DXA_LOGGER.getLogger(__name__)
+        self.logger = DANA_LOGGER.getLogger(__name__)
 
     def enforce(self, output: Any, context: dict[str, Any], expected_type: type | None = None) -> EnforceResult:
         """

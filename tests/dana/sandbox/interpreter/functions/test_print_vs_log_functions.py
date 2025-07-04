@@ -44,7 +44,7 @@ class TestPrintVsLogFunctions:
         context = SandboxContext()
 
         # This should work - single string argument with level
-        with patch("opendxa.dana.sandbox.log_manager.SandboxLogger.log") as mock_log:
+        with patch("dana.dana.sandbox.log_manager.SandboxLogger.log") as mock_log:
             log_function(context, "Hello world", "info")
             mock_log.assert_called_once()
 
@@ -56,7 +56,7 @@ class TestPrintVsLogFunctions:
         # It cannot accept multiple string arguments like print_function can
 
         # This works - single message with level
-        with patch("opendxa.dana.sandbox.log_manager.SandboxLogger.log") as mock_log:
+        with patch("dana.dana.sandbox.log_manager.SandboxLogger.log") as mock_log:
             log_function(context, "Single message", "info")
             mock_log.assert_called_once()
 
@@ -65,12 +65,12 @@ class TestPrintVsLogFunctions:
         # log_function(context, "Hello", "World", 123)   # TypeError: too many positional arguments
 
     def test_log_function_sandbox_logger_issue(self):
-        """Test that log_function fails due to incorrect DXA_LOGGER.log() call."""
+        """Test that log_function fails due to incorrect DANA_LOGGER.log() call."""
         context = SandboxContext()
 
-        # Mock DXA_LOGGER.log to raise TypeError when called with unexpected arguments
-        with patch("opendxa.dana.sandbox.log_manager.DXA_LOGGER") as mock_dxa_logger:
-            # Simulate the real DXA_LOGGER.log signature which doesn't accept 'scope'
+        # Mock DANA_LOGGER.log to raise TypeError when called with unexpected arguments
+        with patch("dana.dana.sandbox.log_manager.DANA_LOGGER") as mock_dxa_logger:
+            # Simulate the real DANA_LOGGER.log signature which doesn't accept 'scope'
             mock_dxa_logger.log.side_effect = TypeError("log() got an unexpected keyword argument 'scope'")
 
             with pytest.raises(TypeError, match="unexpected keyword argument 'scope'"):
@@ -90,7 +90,7 @@ class TestPrintVsLogFunctions:
         """Test log_function's level parameter functionality."""
         context = SandboxContext()
 
-        with patch("opendxa.dana.sandbox.log_manager.SandboxLogger.log") as mock_log:
+        with patch("dana.dana.sandbox.log_manager.SandboxLogger.log") as mock_log:
             # Test with different log levels as positional parameters
             log_function(context, "Debug message", "debug")
             log_function(context, "Info message", "info")
@@ -117,12 +117,12 @@ class TestPrintVsLogFunctions:
         assert print_func is not None
         assert log_func is not None
 
-    @patch("opendxa.dana.sandbox.log_manager.DXA_LOGGER.log")
+    @patch("dana.dana.sandbox.log_manager.DANA_LOGGER.log")
     def test_sandbox_logger_incorrect_call_signature(self, mock_dxa_log):
-        """Test that SandboxLogger.log calls DXA_LOGGER.log with incorrect signature."""
+        """Test that SandboxLogger.log calls DANA_LOGGER.log with incorrect signature."""
         from dana.core.lang.log_manager import SandboxLogger
 
-        # This will demonstrate the bug: SandboxLogger.log passes 'scope' but DXA_LOGGER.log doesn't accept it
+        # This will demonstrate the bug: SandboxLogger.log passes 'scope' but DANA_LOGGER.log doesn't accept it
         mock_dxa_log.side_effect = TypeError("log() got an unexpected keyword argument 'scope'")
 
         with pytest.raises(TypeError, match="unexpected keyword argument 'scope'"):
@@ -131,23 +131,23 @@ class TestPrintVsLogFunctions:
     def test_demonstrate_the_bug_root_cause(self):
         """Test that demonstrates the root cause of why log didn't work."""
         # The bug was in SandboxLogger.log() method which called:
-        # DXA_LOGGER.log(message=message, level=level, scope=SandboxLogger.LOG_SCOPE)
+        # DANA_LOGGER.log(message=message, level=level, scope=SandboxLogger.LOG_SCOPE)
         #
-        # But DXA_LOGGER.log() signature is:
+        # But DANA_LOGGER.log() signature is:
         # log(level: Union[int, str], message: str, *args, **context)
         #
         # There's no 'scope' parameter, and the argument order was wrong!
 
         import inspect
 
-        from dana.common.utils.logging.dxa_logger import DXA_LOGGER
+        from dana.common.utils.logging.dxa_logger import DANA_LOGGER
 
-        # Get the actual signature of DXA_LOGGER.log
-        dxa_log_sig = inspect.signature(DXA_LOGGER.log)
+        # Get the actual signature of DANA_LOGGER.log
+        dxa_log_sig = inspect.signature(DANA_LOGGER.log)
         assert "scope" not in dxa_log_sig.parameters
 
         # The SandboxLogger was calling it incorrectly - this was the source of the bug
-        # Now fixed in SandboxLogger.log() to call: DXA_LOGGER.log(level, message)
+        # Now fixed in SandboxLogger.log() to call: DANA_LOGGER.log(level, message)
         assert True  # This test demonstrates the issue was resolved
 
     def test_signature_differences(self):
@@ -181,8 +181,8 @@ class TestLogFunctionFix:
         """Test a proposed fix for the log function."""
         _ = SandboxContext()
 
-        # Proposed fix: change SandboxLogger.log to call DXA_LOGGER.log correctly
-        with patch("opendxa.dana.sandbox.log_manager.DXA_LOGGER.log") as mock_dxa_log:
+        # Proposed fix: change SandboxLogger.log to call DANA_LOGGER.log correctly
+        with patch("dana.dana.sandbox.log_manager.DANA_LOGGER.log") as mock_dxa_log:
             from dana.core.lang.log_manager import LogLevel
 
             # Fixed call should be:
@@ -203,7 +203,7 @@ class TestLogLevelFunction:
 
         context = SandboxContext()
 
-        with patch("opendxa.dana.sandbox.log_manager.SandboxLogger.set_system_log_level") as mock_set_level:
+        with patch("dana.dana.sandbox.log_manager.SandboxLogger.set_system_log_level") as mock_set_level:
             log_level_function(context, "debug")
             mock_set_level.assert_called_once()
 
@@ -215,7 +215,7 @@ class TestLogLevelFunction:
 
         valid_levels = ["debug", "info", "warn", "error"]
 
-        with patch("opendxa.dana.sandbox.log_manager.SandboxLogger.set_system_log_level") as mock_set_level:
+        with patch("dana.dana.sandbox.log_manager.SandboxLogger.set_system_log_level") as mock_set_level:
             for level in valid_levels:
                 log_level_function(context, level)
 
@@ -236,7 +236,7 @@ class TestLogLevelFunction:
 
         context = SandboxContext()
 
-        with patch("opendxa.dana.sandbox.log_manager.SandboxLogger.set_system_log_level") as mock_set_level:
+        with patch("dana.dana.sandbox.log_manager.SandboxLogger.set_system_log_level") as mock_set_level:
             # Test uppercase
             log_level_function(context, "DEBUG")
             log_level_function(context, "Info")
@@ -251,7 +251,7 @@ class TestLogLevelFunction:
 
         context = SandboxContext()
 
-        with patch("opendxa.dana.sandbox.log_manager.SandboxLogger.set_system_log_level") as mock_set_level:
+        with patch("dana.dana.sandbox.log_manager.SandboxLogger.set_system_log_level") as mock_set_level:
             # Test with options override
             log_level_function(context, "", "dana", {"level": "error"})
             mock_set_level.assert_called_once()
@@ -280,8 +280,8 @@ class TestDynamicHelp:
         import sys
         from io import StringIO
 
-        from dana.core.repl.repl.dana_repl_app import DanaREPLApp
         from dana.core.lang.log_manager import LogLevel
+        from dana.core.repl.repl.dana_repl_app import DanaREPLApp
 
         # Create REPL app
         app = DanaREPLApp(log_level=LogLevel.INFO)
@@ -314,8 +314,8 @@ class TestDynamicHelp:
         import sys
         from io import StringIO
 
-        from dana.core.repl.repl.dana_repl_app import DanaREPLApp
         from dana.core.lang.log_manager import LogLevel
+        from dana.core.repl.repl.dana_repl_app import DanaREPLApp
 
         # Create REPL app
         app = DanaREPLApp(log_level=LogLevel.INFO)
@@ -353,8 +353,8 @@ class TestDynamicHelp:
 
     def test_tab_completion_includes_core_functions(self):
         """Test that tab completion includes all registered core functions."""
-        from dana.core.repl.repl.dana_repl_app import DanaREPLApp
         from dana.core.lang.log_manager import LogLevel
+        from dana.core.repl.repl.dana_repl_app import DanaREPLApp
 
         # Create REPL app
         app = DanaREPLApp(log_level=LogLevel.INFO)
@@ -381,9 +381,9 @@ class TestDynamicHelp:
         from unittest.mock import patch
 
         from dana.common.resource.llm_resource import LLMResource
-        from opendxa.dana.common.terminal_utils import ColorScheme
         from dana.core.repl.repl.commands.command_handler import CommandHandler
         from dana.core.repl.repl.repl import REPL
+        from dana.common.terminal_utils import ColorScheme
 
         # Create a REPL with normal setup
         repl = REPL(llm_resource=LLMResource())

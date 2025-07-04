@@ -15,7 +15,7 @@ By completing these examples, you'll understand:
 
 ### 1. **basic_assignments.na** - Your First Dana Program
 ```bash
-uv run python -m opendxa.dana.exec.dana basic_assignments.na
+uv run python -m dana.dana.exec.dana basic_assignments.na
 ```
 **What you'll learn:**
 - Variable assignment to different scopes
@@ -27,7 +27,7 @@ uv run python -m opendxa.dana.exec.dana basic_assignments.na
 
 ### 2. **arithmetic_example.na** - Mathematical Operations
 ```bash
-uv run python -m opendxa.dana.exec.dana arithmetic_example.na
+uv run python -m dana.dana.exec.dana arithmetic_example.na
 ```
 **What you'll learn:**
 - Float literals and arithmetic operations
@@ -38,7 +38,7 @@ uv run python -m opendxa.dana.exec.dana arithmetic_example.na
 
 ### 3. **fstrings.na** - String Formatting
 ```bash
-uv run python -m opendxa.dana.exec.dana fstrings.na
+uv run python -m dana.dana.exec.dana fstrings.na
 ```
 **What you'll learn:**
 - F-string interpolation syntax
@@ -49,7 +49,7 @@ uv run python -m opendxa.dana.exec.dana fstrings.na
 
 ### 4. **multiple_scopes.na** - Scope Management
 ```bash
-uv run python -m opendxa.dana.exec.dana multiple_scopes.na
+uv run python -m dana.dana.exec.dana multiple_scopes.na
 ```
 **What you'll learn:**
 - Different scope types and their uses
@@ -60,7 +60,7 @@ uv run python -m opendxa.dana.exec.dana multiple_scopes.na
 
 ### 5. **logging.na** - Basic Logging
 ```bash
-uv run python -m opendxa.dana.exec.dana logging.na
+uv run python -m dana.dana.exec.dana logging.na
 ```
 **What you'll learn:**
 - Basic logging with `log()` function
@@ -71,7 +71,7 @@ uv run python -m opendxa.dana.exec.dana logging.na
 
 ### 6. **log_levels.na** - Advanced Logging
 ```bash
-uv run python -m opendxa.dana.exec.dana log_levels.na
+uv run python -m dana.dana.exec.dana log_levels.na
 ```
 **What you'll learn:**
 - Different logging levels (INFO, DEBUG, ERROR)
@@ -82,7 +82,7 @@ uv run python -m opendxa.dana.exec.dana log_levels.na
 
 ### 7. **print_example.na** - Output Methods
 ```bash
-uv run python -m opendxa.dana.exec.dana print_example.na
+uv run python -m dana.dana.exec.dana print_example.na
 ```
 **What you'll learn:**
 - Different output methods in Dana
@@ -99,10 +99,10 @@ Run all basic examples in sequence:
 cd examples/dana/01_language_basics/
 
 # Essential progression
-uv run python -m opendxa.dana.exec.dana basic_assignments.na
-uv run python -m opendxa.dana.exec.dana arithmetic_example.na  
-uv run python -m opendxa.dana.exec.dana fstrings.na
-uv run python -m opendxa.dana.exec.dana multiple_scopes.na
+uv run python -m dana.dana.exec.dana basic_assignments.na
+uv run python -m dana.dana.exec.dana arithmetic_example.na  
+uv run python -m dana.dana.exec.dana fstrings.na
+uv run python -m dana.dana.exec.dana multiple_scopes.na
 ```
 
 ## 💡 Key Dana Concepts Introduced

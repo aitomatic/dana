@@ -4,7 +4,7 @@ POET Decorator Comment Processor
 This module handles parsing of POET decorator comments in Dana code.
 Uses comments that look like decorators: # @poet(domain="building_management")
 
-Author: OpenDXA Framework
+Author: Dana Framework
 """
 
 import ast
@@ -12,7 +12,7 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-from dana.common.utils.logging import DXA_LOGGER
+from dana.common.utils.logging import DANA_LOGGER
 
 
 @dataclass
@@ -36,7 +36,7 @@ class POETDecoratorProcessor:
 
     def __init__(self):
         """Initialize the POET decorator processor."""
-        self.logger = DXA_LOGGER.getChild(__name__)
+        self.logger = DANA_LOGGER.getChild(__name__)
 
     def extract_poet_config(self, comment: str) -> POETDecoratorConfig | None:
         """

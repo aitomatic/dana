@@ -51,6 +51,6 @@ log("  • Provider-specific: 'openai:gpt' → specific OpenAI GPT model")
 
 # Note: The actual responses will depend on:
 # 1. Available API keys in your environment
-# 2. Whether you're in mock mode (OPENDXA_MOCK_LLM=true)
+# 2. Whether you're in mock mode (DANA_MOCK_LLM=true)
 # 3. The specific model capabilities and configurations
 # 4. Available models in your LLM configuration 

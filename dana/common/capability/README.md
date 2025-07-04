@@ -6,9 +6,9 @@
 
 [Project Overview](../../../README.md) | [Main Documentation](../../../docs/README.md)
 
-# Base Capability Module (`opendxa.base.capability`)
+# Base Capability Module (`dana.common.capability`)
 
-This module provides the foundational `BaseCapability` abstract class for defining agent capabilities within OpenDXA.
+This module provides the foundational `BaseCapability` abstract class for defining agent capabilities within Dana.
 
 Capabilities represent higher-level cognitive functions or skills of an agent, bridging the gap between core agent logic (planning/reasoning) and low-level resources.
 
@@ -17,7 +17,7 @@ For detailed explanations of the Capability System architecture, the `BaseCapabi
 ## Key Components
 
 - **`BaseCapability`**: The abstract base class defining the standard interface (`initialize`, `apply`, `cleanup`) for all capabilities.
-- **Specific Capability Implementations**: Concrete capabilities (like `MemoryCapability`, `KnowledgeCapability`) are typically found in `opendxa.agent.capability`.
+- **Specific Capability Implementations**: Concrete capabilities (like `MemoryCapability`, `KnowledgeCapability`) are typically found in `dana.frameworks.agent.capability`.
 
 ---
 <p align="center">

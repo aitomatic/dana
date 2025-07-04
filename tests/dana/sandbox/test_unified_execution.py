@@ -15,7 +15,7 @@ from dana.core.lang.interpreter.functions.core.reason_function import reason_fun
 from dana.core.lang.sandbox_context import SandboxContext
 
 
-@patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "true"})
+@patch.dict(os.environ, {"DANA_MOCK_LLM": "true"})
 def test_reason_function_direct_call():
     """Test reason function with direct call to verify basic functionality."""
     # Create context
@@ -30,7 +30,7 @@ def test_reason_function_direct_call():
     assert result is not None
 
 
-@patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "true"})
+@patch.dict(os.environ, {"DANA_MOCK_LLM": "true"})
 def test_reason_function_parameter_order():
     """Test reason function with different parameter orders to verify robustness."""
     # Create context

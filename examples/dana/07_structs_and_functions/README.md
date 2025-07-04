@@ -108,7 +108,7 @@ result = raw_data | processing_pipeline
 
 1. **Start with basic concepts:**
    ```bash
-   uv run python -m opendxa.dana.exec.dana examples/dana/07_structs_and_functions/01_basic_struct_functions.na
+   uv run python -m dana.dana.exec.dana examples/dana/07_structs_and_functions/01_basic_struct_functions.na
    ```
 
 2. **Progress through examples in order:**

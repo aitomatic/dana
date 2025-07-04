@@ -1,7 +1,7 @@
-"""Base resource implementation for DXA.
+"""Base resource implementation for Dana.
 
 This module provides the foundational resource class that defines the interface
-and common functionality for all DXA resources. Resources are managed entities
+and common functionality for all Dana resources. Resources are managed entities
 that provide specific capabilities to the system.
 
 Classes:

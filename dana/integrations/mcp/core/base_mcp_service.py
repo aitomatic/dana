@@ -5,7 +5,7 @@ from typing import Literal, Optional
 
 from mcp.server.fastmcp import FastMCP
 
-from dana.common.utils.logging import DXA_LOGGER
+from dana.common.utils.logging import DANA_LOGGER
 
 # This is to pass into derived classes to use because "self" is not set when called by the MCP framework
 _SERVER = FastMCP("FastMCP Server")
@@ -18,7 +18,7 @@ class BaseMcpService:
 
     def __init__(self, transport: Literal["stdio", "sse"] = "stdio") -> None:
         """Initialize"""
-        self.logger = DXA_LOGGER.getLogger(self)
+        self.logger = DANA_LOGGER.getLogger(self)
         self.transport: Literal["stdio", "sse"] = transport
         global _SELF  # pylint: disable=global-statement
         _SELF = self

@@ -120,7 +120,7 @@ class TestLLMQueryExecutor(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("max_tokens", params)  # Default max_tokens should not be set
         self.assertIsNone(params["model"])  # No model set
 
-    @patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "false"})
+    @patch.dict(os.environ, {"DANA_MOCK_LLM": "false"})
     async def test_query_once_no_client(self):
         """Test query_once with no client."""
         request = {"messages": [{"role": "user", "content": "test"}]}
@@ -130,7 +130,7 @@ class TestLLMQueryExecutor(unittest.IsolatedAsyncioTestCase):
 
         self.assertIn("LLM client not initialized", str(context.exception))
 
-    @patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "false"})
+    @patch.dict(os.environ, {"DANA_MOCK_LLM": "false"})
     async def test_query_once_no_model(self):
         """Test query_once with no model."""
         self.query_executor.client = MagicMock()
@@ -173,7 +173,7 @@ class TestLLMQueryExecutor(unittest.IsolatedAsyncioTestCase):
         self.assertIn("choices", response)
         self.assertEqual(response["model"], "mock-model")
 
-    @patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "true"})
+    @patch.dict(os.environ, {"DANA_MOCK_LLM": "true"})
     async def test_query_once_with_env_mock(self):
         """Test query_once with environment variable mock."""
         request = {"messages": [{"role": "user", "content": "test"}]}
@@ -182,7 +182,7 @@ class TestLLMQueryExecutor(unittest.IsolatedAsyncioTestCase):
         self.assertIn("choices", response)
         self.assertEqual(response["model"], "mock-model")
 
-    @patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "false"})
+    @patch.dict(os.environ, {"DANA_MOCK_LLM": "false"})
     async def test_query_once_success(self):
         """Test successful query_once execution."""
         # Set up mock client (aisuite is synchronous)
@@ -363,7 +363,7 @@ class TestLLMQueryExecutorAnthropicIntegration(unittest.TestCase):
         """Set up test environment."""
         self.executor = LLMQueryExecutor(model="anthropic:claude-3-5-sonnet-20240620")
 
-    @patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "false"}, clear=False)
+    @patch.dict(os.environ, {"DANA_MOCK_LLM": "false"}, clear=False)
     @patch("aisuite.Client")
     def test_anthropic_system_message_transformation_in_query_executor(self, mock_client_class):
         """Test that LLMQueryExecutor preserves system messages for AISuite to handle."""

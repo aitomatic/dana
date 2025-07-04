@@ -14,7 +14,7 @@ MIT License
 from dataclasses import dataclass
 from typing import Any
 
-from dana.common.utils.logging import DXA_LOGGER
+from dana.common.utils.logging import DANA_LOGGER
 from dana.frameworks.poet.types import POETConfig
 
 
@@ -40,7 +40,7 @@ class PerceivePhase:
     def __init__(self, config: POETConfig):
         """Initialize Perceive phase with configuration."""
         self.config = config
-        self.logger = DXA_LOGGER.getLogger(__name__)
+        self.logger = DANA_LOGGER.getLogger(__name__)
 
     def perceive(self, args: tuple[Any, ...], kwargs: dict[str, Any]) -> PerceiveResult:
         """

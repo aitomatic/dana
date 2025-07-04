@@ -5,7 +5,7 @@ import os
 import pytest
 
 from dana.common.resource.llm_resource import LLMResource
-from opendxa.dana.translator.translator import Translator
+from dana.translator.translator import Translator
 
 
 # Register the live marker

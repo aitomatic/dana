@@ -1,15 +1,15 @@
 """Dana common utilities and resources."""
 
 # Import key components
-from .utils.logging import DXA_LOGGER, DANA_LOGGER, DXALogger
-from .mixins import Loggable, Configurable, Identifiable
-from .resource import LLMResource, MemoryResource
 from .graph import DirectedGraph
 from .io import ConsoleIO
+from .mixins import Configurable, Identifiable, Loggable
+from .resource import LLMResource, MemoryResource
+from .utils.logging import DANA_LOGGER, DanaLogger
 
 __all__ = [
     # Logging
-    'DXA_LOGGER', 'DANA_LOGGER', 'DXALogger',
+    'DANA_LOGGER', 'DanaLogger',
     # Mixins
     'Loggable', 'Configurable', 'Identifiable', 
     # Resources

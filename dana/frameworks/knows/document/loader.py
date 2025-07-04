@@ -1,16 +1,15 @@
 """
-Document loader for OpenDXA KNOWS system.
+Document loader for Dana KNOWS system.
 
 This module handles loading documents from various sources and formats.
 """
 
-import os
 import json
-import uuid
+import os
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, List
-from dana.common.utils.logging import DXA_LOGGER
+
+from dana.common.utils.logging import DANA_LOGGER
 from dana.frameworks.knows.core.base import Document, DocumentBase
 
 
@@ -27,7 +26,7 @@ class DocumentLoader(DocumentBase):
             max_size: Maximum file size in bytes (optional)
         """
         self.max_size = max_size or self.MAX_FILE_SIZE
-        DXA_LOGGER.info(f"Initialized DocumentLoader with max_size: {self.max_size} bytes")
+        DANA_LOGGER.info(f"Initialized DocumentLoader with max_size: {self.max_size} bytes")
     
     def load_document(self, source: str) -> Document:
         """Load document from file path.
@@ -77,14 +76,14 @@ class DocumentLoader(DocumentBase):
                 created_at=datetime.now()
             )
             
-            DXA_LOGGER.info(f"Successfully loaded document: {source} (format: {format_ext}, size: {file_size} bytes)")
+            DANA_LOGGER.info(f"Successfully loaded document: {source} (format: {format_ext}, size: {file_size} bytes)")
             return document
             
         except Exception as e:
-            DXA_LOGGER.error(f"Failed to load document from {source}: {str(e)}")
-            raise IOError(f"Failed to read document: {str(e)}")
+            DANA_LOGGER.error(f"Failed to load document from {source}: {str(e)}")
+            raise OSError(f"Failed to read document: {str(e)}")
     
-    def load_documents(self, sources: List[str]) -> List[Document]:
+    def load_documents(self, sources: list[str]) -> list[Document]:
         """Load multiple documents from file paths.
         
         Args:
@@ -103,12 +102,12 @@ class DocumentLoader(DocumentBase):
             except Exception as e:
                 error_msg = f"Failed to load {source}: {str(e)}"
                 errors.append(error_msg)
-                DXA_LOGGER.warning(error_msg)
+                DANA_LOGGER.warning(error_msg)
         
         if errors:
-            DXA_LOGGER.warning(f"Failed to load {len(errors)} out of {len(sources)} documents")
+            DANA_LOGGER.warning(f"Failed to load {len(errors)} out of {len(sources)} documents")
         
-        DXA_LOGGER.info(f"Successfully loaded {len(documents)} out of {len(sources)} documents")
+        DANA_LOGGER.info(f"Successfully loaded {len(documents)} out of {len(sources)} documents")
         return documents
     
     def validate_document(self, document: Document) -> bool:
@@ -123,27 +122,27 @@ class DocumentLoader(DocumentBase):
         try:
             # Check required fields
             if not document.id:
-                DXA_LOGGER.error("Document validation failed: missing ID")
+                DANA_LOGGER.error("Document validation failed: missing ID")
                 return False
             
             if not document.content:
-                DXA_LOGGER.error("Document validation failed: empty content")
+                DANA_LOGGER.error("Document validation failed: empty content")
                 return False
             
             if document.format not in self.SUPPORTED_FORMATS:
-                DXA_LOGGER.error(f"Document validation failed: unsupported format {document.format}")
+                DANA_LOGGER.error(f"Document validation failed: unsupported format {document.format}")
                 return False
             
             # Check content is string
             if not isinstance(document.content, str):
-                DXA_LOGGER.error("Document validation failed: content must be string")
+                DANA_LOGGER.error("Document validation failed: content must be string")
                 return False
             
-            DXA_LOGGER.info(f"Document validation passed: {document.id}")
+            DANA_LOGGER.info(f"Document validation passed: {document.id}")
             return True
             
         except Exception as e:
-            DXA_LOGGER.error(f"Document validation error: {str(e)}")
+            DANA_LOGGER.error(f"Document validation error: {str(e)}")
             return False
     
     def _load_content(self, source: str, format_ext: str) -> str:
@@ -169,26 +168,27 @@ class DocumentLoader(DocumentBase):
     
     def _load_text_file(self, source: str) -> str:
         """Load plain text or markdown file."""
-        with open(source, 'r', encoding='utf-8') as f:
+        with open(source, encoding='utf-8') as f:
             return f.read()
     
     def _load_json_file(self, source: str) -> str:
         """Load JSON file and return as formatted string."""
-        with open(source, 'r', encoding='utf-8') as f:
+        with open(source, encoding='utf-8') as f:
             data = json.load(f)
             return json.dumps(data, indent=2)
     
     def _load_csv_file(self, source: str) -> str:
         """Load CSV file and return as string."""
-        with open(source, 'r', encoding='utf-8') as f:
+        with open(source, encoding='utf-8') as f:
             return f.read()
     
     def _load_pdf_file(self, source: str) -> str:
         """Load PDF file using pdfplumber for text extraction."""
         try:
-            import pdfplumber
             import logging
             import warnings
+
+            import pdfplumber
             
             # Suppress pdfminer warnings that are common with complex PDFs
             pdfminer_logger = logging.getLogger('pdfminer')
@@ -199,14 +199,14 @@ class DocumentLoader(DocumentBase):
             warnings.filterwarnings('ignore', category=UserWarning, module='pdfplumber')
             
             try:
-                DXA_LOGGER.info(f"Processing PDF file: {source}")
+                DANA_LOGGER.info(f"Processing PDF file: {source}")
                 text_content = ""
                 page_count = 0
                 successful_pages = 0
                 
                 with pdfplumber.open(source) as pdf:
                     page_count = len(pdf.pages)
-                    DXA_LOGGER.info(f"PDF has {page_count} pages")
+                    DANA_LOGGER.info(f"PDF has {page_count} pages")
                     
                     for page_num, page in enumerate(pdf.pages, 1):
                         try:
@@ -218,16 +218,16 @@ class DocumentLoader(DocumentBase):
                                 text_content += page_text.strip()
                                 successful_pages += 1
                             else:
-                                DXA_LOGGER.debug(f"No text found on page {page_num}")
+                                DANA_LOGGER.debug(f"No text found on page {page_num}")
                         except Exception as e:
-                            DXA_LOGGER.warning(f"Failed to extract text from page {page_num}: {str(e)}")
+                            DANA_LOGGER.warning(f"Failed to extract text from page {page_num}: {str(e)}")
                             continue
                 
                 if not text_content.strip():
-                    DXA_LOGGER.warning(f"No text content extracted from PDF: {source}")
+                    DANA_LOGGER.warning(f"No text content extracted from PDF: {source}")
                     return f"[PDF file processed but no text content found: {source}]"
                 
-                DXA_LOGGER.info(f"Successfully extracted {len(text_content)} characters from {successful_pages}/{page_count} pages")
+                DANA_LOGGER.info(f"Successfully extracted {len(text_content)} characters from {successful_pages}/{page_count} pages")
                 return text_content.strip()
                 
             finally:
@@ -235,11 +235,11 @@ class DocumentLoader(DocumentBase):
                 pdfminer_logger.setLevel(original_level)
                 
         except ImportError:
-            DXA_LOGGER.error("pdfplumber not installed - cannot process PDF files")
-            raise IOError("PDF processing requires pdfplumber library. Install with: pip install pdfplumber")
+            DANA_LOGGER.error("pdfplumber not installed - cannot process PDF files")
+            raise OSError("PDF processing requires pdfplumber library. Install with: pip install pdfplumber")
         except Exception as e:
-            DXA_LOGGER.error(f"Failed to process PDF file {source}: {str(e)}")
-            raise IOError(f"PDF processing failed: {str(e)}")
+            DANA_LOGGER.error(f"Failed to process PDF file {source}: {str(e)}")
+            raise OSError(f"PDF processing failed: {str(e)}")
     
     def _generate_document_id(self, source: str) -> str:
         """Generate unique document ID from source path.

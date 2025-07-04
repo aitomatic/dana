@@ -1,8 +1,8 @@
-# OpenDXA PubSub System Design
+# Dana PubSub System Design
 
 ## Overview
 
-The OpenDXA PubSub system provides a unified event-driven communication infrastructure for both Dana and Python code. While it is designed to be language-agnostic, it is primarily used by Dana code for feedback collection and learning in the POET system.
+The Dana PubSub system provides a unified event-driven communication infrastructure for both Dana and Python code. While it is designed to be language-agnostic, it is primarily used by Dana code for feedback collection and learning in the POET system.
 
 ## Architecture
 

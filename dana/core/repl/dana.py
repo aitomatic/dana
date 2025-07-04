@@ -57,13 +57,12 @@ real_file = os.path.realpath(__file__)
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(real_file))))
 sys.path.insert(0, project_root)
 
-from dana.compat import setup_migration_compatibility
-setup_migration_compatibility()
+# Compatibility layer removed - direct Dana imports only
 
-from dana.common.utils.logging import DXA_LOGGER
-from opendxa.dana.common.terminal_utils import ColorScheme, print_header, supports_color
+from dana.common.utils.logging import DANA_LOGGER
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.core.lang.log_manager import LogLevel, SandboxLogger
+from dana.common.terminal_utils import ColorScheme, print_header, supports_color
 
 # Initialize color scheme
 colors = ColorScheme(supports_color())
@@ -281,7 +280,7 @@ def deploy_thru_a2a(file_path, args):
 def configure_debug_logging():
     """Configure debug logging settings."""
     print(f"{colors.accent('Debug logging enabled')}")
-    DXA_LOGGER.configure(level=logging.DEBUG, console=True)
+    DANA_LOGGER.configure(level=logging.DEBUG, console=True)
     SandboxLogger.set_system_log_level(LogLevel.DEBUG)
 
 

@@ -131,7 +131,7 @@ def test_argument_processor_evaluate_args():
     mock_evaluator.evaluate.side_effect = lambda expr, _: 10 if expr.name == "x" else 20
 
     # Create ArgumentProcessor with mocked evaluator
-    with patch("opendxa.dana.sandbox.interpreter.functions.argument_processor.ArgumentProcessor", autospec=True) as MockArgumentProcessor:
+    with patch("dana.dana.sandbox.interpreter.functions.argument_processor.ArgumentProcessor", autospec=True) as MockArgumentProcessor:
         # Create instance of the mock
         processor = MockArgumentProcessor.return_value
 
@@ -151,7 +151,7 @@ def test_argument_processor_evaluate_args():
 def test_argument_processor_bind_parameters():
     """Test the ArgumentProcessor's ability to bind parameters."""
     # Create a mocked ArgumentProcessor
-    with patch("opendxa.dana.sandbox.interpreter.functions.argument_processor.ArgumentProcessor", autospec=True) as MockArgumentProcessor:
+    with patch("dana.dana.sandbox.interpreter.functions.argument_processor.ArgumentProcessor", autospec=True) as MockArgumentProcessor:
         # Create instance of the mock
         processor = MockArgumentProcessor.return_value
 

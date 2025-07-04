@@ -10,7 +10,7 @@ This module provides the print function, which handles printing in the Dana inte
 
 from typing import Any
 
-from dana.common.utils.logging import DXA_LOGGER
+from dana.common.utils.logging import DANA_LOGGER
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -29,7 +29,7 @@ def print_function(
     Returns:
         None
     """
-    logger = DXA_LOGGER.getLogger("opendxa.dana.print")
+    logger = DANA_LOGGER.getLogger("dana.print")
 
     # Process each argument
     processed_args = []

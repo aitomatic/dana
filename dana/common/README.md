@@ -6,11 +6,11 @@
 
 [Project Overview](../../README.md) | [Main Documentation](../../docs/README.md)
 
-# DXA Common Utilities
+# Dana Common Utilities
 
-## dxa.common Module
+## dana.common Module
 
-Common utilities and shared functionality for the DXA framework.
+Common utilities and shared functionality for the Dana framework.
 
 ## Components
 

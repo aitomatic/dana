@@ -3,12 +3,12 @@
 Implementation focusing on core transpilation and learning capabilities.
 """
 
-from .decorator import poet
-from .types import POETConfig, POETResult
-from .enhancer import POETEnhancer
 from .client import POETClient
+from .decorator import poet
 from .domains import DomainRegistry
-from .phases import perceive, operate, enforce
+from .enhancer import POETEnhancer
+from .phases import enforce, operate, perceive
+from .types import POETConfig, POETResult
 
 __all__ = [
     "poet", 

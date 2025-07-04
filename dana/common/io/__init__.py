@@ -1,4 +1,4 @@
-"""I/O resource implementations for DXA.
+"""I/O resource implementations for Dana.
 
 This package provides various I/O resource implementations, including:
 - ConsoleIO: For console-based input/output

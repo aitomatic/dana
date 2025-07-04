@@ -5,7 +5,7 @@ This module provides the WelcomeDisplay class that shows
 the welcome message and feature overview.
 """
 
-from opendxa.dana.common.terminal_utils import ColorScheme, print_header
+from dana.common.terminal_utils import ColorScheme, print_header
 
 
 class WelcomeDisplay:

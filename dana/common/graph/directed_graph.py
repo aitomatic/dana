@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from dana.common.graph.serializer import GraphSerializer
     from dana.common.graph.traversal import Cursor, TopologicalTraversal, TraversalStrategy
     from dana.common.graph.visualizer import GraphVisualizer
-_CURSOR_CLASS_NAME = "opendxa.common.graph.traversal.Cursor"
+_CURSOR_CLASS_NAME = "dana.common.graph.traversal.Cursor"
 
 
 class NodeType(Enum):

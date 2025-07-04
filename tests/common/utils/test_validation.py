@@ -268,7 +268,7 @@ class TestValidationUtilities:
             ValidationUtilities.validate_decay_parameters(0.1, -100)
         assert "decay_interval" in str(exc_info.value)
 
-    @patch("opendxa.common.utils.validation.DXA_LOGGER")
+    @patch("dana.common.utils.validation.DANA_LOGGER")
     def test_validate_decay_parameters_warnings(self, mock_logger):
         """Test decay parameters validation warnings."""
         # High decay rate with long interval should warn about being long
@@ -305,9 +305,9 @@ class TestValidationError:
         assert error.value == "test_value"
 
     def test_validation_error_inheritance(self):
-        """Test that ValidationError properly inherits from OpenDXAError."""
+        """Test that ValidationError properly inherits from DanaError."""
         error = ValidationError("Test message")
-        from dana.common.exceptions import OpenDXAError
+        from dana.common.exceptions import DanaError
 
-        assert isinstance(error, OpenDXAError)
+        assert isinstance(error, DanaError)
         assert isinstance(error, Exception)

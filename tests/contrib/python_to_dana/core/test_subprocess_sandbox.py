@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from opendxa.contrib.python_to_dana.core.subprocess_sandbox import (
+from dana.integrations.python.core.subprocess_sandbox import (
     SUBPROCESS_ISOLATION_CONFIG,
     DanaSubprocessWorker,
     SubprocessSandboxInterface,
@@ -148,7 +148,7 @@ class TestSubprocessSandboxInterface:
         assert sandbox._restart_on_failure is test_case["expected_restart_on_failure"]
         assert sandbox._delegate is not None
 
-    @patch("opendxa.contrib.python_to_dana.core.subprocess_sandbox.InProcessSandboxInterface")
+    @patch("dana.contrib.python_to_dana.core.subprocess_sandbox.InProcessSandboxInterface")
     def test_reason_delegates_to_inprocess_sandbox(self, mock_inprocess_sandbox):
         """Test that reason() calls delegate to InProcessSandboxInterface."""
         # Setup mock
@@ -281,7 +281,7 @@ class TestIntegrationWithDanaModule:
     @pytest.mark.parametrize("test_case", dana_integration_params, ids=lambda x: x["name"])
     def test_dana_module_can_use_subprocess_sandbox(self, test_case):
         """Test that Dana module can be configured to use subprocess sandbox."""
-        from opendxa.contrib.python_to_dana.dana_module import Dana
+        from dana.integrations.python.dana_module import Dana
 
         # Should be able to request subprocess isolation
         dana = Dana(**test_case["init_kwargs"])
@@ -304,7 +304,7 @@ class TestIntegrationWithDanaModule:
         assert "enabled" in config
 
         # Should affect Dana module behavior
-        from opendxa.contrib.python_to_dana.dana_module import Dana
+        from dana.integrations.python.dana_module import Dana
 
         dana = Dana(use_subprocess_isolation=True, debug=True)
 

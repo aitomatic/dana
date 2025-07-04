@@ -4,8 +4,8 @@ import asyncio
 import logging
 
 from dana.common.resource.llm_resource import LLMResource
-from dana.core.repl.repl.repl import REPL
 from dana.core.lang.log_manager import LogLevel
+from dana.core.repl.repl.repl import REPL
 
 
 async def run_conditional_example(repl: REPL) -> None:

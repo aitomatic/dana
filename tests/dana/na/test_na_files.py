@@ -36,7 +36,7 @@ def test_na_file(na_file):
     StructTypeRegistry.clear()
 
     # Check if we should skip tests that need real LLM
-    skip_llm_tests = os.environ.get("OPENDXA_SKIP_NA_LLM_TESTS", "").lower() == "true"
+    skip_llm_tests = os.environ.get("DANA_SKIP_NA_LLM_TESTS", "").lower() == "true"
 
     # Note: test_simple.na now uses correct private.result syntax
 
@@ -46,7 +46,7 @@ def test_na_file(na_file):
 
     # Skip test if it uses reason and we're skipping LLM tests
     if skip_llm_tests and "reason(" in program_text:
-        pytest.skip(f"Skipping {na_file} because it uses reason() and OPENDXA_SKIP_NA_LLM_TESTS is true")
+        pytest.skip(f"Skipping {na_file} because it uses reason() and DANA_SKIP_NA_LLM_TESTS is true")
 
     # Create a context with necessary resources
     context = SandboxContext()
@@ -82,8 +82,8 @@ def test_na_file(na_file):
     # Use environment variable to enable mocking for reason function if needed
     original_mock_env = None
     if "reason(" in program_text:
-        original_mock_env = os.environ.get("OPENDXA_MOCK_LLM")
-        os.environ["OPENDXA_MOCK_LLM"] = "true"
+        original_mock_env = os.environ.get("DANA_MOCK_LLM")
+        os.environ["DANA_MOCK_LLM"] = "true"
 
     result = None
     exception_info = None
@@ -99,9 +99,9 @@ def test_na_file(na_file):
         # Restore original environment
         if "reason(" in program_text:
             if original_mock_env is None:
-                os.environ.pop("OPENDXA_MOCK_LLM", None)
+                os.environ.pop("DANA_MOCK_LLM", None)
             else:
-                os.environ["OPENDXA_MOCK_LLM"] = original_mock_env
+                os.environ["DANA_MOCK_LLM"] = original_mock_env
 
     # Check if execution failed with an exception
     if exception_info:

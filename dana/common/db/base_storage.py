@@ -1,6 +1,6 @@
-"""Storage implementations for the OpenDXA system.
+"""Storage implementations for the Dana system.
 
-This module provides SQL and vector-based storage implementations for the OpenDXA system.
+This module provides SQL and vector-based storage implementations for the Dana system.
 It includes the storage interfaces that handle the persistence of structured knowledge
 and semantic memories.
 """

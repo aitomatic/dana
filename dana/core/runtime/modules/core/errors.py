@@ -1,5 +1,5 @@
 """
-OpenDXA Dana Module System - Error Types
+Dana Dana Module System - Error Types
 
 This module defines the error hierarchy for Dana's module system.
 

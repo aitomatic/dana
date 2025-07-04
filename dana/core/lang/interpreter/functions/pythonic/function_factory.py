@@ -11,10 +11,10 @@ MIT License
 from enum import Enum
 from typing import Any
 
-from opendxa.dana.common.exceptions import SandboxError
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata, FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.common.exceptions import SandboxError
 
 
 class UnsupportedReason(Enum):
@@ -489,7 +489,7 @@ If this is a custom function, make sure it's:
 
         for signature in expected_signatures:
             if len(args) == len(signature):
-                if all(isinstance(arg, sig_type) for arg, sig_type in zip(args, signature)):
+                if all(isinstance(arg, sig_type) for arg, sig_type in zip(args, signature, strict=False)):
                     valid_signature = True
                     break
 

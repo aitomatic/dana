@@ -370,13 +370,13 @@ processed_data = raw_data | validate | normalize | analyze | format_output
 ### REPL (Read-Eval-Print Loop)
 ```bash
 # Start Dana REPL for interactive development
-uv run python -m opendxa.dana.exec.repl
+uv run python -m dana.dana.exec.repl
 ```
 
 ### Execution
 ```bash
 # Execute Dana files
-uv run python -m opendxa.dana.exec.dana examples/dana/na/basic_math_pipeline.na
+uv run python -m dana.dana.exec.dana examples/dana/na/basic_math_pipeline.na
 ```
 
 ### Debugging

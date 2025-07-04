@@ -4,9 +4,9 @@
 
 [Project Overview](../../../README.md) | [Main Documentation](../../../docs/README.md) | [Mixins Architecture](../../../docs/core-concepts/mixins.md)
 
-# Mixins Module Implementation (`opendxa.common.mixins`)
+# Mixins Module Implementation (`dana.common.mixins`)
 
-This module provides the implementation of reusable mixin classes that add common capabilities to OpenDXA components through multiple inheritance.
+This module provides the implementation of reusable mixin classes that add common capabilities to Dana components through multiple inheritance.
 
 > **Note:** For conceptual information about the mixin architecture, design philosophy, and usage patterns, please see the [Mixins Architecture Documentation](../../../docs/core-concepts/mixins.md).
 
@@ -168,8 +168,8 @@ class Capable:
 ### Complete Agent Implementation
 
 ```python
-from opendxa.common.mixins import Configurable, Loggable, ToolCallable
-from opendxa.base.capability import Capable
+from dana.common.mixins import Configurable, Loggable, ToolCallable
+from dana.common.capability import Capable
 
 class CompleteAgent(Configurable, Loggable, Capable, ToolCallable):
     def __init__(self, config=None, id=None, name="Agent", description="A complete agent"):
@@ -197,7 +197,7 @@ class CompleteAgent(Configurable, Loggable, Capable, ToolCallable):
 ### Simple Resource with Configuration and Logging
 
 ```python
-from opendxa.common.mixins import Configurable, Loggable
+from dana.common.mixins import Configurable, Loggable
 
 class SimpleResource(Configurable, Loggable):
     def __init__(self, config_path="resource_config.yaml"):

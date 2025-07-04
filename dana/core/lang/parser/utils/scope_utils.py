@@ -10,7 +10,7 @@ MIT License
 
 from typing import Any
 
-from opendxa.dana.common.exceptions import ParseError
+from dana.common.exceptions import ParseError
 
 
 def insert_local_scope(parts: list[str] | str) -> Any:

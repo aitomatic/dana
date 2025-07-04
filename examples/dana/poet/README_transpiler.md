@@ -42,13 +42,13 @@ Quick reference card summarizing all four use cases with examples
 
 ```bash
 # Run mathematical operations examples
-uv run python -m opendxa.dana.exec.dana examples/dana/poet/05_mathematical_operations.na
+uv run python -m dana.dana.exec.dana examples/dana/poet/05_mathematical_operations.na
 
 # Run transpiler demonstration
-uv run python -m opendxa.dana.exec.dana examples/dana/poet/06_poet_transpiler_demo.na
+uv run python -m dana.dana.exec.dana examples/dana/poet/06_poet_transpiler_demo.na
 
 # Run user interaction guide
-uv run python -m opendxa.dana.exec.dana examples/dana/poet/07_user_interaction_guide.na
+uv run python -m dana.dana.exec.dana examples/dana/poet/07_user_interaction_guide.na
 ```
 
 ## What POET Transpiler Adds

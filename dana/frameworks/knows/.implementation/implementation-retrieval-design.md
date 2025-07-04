@@ -1,4 +1,4 @@
-# Implementation Design: OpenDXA KNOWS - Knowledge Retrieval System
+# Implementation Design: Dana KNOWS - Knowledge Retrieval System
 
 <!-- text markdown -->
 Author: William Nguyen (via AI Assistant collaboration)

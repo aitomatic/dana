@@ -37,7 +37,7 @@ class VectorStoreSettings(BaseSettings):
     
     host: str = "localhost"
     port: int = 5432
-    database: str = "opendxa_test"
+    database: str = "dana_test"
     user: str = "postgres"
     password: str = "postgres"
     ssl_mode: str = "disable"
@@ -51,7 +51,7 @@ class TimeSeriesSettings(BaseSettings):
     
     host: str = "localhost"
     port: int = 5432
-    database: str = "opendxa_test"
+    database: str = "dana_test"
     user: str = "postgres"
     password: str = "postgres"
     ssl_mode: str = "disable"

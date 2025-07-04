@@ -15,11 +15,11 @@ from typing import Any
 from dana.common.mixins.queryable import QueryStrategy
 from dana.common.resource.llm_resource import LLMResource
 from dana.common.types import BaseRequest
-from dana.common.utils.logging import DXA_LOGGER
-from opendxa.dana.common.exceptions import SandboxError
+from dana.common.utils.logging import DANA_LOGGER
 
 # Import POET decorator
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.common.exceptions import SandboxError
 
 
 def old_reason_function(
@@ -41,7 +41,7 @@ def old_reason_function(
             - max_tokens: Limit on response length
             - format: Output format ("text" or "json")
         use_mock: Force use of mock responses (True) or real LLM calls (False).
-                  If None, defaults to checking OPENDXA_MOCK_LLM environment variable.
+                  If None, defaults to checking DANA_MOCK_LLM environment variable.
 
         Note: A2A agents can be provided via options['agents']. This can be an A2AAgent,
               AgentPool, or list of A2AAgent instances. If provided, agent selection
@@ -53,7 +53,7 @@ def old_reason_function(
     Raises:
         SandboxError: If the function execution fails or parameters are invalid
     """
-    logger = DXA_LOGGER.getLogger("opendxa.dana.reason")
+    logger = DANA_LOGGER.getLogger("dana.reason")
     logger.debug(f"Legacy reason function called with prompt: '{prompt[:50]}...'")
     options = options or {}
 
@@ -66,7 +66,7 @@ def old_reason_function(
 
     # Check if we should use mock responses
     # Priority: function parameter > environment variable
-    should_mock = use_mock if use_mock is not None else os.environ.get("OPENDXA_MOCK_LLM", "").lower() == "true"
+    should_mock = use_mock if use_mock is not None else os.environ.get("DANA_MOCK_LLM", "").lower() == "true"
 
     # Get LLM resource from context (assume it's available)
     if hasattr(context, "llm_resource") and context.llm_resource:
@@ -97,8 +97,8 @@ def old_reason_function(
     if actual_agents is not None:
         try:
             # Check if agents is an A2AAgent, AgentPool, or list of agents
-            from opendxa.contrib.mcp_a2a.agent import AbstractDanaAgent
-            from opendxa.contrib.mcp_a2a.agent.pool.agent_pool import AgentPool
+            from dana.integrations.mcp.a2a.agent import AbstractDanaAgent
+            from dana.integrations.mcp.a2a.agent.pool.agent_pool import AgentPool
 
             agent_pool = None
 
@@ -289,7 +289,7 @@ def reason_function(
     from dana.core.lang.interpreter.enhanced_coercion import SemanticCoercer
     from dana.core.lang.interpreter.prompt_enhancement import enhance_prompt_for_type
 
-    logger = DXA_LOGGER.getLogger("opendxa.dana.reason.poet")
+    logger = DANA_LOGGER.getLogger("dana.reason.poet")
     logger.debug(f"POET-enhanced reason called with prompt: '{prompt[:50]}...'")
 
     try:

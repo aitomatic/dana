@@ -55,7 +55,7 @@ def generate_summary(text: str, max_words: int = 100) -> str:
     # In real usage, this would call an LLM
     # POET handles retries, timeouts, validation automatically
     import os
-    if os.getenv('OPENDXA_MOCK_LLM', 'true') == 'true':
+    if os.getenv('DANA_MOCK_LLM', 'true') == 'true':
         # Mock response for demo
         words = text.split()[:max_words]
         return f"Summary: {' '.join(words[:10])}... (mock summary)"

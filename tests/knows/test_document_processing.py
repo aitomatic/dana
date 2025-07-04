@@ -1,20 +1,20 @@
 """
-Tests for document processing components in OpenDXA KNOWS system.
+Tests for document processing components in Dana KNOWS system.
 
 This module tests the document loader, parser, and text extractor functionality.
 """
 
-import os
 import json
+import os
 import tempfile
-import pytest
 from datetime import datetime
-from pathlib import Path
+
+import pytest
 
 from dana.frameworks.knows.core.base import Document, ParsedDocument
+from dana.frameworks.knows.document.extractor import TextExtractor
 from dana.frameworks.knows.document.loader import DocumentLoader
 from dana.frameworks.knows.document.parser import DocumentParser
-from dana.frameworks.knows.document.extractor import TextExtractor
 
 
 class TestDocumentLoader:

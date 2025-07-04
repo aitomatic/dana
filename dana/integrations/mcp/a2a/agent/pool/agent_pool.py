@@ -6,8 +6,8 @@ the most appropriate agent for a given task based on skills.
 """
 
 from dana.common.resource.base_resource import BaseResource
-from opendxa.contrib.mcp_a2a.agent.abstract_dana_agent import AbstractDanaAgent
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.integrations.mcp.a2a.agent.abstract_dana_agent import AbstractDanaAgent
 
 from .agent_selector import AgentSelector
 

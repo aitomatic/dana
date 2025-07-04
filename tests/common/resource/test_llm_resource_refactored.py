@@ -142,7 +142,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
         self.assertEqual(llm3.config["temperature"], 0.9)
         self.assertEqual(llm3.config["max_tokens"], 2048)
 
-    @patch("opendxa.common.resource.llm_resource.ConfigLoader")
+    @patch("dana.common.resource.llm_resource.ConfigLoader")
     def test_preferred_models_integration(self, mock_config_loader):
         """Test integration with preferred models from configuration."""
         # Mock configuration with preferred models

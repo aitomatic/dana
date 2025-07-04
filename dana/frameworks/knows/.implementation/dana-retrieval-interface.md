@@ -1,4 +1,4 @@
-# Dana Language Interface: OpenDXA KNOWS Knowledge Retrieval
+# Dana Language Interface: Dana KNOWS Knowledge Retrieval
 
 ## Simple User Interface
 

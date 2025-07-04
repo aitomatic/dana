@@ -1,4 +1,4 @@
-# OpenDXA PubSub Implementation Tracking
+# Dana PubSub Implementation Tracking
 
 ## Core Implementation Tasks
 
@@ -229,7 +229,7 @@ Status: Design Phase (Deferred to Beta)
 
 ### Notes & Decisions
 - Using Python 3.12+ for implementation
-- Following OpenDXA coding standards
+- Following Dana coding standards
 - Implementing in phases for better tracking
 
 ### Upcoming Milestones

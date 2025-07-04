@@ -3,7 +3,7 @@
 import logging
 from typing import Any
 
-from dana.common.utils.logging.dxa_logger import DXA_LOGGER
+from dana.common.utils.logging import DANA_LOGGER
 
 
 class Loggable:
@@ -54,11 +54,11 @@ class Loggable:
         Returns:
             The configured logger instance
         """
-        self._logger = DXA_LOGGER.getLogger(logger_name or self, prefix)
+        self._logger = DANA_LOGGER.getLogger(logger_name or self, prefix)
 
-        # Only configure if the global DXA_LOGGER system hasn't been configured yet
+        # Only configure if the global DANA_LOGGER system hasn't been configured yet
         # This prevents individual Loggable instances from overriding global settings
-        if not DXA_LOGGER._configured:
+        if not DANA_LOGGER._configured:
             self._logger.configure(
                 console=True,
                 level=level if level is not None else logging.WARNING,
@@ -117,4 +117,4 @@ class Loggable:
     @classmethod
     def get_class_logger(cls) -> Any:
         """Get a logger for the class itself."""
-        return DXA_LOGGER.getLoggerForClass(cls)
+        return DANA_LOGGER.getLoggerForClass(cls)

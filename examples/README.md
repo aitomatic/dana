@@ -1,8 +1,8 @@
 [Project Overview](../README.md) | [Main Documentation](../docs/README.md)
 
-# OpenDXA Examples
+# Dana Examples
 
-This directory contains examples demonstrating different aspects of the OpenDXA framework.
+This directory contains examples demonstrating different aspects of the Dana framework.
 
 ## Directory Structure
 
@@ -16,15 +16,15 @@ examples/
 
 ## Getting Started
 
-The `getting_started/` directory contains basic examples that demonstrate fundamental OpenDXA concepts:
+The `getting_started/` directory contains basic examples that demonstrate fundamental Dana concepts:
 
-1. `01_introduction_to_dxa.ipynb` - Introduction to OpenDXA
+1. `01_introduction_to_dxa.ipynb` - Introduction to Dana
 2. `02_simple_plans.ipynb` - Creating and running basic plans
 3. `03_agent_configuration.ipynb` - Configuring agents with different settings
 
 ## Core Concepts
 
-The `core_concepts/` directory contains examples that demonstrate core OpenDXA features:
+The `core_concepts/` directory contains examples that demonstrate core Dana features:
 
 1. `01_planning_layer.ipynb` - Understanding the planning layer
 2. `02_reasoning_layer.ipynb` - Understanding the reasoning layer
@@ -45,7 +45,7 @@ The `advanced_topics/` directory contains complex examples and patterns:
 
 ## Real-World Applications
 
-The `real_world_applications/` directory contains examples of OpenDXA in real-world scenarios:
+The `real_world_applications/` directory contains examples of Dana in real-world scenarios:
 
 1. `01_semiconductor_manufacturing.ipynb` - Semiconductor manufacturing applications
 2. `02_general_manufacturing.ipynb` - General manufacturing applications
@@ -55,7 +55,7 @@ The `real_world_applications/` directory contains examples of OpenDXA in real-wo
 
 Before running any examples:
 
-1. Install OpenDXA and its dependencies:
+1. Install Dana and its dependencies:
 
    ```bash
    pip install -e .
@@ -71,9 +71,9 @@ Before running any examples:
 3. Configure logging (optional):
 
    ```python
-   from opendxa.common import DXA_LOGGER
-   DXA_LOGGER.configure(
-       level=DXA_LOGGER.DEBUG,
+   from dana.common import DANA_LOGGER
+   DANA_LOGGER.configure(
+       level=DANA_LOGGER.DEBUG,
        console=True,
        log_data=True
    )

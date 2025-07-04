@@ -1,0 +1,71 @@
+{
+    "llm": {
+        "preferred_models": [
+            "openai:gpt-4o-mini",
+            "local",
+            "openai:gpt-4o",
+            "anthropic:claude-3-5-sonnet-20240620",
+            "groq:llama3-70b-8192",
+            "mistral:mistral-large-latest",
+            "google:gemini-1.5-pro-latest",
+            "deepseek:deepseek-chat",
+            "cohere:command",
+            "ibm_watsonx:ibm/granite-20b-multilingual",
+            "azure:gpt-4"
+        ],
+        "provider_configs": {
+            "local": {
+                "api_key": "env:LOCAL_API_KEY",
+                "base_url": "http://localhost:8000/v1",
+                "model_name": "microsoft/Phi-3.5-mini-instruct",
+                "api_type": "openai"
+            },
+            "openai": {
+                "api_key": "env:OPENAI_API_KEY",
+                "base_url": "https://api.openai.com/v1",
+                "api_type": "openai"
+            },
+            "anthropic": {
+                "api_key": "env:ANTHROPIC_API_KEY",
+                "api_type": "anthropic"
+            },
+            "groq": {
+                "api_key": "env:GROQ_API_KEY",
+                "api_type": "openai"
+            },
+            "mistral": {
+                "api_key": "env:MISTRAL_API_KEY",
+                "api_type": "openai"
+            },
+            "google": {
+                "api_key": "env:GOOGLE_API_KEY",
+                "api_type": "openai"
+            },
+            "deepseek": {
+                "api_key": "env:DEEPSEEK_API_KEY",
+                "api_type": "openai"
+            },
+            "cohere": {
+                "api_key": "env:COHERE_API_KEY",
+                "api_type": "openai"
+            },
+            "azure": {
+                "api_key": "env:AZURE_OPENAI_API_KEY",
+                "base_url": "https://your-company.openai.azure.com/",
+                "api_type": "openai"
+            },
+            "ibm_watsonx": {
+                "api_key": "env:WATSONX_API_KEY",
+                "apiBase": "https://us-south.ml.cloud.ibm.com",
+                "projectId": "env:WATSONX_PROJECT_ID",
+                "model_name": "ibm/granite-20b-multilingual",
+                "provider": "watsonx",
+                "api_type": "watsonx",
+                "deploymentId": "env:WATSONX_DEPLOYMENT_ID",
+                "apiVersion": "2024-03-14"
+            }
+        },
+        "query_strategy": "iterative",
+        "query_max_iterations": 5
+    }
+}

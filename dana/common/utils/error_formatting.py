@@ -1,7 +1,7 @@
-"""Error formatting utilities for OpenDXA.
+"""Error formatting utilities for Dana.
 
 This module provides centralized error message formatting utilities that follow
-the OpenDXA error message standard format:
+the Dana error message standard format:
 
 "[What failed]: [Why it failed]. [What user can do]. [Available alternatives]"
 
@@ -24,13 +24,13 @@ Example:
 
 from typing import Any
 
-from dana.common.utils.logging import DXA_LOGGER
+from dana.common.utils.logging import DANA_LOGGER
 
 
 class ErrorFormattingUtilities:
     """Utility class for standardized error message formatting.
 
-    All methods follow the OpenDXA error message format:
+    All methods follow the Dana error message format:
     "[What failed]: [Why it failed]. [What user can do]. [Available alternatives]"
 
     This ensures consistent, actionable error messages across the entire codebase.
@@ -50,7 +50,7 @@ class ErrorFormattingUtilities:
             context: Optional context for additional information
 
         Returns:
-            Formatted error message following OpenDXA standard
+            Formatted error message following Dana standard
 
         Example:
             >>> ErrorFormattingUtilities.format_resource_error(
@@ -95,7 +95,7 @@ class ErrorFormattingUtilities:
             context: Optional context for additional information
 
         Returns:
-            Formatted error message following OpenDXA standard
+            Formatted error message following Dana standard
 
         Example:
             >>> ErrorFormattingUtilities.format_validation_error(
@@ -140,16 +140,16 @@ class ErrorFormattingUtilities:
             config_file: Configuration file name if applicable
 
         Returns:
-            Formatted error message following OpenDXA standard
+            Formatted error message following Dana standard
 
         Example:
             >>> ErrorFormattingUtilities.format_configuration_error(
             ...     config_key="llm.model",
             ...     issue="not found in configuration file",
-            ...     solution="add model configuration to opendxa_config.json",
-            ...     config_file="opendxa_config.json"
+            ...     solution="add model configuration to dana_config.json",
+            ...     config_file="dana_config.json"
             ... )
-            "Configuration 'llm.model' invalid: not found in configuration file 'opendxa_config.json'. Add model configuration to opendxa_config.json. Check configuration file format and required keys"
+            "Configuration 'llm.model' invalid: not found in configuration file 'dana_config.json'. Add model configuration to dana_config.json. Check configuration file format and required keys"
         """
         file_suffix = f" '{config_file}'" if config_file else ""
 
@@ -188,7 +188,7 @@ class ErrorFormattingUtilities:
             available_models: List of available models
 
         Returns:
-            Formatted error message following OpenDXA standard
+            Formatted error message following Dana standard
 
         Example:
             >>> ErrorFormattingUtilities.format_llm_error(
@@ -236,7 +236,7 @@ class ErrorFormattingUtilities:
             solution: Suggested solution
 
         Returns:
-            Formatted error message following OpenDXA standard
+            Formatted error message following Dana standard
 
         Example:
             >>> ErrorFormattingUtilities.format_file_error(
@@ -272,7 +272,7 @@ class ErrorFormattingUtilities:
     def format_generic_error(
         operation: str, reason: str, suggestion: str | None = None, context: str = "", alternatives: list[str] | None = None
     ) -> str:
-        """Format a generic error message following OpenDXA standards.
+        """Format a generic error message following Dana standards.
 
         Args:
             operation: The operation that failed
@@ -282,7 +282,7 @@ class ErrorFormattingUtilities:
             alternatives: List of alternative approaches
 
         Returns:
-            Formatted error message following OpenDXA standard
+            Formatted error message following Dana standard
 
         Example:
             >>> ErrorFormattingUtilities.format_generic_error(
@@ -320,7 +320,7 @@ class ErrorFormattingUtilities:
 
     @staticmethod
     def log_formatted_error(error_message: str, logger_method: str = "error", extra_context: dict[str, Any] | None = None) -> None:
-        """Log a formatted error message using DXA_LOGGER.
+        """Log a formatted error message using DANA_LOGGER.
 
         Args:
             error_message: The formatted error message
@@ -335,9 +335,9 @@ class ErrorFormattingUtilities:
             ... )
         """
         # Use getattr with default None, fallback to error if not callable
-        logger_func = getattr(DXA_LOGGER, logger_method, None)
+        logger_func = getattr(DANA_LOGGER, logger_method, None)
         if not callable(logger_func):
-            logger_func = DXA_LOGGER.error
+            logger_func = DANA_LOGGER.error
 
         if extra_context:
             logger_func(error_message, extra=extra_context)

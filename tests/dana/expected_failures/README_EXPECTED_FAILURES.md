@@ -182,10 +182,10 @@ uv run pytest tests/dana/expected_failures/syntax_limitations/ -v
 ### Run Individual Documentation Files
 ```bash
 # Run Dana files directly to see documentation
-uv run python -m opendxa.dana.exec.dana tests/dana/expected_failures/syntax_limitations/test_expected_syntax_failures.na
+uv run python -m dana.dana.exec.dana tests/dana/expected_failures/syntax_limitations/test_expected_syntax_failures.na
 
 # Run all documentation files
-find tests/dana/expected_failures -name "*.na" -exec uv run python -m opendxa.dana.exec.dana {} \;
+find tests/dana/expected_failures -name "*.na" -exec uv run python -m dana.dana.exec.dana {} \;
 ```
 
 ### Expected Output

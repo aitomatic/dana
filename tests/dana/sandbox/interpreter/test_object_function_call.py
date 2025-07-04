@@ -240,8 +240,8 @@ class TestWebSearchPattern:
 
     def test_websearch_search_method(self):
         """Test websearch.search() method with arguments."""
-        result = self.interpreter._eval('websearch.search("OpenDXA")', self.context)
-        assert result == "Search results for: OpenDXA"
+        result = self.interpreter._eval('websearch.search("Dana")', self.context)
+        assert result == "Search results for: Dana"
 
 
 class TestNestedObjectCalls:

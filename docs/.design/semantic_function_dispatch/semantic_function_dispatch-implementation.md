@@ -140,7 +140,7 @@ Design Document: 02_semantic_function_dispatch_design.md
 
 ### ✅ **WORKING PERFECTLY** - Enhanced Coercion Demo
 ```bash
-uv run python -m opendxa.dana.exec.dana tmp/test_current_status.na
+uv run python -m dana.dana.exec.dana tmp/test_current_status.na
 # Result: ✅ ALL CORE FEATURES WORKING PERFECTLY
 # 📋 1. BASIC SEMANTIC PATTERNS: ✅ PERFECT
 #   - bool('0') → False ✅ (FIXED!)

@@ -7,7 +7,6 @@ appropriate error messages and security rationales.
 
 import pytest
 
-from opendxa.dana.common.exceptions import SandboxError
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
@@ -17,6 +16,7 @@ from dana.core.lang.interpreter.functions.pythonic.function_factory import (
     register_pythonic_builtins,
 )
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.common.exceptions import SandboxError
 
 
 class TestUnsupportedFunctions:

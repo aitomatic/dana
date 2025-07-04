@@ -6,7 +6,7 @@
 
 ## Overview
 
-OpenDXA provides a comprehensive system for managing both knowledge and memory through specialized resources. These resources are designed to work together while maintaining clear separation of concerns.
+Dana provides a comprehensive system for managing both knowledge and memory through specialized resources. These resources are designed to work together while maintaining clear separation of concerns.
 
 ## Logical Architecture
 

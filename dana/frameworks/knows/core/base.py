@@ -1,13 +1,13 @@
 """
-Base classes and interfaces for OpenDXA KNOWS system.
+Base classes and interfaces for Dana KNOWS system.
 
 This module defines the fundamental abstractions used throughout the knowledge ingestion system.
 """
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
 from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -18,7 +18,7 @@ class Document:
     source: str
     content: str
     format: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
     created_at: datetime
     
     def __post_init__(self):
@@ -37,8 +37,8 @@ class ParsedDocument:
     
     document: Document
     text_content: str
-    structured_data: Dict[str, Any]
-    metadata: Dict[str, Any]
+    structured_data: dict[str, Any]
+    metadata: dict[str, Any]
 
 
 @dataclass 
@@ -48,9 +48,9 @@ class KnowledgePoint:
     id: str
     type: str
     content: str
-    context: Dict[str, Any]
+    context: dict[str, Any]
     confidence: float
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
     
     def __post_init__(self):
         """Validate knowledge point fields."""
@@ -63,8 +63,8 @@ class ExpandedKnowledge:
     """Knowledge with expanded context from similarity search."""
     
     knowledge: KnowledgePoint
-    context: List[str]
-    relationships: List[Dict[str, Any]]
+    context: list[str]
+    relationships: list[dict[str, Any]]
     confidence: float
 
 
@@ -74,9 +74,9 @@ class ValidationResult:
     
     is_valid: bool
     confidence: float
-    issues: List[str]
-    suggestions: List[str]
-    metadata: Dict[str, Any]
+    issues: list[str]
+    suggestions: list[str]
+    metadata: dict[str, Any]
 
 
 @dataclass
@@ -86,9 +86,9 @@ class Knowledge:
     id: str
     content: str
     type: str
-    context: Dict[str, Any]
+    context: dict[str, Any]
     validation: ValidationResult
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class DocumentBase(ABC):
@@ -123,7 +123,7 @@ class KnowledgeBase(ABC):
     """Abstract base class for knowledge operations."""
     
     @abstractmethod
-    def extract_knowledge(self, document: Document) -> List[KnowledgePoint]:
+    def extract_knowledge(self, document: Document) -> list[KnowledgePoint]:
         """Extract knowledge points from document."""
         pass
     

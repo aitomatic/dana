@@ -73,7 +73,7 @@ class Misc:
         """Get class by its fully qualified name.
 
         Example:
-            get_class_by_name("opendxa.common.graph.traversal.Cursor")
+            get_class_by_name("dana.common.graph.traversal.Cursor")
         """
         module_path, class_name = class_path.rsplit(".", 1)
         module = import_module(module_path)

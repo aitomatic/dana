@@ -27,7 +27,7 @@ from pydantic import BaseModel, Field
 
 # First-party imports
 from dana.common.capability.base_capability import BaseCapability
-from dana.common.exceptions import DXAMemoryError, OpenDXAError
+from dana.common.exceptions import DanaMemoryError, DanaError
 
 
 class MemoryEntry(BaseModel):
@@ -102,10 +102,10 @@ class MemoryCapability(BaseCapability):
 
             return {"success": True, "stored_at": entry.timestamp}
 
-        except OpenDXAError as e:
+        except DanaError as e:
             return {"success": False, "error": str(e)}
         except Exception as e:
-            raise DXAMemoryError(f"Failed to store memory: {str(e)}") from e
+            raise DanaMemoryError(f"Failed to store memory: {str(e)}") from e
 
     async def _retrieve_memories(self, query: dict, limit: int | None = None) -> dict[str, Any]:
         """Retrieve memories matching query."""
@@ -131,20 +131,20 @@ class MemoryCapability(BaseCapability):
                 ],
             }
 
-        except OpenDXAError as e:
+        except DanaError as e:
             return {"success": False, "error": str(e)}
         except Exception as e:
-            raise DXAMemoryError(f"Failed to retrieve memories: {str(e)}") from e
+            raise DanaMemoryError(f"Failed to retrieve memories: {str(e)}") from e
 
     async def _update_working_memory(self, updates: dict[str, Any]) -> dict[str, Any]:
         """Update working memory."""
         try:
             self._working_memory.update(updates)
             return {"success": True, "working_memory": self._working_memory}
-        except OpenDXAError as e:
+        except DanaError as e:
             return {"success": False, "error": str(e)}
         except Exception as e:
-            raise DXAMemoryError(f"Failed to update working memory: {str(e)}") from e
+            raise DanaMemoryError(f"Failed to update working memory: {str(e)}") from e
 
     async def _clear_memories(self, filter_dict: dict) -> dict[str, Any]:
         """Clear memories matching filter."""
@@ -152,10 +152,10 @@ class MemoryCapability(BaseCapability):
             initial_count = len(self._memories)
             self._memories = [mem for mem in self._memories if not self._matches_query(mem, filter_dict)]
             return {"success": True, "cleared_count": initial_count - len(self._memories)}
-        except OpenDXAError as e:
+        except DanaError as e:
             return {"success": False, "error": str(e)}
         except Exception as e:
-            raise DXAMemoryError(f"Failed to clear memories: {str(e)}") from e
+            raise DanaMemoryError(f"Failed to clear memories: {str(e)}") from e
 
     def _cleanup_memories(self):
         """Clean up memories based on importance and size limits."""

@@ -94,8 +94,8 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
         """Test successful tool calling."""
         # Mock dependencies
         with (
-            patch("opendxa.common.resource.llm_tool_call_manager.ToolFormat") as mock_tool_format,
-            patch("opendxa.common.resource.llm_tool_call_manager.Registerable") as mock_registerable,
+            patch("dana.common.resource.llm_tool_call_manager.ToolFormat") as mock_tool_format,
+            patch("dana.common.resource.llm_tool_call_manager.Registerable") as mock_registerable,
         ):
             # Setup mocks
             mock_tool_format.parse_tool_name.return_value = ("test_resource", "test_id", "test_tool")
@@ -119,8 +119,8 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
     async def test_call_requested_tools_resource_not_found(self):
         """Test tool calling when resource is not found."""
         with (
-            patch("opendxa.common.resource.llm_tool_call_manager.ToolFormat") as mock_tool_format,
-            patch("opendxa.common.resource.llm_tool_call_manager.Registerable") as mock_registerable,
+            patch("dana.common.resource.llm_tool_call_manager.ToolFormat") as mock_tool_format,
+            patch("dana.common.resource.llm_tool_call_manager.Registerable") as mock_registerable,
         ):
             # Setup mocks
             mock_tool_format.parse_tool_name.return_value = ("test_resource", "test_id", "test_tool")
@@ -138,8 +138,8 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
     async def test_call_requested_tools_error_handling(self):
         """Test tool calling error handling."""
         with (
-            patch("opendxa.common.resource.llm_tool_call_manager.ToolFormat") as mock_tool_format,
-            patch("opendxa.common.resource.llm_tool_call_manager.Registerable") as mock_registerable,
+            patch("dana.common.resource.llm_tool_call_manager.ToolFormat") as mock_tool_format,
+            patch("dana.common.resource.llm_tool_call_manager.Registerable") as mock_registerable,
         ):
             # Setup mocks
             mock_tool_format.parse_tool_name.return_value = ("test_resource", "test_id", "test_tool")
@@ -162,8 +162,8 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
     async def test_call_requested_tools_json_response(self):
         """Test tool calling with JSON response conversion."""
         with (
-            patch("opendxa.common.resource.llm_tool_call_manager.ToolFormat") as mock_tool_format,
-            patch("opendxa.common.resource.llm_tool_call_manager.Registerable") as mock_registerable,
+            patch("dana.common.resource.llm_tool_call_manager.ToolFormat") as mock_tool_format,
+            patch("dana.common.resource.llm_tool_call_manager.Registerable") as mock_registerable,
         ):
             # Setup mocks
             mock_tool_format.parse_tool_name.return_value = ("test_resource", "test_id", "test_tool")
@@ -191,8 +191,8 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
         self.tool_manager.max_response_length = 10
 
         with (
-            patch("opendxa.common.resource.llm_tool_call_manager.ToolFormat") as mock_tool_format,
-            patch("opendxa.common.resource.llm_tool_call_manager.Registerable") as mock_registerable,
+            patch("dana.common.resource.llm_tool_call_manager.ToolFormat") as mock_tool_format,
+            patch("dana.common.resource.llm_tool_call_manager.Registerable") as mock_registerable,
         ):
             # Setup mocks
             mock_tool_format.parse_tool_name.return_value = ("test_resource", "test_id", "test_tool")

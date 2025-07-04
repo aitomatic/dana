@@ -1,8 +1,9 @@
 """Test LLMResource model switching functionality."""
 
 import os
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 from dana.common.resource.llm_resource import LLMResource
 from dana.common.types import BaseRequest
@@ -273,13 +274,13 @@ class TestLLMResourceModelSwitching:
 
     def test_actual_aisuite_model_format_validation(self):
         """Test that actually triggers the AISuite model format validation error."""
-        from dana.common.types import BaseRequest
-        from unittest.mock import patch
         import os
 
+        from dana.common.types import BaseRequest
+
         # Temporarily disable mock mode
-        original_mock_env = os.environ.get("OPENDXA_MOCK_LLM")
-        os.environ["OPENDXA_MOCK_LLM"] = "false"
+        original_mock_env = os.environ.get("DANA_MOCK_LLM")
+        os.environ["DANA_MOCK_LLM"] = "false"
 
         try:
             # Create LLMResource with the exact model that's causing the error
@@ -309,18 +310,17 @@ class TestLLMResourceModelSwitching:
         finally:
             # Restore original mock environment
             if original_mock_env is not None:
-                os.environ["OPENDXA_MOCK_LLM"] = original_mock_env
+                os.environ["DANA_MOCK_LLM"] = original_mock_env
             else:
-                del os.environ["OPENDXA_MOCK_LLM"]
+                del os.environ["DANA_MOCK_LLM"]
 
     def test_config_with_invalid_model_format_triggers_error(self):
         """Test that a config with an invalid model format triggers the error before Dana sees it."""
-        from dana.common.types import BaseRequest
-        from unittest.mock import patch
         import copy
 
         # Patch ConfigLoader to inject a bad preferred model
         from dana.common.config import ConfigLoader
+        from dana.common.types import BaseRequest
 
         bad_model = "microsoft/Phi-3.5-mini-instruct"
 
@@ -348,8 +348,9 @@ class TestLLMResourceModelSwitching:
 
     def test_local_model_bug_is_fixed(self):
         """Test that the local model bug is fixed - correct model format transformation."""
-        from dana.common.types import BaseRequest
         import os
+
+        from dana.common.types import BaseRequest
 
         # Test 1: Default api_type (should default to "openai")
         provider_configs_default = {
@@ -413,8 +414,8 @@ class TestLLMResourceModelSwitching:
         )
 
         # Enable mock mode to test the query without real API calls
-        original_mock = os.environ.get("OPENDXA_MOCK_LLM")
-        os.environ["OPENDXA_MOCK_LLM"] = "true"
+        original_mock = os.environ.get("DANA_MOCK_LLM")
+        os.environ["DANA_MOCK_LLM"] = "true"
 
         try:
             # Test query with mock enabled
@@ -434,9 +435,9 @@ class TestLLMResourceModelSwitching:
         finally:
             # Restore original mock environment
             if original_mock is not None:
-                os.environ["OPENDXA_MOCK_LLM"] = original_mock
-            elif "OPENDXA_MOCK_LLM" in os.environ:
-                del os.environ["OPENDXA_MOCK_LLM"]
+                os.environ["DANA_MOCK_LLM"] = original_mock
+            elif "DANA_MOCK_LLM" in os.environ:
+                del os.environ["DANA_MOCK_LLM"]
 
     def test_local_model_api_type_configuration(self):
         """Test that different api_type values are properly handled for local models."""

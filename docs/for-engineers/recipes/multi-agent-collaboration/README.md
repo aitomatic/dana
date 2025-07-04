@@ -27,11 +27,11 @@ This directory contains Dana module agent examples that work alongside the A2A a
    # Method 1: Navigate to this directory (simple)
    # After starting A2A agents, we are in examples/dana/08_a2a_multi_agents/
    cd module_agents
-   uv run python -m opendxa.dana.exec.dana demo_main.na
+   uv run python -m dana.dana.exec.dana demo_main.na
    
    # Method 2: Use DANA_PATH from anywhere
    export DANA_PATH=/path/to/opendxa/examples/dana/08_a2a_multi_agents/module_agents
-   uv run python -m opendxa.dana.exec.dana examples/dana/08_a2a_multi_agents/module_agents/demo_main.na
+   uv run python -m dana.dana.exec.dana examples/dana/08_a2a_multi_agents/module_agents/demo_main.na
    ```
 
 ## Important Notes
@@ -46,10 +46,10 @@ You can set the `DANA_PATH` environment variable to enable imports from any dire
 ```bash
 # From OpenDXA root directory
 export DANA_PATH=$(pwd)/examples/dana/08_a2a_multi_agents/module_agents
-uv run python -m opendxa.dana.exec.dana examples/dana/08_a2a_multi_agents/module_agents/demo_main.na
+uv run python -m dana.dana.exec.dana examples/dana/08_a2a_multi_agents/module_agents/demo_main.na
 
 # Or inline
-DANA_PATH=$(pwd)/examples/dana/08_a2a_multi_agents/module_agents uv run python -m opendxa.dana.exec.dana examples/dana/08_a2a_multi_agents/module_agents/demo_main.na
+DANA_PATH=$(pwd)/examples/dana/08_a2a_multi_agents/module_agents uv run python -m dana.dana.exec.dana examples/dana/08_a2a_multi_agents/module_agents/demo_main.na
 ```
 
 ### MCP Resource Adaptation

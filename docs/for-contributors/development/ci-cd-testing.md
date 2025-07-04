@@ -211,7 +211,7 @@ If a specific job fails:
 If all jobs fail with similar errors:
 
 1. **Check for dependency issues** - `uv sync --extra dev`
-2. **Check for environment variable issues** - `OPENDXA_MOCK_LLM`, etc.
+2. **Check for environment variable issues** - `DANA_MOCK_LLM`, etc.
 3. **Run the full test suite locally** - `uv run pytest tests/ -v`
 
 ### Adding More Parallelization

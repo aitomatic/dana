@@ -77,7 +77,7 @@ validated_inputs = {{
 
         return CodeBlock(
             code=validation_code,
-            dependencies=["json", "re", "opendxa.common.resource.llm_resource"],
+            dependencies=["json", "re", "dana.common.resource.llm_resource"],
             imports=["import json", "import re", "from dana.common.resource.llm_resource import LLMResource"],
             metadata={
                 "phase": "perceive",
@@ -359,7 +359,7 @@ if use_mock_param is not None:
 else:
     # Check environment variable
     import os
-    use_mock = os.getenv('OPENDXA_MOCK_LLM', 'false').lower() == 'true'
+    use_mock = os.getenv('DANA_MOCK_LLM', 'false').lower() == 'true'
 """.strip()
 
     def _generate_mock_response(self) -> str:

@@ -5,13 +5,12 @@ A language and framework for building domain-expert multi-agent systems.
 """
 
 # Core components
-from .core import DanaParser, DanaInterpreter, DanaSandbox
-
 # Common utilities
-from .common import DXA_LOGGER, DANA_LOGGER, DXALogger
+from .common import DANA_LOGGER, DanaLogger
+from .core import DanaInterpreter, DanaParser, DanaSandbox
 
 # Frameworks
-from .frameworks import poet, POETConfig, POETResult, DocumentLoader, KnowledgePoint, Agent
+from .frameworks import Agent, DocumentLoader, KnowledgePoint, POETConfig, POETResult, poet
 
 __version__ = "1.0.0"
 
@@ -19,7 +18,7 @@ __all__ = [
     # Core
     'DanaParser', 'DanaInterpreter', 'DanaSandbox',
     # Common
-    'DXA_LOGGER', 'DANA_LOGGER', 'DXALogger',
+    'DANA_LOGGER', 'DanaLogger',
     # Frameworks  
     'poet', 'POETConfig', 'POETResult',
     'DocumentLoader', 'KnowledgePoint',

@@ -4,9 +4,9 @@ import os
 import unittest
 from unittest.mock import patch
 
-from opendxa.dana.common.exceptions import SandboxError
 from dana.core.lang.interpreter.functions.core.list_models_function import list_models_function
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.common.exceptions import SandboxError
 
 
 class TestListModelsFunction(unittest.TestCase):
@@ -116,7 +116,7 @@ class TestListModelsFunction(unittest.TestCase):
         result = list_models_function(self.context)
 
         # The first model should be the top preferred model from the config
-        # Based on opendxa_config.json, "openai:gpt-4o-mini" is the first preferred model
+        # Based on dana_config.json, "openai:gpt-4o-mini" is the first preferred model
         self.assertEqual(result[0], "openai:gpt-4o-mini")
 
         # Check that another preferred model is also present
@@ -135,7 +135,7 @@ class TestListModelsFunction(unittest.TestCase):
     def test_function_error_handling(self):
         """Test error handling in the function."""
         # Mock _get_available_model_names to raise an exception
-        with patch("opendxa.dana.sandbox.interpreter.functions.core.list_models_function._get_available_model_names") as mock_get_models:
+        with patch("dana.dana.sandbox.interpreter.functions.core.list_models_function._get_available_model_names") as mock_get_models:
             mock_get_models.side_effect = Exception("Test error")
 
             with self.assertRaises(SandboxError) as context:

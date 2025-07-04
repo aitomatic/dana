@@ -95,7 +95,7 @@ export DXA_FEATURE_SETTING1=value1
 export DXA_FEATURE_SETTING2=value2
 
 # Verification
-uv run python -m opendxa.[module].verify
+uv run python -m dana.[module].verify
 ```
 
 ### Test Cases

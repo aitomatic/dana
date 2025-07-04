@@ -4,14 +4,15 @@ This is a simple example of how to use the code agent.
 
 from pathlib import Path
 
-from opendxa import DXA_LOGGER, PlanFactory
 from dana.frameworks.agent import Agent
-from opendxa.contrib.code_agent.code_resource import CodeResource
-from opendxa.contrib.sql_agent_with_dynamic_plan.execution.planning.dynamic_plan_executor import (
+from dana.common.utils.logging import DANA_LOGGER
+from dana.frameworks.agent import PlanFactory
+from dana.contrib.code_agent.code_resource import CodeResource
+from dana.contrib.sql_agent_with_dynamic_plan.execution.planning.dynamic_plan_executor import (
     DynamicPlanExecutor,
 )
 
-DXA_LOGGER.setLevel(DXA_LOGGER.DEBUG)
+DANA_LOGGER.setLevel(DANA_LOGGER.DEBUG)
 
 # load_dotenv()  # no longer needed; done by the framework
 

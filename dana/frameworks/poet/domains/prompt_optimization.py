@@ -112,7 +112,7 @@ validated_inputs["prompt_history"] = prompt_history[:5]  # Keep top 5
 
         return CodeBlock(
             code=enhanced_perceive,
-            dependencies=base_perceive.dependencies + ["opendxa.dana.poet.storage", "time"],
+            dependencies=base_perceive.dependencies + ["dana.poet.storage", "time"],
             imports=base_perceive.imports + ["from dana.frameworks.poet.storage import POETStorage", "import time"],
             metadata={**base_perceive.metadata, "prompt_variants": True, "historical_learning": True, "ab_testing": True},
         )
@@ -299,7 +299,7 @@ if execution_id and final_result:
 
         return CodeBlock(
             code=train_code,
-            dependencies=["opendxa.dana.poet.feedback", "opendxa.dana.poet.storage", "time"],
+            dependencies=["dana.poet.feedback", "dana.poet.storage", "time"],
             imports=[
                 "from dana.frameworks.poet.feedback import get_feedback_system",
                 "from dana.frameworks.poet.storage import POETStorage",

@@ -1,4 +1,4 @@
-"""Graph utilities for DXA workflows and plans."""
+"""Graph utilities for Dana workflows and plans."""
 
 from .directed_graph import DirectedGraph, Edge, Node, NodeType
 from .factory import GraphFactory

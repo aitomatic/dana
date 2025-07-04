@@ -1,4 +1,4 @@
-"""Knowledge Organizations module for OpenDXA KNOWS framework."""
+"""Knowledge Organizations module for Dana KNOWS framework."""
 
 from dana.frameworks.knows.core.knowledge_orgs.base import (
     KnowledgeOrganization,

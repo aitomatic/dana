@@ -1,4 +1,4 @@
-"""Base class for configurable components in DXA.
+"""Base class for configurable components in Dana.
 
 This module provides a base class for components that need configuration management.
 It unifies common configuration patterns like loading from YAML, validation,
@@ -24,16 +24,16 @@ T = TypeVar("T")
 
 
 class Configurable(Loggable):
-    """Base class for configurable components in DXA.
+    """Base class for configurable components in Dana.
 
-    This class provides a unified interface for configuration management across DXA components.
+    This class provides a unified interface for configuration management across Dana components.
     It handles loading, validating, and accessing configuration from multiple sources.
 
     Configuration Location:
     The configuration path is determined by the location of the class definition:
-    - If MyComponent is defined in /path/to/opendxa/base/execution/my_component.py
-    - Then its config files will be in /path/to/opendxa/base/execution/yaml/
-    - And its default config will be in /path/to/opendxa/base/execution/yaml/my_component.yaml
+    - If MyComponent is defined in /path/to/dana/base/execution/my_component.py
+    - Then its config files will be in /path/to/dana/base/execution/yaml/
+    - And its default config will be in /path/to/dana/base/execution/yaml/my_component.yaml
 
     This means each configurable component's configuration is co-located with its code,
     making it easy to find and maintain related configurations. The default config file
@@ -41,9 +41,9 @@ class Configurable(Loggable):
     the physical file organization.
 
     Configuration Directory Structure:
-    - Base path: Directory containing the class definition (e.g., /path/to/opendxa/base/execution/)
-    - Config directory: 'yaml' subdirectory under base path (e.g., /path/to/opendxa/base/execution/yaml/)
-    - Default config: '{module_name}.yaml' in config directory (e.g., /path/to/opendxa/base/execution/yaml/my_component.yaml)
+    - Base path: Directory containing the class definition (e.g., /path/to/dana/base/execution/)
+    - Config directory: 'yaml' subdirectory under base path (e.g., /path/to/dana/base/execution/yaml/)
+    - Default config: '{module_name}.yaml' in config directory (e.g., /path/to/dana/base/execution/yaml/my_component.yaml)
 
     Key Features:
     - YAML file loading with defaults and overrides

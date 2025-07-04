@@ -31,16 +31,16 @@ class TestConfigLoader(unittest.TestCase):
         assert loader1 is loader2, "ConfigLoader should be a singleton"
 
     def test_config_dir_property(self):
-        """Test that config_dir returns correct opendxa library directory."""
+        """Test that config_dir returns correct dana library directory."""
         loader = ConfigLoader()
         config_dir = loader.config_dir
 
-        # Should point to opendxa library directory (where default config is stored)
-        assert config_dir.name == "opendxa", f"Expected opendxa library directory, got {config_dir}"
+        # Should point to dana library directory (where default config is stored)
+        assert config_dir.name == "dana", f"Expected dana library directory, got {config_dir}"
 
         # Verify it contains the expected library files
         assert (config_dir / "__init__.py").exists(), "Library directory should contain __init__.py"
-        assert (config_dir / "opendxa_config.json").exists(), "Library directory should contain default opendxa_config.json"
+        assert (config_dir / "dana_config.json").exists(), "Library directory should contain default dana_config.json"
 
     def test_load_config_from_path_valid_json(self):
         """Test loading valid JSON config from specific path."""
@@ -98,7 +98,7 @@ class TestConfigLoader(unittest.TestCase):
                 config_path.unlink()
 
     def test_get_default_config_env_var_priority(self):
-        """Test that OPENDXA_CONFIG environment variable takes priority."""
+        """Test that DANA_CONFIG environment variable takes priority."""
         loader = ConfigLoader()
         test_config = {"env_config": "priority_value"}
 
@@ -107,9 +107,9 @@ class TestConfigLoader(unittest.TestCase):
             temp_path = Path(f.name)
 
         try:
-            with patch.dict(os.environ, {"OPENDXA_CONFIG": str(temp_path)}):
+            with patch.dict(os.environ, {"DANA_CONFIG": str(temp_path)}):
                 result = loader.get_default_config()
-                assert result == test_config, "Should load from OPENDXA_CONFIG path"
+                assert result == test_config, "Should load from DANA_CONFIG path"
         finally:
             temp_path.unlink()
 
@@ -158,16 +158,16 @@ class TestConfigLoader(unittest.TestCase):
                 with patch.dict(os.environ, {}, clear=True):
                     # Mock __file__ to point to a fake location where no config exists
                     fake_config_file = Path(temp_dir) / "fake" / "common" / "config" / "config_loader.py"
-                    with patch("opendxa.common.config.config_loader.__file__", str(fake_config_file)):
+                    with patch("dana.common.config.config_loader.__file__", str(fake_config_file)):
                         with pytest.raises(ConfigurationError, match="Default config .* not found"):
                             loader.get_default_config()
 
     def test_get_default_config_env_var_invalid_path(self):
-        """Test error handling for invalid OPENDXA_CONFIG path."""
+        """Test error handling for invalid DANA_CONFIG path."""
         loader = ConfigLoader()
 
-        with patch.dict(os.environ, {"OPENDXA_CONFIG": "/invalid/path/config.json"}):
-            with pytest.raises(ConfigurationError, match="Failed to load config from OPENDXA_CONFIG"):
+        with patch.dict(os.environ, {"DANA_CONFIG": "/invalid/path/config.json"}):
+            with pytest.raises(ConfigurationError, match="Failed to load config from DANA_CONFIG"):
                 loader.get_default_config()
 
     def test_user_override_behavior(self):

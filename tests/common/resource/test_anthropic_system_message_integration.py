@@ -6,7 +6,7 @@ transformation, eliminating the need for manual transformation and preventing co
 
 import os
 import unittest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 from dana.common.resource.llm_resource import LLMResource
 from dana.common.types import BaseRequest

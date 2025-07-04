@@ -30,7 +30,7 @@ The REPL utilizes the Dana Parser to parse input into an AST, and then the [Dana
 Typically, the REPL is started via a command-line script:
 
 ```bash
-python -m opendxa.dana.exec.repl.dana_repl_app
+python -m dana.dana.exec.repl.dana_repl_app
 ```
 
 ### Programmatic API
@@ -122,7 +122,7 @@ After an error, the REPL usually resets its input state, allowing the user to tr
 
 ## 8. LLM Integration for NLP
 
-For NLP capabilities, the REPL system integrates with an LLM, typically configured via API keys (e.g., `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, etc.) or a configuration file (`opendxa_config.json`). This enables the transcoding of natural language queries into executable Dana code.
+For NLP capabilities, the REPL system integrates with an LLM, typically configured via API keys (e.g., `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, etc.) or a configuration file (`dana_config.json`). This enables the transcoding of natural language queries into executable Dana code.
 
 ---
 *Self-reflection: This document needs to be kept in sync with the actual CLI REPL (`dana_repl_app.py`) and the programmatic REPL (`repl.py`) as they evolve. Links to Parser and Transcoder design documents are important once those are finalized in the new structure.*

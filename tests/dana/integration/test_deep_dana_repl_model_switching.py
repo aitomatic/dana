@@ -7,10 +7,8 @@ They test the integration stack from Dana -> LLMResource -> AISuite -> Providers
 
 import os
 import unittest
-from unittest.mock import MagicMock, patch
 
 from dana.core.lang.dana_sandbox import DanaSandbox
-
 
 # These tests are complex and have issues with Dana syntax
 # They should be converted to simpler tests or skipped for now
@@ -32,7 +30,7 @@ class TestDeepDanaREPLModelSwitching(unittest.TestCase):
                 "GROQ_API_KEY": "test-groq-key",
                 "DEEPSEEK_API_KEY": "test-deepseek-key",
                 # Enable mock mode for testing
-                "OPENDXA_MOCK_LLM": "true",
+                "DANA_MOCK_LLM": "true",
             }
         )
 

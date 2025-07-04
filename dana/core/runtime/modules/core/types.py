@@ -1,5 +1,5 @@
 """
-OpenDXA Dana Module System - Core Types
+Dana Dana Module System - Core Types
 
 This module defines the core types for Dana's module system, including module specifications,
 module objects, and related data structures.

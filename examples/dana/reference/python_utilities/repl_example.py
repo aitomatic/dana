@@ -4,8 +4,8 @@ import asyncio
 import logging
 
 from dana.common.resource.llm_resource import LLMResource
-from dana.core.repl.repl.repl import REPL
 from dana.core.lang.log_manager import LogLevel
+from dana.core.repl.repl.repl import REPL
 
 
 async def main():
@@ -14,7 +14,7 @@ async def main():
     logging.basicConfig(level=logging.INFO)
 
     # Create LLM resource for transcoding
-    # LLMResource now loads configuration via ConfigLoader (opendxa_config.json)
+    # LLMResource now loads configuration via ConfigLoader (dana_config.json)
     # and defaults the name to "default_llm". Ensure API keys are set in your
     # environment or the config file.
     llm = LLMResource()

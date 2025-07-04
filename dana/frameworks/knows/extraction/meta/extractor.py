@@ -1,17 +1,16 @@
 """
-Meta knowledge extractor for OpenDXA KNOWS system.
+Meta knowledge extractor for Dana KNOWS system.
 
 This module handles extracting high-level meta knowledge points from documents using LLM.
 """
 
 import json
 import uuid
-from typing import Dict, Any, List, Optional
-from dataclasses import asdict
+from typing import Any
 
-from dana.common.utils.logging import DXA_LOGGER
 from dana.common.resource.llm_resource import LLMResource
 from dana.common.types import BaseRequest
+from dana.common.utils.logging import DANA_LOGGER
 from dana.frameworks.knows.core.base import Document, KnowledgePoint, ProcessorBase
 
 
@@ -22,7 +21,7 @@ class MetaKnowledgeExtractor(ProcessorBase):
     MAX_RETRIES = 3
     
     def __init__(self, 
-                 llm_resource: Optional[LLMResource] = None,
+                 llm_resource: LLMResource | None = None,
                  confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD,
                  max_knowledge_points: int = 10):
         """Initialize meta knowledge extractor.
@@ -35,9 +34,9 @@ class MetaKnowledgeExtractor(ProcessorBase):
         self.llm_resource = llm_resource or LLMResource()
         self.confidence_threshold = confidence_threshold
         self.max_knowledge_points = max_knowledge_points
-        DXA_LOGGER.info(f"Initialized MetaKnowledgeExtractor with threshold: {confidence_threshold}")
+        DANA_LOGGER.info(f"Initialized MetaKnowledgeExtractor with threshold: {confidence_threshold}")
     
-    def process(self, document: Document) -> List[KnowledgePoint]:
+    def process(self, document: Document) -> list[KnowledgePoint]:
         """Extract meta knowledge points from document.
         
         Args:
@@ -68,11 +67,11 @@ class MetaKnowledgeExtractor(ProcessorBase):
                 filtered_points.sort(key=lambda x: x.confidence, reverse=True)
                 filtered_points = filtered_points[:self.max_knowledge_points]
             
-            DXA_LOGGER.info(f"Extracted {len(filtered_points)} meta knowledge points from document {document.id}")
+            DANA_LOGGER.info(f"Extracted {len(filtered_points)} meta knowledge points from document {document.id}")
             return filtered_points
             
         except Exception as e:
-            DXA_LOGGER.error(f"Failed to extract meta knowledge from document {document.id}: {str(e)}")
+            DANA_LOGGER.error(f"Failed to extract meta knowledge from document {document.id}: {str(e)}")
             # Apply fallback mechanism
             return self._fallback_extraction(document)
     
@@ -86,19 +85,19 @@ class MetaKnowledgeExtractor(ProcessorBase):
             True if document is valid
         """
         if not isinstance(document, Document):
-            DXA_LOGGER.error("Input must be a Document object")
+            DANA_LOGGER.error("Input must be a Document object")
             return False
         
         if not document.content or len(document.content.strip()) == 0:
-            DXA_LOGGER.error("Document content is empty")
+            DANA_LOGGER.error("Document content is empty")
             return False
         
         if len(document.content) > 50000:  # 50KB limit for LLM processing
-            DXA_LOGGER.warning(f"Document {document.id} is large ({len(document.content)} chars), may impact performance")
+            DANA_LOGGER.warning(f"Document {document.id} is large ({len(document.content)} chars), may impact performance")
         
         return True
     
-    def _extract_with_llm(self, document: Document) -> List[KnowledgePoint]:
+    def _extract_with_llm(self, document: Document) -> list[KnowledgePoint]:
         """Extract knowledge points using LLM.
         
         Args:
@@ -136,10 +135,10 @@ class MetaKnowledgeExtractor(ProcessorBase):
                 if knowledge_points:
                     return knowledge_points
                 
-                DXA_LOGGER.warning(f"LLM extraction attempt {attempt + 1} returned no valid knowledge points")
+                DANA_LOGGER.warning(f"LLM extraction attempt {attempt + 1} returned no valid knowledge points")
                 
             except Exception as e:
-                DXA_LOGGER.error(f"LLM extraction attempt {attempt + 1} failed: {str(e)}")
+                DANA_LOGGER.error(f"LLM extraction attempt {attempt + 1} failed: {str(e)}")
                 if attempt == self.MAX_RETRIES - 1:
                     raise
         
@@ -206,7 +205,6 @@ Extract up to {self.max_knowledge_points} knowledge points, prioritizing the mos
                 if response_content.startswith("{'choices':") or response_content.startswith('{"choices":'):
                     # Extract the content from the string representation
                     # Look for the content pattern: ChatCompletionMessage(content='...')
-                    import re
                     
                     # Find the start of the content field
                     content_start = response_content.find("content='")
@@ -255,10 +253,10 @@ Extract up to {self.max_knowledge_points} knowledge points, prioritizing the mos
             return str(response_content)
             
         except Exception as e:
-            DXA_LOGGER.error(f"Error extracting response text: {str(e)}")
+            DANA_LOGGER.error(f"Error extracting response text: {str(e)}")
             return str(response_content)
     
-    def _parse_llm_response(self, response: str, document: Document) -> List[KnowledgePoint]:
+    def _parse_llm_response(self, response: str, document: Document) -> list[KnowledgePoint]:
         """Parse LLM response into knowledge points.
         
         Args:
@@ -288,7 +286,7 @@ Extract up to {self.max_knowledge_points} knowledge points, prioritizing the mos
             parsed_data = json.loads(response_clean)
             
             if not isinstance(parsed_data, list):
-                DXA_LOGGER.error("LLM response is not a JSON array")
+                DANA_LOGGER.error("LLM response is not a JSON array")
                 return []
             
             knowledge_points = []
@@ -298,19 +296,19 @@ Extract up to {self.max_knowledge_points} knowledge points, prioritizing the mos
                     if kp:
                         knowledge_points.append(kp)
                 except Exception as e:
-                    DXA_LOGGER.warning(f"Failed to parse knowledge point: {str(e)}")
+                    DANA_LOGGER.warning(f"Failed to parse knowledge point: {str(e)}")
                     continue
             
             return knowledge_points
             
         except json.JSONDecodeError as e:
-            DXA_LOGGER.error(f"Failed to parse LLM response as JSON: {str(e)}")
+            DANA_LOGGER.error(f"Failed to parse LLM response as JSON: {str(e)}")
             return []
         except Exception as e:
-            DXA_LOGGER.error(f"Error parsing LLM response: {str(e)}")
+            DANA_LOGGER.error(f"Error parsing LLM response: {str(e)}")
             return []
     
-    def _create_knowledge_point(self, data: Dict[str, Any], document: Document) -> Optional[KnowledgePoint]:
+    def _create_knowledge_point(self, data: dict[str, Any], document: Document) -> KnowledgePoint | None:
         """Create a KnowledgePoint from parsed data.
         
         Args:
@@ -360,10 +358,10 @@ Extract up to {self.max_knowledge_points} knowledge points, prioritizing the mos
             return kp
             
         except Exception as e:
-            DXA_LOGGER.error(f"Error creating knowledge point: {str(e)}")
+            DANA_LOGGER.error(f"Error creating knowledge point: {str(e)}")
             return None
     
-    def _fallback_extraction(self, document: Document) -> List[KnowledgePoint]:
+    def _fallback_extraction(self, document: Document) -> list[KnowledgePoint]:
         """Fallback extraction method when LLM fails.
         
         Args:
@@ -372,7 +370,7 @@ Extract up to {self.max_knowledge_points} knowledge points, prioritizing the mos
         Returns:
             List of basic knowledge points
         """
-        DXA_LOGGER.info(f"Applying fallback extraction for document {document.id}")
+        DANA_LOGGER.info(f"Applying fallback extraction for document {document.id}")
         
         try:
             # Basic rule-based extraction as fallback
@@ -403,11 +401,11 @@ Extract up to {self.max_knowledge_points} knowledge points, prioritizing the mos
                     )
                     knowledge_points.append(kp)
             
-            DXA_LOGGER.info(f"Fallback extraction produced {len(knowledge_points)} knowledge points")
+            DANA_LOGGER.info(f"Fallback extraction produced {len(knowledge_points)} knowledge points")
             return knowledge_points
             
         except Exception as e:
-            DXA_LOGGER.error(f"Fallback extraction failed: {str(e)}")
+            DANA_LOGGER.error(f"Fallback extraction failed: {str(e)}")
             return []
     
     def _is_potentially_important(self, sentence: str) -> bool:

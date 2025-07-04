@@ -1,3 +1,3 @@
 """
-Test module for OpenDXA KNOWS system.
+Test module for Dana KNOWS system.
 """ 

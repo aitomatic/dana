@@ -1,6 +1,5 @@
 """Direct AISuite test to isolate the proxies issue."""
 
-import os
 import aisuite as ai
 
 

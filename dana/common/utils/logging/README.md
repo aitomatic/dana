@@ -4,14 +4,14 @@
 
 [Project Overview](../../../../README.md) | [Main Documentation](../../../../docs/README.md)
 
-# DXA Logging
+# Dana Logging
 
-This module provides standardized logging capabilities for the DXA framework.
+This module provides standardized logging capabilities for the Dana framework.
 
 ## Components
 
-- **DXALogger**: Core logging class with enhanced functionality
-- **DXA_LOGGER**: Global logger instance
+- **DanaLogger**: Core logging class with enhanced functionality
+- **DANA_LOGGER**: Global logger instance
 - **Loggable**: Abstract base class for objects that need logging capabilities
 - **LLMInteractionAnalyzer**: Utility for analyzing LLM interactions
 
@@ -22,7 +22,7 @@ The `Loggable` abstract base class provides a standardized way to add logging ca
 ### Basic Usage
 
 ```python
-from dxa.common.utils.logging import Loggable
+from dana.common.utils.logging import Loggable
 
 class MyService(Loggable):
     def __init__(self):
@@ -40,7 +40,7 @@ class MyService(Loggable):
 
 1. **Automatic Logger Naming**: The logger is automatically named based on the class's module hierarchy and class name.
 
-2. **Execution Layer Support**: For execution layer classes (with a `layer` attribute), the logger is automatically named `dxa.execution.<layer>`.
+2. **Execution Layer Support**: For execution layer classes (with a `layer` attribute), the logger is automatically named `dana.execution.<layer>`.
 
 3. **Convenience Methods**: Direct access to logging methods:
 
@@ -78,7 +78,7 @@ To migrate existing classes to use `Loggable`:
 class Executor:
     def __init__(self):
         self.layer = "executor"
-        self.logger = logging.getLogger(f"dxa.execution.{self.layer}")
+        self.logger = logging.getLogger(f"dana.execution.{self.layer}")
 ```
 
 #### After

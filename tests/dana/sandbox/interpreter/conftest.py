@@ -32,6 +32,6 @@ def fresh_sandbox():
 @pytest.fixture
 def mock_sandbox():
     """Fixture to provide a mocked DanaSandbox instance."""
-    with patch("opendxa.dana.sandbox.dana_sandbox.DanaSandbox._ensure_initialized"):
+    with patch("dana.dana.sandbox.dana_sandbox.DanaSandbox._ensure_initialized"):
         sandbox = DanaSandbox()
         yield sandbox

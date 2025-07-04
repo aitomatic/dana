@@ -37,17 +37,17 @@ def configure_test_logging():
     logging.getLogger("httpcore").setLevel(logging.WARNING)
     logging.getLogger("h11").setLevel(logging.WARNING)
 
-    # Suppress OpenDXA logs during tests to reduce noise
+    # Suppress Dana logs during tests to reduce noise
     # Set to ERROR to suppress the repetitive INFO-level cleanup messages
-    logging.getLogger("opendxa").setLevel(logging.ERROR)
+    logging.getLogger("dana").setLevel(logging.ERROR)
 
     # Suppress specific noisy loggers during tests
-    logging.getLogger("opendxa.dana").setLevel(logging.ERROR)
-    logging.getLogger("opendxa.common").setLevel(logging.ERROR)
-    logging.getLogger("opendxa.api").setLevel(logging.ERROR)
-    logging.getLogger("opendxa.common.resource.llm_resource").setLevel(logging.ERROR)
-    logging.getLogger("opendxa.api.client").setLevel(logging.ERROR)
-    logging.getLogger("opendxa.api.server").setLevel(logging.ERROR)
+    logging.getLogger("dana.dana").setLevel(logging.ERROR)
+    logging.getLogger("dana.common").setLevel(logging.ERROR)
+    logging.getLogger("dana.api").setLevel(logging.ERROR)
+    logging.getLogger("dana.common.resource.llm_resource").setLevel(logging.ERROR)
+    logging.getLogger("dana.api.client").setLevel(logging.ERROR)
+    logging.getLogger("dana.api.server").setLevel(logging.ERROR)
 
     # Allow critical errors to still show through
     # If you need to see specific warnings/info during debugging,
@@ -70,19 +70,19 @@ def configure_llm_mocking(request):
     and do not enable mock mode.
     """
     if not request.config.getoption("--run-llm"):
-        os.environ["OPENDXA_MOCK_LLM"] = "true"
+        os.environ["DANA_MOCK_LLM"] = "true"
         yield
         # Only delete if it exists
-        if "OPENDXA_MOCK_LLM" in os.environ:
-            del os.environ["OPENDXA_MOCK_LLM"]
+        if "DANA_MOCK_LLM" in os.environ:
+            del os.environ["DANA_MOCK_LLM"]
     else:
         # When running live tests, ensure mock mode is disabled
-        original_value = os.environ.get("OPENDXA_MOCK_LLM")
+        original_value = os.environ.get("DANA_MOCK_LLM")
         if original_value:
-            del os.environ["OPENDXA_MOCK_LLM"]
+            del os.environ["DANA_MOCK_LLM"]
         yield
         if original_value:
-            os.environ["OPENDXA_MOCK_LLM"] = original_value
+            os.environ["DANA_MOCK_LLM"] = original_value
 
 
 # Universal Dana (.na) file test integration

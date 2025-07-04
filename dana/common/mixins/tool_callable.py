@@ -1,4 +1,4 @@
-"""Tool-callable functionality for DXA.
+"""Tool-callable functionality for Dana.
 
 This module provides the ToolCallable mixin class that enables any class to expose
 methods as tools to the LLM. It handles the generation of OpenAI-compatible function

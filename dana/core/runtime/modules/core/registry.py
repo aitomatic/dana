@@ -1,5 +1,5 @@
 """
-OpenDXA Dana Module System - Registry
+Dana Dana Module System - Registry
 
 This module provides the registry for tracking Dana modules and their dependencies.
 

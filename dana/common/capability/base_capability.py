@@ -1,4 +1,4 @@
-"""Base capability for DXA."""
+"""Base capability for Dana."""
 
 from abc import ABC
 from typing import Any

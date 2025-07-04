@@ -1,12 +1,12 @@
-"""Tests for OpenDXA common exceptions."""
+"""Tests for Dana common exceptions."""
 
 from dana.common.exceptions import (
     AgentError,
     CommunicationError,
     ConfigurationError,
-    DXAContextError,
-    DXAMemoryError,
-    DXAValidationError,
+    DanaContextError,
+    DanaMemoryError,
+    DanaValidationError,
     LLMAuthenticationError,
     LLMContextLengthError,
     LLMError,
@@ -14,7 +14,7 @@ from dana.common.exceptions import (
     LLMRateLimitError,
     LLMResponseError,
     NetworkError,
-    OpenDXAError,
+    DanaError,
     ReasoningError,
     ResourceError,
     StateError,
@@ -23,17 +23,17 @@ from dana.common.exceptions import (
 )
 
 
-class TestOpenDXAError:
-    """Test the base OpenDXAError class."""
+class TestDanaError:
+    """Test the base DanaError class."""
 
     def test_basic_initialization(self):
         """Test basic error initialization."""
-        error = OpenDXAError("Test error")
+        error = DanaError("Test error")
         assert str(error) == "Test error"
         assert isinstance(error, Exception)
 
     def test_inheritance(self):
-        """Test that all OpenDXA exceptions inherit from OpenDXAError."""
+        """Test that all Dana exceptions inherit from DanaError."""
         exception_classes = [
             ConfigurationError,
             LLMError,
@@ -48,15 +48,15 @@ class TestOpenDXAError:
             ReasoningError,
             AgentError,
             CommunicationError,
-            DXAValidationError,
+            DanaValidationError,
             ValidationError,  # Backward compatibility alias
             StateError,
-            DXAMemoryError,
-            DXAContextError,
+            DanaMemoryError,
+            DanaContextError,
         ]
 
         for exc_class in exception_classes:
-            assert issubclass(exc_class, OpenDXAError)
+            assert issubclass(exc_class, DanaError)
 
 
 class TestLLMProviderError:
@@ -115,7 +115,7 @@ class TestLLMResponseError:
         """Test LLMResponseError inheritance."""
         error = LLMResponseError("Test error")
         assert isinstance(error, LLMError)
-        assert isinstance(error, OpenDXAError)
+        assert isinstance(error, DanaError)
 
 
 class TestBasicExceptions:
@@ -125,73 +125,73 @@ class TestBasicExceptions:
         """Test ConfigurationError."""
         error = ConfigurationError("Invalid config")
         assert str(error) == "Invalid config"
-        assert isinstance(error, OpenDXAError)
+        assert isinstance(error, DanaError)
 
     def test_resource_error(self):
         """Test ResourceError."""
         error = ResourceError("Resource not found")
         assert str(error) == "Resource not found"
-        assert isinstance(error, OpenDXAError)
+        assert isinstance(error, DanaError)
 
     def test_network_error(self):
         """Test NetworkError."""
         error = NetworkError("Connection failed")
         assert str(error) == "Connection failed"
-        assert isinstance(error, OpenDXAError)
+        assert isinstance(error, DanaError)
 
     def test_websocket_error(self):
         """Test WebSocketError."""
         error = WebSocketError("WebSocket connection lost")
         assert str(error) == "WebSocket connection lost"
-        assert isinstance(error, OpenDXAError)
+        assert isinstance(error, DanaError)
 
     def test_reasoning_error(self):
         """Test ReasoningError."""
         error = ReasoningError("Reasoning failed")
         assert str(error) == "Reasoning failed"
-        assert isinstance(error, OpenDXAError)
+        assert isinstance(error, DanaError)
 
     def test_agent_error(self):
         """Test AgentError."""
         error = AgentError("Agent initialization failed")
         assert str(error) == "Agent initialization failed"
-        assert isinstance(error, OpenDXAError)
+        assert isinstance(error, DanaError)
 
     def test_communication_error(self):
         """Test CommunicationError."""
         error = CommunicationError("Communication failed")
         assert str(error) == "Communication failed"
-        assert isinstance(error, OpenDXAError)
+        assert isinstance(error, DanaError)
 
     def test_dxa_validation_error(self):
-        """Test DXAValidationError."""
-        error = DXAValidationError("Validation failed")
+        """Test DanaValidationError."""
+        error = DanaValidationError("Validation failed")
         assert str(error) == "Validation failed"
-        assert isinstance(error, OpenDXAError)
+        assert isinstance(error, DanaError)
 
     def test_validation_error_backward_compatibility(self):
         """Test ValidationError backward compatibility alias."""
         error = ValidationError("Validation failed")
         assert str(error) == "Validation failed"
-        assert isinstance(error, OpenDXAError)
-        assert isinstance(error, DXAValidationError)
+        assert isinstance(error, DanaError)
+        assert isinstance(error, DanaValidationError)
         # Verify it's actually the same class
-        assert ValidationError is DXAValidationError
+        assert ValidationError is DanaValidationError
 
     def test_state_error(self):
         """Test StateError."""
         error = StateError("Invalid state")
         assert str(error) == "Invalid state"
-        assert isinstance(error, OpenDXAError)
+        assert isinstance(error, DanaError)
 
     def test_dxa_memory_error(self):
-        """Test DXAMemoryError."""
-        error = DXAMemoryError("Memory allocation failed")
+        """Test DanaMemoryError."""
+        error = DanaMemoryError("Memory allocation failed")
         assert str(error) == "Memory allocation failed"
-        assert isinstance(error, OpenDXAError)
+        assert isinstance(error, DanaError)
 
     def test_dxa_context_error(self):
-        """Test DXAContextError."""
-        error = DXAContextError("Context error")
+        """Test DanaContextError."""
+        error = DanaContextError("Context error")
         assert str(error) == "Context error"
-        assert isinstance(error, OpenDXAError)
+        assert isinstance(error, DanaError)

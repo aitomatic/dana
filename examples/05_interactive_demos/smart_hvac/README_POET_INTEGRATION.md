@@ -6,7 +6,7 @@ This demo has been enhanced to use the **real POET framework** instead of the mo
 
 ### 1. **Real POET Framework Integration**
 - **File**: `hvac_systems.py`
-- **Import**: `from opendxa.dana.poet.poet import poet`
+- **Import**: `from dana.dana.poet.poet import poet`
 - **Plugin**: Automatic discovery of `building_management` domain plugin
 - **Fallback**: Graceful fallback to mock if imports fail
 
@@ -30,8 +30,8 @@ This demo has been enhanced to use the **real POET framework** instead of the mo
 
 ### 1. **Install Dependencies**
 ```bash
-# Ensure you have the OpenDXA package installed
-pip install -e .  # From the opendxa.poet root directory
+# Ensure you have the Dana package installed
+pip install -e .  # From the dana.poet root directory
 ```
 
 ### 2. **Configure LLM Access**
@@ -60,7 +60,7 @@ Visit http://localhost:8000 to see the enhanced demo.
 
 ### Basic Usage
 ```python
-from opendxa.dana.poet.poet import poet
+from dana.dana.poet.poet import poet
 
 @poet(domain="building_management")
 def my_hvac_function(temp, setpoint, occupancy, outdoor_temp):
@@ -174,18 +174,18 @@ patterns = await llm_manager.analyze_feedback_patterns(feedback_history)
 ### POET Import Errors?
 1. Ensure you're in the correct directory
 2. Install with `pip install -e .` from project root
-3. Check Python path includes opendxa package
+3. Check Python path includes dana package
 
 ### Plugin Not Loading?
 1. Check console for plugin discovery messages
-2. Verify plugin files exist in `opendxa/dana/poet/plugins/`
+2. Verify plugin files exist in `dana/dana/poet/plugins/`
 3. Check plugin registry initialization
 
 ## 🎓 Learning More
 
 - **POET Documentation**: `docs/reference/02_dana_runtime_and_execution/poet_functions.md`
-- **Plugin Development**: `opendxa/dana/poet/plugins/base.py`
-- **LLM Resource Guide**: `opendxa/common/resource/llm_resource.py`
+- **Plugin Development**: `dana/dana/poet/plugins/base.py`
+- **LLM Resource Guide**: `dana/common/resource/llm_resource.py`
 
 ## 🎯 Next Steps
 

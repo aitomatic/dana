@@ -7,9 +7,9 @@ through the Dana interpreter with actual Dana code execution.
 
 import pytest
 
-from opendxa.dana.common.exceptions import SandboxError
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.common.exceptions import SandboxError
 
 
 @pytest.mark.deep
@@ -483,8 +483,8 @@ class TestFStringFunctionArguments:
         # We'll set an environment variable to force mocking
         import os
 
-        original_mock_env = os.environ.get("OPENDXA_MOCK_LLM")
-        os.environ["OPENDXA_MOCK_LLM"] = "true"
+        original_mock_env = os.environ.get("DANA_MOCK_LLM")
+        os.environ["DANA_MOCK_LLM"] = "true"
 
         try:
             # Execute reason with f-string - this should work without any patching
@@ -501,9 +501,9 @@ class TestFStringFunctionArguments:
         finally:
             # Restore original environment
             if original_mock_env is None:
-                os.environ.pop("OPENDXA_MOCK_LLM", None)
+                os.environ.pop("DANA_MOCK_LLM", None)
             else:
-                os.environ["OPENDXA_MOCK_LLM"] = original_mock_env
+                os.environ["DANA_MOCK_LLM"] = original_mock_env
 
     def test_consistency_between_print_and_reason(self, capsys):
         """Test that print() and reason() behave consistently with f-string arguments."""
@@ -517,8 +517,8 @@ class TestFStringFunctionArguments:
         # Use environment variable to enable mocking for reason function
         import os
 
-        original_mock_env = os.environ.get("OPENDXA_MOCK_LLM")
-        os.environ["OPENDXA_MOCK_LLM"] = "true"
+        original_mock_env = os.environ.get("DANA_MOCK_LLM")
+        os.environ["DANA_MOCK_LLM"] = "true"
 
         try:
             # Execute both functions with the same f-string
@@ -543,9 +543,9 @@ class TestFStringFunctionArguments:
         finally:
             # Restore original environment
             if original_mock_env is None:
-                os.environ.pop("OPENDXA_MOCK_LLM", None)
+                os.environ.pop("DANA_MOCK_LLM", None)
             else:
-                os.environ["OPENDXA_MOCK_LLM"] = original_mock_env
+                os.environ["DANA_MOCK_LLM"] = original_mock_env
 
     def test_fstring_with_builtin_functions(self):
         """Test f-strings work correctly with built-in functions."""

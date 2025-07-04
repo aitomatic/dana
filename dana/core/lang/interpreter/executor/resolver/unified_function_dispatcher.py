@@ -11,7 +11,7 @@ MIT License
 
 from typing import Any
 
-from dana.common.utils.logging import DXA_LOGGER
+from dana.common.utils.logging import DANA_LOGGER
 from dana.core.lang.exceptions import SandboxError
 from dana.core.lang.interpreter.executor.function_name_utils import FunctionNameInfo
 from dana.core.lang.interpreter.executor.function_resolver import ResolvedFunction
@@ -44,7 +44,7 @@ class UnifiedFunctionDispatcher:
             function_registry: The function registry for core functions
             executor: The function executor for result coercion
         """
-        self.logger = DXA_LOGGER
+        self.logger = DANA_LOGGER
         self.function_registry = function_registry
         self.executor = executor
 

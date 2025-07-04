@@ -6,7 +6,7 @@
 
 # Base Resource Module (`opendxa.base.resource`)
 
-This module provides the foundational `BaseResource` class and potentially other base abstractions for resources within OpenDXA.
+This module provides the foundational `BaseResource` class and potentially other base abstractions for resources within Dana.
 
 Resources represent concrete tools, services, data sources, or interfaces (like LLMs, databases, APIs, human input) that agent capabilities can access.
 

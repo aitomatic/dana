@@ -18,12 +18,12 @@ class TestLoggable:
 
     @pytest.fixture
     def mock_logger(self, mocker):  # Use pytest-mock fixture 'mocker'
-        """Fixture to mock DXA_LOGGER.getLogger and return a MagicMock."""
+        """Fixture to mock DANA_LOGGER.getLogger and return a MagicMock."""
         mock = MagicMock()
         # Mock the getLogger method to return our mock logger instance
-        mocker.patch("opendxa.common.utils.logging.dxa_logger.DXA_LOGGER.getLogger", return_value=mock)
+        mocker.patch("dana.common.utils.logging.dana_logger.DANA_LOGGER.getLogger", return_value=mock)
         # Mock getLoggerForClass as well, just in case
-        mocker.patch("opendxa.common.utils.logging.dxa_logger.DXA_LOGGER.getLoggerForClass", return_value=mock)
+        mocker.patch("dana.common.utils.logging.dana_logger.DANA_LOGGER.getLoggerForClass", return_value=mock)
         return mock
 
     def test_custom_prefix(self, mock_logger):  # Inject the fixture
@@ -41,11 +41,11 @@ class TestLoggable:
 
     def test_custom_level(self, mock_logger):  # Inject the fixture
         """Test initialization with custom logging level."""
-        # With DXA_LOGGER already configured, Loggable should not call configure()
+        # With DANA_LOGGER already configured, Loggable should not call configure()
         # Instead, it should rely on the global configuration
         Loggable(level=logging.DEBUG)
 
-        # configure() should not be called since DXA_LOGGER is already configured
+        # configure() should not be called since DANA_LOGGER is already configured
         mock_logger.configure.assert_not_called()
 
         # But if level is explicitly provided, setLevel should be called
@@ -56,7 +56,7 @@ class TestLoggable:
         # Note: log_data parameter is now deprecated and ignored
         Loggable(log_data=True)
 
-        # configure() should not be called since DXA_LOGGER is already configured
+        # configure() should not be called since DANA_LOGGER is already configured
         mock_logger.configure.assert_not_called()
 
         # No special handling for log_data in new implementation
@@ -64,11 +64,11 @@ class TestLoggable:
 
     def test_logging_methods(self, mock_logger):  # Inject the fixture
         """Test all logging methods."""
-        obj = Loggable()  # With DXA_LOGGER configured, this won't call configure()
+        obj = Loggable()  # With DANA_LOGGER configured, this won't call configure()
         message = "test message"
         context = {"key": "value"}
 
-        # configure() should not be called since DXA_LOGGER is already configured
+        # configure() should not be called since DANA_LOGGER is already configured
         mock_logger.configure.assert_not_called()
 
         # But the logging methods should still work

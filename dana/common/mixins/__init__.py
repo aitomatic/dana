@@ -1,4 +1,4 @@
-"""Mixin classes for OpenDXA.
+"""Mixin classes for Dana.
 
 This module provides reusable mixin classes that add specific functionality to other classes.
 """

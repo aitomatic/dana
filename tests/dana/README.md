@@ -9,8 +9,8 @@ Dana tests, especially those involving the `reason` function, need to interact w
 The mocking system has two layers:
 
 1. **Environment Variable Control**:
-   - `OPENDXA_MOCK_LLM=true` (default): Uses mock LLM responses
-   - `OPENDXA_USE_REAL_LLM=true`: Forces real LLM calls
+   - `DANA_MOCK_LLM=true` (default): Uses mock LLM responses
+   - `DANA_USE_REAL_LLM=true`: Forces real LLM calls
 
 2. **Function Parameter Control**:
    - `reason_function(..., use_mock=True)`: Forces mock response
@@ -30,7 +30,7 @@ pytest tests/dana/
 
 ```bash
 # Run tests with real LLM calls
-OPENDXA_USE_REAL_LLM=true pytest tests/dana/
+DANA_USE_REAL_LLM=true pytest tests/dana/
 ```
 
 ### Running Live Tests
@@ -49,7 +49,7 @@ pytest --no-skip tests/dana/
 
 1. The `reason_function` checks:
    - First: The `use_mock` parameter
-   - Second: The `OPENDXA_MOCK_LLM` environment variable
+   - Second: The `DANA_MOCK_LLM` environment variable
 
 2. When mocking is enabled, `LLMResource.with_mock_llm_call(True)` is used to create a mocked client.
 

@@ -8,8 +8,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from opendxa.contrib.python_to_dana.core.inprocess_sandbox import InProcessSandboxInterface
-from opendxa.contrib.python_to_dana.core.reasoning_cache import ReasoningCache
+from dana.integrations.python.core.inprocess_sandbox import InProcessSandboxInterface
+from dana.integrations.python.core.reasoning_cache import ReasoningCache
 
 # Test data for cache initialization
 cache_initialization_params = [
@@ -428,7 +428,7 @@ class TestReasoningCache:
 class TestInProcessSandboxCacheIntegration:
     """Test caching integration with InProcessSandboxInterface using table-driven approach."""
 
-    @patch("opendxa.contrib.python_to_dana.core.inprocess_sandbox.DanaSandbox")
+    @patch("dana.contrib.python_to_dana.core.inprocess_sandbox.DanaSandbox")
     @pytest.mark.parametrize("test_case", sandbox_initialization_params, ids=lambda x: x["name"])
     def test_sandbox_cache_initialization(self, mock_sandbox_class, test_case):
         """Test sandbox initialization with caching options."""
@@ -455,7 +455,7 @@ class TestInProcessSandboxCacheIntegration:
         else:
             assert sandbox._cache is None
 
-    @patch("opendxa.contrib.python_to_dana.core.inprocess_sandbox.DanaSandbox")
+    @patch("dana.contrib.python_to_dana.core.inprocess_sandbox.DanaSandbox")
     def test_sandbox_reason_with_cache_hit(self, mock_sandbox_class):
         """Test reasoning with cache hit."""
         # Arrange
@@ -478,7 +478,7 @@ class TestInProcessSandboxCacheIntegration:
         assert result2 == "2+2 equals 4"
         assert mock_sandbox.eval.call_count == 2  # Only called twice (cache hit on second call)
 
-    @patch("opendxa.contrib.python_to_dana.core.inprocess_sandbox.DanaSandbox")
+    @patch("dana.contrib.python_to_dana.core.inprocess_sandbox.DanaSandbox")
     def test_sandbox_reason_without_cache(self, mock_sandbox_class):
         """Test reasoning without caching."""
         # Arrange
@@ -500,7 +500,7 @@ class TestInProcessSandboxCacheIntegration:
         assert result2 == "2+2 equals 4"
         assert mock_sandbox.eval.call_count == 2  # Called again (no caching)
 
-    @patch("opendxa.contrib.python_to_dana.core.inprocess_sandbox.DanaSandbox")
+    @patch("dana.contrib.python_to_dana.core.inprocess_sandbox.DanaSandbox")
     @pytest.mark.parametrize("test_case", cache_with_options_params, ids=lambda x: x["name"])
     def test_sandbox_cache_with_options(self, mock_sandbox_class, test_case):
         """Test caching with different options."""
@@ -521,7 +521,7 @@ class TestInProcessSandboxCacheIntegration:
         # Assert
         assert mock_sandbox.eval.call_count == test_case["expected_call_count"]
 
-    @patch("opendxa.contrib.python_to_dana.core.inprocess_sandbox.DanaSandbox")
+    @patch("dana.contrib.python_to_dana.core.inprocess_sandbox.DanaSandbox")
     def test_sandbox_cache_stats_and_management(self, mock_sandbox_class):
         """Test cache statistics and management methods."""
         # Arrange
@@ -566,7 +566,7 @@ class TestInProcessSandboxCacheIntegration:
         assert stats["miss_count"] == 0
         assert stats["cache_size"] == 0
 
-    @patch("opendxa.contrib.python_to_dana.core.inprocess_sandbox.DanaSandbox")
+    @patch("dana.contrib.python_to_dana.core.inprocess_sandbox.DanaSandbox")
     def test_sandbox_cache_disabled_methods(self, mock_sandbox_class):
         """Test cache methods when caching is disabled."""
         # Arrange
@@ -583,7 +583,7 @@ class TestInProcessSandboxCacheIntegration:
         # Clear cache should not raise error
         sandbox.clear_cache()  # Should not raise
 
-    @patch("opendxa.contrib.python_to_dana.core.inprocess_sandbox.DanaSandbox")
+    @patch("dana.contrib.python_to_dana.core.inprocess_sandbox.DanaSandbox")
     def test_sandbox_close_clears_cache(self, mock_sandbox_class):
         """Test that closing sandbox clears the cache."""
         # Arrange

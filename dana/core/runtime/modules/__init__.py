@@ -1,5 +1,5 @@
 """Dana module system."""
 
-from .core import registry, loader, types, errors
+from .core import errors, loader, registry, types
 
 __all__ = ['registry', 'loader', 'types', 'errors']

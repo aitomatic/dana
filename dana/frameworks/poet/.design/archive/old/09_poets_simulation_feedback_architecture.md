@@ -524,7 +524,7 @@ The POETS architecture builds incrementally on the existing POET foundation:
 3. **Week 3**: Develop thermal building simulation models
 4. **Week 4**: Create hybrid feedback fusion prototype
 
-The POETS evolution positions OpenDXA as the definitive framework for intelligent, learning-enabled AI systems that safely and continuously improve through sophisticated feedback mechanisms.
+The POETS evolution positions Dana as the definitive framework for intelligent, learning-enabled AI systems that safely and continuously improve through sophisticated feedback mechanisms.
 
 ---
 

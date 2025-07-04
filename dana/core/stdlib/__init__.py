@@ -16,8 +16,8 @@ This package provides implementations of core Dana functions including:
 """
 
 # Import main components
-from .function_registry import FunctionRegistry
-from .dana_function import DanaFunction
 from .core.register_core_functions import register_core_functions
+from .dana_function import DanaFunction
+from .function_registry import FunctionRegistry
 
 __all__ = ['FunctionRegistry', 'DanaFunction', 'register_core_functions']

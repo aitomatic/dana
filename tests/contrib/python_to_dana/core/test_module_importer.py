@@ -10,8 +10,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from opendxa.contrib.python_to_dana import Dana, disable_dana_imports, enable_dana_imports, list_dana_modules
-from opendxa.contrib.python_to_dana.core.module_importer import (
+from dana.integrations.python import Dana, disable_dana_imports, enable_dana_imports, list_dana_modules
+from dana.integrations.python.core.module_importer import (
     DanaModuleLoader,
     DanaModuleWrapper,
     install_import_hook,
@@ -273,7 +273,7 @@ class TestDanaModuleLoader:
         """Test loader initialization."""
         mock_sandbox = Mock()
 
-        with patch("opendxa.contrib.python_to_dana.core.module_importer.initialize_module_system"):
+        with patch("dana.contrib.python_to_dana.core.module_importer.initialize_module_system"):
             loader = DanaModuleLoader(test_case["search_paths"], mock_sandbox, debug=test_case["debug"])
 
             assert len(loader.search_paths) == test_case["expected_paths_length"]
@@ -282,7 +282,7 @@ class TestDanaModuleLoader:
 
     def test_find_spec_existing_module(self):
         """Test find_spec returns None for existing modules."""
-        with patch("opendxa.contrib.python_to_dana.core.module_importer.initialize_module_system"):
+        with patch("dana.contrib.python_to_dana.core.module_importer.initialize_module_system"):
             loader = DanaModuleLoader()
 
         # Test with a module that's already in sys.modules
@@ -295,7 +295,7 @@ class TestDanaModuleLoader:
         {"name": "os_module", "module_name": "os", "expected_result": True},
         {"name": "sys_module", "module_name": "sys", "expected_result": True},
         {"name": "sys_submodule", "module_name": "sys.path", "expected_result": True},
-        {"name": "opendxa_module", "module_name": "opendxa.core", "expected_result": True},
+        {"name": "dana_module", "module_name": "dana.core", "expected_result": True},
         {"name": "private_module", "module_name": "_private_module", "expected_result": True},
         {"name": "custom_module", "module_name": "simple_math", "expected_result": False},
         {"name": "another_custom_module", "module_name": "custom_module", "expected_result": False},
@@ -304,7 +304,7 @@ class TestDanaModuleLoader:
     @pytest.mark.parametrize("test_case", standard_library_params, ids=lambda x: x["name"])
     def test_find_spec_standard_library(self, test_case):
         """Test find_spec returns None for standard library modules."""
-        with patch("opendxa.contrib.python_to_dana.core.module_importer.initialize_module_system"):
+        with patch("dana.contrib.python_to_dana.core.module_importer.initialize_module_system"):
             loader = DanaModuleLoader()
 
         if test_case["expected_result"]:
@@ -318,7 +318,7 @@ class TestDanaModuleLoader:
     @pytest.mark.parametrize("test_case", standard_library_params, ids=lambda x: x["name"])
     def test_is_standard_library_module(self, test_case):
         """Test standard library module detection."""
-        with patch("opendxa.contrib.python_to_dana.core.module_importer.initialize_module_system"):
+        with patch("dana.contrib.python_to_dana.core.module_importer.initialize_module_system"):
             loader = DanaModuleLoader()
 
         result = loader._is_standard_library_module(test_case["module_name"])
@@ -337,7 +337,7 @@ class TestDanaClassImportFeatures:
     @pytest.mark.parametrize("test_case", dana_init_params, ids=lambda x: x["name"])
     def test_dana_init_with_imports(self, test_case):
         """Test Dana initialization with enable_imports parameter."""
-        with patch("opendxa.contrib.python_to_dana.dana_module.install_import_hook") as mock_install:
+        with patch("dana.contrib.python_to_dana.dana_module.install_import_hook") as mock_install:
             dana = Dana(enable_imports=test_case["enable_imports"])
 
             assert dana._imports_enabled is test_case["expected_imports_enabled"]
@@ -350,7 +350,7 @@ class TestDanaClassImportFeatures:
         """Test enabling module imports."""
         dana = Dana()
 
-        with patch("opendxa.contrib.python_to_dana.dana_module.install_import_hook") as mock_install:
+        with patch("dana.contrib.python_to_dana.dana_module.install_import_hook") as mock_install:
             dana.enable_module_imports()
 
             assert dana._imports_enabled is True
@@ -361,7 +361,7 @@ class TestDanaClassImportFeatures:
         dana = Dana()
         dana._imports_enabled = True
 
-        with patch("opendxa.contrib.python_to_dana.dana_module.uninstall_import_hook") as mock_uninstall:
+        with patch("dana.contrib.python_to_dana.dana_module.uninstall_import_hook") as mock_uninstall:
             dana.disable_module_imports()
 
             assert dana._imports_enabled is False
@@ -371,7 +371,7 @@ class TestDanaClassImportFeatures:
         """Test listing available modules."""
         dana = Dana()
 
-        with patch("opendxa.contrib.python_to_dana.dana_module.list_available_modules") as mock_list:
+        with patch("dana.contrib.python_to_dana.dana_module.list_available_modules") as mock_list:
             mock_list.return_value = ["simple_math", "text_utils"]
 
             modules = dana.list_modules()
@@ -449,7 +449,7 @@ class TestConvenienceFunctions:
     @pytest.mark.parametrize("test_case", convenience_functions_params, ids=lambda x: x["name"])
     def test_convenience_functions(self, test_case):
         """Test convenience functions for Dana imports."""
-        from opendxa.contrib.python_to_dana import dana
+        from dana.integrations.python import dana
 
         with patch.object(dana, test_case["mock_method"]) as mock_method:
             # Get the function from the module
@@ -469,7 +469,7 @@ class TestConvenienceFunctions:
 
     def test_list_dana_modules(self):
         """Test list_dana_modules convenience function."""
-        from opendxa.contrib.python_to_dana import dana
+        from dana.integrations.python import dana
 
         with patch.object(dana, "list_modules") as mock_list:
             mock_list.return_value = ["module1", "module2"]

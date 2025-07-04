@@ -1,7 +1,7 @@
 """Test suite for ErrorFormattingUtilities.
 
 This module tests the error formatting utilities to ensure they produce
-consistent, standardized error messages following the OpenDXA format:
+consistent, standardized error messages following the Dana format:
 "[What failed]: [Why it failed]. [What user can do]. [Available alternatives]"
 """
 
@@ -94,10 +94,10 @@ class TestErrorFormattingUtilities:
     def test_format_configuration_error_with_config_file(self):
         """Test configuration error formatting with config file."""
         result = ErrorFormattingUtilities.format_configuration_error(
-            config_key="api.key", issue="invalid format", solution="provide valid API key", config_file="opendxa_config.json"
+            config_key="api.key", issue="invalid format", solution="provide valid API key", config_file="dana_config.json"
         )
 
-        expected = "Configuration 'api.key' invalid: invalid format 'opendxa_config.json'. Provide valid API key. Check configuration file format and required keys"
+        expected = "Configuration 'api.key' invalid: invalid format 'dana_config.json'. Provide valid API key. Check configuration file format and required keys"
         assert result == expected
 
     def test_format_llm_error_basic(self):
@@ -173,21 +173,21 @@ class TestErrorFormattingUtilities:
 
     def test_log_formatted_error_basic(self):
         """Test logging of formatted error message."""
-        with patch("opendxa.common.utils.error_formatting.DXA_LOGGER") as mock_logger:
+        with patch("dana.common.utils.error_formatting.DANA_LOGGER") as mock_logger:
             ErrorFormattingUtilities.log_formatted_error(error_message="Test error message")
 
             mock_logger.error.assert_called_once_with("Test error message")
 
     def test_log_formatted_error_with_method(self):
         """Test logging with different logger method."""
-        with patch("opendxa.common.utils.error_formatting.DXA_LOGGER") as mock_logger:
+        with patch("dana.common.utils.error_formatting.DANA_LOGGER") as mock_logger:
             ErrorFormattingUtilities.log_formatted_error(error_message="Warning message", logger_method="warning")
 
             mock_logger.warning.assert_called_once_with("Warning message")
 
     def test_log_formatted_error_with_context(self):
         """Test logging with extra context."""
-        with patch("opendxa.common.utils.error_formatting.DXA_LOGGER") as mock_logger:
+        with patch("dana.common.utils.error_formatting.DANA_LOGGER") as mock_logger:
             extra_context = {"operation": "test", "user_id": "123"}
             ErrorFormattingUtilities.log_formatted_error(error_message="Error with context", extra_context=extra_context)
 
@@ -195,7 +195,7 @@ class TestErrorFormattingUtilities:
 
     def test_log_formatted_error_invalid_method(self):
         """Test logging with invalid logger method falls back to error."""
-        with patch("opendxa.common.utils.error_formatting.DXA_LOGGER") as mock_logger:
+        with patch("dana.common.utils.error_formatting.DANA_LOGGER") as mock_logger:
             mock_logger.invalid_method = None  # Ensure getattr returns None for invalid_method
             ErrorFormattingUtilities.log_formatted_error(error_message="Test message", logger_method="invalid_method")
 

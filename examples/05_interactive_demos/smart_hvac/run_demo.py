@@ -12,21 +12,21 @@ from pathlib import Path
 
 
 def setup_python_path():
-    """Add the opendxa project to Python path."""
-    # Get the path to the opendxa.poet project (parent of demos)
+    """Add the dana project to Python path."""
+    # Get the path to the dana.poet project (parent of demos)
     current_dir = Path(__file__).parent.absolute()
-    opendxa_path = current_dir.parent.parent
+    dana_path = current_dir.parent.parent
 
     # Add to Python path
-    if str(opendxa_path) not in sys.path:
-        sys.path.insert(0, str(opendxa_path))
+    if str(dana_path) not in sys.path:
+        sys.path.insert(0, str(dana_path))
 
     # Also set environment variable for subprocess
     env_path = os.environ.get("PYTHONPATH", "")
-    if str(opendxa_path) not in env_path:
-        os.environ["PYTHONPATH"] = f"{opendxa_path}:{env_path}"
+    if str(dana_path) not in env_path:
+        os.environ["PYTHONPATH"] = f"{dana_path}:{env_path}"
 
-    print(f"✅ Added to Python path: {opendxa_path}")
+    print(f"✅ Added to Python path: {dana_path}")
 
 
 def check_dependencies():
@@ -60,7 +60,7 @@ def check_poet_availability():
         return True
     except ImportError as e:
         print(f"❌ POET framework not available: {e}")
-        print("\n🔧 Make sure you're running from the opendxa.poet project directory")
+        print("\n🔧 Make sure you're running from the dana.poet project directory")
         return False
 
 

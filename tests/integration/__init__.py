@@ -1,1 +1,1 @@
-"""Integration tests for OpenDXA cross-module functionality."""
+"""Integration tests for Dana cross-module functionality."""

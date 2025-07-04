@@ -1,11 +1,11 @@
-"""LLM resource implementation for OpenDXA.
+"""LLM resource implementation for Dana.
 
 This module provides the LLMResource class, which manages LLM model selection
 and interaction. It leverages the ConfigLoader for base configuration and supports
 runtime overrides.
 
 Features:
-- Centralized configuration via ConfigLoader ('opendxa_config.json').
+- Centralized configuration via ConfigLoader ('dana_config.json').
 - Automatic model selection based on preferred models and available API keys.
 - Explicit model override via constructor.
 - Runtime parameter overrides for LLM calls (temperature, max_tokens, etc.).
@@ -56,11 +56,11 @@ class LLMResource(BaseResource):
     """LLM resource with flexible model selection and configuration.
 
     Provides a unified interface for LLM interaction, integrating with the
-    centralized ConfigLoader for base settings ('opendxa_config.json') and
+    centralized ConfigLoader for base settings ('dana_config.json') and
     allowing overrides through constructor arguments and request parameters.
 
     Configuration Hierarchy:
-    1. Base configuration loaded by ConfigLoader (using its search order for 'opendxa_config.json').
+    1. Base configuration loaded by ConfigLoader (using its search order for 'dana_config.json').
     2. `preferred_models` list provided to constructor (overrides list from config).
     3. `model` provided to constructor (overrides automatic selection from preferred list or config default).
     4. `kwargs` provided to constructor (overrides default parameters like temperature from config).
@@ -78,7 +78,7 @@ class LLMResource(BaseResource):
     1.  **Use Configuration File Defaults (Simplest Case):**
         ```python
         # Instantiating with no arguments uses the name "default_llm".
-        # Relies entirely on 'opendxa_config.json' found by ConfigLoader.
+        # Relies entirely on 'dana_config.json' found by ConfigLoader.
         # Requires 'preferred_models' or 'default_model' in the config.
         # Requires relevant API keys (e.g., OPENAI_API_KEY) in environment.
         llm = LLMResource() # Name defaults to "default_llm"
@@ -184,7 +184,7 @@ class LLMResource(BaseResource):
             if not self._model:
                 # If auto-selection fails, log an error (unless in mock mode).
                 # We no longer fall back to `default_model`.
-                is_mock_mode = os.environ.get("OPENDXA_MOCK_LLM", "").lower() == "true"
+                is_mock_mode = os.environ.get("DANA_MOCK_LLM", "").lower() == "true"
                 if not is_mock_mode:
                     self.error(
                         "Could not find an available model from the preferred_models list. "
@@ -338,7 +338,7 @@ class LLMResource(BaseResource):
 
         # Check if we should use mock responses first, even if resource is not available
         should_mock = self._mock_llm_call is not None and (
-            self._mock_llm_call is True or callable(self._mock_llm_call) or os.environ.get("OPENDXA_MOCK_LLM", "").lower() == "true"
+            self._mock_llm_call is True or callable(self._mock_llm_call) or os.environ.get("DANA_MOCK_LLM", "").lower() == "true"
         )
 
         if not self._is_available and not should_mock:
@@ -692,7 +692,7 @@ class LLMResource(BaseResource):
 
         This method delegates to the LLMConfigurationManager, which now uses
         ValidationUtilities.validate_model_availability() for centralized,
-        consistent validation logic across the OpenDXA framework.
+        consistent validation logic across the Dana framework.
 
         Args:
             model_name: Name of the model to validate

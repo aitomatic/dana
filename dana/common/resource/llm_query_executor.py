@@ -1,4 +1,4 @@
-"""LLM Query Execution Engine for OpenDXA.
+"""LLM Query Execution Engine for Dana.
 
 This module provides the LLMQueryExecutor class, which handles the core
 LLM query execution logic including iterative tool calling and API communication.
@@ -329,7 +329,7 @@ class LLMQueryExecutor(Loggable):
             return await self.mock_llm_query(request)
 
         # Also check environment variable for mocking
-        if os.environ.get("OPENDXA_MOCK_LLM", "").lower() == "true":
+        if os.environ.get("DANA_MOCK_LLM", "").lower() == "true":
             return await self.mock_llm_query(request)
 
         if not self._client:

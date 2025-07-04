@@ -1,12 +1,13 @@
 """
-Knowledge Organization (KO) Registry for OpenDXA KNOWS system.
+Knowledge Organization (KO) Registry for Dana KNOWS system.
 
 This module provides a registry system for managing different types of knowledge organizations
 and their configurations.
 """
 
-from typing import Dict, Type, Any, List
-from dana.common.utils.logging import DXA_LOGGER
+from typing import Any
+
+from dana.common.utils.logging import DANA_LOGGER
 
 
 class KORegistry:
@@ -14,11 +15,11 @@ class KORegistry:
     
     def __init__(self):
         """Initialize the KO registry."""
-        self._ko_types: Dict[str, Type] = {}
-        self._ko_configs: Dict[str, Dict[str, Any]] = {}
-        DXA_LOGGER.info("Initialized KO Registry")
+        self._ko_types: dict[str, type] = {}
+        self._ko_configs: dict[str, dict[str, Any]] = {}
+        DANA_LOGGER.info("Initialized KO Registry")
     
-    def register_ko_type(self, name: str, ko_class: Type) -> None:
+    def register_ko_type(self, name: str, ko_class: type) -> None:
         """Register a Knowledge Organization type.
         
         Args:
@@ -26,12 +27,12 @@ class KORegistry:
             ko_class: Class implementing the KO interface
         """
         if name in self._ko_types:
-            DXA_LOGGER.warning(f"KO type '{name}' already registered, overwriting")
+            DANA_LOGGER.warning(f"KO type '{name}' already registered, overwriting")
         
         self._ko_types[name] = ko_class
-        DXA_LOGGER.info(f"Registered KO type: {name}")
+        DANA_LOGGER.info(f"Registered KO type: {name}")
     
-    def register_ko_config(self, name: str, config: Dict[str, Any]) -> None:
+    def register_ko_config(self, name: str, config: dict[str, Any]) -> None:
         """Register a configuration for a KO type.
         
         Args:
@@ -39,9 +40,9 @@ class KORegistry:
             config: Configuration dictionary
         """
         self._ko_configs[name] = config
-        DXA_LOGGER.info(f"Registered KO config for: {name}")
+        DANA_LOGGER.info(f"Registered KO config for: {name}")
     
-    def get_ko_type(self, name: str) -> Type:
+    def get_ko_type(self, name: str) -> type:
         """Get a registered KO type.
         
         Args:
@@ -59,7 +60,7 @@ class KORegistry:
         
         return self._ko_types[name]
     
-    def get_ko_config(self, name: str) -> Dict[str, Any]:
+    def get_ko_config(self, name: str) -> dict[str, Any]:
         """Get configuration for a KO type.
         
         Args:
@@ -77,7 +78,7 @@ class KORegistry:
         
         return self._ko_configs[name].copy()
     
-    def list_ko_types(self) -> List[str]:
+    def list_ko_types(self) -> list[str]:
         """List all registered KO types.
         
         Returns:
@@ -85,7 +86,7 @@ class KORegistry:
         """
         return list(self._ko_types.keys())
     
-    def list_ko_configs(self) -> List[str]:
+    def list_ko_configs(self) -> list[str]:
         """List all registered KO configurations.
         
         Returns:
@@ -116,7 +117,7 @@ class KORegistry:
         # Override with provided kwargs
         config.update(kwargs)
         
-        DXA_LOGGER.info(f"Creating KO instance: {name} with config: {config}")
+        DANA_LOGGER.info(f"Creating KO instance: {name} with config: {config}")
         return ko_class(**config)
 
 

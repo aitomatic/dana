@@ -1,13 +1,12 @@
 """Dana frameworks built on top of the core language."""
 
 # Import POET framework
-from .poet import poet, POETConfig, POETResult, POETEnhancer
+# Import Agent framework
+from .agent import Agent, AgentFactory, DomainExpertise
 
 # Import KNOWS framework
 from .knows import DocumentLoader, DocumentParser, KnowledgePoint, MetaKnowledgeExtractor
-
-# Import Agent framework
-from .agent import Agent, AgentFactory, DomainExpertise
+from .poet import POETConfig, POETEnhancer, POETResult, poet
 
 __all__ = [
     # POET Framework

@@ -4,7 +4,7 @@ Tests for core.exceptions module - Exception classes for Python-to-Dana Integrat
 
 import pytest
 
-from opendxa.contrib.python_to_dana.core.exceptions import (
+from dana.integrations.python.core.exceptions import (
     DanaCallError,
     DanaError,
     ResourceError,

@@ -1,6 +1,6 @@
 """Dana runtime components."""
 
 # Export module system
-from .modules import registry, loader, types, errors
+from .modules import errors, loader, registry, types
 
 __all__ = ['registry', 'loader', 'types', 'errors']

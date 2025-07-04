@@ -6,8 +6,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from opendxa.contrib.python_to_dana.core.exceptions import DanaCallError
-from opendxa.contrib.python_to_dana.dana_module import Dana
+from dana.integrations.python.core.exceptions import DanaCallError
+from dana.integrations.python.dana_module import Dana
 
 # Test parameters for various Dana module initialization scenarios
 dana_init_params = [
@@ -19,14 +19,14 @@ dana_init_params = [
 @pytest.mark.parametrize("params", dana_init_params)
 def test_dana_initialization(params):
     """Test Dana module initialization with different parameters."""
-    with patch("opendxa.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
+    with patch("dana.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
         dana = Dana(debug=params["debug"])
         assert dana.debug == params["expected_debug"]
 
 
 def test_dana_reason_basic_functionality():
     """Test basic Dana reasoning functionality."""
-    with patch("opendxa.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
+    with patch("dana.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
         dana = Dana(debug=True)
 
         # Mock the sandbox interface response
@@ -96,7 +96,7 @@ def mock_sandbox_interface():
 @pytest.mark.parametrize("test_data", type_validation_test_data, ids=lambda x: x["name"])
 def test_dana_reason_type_validation(test_data):
     """Test type validation in Dana.reason() method."""
-    with patch("opendxa.contrib.python_to_dana.dana_module.InProcessSandboxInterface") as mock_interface_class:
+    with patch("dana.contrib.python_to_dana.dana_module.InProcessSandboxInterface") as mock_interface_class:
         mock_interface = Mock()
         mock_interface.reason.return_value = "Valid response"
         mock_interface_class.return_value = mock_interface
@@ -115,7 +115,7 @@ def test_dana_reason_type_validation(test_data):
 
 def test_dana_call_count_tracking():
     """Test that Dana tracks call count correctly."""
-    with patch("opendxa.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
+    with patch("dana.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
         dana = Dana(debug=True)
 
         # Initial call count should be 0
@@ -137,7 +137,7 @@ def test_dana_call_count_tracking():
 
 def test_dana_error_handling():
     """Test Dana error handling for various scenarios."""
-    with patch("opendxa.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
+    with patch("dana.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
         dana = Dana(debug=True)
 
         # Test DanaCallError propagation
@@ -155,7 +155,7 @@ def test_dana_error_handling():
 
 def test_dana_properties():
     """Test Dana properties and accessors."""
-    with patch("opendxa.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
+    with patch("dana.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
         dana = Dana(debug=True)
 
         # Test debug property
@@ -168,7 +168,7 @@ def test_dana_properties():
 
 def test_dana_close_functionality():
     """Test Dana close functionality."""
-    with patch("opendxa.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
+    with patch("dana.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
         dana = Dana(debug=False)
 
         # Mock the close method
@@ -183,7 +183,7 @@ def test_dana_close_functionality():
 
 def test_dana_repr():
     """Test Dana string representation."""
-    with patch("opendxa.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
+    with patch("dana.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
         # Test normal mode
         dana_normal = Dana(debug=False)
         repr_str = repr(dana_normal)
@@ -199,7 +199,7 @@ def test_dana_repr():
 
 def test_dana_debug_output(capsys):
     """Test debug output functionality."""
-    with patch("opendxa.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
+    with patch("dana.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
         dana = Dana(debug=True)
 
         # Mock sandbox response
@@ -236,7 +236,7 @@ interface_delegation_tests = [
 @pytest.mark.parametrize("test_case", interface_delegation_tests, ids=lambda x: x["name"])
 def test_sandbox_interface_delegation(test_case):
     """Test that Dana properly delegates to sandbox interface."""
-    with patch("opendxa.contrib.python_to_dana.dana_module.InProcessSandboxInterface") as mock_interface_class:
+    with patch("dana.contrib.python_to_dana.dana_module.InProcessSandboxInterface") as mock_interface_class:
         mock_interface = Mock()
         mock_interface_class.return_value = mock_interface
 
@@ -257,7 +257,7 @@ def test_sandbox_interface_delegation(test_case):
 
 def test_dana_context_manager():
     """Test Dana can be used as a context manager."""
-    with patch("opendxa.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
+    with patch("dana.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
         mock_close = Mock()
 
         with patch.object(Dana, "close", mock_close):
@@ -272,8 +272,8 @@ def test_dana_context_manager():
 def test_dana_subprocess_isolation_placeholder():
     """Test subprocess isolation placeholder functionality."""
     with (
-        patch("opendxa.contrib.python_to_dana.dana_module.InProcessSandboxInterface") as mock_inprocess,
-        patch("opendxa.contrib.python_to_dana.dana_module.SubprocessSandboxInterface") as mock_subprocess,
+        patch("dana.contrib.python_to_dana.dana_module.InProcessSandboxInterface") as mock_inprocess,
+        patch("dana.contrib.python_to_dana.dana_module.SubprocessSandboxInterface") as mock_subprocess,
     ):
         # Test that subprocess isolation is requested but falls back
         _dana = Dana(use_subprocess_isolation=True, debug=True)
@@ -285,7 +285,7 @@ def test_dana_subprocess_isolation_placeholder():
 
 def test_dana_subprocess_properties():
     """Test subprocess-related properties."""
-    with patch("opendxa.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
+    with patch("dana.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
         dana = Dana(use_subprocess_isolation=True, debug=True)
 
         # Should indicate subprocess isolation is not actually enabled
@@ -297,7 +297,7 @@ def test_dana_subprocess_properties():
 
 def test_dana_subprocess_restart():
     """Test subprocess restart functionality."""
-    with patch("opendxa.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
+    with patch("dana.contrib.python_to_dana.dana_module.InProcessSandboxInterface", return_value=mock_sandbox_interface):
         dana = Dana(debug=True)
 
         # Should handle restart gracefully even for in-process

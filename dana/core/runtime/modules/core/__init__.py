@@ -1,5 +1,5 @@
 """
-OpenDXA Dana Module System - Core
+Dana Dana Module System - Core
 
 This module provides the core functionality for Dana's module system.
 

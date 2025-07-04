@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Example: Using OpenDXA with Local vLLM Server
+Example: Using Dana with Local vLLM Server
 
-This script demonstrates how to configure OpenDXA to use a local vLLM server
+This script demonstrates how to configure Dana to use a local vLLM server
 instead of cloud-based LLM providers.
 
 Prerequisites:
@@ -16,16 +16,15 @@ MIT License
 
 import asyncio
 import os
-from pathlib import Path
 
 import aisuite as ai
 
 from dana.common.resource.llm_resource import LLMResource
-from dana.common.types import BaseRequest, BaseResponse
+from dana.common.types import BaseRequest
 
 
 class LocalvLLMDemo:
-    """Demonstrates OpenDXA integration with local vLLM server."""
+    """Demonstrates Dana integration with local vLLM server."""
 
     def __init__(self):
         self.vllm_base_url = "http://localhost:8000/v1"
@@ -55,9 +54,9 @@ class LocalvLLMDemo:
             print(f"❌ Direct aisuite connection failed: {e}")
             return False
 
-    async def test_opendxa_llm_resource(self):
-        """Test OpenDXA LLMResource with vLLM configuration."""
-        print("\n🔧 Testing OpenDXA LLMResource with vLLM...")
+    async def test_dana_llm_resource(self):
+        """Test Dana LLMResource with vLLM configuration."""
+        print("\n🔧 Testing Dana LLMResource with vLLM...")
 
         # Method 1: Configure via provider_configs
         llm_resource = LLMResource(
@@ -78,14 +77,14 @@ class LocalvLLMDemo:
             response = await llm_resource.query(request)
 
             if hasattr(response, "content") and response.content:
-                print(f"✅ OpenDXA LLMResource response: {response.content}")
+                print(f"✅ Dana LLMResource response: {response.content}")
                 return True
             else:
                 print(f"❌ No content in response: {response}")
                 return False
 
         except Exception as e:
-            print(f"❌ OpenDXA LLMResource test failed: {e}")
+            print(f"❌ Dana LLMResource test failed: {e}")
             return False
 
     async def test_environment_variable_config(self):
@@ -133,7 +132,7 @@ class LocalvLLMDemo:
 
     async def run_all_tests(self):
         """Run all configuration tests."""
-        print("🚀 OpenDXA + vLLM Integration Demo")
+        print("🚀 Dana + vLLM Integration Demo")
         print("=" * 50)
 
         # Check if vLLM server is running
@@ -146,13 +145,13 @@ class LocalvLLMDemo:
 
         # Run tests
         test1 = await self.test_direct_aisuite_connection()
-        test2 = await self.test_opendxa_llm_resource()
+        test2 = await self.test_dana_llm_resource()
         test3 = await self.test_environment_variable_config()
 
         print("\n" + "=" * 50)
         print("📊 Test Results:")
         print(f"   Direct aisuite: {'✅ PASS' if test1 else '❌ FAIL'}")
-        print(f"   OpenDXA LLMResource: {'✅ PASS' if test2 else '❌ FAIL'}")
+        print(f"   Dana LLMResource: {'✅ PASS' if test2 else '❌ FAIL'}")
         print(f"   Environment config: {'✅ PASS' if test3 else '❌ FAIL'}")
 
         if all([test1, test2, test3]):
@@ -162,7 +161,7 @@ class LocalvLLMDemo:
 
 
 def show_configuration_examples():
-    """Show different ways to configure vLLM with OpenDXA."""
+    """Show different ways to configure vLLM with Dana."""
     print("\n📋 Configuration Examples:")
     print("-" * 30)
 
@@ -183,7 +182,7 @@ provider_configs = {
 client = ai.Client(provider_configs=provider_configs)
 """)
 
-    print("\n3️⃣ OpenDXA Config (opendxa_config.json):")
+    print("\n3️⃣ Dana Config (dana_config.json):")
     print("""
 {
     "llm": {

@@ -12,9 +12,9 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Optional
 
-from opendxa.dana.common.exceptions import FunctionRegistryError, SandboxError
-from opendxa.dana.common.runtime_scopes import RuntimeScopes
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
+from dana.common.exceptions import FunctionRegistryError, SandboxError
+from dana.common.runtime_scopes import RuntimeScopes
 
 if TYPE_CHECKING:
     from dana.core.lang.sandbox_context import SandboxContext

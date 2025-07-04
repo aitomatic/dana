@@ -8,14 +8,14 @@ import glob
 import os
 import sys
 
-# Adjust path to import from the opendxa package root
+# Adjust path to import from the dana package root
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-from opendxa.dana.common.exceptions import DanaError
-from opendxa.dana.io.file_io import read_dana_program
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.log_manager import LogLevel
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.dana.common.exceptions import DanaError
+from dana.dana.io.file_io import read_dana_program
 
 # ANSI color codes
 BLUE = "\033[94m"  # Program headers

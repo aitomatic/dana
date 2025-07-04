@@ -1,6 +1,6 @@
-"""Database storage implementations for the OpenDXA system.
+"""Database storage implementations for the Dana system.
 
-Here we provide the model-to-storage mappings for the OpenDXA memory and knowledge
+Here we provide the model-to-storage mappings for the Dana memory and knowledge
 subsystems: Memories are stored in vector databases, while Knowledge is stored in SQL databases.
 
 This is because Memories are accessed via semantic search, while Knowledge is accessed via

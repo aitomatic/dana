@@ -5,7 +5,7 @@ from pathlib import Path
 
 from python_a2a import A2AServer, TaskState, TaskStatus, agent, run_server, skill
 
-from opendxa.dana import dana
+from dana.dana import dana
 
 
 def validate_agent_module(na_file_path: str, na_module):

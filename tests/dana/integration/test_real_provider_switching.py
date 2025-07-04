@@ -5,8 +5,10 @@ Run with: pytest -m real_api tests/dana/integration/test_real_provider_switching
 """
 
 import os
+
 import pytest
 from dotenv import load_dotenv
+
 from dana.core.lang.dana_sandbox import DanaSandbox
 
 
@@ -32,9 +34,9 @@ class TestRealProviderSwitching:
             pytest.skip(f"Missing required API keys: {missing_keys}")
 
         # Ensure we're NOT using mock mode
-        os.environ["OPENDXA_MOCK_LLM"] = "false"
+        os.environ["DANA_MOCK_LLM"] = "false"
 
-        print(f"\n🔑 Using real API keys:")
+        print("\n🔑 Using real API keys:")
         print(f"   OPENAI_API_KEY: {'✅ Set' if os.getenv('OPENAI_API_KEY') else '❌ Missing'}")
         print(f"   ANTHROPIC_API_KEY: {'✅ Set' if os.getenv('ANTHROPIC_API_KEY') else '❌ Missing'}")
 

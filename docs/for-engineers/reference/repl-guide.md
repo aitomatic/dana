@@ -8,7 +8,7 @@
 
 ```bash
 # Start the REPL
-python -m opendxa.dana.exec.repl.dana_repl_app
+python -m dana.dana.exec.repl.dana_repl_app
 
 # Or from your code
 from opendxa.dana.exec.repl.repl import REPL
@@ -344,7 +344,7 @@ def test_document_processing():
 export OPENAI_API_KEY="your-key-here"
 # or
 export ANTHROPIC_API_KEY="your-key-here"
-# or configure in opendxa_config.json
+# or configure in dana_config.json
 ```
 
 ### Custom Configuration

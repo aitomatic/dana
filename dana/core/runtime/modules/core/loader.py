@@ -1,5 +1,5 @@
 """
-OpenDXA Dana Module System - Module Loader
+Dana Dana Module System - Module Loader
 
 This module provides the loader responsible for finding and loading Dana modules.
 

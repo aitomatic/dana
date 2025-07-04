@@ -2,7 +2,7 @@
 
 import asyncio
 import unittest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 from dana.common.exceptions import LLMAuthenticationError, LLMContextLengthError, LLMError, LLMProviderError, LLMRateLimitError
 from dana.common.resource.llm_resource import LLMResource
@@ -80,8 +80,8 @@ class TestLLMResource(unittest.TestCase):
         self.assertTrue(check_error_type(provider_error, LLMProviderError))
         self.assertTrue(check_error_type(generic_error, LLMError))
 
-    @patch("opendxa.common.utils.token_management.TokenManagement.enforce_context_window")
-    @patch("opendxa.common.utils.token_management.TokenManagement.estimate_message_tokens")
+    @patch("dana.common.utils.token_management.TokenManagement.enforce_context_window")
+    @patch("dana.common.utils.token_management.TokenManagement.estimate_message_tokens")
     def test_token_management(self, mock_estimate, mock_enforce):
         """Test token management and context window enforcement."""
         # Create a long conversation that exceeds token limits

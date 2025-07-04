@@ -7,8 +7,8 @@ from pathlib import Path
 # Add the parent directory to the path so we can import dana
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent))
 
-from dana.core.lang.sandbox_context import SandboxContext
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 def main():

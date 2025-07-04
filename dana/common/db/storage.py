@@ -1,8 +1,8 @@
 """
-Storage implementations for the OpenDXA system.
+Storage implementations for the Dana system.
 
 This module provides the mapping between Memory/Knowledge (logical) and
-SQL/Vector (physical) storage mechanisms. In OpenDXA, Memories are stored in
+SQL/Vector (physical) storage mechanisms. In Dana, Memories are stored in
 vector databases, while Knowledge is stored in SQL databases.
 
 This is because Memories are accessed via semantic search. Knowledge bases, on the other hand,

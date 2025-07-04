@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AISuite/Anthropic compatibility patch for OpenDXA.
+"""AISuite/Anthropic compatibility patch for Dana.
 
 This module applies monkey patches to fix the known compatibility issue between
 AISuite 0.1.11, Anthropic 0.30.1, and httpx 0.28.1 where the 'proxies' parameter
@@ -17,8 +17,6 @@ This patch fixes the issue by:
 3. Patching SyncHttpxClientWrapper.__init__ to remove 'proxies' from kwargs
 """
 
-import sys
-from typing import Optional
 
 # Global flag to track if patch has been applied
 _PATCH_APPLIED = False
@@ -36,7 +34,6 @@ def apply_aisuite_patch() -> bool:
         return True
 
     try:
-        import anthropic
         from anthropic import Anthropic
 
         # Store the original __init__ method

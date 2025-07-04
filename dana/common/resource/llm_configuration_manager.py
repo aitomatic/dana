@@ -1,5 +1,5 @@
 """
-LLM Configuration Manager for OpenDXA.
+LLM Configuration Manager for Dana.
 
 This module handles model selection, validation, and configuration management
 for LLM resources. Extracted from LLMResource for better separation of concerns.
@@ -48,7 +48,7 @@ class LLMConfigurationManager:
     def _determine_model(self) -> str:
         """Determine which model to use based on configuration and availability."""
         # Check if we're in mock mode first to avoid unnecessary work and logging
-        is_mock_mode = os.environ.get("OPENDXA_MOCK_LLM", "").lower() == "true"
+        is_mock_mode = os.environ.get("DANA_MOCK_LLM", "").lower() == "true"
 
         # Priority: explicit model > auto-selection > default
         if self.explicit_model:

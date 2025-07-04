@@ -8,7 +8,7 @@ import tempfile
 import pytest
 from llama_index.core import Document
 
-from opendxa.contrib.rag_resource.common.resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager
+from dana.integrations.rag.common.resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager
 
 
 class TestUnifiedCacheManager:

@@ -1,15 +1,14 @@
 """
-Knowledge categorizer for OpenDXA KNOWS system.
+Knowledge categorizer for Dana KNOWS system.
 
 This module handles hierarchical categorization and relationship mapping of knowledge points.
 """
 
-import uuid
-from typing import Dict, Any, List, Set, Optional, Tuple
 from collections import defaultdict
 from dataclasses import dataclass
+from typing import Any
 
-from dana.common.utils.logging import DXA_LOGGER
+from dana.common.utils.logging import DANA_LOGGER
 from dana.frameworks.knows.core.base import KnowledgePoint, ProcessorBase
 
 
@@ -20,8 +19,8 @@ class KnowledgeCategory:
     id: str
     name: str
     description: str
-    parent_id: Optional[str] = None
-    keywords: List[str] = None
+    parent_id: str | None = None
+    keywords: list[str] = None
     confidence_threshold: float = 0.5
     
     def __post_init__(self):
@@ -37,7 +36,7 @@ class CategoryRelationship:
     category_id: str
     confidence: float
     relationship_type: str  # "exact", "partial", "related"
-    metadata: Dict[str, Any] = None
+    metadata: dict[str, Any] = None
     
     def __post_init__(self):
         if self.metadata is None:
@@ -94,7 +93,7 @@ class KnowledgeCategorizer(ProcessorBase):
     ]
     
     def __init__(self, 
-                 categories: Optional[List[KnowledgeCategory]] = None,
+                 categories: list[KnowledgeCategory] | None = None,
                  similarity_threshold: float = 0.6):
         """Initialize knowledge categorizer.
         
@@ -106,9 +105,9 @@ class KnowledgeCategorizer(ProcessorBase):
         self.similarity_threshold = similarity_threshold
         self.category_index = {cat.id: cat for cat in self.categories}
         
-        DXA_LOGGER.info(f"Initialized KnowledgeCategorizer with {len(self.categories)} categories")
+        DANA_LOGGER.info(f"Initialized KnowledgeCategorizer with {len(self.categories)} categories")
     
-    def process(self, knowledge_points: List[KnowledgePoint]) -> Dict[str, Any]:
+    def process(self, knowledge_points: list[KnowledgePoint]) -> dict[str, Any]:
         """Categorize knowledge points and map relationships.
         
         Args:
@@ -163,14 +162,14 @@ class KnowledgeCategorizer(ProcessorBase):
                 'summary': self._generate_categorization_summary(categorized_points, relationships)
             }
             
-            DXA_LOGGER.info(f"Categorized {len(knowledge_points)} knowledge points into {len(set(r.category_id for r in relationships))} categories")
+            DANA_LOGGER.info(f"Categorized {len(knowledge_points)} knowledge points into {len(set(r.category_id for r in relationships))} categories")
             return result
             
         except Exception as e:
-            DXA_LOGGER.error(f"Failed to categorize knowledge points: {str(e)}")
+            DANA_LOGGER.error(f"Failed to categorize knowledge points: {str(e)}")
             raise
     
-    def validate_input(self, knowledge_points: List[KnowledgePoint]) -> bool:
+    def validate_input(self, knowledge_points: list[KnowledgePoint]) -> bool:
         """Validate input knowledge points.
         
         Args:
@@ -180,21 +179,21 @@ class KnowledgeCategorizer(ProcessorBase):
             True if input is valid
         """
         if not isinstance(knowledge_points, list):
-            DXA_LOGGER.error("Input must be a list of KnowledgePoint objects")
+            DANA_LOGGER.error("Input must be a list of KnowledgePoint objects")
             return False
         
         if len(knowledge_points) == 0:
-            DXA_LOGGER.error("Knowledge points list is empty")
+            DANA_LOGGER.error("Knowledge points list is empty")
             return False
         
         for kp in knowledge_points:
             if not isinstance(kp, KnowledgePoint):
-                DXA_LOGGER.error(f"Invalid knowledge point type: {type(kp)}")
+                DANA_LOGGER.error(f"Invalid knowledge point type: {type(kp)}")
                 return False
         
         return True
     
-    def _categorize_knowledge_point(self, knowledge_point: KnowledgePoint) -> List[Dict[str, Any]]:
+    def _categorize_knowledge_point(self, knowledge_point: KnowledgePoint) -> list[dict[str, Any]]:
         """Categorize a single knowledge point.
         
         Args:
@@ -248,7 +247,7 @@ class KnowledgeCategorizer(ProcessorBase):
         # Limit to top 3 assignments to avoid over-categorization
         return assignments[:3]
     
-    def _calculate_keyword_similarity(self, text: str, keywords: List[str]) -> float:
+    def _calculate_keyword_similarity(self, text: str, keywords: list[str]) -> float:
         """Calculate similarity between text and category keywords.
         
         Args:
@@ -291,7 +290,7 @@ class KnowledgeCategorizer(ProcessorBase):
         else:
             return "related"
     
-    def _map_knowledge_point_relationships(self, knowledge_points: List[KnowledgePoint]) -> List[Dict[str, Any]]:
+    def _map_knowledge_point_relationships(self, knowledge_points: list[KnowledgePoint]) -> list[dict[str, Any]]:
         """Map relationships between knowledge points.
         
         Args:
@@ -383,7 +382,7 @@ class KnowledgeCategorizer(ProcessorBase):
         
         return False
     
-    def _find_shared_context(self, kp1: KnowledgePoint, kp2: KnowledgePoint) -> Dict[str, Any]:
+    def _find_shared_context(self, kp1: KnowledgePoint, kp2: KnowledgePoint) -> dict[str, Any]:
         """Find shared context between two knowledge points.
         
         Args:
@@ -403,7 +402,7 @@ class KnowledgeCategorizer(ProcessorBase):
         
         return shared
     
-    def _build_category_hierarchy(self) -> Dict[str, Any]:
+    def _build_category_hierarchy(self) -> dict[str, Any]:
         """Build hierarchical representation of categories.
         
         Returns:
@@ -431,8 +430,8 @@ class KnowledgeCategorizer(ProcessorBase):
         return hierarchy
     
     def _generate_categorization_summary(self, 
-                                       categorized_points: List[Dict[str, Any]], 
-                                       relationships: List[CategoryRelationship]) -> Dict[str, Any]:
+                                       categorized_points: list[dict[str, Any]], 
+                                       relationships: list[CategoryRelationship]) -> dict[str, Any]:
         """Generate summary of categorization results.
         
         Args:

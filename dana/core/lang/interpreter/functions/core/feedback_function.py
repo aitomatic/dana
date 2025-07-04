@@ -47,8 +47,8 @@ def feedback_function(
         poet_feedback(result, feedback_payload)
     except Exception as e:
         # Log error but don't fail Dana execution
-        from dana.common.utils.logging import DXA_LOGGER
+        from dana.common.utils.logging import DANA_LOGGER
 
-        DXA_LOGGER.error(f"Feedback processing failed: {e}")
+        DANA_LOGGER.error(f"Feedback processing failed: {e}")
         # Re-raise to inform user
         raise RuntimeError(f"Feedback processing failed: {e}")

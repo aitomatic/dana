@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import pytest
 
-from opendxa.contrib.rag_resource.common.resource.rag.pipeline.document_loader import DocumentLoader
+from dana.integrations.rag.common.resource.rag.pipeline.document_loader import DocumentLoader
 
 
 class TestDocumentLoader:

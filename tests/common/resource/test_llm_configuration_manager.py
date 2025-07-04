@@ -74,7 +74,7 @@ class TestLLMConfigurationManager(unittest.TestCase):
         with self.assertRaises(LLMError):
             config_manager.selected_model = "anthropic:claude-3"  # No ANTHROPIC_API_KEY
 
-    @patch("opendxa.common.resource.llm_configuration_manager.ConfigLoader")
+    @patch("dana.common.resource.llm_configuration_manager.ConfigLoader")
     @patch.dict(os.environ, {}, clear=True)  # Clear all environment variables for this test
     def test_find_first_available_model(self, mock_config_loader):
         """Test finding the first available model from configuration."""
@@ -105,7 +105,7 @@ class TestLLMConfigurationManager(unittest.TestCase):
         # With OPENAI_API_KEY set, openai:gpt-4 is the first available model in the list
         self.assertEqual(result, "openai:gpt-4")
 
-    @patch("opendxa.common.resource.llm_configuration_manager.ConfigLoader")
+    @patch("dana.common.resource.llm_configuration_manager.ConfigLoader")
     @patch.dict(os.environ, {}, clear=True)  # Clear all environment variables for this test
     def test_find_first_available_model_none_available(self, mock_config_loader):
         """Test when no models are available."""
@@ -126,7 +126,7 @@ class TestLLMConfigurationManager(unittest.TestCase):
         result = config_manager._find_first_available_model()
         self.assertIsNone(result)
 
-    @patch("opendxa.common.resource.llm_configuration_manager.ConfigLoader")
+    @patch("dana.common.resource.llm_configuration_manager.ConfigLoader")
     @patch.dict(os.environ, {}, clear=True)  # Clear all environment variables for this test
     def test_get_available_models(self, mock_config_loader):
         """Test getting list of available models."""
@@ -160,7 +160,7 @@ class TestLLMConfigurationManager(unittest.TestCase):
         self.assertNotIn("someprovider:unavailable-model", available_models)
         self.assertNotIn("anotherprovider:missing-model", available_models)
 
-    @patch("opendxa.common.resource.llm_configuration_manager.ConfigLoader")
+    @patch("dana.common.resource.llm_configuration_manager.ConfigLoader")
     def test_get_model_config(self, mock_config_loader):
         """Test getting model-specific configuration."""
         # Mock configuration
@@ -179,8 +179,8 @@ class TestLLMConfigurationManager(unittest.TestCase):
         self.assertEqual(default_config["max_tokens"], 4096)
         self.assertEqual(default_config["temperature"], 0.7)
 
-    @patch("opendxa.common.resource.llm_configuration_manager.ConfigLoader")
-    @patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "false", "OPENAI_API_KEY": "test-key"}, clear=True)
+    @patch("dana.common.resource.llm_configuration_manager.ConfigLoader")
+    @patch.dict(os.environ, {"DANA_MOCK_LLM": "false", "OPENAI_API_KEY": "test-key"}, clear=True)
     def test_determine_model_explicit(self, mock_config_loader):
         """Test model determination with explicit model."""
         # Mock configuration with provider configs
@@ -198,8 +198,8 @@ class TestLLMConfigurationManager(unittest.TestCase):
         model = config_manager._determine_model()
         self.assertEqual(model, "openai:gpt-4")
 
-    @patch("opendxa.common.resource.llm_configuration_manager.ConfigLoader")
-    @patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "false"}, clear=True)  # Clear all env vars and disable mock mode
+    @patch("dana.common.resource.llm_configuration_manager.ConfigLoader")
+    @patch.dict(os.environ, {"DANA_MOCK_LLM": "false"}, clear=True)  # Clear all env vars and disable mock mode
     def test_determine_model_explicit_unavailable(self, mock_config_loader):
         """Test model determination with unavailable explicit model."""
         # Mock configuration
@@ -223,8 +223,8 @@ class TestLLMConfigurationManager(unittest.TestCase):
 
         self.assertIn("not available", str(context.exception))
 
-    @patch("opendxa.common.resource.llm_configuration_manager.ConfigLoader")
-    @patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "false", "OPENAI_API_KEY": "test-key"}, clear=True)
+    @patch("dana.common.resource.llm_configuration_manager.ConfigLoader")
+    @patch.dict(os.environ, {"DANA_MOCK_LLM": "false", "OPENAI_API_KEY": "test-key"}, clear=True)
     def test_determine_model_auto_selection(self, mock_config_loader):
         """Test model determination with auto-selection."""
         # Mock configuration
@@ -243,10 +243,10 @@ class TestLLMConfigurationManager(unittest.TestCase):
         model = config_manager._determine_model()
         self.assertEqual(model, "openai:gpt-4")
 
-    @patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "false"})
+    @patch.dict(os.environ, {"DANA_MOCK_LLM": "false"})
     def test_error_handling_with_config_errors(self):
         """Test graceful error handling when config files are corrupt or missing."""
-        with patch("opendxa.common.resource.llm_configuration_manager.ConfigLoader") as mock_config_loader:
+        with patch("dana.common.resource.llm_configuration_manager.ConfigLoader") as mock_config_loader:
             # Make config loader raise an exception
             mock_config_loader.return_value.get_default_config.side_effect = FileNotFoundError("Config not found")
 

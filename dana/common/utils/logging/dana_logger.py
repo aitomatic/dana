@@ -41,7 +41,7 @@ class ColoredFormatter(logging.Formatter):
         return formatted
 
 
-class DXALogger:
+class DanaLogger:
     """Simple logger with prefix support and enhanced functionality."""
 
     # Logging level constants
@@ -51,7 +51,7 @@ class DXALogger:
     ERROR = logging.ERROR
     CRITICAL = logging.CRITICAL
 
-    def __init__(self, name: str = "opendxa", prefix: str | None = None) -> None:
+    def __init__(self, name: str = "dana", prefix: str | None = None) -> None:
         """Initialize the logger.
 
         Args:
@@ -74,32 +74,32 @@ class DXALogger:
     ) -> None:
         """Configure the logger with basic settings.
 
-        Only affects OpenDXA loggers to avoid interfering with third-party libraries.
+        Only affects Dana loggers to avoid interfering with third-party libraries.
         """
         if self._configured:
             return
 
-        # Configure only the OpenDXA root logger, not the system root logger
-        opendxa_root = logging.getLogger("opendxa")
-        opendxa_root.setLevel(level)
+        # Configure only the Dana root logger, not the system root logger
+        dana_root = logging.getLogger("dana")
+        dana_root.setLevel(level)
 
-        # Add our handler to the OpenDXA root logger only if console logging is enabled
+        # Add our handler to the Dana root logger only if console logging is enabled
         if console:
-            # Remove any existing handlers on the OpenDXA logger
-            for handler in opendxa_root.handlers[:]:
-                opendxa_root.removeHandler(handler)
+            # Remove any existing handlers on the Dana logger
+            for handler in dana_root.handlers[:]:
+                dana_root.removeHandler(handler)
 
             handler = logging.StreamHandler()
             formatter = ColoredFormatter(fmt=fmt, datefmt=datefmt)
             handler.setFormatter(formatter)
-            opendxa_root.addHandler(handler)
+            dana_root.addHandler(handler)
             # Prevent propagation to avoid duplicate messages
-            opendxa_root.propagate = False
+            dana_root.propagate = False
 
-        # Configure this logger and only existing OpenDXA loggers
+        # Configure this logger and only existing Dana loggers
         self.logger.setLevel(level)
         for logger_name in logging.Logger.manager.loggerDict:
-            if logger_name.startswith("opendxa"):
+            if logger_name.startswith("dana"):
                 logger = logging.getLogger(logger_name)
                 if isinstance(logger, logging.Logger):
                     logger.setLevel(level)
@@ -109,7 +109,7 @@ class DXALogger:
     def _configure_third_party_logging(self) -> None:
         """Configure third-party library logging to reduce noise.
 
-        This suppresses verbose logging from libraries commonly used in OpenDXA
+        This suppresses verbose logging from libraries commonly used in Dana
         that produce excessive output at INFO level.
         """
         # HTTP client libraries
@@ -123,19 +123,19 @@ class DXALogger:
         for logger_name in ["asyncio", "filelock"]:
             logging.getLogger(logger_name).setLevel(logging.WARNING)
 
-    def setLevel(self, level: int, scope: str | None = "opendxa") -> None:
+    def setLevel(self, level: int, scope: str | None = "dana") -> None:
         """Set the logging level with configurable scope.
 
-        By default, sets level for all OpenDXA components. This ensures that
-        DXA_LOGGER.setLevel(DEBUG) affects the entire OpenDXA system.
+        By default, sets level for all Dana components. This ensures that
+        DANA_LOGGER.setLevel(DEBUG) affects the entire Dana system.
 
         Args:
             level: The logging level to set (e.g., logging.DEBUG, logging.INFO)
             scope: Optional scope parameter:
-                  - "opendxa" (default): Set level for all OpenDXA components
+                  - "dana" (default): Set level for all Dana components
                   - "*": Set level for all loggers system-wide
                   - None: Set level only for this logger instance
-                  - "opendxa.agent": Set level for specific OpenDXA subsystem
+                  - "dana.agent": Set level for specific Dana subsystem
         """
         if scope is None:
             # Set level only for this logger instance
@@ -221,7 +221,7 @@ class DXALogger:
         """Log critical message."""
         self._log(logging.CRITICAL, message, *args, **kwargs)
 
-    def getLogger(self, name_or_obj: str | Any, prefix: str | None = None) -> "DXALogger":
+    def getLogger(self, name_or_obj: str | Any, prefix: str | None = None) -> "DanaLogger":
         """Create a new logger instance.
 
         Args:
@@ -231,16 +231,16 @@ class DXALogger:
             prefix: Optional prefix for log messages
 
         Returns:
-            DXALogger instance
+            DanaLogger instance
         """
         if isinstance(name_or_obj, str):
-            return DXALogger(name_or_obj, prefix or self.prefix)
+            return DanaLogger(name_or_obj, prefix or self.prefix)
         else:
-            return DXALogger.getLoggerForClass(name_or_obj.__class__, prefix or self.prefix)
+            return DanaLogger.getLoggerForClass(name_or_obj.__class__, prefix or self.prefix)
 
     @classmethod
     @lru_cache(maxsize=128)  # Increased cache size for better performance
-    def getLoggerForClass(cls, for_class: type[Any], prefix: str | None = None) -> "DXALogger":
+    def getLoggerForClass(cls, for_class: type[Any], prefix: str | None = None) -> "DanaLogger":
         """Get a logger for a class.
 
         Args:
@@ -248,18 +248,18 @@ class DXALogger:
             prefix: Optional prefix for log messages
 
         Returns:
-            DXALogger instance
+            DanaLogger instance
         """
-        return DXALogger(f"{for_class.__module__}.{for_class.__name__}", prefix)
+        return DanaLogger(f"{for_class.__module__}.{for_class.__name__}", prefix)
 
     @contextmanager
     def with_level(self, level: int) -> Generator[None, None, None]:
         """Context manager to temporarily change log level.
 
         Example:
-            >>> with DXA_LOGGER.with_level(logging.DEBUG):
-            ...     DXA_LOGGER.debug("This will be logged")
-            >>> DXA_LOGGER.debug("This might not be logged")
+            >>> with DANA_LOGGER.with_level(logging.DEBUG):
+            ...     DANA_LOGGER.debug("This will be logged")
+            >>> DANA_LOGGER.debug("This might not be logged")
         """
         original_level = self.logger.level
         self.logger.setLevel(level)
@@ -269,14 +269,14 @@ class DXALogger:
             self.logger.setLevel(original_level)
 
     @contextmanager
-    def with_prefix(self, prefix: str) -> Generator["DXALogger", None, None]:
+    def with_prefix(self, prefix: str) -> Generator["DanaLogger", None, None]:
         """Context manager to temporarily use a different prefix.
 
         Example:
-            >>> with DXA_LOGGER.with_prefix("PROCESSING") as logger:
+            >>> with DANA_LOGGER.with_prefix("PROCESSING") as logger:
             ...     logger.info("Starting processing")
         """
-        temp_logger = DXALogger(self.logger.name, prefix)
+        temp_logger = DanaLogger(self.logger.name, prefix)
         temp_logger.logger = self.logger  # Share the same underlying logger
         temp_logger._configured = self._configured
         yield temp_logger
@@ -285,7 +285,7 @@ class DXALogger:
         """Log with lazy evaluation of expensive message generation.
 
         Example:
-            >>> DXA_LOGGER.lazy(
+            >>> DANA_LOGGER.lazy(
             ...     logging.DEBUG,
             ...     lambda: f"Expensive computation: {expensive_function()}"
             ... )
@@ -304,13 +304,14 @@ class DXALogger:
 
 
 # Create global logger instances
-DXA_LOGGER = DXALogger("opendxa")  # For backwards compatibility
-DANA_LOGGER = DXALogger("dana")    # New Dana logger
+DANA_LOGGER = DanaLogger("dana")  # Main Dana logger
 
-# Configure both
-DXA_LOGGER.configure()
+# Configure the logger
 DANA_LOGGER.configure()
 
 # Configure third-party logging globally
-DXA_LOGGER._configure_third_party_logging()
 DANA_LOGGER._configure_third_party_logging()
+
+# For backward compatibility, also create DanaLogger as alias
+# Legacy alias for backward compatibility
+DanaLogger = DANA_LOGGER

@@ -154,7 +154,7 @@ validated_inputs = {
 
         return CodeBlock(
             code=validation_code,
-            dependencies=["numpy", "opendxa.dana.poet.storage"],
+            dependencies=["numpy", "dana.poet.storage"],
             imports=["import numpy as np", "from dana.frameworks.poet.storage import POETStorage"],
             metadata={"phase": "perceive", "domain": "ml_monitoring", "drift_detection": True, "adaptive_thresholds": True},
         )
@@ -314,7 +314,7 @@ log(f"ML monitoring score: {{performance_score:.2f}}")
 
         return CodeBlock(
             code=ml_enforcement,
-            dependencies=parent_block.dependencies + ["opendxa.dana.poet.storage"],
+            dependencies=parent_block.dependencies + ["dana.poet.storage"],
             imports=parent_block.imports + ["from dana.frameworks.poet.storage import POETStorage"],
             metadata={
                 **parent_block.metadata,
@@ -464,7 +464,7 @@ if execution_id and final_result:
 
         return CodeBlock(
             code=train_code,
-            dependencies=["opendxa.dana.poet.storage", "time", "numpy"],
+            dependencies=["dana.poet.storage", "time", "numpy"],
             imports=["from dana.frameworks.poet.storage import POETStorage", "import time", "import numpy as np"],
             metadata={
                 "phase": "train",

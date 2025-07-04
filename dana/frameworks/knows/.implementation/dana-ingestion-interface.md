@@ -1,4 +1,4 @@
-# Dana Language Interface: OpenDXA KNOWS Knowledge Ingestion
+# Dana Language Interface: Dana KNOWS Knowledge Ingestion
 
 ## Simple User Interface
 

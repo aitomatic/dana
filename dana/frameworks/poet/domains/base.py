@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from dana.common.utils.logging import DXA_LOGGER
+from dana.common.utils.logging import DANA_LOGGER
 
 
 @dataclass
@@ -65,7 +65,7 @@ class DomainTemplate(ABC):
 
         This is the main entry point that orchestrates all phases.
         """
-        DXA_LOGGER.info(f"Generating enhanced function for domain '{self.name}'")
+        DANA_LOGGER.info(f"Generating enhanced function for domain '{self.name}'")
 
         # Generate individual phases
         perceive_block = self.generate_perceive(func_info)

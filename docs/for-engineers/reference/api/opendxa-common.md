@@ -141,9 +141,9 @@ config = loader.get_default_config()
 config = loader.load_config("custom_config.json")
 
 # Configuration search order:
-# 1. OPENDXA_CONFIG environment variable
-# 2. Current working directory/opendxa_config.json
-# 3. Project root/opendxa_config.json
+# 1. DANA_CONFIG environment variable
+# 2. Current working directory/dana_config.json
+# 3. Project root/dana_config.json
 ```
 
 **Example Configuration:**

@@ -15,7 +15,7 @@ By completing these examples, you'll master:
 
 ### 1. **builtin_functions_basic.na** ⭐ **START HERE**
 ```bash
-uv run python -m opendxa.dana.exec.dana builtin_functions_basic.na
+uv run python -m dana.dana.exec.dana builtin_functions_basic.na
 ```
 **What you'll learn:**
 - Essential collection functions you'll use daily
@@ -27,7 +27,7 @@ uv run python -m opendxa.dana.exec.dana builtin_functions_basic.na
 
 ### 2. **pythonic_builtins_demo.na** ⭐ **COMPREHENSIVE REFERENCE**
 ```bash
-uv run python -m opendxa.dana.exec.dana pythonic_builtins_demo.na
+uv run python -m dana.dana.exec.dana pythonic_builtins_demo.na
 ```
 **What you'll learn:**
 - Complete coverage of all Dana built-in functions
@@ -44,10 +44,10 @@ uv run python -m opendxa.dana.exec.dana pythonic_builtins_demo.na
 cd examples/dana/02_built_in_functions/
 
 # Start with essentials (5-10 minutes)
-uv run python -m opendxa.dana.exec.dana builtin_functions_basic.na
+uv run python -m dana.dana.exec.dana builtin_functions_basic.na
 
 # Comprehensive exploration (15-20 minutes)
-uv run python -m opendxa.dana.exec.dana pythonic_builtins_demo.na
+uv run python -m dana.dana.exec.dana pythonic_builtins_demo.na
 ```
 
 ## 💡 Key Functions by Category

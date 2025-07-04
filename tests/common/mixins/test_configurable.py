@@ -61,7 +61,7 @@ class TestConfigurable:
         assert path == abs_path
 
     @patch("builtins.open", new_callable=mock_open, read_data="setting1: test_value\nsetting2: 123")
-    @patch("opendxa.common.utils.misc.Misc.load_yaml_config")
+    @patch("dana.common.utils.misc.Misc.load_yaml_config")
     # pylint: disable=unused-argument
     def test_load_config_from_file(self, mock_load_yaml, mock_file):
         """Test loading configuration from file."""

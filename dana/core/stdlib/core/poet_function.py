@@ -7,8 +7,8 @@ to any function call directly from Dana code.
 
 from typing import Any
 
-from dana.frameworks.poet import POETConfig
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.frameworks.poet import POETConfig
 
 
 def poet_function(

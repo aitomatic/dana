@@ -1,16 +1,16 @@
 """
-Similarity search component for OpenDXA KNOWS system.
+Similarity search component for Dana KNOWS system.
 
 This module handles vector-based similarity search, semantic matching, and relevance scoring.
 """
 
-import uuid
-import numpy as np
-from typing import Dict, Any, List, Optional, Tuple, Union
-from dataclasses import dataclass
 from collections import defaultdict
+from dataclasses import dataclass
+from typing import Any
 
-from dana.common.utils.logging import DXA_LOGGER
+import numpy as np
+
+from dana.common.utils.logging import DANA_LOGGER
 from dana.frameworks.knows.core.base import KnowledgePoint, ProcessorBase
 
 
@@ -19,8 +19,8 @@ class SimilarityResult:
     """Result of similarity search operation."""
     
     query_id: str
-    similar_items: List[Dict[str, Any]]
-    search_metadata: Dict[str, Any]
+    similar_items: list[dict[str, Any]]
+    search_metadata: dict[str, Any]
     confidence: float
 
 
@@ -32,8 +32,8 @@ class SemanticMatch:
     target_id: str
     similarity_score: float
     match_type: str  # "semantic", "keyword", "contextual"
-    matching_features: List[str]
-    metadata: Dict[str, Any]
+    matching_features: list[str]
+    metadata: dict[str, Any]
 
 
 class SimilaritySearcher(ProcessorBase):
@@ -58,12 +58,12 @@ class SimilaritySearcher(ProcessorBase):
         self.enable_semantic_search = enable_semantic_search
         
         # Knowledge point storage for similarity comparison
-        self.knowledge_index: Dict[str, KnowledgePoint] = {}
-        self.content_vectors: Dict[str, np.ndarray] = {}
+        self.knowledge_index: dict[str, KnowledgePoint] = {}
+        self.content_vectors: dict[str, np.ndarray] = {}
         
-        DXA_LOGGER.info(f"Initialized SimilaritySearcher with threshold: {similarity_threshold}")
+        DANA_LOGGER.info(f"Initialized SimilaritySearcher with threshold: {similarity_threshold}")
     
-    def process(self, knowledge_points: List[KnowledgePoint]) -> Dict[str, Any]:
+    def process(self, knowledge_points: list[KnowledgePoint]) -> dict[str, Any]:
         """Find similar content and create similarity mappings.
         
         Args:
@@ -106,14 +106,14 @@ class SimilaritySearcher(ProcessorBase):
                 }
             }
             
-            DXA_LOGGER.info(f"Found {len(semantic_matches)} semantic matches across {len(knowledge_points)} knowledge points")
+            DANA_LOGGER.info(f"Found {len(semantic_matches)} semantic matches across {len(knowledge_points)} knowledge points")
             return result
             
         except Exception as e:
-            DXA_LOGGER.error(f"Failed to perform similarity search: {str(e)}")
+            DANA_LOGGER.error(f"Failed to perform similarity search: {str(e)}")
             raise
     
-    def validate_input(self, knowledge_points: List[KnowledgePoint]) -> bool:
+    def validate_input(self, knowledge_points: list[KnowledgePoint]) -> bool:
         """Validate input knowledge points.
         
         Args:
@@ -123,22 +123,22 @@ class SimilaritySearcher(ProcessorBase):
             True if input is valid
         """
         if not isinstance(knowledge_points, list):
-            DXA_LOGGER.error("Input must be a list of KnowledgePoint objects")
+            DANA_LOGGER.error("Input must be a list of KnowledgePoint objects")
             return False
         
         if len(knowledge_points) == 0:
-            DXA_LOGGER.error("Knowledge points list is empty")
+            DANA_LOGGER.error("Knowledge points list is empty")
             return False
         
         for kp in knowledge_points:
             if not isinstance(kp, KnowledgePoint):
-                DXA_LOGGER.error(f"Invalid knowledge point type: {type(kp)}")
+                DANA_LOGGER.error(f"Invalid knowledge point type: {type(kp)}")
                 return False
         
         return True
     
     def search_similar(self, query_point: KnowledgePoint, 
-                      candidate_points: Optional[List[KnowledgePoint]] = None) -> SimilarityResult:
+                      candidate_points: list[KnowledgePoint] | None = None) -> SimilarityResult:
         """Search for similar knowledge points to a query.
         
         Args:
@@ -192,16 +192,16 @@ class SimilaritySearcher(ProcessorBase):
             confidence=self._calculate_search_confidence(similarities)
         )
     
-    def _build_knowledge_index(self, knowledge_points: List[KnowledgePoint]) -> None:
+    def _build_knowledge_index(self, knowledge_points: list[KnowledgePoint]) -> None:
         """Build searchable index of knowledge points.
         
         Args:
             knowledge_points: Knowledge points to index
         """
         self.knowledge_index = {kp.id: kp for kp in knowledge_points}
-        DXA_LOGGER.info(f"Built knowledge index with {len(self.knowledge_index)} points")
+        DANA_LOGGER.info(f"Built knowledge index with {len(self.knowledge_index)} points")
     
-    def _generate_content_vectors(self, knowledge_points: List[KnowledgePoint]) -> None:
+    def _generate_content_vectors(self, knowledge_points: list[KnowledgePoint]) -> None:
         """Generate content vectors for knowledge points.
         
         Args:
@@ -211,7 +211,7 @@ class SimilaritySearcher(ProcessorBase):
         for kp in knowledge_points:
             self.content_vectors[kp.id] = self._generate_content_vector(kp.content)
         
-        DXA_LOGGER.info(f"Generated {len(self.content_vectors)} content vectors")
+        DANA_LOGGER.info(f"Generated {len(self.content_vectors)} content vectors")
     
     def _generate_content_vector(self, content: str) -> np.ndarray:
         """Generate vector representation of content.
@@ -297,7 +297,7 @@ class SimilaritySearcher(ProcessorBase):
         # Convert to 0-1 range (cosine similarity is -1 to 1)
         return (cosine_sim + 1) / 2
     
-    def _identify_matching_features(self, kp1: KnowledgePoint, kp2: KnowledgePoint) -> List[str]:
+    def _identify_matching_features(self, kp1: KnowledgePoint, kp2: KnowledgePoint) -> list[str]:
         """Identify features that match between knowledge points.
         
         Args:
@@ -337,7 +337,7 @@ class SimilaritySearcher(ProcessorBase):
         
         return matching_features
     
-    def _find_similarities(self, knowledge_points: List[KnowledgePoint]) -> List[Dict[str, Any]]:
+    def _find_similarities(self, knowledge_points: list[KnowledgePoint]) -> list[dict[str, Any]]:
         """Find all similarity relationships between knowledge points.
         
         Args:
@@ -374,7 +374,7 @@ class SimilaritySearcher(ProcessorBase):
         
         return similarity_mappings
     
-    def _create_semantic_matches(self, similarity_mappings: List[Dict[str, Any]]) -> List[SemanticMatch]:
+    def _create_semantic_matches(self, similarity_mappings: list[dict[str, Any]]) -> list[SemanticMatch]:
         """Create semantic match objects from similarity mappings.
         
         Args:
@@ -402,7 +402,7 @@ class SimilaritySearcher(ProcessorBase):
         
         return semantic_matches
     
-    def _determine_match_type(self, matching_features: List[str]) -> str:
+    def _determine_match_type(self, matching_features: list[str]) -> str:
         """Determine the type of semantic match.
         
         Args:
@@ -425,7 +425,7 @@ class SimilaritySearcher(ProcessorBase):
         else:
             return "similarity"
     
-    def _generate_similarity_clusters(self, semantic_matches: List[SemanticMatch]) -> List[Dict[str, Any]]:
+    def _generate_similarity_clusters(self, semantic_matches: list[SemanticMatch]) -> list[dict[str, Any]]:
         """Generate clusters of similar knowledge points.
         
         Args:
@@ -459,7 +459,7 @@ class SimilaritySearcher(ProcessorBase):
         
         return clusters
     
-    def _find_connected_points(self, start_id: str, semantic_matches: List[SemanticMatch]) -> set:
+    def _find_connected_points(self, start_id: str, semantic_matches: list[SemanticMatch]) -> set:
         """Find all points connected to a starting point.
         
         Args:
@@ -485,8 +485,8 @@ class SimilaritySearcher(ProcessorBase):
         
         return connected
     
-    def _calculate_cluster_similarity(self, cluster_ids: List[str], 
-                                    semantic_matches: List[SemanticMatch]) -> float:
+    def _calculate_cluster_similarity(self, cluster_ids: list[str], 
+                                    semantic_matches: list[SemanticMatch]) -> float:
         """Calculate average similarity within a cluster.
         
         Args:
@@ -506,8 +506,8 @@ class SimilaritySearcher(ProcessorBase):
         
         return sum(match.similarity_score for match in cluster_matches) / len(cluster_matches)
     
-    def _get_dominant_match_type(self, cluster_ids: List[str], 
-                                semantic_matches: List[SemanticMatch]) -> str:
+    def _get_dominant_match_type(self, cluster_ids: list[str], 
+                                semantic_matches: list[SemanticMatch]) -> str:
         """Get the dominant match type in a cluster.
         
         Args:
@@ -533,7 +533,7 @@ class SimilaritySearcher(ProcessorBase):
         # Return most common type
         return max(type_counts.items(), key=lambda x: x[1])[0]
     
-    def _calculate_search_confidence(self, similarities: List[Dict[str, Any]]) -> float:
+    def _calculate_search_confidence(self, similarities: list[dict[str, Any]]) -> float:
         """Calculate confidence in search results.
         
         Args:

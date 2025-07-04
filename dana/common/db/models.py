@@ -1,4 +1,4 @@
-"""Database models for the OpenDXA system.
+"""Database models for the Dana system.
 
 This module contains SQLAlchemy models that define the specific database schema
 for memory and knowledge storage.

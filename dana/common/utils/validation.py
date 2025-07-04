@@ -1,7 +1,7 @@
-"""Validation utilities for OpenDXA.
+"""Validation utilities for Dana.
 
 This module provides centralized validation utilities to eliminate code duplication
-across the OpenDXA codebase. All validation functions follow consistent patterns
+across the Dana codebase. All validation functions follow consistent patterns
 and provide clear, actionable error messages.
 
 Copyright © 2025 Aitomatic, Inc.
@@ -12,13 +12,13 @@ import os
 from pathlib import Path
 from typing import Any, TypeVar
 
-from dana.common.exceptions import OpenDXAError
-from dana.common.utils.logging import DXA_LOGGER
+from dana.common.exceptions import DanaError
+from dana.common.utils.logging import DANA_LOGGER
 
 T = TypeVar("T")
 
 
-class ValidationError(OpenDXAError):
+class ValidationError(DanaError):
     """Error raised when validation fails."""
 
     def __init__(self, message: str, field_name: str | None = None, value: Any = None):
@@ -35,10 +35,10 @@ class ValidationError(OpenDXAError):
 
 
 class ValidationUtilities:
-    """Centralized validation utilities for OpenDXA.
+    """Centralized validation utilities for Dana.
 
     This class provides static methods for common validation patterns used
-    throughout the OpenDXA codebase. All methods follow consistent error
+    throughout the Dana codebase. All methods follow consistent error
     reporting and logging patterns.
     """
 
@@ -287,7 +287,7 @@ class ValidationUtilities:
 
         # Check if model is in available models list
         if available_models is not None and model_name not in available_models:
-            DXA_LOGGER.warning(
+            DANA_LOGGER.warning(
                 f"Model '{model_name}' not in available models list: {available_models}{f' in {context}' if context else ''}"
             )
             return False
@@ -296,7 +296,7 @@ class ValidationUtilities:
         if required_env_vars:
             missing_vars = [var for var in required_env_vars if not os.environ.get(var)]
             if missing_vars:
-                DXA_LOGGER.warning(
+                DANA_LOGGER.warning(
                     f"Model '{model_name}' requires missing environment variables: {missing_vars}{f' in {context}' if context else ''}"
                 )
                 return False
@@ -337,12 +337,12 @@ class ValidationUtilities:
             expected_interval = decay_interval / half_life
 
             if expected_interval > 10:
-                DXA_LOGGER.warning(
+                DANA_LOGGER.warning(
                     f"Decay interval ({decay_interval}s) seems long relative to decay rate "
                     f"({decay_rate}). Memory will take {expected_interval:.1f} intervals to reach half-life{f' in {context}' if context else ''}"
                 )
             elif expected_interval < 0.1:
-                DXA_LOGGER.warning(
+                DANA_LOGGER.warning(
                     f"Decay interval ({decay_interval}s) seems short relative to decay rate "
                     f"({decay_rate}). Memory will reach half-life in {expected_interval:.1f} intervals{f' in {context}' if context else ''}"
                 )

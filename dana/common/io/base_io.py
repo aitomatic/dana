@@ -1,6 +1,6 @@
-"""Base I/O resource implementation for DXA.
+"""Base I/O resource implementation for Dana.
 
-This module provides the abstract base class for all I/O resources in DXA.
+This module provides the abstract base class for all I/O resources in Dana.
 It defines the core interface that all I/O classes must implement to handle
 input/output operations while extending BaseResource functionality.
 """
@@ -17,7 +17,7 @@ class BaseIO(BaseResource):
     """Base class for I/O resources.
 
     This abstract class defines the interface for handling input/output operations
-    in DXA while providing resource capabilities.
+    in Dana while providing resource capabilities.
     """
 
     def __init__(self, name: str, description: str | None = None):

@@ -1,7 +1,7 @@
 """Simplified integration tests for logging system.
 
 These tests focus on the core integration behaviors without
-complex handler setup that conflicts with DXA_LOGGER.configure().
+complex handler setup that conflicts with DANA_LOGGER.configure().
 """
 
 import logging
@@ -9,7 +9,7 @@ import logging
 import pytest
 
 from dana.common.mixins.loggable import Loggable
-from dana.common.utils.logging import DXA_LOGGER
+from dana.common.utils.logging import DANA_LOGGER
 from dana.core.lang.log_manager import LogLevel, SandboxLogger
 
 
@@ -18,42 +18,42 @@ class TestLoggingIntegrationSimple:
 
     def setup_method(self):
         """Setup for each test."""
-        # Reset DXA_LOGGER state
-        DXA_LOGGER._configured = False
+        # Reset DANA_LOGGER state
+        DANA_LOGGER._configured = False
 
     def teardown_method(self):
         """Cleanup after each test."""
-        # Reset DXA_LOGGER
-        DXA_LOGGER._configured = False
-        DXA_LOGGER.configure()
+        # Reset DANA_LOGGER
+        DANA_LOGGER._configured = False
+        DANA_LOGGER.configure()
 
-    def test_dxa_logger_scope_default_behavior(self):
-        """Test that DXA_LOGGER defaults to opendxa scope."""
-        # Configure DXA_LOGGER
-        DXA_LOGGER.configure(level=logging.WARNING)
+    def test_dana_logger_scope_default_behavior(self):
+        """Test that DANA_LOGGER defaults to dana scope."""
+        # Configure DANA_LOGGER
+        DANA_LOGGER.configure(level=logging.WARNING)
 
-        # Create loggers for different OpenDXA modules
-        agent_logger = DXA_LOGGER.getLogger("opendxa.agent.TestAgent")
-        dana_logger = DXA_LOGGER.getLogger("opendxa.dana.TestDana")
+        # Create loggers for different Dana modules
+        agent_logger = DANA_LOGGER.getLogger("dana.agent.TestAgent")
+        dana_logger = DANA_LOGGER.getLogger("dana.dana.TestDana")
 
-        # Check initial effective levels (child loggers inherit from opendxa parent)
+        # Check initial effective levels (child loggers inherit from dana parent)
         assert agent_logger.logger.getEffectiveLevel() == logging.WARNING
         assert dana_logger.logger.getEffectiveLevel() == logging.WARNING
 
-        # Set DEBUG level - should affect both by default (opendxa scope)
-        DXA_LOGGER.setLevel(logging.DEBUG)
+        # Set DEBUG level - should affect both by default (dana scope)
+        DANA_LOGGER.setLevel(logging.DEBUG)
 
         # Both should now be DEBUG (either direct level or effective level)
         assert agent_logger.logger.getEffectiveLevel() == logging.DEBUG
         assert dana_logger.logger.getEffectiveLevel() == logging.DEBUG
 
-    def test_sandbox_logger_uses_dxa_logger(self):
-        """Test that SandboxLogger integrates with DXA_LOGGER."""
-        # Configure DXA_LOGGER
-        DXA_LOGGER.configure(level=logging.WARNING)
+    def test_sandbox_logger_uses_dana_logger(self):
+        """Test that SandboxLogger integrates with DANA_LOGGER."""
+        # Configure DANA_LOGGER
+        DANA_LOGGER.configure(level=logging.WARNING)
 
-        # Create OpenDXA logger
-        test_logger = DXA_LOGGER.getLogger("opendxa.test.Component")
+        # Create Dana logger
+        test_logger = DANA_LOGGER.getLogger("dana.test.Component")
 
         # Initial level should be WARNING
         assert test_logger.logger.getEffectiveLevel() == logging.WARNING
@@ -66,13 +66,13 @@ class TestLoggingIntegrationSimple:
 
     def test_loggable_integration_with_global_level(self):
         """Test that Loggable respects global log level changes."""
-        # Configure DXA_LOGGER
-        DXA_LOGGER.configure(level=logging.WARNING)
+        # Configure DANA_LOGGER
+        DANA_LOGGER.configure(level=logging.WARNING)
 
         # Create Loggable component
         class TestComponent(Loggable):
             def __init__(self):
-                super().__init__(logger_name="opendxa.test.LoggableComponent")
+                super().__init__(logger_name="dana.test.LoggableComponent")
 
         component = TestComponent()
 
@@ -80,78 +80,78 @@ class TestLoggingIntegrationSimple:
         assert component.logger.logger.getEffectiveLevel() == logging.WARNING
 
         # Change global level
-        DXA_LOGGER.setLevel(logging.DEBUG)
+        DANA_LOGGER.setLevel(logging.DEBUG)
 
         # Component should now be DEBUG
         assert component.logger.logger.getEffectiveLevel() == logging.DEBUG
 
     def test_existing_vs_new_loggers(self):
         """Test that both existing and new loggers are affected by level changes."""
-        # Configure DXA_LOGGER
-        DXA_LOGGER.configure(level=logging.WARNING)
+        # Configure DANA_LOGGER
+        DANA_LOGGER.configure(level=logging.WARNING)
 
         # Create existing logger
-        existing_logger = DXA_LOGGER.getLogger("opendxa.test.ExistingLogger")
+        existing_logger = DANA_LOGGER.getLogger("dana.test.ExistingLogger")
         assert existing_logger.logger.getEffectiveLevel() == logging.WARNING
 
         # Change global level
-        DXA_LOGGER.setLevel(logging.INFO)
+        DANA_LOGGER.setLevel(logging.INFO)
 
         # Existing logger should be updated
         assert existing_logger.logger.getEffectiveLevel() == logging.INFO
 
         # New logger should inherit the level
-        new_logger = DXA_LOGGER.getLogger("opendxa.test.NewLogger")
+        new_logger = DANA_LOGGER.getLogger("dana.test.NewLogger")
         assert new_logger.logger.getEffectiveLevel() == logging.INFO
 
     def test_specific_scope_still_works(self):
         """Test that specific scope targeting still works."""
-        # Configure DXA_LOGGER
-        DXA_LOGGER.configure(level=logging.WARNING)
+        # Configure DANA_LOGGER
+        DANA_LOGGER.configure(level=logging.WARNING)
 
         # Create loggers in different scopes
-        agent_logger = DXA_LOGGER.getLogger("opendxa.agent.SpecificAgent")
-        dana_logger = DXA_LOGGER.getLogger("opendxa.dana.SpecificDana")
+        agent_logger = DANA_LOGGER.getLogger("dana.agent.SpecificAgent")
+        dana_logger = DANA_LOGGER.getLogger("dana.dana.SpecificDana")
 
         # Both start at WARNING
         assert agent_logger.logger.getEffectiveLevel() == logging.WARNING
         assert dana_logger.logger.getEffectiveLevel() == logging.WARNING
 
         # Set DEBUG only for agent scope
-        DXA_LOGGER.setLevel(logging.DEBUG, scope="opendxa.agent")
+        DANA_LOGGER.setLevel(logging.DEBUG, scope="dana.agent")
 
         # Only agent logger should be DEBUG
         assert agent_logger.logger.getEffectiveLevel() == logging.DEBUG
         assert dana_logger.logger.getEffectiveLevel() == logging.WARNING
 
-    def test_non_opendxa_loggers_unaffected(self):
-        """Test that non-OpenDXA loggers are not affected."""
-        # Configure DXA_LOGGER
-        DXA_LOGGER.configure(level=logging.WARNING)
+    def test_non_dana_loggers_unaffected(self):
+        """Test that non-Dana loggers are not affected."""
+        # Configure DANA_LOGGER
+        DANA_LOGGER.configure(level=logging.WARNING)
 
-        # Create non-OpenDXA logger
+        # Create non-Dana logger
         external_logger = logging.getLogger("external.library.Logger")
         external_logger.setLevel(logging.ERROR)
 
-        # Set OpenDXA to DEBUG
-        DXA_LOGGER.setLevel(logging.DEBUG)
+        # Set Dana to DEBUG
+        DANA_LOGGER.setLevel(logging.DEBUG)
 
         # External logger should be unchanged
         assert external_logger.level == logging.ERROR
 
-        # OpenDXA logger should be DEBUG
-        opendxa_logger = DXA_LOGGER.getLogger("opendxa.test.Internal")
-        assert opendxa_logger.logger.getEffectiveLevel() == logging.DEBUG
+        # Dana logger should be DEBUG
+        dana_logger = DANA_LOGGER.getLogger("dana.test.Internal")
+        assert dana_logger.logger.getEffectiveLevel() == logging.DEBUG
 
     def test_dana_repl_simulation(self):
         """Test simulation of Dana REPL log level changes."""
-        # Configure DXA_LOGGER (simulates REPL startup)
-        DXA_LOGGER.configure(level=logging.WARNING)
+        # Configure DANA_LOGGER (simulates REPL startup)
+        DANA_LOGGER.configure(level=logging.WARNING)
 
         # Create REPL-like component
         class REPLComponent(Loggable):
             def __init__(self):
-                super().__init__(logger_name="opendxa.dana.exec.repl.TestREPL")
+                super().__init__(logger_name="dana.dana.exec.repl.TestREPL")
 
         # Create component before log level change
         repl_component = REPLComponent()
@@ -170,13 +170,13 @@ class TestLoggingIntegrationSimple:
     @pytest.mark.parametrize("log_level", [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR])
     def test_all_sandbox_log_levels(self, log_level: LogLevel):
         """Test that all SandboxLogger levels work correctly."""
-        # Configure DXA_LOGGER
-        DXA_LOGGER.configure(level=logging.ERROR)
+        # Configure DANA_LOGGER
+        DANA_LOGGER.configure(level=logging.ERROR)
 
         # Create test component
         class TestComponent(Loggable):
             def __init__(self):
-                super().__init__(logger_name="opendxa.test.LevelTest")
+                super().__init__(logger_name="dana.test.LevelTest")
 
         component = TestComponent()
 
@@ -188,38 +188,38 @@ class TestLoggingIntegrationSimple:
 
     def test_logger_hierarchy_inheritance(self):
         """Test that logger hierarchy inheritance works correctly."""
-        # Configure DXA_LOGGER
-        DXA_LOGGER.configure(level=logging.WARNING)
+        # Configure DANA_LOGGER
+        DANA_LOGGER.configure(level=logging.WARNING)
 
-        # Set level for opendxa parent
-        DXA_LOGGER.setLevel(logging.DEBUG, scope="opendxa")
+        # Set level for dana parent
+        DANA_LOGGER.setLevel(logging.DEBUG, scope="dana")
 
         # Create child loggers
-        child1 = DXA_LOGGER.getLogger("opendxa.module.Child1")
-        child2 = DXA_LOGGER.getLogger("opendxa.module.submodule.Child2")
+        child1 = DANA_LOGGER.getLogger("dana.module.Child1")
+        child2 = DANA_LOGGER.getLogger("dana.module.submodule.Child2")
 
         # Both should inherit DEBUG level (check effective level)
         assert child1.logger.getEffectiveLevel() == logging.DEBUG
         assert child2.logger.getEffectiveLevel() == logging.DEBUG
 
         # Create even deeper child
-        deep_child = DXA_LOGGER.getLogger("opendxa.very.deep.nested.Child")
+        deep_child = DANA_LOGGER.getLogger("dana.very.deep.nested.Child")
         assert deep_child.logger.getEffectiveLevel() == logging.DEBUG
 
     def test_configure_only_called_once(self):
-        """Test that configure() is only called once per DXA_LOGGER instance."""
+        """Test that configure() is only called once per DANA_LOGGER instance."""
         # Verify initial state
-        assert not DXA_LOGGER._configured
+        assert not DANA_LOGGER._configured
 
         # First configure call should work
-        DXA_LOGGER.configure(level=logging.INFO)
-        assert DXA_LOGGER._configured
-        assert DXA_LOGGER.logger.level == logging.INFO
+        DANA_LOGGER.configure(level=logging.INFO)
+        assert DANA_LOGGER._configured
+        assert DANA_LOGGER.logger.level == logging.INFO
 
         # Second configure call should be ignored
-        DXA_LOGGER.configure(level=logging.ERROR)
-        assert DXA_LOGGER.logger.level == logging.INFO  # Should remain INFO
+        DANA_LOGGER.configure(level=logging.ERROR)
+        assert DANA_LOGGER.logger.level == logging.INFO  # Should remain INFO
 
         # But setLevel should still work
-        DXA_LOGGER.setLevel(logging.ERROR)
-        assert DXA_LOGGER.logger.level == logging.ERROR
+        DANA_LOGGER.setLevel(logging.ERROR)
+        assert DANA_LOGGER.logger.level == logging.ERROR

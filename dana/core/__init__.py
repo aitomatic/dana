@@ -1,16 +1,16 @@
 """Dana core components."""
 
 # Language components
-from .lang import DanaParser, DanaInterpreter, DanaSandbox
-
-# Runtime components  
-from .runtime import registry, loader, types, errors
+from .lang import DanaInterpreter, DanaParser, DanaSandbox
 
 # REPL components
-from .repl import dana_repl, dana_main
+from .repl import dana_main, dana_repl
+
+# Runtime components  
+from .runtime import errors, loader, registry, types
 
 # Standard library components
-from .stdlib import FunctionRegistry, DanaFunction, register_core_functions
+from .stdlib import DanaFunction, FunctionRegistry, register_core_functions
 
 __all__ = [
     # Language

@@ -1,5 +1,5 @@
 """
-OpenDXA Dana Runtime
+Dana Dana Runtime
 
 This module provides the runtime environment for Dana execution.
 

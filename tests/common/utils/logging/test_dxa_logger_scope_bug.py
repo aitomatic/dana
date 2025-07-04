@@ -1,18 +1,18 @@
-"""Test DXA logger scope isolation from third-party libraries."""
+"""Test Dana logger scope isolation from third-party libraries."""
 
 import logging
 import unittest
 
-from dana.common.utils.logging.dxa_logger import DXALogger
+from dana.common.utils.logging.dana_logger import DanaLogger
 
 
-class TestDXALoggerScopeIsolation(unittest.TestCase):
-    """Test DXA logger scope isolation from third-party libraries."""
+class TestDanaLoggerScopeIsolation(unittest.TestCase):
+    """Test Dana logger scope isolation from third-party libraries."""
 
     def setUp(self):
         """Reset logging state."""
-        # Reset DXA logger configured state
-        DXALogger._configured = False
+        # Reset Dana logger configured state
+        DanaLogger._configured = False
         # Store original root logger level
         self.original_root_level = logging.getLogger().level
 
@@ -21,7 +21,7 @@ class TestDXALoggerScopeIsolation(unittest.TestCase):
         logging.getLogger().setLevel(self.original_root_level)
 
     def test_third_party_logger_isolation(self):
-        """Test that DXA logger doesn't affect third-party library loggers."""
+        """Test that Dana logger doesn't affect third-party library loggers."""
         # Create a mock third-party logger (like Lark would have)
         third_party_logger = logging.getLogger("lark.parser")
 
@@ -29,37 +29,37 @@ class TestDXALoggerScopeIsolation(unittest.TestCase):
         third_party_logger.setLevel(logging.DEBUG)
         initial_level = third_party_logger.level
 
-        # Configure DXA logger (this should NOT affect third-party loggers)
-        dxa_logger = DXALogger()
-        dxa_logger.configure(level=logging.WARNING)
+        # Configure Dana logger (this should NOT affect third-party loggers)
+        dana_logger = DanaLogger()
+        dana_logger.configure(level=logging.WARNING)
 
         # Third-party logger should retain its original level
         assert third_party_logger.level == initial_level, (
             f"Third-party logger level changed from {initial_level} to {third_party_logger.level}"
         )
 
-    def test_opendxa_logger_affected(self):
-        """Test that DXA logger properly affects OpenDXA loggers."""
-        # Create OpenDXA loggers
-        opendxa_logger = logging.getLogger("opendxa.test.module")
-        opendxa_logger.setLevel(logging.DEBUG)
+    def test_dana_logger_affected(self):
+        """Test that Dana logger properly affects Dana loggers."""
+        # Create Dana loggers
+        dana_logger = logging.getLogger("dana.test.module")
+        dana_logger.setLevel(logging.DEBUG)
 
-        # Configure DXA logger
-        dxa_logger = DXALogger()
-        dxa_logger.configure(level=logging.WARNING)
+        # Configure Dana logger
+        dana_logger_instance = DanaLogger()
+        dana_logger_instance.configure(level=logging.WARNING)
 
-        # OpenDXA logger should be affected by DXA configuration
+        # Dana logger should be affected by Dana configuration
         # (This test may need adjustment based on the fix implementation)
         pass
 
     def test_root_logger_not_modified(self):
-        """Test that root logger is not modified by DXA configuration."""
+        """Test that root logger is not modified by Dana configuration."""
         original_root_level = logging.getLogger().level
         len(logging.getLogger().handlers)
 
-        # Configure DXA logger
-        dxa_logger = DXALogger()
-        dxa_logger.configure(level=logging.ERROR)
+        # Configure Dana logger
+        dana_logger = DanaLogger()
+        dana_logger.configure(level=logging.ERROR)
 
         # Root logger should not be modified
         root_logger = logging.getLogger()
@@ -68,7 +68,7 @@ class TestDXALoggerScopeIsolation(unittest.TestCase):
         # Note: Handler count test may need adjustment based on fix approach
 
     def test_lark_logger_specifically(self):
-        """Test that Lark loggers are not affected by DXA configuration."""
+        """Test that Lark loggers are not affected by Dana configuration."""
         # Create loggers that Lark typically uses
         lark_loggers = [
             logging.getLogger("lark"),
@@ -76,15 +76,15 @@ class TestDXALoggerScopeIsolation(unittest.TestCase):
             logging.getLogger("lark.lexer"),
         ]
 
-        # Set them to DEBUG to see if DXA config affects them
+        # Set them to DEBUG to see if Dana config affects them
         for logger in lark_loggers:
             logger.setLevel(logging.DEBUG)
 
         original_levels = [logger.level for logger in lark_loggers]
 
-        # Configure DXA logger with WARNING level
-        dxa_logger = DXALogger()
-        dxa_logger.configure(level=logging.WARNING)
+        # Configure Dana logger with WARNING level
+        dana_logger = DanaLogger()
+        dana_logger.configure(level=logging.WARNING)
 
         # Lark loggers should retain their DEBUG levels
         for i, logger in enumerate(lark_loggers):

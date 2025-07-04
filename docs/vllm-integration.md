@@ -37,7 +37,7 @@ client = ai.Client(provider_configs=provider_configs)
 ```
 
 #### Option C: OpenDXA Configuration File
-Update `opendxa/opendxa_config.json`:
+Update `opendxa/dana_config.json`:
 ```json
 {
   "llm": {

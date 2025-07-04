@@ -1,16 +1,15 @@
 """
-Context expansion component for OpenDXA KNOWS system.
+Context expansion component for Dana KNOWS system.
 
 This module handles LLM-based context analysis, validation, and refinement.
 """
 
-import uuid
 import json
-from typing import Dict, Any, List, Optional, Union
 from dataclasses import dataclass
+from typing import Any
 
-from dana.common.utils.logging import DXA_LOGGER
-from dana.common.resource.llm_resource import LLMResource, BaseRequest, BaseResponse
+from dana.common.resource.llm_resource import BaseRequest, BaseResponse, LLMResource
+from dana.common.utils.logging import DANA_LOGGER
 from dana.frameworks.knows.core.base import KnowledgePoint, ProcessorBase
 
 
@@ -19,11 +18,11 @@ class ContextExpansion:
     """Result of context expansion operation."""
     
     source_id: str
-    expanded_context: Dict[str, Any]
+    expanded_context: dict[str, Any]
     expansion_type: str  # "semantic", "logical", "temporal", "causal"
     confidence: float
     reasoning: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 @dataclass
@@ -33,9 +32,9 @@ class ContextValidation:
     context_id: str
     is_valid: bool
     validation_score: float
-    issues_found: List[str]
-    recommendations: List[str]
-    metadata: Dict[str, Any]
+    issues_found: list[str]
+    recommendations: list[str]
+    metadata: dict[str, Any]
 
 
 class ContextExpander(ProcessorBase):
@@ -130,7 +129,7 @@ Return your validation as JSON in this exact format:
 """
     
     def __init__(self, 
-                 llm_resource: Optional[LLMResource] = None,
+                 llm_resource: LLMResource | None = None,
                  confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD,
                  max_expansions: int = DEFAULT_MAX_EXPANSIONS):
         """Initialize context expander.
@@ -144,9 +143,9 @@ Return your validation as JSON in this exact format:
         self.confidence_threshold = confidence_threshold
         self.max_expansions = max_expansions
         
-        DXA_LOGGER.info(f"Initialized ContextExpander with threshold: {confidence_threshold}")
+        DANA_LOGGER.info(f"Initialized ContextExpander with threshold: {confidence_threshold}")
     
-    def process(self, knowledge_points: List[KnowledgePoint]) -> Dict[str, Any]:
+    def process(self, knowledge_points: list[KnowledgePoint]) -> dict[str, Any]:
         """Expand context for knowledge points.
         
         Args:
@@ -193,14 +192,14 @@ Return your validation as JSON in this exact format:
                 }
             }
             
-            DXA_LOGGER.info(f"Generated {len(expansions)} context expansions for {len(knowledge_points)} knowledge points")
+            DANA_LOGGER.info(f"Generated {len(expansions)} context expansions for {len(knowledge_points)} knowledge points")
             return result
             
         except Exception as e:
-            DXA_LOGGER.error(f"Failed to expand context: {str(e)}")
+            DANA_LOGGER.error(f"Failed to expand context: {str(e)}")
             raise
     
-    def validate_input(self, knowledge_points: List[KnowledgePoint]) -> bool:
+    def validate_input(self, knowledge_points: list[KnowledgePoint]) -> bool:
         """Validate input knowledge points.
         
         Args:
@@ -210,21 +209,21 @@ Return your validation as JSON in this exact format:
             True if input is valid
         """
         if not isinstance(knowledge_points, list):
-            DXA_LOGGER.error("Input must be a list of KnowledgePoint objects")
+            DANA_LOGGER.error("Input must be a list of KnowledgePoint objects")
             return False
         
         if len(knowledge_points) == 0:
-            DXA_LOGGER.error("Knowledge points list is empty")
+            DANA_LOGGER.error("Knowledge points list is empty")
             return False
         
         for kp in knowledge_points:
             if not isinstance(kp, KnowledgePoint):
-                DXA_LOGGER.error(f"Invalid knowledge point type: {type(kp)}")
+                DANA_LOGGER.error(f"Invalid knowledge point type: {type(kp)}")
                 return False
         
         return True
     
-    def expand_context(self, knowledge_point: KnowledgePoint) -> List[ContextExpansion]:
+    def expand_context(self, knowledge_point: KnowledgePoint) -> list[ContextExpansion]:
         """Expand context for a single knowledge point.
         
         Args:
@@ -234,7 +233,7 @@ Return your validation as JSON in this exact format:
             List of context expansions
         """
         if self.llm_resource is None:
-            DXA_LOGGER.warning("No LLM resource available, using rule-based expansion")
+            DANA_LOGGER.warning("No LLM resource available, using rule-based expansion")
             return self._rule_based_expansion(knowledge_point)
         
         try:
@@ -270,7 +269,7 @@ Return your validation as JSON in this exact format:
             return high_confidence_expansions[:self.max_expansions]
             
         except Exception as e:
-            DXA_LOGGER.error(f"LLM context expansion failed for {knowledge_point.id}: {str(e)}")
+            DANA_LOGGER.error(f"LLM context expansion failed for {knowledge_point.id}: {str(e)}")
             return self._rule_based_expansion(knowledge_point)
     
     def validate_context(self, knowledge_point: KnowledgePoint) -> ContextValidation:
@@ -283,7 +282,7 @@ Return your validation as JSON in this exact format:
             Context validation result
         """
         if self.llm_resource is None:
-            DXA_LOGGER.warning("No LLM resource available, using rule-based validation")
+            DANA_LOGGER.warning("No LLM resource available, using rule-based validation")
             return self._rule_based_validation(knowledge_point)
         
         try:
@@ -312,10 +311,10 @@ Return your validation as JSON in this exact format:
             return validation
             
         except Exception as e:
-            DXA_LOGGER.error(f"LLM context validation failed for {knowledge_point.id}: {str(e)}")
+            DANA_LOGGER.error(f"LLM context validation failed for {knowledge_point.id}: {str(e)}")
             return self._rule_based_validation(knowledge_point)
     
-    def _parse_expansion_response(self, response: BaseResponse, source_id: str) -> List[ContextExpansion]:
+    def _parse_expansion_response(self, response: BaseResponse, source_id: str) -> list[ContextExpansion]:
         """Parse LLM response for context expansions.
         
         Args:
@@ -363,7 +362,7 @@ Return your validation as JSON in this exact format:
             return expansions
             
         except Exception as e:
-            DXA_LOGGER.error(f"Failed to parse expansion response: {str(e)}")
+            DANA_LOGGER.error(f"Failed to parse expansion response: {str(e)}")
             return []
     
     def _parse_validation_response(self, response: BaseResponse, context_id: str) -> ContextValidation:
@@ -418,7 +417,7 @@ Return your validation as JSON in this exact format:
             return validation
             
         except Exception as e:
-            DXA_LOGGER.error(f"Failed to parse validation response: {str(e)}")
+            DANA_LOGGER.error(f"Failed to parse validation response: {str(e)}")
             return ContextValidation(
                 context_id=context_id,
                 is_valid=False,
@@ -428,7 +427,7 @@ Return your validation as JSON in this exact format:
                 metadata={"llm_generated": False, "parse_error": True}
             )
     
-    def _rule_based_expansion(self, knowledge_point: KnowledgePoint) -> List[ContextExpansion]:
+    def _rule_based_expansion(self, knowledge_point: KnowledgePoint) -> list[ContextExpansion]:
         """Fallback rule-based context expansion.
         
         Args:
@@ -566,7 +565,7 @@ Return your validation as JSON in this exact format:
             }
         )
     
-    def _assess_response_quality(self, expansion_data: Dict[str, Any]) -> float:
+    def _assess_response_quality(self, expansion_data: dict[str, Any]) -> float:
         """Assess the quality of an expansion response.
         
         Args:
@@ -597,8 +596,8 @@ Return your validation as JSON in this exact format:
         
         return min(1.0, quality_score)
     
-    def _create_context_relationships(self, knowledge_points: List[KnowledgePoint], 
-                                    expansions: List[ContextExpansion]) -> List[Dict[str, Any]]:
+    def _create_context_relationships(self, knowledge_points: list[KnowledgePoint], 
+                                    expansions: list[ContextExpansion]) -> list[dict[str, Any]]:
         """Create relationships between contexts.
         
         Args:
@@ -642,8 +641,8 @@ Return your validation as JSON in this exact format:
         
         return relationships
     
-    def _generate_context_summary(self, expansions: List[ContextExpansion], 
-                                 validations: List[ContextValidation]) -> Dict[str, Any]:
+    def _generate_context_summary(self, expansions: list[ContextExpansion], 
+                                 validations: list[ContextValidation]) -> dict[str, Any]:
         """Generate summary of context processing.
         
         Args:
@@ -677,7 +676,7 @@ Return your validation as JSON in this exact format:
         
         return summary
     
-    def _calculate_average_confidence(self, expansions: List[ContextExpansion]) -> float:
+    def _calculate_average_confidence(self, expansions: list[ContextExpansion]) -> float:
         """Calculate average confidence of expansions.
         
         Args:
@@ -691,7 +690,7 @@ Return your validation as JSON in this exact format:
         
         return sum(exp.confidence for exp in expansions) / len(expansions)
     
-    def _calculate_average_validation_score(self, validations: List[ContextValidation]) -> float:
+    def _calculate_average_validation_score(self, validations: list[ContextValidation]) -> float:
         """Calculate average validation score.
         
         Args:
@@ -705,7 +704,7 @@ Return your validation as JSON in this exact format:
         
         return sum(val.validation_score for val in validations) / len(validations)
     
-    def _calculate_validation_pass_rate(self, validations: List[ContextValidation]) -> float:
+    def _calculate_validation_pass_rate(self, validations: list[ContextValidation]) -> float:
         """Calculate validation pass rate.
         
         Args:
@@ -720,7 +719,7 @@ Return your validation as JSON in this exact format:
         valid_count = len([v for v in validations if v.is_valid])
         return valid_count / len(validations)
     
-    def _get_common_issues(self, validations: List[ContextValidation]) -> List[str]:
+    def _get_common_issues(self, validations: list[ContextValidation]) -> list[str]:
         """Get most common validation issues.
         
         Args:

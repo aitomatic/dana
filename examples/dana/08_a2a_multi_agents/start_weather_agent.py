@@ -14,7 +14,7 @@ Example queries the agent can handle:
     - "Temperature in New York"
     - "Weather forecast for London"
 
-Author: OpenDXA Team
+Author: Dana Team
 Version: 1.0.0
 """
 

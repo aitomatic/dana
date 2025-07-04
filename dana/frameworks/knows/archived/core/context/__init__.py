@@ -1,4 +1,4 @@
-"""Context Management module for OpenDXA KNOWS framework."""
+"""Context Management module for Dana KNOWS framework."""
 
 from dana.frameworks.knows.core.context.base import Context, ContextError, ContextSyncError, ContextType, ContextValidationError
 from dana.frameworks.knows.core.context.config import ContextSettings

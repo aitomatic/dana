@@ -4,9 +4,9 @@
 
 [Project Overview](../../../README.md) | [Main Documentation](../../../docs/README.md) | [Graph Architecture](../../../docs/core-concepts/graphs.md)
 
-# Graph Module Implementation (`opendxa.common.graph`)
+# Graph Module Implementation (`dana.common.graph`)
 
-This module provides the implementation of the directed graph data structures and algorithms used throughout the OpenDXA framework.
+This module provides the implementation of the directed graph data structures and algorithms used throughout the Dana framework.
 
 > **Note:** For conceptual information about the graph architecture, design philosophy, and usage patterns, please see the [Graph Architecture Documentation](../../../docs/core-concepts/graphs.md).
 
@@ -132,7 +132,7 @@ class GraphTraversal:
 ### Creating a Simple Graph
 
 ```python
-from opendxa.common.graph import DirectedGraph, Node, Edge, NodeType
+from dana.common.graph import DirectedGraph, Node, Edge, NodeType
 
 # Create a graph
 graph = DirectedGraph(id="workflow", name="Simple Workflow", description="Example workflow")
@@ -160,7 +160,7 @@ graph.add_edge(Edge(
 ### Using GraphCursor for Traversal
 
 ```python
-from opendxa.common.graph import GraphCursor
+from dana.common.graph import GraphCursor
 
 # Create cursor
 cursor = GraphCursor(graph, "start")
@@ -187,7 +187,7 @@ next_moves = cursor.get_possible_moves(context)
 ### Using Factory for Common Patterns
 
 ```python
-from opendxa.common.graph import GraphFactory, NodeType, Node
+from dana.common.graph import GraphFactory, NodeType, Node
 
 # Create nodes
 nodes = [
@@ -222,7 +222,7 @@ branching_graph = GraphFactory.create_branching(
 ### Serialization and Deserialization
 
 ```python
-from opendxa.common.graph import GraphSerializer
+from dana.common.graph import GraphSerializer
 
 # Serialize graph to JSON
 json_data = GraphSerializer.to_json(graph)
@@ -239,8 +239,8 @@ loaded_graph = GraphSerializer.load_from_file("workflow.json")
 ### In the Planning Layer
 
 ```python
-from opendxa.common.graph import DirectedGraph, Node, Edge, NodeType
-from opendxa.execution.planning import PlanExecutor
+from dana.common.graph import DirectedGraph, Node, Edge, NodeType
+from dana.core.runtime import PlanExecutor
 
 # Create a plan graph
 plan_graph = DirectedGraph(id="analysis_plan", name="Data Analysis Plan")
@@ -258,8 +258,8 @@ result = executor.execute(plan_graph, context={})
 ### In the State Management System
 
 ```python
-from opendxa.common.graph import GraphFactory
-from opendxa.common.graph import Node, NodeType
+from dana.common.graph import GraphFactory
+from dana.common.graph import Node, NodeType
 
 # Define a state machine
 states = [

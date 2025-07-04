@@ -1,4 +1,4 @@
-"""WebSocket I/O resource implementation for DXA.
+"""WebSocket I/O resource implementation for Dana.
 
 This module provides a WebSocket-based implementation of the BaseIOResource interface,
 enabling real-time bidirectional communication over WebSocket connections.

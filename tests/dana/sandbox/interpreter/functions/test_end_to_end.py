@@ -331,8 +331,8 @@ def test_reason_function_integration():
     import os
 
     # Setup environment for mocking
-    original_mock_env = os.environ.get("OPENDXA_MOCK_LLM")
-    os.environ["OPENDXA_MOCK_LLM"] = "true"
+    original_mock_env = os.environ.get("DANA_MOCK_LLM")
+    os.environ["DANA_MOCK_LLM"] = "true"
 
     try:
         context = SandboxContext()
@@ -376,9 +376,9 @@ def test_reason_function_integration():
     finally:
         # Restore environment
         if original_mock_env is None:
-            os.environ.pop("OPENDXA_MOCK_LLM", None)
+            os.environ.pop("DANA_MOCK_LLM", None)
         else:
-            os.environ["OPENDXA_MOCK_LLM"] = original_mock_env
+            os.environ["DANA_MOCK_LLM"] = original_mock_env
 
 
 def test_comprehensive_function_scenarios():

@@ -106,29 +106,29 @@ Documentation, utilities, and reference materials.
 ### **New to Dana?** (Start Here - 15 minutes)
 ```bash
 # Essential foundation
-uv run python -m opendxa.dana.exec.dana examples/dana/01_language_basics/basic_assignments.na
-uv run python -m opendxa.dana.exec.dana examples/dana/01_language_basics/arithmetic_example.na
+uv run python -m dana.dana.exec.dana examples/dana/01_language_basics/basic_assignments.na
+uv run python -m dana.dana.exec.dana examples/dana/01_language_basics/arithmetic_example.na
 
 # Essential functions
-uv run python -m opendxa.dana.exec.dana examples/dana/02_built_in_functions/builtin_functions_basic.na
+uv run python -m dana.dana.exec.dana examples/dana/02_built_in_functions/builtin_functions_basic.na
 ```
 
 ### **Ready for AI Features?** (20 minutes)
 ```bash
 # AI reasoning introduction
-uv run python -m opendxa.dana.exec.dana examples/dana/03_advanced_features/reason_demo.na
+uv run python -m dana.dana.exec.dana examples/dana/03_advanced_features/reason_demo.na
 
 # Complete AI agent example
-uv run python -m opendxa.dana.exec.dana examples/dana/03_advanced_features/hybrid_math_agent.na
+uv run python -m dana.dana.exec.dana examples/dana/03_advanced_features/hybrid_math_agent.na
 ```
 
 ### **Want Self-Improving Functions?** (15 minutes)
 ```bash
 # POET basics
-uv run python -m opendxa.dana.exec.dana examples/dana/04_poet_examples/poet_basic_demo.na
+uv run python -m dana.dana.exec.dana examples/dana/04_poet_examples/poet_basic_demo.na
 
 # Advanced POET features
-uv run python -m opendxa.dana.exec.dana examples/dana/04_poet_examples/poet_learning_demo.na
+uv run python -m dana.dana.exec.dana examples/dana/04_poet_examples/poet_learning_demo.na
 ```
 
 ## 🎯 **Quality-Focused Approach**
@@ -177,13 +177,13 @@ uv run python -m opendxa.dana.exec.dana examples/dana/04_poet_examples/poet_lear
 ### **Individual Examples**
 ```bash
 # Basic Dana syntax
-uv run python -m opendxa.dana.exec.dana examples/dana/01_language_basics/basic_assignments.na
+uv run python -m dana.dana.exec.dana examples/dana/01_language_basics/basic_assignments.na
 
 # AI reasoning  
-uv run python -m opendxa.dana.exec.dana examples/dana/03_advanced_features/reason_demo.na
+uv run python -m dana.dana.exec.dana examples/dana/03_advanced_features/reason_demo.na
 
 # Self-improving functions
-uv run python -m opendxa.dana.exec.dana examples/dana/04_poet_examples/poet_basic_demo.na
+uv run python -m dana.dana.exec.dana examples/dana/04_poet_examples/poet_basic_demo.na
 ```
 
 ### **Run All Examples in a Category**
@@ -191,7 +191,7 @@ uv run python -m opendxa.dana.exec.dana examples/dana/04_poet_examples/poet_basi
 # Run all basic examples
 for file in examples/dana/01_language_basics/*.na; do
     echo "=== Running $file ==="
-    uv run python -m opendxa.dana.exec.dana "$file"
+    uv run python -m dana.dana.exec.dana "$file"
 done
 ```
 
@@ -253,7 +253,7 @@ python examples/dana/reference/python_utilities/run_examples.py
 ### **Advanced Topics**
 - **[Real-World Applications](../../04_real_world_applications/)** - Production examples
 - **[Agent Framework](../../02_core_concepts/)** - Multi-agent systems
-- **[OpenDXA Architecture](../../for-engineers/)** - Framework overview
+- **[Dana Architecture](../../for-engineers/)** - Framework overview
 
 ---
 

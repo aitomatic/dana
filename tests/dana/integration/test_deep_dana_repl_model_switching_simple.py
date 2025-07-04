@@ -5,6 +5,7 @@ These tests verify basic model switching functionality without complex Dana synt
 
 import os
 import unittest
+
 from dana.core.lang.dana_sandbox import DanaSandbox
 
 
@@ -16,7 +17,7 @@ class TestSimpleModelSwitching(unittest.TestCase):
         self.original_env = os.environ.copy()
 
         # Set API keys and enable mock mode
-        os.environ.update({"OPENAI_API_KEY": "test-openai-key", "ANTHROPIC_API_KEY": "test-anthropic-key", "OPENDXA_MOCK_LLM": "true"})
+        os.environ.update({"OPENAI_API_KEY": "test-openai-key", "ANTHROPIC_API_KEY": "test-anthropic-key", "DANA_MOCK_LLM": "true"})
 
         self.sandbox = DanaSandbox()
 

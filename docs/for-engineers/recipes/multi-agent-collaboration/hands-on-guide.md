@@ -31,13 +31,13 @@ sleep 3
 ### 2. Test Basic A2A Usage
 
 ```bash
-uv run python -m opendxa.dana.exec.dana examples/dana/08_a2a_multi_agents/na/use_a2a.na
+uv run python -m dana.dana.exec.dana examples/dana/08_a2a_multi_agents/na/use_a2a.na
 ```
 
 ### 3. Test Reason Function with Agents
 
 ```bash
-uv run python -m opendxa.dana.exec.dana examples/dana/08_a2a_multi_agents/na/test_reason_agents.na
+uv run python -m dana.dana.exec.dana examples/dana/08_a2a_multi_agents/na/test_reason_agents.na
 ```
 
 ## Part 1: A2A Agents

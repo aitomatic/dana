@@ -86,7 +86,7 @@ def detect_feature_drift(current_mean: float, reference_mean: float,
 
 ### Prerequisites
 ```bash
-# Ensure OpenDXA is installed
+# Ensure Dana is installed
 uv sync
 
 # Start the Dana REPL (if needed)
@@ -96,13 +96,13 @@ uv run dana
 ### Run Individual Examples
 ```bash
 # Basic enhancement example
-uv run python -m opendxa.dana.exec.dana examples/dana/poet/01_basic_enhancement.na
+uv run python -m dana.dana.exec.dana examples/dana/poet/01_basic_enhancement.na
 
 # Feedback learning example  
-uv run python -m opendxa.dana.exec.dana examples/dana/poet/02_feedback_learning.na
+uv run python -m dana.dana.exec.dana examples/dana/poet/02_feedback_learning.na
 
 # ML monitoring example
-uv run python -m opendxa.dana.exec.dana examples/dana/poet/03_ml_monitoring.na
+uv run python -m dana.dana.exec.dana examples/dana/poet/03_ml_monitoring.na
 ```
 
 ## 🔧 What You'll See
@@ -167,7 +167,7 @@ enhanced = result._poet['enhanced']      # Check if enhancement applied
 
 ### **3. Feedback Interface**
 ```dana
-import opendxa.dana.poet.decorator.py as poet_module
+import dana.dana.poet.decorator.py as poet_module
 
 # Any format works
 poet_module.feedback(result, "Great job!")
@@ -280,7 +280,7 @@ from dana.frameworks.poet.decorator import feedback
 
 - **[Dana Language Reference](../README.md)**: Complete Dana syntax
 - **[POET Architecture](../../../docs/.implementation/poet/)**: Technical details
-- **[OpenDXA Overview](../../../README.md)**: Framework overview
+- **[Dana Overview](../../../README.md)**: Framework overview
 
 ## 🎉 Next Steps
 

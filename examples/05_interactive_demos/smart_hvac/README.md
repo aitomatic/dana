@@ -47,8 +47,8 @@ The key insight: **The business logic is identical**. POET adds the intelligence
 # Install Python dependencies
 pip install -r requirements.txt
 
-# Ensure POET is available (from parent opendxa project)
-export PYTHONPATH="/path/to/opendxa.poet:$PYTHONPATH"
+# Ensure POET is available (from parent dana project)
+export PYTHONPATH="/path/to/dana.poet:$PYTHONPATH"
 ```
 
 ### Start the Demo
@@ -177,7 +177,7 @@ This demonstrates POET's core value: **Transform simple business logic into ente
 - Verify CORS settings if accessing from different domain
 
 ### POET Import Errors
-- Ensure PYTHONPATH includes opendxa project
+- Ensure PYTHONPATH includes dana project
 - Check that all dependencies are installed
 - Verify Python version compatibility (3.9+)
 

@@ -1,7 +1,7 @@
 # POET Industry-Specific Examples
 # ===============================
 
-**POET (Perceive → Operate → Enforce → Train)** is OpenDXA's framework that automatically transforms simple business functions into enterprise-grade systems. Engineers write **simple core logic**, and POET's runtime infrastructure adds **enterprise capabilities** through domain intelligence.
+**POET (Perceive → Operate → Enforce → Train)** is Dana's framework that automatically transforms simple business functions into enterprise-grade systems. Engineers write **simple core logic**, and POET's runtime infrastructure adds **enterprise capabilities** through domain intelligence.
 
 ## 🎯 What You'll Learn
 
@@ -87,7 +87,7 @@ def set_hvac_temperature(target: float, current: float, occupancy: int) -> dict:
 ### Running Examples
 ```bash
 # See simple functions transformed into enterprise systems
-uv run python -m opendxa.dana.exec.dana examples/dana/04_poet_examples/01_financial_services_risk_assessment.na
+uv run python -m dana.dana.exec.dana examples/dana/04_poet_examples/01_financial_services_risk_assessment.na
 ```
 
 ### Domain Plugins Available
@@ -150,7 +150,7 @@ def validate_output(result, input_data):
 ## 🔧 Current Runtime Capabilities
 
 ### **POEExecutor Implementation**
-Located in `opendxa/dana/poet/mvp_poet.py`:
+Located in `dana/dana/poet/mvp_poet.py`:
 - **P**: Calls `domain_plugin.process_inputs(args, kwargs)`
 - **O**: Executes function with retry logic and timeout handling
 - **E**: Calls `domain_plugin.validate_output(result, input_data)`
@@ -240,7 +240,7 @@ Engineers write:
 4. Observe audit trails and compliance features added automatically
 
 ### **Intermediate**: Understand Domain Intelligence
-1. Examine domain plugin implementations in `opendxa/dana/poet/domains/`
+1. Examine domain plugin implementations in `dana/dana/poet/domains/`
 2. See how `financial_services.py` normalizes varied input formats
 3. Understand the P/E stage separation from O stage business logic
 

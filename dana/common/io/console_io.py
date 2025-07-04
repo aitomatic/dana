@@ -1,4 +1,4 @@
-"""Console I/O resource implementation for DXA.
+"""Console I/O resource implementation for Dana.
 
 This module provides a console-based implementation of the BaseIOResource interface,
 allowing interaction through standard input/output streams.

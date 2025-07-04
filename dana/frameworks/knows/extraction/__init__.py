@@ -1,5 +1,5 @@
 """
-OpenDXA KNOWS extraction components.
+Dana KNOWS extraction components.
 
 This module provides knowledge extraction capabilities including:
 - Meta knowledge extraction from documents
@@ -8,8 +8,8 @@ This module provides knowledge extraction capabilities including:
 - Context expansion and validation
 """
 
-from .meta import MetaKnowledgeExtractor, KnowledgeCategorizer, KnowledgeCategory, CategoryRelationship
-from .context import SimilaritySearcher, ContextExpander
+from .context import ContextExpander, SimilaritySearcher
+from .meta import CategoryRelationship, KnowledgeCategorizer, KnowledgeCategory, MetaKnowledgeExtractor
 
 __all__ = [
     # Meta extraction components

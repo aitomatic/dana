@@ -22,7 +22,7 @@ The REPL uses the Parser to parse a Dana program into an AST, then calls the Int
 To start the REPL CLI, run:
 
 ```bash
-python -m opendxa.dana.exec.repl.dana_repl_app
+python -m dana.dana.exec.repl.dana_repl_app
 ```
 
 Or use the programmatic API:
@@ -121,7 +121,7 @@ To enable these features, set one of the supported API keys as an environment va
 - `GROQ_API_KEY`
 - `GOOGLE_API_KEY`
 
-Or configure models in `opendxa_config.json`.
+Or configure models in `dana_config.json`.
 
 ## Tips
 

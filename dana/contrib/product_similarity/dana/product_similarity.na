@@ -1,0 +1,70 @@
+private.use_case_description = "Foundation pouring, concrete slabs, heavy-duty construction, infrastructure projects"
+private.product = get_product_details("CM-2501")
+private.top_5_candidates = vector_search_descriptions(private.product.description)
+private.scores = reason("Given the use case, original product info, and candidate products, rank the candidates based on how well they would function as an alternative to the original product for this use case. Return the ordered list of IDs of the top 3 candidates.", context=[private.product, private.top_5_candidates, private.use_case_description])
+print(private.scores)
+
+
+# How it would literally run in DANA logic for now.
+# private.use_case_description = "We need to pour a concrete slab for a new deck."
+
+# private.product = """
+# Product ID: CM-2501
+# Product Name: ProStrength Portland Cement
+# Product Description: High-strength Portland cement Type I/II, 94lb bag
+# Use Cases: Foundation pouring, concrete slabs, sidewalk construction, general construction
+# Cost per Unit: 12.50 per bag
+# Availability: Out of Stock
+# """
+
+# private.a = """
+# Product ID: CM-2501
+# Product Name: ProStrength Portland Cement
+# Product Description: High-strength Portland cement Type I/II, 94lb bag
+# Use Cases: Foundation pouring, concrete slabs, sidewalk construction, general construction
+# Cost per Unit: 12.50 per bag
+# Availability: Out of Stock
+# """
+
+# private.b = """
+# Product ID: CM-2503
+# Product Name: QuickSet Cement Mix
+# Product Description: Rapid-setting Portland cement, 50lb bag
+# Use Cases: Foundation pouring,   concrete slabs, emergency repairs, time-sensitive projects
+# Cost per Unit: 18.25 per bag
+# Availability: In Stock
+# Similarity Score: 0.85
+# """
+
+# private.c = """
+# Product ID: CM-2504
+# Product Name: StructureCrete Cement
+# Product Description: High-performance Portland cement with additives, 94lb bag
+# Use Cases: Foundation pouring, concrete slabs, heavy-duty construction, infrastructure projects
+# Cost per Unit: 22.50 per bag
+# Availability: In Stock
+# Similarity Score: 0.87
+# """
+
+# private.d = """
+# Product ID: CM-2505
+# Product Name: MasonMix Portland Cement
+# Product Description: Modified Portland cement with improved workability, 94lb bag
+# Use Cases: Masonry work, brick laying, block work, stone setting
+# Cost per Unit: 19.99 per bag
+# Availability: In Stock
+# Similarity Score: 0.79
+# """
+
+# private.e = """
+# Product ID: CM-2506
+# Product Name: DuraBuild Cement
+# Product Description: Premium Portland cement with durability enhancers, 94lb bag
+# Use Cases: Exterior facades, weather-exposed structures, high-traffic areas
+# Cost per Unit: 24.50 per bag
+# Availability: Low Stock
+# Similarity Score: 0.76
+# """
+
+# private.scores = reason("Given the use case, original product info, and candidate products, rank the candidates based on how well they would function as an alternative to the original product for this use case. Return ONLY an ordered list of IDs of the top 3 candidates.", context=[private.use_case_description, private.product, private.a, private.b, private.c, private.d, private.e])
+# print(private.scores)

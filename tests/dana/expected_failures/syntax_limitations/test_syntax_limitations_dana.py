@@ -6,10 +6,10 @@ marking them as expected failures in pytest. These tests document Dana language
 features that seem natural but aren't currently supported.
 """
 
-import pytest
 import subprocess
-import sys
 from pathlib import Path
+
+import pytest
 
 # Get the directory containing this test file
 TEST_DIR = Path(__file__).parent

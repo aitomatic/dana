@@ -6,8 +6,8 @@ formatting of execution results and error messages.
 """
 
 from dana.common.mixins.loggable import Loggable
-from opendxa.dana.common.error_utils import ErrorContext, ErrorHandler
-from opendxa.dana.common.terminal_utils import ColorScheme
+from dana.common.error_utils import ErrorContext, ErrorHandler
+from dana.common.terminal_utils import ColorScheme
 
 
 class OutputFormatter(Loggable):

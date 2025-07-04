@@ -1,13 +1,14 @@
 """
-Document parser for OpenDXA KNOWS system.
+Document parser for Dana KNOWS system.
 
 This module handles parsing different document formats and extracting structured data.
 """
 
 import json
 import re
-from typing import Dict, Any, List
-from dana.common.utils.logging import DXA_LOGGER
+from typing import Any
+
+from dana.common.utils.logging import DANA_LOGGER
 from dana.frameworks.knows.core.base import Document, ParsedDocument, ProcessorBase
 
 
@@ -16,7 +17,7 @@ class DocumentParser(ProcessorBase):
     
     def __init__(self):
         """Initialize document parser."""
-        DXA_LOGGER.info("Initialized DocumentParser")
+        DANA_LOGGER.info("Initialized DocumentParser")
     
     def process(self, document: Document) -> ParsedDocument:
         """Parse document into structured format.
@@ -56,11 +57,11 @@ class DocumentParser(ProcessorBase):
                 }
             )
             
-            DXA_LOGGER.info(f"Successfully parsed document {document.id} (format: {document.format})")
+            DANA_LOGGER.info(f"Successfully parsed document {document.id} (format: {document.format})")
             return parsed_doc
             
         except Exception as e:
-            DXA_LOGGER.error(f"Failed to parse document {document.id}: {str(e)}")
+            DANA_LOGGER.error(f"Failed to parse document {document.id}: {str(e)}")
             raise ValueError(f"Document parsing failed: {str(e)}")
     
     def validate_input(self, document: Document) -> bool:
@@ -73,20 +74,20 @@ class DocumentParser(ProcessorBase):
             True if document is valid for parsing
         """
         if not isinstance(document, Document):
-            DXA_LOGGER.error("Input must be a Document object")
+            DANA_LOGGER.error("Input must be a Document object")
             return False
         
         if not document.content:
-            DXA_LOGGER.error("Document content is empty")
+            DANA_LOGGER.error("Document content is empty")
             return False
         
         if not document.format:
-            DXA_LOGGER.error("Document format not specified")
+            DANA_LOGGER.error("Document format not specified")
             return False
         
         return True
     
-    def _parse_text_document(self, document: Document) -> Dict[str, Any]:
+    def _parse_text_document(self, document: Document) -> dict[str, Any]:
         """Parse text or markdown document.
         
         Args:
@@ -158,7 +159,7 @@ class DocumentParser(ProcessorBase):
         
         return structured_data
     
-    def _parse_json_document(self, document: Document) -> Dict[str, Any]:
+    def _parse_json_document(self, document: Document) -> dict[str, Any]:
         """Parse JSON document.
         
         Args:
@@ -185,10 +186,10 @@ class DocumentParser(ProcessorBase):
             return structured_data
             
         except json.JSONDecodeError as e:
-            DXA_LOGGER.error(f"Invalid JSON in document {document.id}: {str(e)}")
+            DANA_LOGGER.error(f"Invalid JSON in document {document.id}: {str(e)}")
             return self._parse_generic_document(document)
     
-    def _parse_csv_document(self, document: Document) -> Dict[str, Any]:
+    def _parse_csv_document(self, document: Document) -> dict[str, Any]:
         """Parse CSV document.
         
         Args:
@@ -210,7 +211,7 @@ class DocumentParser(ProcessorBase):
             if line.strip():
                 row_data = [col.strip() for col in line.split(',')]
                 if len(row_data) == len(headers):
-                    rows.append(dict(zip(headers, row_data)))
+                    rows.append(dict(zip(headers, row_data, strict=False)))
         
         structured_data = {
             "type": "csv_document",
@@ -225,7 +226,7 @@ class DocumentParser(ProcessorBase):
         
         return structured_data
     
-    def _parse_generic_document(self, document: Document) -> Dict[str, Any]:
+    def _parse_generic_document(self, document: Document) -> dict[str, Any]:
         """Parse document with generic approach.
         
         Args:
@@ -249,7 +250,7 @@ class DocumentParser(ProcessorBase):
         
         return structured_data
     
-    def _analyze_json_schema(self, data: Any, path: str = "") -> Dict[str, Any]:
+    def _analyze_json_schema(self, data: Any, path: str = "") -> dict[str, Any]:
         """Analyze JSON data structure to create schema information.
         
         Args:

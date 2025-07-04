@@ -8,7 +8,7 @@
 
 # Agent System Module (`opendxa.agent`)
 
-This module provides the core components for creating and managing OpenDXA agents, including the `Agent` class (often used via `AgentFactory`), and submodules for specific agent aspects like `capability` and `resource` implementations.
+This module provides the core components for creating and managing Dana agents, including the `Agent` class (often used via `AgentFactory`), and submodules for specific agent aspects like `capability` and `resource` implementations.
 
 For detailed explanations of the Agent System architecture, core concepts (Agents, Capabilities, Resources), design philosophy, and usage, please refer to the **[Agent System Concepts Documentation](../../docs/details/agent_system.md)**.
 
