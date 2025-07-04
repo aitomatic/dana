@@ -29,7 +29,7 @@ from dana.common.utils.misc import Misc
 # Sorted first-party imports
 from dana.frameworks.agent.agent_config import AgentConfig
 from dana.frameworks.agent.agent_runtime import AgentRuntime
-from dana.frameworks.agent.dummy import (
+from dana.frameworks.agent.deprecated.dummy import (
     AgentState,
     ExecutionSignal,
     ExecutionSignalType,

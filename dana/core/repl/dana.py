@@ -123,7 +123,7 @@ async def start_repl(debug=False):
     """
     # Import the REPL application module
     try:
-        from dana.core.repl.repl.dana_repl_app import main as repl_main
+        from dana.core.repl.dana_repl_app import main as repl_main
 
         # Pass debug flag to repl_main
         await repl_main(debug=debug)

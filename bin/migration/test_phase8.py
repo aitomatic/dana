@@ -34,7 +34,7 @@ def test_python_integration():
     print("\nTesting Python integration...")
     
     try:
-        from dana.integrations.python import Dana, DanaModule, enable_dana_imports
+        from dana.integrations.python.to_dana import Dana, DanaModule, enable_dana_imports
         print("✅ dana.integrations.python: Dana, DanaModule, enable_dana_imports")
     except ImportError as e:
         print(f"❌ dana.integrations.python: {e}")
@@ -159,7 +159,7 @@ def test_basic_functionality():
     
     try:
         # Test that we can create instances
-        from dana.integrations.python import Dana
+        from dana.integrations.python.to_dana import Dana
         from dana.integrations.rag import RAGResource
         
         dana_instance = Dana()

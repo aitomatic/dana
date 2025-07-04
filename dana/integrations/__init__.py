@@ -2,7 +2,7 @@
 
 # Import key integrations
 from .mcp import McpResource
-from .python import DanaModule
+from .python.to_dana import DanaModule
 from .rag import RAGResource
 
 __all__ = [

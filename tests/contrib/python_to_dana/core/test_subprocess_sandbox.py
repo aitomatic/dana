@@ -281,7 +281,7 @@ class TestIntegrationWithDanaModule:
     @pytest.mark.parametrize("test_case", dana_integration_params, ids=lambda x: x["name"])
     def test_dana_module_can_use_subprocess_sandbox(self, test_case):
         """Test that Dana module can be configured to use subprocess sandbox."""
-        from dana.integrations.python.dana_module import Dana
+        from dana.integrations.python.to_dana.dana_module import Dana
 
         # Should be able to request subprocess isolation
         dana = Dana(**test_case["init_kwargs"])
@@ -304,7 +304,7 @@ class TestIntegrationWithDanaModule:
         assert "enabled" in config
 
         # Should affect Dana module behavior
-        from dana.integrations.python.dana_module import Dana
+        from dana.integrations.python.to_dana.dana_module import Dana
 
         dana = Dana(use_subprocess_isolation=True, debug=True)
 

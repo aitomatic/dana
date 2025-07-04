@@ -310,7 +310,7 @@ class TestModuleIntegration:
 
     def test_all_exports_are_correct(self):
         """Test that __all__ exports are correct in core module."""
-        from dana.integrations.python import core
+        from dana.integrations.python.to_dana import core
 
         # Should export all the interface components
         expected_exports = {

@@ -96,7 +96,7 @@ class TestPackageImports:
 
     def test_main_import(self):
         """Test that the main package can be imported."""
-        from dana.integrations.python import dana
+        from dana.integrations.python.to_dana import dana
 
         assert dana is not None
 
@@ -131,7 +131,7 @@ class TestPackageImports:
 
     def test_gateway_imports(self):
         """Test that gateway components can be imported."""
-        from dana.integrations.python.dana_module import Dana
+        from dana.integrations.python.to_dana.dana_module import Dana
 
         assert Dana is not None
 
@@ -147,22 +147,22 @@ class TestMainDanaInstance:
 
     def test_dana_instance_exists(self):
         """Test that the main dana instance exists."""
-        from dana.integrations.python import dana
+        from dana.integrations.python.to_dana import dana
 
         assert dana is not None
         assert hasattr(dana, "reason")
 
     def test_dana_instance_type(self):
         """Test that dana instance is of correct type."""
-        from dana.integrations.python import dana
-        from dana.integrations.python.dana_module import Dana
+        from dana.integrations.python.to_dana import dana
+        from dana.integrations.python.to_dana.dana_module import Dana
 
         assert isinstance(dana, Dana)
 
     @pytest.mark.parametrize("test_case", dana_method_params, ids=lambda x: x["name"])
     def test_dana_instance_methods(self, test_case):
         """Test that dana instance has expected methods."""
-        from dana.integrations.python import dana
+        from dana.integrations.python.to_dana import dana
 
         # Act
         method = getattr(dana, test_case["method_name"], None)
@@ -175,7 +175,7 @@ class TestMainDanaInstance:
     @pytest.mark.parametrize("test_case", dana_property_params, ids=lambda x: x["name"])
     def test_dana_instance_properties(self, test_case):
         """Test that dana instance has expected properties."""
-        from dana.integrations.python import dana
+        from dana.integrations.python.to_dana import dana
 
         # Act & Assert
         if test_case["should_exist"]:
@@ -188,14 +188,14 @@ class TestInitializationOrder:
     def test_dana_imports_without_errors(self):
         """Test that dana can be imported without circular import errors."""
         # This should not raise any exceptions
-        from dana.integrations.python import dana
+        from dana.integrations.python.to_dana import dana
 
         assert dana is not None
 
     def test_core_before_gateway(self):
         """Test that core components can be imported before gateway."""
         from dana.integrations.python.core import SandboxInterface
-        from dana.integrations.python.dana_module import Dana
+        from dana.integrations.python.to_dana.dana_module import Dana
 
         # Both should work
         assert SandboxInterface is not None
@@ -209,14 +209,14 @@ class TestDefaultDanaConfiguration:
     def test_default_dana_is_not_debug_mode(self, mock_sandbox_class):
         """Test that default dana instance is not in debug mode."""
         # Import after patching to ensure clean state
-        from dana.integrations.python import dana
+        from dana.integrations.python.to_dana import dana
 
         # Should not be in debug mode by default
         assert dana.debug is False
 
     def test_default_dana_uses_inprocess_sandbox(self):
         """Test that default dana uses in-process sandbox."""
-        from dana.integrations.python import dana
+        from dana.integrations.python.to_dana import dana
         from dana.integrations.python.core.inprocess_sandbox import InProcessSandboxInterface
 
         # Verify that the dana instance uses InProcessSandboxInterface
@@ -228,7 +228,7 @@ class TestPackageStructure:
 
     def test_all_exports_defined(self):
         """Test that __all__ is properly defined in submodules."""
-        from dana.integrations.python import core
+        from dana.integrations.python.to_dana import core
 
         # Core should have __all__ defined
         assert hasattr(core, "__all__")
@@ -237,7 +237,7 @@ class TestPackageStructure:
 
     def test_no_internal_imports_in_all(self):
         """Test that __all__ doesn't export internal implementation details."""
-        from dana.integrations.python import core
+        from dana.integrations.python.to_dana import core
 
         # Should not export private/internal items
         private_items = [item for item in core.__all__ if item.startswith("_")]
@@ -250,7 +250,7 @@ class TestExampleCompatibility:
     def test_simple_usage_pattern(self):
         """Test that simple usage pattern works."""
         # This is the pattern shown in examples
-        from dana.integrations.python import dana
+        from dana.integrations.python.to_dana import dana
 
         # Should be able to access dana instance
         assert dana is not None
@@ -259,7 +259,7 @@ class TestExampleCompatibility:
     def test_advanced_usage_pattern(self):
         """Test that advanced usage pattern works."""
         # Advanced pattern for custom configuration
-        from dana.integrations.python.dana_module import Dana
+        from dana.integrations.python.to_dana.dana_module import Dana
 
         # Should be able to create custom instances
         assert Dana is not None
@@ -299,7 +299,7 @@ class TestBackwardCompatibility:
 
     def test_main_api_stable(self):
         """Test that the main API remains stable."""
-        from dana.integrations.python import dana
+        from dana.integrations.python.to_dana import dana
 
         # Core API should remain stable
         assert hasattr(dana, "reason")

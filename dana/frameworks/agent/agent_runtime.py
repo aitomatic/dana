@@ -54,7 +54,7 @@ from dana.common.mixins.loggable import Loggable
 from dana.common.resource import LLMResource
 
 # Local imports
-from dana.frameworks.agent.dummy import ExecutionState, Plan, Planner, PlanStrategy, Reasoner, ReasoningStrategy, RuntimeContext, WorldState
+from dana.frameworks.agent.deprecated.dummy import ExecutionState, Plan, Planner, PlanStrategy, Reasoner, ReasoningStrategy, RuntimeContext, WorldState
 
 if TYPE_CHECKING:
     from dana.frameworks.agent.agent import Agent

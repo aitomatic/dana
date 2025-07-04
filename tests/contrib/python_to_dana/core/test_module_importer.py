@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from dana.integrations.python import Dana, disable_dana_imports, enable_dana_imports, list_dana_modules
+from dana.integrations.python.to_dana import Dana, disable_dana_imports, enable_dana_imports, list_dana_modules
 from dana.integrations.python.core.module_importer import (
     DanaModuleLoader,
     DanaModuleWrapper,
@@ -449,7 +449,7 @@ class TestConvenienceFunctions:
     @pytest.mark.parametrize("test_case", convenience_functions_params, ids=lambda x: x["name"])
     def test_convenience_functions(self, test_case):
         """Test convenience functions for Dana imports."""
-        from dana.integrations.python import dana
+        from dana.integrations.python.to_dana import dana
 
         with patch.object(dana, test_case["mock_method"]) as mock_method:
             # Get the function from the module
@@ -469,7 +469,7 @@ class TestConvenienceFunctions:
 
     def test_list_dana_modules(self):
         """Test list_dana_modules convenience function."""
-        from dana.integrations.python import dana
+        from dana.integrations.python.to_dana import dana
 
         with patch.object(dana, "list_modules") as mock_list:
             mock_list.return_value = ["module1", "module2"]
