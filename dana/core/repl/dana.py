@@ -249,7 +249,7 @@ def handle_deploy_command(args):
 def deploy_thru_mcp(file_path, args):
     """Deploy file using MCP protocol."""
     try:
-        from dana.core.repl.deploy.mcp import deploy_dana_agents_thru_mcp
+        from dana.contrib.mcp_a2a.deploy.mcp import deploy_dana_agents_thru_mcp
 
         deploy_dana_agents_thru_mcp(file_path, args.host, args.port)
         return 0
@@ -267,7 +267,7 @@ def deploy_thru_mcp(file_path, args):
 def deploy_thru_a2a(file_path, args):
     """Deploy file using A2A protocol."""
     try:
-        from dana.core.repl.deploy.a2a import deploy_dana_agents_thru_a2a
+        from dana.contrib.mcp_a2a.deploy.a2a import deploy_dana_agents_thru_a2a
 
         deploy_dana_agents_thru_a2a(file_path, args.host, args.port)
         return 0

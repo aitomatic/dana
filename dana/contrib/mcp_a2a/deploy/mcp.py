@@ -2,7 +2,7 @@ import importlib
 import os
 from pathlib import Path
 
-from dana.dana import dana
+from dana import dana
 
 
 def validate_agent_module(na_file_path: str, na_module):
