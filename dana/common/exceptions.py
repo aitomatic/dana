@@ -23,7 +23,12 @@ from typing import Any
 class DanaError(Exception):
     """Base class for Dana exceptions."""
 
-    pass
+    def __init__(self, message: str = "DanaError", *args, **kwargs):
+        self.message = message
+        super().__init__(message, *args)
+
+    def __str__(self) -> str:
+        return self.message or self.__class__.__name__
 
 
 class ConfigurationError(DanaError):
@@ -164,12 +169,12 @@ class ParseError(DanaError):
         line = line_num if line_num is not None else 0
         source_line = line_content or ""
         full_message = message
-        
+
         if line_num is not None:
             full_message += f" (line {line_num})"
         if line_content:
             full_message += f": {line_content}"
-        
+
         super().__init__(full_message)
 
 

@@ -384,8 +384,13 @@ class LLMQueryExecutor(Loggable):
             self.error(f"LLM API error for provider '{provider}': {e.message}")
             raise LLMProviderError(provider, e.status_code, str(e.message)) from e
         except Exception as e:
-            self.error(f"An unexpected error occurred during LLM query: {e}")
-            raise LLMError(f"An unexpected error occurred: {e}") from e
+            error_msg = str(e)
+            if "connection" in error_msg.lower() or "connect" in error_msg.lower():
+                self.debug(f"LLM connection failed: {error_msg}")
+                raise LLMError(f"LLM connection failed: {error_msg}. Please check your API key configuration in .env file.") from e
+            else:
+                self.error(f"An unexpected error occurred during LLM query: {e}")
+                raise LLMError(f"An unexpected error occurred: {e}") from e
 
     async def mock_llm_query(self, request: dict[str, Any]) -> dict[str, Any]:
         """Intelligent mock LLM query that understands POET-enhanced prompts.

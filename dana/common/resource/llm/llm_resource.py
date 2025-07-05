@@ -146,7 +146,7 @@ class LLMResource(BaseResource):
         super().__init__(name)
 
         # Initialize configuration manager (Phase 1B integration)
-        self._config_manager = LLMConfigurationManager(explicit_model=model, config=kwargs)
+        self._config_manager = LLMConfigurationManager(explicit_model=model)
 
         # Initialize tool call manager (Phase 4A integration)
         self._tool_call_manager = LLMToolCallManager()
@@ -688,42 +688,21 @@ class LLMResource(BaseResource):
         return responses
 
     def _validate_model(self, model_name: str) -> bool:
-        """Checks if the necessary API keys for a given model are available.
-
-        This method delegates to the LLMConfigurationManager, which now uses
-        ValidationUtilities.validate_model_availability() for centralized,
-        consistent validation logic across the Dana framework.
-
-        Args:
-            model_name: Name of the model to validate
-
-        Returns:
-            True if the model is available and properly configured, False otherwise
-        """
-        return self._config_manager._validate_model(model_name)
+        """Check if model has required API key."""
+        return self._config_manager._has_required_api_key(model_name)
 
     def _find_first_available_model(self) -> str | None:
-        """Finds the first available model from the preferred_models list.
-
-        Iterates through `self.preferred_models` and returns the name of the
-        first model for which all `required_env_vars` are set as environment vars.
-
-        Returns:
-            The name of the first available model, or None if none are available.
-        """
+        """Find first available model from preferred list."""
         return self._config_manager._find_first_available_model()
 
     def get_available_models(self) -> list[str]:
-        """Gets a list of models from preferred_models that are currently available.
+        """Get list of models with API keys set."""
+        return self._config_manager.get_available_models()
 
-        Checks API key availability for each model in `self.preferred_models`.
-
-        Returns:
-            A list of available model names.
-        """
-        available = self._config_manager.get_available_models()
-        self.debug(f"Available models based on API keys: {available}")
-        return available
+    def _is_model_available(self, model_info: dict[str, Any]) -> bool:
+        """Check if model is available based on API key."""
+        model_name = model_info.get("name")
+        return bool(model_name and self._config_manager._has_required_api_key(model_name))
 
     def _resolve_env_vars_in_provider_configs(self, provider_configs: dict[str, Any]) -> dict[str, Any]:
         """Resolve environment variable references in provider configs.
@@ -789,15 +768,6 @@ class LLMResource(BaseResource):
 
         # Use the consolidated helper method for all model-specific transformations
         return self._get_aisuite_config_for_model(self._model, resolved_config)
-
-    def _is_model_available(self, model_info: dict[str, Any]) -> bool:
-        """Check if a given model is available based on required API keys."""
-        model_name = model_info.get("name")
-        if not model_name:
-            return False
-
-        # Delegate to the configuration manager for validation
-        return self._validate_model(model_name)
 
     def _get_provider_from_model(self, model_name: str) -> str | None:
         """Extract provider name from model name."""

@@ -282,25 +282,31 @@ class ValidationUtilities:
         Raises:
             ValidationError: If model_name is invalid
         """
-        ValidationUtilities.validate_required_field(model_name, "model_name", context)
-        ValidationUtilities.validate_type(model_name, str, "model_name", context)
+        ValidationUtilities.validate_required_field(model_name, "model_name")
 
-        # Check if model is in available models list
+        # Debug logging to understand model validation
+        DANA_LOGGER.debug(f"Validating model '{model_name}' with required_env_vars: {required_env_vars}")
+
+        # Check if model is in available models list (if provided)
         if available_models is not None and model_name not in available_models:
-            DANA_LOGGER.warning(
-                f"Model '{model_name}' not in available models list: {available_models}{f' in {context}' if context else ''}"
-            )
+            DANA_LOGGER.debug(f"Model '{model_name}' not in available models list: {available_models}")
             return False
 
         # Check required environment variables
         if required_env_vars:
-            missing_vars = [var for var in required_env_vars if not os.environ.get(var)]
+            missing_vars = []
+            for var in required_env_vars:
+                value = os.getenv(var)
+                if not value:
+                    missing_vars.append(var)
+                else:
+                    DANA_LOGGER.debug(f"Environment variable '{var}' is set for model '{model_name}'")
+
             if missing_vars:
-                DANA_LOGGER.warning(
-                    f"Model '{model_name}' requires missing environment variables: {missing_vars}{f' in {context}' if context else ''}"
-                )
+                DANA_LOGGER.debug(f"Model '{model_name}' missing environment variables: {missing_vars}")
                 return False
 
+        DANA_LOGGER.debug(f"Model '{model_name}' validation passed")
         return True
 
     @staticmethod
