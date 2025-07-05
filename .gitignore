@@ -33,7 +33,6 @@ configs/
 
 # Editors and tools
 .qodo/
-.vscode/
 *.swp
 *.swo
 .aider*
