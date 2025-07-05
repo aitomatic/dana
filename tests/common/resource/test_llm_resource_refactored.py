@@ -16,7 +16,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
         """Set up test fixtures."""
         # Clear environment variables for clean tests
         self.original_env = {}
-        for key in ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GOOGLE_API_KEY"]:
+        for key in ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GOOGLE_API_KEY", "DANA_MOCK_LLM"]:
             self.original_env[key] = os.environ.get(key)
             if key in os.environ:
                 del os.environ[key]

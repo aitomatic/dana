@@ -247,7 +247,7 @@ class LLMResource(BaseResource):
     @property
     def model(self) -> str | None:
         """The currently selected LLM model name."""
-        return self._model
+        return self._config_manager.selected_model
 
     @property
     def physical_model_name(self) -> str | None:
@@ -689,7 +689,7 @@ class LLMResource(BaseResource):
 
     def _validate_model(self, model_name: str) -> bool:
         """Check if model has required API key."""
-        return self._config_manager._has_required_api_key(model_name)
+        return self._config_manager._validate_model(model_name)
 
     def _find_first_available_model(self) -> str | None:
         """Find first available model from preferred list."""
@@ -697,12 +697,13 @@ class LLMResource(BaseResource):
 
     def get_available_models(self) -> list[str]:
         """Get list of models with API keys set."""
+        self.debug("Delegating get_available_models to configuration manager")
         return self._config_manager.get_available_models()
 
     def _is_model_available(self, model_info: dict[str, Any]) -> bool:
         """Check if model is available based on API key."""
         model_name = model_info.get("name")
-        return bool(model_name and self._config_manager._has_required_api_key(model_name))
+        return bool(model_name and self._config_manager._is_model_actually_available(model_name))
 
     def _resolve_env_vars_in_provider_configs(self, provider_configs: dict[str, Any]) -> dict[str, Any]:
         """Resolve environment variable references in provider configs.
