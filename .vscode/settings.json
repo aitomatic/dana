@@ -38,7 +38,6 @@
         "**/.-markdownlint.yaml": true,
         "**/.pre-commit-config.yaml": true,
         "**/.python-version": true,
-        "**/.github": true,
         "**/.claude": true,
         "**/CVS": true,
 
