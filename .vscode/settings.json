@@ -15,7 +15,6 @@
         "**/docs/images": true,
         "**/uv.lock": true,
         "**/-.env": true,
-        "**/.vscode": true,
         "**/-pyproject.toml": true,
         "**/-Makefile": true,
         "**/mkdocs.yml": true,
