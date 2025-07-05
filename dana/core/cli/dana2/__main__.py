@@ -1,5 +1,5 @@
 """Dana2 CLI."""
 
-from . import dana2
+from . import main
 
-dana2()
+main()

@@ -24,7 +24,7 @@ DANA_KEY_VALUE_INPUT_PATTERN = re.compile(
     r"(?=\s+[a-zA-Z_][a-zA-Z0-9_]*\s*=|$)"  # lookahead for next key= or end
 )
 
-def parse_dana_input_args(input_strs: tuple[str, ...]) -> dict[str, str]:
+def parse_dana_input_args(input_strs: list[str] | tuple[str, ...]) -> dict[str, str]:
     """Parse input arguments tuple into a dictionary.
 
     The inputs have been preliminarily parsed from a string with key-value pairs in various formats such as
