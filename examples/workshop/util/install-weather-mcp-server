@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+uv add https://GitHub.com/AI-App/IsDaniel.MCP-Weather-Server/archive/dev.zip

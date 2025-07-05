@@ -1,0 +1,32 @@
+"""Specialist Agent #3."""
+
+# Agent Card declaration
+system:agent_name = "Flight Ticket Agent"
+system:agent_description = "Agent that can find the best tickets for a flight"
+
+# Agent resources
+search_service = use("mcp", url="https://demo.mcp.aitomatic.com/websearch_v2")
+
+# Agent's problem solver
+def plan(request):
+    return {"plan": reason(f"Create a plan to find the best tickets based on the following request: {request}"), "request": request}
+
+def execute(data):
+    request = data["request"]
+    plan = data["plan"]
+    qualified = False
+    result = ""
+
+    while qualified == False:
+        answer = reason(f"Your goal is to find the best tickets for this request: {request}. This is the current plan : {plan} and the current result is : {result}. Follow the plan, execute what is missing and return the result.")
+        qualified : bool = reason(f"Is the result qualified this request? Answer : {answer}. Return only 'True' or 'False'.")
+        result = answer
+        print(result)
+    return result
+
+def solve(request):
+    workflow = plan | execute
+    return workflow(request)
+
+# quick test:
+# solve("Find the best tickets for a flight from San Francisco to Tokyo on June 26th 2025")
