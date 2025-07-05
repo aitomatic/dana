@@ -88,23 +88,23 @@ docs = [
     # Core: MkDocs for DevRel team productivity
     "mkdocs-material>=9.0",
     "mkdocs-mermaid2-plugin",
-    
+
     # Auto-sync with code (solves staleness problem)
     "mkdocstrings[python]>=0.24",    # API docs from docstrings (auto-update)
-    "mkdocs-gen-files",              # Generate docs from code structure  
+    "mkdocs-gen-files",              # Generate docs from code structure
     "mkdocs-literate-nav",           # Auto-generate navigation
     "mkdocs-section-index",          # Clickable sections
-    
+
     # Validation tools (catch problems early)
-    "mkdocs-htmlproofer-plugin",     # Broken link detection  
+    "mkdocs-htmlproofer-plugin",     # Broken link detection
     "linkcheckmd",                   # Fast async link checking
     "doc8",                          # Documentation style checking
-    
+
     # Multi-constituency features
     "mkdocs-redirects",              # Handle URL changes
     "mkdocs-awesome-nav",            # Advanced navigation control
     "mkdocs-print-site-plugin",      # PDF export for offline reading
-    
+
     # Content enhancement
     "mkdocs-include-markdown-plugin",# Reusable content blocks
     "mkdocs-macros-plugin",          # Variables and templating
@@ -114,7 +114,7 @@ docs = [
 
 # Command-line entry points for end users
 [project.scripts]
-dana = "dana.core.repl.dana:main"
+dana = "dana.core.cli.dana:main"
 
 # =============================================================================
 # Package Configuration
@@ -134,9 +134,9 @@ dana = ["**/*.py", "**/*.lark"]
 # Development Tools & Scripts (uv-specific)
 # =============================================================================
 
-# NOTE: Native task runner support ([tool.uv.tasks] or [tool.uv.scripts]) 
+# NOTE: Native task runner support ([tool.uv.tasks] or [tool.uv.scripts])
 # is planned but not yet available in uv 0.7.9
-# 
+#
 # Use these direct uv run commands for common development tasks:
 #
 # Testing workflows:
@@ -161,7 +161,7 @@ dana = ["**/*.py", "**/*.lark"]
 #
 # Documentation validation (catch staleness):
 #   uv run pytest --doctest-modules dana/             # Test code examples in docstrings
-#   uv run python -m linkcheckmd docs/                # Check all markdown links (fast async)  
+#   uv run python -m linkcheckmd docs/                # Check all markdown links (fast async)
 #   uv run doc8 docs/                                 # Documentation style checking
 #   uv run python -m mkdocs build --strict            # Validate complete build
 #
@@ -200,7 +200,7 @@ target-version = "py312"    # Align with requires-python
 # Enable these rule categories
 select = [
     "E",   # pycodestyle errors
-    "F",   # pyflakes 
+    "F",   # pyflakes
     "I",   # isort (import sorting)
     "B",   # bugbear (common Python gotchas)
     "UP",  # pyupgrade (modern Python features)
@@ -213,7 +213,7 @@ ignore = [
     "E203",  # Whitespace before ':' (conflicts with Black)
     "E501",  # Line too long (handled by line-length setting)
     "B008",  # Function call in default argument (common in frameworks)
-    "B010",  # setattr in class body (common in frameworks) 
+    "B010",  # setattr in class body (common in frameworks)
     "B904",  # raise ... from ... (not always needed)
     "N802",  # Function name should be lowercase (conflicts with transformers)
 ]
@@ -229,7 +229,7 @@ exclude = [
 # Type Checking
 [tool.pyright]
 reportAttributeAccessIssue = false
-reportGeneralTypeIssues = false  
+reportGeneralTypeIssues = false
 reportAssignmentType = false
 
 # MyPy Configuration
@@ -269,7 +269,7 @@ preview = true
 resolution = "highest"      # Always use highest compatible versions
 prerelease = "disallow"     # Avoid pre-release versions in production
 
-# Python environment preferences  
+# Python environment preferences
 python-preference = "only-managed"  # Use uv-managed Python installations
 compile-bytecode = true             # Pre-compile .pyc files for performance
 
@@ -283,5 +283,5 @@ dev = [
 # dana = { workspace = true }  # For workspace/monorepo setup
 
 # Future: Workspace configuration for multi-package projects
-# [tool.uv.workspace]  
+# [tool.uv.workspace]
 # members = ["dana", "extensions/*"]
