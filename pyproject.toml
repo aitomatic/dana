@@ -115,6 +115,7 @@ docs = [
 # Command-line entry points for end users
 [project.scripts]
 dana = "dana.core.cli.dana:main"
+dana2 = "dana.core.cli.dana2:main"
 
 # =============================================================================
 # Package Configuration
