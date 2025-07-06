@@ -4,13 +4,10 @@ Team Migration Status - Generate summary for team communication
 """
 
 import subprocess
-import sys
 from datetime import datetime
-from pathlib import Path
-from typing import List, Tuple
 
 
-def run_command(cmd: List[str]) -> Tuple[int, str, str]:
+def run_command(cmd: list[str]) -> tuple[int, str, str]:
     """Run a shell command and return exit code, stdout, stderr."""
     try:
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -19,7 +16,7 @@ def run_command(cmd: List[str]) -> Tuple[int, str, str]:
         return 1, "", str(e)
 
 
-def get_recent_branches() -> List[Tuple[str, str, str]]:
+def get_recent_branches() -> list[tuple[str, str, str]]:
     """Get list of recent branches with dates and authors."""
     code, stdout, stderr = run_command([
         "git", "for-each-ref", "--format=%(refname:short) %(committerdate:short) %(authorname)",
@@ -45,7 +42,7 @@ def get_recent_branches() -> List[Tuple[str, str, str]]:
 def get_migration_status() -> str:
     """Get current migration status."""
     try:
-        with open("DANA_MIGRATION.md", "r") as f:
+        with open("DANA_MIGRATION.md") as f:
             content = f.read()
             
         # Count completed phases

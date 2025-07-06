@@ -12,6 +12,7 @@ import json
 import os
 from typing import Any
 
+from dana.common.exceptions import SandboxError
 from dana.common.mixins.queryable import QueryStrategy
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
@@ -19,7 +20,6 @@ from dana.common.utils.logging import DANA_LOGGER
 
 # Import POET decorator
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.common.exceptions import SandboxError
 
 
 def old_reason_function(

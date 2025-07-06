@@ -1,7 +1,7 @@
 """Capability factory."""
 
-from dana.frameworks.agent.capability.memory_capability import MemoryCapability
 from dana.common.capability.base_capability import BaseCapability
+from dana.frameworks.agent.capability.memory_capability import MemoryCapability
 
 
 class CapabilityFactory:

@@ -3,8 +3,8 @@ import os
 import pickle
 from typing import override
 
-from dana.common.utils.misc import Misc
 from dana.common.resource.rag.cache.base_cache import AbstractCache
+from dana.common.utils.misc import Misc
 
 
 class AbstractFileCache(AbstractCache):

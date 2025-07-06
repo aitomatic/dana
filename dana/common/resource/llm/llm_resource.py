@@ -47,9 +47,7 @@ from dana.common.utils.misc import Misc
 # we limit the total length of tool-call responses.
 MAX_TOOL_CALL_RESPONSE_LENGTH = 10000
 
-# AISuite compatibility constants - KISS approach to eliminate duplication
-AISUITE_UNSUPPORTED_PARAMS = {"proxies", "model_name", "api_type"}
-AISUITE_SUPPORTED_PARAMS = {"api_key", "base_url", "organization", "project", "timeout", "max_retries", "default_headers", "default_query"}
+# Removed parameter filtering - config file controls what gets sent to AISuite
 
 
 class LLMResource(BaseResource):
@@ -349,6 +347,17 @@ class LLMResource(BaseResource):
         if not self._client:
             self.debug("Initializing AISuite client...")
 
+            # Explicitly apply the AISuite patch to fix the proxies issue
+            if not is_patch_applied():
+                self.debug("Applying AISuite patch for proxies issue...")
+                patch_success = apply_aisuite_patch()
+                if patch_success:
+                    self.debug("AISuite patch applied successfully")
+                else:
+                    self.warning("Failed to apply AISuite patch - may encounter proxies issue")
+            else:
+                self.debug("AISuite patch already applied")
+
             # Get provider configuration for current model
             provider_configs = self._get_provider_config_for_current_model()
 
@@ -359,17 +368,12 @@ class LLMResource(BaseResource):
 
             try:
                 # Workaround for AISuite 0.1.11 proxies bug
-                # Filter out problematic parameters that AISuite might add internally
-                cleaned_provider_configs = self._clean_provider_configs_for_aisuite(provider_configs)
+                # Clean provider configs to remove unsupported parameters
+                provider_configs = self._clean_provider_configs_for_aisuite(provider_configs)
 
-                self.debug(f"Initializing AISuite client with provider_configs: {cleaned_provider_configs}")
-                # Check for any unexpected keys in provider_configs
-                for provider, config in cleaned_provider_configs.items():
-                    self.debug(f"Provider {provider} config keys: {list(config.keys())}")
-                    if "proxies" in config:
-                        self.warning(f"Found 'proxies' key in {provider} config: {config['proxies']}")
+                self.debug(f"Initializing AISuite client with provider_configs: {provider_configs}")
 
-                self._client = ai.Client(provider_configs=cleaned_provider_configs)
+                self._client = ai.Client(provider_configs=provider_configs)
                 self.debug("AISuite client initialized successfully.")
                 self._query_executor.client = self._client
                 self._query_executor.model = self.aisuite_model_name  # Use AISuite-compatible model name
@@ -380,34 +384,39 @@ class LLMResource(BaseResource):
                     self.warning("LLM client initialized without a model")
                     self._is_available = False
             except Exception as e:
-                self.error(f"Failed to initialize AISuite client: {e}")
+                error_msg = str(e)
+                if "proxies" in error_msg:
+                    self.error(f"AISuite proxies error (patch may not be working): {e}")
+                    self.error("Try restarting the application or check AISuite/Anthropic versions")
+                else:
+                    self.error(f"Failed to initialize AISuite client: {e}")
                 self._is_available = False
 
     def _clean_provider_configs_for_aisuite(self, provider_configs: dict[str, Any]) -> dict[str, Any]:
-        """Clean provider configs to work around AISuite 0.1.11 compatibility issues.
-
-        This method filters out problematic parameters that cause issues with
-        AISuite 0.1.11 and its dependencies, particularly the 'proxies' parameter
-        that causes conflicts with the underlying HTTP client.
+        """Clean provider configs to remove AISuite-unsupported parameters.
 
         Args:
             provider_configs: Original provider configurations
 
         Returns:
-            Cleaned provider configurations safe for AISuite
+            Provider configurations with unsupported parameters removed
         """
+        # Remove problematic parameters that AISuite doesn't support
         cleaned_configs = {}
+        unsupported_params = {"proxies", "model_name", "api_type", "http_client"}
 
         for provider, config in provider_configs.items():
-            cleaned_config = {}
-            for key, value in config.items():
-                if key not in AISUITE_UNSUPPORTED_PARAMS:
-                    cleaned_config[key] = value
-                else:
-                    self.debug(f"Filtering out problematic parameter '{key}' for provider '{provider}' (AISuite compatibility)")
-
-            if cleaned_config:  # Only add provider if it has valid config
+            if isinstance(config, dict):
+                # Filter out unsupported parameters
+                cleaned_config = {k: v for k, v in config.items() if k not in unsupported_params}
                 cleaned_configs[provider] = cleaned_config
+
+                # Log if we removed any parameters
+                removed_params = set(config.keys()) - set(cleaned_config.keys())
+                if removed_params:
+                    self.debug(f"Removed unsupported parameters from {provider}: {removed_params}")
+            else:
+                cleaned_configs[provider] = config
 
         return cleaned_configs
 
@@ -776,11 +785,7 @@ class LLMResource(BaseResource):
         resolved_config = {}
 
         for key, value in provider_config.items():
-            # Filter out unsupported parameters using constants
-            if key not in AISUITE_SUPPORTED_PARAMS:
-                self.debug(f"Filtering out unsupported parameter {key} (not supported by aisuite)")
-                continue
-
+            # Don't filter parameters here - let _filter_aisuite_params handle provider-specific filtering
             if isinstance(value, str) and value.startswith("env:"):
                 # Extract environment variable name
                 env_var = value[4:]  # Remove "env:" prefix
@@ -803,18 +808,29 @@ class LLMResource(BaseResource):
         if model_name == "local":
             # Local models use the api_type from config (default to "openai")
             api_type = provider_config.get("api_type", "openai")
-            filtered_config = self._filter_aisuite_params(provider_config)
-            return {api_type: filtered_config}
+            return {api_type: provider_config}
         elif model_name and model_name.startswith("vllm:"):
             # vLLM models use OpenAI provider in AISuite
-            filtered_config = self._filter_aisuite_params(provider_config)
-            return {"openai": filtered_config}
+            return {"openai": provider_config}
         else:
             # Standard provider:model format
             provider = model_name.split(":", 1)[0] if ":" in model_name else "openai"
-            filtered_config = self._filter_aisuite_params(provider_config)
-            return {provider: filtered_config}
 
-    def _filter_aisuite_params(self, config: dict[str, Any]) -> dict[str, Any]:
-        """Filter config parameters for AISuite compatibility using constants."""
-        return {k: v for k, v in config.items() if k in AISUITE_SUPPORTED_PARAMS}
+            # Special handling for Azure: construct deployment URL dynamically
+            if provider == "azure" and ":" in model_name:
+                config_copy = provider_config.copy()
+                deployment_name = model_name.split(":", 1)[1]  # Extract model name (e.g., "gpt-4o")
+                base_url = config_copy.get("base_url", "")
+
+                # Construct the full deployment URL if base_url doesn't already include deployment path
+                if base_url and not base_url.endswith(f"/openai/deployments/{deployment_name}"):
+                    # Remove trailing slash if present
+                    base_url = base_url.rstrip("/")
+                    # Construct deployment URL
+                    deployment_url = f"{base_url}/openai/deployments/{deployment_name}"
+                    config_copy["base_url"] = deployment_url
+                    self.debug(f"Constructed Azure deployment URL: {deployment_url}")
+
+                return {provider: config_copy}
+            else:
+                return {provider: provider_config}

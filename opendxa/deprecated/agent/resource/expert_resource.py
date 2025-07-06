@@ -38,14 +38,14 @@ Example:
 
 from typing import Any, ClassVar
 
-# Local imports
-from dana.frameworks.agent.capability.domain_expertise import DomainExpertise
-
 # First-party imports
 from dana.common.io import IOFactory
 from dana.common.mixins import ToolCallable
 from dana.common.resource import BaseResource
 from dana.common.types import BaseRequest, BaseResponse
+
+# Local imports
+from dana.frameworks.agent.capability.domain_expertise import DomainExpertise
 
 
 class ExpertResponse(BaseResponse):

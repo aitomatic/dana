@@ -7,8 +7,8 @@ from llama_index.core import Document, VectorStoreIndex, load_index_from_storage
 from llama_index.core.storage.storage_context import StorageContext
 
 from dana.common.mixins.loggable import Loggable
-from dana.common.utils.misc import Misc
 from dana.common.resource.rag.cache import JsonFileCache
+from dana.common.utils.misc import Misc
 
 
 class UnifiedCacheManager(Loggable):

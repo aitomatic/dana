@@ -56,12 +56,13 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
 from dana.compat import setup_migration_compatibility
+
 setup_migration_compatibility()
 
 from dana.common.utils.logging import DXA_LOGGER
-from opendxa.dana.common.terminal_utils import ColorScheme, print_header, supports_color
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.core.lang.log_manager import LogLevel, SandboxLogger
+from opendxa.dana.common.terminal_utils import ColorScheme, print_header, supports_color
 
 # Initialize color scheme
 colors = ColorScheme(supports_color())

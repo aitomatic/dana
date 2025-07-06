@@ -10,8 +10,8 @@ MIT License
 from collections.abc import Callable
 from typing import Any
 
-from opendxa.dana.common.exceptions import SandboxError
 from dana.core.lang.sandbox_context import SandboxContext
+from opendxa.dana.common.exceptions import SandboxError
 
 
 class ArgumentProcessor:

@@ -19,7 +19,6 @@ Discord: https://discord.gg/6jGD4PYk
 
 from typing import Any, Optional
 
-from opendxa.dana.common.exceptions import TypeError
 from dana.core.lang.parser.ast import (
     AssertStatement,
     Assignment,
@@ -53,6 +52,7 @@ from dana.core.lang.parser.ast import (
     UseStatement,
     WhileLoop,
 )
+from opendxa.dana.common.exceptions import TypeError
 
 
 class DanaType:

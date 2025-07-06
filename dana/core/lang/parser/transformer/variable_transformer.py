@@ -13,9 +13,9 @@ Follows the style and best practices of StatementTransformer and ExpressionTrans
 
 from lark import Token, Tree
 
+from dana.common.runtime_scopes import RuntimeScopes
 from dana.core.lang.parser.ast import Identifier
 from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
-from dana.common.runtime_scopes import RuntimeScopes
 
 
 class VariableTransformer(BaseTransformer):

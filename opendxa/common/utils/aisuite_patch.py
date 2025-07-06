@@ -17,9 +17,6 @@ This patch fixes the issue by:
 3. Patching SyncHttpxClientWrapper.__init__ to remove 'proxies' from kwargs
 """
 
-import sys
-from typing import Optional
-
 # Global flag to track if patch has been applied
 _PATCH_APPLIED = False
 
@@ -36,7 +33,6 @@ def apply_aisuite_patch() -> bool:
         return True
 
     try:
-        import anthropic
         from anthropic import Anthropic
 
         # Store the original __init__ method
