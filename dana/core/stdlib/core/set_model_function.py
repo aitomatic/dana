@@ -138,7 +138,7 @@ def _find_closest_model_match(model_input: str, available_models: list[str]) -> 
         "openai": lambda models: next((m for m in models if "gpt-4o" in m), models[0] if models else None),
         "anthropic": lambda models: next((m for m in models if "claude-3-5-sonnet" in m), models[0] if models else None),
         "google": lambda models: next((m for m in models if "gemini-1.5-pro" in m), models[0] if models else None),
-        "groq": lambda models: next((m for m in models if "llama3-70b" in m), models[0] if models else None),
+        "groq": lambda models: next((m for m in models if "llama-3" in m and "70b" in m), models[0] if models else None),
         "azure": lambda models: next((m for m in models if "gpt-4o" in m), models[0] if models else None),
         "deepseek": lambda models: next((m for m in models if "deepseek-chat" in m), models[0] if models else None),
     }
@@ -161,7 +161,7 @@ def _find_closest_model_match(model_input: str, available_models: list[str]) -> 
             return substring_matches[0]
 
         # Smart provider preferences for common models
-        if "gpt" in model_lower or "4" in model_lower:
+        if "gpt" in model_lower:
             # For GPT models, prefer OpenAI over Azure, then prefer latest versions
             openai_matches = [m for m in substring_matches if m.startswith("openai:")]
             if openai_matches:
