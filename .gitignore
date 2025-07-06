@@ -16,7 +16,6 @@ tmp/
 .venv/
 venv/
 .env
-.env.*
 !.env.example
 
 # Testing and coverage
@@ -60,5 +59,3 @@ node_modules/
 .refactoring_*/
 .cache/
 .ipynb_checkpoints/
-.cursor/
-!.cursor/rules/
