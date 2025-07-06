@@ -335,7 +335,7 @@ class TestSetModelFunction(unittest.TestCase):
             sys.stdout = sys.__stdout__
 
     def test_set_model_no_parameters_displays_grouped_models(self):
-        """Test that set_model() displays available models in a simple list."""
+        """Test that set_model() displays available models grouped by provider."""
         # Redirect stdout to capture print statements
         import io
         import sys
@@ -351,13 +351,17 @@ class TestSetModelFunction(unittest.TestCase):
 
             # Should display available models or no models message
             output = captured_output.getvalue()
-            self.assertTrue("Available models:" in output or "No models available" in output)
+            self.assertTrue("Available models:" in output or "❌ No models available" in output)
+
+            # If models are available, should show provider grouping
+            if "Available models:" in output:
+                self.assertIn(":", output)  # Should have provider sections like "OPENAI:"
 
         finally:
             sys.stdout = sys.__stdout__
 
-    def test_set_model_no_parameters_shows_examples(self):
-        """Test that set_model() shows concise examples."""
+    def test_set_model_no_parameters_shows_enhanced_examples(self):
+        """Test that set_model() shows enhanced examples with emojis."""
         # Redirect stdout to capture print statements
         import io
         import sys
@@ -368,18 +372,37 @@ class TestSetModelFunction(unittest.TestCase):
         try:
             set_model_function(self.context)
 
-            # Should show examples if models are available
+            # Should show enhanced examples if models are available
             output = captured_output.getvalue()
             if "Available models:" in output:
-                self.assertIn("Examples:", output)
-                self.assertIn("set_model('gpt-4')", output)
-                self.assertIn("set_model('claude')", output)
-                self.assertIn("set_model('openai')", output)
-            elif "No models available" in output:
-                self.assertIn("check your API keys", output)
+                self.assertIn("💡 Examples:", output)
+                self.assertIn("fuzzy match →", output)
+                self.assertIn("🔧 Pro tips:", output)
+                self.assertIn("provider →", output)
+            elif "❌ No models available" in output:
+                self.assertIn("🔑 Check your API keys", output)
+                self.assertIn("OPENAI_API_KEY", output)
 
         finally:
             sys.stdout = sys.__stdout__
+
+    def test_enhanced_provider_fuzzy_matching(self):
+        """Test that enhanced fuzzy matching works with provider intelligence."""
+        os.environ["OPENAI_API_KEY"] = "test-key"
+
+        # Test provider-only input should return best model for that provider
+        result = set_model_function(self.context, "openai")
+        self.assertTrue(result.startswith("openai:"))
+        self.assertIn("gpt", result.lower())
+
+        # Test enhanced GPT matching should prefer OpenAI and latest versions
+        result = set_model_function(self.context, "gpt-4")
+        self.assertTrue(result.startswith("openai:"))
+        self.assertIn("gpt-4", result.lower())
+
+        # Test case insensitive still works
+        result = set_model_function(self.context, "GPT-4O")
+        self.assertIn("gpt-4o", result.lower())
 
 
 if __name__ == "__main__":

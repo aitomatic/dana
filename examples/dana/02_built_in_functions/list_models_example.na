@@ -1,53 +1,79 @@
-# Example: Using the set_model function to view and set models in Dana
-# This demonstrates the new concise format that only shows available models
+# Enhanced set_model() Example - Provider Intelligence & Beautiful Output
+# This demonstrates the latest provider-intelligent model switching with beautiful output
 
-log("🚀 Starting enhanced set_model example")
+log("🚀 Enhanced set_model Example - Latest Features")
 
-# === VIEW CURRENT MODEL AND AVAILABLE OPTIONS ===
-log("1. Viewing current model and available options (concise format):")
-current_model = set_model()  # No parameters - displays concise information
-log(f"Current model returned: {current_model}")
+# === VIEW ENHANCED MODEL DISPLAY ===
+log("1. Viewing enhanced model display with provider grouping:")
+current_model = set_model()  # No parameters - displays enhanced information
+log(f"Function returned: {current_model}")
 
-# === SET MODELS WITH FAULT-TOLERANT NAMES ===
-log("2. Setting models with fault-tolerant names:")
+# === SMART PROVIDER MATCHING ===
+log("\n2. Smart provider matching - just type provider names:")
 
-# Using partial names - these will be fuzzy matched
-log("Setting model with 'gpt-4' (partial name)...")
+log("Setting model with just 'openai' (picks best OpenAI model)...")
+model = set_model("openai")
+log(f"✅ Smart match result: {model}")
+
+log("Setting model with just 'anthropic' (picks best Claude model)...")
+model = set_model("anthropic")
+log(f"✅ Smart match result: {model}")
+
+log("Setting model with just 'groq' (picks best Groq model)...")
+model = set_model("groq")
+log(f"✅ Smart match result: {model}")
+
+# === ENHANCED FUZZY MATCHING ===
+log("\n3. Enhanced fuzzy matching with intelligent preferences:")
+
+log("Trying 'gpt-4' (should prefer OpenAI over Azure, latest version)...")
 model = set_model("gpt-4")
-log(f"✅ Model set to: {model}")
+log(f"✅ Enhanced fuzzy match: {model}")
 
-# Test the model
-response = reason("What is 2+2?")
-log(f"Response from {model}: {response}")
-
-# Using provider name - matches best model for that provider
-log("Setting model with 'claude' (provider name)...")
+log("Trying 'claude' (should prefer Sonnet over Haiku)...")
 model = set_model("claude")
-log(f"✅ Model set to: {model}")
+log(f"✅ Enhanced fuzzy match: {model}")
 
-response = reason("What is the capital of France?")
-log(f"Response from {model}: {response}")
+log("Trying 'gemini' (should prefer Pro over Flash)...")
+model = set_model("gemini")
+log(f"✅ Enhanced fuzzy match: {model}")
 
-# Using case-insensitive matching
-log("Setting model with 'GEMINI' (case insensitive)...")
-model = set_model("GEMINI")
-log(f"✅ Model set to: {model}")
+# === CASE INSENSITIVE MATCHING ===
+log("\n4. Case insensitive matching:")
 
-response = reason("Explain machine learning in one sentence.")
-log(f"Response from {model}: {response}")
+log("Trying 'GPT-4O' (uppercase)...")
+model = set_model("GPT-4O")
+log(f"✅ Case insensitive match: {model}")
 
-# === VIEWING MODELS AGAIN ===
-log("3. Viewing models again to see current selection:")
-current_model = set_model()  # Shows updated current model with checkmark
+log("Trying 'Claude' (mixed case)...")
+model = set_model("Claude")
+log(f"✅ Case insensitive match: {model}")
 
-log("✅ Enhanced set_model example completed successfully!")
+# === TEST THE SELECTED MODEL ===
+log("\n5. Testing the selected model:")
+log("Current model status after all changes:")
+final_model = set_model()
 
-log("📝 Key benefits of the new set_model function:")
-log("  • Concise output - only shows models you can actually use")
-log("  • Only displays models with available API keys")
-log("  • Clear indication of current model with ✓ marker")
-log("  • Simple examples for common usage patterns")
-log("  • Fast and focused - no unnecessary information")
+log("\nTesting model functionality...")
+response = reason("What is 2+2? Answer with just the number.")
+log(f"Model response: {response}")
+
+log("\n🎉 Enhanced set_model example completed!")
+log("Key improvements:")
+log("  ✅ Provider-grouped display")
+log("  ✅ Smart provider matching")
+log("  ✅ Enhanced fuzzy matching")
+log("  ✅ Intelligent model preferences")
+log("  ✅ Beautiful emoji-enhanced output")
+log("  ✅ Comprehensive user guidance")
 
 # Note: Only models with API keys in your environment will be shown:
-# OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY, DEEPSEEK_API_KEY, etc. 
+# - OpenAI: OPENAI_API_KEY
+# - Anthropic: ANTHROPIC_API_KEY
+# - Google: GOOGLE_API_KEY
+# - Groq: GROQ_API_KEY
+# - Azure: AZURE_API_KEY
+# - Perplexity: PERPLEXITY_API_KEY
+# - Cohere: COHERE_API_KEY
+# - Mistral: MISTRAL_API_KEY
+# - Together: TOGETHER_API_KEY 
