@@ -12,11 +12,9 @@ The issue is that:
 4. This causes Client.__init__() got an unexpected keyword argument 'proxies'
 
 This patch fixes the issue by:
-1. Patching Anthropic.__init__ to filter out problematic parameters
-2. Patching BaseClient.__init__ to provide defaults for required parameters
-3. Patching SyncHttpxClientWrapper.__init__ to remove 'proxies' from kwargs
+1. Ensuring 'proxies' parameter is set to None where needed
+2. Filtering out 'proxies' from httpx calls where it causes issues
 """
-
 
 # Global flag to track if patch has been applied
 _PATCH_APPLIED = False
@@ -40,32 +38,27 @@ def apply_aisuite_patch() -> bool:
         original_init = Anthropic.__init__
 
         def patched_init(self, **kwargs):
-            """Patched __init__ that filters out problematic parameters."""
-            # Filter out problematic parameters
-            problematic_params = ["proxies", "model_name", "api_type", "http_client"]
-            filtered_kwargs = {k: v for k, v in kwargs.items() if k not in problematic_params}
-            return original_init(self, **filtered_kwargs)
+            """Patched __init__ that filters out the 'proxies' parameter."""
+            # Remove 'proxies' parameter that causes issues with httpx
+            if "proxies" in kwargs:
+                del kwargs["proxies"]
+            return original_init(self, **kwargs)
 
         # Apply the patch
         Anthropic.__init__ = patched_init
 
-        # Patch the base client if possible
+        # Patch the base client to ensure proxies is set correctly
         try:
             from anthropic._base_client import BaseClient
 
             original_base_init = BaseClient.__init__
 
             def patched_base_init(self, **kwargs):
-                """Patched BaseClient __init__ that provides defaults for required parameters."""
-                # Filter out problematic parameters but provide defaults for required ones
-                problematic_params = ["model_name", "api_type", "http_client"]
-                filtered_kwargs = {k: v for k, v in kwargs.items() if k not in problematic_params}
-
-                # Provide default for proxies if not present (since it's required)
-                if "proxies" not in filtered_kwargs:
-                    filtered_kwargs["proxies"] = None
-
-                return original_base_init(self, **filtered_kwargs)
+                """Patched BaseClient __init__ that ensures 'proxies' is set to None."""
+                # Ensure 'proxies' is set to None if not provided (it's required but should be None)
+                if "proxies" not in kwargs:
+                    kwargs["proxies"] = None
+                return original_base_init(self, **kwargs)
 
             # Apply the patch
             BaseClient.__init__ = patched_base_init
@@ -74,15 +67,15 @@ def apply_aisuite_patch() -> bool:
             # BaseClient patch is optional
             pass
 
-        # Patch SyncHttpxClientWrapper to filter proxies
+        # Patch SyncHttpxClientWrapper to filter proxies before passing to httpx
         try:
             from anthropic._base_client import SyncHttpxClientWrapper
 
             original_sync_init = SyncHttpxClientWrapper.__init__
 
             def patched_sync_init(self, **kwargs):
-                """Patched SyncHttpxClientWrapper __init__ that filters out proxies."""
-                # Remove proxies from kwargs
+                """Patched SyncHttpxClientWrapper __init__ that filters out proxies before passing to httpx."""
+                # Remove 'proxies' parameter before passing to httpx since it doesn't accept it
                 if "proxies" in kwargs:
                     del kwargs["proxies"]
                 return original_sync_init(self, **kwargs)
@@ -92,6 +85,26 @@ def apply_aisuite_patch() -> bool:
 
         except ImportError:
             # SyncHttpxClientWrapper patch is optional
+            pass
+
+        # Also try to patch httpx.Client if it's available
+        try:
+            import httpx
+
+            original_httpx_init = httpx.Client.__init__
+
+            def patched_httpx_init(self, **kwargs):
+                """Patched httpx.Client __init__ that filters out 'proxies' parameter."""
+                # Remove 'proxies' parameter that causes issues
+                if "proxies" in kwargs:
+                    del kwargs["proxies"]
+                return original_httpx_init(self, **kwargs)
+
+            # Apply the patch
+            httpx.Client.__init__ = patched_httpx_init
+
+        except ImportError:
+            # httpx patch is optional
             pass
 
         _PATCH_APPLIED = True

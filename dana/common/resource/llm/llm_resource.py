@@ -347,6 +347,17 @@ class LLMResource(BaseResource):
         if not self._client:
             self.debug("Initializing AISuite client...")
 
+            # Explicitly apply the AISuite patch to fix the proxies issue
+            if not is_patch_applied():
+                self.debug("Applying AISuite patch for proxies issue...")
+                patch_success = apply_aisuite_patch()
+                if patch_success:
+                    self.debug("AISuite patch applied successfully")
+                else:
+                    self.warning("Failed to apply AISuite patch - may encounter proxies issue")
+            else:
+                self.debug("AISuite patch already applied")
+
             # Get provider configuration for current model
             provider_configs = self._get_provider_config_for_current_model()
 
@@ -357,7 +368,7 @@ class LLMResource(BaseResource):
 
             try:
                 # Workaround for AISuite 0.1.11 proxies bug
-                # Pass through provider configs unchanged - config file controls parameters
+                # Clean provider configs to remove unsupported parameters
                 provider_configs = self._clean_provider_configs_for_aisuite(provider_configs)
 
                 self.debug(f"Initializing AISuite client with provider_configs: {provider_configs}")
@@ -373,19 +384,41 @@ class LLMResource(BaseResource):
                     self.warning("LLM client initialized without a model")
                     self._is_available = False
             except Exception as e:
-                self.error(f"Failed to initialize AISuite client: {e}")
+                error_msg = str(e)
+                if "proxies" in error_msg:
+                    self.error(f"AISuite proxies error (patch may not be working): {e}")
+                    self.error("Try restarting the application or check AISuite/Anthropic versions")
+                else:
+                    self.error(f"Failed to initialize AISuite client: {e}")
                 self._is_available = False
 
     def _clean_provider_configs_for_aisuite(self, provider_configs: dict[str, Any]) -> dict[str, Any]:
-        """Pass through provider configs without filtering - config file controls parameters.
+        """Clean provider configs to remove AISuite-unsupported parameters.
 
         Args:
             provider_configs: Original provider configurations
 
         Returns:
-            Provider configurations passed through unchanged
+            Provider configurations with unsupported parameters removed
         """
-        return provider_configs
+        # Remove problematic parameters that AISuite doesn't support
+        cleaned_configs = {}
+        unsupported_params = {"proxies", "model_name", "api_type", "http_client"}
+
+        for provider, config in provider_configs.items():
+            if isinstance(config, dict):
+                # Filter out unsupported parameters
+                cleaned_config = {k: v for k, v in config.items() if k not in unsupported_params}
+                cleaned_configs[provider] = cleaned_config
+
+                # Log if we removed any parameters
+                removed_params = set(config.keys()) - set(cleaned_config.keys())
+                if removed_params:
+                    self.debug(f"Removed unsupported parameters from {provider}: {removed_params}")
+            else:
+                cleaned_configs[provider] = config
+
+        return cleaned_configs
 
     async def cleanup(self) -> None:
         """Cleanup resources."""
@@ -782,13 +815,13 @@ class LLMResource(BaseResource):
         else:
             # Standard provider:model format
             provider = model_name.split(":", 1)[0] if ":" in model_name else "openai"
-            
+
             # Special handling for Azure: construct deployment URL dynamically
             if provider == "azure" and ":" in model_name:
                 config_copy = provider_config.copy()
                 deployment_name = model_name.split(":", 1)[1]  # Extract model name (e.g., "gpt-4o")
                 base_url = config_copy.get("base_url", "")
-                
+
                 # Construct the full deployment URL if base_url doesn't already include deployment path
                 if base_url and not base_url.endswith(f"/openai/deployments/{deployment_name}"):
                     # Remove trailing slash if present
@@ -797,7 +830,7 @@ class LLMResource(BaseResource):
                     deployment_url = f"{base_url}/openai/deployments/{deployment_name}"
                     config_copy["base_url"] = deployment_url
                     self.debug(f"Constructed Azure deployment URL: {deployment_url}")
-                
+
                 return {provider: config_copy}
             else:
                 return {provider: provider_config}

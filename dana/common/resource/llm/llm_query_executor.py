@@ -274,10 +274,16 @@ class LLMQueryExecutor(Loggable):
         for resource in available_resources.values():
             resource.remove_from_registry()
 
-        return (
-            response
-            if isinstance(response, BaseResponse)
-            else {
+        # Always return dict[str, Any] format
+        if isinstance(response, BaseResponse):
+            # Convert BaseResponse to dict format for consistency
+            return {
+                "choices": response.content.get("choices", []) if isinstance(response.content, dict) else [],
+                "usage": response.content.get("usage", {}) if isinstance(response.content, dict) else {},
+                "model": response.content.get("model", "") if isinstance(response.content, dict) else "",
+            }
+        else:
+            return {
                 "choices": (
                     response.get("choices", [])
                     if isinstance(response, dict)
@@ -290,7 +296,6 @@ class LLMQueryExecutor(Loggable):
                     response.get("model", "") if isinstance(response, dict) else (response.model if hasattr(response, "model") else "")
                 ),
             }
-        )
 
     async def query_once(
         self, request: dict[str, Any], build_request_params: Callable[[dict[str, Any]], dict[str, Any]] | None = None

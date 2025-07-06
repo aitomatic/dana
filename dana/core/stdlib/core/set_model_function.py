@@ -14,6 +14,7 @@ from typing import Any
 
 from dana.common.config.config_loader import ConfigLoader
 from dana.common.exceptions import LLMError, SandboxError
+from dana.common.resource.llm.llm_configuration_manager import LLMConfigurationManager
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.utils.logging import DANA_LOGGER
 from dana.core.lang.sandbox_context import SandboxContext
@@ -186,7 +187,7 @@ def set_model_function(
         context: The runtime context for variable resolution.
         model: The model name to set (e.g., "gpt-4", "claude", "openai:gpt-4o").
                Supports partial names that will be matched to available models.
-               If None or not provided, returns the currently selected model.
+               If None or not provided, displays current model and available options.
         options: Optional parameters for the function.
                - exact_match_only (bool): If True, disable fuzzy matching (default: False)
 
@@ -199,8 +200,8 @@ def set_model_function(
         LLMError: If the model is invalid or unavailable.
 
     Example:
-        # Get current model
-        current = set_model()
+        # Display current model and available options
+        set_model()
 
         # Set exact match
         set_model("openai:gpt-4o")
@@ -218,18 +219,34 @@ def set_model_function(
     # Get the current LLM resource from context
     llm_resource = context.get("system:llm_resource")
 
-    # If no model argument provided, return the current model
+    # If no model argument provided, display comprehensive information
     if model is None:
-        if llm_resource is None:
-            logger.warning("No LLM resource found in context, no current model set")
-            return "None"
+        # Get current model
+        current_model = "None"
+        if llm_resource is not None and llm_resource.model is not None:
+            current_model = llm_resource.model
 
-        current_model = llm_resource.model
-        if current_model is None:
-            logger.warning("LLM resource exists but no model is currently set")
-            return "None"
+        # Get only available models (with API keys)
+        config_manager = LLMConfigurationManager()
+        available_models = config_manager.get_available_models()
 
-        logger.info(f"Current model: {current_model}")
+        # Display concise information
+        print(f"Current model: {current_model}")
+
+        if available_models:
+            print("Available models:")
+            for model_name in available_models:
+                marker = "✓" if model_name == current_model else " "
+                print(f"  {marker} {model_name}")
+
+            print("\nExamples:")
+            print("  set_model('gpt-4')    # fuzzy match")
+            print("  set_model('claude')   # fuzzy match")
+            print("  set_model('openai')   # best provider model")
+        else:
+            print("No models available - check your API keys in environment variables")
+            print("Common API keys: OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY")
+
         return current_model
 
     # Validate model argument
