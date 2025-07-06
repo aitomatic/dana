@@ -54,6 +54,7 @@ class Dana:
         self._use_subprocess_isolation = use_subprocess_isolation
         self._call_count = 0
         self._imports_enabled = False
+        self._closed = False
 
         # TODO: Remove this check when subprocess isolation is implemented
         if use_subprocess_isolation and not SUBPROCESS_ISOLATION_CONFIG["enabled"]:
@@ -190,6 +191,11 @@ class Dana:
 
     def close(self):
         """Close the Dana instance and cleanup resources."""
+        if self._closed:
+            return
+
+        self._closed = True
+
         if self._imports_enabled:
             self.disable_module_imports()
 

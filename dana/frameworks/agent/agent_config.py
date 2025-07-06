@@ -133,7 +133,7 @@ class AgentConfig(BaseModel, Loggable):
             "google": ["GOOGLE_API_KEY"],
             "deepseek": ["DEEPSEEK_API_KEY"],
             "cohere": ["COHERE_API_KEY"],
-            "azure": ["AZURE_OPENAI_API_KEY"],
+            "azure": ["AZURE_OPENAI_KEY"],
             "ibm_watsonx": ["WATSONX_API_KEY", "WATSONX_PROJECT_ID"],
             "local": ["LOCAL_API_KEY"],  # Optional for local models
         }

@@ -1,0 +1,4 @@
+#!/bin/bash -
+export GITFLOW_DIR=$(dirname "$0")
+exec "$GITFLOW_DIR/git-flow-dir/git-flow" "$@"
+#exec "/usr/local/Cellar/git-flow/0.4.1_1/libexec/bin/git-flow" "$@"

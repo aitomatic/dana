@@ -16,7 +16,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
         """Set up test fixtures."""
         # Clear environment variables for clean tests
         self.original_env = {}
-        for key in ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GOOGLE_API_KEY"]:
+        for key in ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GOOGLE_API_KEY", "DANA_MOCK_LLM"]:
             self.original_env[key] = os.environ.get(key)
             if key in os.environ:
                 del os.environ[key]
@@ -41,15 +41,15 @@ class TestLLMResourceRefactored(unittest.TestCase):
         self.assertEqual(llm._config_manager.explicit_model, "openai:gpt-4o-mini")
 
     def test_model_property_uses_config_manager(self):
-        """Test that model property uses configuration manager."""
+        """Test that model property stays in sync with configuration manager."""
         os.environ["OPENAI_API_KEY"] = "test-key"
 
         llm = LLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
-        # Verify getter uses config manager
+        # Verify getter returns the correct model
         self.assertEqual(llm.model, "openai:gpt-4o-mini")
 
-        # Verify that the property comes from config manager
+        # Verify that the property and config manager are in sync
         self.assertEqual(llm.model, llm._config_manager.selected_model)
 
     def test_model_property_setter_uses_config_manager(self):
@@ -70,15 +70,20 @@ class TestLLMResourceRefactored(unittest.TestCase):
         self.assertEqual(llm._model, "anthropic:claude-3-5-sonnet-20241022")
 
     @patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}, clear=True)  # Only have OpenAI key
-    def test_model_property_setter_error_handling(self):
-        """Test model property setter error handling."""
+    def test_model_property_setter_permissive_behavior(self):
+        """Test model property setter permissive behavior."""
         llm = LLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
         # Try to set unavailable model (no API key for someprovider)
-        with self.assertRaises(LLMError) as context:
-            llm.model = "someprovider:unavailable-model"
+        # This should succeed now with the permissive approach
+        llm.model = "someprovider:unavailable-model"
 
-        self.assertIn("Invalid or unavailable model", str(context.exception))
+        # Verify the model was set successfully
+        self.assertEqual(llm.model, "someprovider:unavailable-model")
+        
+        # Verify both internal model and config manager are in sync
+        self.assertEqual(llm._model, "someprovider:unavailable-model")
+        self.assertEqual(llm._config_manager.selected_model, "someprovider:unavailable-model")
 
     def test_validate_model_uses_config_manager(self):
         """Test that _validate_model uses configuration manager."""
