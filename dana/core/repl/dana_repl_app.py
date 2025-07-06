@@ -64,12 +64,12 @@ import sys
 
 from dana.common.mixins.loggable import Loggable
 from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.terminal_utils import ColorScheme, supports_color
 from dana.core.lang.log_manager import LogLevel
 from dana.core.repl.commands import CommandHandler
 from dana.core.repl.input import InputProcessor
 from dana.core.repl.repl import REPL
 from dana.core.repl.ui import OutputFormatter, PromptSessionManager, WelcomeDisplay
-from dana.common.terminal_utils import ColorScheme, supports_color
 
 # Map Dana LogLevel to Python logging levels
 LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}

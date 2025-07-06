@@ -13,9 +13,9 @@ from typing import Any
 
 from dana.common.mixins.loggable import Loggable
 from dana.common.utils.misc import Misc
-from opendxa.dana.common.exceptions import StateError
 from dana.core.lang.parser.ast import Identifier
 from dana.core.lang.sandbox_context import SandboxContext
+from opendxa.dana.common.exceptions import StateError
 
 
 class IdentifierResolver(Loggable):

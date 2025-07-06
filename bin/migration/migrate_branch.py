@@ -7,14 +7,12 @@ to new dana.* import paths while preserving git history and providing rollback c
 """
 
 import argparse
-import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 
-def run_command(cmd: List[str], cwd: str = None) -> Tuple[int, str, str]:
+def run_command(cmd: list[str], cwd: str = None) -> tuple[int, str, str]:
     """Run a shell command and return exit code, stdout, stderr."""
     try:
         result = subprocess.run(
@@ -59,7 +57,7 @@ def create_backup_branch(branch_name: str) -> str:
         raise Exception(f"Failed to create backup branch: {stderr}")
 
 
-def find_python_files(directory: Path) -> List[Path]:
+def find_python_files(directory: Path) -> list[Path]:
     """Find all Python files in the given directory."""
     python_files = []
     for file_path in directory.rglob("*.py"):
@@ -114,7 +112,7 @@ def convert_imports_in_file(file_path: Path, dry_run: bool = False) -> int:
     }
     
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, encoding='utf-8') as f:
             content = f.read()
         
         original_content = content

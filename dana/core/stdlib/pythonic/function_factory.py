@@ -11,10 +11,10 @@ MIT License
 from enum import Enum
 from typing import Any
 
+from dana.common.exceptions import SandboxError
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata, FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.common.exceptions import SandboxError
 
 
 class UnsupportedReason(Enum):

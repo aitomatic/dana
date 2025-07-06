@@ -6,8 +6,8 @@ special commands and coordinates with the help formatter.
 """
 
 from dana.common.mixins.loggable import Loggable
-from dana.core.repl.repl import REPL
 from dana.common.terminal_utils import ColorScheme
+from dana.core.repl.repl import REPL
 
 from .help_formatter import HelpFormatter
 
@@ -66,7 +66,7 @@ class CommandHandler(Loggable):
         if not self.repl.transcoder:
             print(f"{self.colors.error('❌ No LLM resource available for transcoding')}")
             print("Configure an LLM resource by setting one of these environment variables:")
-            print(f"  {self.colors.accent('- OPENAI_API_KEY, ANTHROPIC_API_KEY, AZURE_OPENAI_KEY, etc.')}")
+            print(f"  {self.colors.accent('- OPENAI_API_KEY, ANTHROPIC_API_KEY, AZURE_OPENAI_API_KEY, etc.')}")
             return
 
         print("Testing NLP transcoder with common examples...")

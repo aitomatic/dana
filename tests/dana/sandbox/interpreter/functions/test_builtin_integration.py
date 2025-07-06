@@ -7,9 +7,9 @@ through the Dana interpreter with actual Dana code execution.
 
 import pytest
 
+from dana.common.exceptions import SandboxError
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.common.exceptions import SandboxError
 
 
 @pytest.mark.deep

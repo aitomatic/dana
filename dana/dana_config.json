@@ -1,6 +1,8 @@
 {
     "llm": {
         "preferred_models": [
+            "azure:gpt-4o",
+            "azure:gpt-4o-mini",
             "openai:gpt-4o-mini",
             "local",
             "openai:gpt-4o",
@@ -17,42 +19,35 @@
             "local": {
                 "api_key": "env:LOCAL_API_KEY",
                 "base_url": "http://localhost:8000/v1",
-                "model_name": "microsoft/Phi-3.5-mini-instruct",
-                "api_type": "openai"
+                "model_name": "microsoft/Phi-3.5-mini-instruct"
             },
             "openai": {
                 "api_key": "env:OPENAI_API_KEY",
-                "base_url": "https://api.openai.com/v1",
-                "api_type": "openai"
+                "base_url": "https://api.openai.com/v1"
             },
             "anthropic": {
-                "api_key": "env:ANTHROPIC_API_KEY",
-                "api_type": "anthropic"
+                "api_key": "env:ANTHROPIC_API_KEY"
             },
             "groq": {
-                "api_key": "env:GROQ_API_KEY",
-                "api_type": "openai"
+                "api_key": "env:GROQ_API_KEY"
             },
             "mistral": {
-                "api_key": "env:MISTRAL_API_KEY",
-                "api_type": "openai"
+                "api_key": "env:MISTRAL_API_KEY"
             },
             "google": {
-                "api_key": "env:GOOGLE_API_KEY",
-                "api_type": "openai"
+                "api_key": "env:GOOGLE_API_KEY"
             },
             "deepseek": {
-                "api_key": "env:DEEPSEEK_API_KEY",
-                "api_type": "openai"
+                "api_key": "env:DEEPSEEK_API_KEY"
             },
             "cohere": {
-                "api_key": "env:COHERE_API_KEY",
-                "api_type": "openai"
+                "api_key": "env:COHERE_API_KEY"
             },
             "azure": {
-                "api_key": "env:AZURE_OPENAI_KEY",
-                "base_url": "https://your-company.openai.azure.com/",
-                "api_type": "openai"
+                "api_key": "env:AZURE_OPENAI_API_KEY",
+                "base_url": "env:AZURE_OPENAI_API_URL",
+                "api_version": "2025-04-01-preview",
+                "api_type": "azure"
             },
             "ibm_watsonx": {
                 "api_key": "env:WATSONX_API_KEY",

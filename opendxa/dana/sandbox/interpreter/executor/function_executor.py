@@ -20,7 +20,6 @@ Discord: https://discord.gg/6jGD4PYk
 import logging
 from typing import Any
 
-from opendxa.dana.common.exceptions import SandboxError
 from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
 from dana.core.lang.interpreter.executor.function_error_handling import FunctionExecutionErrorHandler
 from dana.core.lang.interpreter.executor.function_name_utils import FunctionNameInfo
@@ -33,6 +32,7 @@ from dana.core.lang.parser.ast import (
     FunctionDefinition,
 )
 from dana.core.lang.sandbox_context import SandboxContext
+from opendxa.dana.common.exceptions import SandboxError
 
 
 class FunctionExecutor(BaseExecutor):
@@ -122,6 +122,7 @@ class FunctionExecutor(BaseExecutor):
             context.set(f"local:{node.name.name}", wrapped_func)
             # Register as agent method if appropriate
             from opendxa.dana.agent.agent_system import register_agent_method_from_function_def
+
             register_agent_method_from_function_def(node, wrapped_func)
             return wrapped_func
         else:
@@ -129,6 +130,7 @@ class FunctionExecutor(BaseExecutor):
             context.set(f"local:{node.name.name}", dana_func)
             # Register as agent method if appropriate
             from opendxa.dana.agent.agent_system import register_agent_method_from_function_def
+
             register_agent_method_from_function_def(node, dana_func)
             return dana_func
 

@@ -6,8 +6,8 @@ help messages and displays available functions.
 """
 
 from dana.common.mixins.loggable import Loggable
-from dana.core.repl.repl import REPL
 from dana.common.terminal_utils import ColorScheme, print_header
+from dana.core.repl.repl import REPL
 
 
 class HelpFormatter(Loggable):

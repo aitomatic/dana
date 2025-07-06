@@ -7,14 +7,13 @@ testing both old and new import paths to ensure compatibility.
 """
 
 import argparse
-import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import List, Tuple, Dict, Any
+from typing import Any
 
 
-def run_command(cmd: List[str], cwd: str = None) -> Tuple[int, str, str]:
+def run_command(cmd: list[str], cwd: str = None) -> tuple[int, str, str]:
     """Run a shell command and return exit code, stdout, stderr."""
     try:
         result = subprocess.run(
@@ -37,7 +36,7 @@ def get_current_branch() -> str:
         raise Exception(f"Failed to get current branch: {stderr}")
 
 
-def test_import_compatibility() -> Dict[str, Any]:
+def test_import_compatibility() -> dict[str, Any]:
     """Test that both old and new import paths work."""
     
     print("🔍 Testing import compatibility...")
@@ -183,7 +182,7 @@ except ImportError as e:
     return results
 
 
-def run_existing_tests() -> Dict[str, Any]:
+def run_existing_tests() -> dict[str, Any]:
     """Run existing test suites to verify nothing is broken."""
     
     print("\n🧪 Running existing tests...")
@@ -233,7 +232,7 @@ def run_existing_tests() -> Dict[str, Any]:
     return results
 
 
-def check_syntax_errors() -> Dict[str, Any]:
+def check_syntax_errors() -> dict[str, Any]:
     """Check for syntax errors in Python files."""
     
     print("\n🔍 Checking for syntax errors...")
@@ -255,7 +254,7 @@ def check_syntax_errors() -> Dict[str, Any]:
     
     for file_path in python_files:
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 content = f.read()
             
             # Try to compile the file
@@ -304,21 +303,21 @@ def validate_branch(branch_name: str) -> None:
     print("=" * 60)
     
     # Import compatibility
-    print(f"📦 Import Compatibility:")
+    print("📦 Import Compatibility:")
     print(f"  ✅ New imports: {import_results['new_imports_passed']}")
     print(f"  ❌ New imports: {import_results['new_imports_failed']}")
     print(f"  ✅ Old imports (compatibility): {import_results['old_imports_passed']}")
     print(f"  ❌ Old imports (compatibility): {import_results['old_imports_failed']}")
     
     # Test results
-    print(f"\n🧪 Test Results:")
+    print("\n🧪 Test Results:")
     if test_results["tests_run"]:
         print(f"  {'✅' if test_results['tests_passed'] else '❌'} Tests {'passed' if test_results['tests_passed'] else 'failed'}")
     else:
-        print(f"  ℹ️  No tests found or run")
+        print("  ℹ️  No tests found or run")
     
     # Syntax check
-    print(f"\n🔍 Syntax Check:")
+    print("\n🔍 Syntax Check:")
     print(f"  📝 Files checked: {syntax_results['files_checked']}")
     print(f"  {'✅' if syntax_results['syntax_errors'] == 0 else '❌'} Syntax errors: {syntax_results['syntax_errors']}")
     

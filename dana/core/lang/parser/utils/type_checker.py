@@ -19,6 +19,7 @@ Discord: https://discord.gg/6jGD4PYk
 
 from typing import Any, Optional
 
+from dana.common.exceptions import TypeError
 from dana.core.lang.parser.ast import (
     AssertStatement,
     Assignment,
@@ -52,7 +53,6 @@ from dana.core.lang.parser.ast import (
     UseStatement,
     WhileLoop,
 )
-from dana.common.exceptions import TypeError
 
 
 class DanaType:

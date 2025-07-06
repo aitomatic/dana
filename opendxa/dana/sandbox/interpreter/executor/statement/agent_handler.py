@@ -11,7 +11,6 @@ MIT License
 from typing import Any
 
 from dana.common.mixins.loggable import Loggable
-from opendxa.dana.common.exceptions import SandboxError
 from dana.core.lang.parser.ast import (
     AgentDefinition,
     AgentPoolStatement,
@@ -22,6 +21,7 @@ from dana.core.lang.parser.ast import (
     UseStatement,
 )
 from dana.core.lang.sandbox_context import SandboxContext
+from opendxa.dana.common.exceptions import SandboxError
 
 
 class AgentHandler(Loggable):
@@ -234,7 +234,7 @@ class AgentHandler(Loggable):
             None (agent definitions don't produce a value, they register a type)
         """
         # Import here to avoid circular imports
-        from opendxa.dana.agent.agent_system import register_agent_from_ast, AgentTypeRegistry
+        from opendxa.dana.agent.agent_system import AgentTypeRegistry, register_agent_from_ast
 
         # Create and register the agent type using the new struct-like system
         try:

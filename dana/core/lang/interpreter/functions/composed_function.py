@@ -10,9 +10,9 @@ MIT License
 
 from typing import Any
 
+from dana.common.exceptions import SandboxError
 from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.common.exceptions import SandboxError
 
 
 class ComposedFunction(SandboxFunction):

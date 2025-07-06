@@ -11,9 +11,9 @@ MIT License
 from typing import Any
 
 from dana.common.mixins.loggable import Loggable
-from opendxa.dana.common.exceptions import SandboxError
 from dana.core.lang.parser.ast import BinaryExpression, BinaryOperator
 from dana.core.lang.sandbox_context import SandboxContext
+from opendxa.dana.common.exceptions import SandboxError
 
 
 class BinaryOperationHandler(Loggable):

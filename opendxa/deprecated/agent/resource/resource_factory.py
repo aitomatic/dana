@@ -2,11 +2,11 @@
 
 from typing import Any
 
-# Local imports
-from dana.frameworks.agent.resource.expert_resource import ExpertResource
-
 # First-party imports
 from dana.common.resource import BaseResource, LLMResource
+
+# Local imports
+from dana.frameworks.agent.resource.expert_resource import ExpertResource
 
 
 class ResourceFactory:

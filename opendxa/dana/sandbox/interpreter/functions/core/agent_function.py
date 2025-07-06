@@ -1,7 +1,7 @@
 from dana.common.resource.base_resource import BaseResource
 from dana.common.utils.misc import Misc
-from opendxa.dana.agent.abstract_dana_agent import AbstractDanaAgent
 from dana.core.lang.sandbox_context import SandboxContext
+from opendxa.dana.agent.abstract_dana_agent import AbstractDanaAgent
 
 
 def agent_function(context: SandboxContext, *args, _name: str | None = None, **kwargs) -> AbstractDanaAgent:

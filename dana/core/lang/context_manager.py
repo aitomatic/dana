@@ -20,9 +20,9 @@ Discord: https://discord.gg/6jGD4PYk
 
 from typing import Any
 
-from dana.core.lang.sandbox_context import SandboxContext
 from dana.common.exceptions import StateError
 from dana.common.runtime_scopes import RuntimeScopes
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class ContextManager:

@@ -6,21 +6,21 @@ This module defines the fundamental abstractions used throughout the knowledge i
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
 from datetime import datetime
+from typing import Any
 
 
 @dataclass
 class Document:
     """Represents a document to be processed for knowledge extraction."""
-    
+
     id: str
     source: str
     content: str
     format: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
     created_at: datetime
-    
+
     def __post_init__(self):
         """Validate document fields after initialization."""
         if not self.id:
@@ -34,24 +34,24 @@ class Document:
 @dataclass
 class ParsedDocument:
     """Represents a parsed document with extracted structure."""
-    
+
     document: Document
     text_content: str
-    structured_data: Dict[str, Any]
-    metadata: Dict[str, Any]
+    structured_data: dict[str, Any]
+    metadata: dict[str, Any]
 
 
-@dataclass 
+@dataclass
 class KnowledgePoint:
     """Meta-level knowledge point extracted from documents."""
-    
+
     id: str
     type: str
     content: str
-    context: Dict[str, Any]
+    context: dict[str, Any]
     confidence: float
-    metadata: Dict[str, Any]
-    
+    metadata: dict[str, Any]
+
     def __post_init__(self):
         """Validate knowledge point fields."""
         if not (0.0 <= self.confidence <= 1.0):
@@ -61,44 +61,44 @@ class KnowledgePoint:
 @dataclass
 class ExpandedKnowledge:
     """Knowledge with expanded context from similarity search."""
-    
+
     knowledge: KnowledgePoint
-    context: List[str]
-    relationships: List[Dict[str, Any]]
+    context: list[str]
+    relationships: list[dict[str, Any]]
     confidence: float
 
 
 @dataclass
 class ValidationResult:
     """Result of knowledge validation process."""
-    
+
     is_valid: bool
     confidence: float
-    issues: List[str]
-    suggestions: List[str]
-    metadata: Dict[str, Any]
+    issues: list[str]
+    suggestions: list[str]
+    metadata: dict[str, Any]
 
 
 @dataclass
 class Knowledge:
     """Final extracted and validated knowledge."""
-    
+
     id: str
     content: str
     type: str
-    context: Dict[str, Any]
+    context: dict[str, Any]
     validation: ValidationResult
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class DocumentBase(ABC):
     """Abstract base class for document-related operations."""
-    
+
     @abstractmethod
     def load_document(self, source: str) -> Document:
         """Load document from source."""
         pass
-    
+
     @abstractmethod
     def validate_document(self, document: Document) -> bool:
         """Validate document format and content."""
@@ -107,12 +107,12 @@ class DocumentBase(ABC):
 
 class ProcessorBase(ABC):
     """Abstract base class for processing operations."""
-    
+
     @abstractmethod
     def process(self, input_data: Any) -> Any:
         """Process input data and return result."""
         pass
-    
+
     @abstractmethod
     def validate_input(self, input_data: Any) -> bool:
         """Validate input data before processing."""
@@ -121,13 +121,13 @@ class ProcessorBase(ABC):
 
 class KnowledgeBase(ABC):
     """Abstract base class for knowledge operations."""
-    
+
     @abstractmethod
-    def extract_knowledge(self, document: Document) -> List[KnowledgePoint]:
+    def extract_knowledge(self, document: Document) -> list[KnowledgePoint]:
         """Extract knowledge points from document."""
         pass
-    
+
     @abstractmethod
     def validate_knowledge(self, knowledge: KnowledgePoint) -> ValidationResult:
         """Validate extracted knowledge."""
-        pass 
+        pass

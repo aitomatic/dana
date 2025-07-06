@@ -1,19 +1,22 @@
+from collections.abc import Callable
+from functools import wraps
+from pathlib import Path
+
 from dana.common.resource.base_resource import BaseResource
 from dana.common.utils.misc import Misc
 from dana.core.lang.sandbox_context import SandboxContext
-from pathlib import Path
-from typing import Callable
-from functools import wraps
 
 
 def create_function_with_better_doc_string(func: Callable, doc_string: str) -> Callable:
-    """Create a function with a better doc string.
-    """
+    """Create a function with a better doc string."""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)
+
     wrapper.__doc__ = doc_string
     return wrapper
+
 
 def use_function(context: SandboxContext, function_name: str, *args, _name: str | None = None, **kwargs) -> BaseResource:
     """Use a function in the context.
@@ -52,6 +55,7 @@ def use_function(context: SandboxContext, function_name: str, *args, _name: str 
         return resource
     elif function_name.lower() == "file_reader":
         from opendxa.contrib.rag_resource.common.resource.rag.file_reader_resource import FileReaderResource
+
         resource = FileReaderResource(*args, name=_name, **kwargs)
         context.set_resource(_name, resource)
         return resource

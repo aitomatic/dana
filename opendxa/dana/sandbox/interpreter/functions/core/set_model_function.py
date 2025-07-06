@@ -14,10 +14,11 @@ from typing import Any
 
 from dana.common.config.config_loader import ConfigLoader
 from dana.common.exceptions import LLMError
+from dana.common.resource.llm.llm_configuration_manager import LLMConfigurationManager
 from dana.common.resource.llm_resource import LLMResource
 from dana.common.utils.logging import DXA_LOGGER
-from opendxa.dana.common.exceptions import SandboxError
 from dana.core.lang.sandbox_context import SandboxContext
+from opendxa.dana.common.exceptions import SandboxError
 
 
 def _get_available_model_names() -> list[str]:
@@ -175,7 +176,7 @@ def _find_closest_model_match(model_input: str, available_models: list[str]) -> 
 
 def set_model_function(
     context: SandboxContext,
-    model: str,
+    model: str | None = None,
     options: dict[str, Any] | None = None,
 ) -> str:
     """Execute the set_model function to change the LLM model in the current context.
@@ -187,18 +188,23 @@ def set_model_function(
         context: The runtime context for variable resolution.
         model: The model name to set (e.g., "gpt-4", "claude", "openai:gpt-4o").
                Supports partial names that will be matched to available models.
+               If None or not provided, displays current model and available options.
         options: Optional parameters for the function.
                - exact_match_only (bool): If True, disable fuzzy matching (default: False)
 
     Returns:
-        The name of the model that was actually set (may be different from input if fuzzy matched).
+        The name of the model that was actually set (may be different from input if fuzzy matched),
+        or the currently selected model if no model argument is provided.
 
     Raises:
         SandboxError: If the function execution fails or no suitable model is found.
         LLMError: If the model is invalid or unavailable.
 
     Example:
-        # Exact match
+        # Display current model and available options
+        set_model()
+
+        # Set exact match
         set_model("openai:gpt-4o")
 
         # Fuzzy match examples
@@ -211,6 +217,40 @@ def set_model_function(
     if options is None:
         options = {}
 
+    # Get the current LLM resource from context
+    llm_resource = context.get("system:llm_resource")
+
+    # If no model argument provided, display comprehensive information
+    if model is None:
+        # Get current model
+        current_model = "None"
+        if llm_resource is not None and llm_resource.model is not None:
+            current_model = llm_resource.model
+
+        # Get only available models (with API keys)
+        config_manager = LLMConfigurationManager()
+        available_models = config_manager.get_available_models()
+
+        # Display concise information
+        print(f"Current model: {current_model}")
+
+        if available_models:
+            print("Available models:")
+            for model_name in available_models:
+                marker = "✓" if model_name == current_model else " "
+                print(f"  {marker} {model_name}")
+
+            print("\nExamples:")
+            print("  set_model('gpt-4')    # fuzzy match")
+            print("  set_model('claude')   # fuzzy match")
+            print("  set_model('openai')   # best provider model")
+        else:
+            print("No models available - check your API keys in environment variables")
+            print("Common API keys: OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY")
+
+        return current_model
+
+    # Validate model argument
     if not model:
         raise SandboxError("set_model function requires a non-empty model name")
 
@@ -234,9 +274,6 @@ def set_model_function(
                 model = matched_model
             elif not matched_model:
                 logger.warning(f"No close match found for '{original_input}', trying as-is")
-
-        # Get the current LLM resource from context
-        llm_resource = context.get("system:llm_resource")
 
         if llm_resource is None:
             # If no LLM resource exists, create a new one with the specified model

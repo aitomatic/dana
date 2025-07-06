@@ -7,8 +7,8 @@ This module provides the ModuleAgent class for wrapping Dana modules as agents.
 import inspect
 from typing import Any
 
-from opendxa.dana.agent.abstract_dana_agent import AbstractDanaAgent
 from opendxa.contrib.mcp_a2a.resource.a2a.common.module_agent_utils import get_module_agent_info
+from opendxa.dana.agent.abstract_dana_agent import AbstractDanaAgent
 
 
 class ModuleAgent(AbstractDanaAgent):

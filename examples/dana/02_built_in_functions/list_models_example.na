@@ -1,80 +1,53 @@
-# Example: Using the list_models function in Dana
-# This demonstrates how to list available LLM models in preferred order
+# Example: Using the set_model function to view and set models in Dana
+# This demonstrates the new concise format that only shows available models
 
-log("🚀 Starting list_models example")
+log("🚀 Starting enhanced set_model example")
 
-# === LIST ALL MODELS ===
-log("1. Listing all available models in preferred order:")
-all_models = list_models()
-log(f"Total models available: {len(all_models)}")
+# === VIEW CURRENT MODEL AND AVAILABLE OPTIONS ===
+log("1. Viewing current model and available options (concise format):")
+current_model = set_model()  # No parameters - displays concise information
+log(f"Current model returned: {current_model}")
 
-log("Top 10 preferred models:")
-max_to_show = 10
-if len(all_models) < max_to_show:
-    max_to_show = len(all_models)
+# === SET MODELS WITH FAULT-TOLERANT NAMES ===
+log("2. Setting models with fault-tolerant names:")
 
-for i in range(max_to_show):
-    model = all_models[i]
-    position = i + 1
-    log(f"  {position:2d}. {model}")
-
-# === FILTER BY PROVIDER ===
-log("2. Filtering models by provider:")
-
-# OpenAI models
-openai_models = list_models({"provider": "openai"})
-log(f"OpenAI models ({len(openai_models)} found):")
-for model in openai_models:
-    log(f"  • {model}")
-
-# Anthropic models  
-anthropic_models = list_models({"provider": "anthropic"})
-log(f"Anthropic models ({len(anthropic_models)} found):")
-for model in anthropic_models:
-    log(f"  • {model}")
-
-# DeepSeek models
-deepseek_models = list_models({"provider": "deepseek"})
-log(f"DeepSeek models ({len(deepseek_models)} found):")
-for model in deepseek_models:
-    log(f"  • {model}")
-
-# === PRACTICAL USAGE ===
-log("3. Practical usage - setting model to top choice:")
-if len(all_models) > 0:
-    top_choice = all_models[0]
-    log(f"Setting model to top preference: {top_choice}")
-    current_model = set_model(top_choice)
-    log(f"✅ Model set to: {current_model}")
+# Using partial names - these will be fuzzy matched
+log("Setting model with 'gpt-4' (partial name)...")
+model = set_model("gpt-4")
+log(f"✅ Model set to: {model}")
 
 # Test the model
 response = reason("What is 2+2?")
-log(f"Response from {current_model}: {response}")
+log(f"Response from {model}: {response}")
 
-# === PROVIDER-SPECIFIC SELECTION ===
-log("4. Selecting best OpenAI model:")
-if len(openai_models) > 0:
-    best_openai = openai_models[0]
-    log(f"Best OpenAI model: {best_openai}")
-    
-    # This should be equivalent to fuzzy matching with "openai"
-    fuzzy_match = set_model("openai")
-    log(f"Fuzzy match for 'openai': {fuzzy_match}")
-    
-    if best_openai == fuzzy_match:
-        log("✅ Fuzzy matching correctly selects the top preferred model!")
-    else:
-        log(f"⚠️  Mismatch: top={best_openai}, fuzzy={fuzzy_match}")
+# Using provider name - matches best model for that provider
+log("Setting model with 'claude' (provider name)...")
+model = set_model("claude")
+log(f"✅ Model set to: {model}")
 
-log("✅ list_models example completed successfully!")
+response = reason("What is the capital of France?")
+log(f"Response from {model}: {response}")
 
-log("📝 Key benefits of list_models:")
-log("  • See all available models in your preferred order")
-log("  • Filter by provider to find specific models")
-log("  • Understand why set_model('openai') picks a specific model")
-log("  • Choose models programmatically based on preferences")
+# Using case-insensitive matching
+log("Setting model with 'GEMINI' (case insensitive)...")
+model = set_model("GEMINI")
+log(f"✅ Model set to: {model}")
 
-# Note: Model availability depends on:
-# 1. Configuration in dana_config.json (under llm.preferred_models)
-# 2. Available API keys in your environment
-# 3. Whether you're in mock mode (DANA_MOCK_LLM=true) 
+response = reason("Explain machine learning in one sentence.")
+log(f"Response from {model}: {response}")
+
+# === VIEWING MODELS AGAIN ===
+log("3. Viewing models again to see current selection:")
+current_model = set_model()  # Shows updated current model with checkmark
+
+log("✅ Enhanced set_model example completed successfully!")
+
+log("📝 Key benefits of the new set_model function:")
+log("  • Concise output - only shows models you can actually use")
+log("  • Only displays models with available API keys")
+log("  • Clear indication of current model with ✓ marker")
+log("  • Simple examples for common usage patterns")
+log("  • Fast and focused - no unnecessary information")
+
+# Note: Only models with API keys in your environment will be shown:
+# OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY, DEEPSEEK_API_KEY, etc. 

@@ -33,10 +33,10 @@ from lark import Lark, Tree
 from lark.indenter import PythonIndenter
 
 from dana.common.mixins.loggable import Loggable
-from opendxa.dana.common.exceptions import ParseError
 from dana.core.lang.parser.ast import Identifier, Program
 from dana.core.lang.parser.transformer.dana_transformer import DanaTransformer
 from dana.core.lang.parser.utils.type_checker import TypeChecker, TypeEnvironment
+from opendxa.dana.common.exceptions import ParseError
 
 # Lark is already imported at line 32, this block is redundant
 LARK_AVAILABLE = True

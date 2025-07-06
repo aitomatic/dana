@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Test Phase 8 imports and functionality."""
 
-import sys
 import os
+import sys
 
 # Add dana directory to path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -10,17 +10,17 @@ sys.path.insert(0, project_root)
 
 # Set up compatibility layer
 from dana.compat import setup_migration_compatibility
+
 setup_migration_compatibility()
 
 # Pre-import new modules to ensure they're available for compatibility
-import dana.integrations
 
 def test_integration_imports():
     """Test importing Integration components from new dana structure."""
     print("Testing Integration import paths...")
     
     try:
-        from dana.integrations import DanaModule, RAGResource, McpResource
+        from dana.integrations import DanaModule, McpResource, RAGResource
         print("✅ dana.integrations: DanaModule, RAGResource, MCPResource")
     except ImportError as e:
         print(f"❌ dana.integrations: {e}")
@@ -85,7 +85,7 @@ def test_mcp_integration():
     print("\nTesting MCP integration...")
     
     try:
-        from dana.integrations.mcp import McpResource, A2AAgent
+        from dana.integrations.mcp import A2AAgent, McpResource
         print("✅ dana.integrations.mcp: MCPResource, A2AAgent")
     except ImportError as e:
         print(f"❌ dana.integrations.mcp: {e}")
@@ -110,7 +110,7 @@ def test_llm_integration():
     print("\nTesting LLM integration...")
     
     try:
-        from dana.integrations.llm import LLMResource, LLMConfigurationManager
+        from dana.integrations.llm import LLMConfigurationManager, LLMResource
         print("✅ dana.integrations.llm: LLMResource, LLMConfigurationManager")
     except ImportError as e:
         print(f"❌ dana.integrations.llm: {e}")
@@ -160,7 +160,6 @@ def test_basic_functionality():
     try:
         # Test that we can create instances
         from dana.integrations.python.to_dana import Dana
-        from dana.integrations.rag import RAGResource
         
         dana_instance = Dana()
         print("✅ Dana instance creation works")

@@ -4,7 +4,6 @@ import os
 import unittest
 from unittest.mock import patch
 
-from dana.common.exceptions import LLMError
 from dana.common.resource.llm.llm_configuration_manager import LLMConfigurationManager
 from dana.common.resource.llm.llm_resource import LLMResource
 
