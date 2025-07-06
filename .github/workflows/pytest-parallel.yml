@@ -302,8 +302,8 @@ jobs:
       run: |
         uv run pytest tests/dana/expected_failures/ -m "not live and not deep" --tb=short -v
 
-  # Common Utilities - Graph, I/O, mixins, resources, logging
-  test-common-utilities:
+  # Common Resources - LLM, AISuite integration, resource management (heavy tests)
+  test-common-resources:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -325,13 +325,45 @@ jobs:
           uv-${{ runner.os }}-
     - name: Install dependencies
       run: uv sync --extra dev
-    - name: Test Common Utilities
+    - name: Test Common Resources
       env:
         OPENDXA_MOCK_LLM: "true"
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/common/ -m "not live and not deep" --tb=short -v
+        uv run pytest tests/common/resource/ -m "not live and not deep" --tb=short -v
+
+  # Common Core - Graph, I/O, mixins, config, utils, state (light tests)
+  test-common-core:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5  # Updated version
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Cache uv dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Common Core
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        uv run pytest tests/common/ -m "not live and not deep" --tb=short -v \
+          --ignore=tests/common/resource/
 
   # Agent Framework - Capabilities and resources
   test-agent-framework:
@@ -478,7 +510,7 @@ jobs:
 
   # Summary job that depends on all test jobs
   test-summary:
-    needs: [test-dana-parser, test-dana-structs, test-dana-functions, test-dana-imports, test-dana-execution, test-dana-sandbox, test-dana-components, test-dana-integrated, test-dana-expected-failures, test-common-utilities, test-agent-framework, test-poet-framework, test-execution-engine, test-miscellaneous]
+    needs: [test-dana-parser, test-dana-structs, test-dana-functions, test-dana-imports, test-dana-execution, test-dana-sandbox, test-dana-components, test-dana-integrated, test-dana-expected-failures, test-common-resources, test-common-core, test-agent-framework, test-poet-framework, test-execution-engine, test-miscellaneous]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -493,7 +525,8 @@ jobs:
               "${{ needs.test-dana-components.result }}" == "failure" || 
               "${{ needs.test-dana-integrated.result }}" == "failure" || 
               "${{ needs.test-dana-expected-failures.result }}" == "failure" || 
-              "${{ needs.test-common-utilities.result }}" == "failure" || 
+              "${{ needs.test-common-resources.result }}" == "failure" || 
+              "${{ needs.test-common-core.result }}" == "failure" || 
               "${{ needs.test-agent-framework.result }}" == "failure" || 
               "${{ needs.test-poet-framework.result }}" == "failure" || 
               "${{ needs.test-execution-engine.result }}" == "failure" || 
