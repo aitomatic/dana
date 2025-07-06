@@ -44,7 +44,7 @@ PREFIX=$(git config --get gitflow.prefix.bugfix)
 usage() {
 	echo "usage: git flow bugfix [list] [-v]"
 	echo "       git flow bugfix start [-F] <name> [<base>]"
-	echo "       git flow bugfix finish [-rFk] <name|nameprefix>"
+	echo "       git flow bugfix finish [-rFkp] <name|nameprefix>"
 	echo "       git flow bugfix publish <name>"
 	echo "       git flow bugfix track <name>"
 	echo "       git flow bugfix diff [<name|nameprefix>]"
@@ -231,6 +231,7 @@ cmd_finish() {
 	DEFINE_boolean fetch false "fetch from $ORIGIN before performing finish" F
 	DEFINE_boolean rebase false "rebase instead of merge" r
 	DEFINE_boolean keep false "keep branch after performing finish" k
+	DEFINE_boolean push false "push to $ORIGIN after performing finish" p
 	parse_args "$@"
 	expand_nameprefix_arg
 
@@ -296,11 +297,11 @@ cmd_finish() {
 
 	# if the user wants to rebase, do that first
 	if flag rebase; then
-		if ! git flow bugfix rebase "$NAME" "$DEVELOP_BRANCH"; then
+		if ! git flow bugfix rebase "$NAME"; then
 			warn "Finish was aborted due to conflicts during rebase."
 			warn "Please finish the rebase manually now."
 			warn "When finished, re-run:"
-			warn "    git flow bugfix finish '$NAME' '$DEVELOP_BRANCH'"
+			warn "    git flow bugfix finish '$NAME'"
 			exit 1
 		fi
 	fi
@@ -338,12 +339,12 @@ helper_finish_cleanup() {
 	require_branch "$BRANCH"
 	require_clean_working_tree
 
-	# delete branch
-	if flag fetch; then
+	# delete remote branch if push flag is set
+	if flag push; then
 		git push "$ORIGIN" ":refs/heads/$BRANCH"
 	fi
 	
-	
+	# delete local branch unless keep flag is set
 	if noflag keep; then
 		git branch -d "$BRANCH"
 	fi
@@ -353,9 +354,9 @@ helper_finish_cleanup() {
 	echo "- The bugfix branch '$BRANCH' was merged into '$DEVELOP_BRANCH'"
 	#echo "- Merge conflicts were resolved"		# TODO: Add this line when it's supported
 	if flag keep; then
-		echo "- Feature branch '$BRANCH' is still available"
+		echo "- Bugfix branch '$BRANCH' is still available"
 	else
-		echo "- Feature branch '$BRANCH' has been removed"
+		echo "- Bugfix branch '$BRANCH' has been removed"
 	fi
 	echo "- You are now on branch '$DEVELOP_BRANCH'"
 	echo
