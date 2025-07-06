@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Test Phase 4 imports and functionality."""
 
-import sys
 import os
+import sys
 
 # Add dana directory to path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -10,17 +10,17 @@ sys.path.insert(0, project_root)
 
 # Set up compatibility layer
 from dana.compat import setup_migration_compatibility
+
 setup_migration_compatibility()
 
 # Pre-import new modules to ensure they're available for compatibility
-import dana.common
 
 def test_common_imports():
     """Test importing common utilities from new dana structure."""
     print("Testing common utility import paths...")
     
     try:
-        from dana.common import DXA_LOGGER, DANA_LOGGER, DXALogger
+        from dana.common import DANA_LOGGER, DXA_LOGGER, DXALogger
         print("✅ dana.common loggers: DXA_LOGGER, DANA_LOGGER, DXALogger")
     except ImportError as e:
         print(f"❌ dana.common loggers: {e}")
@@ -107,7 +107,7 @@ def test_logger_functionality():
     print("\nTesting logger functionality...")
     
     try:
-        from dana.common import DXA_LOGGER, DANA_LOGGER
+        from dana.common import DANA_LOGGER, DXA_LOGGER
         
         # Test that loggers can be used
         DXA_LOGGER.info("Testing DXA_LOGGER compatibility")
@@ -126,7 +126,7 @@ def test_integration():
     
     try:
         # Test accessing through dana.common
-        from dana.common import Loggable, DXALogger
+        from dana.common import DXALogger, Loggable
         
         print("✅ Integration with dana.common works")
         return True

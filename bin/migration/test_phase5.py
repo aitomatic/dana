@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Test Phase 5 imports and functionality."""
 
-import sys
 import os
+import sys
 
 # Add dana directory to path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -10,17 +10,17 @@ sys.path.insert(0, project_root)
 
 # Set up compatibility layer
 from dana.compat import setup_migration_compatibility
+
 setup_migration_compatibility()
 
 # Pre-import new modules to ensure they're available for compatibility
-import dana.frameworks.poet
 
 def test_poet_imports():
     """Test importing POET components from new dana structure."""
     print("Testing POET import paths...")
     
     try:
-        from dana.frameworks.poet import poet, POETConfig, POETResult
+        from dana.frameworks.poet import POETConfig, POETResult, poet
         print("✅ dana.frameworks.poet: poet, POETConfig, POETResult")
     except ImportError as e:
         print(f"❌ dana.frameworks.poet: {e}")
@@ -102,7 +102,7 @@ def test_framework_integration():
     print("\nTesting framework integration...")
     
     try:
-        from dana.frameworks import poet, POETConfig
+        from dana.frameworks import POETConfig, poet
         print("✅ dana.frameworks POET components accessible")
         
         return True
@@ -116,7 +116,7 @@ def test_top_level_integration():
     print("\nTesting top-level integration...")
     
     try:
-        from dana import poet, POETConfig
+        from dana import POETConfig, poet
         print("✅ Top-level dana POET components accessible")
         
         return True

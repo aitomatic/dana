@@ -66,7 +66,7 @@ class ErrorHandler:
             return error
 
         # Create a new DanaError with the original error and context
-        return DanaError(message=f"Error during {context.operation}", original_error=error, context=context)
+        return DanaError(f"Error during {context.operation}: {error}")
 
 
 class ErrorUtils:

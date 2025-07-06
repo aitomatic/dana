@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 """Test import compatibility during migration."""
 
-import sys
 import importlib
-from typing import List, Tuple
-
+import sys
 
 # Import mappings to test (old_path, new_path)
-IMPORT_MAPPINGS: List[Tuple[str, str]] = [
+IMPORT_MAPPINGS: list[tuple[str, str]] = [
     # These will be populated as we migrate components
     # Example:
     # ("opendxa.dana.sandbox.parser", "dana.core.lang.parser"),
@@ -47,9 +45,9 @@ def test_dual_imports():
             old_module = sys.modules.get(old_path)
             new_module = sys.modules.get(new_path)
             if old_module is new_module:
-                print(f"   └─ Same module: ✓")
+                print("   └─ Same module: ✓")
             else:
-                print(f"   └─ Same module: ✗ (WARNING: Different modules!)")
+                print("   └─ Same module: ✗ (WARNING: Different modules!)")
                 all_passed = False
     
     print("=" * 60)

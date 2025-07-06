@@ -47,9 +47,7 @@ from dana.common.utils.misc import Misc
 # we limit the total length of tool-call responses.
 MAX_TOOL_CALL_RESPONSE_LENGTH = 10000
 
-# AISuite compatibility constants - KISS approach to eliminate duplication
-AISUITE_UNSUPPORTED_PARAMS = {"proxies", "model_name", "api_type"}
-AISUITE_SUPPORTED_PARAMS = {"api_key", "base_url", "organization", "project", "timeout", "max_retries", "default_headers", "default_query"}
+# Removed parameter filtering - config file controls what gets sent to AISuite
 
 
 class LLMResource(BaseResource):
@@ -146,7 +144,7 @@ class LLMResource(BaseResource):
         super().__init__(name)
 
         # Initialize configuration manager (Phase 1B integration)
-        self._config_manager = LLMConfigurationManager(explicit_model=model, config=kwargs)
+        self._config_manager = LLMConfigurationManager(explicit_model=model)
 
         # Initialize tool call manager (Phase 4A integration)
         self._tool_call_manager = LLMToolCallManager()
@@ -171,28 +169,18 @@ class LLMResource(BaseResource):
             self.warning("No preferred_models list found in config or arguments.")
 
         # --- Determine the model ---
-        # Priority: constructor arg -> find available -> default from config -> None
+        # Priority: constructor arg -> find available -> None (let user figure it out)
         if model:
-            # Validate the explicitly provided model
-            if not self._validate_model(model):
-                self.warning(f"Explicitly provided model '{model}' seems unavailable (missing API keys?). Continuing anyway.")
-            self._model = model  # Use underscore to avoid setter validation initially
+            # Accept any explicitly provided model without validation
+            self._model = model
             self.debug(f"Using explicitly set model: {self._model}")
         else:
-            # Automatically find the first available model from the list
+            # Try to find an available model, but don't fail if none found
             self._model = self._find_first_available_model()
-            if not self._model:
-                # If auto-selection fails, log an error (unless in mock mode).
-                # We no longer fall back to `default_model`.
-                is_mock_mode = os.environ.get("DANA_MOCK_LLM", "").lower() == "true"
-                if not is_mock_mode:
-                    self.error(
-                        "Could not find an available model from the preferred_models list. "
-                        "No explicit model was provided, and the fallback to 'default_model' is no longer used."
-                    )
-                else:
-                    self.debug("No available model found, but mock mode is enabled. This is expected in test environments.")
-                # self._model remains None.
+            if self._model:
+                self.debug(f"Auto-selected model: {self._model}")
+            else:
+                self.debug("No model auto-selected - will be determined at usage time")
 
         # Initialize query executor (Phase 5A integration)
         self._query_executor = LLMQueryExecutor(
@@ -238,7 +226,9 @@ class LLMResource(BaseResource):
         if self._model:
             self.config["model"] = self._model
 
-        self.info(f"Initialized LLMResource '{name}' with model '{self.model}'")
+        # Use direct model value to avoid triggering validation
+        model_display = self._model or "auto-select"
+        self.info(f"Initialized LLMResource '{name}' with model '{model_display}'")
         self.debug(f"Final LLM config keys: {list(self.config.keys())}")
 
         # Mocking setup
@@ -289,8 +279,8 @@ class LLMResource(BaseResource):
     def model(self, value: str) -> None:
         """Set the model and force reinitialization with new provider config."""
         if value != self._model:
-            self._config_manager.selected_model = value
             self._model = value
+            self._config_manager.selected_model = value  # Keep config manager in sync
             self.config["model"] = value
             self.info(f"LLM model set to: {self._model}")
 
@@ -357,6 +347,17 @@ class LLMResource(BaseResource):
         if not self._client:
             self.debug("Initializing AISuite client...")
 
+            # Explicitly apply the AISuite patch to fix the proxies issue
+            if not is_patch_applied():
+                self.debug("Applying AISuite patch for proxies issue...")
+                patch_success = apply_aisuite_patch()
+                if patch_success:
+                    self.debug("AISuite patch applied successfully")
+                else:
+                    self.warning("Failed to apply AISuite patch - may encounter proxies issue")
+            else:
+                self.debug("AISuite patch already applied")
+
             # Get provider configuration for current model
             provider_configs = self._get_provider_config_for_current_model()
 
@@ -367,17 +368,12 @@ class LLMResource(BaseResource):
 
             try:
                 # Workaround for AISuite 0.1.11 proxies bug
-                # Filter out problematic parameters that AISuite might add internally
-                cleaned_provider_configs = self._clean_provider_configs_for_aisuite(provider_configs)
+                # Clean provider configs to remove unsupported parameters
+                provider_configs = self._clean_provider_configs_for_aisuite(provider_configs)
 
-                self.debug(f"Initializing AISuite client with provider_configs: {cleaned_provider_configs}")
-                # Check for any unexpected keys in provider_configs
-                for provider, config in cleaned_provider_configs.items():
-                    self.debug(f"Provider {provider} config keys: {list(config.keys())}")
-                    if "proxies" in config:
-                        self.warning(f"Found 'proxies' key in {provider} config: {config['proxies']}")
+                self.debug(f"Initializing AISuite client with provider_configs: {provider_configs}")
 
-                self._client = ai.Client(provider_configs=cleaned_provider_configs)
+                self._client = ai.Client(provider_configs=provider_configs)
                 self.debug("AISuite client initialized successfully.")
                 self._query_executor.client = self._client
                 self._query_executor.model = self.aisuite_model_name  # Use AISuite-compatible model name
@@ -388,34 +384,39 @@ class LLMResource(BaseResource):
                     self.warning("LLM client initialized without a model")
                     self._is_available = False
             except Exception as e:
-                self.error(f"Failed to initialize AISuite client: {e}")
+                error_msg = str(e)
+                if "proxies" in error_msg:
+                    self.error(f"AISuite proxies error (patch may not be working): {e}")
+                    self.error("Try restarting the application or check AISuite/Anthropic versions")
+                else:
+                    self.error(f"Failed to initialize AISuite client: {e}")
                 self._is_available = False
 
     def _clean_provider_configs_for_aisuite(self, provider_configs: dict[str, Any]) -> dict[str, Any]:
-        """Clean provider configs to work around AISuite 0.1.11 compatibility issues.
-
-        This method filters out problematic parameters that cause issues with
-        AISuite 0.1.11 and its dependencies, particularly the 'proxies' parameter
-        that causes conflicts with the underlying HTTP client.
+        """Clean provider configs to remove AISuite-unsupported parameters.
 
         Args:
             provider_configs: Original provider configurations
 
         Returns:
-            Cleaned provider configurations safe for AISuite
+            Provider configurations with unsupported parameters removed
         """
+        # Remove problematic parameters that AISuite doesn't support
         cleaned_configs = {}
+        unsupported_params = {"proxies", "model_name", "api_type", "http_client"}
 
         for provider, config in provider_configs.items():
-            cleaned_config = {}
-            for key, value in config.items():
-                if key not in AISUITE_UNSUPPORTED_PARAMS:
-                    cleaned_config[key] = value
-                else:
-                    self.debug(f"Filtering out problematic parameter '{key}' for provider '{provider}' (AISuite compatibility)")
-
-            if cleaned_config:  # Only add provider if it has valid config
+            if isinstance(config, dict):
+                # Filter out unsupported parameters
+                cleaned_config = {k: v for k, v in config.items() if k not in unsupported_params}
                 cleaned_configs[provider] = cleaned_config
+
+                # Log if we removed any parameters
+                removed_params = set(config.keys()) - set(cleaned_config.keys())
+                if removed_params:
+                    self.debug(f"Removed unsupported parameters from {provider}: {removed_params}")
+            else:
+                cleaned_configs[provider] = config
 
         return cleaned_configs
 
@@ -688,42 +689,22 @@ class LLMResource(BaseResource):
         return responses
 
     def _validate_model(self, model_name: str) -> bool:
-        """Checks if the necessary API keys for a given model are available.
-
-        This method delegates to the LLMConfigurationManager, which now uses
-        ValidationUtilities.validate_model_availability() for centralized,
-        consistent validation logic across the Dana framework.
-
-        Args:
-            model_name: Name of the model to validate
-
-        Returns:
-            True if the model is available and properly configured, False otherwise
-        """
+        """Check if model has required API key."""
         return self._config_manager._validate_model(model_name)
 
     def _find_first_available_model(self) -> str | None:
-        """Finds the first available model from the preferred_models list.
-
-        Iterates through `self.preferred_models` and returns the name of the
-        first model for which all `required_env_vars` are set as environment vars.
-
-        Returns:
-            The name of the first available model, or None if none are available.
-        """
+        """Find first available model from preferred list."""
         return self._config_manager._find_first_available_model()
 
     def get_available_models(self) -> list[str]:
-        """Gets a list of models from preferred_models that are currently available.
+        """Get list of models with API keys set."""
+        self.debug("Delegating get_available_models to configuration manager")
+        return self._config_manager.get_available_models()
 
-        Checks API key availability for each model in `self.preferred_models`.
-
-        Returns:
-            A list of available model names.
-        """
-        available = self._config_manager.get_available_models()
-        self.debug(f"Available models based on API keys: {available}")
-        return available
+    def _is_model_available(self, model_info: dict[str, Any]) -> bool:
+        """Check if model is available based on API key."""
+        model_name = model_info.get("name")
+        return bool(model_name and self._config_manager._is_model_actually_available(model_name))
 
     def _resolve_env_vars_in_provider_configs(self, provider_configs: dict[str, Any]) -> dict[str, Any]:
         """Resolve environment variable references in provider configs.
@@ -790,15 +771,6 @@ class LLMResource(BaseResource):
         # Use the consolidated helper method for all model-specific transformations
         return self._get_aisuite_config_for_model(self._model, resolved_config)
 
-    def _is_model_available(self, model_info: dict[str, Any]) -> bool:
-        """Check if a given model is available based on required API keys."""
-        model_name = model_info.get("name")
-        if not model_name:
-            return False
-
-        # Delegate to the configuration manager for validation
-        return self._validate_model(model_name)
-
     def _get_provider_from_model(self, model_name: str) -> str | None:
         """Extract provider name from model name."""
         if model_name == "local":
@@ -813,11 +785,7 @@ class LLMResource(BaseResource):
         resolved_config = {}
 
         for key, value in provider_config.items():
-            # Filter out unsupported parameters using constants
-            if key not in AISUITE_SUPPORTED_PARAMS:
-                self.debug(f"Filtering out unsupported parameter {key} (not supported by aisuite)")
-                continue
-
+            # Don't filter parameters here - let _filter_aisuite_params handle provider-specific filtering
             if isinstance(value, str) and value.startswith("env:"):
                 # Extract environment variable name
                 env_var = value[4:]  # Remove "env:" prefix
@@ -840,18 +808,29 @@ class LLMResource(BaseResource):
         if model_name == "local":
             # Local models use the api_type from config (default to "openai")
             api_type = provider_config.get("api_type", "openai")
-            filtered_config = self._filter_aisuite_params(provider_config)
-            return {api_type: filtered_config}
+            return {api_type: provider_config}
         elif model_name and model_name.startswith("vllm:"):
             # vLLM models use OpenAI provider in AISuite
-            filtered_config = self._filter_aisuite_params(provider_config)
-            return {"openai": filtered_config}
+            return {"openai": provider_config}
         else:
             # Standard provider:model format
             provider = model_name.split(":", 1)[0] if ":" in model_name else "openai"
-            filtered_config = self._filter_aisuite_params(provider_config)
-            return {provider: filtered_config}
 
-    def _filter_aisuite_params(self, config: dict[str, Any]) -> dict[str, Any]:
-        """Filter config parameters for AISuite compatibility using constants."""
-        return {k: v for k, v in config.items() if k in AISUITE_SUPPORTED_PARAMS}
+            # Special handling for Azure: construct deployment URL dynamically
+            if provider == "azure" and ":" in model_name:
+                config_copy = provider_config.copy()
+                deployment_name = model_name.split(":", 1)[1]  # Extract model name (e.g., "gpt-4o")
+                base_url = config_copy.get("base_url", "")
+
+                # Construct the full deployment URL if base_url doesn't already include deployment path
+                if base_url and not base_url.endswith(f"/openai/deployments/{deployment_name}"):
+                    # Remove trailing slash if present
+                    base_url = base_url.rstrip("/")
+                    # Construct deployment URL
+                    deployment_url = f"{base_url}/openai/deployments/{deployment_name}"
+                    config_copy["base_url"] = deployment_url
+                    self.debug(f"Constructed Azure deployment URL: {deployment_url}")
+
+                return {provider: config_copy}
+            else:
+                return {provider: provider_config}

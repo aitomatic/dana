@@ -19,7 +19,6 @@ Discord: https://discord.gg/6jGD4PYk
 
 from typing import Any
 
-from opendxa.dana.common.exceptions import SandboxError
 from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
 from dana.core.lang.interpreter.executor.expression.binary_operation_handler import BinaryOperationHandler
 from dana.core.lang.interpreter.executor.expression.collection_processor import CollectionProcessor
@@ -42,6 +41,7 @@ from dana.core.lang.parser.ast import (
     UnaryExpression,
 )
 from dana.core.lang.sandbox_context import SandboxContext
+from opendxa.dana.common.exceptions import SandboxError
 
 
 class ExpressionExecutor(BaseExecutor):

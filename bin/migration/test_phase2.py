@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Test Phase 2 imports and functionality."""
 
-import sys
 import os
+import sys
 
 # Add dana directory to path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -10,18 +10,18 @@ sys.path.insert(0, project_root)
 
 # Set up compatibility layer
 from dana.compat import setup_migration_compatibility
+
 setup_migration_compatibility()
 
 # Pre-import new modules to ensure they're available for compatibility
-import dana.core.runtime
-import dana.core.repl
+
 
 def test_runtime_imports():
     """Test importing runtime components from new dana structure."""
     print("Testing runtime import paths...")
     
     try:
-        from dana.core.runtime.modules import registry, loader
+        from dana.core.runtime.modules import loader, registry
         print("✅ dana.core.runtime.modules.registry, loader")
     except ImportError as e:
         print(f"❌ dana.core.runtime.modules: {e}")

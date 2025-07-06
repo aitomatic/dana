@@ -274,10 +274,16 @@ class LLMQueryExecutor(Loggable):
         for resource in available_resources.values():
             resource.remove_from_registry()
 
-        return (
-            response
-            if isinstance(response, BaseResponse)
-            else {
+        # Always return dict[str, Any] format
+        if isinstance(response, BaseResponse):
+            # Convert BaseResponse to dict format for consistency
+            return {
+                "choices": response.content.get("choices", []) if isinstance(response.content, dict) else [],
+                "usage": response.content.get("usage", {}) if isinstance(response.content, dict) else {},
+                "model": response.content.get("model", "") if isinstance(response.content, dict) else "",
+            }
+        else:
+            return {
                 "choices": (
                     response.get("choices", [])
                     if isinstance(response, dict)
@@ -290,7 +296,6 @@ class LLMQueryExecutor(Loggable):
                     response.get("model", "") if isinstance(response, dict) else (response.model if hasattr(response, "model") else "")
                 ),
             }
-        )
 
     async def query_once(
         self, request: dict[str, Any], build_request_params: Callable[[dict[str, Any]], dict[str, Any]] | None = None
@@ -384,8 +389,13 @@ class LLMQueryExecutor(Loggable):
             self.error(f"LLM API error for provider '{provider}': {e.message}")
             raise LLMProviderError(provider, e.status_code, str(e.message)) from e
         except Exception as e:
-            self.error(f"An unexpected error occurred during LLM query: {e}")
-            raise LLMError(f"An unexpected error occurred: {e}") from e
+            error_msg = str(e)
+            if "connection" in error_msg.lower() or "connect" in error_msg.lower():
+                self.debug(f"LLM connection failed: {error_msg}")
+                raise LLMError(f"LLM connection failed: {error_msg}. Please check your API key configuration in .env file.") from e
+            else:
+                self.error(f"An unexpected error occurred during LLM query: {e}")
+                raise LLMError(f"An unexpected error occurred: {e}") from e
 
     async def mock_llm_query(self, request: dict[str, Any]) -> dict[str, Any]:
         """Intelligent mock LLM query that understands POET-enhanced prompts.

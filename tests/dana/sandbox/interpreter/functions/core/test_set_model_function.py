@@ -282,6 +282,138 @@ class TestSetModelFunction(unittest.TestCase):
         result = _find_closest_model_match("nonexistent", available_models)
         self.assertIsNone(result)
 
+    def test_set_model_no_parameters_no_current_model(self):
+        """Test set_model() with no parameters when no current model is set."""
+        # Redirect stdout to capture print statements
+        import io
+        import sys
+
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        try:
+            result = set_model_function(self.context)
+
+            # Should return "None" when no model is set
+            self.assertEqual(result, "None")
+
+            # Should display current model and available options in concise format
+            output = captured_output.getvalue()
+            self.assertIn("Current model: None", output)
+            # Could show either available models or no models message depending on API keys
+            self.assertTrue("Available models:" in output or "No models available" in output)
+
+        finally:
+            sys.stdout = sys.__stdout__
+
+    def test_set_model_no_parameters_with_current_model(self):
+        """Test set_model() with no parameters when a current model is set."""
+        # Set up a model first
+        os.environ["OPENAI_API_KEY"] = "test-key"
+        set_model_function(self.context, "openai:gpt-4o")
+
+        # Redirect stdout to capture print statements
+        import io
+        import sys
+
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        try:
+            result = set_model_function(self.context)
+
+            # Should return the current model
+            self.assertEqual(result, "openai:gpt-4o")
+
+            # Should display current model and available options in concise format
+            output = captured_output.getvalue()
+            self.assertIn("Current model: openai:gpt-4o", output)
+            self.assertIn("Available models:", output)
+            self.assertIn("✓ openai:gpt-4o", output)  # Should show current model with checkmark
+
+        finally:
+            sys.stdout = sys.__stdout__
+
+    def test_set_model_no_parameters_displays_models(self):
+        """Test that set_model() displays available models in a simple list."""
+        # Redirect stdout to capture print statements
+        import io
+        import sys
+
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        try:
+            result = set_model_function(self.context)
+
+            # Should return current model status
+            self.assertEqual(result, "None")
+
+            # Should display available models or no models message
+            output = captured_output.getvalue()
+            self.assertTrue("Available models:" in output or "No models available" in output)
+
+        finally:
+            sys.stdout = sys.__stdout__
+
+    def test_set_model_no_parameters_shows_examples(self):
+        """Test that set_model() shows concise examples."""
+        # Redirect stdout to capture print statements
+        import io
+        import sys
+
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+
+        try:
+            set_model_function(self.context)
+
+            # Should show examples if models are available
+            output = captured_output.getvalue()
+            if "Available models:" in output:
+                self.assertIn("Examples:", output)
+                self.assertIn("set_model('gpt-4')", output)
+                self.assertIn("set_model('claude')", output)
+                self.assertIn("set_model('openai')", output)
+            elif "No models available" in output:
+                self.assertIn("check your API keys", output)
+                self.assertIn("OPENAI_API_KEY", output)
+
+        finally:
+            sys.stdout = sys.__stdout__
+
+    def test_bug_fixes_model_matching(self):
+        """Test specific bug fixes for model matching logic."""
+        from dana.core.stdlib.core.set_model_function import _find_closest_model_match
+
+        # Test Bug Fix 1: Groq model pattern should match llama-3.1-70b-versatile
+        available_models = ["groq:llama-3.1-70b-versatile", "groq:llama-3.1-8b-instant", "openai:gpt-4o"]
+
+        # Test that groq provider selection works with corrected pattern
+        result = _find_closest_model_match("groq", available_models)
+        # Should select the 70b model since it matches "llama-3" and "70b" pattern
+        self.assertEqual(result, "groq:llama-3.1-70b-versatile")
+
+        # Test Bug Fix 2: Non-GPT models with "4" should not trigger GPT logic
+        available_models_with_claude4 = [
+            "anthropic:claude-4-hypothetical",  # Hypothetical future model
+            "openai:gpt-4o",
+            "anthropic:claude-3-5-sonnet-20241022",
+        ]
+
+        # Test that "claude-4" doesn't trigger GPT selection logic
+        result = _find_closest_model_match("claude-4", available_models_with_claude4)
+        # Should match the claude model, not fall back to GPT logic
+        self.assertIsNotNone(result)
+        if result:  # Type guard for linter
+            self.assertTrue(result.startswith("anthropic:"))
+            self.assertIn("claude", result.lower())
+
+        # Verify GPT logic still works for actual GPT inputs
+        result = _find_closest_model_match("gpt-4", available_models_with_claude4)
+        # Should correctly select GPT model
+        self.assertEqual(result, "openai:gpt-4o")
+
 
 if __name__ == "__main__":
     unittest.main()

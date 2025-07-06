@@ -16,10 +16,10 @@ from dana.common.mixins.queryable import QueryStrategy
 from dana.common.resource.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.logging import DXA_LOGGER
-from opendxa.dana.common.exceptions import SandboxError
 
 # Import POET decorator
 from dana.core.lang.sandbox_context import SandboxContext
+from opendxa.dana.common.exceptions import SandboxError
 
 
 def old_reason_function(
@@ -97,8 +97,8 @@ def old_reason_function(
     if actual_agents is not None:
         try:
             # Check if agents is an A2AAgent, AgentPool, or list of agents
-            from opendxa.dana.agent.abstract_dana_agent import AbstractDanaAgent
             from opendxa.contrib.mcp_a2a.agent.pool.agent_pool import AgentPool
+            from opendxa.dana.agent.abstract_dana_agent import AbstractDanaAgent
 
             agent_pool = None
 
@@ -293,7 +293,6 @@ def reason_function(
     logger.debug(f"POET-enhanced reason called with prompt: '{prompt[:50]}...'")
 
     try:
-
         # Phase 1: Detect expected return type context
         context_detector = ContextDetector()
         type_context = context_detector.detect_current_context(context)

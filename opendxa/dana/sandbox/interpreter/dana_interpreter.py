@@ -25,12 +25,12 @@ from pathlib import Path
 from typing import Any
 
 from dana.common.mixins.loggable import Loggable
-from opendxa.dana.common.error_utils import ErrorUtils
 from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.parser.ast import FunctionDefinition, Program
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
 from dana.core.lang.sandbox_context import ExecutionStatus, SandboxContext
+from opendxa.dana.common.error_utils import ErrorUtils
 
 # Map Dana LogLevel to Python logging levels
 Dana_TO_PYTHON_LOG_LEVELS = {
@@ -97,8 +97,6 @@ class DanaInterpreter(Loggable):
 
         # Register all core functions automatically
         register_core_functions(self._function_registry)
-
-
 
         self.debug("Function registry initialized")
 
@@ -220,8 +218,9 @@ class DanaInterpreter(Loggable):
         """
         # Set the current context in thread-local storage for agent methods
         import threading
+
         current_thread = threading.current_thread()
-        old_context = getattr(current_thread, 'dana_context', None)
+        old_context = getattr(current_thread, "dana_context", None)
         current_thread.dana_context = context
         try:
             # All execution goes through the unified executor
@@ -230,8 +229,8 @@ class DanaInterpreter(Loggable):
             # Restore the previous context
             if old_context is not None:
                 current_thread.dana_context = old_context
-            elif hasattr(current_thread, 'dana_context'):
-                delattr(current_thread, 'dana_context')
+            elif hasattr(current_thread, "dana_context"):
+                delattr(current_thread, "dana_context")
 
     def get_and_clear_output(self) -> str:
         """Retrieve and clear the output buffer from the executor."""

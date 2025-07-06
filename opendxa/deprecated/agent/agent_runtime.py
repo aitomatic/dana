@@ -49,12 +49,21 @@ Example:
 
 from typing import TYPE_CHECKING, Any
 
-# Local imports
-from dana.frameworks.agent.deprecated.dummy import ExecutionState, Plan, Planner, PlanStrategy, Reasoner, ReasoningStrategy, RuntimeContext, WorldState
-
 # First-party imports
 from dana.common.mixins.loggable import Loggable
 from dana.common.resource import LLMResource
+
+# Local imports
+from dana.frameworks.agent.deprecated.dummy import (
+    ExecutionState,
+    Plan,
+    Planner,
+    PlanStrategy,
+    Reasoner,
+    ReasoningStrategy,
+    RuntimeContext,
+    WorldState,
+)
 
 if TYPE_CHECKING:
     from dana.frameworks.agent.agent import Agent

@@ -13,11 +13,11 @@ import difflib
 from typing import Any
 
 from dana.common.config.config_loader import ConfigLoader
-from dana.common.exceptions import LLMError
+from dana.common.exceptions import LLMError, SandboxError
+from dana.common.resource.llm.llm_configuration_manager import LLMConfigurationManager
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.utils.logging import DANA_LOGGER
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.common.exceptions import SandboxError
 
 
 def _get_available_model_names() -> list[str]:
@@ -112,7 +112,9 @@ def _get_available_model_names() -> list[str]:
 
 
 def _find_closest_model_match(model_input: str, available_models: list[str]) -> str | None:
-    """Find the closest matching model name using fuzzy matching.
+    """Find the closest matching model name using enhanced fuzzy matching.
+
+    This function uses intelligent provider-aware matching to find the best model.
 
     Args:
         model_input: The user-provided model string
@@ -124,43 +126,99 @@ def _find_closest_model_match(model_input: str, available_models: list[str]) -> 
     if not model_input or not available_models:
         return None
 
-    # Try exact match first (case insensitive)
     model_lower = model_input.lower()
+
+    # Try exact match first (case insensitive)
     for model in available_models:
         if model.lower() == model_lower:
             return model
 
-    # Try substring match (e.g., "gpt-4" matches "openai:gpt-4o")
-    # Prefer matches that align with typical provider-model relationships
+    # Smart provider matching - if user types just a provider name, return the best model
+    provider_preferences = {
+        "openai": lambda models: next((m for m in models if "gpt-4o" in m), models[0] if models else None),
+        "anthropic": lambda models: next((m for m in models if "claude-3-5-sonnet" in m), models[0] if models else None),
+        "google": lambda models: next((m for m in models if "gemini-1.5-pro" in m), models[0] if models else None),
+        "groq": lambda models: next((m for m in models if "llama-3" in m and "70b" in m), models[0] if models else None),
+        "azure": lambda models: next((m for m in models if "gpt-4o" in m), models[0] if models else None),
+        "deepseek": lambda models: next((m for m in models if "deepseek-chat" in m), models[0] if models else None),
+    }
+
+    if model_lower in provider_preferences:
+        provider_models = [m for m in available_models if m.startswith(f"{model_lower}:")]
+        if provider_models:
+            best_model = provider_preferences[model_lower](provider_models)
+            if best_model:
+                return best_model
+
+    # Enhanced substring matching with provider preference
     substring_matches = []
     for model in available_models:
         if model_lower in model.lower() or model.lower() in model_lower:
             substring_matches.append(model)
 
     if substring_matches:
-        # If we have multiple substring matches, prefer the most logical provider
         if len(substring_matches) == 1:
             return substring_matches[0]
 
-        # For GPT models, prefer OpenAI over Azure
+        # Smart provider preferences for common models
         if "gpt" in model_lower:
-            for match in substring_matches:
-                if match.startswith("openai:"):
-                    return match
+            # For GPT models, prefer OpenAI over Azure, then prefer latest versions
+            openai_matches = [m for m in substring_matches if m.startswith("openai:")]
+            if openai_matches:
+                # Prefer gpt-4o over gpt-4o-mini, gpt-4 over gpt-3.5
+                priority_order = ["gpt-4o", "gpt-4", "gpt-3.5"]
+                for priority in priority_order:
+                    for match in openai_matches:
+                        if priority in match:
+                            return match
+                return openai_matches[0]
 
-        # For other models, return the first match (preserves preference order)
+            # Fallback to Azure if no OpenAI
+            azure_matches = [m for m in substring_matches if m.startswith("azure:")]
+            if azure_matches:
+                return azure_matches[0]
+
+        elif "claude" in model_lower:
+            # For Claude models, prefer latest versions
+            anthropic_matches = [m for m in substring_matches if m.startswith("anthropic:")]
+            if anthropic_matches:
+                # Prefer claude-3-5-sonnet over haiku
+                for match in anthropic_matches:
+                    if "sonnet" in match:
+                        return match
+                return anthropic_matches[0]
+
+        elif "gemini" in model_lower:
+            # For Gemini models, prefer pro over flash
+            google_matches = [m for m in substring_matches if m.startswith("google:")]
+            if google_matches:
+                for match in google_matches:
+                    if "pro" in match:
+                        return match
+                return google_matches[0]
+
+        # Return first match if no smart preference applies
         return substring_matches[0]
 
-    # Use fuzzy matching for close matches
-    # Get close matches with a reasonable cutoff (0.6 = 60% similarity)
+    # Enhanced fuzzy matching with better threshold
     close_matches = difflib.get_close_matches(
         model_input,
         available_models,
-        n=1,  # Return only the best match
-        cutoff=0.6,  # 60% similarity threshold
+        n=3,  # Get top 3 matches
+        cutoff=0.5,  # Lower threshold for more flexibility
     )
 
     if close_matches:
+        # Apply smart preferences to fuzzy matches too
+        if "gpt" in model_lower:
+            openai_matches = [m for m in close_matches if m.startswith("openai:")]
+            if openai_matches:
+                return openai_matches[0]
+        elif "claude" in model_lower:
+            anthropic_matches = [m for m in close_matches if m.startswith("anthropic:")]
+            if anthropic_matches:
+                return anthropic_matches[0]
+
         return close_matches[0]
 
     # Try matching just the model name part (after the colon)
@@ -175,7 +233,7 @@ def _find_closest_model_match(model_input: str, available_models: list[str]) -> 
 
 def set_model_function(
     context: SandboxContext,
-    model: str,
+    model: str | None = None,
     options: dict[str, Any] | None = None,
 ) -> str:
     """Execute the set_model function to change the LLM model in the current context.
@@ -187,23 +245,28 @@ def set_model_function(
         context: The runtime context for variable resolution.
         model: The model name to set (e.g., "gpt-4", "claude", "openai:gpt-4o").
                Supports partial names that will be matched to available models.
+               If None or not provided, displays current model and available options.
         options: Optional parameters for the function.
                - exact_match_only (bool): If True, disable fuzzy matching (default: False)
 
     Returns:
-        The name of the model that was actually set (may be different from input if fuzzy matched).
+        The name of the model that was actually set (may be different from input if fuzzy matched),
+        or the currently selected model if no model argument is provided.
 
     Raises:
         SandboxError: If the function execution fails or no suitable model is found.
         LLMError: If the model is invalid or unavailable.
 
     Example:
-        # Exact match
+        # Display current model and available options
+        set_model()
+
+        # Set exact match
         set_model("openai:gpt-4o")
 
         # Fuzzy match examples
         set_model("gpt-4")          # matches "openai:gpt-4o"
-        set_model("claude")         # matches "anthropic:claude-3-5-sonnet-20241022"
+        set_model("claude")         # matches "anthropic:claude-3-5-*")
         set_model("gemini")         # matches "google:gemini-1.5-pro"
     """
     logger = DANA_LOGGER.getLogger("dana.set_model")
@@ -211,6 +274,40 @@ def set_model_function(
     if options is None:
         options = {}
 
+    # Get the current LLM resource from context
+    llm_resource = context.get("system:llm_resource")
+
+    # If no model argument provided, display comprehensive information
+    if model is None:
+        # Get current model
+        current_model = "None"
+        if llm_resource is not None and llm_resource.model is not None:
+            current_model = llm_resource.model
+
+        # Get only available models (with API keys)
+        config_manager = LLMConfigurationManager()
+        available_models = config_manager.get_available_models()
+
+        # Display concise information
+        print(f"Current model: {current_model}")
+
+        if available_models:
+            print("Available models:")
+            for model_name in available_models:
+                marker = "✓" if model_name == current_model else " "
+                print(f"  {marker} {model_name}")
+
+            print("\nExamples:")
+            print("  set_model('gpt-4')    # fuzzy match")
+            print("  set_model('claude')   # fuzzy match")
+            print("  set_model('openai')   # best provider model")
+        else:
+            print("No models available - check your API keys in environment variables")
+            print("Common API keys: OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY")
+
+        return current_model
+
+    # Validate model argument
     if not model:
         raise SandboxError("set_model function requires a non-empty model name")
 
@@ -234,9 +331,6 @@ def set_model_function(
                 model = matched_model
             elif not matched_model:
                 logger.warning(f"No close match found for '{original_input}', trying as-is")
-
-        # Get the current LLM resource from context
-        llm_resource = context.get("system:llm_resource")
 
         if llm_resource is None:
             # If no LLM resource exists, create a new one with the specified model

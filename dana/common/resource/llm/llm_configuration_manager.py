@@ -1,8 +1,7 @@
 """
 LLM Configuration Manager for Dana.
 
-This module handles model selection, validation, and configuration management
-for LLM resources. Extracted from LLMResource for better separation of concerns.
+Simple model selection: check API keys, pick first available.
 
 Copyright © 2025 Aitomatic, Inc.
 MIT License
@@ -12,12 +11,11 @@ import os
 from typing import Any
 
 from dana.common.config.config_loader import ConfigLoader
-from dana.common.exceptions import LLMError
-from dana.common.utils.validation import ValidationUtilities
+from dana.common.utils.logging import DANA_LOGGER
 
 
 class LLMConfigurationManager:
-    """Manages LLM model configuration, selection and validation."""
+    """Simple LLM model selection and validation."""
 
     def __init__(self, explicit_model: str | None = None, config: dict[str, Any] | None = None):
         """Initialize configuration manager.
@@ -32,7 +30,7 @@ class LLMConfigurationManager:
         self._selected_model = None
 
     @property
-    def selected_model(self) -> str:
+    def selected_model(self) -> str | None:
         """Get the currently selected model."""
         if self._selected_model is None:
             self._selected_model = self._determine_model()
@@ -40,170 +38,112 @@ class LLMConfigurationManager:
 
     @selected_model.setter
     def selected_model(self, value: str) -> None:
-        """Set the model, with validation."""
-        if not self._validate_model(value):
-            raise LLMError(f"Invalid or unavailable model: {value}")
+        """Set the model."""
         self._selected_model = value
 
-    def _determine_model(self) -> str:
+    def _determine_model(self) -> str | None:
         """Determine which model to use based on configuration and availability."""
-        # Check if we're in mock mode first to avoid unnecessary work and logging
-        is_mock_mode = os.environ.get("DANA_MOCK_LLM", "").lower() == "true"
+        # Mock mode
+        if os.environ.get("DANA_MOCK_LLM", "").lower() == "true":
+            return "mock:test-model"
 
-        # Priority: explicit model > auto-selection > default
+        # Accept explicit model without validation - let user figure out issues at usage time
         if self.explicit_model:
-            if self._validate_model(self.explicit_model):
-                return self.explicit_model
-            else:
-                if is_mock_mode:
-                    # In mock mode, just return a mock model instead of raising error
-                    return "mock:test-model"
-                raise LLMError(f"Explicitly requested model '{self.explicit_model}' is not available")
+            return self.explicit_model
 
-        # Try auto-selection
+        # Try auto-selection, but don't fail if nothing found
         auto_model = self._find_first_available_model()
         if auto_model:
             return auto_model
 
-        # If no models are available and we're in mock mode, return a mock model silently
-        if is_mock_mode:
-            return "mock:test-model"
-
-        raise LLMError("No available LLM models found. Please check your API keys and configuration.")
+        # Return None instead of raising - validation happens at usage time
+        return None
 
     def _validate_model(self, model_name: str) -> bool:
-        """Validate that a model is available and properly configured.
+        """Validate if model is available (has required API key and is properly configured).
 
-        Uses ValidationUtilities for centralized validation logic while maintaining
-        backward compatibility with existing behavior.
+        For properly formatted models with known providers: validates API keys immediately.
+        For improperly formatted models: allows setting (will fail at query time).
+
+        Args:
+            model_name: Name of the model to validate
+
+        Returns:
+            True if the model is available/settable, False only for known providers missing API keys
         """
         if not model_name:
             return False
 
-        # Accept mock models when in mock mode
+        # Mock models always available
         if model_name.startswith("mock:"):
             return True
 
         try:
-            # Check if the provider exists in configuration
+            # Get provider from model name
             provider = self._get_provider_from_model(model_name)
-            if provider:
-                config = self.config_loader.get_default_config()
-                provider_configs = config.get("llm", {}).get("provider_configs", {})
+            if not provider:
+                # If we can't extract a provider (invalid format), allow setting
+                # This will fail at query time, which matches existing test expectations
+                return True
 
-                # If provider is not in config, model is invalid
-                if provider not in provider_configs:
+            # Get configuration to check if provider is in provider_configs
+            config = self.config_loader.get_default_config()
+            provider_configs = config.get("llm", {}).get("provider_configs", {})
+
+            # Check if this is a known provider type (has API key mapping)
+            api_key_var = self._get_api_key_var_for_provider(provider)
+
+            if provider not in provider_configs:
+                # Provider not in config
+                if api_key_var:
+                    # This is a known provider type but not in config - validate API key
+                    api_key_value = os.getenv(api_key_var)
+                    return bool(api_key_value and api_key_value.strip())
+                else:
+                    # Unknown provider type with proper format - reject
+                    # (This covers cases like "unknown:model" where "unknown" is not a known provider)
                     return False
 
-            # For model validation, we only check required API keys, not whether
-            # the model is in the preferred_models list. The preferred_models list
-            # is used for selection priority, not validation restrictions.
-            required_env_vars = self._get_required_env_vars_for_model(model_name)
+            # Provider is in config - validate according to config requirements
+            # Check if required API key is set for known providers
+            if api_key_var:
+                api_key_value = os.getenv(api_key_var)
+                return bool(api_key_value and api_key_value.strip())
 
-            # Use ValidationUtilities for the actual validation
-            # Pass None for available_models to skip that check
-            return ValidationUtilities.validate_model_availability(
-                model_name=model_name, available_models=None, required_env_vars=required_env_vars, context="LLM configuration"
-            )
-
-        except Exception:
-            # Maintain original behavior: return False on any exception
-            return False
-
-    def _get_available_models_list(self) -> list[str] | None:
-        """Get the list of available models from configuration.
-
-        Returns None to indicate that any model name should be accepted
-        (ValidationUtilities will only check environment variables).
-        """
-        try:
-            config = self.config_loader.get_default_config()
-
-            # Load preferred_models from llm section
-            if "llm" in config and "preferred_models" in config["llm"]:
-                preferred_models = config["llm"]["preferred_models"]
-            else:
-                preferred_models = []
-
-            # Extract model names from both string and dict formats
-            model_names = []
-            for model in preferred_models:
-                if isinstance(model, str):
-                    model_names.append(model)
-                elif isinstance(model, dict) and model.get("name"):
-                    model_names.append(model["name"])
-
-            # Return None if no models found - this means "accept any model name"
-            return model_names if model_names else None
-
-        except Exception:
-            return None
-
-    def _get_required_env_vars_for_model(self, model_name: str) -> list[str]:
-        """Get required environment variables for a specific model based on provider configs."""
-        try:
-            # Get configuration
-            config = self.config_loader.get_default_config()
-
-            # Load provider_configs from llm section
-            if "llm" in config and "provider_configs" in config["llm"]:
-                provider_configs = config["llm"]["provider_configs"]
-            else:
-                return []
-
-            # Determine provider from model name
-            provider = self._get_provider_from_model(model_name)
-
-            if not provider or provider not in provider_configs:
-                return []
-
-            # Get provider config
+            # For providers without a predefined API key mapping,
+            # check if there are any environment variable requirements in the provider config
             provider_config = provider_configs[provider]
-
-            # Extract required environment variables from provider config
             required_vars = []
-            for key, value in provider_config.items():
+            for _key, value in provider_config.items():
                 if isinstance(value, str) and value.startswith("env:"):
                     env_var = value[4:]  # Remove "env:" prefix
                     required_vars.append(env_var)
 
-            return required_vars
+            # Check if all required environment variables are set
+            for env_var in required_vars:
+                if not os.getenv(env_var):
+                    return False
+
+            return True
 
         except Exception:
-            return []
-
-    def _get_provider_from_model(self, model_name: str) -> str | None:
-        """Extract provider name from model name."""
-        if model_name == "local":
-            return "local"
-        elif ":" in model_name:
-            return model_name.split(":", 1)[0]
-        else:
-            return None
+            # On any exception, allow setting (will fail at query time if invalid)
+            return True
 
     def _find_first_available_model(self) -> str | None:
-        """Find the first available model from preferred list."""
+        """Find first model with API key set."""
         try:
             config = self.config_loader.get_default_config()
+            preferred_models = config.get("llm", {}).get("preferred_models", [])
 
-            # Load preferred_models from llm section
-            if "llm" in config and "preferred_models" in config["llm"]:
-                preferred_models = config["llm"]["preferred_models"]
-            else:
-                # No preferred models configured
+            if not preferred_models:
                 return None
 
             for model in preferred_models:
-                # Handle string format (new streamlined approach)
-                if isinstance(model, str):
-                    model_name = model
-                # Handle dict format (backward compatibility)
-                elif isinstance(model, dict):
-                    model_name = model.get("name")
-                else:
-                    continue
+                # Handle both string and dict formats
+                model_name = model if isinstance(model, str) else model.get("name") if isinstance(model, dict) else None
 
-                if model_name and self._validate_model(model_name):
+                if model_name and self._is_model_actually_available(model_name):
                     return model_name
 
             return None
@@ -211,45 +151,113 @@ class LLMConfigurationManager:
         except Exception:
             return None
 
-    def get_available_models(self) -> list[str]:
-        """Get list of all available models."""
+    def _get_provider_from_model(self, model_name: str) -> str | None:
+        """Extract provider from model name."""
+        if model_name == "local":
+            return "local"
+        elif ":" in model_name:
+            return model_name.split(":", 1)[0]
+        else:
+            return None
+
+    def _get_api_key_var_for_provider(self, provider: str) -> str | None:
+        """Get API key environment variable name for provider."""
+        api_key_vars = {
+            "openai": "OPENAI_API_KEY",
+            "anthropic": "ANTHROPIC_API_KEY",
+            "groq": "GROQ_API_KEY",
+            "mistral": "MISTRAL_API_KEY",
+            "google": "GOOGLE_API_KEY",
+            "deepseek": "DEEPSEEK_API_KEY",
+            "cohere": "COHERE_API_KEY",
+            "azure": "AZURE_OPENAI_API_KEY",
+            "local": "LOCAL_API_KEY",
+            "ibm_watsonx": "WATSONX_API_KEY",
+        }
+        return api_key_vars.get(provider)
+
+    def _is_model_actually_available(self, model_name: str) -> bool:
+        """Strict validation for whether a model is actually available and usable.
+
+        Used by get_available_models() - requires proper configuration and API keys.
+        More strict than _validate_model() which allows setting invalid formats.
+        """
+        if not model_name:
+            return False
+
+        # Mock models always available
+        if model_name.startswith("mock:"):
+            return True
+
         try:
+            # Get provider from model name
+            provider = self._get_provider_from_model(model_name)
+            if not provider:
+                # Invalid format models are not considered "available"
+                return False
+
+            # Get configuration to check if provider is in provider_configs
             config = self.config_loader.get_default_config()
+            provider_configs = config.get("llm", {}).get("provider_configs", {})
 
-            # Get models from preferred_models (new streamlined approach)
-            preferred_models = config.get("llm", {}).get("preferred_models", [])
-            preferred_model_names = []
+            # For availability, provider must be in config
+            if provider not in provider_configs:
+                # For known providers, check API key even if not in config
+                api_key_var = self._get_api_key_var_for_provider(provider)
+                if api_key_var:
+                    api_key_value = os.getenv(api_key_var)
+                    return bool(api_key_value and api_key_value.strip())
+                else:
+                    # Unknown provider not in config = not available
+                    return False
 
-            for model in preferred_models:
-                # Handle string format (new streamlined approach)
-                if isinstance(model, str):
-                    preferred_model_names.append(model)
-                # Handle dict format (backward compatibility)
-                elif isinstance(model, dict) and model.get("name"):
-                    preferred_model_names.append(model["name"])
+            # Provider is in config - validate according to config requirements
+            # Check if required API key is set for known providers
+            api_key_var = self._get_api_key_var_for_provider(provider)
+            if api_key_var:
+                api_key_value = os.getenv(api_key_var)
+                return bool(api_key_value and api_key_value.strip())
 
-            # Also get models from all_models if it exists (backward compatibility)
-            all_models = config.get("llm", {}).get("all_models", [])
+            # For providers without a predefined API key mapping,
+            # check if there are any environment variable requirements in the provider config
+            provider_config = provider_configs[provider]
+            required_vars = []
+            for _key, value in provider_config.items():
+                if isinstance(value, str) and value.startswith("env:"):
+                    env_var = value[4:]  # Remove "env:" prefix
+                    required_vars.append(env_var)
 
-            # Combine both lists, removing duplicates while preserving order
-            combined_models = []
-            seen_models = set()
+            # Check if all required environment variables are set
+            for env_var in required_vars:
+                if not os.getenv(env_var):
+                    return False
 
-            # Add preferred models first (they have priority)
-            for model in preferred_model_names:
-                if model not in seen_models:
-                    combined_models.append(model)
-                    seen_models.add(model)
-
-            # Add all_models that aren't already included
-            for model in all_models:
-                if model not in seen_models:
-                    combined_models.append(model)
-                    seen_models.add(model)
-
-            return [model for model in combined_models if self._validate_model(model)]
+            return True
 
         except Exception:
+            return False
+
+    def get_available_models(self) -> list[str]:
+        """Get list of models with API keys set."""
+        try:
+            config = self.config_loader.get_default_config()
+            preferred_models = config.get("llm", {}).get("preferred_models", [])
+            available_models = []
+
+            DANA_LOGGER.debug(f"Checking available models from {len(preferred_models)} preferred models")
+
+            for model in preferred_models:
+                # Handle both string and dict formats
+                model_name = model if isinstance(model, str) else model.get("name") if isinstance(model, dict) else None
+
+                if model_name and self._is_model_actually_available(model_name):
+                    available_models.append(model_name)
+
+            DANA_LOGGER.debug(f"Found {len(available_models)} available models: {available_models}")
+            return available_models
+
+        except Exception as e:
+            DANA_LOGGER.error(f"Error getting available models: {e}")
             return []
 
     def get_model_config(self, model: str | None = None) -> dict[str, Any]:

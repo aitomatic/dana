@@ -49,13 +49,13 @@ Discord: https://discord.gg/6jGD4PYk
 
 from typing import Any
 
+from dana.common.error_utils import DanaError
 from dana.common.mixins.loggable import Loggable
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.utils import Misc
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.core.lang.log_manager import LogLevel, SandboxLogger
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.common.error_utils import DanaError
 from dana.core.lang.translator.translator import Translator
 
 

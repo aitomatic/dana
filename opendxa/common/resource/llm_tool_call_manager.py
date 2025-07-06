@@ -10,7 +10,6 @@ MIT License
 
 import json
 from typing import Any, cast
-import os
 
 from dana.common.mixins.loggable import Loggable
 from dana.common.mixins.registerable import Registerable
@@ -18,7 +17,6 @@ from dana.common.mixins.tool_callable import OpenAIFunctionCall, ToolCallable
 from dana.common.mixins.tool_formats import ToolFormat
 from dana.common.resource.base_resource import BaseResource
 from dana.common.types import BaseRequest, BaseResponse
-from dana.common.exceptions import LLMError
 
 # To avoid accidentally sending too much data to the LLM,
 # we limit the total length of tool-call responses.

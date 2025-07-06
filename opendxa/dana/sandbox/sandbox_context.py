@@ -22,9 +22,9 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional
 
 from dana.common.resource.base_resource import BaseResource
+from dana.core.lang.parser.utils.scope_utils import extract_scope_and_name
 from opendxa.dana.common.exceptions import StateError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
-from dana.core.lang.parser.utils.scope_utils import extract_scope_and_name
 
 if TYPE_CHECKING:
     from dana.core.lang.context_manager import ContextManager

@@ -4,12 +4,12 @@ This is a simple example of how to use the code agent.
 
 from pathlib import Path
 
-from dana.frameworks.agent import Agent
 from dana.common.utils.logging import DANA_LOGGER
 from dana.contrib.code_agent.code_resource import CodeResource
 from dana.contrib.sql_agent_with_dynamic_plan.execution.planning.dynamic_plan_executor import (
     DynamicPlanExecutor,
 )
+from dana.frameworks.agent import Agent
 
 DANA_LOGGER.setLevel(DANA_LOGGER.DEBUG)
 

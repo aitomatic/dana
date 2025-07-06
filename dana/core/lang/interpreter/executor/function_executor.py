@@ -20,6 +20,7 @@ Discord: https://discord.gg/6jGD4PYk
 import logging
 from typing import Any
 
+from dana.common.exceptions import SandboxError
 from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
 from dana.core.lang.interpreter.executor.function_error_handling import FunctionExecutionErrorHandler
 from dana.core.lang.interpreter.executor.function_name_utils import FunctionNameInfo
@@ -32,7 +33,6 @@ from dana.core.lang.parser.ast import (
     FunctionDefinition,
 )
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.common.exceptions import SandboxError
 
 
 class FunctionExecutor(BaseExecutor):
