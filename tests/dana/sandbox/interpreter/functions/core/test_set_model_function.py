@@ -329,7 +329,7 @@ class TestSetModelFunction(unittest.TestCase):
             output = captured_output.getvalue()
             self.assertIn("Current model: openai:gpt-4o", output)
             self.assertIn("Available models:", output)
-            self.assertIn("✓ openai:gpt-4o", output)  # Should show current model with checkmark
+            self.assertIn("✅ openai:gpt-4o", output)  # Should show current model with checkmark
 
         finally:
             sys.stdout = sys.__stdout__
