@@ -20,7 +20,7 @@
         "**/-Makefile": true,
         "**/mkdocs.yml": true,
         "**/pytest.ini": true,
-        "**/.env.example": true,
+        "**/-.env.example": true,
         "**/.cursorrules": true,
         "**/.-markdownlint.yaml": true,
         "**/.pre-commit-config.yaml": true,

@@ -31,7 +31,7 @@ async def main():
     api_keys = {
         "OpenAI": os.environ.get("OPENAI_API_KEY"),
         "Anthropic": os.environ.get("ANTHROPIC_API_KEY"),
-        "Azure": os.environ.get("AZURE_OPENAI_KEY"),
+        "Azure": os.environ.get("AZURE_OPENAI_API_KEY"),
         "Groq": os.environ.get("GROQ_API_KEY"),
         "Google": os.environ.get("GOOGLE_API_KEY"),
     }
@@ -44,7 +44,7 @@ async def main():
         print("\nSupported providers and their environment variables:")
         print("  - OpenAI: OPENAI_API_KEY")
         print("  - Anthropic: ANTHROPIC_API_KEY")
-        print("  - Azure: AZURE_OPENAI_KEY")
+        print("  - Azure: AZURE_OPENAI_API_KEY")
         print("  - Groq: GROQ_API_KEY")
         print("  - Google: GOOGLE_API_KEY")
         return

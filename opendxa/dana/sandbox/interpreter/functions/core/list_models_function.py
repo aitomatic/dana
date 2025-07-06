@@ -12,9 +12,9 @@ in preferred order from the configuration.
 from typing import Any
 
 from dana.common.utils.logging import DXA_LOGGER
-from opendxa.dana.common.exceptions import SandboxError
 from dana.core.lang.interpreter.functions.core.set_model_function import _get_available_model_names
 from dana.core.lang.sandbox_context import SandboxContext
+from opendxa.dana.common.exceptions import SandboxError
 
 
 def list_models_function(

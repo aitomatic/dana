@@ -20,9 +20,9 @@ Discord: https://discord.gg/6jGD4PYk
 from typing import Any
 
 from dana.common.mixins.loggable import Loggable
-from opendxa.dana.common.exceptions import SandboxError
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
+from opendxa.dana.common.exceptions import SandboxError
 
 
 class BaseExecutor(Loggable):

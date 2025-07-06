@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Test Phase 3 imports and functionality."""
 
-import sys
 import os
+import sys
 
 # Add dana directory to path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -10,17 +10,17 @@ sys.path.insert(0, project_root)
 
 # Set up compatibility layer
 from dana.compat import setup_migration_compatibility
+
 setup_migration_compatibility()
 
 # Pre-import new modules to ensure they're available for compatibility
-import dana.core.stdlib
 
 def test_stdlib_imports():
     """Test importing standard library components from new dana structure."""
     print("Testing stdlib import paths...")
     
     try:
-        from dana.core.stdlib import FunctionRegistry, DanaFunction
+        from dana.core.stdlib import DanaFunction, FunctionRegistry
         print("✅ dana.core.stdlib.FunctionRegistry, DanaFunction")
     except ImportError as e:
         print(f"❌ dana.core.stdlib: {e}")
@@ -98,7 +98,7 @@ def test_dana_execution():
     
     try:
         # Test that we can still parse and execute Dana code
-        from dana.core import DanaParser, DanaSandbox
+        from dana.core import DanaParser
         
         parser = DanaParser()
         ast = parser.parse('x = 5\nlog("test")')

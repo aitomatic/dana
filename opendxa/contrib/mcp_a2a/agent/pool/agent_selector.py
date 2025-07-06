@@ -8,10 +8,10 @@ the most appropriate agent from a pool based on task requirements and skills.
 import json
 from typing import TYPE_CHECKING, Any
 
-from opendxa import BaseRequest
 from dana.common.mixins import Loggable
 from dana.common.resource.llm_resource import LLMResource
 from dana.common.utils import Misc
+from opendxa import BaseRequest
 
 if TYPE_CHECKING:
     from .agent_pool import AgentPool

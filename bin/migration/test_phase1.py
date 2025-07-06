@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Test Phase 1 imports and functionality."""
 
-import sys
 import os
+import sys
 
 # Add dana directory to path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -10,12 +10,11 @@ sys.path.insert(0, project_root)
 
 # Set up compatibility layer
 from dana.compat import setup_migration_compatibility
+
 setup_migration_compatibility()
 
 # Pre-import new modules to ensure they're available for compatibility
-import dana.core.lang.parser
-import dana.core.lang.interpreter  
-import dana.core.lang
+
 
 def test_new_imports():
     """Test importing from new dana structure."""

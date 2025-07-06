@@ -2,10 +2,8 @@
 """Track and display migration progress."""
 
 import json
-import os
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 # Migration phases and their tasks
 PHASES = {
@@ -54,7 +52,7 @@ PHASES = {
 STATUS_FILE = Path("scripts/migration/status.json")
 
 
-def load_status() -> Dict:
+def load_status() -> dict:
     """Load migration status from file."""
     if STATUS_FILE.exists():
         with open(STATUS_FILE) as f:
@@ -62,14 +60,14 @@ def load_status() -> Dict:
     return {"phases": {}, "started": datetime.now().isoformat()}
 
 
-def save_status(status: Dict) -> None:
+def save_status(status: dict) -> None:
     """Save migration status to file."""
     STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(STATUS_FILE, 'w') as f:
         json.dump(status, f, indent=2)
 
 
-def get_phase_status(status: Dict, phase: int) -> Tuple[int, int]:
+def get_phase_status(status: dict, phase: int) -> tuple[int, int]:
     """Get completed and total tasks for a phase."""
     phase_data = status.get("phases", {}).get(str(phase), {})
     completed = len([t for t in phase_data.get("tasks", {}).values() if t.get("completed")])

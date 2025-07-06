@@ -16,8 +16,8 @@ from dana.common.config.config_loader import ConfigLoader
 from dana.common.exceptions import LLMError
 from dana.common.resource.llm_resource import LLMResource
 from dana.common.utils.logging import DXA_LOGGER
-from opendxa.dana.common.exceptions import SandboxError
 from dana.core.lang.sandbox_context import SandboxContext
+from opendxa.dana.common.exceptions import SandboxError
 
 
 def _get_available_model_names() -> list[str]:

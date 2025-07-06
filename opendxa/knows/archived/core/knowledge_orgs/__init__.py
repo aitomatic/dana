@@ -31,25 +31,21 @@ __all__ = [
     # Base classes and protocols
     "KnowledgeOrganization",
     "KnowledgeType",
-    
     # Exceptions
     "StorageError",
-    "RetrievalError", 
+    "RetrievalError",
     "QueryError",
     "ValidationError",
-    
     # Configuration classes
     "RedisSettings",
     "VectorStoreSettings",
     "TimeSeriesSettings",
     "RelationalSettings",
-    
     # Store implementations
     "SemiStructuredStore",
     "VectorStore",
     "TimeSeriesStore",
     "RelationalStore",
-    
     # Dana integration
     "KnowledgeStoreTypes",
     "create_store",
@@ -61,5 +57,5 @@ __all__ = [
     "get_store_types",
     "get_active_stores",
     "convert_dana_to_python",
-    "convert_python_to_dana"
-] 
+    "convert_python_to_dana",
+]

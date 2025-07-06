@@ -19,6 +19,7 @@ Discord: https://discord.gg/6jGD4PYk
 
 from typing import Any
 
+from dana.common.exceptions import SandboxError
 from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.interpreter.executor.statement import (
@@ -42,7 +43,6 @@ from dana.core.lang.parser.ast import (
     UseStatement,
 )
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.common.exceptions import SandboxError
 
 
 class StatementExecutor(BaseExecutor):

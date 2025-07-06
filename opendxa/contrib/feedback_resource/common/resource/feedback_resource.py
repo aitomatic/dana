@@ -9,6 +9,6 @@ class FeedbackResource(BaseResource):
         pass
 
     def get_feedback(self, question: str) -> str:
-        """Get feedback or suggestion from the user. """
+        """Get feedback or suggestion from the user."""
         print(f"\033[93m> Assistant : {question}\033[0m")
-        return input(f"> User : ")
+        return input("> User : ")

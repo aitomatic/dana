@@ -17,10 +17,10 @@ from importlib.machinery import ModuleSpec
 from pathlib import Path
 from typing import Any
 
+from dana.core.runtime.modules.core import initialize_module_system
 from opendxa.contrib.python_to_dana.core.exceptions import DanaCallError
 from opendxa.contrib.python_to_dana.core.inprocess_sandbox import InProcessSandboxInterface
 from opendxa.contrib.python_to_dana.core.sandbox_interface import SandboxInterface
-from dana.core.runtime.modules.core import initialize_module_system
 
 
 class DanaModuleWrapper:

@@ -2,8 +2,8 @@
 
 import os
 
-from opendxa.api.client import APIClient
 from dana.frameworks.poet.types import POETConfig
+from opendxa.api.client import APIClient
 
 
 class POETClient:

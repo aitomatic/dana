@@ -18,8 +18,8 @@ from prompt_toolkit.keys import Keys
 from prompt_toolkit.styles import Style
 
 from dana.common.mixins.loggable import Loggable
-from dana.core.repl.repl import REPL
 from dana.common.terminal_utils import ColorScheme, get_dana_lexer
+from dana.core.repl.repl import REPL
 
 # Constants
 HISTORY_FILE = os.path.expanduser("~/.dana_history")

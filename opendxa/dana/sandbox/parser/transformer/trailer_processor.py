@@ -8,17 +8,17 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
+
+from dana.common.utils.logging import DXA_LOGGER
+from dana.core.lang.exceptions import SandboxError
 from dana.core.lang.parser.ast import (
     AttributeAccess,
     Expression,
     FunctionCall,
-    Identifier,
     ObjectFunctionCall,
     SubscriptExpression,
 )
-from dana.core.lang.exceptions import SandboxError
-from dana.common.utils.logging import DXA_LOGGER
 
 
 class TrailerValidationError(SandboxError):
@@ -52,7 +52,7 @@ class TrailerValidator:
             raise TrailerValidationError(f"Expected 'NAME', got '{trailer.type}'")
 
         if not hasattr(trailer, "value"):
-            raise TrailerValidationError(f"Attribute trailer missing 'value' attribute")
+            raise TrailerValidationError("Attribute trailer missing 'value' attribute")
 
 
 class FunctionCallHandler:
@@ -62,7 +62,7 @@ class FunctionCallHandler:
         self.transformer = transformer
         self.validator = TrailerValidator()
 
-    def handle_function_call(self, current_base: Expression, trailer: Any) -> Union[ObjectFunctionCall, FunctionCall]:
+    def handle_function_call(self, current_base: Expression, trailer: Any) -> ObjectFunctionCall | FunctionCall:
         """
         Handle function call trailers.
 
@@ -90,7 +90,7 @@ class FunctionCallHandler:
         else:
             return self._create_function_call(current_base, args)
 
-    def _create_method_call(self, attribute_access: AttributeAccess, args: Dict[str, Any]) -> ObjectFunctionCall:
+    def _create_method_call(self, attribute_access: AttributeAccess, args: dict[str, Any]) -> ObjectFunctionCall:
         """Create ObjectFunctionCall for method calls."""
         object_expr = attribute_access.object
         method_name = attribute_access.attribute
@@ -99,7 +99,7 @@ class FunctionCallHandler:
             object=object_expr, method_name=method_name, args=args, location=getattr(attribute_access, "location", None)
         )
 
-    def _create_function_call(self, base: Expression, args: Dict[str, Any]) -> FunctionCall:
+    def _create_function_call(self, base: Expression, args: dict[str, Any]) -> FunctionCall:
         """Create FunctionCall for regular function calls."""
         name = getattr(base, "name", None)
         if not isinstance(name, str):
@@ -161,7 +161,7 @@ class ChainMetrics:
         self.chain_length_warning_threshold = 20
         self.chain_length_error_threshold = 50
 
-    def analyze_chain(self, trailers: List[Any]) -> Dict[str, Any]:
+    def analyze_chain(self, trailers: list[Any]) -> dict[str, Any]:
         """
         Analyze method chain for metrics and optimization opportunities.
 
@@ -189,7 +189,7 @@ class ChainMetrics:
 
         return analysis
 
-    def _count_trailer_types(self, trailers: List[Any]) -> Dict[str, int]:
+    def _count_trailer_types(self, trailers: list[Any]) -> dict[str, int]:
         """Count different types of trailers in the chain."""
         counts = {"function_calls": 0, "attribute_access": 0, "indexing": 0, "unknown": 0}
 
@@ -221,7 +221,7 @@ class TrailerProcessor:
         self.indexing_handler = IndexingHandler(transformer)
         self.metrics = ChainMetrics()
 
-    def process_trailers(self, base: Expression, trailers: List[Any]) -> Expression:
+    def process_trailers(self, base: Expression, trailers: list[Any]) -> Expression:
         """
         Process trailers sequentially to handle method chaining.
 
