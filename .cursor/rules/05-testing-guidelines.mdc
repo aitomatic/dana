@@ -12,7 +12,7 @@
 - **Create `test_*.na` files** for Dana functionality testing
 - Use `log()` statements for test output and debugging (provides color coding)
 - pytest automatically discovers and runs `.na` test files
-- Run `.na` files directly: `dana test_example.na` or `uv run python -m opendxa.dana.exec.dana test_example.na`
+- Run `.na` files directly: `dana test_example.na` or `uv run python -m dana.core.repl.dana test_example.na`
 
 ## Testing Commands
 
