@@ -11,7 +11,6 @@ import os
 from typing import Any
 
 from dana.common.config.config_loader import ConfigLoader
-from dana.common.exceptions import LLMError
 from dana.common.utils.logging import DANA_LOGGER
 
 
@@ -31,7 +30,7 @@ class LLMConfigurationManager:
         self._selected_model = None
 
     @property
-    def selected_model(self) -> str:
+    def selected_model(self) -> str | None:
         """Get the currently selected model."""
         if self._selected_model is None:
             self._selected_model = self._determine_model()
@@ -39,10 +38,26 @@ class LLMConfigurationManager:
 
     @selected_model.setter
     def selected_model(self, value: str) -> None:
-        """Set the model, with validation."""
-        if not self._validate_model(value):
-            raise LLMError(f"Invalid or unavailable model: {value}")
+        """Set the model."""
         self._selected_model = value
+
+    def _determine_model(self) -> str | None:
+        """Determine which model to use based on configuration and availability."""
+        # Mock mode
+        if os.environ.get("DANA_MOCK_LLM", "").lower() == "true":
+            return "mock:test-model"
+
+        # Accept explicit model without validation - let user figure out issues at usage time
+        if self.explicit_model:
+            return self.explicit_model
+
+        # Try auto-selection, but don't fail if nothing found
+        auto_model = self._find_first_available_model()
+        if auto_model:
+            return auto_model
+
+        # Return None instead of raising - validation happens at usage time
+        return None
 
     def _validate_model(self, model_name: str) -> bool:
         """Validate if model is available (has required API key and is properly configured).
@@ -77,7 +92,7 @@ class LLMConfigurationManager:
 
             # Check if this is a known provider type (has API key mapping)
             api_key_var = self._get_api_key_var_for_provider(provider)
-            
+
             if provider not in provider_configs:
                 # Provider not in config
                 if api_key_var:
@@ -99,7 +114,7 @@ class LLMConfigurationManager:
             # check if there are any environment variable requirements in the provider config
             provider_config = provider_configs[provider]
             required_vars = []
-            for key, value in provider_config.items():
+            for _key, value in provider_config.items():
                 if isinstance(value, str) and value.startswith("env:"):
                     env_var = value[4:]  # Remove "env:" prefix
                     required_vars.append(env_var)
@@ -115,26 +130,6 @@ class LLMConfigurationManager:
             # On any exception, allow setting (will fail at query time if invalid)
             return True
 
-    def _determine_model(self) -> str:
-        """Determine which model to use."""
-        # Mock mode
-        if os.environ.get("DANA_MOCK_LLM", "").lower() == "true":
-            return "mock:test-model"
-
-        # Explicit model
-        if self.explicit_model:
-            if self._validate_model(self.explicit_model):
-                return self.explicit_model
-            else:
-                raise LLMError(f"Requested model '{self.explicit_model}' not available - missing API key")
-
-        # Auto-selection
-        auto_model = self._find_first_available_model()
-        if auto_model:
-            return auto_model
-
-        raise LLMError("No available LLM models found. Please set API keys in your .env file.")
-
     def _find_first_available_model(self) -> str | None:
         """Find first model with API key set."""
         try:
@@ -142,29 +137,19 @@ class LLMConfigurationManager:
             preferred_models = config.get("llm", {}).get("preferred_models", [])
 
             if not preferred_models:
-                DANA_LOGGER.warning("No preferred_models configured")
                 return None
-
-            DANA_LOGGER.debug(f"Checking preferred models: {preferred_models}")
 
             for model in preferred_models:
                 # Handle both string and dict formats
                 model_name = model if isinstance(model, str) else model.get("name") if isinstance(model, dict) else None
 
                 if model_name and self._is_model_actually_available(model_name):
-                    DANA_LOGGER.info(f"✅ Selected model: {model_name}")
                     return model_name
-                elif model_name:
-                    DANA_LOGGER.debug(f"❌ Skipping model: {model_name} (no API key)")
 
-            DANA_LOGGER.warning("No models have required API keys set")
             return None
 
-        except Exception as e:
-            DANA_LOGGER.error(f"Error finding first available model: {e}")
+        except Exception:
             return None
-
-
 
     def _get_provider_from_model(self, model_name: str) -> str | None:
         """Extract provider from model name."""
@@ -193,7 +178,7 @@ class LLMConfigurationManager:
 
     def _is_model_actually_available(self, model_name: str) -> bool:
         """Strict validation for whether a model is actually available and usable.
-        
+
         Used by get_available_models() - requires proper configuration and API keys.
         More strict than _validate_model() which allows setting invalid formats.
         """
@@ -237,7 +222,7 @@ class LLMConfigurationManager:
             # check if there are any environment variable requirements in the provider config
             provider_config = provider_configs[provider]
             required_vars = []
-            for key, value in provider_config.items():
+            for _key, value in provider_config.items():
                 if isinstance(value, str) and value.startswith("env:"):
                     env_var = value[4:]  # Remove "env:" prefix
                     required_vars.append(env_var)

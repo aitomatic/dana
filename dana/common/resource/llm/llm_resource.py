@@ -171,28 +171,18 @@ class LLMResource(BaseResource):
             self.warning("No preferred_models list found in config or arguments.")
 
         # --- Determine the model ---
-        # Priority: constructor arg -> find available -> default from config -> None
+        # Priority: constructor arg -> find available -> None (let user figure it out)
         if model:
-            # Validate the explicitly provided model
-            if not self._validate_model(model):
-                self.warning(f"Explicitly provided model '{model}' seems unavailable (missing API keys?). Continuing anyway.")
-            self._model = model  # Use underscore to avoid setter validation initially
+            # Accept any explicitly provided model without validation
+            self._model = model
             self.debug(f"Using explicitly set model: {self._model}")
         else:
-            # Automatically find the first available model from the list
+            # Try to find an available model, but don't fail if none found
             self._model = self._find_first_available_model()
-            if not self._model:
-                # If auto-selection fails, log an error (unless in mock mode).
-                # We no longer fall back to `default_model`.
-                is_mock_mode = os.environ.get("DANA_MOCK_LLM", "").lower() == "true"
-                if not is_mock_mode:
-                    self.error(
-                        "Could not find an available model from the preferred_models list. "
-                        "No explicit model was provided, and the fallback to 'default_model' is no longer used."
-                    )
-                else:
-                    self.debug("No available model found, but mock mode is enabled. This is expected in test environments.")
-                # self._model remains None.
+            if self._model:
+                self.debug(f"Auto-selected model: {self._model}")
+            else:
+                self.debug("No model auto-selected - will be determined at usage time")
 
         # Initialize query executor (Phase 5A integration)
         self._query_executor = LLMQueryExecutor(
@@ -238,7 +228,9 @@ class LLMResource(BaseResource):
         if self._model:
             self.config["model"] = self._model
 
-        self.info(f"Initialized LLMResource '{name}' with model '{self.model}'")
+        # Use direct model value to avoid triggering validation
+        model_display = self._model or "auto-select"
+        self.info(f"Initialized LLMResource '{name}' with model '{model_display}'")
         self.debug(f"Final LLM config keys: {list(self.config.keys())}")
 
         # Mocking setup
@@ -247,7 +239,7 @@ class LLMResource(BaseResource):
     @property
     def model(self) -> str | None:
         """The currently selected LLM model name."""
-        return self._config_manager.selected_model
+        return self._model
 
     @property
     def physical_model_name(self) -> str | None:
@@ -289,8 +281,8 @@ class LLMResource(BaseResource):
     def model(self, value: str) -> None:
         """Set the model and force reinitialization with new provider config."""
         if value != self._model:
-            self._config_manager.selected_model = value
             self._model = value
+            self._config_manager.selected_model = value  # Keep config manager in sync
             self.config["model"] = value
             self.info(f"LLM model set to: {self._model}")
 
