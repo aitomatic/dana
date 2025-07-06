@@ -61,3 +61,4 @@ node_modules/
 .cache/
 .ipynb_checkpoints/
 .cursor/
+!.cursor/rules/

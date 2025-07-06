@@ -1,0 +1,27 @@
+# Error Handling - Standards & Patterns
+
+## Error Handling Standards
+
+Every error message must follow this template:
+"[What failed]: [Why it failed]. [What user can do]. [Available alternatives]"
+
+Example:
+"Dana module 'math_utils' not found: File does not exist in search paths. 
+Check module name spelling or verify file exists. 
+Available modules: simple_math, string_utils"
+
+## Requirements
+
+- Handle all invalid inputs gracefully
+- Include context about what was attempted
+- Provide actionable suggestions for resolution
+- Test error paths as thoroughly as success paths
+
+## Diagnostic Verification
+
+- For complex issues, verify diagnoses before making code changes
+- Add logging statements to confirm assumptions
+- Write temporary test cases to validate behavior
+- Run relevant test suites to ensure no regressions
+- Use debugger breakpoints when needed
+- Document verification steps taken
