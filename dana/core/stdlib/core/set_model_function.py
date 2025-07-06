@@ -288,43 +288,22 @@ def set_model_function(
         config_manager = LLMConfigurationManager()
         available_models = config_manager.get_available_models()
 
-        # Display concise information with better formatting
+        # Display concise information
         print(f"Current model: {current_model}")
 
         if available_models:
-            # Group models by provider for better organization
-            providers = {}
-            for model_name in available_models:
-                provider = model_name.split(":")[0] if ":" in model_name else "unknown"
-                if provider not in providers:
-                    providers[provider] = []
-                providers[provider].append(model_name)
-
             print("Available models:")
-            for provider, models in sorted(providers.items()):
-                print(f"  {provider.upper()}:")
-                for model_name in models:
-                    marker = "✅" if model_name == current_model else "  "
-                    print(f"    {marker} {model_name}")
+            for model_name in available_models:
+                marker = "✓" if model_name == current_model else " "
+                print(f"  {marker} {model_name}")
 
-            print("\n💡 Examples:")
-            print("  set_model('gpt-4')      # fuzzy match → openai:gpt-4o")
-            print("  set_model('claude')     # fuzzy match → anthropic:claude-3-5-*")
-            print("  set_model('openai')     # provider → best openai model")
-            print("  set_model('groq')       # provider → best groq model")
-
-            print("\n🔧 Pro tips:")
-            print("  - Use partial names for quick switching")
-            print("  - Provider names work: 'openai', 'anthropic', 'google'")
-            print("  - Case insensitive: 'GPT-4' = 'gpt-4'")
+            print("\nExamples:")
+            print("  set_model('gpt-4')    # fuzzy match")
+            print("  set_model('claude')   # fuzzy match")
+            print("  set_model('openai')   # best provider model")
         else:
-            print("\n❌ No models available")
-            print("🔑 Check your API keys in environment variables:")
-            print("   • OPENAI_API_KEY     - for OpenAI models")
-            print("   • ANTHROPIC_API_KEY  - for Claude models")
-            print("   • GOOGLE_API_KEY     - for Gemini models")
-            print("   • GROQ_API_KEY       - for Groq models")
-            print("   • AZURE_OPENAI_*     - for Azure OpenAI")
+            print("No models available - check your API keys in environment variables")
+            print("Common API keys: OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY")
 
         return current_model
 
