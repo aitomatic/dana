@@ -4,7 +4,6 @@ import os
 import unittest
 from unittest.mock import patch
 
-from dana.common.exceptions import LLMError
 from dana.common.resource.llm.llm_configuration_manager import LLMConfigurationManager
 
 
@@ -70,9 +69,9 @@ class TestLLMConfigurationManager(unittest.TestCase):
         config_manager.selected_model = config_manager.selected_model  # Should not raise
         self.assertIsInstance(config_manager.selected_model, str)
 
-        # Test setter with invalid model (should raise LLMError)
-        with self.assertRaises(LLMError):
-            config_manager.selected_model = "anthropic:claude-3"  # No ANTHROPIC_API_KEY
+        # Test setter with invalid model (should accept it - validation happens at usage time)
+        config_manager.selected_model = "anthropic:claude-3"  # No ANTHROPIC_API_KEY
+        self.assertEqual(config_manager.selected_model, "anthropic:claude-3")
 
     @patch.dict(os.environ, {}, clear=True)  # Clear all environment variables for this test
     def test_find_first_available_model(self):
@@ -221,11 +220,9 @@ class TestLLMConfigurationManager(unittest.TestCase):
         # Use a model that requires an API key we don't have
         config_manager = LLMConfigurationManager(explicit_model="someprovider:unavailable-model")
 
-        # Should raise error for unavailable explicit model
-        with self.assertRaises(LLMError) as context:
-            config_manager._determine_model()
-
-        self.assertIn("not available", str(context.exception))
+        # Should accept unavailable explicit model - validation happens at usage time
+        model = config_manager._determine_model()
+        self.assertEqual(model, "someprovider:unavailable-model")
 
     @patch.dict(os.environ, {"DANA_MOCK_LLM": "false", "OPENAI_API_KEY": "test-key"}, clear=True)
     def test_determine_model_auto_selection(self):

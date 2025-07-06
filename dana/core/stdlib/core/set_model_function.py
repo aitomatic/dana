@@ -13,11 +13,10 @@ import difflib
 from typing import Any
 
 from dana.common.config.config_loader import ConfigLoader
-from dana.common.exceptions import LLMError
+from dana.common.exceptions import LLMError, SandboxError
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.utils.logging import DANA_LOGGER
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.common.exceptions import SandboxError
 
 
 def _get_available_model_names() -> list[str]:
@@ -175,7 +174,7 @@ def _find_closest_model_match(model_input: str, available_models: list[str]) -> 
 
 def set_model_function(
     context: SandboxContext,
-    model: str,
+    model: str | None = None,
     options: dict[str, Any] | None = None,
 ) -> str:
     """Execute the set_model function to change the LLM model in the current context.
@@ -187,18 +186,23 @@ def set_model_function(
         context: The runtime context for variable resolution.
         model: The model name to set (e.g., "gpt-4", "claude", "openai:gpt-4o").
                Supports partial names that will be matched to available models.
+               If None or not provided, returns the currently selected model.
         options: Optional parameters for the function.
                - exact_match_only (bool): If True, disable fuzzy matching (default: False)
 
     Returns:
-        The name of the model that was actually set (may be different from input if fuzzy matched).
+        The name of the model that was actually set (may be different from input if fuzzy matched),
+        or the currently selected model if no model argument is provided.
 
     Raises:
         SandboxError: If the function execution fails or no suitable model is found.
         LLMError: If the model is invalid or unavailable.
 
     Example:
-        # Exact match
+        # Get current model
+        current = set_model()
+
+        # Set exact match
         set_model("openai:gpt-4o")
 
         # Fuzzy match examples
@@ -211,6 +215,24 @@ def set_model_function(
     if options is None:
         options = {}
 
+    # Get the current LLM resource from context
+    llm_resource = context.get("system:llm_resource")
+
+    # If no model argument provided, return the current model
+    if model is None:
+        if llm_resource is None:
+            logger.warning("No LLM resource found in context, no current model set")
+            return "None"
+
+        current_model = llm_resource.model
+        if current_model is None:
+            logger.warning("LLM resource exists but no model is currently set")
+            return "None"
+
+        logger.info(f"Current model: {current_model}")
+        return current_model
+
+    # Validate model argument
     if not model:
         raise SandboxError("set_model function requires a non-empty model name")
 
@@ -234,9 +256,6 @@ def set_model_function(
                 model = matched_model
             elif not matched_model:
                 logger.warning(f"No close match found for '{original_input}', trying as-is")
-
-        # Get the current LLM resource from context
-        llm_resource = context.get("system:llm_resource")
 
         if llm_resource is None:
             # If no LLM resource exists, create a new one with the specified model

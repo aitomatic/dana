@@ -146,7 +146,7 @@ class LLMResource(BaseResource):
         super().__init__(name)
 
         # Initialize configuration manager (Phase 1B integration)
-        self._config_manager = LLMConfigurationManager(explicit_model=model, config=kwargs)
+        self._config_manager = LLMConfigurationManager(explicit_model=model)
 
         # Initialize tool call manager (Phase 4A integration)
         self._tool_call_manager = LLMToolCallManager()
@@ -171,28 +171,18 @@ class LLMResource(BaseResource):
             self.warning("No preferred_models list found in config or arguments.")
 
         # --- Determine the model ---
-        # Priority: constructor arg -> find available -> default from config -> None
+        # Priority: constructor arg -> find available -> None (let user figure it out)
         if model:
-            # Validate the explicitly provided model
-            if not self._validate_model(model):
-                self.warning(f"Explicitly provided model '{model}' seems unavailable (missing API keys?). Continuing anyway.")
-            self._model = model  # Use underscore to avoid setter validation initially
+            # Accept any explicitly provided model without validation
+            self._model = model
             self.debug(f"Using explicitly set model: {self._model}")
         else:
-            # Automatically find the first available model from the list
+            # Try to find an available model, but don't fail if none found
             self._model = self._find_first_available_model()
-            if not self._model:
-                # If auto-selection fails, log an error (unless in mock mode).
-                # We no longer fall back to `default_model`.
-                is_mock_mode = os.environ.get("DANA_MOCK_LLM", "").lower() == "true"
-                if not is_mock_mode:
-                    self.error(
-                        "Could not find an available model from the preferred_models list. "
-                        "No explicit model was provided, and the fallback to 'default_model' is no longer used."
-                    )
-                else:
-                    self.debug("No available model found, but mock mode is enabled. This is expected in test environments.")
-                # self._model remains None.
+            if self._model:
+                self.debug(f"Auto-selected model: {self._model}")
+            else:
+                self.debug("No model auto-selected - will be determined at usage time")
 
         # Initialize query executor (Phase 5A integration)
         self._query_executor = LLMQueryExecutor(
@@ -238,7 +228,9 @@ class LLMResource(BaseResource):
         if self._model:
             self.config["model"] = self._model
 
-        self.info(f"Initialized LLMResource '{name}' with model '{self.model}'")
+        # Use direct model value to avoid triggering validation
+        model_display = self._model or "auto-select"
+        self.info(f"Initialized LLMResource '{name}' with model '{model_display}'")
         self.debug(f"Final LLM config keys: {list(self.config.keys())}")
 
         # Mocking setup
@@ -289,8 +281,8 @@ class LLMResource(BaseResource):
     def model(self, value: str) -> None:
         """Set the model and force reinitialization with new provider config."""
         if value != self._model:
-            self._config_manager.selected_model = value
             self._model = value
+            self._config_manager.selected_model = value  # Keep config manager in sync
             self.config["model"] = value
             self.info(f"LLM model set to: {self._model}")
 
@@ -688,42 +680,22 @@ class LLMResource(BaseResource):
         return responses
 
     def _validate_model(self, model_name: str) -> bool:
-        """Checks if the necessary API keys for a given model are available.
-
-        This method delegates to the LLMConfigurationManager, which now uses
-        ValidationUtilities.validate_model_availability() for centralized,
-        consistent validation logic across the Dana framework.
-
-        Args:
-            model_name: Name of the model to validate
-
-        Returns:
-            True if the model is available and properly configured, False otherwise
-        """
+        """Check if model has required API key."""
         return self._config_manager._validate_model(model_name)
 
     def _find_first_available_model(self) -> str | None:
-        """Finds the first available model from the preferred_models list.
-
-        Iterates through `self.preferred_models` and returns the name of the
-        first model for which all `required_env_vars` are set as environment vars.
-
-        Returns:
-            The name of the first available model, or None if none are available.
-        """
+        """Find first available model from preferred list."""
         return self._config_manager._find_first_available_model()
 
     def get_available_models(self) -> list[str]:
-        """Gets a list of models from preferred_models that are currently available.
+        """Get list of models with API keys set."""
+        self.debug("Delegating get_available_models to configuration manager")
+        return self._config_manager.get_available_models()
 
-        Checks API key availability for each model in `self.preferred_models`.
-
-        Returns:
-            A list of available model names.
-        """
-        available = self._config_manager.get_available_models()
-        self.debug(f"Available models based on API keys: {available}")
-        return available
+    def _is_model_available(self, model_info: dict[str, Any]) -> bool:
+        """Check if model is available based on API key."""
+        model_name = model_info.get("name")
+        return bool(model_name and self._config_manager._is_model_actually_available(model_name))
 
     def _resolve_env_vars_in_provider_configs(self, provider_configs: dict[str, Any]) -> dict[str, Any]:
         """Resolve environment variable references in provider configs.
@@ -789,15 +761,6 @@ class LLMResource(BaseResource):
 
         # Use the consolidated helper method for all model-specific transformations
         return self._get_aisuite_config_for_model(self._model, resolved_config)
-
-    def _is_model_available(self, model_info: dict[str, Any]) -> bool:
-        """Check if a given model is available based on required API keys."""
-        model_name = model_info.get("name")
-        if not model_name:
-            return False
-
-        # Delegate to the configuration manager for validation
-        return self._validate_model(model_name)
 
     def _get_provider_from_model(self, model_name: str) -> str | None:
         """Extract provider name from model name."""

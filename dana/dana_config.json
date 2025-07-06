@@ -50,7 +50,7 @@
                 "api_type": "openai"
             },
             "azure": {
-                "api_key": "env:AZURE_OPENAI_API_KEY",
+                "api_key": "env:AZURE_OPENAI_KEY",
                 "base_url": "https://your-company.openai.azure.com/",
                 "api_type": "openai"
             },
