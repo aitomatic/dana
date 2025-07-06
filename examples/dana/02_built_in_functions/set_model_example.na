@@ -1,56 +1,53 @@
-# Example: Using the set_model function with fuzzy matching in Dana
-# This demonstrates how to change LLM models during program execution
-# with support for fuzzy matching of model names
+# Example: Using the set_model function to view and set models in Dana
+# This demonstrates the concise format that only shows available models
 
-log("🚀 Starting enhanced set_model example with fuzzy matching")
+log("Starting set_model example")
 
-# === EXACT MATCHING ===
-log("1. Setting model with exact name")
-current_model = set_model("openai:gpt-4o-mini")
-log(f"Current model: {current_model}")
+# === VIEW CURRENT MODEL AND AVAILABLE OPTIONS ===
+log("1. Viewing current model and available options:")
+current_model = set_model()  # No parameters - displays concise information
+log(f"Current model returned: {current_model}")
 
-response1 = reason("What is the capital of France?")
-log(f"OpenAI response: {response1}")
+# === SET MODELS WITH FAULT-TOLERANT NAMES ===
+log("2. Setting models with fault-tolerant names:")
 
-# === FUZZY MATCHING EXAMPLES ===
-log("2. Using fuzzy matching - partial model name")
-current_model = set_model("gpt-4")  # Will match to "openai:gpt-4o"
-log(f"Current model (fuzzy matched): {current_model}")
+# Using partial names - these will be fuzzy matched
+log("Setting model with 'gpt-4' (partial name)...")
+model = set_model("gpt-4")
+log(f"Model set to: {model}")
 
-log("3. Using fuzzy matching - provider name only")
-current_model = set_model("claude")  # Will match to "anthropic:claude-3-5-sonnet-20241022"
-log(f"Current model (fuzzy matched): {current_model}")
+# Test the model
+response = reason("What is 2+2?")
+log(f"Response from {model}: {response}")
 
-response2 = reason("What is the capital of Spain?")
-log(f"Claude response: {response2}")
+# Using provider name - matches best model for that provider
+log("Setting model with 'claude' (provider name)...")
+model = set_model("claude")
+log(f"Model set to: {model}")
 
-log("4. Using fuzzy matching - case insensitive")
-current_model = set_model("GEMINI")  # Will match to "google:gemini-1.5-pro"
-log(f"Current model (fuzzy matched): {current_model}")
+response = reason("What is the capital of France?")
+log(f"Response from {model}: {response}")
 
-response3 = reason("Explain machine learning in one sentence.")
-log(f"Gemini response: {response3}")
+# Using case-insensitive matching
+log("Setting model with 'GEMINI' (case insensitive)...")
+model = set_model("GEMINI")
+log(f"Model set to: {model}")
 
-# === PROVIDER-SPECIFIC PARTIAL MATCHING ===
-log("5. Provider-specific partial matching")
-current_model = set_model("openai:gpt")  # Will match to best OpenAI GPT model
-log(f"Current model (provider-specific match): {current_model}")
+response = reason("Explain machine learning in one sentence.")
+log(f"Response from {model}: {response}")
 
-# === EXACT MATCH ONLY OPTION ===
-log("6. Disabling fuzzy matching with exact_match_only option")
-# Note: In Dana, options are not directly supported in this syntax
-# But the function supports it internally for programmatic use
+# === VIEWING MODELS AGAIN ===
+log("3. Viewing models again to see current selection:")
+current_model = set_model()  # Shows updated current model with checkmark
 
-log("✅ Enhanced set_model example completed successfully!")
+log("set_model example completed successfully!")
 
-log("📝 Fuzzy matching features demonstrated:")
-log("  • Partial model names: 'gpt-4' → 'openai:gpt-4o'")
-log("  • Provider names: 'claude' → 'anthropic:claude-3-5-sonnet'")
-log("  • Case insensitive: 'GEMINI' → 'google:gemini-1.5-pro'")
-log("  • Provider-specific: 'openai:gpt' → specific OpenAI GPT model")
+log("Key benefits of the set_model function:")
+log("  • Concise output - only shows models you can actually use")
+log("  • Only displays models with available API keys")
+log("  • Clear indication of current model with checkmark")
+log("  • Simple examples for common usage patterns")
+log("  • Fast and focused - no unnecessary information")
 
-# Note: The actual responses will depend on:
-# 1. Available API keys in your environment
-# 2. Whether you're in mock mode (DANA_MOCK_LLM=true)
-# 3. The specific model capabilities and configurations
-# 4. Available models in your LLM configuration 
+# Note: Only models with API keys in your environment will be shown:
+# OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY, DEEPSEEK_API_KEY, etc. 
