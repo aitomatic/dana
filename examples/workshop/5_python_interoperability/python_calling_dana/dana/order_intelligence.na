@@ -1,0 +1,28 @@
+
+def analyze_order(order_data):
+    return reason(f"""
+        Analyze this order for business intelligence:
+        
+        Customer: {order_data.customer_tier} ({order_data.customer_history} previous orders)
+        Order: ${order_data.amount} for {order_data.items} items
+        Location: {order_data.shipping_country}
+        
+        Provide concise insights:
+        - Fraud risk score (0-100)
+        - Upsell opportunities 
+        - Customer satisfaction prediction
+        
+        Return as brief summary.
+    """)
+
+def analyze_customer_risk(customer_data):
+    return reason(f"""
+        Assess customer risk: {customer_data}
+        Return: low/medium/high risk with reasoning
+    """)
+
+def suggest_upsells(order_data):
+    return reason(f"""
+        Suggest upsell products for order: {order_data}
+        Return: top 3 product recommendations with reasoning
+    """) 

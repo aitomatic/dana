@@ -334,7 +334,7 @@ class TestSetModelFunction(unittest.TestCase):
         finally:
             sys.stdout = sys.__stdout__
 
-    def test_set_model_no_parameters_displays_grouped_models(self):
+    def test_set_model_no_parameters_displays_models(self):
         """Test that set_model() displays available models in a simple list."""
         # Redirect stdout to capture print statements
         import io
@@ -377,9 +377,42 @@ class TestSetModelFunction(unittest.TestCase):
                 self.assertIn("set_model('openai')", output)
             elif "No models available" in output:
                 self.assertIn("check your API keys", output)
+                self.assertIn("OPENAI_API_KEY", output)
 
         finally:
             sys.stdout = sys.__stdout__
+
+    def test_bug_fixes_model_matching(self):
+        """Test specific bug fixes for model matching logic."""
+        from dana.core.stdlib.core.set_model_function import _find_closest_model_match
+
+        # Test Bug Fix 1: Groq model pattern should match llama-3.1-70b-versatile
+        available_models = ["groq:llama-3.1-70b-versatile", "groq:llama-3.1-8b-instant", "openai:gpt-4o"]
+
+        # Test that groq provider selection works with corrected pattern
+        result = _find_closest_model_match("groq", available_models)
+        # Should select the 70b model since it matches "llama-3" and "70b" pattern
+        self.assertEqual(result, "groq:llama-3.1-70b-versatile")
+
+        # Test Bug Fix 2: Non-GPT models with "4" should not trigger GPT logic
+        available_models_with_claude4 = [
+            "anthropic:claude-4-hypothetical",  # Hypothetical future model
+            "openai:gpt-4o",
+            "anthropic:claude-3-5-sonnet-20241022",
+        ]
+
+        # Test that "claude-4" doesn't trigger GPT selection logic
+        result = _find_closest_model_match("claude-4", available_models_with_claude4)
+        # Should match the claude model, not fall back to GPT logic
+        self.assertIsNotNone(result)
+        if result:  # Type guard for linter
+            self.assertTrue(result.startswith("anthropic:"))
+            self.assertIn("claude", result.lower())
+
+        # Verify GPT logic still works for actual GPT inputs
+        result = _find_closest_model_match("gpt-4", available_models_with_claude4)
+        # Should correctly select GPT model
+        self.assertEqual(result, "openai:gpt-4o")
 
 
 if __name__ == "__main__":
