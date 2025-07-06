@@ -2,8 +2,11 @@ import argparse
 
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.util.env import assign_default_dana_config
 
 from .dana_input_args_parser import parse_dana_input_args
+
+assign_default_dana_config()
 
 def main():
     """
