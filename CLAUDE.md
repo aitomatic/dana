@@ -4,8 +4,8 @@ Claude AI Configuration and Guidelines
 
 ## Quick Reference - Critical Rules
 🚨 **MUST FOLLOW IMMEDIATELY**
-- Use `DANA_LOGGER` for Python logging: `from dana.common.utils.logging import DANA_LOGGER`
-- Apply the Loggable mixin to Python classes needing easy Dana logging
+- Use standard Python logging: `import logging; logger = logging.getLogger(__name__)`
+- Apply appropriate logging patterns for Dana development
 - Always use f-strings: `f"Value: {var}"` not `"Value: " + str(var)`
 - Dana modules: `import math_utils` (no .na), Python modules: `import math.py`
 - **ALL temporary development files go in `tmp/` directory**
@@ -20,13 +20,13 @@ uv run ruff check . && uv run ruff format .    # Lint and format
 uv run pytest tests/ -v                        # Run tests with verbose output (includes .na files)
 
 # Dana execution - PREFER .na files for Dana functionality testing
-dana examples/dana/na/basic_math_pipeline.na                              # Direct dana command (recommended)
-dana --debug examples/dana/na/basic_math_pipeline.na                      # With debug output
-uv run python -m dana.dana.exec.dana examples/dana/na/basic_math_pipeline.na  # Alternative
+dana examples/dana/01_language_basics/hello_world.na                      # Direct dana command (recommended)
+dana --debug examples/dana/01_language_basics/hello_world.na              # With debug output
+uv run python -m dana.core.repl.dana examples/dana/01_language_basics/hello_world.na  # Alternative
 
 # Interactive development
 dana                                            # Start Dana REPL (recommended)
-uv run python -m dana.dana.exec.repl       # Alternative REPL entry point
+uv run python -m dana.core.repl.repl          # Alternative REPL entry point
 
 # Alternative test execution
 uv run python -m pytest tests/
@@ -218,11 +218,11 @@ Requirements:
 ### When Working on Dana Code
 - **🎯 ALWAYS create `.na` test files** for Dana functionality (not `.py` files)
 - **🎯 Use `dana filename.na`** as the primary execution method
-- Test with existing `.na` files in `examples/dana/na/`
-- Use DanaSandbox for execution testing in Python when needed
-- Validate against grammar in `dana/dana/sandbox/parser/dana_grammar.lark`
+- Test with existing `.na` files in `examples/dana/`
+- Use Dana runtime for execution testing in Python when needed
+- Validate against grammar in `dana/core/lang/parser/dana_grammar.lark`
 - **Use `log()` for examples/testing output** (preferred for color coding)
-- Test Dana code in REPL: `dana` or `uv run python -m dana.dana.exec.repl`
+- Test Dana code in REPL: `dana` or `uv run python -m dana.core.repl.repl`
 - Check AST output: Enable debug logging in transformer
 - Run through pytest: Copy `test_dana_files.py` to test directory
 
@@ -238,12 +238,12 @@ Requirements:
 - Implement proper error handling
 
 ## Common Tasks Quick Guide
-- **Adding new Dana function**: See `dana/dana/sandbox/interpreter/functions/core/`
-- **Creating agent capability**: Inherit from `dana/common/capability/base_capability.py`
-- **Adding LLM integration**: Use `dana/common/resource/llm_resource.py`
+- **Adding new Dana function**: See `dana/core/stdlib/`
+- **Creating agent capability**: Inherit from `dana/frameworks/agent/capability/`
+- **Adding LLM integration**: Use `dana/integrations/llm/`
 
 ## Common Methods and Utilities
-- **Use DANA_LOGGER for Python logging**: `from dana.common.utils.logging import DANA_LOGGER`
+- **Use standard Python logging**: `import logging; logger = logging.getLogger(__name__)`
 - Use configuration from `dana.common.config`
 - Use graph operations from `dana.common.graph`
 - Use IO utilities from `dana.common.io`
@@ -260,7 +260,7 @@ Requirements:
 - **Create `test_*.na` files** for Dana functionality testing
 - Use `log()` statements for test output and debugging (provides color coding)
 - pytest automatically discovers and runs `.na` test files
-- Run `.na` files directly: `dana test_example.na` or `uv run python -m dana.dana.exec.dana test_example.na`
+- Run `.na` files directly: `dana test_example.na` or `uv run python -m dana.core.repl.dana test_example.na`
 
 ## Dana Execution Quick Guide
 **Always prefer `.na` test files for Dana functionality testing**
@@ -287,11 +287,11 @@ dana test_my_feature.na
 dana --debug test_my_feature.na
 
 # 3. Via Python module
-uv run python -m dana.dana.exec.dana test_my_feature.na
+uv run python -m dana.core.repl.dana test_my_feature.na
 
 # 4. Interactive REPL for development
 dana                                    # Start REPL
-uv run python -m dana.dana.exec.repl # Direct REPL access
+uv run python -m dana.core.repl.repl   # Direct REPL access
 
 # 5. Through pytest (automatic discovery)
 pytest tests/my_directory/test_dana_files.py -v  # Runs all test_*.na files
@@ -307,15 +307,15 @@ pytest tests/my_directory/test_dana_files.py -v  # Runs all test_*.na files
 ## Dana-Specific Debugging & Validation
 - **Use `log()` for examples/testing output** (provides color coding and better debugging)
 - **Prefer creating `.na` test files** over `.py` for Dana functionality
-- Test Dana code in REPL: `uv run python -m dana.dana.exec.repl`
+- Test Dana code in REPL: `uv run python -m dana.core.repl.repl`
 - Check AST output: Enable debug logging in transformer
-- Validate against grammar: `dana/dana/sandbox/parser/dana_grammar.lark`
-- Test with existing `.na` files in `examples/dana/na/`
-- Execute `.na` files: `dana filename.na` or `uv run python -m dana.dana.exec.dana filename.na`
+- Validate against grammar: `dana/core/lang/parser/dana_grammar.lark`
+- Test with existing `.na` files in `examples/dana/`
+- Execute `.na` files: `dana filename.na` or `uv run python -m dana.core.repl.dana filename.na`
 
 ## Security & Performance
-- **DanaSandbox Security**: Never expose DanaSandbox instances to untrusted code
-- **LLM Resource Management**: Always use LLMConfigurationManager for model configuration
+- **Dana Runtime Security**: Never expose Dana runtime instances to untrusted code
+- **LLM Resource Management**: Always use proper configuration management for model configuration
 - Profile code for performance bottlenecks
 - Cache expensive operations
 - Handle memory management properly
