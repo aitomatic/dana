@@ -12,6 +12,7 @@ Claude AI Configuration and Guidelines
 - Run `uv run ruff check . && uv run ruff format .` before commits
 - Use type hints: `def func(x: int) -> str:` (required)
 - **Apply KISS/YAGNI**: Start simple, add complexity only when needed
+- **NEVER include Claude attribution or "Generated with Claude Code" in git commit messages**
 
 ## Essential Commands
 ```bash
