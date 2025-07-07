@@ -9,13 +9,6 @@ MIT License
 
 import pytest
 
-from dana.core.lang.interpreter.struct_system import (
-    StructInstance,
-    StructTypeRegistry,
-    create_struct_instance,
-    create_struct_type_from_ast,
-    register_struct_from_ast,
-)
 from dana.core.lang.ast import (
     DictLiteral,
     FunctionCall,
@@ -23,6 +16,13 @@ from dana.core.lang.ast import (
     StructDefinition,
     StructField,
     TypeHint,
+)
+from dana.core.lang.interpreter.struct_system import (
+    StructInstance,
+    StructTypeRegistry,
+    create_struct_instance,
+    create_struct_type_from_ast,
+    register_struct_from_ast,
 )
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
 

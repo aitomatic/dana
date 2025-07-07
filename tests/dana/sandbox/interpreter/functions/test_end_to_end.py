@@ -216,8 +216,8 @@ def test_fstring_evaluation_comprehensive():
     Migrated from tests/dana/sandbox/test_fixed_functions.py::test_fstring_evaluation()
     Enhanced with additional f-string scenarios and edge cases.
     """
-    from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
     from dana.core.lang.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier, LiteralExpression
+    from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
 
     context = SandboxContext()
     executor = DanaExecutor()

@@ -334,8 +334,8 @@ def test_enhanced_function_call_evaluation():
     Migrated from tests/dana/sandbox/test_fixed_functions.py::test_evaluate_function_call()
     Enhanced with additional function call scenarios.
     """
-    from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
     from dana.core.lang.ast import FunctionCall, LiteralExpression
+    from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
 
     context = SandboxContext()
 
@@ -375,8 +375,8 @@ def test_expression_evaluation_comprehensive():
     Migrated from tests/dana/sandbox/test_fixed_functions.py::test_evaluate_expressions()
     Enhanced with additional expression types and edge cases.
     """
-    from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
     from dana.core.lang.ast import BinaryExpression, BinaryOperator, Identifier, LiteralExpression
+    from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
 
     context = SandboxContext()
     executor = DanaExecutor()

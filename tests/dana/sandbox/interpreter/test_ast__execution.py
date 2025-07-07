@@ -18,9 +18,6 @@ Discord: https://discord.gg/6jGD4PYk
 
 import pytest
 
-from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
-from dana.core.lang.interpreter.functions.python_function import PythonFunction
 from dana.core.lang.ast import (
     Assignment,
     BinaryExpression,
@@ -31,6 +28,9 @@ from dana.core.lang.ast import (
     Program,
     WhileLoop,
 )
+from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+from dana.core.lang.interpreter.functions.python_function import PythonFunction
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -549,8 +549,8 @@ def test_print_statement():
 
 
 def test_break_statement():
-    from dana.core.lang.interpreter.executor.control_flow.exceptions import BreakException
     from dana.core.lang.ast import BreakStatement
+    from dana.core.lang.interpreter.executor.control_flow.exceptions import BreakException
 
     interpreter = DanaInterpreter()
     context = SandboxContext()
@@ -568,8 +568,8 @@ def test_break_statement():
 
 
 def test_continue_statement():
-    from dana.core.lang.interpreter.executor.control_flow.exceptions import ContinueException
     from dana.core.lang.ast import ContinueStatement
+    from dana.core.lang.interpreter.executor.control_flow.exceptions import ContinueException
 
     interpreter = DanaInterpreter()
     context = SandboxContext()
@@ -600,8 +600,8 @@ def test_pass_statement():
 
 
 def test_return_statement():
-    from dana.core.lang.interpreter.executor.control_flow.exceptions import ReturnException
     from dana.core.lang.ast import ReturnStatement
+    from dana.core.lang.interpreter.executor.control_flow.exceptions import ReturnException
 
     interpreter = DanaInterpreter()
     context = SandboxContext()
