@@ -38,6 +38,12 @@ def process_data(items: List[str], config: Optional[Dict[str, int]] = None) -> U
 - **Start with simplest solution that works**
 - **Add complexity only when requirements demand it**
 
+## Git Commit Standards
+
+- **NEVER include Claude attribution or "Generated with Claude Code" in git commit messages**
+- Write clean, professional commit messages focusing on technical content
+- Use clear, descriptive commit messages explaining the "why" not just the "what"
+
 ## Common Methods and Utilities
 
 - **Use standard Python logging**: `import logging; logger = logging.getLogger(__name__)`
