@@ -17,8 +17,6 @@ GitHub: https://github.com/aitomatic/dana
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.ast import (
     DictLiteral,
     FStringExpression,
@@ -26,6 +24,8 @@ from dana.core.lang.ast import (
     SetLiteral,
     TupleLiteral,
 )
+from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
+from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
 
 

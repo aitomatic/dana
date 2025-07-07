@@ -9,9 +9,9 @@ NOTE: These tests are fully independent of OPENAI_API_KEY.
 
 import pytest
 
+from dana.core.lang.ast import Identifier
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
-from dana.core.lang.ast import Identifier
 from dana.core.lang.parser.transformer.fstring_transformer import FStringTransformer
 from dana.core.lang.parser.utils.identifier_utils import is_valid_identifier
 from dana.core.lang.parser.utils.parsing_utils import ParserCache

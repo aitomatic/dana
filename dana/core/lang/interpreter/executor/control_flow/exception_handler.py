@@ -11,8 +11,8 @@ MIT License
 from typing import Any
 
 from dana.common.mixins.loggable import Loggable
+from dana.core.lang.ast import ExceptBlock, Identifier, TryBlock, TupleLiteral
 from dana.core.lang.interpreter.executor.control_flow.exceptions import ReturnException
-from dana.core.lang.ast import ExceptBlock, Expression, Identifier, TryBlock, TupleLiteral
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.core.runtime.exceptions import create_dana_exception
 
@@ -275,5 +275,5 @@ class ExceptionHandler(Loggable):
         # For other expression types, evaluate and compare
         # This is a simplified implementation - a full implementation would
         # need to handle evaluating the expression to get the exception class
-        self.debug(f"Complex exception type expression not fully supported yet")
+        self.debug("Complex exception type expression not fully supported yet")
         return False

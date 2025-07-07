@@ -62,7 +62,7 @@ class BaseA2AClient(A2AClient):
         self.json_agent_card = self.get_json_agent_card()
         self._last_refresh = datetime.now(UTC)
 
-    async def ask_with_metadata(self, message_text: str, metadata: dict[str, any] = None) -> str:
+    async def ask_with_metadata(self, message_text: str, metadata: dict[str, any] | None = None) -> str:
         """Ask a question and return the response with metadata."""
         if metadata is None:
             metadata = {}

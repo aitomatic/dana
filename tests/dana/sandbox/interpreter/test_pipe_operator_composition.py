@@ -7,7 +7,6 @@ MIT License
 
 import pytest
 
-from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.ast import (
     Assignment,
     BinaryExpression,
@@ -17,6 +16,7 @@ from dana.core.lang.ast import (
     LiteralExpression,
     Program,
 )
+from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.sandbox_context import SandboxContext
 
 

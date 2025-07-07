@@ -421,8 +421,8 @@ class TestPrintFunctionWithFStrings:
     def test_print_function_fstring_basic(self, capsys):
         """Test basic f-string evaluation in print function."""
 
-        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
         from dana.core.lang.ast import FStringExpression, Identifier
+        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
         from dana.core.stdlib.core.print_function import print_function
 
         # Create a context with variables
@@ -449,8 +449,8 @@ class TestPrintFunctionWithFStrings:
     def test_print_function_fstring_complex(self, capsys):
         """Test complex f-string evaluation in print function."""
 
-        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
         from dana.core.lang.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier, LiteralExpression
+        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
         from dana.core.stdlib.core.print_function import print_function
 
         # Create a context with variables
@@ -477,8 +477,8 @@ class TestPrintFunctionWithFStrings:
 
     def test_print_function_fstring_multiple_variables(self, capsys):
         """Test f-string with multiple variables in print function."""
-        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
         from dana.core.lang.ast import FStringExpression, Identifier
+        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
         from dana.core.stdlib.core.print_function import print_function
 
         # Create a context with multiple variables
@@ -505,8 +505,8 @@ class TestPrintFunctionWithFStrings:
 
     def test_print_function_fstring_with_expressions(self, capsys):
         """Test f-string with complex expressions in print function."""
-        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
         from dana.core.lang.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier
+        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
         from dana.core.stdlib.core.print_function import print_function
 
         # Create a context with variables
@@ -547,8 +547,8 @@ class TestPrintFunctionWithFStrings:
 
     def test_print_function_fstring_template_style(self, capsys):
         """Test f-string with template and expressions style."""
-        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
         from dana.core.lang.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier
+        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
         from dana.core.stdlib.core.print_function import print_function
 
         # Create a context with variables
@@ -580,8 +580,8 @@ class TestPrintFunctionWithFStrings:
 
     def test_print_function_fstring_error_handling(self, capsys):
         """Test print function error handling with invalid f-strings."""
-        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
         from dana.core.lang.ast import FStringExpression, Identifier
+        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
         from dana.core.stdlib.core.print_function import print_function
 
         # Create a context without the required variable
@@ -608,8 +608,8 @@ class TestPrintFunctionWithFStrings:
 
     def test_print_function_mixed_args_with_fstrings(self, capsys):
         """Test print function with mixed regular and f-string arguments."""
-        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
         from dana.core.lang.ast import FStringExpression, Identifier
+        from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
         from dana.core.stdlib.core.print_function import print_function
 
         # Create a context with variables

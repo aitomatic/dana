@@ -20,12 +20,6 @@ Discord: https://discord.gg/6jGD4PYk
 from typing import Any
 
 from dana.common.exceptions import SandboxError
-from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
-from dana.core.lang.interpreter.executor.expression.binary_operation_handler import BinaryOperationHandler
-from dana.core.lang.interpreter.executor.expression.collection_processor import CollectionProcessor
-from dana.core.lang.interpreter.executor.expression.identifier_resolver import IdentifierResolver
-from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import PipeOperationHandler
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.ast import (
     AttributeAccess,
     BinaryExpression,
@@ -41,6 +35,12 @@ from dana.core.lang.ast import (
     TupleLiteral,
     UnaryExpression,
 )
+from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
+from dana.core.lang.interpreter.executor.expression.binary_operation_handler import BinaryOperationHandler
+from dana.core.lang.interpreter.executor.expression.collection_processor import CollectionProcessor
+from dana.core.lang.interpreter.executor.expression.identifier_resolver import IdentifierResolver
+from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import PipeOperationHandler
+from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
 
 
