@@ -2,9 +2,25 @@
     // === Explorer Settings ===
     // Show hidden files and folders
     "files.exclude": {
-	"**/.dana": true,
-	"**/.poet": true,
-	"**/.qodo": true,
+        // Environment-related
+        "**/.env": true,
+
+        // Git-related
+        "**/.git": true,
+
+        // Python-related
+        "**/__pycache__": true,
+        "**/build": true,
+        "**/*.egg-info": true,
+        "**/.mypy_cache": true,
+        "**/.pytest_cache": true,
+        "**/.ruff_cache": true,
+        "**/uv.lock": true,
+        "**/.venv": true,
+
+        "**/.dana": true,
+        "**/.poet": true,
+        "**/.qodo": true,
         "**/tmp": true,
         "**/bin": true,
         "**/docs/.ai-only": true,
@@ -13,34 +29,21 @@
         "**/docs/javascripts": true,
         "**/docs/stylesheets": true,
         "**/docs/images": true,
-        "**/uv.lock": true,
-        "**/-.env": true,
-        "**/.vscode": true,
+
         "**/-pyproject.toml": true,
         "**/-Makefile": true,
         "**/mkdocs.yml": true,
         "**/pytest.ini": true,
-        "**/-.env.example": true,
         "**/.cursorrules": true,
         "**/.-markdownlint.yaml": true,
         "**/.pre-commit-config.yaml": true,
         "**/.python-version": true,
-        "**/.gitignore": true,
-        "**/.github": true,
         "**/.claude": true,
-        "**/.git": true,
-        "**/.svn": true,
-        "**/.hg": true,
         "**/CVS": true,
+
+        // misc/other
         "**/.DS_Store": true,
-        "**/Thumbs.db": true,
-        "**/__pycache__": true,
-        "**/.pytest_cache": true,
-        "**/.coverage": true,
-        "**/.mypy_cache": true,
-        "**/.ruff_cache": true,
-        "**/.venv": true,
-        "**/opendxa.egg-info": true
+        "**/Thumbs.db": true
     },
 
     // === Python Analysis Settings ===

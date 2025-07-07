@@ -1,0 +1,17 @@
+"""Specialist Agent #1."""
+
+# Agent Card declaration
+system:agent_name = "Weather Reporter/Forecaster"
+system:agent_description = "Agent providing current & forecast weather information"
+
+# Agent resources
+weather_info = use("mcp", url="http://127.0.0.1:8000/mcp")
+
+from datetime.py import date
+
+# Agent's problem solver
+def solve(problem):
+    return reason(f"{problem} Be aware that today is {date.today()}", resources=[weather_info])
+
+# quick test:
+# solve("How is Tokyo's weather this weekend?")
