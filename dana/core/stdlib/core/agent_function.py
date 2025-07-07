@@ -37,7 +37,7 @@ def _create_module_agent(context: SandboxContext, name: str, module, **kwargs) -
         module: Dana module to wrap as agent
         **kwargs: Additional parameters
     """
-    from dana.integrations.agent_to_agent.resource.a2a import ModuleAgent
+    from dana.integrations.agent_to_agent import ModuleAgent
 
     # Try to get the module's original context for resource discovery
     # Look for the context from the module's solve function (if it's a DanaFunction)
@@ -66,7 +66,7 @@ def _create_a2a_agent(context: SandboxContext, name: str, *args, **kwargs) -> Ab
         *args: Positional arguments for agent creation
         **kwargs: Keyword arguments for agent creation
     """
-    from dana.integrations.agent_to_agent.resource.a2a import A2AAgent
+    from dana.integrations.agent_to_agent import A2AAgent
 
     resource = A2AAgent(name=name, *args, **kwargs)
     context.set_agent(name, resource)
@@ -83,7 +83,7 @@ def agent_pool_function(context: SandboxContext, *args, _name: str | None = None
         **kwargs: Keyword arguments for agent pool creation
     """
     name: str = _name if _name is not None else Misc.generate_uuid(length=6)
-    from dana.integrations.agent_to_agent.agent.pool.agent_pool import AgentPool
+    from dana.integrations.agent_to_agent.pool.agent_pool import AgentPool
 
     resource = AgentPool(name=name, *args, **kwargs, context=context)
     context.set(name, resource)

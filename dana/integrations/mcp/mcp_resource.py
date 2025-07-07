@@ -90,23 +90,19 @@ class MCPResource(BaseResource):
         self.log_debug(f"Calling tool {tool_name} with arguments {arguments}")
         print(f"Calling tool {tool_name} with arguments {arguments}")
         async with self.client as _client:
-            results = await _client.call_tool(tool_name, arguments)  # This will raise ToolError if the tool call fails.
+            response = await _client.call_tool(tool_name, arguments)  # This will raise ToolError if the tool call fails.
+        await self.client._disconnect()
+        
+        results = response.content
 
-        # Handle both single result and list of results
-        if hasattr(results, "__len__"):
-            # results is a list
-            assert len(results) == 1, (
-                f"Tool {tool_name} with arguments {arguments} returned {len(results)} results, expected 1. \nresults: {results}"
-            )
-            result = results[0]
-        else:
-            # results is a single object (like CallToolResult)
-            result = results
+        assert len(results) == 1, (
+            f"Tool {tool_name} with arguments {arguments} returned {len(results)} results, expected 1. \nresults: {results}"
+        )
 
-        if Misc.get_field(result, "type") == "text":
-            return Misc.get_field(result, "text")
+        if Misc.get_field(results[0], "type") == "text":
+            return Misc.get_field(results[0], "text")
         else:
-            return result
+            return results[0]
 
     async def query(self, request: BaseRequest) -> BaseResponse:
         """Handle resource queries by calling MCP tools."""

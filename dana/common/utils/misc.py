@@ -14,6 +14,7 @@ from typing import Any
 import nest_asyncio
 import yaml
 from pydantic import BaseModel
+from dana.common.types import BaseResponse
 
 
 class ParsedArgKwargsResults(BaseModel):
@@ -308,3 +309,21 @@ class Misc:
                 return parsed_json
             except Exception as e:
                 raise ValueError(f"Failed to parse JSON: {str(e)}")
+
+    @staticmethod
+    def get_response_content(response: BaseResponse) -> Any:
+        """Get the content of a BaseResponse."""
+        content = Misc.get_field(response, "content", None)
+        if content is None:
+            raise ValueError(f"No content found in BaseResponse : {response}")
+        choices = Misc.get_field(content, "choices", [])
+        if len(choices) == 0:
+            raise ValueError(f"No choices found in BaseResponse : {response}")
+        choice = choices[0]
+        message = Misc.get_field(choice, "message", None)
+        if message is None:
+            raise ValueError(f"No message found in BaseResponse : {response}")
+        content = Misc.get_field(message, "content", None)
+        if content is None:
+            raise ValueError(f"No content found in BaseResponse : {response}")
+        return content

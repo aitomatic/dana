@@ -21,6 +21,8 @@ from dana.core.lang.ast import (
     StructDefinition,
     StructField,
     TypeHint,
+    AgentDefinition,
+    AgentField,
 )
 from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
 
@@ -326,3 +328,53 @@ class FunctionDefinitionTransformer(BaseTransformer):
             type_hint = type_hint_node
 
         return StructField(name=field_name, type_hint=type_hint)
+
+        # === Agent Definitions ===
+
+    def agent_definition(self, items):
+        """Transform an agent definition rule into an AgentDefinition node."""
+        name_token = items[0]
+        # items are [NAME, optional COMMENT, agent_block]
+        agent_block = items[2] if len(items) > 2 else items[1]
+
+        fields = []
+        if hasattr(agent_block, "data") and agent_block.data == "agent_block":
+            # The children of agent_block are NL, INDENT, agent_fields, DEDENT...
+            # The agent_fields tree is what we want
+            agent_fields_tree = None
+            for child in agent_block.children:
+                if hasattr(child, "data") and child.data == "agent_fields":
+                    agent_fields_tree = child
+                    break
+
+            if agent_fields_tree:
+                fields = [child for child in agent_fields_tree.children if isinstance(child, AgentField)]
+
+        return AgentDefinition(name=name_token.value, fields=fields)
+
+    def agent_field(self, items):
+        """Transform an agent field rule into an AgentField node."""
+
+        name_token = items[0]
+        type_hint_node = items[1]
+        default_value = None
+
+        # Check if there's a default value (items[2] would be the default expression)
+        if len(items) > 2:
+            default_value = self.main_transformer.expression_transformer.transform(items[2])
+
+        field_name = name_token.value
+
+        # The type_hint_node should already be a TypeHint object
+        # from the 'basic_type' rule transformation.
+        if not isinstance(type_hint_node, TypeHint):
+            # Fallback if it's a token
+            if isinstance(type_hint_node, Token):
+                type_hint = TypeHint(name=type_hint_node.value)
+            else:
+                # This would be an unexpected state
+                raise TypeError(f"Unexpected type for type_hint_node: {type(type_hint_node)}")
+        else:
+            type_hint = type_hint_node
+
+        return AgentField(name=field_name, type_hint=type_hint, default_value=default_value)

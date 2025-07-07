@@ -48,6 +48,7 @@ class AgentSelector(Loggable):
         if strategy != "llm":
             raise ValueError("Only 'llm' selection strategy is supported at this time.")
         return self._select_by_llm(task, included_resources=included_resources)
+    
 
     def _select_by_llm(self, task: any, included_resources: list[str | Any] | None = None) -> Any:
         """Select agent using LLM-based selection.
@@ -100,10 +101,7 @@ Your response must be wrapped in ```json``` tags and contain a valid JSON object
             # Use LLM to select agent
             request = BaseRequest(arguments={"messages": [{"role": "user", "content": prompt}]})
             decision = self._llm.query_sync(request)
-            if decision.content is None or "choices" not in decision.content or not decision.content["choices"]:
-                self.log_error("LLM returned no content or no choices")
-                return None
-            text = decision.content["choices"][0].message.content
+            text = Misc.get_response_content(decision)
             decision_dict = Misc.text_to_dict(text)
             self.log_debug(f"Agent selection decision: \n{json.dumps(decision_dict, indent=4)}")
             selected_agents = decision_dict.get("selected_agents", [])

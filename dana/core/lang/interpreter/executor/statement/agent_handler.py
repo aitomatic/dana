@@ -12,7 +12,15 @@ from typing import Any
 
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.ast import AgentPoolStatement, AgentStatement, ExportStatement, StructDefinition, UseStatement
+from dana.core.lang.ast import (
+    AgentDefinition,
+    AgentPoolStatement,
+    AgentStatement,
+    ExportStatement,
+    FunctionDefinition,
+    StructDefinition,
+    UseStatement,
+)
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -28,6 +36,8 @@ class AgentHandler(Loggable):
         self.parent_executor = parent_executor
         self.function_registry = function_registry
         self._resource_count = 0
+        # Track the last agent definition for method association
+        self._last_agent_type: Any = None
 
     def execute_agent_statement(self, node: AgentStatement, context: SandboxContext) -> Any:
         """Execute an agent statement with optimized processing.
@@ -212,6 +222,143 @@ class AgentHandler(Loggable):
             raise SandboxError(f"Failed to register struct {node.name}: {e}")
 
         return None
+
+    def execute_agent_definition(self, node: AgentDefinition, context: SandboxContext) -> None:
+        """Execute an agent definition statement with optimized processing.
+
+        Args:
+            node: The agent definition node
+            context: The execution context
+
+        Returns:
+            None (agent definitions don't produce a value, they register a type)
+        """
+        # Import here to avoid circular imports
+        from dana.agent.agent_system import register_agent_from_ast, AgentTypeRegistry
+
+        # Create and register the agent type using the new struct-like system
+        try:
+            agent_type = register_agent_from_ast(node)
+            # print(f"[DEBUG] Registered agent type: {agent_type.name}")
+            from dana.agent.agent_system import AgentTypeRegistry
+            # print(f"[DEBUG] AgentTypeRegistry.list_types(): {AgentTypeRegistry.list_types()}")
+
+            # Store reference to this agent type for method association
+            self._last_agent_type = agent_type
+
+            # Register agent constructor function in the context
+            # This allows `agent_instance = TestAgent(name="test")` syntax
+            def agent_constructor(**kwargs):
+                return AgentTypeRegistry.create_instance(agent_type.name, kwargs, context=context)
+
+            context.set(f"local:{node.name}", agent_constructor)
+
+            # Trace agent registration
+            self._trace_resource_operation("agent_definition", node.name, len(node.fields), 0)
+
+        except Exception as e:
+            raise SandboxError(f"Failed to register agent {node.name}: {e}")
+
+        return None
+
+    def execute_function_definition(self, node: FunctionDefinition, context: SandboxContext) -> Any:
+        # print(f"[DEBUG] execute_function_definition called for: {getattr(node.name, 'name', node.name)}")
+        """Execute a function definition, potentially associating it with the last agent type.
+
+        Args:
+            node: The function definition to execute
+            context: The execution context
+
+        Returns:
+            The defined function
+        """
+        # Create the DanaFunction object
+        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+
+        # Extract parameter names and defaults
+        param_names = []
+        param_defaults = {}
+        for param in node.parameters:
+            if hasattr(param, "name"):
+                param_name = param.name
+                param_names.append(param_name)
+
+                # Extract default value if present
+                if hasattr(param, "default_value") and param.default_value is not None:
+                    # Evaluate the default value expression in the current context
+                    try:
+                        default_value = self.parent_executor.parent.execute(param.default_value, context)
+                        param_defaults[param_name] = default_value
+                    except Exception as e:
+                        self.debug(f"Failed to evaluate default value for parameter {param_name}: {e}")
+                        pass
+            else:
+                param_names.append(str(param))
+
+        # Extract return type if present
+        return_type = None
+        if hasattr(node, "return_type") and node.return_type is not None:
+            if hasattr(node.return_type, "name"):
+                return_type = node.return_type.name
+            else:
+                return_type = str(node.return_type)
+
+        # Create the base DanaFunction with defaults
+        dana_func = DanaFunction(
+            body=node.body, parameters=param_names, context=context, return_type=return_type, defaults=param_defaults, name=node.name.name
+        )
+
+        # Remove all agent method association logic here. Only register the function in the context and handle decorators.
+        # (No code for agent method association remains in this function.)
+
+        # Apply decorators if present
+        if node.decorators:
+            wrapped_func = self._apply_decorators(dana_func, node.decorators, context)
+            # Store the decorated function in context
+            context.set(f"local:{node.name.name}", wrapped_func)
+            return wrapped_func
+        else:
+            # No decorators, store the DanaFunction as usual
+            context.set(f"local:{node.name.name}", dana_func)
+            return dana_func
+
+    def _apply_decorators(self, func, decorators, context):
+        """Apply decorators to a function, handling both simple and parameterized decorators."""
+        result = func
+        # Apply decorators in reverse order (innermost first)
+        for decorator in reversed(decorators):
+            decorator_func = self._resolve_decorator(decorator, context)
+
+            # Check if decorator has arguments (factory pattern)
+            if decorator.args or decorator.kwargs:
+                # Evaluate arguments to Python values
+                evaluated_args = []
+                evaluated_kwargs = {}
+
+                for arg_expr in decorator.args:
+                    evaluated_args.append(self.parent_executor.parent.execute(arg_expr, context))
+
+                for key, value_expr in decorator.kwargs.items():
+                    evaluated_kwargs[key] = self.parent_executor.parent.execute(value_expr, context)
+
+                # Call the decorator factory with arguments
+                actual_decorator = decorator_func(*evaluated_args, **evaluated_kwargs)
+                result = actual_decorator(result)
+            else:
+                # Simple decorator (no arguments)
+                result = decorator_func(result)
+
+        return result
+
+    def _resolve_decorator(self, decorator, context):
+        """Resolve a decorator to a callable function."""
+        # If it's a function call, resolve it
+        if hasattr(decorator, "func") and hasattr(decorator, "args"):
+            decorator_func = self.parent_executor.parent.execute(decorator.func, context)
+            return decorator_func
+        else:
+            # Simple identifier
+            return self.parent_executor.parent.execute(decorator, context)
 
     def _trace_resource_operation(self, operation_type: str, resource_name: str, arg_count: int, kwarg_count: int) -> None:
         """Trace resource operations for debugging when enabled.
