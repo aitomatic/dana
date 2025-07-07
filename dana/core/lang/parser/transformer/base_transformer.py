@@ -5,7 +5,7 @@ from typing import Any
 from lark import Token, Transformer, Tree
 
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.parser.ast import ASTNode, Location
+from dana.core.lang.ast import ASTNode, Location
 from dana.core.lang.parser.utils.parsing_utils import create_literal, parse_literal
 from dana.core.lang.parser.utils.scope_utils import insert_local_scope
 from dana.core.lang.parser.utils.transformer_utils import flatten_items as utils_flatten_items

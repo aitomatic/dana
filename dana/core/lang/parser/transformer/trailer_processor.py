@@ -11,14 +11,14 @@ MIT License
 from typing import Any
 
 from dana.common.utils.logging import DANA_LOGGER
-from dana.core.lang.exceptions import SandboxError
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     AttributeAccess,
     Expression,
     FunctionCall,
     ObjectFunctionCall,
     SubscriptExpression,
 )
+from dana.core.lang.exceptions import SandboxError
 
 
 class TrailerValidationError(SandboxError):

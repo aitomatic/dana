@@ -20,7 +20,7 @@ import textwrap
 import pytest
 from lark import Tree
 
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     Assignment,
     AttributeAccess,
     BinaryExpression,

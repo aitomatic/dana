@@ -12,7 +12,7 @@ from typing import Any
 
 from lark import Token
 
-from dana.core.lang.parser.ast import LiteralExpression
+from dana.core.lang.ast import LiteralExpression
 
 
 class ParserCache:

@@ -20,7 +20,7 @@ Discord: https://discord.gg/6jGD4PYk
 from typing import Any, Optional
 
 from dana.common.exceptions import TypeError
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     AssertStatement,
     Assignment,
     AttributeAccess,
@@ -175,7 +175,7 @@ class TypeChecker:
 
     def check_assignment(self, node: Assignment) -> None:
         """Check an assignment for type errors."""
-        from dana.core.lang.parser.ast import AttributeAccess, Identifier
+        from dana.core.lang.ast import AttributeAccess, Identifier
 
         value_type = self.check_expression(node.value)
 

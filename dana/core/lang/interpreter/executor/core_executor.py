@@ -7,7 +7,7 @@ This module provides core execution methods for specific statement types.
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from dana.core.lang.parser.ast import ExportStatement
+    from dana.core.lang.ast import ExportStatement
 
 
 class CoreExecutorMixin:

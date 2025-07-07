@@ -468,7 +468,7 @@ class StructTypeRegistry:
 
 def create_struct_type_from_ast(struct_def) -> StructType:
     """Create a StructType from a StructDefinition AST node."""
-    from dana.core.lang.parser.ast import StructDefinition
+    from dana.core.lang.ast import StructDefinition
 
     if not isinstance(struct_def, StructDefinition):
         raise TypeError(f"Expected StructDefinition, got {type(struct_def)}")
