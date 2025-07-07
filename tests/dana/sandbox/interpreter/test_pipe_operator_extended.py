@@ -8,7 +8,7 @@ MIT License
 import pytest
 
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     Assignment,
     BinaryExpression,
     BinaryOperator,
@@ -92,7 +92,7 @@ def test_pipe_with_different_data_types():
     interpreter.function_registry.register("add_ten", add_ten)
 
     # Test list: [1,2,3] | list_length | add_ten | string_upper
-    from dana.core.lang.parser.ast import ListLiteral
+    from dana.core.lang.ast import ListLiteral
 
     list_expr = ListLiteral([LiteralExpression(1), LiteralExpression(2), LiteralExpression(3)])
 

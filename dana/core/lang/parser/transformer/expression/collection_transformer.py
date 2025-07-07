@@ -14,7 +14,7 @@ MIT License
 
 from typing import cast
 
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     DictLiteral,
     Expression,
     ListLiteral,

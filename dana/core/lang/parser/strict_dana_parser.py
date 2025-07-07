@@ -8,7 +8,7 @@ from typing import Any, cast
 
 from lark import Tree
 
-from dana.core.lang.parser.ast import Program
+from dana.core.lang.ast import Program
 from dana.core.lang.parser.dana_parser import DanaParser
 from dana.core.lang.parser.utils.ast_validator import AstValidator
 

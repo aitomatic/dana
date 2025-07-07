@@ -14,7 +14,7 @@ MIT License
 
 from lark import Token
 
-from dana.core.lang.parser.ast import Identifier, LiteralExpression
+from dana.core.lang.ast import Identifier, LiteralExpression
 from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
 
 

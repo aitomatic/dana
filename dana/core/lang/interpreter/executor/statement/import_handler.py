@@ -12,7 +12,7 @@ from typing import Any
 
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.parser.ast import ImportFromStatement, ImportStatement
+from dana.core.lang.ast import ImportFromStatement, ImportStatement
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -341,8 +341,7 @@ class ImportHandler(Loggable):
             # Wrap the function in a PythonFunction wrapper for Dana compatibility
             wrapped_func = PythonFunction(
                 func=func,
-                name=context_name,
-                module=module_name,
+                trusted_for_context=True,
             )
 
             # Register in the appropriate scope

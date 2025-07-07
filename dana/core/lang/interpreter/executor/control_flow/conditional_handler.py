@@ -12,7 +12,7 @@ from typing import Any
 
 from dana.common.mixins.loggable import Loggable
 from dana.core.lang.interpreter.executor.control_flow.exceptions import ReturnException
-from dana.core.lang.parser.ast import Conditional
+from dana.core.lang.ast import Conditional
 from dana.core.lang.sandbox_context import SandboxContext
 
 

@@ -34,7 +34,7 @@ from lark.indenter import PythonIndenter
 
 from dana.common.exceptions import ParseError
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.parser.ast import Identifier, Program
+from dana.core.lang.ast import Identifier, Program
 from dana.core.lang.parser.transformer.dana_transformer import DanaTransformer
 from dana.core.lang.parser.utils.type_checker import TypeChecker, TypeEnvironment
 

@@ -12,7 +12,7 @@ MIT License
 from collections.abc import Sequence
 from typing import Any
 
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     Assignment,
     ExceptBlock,
     FunctionCall,

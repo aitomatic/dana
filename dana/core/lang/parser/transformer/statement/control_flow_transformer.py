@@ -14,7 +14,7 @@ from typing import cast
 
 from lark import Token, Tree
 
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     Conditional,
     ExceptBlock,
     Expression,
@@ -63,7 +63,7 @@ class ControlFlowTransformer(BaseTransformer):
     def if_stmt(self, items):
         """Transform an if_stmt rule into a Conditional AST node, handling if/elif/else blocks."""
 
-        from dana.core.lang.parser.ast import Conditional
+        from dana.core.lang.ast import Conditional
 
         relevant_items = self.main_transformer._filter_relevant_items(items)
 
@@ -161,7 +161,7 @@ class ControlFlowTransformer(BaseTransformer):
     def for_stmt(self, items):
         """Transform a for loop rule into a ForLoop node."""
 
-        from dana.core.lang.parser.ast import Expression
+        from dana.core.lang.ast import Expression
 
         # Filter out irrelevant items (None, comments, etc.)
         relevant_items = self.main_transformer._filter_relevant_items(items)
@@ -213,38 +213,100 @@ class ControlFlowTransformer(BaseTransformer):
         # First item is always the try body
         try_body = self.main_transformer._transform_block(relevant_items[0])
 
-        # Find except and finally blocks
-        except_block_statements = []
-        finally_block_statements = []
-        exception_type = None
-
-        # Look for except block (should be the second or third relevant item)
-        if len(relevant_items) >= 2:
-            # Check if we have an exception type expression
-            # If items[1] is not a block-like structure, it might be an exception type
-            second_item = relevant_items[1]
-            if hasattr(second_item, "data") and second_item.data == "block":
-                # No exception type, this is the except block
-                except_block_statements = self.main_transformer._transform_block(second_item)
-            else:
-                # This might be an exception type, except block should be next
-                exception_type = second_item
-                if len(relevant_items) >= 3:
-                    except_block_statements = self.main_transformer._transform_block(relevant_items[2])
-
-        # Look for finally block
-        finally_index = 3 if exception_type else 2
-        if len(relevant_items) > finally_index:
-            finally_block_statements = self.main_transformer._transform_block(relevant_items[finally_index])
-
-        # Create ExceptBlock object
+        # Find except clauses and finally block
         except_blocks = []
-        if except_block_statements:
-            except_block = ExceptBlock(body=except_block_statements, exception_type=exception_type, location=None)
-            except_blocks.append(except_block)
+        finally_block_statements = None
+
+        # Process remaining items
+        for item in relevant_items[1:]:
+            if isinstance(item, ExceptBlock):
+                # Already transformed except clause
+                except_blocks.append(item)
+            elif hasattr(item, "data") and item.data == "block":
+                # This is the finally block
+                finally_block_statements = self.main_transformer._transform_block(item)
+            elif hasattr(item, "data") and item.data == "except_clause":
+                # Transform except clause
+                except_block = self.except_clause(item.children)
+                except_blocks.append(except_block)
 
         return TryBlock(
             body=try_body,
             except_blocks=except_blocks,
-            finally_block=finally_block_statements if finally_block_statements else None,
+            finally_block=finally_block_statements,
         )
+
+    def except_clause(self, items):
+        """Transform an except clause into an ExceptBlock node."""
+        relevant_items = self.main_transformer._filter_relevant_items(items)
+        
+        exception_type = None
+        variable_name = None
+        body = []
+        
+        # Process items to extract exception spec and body
+        for item in relevant_items:
+            if hasattr(item, "data") and item.data == "block":
+                # This is the except body
+                body = self.main_transformer._transform_block(item)
+            elif hasattr(item, "data") and item.data == "except_spec":
+                # Process exception specification
+                exception_type, variable_name = self.except_spec(item.children)
+        
+        return ExceptBlock(
+            body=body,
+            exception_type=exception_type,
+            variable_name=variable_name,
+            location=None
+        )
+    
+    def except_spec(self, items):
+        """Transform exception specification into (exception_type, variable_name)."""
+        relevant_items = self.main_transformer._filter_relevant_items(items)
+        
+        exception_type = None
+        variable_name = None
+        
+        for i, item in enumerate(relevant_items):
+            if isinstance(item, Token) and item.type == "NAME":
+                # This is the variable name from 'as NAME'
+                variable_name = item.value
+            elif hasattr(item, "data") and item.data == "exception_type":
+                # Transform exception type
+                exception_type = self.exception_type(item.children)
+            else:
+                # Direct expression for exception type
+                exception_type = self.expression_transformer.expression([item])
+        
+        return exception_type, variable_name
+    
+    def exception_type(self, items):
+        """Transform exception type (single expr or tuple of exprs)."""
+        relevant_items = self.main_transformer._filter_relevant_items(items)
+        
+        if len(relevant_items) == 1:
+            # Single exception type
+            return self.expression_transformer.expression([relevant_items[0]])
+        else:
+            # Multiple exception types in parentheses
+            # Look for exception_list
+            for item in relevant_items:
+                if hasattr(item, "data") and item.data == "exception_list":
+                    return self.exception_list(item.children)
+            
+            # Fallback: transform as expression
+            return self.expression_transformer.expression(relevant_items)
+    
+    def exception_list(self, items):
+        """Transform a list of exception types into a TupleLiteral."""
+        from dana.core.lang.ast import TupleLiteral
+        
+        relevant_items = self.main_transformer._filter_relevant_items(items)
+        exception_types = []
+        
+        for item in relevant_items:
+            if isinstance(item, Token) and item.type == "COMMA":
+                continue
+            exception_types.append(self.expression_transformer.expression([item]))
+        
+        return TupleLiteral(items=exception_types)

@@ -29,7 +29,7 @@ from dana.core.lang.interpreter.executor.statement import (
     StatementUtils,
 )
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     AgentPoolStatement,
     AgentStatement,
     AssertStatement,

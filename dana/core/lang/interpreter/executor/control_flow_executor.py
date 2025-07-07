@@ -26,7 +26,7 @@ from dana.core.lang.interpreter.executor.control_flow.control_flow_utils import 
 from dana.core.lang.interpreter.executor.control_flow.exception_handler import ExceptionHandler
 from dana.core.lang.interpreter.executor.control_flow.loop_handler import LoopHandler
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     BreakStatement,
     Conditional,
     ContinueStatement,

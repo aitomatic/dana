@@ -157,7 +157,7 @@ def test_unified_interpreter_execution_comprehensive():
     Migrated from tests/dana/sandbox/test_fixed_functions.py::test_unified_interpreter_execution()
     Enhanced with additional execution scenarios and comprehensive testing.
     """
-    from dana.core.lang.parser.ast import Assignment, BinaryExpression, BinaryOperator, Identifier, LiteralExpression, Program
+    from dana.core.lang.ast import Assignment, BinaryExpression, BinaryOperator, Identifier, LiteralExpression, Program
 
     context = SandboxContext()
     interpreter = DanaInterpreter()
@@ -217,7 +217,7 @@ def test_fstring_evaluation_comprehensive():
     Enhanced with additional f-string scenarios and edge cases.
     """
     from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-    from dana.core.lang.parser.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier, LiteralExpression
+    from dana.core.lang.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier, LiteralExpression
 
     context = SandboxContext()
     executor = DanaExecutor()

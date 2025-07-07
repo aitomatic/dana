@@ -16,7 +16,7 @@ from dana.core.lang.interpreter.struct_system import (
     create_struct_type_from_ast,
     register_struct_from_ast,
 )
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     DictLiteral,
     FunctionCall,
     LiteralExpression,

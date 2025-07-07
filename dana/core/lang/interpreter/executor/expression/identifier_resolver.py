@@ -14,7 +14,7 @@ from typing import Any
 from dana.common.exceptions import StateError
 from dana.common.mixins.loggable import Loggable
 from dana.common.utils.misc import Misc
-from dana.core.lang.parser.ast import Identifier
+from dana.core.lang.ast import Identifier
 from dana.core.lang.sandbox_context import SandboxContext
 
 

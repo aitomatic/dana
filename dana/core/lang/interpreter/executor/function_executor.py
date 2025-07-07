@@ -26,7 +26,7 @@ from dana.core.lang.interpreter.executor.function_error_handling import Function
 from dana.core.lang.interpreter.executor.function_name_utils import FunctionNameInfo
 from dana.core.lang.interpreter.executor.resolver.unified_function_dispatcher import UnifiedFunctionDispatcher
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     AttributeAccess,
     FStringExpression,
     FunctionCall,
@@ -163,7 +163,7 @@ class FunctionExecutor(BaseExecutor):
                 return result
             else:
                 # Fallback for simple expressions
-                from dana.core.lang.parser.ast import LiteralExpression
+                from dana.core.lang.ast import LiteralExpression
 
                 if isinstance(expr, LiteralExpression):
                     return expr.value
@@ -255,7 +255,7 @@ class FunctionExecutor(BaseExecutor):
         # Phase 2.5: Check for struct instantiation
         self.debug("Checking for struct instantiation...")
         # Phase 2.5: Handle method calls (AttributeAccess) before other processing
-        from dana.core.lang.parser.ast import AttributeAccess
+        from dana.core.lang.ast import AttributeAccess
 
         if isinstance(node.name, AttributeAccess):
             return self.__execute_method_call(node, context, evaluated_args, evaluated_kwargs)
