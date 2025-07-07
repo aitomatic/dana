@@ -49,7 +49,7 @@ class TestMetaKnowledgeExtractor:
 
     def test_validate_input_invalid_type(self):
         """Test input validation with invalid type."""
-        assert self.extractor.validate_input("not a document") is False
+        assert self.extractor.validate_input("not a document") is False  # type: ignore
 
     def test_validate_input_empty_content(self):
         """Test input validation with empty content."""
@@ -244,7 +244,7 @@ class TestMetaKnowledgeExtractor:
     def test_process_invalid_input(self):
         """Test processing with invalid input."""
         with pytest.raises(ValueError, match="Invalid document provided"):
-            self.extractor.process("not a document")
+            self.extractor.process("not a document")  # type: ignore
 
     @patch("dana.frameworks.knows.extraction.meta.extractor.MetaKnowledgeExtractor._extract_with_llm")
     def test_process_llm_failure_fallback(self, mock_extract):
@@ -312,12 +312,12 @@ class TestKnowledgeCategorizer:
 
     def test_validate_input_invalid_type(self):
         """Test input validation with invalid type."""
-        assert self.categorizer.validate_input("not a list") is False
+        assert self.categorizer.validate_input("not a list") is False  # type: ignore
 
     def test_validate_input_invalid_items(self):
         """Test input validation with invalid items."""
         invalid_list = ["not", "knowledge", "points"]
-        assert self.categorizer.validate_input(invalid_list) is False
+        assert self.categorizer.validate_input(invalid_list) is False  # type: ignore
 
     def test_categorize_knowledge_point_existing_type(self):
         """Test categorizing knowledge point with existing type."""
@@ -533,7 +533,7 @@ class TestKnowledgeCategorizer:
     def test_process_invalid_input(self):
         """Test processing with invalid input."""
         with pytest.raises(ValueError, match="Invalid knowledge points provided"):
-            self.categorizer.process("not a list")
+            self.categorizer.process("not a list")  # type: ignore
 
     def test_map_knowledge_point_relationships(self):
         """Test mapping relationships between knowledge points."""
