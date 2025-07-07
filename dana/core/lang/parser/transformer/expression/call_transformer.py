@@ -12,7 +12,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     AttributeAccess,
     FunctionCall,
     Identifier,
@@ -236,7 +236,7 @@ class CallTransformer(BaseTransformer):
             return items[0]
         else:
             # Multi-dimensional - return a SliceTuple
-            from dana.core.lang.parser.ast import SliceTuple
+            from dana.core.lang.ast import SliceTuple
 
             return SliceTuple(slices=items)
 

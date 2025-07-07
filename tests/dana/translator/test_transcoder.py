@@ -8,7 +8,7 @@ import pytest
 from dana.common.exceptions import ParseError, TranscoderError
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseResponse
-from dana.core.lang.parser.ast import Program
+from dana.core.lang.ast import Program
 from dana.core.lang.parser.dana_parser import ParseResult
 from dana.core.lang.translator.translator import Translator
 

@@ -23,7 +23,7 @@ from typing import Any
 
 from lark import Token, Tree
 
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     AgentPoolStatement,
     AgentStatement,
     Assignment,
@@ -211,7 +211,7 @@ class StatementTransformer(BaseTransformer):
 
     def _is_local_scoped_assignment(self, assignment):
         """Check if an assignment targets a local: scoped variable."""
-        from dana.core.lang.parser.ast import Identifier
+        from dana.core.lang.ast import Identifier
 
         if isinstance(assignment, Assignment) and isinstance(assignment.target, Identifier):
             return assignment.target.name.startswith("local:")

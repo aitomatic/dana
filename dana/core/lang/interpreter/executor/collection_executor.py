@@ -19,7 +19,7 @@ Discord: https://discord.gg/6jGD4PYk
 
 from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     DictLiteral,
     FStringExpression,
     ListLiteral,

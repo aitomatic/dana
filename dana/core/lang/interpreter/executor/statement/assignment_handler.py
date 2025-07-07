@@ -12,7 +12,7 @@ from typing import Any
 
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.parser.ast import Assignment, AttributeAccess, Identifier, SubscriptExpression
+from dana.core.lang.ast import Assignment, AttributeAccess, Identifier, SubscriptExpression
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -181,7 +181,7 @@ class AssignmentHandler(Loggable):
             value: The value to assign
             context: The execution context
         """
-        from dana.core.lang.parser.ast import SliceExpression, SliceTuple
+        from dana.core.lang.ast import SliceExpression, SliceTuple
 
         # Get the target object
         if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
@@ -237,7 +237,7 @@ class AssignmentHandler(Loggable):
             value: The value to assign
             context: The execution context
         """
-        from dana.core.lang.parser.ast import SliceExpression
+        from dana.core.lang.ast import SliceExpression
 
         try:
             # Evaluate each slice in the tuple

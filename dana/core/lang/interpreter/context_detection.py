@@ -13,7 +13,7 @@ from enum import Enum
 from typing import Any
 
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.parser.ast import Assignment, TypeHint
+from dana.core.lang.ast import Assignment, TypeHint
 
 
 class ContextType(Enum):

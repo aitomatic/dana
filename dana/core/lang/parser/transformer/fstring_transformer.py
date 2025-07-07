@@ -24,7 +24,7 @@ Discord: https://discord.gg/6jGD4PYk
 import logging
 from typing import Any
 
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     FStringExpression,
     Identifier,
     LiteralExpression,
