@@ -1,0 +1,52 @@
+# Coding Standards - Python & Type Hints
+
+## Core Standards
+
+- Follow PEP 8 style guide for Python code
+- Use 4-space indentation (no tabs)
+- **Type hints required**: `def func(x: int) -> str:` (mandatory)
+- Use docstrings for all public modules, classes, and functions
+- **Always use f-strings**: `f"Value: {var}"` not `"Value: " + str(var)`
+
+## Modern Type Hints (PEP 604)
+
+```python
+# ✅ CORRECT - Modern syntax
+def process_data(items: list[str], config: dict[str, int] | None = None) -> str | None:
+    return f"Processed {len(items)} items"
+
+# ❌ AVOID - Old syntax
+from typing import Dict, List, Optional, Union
+def process_data(items: List[str], config: Optional[Dict[str, int]] = None) -> Union[str, None]:
+    return "Processed " + str(len(items)) + " items"
+```
+
+## Linting & Formatting
+
+- **MUST RUN**: `uv run ruff check . && uv run ruff format .` before commits
+- Line length limit: 140 characters (configured in pyproject.toml)
+- Auto-fix with: `uv run ruff check --fix .`
+
+## Best Practices and Patterns
+
+- Use dataclasses or Pydantic models for data structures
+- Prefer composition over inheritance
+- Use async/await for I/O operations
+- Follow SOLID principles
+- Use dependency injection where appropriate
+- Implement proper error handling with custom exceptions
+- **Start with simplest solution that works**
+- **Add complexity only when requirements demand it**
+
+## Git Commit Standards
+
+- **NEVER include Claude attribution or "Generated with Claude Code" in git commit messages**
+- Write clean, professional commit messages focusing on technical content
+- Use clear, descriptive commit messages explaining the "why" not just the "what"
+
+## Common Methods and Utilities
+
+- **Use standard Python logging**: `import logging; logger = logging.getLogger(__name__)`
+- Use configuration from `dana.common.config`
+- Use graph operations from `dana.common.graph`
+- Use IO utilities from `dana.common.io`
