@@ -31,7 +31,7 @@ class TestAstValidator:
         """Test detection of Tree nodes in a dirty AST."""
         # Create a dirty AST with a Tree node embedded
         dirty_tree = Tree("some_rule", [Token("TOKEN", "value")])
-        assignment = Assignment(target=Identifier(name="x"), value=dirty_tree)  # This should be detected
+        assignment = Assignment(target=Identifier(name="x"), value=dirty_tree)  # type: ignore  # This should be detected
         program = Program(statements=[assignment])
 
         # Should detect the Tree node

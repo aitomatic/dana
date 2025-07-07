@@ -312,13 +312,63 @@ point = Point(5, 10)             # Positional arguments not supported
 
 ### Error Handling
 ```dana
-# Error handling
+# Basic exception handling
 try:
     result = risky_operation()
-except ValueError as e:
-    log(f"Error: {e}", "error")
+except ValueError:
+    log("Value error occurred", "error")
     result = default_value
+
+# Exception variable assignment - access exception details
+try:
+    result = process_data(user_input)
+except Exception as e:
+    log(f"Error: {e.message}", "error")
+    log(f"Exception type: {e.type}", "debug")
+    log(f"Traceback: {e.traceback}", "debug")
+    result = default_value
+
+# Multiple exception types with variables
+try:
+    result = complex_operation()
+except ValueError as validation_error:
+    log(f"Validation failed: {validation_error.message}", "warn")
+    result = handle_validation_error(validation_error)
+except RuntimeError as runtime_error:
+    log(f"Runtime error: {runtime_error.message}", "error")
+    result = handle_runtime_error(runtime_error)
+except Exception as general_error:
+    log(f"Unexpected error: {general_error.message}", "error")
+    result = handle_general_error(general_error)
+
+# Exception matching with specific types
+try:
+    result = api_call()
+except (ConnectionError, TimeoutError) as network_error:
+    log(f"Network issue: {network_error.message}", "warn")
+    result = retry_with_backoff()
+
+# Generic exception catching
+try:
+    result = unsafe_operation()
+except as error:
+    log(f"Caught exception: {error.type} - {error.message}", "error")
+    result = fallback_value
 ```
+
+**Exception Object Properties:**
+When using `except Exception as e:` syntax, the exception variable provides:
+- `e.type` - Exception class name (string)
+- `e.message` - Error message (string) 
+- `e.traceback` - Stack trace lines (list of strings)
+- `e.original` - Original Python exception object
+
+**Exception Syntax Variations:**
+- `except ExceptionType as var:` - Catch specific type with variable
+- `except (Type1, Type2) as var:` - Catch multiple types with variable
+- `except as var:` - Catch any exception with variable
+- `except ExceptionType:` - Catch specific type without variable
+- `except:` - Catch any exception without variable
 
 ### Data Validation
 ```dana
