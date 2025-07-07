@@ -60,3 +60,6 @@ node_modules/
 .cache/
 .ipynb_checkpoints/
 .cursor/
+
+.vscode/launch.json
+.vscode/settings.json
