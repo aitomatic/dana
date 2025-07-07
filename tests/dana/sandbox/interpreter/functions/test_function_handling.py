@@ -334,8 +334,8 @@ def test_enhanced_function_call_evaluation():
     Migrated from tests/dana/sandbox/test_fixed_functions.py::test_evaluate_function_call()
     Enhanced with additional function call scenarios.
     """
+    from dana.core.lang.ast import FunctionCall, LiteralExpression
     from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-    from dana.core.lang.parser.ast import FunctionCall, LiteralExpression
 
     context = SandboxContext()
 
@@ -375,8 +375,8 @@ def test_expression_evaluation_comprehensive():
     Migrated from tests/dana/sandbox/test_fixed_functions.py::test_evaluate_expressions()
     Enhanced with additional expression types and edge cases.
     """
+    from dana.core.lang.ast import BinaryExpression, BinaryOperator, Identifier, LiteralExpression
     from dana.core.lang.interpreter.executor.dana_executor import DanaExecutor
-    from dana.core.lang.parser.ast import BinaryExpression, BinaryOperator, Identifier, LiteralExpression
 
     context = SandboxContext()
     executor = DanaExecutor()
@@ -426,7 +426,7 @@ def test_assignment_and_execution_comprehensive():
     Migrated from tests/dana/sandbox/test_fixed_functions.py::test_assignment_and_print()
     Enhanced with additional assignment patterns and execution scenarios.
     """
-    from dana.core.lang.parser.ast import Assignment, Identifier, LiteralExpression
+    from dana.core.lang.ast import Assignment, Identifier, LiteralExpression
 
     context = SandboxContext()
     interpreter = DanaInterpreter()
@@ -438,7 +438,7 @@ def test_assignment_and_execution_comprehensive():
     assert context.get("private:x") == 99
 
     # Test assignment with expressions
-    from dana.core.lang.parser.ast import BinaryExpression, BinaryOperator
+    from dana.core.lang.ast import BinaryExpression, BinaryOperator
 
     expr_stmt = Assignment(
         target=Identifier("private:y"),

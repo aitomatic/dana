@@ -7,7 +7,7 @@ from typing import cast
 
 import pytest
 
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     Assignment,
     AttributeAccess,
     BinaryExpression,

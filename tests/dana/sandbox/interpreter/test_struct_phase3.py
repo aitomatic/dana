@@ -10,17 +10,17 @@ MIT License
 
 import pytest
 
+from dana.core.lang.ast import (
+    StructDefinition,
+    StructField,
+    TypeHint,
+)
 from dana.core.lang.dana_sandbox import DanaSandbox, ExecutionResult
 from dana.core.lang.interpreter.struct_system import (
     StructInstance,
     StructTypeRegistry,
     create_struct_instance,
     register_struct_from_ast,
-)
-from dana.core.lang.parser.ast import (
-    StructDefinition,
-    StructField,
-    TypeHint,
 )
 
 

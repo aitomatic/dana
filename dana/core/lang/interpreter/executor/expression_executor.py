@@ -20,13 +20,7 @@ Discord: https://discord.gg/6jGD4PYk
 from typing import Any
 
 from dana.common.exceptions import SandboxError
-from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
-from dana.core.lang.interpreter.executor.expression.binary_operation_handler import BinaryOperationHandler
-from dana.core.lang.interpreter.executor.expression.collection_processor import CollectionProcessor
-from dana.core.lang.interpreter.executor.expression.identifier_resolver import IdentifierResolver
-from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import PipeOperationHandler
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     AttributeAccess,
     BinaryExpression,
     BinaryOperator,
@@ -41,6 +35,12 @@ from dana.core.lang.parser.ast import (
     TupleLiteral,
     UnaryExpression,
 )
+from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
+from dana.core.lang.interpreter.executor.expression.binary_operation_handler import BinaryOperationHandler
+from dana.core.lang.interpreter.executor.expression.collection_processor import CollectionProcessor
+from dana.core.lang.interpreter.executor.expression.identifier_resolver import IdentifierResolver
+from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import PipeOperationHandler
+from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -424,7 +424,7 @@ class ExpressionExecutor(BaseExecutor):
         Returns:
             The value at the specified index or slice
         """
-        from dana.core.lang.parser.ast import SliceExpression, SliceTuple
+        from dana.core.lang.ast import SliceExpression, SliceTuple
 
         # Get the target object
         target = self.parent.execute(node.object, context)
@@ -651,7 +651,7 @@ class ExpressionExecutor(BaseExecutor):
         Raises:
             SandboxError: For invalid multi-dimensional slice operations
         """
-        from dana.core.lang.parser.ast import SliceExpression
+        from dana.core.lang.ast import SliceExpression
 
         # Evaluate each slice in the tuple
         evaluated_slices = []

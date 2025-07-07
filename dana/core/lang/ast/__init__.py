@@ -391,8 +391,8 @@ class ExceptBlock:
 
     body: list[Statement]
     location: Location | None = None
-    exception_type: Identifier | None = None
-    exception_name: Identifier | None = None
+    exception_type: Expression | None = None  # Can be Identifier, TupleLiteral, or None
+    variable_name: str | None = None  # Variable name from 'as' clause
 
 
 @dataclass

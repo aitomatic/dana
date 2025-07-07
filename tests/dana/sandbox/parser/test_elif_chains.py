@@ -13,7 +13,7 @@ import textwrap
 
 import pytest
 
-from dana.core.lang.parser.ast import BinaryOperator, Conditional
+from dana.core.lang.ast import BinaryOperator, Conditional
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
 
 

@@ -15,7 +15,7 @@ from typing import cast
 
 from lark import Token, Tree
 
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     AgentPoolStatement,
     AgentStatement,
     Expression,
@@ -213,7 +213,7 @@ class AgentContextTransformer(BaseTransformer):
 
     def with_stmt(self, items):
         """Transform a with statement rule into a WithStatement node."""
-        from dana.core.lang.parser.ast import Expression
+        from dana.core.lang.ast import Expression
 
         # Filter out None items
         filtered_items = [item for item in items if item is not None]

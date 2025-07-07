@@ -12,7 +12,7 @@ import warnings
 from typing import Any
 
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.parser.ast import Identifier, WithStatement
+from dana.core.lang.ast import Identifier, WithStatement
 from dana.core.lang.sandbox_context import SandboxContext
 
 

@@ -10,7 +10,7 @@ MIT License
 
 from lark import Token, Tree
 
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     BinaryExpression,
     BinaryOperator,
     LiteralExpression,
@@ -27,7 +27,7 @@ class OperatorHelper:
         Handles comp_op, *_op, ADD_OP, MUL_OP, direct tokens, and plain strings.
         Also handles BinaryOperator enum values.
         """
-        from dana.core.lang.parser.ast import BinaryOperator
+        from dana.core.lang.ast import BinaryOperator
 
         if isinstance(op_token, Token):
             return op_token.value
@@ -177,7 +177,7 @@ class CallHelper:
     @staticmethod
     def get_full_attribute_name(attr):
         """Recursively extract full dotted name from AttributeAccess chain."""
-        from dana.core.lang.parser.ast import AttributeAccess, Identifier
+        from dana.core.lang.ast import AttributeAccess, Identifier
 
         parts = []
         while isinstance(attr, AttributeAccess):

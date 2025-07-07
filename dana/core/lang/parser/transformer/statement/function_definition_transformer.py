@@ -13,7 +13,7 @@ MIT License
 
 from lark import Token, Tree
 
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     Decorator,
     FunctionDefinition,
     Identifier,
@@ -128,7 +128,7 @@ class FunctionDefinitionTransformer(BaseTransformer):
             item = relevant_items[current_index]
 
             if not isinstance(item, list):
-                from dana.core.lang.parser.ast import TypeHint
+                from dana.core.lang.ast import TypeHint
 
                 if isinstance(item, Tree) and item.data == "basic_type":
                     return_type = self.main_transformer.assignment_transformer.basic_type(item.children)

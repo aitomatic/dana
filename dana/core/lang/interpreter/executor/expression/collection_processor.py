@@ -11,7 +11,7 @@ MIT License
 from typing import Any
 
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.parser.ast import DictLiteral, FStringExpression, ListLiteral, SetLiteral, TupleLiteral
+from dana.core.lang.ast import DictLiteral, FStringExpression, ListLiteral, SetLiteral, TupleLiteral
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -43,6 +43,8 @@ class CollectionProcessor(Loggable):
             parent_executor: Reference to parent executor for item evaluation
         """
         super().__init__()
+        if parent_executor is None:
+            raise ValueError("parent_executor is required for CollectionProcessor")
         self.parent_executor = parent_executor
         self._fstring_template_cache = {}  # Cache for f-string templates
         self._cache_hits = 0
