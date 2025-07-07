@@ -8,7 +8,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from .agent_system import AgentInstance, AgentType, AgentTypeRegistry
 from .abstract_dana_agent import AbstractDanaAgent
+from .agent_system import AgentInstance, AgentType, AgentTypeRegistry
 
 __all__ = ["AgentType", "AgentInstance", "AgentTypeRegistry", "AbstractDanaAgent"]

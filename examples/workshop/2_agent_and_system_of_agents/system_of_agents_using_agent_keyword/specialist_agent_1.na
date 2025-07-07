@@ -17,8 +17,8 @@ agent WeatherAgent:
 def solve(weather_agent : WeatherAgent, problem : str):
     return reason(f"{problem} Be aware that today is {date.today()}", resources=weather_agent.resources)
 
-# quick test:
-weather_agent = WeatherAgent()
-print(weather_agent.solve("How is Tokyo's weather this weekend?"))
-#OR
-print(solve(weather_agent, "How is Tokyo's weather this weekend?"))
+# # quick test:
+# weather_agent = WeatherAgent()
+# print(weather_agent.solve("How is Tokyo's weather this weekend?"))
+# #OR
+# print(solve(weather_agent, "How is Tokyo's weather this weekend?"))

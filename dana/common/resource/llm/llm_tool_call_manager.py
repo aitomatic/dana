@@ -141,12 +141,12 @@ class LLMToolCallManager(Loggable):
                 function_obj = Misc.get_field(tool_call, "function")
                 tool_call_id = Misc.get_field(tool_call, "id")
                 if not function_obj:
-                    self.error(f"Invalid tool call structure: missing function object")
+                    self.error("Invalid tool call structure: missing function object")
                     continue
                 function_name = Misc.get_field(function_obj, "name")
                 arguments_str = Misc.get_field(function_obj, "arguments")
                 if not function_name or not arguments_str:
-                    self.error(f"Invalid tool call structure: missing function name or arguments")
+                    self.error("Invalid tool call structure: missing function name or arguments")
                     continue
                 if isinstance(arguments_str, str):
                     arguments = json.loads(arguments_str)

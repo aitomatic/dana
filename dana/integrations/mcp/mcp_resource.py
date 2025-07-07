@@ -5,12 +5,13 @@ MCP Resource implementation for Dana integration.
 import inspect
 from typing import Any
 
+from mcp.types import Tool as McpTool
+
 from dana.common.mixins.tool_formats import OpenAIToolFormat
 from dana.common.resource.base_resource import BaseResource
 from dana.common.types import BaseRequest, BaseResponse
 from dana.common.utils.misc import Misc
 from dana.integrations.mcp.client.mcp_client import MCPClient
-from mcp.types import Tool as McpTool
 
 
 class MCPResource(BaseResource):
@@ -138,13 +139,17 @@ class MCPResource(BaseResource):
 
 
 if __name__ == "__main__":
-    import asyncio
+    from dana.common.utils.misc import Misc
 
     async def main():
         mcp_resource = MCPResource("sensors", url="http://localhost:8880/sensors")
         response = mcp_resource._list_tools(OpenAIToolFormat(mcp_resource.name, mcp_resource.id))
         print(response)
-        response = await mcp_resource.call_tool("list_all_sensors", {})
+        response = Misc.safe_asyncio_run(mcp_resource.call_tool, "list_all_sensors", {})
         print(response)
 
-    asyncio.run(main())
+    Misc.safe_asyncio_run(main)
+    Misc.safe_asyncio_run(main)
+
+    import time
+    time.sleep(20)

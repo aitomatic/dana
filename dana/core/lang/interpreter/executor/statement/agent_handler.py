@@ -234,7 +234,7 @@ class AgentHandler(Loggable):
             None (agent definitions don't produce a value, they register a type)
         """
         # Import here to avoid circular imports
-        from dana.agent.agent_system import register_agent_from_ast, AgentTypeRegistry
+        from dana.agent.agent_system import AgentTypeRegistry, register_agent_from_ast
 
         # Create and register the agent type using the new struct-like system
         try:

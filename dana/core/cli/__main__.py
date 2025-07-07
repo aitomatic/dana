@@ -3,6 +3,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 import dana
+
 from .dana import main
 
 # if developer puts an .env file in the OpenDXA repo root directory, load it

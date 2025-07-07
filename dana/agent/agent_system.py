@@ -7,9 +7,12 @@ Agents are pure data containers; all method logic is handled externally and boun
 
 from dataclasses import dataclass
 from typing import Any
-from .abstract_dana_agent import AbstractDanaAgent
-from dana.core.stdlib.core.reason_function import reason_function
+
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.core.stdlib.core.reason_function import reason_function
+
+from .abstract_dana_agent import AbstractDanaAgent
+
 
 # --- Default Method Implementations ---
 def default_plan_method(context: SandboxContext, agent_instance: "AgentInstance", task: str, user_context: dict | None = None) -> Any:

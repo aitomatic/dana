@@ -8,8 +8,9 @@ without changing ANY existing business logic.
 Key Insight: AI enhancement, not replacement!
 """
 
-from opendxa.dana import dana
 import logging
+
+from opendxa.dana import dana
 
 # Hide all INFO logs system-wide
 logging.getLogger().setLevel(logging.WARNING)
@@ -93,7 +94,7 @@ def main():
     print("\n\033[1;33m🔄 Processing order with AI enhancement...\033[0m")
     enhanced_order = system.process_order(sample_order)
     
-    print(f"\n\033[1;32m✅ Order processed successfully!\033[0m")
+    print("\n\033[1;32m✅ Order processed successfully!\033[0m")
     print(f"\033[38;5;147m📊 Orders processed: {system.orders_processed}\033[0m")
     print(f"\033[38;5;147m🤖 AI enhancement: {'Added' if 'ai_insights' in enhanced_order else 'Failed'}\033[0m")
     

@@ -5,9 +5,9 @@ This module provides the AgentPool class for managing multiple A2A agents and se
 the most appropriate agent for a given task based on skills.
 """
 
+from dana.agent.abstract_dana_agent import AbstractDanaAgent
 from dana.common.resource.base_resource import BaseResource
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.agent.abstract_dana_agent import AbstractDanaAgent
 
 from .agent_selector import AgentSelector
 

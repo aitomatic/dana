@@ -44,7 +44,6 @@ dependencies = [
     "websockets",
     "httpx==0.27.2", # Pin to fix AISuite/Anthropic compatibility issue
     # Configuration & Utilities
-    "nest_asyncio",
     "python-dotenv",
     "pyyaml",
     "structlog",

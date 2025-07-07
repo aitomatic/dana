@@ -14,6 +14,8 @@ MIT License
 from lark import Token, Tree
 
 from dana.core.lang.ast import (
+    AgentDefinition,
+    AgentField,
     Decorator,
     FunctionDefinition,
     Identifier,
@@ -21,8 +23,6 @@ from dana.core.lang.ast import (
     StructDefinition,
     StructField,
     TypeHint,
-    AgentDefinition,
-    AgentField,
 )
 from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
 
