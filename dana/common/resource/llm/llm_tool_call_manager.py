@@ -17,6 +17,7 @@ from dana.common.mixins.tool_callable import OpenAIFunctionCall, ToolCallable
 from dana.common.mixins.tool_formats import ToolFormat
 from dana.common.resource.base_resource import BaseResource
 from dana.common.types import BaseRequest, BaseResponse
+from dana.common.utils.misc import Misc
 
 # To avoid accidentally sending too much data to the LLM,
 # we limit the total length of tool-call responses.
@@ -132,12 +133,28 @@ class LLMToolCallManager(Loggable):
         Returns:
             List[dict[str, Any]]: List of tool responses in OpenAI format
         """
+        
         responses: list[dict[str, Any]] = []
         for tool_call in tool_calls:
             try:
-                # Get the function name and arguments
-                function_name = tool_call.function.name
-                arguments = json.loads(tool_call.function.arguments)
+                # Get the function object (can be object or dict)
+                function_obj = Misc.get_field(tool_call, "function")
+                tool_call_id = Misc.get_field(tool_call, "id")
+                if not function_obj:
+                    self.error(f"Invalid tool call structure: missing function object")
+                    continue
+                function_name = Misc.get_field(function_obj, "name")
+                arguments_str = Misc.get_field(function_obj, "arguments")
+                if not function_name or not arguments_str:
+                    self.error(f"Invalid tool call structure: missing function name or arguments")
+                    continue
+                if isinstance(arguments_str, str):
+                    arguments = json.loads(arguments_str)
+                elif isinstance(arguments_str, dict):
+                    arguments = arguments_str
+                else:
+                    self.error(f"Invalid tool call structure: invalid arguments type {type(arguments_str)} : {arguments_str}")
+                    continue
 
                 # Parse the function name to get the resource name, id, and tool name
                 resource_name, resource_id, tool_name = ToolFormat.parse_tool_name(function_name)
@@ -162,8 +179,10 @@ class LLMToolCallManager(Loggable):
             except Exception as e:
                 response = f"Tool call failed: {str(e)}"
                 self.error(response)
+                function_name = "unknown"
+                tool_call_id = None
 
-            responses.append({"role": "tool", "name": function_name, "content": response, "tool_call_id": tool_call.id})
+            responses.append({"role": "tool", "name": function_name, "content": response, "tool_call_id": tool_call_id})
 
         return responses
 

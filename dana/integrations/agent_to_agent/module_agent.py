@@ -8,7 +8,7 @@ import inspect
 from typing import Any
 
 from dana.agent.abstract_dana_agent import AbstractDanaAgent
-from dana.integrations.agent_to_agent.resource.a2a.common.module_agent_utils import get_module_agent_info
+from dana.integrations.agent_to_agent.a2a.common.module_agent_utils import get_module_agent_info
 
 
 class ModuleAgent(AbstractDanaAgent):

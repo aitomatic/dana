@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 from python_a2a import A2AClient
 from python_a2a.models import AgentCard, Message, MessageRole, Metadata, TextContent
 
-from dana.integrations.agent_to_agent.resource.a2a.common.message_utils import extract_text_from_response
+from dana.integrations.agent_to_agent.a2a.common.message_utils import extract_text_from_response
 
 
 class BaseA2AClient(A2AClient):

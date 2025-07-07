@@ -1,14 +1,27 @@
 {
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Run Dana",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "dana.core.cli",
-      "args": ["${file}"],
-      "cwd": "${fileDirname}",
-      "console": "integratedTerminal"
-    },
-  ]
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run Dana",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "dana.core.cli",
+            "args": [
+                "${file}"
+            ],
+            "cwd": "${fileDirname}",
+            "console": "integratedTerminal"
+        },
+        {
+         "name": "Python Debugger: Current File",
+         "type": "debugpy",
+         "request": "launch",
+         "program": "${file}",
+         "justMyCode": false,
+         "console": "integratedTerminal",
+         "env": {
+           "PYTHONPATH": "${workspaceFolder}/src"
+         }
+       }
+    ]
 }

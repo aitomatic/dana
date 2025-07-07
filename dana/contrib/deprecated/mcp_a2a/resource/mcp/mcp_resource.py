@@ -9,7 +9,7 @@ from dana.common.mixins.tool_formats import OpenAIToolFormat
 from dana.common.resource.base_resource import BaseResource
 from dana.common.types import BaseRequest, BaseResponse
 from dana.common.utils.misc import Misc
-from dana.integrations.a2a.resource.mcp.client.mcp_client import MCPClient
+from dana.integrations.agent_to_agent.resource.mcp.client.mcp_client import MCPClient
 from mcp.types import Tool as McpTool
 
 

@@ -13,6 +13,6 @@ class Identifiable:
             name: Optional name for the object
             description: Optional description of the object
         """
-        self.id = Misc.generate_base64_uuid(8)
+        self.id = Misc.generate_uuid(8)
         self.name = name or self.__class__.__name__  # must have a name
         self.description = description

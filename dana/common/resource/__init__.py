@@ -100,10 +100,7 @@ from dana.common.types import (
     JsonType,
 )
 from dana.common.utils import DANA_LOGGER, DanaLogger, Misc
-from dana.integrations.mcp.base_mcp_service import BaseMcpService
-from dana.integrations.mcp.mcp_config import HttpTransportParams, StdioTransportParams
-from dana.integrations.mcp.mcp_echo_service import McpEchoService
-from dana.integrations.mcp.mcp_resource import McpResource
+from dana.integrations.mcp import MCPResource
 
 __all__ = [
     # Exceptions (from exceptions.py)
@@ -157,13 +154,9 @@ __all__ = [
     "STMemoryResource",
     "PermMemoryResource",
     # MCP Services (from integrations/mcp/)
-    "BaseMcpService",
-    "McpEchoService",
-    "HttpTransportParams",
-    "StdioTransportParams",
+    "MCPResource",
     # Utils (from utils/)
     "Misc",
     "DanaLogger",
     "DANA_LOGGER",
-    "McpResource",
 ]

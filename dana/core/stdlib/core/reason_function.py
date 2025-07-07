@@ -97,8 +97,8 @@ def old_reason_function(
     if actual_agents is not None:
         try:
             # Check if agents is an A2AAgent, AgentPool, or list of agents
-            from dana.integrations.a2a.agent import AbstractDanaAgent
-            from dana.integrations.a2a.agent.pool.agent_pool import AgentPool
+            from dana.integrations.agent_to_agent.agent import AbstractDanaAgent
+            from dana.integrations.agent_to_agent.agent.pool.agent_pool import AgentPool
 
             agent_pool = None
 
