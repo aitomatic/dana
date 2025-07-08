@@ -134,12 +134,40 @@ def _find_closest_model_match(model_input: str, available_models: list[str]) -> 
             return model
 
     # Smart provider matching - if user types just a provider name, return the best model
+    def _get_best_openai_model(models: list[str]) -> str | None:
+        """Get the best OpenAI model with proper priority matching."""
+        if not models:
+            return None
+        # First try exact match for gpt-4o
+        for model in models:
+            if model.endswith(":gpt-4o"):
+                return model
+        # Then try other gpt-4o variants
+        for model in models:
+            if "gpt-4o" in model:
+                return model
+        return models[0]
+
+    def _get_best_azure_model(models: list[str]) -> str | None:
+        """Get the best Azure model with proper priority matching."""
+        if not models:
+            return None
+        # First try exact match for gpt-4o
+        for model in models:
+            if model.endswith(":gpt-4o"):
+                return model
+        # Then try other gpt-4o variants
+        for model in models:
+            if "gpt-4o" in model:
+                return model
+        return models[0]
+
     provider_preferences = {
-        "openai": lambda models: next((m for m in models if "gpt-4o" in m), models[0] if models else None),
+        "openai": _get_best_openai_model,
         "anthropic": lambda models: next((m for m in models if "claude-3-5-sonnet" in m), models[0] if models else None),
         "google": lambda models: next((m for m in models if "gemini-1.5-pro" in m), models[0] if models else None),
         "groq": lambda models: next((m for m in models if "llama-3" in m and "70b" in m), models[0] if models else None),
-        "azure": lambda models: next((m for m in models if "gpt-4o" in m), models[0] if models else None),
+        "azure": _get_best_azure_model,
         "deepseek": lambda models: next((m for m in models if "deepseek-chat" in m), models[0] if models else None),
     }
 
@@ -166,11 +194,25 @@ def _find_closest_model_match(model_input: str, available_models: list[str]) -> 
             openai_matches = [m for m in substring_matches if m.startswith("openai:")]
             if openai_matches:
                 # Prefer gpt-4o over gpt-4o-mini, gpt-4 over gpt-3.5
+                # Use proper priority matching to avoid substring issues
                 priority_order = ["gpt-4o", "gpt-4", "gpt-3.5"]
+
+                # First pass: look for exact matches
+                for priority in priority_order:
+                    exact_match = f"openai:{priority}"
+                    if exact_match in openai_matches:
+                        return exact_match
+
+                # Second pass: look for variations (like gpt-4o-mini)
                 for priority in priority_order:
                     for match in openai_matches:
-                        if priority in match:
-                            return match
+                        model_name = match.split(":", 1)[-1]
+                        # Only match if it starts with priority followed by a delimiter
+                        if model_name.startswith(priority) and len(model_name) > len(priority):
+                            next_char = model_name[len(priority)]
+                            if next_char in ["-", "_", "."]:
+                                return match
+
                 return openai_matches[0]
 
             # Fallback to Azure if no OpenAI

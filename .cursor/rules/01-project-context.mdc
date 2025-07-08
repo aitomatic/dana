@@ -1,0 +1,41 @@
+# Project Context - Dana Framework
+
+## Project Overview
+
+- Dana is a Domain-Aware NeuroSymbolic Architecture language for AI-driven automation and agent systems
+- Core components: Dana Language, Runtime Engine, Agent Framework
+- Primary language: Python 3.12+
+- Uses uv for dependency management
+
+## Key Files and References
+
+@file pyproject.toml
+@file .python-version
+@file .gitignore
+@file Makefile
+@file README.md
+
+## File Modification Priority
+
+1. **NEVER modify core grammar files without extensive testing**
+2. **Always check existing examples before creating new ones**
+3. **ALL temporary development files go in `tmp/` directory**
+4. **Prefer editing existing files over creating new ones**
+
+## Project Structure
+
+- Core framework code: `dana/`
+- Tests: `tests/` (matching source structure)
+- Examples: `examples/`
+- Documentation: `docs/`
+- Temporary files: `tmp/`
+
+## Documentation References
+
+For comprehensive Dana language documentation including syntax, scoping, data types, functions, structs, pipelines, module system, and AI integration, see:
+
+**📖 [docs/.ai-only/dana.md](dana.md) - Complete Dana Language Reference**
+
+For comprehensive 3D methodology guidelines including design documents, implementation phases, quality gates, example creation, and unit testing standards, see:
+
+**📋 [docs/.ai-only/3d.md](3d.md) - Complete 3D Methodology Reference**

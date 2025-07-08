@@ -1,0 +1,50 @@
+# Testing Guidelines - Quality Assurance
+
+## General Testing Standards
+
+- **Prefer `.na` (Dana) test files** over `.py` for Dana-specific functionality
+- Write unit tests for all new code (pytest automatically discovers `test_*.na` files)
+- Test coverage above 80%
+- Run relevant test suites to ensure no regressions
+
+## Dana Test File Guidelines
+
+- **Create `test_*.na` files** for Dana functionality testing
+- Use `log()` statements for test output and debugging (provides color coding)
+- pytest automatically discovers and runs `.na` test files
+- Run `.na` files directly: `dana test_example.na` or `uv run python -m dana.core.repl.dana test_example.na`
+
+## Testing Commands
+
+```bash
+# Run all tests with verbose output
+uv run pytest tests/ -v
+
+# Run specific test directory
+pytest tests/my_directory/test_dana_files.py -v
+
+# Run Dana files directly
+dana test_my_feature.na
+dana --debug test_my_feature.na
+```
+
+## Test File Preferences
+
+- **`.na` files**: For Dana-specific functionality, examples, and testing
+- **`.py` files**: Only for Python-specific testing (imports, integrations)
+- **pytest**: Automated testing and CI/CD pipelines
+- **dana command**: Direct execution and development
+
+## Security & Testing Essentials
+
+- **Never commit API keys or secrets**
+- Use environment variables for configuration
+- Validate all inputs
+- Handle all invalid inputs gracefully
+- Test error paths as thoroughly as success paths
+
+## Testing High-Level Requirements
+
+User prefers that tests be written at a high abstraction level so they do not depend on exact configuration file details, accommodating potential changes in configuration per installation.
+
+Project-wide testing convention: Unless tests are reading from config files, they should not test against fixed configuration models or values, since config files may change.

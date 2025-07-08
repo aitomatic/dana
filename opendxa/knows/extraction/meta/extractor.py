@@ -8,7 +8,7 @@ import json
 import uuid
 from typing import Any
 
-from dana.common.resource.llm_resource import LLMResource
+from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.logging import DXA_LOGGER
 from dana.frameworks.knows.core.base import Document, KnowledgePoint, ProcessorBase
