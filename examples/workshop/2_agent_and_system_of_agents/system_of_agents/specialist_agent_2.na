@@ -1,0 +1,17 @@
+"""Specialist Agent #2."""
+
+# Agent Card declaration
+system:agent_name = "Web Searcher"
+system:agent_description = "Agent answering questions through searching the web"
+
+# Agent resources
+search_service = use("mcp", url="https://demo.mcp.aitomatic.com/websearch_v2")
+
+from datetime.py import date
+
+# Agent's problem solver
+def solve(problem):
+    return reason(f"{problem} Be aware that today is {date.today()}", resources=[search_service])
+
+# quick test:
+# solve("Find 10 notable cultural events going on in Tokyo this week")

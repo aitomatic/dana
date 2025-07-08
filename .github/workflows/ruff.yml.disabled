@@ -38,10 +38,10 @@ jobs:
         echo "🚫 Running critical lint checks (BLOCKING)..."
         echo "Checking core modules for: bare except (E722), undefined names (F821)"
         echo "Excluding contrib/ directory for now"
-        uv run ruff check opendxa/ tests/ --select E722,F821 --exclude opendxa/contrib --output-format=github || {
+        uv run ruff check dana/ tests/ --select E722,F821 --exclude dana/contrib --output-format=github || {
           echo "❌ Critical lint violations found in core modules"
           echo "These must be fixed as they can cause runtime errors or security issues"
-          echo "Run: uv run ruff check opendxa/ tests/ --select E722,F821 --exclude opendxa/contrib"
+          echo "Run: uv run ruff check dana/ tests/ --select E722,F821 --exclude dana/contrib"
           exit 1
         }
         echo "✅ Critical lint checks passed for core modules"
@@ -53,7 +53,7 @@ jobs:
         # Show important issues but don't block CI
         echo "⚠️ Running important lint checks (non-blocking)..."
         echo "Checking for: unused variables (F841), assert exceptions (B017)"
-        uv run ruff check opendxa/ tests/ --select F841,B017 --output-format=github || {
+        uv run ruff check dana/ tests/ --select F841,B017 --output-format=github || {
           echo "⚠️ Found important issues - should fix soon but CI continues"
         }
         
@@ -63,9 +63,9 @@ jobs:
       run: |
         # Show style issues but don't block CI
         echo "✨ Running style and formatting checks (non-blocking)..."
-        uv run ruff format --check opendxa/ tests/ || {
-          echo "ℹ️ Formatting issues found - run 'uv run ruff format opendxa/ tests/' to fix"
+        uv run ruff format --check dana/ tests/ || {
+          echo "ℹ️ Formatting issues found - run 'uv run ruff format dana/ tests/' to fix"
         }
-        uv run ruff check opendxa/ tests/ --select UP038,B026,E712,E721,B024,B007 --output-format=github || {
+        uv run ruff check dana/ tests/ --select UP038,B026,E712,E721,B024,B007 --output-format=github || {
           echo "ℹ️ Style issues found - fix when convenient"
         } 

@@ -1,0 +1,10 @@
+location = "PARIS"
+
+def get_weather():
+    return f"Weather in {location}"
+
+def add_ten(x):
+    return x+10
+
+export get_weather
+export add_ten

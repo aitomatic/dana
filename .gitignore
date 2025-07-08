@@ -33,7 +33,6 @@ configs/
 
 # Editors and tools
 .qodo/
-.vscode/
 *.swp
 *.swo
 .aider*
@@ -60,3 +59,8 @@ node_modules/
 .refactoring_*/
 .cache/
 .ipynb_checkpoints/
+.cursor/
+
+.vscode/launch.json
+.vscode/settings.json
+.deprecated_opendxa

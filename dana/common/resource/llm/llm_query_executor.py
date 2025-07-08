@@ -201,14 +201,14 @@ class LLMQueryExecutor(Loggable):
             iteration += 1
 
             # Guard rail the total message length before sending
-            message_history = TokenManagement.enforce_context_window(
-                messages=message_history,
-                model=self.model,
-                max_tokens=Misc.get_field(request, "max_tokens"),
-                preserve_system_messages=True,
-                preserve_latest_messages=4,
-                safety_margin=200,
-            )
+            # message_history = TokenManagement.enforce_context_window(
+            #     messages=message_history,
+            #     model=self.model,
+            #     max_tokens=Misc.get_field(request, "max_tokens"),
+            #     preserve_system_messages=True,
+            #     preserve_latest_messages=4,
+            #     safety_margin=200,
+            # )
 
             # Logging the token count for debugging
             token_count = sum(TokenManagement.estimate_message_tokens(msg) for msg in message_history)

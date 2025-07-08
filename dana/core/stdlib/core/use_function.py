@@ -18,7 +18,7 @@ def use_function(context: SandboxContext, function_name: str, *args, _name: str 
     if _name is None:
         _name = Misc.generate_base64_uuid(length=6)
     if function_name.lower() == "mcp":
-        from dana.integrations.mcp.resource.mcp import MCPResource
+        from dana.integrations.mcp import MCPResource
 
         resource = MCPResource(*args, name=_name, **kwargs)
         context.set_resource(_name, resource)

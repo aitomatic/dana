@@ -42,9 +42,8 @@ dependencies = [
     "aiohttp",
     "aioconsole",
     "websockets",
-    "httpx==0.27.2",  # Pin to fix AISuite/Anthropic compatibility issue
+    "httpx==0.27.2", # Pin to fix AISuite/Anthropic compatibility issue
     # Configuration & Utilities
-    "nest_asyncio",
     "python-dotenv",
     "pyyaml",
     "structlog",
@@ -71,6 +70,7 @@ dependencies = [
     # API Server - Required for Dana sandbox operations
     "fastapi",
     "openai>=1.55.3",
+    "fastmcp>=2.10.2",
 ]
 
 # Development-only dependencies

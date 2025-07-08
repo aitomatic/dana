@@ -17,9 +17,12 @@ GitHub: https://github.com/aitomatic/dana
 Discord: https://discord.gg/6jGD4PYk
 """
 
+import asyncio
+from collections.abc import Callable
 from typing import Any
 
 from dana.common.exceptions import SandboxError
+from dana.common.utils.misc import Misc
 from dana.core.lang.ast import (
     AttributeAccess,
     BinaryExpression,
@@ -239,6 +242,12 @@ class ExpressionExecutor(BaseExecutor):
             return target[node.attribute]
 
         raise AttributeError(f"'{type(target).__name__}' object has no attribute '{node.attribute}'")
+    
+    def run_function(self, func: Callable, *args, **kwargs) -> Any:
+        if asyncio.iscoroutinefunction(func):
+            return Misc.safe_asyncio_run(func, *args, **kwargs)
+        else:
+            return func(*args, **kwargs)
 
     def execute_object_function_call(self, node: Any, context: SandboxContext) -> Any:
         """Execute an object function call.
@@ -310,54 +319,21 @@ class ExpressionExecutor(BaseExecutor):
                     return func.execute(func_context, obj, *args, **kwargs)
                 else:
                     self.debug("DEBUG: Using direct function call")
-                    result = func(obj, *args, **kwargs)
-                    # If the result is a coroutine, await it
-                    import asyncio
-
-                    if asyncio.iscoroutine(result):
-                        self.debug("DEBUG: Struct function returned coroutine, awaiting it")
-                        try:
-                            return asyncio.run(result)
-                        except RuntimeError as e:
-                            self.warning(f"Cannot await coroutine in current context: {e}")
-                            return result
-                    return result
+                    return self.run_function(func, obj, *args, **kwargs)
 
             # If no function found in scopes, try to find a method on the struct type
             self.debug(f"DEBUG: No function found in scopes, trying struct_type.{method_name}")
             method = getattr(struct_type, method_name, None)
             if method is not None and callable(method):
                 self.debug("DEBUG: Found callable method on struct_type")
-                result = method(obj, *args, **kwargs)
-                # If the result is a coroutine, await it
-                import asyncio
-
-                if asyncio.iscoroutine(result):
-                    self.debug("DEBUG: Struct type method returned coroutine, awaiting it")
-                    try:
-                        return asyncio.run(result)
-                    except RuntimeError as e:
-                        self.warning(f"Cannot await coroutine in current context: {e}")
-                        return result
-                return result
+                return self.run_function(method, obj, *args, **kwargs)
 
             # If no method found on struct type, try to find a method on the object itself
             self.debug(f"DEBUG: No method found on struct_type, trying object.{method_name}")
             method = getattr(obj, method_name, None)
             if method is not None and callable(method):
                 self.debug("DEBUG: Found callable method on object")
-                result = method(*args, **kwargs)
-                # If the result is a coroutine, await it
-                import asyncio
-
-                if asyncio.iscoroutine(result):
-                    self.debug("DEBUG: Struct object method returned coroutine, awaiting it")
-                    try:
-                        return asyncio.run(result)
-                    except RuntimeError as e:
-                        self.warning(f"Cannot await coroutine in current context: {e}")
-                        return result
-                return result
+                return self.run_function(method, *args, **kwargs)
 
             # If we get here, no method was found
             self.debug(f"DEBUG: No method found for {method_name}")
@@ -373,22 +349,7 @@ class ExpressionExecutor(BaseExecutor):
         method = getattr(obj, method_name, None)
         if callable(method):
             self.debug("DEBUG: Found callable method on object")
-            result = method(*args, **kwargs)
-            # If the result is a coroutine, await it
-            import asyncio
-
-            if asyncio.iscoroutine(result):
-                self.debug("DEBUG: Method returned coroutine, awaiting it")
-                try:
-                    # Try to run the coroutine in a new event loop
-                    return asyncio.run(result)
-                except RuntimeError as e:
-                    # If we're already in an event loop, we can't use asyncio.run()
-                    # This is a limitation - we need a more sophisticated async handling
-                    self.warning(f"Cannot await coroutine in current context: {e}")
-                    self.warning("Returning coroutine object - caller must handle async execution")
-                    return result
-            return result
+            return self.run_function(method, *args, **kwargs)
 
         # If the object is a dict, try to get the method from the dict
         if isinstance(obj, dict):
@@ -396,19 +357,7 @@ class ExpressionExecutor(BaseExecutor):
             method = obj.get(method_name)
             if callable(method):
                 self.debug("DEBUG: Found callable method in dict")
-                result = method(*args, **kwargs)
-                # If the result is a coroutine, await it
-                import asyncio
-
-                if asyncio.iscoroutine(result):
-                    self.debug("DEBUG: Dict method returned coroutine, awaiting it")
-                    try:
-                        return asyncio.run(result)
-                    except RuntimeError as e:
-                        self.warning(f"Cannot await coroutine in current context: {e}")
-                        self.warning("Returning coroutine object - caller must handle async execution")
-                        return result
-                return result
+                return self.run_function(method, *args, **kwargs)
 
         # If we get here, the object doesn't have the method
         self.debug(f"DEBUG: No method found for {method_name}")

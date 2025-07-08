@@ -1,0 +1,4 @@
+"""Web Search through Aitomatic MCP."""
+
+with use("mcp", url="https://demo.mcp.aitomatic.com/websearch_v2") as search_service:
+    reason("Name key founding member organizations of AI Alliance")

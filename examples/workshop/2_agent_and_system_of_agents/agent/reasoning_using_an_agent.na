@@ -1,0 +1,23 @@
+"""Reasoning Using an Agent."""
+
+# Define components of Agent Card
+system:agent_name = "Reasoning Agent"
+system:agent_description = "A reasoning agent that can reason about the world and make decisions."
+
+# Equip the agent with resources
+weather_mcp = use("mcp", url="http://127.0.0.1:8000/mcp")
+
+
+# Define solve function
+def solve(question: str) -> str:
+    """Solve a question using the agent."""
+    return reason(question)
+
+
+question = "What is the weather in Tokyo?"
+print(solve(question))
+
+# An AGENT in DANA must have the following components:
+# - name
+# - description
+# - solve function

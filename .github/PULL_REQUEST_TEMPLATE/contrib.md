@@ -36,7 +36,7 @@
 ```bash
 # Run contrib module tests
 pytest tests/contrib/
-pytest opendxa/contrib/[module_name]/
+pytest dana/contrib/[module_name]/
 ```
 
 ## Module Integration

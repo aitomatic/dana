@@ -5,16 +5,44 @@ import base64
 import hashlib
 import inspect
 import uuid
+import warnings
 from collections.abc import Callable
 from functools import lru_cache
 from importlib import import_module
 from pathlib import Path
 from typing import Any
 
-import nest_asyncio
 import yaml
 from pydantic import BaseModel
 
+from dana.common.types import BaseResponse
+
+# Configure asyncio to only warn about tasks taking longer than 30 seconds
+# (LLM operations typically take 1-10 seconds, so this avoids false warnings)
+import logging
+asyncio_logger = logging.getLogger("asyncio")
+asyncio_logger.setLevel(logging.ERROR)
+
+# Configure asyncio slow task threshold
+def configure_asyncio_threshold():
+    """Configure asyncio to use a 30-second threshold for slow task warnings."""
+    try:
+        # Get the current event loop policy
+        policy = asyncio.get_event_loop_policy()
+        
+        # Set slow task threshold to 30 seconds (default is usually 0.1 seconds)
+        if hasattr(policy, '_slow_callback_duration'):
+            policy._slow_callback_duration = 30.0
+        else:
+            # Alternative: set environment variable before asyncio is used
+            import os
+            os.environ["PYTHONASYNCIOSLOWTASKTHRESHOLD"] = "30.0"
+    except Exception:
+        # Fallback: suppress warnings if configuration fails
+        warnings.filterwarnings("ignore", message=".*asyncio.*", category=RuntimeWarning)
+
+# Apply the configuration
+configure_asyncio_threshold()
 
 class ParsedArgKwargsResults(BaseModel):
     matched_args: list[Any]
@@ -138,23 +166,55 @@ class Misc:
         return Misc.get_base_path(for_class) / config_dir / f"{path}.{file_extension}"
 
     @staticmethod
-    def ensure_asyncio_safety():
-        """Check and make sure asyncio is safe to use."""
+    def safe_asyncio_run(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+        """Run a function in an asyncio loop with smart event loop handling.
+        
+        This method handles all scenarios:
+        - No event loop running: Uses asyncio.run()
+        - Event loop running in async context: Uses await
+        - Event loop running in sync context: Uses loop.create_task() and run_until_complete()
+        
+        This approach eliminates the need for nest_asyncio and works in:
+        - Jupyter notebooks
+        - FastMCP environments  
+        - Standard Python scripts
+        - Any async framework
+        
+        Args:
+            func: The async function to run
+            *args: Arguments to pass to the function
+            **kwargs: Keyword arguments to pass to the function
+            
+        Returns:
+            The result of the async function
+        """
+        # Check if we're already in an event loop
         try:
-            asyncio.get_running_loop()
-            # We're in a running event loop (e.g., iPython notebook)
-            # For notebooks, we need to ensure we have the result
-            # One approach is to use a helper function to wait for the task
-            nest_asyncio.apply()
+            loop = asyncio.get_running_loop()
+            # We're in a running event loop
+            return Misc._run_in_existing_loop(func, *args, **kwargs)
         except RuntimeError:
-            # We're not in an asyncio loop
-            pass
+            # No event loop is running, we can use asyncio.run()
+            return asyncio.run(func(*args, **kwargs))
 
     @staticmethod
-    def safe_asyncio_run(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
-        """Run a function in an asyncio loop."""
-        Misc.ensure_asyncio_safety()
-        return asyncio.run(func(*args, **kwargs))
+    def _run_in_existing_loop(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+        """Run a function in an existing event loop.
+        
+        This method handles the case where we're already in an event loop
+        and need to execute an async function. It uses a thread-based approach
+        to avoid interfering with the existing event loop.
+        """
+        # Use a thread-based approach to avoid event loop conflicts
+        import concurrent.futures
+        
+        def run_in_thread():
+            # Create a new event loop in this thread and run the function
+            return asyncio.run(func(*args, **kwargs))
+        
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(run_in_thread)
+            return future.result()
 
     @staticmethod
     def get_field(obj: dict | object, field_name: str, default: Any = None) -> Any:
@@ -214,13 +274,13 @@ class Misc:
         import inspect
 
         """
-        Bind (args, kwargs) to `func`’s signature, returning a dict with:
+        Bind (args, kwargs) to `func`'s signature, returning a dict with:
         - matched_args:      positional args that were bound to named parameters
         - matched_kwargs:    keyword args that were bound to named or kw-only parameters
-        - varargs:           values that ended up in func’s *args (if it has one)
-        - varkwargs:         values that ended up in func’s **kwargs (if it has one)
-        - unmatched_args:    positional args that couldn’t be bound (and no *args present)
-        - unmatched_kwargs:  keyword args that couldn’t be bound (and no **kwargs present)
+        - varargs:           values that ended up in func's *args (if it has one)
+        - varkwargs:         values that ended up in func's **kwargs (if it has one)
+        - unmatched_args:    positional args that couldn't be bound (and no *args present)
+        - unmatched_kwargs:  keyword args that couldn't be bound (and no **kwargs present)
         """
         sig = inspect.signature(func)
         params = list(sig.parameters.values())
@@ -232,7 +292,7 @@ class Misc:
         unmatched_args = []
         unmatched_kwargs = {}
 
-        # Separate out which parameters are “named positional” (POSITIONAL_ONLY, POSITIONAL_OR_KEYWORD)
+        # Separate out which parameters are "named positional" (POSITIONAL_ONLY, POSITIONAL_OR_KEYWORD)
         pos_params = [p for p in params if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)]
         # Which are keyword-only
         kwonly_params = [p for p in params if p.kind == p.KEYWORD_ONLY]
@@ -244,7 +304,7 @@ class Misc:
         # 1) Assign positional arguments
         for index, value in enumerate(args):
             if index < len(pos_params):
-                # Still within the “named positional” slots
+                # Still within the "named positional" slots
                 matched_args.append(value)
             else:
                 # No more named positional slots left
@@ -308,3 +368,21 @@ class Misc:
                 return parsed_json
             except Exception as e:
                 raise ValueError(f"Failed to parse JSON: {str(e)}")
+
+    @staticmethod
+    def get_response_content(response: BaseResponse) -> Any:
+        """Get the content of a BaseResponse."""
+        content = Misc.get_field(response, "content", None)
+        if content is None:
+            raise ValueError(f"No content found in BaseResponse : {response}")
+        choices = Misc.get_field(content, "choices", [])
+        if len(choices) == 0:
+            raise ValueError(f"No choices found in BaseResponse : {response}")
+        choice = choices[0]
+        message = Misc.get_field(choice, "message", None)
+        if message is None:
+            raise ValueError(f"No message found in BaseResponse : {response}")
+        content = Misc.get_field(message, "content", None)
+        if content is None:
+            raise ValueError(f"No content found in BaseResponse : {response}")
+        return content

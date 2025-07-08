@@ -83,6 +83,12 @@ class TokenManagement:
         content = message.get("content", "")
         if isinstance(content, str):
             base_tokens += TokenManagement.estimate_tokens(content)
+        elif hasattr(content, "__str__"):
+            # Handle objects that can be converted to string (like CallToolResult)
+            base_tokens += TokenManagement.estimate_tokens(str(content))
+        else:
+            # For other types, use a conservative estimate
+            base_tokens += 10
 
         # Add tool calls if present
         tool_calls = message.get("tool_calls", [])

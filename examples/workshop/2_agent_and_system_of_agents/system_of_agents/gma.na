@@ -1,0 +1,51 @@
+"""General-Management Agent."""
+
+# Define components of Agent Card
+system:agent_name = "General-Management Agent"
+system:agent_description = "A general-management agent that can manage a team of agents"
+
+import json.py
+
+# Register other agents
+import specialist_agent_1
+import specialist_agent_2
+import specialist_agent_3
+
+weather_agent = agent(module=specialist_agent_1)
+search_agent = agent(module=specialist_agent_2)
+# A2A Agent
+ticketing_agent = agent(url="http://localhost:5009", timeout=1800)
+# agent_3 = agent(module=specialist_agent_3)
+
+# Create a pool of agents
+pool = agent_pool(agents=[weather_agent, search_agent, ticketing_agent])
+
+# Print the pool of agents
+all_available_agents = pool.get_agent_cards()
+
+# Agent's problem solver
+def plan(task, available_agents):
+    # NEED TO BE FIXED
+    steps = reason(f"Create a plan to solve the task {task} using the following agents: {available_agents}. Return only an array of steps in json format, nothing else, not even ```json or ```")
+    # steps : list = reason(f"Create a plan to solve the task {task} using the following agents: {available_agents}")
+    print(steps)
+    return {"task": task, "steps": json.loads(steps)}
+
+def execute(data):
+    print(data)
+    task = data["task"]
+    steps = data["steps"]
+    context = ""
+    for step in steps:
+        print(step)
+        answer : str = reason(f"Task: {task} Current Step: {step}. Current result : {context}. Action: Perform this step, return the result, and briefly describe how it helps achieve the overall task.", agents=pool)
+        context = context + answer
+        print(f"Answer: {answer}")
+
+    return reason(f"Based on this information : {context}, return the final and comprehensive answer to the task : {task}")
+
+workflow = plan | execute
+
+output = workflow("Plan me a trip to Tokyo today", all_available_agents)
+
+print(output)
