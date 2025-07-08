@@ -1,69 +1,129 @@
-# React + TypeScript + Vite
+# DXA Dana UI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern React-based user interface for managing Domain-Expert Agents (DXA) with a comprehensive library system and agent creation capabilities.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Agent Management**: Create, view, and manage Domain-Expert Agents
+- **Library System**: File and folder management with drag-and-drop support
+- **Modern UI**: Built with Tailwind CSS and Radix UI components
+- **Code Editor**: Monaco Editor integration for agent code editing
+- **Responsive Design**: Mobile-friendly interface with collapsible sidebar
+- **Type Safety**: Full TypeScript support throughout the application
 
-## Expanding the ESLint configuration
+## 🛠️ Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Frontend Framework**: React 19 with TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS 4
+- **UI Components**: Radix UI + Custom components
+- **Icons**: Iconoir React + Tabler Icons
+- **State Management**: Zustand
+- **Routing**: React Router DOM
+- **Code Editor**: Monaco Editor
+- **Forms**: React Hook Form
+- **Tables**: TanStack React Table
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 📦 Installation
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+1. Clone the repository:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+git clone <repository-url>
+cd dxa-dana-ui
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+2. Install dependencies:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
+
+3. Start the development server:
+
+```bash
+npm run dev
+```
+
+The application will be available at `http://localhost:5173`
+
+## 🏗️ Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+- `npm run lint:fix` - Fix ESLint issues
+- `npm run format` - Format code with Prettier
+- `npm run format:check` - Check code formatting
+
+## 📁 Project Structure
+
+```
+src/
+├── components/          # Reusable UI components
+│   ├── agent-editor/   # Agent creation/editing components
+│   ├── library/        # Library management components
+│   ├── table/          # Data table components
+│   └── ui/             # Base UI components (buttons, inputs, etc.)
+├── hooks/              # Custom React hooks
+├── pages/              # Page components
+│   ├── Agents/         # Agent management pages
+│   └── Library/        # Library pages
+├── stores/             # Zustand state stores
+├── types/              # TypeScript type definitions
+└── lib/                # Utility functions
+```
+
+## 🎨 UI Components
+
+The application uses a mix of icon libraries:
+
+- **Iconoir React**: Main navigation items (Domain-Expert Agents uses Tray3d icon, Library uses Book icon)
+- **Tabler Icons**: Other UI elements throughout the application
+
+## 🔧 Development
+
+### Code Style
+
+- ESLint configuration with TypeScript support
+- Prettier for code formatting
+- Strict TypeScript configuration
+
+### Component Guidelines
+
+- Use TypeScript for all components
+- Follow the established component structure
+- Use Tailwind CSS for styling
+- Implement responsive design patterns
+
+### State Management
+
+- Use Zustand for global state management
+- Local component state with React hooks
+- Form state managed with React Hook Form
+
+## 🚀 Deployment
+
+Build the application for production:
+
+```bash
+npm run build
+```
+
+The built files will be in the `dist` directory, ready for deployment to your hosting platform.
+
+## 📝 License
+
+This project is private and proprietary.
+
+## 🤝 Contributing
+
+1. Follow the established code style and patterns
+2. Ensure all TypeScript types are properly defined
+3. Test your changes thoroughly
+4. Update documentation as needed
+
+---
+
+For more information about Domain-Expert Agents and the Dana platform, please refer to the project documentation.

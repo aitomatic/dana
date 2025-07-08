@@ -315,7 +315,7 @@ release-check: clean check test-fast security validate-config ## MORE: Complete 
 run: dana ## Alias for 'dana' command 
 
 build-frontend: ## Build the frontend (Vite React app) and copy to backend static
-	cd dana/contrib/ui && npm run build
+	cd dana/contrib/ui && npm i && npm run build
 
 build-all: build-frontend ## Build frontend and Python package
 	uv run python -m build

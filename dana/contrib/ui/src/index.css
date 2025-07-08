@@ -1,68 +1,206 @@
+@import 'tailwindcss';
+@config "../tailwind.config.js";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-family-sans:
+    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  /* Gray colors as RGB values for opacity support */
+  --gray-25: 252 252 253; /* #FCFCFD */
+  --gray-50: 249 250 251; /* #F9FAFB */
+  --gray-100: 242 244 247; /* #F2F4F7 */
+  --gray-200: 228 231 236; /* #E4E7EC */
+  --gray-300: 208 213 221; /* #D0D5DD */
+  --gray-400: 152 162 179; /* #98A2B3 */
+  --gray-500: 102 112 133; /* #667085 */
+  --gray-600: 71 84 103; /* #475467 */
+  --gray-700: 52 64 84; /* #344054 */
+  --gray-800: 24 34 48; /* #182230 */
+  --gray-900: 16 24 40; /* #101828 */
+  --gray-950: 12 17 29; /* #0C111D */
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  /* Brand colors */
+  --brand-25: 241 245 254; /* #FCFAFF */
+  --brand-50: 239 244 254; /* #EFF4FE */
+  --brand-100: 225 235 254; /* #E1EBFE */
+  --brand-200: 201 216 252; /* #C9D8FC */
+  --brand-300: 168 191 249; /* #A8BFF9 */
+  --brand-400: 134 156 243; /* #869CF3 */
+  --brand-500: 105 121 235; /* #6979EB */
+  --brand-600: 61 69 220; /* #3D45DC */
+  --brand-700: 62 66 196; /* #3E42C4 */
+  --brand-800: 53 58 158; /* #353A9E */
+  --brand-900: 49 54 126; /* #31367E */
+  --brand-950: 29 31 73; /* #1D1F49 */
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Error colors */
+  --error-25: 255 251 250; /* #FFFBF9 */
+  --error-50: 254 242 242; /* #FEF2F2 */
+  --error-100: 254 226 226; /* #FEE2E2 */
+  --error-200: 254 202 202; /* #FECACA */
+  --error-300: 252 165 165; /* #FCA5A5 */
+  --error-400: 248 113 113; /* #F87171 */
+  --error-500: 239 68 68; /* #EF4444 */
+  --error-600: 220 38 38; /* #DC2626 */
+  --error-700: 185 28 28; /* #B91C1C */
+  --error-800: 153 27 27; /* #991B1B */
+  --error-900: 127 29 29; /* #7F1D1D */
+  --error-950: 69 10 10; /* #450A0A */
+
+  /* Success colors */
+  --success-25: 250 255 251; /* #FAFFFB */
+  --success-50: 240 253 244; /* #F0FDF4 */
+  --success-100: 220 252 231; /* #DCFCE7 */
+  --success-200: 187 247 208; /* #BBF7D0 */
+  --success-300: 134 239 172; /* #86EFAC */
+  --success-400: 74 222 128; /* #4ADE80 */
+  --success-500: 34 197 94; /* #22C55E */
+  --success-600: 22 163 74; /* #16A34A */
+  --success-700: 21 128 61; /* #15803D */
+  --success-800: 22 101 52; /* #166534 */
+  --success-900: 20 83 45; /* #14532D */
+  --success-950: 5 46 22; /* #052E16 */
+
+  /* Warning colors */
+  --warning-25: 255 253 250; /* #FFFDFA */
+  --warning-50: 255 251 235; /* #FFFBF0 */
+  --warning-100: 254 243 199; /* #FEF3C7 */
+  --warning-200: 253 230 138; /* #FDE68A */
+  --warning-300: 252 211 77; /* #FCD34D */
+  --warning-400: 251 191 36; /* #FBBF24 */
+  --warning-500: 245 158 11; /* #F59E0B */
+  --warning-600: 217 119 6; /* #D97706 */
+  --warning-700: 180 83 9; /* #B45309 */
+  --warning-800: 146 64 14; /* #92400E */
+  --warning-900: 120 53 15; /* #78350F */
+  --warning-950: 69 26 3; /* #451A03 */
+
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: rgb(var(--brand-50));
+  --sidebar-accent-foreground: rgb(var(--brand-700));
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: rgb(var(--brand-50));
+  --sidebar-accent-foreground: rgb(var(--brand-700));
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-  a:hover {
-    color: #747bff;
+  body {
+    @apply bg-background text-foreground;
   }
-  button {
-    background-color: #f9f9f9;
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
   }
 }
