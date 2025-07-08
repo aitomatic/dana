@@ -1,0 +1,125 @@
+# Dana Language - Syntax & Execution
+
+## Dana Language Overview
+
+Dana is a Domain-Aware NeuroSymbolic Architecture language for AI-driven automation and agent systems.
+
+## Import Patterns
+
+- **Dana modules**: `import math_utils` (no .na extension)
+- **Python modules**: `import math.py`
+
+## Dana Syntax Essentials
+
+- **Always use f-strings**: `f"Value: {var}"` not `"Value: " + str(var)`
+- **Type hints required**: `def func(x: int) -> str:` (mandatory)
+- **Named arguments for structs**: `Point(x=5, y=10)` not `Point(5, 10)`
+- **Use `log()` for examples/testing output** (preferred for color coding and debugging)
+
+## Exception Handling
+
+Dana supports comprehensive exception variable assignment syntax:
+
+```dana
+# Exception variable assignment - access exception details
+try:
+    result = process_data(user_input)
+except Exception as e:
+    log(f"Error: {e.message}", "error")
+    log(f"Exception type: {e.type}", "debug")
+    log(f"Traceback: {e.traceback}", "debug")
+    result = default_value
+
+# Multiple exception types with variables
+try:
+    result = complex_operation()
+except ValueError as validation_error:
+    log(f"Validation failed: {validation_error.message}", "warn")
+    result = handle_validation_error(validation_error)
+except RuntimeError as runtime_error:
+    log(f"Runtime error: {runtime_error.message}", "error")
+    result = handle_runtime_error(runtime_error)
+
+# Generic exception catching
+try:
+    result = unsafe_operation()
+except as error:
+    log(f"Caught exception: {error.type} - {error.message}", "error")
+    result = fallback_value
+```
+
+**Exception Object Properties:**
+- `e.type` - Exception class name (string)
+- `e.message` - Error message (string) 
+- `e.traceback` - Stack trace lines (list of strings)
+- `e.original` - Original Python exception object
+
+**Supported Syntax:**
+- `except ExceptionType as var:` - Catch specific type with variable
+- `except (Type1, Type2) as var:` - Catch multiple types with variable
+- `except as var:` - Catch any exception with variable
+- `except ExceptionType:` - Catch specific type without variable
+- `except:` - Catch any exception without variable
+
+## Dana Test File Guidelines
+
+- **Create `test_*.na` files** for Dana functionality testing
+- **Prefer `.na` (Dana) test files over `.py`** for Dana-specific functionality
+- Use `log()` statements for test output and debugging (provides color coding)
+- pytest automatically discovers and runs `.na` test files
+- Run `.na` files directly: `dana test_example.na` or `uv run python -m dana.core.repl.dana test_example.na`
+
+## Dana Execution Methods
+
+### 📁 Create `.na` Test Files
+
+```dana
+# test_my_feature.na
+log("🧪 Testing My Feature")
+
+# Test basic functionality
+result = my_function(5)
+assert result == 10
+log("✅ Basic test passed")
+
+log("🎉 All tests passed!")
+```
+
+### 🏃 Multiple Ways to Run `.na` Files
+
+```bash
+# 1. Direct dana command (recommended)
+dana test_my_feature.na
+
+# 2. With debug output
+dana --debug test_my_feature.na
+
+# 3. Via Python module
+uv run python -m dana.core.repl.dana test_my_feature.na
+
+# 4. Interactive REPL for development
+dana                                    # Start REPL
+uv run python -m dana.core.repl.repl   # Direct REPL access
+
+# 5. Through pytest (automatic discovery)
+pytest tests/my_directory/test_dana_files.py -v  # Runs all test_*.na files
+```
+
+### ✅ When to Use Each Method
+
+- **`.na` files**: For Dana-specific functionality, examples, and testing
+- **`.py` files**: Only for Python-specific testing (imports, integrations)
+- **pytest**: Automated testing and CI/CD pipelines
+- **dana command**: Direct execution and development
+- **REPL**: Interactive development and debugging
+
+## Dana-Specific Debugging & Validation
+
+- **Use `log()` for examples/testing output** (provides color coding and better debugging)
+- **Prefer creating `.na` test files** over `.py` for Dana functionality
+- Test Dana code in REPL: `uv run python -m dana.core.repl.repl`
+- Check AST output: Enable debug logging in transformer
+- Validate against grammar: `dana/core/lang/parser/dana_grammar.lark`
+- Test with existing `.na` files in `examples/dana/`
+- Execute `.na` files: `dana filename.na` or `uv run python -m dana.core.repl.dana filename.na`
+- Use Dana runtime for execution testing

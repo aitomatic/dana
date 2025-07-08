@@ -44,6 +44,6 @@ jobs:
       run: |
         echo "🔍 Running Pylint code analysis..."
         echo "Using .pylintrc configuration"
-        echo "Analyzing core OpenDXA modules..."
-        uv run pylint opendxa/ --fail-under=8.0 --output-format=github
+        echo "Analyzing core Dana modules..."
+        uv run pylint dana/ --fail-under=8.0 --output-format=github
         echo "✅ Pylint analysis completed" 

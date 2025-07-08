@@ -43,9 +43,9 @@ jobs:
       run: |
         # Run mypy on the main package - report issues but don't fail CI
         echo "🔍 Running MyPy type checking (non-blocking)..."
-        uv run mypy opendxa/ --show-error-codes --no-strict-optional --allow-untyped-calls --ignore-missing-imports || {
+        uv run mypy dana/ --show-error-codes --no-strict-optional --allow-untyped-calls --ignore-missing-imports || {
           echo "⚠️ MyPy found type issues in main package"
-          echo "This is expected during development - run 'uv run mypy opendxa/' locally to see details"
+          echo "This is expected during development - run 'uv run mypy dana/' locally to see details"
           echo "Total type errors shown above - working to improve type coverage gradually"
           echo "Continuing CI pipeline..."
         }
@@ -62,9 +62,9 @@ jobs:
         
         # Test core imports one by one for better error reporting
         modules_to_test = [
-            'opendxa.common',
-            'opendxa.dana.sandbox.dana_sandbox', 
-            'opendxa.dana.poet'
+            'dana.common',
+            'dana.core.lang.dana_sandbox', 
+            'dana.frameworks.poet'
         ]
         
         for module in modules_to_test:
