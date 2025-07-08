@@ -27,7 +27,7 @@ class APIServiceError(APIClientError):
 
 class APIClient(Loggable):
     """Generic API client for Dana
- services with fail-fast behavior"""
+    services with fail-fast behavior"""
 
     def __init__(self, base_uri: str, api_key: str | None = None, timeout: float = 30.0):
         super().__init__()  # Initialize Loggable mixin
