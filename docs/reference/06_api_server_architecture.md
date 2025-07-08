@@ -8,22 +8,25 @@ Status: Implementation Phase
 ```
 
 ## Problem Statement
-**Brief Description**: Need for a local API server to support Dana agent management, document management, and provide a foundation for web-based interfaces.
+**Brief Description**: Need for a local API server to support Dana agent management, document management, conversation/message management, and provide a foundation for web-based interfaces.
 
-The Dana framework currently lacks a standardized way to manage agents and documents programmatically and provide web-based interfaces. Users need:
+The Dana framework currently lacks a standardized way to manage agents, documents, and conversations/messages programmatically and provide web-based interfaces. Users need:
 - A local API server for agent CRUD operations
 - Document upload and management capabilities
+- Conversation and message management (for chat, logs, or agent interaction history)
 - Topic organization for document categorization
-- RESTful endpoints for agent and document management
+- RESTful endpoints for agent, document, conversation, and message management
 - Support for serving web applications (React frontend)
 - Local SQLite database for persistence
 - Comprehensive testing infrastructure
 
 ## Goals
-**Brief Description**: Create a modern, testable API server for Dana agent and document management with web interface support.
+**Brief Description**: Create a modern, testable API server for Dana agent, document, and conversation/message management with web interface support.
 
 - **Agent Management**: Full CRUD operations for agents with flexible configuration storage
 - **Document Management**: Upload, organize, and manage documents with topic categorization
+- **Conversation Management**: Create, update, and manage conversations (chat sessions, logs, etc.)
+- **Message Management**: CRUD for messages within conversations
 - **Topic Management**: Create and manage topics for document organization
 - **File Storage**: Local file system storage with metadata management
 - **Local Development**: SQLite-based local database for development and testing
@@ -294,6 +297,20 @@ POST   /documents/upload # Upload new document
 GET    /documents/{id}/download # Download document file
 PUT    /documents/{id}   # Update document metadata
 DELETE /documents/{id}   # Delete document and file
+
+# Conversation Management
+GET    /conversations/           # List conversations
+GET    /conversations/{id}       # Get specific conversation
+POST   /conversations/           # Create new conversation
+PUT    /conversations/{id}       # Update conversation
+DELETE /conversations/{id}       # Delete conversation
+
+# Message Management
+GET    /conversations/{conversation_id}/messages/         # List messages in a conversation
+GET    /conversations/{conversation_id}/messages/{id}     # Get specific message
+POST   /conversations/{conversation_id}/messages/         # Create new message
+PUT    /conversations/{conversation_id}/messages/{id}     # Update message
+DELETE /conversations/{conversation_id}/messages/{id}     # Delete message
 ```
 
 #### Data Models
@@ -329,6 +346,24 @@ class Document(Base):
     updated_at: datetime
     topic: relationship to Topic
     agent: relationship to Agent
+
+# Conversation Model
+class Conversation(Base):
+    id: int (auto-increment)
+    title: str
+    created_at: datetime
+    updated_at: datetime
+    messages: relationship to Message
+
+# Message Model
+class Message(Base):
+    id: int (auto-increment)
+    conversation_id: int (foreign key)
+    sender: str
+    content: str
+    created_at: datetime
+    updated_at: datetime
+    conversation: relationship to Conversation
 
 # API Schemas
 AgentBase: name, description, config

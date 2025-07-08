@@ -27,7 +27,7 @@ def get_document_service():
 
 
 @router.get("/", response_model=List[schemas.DocumentRead])
-def list_documents(
+async def list_documents(
     skip: int = 0,
     limit: int = 100,
     topic_id: Optional[int] = None,
@@ -38,25 +38,26 @@ def list_documents(
 
 
 @router.get("/{document_id}", response_model=schemas.DocumentRead)
-def get_document(document_id: int, db: Session = Depends(get_db), document_service: DocumentService = Depends(get_document_service)):
+async def get_document(document_id: int, db: Session = Depends(get_db), document_service: DocumentService = Depends(get_document_service)):
     document = document_service.get_document(db, document_id)
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
     return document
 
 
-@router.post("/upload", response_model=schemas.DocumentRead)
+@router.post("/", response_model=schemas.DocumentRead)
 async def upload_document(
     file: UploadFile = File(...),
+    title: str = Form(...),
+    description: Optional[str] = Form(None),
     topic_id: Optional[int] = Form(None),
-    agent_id: Optional[int] = Form(None),
     db: Session = Depends(get_db),
     document_service: DocumentService = Depends(get_document_service),
 ):
     if not file.filename:
         raise HTTPException(status_code=400, detail="Filename is required")
 
-    document_data = schemas.DocumentCreate(original_filename=file.filename, topic_id=topic_id, agent_id=agent_id)
+    document_data = schemas.DocumentCreate(original_filename=file.filename, topic_id=topic_id, agent_id=None)
 
     return document_service.create_document(db, file, document_data)
 
@@ -75,7 +76,7 @@ def download_document(document_id: int, db: Session = Depends(get_db), document_
 
 
 @router.put("/{document_id}", response_model=schemas.DocumentRead)
-def update_document(
+async def update_document(
     document_id: int,
     document_data: schemas.DocumentUpdate,
     db: Session = Depends(get_db),
@@ -88,7 +89,7 @@ def update_document(
 
 
 @router.delete("/{document_id}")
-def delete_document(document_id: int, db: Session = Depends(get_db), document_service: DocumentService = Depends(get_document_service)):
+async def delete_document(document_id: int, db: Session = Depends(get_db), document_service: DocumentService = Depends(get_document_service)):
     success = document_service.delete_document(db, document_id)
     if not success:
         raise HTTPException(status_code=404, detail="Document not found")

@@ -7,6 +7,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, List
 from fastapi import UploadFile, HTTPException
+# from dana.sandbox.dana_sandbox import DanaSandbox
+from .schemas import RunNAFileRequest, RunNAFileResponse
+from .models import Conversation, Message
+from .schemas import ConversationCreate, ConversationRead, MessageCreate, MessageRead
 
 
 def get_agent(db: Session, agent_id: int):
@@ -219,3 +223,99 @@ class DocumentService:
         if document:
             return self.file_storage.get_file_path(str(document.file_path))
         return None
+
+
+def run_na_file_service(request: RunNAFileRequest):
+    """Run a DANA .na file using DanaSandbox and return the result."""
+    try:
+        print(f"Running .na file: {request.file_path}")
+
+        # sandbox = DanaSandbox()
+        # # Optionally set input in context if provided
+        # if request.input is not None:
+        #     sandbox._context.set("input", request.input)
+        # result = sandbox.run(request.file_path)
+        # # Convert final_context to dict[str, Any] if possible
+        # final_ctx = None
+        # if hasattr(result, "final_context") and result.final_context is not None:
+        #     fc = result.final_context
+        #     if hasattr(fc, "to_dict"):
+        #         final_ctx = fc.to_dict()
+        #     elif isinstance(fc, dict):
+        #         final_ctx = fc
+        #     else:
+        #         final_ctx = None
+        # return RunNAFileResponse(
+        #     success=result.success,
+        #     output=getattr(result, "output", None),
+        #     result=getattr(result, "result", None),
+        #     error=str(result.error) if result.error else None,
+        #     final_context=final_ctx,
+        # )
+    except Exception as e:
+        return RunNAFileResponse(success=False, error=str(e))
+
+
+class ConversationService:
+    def create_conversation(self, db: Session, conversation: ConversationCreate) -> Conversation:
+        db_convo = Conversation(title=conversation.title)
+        db.add(db_convo)
+        db.commit()
+        db.refresh(db_convo)
+        return db_convo
+
+    def get_conversations(self, db: Session, skip: int = 0, limit: int = 100) -> list[Conversation]:
+        return db.query(Conversation).offset(skip).limit(limit).all()
+
+    def get_conversation(self, db: Session, conversation_id: int) -> Conversation | None:
+        return db.query(Conversation).filter(Conversation.id == conversation_id).first()
+
+    def update_conversation(self, db: Session, conversation_id: int, conversation: ConversationCreate) -> Conversation | None:
+        db_convo = db.query(Conversation).filter(Conversation.id == conversation_id).first()
+        if db_convo:
+            db_convo.title = conversation.title
+            db_convo.updated_at = datetime.utcnow()
+            db.commit()
+            db.refresh(db_convo)
+        return db_convo
+
+    def delete_conversation(self, db: Session, conversation_id: int) -> bool:
+        db_convo = db.query(Conversation).filter(Conversation.id == conversation_id).first()
+        if db_convo:
+            db.delete(db_convo)
+            db.commit()
+            return True
+        return False
+
+
+class MessageService:
+    def create_message(self, db: Session, conversation_id: int, message: MessageCreate) -> Message:
+        db_msg = Message(conversation_id=conversation_id, sender=message.sender, content=message.content)
+        db.add(db_msg)
+        db.commit()
+        db.refresh(db_msg)
+        return db_msg
+
+    def get_messages(self, db: Session, conversation_id: int, skip: int = 0, limit: int = 100) -> list[Message]:
+        return db.query(Message).filter(Message.conversation_id == conversation_id).offset(skip).limit(limit).all()
+
+    def get_message(self, db: Session, conversation_id: int, message_id: int) -> Message | None:
+        return db.query(Message).filter(Message.conversation_id == conversation_id, Message.id == message_id).first()
+
+    def update_message(self, db: Session, conversation_id: int, message_id: int, message: MessageCreate) -> Message | None:
+        db_msg = db.query(Message).filter(Message.conversation_id == conversation_id, Message.id == message_id).first()
+        if db_msg:
+            db_msg.sender = message.sender
+            db_msg.content = message.content
+            db_msg.updated_at = datetime.utcnow()
+            db.commit()
+            db.refresh(db_msg)
+        return db_msg
+
+    def delete_message(self, db: Session, conversation_id: int, message_id: int) -> bool:
+        db_msg = db.query(Message).filter(Message.conversation_id == conversation_id, Message.id == message_id).first()
+        if db_msg:
+            db.delete(db_msg)
+            db.commit()
+            return True
+        return False

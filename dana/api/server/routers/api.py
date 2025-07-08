@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from .. import services, schemas, db
+from ..schemas import RunNAFileRequest, RunNAFileResponse
+from ..services import run_na_file_service
 
 router = APIRouter(prefix="/agents", tags=["agents"])
-
 
 def get_db():
     db_session = db.SessionLocal()
@@ -29,3 +30,8 @@ def get_agent(agent_id: int, db: Session = Depends(get_db)):
 @router.post("/", response_model=schemas.AgentRead)
 def create_agent(agent: schemas.AgentCreate, db: Session = Depends(get_db)):
     return services.create_agent(db, agent)
+
+
+@router.post("/run-na-file", response_model=RunNAFileResponse)
+def run_na_file(request: RunNAFileRequest):
+    return run_na_file_service(request)
