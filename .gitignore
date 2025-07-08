@@ -64,3 +64,7 @@ node_modules/
 .vscode/launch.json
 .vscode/settings.json
 .deprecated_opendxa
+
+# Data file
+
+local.db

@@ -2,25 +2,30 @@
 
 ```text
 Author: OpenDXA Team
-Version: 1.0
+Version: 2.0
 Date: 2025-01-27
 Status: Implementation Phase
 ```
 
 ## Problem Statement
-**Brief Description**: Need for a local API server to support Dana agent management and provide a foundation for web-based interfaces.
+**Brief Description**: Need for a local API server to support Dana agent management, document management, and provide a foundation for web-based interfaces.
 
-The Dana framework currently lacks a standardized way to manage agents programmatically and provide web-based interfaces. Users need:
+The Dana framework currently lacks a standardized way to manage agents and documents programmatically and provide web-based interfaces. Users need:
 - A local API server for agent CRUD operations
-- RESTful endpoints for agent management
+- Document upload and management capabilities
+- Topic organization for document categorization
+- RESTful endpoints for agent and document management
 - Support for serving web applications (React frontend)
 - Local SQLite database for persistence
 - Comprehensive testing infrastructure
 
 ## Goals
-**Brief Description**: Create a modern, testable API server for Dana agent management with web interface support.
+**Brief Description**: Create a modern, testable API server for Dana agent and document management with web interface support.
 
 - **Agent Management**: Full CRUD operations for agents with flexible configuration storage
+- **Document Management**: Upload, organize, and manage documents with topic categorization
+- **Topic Management**: Create and manage topics for document organization
+- **File Storage**: Local file system storage with metadata management
 - **Local Development**: SQLite-based local database for development and testing
 - **Web Interface Support**: Serve static files and support React frontend development
 - **Modern Architecture**: FastAPI with Pydantic validation and SQLAlchemy ORM
@@ -29,7 +34,7 @@ The Dana framework currently lacks a standardized way to manage agents programma
 - **Production Ready**: Proper error handling, validation, and security considerations
 
 ## Non-Goals
-**Brief Description**: Explicitly define what's out of scope for this initial implementation.
+**Brief Description**: Explicitly define what's out of scope for this implementation.
 
 - **Authentication/Authorization**: Will be added in future iterations
 - **Multi-tenant Support**: Single-user local server only
@@ -37,24 +42,31 @@ The Dana framework currently lacks a standardized way to manage agents programma
 - **External Integrations**: No third-party service integrations beyond basic LLM configs
 - **Advanced Querying**: Basic CRUD operations only, no complex filtering/searching
 - **Database Migrations**: Simple table creation, no migration system
+- **File Versioning**: No version control for documents
+- **Advanced Search**: Basic metadata search only, no full-text search
+- **File Compression**: No automatic compression or optimization
+- **Cloud Storage**: Local file system only
+- **File Sharing**: No sharing or collaboration features
+- **Document Editing**: Upload/download only, no in-place editing
 
 ## Proposed Solution
-**Brief Description**: FastAPI-based REST server with SQLAlchemy ORM, Pydantic validation, and modular router architecture.
+**Brief Description**: FastAPI-based REST server with SQLAlchemy ORM, Pydantic validation, modular router architecture, and two-tier file storage.
 
 The solution uses modern Python web development patterns:
 - **FastAPI** for high-performance async API framework
 - **SQLAlchemy** with SQLite for local data persistence
 - **Pydantic v2** for request/response validation and serialization
 - **Modular Router Architecture** for clean separation of concerns
+- **Two-tier Storage**: SQLite for metadata, local file system for files
 - **Comprehensive Testing** with pytest and database fixtures
 
 **KISS/YAGNI Analysis**: 
-- **Simple**: Single database, basic CRUD operations, local-only deployment
-- **Justified Complexity**: Pydantic validation, proper error handling, test infrastructure
+- **Simple**: Single database, basic CRUD operations, local-only deployment, straightforward file storage
+- **Justified Complexity**: Pydantic validation, proper error handling, test infrastructure, file validation
 - **Future-Ready**: Modular design allows easy extension without refactoring
 
 ## Proposed Design
-**Brief Description**: Layered architecture with clear separation between API, business logic, data access, and persistence.
+**Brief Description**: Layered architecture with clear separation between API, business logic, data access, persistence, and file storage.
 
 ### System Architecture Diagram
 
@@ -70,11 +82,16 @@ graph TB
         FastAPI[FastAPI App]
         MainRouter[Main Router<br/>/health, /]
         AgentRouter[Agent Router<br/>/agents/*]
+        TopicRouter[Topic Router<br/>/topics/*]
+        DocRouter[Document Router<br/>/documents/*]
         StaticFiles[Static Files<br/>/static/*]
     end
     
     subgraph "Service Layer"
         AgentService[Agent Service<br/>CRUD Operations]
+        TopicService[Topic Service<br/>Topic Management]
+        DocService[Document Service<br/>Document Management]
+        FileService[File Storage Service<br/>File Operations]
     end
     
     subgraph "Data Layer"
@@ -83,19 +100,33 @@ graph TB
         SQLite[(SQLite Database<br/>local.db)]
     end
     
+    subgraph "Storage Layer"
+        FileSystem[Local File System<br/>/uploads/]
+    end
+    
     Web --> FastAPI
     CLI --> FastAPI
     API --> FastAPI
     
     FastAPI --> MainRouter
     FastAPI --> AgentRouter
+    FastAPI --> TopicRouter
+    FastAPI --> DocRouter
     FastAPI --> StaticFiles
     
     MainRouter --> AgentService
     AgentRouter --> AgentService
+    TopicRouter --> TopicService
+    DocRouter --> DocService
+    DocRouter --> FileService
     
     AgentService --> Pydantic
     AgentService --> SQLAlchemy
+    TopicService --> Pydantic
+    TopicService --> SQLAlchemy
+    DocService --> Pydantic
+    DocService --> SQLAlchemy
+    FileService --> FileSystem
     
     SQLAlchemy --> SQLite
 ```
@@ -119,6 +150,8 @@ graph TB
 - **Key Decisions**:
   - `main.py`: Health checks and static file serving
   - `api.py`: Agent-specific endpoints with proper prefixing
+  - `topics.py`: Topic management endpoints
+  - `documents.py`: Document upload/download and management endpoints
   - Dependency injection for database sessions
 - **Alternatives**: Single router file (harder to maintain), Blueprint pattern (Flask-specific)
 
@@ -130,6 +163,7 @@ graph TB
   - Pure functions for testability
   - SQLAlchemy session dependency injection
   - Clear separation of concerns
+  - File storage service for document operations
 - **Alternatives**: Direct database operations in routers (tight coupling)
 
 #### 4. Data Models (`models.py`, `schemas.py`)
@@ -141,6 +175,7 @@ graph TB
   - Pydantic schemas for API validation
   - Auto-incrementing integer IDs for simplicity
   - JSON field for flexible agent configuration
+  - Foreign key relationships for document associations
 - **Alternatives**: UUIDs (more complex), separate validation (duplication)
 
 #### 5. Database Layer (`db.py`)
@@ -153,6 +188,17 @@ graph TB
   - Proper connection cleanup
 - **Alternatives**: PostgreSQL (overkill for local), direct connections (no session management)
 
+#### 6. File Storage System
+**Purpose**: Local file storage with metadata management
+- **Why**: Two-tier storage for efficient document management
+- **System Fit**: Separates metadata from file content
+- **Key Decisions**:
+  - UUID-based filenames for uniqueness
+  - Date-based directory structure for organization
+  - File validation and size limits
+  - Relative path storage in database
+- **Alternatives**: Cloud storage (complexity), direct file paths (security issues)
+
 ### Data Flow Diagram
 
 ```mermaid
@@ -164,25 +210,30 @@ sequenceDiagram
     participant Schema
     participant Model
     participant Database
+    participant FileSystem
     
-    Client->>FastAPI: POST /agents/
-    FastAPI->>Router: Route to create_agent
-    Router->>Schema: Validate request data
-    Schema-->>Router: Validated AgentCreate
-    Router->>Service: create_agent(db, agent_data)
-    Service->>Model: Create Agent instance
-    Service->>Database: db.add(agent)
+    Note over Client,FileSystem: Document Upload Flow
+    Client->>FastAPI: POST /documents/upload
+    FastAPI->>Router: Route to upload_document
+    Router->>Service: validate_file(file)
+    Service-->>Router: Validation result
+    Router->>Service: save_file(file)
+    Service->>FileSystem: Store file with UUID name
+    FileSystem-->>Service: File path
+    Service-->>Router: File metadata
+    Router->>Service: create_document(metadata)
+    Service->>Model: Create Document instance
+    Service->>Database: db.add(document)
     Service->>Database: db.commit()
-    Service->>Database: db.refresh(agent)
-    Service-->>Router: Agent instance
-    Router->>Schema: Convert to AgentRead
+    Service-->>Router: Document instance
+    Router->>Schema: Convert to DocumentRead
     Schema-->>Router: Serialized response
     Router-->>FastAPI: JSON response
-    FastAPI-->>Client: 200 OK + Agent data
+    FastAPI-->>Client: 201 Created + Document data
 ```
 
 ## Proposed Implementation
-**Brief Description**: Modular implementation with comprehensive testing and modern Python patterns.
+**Brief Description**: Modular implementation with comprehensive testing, modern Python patterns, and file handling capabilities.
 
 ### Technical Specifications
 
@@ -199,8 +250,14 @@ dana/api/server/
 ├── routers/
 │   ├── __init__.py
 │   ├── main.py          # Health, static files
-│   └── api.py           # Agent endpoints
-└── static/              # Web app files
+│   ├── api.py           # Agent endpoints
+│   ├── topics.py        # Topic endpoints
+│   └── documents.py     # Document endpoints
+├── static/              # Web app files
+└── uploads/             # File storage directory
+    └── 2025/
+        └── 01/
+            └── 27/
 ```
 
 #### Key Technologies
@@ -215,9 +272,28 @@ dana/api/server/
 GET    /health           # Health check
 GET    /                 # Serve React app
 GET    /static/*         # Static files
+
+# Agent Management
 GET    /agents/          # List agents (with pagination)
 GET    /agents/{id}      # Get specific agent
 POST   /agents/          # Create new agent
+PUT    /agents/{id}      # Update agent
+DELETE /agents/{id}      # Delete agent
+
+# Topic Management
+GET    /topics/          # List topics
+GET    /topics/{id}      # Get specific topic
+POST   /topics/          # Create new topic
+PUT    /topics/{id}      # Update topic
+DELETE /topics/{id}      # Delete topic
+
+# Document Management
+GET    /documents/       # List documents (with optional topic filter)
+GET    /documents/{id}   # Get document metadata
+POST   /documents/upload # Upload new document
+GET    /documents/{id}/download # Download document file
+PUT    /documents/{id}   # Update document metadata
+DELETE /documents/{id}   # Delete document and file
 ```
 
 #### Data Models
@@ -228,30 +304,75 @@ class Agent(Base):
     name: str (indexed)
     description: str
     config: JSON (flexible configuration)
+    documents: relationship to Document
+
+# Topic Model
+class Topic(Base):
+    id: int (auto-increment)
+    name: str (unique, indexed)
+    description: str
+    created_at: datetime
+    updated_at: datetime
+    documents: relationship to Document
+
+# Document Model
+class Document(Base):
+    id: int (auto-increment)
+    filename: str (indexed, UUID)
+    original_filename: str
+    file_path: str (relative path)
+    file_size: int
+    mime_type: str
+    topic_id: int (foreign key, optional)
+    agent_id: int (foreign key, optional)
+    created_at: datetime
+    updated_at: datetime
+    topic: relationship to Topic
+    agent: relationship to Agent
 
 # API Schemas
 AgentBase: name, description, config
 AgentCreate: extends AgentBase
 AgentRead: extends AgentBase + id
+
+TopicBase: name, description
+TopicCreate: extends TopicBase
+TopicRead: extends TopicBase + id, created_at, updated_at
+
+DocumentBase: original_filename, topic_id, agent_id
+DocumentCreate: extends DocumentBase
+DocumentRead: extends DocumentBase + id, filename, file_size, mime_type, created_at, updated_at
+DocumentUpdate: partial update fields
 ```
+
+#### File Storage Configuration
+- **Base Directory**: `./uploads/`
+- **Max File Size**: 50MB
+- **Allowed Extensions**: `.pdf`, `.txt`, `.md`, `.json`, `.csv`, `.docx`
+- **File Naming**: UUID v4 for uniqueness
+- **Directory Structure**: Year/Month/Day for organization
+- **Path Resolution**: Database stores relative paths, service resolves to absolute paths
 
 ### Testing Strategy
 - **Unit Tests**: Individual component testing
 - **Integration Tests**: Full API flow testing
 - **Database Fixtures**: Isolated test databases
+- **File System Tests**: Mock file operations
+- **API Tests**: Endpoint testing with file uploads
 - **Test Coverage**: 100% coverage target
 - **Test Organization**: Mirror source structure
 
 ### Error Handling
 - **Validation Errors**: Pydantic automatic validation
 - **Database Errors**: SQLAlchemy exception handling
+- **File Errors**: File size exceeded, invalid types, storage errors
 - **HTTP Status Codes**: Proper REST status codes
 - **Error Messages**: Clear, actionable error messages
 
 ## Design Review Checklist
 **Status**: [x] Complete
 
-- [x] **Problem Alignment**: Solution addresses agent management needs
+- [x] **Problem Alignment**: Solution addresses agent and document management needs
 - [x] **Goal Achievement**: All success criteria met
 - [x] **Non-Goal Compliance**: Staying within defined scope
 - [x] **KISS/YAGNI Compliance**: Complexity justified by immediate needs
@@ -271,7 +392,6 @@ AgentRead: extends AgentBase + id
 - [x] Create basic infrastructure and scaffolding
 - [x] Establish architectural patterns and conventions
 - [x] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
-- [x] **Phase Gate**: Update implementation progress checkboxes
 
 ### Phase 2: Core Functionality ✅
 **Description**: Implement primary features and happy path scenarios
@@ -279,7 +399,6 @@ AgentRead: extends AgentBase + id
 - [x] Focus on happy path scenarios and basic operations
 - [x] Create working examples and demonstrations
 - [x] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
-- [x] **Phase Gate**: Update implementation progress checkboxes
 
 ### Phase 3: Error Handling & Edge Cases ✅
 **Description**: Add comprehensive error detection and edge case handling
@@ -287,7 +406,6 @@ AgentRead: extends AgentBase + id
 - [x] Test failure scenarios and error conditions
 - [x] Handle edge cases and boundary conditions
 - [x] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
-- [x] **Phase Gate**: Update implementation progress checkboxes
 
 ### Phase 4: Advanced Features & Integration ✅
 **Description**: Add sophisticated functionality and ensure seamless integration
@@ -295,7 +413,6 @@ AgentRead: extends AgentBase + id
 - [x] Test complex interactions and integration scenarios
 - [x] Ensure seamless integration with existing systems
 - [x] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
-- [x] **Phase Gate**: Update implementation progress checkboxes
 
 ### Phase 5: Integration & Performance Testing ✅
 **Description**: Validate real-world performance and run comprehensive tests
@@ -303,7 +420,6 @@ AgentRead: extends AgentBase + id
 - [x] Validate performance benchmarks and requirements
 - [x] Run regression tests and integration suites
 - [x] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
-- [x] **Phase Gate**: Update implementation progress checkboxes
 
 ### Phase 6: Examples, Documentation & Polish ✅
 **Description**: Create comprehensive examples, finalize documentation, and perform final validation
@@ -326,7 +442,7 @@ uv run python -m dana.api.server --host localhost --port 8080
 uv run python -m dana.api.server --host 0.0.0.0 --port 8080 --log-level warning
 ```
 
-### API Usage
+### Agent Management
 ```bash
 # Create an agent
 curl -X POST http://localhost:8080/agents/ \
@@ -342,8 +458,48 @@ curl http://localhost:8080/agents/
 
 # Get specific agent
 curl http://localhost:8080/agents/1
+```
 
-# Health check
+### Topic Management
+```bash
+# Create a topic
+curl -X POST http://localhost:8080/topics/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Research Papers",
+    "description": "Academic research papers and articles"
+  }'
+
+# List topics
+curl http://localhost:8080/topics/
+
+# Get specific topic
+curl http://localhost:8080/topics/1
+```
+
+### Document Management
+```bash
+# Upload a document
+curl -X POST http://localhost:8080/documents/upload \
+  -F "file=@research_paper.pdf" \
+  -F "topic_id=1" \
+  -F "agent_id=1"
+
+# List documents
+curl "http://localhost:8080/documents/"
+
+# List documents in topic
+curl "http://localhost:8080/documents/?topic_id=1"
+
+# Download a document
+curl -O "http://localhost:8080/documents/1/download"
+
+# Get document metadata
+curl "http://localhost:8080/documents/1"
+```
+
+### Health Check
+```bash
 curl http://localhost:8080/health
 ```
 
@@ -362,11 +518,6 @@ uv run pytest tests/api/ --cov=dana.api.server --cov-report=html
 ## Future Enhancements
 
 ### Phase 2 Features (Next)
-- **Document Management**: 
-  - CRUD operations for documents (upload, list, retrieve, delete)
-  - Associate documents with agents
-  - API endpoints for document management
-  - File storage and metadata handling
 - **Agent Running Management**:
   - Endpoints to start, stop, and monitor agent execution
   - Track agent run status and logs
@@ -386,8 +537,22 @@ uv run pytest tests/api/ --cov=dana.api.server --cov-report=html
 - **Rate Limiting**: Request throttling and quotas
 - **Caching**: Redis-based caching layer
 
+### Document Management Enhancements (Future)
+- **File Versioning**: Track document versions
+- **Advanced Search**: Full-text search capabilities
+- **File Compression**: Automatic compression for large files
+- **Cloud Storage**: Integration with cloud storage providers
+- **Document Preview**: Generate previews for supported formats
+- **Collaboration**: Document sharing and collaboration
+- **Access Control**: Fine-grained permissions
+- **Audit Trail**: Track document access and modifications
+- **Bulk Operations**: Upload/download multiple files
+- **File Conversion**: Convert between file formats
+
 ## Conclusion
 
-The Dana API Server provides a solid foundation for agent management with modern Python web development practices. The modular architecture ensures extensibility while maintaining simplicity for current needs. The comprehensive test suite provides confidence in the implementation and serves as documentation for expected behavior.
+The Dana API Server provides a solid foundation for agent and document management with modern Python web development practices. The modular architecture ensures extensibility while maintaining simplicity for current needs. The comprehensive test suite provides confidence in the implementation and serves as documentation for expected behavior.
 
-The design follows KISS/YAGNI principles by starting simple but building on proven, modern technologies that scale well. The FastAPI + SQLAlchemy + Pydantic stack provides excellent developer experience, performance, and type safety while remaining approachable for contributors. 
+The design follows KISS/YAGNI principles by starting simple but building on proven, modern technologies that scale well. The FastAPI + SQLAlchemy + Pydantic stack provides excellent developer experience, performance, and type safety while remaining approachable for contributors.
+
+The addition of document management capabilities enhances the system's utility for real-world applications, allowing users to organize and manage knowledge resources alongside their agent configurations. The two-tier storage approach (SQLite metadata + local file system) provides a good balance between simplicity and functionality. 
