@@ -550,6 +550,40 @@ uv run pytest tests/api/test_routers.py -v
 uv run pytest tests/api/ --cov=dana.api.server --cov-report=html
 ```
 
+## CLI Command: `dana serve`
+
+**Purpose**: Provide a simple, memorable command to start the Dana API server for local development or production use.
+
+- **Why**: Streamlines developer and user experience by making server startup a first-class CLI operation, consistent with modern Python tooling.
+- **System Fit**: Integrates with the existing `dana` CLI entry point, allowing users to run `dana serve` from any terminal to launch the API server.
+- **Key Decisions**:
+  - Aliases the existing FastAPI app startup logic
+  - Supports all standard options (host, port, log-level, reload)
+  - Prints helpful startup messages and endpoint URLs
+  - **Implemented as a subcommand in the CLI** (see `dana/core/cli/dana.py`)
+  - Uses `uvicorn` to launch the FastAPI app factory (`dana.api.server.server:create_app`)
+- **Alternatives**: Manual `python -m dana.api.server` invocation (less discoverable)
+
+### Example Usage
+```bash
+# Start the API server on default host/port
+$ dana serve
+
+# Start with custom host/port
+$ dana serve --host 0.0.0.0 --port 8080
+
+# Start with auto-reload for development
+$ dana serve --reload
+```
+
+### Implementation Notes
+- Implemented as a subcommand in the `dana` CLI (see `dana/core/cli/dana.py`)
+- Calls the FastAPI app factory and launches the server using uvicorn
+- All previous manual server startup methods remain supported for backward compatibility
+- **Code reference:**
+  - The `serve` subcommand is parsed and handled in `main()` in `dana/core/cli/dana.py`
+  - The handler function `handle_serve_command` calls `uvicorn.run` with the correct options
+
 ## Future Enhancements
 
 ### Phase 2 Features (Next)

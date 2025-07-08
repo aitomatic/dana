@@ -50,6 +50,7 @@ import asyncio
 import logging
 import os
 import sys
+import uvicorn
 
 # Set up compatibility layer for new dana structure
 # Resolve the real path to avoid symlink issues
@@ -135,9 +136,27 @@ async def start_repl(debug=False):
         sys.exit(1)
 
 
+def handle_serve_command(args):
+    """Start the Dana API server using uvicorn."""
+    host = args.host or "127.0.0.1"
+    port = args.port or 8080
+    reload = args.reload
+    log_level = args.log_level or "info"
+    print(f"\n🌐 Starting Dana API server on http://{host}:{port}")
+    print(f"📊 Health check: http://{host}:{port}/health")
+    print(f"🔗 Root endpoint: http://{host}:{port}/")
+    uvicorn.run(
+        "dana.api.server.server:create_app",
+        host=host,
+        port=port,
+        reload=reload,
+        log_level=log_level,
+        factory=True,
+    )
+
+
 def main():
     """Main entry point for the DANA CLI."""
-
     try:
         parser = argparse.ArgumentParser(description="DANA Command Line Interface", add_help=False)
         subparsers = parser.add_subparsers(dest="subcommand")
@@ -157,8 +176,15 @@ def main():
         parser_deploy.add_argument("--host", default="0.0.0.0", help="Host to bind the server (default: 0.0.0.0)")
         parser_deploy.add_argument("--port", type=int, default=8000, help="Port to bind the server (default: 8000)")
 
+        # Serve subcommand for API server
+        parser_serve = subparsers.add_parser("serve", help="Start the Dana API server")
+        parser_serve.add_argument("--host", default="127.0.0.1", help="Host to bind the server (default: 127.0.0.1)")
+        parser_serve.add_argument("--port", type=int, default=8080, help="Port to bind the server (default: 8080)")
+        parser_serve.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
+        parser_serve.add_argument("--log-level", default="info", help="Log level (default: info)")
+
         # Handle default behavior
-        if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] not in ("deploy")):
+        if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] not in ("deploy", "serve")):
             return handle_main_command()
 
         # Parse subcommand
@@ -166,6 +192,8 @@ def main():
 
         if args.subcommand == "deploy":
             return handle_deploy_command(args)
+        if args.subcommand == "serve":
+            return handle_serve_command(args)
 
         return 0
 
@@ -174,9 +202,8 @@ def main():
         return 0
     except Exception as e:
         print(f"\n{colors.error(f'Unexpected error: {str(e)}')}")
-        if args.debug:
+        if hasattr(args, 'debug') and args.debug:
             import traceback
-
             traceback.print_exc()
         return 1
 
