@@ -24,43 +24,36 @@ authors = [
 
 # Production dependencies - keep minimal and well-organized
 dependencies = [
-    # AI/LLM Integration - Core functionality for agent reasoning
-    "google-cloud-aiplatform",
-    # "google-genai<1.20.0",  # Temporarily disabled to test httpx compatibility
-    "aisuite[openai,anthropic,azure,groq,huggingface,ollama]>=0.1.11",
-    "mcp",
-    # "fastmcp>=2.6.1,<2.9.0",  # Temporarily disabled to test httpx compatibility
-    "llm-code-executor",
-    "llama-index",
-    "openai>=1.55.3",
-    
-    # Networking & I/O - Core connectivity
-    "aiohttp",
-    "aioconsole", 
-    "websockets",
-    "httpx==0.27.2", # Pin to fix AISuite/Anthropic compatibility issue
-    
-    # Database & Storage
-    "sqlalchemy",
-    
-    # Configuration & Utilities - Essential for Dana runtime
-    "nest_asyncio",
-    "python-dotenv",
-    "pyyaml",
-    "structlog",
-    
-    # Language Processing - Dana language parser (essential)
-    "lark",
-    
-    # Interactive Features - REPL and user interface (core UX)
-    "prompt-toolkit",
-    "pygments",
-    
-    # Agent Communication - Core multi-agent functionality
-    "python-a2a>=0.5.9",
-    
-    # API Server - Core Dana sandbox operations
-    "fastapi",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "python-dotenv>=1.0.0",
+    "click>=8.0.0",
+    "click-default-group>=1.2.0",
+    "rich>=10.0.0",
+    "tenacity>=8.0.0",
+    "google-genai>=1.20.0",
+    "fastmcp>=2.6.1,<2.9.0",
+    "anthropic>=0.39.0,<1.0.0",
+    "openai>=1.50.0,<2.0.0",
+    "aisuite>=0.4.0,<1.0.0",
+    "litellm>=1.52.0,<2.0.0",
+    "instructor>=1.5.0,<2.0.0",
+    "httpx>=0.28.1",
+    "ollama>=0.3.0,<1.0.0",
+    "toml>=0.10.0",
+    "PyYAML>=6.0.0",
+    "jinja2>=3.0.0",
+    "aiofiles>=23.0.0",
+    "anyio>=4.0.0",
+    "trio>=0.23.0",
+    "asyncio-mqtt>=0.16.0",
+    "httpcore>=1.0.0",
+    "psutil>=5.9.0",
+    "packaging>=21.0",
+    "jsonschema>=4.0.0",
+    "toolz>=0.12.0",
+    "more-itertools>=9.0.0",
+    "python-dateutil>=2.8.0",
 ]
 
 # Development-only dependencies
@@ -316,9 +309,6 @@ disallow_untyped_defs = true  # Strict checking for core interpreter
 
 [tool.uv]
 package = true
-override-dependencies = [
-    "httpx>=0.28.1",  # Force newer httpx to resolve aisuite/fastmcp conflict
-]
 
 # Enable preview features for scripts support
 preview = true
