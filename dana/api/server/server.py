@@ -36,7 +36,7 @@ def create_app():
     from .routers.documents import router as documents_router
     from .routers.conversations import router as conversations_router
 
-    app.include_router(main_router, prefix="/api")
+    app.include_router(main_router)
     app.include_router(api_router, prefix="/api")
     app.include_router(topics_router, prefix="/api")
     app.include_router(documents_router, prefix="/api")
