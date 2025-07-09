@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 export interface UIState {
   // Dialog States
@@ -11,13 +11,13 @@ export interface UIState {
   sidebarCollapsed: boolean;
 
   // Theme & Appearance
-  theme: 'light' | 'dark' | 'system';
+  theme: "light" | "dark" | "system";
   sidebarWidth: number;
 
   // Notifications
   notifications: Array<{
     id: string;
-    type: 'success' | 'error' | 'warning' | 'info';
+    type: "success" | "error" | "warning" | "info";
     title: string;
     message: string;
     duration?: number;
@@ -38,11 +38,13 @@ export interface UIState {
   setSidebarCollapsed: (collapsed: boolean) => void;
 
   // Theme Actions
-  setTheme: (theme: 'light' | 'dark' | 'system') => void;
+  setTheme: (theme: "light" | "dark" | "system") => void;
   setSidebarWidth: (width: number) => void;
 
   // Notification Actions
-  addNotification: (notification: Omit<UIState['notifications'][0], 'id'>) => void;
+  addNotification: (
+    notification: Omit<UIState["notifications"][0], "id">,
+  ) => void;
   removeNotification: (id: string) => void;
   clearNotifications: () => void;
 
@@ -55,9 +57,9 @@ export const useUIStore = create<UIState>((set, get) => ({
   isCreateAgentDialogOpen: false,
   isSettingsDialogOpen: false,
   isHelpDialogOpen: false,
-  currentPage: 'dashboard',
+  currentPage: "dashboard",
   sidebarCollapsed: false,
-  theme: 'system',
+  theme: "system",
   sidebarWidth: 280,
   notifications: [],
 
@@ -71,11 +73,13 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   // Navigation Actions
   setCurrentPage: (page: string) => set({ currentPage: page }),
-  toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
-  setSidebarCollapsed: (collapsed: boolean) => set({ sidebarCollapsed: collapsed }),
+  toggleSidebar: () =>
+    set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+  setSidebarCollapsed: (collapsed: boolean) =>
+    set({ sidebarCollapsed: collapsed }),
 
   // Theme Actions
-  setTheme: (theme: 'light' | 'dark' | 'system') => set({ theme }),
+  setTheme: (theme: "light" | "dark" | "system") => set({ theme }),
   setSidebarWidth: (width: number) => set({ sidebarWidth: width }),
 
   // Notification Actions
@@ -110,11 +114,11 @@ export const useUIStore = create<UIState>((set, get) => ({
       isCreateAgentDialogOpen: false,
       isSettingsDialogOpen: false,
       isHelpDialogOpen: false,
-      currentPage: 'dashboard',
+      currentPage: "dashboard",
       sidebarCollapsed: false,
-      theme: 'system',
+      theme: "system",
       sidebarWidth: 280,
       notifications: [],
     });
   },
-})); 
+}));

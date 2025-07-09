@@ -4,7 +4,11 @@ import * as React from "react";
 import { IconChevronRight } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
 
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   SidebarGroup,
   SidebarMenu,
@@ -37,7 +41,11 @@ export function NavMain({
         {items.map((item) => (
           <React.Fragment key={item.title}>
             {item.items ? (
-              <Collapsible asChild defaultOpen={item.isActive} className="group/collapsible">
+              <Collapsible
+                asChild
+                defaultOpen={item.isActive}
+                className="group/collapsible"
+              >
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton
@@ -79,7 +87,7 @@ export function NavMain({
                   asChild
                   tooltip={item.title}
                   isActive={item.isActive}
-                  className="h-12 [&[data-active=true]]:!bg-brand-50 [&[data-active=true]]:!text-brand-600 hover:!bg-gray-100 hover:!text-gray-600 text-gray-600"
+                  className="h-12 [&[data-active=true]]:!bg-brand-50 [&[data-active=true]]:!text-brand-600 hover:!bg-gray-100 hover:!text-gray-600 text-gray-600 [&>span:last-child]:truncate"
                 >
                   <a
                     href="#"

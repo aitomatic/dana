@@ -9,7 +9,11 @@ import { cn } from "@/lib/utils";
 
 import ChatBox from "./chat-box";
 
-const AgentChatView = ({ isSidebarCollapsed }: { isSidebarCollapsed: boolean }) => {
+const AgentChatView = ({
+  isSidebarCollapsed,
+}: {
+  isSidebarCollapsed: boolean;
+}) => {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { chat_id } = useParams();
   const [files] = useState<any[]>([]);
@@ -33,9 +37,13 @@ const AgentChatView = ({ isSidebarCollapsed }: { isSidebarCollapsed: boolean }) 
             <span className="text-[36px] font-medium text-gray-400">
               Hi, how can I help you today?
             </span>
-            <span className="text-[36px] font-medium text-gray-700">How can I help you today?</span>
+            <span className="text-[36px] font-medium text-gray-700">
+              How can I help you today?
+            </span>
           </div>
-          <div className={`flex flex-col gap-2 w-[700px] transition-all duration-300`}>
+          <div
+            className={`flex flex-col gap-2 w-[700px] transition-all duration-300`}
+          >
             <ChatBox
               files={files}
               isShowUpload={false}
@@ -56,14 +64,17 @@ const AgentChatView = ({ isSidebarCollapsed }: { isSidebarCollapsed: boolean }) 
             <div className="relative flex items-center justify-center w-full h-full">
               <div
                 id="chat-container"
-                className={cn("flex flex-col items-center justify-center w-full h-full", "w-full")}
+                className={cn(
+                  "flex flex-col items-center justify-center w-full h-full",
+                  "w-full",
+                )}
               >
                 <div
                   className={cn(
                     "relative flex flex-col justify-between h-full w-full",
                     isSidebarCollapsed ? "pl-10 pr-6" : "px-4",
                     "max-w-[760px] 3xl:max-w-[1200px]",
-                    "opacity-100"
+                    "opacity-100",
                   )}
                 >
                   {/* Message container with fixed height and scroll */}
@@ -88,7 +99,9 @@ const AgentChatView = ({ isSidebarCollapsed }: { isSidebarCollapsed: boolean }) 
             </div>
           </div>
         ) : (
-          <div className={cn("relative flex items-center w-full h-full fade-in")}>
+          <div
+            className={cn("relative flex items-center w-full h-full fade-in")}
+          >
             {renderWelcomeContent()}
           </div>
         )}

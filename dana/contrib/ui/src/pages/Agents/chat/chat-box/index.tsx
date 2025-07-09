@@ -1,4 +1,3 @@
-// ChatBox.tsx - Main component file
 import { useState, useCallback, useMemo, memo } from "react";
 import { cn } from "@/lib/utils";
 
@@ -8,11 +7,7 @@ import SendButton from "./send-button";
 // Create separate, memoized components
 const MemoizedChatInput = memo(ChatInput);
 
-// Main ChatBox component
 const ChatBox = ({ handleSendMessage, placeholder, files, id }: any) => {
-  // Hooks
-
-  // State
   const [message, setMessage] = useState<string | null>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,19 +34,26 @@ const ChatBox = ({ handleSendMessage, placeholder, files, id }: any) => {
 
   const MemoizedSendButton = useMemo(
     () => (
-      <SendButton message={message} files={files} onSubmit={onSubmit} isSubmitting={isSubmitting} />
+      <SendButton
+        message={message}
+        files={files}
+        onSubmit={onSubmit}
+        isSubmitting={isSubmitting}
+      />
     ),
-    [message, files, onSubmit, isSubmitting]
+    [message, files, onSubmit, isSubmitting],
   );
 
   // Memoized controls area - doesn't rerender when message changes except for the SendButton
   const ControlsArea = useMemo(
     () => (
       <div className={cn("flex items-end w-full h-10 gap-2 justify-between")}>
-        <div className={cn("flex items-center gap-4")}>{MemoizedSendButton}</div>
+        <div className={cn("flex items-center gap-4")}>
+          {MemoizedSendButton}
+        </div>
       </div>
     ),
-    [MemoizedSendButton]
+    [MemoizedSendButton],
   );
 
   return (

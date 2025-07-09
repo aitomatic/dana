@@ -9,7 +9,12 @@ interface SendButtonProps {
   isSubmitting: boolean;
 }
 
-const SendButton = ({ message, files, onSubmit, isSubmitting }: SendButtonProps) => {
+const SendButton = ({
+  message,
+  files,
+  onSubmit,
+  isSubmitting,
+}: SendButtonProps) => {
   const hasContent = message || (files && files.length > 0);
   const isDisabled = isSubmitting || !hasContent;
 
@@ -19,8 +24,10 @@ const SendButton = ({ message, files, onSubmit, isSubmitting }: SendButtonProps)
       className={cn(
         "flex items-center justify-center w-9! h-9! bg-background rounded-full transition-all duration-200",
         isSubmitting && "opacity-50 cursor-not-allowed bg-gray-400",
-        hasContent ? "bg-brand-600 cursor-pointer" : "bg-gray-400 cursor-not-allowed",
-        isSubmitting && "opacity-50 cursor-not-allowed"
+        hasContent
+          ? "bg-brand-600 cursor-pointer"
+          : "bg-gray-400 cursor-not-allowed",
+        isSubmitting && "opacity-50 cursor-not-allowed",
       )}
       style={{ pointerEvents: isDisabled ? "none" : "auto" }}
       data-testid="send-message-button"

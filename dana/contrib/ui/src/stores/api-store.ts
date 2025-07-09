@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import { apiService } from '@/lib/api';
-import type { HealthResponse, RootResponse, ApiError } from '@/lib/api';
+import { create } from "zustand";
+import { apiService } from "@/lib/api";
+import type { HealthResponse, RootResponse, ApiError } from "@/lib/api";
 
 export interface ApiState {
   // API Health & Status
@@ -40,7 +40,7 @@ export const useApiStore = create<ApiState>((set) => ({
 
     try {
       const healthData = await apiService.checkHealth();
-      const isHealthy = healthData.status === 'healthy';
+      const isHealthy = healthData.status === "healthy";
 
       set({
         isHealthy,

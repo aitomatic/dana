@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DataTable } from "@/components/table/data-table";
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,6 @@ import {
   IconEdit,
   IconEye,
   IconFolderPlus,
-  IconX,
   IconRefresh,
 } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -28,7 +27,6 @@ import type { TopicRead } from "@/types/topic";
 import type { DocumentRead } from "@/types/document";
 import { cn } from "@/lib/utils";
 import { useTopicOperations, useDocumentOperations } from "@/hooks/use-api";
-import { FileUpload } from "@/components/library/file-upload";
 import { CreateFolderDialog } from "@/components/library/create-folder-dialog";
 import FileIcon from "@/components/file-icon";
 
@@ -93,15 +91,14 @@ export default function LibraryPage() {
     isLoading: documentsLoading,
     isUploading,
     error: documentsError,
-    uploadProgress,
     clearError: clearDocumentsError,
   } = useDocumentOperations();
 
   // Local state
   const [showCreateFolder, setShowCreateFolder] = useState(false);
-  const [showUpload, setShowUpload] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "files" | "folders">("all");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -134,10 +131,10 @@ export default function LibraryPage() {
       accessorKey: "name",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
       cell: ({ row }) => {
-        const item = row.original;
+        const item: any = row.original;
         return (
-          <div className="flex items-center space-x-3">
-            <FileIcon resource={item} />
+          <div className="flex space-x-3">
+            <FileIcon ext={item?.extension} />
             <div className="flex flex-col">
               <span className="font-medium text-gray-900">{item.name}</span>
               <span className="text-sm text-gray-500">{item.path}</span>
@@ -296,7 +293,6 @@ export default function LibraryPage() {
         description: `Uploaded: ${file.name}`,
       });
     }
-    setShowUpload(false);
   };
 
   const handleSearchChange = (value: string) => {
@@ -310,6 +306,20 @@ export default function LibraryPage() {
   const handleRefresh = () => {
     fetchTopics();
     fetchDocuments();
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      const fileArray = Array.from(files);
+      await handleFilesUploaded(fileArray);
+      // Reset the input
+      event.target.value = "";
+    }
   };
 
   const isLoading = topicsLoading || documentsLoading;
@@ -336,9 +346,9 @@ export default function LibraryPage() {
             <IconFolderPlus className="mr-2 w-4 h-4" />
             New Topic
           </Button>
-          <Button onClick={() => setShowUpload(true)} disabled={isUploading}>
+          <Button onClick={handleUploadClick} disabled={isUploading}>
             <IconUpload className="mr-2 w-4 h-4" />
-            Upload Documents
+            Add Documents
           </Button>
         </div>
       </div>
@@ -405,6 +415,16 @@ export default function LibraryPage() {
         />
       </div>
 
+      {/* Hidden file input for upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        onChange={handleFileChange}
+        style={{ display: "none" }}
+        accept="*/*"
+      />
+
       {/* Dialogs */}
       <CreateFolderDialog
         isOpen={showCreateFolder}
@@ -412,39 +432,6 @@ export default function LibraryPage() {
         onCreateFolder={handleCreateFolder}
         currentPath="/"
       />
-
-      {showUpload && (
-        <div className="flex fixed inset-0 z-50 justify-center items-center bg-black bg-opacity-50">
-          <div className="p-6 mx-4 w-full max-w-2xl bg-white rounded-lg">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Upload Documents</h2>
-              <Button variant="ghost" size="sm" onClick={() => setShowUpload(false)}>
-                <IconX className="w-4 h-4" />
-              </Button>
-            </div>
-            {isUploading && (
-              <div className="mb-4">
-                <div className="flex justify-between text-sm text-gray-600 mb-1">
-                  <span>Uploading...</span>
-                  <span>{Math.round(uploadProgress)}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
-                </div>
-              </div>
-            )}
-            <FileUpload
-              onFilesSelected={handleFilesUploaded}
-              multiple={true}
-              accept="*/*"
-              maxSize={50 * 1024 * 1024}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

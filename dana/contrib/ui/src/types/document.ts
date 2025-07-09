@@ -1,4 +1,3 @@
-
 // Document Types matching the API schemas
 export interface DocumentBase {
   original_filename: string;
@@ -79,4 +78,4 @@ export interface DocumentState {
   skip: number;
   limit: number;
   uploadProgress: number;
-} 
+}

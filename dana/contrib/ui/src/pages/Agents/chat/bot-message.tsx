@@ -128,8 +128,10 @@ const BotMessage = ({
       <div
         className={cn(
           "flex flex-col w-full",
-          isSplitScreen ? "max-w-full 3xl:max-w-full" : "max-w-[630px] 3xl:max-w-[1085px]",
-          className
+          isSplitScreen
+            ? "max-w-full 3xl:max-w-full"
+            : "max-w-[630px] 3xl:max-w-[1085px]",
+          className,
         )}
       >
         {displayText ? (
@@ -138,7 +140,7 @@ const BotMessage = ({
               "flex flex-col",
               message?.data?.meta_data?.type === "dxa:prosea:user_input" &&
                 isLastMessage &&
-                "bg-blue-50 rounded-xl p-4 border border-blue-100"
+                "bg-blue-50 rounded-xl p-4 border border-blue-100",
             )}
           >
             {contributedMessage && (
@@ -147,9 +149,12 @@ const BotMessage = ({
                 className="flex gap-2 items-center cursor-pointer"
               >
                 <ArrowLeft
-                  className={cn("w-3 h-3 text-gray-400 transition-transform duration-300", {
-                    "rotate-180": isOldResponse,
-                  })}
+                  className={cn(
+                    "w-3 h-3 text-gray-400 transition-transform duration-300",
+                    {
+                      "rotate-180": isOldResponse,
+                    },
+                  )}
                   strokeWidth={3}
                 />
                 <span className="text-sm font-medium text-gray-400">
@@ -158,21 +163,26 @@ const BotMessage = ({
               </div>
             )}
             <MarkdownViewerSmall citations={messageSources}>
-              {contributedMessage && !isOldResponse ? contributedMessage : displayText}
+              {contributedMessage && !isOldResponse
+                ? contributedMessage
+                : displayText}
             </MarkdownViewerSmall>
-            {message?.data?.meta_data?.type === "dxa:prosea:user_input" && isLastMessage && (
-              <div className="flex gap-1 items-center mt-2">
-                <Hourglass className="w-5 h-5 text-brand-700" />
-                <span className="font-medium text-brand-700 animate-flash">
-                  Awaiting for your response
-                </span>
-              </div>
-            )}
+            {message?.data?.meta_data?.type === "dxa:prosea:user_input" &&
+              isLastMessage && (
+                <div className="flex gap-1 items-center mt-2">
+                  <Hourglass className="w-5 h-5 text-brand-700" />
+                  <span className="font-medium text-brand-700 animate-flash">
+                    Awaiting for your response
+                  </span>
+                </div>
+              )}
           </div>
         ) : (
           <div className="grid grid-cols-[max-content_1fr] items-start gap-2">
             <IconLoader className="animate-spin text-brand-700" size={20} />
-            <span className={`text-sm font-normal text-gray-900 xl:text-base animate-flash`}>
+            <span
+              className={`text-sm font-normal text-gray-900 xl:text-base animate-flash`}
+            >
               {thinkingMessage ?? "Thinking..."}
             </span>
           </div>

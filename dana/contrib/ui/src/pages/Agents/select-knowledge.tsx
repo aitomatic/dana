@@ -84,9 +84,9 @@ export default function SelectKnowledgePage() {
       mockLibraryData.filter(
         (item) =>
           selectedIds.includes(item.id) &&
-          item.name.toLowerCase().includes(sidebarSearch.toLowerCase())
+          item.name.toLowerCase().includes(sidebarSearch.toLowerCase()),
       ),
-    [selectedIds, sidebarSearch]
+    [selectedIds, sidebarSearch],
   );
 
   // Table columns
@@ -107,11 +107,15 @@ export default function SelectKnowledgePage() {
           onCheckedChange={(checked) => {
             if (checked) {
               setSelectedIds((prev) =>
-                Array.from(new Set([...prev, ...filteredData.map((item) => item.id)]))
+                Array.from(
+                  new Set([...prev, ...filteredData.map((item) => item.id)]),
+                ),
               );
             } else {
               setSelectedIds((prev) =>
-                prev.filter((id) => !filteredData.map((item) => item.id).includes(id))
+                prev.filter(
+                  (id) => !filteredData.map((item) => item.id).includes(id),
+                ),
               );
             }
           }}
@@ -122,7 +126,9 @@ export default function SelectKnowledgePage() {
           checked={selectedIds.includes(row.original.id)}
           onCheckedChange={(checked) => {
             setSelectedIds((prev) =>
-              checked ? [...prev, row.original.id] : prev.filter((id) => id !== row.original.id)
+              checked
+                ? [...prev, row.original.id]
+                : prev.filter((id) => id !== row.original.id),
             );
           }}
         />
@@ -137,7 +143,9 @@ export default function SelectKnowledgePage() {
       accessorKey: "size",
       header: "Size",
       cell: ({ row }: any) =>
-        row.original.type === "file" ? formatFileSize((row.original as FileItem).size) : "",
+        row.original.type === "file"
+          ? formatFileSize((row.original as FileItem).size)
+          : "",
     },
     {
       id: "actions",
@@ -146,7 +154,11 @@ export default function SelectKnowledgePage() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setSelectedIds((prev) => prev.filter((id) => id !== row.original.id))}
+          onClick={() =>
+            setSelectedIds((prev) =>
+              prev.filter((id) => id !== row.original.id),
+            )
+          }
         >
           <IconTrash className="w-4 h-4" />
         </Button>
@@ -209,7 +221,11 @@ export default function SelectKnowledgePage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => setSelectedIds((prev) => prev.filter((id) => id !== item.id))}
+                      onClick={() =>
+                        setSelectedIds((prev) =>
+                          prev.filter((id) => id !== item.id),
+                        )
+                      }
                     >
                       <IconTrash className="w-4 h-4" />
                     </Button>

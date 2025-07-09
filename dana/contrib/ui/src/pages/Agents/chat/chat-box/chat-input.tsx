@@ -1,4 +1,10 @@
-import { useEffect, useRef, useLayoutEffect, useState, useCallback } from "react";
+import {
+  useEffect,
+  useRef,
+  useLayoutEffect,
+  useState,
+  useCallback,
+} from "react";
 import { Textarea } from "@/components/ui/textarea";
 import FileIcon from "@/components/file-icon";
 
@@ -46,7 +52,7 @@ const ChatInput = ({
 
   // Filtered mention options based on query
   const filteredMentionOptions = availableMentionOptions.filter((option) =>
-    option.label.toLowerCase().includes(mentionQuery.toLowerCase())
+    option.label.toLowerCase().includes(mentionQuery.toLowerCase()),
   );
   const [isComposing, setIsComposing] = useState(false);
 
@@ -106,7 +112,11 @@ const ChatInput = ({
 
       // Replace @query with the selected mention (keeping the @ symbol)
       const newText =
-        text.substring(0, atPosition) + "@" + option.value + " " + text.substring(cursorPosition);
+        text.substring(0, atPosition) +
+        "@" +
+        option.value +
+        " " +
+        text.substring(cursorPosition);
 
       // Update both internal and parent state
       setInternalValue(newText);
@@ -126,7 +136,7 @@ const ChatInput = ({
         }
       }, 0);
     },
-    [atPosition, setMessage]
+    [atPosition, setMessage],
   );
 
   // Sync internal state with prop - this ensures one-way data flow
@@ -211,7 +221,10 @@ const ChatInput = ({
   const handleSelect = () => {
     if (showMentionPopover && textareaRef.current) {
       const cursorPosition = textareaRef.current.selectionEnd;
-      if (cursorPosition <= atPosition || cursorPosition > atPosition + mentionQuery.length + 1) {
+      if (
+        cursorPosition <= atPosition ||
+        cursorPosition > atPosition + mentionQuery.length + 1
+      ) {
         // Cursor moved away from the mention context
         setShowMentionPopover(false);
         setAtPosition(-1);
@@ -243,12 +256,14 @@ const ChatInput = ({
       case "ArrowDown":
         e.preventDefault();
         setSelectedMentionIndex((prevIndex) =>
-          prevIndex < totalOptions - 1 ? prevIndex + 1 : prevIndex
+          prevIndex < totalOptions - 1 ? prevIndex + 1 : prevIndex,
         );
         break;
       case "ArrowUp":
         e.preventDefault();
-        setSelectedMentionIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : prevIndex));
+        setSelectedMentionIndex((prevIndex) =>
+          prevIndex > 0 ? prevIndex - 1 : prevIndex,
+        );
         break;
       case "Enter":
         e.preventDefault();
@@ -280,7 +295,7 @@ const ChatInput = ({
         onInput={adjustTextareaHeight}
         onKeyPress={handleKeyPress}
         onSelect={handleSelect}
-        className="flex p-0 w-full text-sm xl:text-base font-normal text-gray-900 bg-transparent dark:bg-gray-50 border-none outline-none placeholder:text-gray-400 min-h-[50px] scrollbar-hide overflow-y-auto resize-none"
+        className="flex p-0 w-full text-sm xl:text-base font-normal text-gray-900 bg-transparent dark:bg-gray-50 border-none outline-none placeholder:text-gray-400 min-h-[60px] scrollbar-hide overflow-y-auto resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
         onCompositionStart={() => setIsComposing(true)}
         onCompositionEnd={() => setIsComposing(false)}
         onKeyDown={handleKeyNavigation}
@@ -340,7 +355,9 @@ const ChatInput = ({
                   onClick={() => insertMention(option)}
                   onMouseEnter={() => setSelectedMentionIndex(index)}
                 >
-                  {option.icon && <span className="text-gray-600">{option.icon}</span>}
+                  {option.icon && (
+                    <span className="text-gray-600">{option.icon}</span>
+                  )}
                   <span className="font-medium">{option.label}</span>
                 </li>
               ))}

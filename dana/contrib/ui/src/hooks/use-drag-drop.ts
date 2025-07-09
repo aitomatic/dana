@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef } from "react";
 
 interface UseDragDropOptions {
   onFileUpload: (file: File) => void;
@@ -29,12 +29,12 @@ export function useDragDrop({
 
   const validateFile = (file: File): boolean => {
     if (acceptedFileTypes.length === 0) return true;
-    return acceptedFileTypes.some(type => file.name.endsWith(type));
+    return acceptedFileTypes.some((type) => file.name.endsWith(type));
   };
 
   const handleFileUpload = (file: File) => {
     if (!validateFile(file)) {
-      console.log('Invalid file type');
+      console.log("Invalid file type");
       return;
     }
     onFileUpload(file);

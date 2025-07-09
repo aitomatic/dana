@@ -1,6 +1,11 @@
-import { create } from 'zustand';
-import { apiService } from '@/lib/api';
-import type { TopicRead, TopicCreate, TopicFilters, TopicState } from '@/types/topic';
+import { create } from "zustand";
+import { apiService } from "@/lib/api";
+import type {
+  TopicRead,
+  TopicCreate,
+  TopicFilters,
+  TopicState,
+} from "@/types/topic";
 
 export interface TopicStore extends TopicState {
   // Actions
@@ -44,7 +49,8 @@ export const useTopicStore = create<TopicStore>((set) => ({
         total: topics.length, // Note: API doesn't return total count, using array length
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch topics';
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to fetch topics";
       set({
         topics: [],
         isLoading: false,
@@ -63,7 +69,8 @@ export const useTopicStore = create<TopicStore>((set) => ({
         isLoading: false,
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch topic';
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to fetch topic";
       set({
         selectedTopic: null,
         isLoading: false,
@@ -82,7 +89,8 @@ export const useTopicStore = create<TopicStore>((set) => ({
         isCreating: false,
       }));
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create topic';
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create topic";
       set({
         isCreating: false,
         error: errorMessage,
@@ -97,11 +105,15 @@ export const useTopicStore = create<TopicStore>((set) => ({
       const updatedTopic = await apiService.updateTopic(topicId, topic);
       set((state) => ({
         topics: state.topics.map((t) => (t.id === topicId ? updatedTopic : t)),
-        selectedTopic: state.selectedTopic?.id === topicId ? updatedTopic : state.selectedTopic,
+        selectedTopic:
+          state.selectedTopic?.id === topicId
+            ? updatedTopic
+            : state.selectedTopic,
         isUpdating: false,
       }));
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update topic';
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update topic";
       set({
         isUpdating: false,
         error: errorMessage,
@@ -116,11 +128,13 @@ export const useTopicStore = create<TopicStore>((set) => ({
       await apiService.deleteTopic(topicId);
       set((state) => ({
         topics: state.topics.filter((t) => t.id !== topicId),
-        selectedTopic: state.selectedTopic?.id === topicId ? null : state.selectedTopic,
+        selectedTopic:
+          state.selectedTopic?.id === topicId ? null : state.selectedTopic,
         isDeleting: false,
       }));
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete topic';
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to delete topic";
       set({
         isDeleting: false,
         error: errorMessage,

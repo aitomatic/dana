@@ -28,7 +28,9 @@ export function FileUpload({
 
       Array.from(files).forEach((file) => {
         if (file.size > maxSize) {
-          errors.push(`${file.name} is too large. Maximum size is ${formatFileSize(maxSize)}`);
+          errors.push(
+            `${file.name} is too large. Maximum size is ${formatFileSize(maxSize)}`,
+          );
         } else {
           validFiles.push(file);
         }
@@ -42,7 +44,7 @@ export function FileUpload({
       setError(null);
       return validFiles;
     },
-    [maxSize]
+    [maxSize],
   );
 
   const handleFileSelect = useCallback(
@@ -52,7 +54,7 @@ export function FileUpload({
         onFilesSelected(validFiles);
       }
     },
-    [validateFiles, onFilesSelected]
+    [validateFiles, onFilesSelected],
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -71,7 +73,7 @@ export function FileUpload({
       setIsDragOver(false);
       handleFileSelect(e.dataTransfer.files);
     },
-    [handleFileSelect]
+    [handleFileSelect],
   );
 
   const handleFileInputChange = useCallback(
@@ -81,7 +83,7 @@ export function FileUpload({
         handleFileSelect(files);
       }
     },
-    [handleFileSelect]
+    [handleFileSelect],
   );
 
   const formatFileSize = (bytes: number): string => {
@@ -97,8 +99,10 @@ export function FileUpload({
       <div
         className={cn(
           "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
-          isDragOver ? "border-brand-500 bg-brand-50" : "border-gray-300 hover:border-gray-400",
-          error && "border-error-500 bg-error-50"
+          isDragOver
+            ? "border-brand-500 bg-brand-50"
+            : "border-gray-300 hover:border-gray-400",
+          error && "border-error-500 bg-error-50",
         )}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -119,7 +123,9 @@ export function FileUpload({
               />
             </label>
           </p>
-          <p className="text-xs text-gray-500">Maximum file size: {formatFileSize(maxSize)}</p>
+          <p className="text-xs text-gray-500">
+            Maximum file size: {formatFileSize(maxSize)}
+          </p>
         </div>
       </div>
 

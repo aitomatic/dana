@@ -8,6 +8,7 @@ import { CreateAgentPage } from "./pages/Agents/create";
 import LibraryPage from "./pages/Library";
 import SelectKnowledgePage from "./pages/Agents/select-knowledge";
 import "./index.css";
+import AgentChat from "./pages/Agents/chat";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -48,6 +49,14 @@ createRoot(document.getElementById("root")!).render(
           }
         />
         <Route
+          path="/chat"
+          element={
+            <Layout>
+              <AgentChat />
+            </Layout>
+          }
+        />
+        <Route
           path="/library"
           element={
             <Layout>
@@ -64,5 +73,5 @@ createRoot(document.getElementById("root")!).render(
         */}
       </Routes>
     </BrowserRouter>
-  </StrictMode>
+  </StrictMode>,
 );

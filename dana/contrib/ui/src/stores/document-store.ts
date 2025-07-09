@@ -1,6 +1,12 @@
-import { create } from 'zustand';
-import { apiService } from '@/lib/api';
-import type { DocumentRead, DocumentUpdate, DocumentFilters, DocumentUploadData, DocumentState } from '@/types/document';
+import { create } from "zustand";
+import { apiService } from "@/lib/api";
+import type {
+  DocumentRead,
+  DocumentUpdate,
+  DocumentFilters,
+  DocumentUploadData,
+  DocumentState,
+} from "@/types/document";
 
 export interface DocumentStore extends DocumentState {
   // Actions
@@ -8,7 +14,10 @@ export interface DocumentStore extends DocumentState {
   fetchDocuments: (filters?: DocumentFilters) => Promise<void>;
   fetchDocument: (documentId: number) => Promise<void>;
   uploadDocument: (uploadData: DocumentUploadData) => Promise<void>;
-  updateDocument: (documentId: number, document: DocumentUpdate) => Promise<void>;
+  updateDocument: (
+    documentId: number,
+    document: DocumentUpdate,
+  ) => Promise<void>;
   deleteDocument: (documentId: number) => Promise<void>;
   downloadDocument: (documentId: number) => Promise<void>;
 
@@ -49,7 +58,8 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
         total: documents.length, // Note: API doesn't return total count, using array length
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch documents';
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to fetch documents";
       set({
         documents: [],
         isLoading: false,
@@ -68,7 +78,8 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
         isLoading: false,
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch document';
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to fetch document";
       set({
         selectedDocument: null,
         isLoading: false,
@@ -88,7 +99,8 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
         uploadProgress: 100,
       }));
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to upload document';
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to upload document";
       set({
         isUploading: false,
         uploadProgress: 0,
@@ -101,14 +113,23 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     set({ isUpdating: true, error: null });
 
     try {
-      const updatedDocument = await apiService.updateDocument(documentId, document);
+      const updatedDocument = await apiService.updateDocument(
+        documentId,
+        document,
+      );
       set((state) => ({
-        documents: state.documents.map((d) => (d.id === documentId ? updatedDocument : d)),
-        selectedDocument: state.selectedDocument?.id === documentId ? updatedDocument : state.selectedDocument,
+        documents: state.documents.map((d) =>
+          d.id === documentId ? updatedDocument : d,
+        ),
+        selectedDocument:
+          state.selectedDocument?.id === documentId
+            ? updatedDocument
+            : state.selectedDocument,
         isUpdating: false,
       }));
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update document';
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update document";
       set({
         isUpdating: false,
         error: errorMessage,
@@ -123,11 +144,15 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
       await apiService.deleteDocument(documentId);
       set((state) => ({
         documents: state.documents.filter((d) => d.id !== documentId),
-        selectedDocument: state.selectedDocument?.id === documentId ? null : state.selectedDocument,
+        selectedDocument:
+          state.selectedDocument?.id === documentId
+            ? null
+            : state.selectedDocument,
         isDeleting: false,
       }));
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete document';
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to delete document";
       set({
         isDeleting: false,
         error: errorMessage,
@@ -143,12 +168,14 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
 
       // Create download link
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
 
       // Get filename from selected document or use default
-      const doc = get().selectedDocument || get().documents.find(d => d.id === documentId);
-      a.download = doc?.original_filename || 'document';
+      const doc =
+        get().selectedDocument ||
+        get().documents.find((d) => d.id === documentId);
+      a.download = doc?.original_filename || "document";
 
       document.body.appendChild(a);
       a.click();
@@ -157,7 +184,8 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
 
       set({ isDownloading: false });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to download document';
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to download document";
       set({
         isDownloading: false,
         error: errorMessage,
@@ -194,4 +222,4 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
       uploadProgress: 0,
     });
   },
-})); 
+}));

@@ -57,7 +57,7 @@ export function GeneralAgentPage({
     <div
       className={cn(
         "flex w-full flex-col h-[calc(100vh-80px)] gap-4 px-6 bg-gray-50",
-        isDragOver && "opacity-50"
+        isDragOver && "opacity-50",
       )}
     >
       <div className="flex flex-row gap-4 h-full">
@@ -81,7 +81,9 @@ export function GeneralAgentPage({
               <div className="flex flex-col gap-1 h-full">
                 {isEditingDescription ? (
                   <div className="flex flex-col gap-1">
-                    <Label className="text-sm font-semibold text-gray-600">Description</Label>
+                    <Label className="text-sm font-semibold text-gray-600">
+                      Description
+                    </Label>
                     <Textarea
                       {...register("description")}
                       id="description"
@@ -92,21 +94,32 @@ export function GeneralAgentPage({
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2">
-                    <span className="text-sm text-gray-300">(no description)</span>
+                    <span className="text-sm text-gray-300">
+                      (no description)
+                    </span>
                     <Button
                       variant="tertiary"
                       className="gap-2 w-max"
                       onClick={() => setIsEditingDescription(true)}
                     >
-                      <Edit className="text-gray-600" width={18} height={18} strokeWidth={2} />
-                      <span className="text-sm text-gray-600">Add description</span>
+                      <Edit
+                        className="text-gray-600"
+                        width={18}
+                        height={18}
+                        strokeWidth={2}
+                      />
+                      <span className="text-sm text-gray-600">
+                        Add description
+                      </span>
                     </Button>
                   </div>
                 )}
               </div>
             </div>
             <div className="flex flex-col gap-2 h-full">
-              <span className="text-sm font-medium text-gray-600">Resources</span>
+              <span className="text-sm font-medium text-gray-600">
+                Resources
+              </span>
               {/* <FileSelection /> */}
             </div>
           </div>
@@ -116,8 +129,12 @@ export function GeneralAgentPage({
           <div className="flex flex-col gap-2 h-full">
             <div className="flex flex-row gap-1 justify-between">
               <div className="flex flex-col gap-1">
-                <Label className="text-sm font-semibold text-gray-900">Agent Configuration</Label>
-                <span className="text-sm text-gray-600">Use DANA to configure your agent</span>
+                <Label className="text-sm font-semibold text-gray-900">
+                  Agent Configuration
+                </Label>
+                <span className="text-sm text-gray-600">
+                  Use DANA to configure your agent
+                </span>
               </div>
               <input
                 type="file"

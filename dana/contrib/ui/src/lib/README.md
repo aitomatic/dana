@@ -7,10 +7,12 @@ This directory contains the API services, Zustand stores, and utilities for the 
 ## Files
 
 ### API Services
+
 - `api.ts` - Centralized API service using Axios
 - `constants.ts` - Application constants and configuration
 
 ### Stores
+
 - `api-store.ts` - API connection and health state
 - `poet-store.ts` - POET service state management
 - `ui-store.ts` - UI state (dialogs, navigation, notifications)
@@ -19,33 +21,44 @@ This directory contains the API services, Zustand stores, and utilities for the 
 - `document-store.ts` - Document management state
 
 ### Hooks
+
 - `use-api.ts` - Custom hooks for API operations
 
 ### Utilities
+
 - `utils.ts` - Common utility functions
 
 ## Usage
 
 ```typescript
 // API Service
-import { apiService } from '@/lib/api';
+import { apiService } from "@/lib/api";
 const health = await apiService.checkHealth();
 
 // Stores
-import { useApiStore, usePoetStore, useTopicStore, useDocumentStore } from '@/stores';
+import {
+  useApiStore,
+  usePoetStore,
+  useTopicStore,
+  useDocumentStore,
+} from "@/stores";
 const { isHealthy } = useApiStore();
 const { configurePoet } = usePoetStore();
 const { topics, createTopic } = useTopicStore();
 const { documents, uploadDocument } = useDocumentStore();
 
 // Hooks
-import { useApiInitialization, useTopicOperations, useDocumentOperations } from '@/hooks/use-api';
+import {
+  useApiInitialization,
+  useTopicOperations,
+  useDocumentOperations,
+} from "@/hooks/use-api";
 useApiInitialization(); // Auto-initialize API
 const { topics, createTopic } = useTopicOperations();
 const { documents, uploadDocument } = useDocumentOperations();
 
 // Utilities
-import { formatApiError, cn } from '@/lib/utils';
+import { formatApiError, cn } from "@/lib/utils";
 ```
 
 ## Environment
@@ -64,120 +77,131 @@ The frontend follows a clean architecture pattern with:
 ## API Services
 
 ### `api.ts`
+
 Centralized API service using Axios for all OpenDXA API communications.
 
 **Features:**
+
 - Automatic request/response logging
 - Standardized error handling
 - Type-safe API calls
 - Interceptors for common operations
 
 **Available Endpoints:**
+
 - `GET /health` - Health check
 - `GET /` - Root information
 - `POST /poet/configure` - Configure POET
 - `GET /poet/domains` - Get available domains
 
 **Usage:**
+
 ```typescript
-import { apiService } from '@/lib/api';
+import { apiService } from "@/lib/api";
 
 // Health check
 const health = await apiService.checkHealth();
 
 // Configure POET
 const config = await apiService.configurePoet({
-  domain: 'healthcare',
+  domain: "healthcare",
   retries: 3,
-  enable_training: true
+  enable_training: true,
 });
 ```
 
 ## Zustand Stores
 
 ### `api-store.ts`
+
 Manages API connection state, health checks, and general API status.
 
 **State:**
+
 - API health status
 - Connection availability
 - Loading states
 - Error handling
 
 **Usage:**
+
 ```typescript
-import { useApiStore } from '@/stores/api-store';
+import { useApiStore } from "@/stores/api-store";
 
 const { isHealthy, checkHealth, error } = useApiStore();
 ```
 
 ### `poet-store.ts`
+
 Manages POET service state including configurations and domains.
 
 **State:**
+
 - Current POET configuration
 - Available domains
 - Selected domain
 - Loading states
 
 **Usage:**
+
 ```typescript
-import { usePoetStore } from '@/stores/poet-store';
+import { usePoetStore } from "@/stores/poet-store";
 
 const { configurePoet, availableDomains, selectedDomain } = usePoetStore();
 ```
 
 ### `ui-store.ts`
+
 Manages UI state including dialogs, navigation, and notifications.
 
 **State:**
+
 - Dialog visibility
 - Navigation state
 - Theme preferences
 - Notifications
 
 **Usage:**
-```typescript
-import { useUIStore } from '@/stores/ui-store';
 
-const { 
-  openCreateAgentDialog, 
-  addNotification, 
-  theme 
-} = useUIStore();
+```typescript
+import { useUIStore } from "@/stores/ui-store";
+
+const { openCreateAgentDialog, addNotification, theme } = useUIStore();
 ```
 
 ### `agent-store.ts`
+
 Manages agent-related state and operations.
 
 **State:**
+
 - Agent list
 - Selected agent
 - Dialog states
 - Loading states
 
 **Usage:**
-```typescript
-import { useAgentStore } from '@/stores/agent-store';
 
-const { 
-  agents, 
-  openCreateAgentDialog, 
-  selectedAgent 
-} = useAgentStore();
+```typescript
+import { useAgentStore } from "@/stores/agent-store";
+
+const { agents, openCreateAgentDialog, selectedAgent } = useAgentStore();
 ```
 
 ## Custom Hooks
 
 ### `use-api.ts`
+
 Provides high-level API operations with automatic error handling and notifications.
 
 **Hooks:**
+
 - `useApiInitialization()` - Initialize API connection on app start
 - `usePoetOperations()` - POET-specific operations with notifications
 - `useApiHealth()` - API health monitoring
 
 **Usage:**
+
 ```typescript
 import { useApiInitialization, usePoetOperations } from '@/hooks/use-api';
 
@@ -197,9 +221,11 @@ function PoetConfig() {
 ## Utilities
 
 ### `utils.ts`
+
 Common utility functions for the application.
 
 **Functions:**
+
 - `cn()` - Class name utility with Tailwind CSS
 - `formatApiError()` - Format API errors for display
 - `debounce()` / `throttle()` - Performance utilities
@@ -208,9 +234,11 @@ Common utility functions for the application.
 - `copyToClipboard()` - Clipboard operations
 
 ### `constants.ts`
+
 Application constants and configuration values.
 
 **Constants:**
+
 - API configuration
 - Endpoint URLs
 - UI constants
@@ -220,6 +248,7 @@ Application constants and configuration values.
 ## Usage Patterns
 
 ### 1. API Operations
+
 ```typescript
 // Direct API call
 const health = await apiService.checkHealth();
@@ -230,10 +259,11 @@ await checkHealth();
 
 // Using custom hook
 const { configurePoet } = usePoetOperations();
-await configurePoet({ domain: 'healthcare' });
+await configurePoet({ domain: "healthcare" });
 ```
 
 ### 2. State Management
+
 ```typescript
 // Multiple stores
 const { isHealthy } = useApiStore();
@@ -243,25 +273,26 @@ const { addNotification } = useUIStore();
 // Combined operations
 if (isHealthy && availableDomains.length > 0) {
   addNotification({
-    type: 'success',
-    title: 'Ready',
-    message: 'System is ready'
+    type: "success",
+    title: "Ready",
+    message: "System is ready",
   });
 }
 ```
 
 ### 3. Error Handling
+
 ```typescript
-import { formatApiError } from '@/lib/utils';
+import { formatApiError } from "@/lib/utils";
 
 try {
   await apiService.configurePoet(config);
 } catch (error) {
   const message = formatApiError(error);
   addNotification({
-    type: 'error',
-    title: 'Configuration Failed',
-    message
+    type: "error",
+    title: "Configuration Failed",
+    message,
   });
 }
 ```
@@ -271,6 +302,7 @@ try {
 ### Adding New API Endpoints
 
 1. Add endpoint to `api.ts`:
+
 ```typescript
 async newEndpoint(data: NewEndpointRequest): Promise<NewEndpointResponse> {
   const response = await this.client.post<NewEndpointResponse>('/new-endpoint', data);
@@ -279,6 +311,7 @@ async newEndpoint(data: NewEndpointRequest): Promise<NewEndpointResponse> {
 ```
 
 2. Add types to `api.ts`:
+
 ```typescript
 export interface NewEndpointRequest {
   // ...
@@ -290,6 +323,7 @@ export interface NewEndpointResponse {
 ```
 
 3. Add to store if needed:
+
 ```typescript
 // In appropriate store
 newEndpoint: async (data: NewEndpointRequest) => {
@@ -300,7 +334,7 @@ newEndpoint: async (data: NewEndpointRequest) => {
   } catch (error) {
     set({ error, isLoading: false });
   }
-}
+};
 ```
 
 ### Adding New Stores
@@ -328,4 +362,4 @@ All stores and services should be tested with:
 5. **Constants**: Use constants for magic strings and configuration values
 6. **Hooks**: Create custom hooks for complex logic and reuse
 7. **Stores**: Keep stores focused on specific domains
-8. **Utilities**: Extract common functionality into utility functions 
+8. **Utilities**: Extract common functionality into utility functions

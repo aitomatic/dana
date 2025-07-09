@@ -1,6 +1,9 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || 'http://localhost:12345',
+  BASE_URL:
+    (typeof import.meta !== "undefined" &&
+      import.meta.env?.VITE_API_BASE_URL) ||
+    "http://localhost:12345",
   TIMEOUT: 30000, // 30 seconds
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000, // 1 second
@@ -8,22 +11,22 @@ export const API_CONFIG = {
 
 // API Endpoints
 export const API_ENDPOINTS = {
-  HEALTH: '/health',
-  ROOT: '/',
+  HEALTH: "/health",
+  ROOT: "/",
   POET: {
-    CONFIGURE: '/poet/configure',
-    DOMAINS: '/poet/domains',
+    CONFIGURE: "/poet/configure",
+    DOMAINS: "/poet/domains",
   },
   TOPICS: {
-    LIST: '/topics',
-    CREATE: '/topics',
+    LIST: "/topics",
+    CREATE: "/topics",
     GET: (id: number) => `/topics/${id}`,
     UPDATE: (id: number) => `/topics/${id}`,
     DELETE: (id: number) => `/topics/${id}`,
   },
   DOCUMENTS: {
-    LIST: '/documents',
-    CREATE: '/documents',
+    LIST: "/documents",
+    CREATE: "/documents",
     GET: (id: number) => `/documents/${id}`,
     UPDATE: (id: number) => `/documents/${id}`,
     DELETE: (id: number) => `/documents/${id}`,
@@ -33,13 +36,13 @@ export const API_ENDPOINTS = {
 
 // POET Domains (available domains for POET configuration)
 export const POET_DOMAINS = [
-  'healthcare',
-  'finance',
-  'manufacturing',
-  'building_management',
-  'text_classification',
-  'mathematical_operations',
-  'data_processing',
+  "healthcare",
+  "finance",
+  "manufacturing",
+  "building_management",
+  "text_classification",
+  "mathematical_operations",
+  "data_processing",
 ] as const;
 
 // Default POET Configuration
@@ -69,51 +72,53 @@ export const UI_CONSTANTS = {
 
 // Theme Constants
 export const THEME = {
-  LIGHT: 'light',
-  DARK: 'dark',
-  SYSTEM: 'system',
+  LIGHT: "light",
+  DARK: "dark",
+  SYSTEM: "system",
 } as const;
 
 // Notification Types
 export const NOTIFICATION_TYPES = {
-  SUCCESS: 'success',
-  ERROR: 'error',
-  WARNING: 'warning',
-  INFO: 'info',
+  SUCCESS: "success",
+  ERROR: "error",
+  WARNING: "warning",
+  INFO: "info",
 } as const;
 
 // Local Storage Keys
 export const STORAGE_KEYS = {
-  THEME: 'opendxa-theme',
-  SIDEBAR_COLLAPSED: 'opendxa-sidebar-collapsed',
-  SIDEBAR_WIDTH: 'opendxa-sidebar-width',
-  API_CONFIG: 'opendxa-api-config',
+  THEME: "opendxa-theme",
+  SIDEBAR_COLLAPSED: "opendxa-sidebar-collapsed",
+  SIDEBAR_WIDTH: "opendxa-sidebar-width",
+  API_CONFIG: "opendxa-api-config",
 } as const;
 
 // Error Messages
 export const ERROR_MESSAGES = {
-  API_UNAVAILABLE: 'OpenDXA API is not available. Please check if the server is running.',
-  NETWORK_ERROR: 'Network error occurred. Please check your connection.',
-  UNAUTHORIZED: 'Unauthorized access. Please check your credentials.',
-  FORBIDDEN: 'Access forbidden. You do not have permission to perform this action.',
-  NOT_FOUND: 'Resource not found.',
-  SERVER_ERROR: 'Server error occurred. Please try again later.',
-  TIMEOUT: 'Request timed out. Please try again.',
-  UNKNOWN: 'An unexpected error occurred.',
+  API_UNAVAILABLE:
+    "OpenDXA API is not available. Please check if the server is running.",
+  NETWORK_ERROR: "Network error occurred. Please check your connection.",
+  UNAUTHORIZED: "Unauthorized access. Please check your credentials.",
+  FORBIDDEN:
+    "Access forbidden. You do not have permission to perform this action.",
+  NOT_FOUND: "Resource not found.",
+  SERVER_ERROR: "Server error occurred. Please try again later.",
+  TIMEOUT: "Request timed out. Please try again.",
+  UNKNOWN: "An unexpected error occurred.",
 } as const;
 
 // Success Messages
 export const SUCCESS_MESSAGES = {
-  API_CONNECTED: 'Successfully connected to OpenDXA API',
-  POET_CONFIGURED: 'POET configuration updated successfully',
-  DOMAINS_REFRESHED: 'Available domains refreshed successfully',
-  HEALTH_CHECK_PASSED: 'OpenDXA API is running normally',
+  API_CONNECTED: "Successfully connected to OpenDXA API",
+  POET_CONFIGURED: "POET configuration updated successfully",
+  DOMAINS_REFRESHED: "Available domains refreshed successfully",
+  HEALTH_CHECK_PASSED: "OpenDXA API is running normally",
 } as const;
 
 // Loading States
 export const LOADING_STATES = {
-  IDLE: 'idle',
-  LOADING: 'loading',
-  SUCCESS: 'success',
-  ERROR: 'error',
-} as const; 
+  IDLE: "idle",
+  LOADING: "loading",
+  SUCCESS: "success",
+  ERROR: "error",
+} as const;

@@ -1,5 +1,5 @@
-import { useForm } from 'react-hook-form';
-import type { AgentSteps, DanaAgentForm } from '@/types/agent';
+import { useForm } from "react-hook-form";
+import type { AgentSteps, DanaAgentForm } from "@/types/agent";
 
 const getRandomAvatar = () => {
   const avatarNumbers = Array.from({ length: 20 }, (_, i) => i + 1);
@@ -10,19 +10,19 @@ const getRandomAvatar = () => {
 export function useDanaAgentForm() {
   const form = useForm<DanaAgentForm>({
     defaultValues: {
-      name: '',
-      description: '',
+      name: "",
+      description: "",
       avatar: getRandomAvatar(),
       general_agent_config: {
-        dana_code: '',
+        dana_code: "",
       },
-      step: 'general' as AgentSteps,
+      step: "general" as AgentSteps,
     },
   });
 
   const onCreateAgent = () => {
     const values = form.getValues();
-    console.log('Creating agent:', values);
+    console.log("Creating agent:", values);
     // TODO: Implement actual agent creation logic
   };
 

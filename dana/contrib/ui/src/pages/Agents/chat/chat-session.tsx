@@ -4,7 +4,13 @@ import BotMessage from "./bot-message";
 import UserMessage from "./user-message";
 import BotThinking from "./bot-thinking";
 
-const ChatSession = ({ messages, isBotThinking, botAvatar, isMessageFeedback, className }: any) => {
+const ChatSession = ({
+  messages,
+  isBotThinking,
+  botAvatar,
+  isMessageFeedback,
+  className,
+}: any) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [isScrollEnable, setIsScrollEnable] = useState(false);
@@ -16,7 +22,10 @@ const ChatSession = ({ messages, isBotThinking, botAvatar, isMessageFeedback, cl
       let totalHeight = 0;
       setTimeout(() => {
         for (let i = 0; i < message_chilren.length; i++) {
-          totalHeight += Math.max(message_chilren.item(i)?.clientHeight ?? 0, 100);
+          totalHeight += Math.max(
+            message_chilren.item(i)?.clientHeight ?? 0,
+            100,
+          );
         }
 
         if (scrollHeight - 20 < totalHeight) {
@@ -43,13 +52,15 @@ const ChatSession = ({ messages, isBotThinking, botAvatar, isMessageFeedback, cl
     <div className="flex overflow-scroll flex-col flex-1 w-full scrollbar-hide">
       <div className="flex overflow-scroll flex-col flex-1 scrollbar-hide">
         <div
-          className={cn("flex overflow-y-scroll flex-col flex-1 max-h-full scrollbar-hide")}
+          className={cn(
+            "flex overflow-y-scroll flex-col flex-1 max-h-full scrollbar-hide",
+          )}
           ref={containerRef}
         >
           <div
             className={cn(
               "flex overflow-y-scroll flex-col flex-1 pb-8 h-full scrollbar-hide chat-wrapper",
-              isScrollEnable ? "" : "justify-end"
+              isScrollEnable ? "" : "justify-end",
             )}
             ref={listRef}
           >

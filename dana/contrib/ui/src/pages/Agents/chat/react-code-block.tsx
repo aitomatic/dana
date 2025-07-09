@@ -30,7 +30,9 @@ const ReactCodeBlock = ({ content }: { content: string }) => {
           </div>
           <div className="flex flex-col gap-1">
             <span className="font-medium text-gray-900">{componentName}</span>
-            <span className="text-xs text-gray-600">{componentDescription}</span>
+            <span className="text-xs text-gray-600">
+              {componentDescription}
+            </span>
           </div>
         </div>
       </div>
@@ -56,13 +58,17 @@ const extractComponentName = (content: string): string => {
   }
 
   // Try to find arrow function export
-  const arrowExportMatches = content.match(/export\s+(?:default)?\s*const\s+([A-Za-z0-9_]+)\s*=/);
+  const arrowExportMatches = content.match(
+    /export\s+(?:default)?\s*const\s+([A-Za-z0-9_]+)\s*=/,
+  );
   if (arrowExportMatches && arrowExportMatches[1]) {
     return arrowExportMatches[1];
   }
 
   // Try to find class component
-  const classMatches = content.match(/class\s+([A-Za-z0-9_]+)\s+extends\s+React\.Component/);
+  const classMatches = content.match(
+    /class\s+([A-Za-z0-9_]+)\s+extends\s+React\.Component/,
+  );
   if (classMatches && classMatches[1]) {
     return classMatches[1];
   }
@@ -102,7 +108,11 @@ const extractComponentName = (content: string): string => {
     return "Form Component";
   }
 
-  if (content.includes("<Table") || content.includes("<tr") || content.includes("<td")) {
+  if (
+    content.includes("<Table") ||
+    content.includes("<tr") ||
+    content.includes("<td")
+  ) {
     return "Table Component";
   }
 
@@ -123,7 +133,11 @@ const generateComponentDescription = (content: string): string => {
   const chartDescription = [];
 
   // Check for chart-related imports
-  if (content.includes("recharts") || content.includes("Chart") || content.includes("d3")) {
+  if (
+    content.includes("recharts") ||
+    content.includes("Chart") ||
+    content.includes("d3")
+  ) {
     chartDescription.push("Data visualization");
 
     // Look for data keys that might reveal what's being shown
@@ -151,7 +165,10 @@ const generateComponentDescription = (content: string): string => {
     return "Dashboard component";
   }
 
-  if (content.toLowerCase().includes("analytics") || content.toLowerCase().includes("metrics")) {
+  if (
+    content.toLowerCase().includes("analytics") ||
+    content.toLowerCase().includes("metrics")
+  ) {
     return "Analytics visualization";
   }
 

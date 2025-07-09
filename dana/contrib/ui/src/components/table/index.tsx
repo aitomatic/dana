@@ -1,27 +1,27 @@
-import { cn } from '@/lib/utils';
-import * as React from 'react';
+import { cn } from "@/lib/utils";
+import * as React from "react";
 
 const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
 >(({ className, ...props }, ref) => (
-  <div className='overflow-auto relative w-full rounded-lg scrollbar-hide'>
+  <div className="overflow-auto relative w-full rounded-lg scrollbar-hide">
     <table
       ref={ref}
-      className={cn('w-full text-sm rounded-lg caption-bottom', className)}
+      className={cn("w-full text-sm rounded-lg caption-bottom", className)}
       {...props}
     />
   </div>
 ));
-Table.displayName = 'Table';
+Table.displayName = "Table";
 
 const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn('[&_tr]:border-b', className)} {...props} />
+  <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
 ));
-TableHeader.displayName = 'TableHeader';
+TableHeader.displayName = "TableHeader";
 
 const TableBody = React.forwardRef<
   HTMLTableSectionElement,
@@ -29,11 +29,11 @@ const TableBody = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <tbody
     ref={ref}
-    className={cn('[&_tr:last-child]:border-0', className)}
+    className={cn("[&_tr:last-child]:border-0", className)}
     {...props}
   />
 ));
-TableBody.displayName = 'TableBody';
+TableBody.displayName = "TableBody";
 
 const TableFooter = React.forwardRef<
   HTMLTableSectionElement,
@@ -42,13 +42,13 @@ const TableFooter = React.forwardRef<
   <tfoot
     ref={ref}
     className={cn(
-      'border-t bg-gray-50 font-medium [&>tr]:last:border-b-0',
-      className
+      "border-t bg-gray-50 font-medium [&>tr]:last:border-b-0",
+      className,
     )}
     {...props}
   />
 ));
-TableFooter.displayName = 'TableFooter';
+TableFooter.displayName = "TableFooter";
 
 const TableRow = React.forwardRef<
   HTMLTableRowElement,
@@ -57,13 +57,13 @@ const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      'border-b border-gray-200 hover:bg-gray-50 data-[state=selected]:bg-gray-50 last:border-b-0 [&:last-child_td:first-child]:rounded-bl-lg [&:last-child_td:last-child]:rounded-br-lg [&:first-child_td:first-child]:rounded-tl-lg [&:first-child_td:last-child]:rounded-tr-lg',
-      className
+      "border-b border-gray-200 hover:bg-gray-50 data-[state=selected]:bg-gray-50 last:border-b-0 [&:last-child_td:first-child]:rounded-bl-lg [&:last-child_td:last-child]:rounded-br-lg [&:first-child_td:first-child]:rounded-tl-lg [&:first-child_td:last-child]:rounded-tr-lg",
+      className,
     )}
     {...props}
   />
 ));
-TableRow.displayName = 'TableRow';
+TableRow.displayName = "TableRow";
 
 const TableHead = React.forwardRef<
   HTMLTableCellElement,
@@ -72,13 +72,13 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      'h-10 px-6 text-left align-middle font-medium text-gray-600 [&>[role=checkbox]]:translate-y-[2px] first:rounded-tl-lg last:rounded-tr-lg',
-      className
+      "h-10 px-6 text-left align-middle font-medium text-gray-600 [&>[role=checkbox]]:translate-y-[2px] first:rounded-tl-lg last:rounded-tr-lg",
+      className,
     )}
     {...props}
   />
 ));
-TableHead.displayName = 'TableHead';
+TableHead.displayName = "TableHead";
 
 const TableCell = React.forwardRef<
   HTMLTableCellElement,
@@ -87,13 +87,13 @@ const TableCell = React.forwardRef<
   <td
     ref={ref}
     className={cn(
-      'py-4 px-6 align-middle [&>[role=checkbox]]:translate-y-[2px]',
-      className
+      "py-4 px-6 align-middle [&>[role=checkbox]]:translate-y-[2px]",
+      className,
     )}
     {...props}
   />
 ));
-TableCell.displayName = 'TableCell';
+TableCell.displayName = "TableCell";
 
 const TableCaption = React.forwardRef<
   HTMLTableCaptionElement,
@@ -101,11 +101,11 @@ const TableCaption = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <caption
     ref={ref}
-    className={cn('mt-4 text-sm text-gray-600', className)}
+    className={cn("mt-4 text-sm text-gray-600", className)}
     {...props}
   />
 ));
-TableCaption.displayName = 'TableCaption';
+TableCaption.displayName = "TableCaption";
 
 export {
   Table,

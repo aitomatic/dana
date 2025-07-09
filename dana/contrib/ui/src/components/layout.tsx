@@ -1,11 +1,11 @@
-import * as React from 'react';
-import { useLocation } from 'react-router-dom';
+import * as React from "react";
+import { useLocation } from "react-router-dom";
 import {
   SidebarProvider,
   SidebarInset,
   SidebarTrigger,
-} from '@/components/ui/sidebar';
-import { AppSidebar } from './app-sidebar';
+} from "@/components/ui/sidebar";
+import { AppSidebar } from "./app-sidebar";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -18,14 +18,14 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
   // Get page title based on current route - moved before early return
   const getPageTitle = React.useCallback(() => {
     switch (location.pathname) {
-      case '/':
-        return 'Home';
-      case '/agents':
-        return 'Domain-Expert Agents';
-      case '/library':
-        return 'Library';
+      case "/":
+        return "Home";
+      case "/agents":
+        return "Domain-Expert Agents";
+      case "/library":
+        return "Library";
       default:
-        return 'Agent workspace';
+        return "Agent workspace";
     }
   }, [location.pathname]);
 
@@ -38,13 +38,13 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className='flex h-16 shrink-0 items-center gap-2 border-b px-4'>
-          <SidebarTrigger className='-ml-1 text-gray-500 size-6' />
-          <div className='flex items-center gap-2'>
-            <span className='font-semibold text-lg'>{getPageTitle()}</span>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="-ml-1 text-gray-500 size-6" />
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-lg">{getPageTitle()}</span>
           </div>
         </header>
-        <main className='flex-1 overflow-auto'>{children}</main>
+        <main className="flex-1 overflow-auto">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );

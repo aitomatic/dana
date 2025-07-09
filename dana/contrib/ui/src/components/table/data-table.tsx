@@ -1,4 +1,4 @@
-import * as React from 'react';
+import * as React from "react";
 import {
   type ColumnDef,
   type ColumnFiltersState,
@@ -12,7 +12,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-} from '@tanstack/react-table';
+} from "@tanstack/react-table";
 import {
   TableHeader,
   TableRow,
@@ -20,10 +20,10 @@ import {
   TableBody,
   TableCell,
   Table,
-} from '.';
-import { DataTablePagination } from './data-table-pagination';
-import { IconLoader } from '@tabler/icons-react';
-import { cn } from '@/lib/utils';
+} from ".";
+import { DataTablePagination } from "./data-table-pagination";
+import { IconLoader } from "@tabler/icons-react";
+import { cn } from "@/lib/utils";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -45,7 +45,7 @@ export function DataTable<TData, TValue>({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    [],
   );
   const [sorting, setSorting] = React.useState<SortingState>(defaultSorting);
 
@@ -69,25 +69,25 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div className='flex flex-col h-full rounded-lg border'>
+    <div className="flex flex-col h-full rounded-lg border">
       <div
         className={cn(
-          'flex flex-1 overflow-scroll bg-background scrollbar-hide rounded-t-lg',
-          is_border && 'border-b '
+          "flex flex-1 overflow-scroll bg-background scrollbar-hide rounded-t-lg",
+          is_border && "border-b ",
         )}
       >
         <Table>
-          <TableHeader className='sticky top-0 bg-gray-50 rounded-t-lg'>
-            {table.getHeaderGroups().map(headerGroup => (
+          <TableHeader className="sticky top-0 bg-gray-50 rounded-t-lg">
+            {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map(header => {
+                {headerGroup.headers.map((header) => {
                   return (
                     <TableHead key={header.id} colSpan={header.colSpan}>
                       {header.isPlaceholder
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   );
@@ -95,36 +95,36 @@ export function DataTable<TData, TValue>({
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody className='overflow-scroll cursor-pointer scrollbar-hide'>
+          <TableBody className="overflow-scroll cursor-pointer scrollbar-hide">
             {loading ? (
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className='h-24 text-center text-semibold! text-gray-900!'
+                  className="h-24 text-center text-semibold! text-gray-900!"
                 >
-                  <div className='flex justify-center items-center w-full'>
+                  <div className="flex justify-center items-center w-full">
                     <IconLoader
-                      className='animate-spin text-brand-700'
+                      className="animate-spin text-brand-700"
                       size={30}
                     />
                   </div>
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map(row => (
+              table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
-                  className='group'
+                  data-state={row.getIsSelected() && "selected"}
+                  className="group"
                 >
-                  {row.getVisibleCells().map(cell => (
+                  {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
                       onClick={() => handleRowClick && handleRowClick(row)}
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}
@@ -134,16 +134,16 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className='h-24 text-center text-semibold! text-gray-900!'
+                  className="h-24 text-center text-semibold! text-gray-900!"
                 >
-                  <span className='font-semibold! text-gray-700!'>No data</span>
+                  <span className="font-semibold! text-gray-700!">No data</span>
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
-      <div className='flex items-center p-3'>
+      <div className="flex items-center p-3">
         <DataTablePagination table={table} />
       </div>
     </div>

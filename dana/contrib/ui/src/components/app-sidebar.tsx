@@ -1,41 +1,45 @@
-import * as React from 'react';
-import { Book, Box3dCenter } from 'iconoir-react';
-import { useLocation } from 'react-router-dom';
+import * as React from "react";
+import { Book, Box3dCenter } from "iconoir-react";
+import { useLocation } from "react-router-dom";
 
-import { NavMain } from '@/components/nav-main';
-import { TeamSwitcher } from '@/components/team-switcher';
+import { NavMain } from "@/components/nav-main";
+import { TeamSwitcher } from "@/components/team-switcher";
 import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
   SidebarRail,
-} from '@/components/ui/sidebar';
+} from "@/components/ui/sidebar";
 
 // DXA DANA configuration data
 const data = {
   user: {
-    name: 'Username',
-    email: 'user@example.com',
-    avatar: '',
+    name: "Username",
+    email: "user@example.com",
+    avatar: "",
   },
   teams: [
     {
-      name: 'DXA DANA',
+      name: "DXA DANA",
       logo: () => (
-        <img src='/static/logo.svg' alt='DXA DANA' className='size-8 rounded-md' />
+        <img
+          src="/static/logo.svg"
+          alt="DXA DANA"
+          className="size-8 rounded-md"
+        />
       ),
-      plan: 'Domain-Expert Agents',
+      plan: "Domain-Expert Agents",
     },
   ],
   navMain: [
     {
-      title: 'Domain-Expert Agents',
-      url: '/agents',
+      title: "Domain-Expert Agents",
+      url: "/agents",
       icon: Box3dCenter,
     },
     {
-      title: 'Library',
-      url: '/library',
+      title: "Library",
+      url: "/library",
       icon: Book,
     },
   ],
@@ -46,14 +50,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   // Create navigation items with dynamic active state
   const navItems = React.useMemo(() => {
-    return data.navMain.map(item => ({
+    return data.navMain.map((item) => ({
       ...item,
       isActive: location.pathname === item.url,
     }));
   }, [location.pathname]);
 
   return (
-    <Sidebar collapsible='icon' {...props}>
+    <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>

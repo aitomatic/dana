@@ -1,6 +1,12 @@
 import { IconLoader } from "@tabler/icons-react";
 
-const BotThinking = ({ message, avatar }: { message?: string; avatar?: string }) => {
+const BotThinking = ({
+  message,
+  avatar,
+}: {
+  message?: string;
+  avatar?: string;
+}) => {
   const currentAgent = {
     avatar: "1",
   };
@@ -20,7 +26,10 @@ const BotThinking = ({ message, avatar }: { message?: string; avatar?: string })
       />
       <div className="flex gap-2">
         <div className="flex items-start justify-center">
-          <IconLoader className="mt-0.5 animate-spin text-brand-700" size={20} />
+          <IconLoader
+            className="mt-0.5 animate-spin text-brand-700"
+            size={20}
+          />
         </div>
         <span className="text-sm font-normal text-gray-900 break-words xl:text-base animate-flash">
           {message ?? thinkingMessage ?? "Thinking..."}

@@ -1,6 +1,10 @@
-import { create } from 'zustand';
-import { apiService } from '@/lib/api';
-import type { PoetConfigRequest, PoetConfigResponse, ApiError } from '@/lib/api';
+import { create } from "zustand";
+import { apiService } from "@/lib/api";
+import type {
+  PoetConfigRequest,
+  PoetConfigResponse,
+  ApiError,
+} from "@/lib/api";
 
 export interface PoetState {
   // POET Configuration

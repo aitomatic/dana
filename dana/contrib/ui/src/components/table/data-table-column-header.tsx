@@ -1,8 +1,13 @@
 import { cn } from "@/lib/utils";
-import { IconChevronDown, IconChevronUp, IconSelector } from "@tabler/icons-react";
+import {
+  IconChevronDown,
+  IconChevronUp,
+  IconSelector,
+} from "@tabler/icons-react";
 import type { Column } from "@tanstack/react-table";
 
-interface DataTableColumnHeaderProps<TData, TValue> extends React.HTMLAttributes<HTMLDivElement> {
+interface DataTableColumnHeaderProps<TData, TValue>
+  extends React.HTMLAttributes<HTMLDivElement> {
   column: Column<TData, TValue>;
   title: string;
 }
@@ -17,7 +22,7 @@ export function DataTableColumnHeader<TData, TValue>({
       <div
         className={cn(
           "flex items-center py-2 space-x-2 text-xs font-medium text-gray-600",
-          className
+          className,
         )}
       >
         {title.toUpperCase()}
@@ -29,7 +34,7 @@ export function DataTableColumnHeader<TData, TValue>({
     <div
       className={cn(
         "flex items-center space-x-2 h-full text-xs font-medium text-gray-600 cursor-pointer",
-        className
+        className,
       )}
     >
       {title.toUpperCase()}

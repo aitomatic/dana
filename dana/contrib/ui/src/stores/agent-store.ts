@@ -1,8 +1,7 @@
-import { create } from 'zustand';
-import { apiService } from '@/lib/api';
-import type { AgentRead, AgentCreate, AgentFilters, AgentState } from '@/types/agent';
-
-export type { AgentState } from '@/types/agent';
+import { create } from "zustand";
+import type {  AgentCreate, AgentFilters, AgentRead, AgentState } from "@/types/agent";
+import { apiService } from "@/lib/api";
+export type { AgentState } from "@/types/agent";
 
 export const useAgentStore = create<AgentState>((set) => ({
   // State
@@ -16,7 +15,9 @@ export const useAgentStore = create<AgentState>((set) => ({
   total: 0,
   skip: 0,
   limit: 10,
-
+  isCreateAgentDialogOpen: false,
+  isEditAgentDialogOpen: false,
+  isDeleteAgentDialogOpen: false,
   // Actions
   fetchAgents: async (filters?: AgentFilters) => {
     set({ isLoading: true, error: null });
@@ -131,6 +132,29 @@ export const useAgentStore = create<AgentState>((set) => ({
   clearError: () => {
     set({ error: null });
   },
+  // Dialog Actions
+  openCreateAgentDialog: () => set({ isCreateAgentDialogOpen: true }),
+  closeCreateAgentDialog: () => set({ isCreateAgentDialogOpen: false }),
+  openEditAgentDialog: (agent: AgentRead) =>
+    set({
+      isEditAgentDialogOpen: true,
+      selectedAgent: agent,
+    }),
+  closeEditAgentDialog: () =>
+    set({
+      isEditAgentDialogOpen: false,
+      selectedAgent: null,
+    }),
+  openDeleteAgentDialog: (agent: AgentRead) =>
+    set({
+      isDeleteAgentDialogOpen: true,
+      selectedAgent: agent,
+    }),
+  closeDeleteAgentDialog: () =>
+    set({
+      isDeleteAgentDialogOpen: false,
+      selectedAgent: null,
+    }),
 
   reset: () => {
     set({

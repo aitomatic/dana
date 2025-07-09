@@ -22,22 +22,32 @@ export function CreateAgentPage() {
     reader.readAsText(file);
   };
 
-  const { isDragOver, dragOverProps, fileInputRef, handleFileInputChange, triggerFileInput } =
-    useDragDrop({
-      onFileUpload: handleFileUpload,
-      acceptedFileTypes: [".na"],
-    });
+  const {
+    isDragOver,
+    dragOverProps,
+    fileInputRef,
+    handleFileInputChange,
+    triggerFileInput,
+  } = useDragDrop({
+    onFileUpload: handleFileUpload,
+    acceptedFileTypes: [".na"],
+  });
 
   const step = watch("step");
   const name = watch("name");
 
   return (
     <div className="flex flex-col w-full h-full" {...dragOverProps}>
-      {isDragOver && <DragOverComponent title="Drag file here" description="(only .na file)" />}
+      {isDragOver && (
+        <DragOverComponent
+          title="Drag file here"
+          description="(only .na file)"
+        />
+      )}
       <div
         className={cn(
           "flex items-center justify-between px-6 py-1 border-b h-[70px]",
-          isDragOver && "opacity-50"
+          isDragOver && "opacity-50",
         )}
       >
         <div className="flex gap-2 items-center">

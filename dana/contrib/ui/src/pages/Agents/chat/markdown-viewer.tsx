@@ -180,7 +180,13 @@ const MermaidBlock = ({ content }: { content: string }) => {
 };
 
 // Standard Code Block Component
-const CodeBlock = ({ content, language }: { content: string; language: string }) => {
+const CodeBlock = ({
+  content,
+  language,
+}: {
+  content: string;
+  language: string;
+}) => {
   const [copiedContent, setCopiedContent] = useState(false);
   const blockId = `code-block-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -269,7 +275,7 @@ export const MarkdownViewerSmall = ({
         styles["content"],
         styles["content-small"],
         "w-full text-sm xl:text-base",
-        classname
+        classname,
       )}
     >
       <ReactMarkdown
@@ -291,7 +297,8 @@ export const MarkdownViewerSmall = ({
 
             const isRechart =
               content.includes("import { ") &&
-              (content.includes(" from 'recharts'") || content.includes(' from "recharts"'));
+              (content.includes(" from 'recharts'") ||
+                content.includes(' from "recharts"'));
 
             // Handle inline code
             if (isInline) {
@@ -311,7 +318,7 @@ export const MarkdownViewerSmall = ({
                         : isVariable
                           ? "bg-gray-100 text-gray-800"
                           : "bg-gray-50 text-gray-900",
-                    isSingleWord ? "inline-block" : ""
+                    isSingleWord ? "inline-block" : "",
                   )}
                 >
                   {content}
@@ -337,7 +344,7 @@ export const MarkdownViewerSmall = ({
             if (Array.isArray(children)) {
               // Check if any of the children items contain @ mentions
               const hasAtMention = children.some(
-                (child) => typeof child === "string" && child.includes("@")
+                (child) => typeof child === "string" && child.includes("@"),
               );
 
               if (hasAtMention) {
@@ -351,7 +358,9 @@ export const MarkdownViewerSmall = ({
                             {parts.map((part, partIndex) => {
                               if (part.startsWith("@")) {
                                 // Use the enhanced MentionSpan component
-                                return <MentionSpan key={partIndex} mention={part} />;
+                                return (
+                                  <MentionSpan key={partIndex} mention={part} />
+                                );
                               }
                               return <span key={partIndex}>{part}</span>;
                             })}
@@ -382,7 +391,11 @@ export const MarkdownViewerSmall = ({
             }
 
             // Default paragraph rendering
-            return <p className={`py-1 text-sm xl:text-base text-gray-900`}>{children}</p>;
+            return (
+              <p className={`py-1 text-sm xl:text-base text-gray-900`}>
+                {children}
+              </p>
+            );
           },
 
           table: ({ children }: TableProps) => (
@@ -392,7 +405,9 @@ export const MarkdownViewerSmall = ({
               </table>
             </div>
           ),
-          thead: ({ children }: TableProps) => <thead className="bg-gray-50">{children}</thead>,
+          thead: ({ children }: TableProps) => (
+            <thead className="bg-gray-50">{children}</thead>
+          ),
           tbody: ({ children }: TableProps) => (
             <tbody className="divide-y divide-gray-200">{children}</tbody>
           ),
@@ -415,7 +430,11 @@ export const MarkdownViewerSmall = ({
               children.$$typeof === Symbol.for("react.element")
             ) {
               return (
-                <td className={`px-4 py-3 border-b border-gray-200 text-gray-900`}>{children}</td>
+                <td
+                  className={`px-4 py-3 border-b border-gray-200 text-gray-900`}
+                >
+                  {children}
+                </td>
               );
             }
 
@@ -425,39 +444,59 @@ export const MarkdownViewerSmall = ({
                 (child) =>
                   child &&
                   typeof child === "object" &&
-                  child.$$typeof === Symbol.for("react.element")
+                  child.$$typeof === Symbol.for("react.element"),
               );
 
               if (hasReactElements) {
                 return (
-                  <td className={`px-4 py-3 border-b border-gray-200 text-gray-900`}>{children}</td>
+                  <td
+                    className={`px-4 py-3 border-b border-gray-200 text-gray-900`}
+                  >
+                    {children}
+                  </td>
                 );
               }
             }
 
             // For string content, continue with the existing logic
             const content = Array.isArray(children)
-              ? children.map((child) => (typeof child === "string" ? child : "")).join("")
+              ? children
+                  .map((child) => (typeof child === "string" ? child : ""))
+                  .join("")
               : String(children || "");
 
             // Handle bold type formatting with asterisks
-            const formattedContent = content.replace(/\*\*([^*]+)\*\*/g, (_, text) => {
-              return `<strong>${text}</strong>`;
-            });
+            const formattedContent = content.replace(
+              /\*\*([^*]+)\*\*/g,
+              (_, text) => {
+                return `<strong>${text}</strong>`;
+              },
+            );
 
             const parts = formattedContent.split(/(\[\[\d+\]\])/);
 
             if (parts?.length === 1) {
               return (
-                <td className={`px-4 py-3 border-b border-gray-200 text-gray-900`}>{children}</td>
+                <td
+                  className={`px-4 py-3 border-b border-gray-200 text-gray-900`}
+                >
+                  {children}
+                </td>
               );
             }
 
             return (
-              <td className={`px-4 py-3 border-b border-gray-200 text-gray-900`}>
+              <td
+                className={`px-4 py-3 border-b border-gray-200 text-gray-900`}
+              >
                 <span className="inline-flex flex-wrap items-center gap-1">
                   {parts?.map((part, index) => {
-                    return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
+                    return (
+                      <span
+                        key={index}
+                        dangerouslySetInnerHTML={{ __html: part }}
+                      />
+                    );
                   })}
                 </span>
               </td>
@@ -466,7 +505,9 @@ export const MarkdownViewerSmall = ({
 
           text: ({ children }) => {
             const content = Array.isArray(children)
-              ? children.map((child) => (typeof child === "string" ? child : "")).join("")
+              ? children
+                  .map((child) => (typeof child === "string" ? child : ""))
+                  .join("")
               : String(children);
 
             // Check for @ mentions in text content
@@ -485,20 +526,30 @@ export const MarkdownViewerSmall = ({
             }
 
             // Handle bold type formatting with asterisks
-            const formattedContent = content.replace(/\*\*([^*]+)\*\*/g, (_, text) => {
-              return `<strong>${text}</strong>`;
-            });
+            const formattedContent = content.replace(
+              /\*\*([^*]+)\*\*/g,
+              (_, text) => {
+                return `<strong>${text}</strong>`;
+              },
+            );
 
             const parts = formattedContent.split(/(\[\[\d+\]\])/);
 
             if (parts.length === 1) {
-              return <span dangerouslySetInnerHTML={{ __html: formattedContent }} />;
+              return (
+                <span dangerouslySetInnerHTML={{ __html: formattedContent }} />
+              );
             }
 
             return (
               <span className="inline-flex flex-wrap items-center gap-1">
                 {parts.map((part, index) => {
-                  return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
+                  return (
+                    <span
+                      key={index}
+                      dangerouslySetInnerHTML={{ __html: part }}
+                    />
+                  );
                 })}
               </span>
             );

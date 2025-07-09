@@ -55,4 +55,4 @@ export interface TopicState {
   total: number;
   skip: number;
   limit: number;
-} 
+}

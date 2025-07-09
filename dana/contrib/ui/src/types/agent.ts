@@ -54,6 +54,9 @@ export interface AgentState {
   total: number;
   skip: number;
   limit: number;
+  isCreateAgentDialogOpen: boolean;
+  isEditAgentDialogOpen: boolean;
+  isDeleteAgentDialogOpen: boolean;
 
   // Actions
   fetchAgents: (filters?: AgentFilters) => Promise<void>;
@@ -78,7 +81,7 @@ export interface Agent {
   };
 }
 
-export type AgentSteps = 'general' | 'select-knowledge';
+export type AgentSteps = "general" | "select-knowledge";
 
 export interface DanaAgentForm {
   name: string;

@@ -2,7 +2,12 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { IconFolderPlus } from "@tabler/icons-react";
 
 interface CreateFolderDialogProps {
@@ -69,7 +74,10 @@ export function CreateFolderDialog({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="folderName" className="text-sm font-medium text-gray-700">
+            <Label
+              htmlFor="folderName"
+              className="text-sm font-medium text-gray-700"
+            >
               Folder Name
             </Label>
             <Input
@@ -88,7 +96,9 @@ export function CreateFolderDialog({
           </div>
 
           <div>
-            <Label className="text-sm font-medium text-gray-700">Location</Label>
+            <Label className="text-sm font-medium text-gray-700">
+              Location
+            </Label>
             <p className="mt-1 text-sm text-gray-500">{currentPath}</p>
           </div>
 

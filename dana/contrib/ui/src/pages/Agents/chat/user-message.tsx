@@ -14,8 +14,12 @@ const FilePreview = ({ file }: { file: any }) => {
             <FileIcon ext={ext} />
           </div>
           <div className="flex flex-col text-left max-w-[200px]">
-            <span className="text-sm font-medium text-gray-700 truncate">{fileName}</span>
-            <span className="text-sm font-normal text-gray-600 truncate">{ext}</span>
+            <span className="text-sm font-medium text-gray-700 truncate">
+              {fileName}
+            </span>
+            <span className="text-sm font-normal text-gray-600 truncate">
+              {ext}
+            </span>
           </div>
         </div>
       </div>
@@ -34,7 +38,9 @@ const MessageContent = ({ message }: { message: any }) => {
           <div
             className={cn(
               "flex gap-1 mb-2 overflow-x-auto scrollbar-hide",
-              isSplitScreen ? "max-w-full 3xl:max-w-full" : "max-w-[630px] 3xl:max-w-[1085px]"
+              isSplitScreen
+                ? "max-w-full 3xl:max-w-full"
+                : "max-w-[630px] 3xl:max-w-[1085px]",
             )}
           >
             {metaData?.files?.map((file: any) => (
@@ -44,10 +50,14 @@ const MessageContent = ({ message }: { message: any }) => {
           <div
             className={cn(
               "flex flex-wrap w-full text-sm xl:text-base font-normal text-gray-900 break-words",
-              isSplitScreen ? "max-w-full 3xl:max-w-full" : "max-w-[630px] 3xl:max-w-[1085px]"
+              isSplitScreen
+                ? "max-w-full 3xl:max-w-full"
+                : "max-w-[630px] 3xl:max-w-[1085px]",
             )}
           >
-            <MarkdownViewerSmall>{message?.message || message?.data?.message}</MarkdownViewerSmall>
+            <MarkdownViewerSmall>
+              {message?.message || message?.data?.message}
+            </MarkdownViewerSmall>
           </div>
         </div>
       );
@@ -56,10 +66,14 @@ const MessageContent = ({ message }: { message: any }) => {
         <div
           className={cn(
             "flex flex-wrap w-full text-sm xl:text-base font-normal text-gray-900 break-words",
-            isSplitScreen ? "max-w-full 3xl:max-w-full" : "max-w-[630px] 3xl:max-w-[1085px]"
+            isSplitScreen
+              ? "max-w-full 3xl:max-w-full"
+              : "max-w-[630px] 3xl:max-w-[1085px]",
           )}
         >
-          <MarkdownViewerSmall>{message?.message || message?.data?.message}</MarkdownViewerSmall>
+          <MarkdownViewerSmall>
+            {message?.message || message?.data?.message}
+          </MarkdownViewerSmall>
         </div>
       );
   }
