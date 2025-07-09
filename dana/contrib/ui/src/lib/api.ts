@@ -11,6 +11,15 @@ import type {
   DocumentFilters,
   DocumentUploadData
 } from '@/types/document';
+import type {
+  AgentRead,
+  AgentCreate,
+  AgentFilters,
+  AgentListResponse,
+  AgentCreateResponse,
+  AgentUpdateResponse,
+  AgentDeleteResponse
+} from '@/types/agent';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
@@ -205,6 +214,36 @@ class ApiService {
     const response = await this.client.get(`/documents/${documentId}/download`, {
       responseType: 'blob',
     });
+    return response.data;
+  }
+
+  // Agent API Methods
+  async getAgents(filters?: AgentFilters): Promise<AgentRead[]> {
+    const params = new URLSearchParams();
+    if (filters?.skip) params.append('skip', filters.skip.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+
+    const response = await this.client.get<AgentRead[]>(`/agents/?${params.toString()}`);
+    return response.data;
+  }
+
+  async getAgent(agentId: number): Promise<AgentRead> {
+    const response = await this.client.get<AgentRead>(`/agents/${agentId}`);
+    return response.data;
+  }
+
+  async createAgent(agent: AgentCreate): Promise<AgentRead> {
+    const response = await this.client.post<AgentRead>('/agents/', agent);
+    return response.data;
+  }
+
+  async updateAgent(agentId: number, agent: AgentCreate): Promise<AgentRead> {
+    const response = await this.client.put<AgentRead>(`/agents/${agentId}`, agent);
+    return response.data;
+  }
+
+  async deleteAgent(agentId: number): Promise<{ message: string }> {
+    const response = await this.client.delete<{ message: string }>(`/agents/${agentId}`);
     return response.data;
   }
 

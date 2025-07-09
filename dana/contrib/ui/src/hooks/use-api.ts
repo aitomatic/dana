@@ -4,6 +4,7 @@ import { usePoetStore } from '@/stores/poet-store';
 import { useTopicStore } from '@/stores/topic-store';
 import { useDocumentStore } from '@/stores/document-store';
 import { useUIStore } from '@/stores/ui-store';
+import { useAgentStore } from '@/stores/agent-store';
 
 // Hook for initializing API connection
 export const useApiInitialization = () => {
@@ -363,6 +364,101 @@ export const useDocumentOperations = () => {
     uploadProgress,
     setSelectedDocument,
     setUploadProgress,
+    clearError,
+  };
+};
+
+// Hook for Agent operations
+export const useAgentOperations = () => {
+  const {
+    fetchAgents,
+    fetchAgent,
+    createAgent,
+    updateAgent,
+    deleteAgent,
+    agents,
+    selectedAgent,
+    isLoading,
+    isCreating,
+    isUpdating,
+    isDeleting,
+    error,
+    setSelectedAgent,
+    clearError
+  } = useAgentStore();
+  const { addNotification } = useUIStore();
+
+  const handleCreateAgent = async (agent: Parameters<typeof createAgent>[0]) => {
+    try {
+      await createAgent(agent);
+      addNotification({
+        type: 'success',
+        title: 'Agent Created',
+        message: 'Agent created successfully',
+        duration: 3000,
+      });
+    } catch (error) {
+      addNotification({
+        type: 'error',
+        title: 'Creation Failed',
+        message: 'Failed to create agent',
+        duration: 5000,
+      });
+    }
+  };
+
+  const handleUpdateAgent = async (agentId: number, agent: Parameters<typeof updateAgent>[1]) => {
+    try {
+      await updateAgent(agentId, agent);
+      addNotification({
+        type: 'success',
+        title: 'Agent Updated',
+        message: 'Agent updated successfully',
+        duration: 3000,
+      });
+    } catch (error) {
+      addNotification({
+        type: 'error',
+        title: 'Update Failed',
+        message: 'Failed to update agent',
+        duration: 5000,
+      });
+    }
+  };
+
+  const handleDeleteAgent = async (agentId: number) => {
+    try {
+      await deleteAgent(agentId);
+      addNotification({
+        type: 'success',
+        title: 'Agent Deleted',
+        message: 'Agent deleted successfully',
+        duration: 3000,
+      });
+    } catch (error) {
+      addNotification({
+        type: 'error',
+        title: 'Deletion Failed',
+        message: 'Failed to delete agent',
+        duration: 5000,
+      });
+    }
+  };
+
+  return {
+    fetchAgents,
+    fetchAgent,
+    createAgent: handleCreateAgent,
+    updateAgent: handleUpdateAgent,
+    deleteAgent: handleDeleteAgent,
+    agents,
+    selectedAgent,
+    isLoading,
+    isCreating,
+    isUpdating,
+    isDeleting,
+    error,
+    setSelectedAgent,
     clearError,
   };
 }; 

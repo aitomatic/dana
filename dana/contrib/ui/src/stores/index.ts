@@ -2,9 +2,9 @@
 export { useApiStore } from './api-store';
 export { usePoetStore } from './poet-store';
 export { useUIStore } from './ui-store';
-export { useAgentStore } from './agent-store';
 export { useTopicStore } from './topic-store';
 export { useDocumentStore } from './document-store';
+export { useAgentStore } from './agent-store';
 
 // Export store types for use in components
 export type { ApiState } from './api-store';
