@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "sonner";
 import { Layout } from "./components/layout";
 import AgentsPage from "./pages/Agents";
 import { CreateAgentPage } from "./pages/Agents/create";
@@ -11,6 +12,7 @@ import "./index.css";
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
+      <Toaster position="top-right" richColors closeButton duration={4000} />
       <Routes>
         {/* Routes with layout */}
         <Route

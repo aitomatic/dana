@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { IconFolderPlus } from '@tabler/icons-react';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { IconFolderPlus } from "@tabler/icons-react";
 
 interface CreateFolderDialogProps {
   isOpen: boolean;
@@ -15,91 +16,90 @@ export function CreateFolderDialog({
   isOpen,
   onClose,
   onCreateFolder,
-  currentPath = '/',
+  currentPath = "/",
 }: CreateFolderDialogProps) {
-  const [folderName, setFolderName] = useState('');
+  const [folderName, setFolderName] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!folderName.trim()) {
-      setError('Folder name is required');
+      setError("Folder name is required");
       return;
     }
 
-    if (folderName.includes('/') || folderName.includes('\\')) {
-      setError('Folder name cannot contain slashes');
+    if (folderName.includes("/") || folderName.includes("\\")) {
+      setError("Folder name cannot contain slashes");
       return;
     }
 
     if (folderName.length > 255) {
-      setError('Folder name is too long');
+      setError("Folder name is too long");
       return;
     }
 
     onCreateFolder(folderName.trim());
-    setFolderName('');
+    setFolderName("");
     setError(null);
     onClose();
   };
 
   const handleCancel = () => {
-    setFolderName('');
+    setFolderName("");
     setError(null);
     onClose();
   };
 
-  if (!isOpen) return null;
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      handleCancel();
+    }
+  };
 
   return (
-    <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
-      <div className='bg-white rounded-lg p-6 w-full max-w-md mx-4'>
-        <div className='flex items-center space-x-2 mb-4'>
-          <IconFolderPlus className='h-5 w-5 text-blue-500' />
-          <h2 className='text-lg font-semibold text-gray-900'>
-            Create New Folder
-          </h2>
-        </div>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="w-full max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center space-x-2">
+            <IconFolderPlus className="h-5 w-5 text-blue-500" />
+            <span>Create New Folder</span>
+          </DialogTitle>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className='space-y-4'>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label
-              htmlFor='folderName'
-              className='text-sm font-medium text-gray-700'
-            >
+            <Label htmlFor="folderName" className="text-sm font-medium text-gray-700">
               Folder Name
             </Label>
             <Input
-              id='folderName'
-              type='text'
+              id="folderName"
+              type="text"
               value={folderName}
-              onChange={e => {
+              onChange={(e) => {
                 setFolderName(e.target.value);
                 setError(null);
               }}
-              placeholder='Enter folder name'
-              className='mt-1'
+              placeholder="Enter folder name"
+              className="mt-1"
               autoFocus
             />
-            {error && <p className='mt-1 text-sm text-red-600'>{error}</p>}
+            {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
           </div>
 
           <div>
-            <Label className='text-sm font-medium text-gray-700'>
-              Location
-            </Label>
-            <p className='mt-1 text-sm text-gray-500'>{currentPath}</p>
+            <Label className="text-sm font-medium text-gray-700">Location</Label>
+            <p className="mt-1 text-sm text-gray-500">{currentPath}</p>
           </div>
 
-          <div className='flex justify-end space-x-2 pt-4'>
-            <Button type='button' variant='outline' onClick={handleCancel}>
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button type="button" variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button type='submit'>Create Folder</Button>
+            <Button type="submit">Create Folder</Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

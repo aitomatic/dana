@@ -8,6 +8,8 @@ export interface Agent {
   };
 }
 
+export type AgentSteps = 'general' | 'select-knowledge';
+
 export interface DanaAgentForm {
   name: string;
   description?: string;
@@ -15,4 +17,5 @@ export interface DanaAgentForm {
   general_agent_config: {
     dana_code: string;
   };
+  step?: AgentSteps;
 }

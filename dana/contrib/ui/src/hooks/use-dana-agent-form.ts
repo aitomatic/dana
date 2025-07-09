@@ -1,5 +1,5 @@
 import { useForm } from 'react-hook-form';
-import type { DanaAgentForm } from '@/types/agent';
+import type { AgentSteps, DanaAgentForm } from '@/types/agent';
 
 const getRandomAvatar = () => {
   const avatarNumbers = Array.from({ length: 20 }, (_, i) => i + 1);
@@ -16,6 +16,7 @@ export function useDanaAgentForm() {
       general_agent_config: {
         dana_code: '',
       },
+      step: 'general' as AgentSteps,
     },
   });
 

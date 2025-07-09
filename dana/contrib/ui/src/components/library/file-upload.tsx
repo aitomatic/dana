@@ -1,6 +1,7 @@
-import React, { useCallback } from 'react';
-import { IconUpload, IconX } from '@tabler/icons-react';
-import { cn } from '@/lib/utils';
+import React, { useCallback } from "react";
+import { IconX } from "@tabler/icons-react";
+import { cn } from "@/lib/utils";
+import { MultiplePagesPlus } from "iconoir-react";
 
 interface FileUploadProps {
   onFilesSelected: (files: File[]) => void;
@@ -13,7 +14,7 @@ interface FileUploadProps {
 export function FileUpload({
   onFilesSelected,
   multiple = true,
-  accept = '*/*',
+  accept = "*/*",
   maxSize = 50 * 1024 * 1024, // 50MB default
   className,
 }: FileUploadProps) {
@@ -25,18 +26,16 @@ export function FileUpload({
       const validFiles: File[] = [];
       const errors: string[] = [];
 
-      Array.from(files).forEach(file => {
+      Array.from(files).forEach((file) => {
         if (file.size > maxSize) {
-          errors.push(
-            `${file.name} is too large. Maximum size is ${formatFileSize(maxSize)}`
-          );
+          errors.push(`${file.name} is too large. Maximum size is ${formatFileSize(maxSize)}`);
         } else {
           validFiles.push(file);
         }
       });
 
       if (errors.length > 0) {
-        setError(errors.join(', '));
+        setError(errors.join(", "));
         return [];
       }
 
@@ -86,51 +85,47 @@ export function FileUpload({
   );
 
   const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   return (
-    <div className={cn('w-full', className)}>
+    <div className={cn("w-full", className)}>
       <div
         className={cn(
-          'border-2 border-dashed rounded-lg p-6 text-center transition-colors',
-          isDragOver
-            ? 'border-blue-500 bg-blue-50'
-            : 'border-gray-300 hover:border-gray-400',
-          error && 'border-red-500 bg-red-50'
+          "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+          isDragOver ? "border-brand-500 bg-brand-50" : "border-gray-300 hover:border-gray-400",
+          error && "border-error-500 bg-error-50"
         )}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <IconUpload className='mx-auto h-12 w-12 text-gray-400 mb-4' />
-        <div className='space-y-2'>
-          <p className='text-sm text-gray-600'>
-            Drag and drop files here, or{' '}
-            <label className='text-blue-600 hover:text-blue-500 cursor-pointer'>
+        <MultiplePagesPlus className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+        <div className="space-y-2">
+          <p className="text-sm text-gray-600">
+            Drag and drop files here, or{" "}
+            <label className="text-brand-600 hover:text-brand-500 cursor-pointer">
               browse
               <input
-                type='file'
+                type="file"
                 multiple={multiple}
                 accept={accept}
                 onChange={handleFileInputChange}
-                className='hidden'
+                className="hidden"
               />
             </label>
           </p>
-          <p className='text-xs text-gray-500'>
-            Maximum file size: {formatFileSize(maxSize)}
-          </p>
+          <p className="text-xs text-gray-500">Maximum file size: {formatFileSize(maxSize)}</p>
         </div>
       </div>
 
       {error && (
-        <div className='mt-2 flex items-center space-x-2 text-sm text-red-600'>
-          <IconX className='h-4 w-4' />
+        <div className="mt-2 flex items-center space-x-2 text-sm text-error-600">
+          <IconX className="h-4 w-4" />
           <span>{error}</span>
         </div>
       )}
