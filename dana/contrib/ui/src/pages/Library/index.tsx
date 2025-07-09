@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DataTable } from "@/components/table/data-table";
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
 import { Button } from "@/components/ui/button";
@@ -20,71 +20,17 @@ import {
   IconEye,
   IconFolderPlus,
   IconX,
+  IconRefresh,
 } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { LibraryItem, FileItem, FolderItem } from "@/types/library";
+import type { TopicRead } from "@/types/topic";
+import type { DocumentRead } from "@/types/document";
 import { cn } from "@/lib/utils";
-import { useLibrary } from "@/hooks/use-library";
+import { useTopicOperations, useDocumentOperations } from "@/hooks/use-api";
 import { FileUpload } from "@/components/library/file-upload";
 import { CreateFolderDialog } from "@/components/library/create-folder-dialog";
 import FileIcon from "@/components/file-icon";
-
-// Mock data for demonstration
-const mockLibraryData: LibraryItem[] = [
-  {
-    id: "1",
-    name: "Project Assets",
-    type: "folder",
-    itemCount: 15,
-    lastModified: new Date("2024-01-15"),
-    path: "/assets",
-  },
-  {
-    id: "2",
-    name: "logo.png",
-    type: "file",
-    size: 245760,
-    extension: "png",
-    lastModified: new Date("2024-01-14"),
-    path: "/assets/logo.png",
-    thumbnail: "/static/images/logo.svg",
-  },
-  {
-    id: "3",
-    name: "documentation.pdf",
-    type: "file",
-    size: 1024000,
-    extension: "pdf",
-    lastModified: new Date("2024-01-13"),
-    path: "/docs/documentation.pdf",
-  },
-  {
-    id: "4",
-    name: "Images",
-    type: "folder",
-    itemCount: 8,
-    lastModified: new Date("2024-01-12"),
-    path: "/images",
-  },
-  {
-    id: "5",
-    name: "presentation.pptx",
-    type: "file",
-    size: 5120000,
-    extension: "pptx",
-    lastModified: new Date("2024-01-11"),
-    path: "/presentations/presentation.pptx",
-  },
-  {
-    id: "6",
-    name: "data.csv",
-    type: "file",
-    size: 15360,
-    extension: "csv",
-    lastModified: new Date("2024-01-10"),
-    path: "/data/data.csv",
-  },
-];
 
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return "0 Bytes";
@@ -94,7 +40,8 @@ const formatFileSize = (bytes: number): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 };
 
-const formatDate = (date: Date): string => {
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
   return date.toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
@@ -104,10 +51,89 @@ const formatDate = (date: Date): string => {
   });
 };
 
+// Convert API data to LibraryItem format
+const convertTopicToFolderItem = (topic: TopicRead): FolderItem => ({
+  id: `topic-${topic.id}`,
+  name: topic.name,
+  type: "folder",
+  itemCount: 0, // We'll need to count documents per topic
+  lastModified: new Date(topic.updated_at),
+  path: `/topics/${topic.id}`,
+});
+
+const convertDocumentToFileItem = (document: DocumentRead): FileItem => ({
+  id: `doc-${document.id}`,
+  name: document.original_filename,
+  type: "file",
+  size: document.file_size,
+  extension: document.original_filename.split(".").pop() || "unknown",
+  lastModified: new Date(document.updated_at),
+  path: `/documents/${document.id}`,
+});
+
 export default function LibraryPage() {
-  const { filteredData, filters, updateFilters, addItem } = useLibrary(mockLibraryData);
+  // API hooks
+  const {
+    fetchTopics,
+    createTopic,
+    updateTopic,
+    deleteTopic,
+    topics,
+    isLoading: topicsLoading,
+    isCreating: isCreatingTopic,
+    isUpdating: isUpdatingTopic,
+    isDeleting: isDeletingTopic,
+    error: topicsError,
+    clearError: clearTopicsError,
+  } = useTopicOperations();
+
+  const {
+    fetchDocuments,
+    uploadDocument,
+    updateDocument,
+    deleteDocument,
+    downloadDocument,
+    documents,
+    isLoading: documentsLoading,
+    isUploading,
+    isUpdating: isUpdatingDocument,
+    isDeleting: isDeletingDocument,
+    isDownloading,
+    error: documentsError,
+    uploadProgress,
+    clearError: clearDocumentsError,
+  } = useDocumentOperations();
+
+  // Local state
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"all" | "files" | "folders">("all");
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchTopics();
+    fetchDocuments();
+  }, [fetchTopics, fetchDocuments]);
+
+  console.log(topics);
+  console.log(documents);
+
+  // Convert API data to LibraryItem format
+  const libraryItems: LibraryItem[] = [
+    ...(topics?.map(convertTopicToFolderItem) || []),
+    ...(documents?.map(convertDocumentToFileItem) || []),
+  ];
+
+  // Filter items based on search and type
+  const filteredItems = libraryItems.filter((item) => {
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = typeFilter === "all" ||
+      (typeFilter === "folders" && item.type === "folder") ||
+      (typeFilter === "files" && item.type === "file");
+
+    return matchesSearch && matchesType;
+  });
 
   const columns: ColumnDef<LibraryItem>[] = [
     {
@@ -139,7 +165,7 @@ export default function LibraryPage() {
                 item.type === "folder" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"
               )}
             >
-              {item.type === "folder" ? "Folder" : (item as FileItem).extension.toUpperCase()}
+              {item.type === "folder" ? "Topic" : (item as FileItem).extension.toUpperCase()}
             </span>
           </div>
         );
@@ -160,7 +186,7 @@ export default function LibraryPage() {
       accessorKey: "lastModified",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Last Modified" />,
       cell: ({ row }) => {
-        return <span className="text-gray-600">{formatDate(row.original.lastModified)}</span>;
+        return <span className="text-gray-600">{formatDate(row.original.lastModified.toISOString())}</span>;
       },
     },
     {
@@ -176,21 +202,24 @@ export default function LibraryPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleViewItem(item)}>
                 <IconEye className="mr-2 w-4 h-4" />
                 View
               </DropdownMenuItem>
               {item.type === "file" && (
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownloadDocument(item)}>
                   <IconDownload className="mr-2 w-4 h-4" />
                   Download
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleEditItem(item)}>
                 <IconEdit className="mr-2 w-4 h-4" />
-                Rename
+                Edit
               </DropdownMenuItem>
-              <DropdownMenuItem className="text-red-600">
+              <DropdownMenuItem
+                className="text-red-600"
+                onClick={() => handleDeleteItem(item)}
+              >
                 <IconTrash className="mr-2 w-4 h-4" />
                 Delete
               </DropdownMenuItem>
@@ -203,50 +232,93 @@ export default function LibraryPage() {
 
   const handleRowClick = (row: { original: LibraryItem }) => {
     const item = row.original;
+    handleViewItem(item);
+  };
+
+  const handleViewItem = (item: LibraryItem) => {
     if (item.type === "folder") {
-      // Navigate to folder
-      console.log("Navigate to folder:", item.path);
+      // Navigate to topic view
+      console.log("View topic:", item);
     } else {
-      // Open file preview
-      console.log("Open file:", item.path);
+      // Open document preview
+      console.log("View document:", item);
     }
   };
 
+  const handleEditItem = (item: LibraryItem) => {
+    if (item.type === "folder") {
+      // Edit topic
+      const topicId = parseInt(item.id.replace("topic-", ""));
+      const topic = topics.find(t => t.id === topicId);
+      if (topic) {
+        // You can implement topic editing here
+        console.log("Edit topic:", topic);
+      }
+    } else {
+      // Edit document
+      const documentId = parseInt(item.id.replace("doc-", ""));
+      const document = documents.find(d => d.id === documentId);
+      if (document) {
+        // You can implement document editing here
+        console.log("Edit document:", document);
+      }
+    }
+  };
+
+  const handleDeleteItem = async (item: LibraryItem) => {
+    if (item.type === "folder") {
+      // Delete topic
+      const topicId = parseInt(item.id.replace("topic-", ""));
+      if (window.confirm("Are you sure you want to delete this topic?")) {
+        await deleteTopic(topicId);
+      }
+    } else {
+      // Delete document
+      const documentId = parseInt(item.id.replace("doc-", ""));
+      if (window.confirm("Are you sure you want to delete this document?")) {
+        await deleteDocument(documentId);
+      }
+    }
+  };
+
+  const handleDownloadDocument = async (item: LibraryItem) => {
+    if (item.type === "file") {
+      const documentId = parseInt(item.id.replace("doc-", ""));
+      await downloadDocument(documentId);
+    }
+  };
+
+  const handleCreateFolder = async (name: string) => {
+    await createTopic({ name, description: `Topic: ${name}` });
+    setShowCreateFolder(false);
+  };
+
+  const handleFilesUploaded = async (files: File[]) => {
+    for (const file of files) {
+      await uploadDocument({
+        file,
+        title: file.name,
+        description: `Uploaded: ${file.name}`,
+      });
+    }
+    setShowUpload(false);
+  };
+
   const handleSearchChange = (value: string) => {
-    updateFilters({ search: value });
+    setSearchTerm(value);
   };
 
   const handleTypeFilterChange = (type: "all" | "files" | "folders") => {
-    updateFilters({ type });
+    setTypeFilter(type);
   };
 
-  const handleCreateFolder = (name: string) => {
-    const newFolder: FolderItem = {
-      id: Date.now().toString(),
-      name,
-      type: "folder",
-      itemCount: 0,
-      lastModified: new Date(),
-      path: `/new-folder-${Date.now()}`,
-    };
-    addItem(newFolder);
+  const handleRefresh = () => {
+    fetchTopics();
+    fetchDocuments();
   };
 
-  const handleFilesUploaded = (files: File[]) => {
-    files.forEach((file) => {
-      const extension = file.name.split(".").pop() || "";
-      const newFile: FileItem = {
-        id: Date.now().toString() + Math.random(),
-        name: file.name,
-        type: "file",
-        size: file.size,
-        extension,
-        lastModified: new Date(),
-        path: `/uploads/${file.name}`,
-      };
-      addItem(newFile);
-    });
-  };
+  const isLoading = topicsLoading || documentsLoading;
+  const error = topicsError || documentsError;
 
   return (
     <div className="flex flex-col p-6 space-y-6 h-full">
@@ -254,27 +326,46 @@ export default function LibraryPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Library</h1>
-          <p className="text-gray-600">Manage your files and folders</p>
+          <p className="text-gray-600">Manage your topics and documents</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={() => setShowCreateFolder(true)}>
-            <IconFolderPlus className="mr-2 w-4 h-4" />
-            New Folder
+          <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
+            <IconRefresh className="mr-2 w-4 h-4" />
+            Refresh
           </Button>
-          <Button onClick={() => setShowUpload(true)}>
+          <Button variant="outline" onClick={() => setShowCreateFolder(true)} disabled={isCreatingTopic}>
+            <IconFolderPlus className="mr-2 w-4 h-4" />
+            New Topic
+          </Button>
+          <Button onClick={() => setShowUpload(true)} disabled={isUploading}>
             <IconUpload className="mr-2 w-4 h-4" />
-            Upload Files
+            Upload Documents
           </Button>
         </div>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-800">{error}</p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => { clearTopicsError(); clearDocumentsError(); }}
+            className="mt-2"
+          >
+            Dismiss
+          </Button>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex items-center space-x-4">
         <div className="relative flex-1 max-w-sm">
           <IconSearch className="absolute left-3 top-1/2 w-4 h-4 text-gray-400 transform -translate-y-1/2" />
           <Input
-            placeholder="Search files and folders..."
-            value={filters.search}
+            placeholder="Search topics and documents..."
+            value={searchTerm}
             onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-10"
           />
@@ -284,7 +375,7 @@ export default function LibraryPage() {
           <DropdownMenuTrigger asChild>
             <Button variant="outline">
               <IconFilter className="mr-2 w-4 h-4" />
-              {filters.type === "all" ? "All" : filters.type === "files" ? "Files" : "Folders"}
+              {typeFilter === "all" ? "All" : typeFilter === "files" ? "Documents" : "Topics"}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -292,10 +383,10 @@ export default function LibraryPage() {
               All Items
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleTypeFilterChange("files")}>
-              Files Only
+              Documents Only
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleTypeFilterChange("folders")}>
-              Folders Only
+              Topics Only
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -305,8 +396,8 @@ export default function LibraryPage() {
       <div className="flex-1">
         <DataTable
           columns={columns}
-          data={filteredData}
-          loading={false}
+          data={filteredItems}
+          loading={isLoading}
           handleRowClick={handleRowClick}
           is_border={true}
         />
@@ -324,11 +415,25 @@ export default function LibraryPage() {
         <div className="flex fixed inset-0 z-50 justify-center items-center bg-black bg-opacity-50">
           <div className="p-6 mx-4 w-full max-w-2xl bg-white rounded-lg">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Upload Files</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Upload Documents</h2>
               <Button variant="ghost" size="sm" onClick={() => setShowUpload(false)}>
                 <IconX className="w-4 h-4" />
               </Button>
             </div>
+            {isUploading && (
+              <div className="mb-4">
+                <div className="flex justify-between text-sm text-gray-600 mb-1">
+                  <span>Uploading...</span>
+                  <span>{Math.round(uploadProgress)}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
             <FileUpload
               onFilesSelected={handleFilesUploaded}
               multiple={true}

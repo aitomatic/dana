@@ -22,7 +22,7 @@ import type {
 } from '@/types/document';
 
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:12345';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 const API_TIMEOUT = 30000; // 30 seconds
 
 // API Response Types
@@ -145,7 +145,7 @@ class ApiService {
     if (filters?.skip) params.append('skip', filters.skip.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
 
-    const response = await this.client.get<TopicRead[]>(`/topics?${params.toString()}`);
+    const response = await this.client.get<TopicRead[]>(`/topics/?${params.toString()}`);
     return response.data;
   }
 
@@ -155,7 +155,7 @@ class ApiService {
   }
 
   async createTopic(topic: TopicCreate): Promise<TopicRead> {
-    const response = await this.client.post<TopicRead>('/topics', topic);
+    const response = await this.client.post<TopicRead>('/topics/', topic);
     return response.data;
   }
 
@@ -176,7 +176,7 @@ class ApiService {
     if (filters?.limit) params.append('limit', filters.limit.toString());
     if (filters?.topic_id) params.append('topic_id', filters.topic_id.toString());
 
-    const response = await this.client.get<DocumentRead[]>(`/documents?${params.toString()}`);
+    const response = await this.client.get<DocumentRead[]>(`/documents/?${params.toString()}`);
     return response.data;
   }
 
@@ -192,7 +192,7 @@ class ApiService {
     if (uploadData.description) formData.append('description', uploadData.description);
     if (uploadData.topic_id) formData.append('topic_id', uploadData.topic_id.toString());
 
-    const response = await this.client.post<DocumentRead>('/documents', formData, {
+    const response = await this.client.post<DocumentRead>('/documents/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
