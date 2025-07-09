@@ -76,13 +76,10 @@ export default function LibraryPage() {
   const {
     fetchTopics,
     createTopic,
-    updateTopic,
     deleteTopic,
     topics,
     isLoading: topicsLoading,
     isCreating: isCreatingTopic,
-    isUpdating: isUpdatingTopic,
-    isDeleting: isDeletingTopic,
     error: topicsError,
     clearError: clearTopicsError,
   } = useTopicOperations();
@@ -90,15 +87,11 @@ export default function LibraryPage() {
   const {
     fetchDocuments,
     uploadDocument,
-    updateDocument,
     deleteDocument,
     downloadDocument,
     documents,
     isLoading: documentsLoading,
     isUploading,
-    isUpdating: isUpdatingDocument,
-    isDeleting: isDeletingDocument,
-    isDownloading,
     error: documentsError,
     uploadProgress,
     clearError: clearDocumentsError,
@@ -128,7 +121,8 @@ export default function LibraryPage() {
   // Filter items based on search and type
   const filteredItems = libraryItems.filter((item) => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = typeFilter === "all" ||
+    const matchesType =
+      typeFilter === "all" ||
       (typeFilter === "folders" && item.type === "folder") ||
       (typeFilter === "files" && item.type === "file");
 
@@ -186,7 +180,11 @@ export default function LibraryPage() {
       accessorKey: "lastModified",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Last Modified" />,
       cell: ({ row }) => {
-        return <span className="text-gray-600">{formatDate(row.original.lastModified.toISOString())}</span>;
+        return (
+          <span className="text-gray-600">
+            {formatDate(row.original.lastModified.toISOString())}
+          </span>
+        );
       },
     },
     {
@@ -216,10 +214,7 @@ export default function LibraryPage() {
                 <IconEdit className="mr-2 w-4 h-4" />
                 Edit
               </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-red-600"
-                onClick={() => handleDeleteItem(item)}
-              >
+              <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteItem(item)}>
                 <IconTrash className="mr-2 w-4 h-4" />
                 Delete
               </DropdownMenuItem>
@@ -249,7 +244,7 @@ export default function LibraryPage() {
     if (item.type === "folder") {
       // Edit topic
       const topicId = parseInt(item.id.replace("topic-", ""));
-      const topic = topics.find(t => t.id === topicId);
+      const topic = topics.find((t) => t.id === topicId);
       if (topic) {
         // You can implement topic editing here
         console.log("Edit topic:", topic);
@@ -257,7 +252,7 @@ export default function LibraryPage() {
     } else {
       // Edit document
       const documentId = parseInt(item.id.replace("doc-", ""));
-      const document = documents.find(d => d.id === documentId);
+      const document = documents.find((d) => d.id === documentId);
       if (document) {
         // You can implement document editing here
         console.log("Edit document:", document);
@@ -333,7 +328,11 @@ export default function LibraryPage() {
             <IconRefresh className="mr-2 w-4 h-4" />
             Refresh
           </Button>
-          <Button variant="outline" onClick={() => setShowCreateFolder(true)} disabled={isCreatingTopic}>
+          <Button
+            variant="outline"
+            onClick={() => setShowCreateFolder(true)}
+            disabled={isCreatingTopic}
+          >
             <IconFolderPlus className="mr-2 w-4 h-4" />
             New Topic
           </Button>
@@ -351,7 +350,10 @@ export default function LibraryPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => { clearTopicsError(); clearDocumentsError(); }}
+            onClick={() => {
+              clearTopicsError();
+              clearDocumentsError();
+            }}
             className="mt-2"
           >
             Dismiss

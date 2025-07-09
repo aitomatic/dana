@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Agent, DanaAgentForm } from '@/types/agent';
+import type { Agent } from '@/types/agent';
 
 export interface AgentState {
   // Agent Data
@@ -35,7 +35,7 @@ export interface AgentState {
   reset: () => void;
 }
 
-export const useAgentStore = create<AgentState>((set, get) => ({
+export const useAgentStore = create<AgentState>((set) => ({
   // Initial State
   agents: [],
   selectedAgent: null,

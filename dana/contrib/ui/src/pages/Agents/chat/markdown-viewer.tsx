@@ -1,4 +1,5 @@
 import { useMemo, useState, Fragment } from "react";
+import type { ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import remarkGfm from "remark-gfm";
@@ -12,6 +13,28 @@ import { IconCheck, IconCopy, IconPlayerPlay } from "@tabler/icons-react";
 
 import styles from "./MarkdownViewer.module.css";
 import ReactCodeBlock from "./react-code-block";
+
+// Type definitions for markdown components
+interface CodeProps {
+  className?: string;
+  children?: ReactNode;
+}
+
+interface ParagraphProps {
+  children?: ReactNode;
+}
+
+interface TableProps {
+  children?: ReactNode;
+}
+
+interface TableRowProps {
+  children?: ReactNode;
+}
+
+interface TableCellProps {
+  children?: ReactNode;
+}
 
 const regex = /(@[^@]*?\.(?:\w+))/g;
 
@@ -241,241 +264,249 @@ export const MarkdownViewerSmall = ({
   }, [useMath]);
 
   return (
-    <ReactMarkdown
+    <div
       className={cn(
         styles["content"],
         styles["content-small"],
         "w-full text-sm xl:text-base",
         classname
       )}
-      children={refinedContent}
-      remarkPlugins={remarkPlugins}
-      rehypePlugins={[rehypeKatex as any]}
-      components={{
-        code: ({ className, children }) => {
-          const content = String(children).trim();
-          const languageMatch = /language-(\w+)/.exec(className || "");
-          const language = languageMatch ? languageMatch[1] : "";
-          const isInline = !className;
-          const isMermaid = language === "mermaid";
-          const isReact =
-            language === "jsx" ||
-            language === "tsx" ||
-            content.includes("import React") ||
-            content.includes("from 'react'") ||
-            content.includes('from "react"');
+    >
+      <ReactMarkdown
+        remarkPlugins={remarkPlugins}
+        rehypePlugins={[rehypeKatex as any]}
+        components={{
+          code: ({ className, children }: CodeProps) => {
+            const content = String(children).trim();
+            const languageMatch = /language-(\w+)/.exec(className || "");
+            const language = languageMatch ? languageMatch[1] : "";
+            const isInline = !className;
+            const isMermaid = language === "mermaid";
+            const isReact =
+              language === "jsx" ||
+              language === "tsx" ||
+              content.includes("import React") ||
+              content.includes("from 'react'") ||
+              content.includes('from "react"');
 
-          const isRechart =
-            content.includes("import { ") &&
-            (content.includes(" from 'recharts'") || content.includes(' from "recharts"'));
+            const isRechart =
+              content.includes("import { ") &&
+              (content.includes(" from 'recharts'") || content.includes(' from "recharts"'));
 
-          // Handle inline code
-          if (isInline) {
-            const isHook = /^use[A-Z]/.test(content);
-            const isType = /^[A-Z][A-Za-z0-9]*$/.test(content);
-            const isVariable = /^[a-z_$][a-zA-Z0-9_$]*$/.test(content);
-            const isSingleWord = content.split(/\s+/).length === 1;
+            // Handle inline code
+            if (isInline) {
+              const isHook = /^use[A-Z]/.test(content);
+              const isType = /^[A-Z][A-Za-z0-9]*$/.test(content);
+              const isVariable = /^[a-z_$][a-zA-Z0-9_$]*$/.test(content);
+              const isSingleWord = content.split(/\s+/).length === 1;
 
-            return (
-              <code
-                className={cn(
-                  "font-mono font-normal px-1.5 py-0.5 rounded text-sm xl:text-base",
-                  isHook
-                    ? "bg-purple-100 text-purple-800"
-                    : isType
-                      ? "bg-yellow-100 text-yellow-800"
-                      : isVariable
-                        ? "bg-gray-100 text-gray-800"
-                        : "bg-gray-50 text-gray-900",
-                  isSingleWord ? "inline-block" : ""
-                )}
-              >
-                {content}
-              </code>
-            );
-          }
+              return (
+                <code
+                  className={cn(
+                    "font-mono font-normal px-1.5 py-0.5 rounded text-sm xl:text-base",
+                    isHook
+                      ? "bg-purple-100 text-purple-800"
+                      : isType
+                        ? "bg-yellow-100 text-yellow-800"
+                        : isVariable
+                          ? "bg-gray-100 text-gray-800"
+                          : "bg-gray-50 text-gray-900",
+                    isSingleWord ? "inline-block" : ""
+                  )}
+                >
+                  {content}
+                </code>
+              );
+            }
 
-          // Handle mermaid blocks with separate component
-          if (isMermaid) {
-            return <MermaidBlock content={content} />;
-          }
+            // Handle mermaid blocks with separate component
+            if (isMermaid) {
+              return <MermaidBlock content={content} />;
+            }
 
-          // Handle React code blocks with separate component
-          if (isReact && isRechart) {
-            return <ReactCodeBlock content={content} />;
-          }
+            // Handle React code blocks with separate component
+            if (isReact && isRechart) {
+              return <ReactCodeBlock content={content} />;
+            }
 
-          // Handle regular code blocks with separate component
-          return <CodeBlock content={content} language={language} />;
-        },
+            // Handle regular code blocks with separate component
+            return <CodeBlock content={content} language={language} />;
+          },
 
-        p: ({ children }) => {
-          if (Array.isArray(children)) {
-            // Check if any of the children items contain @ mentions
-            const hasAtMention = children.some(
-              (child) => typeof child === "string" && child.includes("@")
-            );
+          p: ({ children }: ParagraphProps) => {
+            if (Array.isArray(children)) {
+              // Check if any of the children items contain @ mentions
+              const hasAtMention = children.some(
+                (child) => typeof child === "string" && child.includes("@")
+              );
 
-            if (hasAtMention) {
+              if (hasAtMention) {
+                return (
+                  <p className={`py-1 text-sm xl:text-base text-gray-900`}>
+                    {children.map((child, index) => {
+                      if (typeof child === "string" && child.includes("@")) {
+                        const parts = child.split(regex);
+                        return (
+                          <Fragment key={index}>
+                            {parts.map((part, partIndex) => {
+                              if (part.startsWith("@")) {
+                                // Use the enhanced MentionSpan component
+                                return <MentionSpan key={partIndex} mention={part} />;
+                              }
+                              return <span key={partIndex}>{part}</span>;
+                            })}
+                          </Fragment>
+                        );
+                      }
+                      return child;
+                    })}
+                  </p>
+                );
+              }
+            }
+
+            // Handle string children with @ mentions
+            if (typeof children === "string" && children.includes("@")) {
+              const parts = children.split(regex);
               return (
                 <p className={`py-1 text-sm xl:text-base text-gray-900`}>
-                  {children.map((child, index) => {
-                    if (typeof child === "string" && child.includes("@")) {
-                      const parts = child.split(regex);
-                      return (
-                        <Fragment key={index}>
-                          {parts.map((part, partIndex) => {
-                            if (part.startsWith("@")) {
-                              // Use the enhanced MentionSpan component
-                              return <MentionSpan key={partIndex} mention={part} />;
-                            }
-                            return <span key={partIndex}>{part}</span>;
-                          })}
-                        </Fragment>
-                      );
+                  {parts.map((part, index) => {
+                    if (part.startsWith("@")) {
+                      // Use the enhanced MentionSpan component
+                      return <MentionSpan key={index} mention={part} />;
                     }
-                    return child;
+                    return <span key={index}>{part}</span>;
                   })}
                 </p>
               );
             }
-          }
 
-          // Handle string children with @ mentions
-          if (typeof children === "string" && children.includes("@")) {
-            const parts = children.split(regex);
+            // Default paragraph rendering
+            return <p className={`py-1 text-sm xl:text-base text-gray-900`}>{children}</p>;
+          },
+
+          table: ({ children }: TableProps) => (
+            <div className="w-full my-4 overflow-x-auto">
+              <table className="w-full overflow-hidden border border-collapse border-gray-200 rounded">
+                {children}
+              </table>
+            </div>
+          ),
+          thead: ({ children }: TableProps) => <thead className="bg-gray-50">{children}</thead>,
+          tbody: ({ children }: TableProps) => (
+            <tbody className="divide-y divide-gray-200">{children}</tbody>
+          ),
+          tr: ({ children }: TableRowProps) => <tr>{children}</tr>,
+          th: ({ children }: TableCellProps) => {
             return (
-              <p className={`py-1 text-sm xl:text-base text-gray-900`}>
-                {parts.map((part, index) => {
-                  if (part.startsWith("@")) {
-                    // Use the enhanced MentionSpan component
-                    return <MentionSpan key={index} mention={part} />;
-                  }
-                  return <span key={index}>{part}</span>;
-                })}
-              </p>
+              <th
+                className={`px-4 py-3 font-medium tracking-wider text-left text-gray-900 uppercase border-b border-gray-200 first:rounded-tl last:rounded-tr text-sm`}
+              >
+                {children}
+              </th>
             );
-          }
-
-          // Default paragraph rendering
-          return <p className={`py-1 text-sm xl:text-base text-gray-900`}>{children}</p>;
-        },
-
-        table: ({ children }) => (
-          <div className="w-full my-4 overflow-x-auto">
-            <table className="w-full overflow-hidden border border-collapse border-gray-200 rounded">
-              {children}
-            </table>
-          </div>
-        ),
-        thead: ({ children }) => <thead className="bg-gray-50">{children}</thead>,
-        tbody: ({ children }) => <tbody className="divide-y divide-gray-200">{children}</tbody>,
-        tr: ({ children }) => <tr>{children}</tr>,
-        th: ({ children }) => {
-          return (
-            <th
-              className={`px-4 py-3 font-medium tracking-wider text-left text-gray-900 uppercase border-b border-gray-200 first:rounded-tl last:rounded-tr text-sm`}
-            >
-              {children}
-            </th>
-          );
-        },
-        td: ({ children }) => {
-          // Handle React elements directly when they're passed as children
-          if (
-            children &&
-            typeof children === "object" &&
-            "$$typeof" in children &&
-            children.$$typeof === Symbol.for("react.element")
-          ) {
-            return (
-              <td className={`px-4 py-3 border-b border-gray-200 text-gray-900`}>{children}</td>
-            );
-          }
-
-          // Process array of children that might contain React elements
-          if (Array.isArray(children)) {
-            const hasReactElements = children.some(
-              (child) =>
-                child && typeof child === "object" && child.$$typeof === Symbol.for("react.element")
-            );
-
-            if (hasReactElements) {
+          },
+          td: ({ children }: TableCellProps) => {
+            // Handle React elements directly when they're passed as children
+            if (
+              children &&
+              typeof children === "object" &&
+              "$$typeof" in children &&
+              children.$$typeof === Symbol.for("react.element")
+            ) {
               return (
                 <td className={`px-4 py-3 border-b border-gray-200 text-gray-900`}>{children}</td>
               );
             }
-          }
 
-          // For string content, continue with the existing logic
-          const content = Array.isArray(children)
-            ? children.map((child) => (typeof child === "string" ? child : "")).join("")
-            : String(children || "");
+            // Process array of children that might contain React elements
+            if (Array.isArray(children)) {
+              const hasReactElements = children.some(
+                (child) =>
+                  child &&
+                  typeof child === "object" &&
+                  child.$$typeof === Symbol.for("react.element")
+              );
 
-          // Handle bold type formatting with asterisks
-          const formattedContent = content.replace(/\*\*([^*]+)\*\*/g, (_, text) => {
-            return `<strong>${text}</strong>`;
-          });
+              if (hasReactElements) {
+                return (
+                  <td className={`px-4 py-3 border-b border-gray-200 text-gray-900`}>{children}</td>
+                );
+              }
+            }
 
-          const parts = formattedContent.split(/(\[\[\d+\]\])/);
+            // For string content, continue with the existing logic
+            const content = Array.isArray(children)
+              ? children.map((child) => (typeof child === "string" ? child : "")).join("")
+              : String(children || "");
 
-          if (parts?.length === 1) {
+            // Handle bold type formatting with asterisks
+            const formattedContent = content.replace(/\*\*([^*]+)\*\*/g, (_, text) => {
+              return `<strong>${text}</strong>`;
+            });
+
+            const parts = formattedContent.split(/(\[\[\d+\]\])/);
+
+            if (parts?.length === 1) {
+              return (
+                <td className={`px-4 py-3 border-b border-gray-200 text-gray-900`}>{children}</td>
+              );
+            }
+
             return (
-              <td className={`px-4 py-3 border-b border-gray-200 text-gray-900`}>{children}</td>
+              <td className={`px-4 py-3 border-b border-gray-200 text-gray-900`}>
+                <span className="inline-flex flex-wrap items-center gap-1">
+                  {parts?.map((part, index) => {
+                    return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
+                  })}
+                </span>
+              </td>
             );
-          }
+          },
 
-          return (
-            <td className={`px-4 py-3 border-b border-gray-200 text-gray-900`}>
+          text: ({ children }) => {
+            const content = Array.isArray(children)
+              ? children.map((child) => (typeof child === "string" ? child : "")).join("")
+              : String(children);
+
+            // Check for @ mentions in text content
+            if (content.includes("@")) {
+              const parts = content.split(regex);
+              return (
+                <span className="inline-flex flex-wrap items-center">
+                  {parts.map((part, idx) => {
+                    if (part.startsWith("@")) {
+                      return <MentionSpan key={idx} mention={part} />;
+                    }
+                    return <span key={idx}>{part}</span>;
+                  })}
+                </span>
+              );
+            }
+
+            // Handle bold type formatting with asterisks
+            const formattedContent = content.replace(/\*\*([^*]+)\*\*/g, (_, text) => {
+              return `<strong>${text}</strong>`;
+            });
+
+            const parts = formattedContent.split(/(\[\[\d+\]\])/);
+
+            if (parts.length === 1) {
+              return <span dangerouslySetInnerHTML={{ __html: formattedContent }} />;
+            }
+
+            return (
               <span className="inline-flex flex-wrap items-center gap-1">
-                {parts?.map((part, index) => {
+                {parts.map((part, index) => {
                   return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
                 })}
               </span>
-            </td>
-          );
-        },
-
-        text: ({ children }) => {
-          const content = Array.isArray(children)
-            ? children.map((child) => (typeof child === "string" ? child : "")).join("")
-            : String(children);
-
-          // Check for @ mentions in text content
-          if (content.includes("@")) {
-            const parts = content.split(regex);
-            return (
-              <span className="inline-flex flex-wrap items-center">
-                {parts.map((part, idx) => {
-                  if (part.startsWith("@")) {
-                    return <MentionSpan key={idx} mention={part} />;
-                  }
-                  return <span key={idx}>{part}</span>;
-                })}
-              </span>
             );
-          }
-
-          // Handle bold type formatting with asterisks
-          const formattedContent = content.replace(/\*\*([^*]+)\*\*/g, (_, text) => {
-            return `<strong>${text}</strong>`;
-          });
-
-          const parts = formattedContent.split(/(\[\[\d+\]\])/);
-
-          if (parts.length === 1) {
-            return <span dangerouslySetInnerHTML={{ __html: formattedContent }} />;
-          }
-
-          return (
-            <span className="inline-flex flex-wrap items-center gap-1">
-              {parts.map((part, index) => {
-                return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
-              })}
-            </span>
-          );
-        },
-      }}
-    />
+          },
+        }}
+      >
+        {refinedContent}
+      </ReactMarkdown>
+    </div>
   );
 };

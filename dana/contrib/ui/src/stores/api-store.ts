@@ -24,7 +24,7 @@ export interface ApiState {
   reset: () => void;
 }
 
-export const useApiStore = create<ApiState>((set, get) => ({
+export const useApiStore = create<ApiState>((set) => ({
   // Initial State
   isHealthy: false,
   isApiAvailable: false,
@@ -102,4 +102,4 @@ export const useApiStore = create<ApiState>((set, get) => ({
       error: null,
     });
   },
-})); 
+}));

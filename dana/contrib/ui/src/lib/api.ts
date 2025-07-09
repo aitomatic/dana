@@ -3,22 +3,13 @@ import type { AxiosInstance, AxiosResponse } from 'axios';
 import type {
   TopicRead,
   TopicCreate,
-  TopicFilters,
-  TopicListResponse,
-  TopicCreateResponse,
-  TopicUpdateResponse,
-  TopicDeleteResponse
+  TopicFilters
 } from '@/types/topic';
 import type {
   DocumentRead,
-  DocumentCreate,
   DocumentUpdate,
   DocumentFilters,
-  DocumentUploadData,
-  DocumentListResponse,
-  DocumentCreateResponse,
-  DocumentUpdateResponse,
-  DocumentDeleteResponse
+  DocumentUploadData
 } from '@/types/document';
 
 // API Configuration
@@ -230,4 +221,4 @@ class ApiService {
 }
 
 // Export singleton instance
-export const apiService = new ApiService(); 
+export const apiService = new ApiService();

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { apiService } from '@/lib/api';
-import type { PoetConfigRequest, PoetConfigResponse, DomainsResponse, ApiError } from '@/lib/api';
+import type { PoetConfigRequest, PoetConfigResponse, ApiError } from '@/lib/api';
 
 export interface PoetState {
   // POET Configuration
@@ -24,7 +24,7 @@ export interface PoetState {
   reset: () => void;
 }
 
-export const usePoetStore = create<PoetState>((set, get) => ({
+export const usePoetStore = create<PoetState>((set) => ({
   // Initial State
   currentConfig: null,
   availableDomains: [],
@@ -94,4 +94,4 @@ export const usePoetStore = create<PoetState>((set, get) => ({
       error: null,
     });
   },
-})); 
+}));

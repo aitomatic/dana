@@ -17,7 +17,7 @@ export interface TopicStore extends TopicState {
   reset: () => void;
 }
 
-export const useTopicStore = create<TopicStore>((set, get) => ({
+export const useTopicStore = create<TopicStore>((set) => ({
   // Initial State
   topics: [],
   selectedTopic: null,
@@ -150,4 +150,4 @@ export const useTopicStore = create<TopicStore>((set, get) => ({
       limit: 100,
     });
   },
-})); 
+}));
