@@ -65,7 +65,7 @@ export function GeneralAgentPage({
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-300 bg-background">
               <img
-                src={`/static/agent-avatar${avatar}`}
+                src={`/agent-avatar${avatar}`}
                 alt="agent-placeholder"
                 className="rounded-full size-10"
               />
@@ -168,7 +168,7 @@ export function GeneralAgentPage({
                   setValue("general_agent_config.dana_code", value);
                 }}
                 placeholder={placeholder}
-                onSave={() => {}}
+                onSave={() => { }}
               />
             </div>
           </div>

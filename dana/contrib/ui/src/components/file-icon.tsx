@@ -6,21 +6,31 @@ import {
   DatabaseCheck,
   DatabaseScriptPlus,
   NetworkRightSolid,
+  Table,
 } from "iconoir-react";
 
+// Import all icon files as modules
+import folderIcon from "/files-icon/folder.svg";
+import pdfIcon from "/files-icon/file-pdf.svg";
+import docxIcon from "/files-icon/file-docx.svg";
+import csvIcon from "/files-icon/file-csv.svg";
+import txtIcon from "/files-icon/file-txt.svg";
+import imageIcon from "/files-icon/file-image.svg";
+import codeIcon from "/files-icon/file-code.svg";
+
 export const FILE_ICONS = {
-  folder: "/static/files-icon/folder.svg",
-  pdf: "/static/files-icon/file-pdf.svg",
-  doc: "/static/files-icon/file-docx.svg",
-  docx: "/static/files-icon/file-docx.svg",
-  csv: "/static/files-icon/file-csv.svg",
-  xlsx: "/static/files-icon/file-csv.svg",
-  xls: "/static/files-icon/file-csv.svg",
-  txt: "/static/files-icon/file-txt.svg",
-  png: "/static/files-icon/file-image.svg",
-  jpeg: "/static/files-icon/file-image.svg",
-  jpg: "/static/files-icon/file-image.svg",
-  html: "/static/files-icon/file-code.svg",
+  folder: folderIcon,
+  pdf: pdfIcon,
+  doc: docxIcon,
+  docx: docxIcon,
+  csv: csvIcon,
+  xlsx: csvIcon,
+  xls: csvIcon,
+  txt: txtIcon,
+  png: imageIcon,
+  jpeg: imageIcon,
+  jpg: imageIcon,
+  html: codeIcon,
 } as const;
 
 interface FileIconProps {
@@ -37,7 +47,7 @@ interface FileIconProps {
 const FileIcon = ({ resource, ext: extensionProp, width, height, className }: FileIconProps) => {
   if (resource?.resource_type === ResourceType.PLAN) {
     return (
-      <img src="/assets/icon/tree-structure.svg" width={20} height={20} alt="Tree structure icon" />
+      <DatabaseScriptPlus className="text-green-600" width={20} height={20} strokeWidth={2} />
     );
   }
 
@@ -46,7 +56,7 @@ const FileIcon = ({ resource, ext: extensionProp, width, height, className }: Fi
   }
 
   if (resource?.resource_type === ResourceType.PRIO_KNOWLEDGE) {
-    return <img src="/assets/icon/table.svg" alt="Table icon" />;
+    return <Table className="text-blue-600" width={20} height={20} />;
   }
 
   if (resource?.resource_type === ResourceType.EXPERIENTIAL) {

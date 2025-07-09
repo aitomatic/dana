@@ -11,6 +11,9 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 
+// Import logo as a module
+import logo from "/logo.svg";
+
 // DXA DANA configuration data
 const data = {
   user: {
@@ -23,7 +26,7 @@ const data = {
       name: "DXA DANA",
       logo: () => (
         <img
-          src="/static/logo.svg"
+          src={logo}
           alt="DXA DANA"
           className="size-8 rounded-md"
         />

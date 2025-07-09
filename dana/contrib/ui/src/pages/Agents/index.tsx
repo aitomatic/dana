@@ -2,6 +2,9 @@ import { Button } from "@/components/ui/button";
 import { IconPlus } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
 
+// Import image as a module
+import emptyAgentImage from "/images/empty-agent.svg";
+
 export default function AgentsPage() {
   const navigate = useNavigate();
 
@@ -10,7 +13,7 @@ export default function AgentsPage() {
       <div className="flex flex-col items-center max-w-md text-center">
         {/* DXA Logo */}
         <img
-          src="/static/images/empty-agent.svg"
+          src={emptyAgentImage}
           alt="empty dxa"
           className="width-[192px] h-[192px]"
         />
