@@ -12,7 +12,7 @@ export default defineConfig({
   server: {
     port: 4040,
   },
-  base: '/static/',
+  base: '/',
   resolve: {
     alias: {
       '@': '/src',

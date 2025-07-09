@@ -1,13 +1,8 @@
-import { cn } from '@/lib/utils';
-import {
-  IconChevronDown,
-  IconChevronUp,
-  IconSelector,
-} from '@tabler/icons-react';
-import type { Column } from '@tanstack/react-table';
+import { cn } from "@/lib/utils";
+import { IconChevronDown, IconChevronUp, IconSelector } from "@tabler/icons-react";
+import type { Column } from "@tanstack/react-table";
 
-interface DataTableColumnHeaderProps<TData, TValue>
-  extends React.HTMLAttributes<HTMLDivElement> {
+interface DataTableColumnHeaderProps<TData, TValue> extends React.HTMLAttributes<HTMLDivElement> {
   column: Column<TData, TValue>;
   title: string;
 }
@@ -21,11 +16,11 @@ export function DataTableColumnHeader<TData, TValue>({
     return (
       <div
         className={cn(
-          'flex items-center py-2 space-x-2 text-xs font-medium text-gray-600',
+          "flex items-center py-2 space-x-2 text-xs font-medium text-gray-600",
           className
         )}
       >
-        {title}
+        {title.toUpperCase()}
       </div>
     );
   }
@@ -33,27 +28,27 @@ export function DataTableColumnHeader<TData, TValue>({
   return (
     <div
       className={cn(
-        'flex items-center space-x-2 h-full text-xs font-medium text-gray-600 cursor-pointer',
+        "flex items-center space-x-2 h-full text-xs font-medium text-gray-600 cursor-pointer",
         className
       )}
     >
-      {title}
-      {column.getIsSorted() === 'desc' ? (
+      {title.toUpperCase()}
+      {column.getIsSorted() === "desc" ? (
         <IconChevronDown
           onClick={() => column.toggleSorting(false)}
-          className='text-gray-600'
+          className="text-gray-600"
           size={16}
         />
-      ) : column.getIsSorted() === 'asc' ? (
+      ) : column.getIsSorted() === "asc" ? (
         <IconChevronUp
           onClick={() => column.toggleSorting(true)}
-          className='text-gray-600'
+          className="text-gray-600"
           size={16}
         />
       ) : (
         <IconSelector
           onClick={() => column.toggleSorting(true)}
-          className='text-gray-600'
+          className="text-gray-600"
           size={16}
         />
       )}

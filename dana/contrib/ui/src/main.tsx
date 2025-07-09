@@ -1,27 +1,28 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import './index.css';
-import { Layout } from './components/layout';
-import AgentsPage from './pages/Agents';
-import { CreateAgentPage } from './pages/Agents/create';
-import LibraryPage from './pages/Library';
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Layout } from "./components/layout";
+import AgentsPage from "./pages/Agents";
+import { CreateAgentPage } from "./pages/Agents/create";
+import LibraryPage from "./pages/Library";
+import SelectKnowledgePage from "./pages/Agents/select-knowledge";
+import "./index.css";
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
         {/* Routes with layout */}
         <Route
-          path='/'
+          path="/"
           element={
             <Layout>
-              <Navigate to='/agents' replace />
+              <Navigate to="/agents" replace />
             </Layout>
           }
         />
         <Route
-          path='/agents'
+          path="/agents"
           element={
             <Layout>
               <AgentsPage />
@@ -29,7 +30,7 @@ createRoot(document.getElementById('root')!).render(
           }
         />
         <Route
-          path='/agents/create'
+          path="/agents/create"
           element={
             <Layout hideLayout={true}>
               <CreateAgentPage />
@@ -37,7 +38,15 @@ createRoot(document.getElementById('root')!).render(
           }
         />
         <Route
-          path='/library'
+          path="/agents/select-knowledge"
+          element={
+            <Layout hideLayout={true}>
+              <SelectKnowledgePage />
+            </Layout>
+          }
+        />
+        <Route
+          path="/library"
           element={
             <Layout>
               <LibraryPage />
