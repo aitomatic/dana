@@ -4,10 +4,15 @@ Provides real-time streaming communication with MCP servers using the Model Cont
 This implementation uses the official MCP Python SDK for protocol compliance.
 """
 
-from fastmcp.client.transports import SSETransport
+# SSE transport temporarily disabled due to API changes
+# from fastmcp.client.transports import SSETransport
 
 from .base_transport import BaseTransport
 
 
-class MCPSSETransport(SSETransport, BaseTransport):
-    pass
+class MCPSSETransport(BaseTransport):
+    """Placeholder SSE transport - needs implementation with new MCP API"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        raise NotImplementedError("SSE transport needs to be updated for new MCP API")

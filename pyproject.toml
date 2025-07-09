@@ -16,7 +16,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dana"
 version = "0.4.0"
-description = "Domain-Expert Agent Framework"
+description = "Domain-Aware Neurosymbolic Architecture"
 requires-python = ">=3.12"
 authors = [
     {name = "Christopher Nguyen", email = "ctn@aitomatic.com"},
@@ -32,35 +32,45 @@ dependencies = [
     # "fastmcp>=2.6.1,<2.9.0",  # Temporarily disabled to test httpx compatibility
     "llm-code-executor",
     "llama-index",
-    "openai>=1.55.3",
-    
-    # Networking & I/O - Core connectivity
-    "aiohttp",
-    "aioconsole", 
-    "websockets",
-    "httpx==0.27.2", # Pin to fix AISuite/Anthropic compatibility issue
-    
+    # Data Processing - Required for agent data handling
+    "pandas",
+    "matplotlib",
+    "seaborn",
     # Database & Storage
     "sqlalchemy",
-    
-    # Configuration & Utilities - Essential for Dana runtime
-    "nest_asyncio",
+    # Networking & I/O
+    "aiohttp",
+    "aioconsole",
+    "websockets",
+    "httpx==0.27.2", # Pin to fix AISuite/Anthropic compatibility issue
+    # Configuration & Utilities
     "python-dotenv",
     "pyyaml",
     "structlog",
-    
-    # Language Processing - Dana language parser (essential)
+    # Language Processing - Dana language parser
     "lark",
-    
-    # Interactive Features - REPL and user interface (core UX)
+    # Interactive Features - REPL and user interface
     "prompt-toolkit",
     "pygments",
-    
-    # Agent Communication - Core multi-agent functionality
+    # Webcrawler
+    "playwright",
+    # Testing - Core testing framework (needed for Dana runtime)
+    "pytest",
+    "pytest-asyncio",
+    "pytest-mock",
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.6.14",
+    "mkdocs-mermaid2-plugin>=1.2.1",
+    "mkdocs-section-index>=0.3.10",
+    "mkdocstrings>=0.29.1",
+    "mkdocstrings-python>=1.16.12",
+    "mkdocs-git-revision-date-localized-plugin>=1.4.7",
+    "pymdown-extensions[extra]>=10.15",
     "python-a2a>=0.5.9",
-    
-    # API Server - Core Dana sandbox operations
+    # API Server - Required for Dana sandbox operations
     "fastapi",
+    "openai>=1.55.3",
+    "fastmcp>=2.10.2",
 ]
 
 # Development-only dependencies
@@ -73,54 +83,17 @@ dev = [
     "pytest-cov", # Test coverage reporting
 ]
 
-# Testing framework - moved from core since not all users need to run tests
-testing = [
-    "pytest",
-    "pytest-asyncio", 
-    "pytest-mock",
-]
-
-# Data science and scientific computing - heavy dependencies for specialized use cases
-data = [
-    "pandas",              # Data manipulation and analysis
-    "scipy>=1.16.0",       # Scientific computing
-    "scikit-learn>=1.7.0", # Machine learning
-    "numpy",               # Numerical computing (required by above)
-]
-
-# Data visualization - optional for users who need plotting capabilities
-visualization = [
-    "matplotlib",
-    "seaborn",
-]
-
-# Web server capabilities - optional for users who need web interfaces
-web = [
-    "flask>=3.1.1",
-    "flask-cors>=6.0.1",
-]
-
-# Browser automation - heavy dependency, optional for web scraping use cases
-automation = [
-    "playwright",
-]
-
 # Documentation tooling - focused on auto-sync and validation
 docs = [
     # Core: MkDocs for DevRel team productivity
-    "mkdocs>=1.6.1",
-    "mkdocs-material>=9.6.14",
-    "mkdocs-mermaid2-plugin>=1.2.1",
-    "mkdocs-section-index>=0.3.10",
-    "mkdocstrings>=0.29.1",
-    "mkdocstrings-python>=1.16.12",
-    "mkdocs-git-revision-date-localized-plugin>=1.4.7",
-    "pymdown-extensions[extra]>=10.15",
+    "mkdocs-material>=9.0",
+    "mkdocs-mermaid2-plugin",
 
     # Auto-sync with code (solves staleness problem)
     "mkdocstrings[python]>=0.24",    # API docs from docstrings (auto-update)
     "mkdocs-gen-files",              # Generate docs from code structure
     "mkdocs-literate-nav",           # Auto-generate navigation
+    "mkdocs-section-index",          # Clickable sections
 
     # Validation tools (catch problems early)
     "mkdocs-htmlproofer-plugin",     # Broken link detection
@@ -136,11 +109,7 @@ docs = [
     "mkdocs-include-markdown-plugin",# Reusable content blocks
     "mkdocs-macros-plugin",          # Variables and templating
     "mkdocs-table-reader-plugin",    # Data tables from CSV/JSON
-]
-
-# Complete development environment - includes all optional dependencies
-full = [
-    "dana[dev,testing,data,visualization,web,automation,docs]"
+    "mkdocs-git-revision-date-localized-plugin", # Last updated dates
 ]
 
 # Command-line entry points for end users
@@ -165,35 +134,16 @@ dana = ["**/*.py", "**/*.lark"]
 # Development Tools & Scripts (uv-specific)
 # =============================================================================
 
-# DEPENDENCY GROUPS USAGE:
-# - Core installation: pip install dana
-# - With testing: pip install dana[testing] 
-# - With data science: pip install dana[data]
-# - With visualization: pip install dana[visualization]
-# - With web server: pip install dana[web]
-# - With browser automation: pip install dana[automation]
-# - With documentation tools: pip install dana[docs]
-# - Full development setup: pip install dana[full]
-# - Development only: pip install dana[dev]
-# 
-# Using uv:
-# - uv sync                           # Core dependencies only (lightweight!)
-# - uv sync --extra testing          # Include testing tools
-# - uv sync --extra data             # Include pandas/scipy/sklearn
-# - uv sync --extra visualization    # Include matplotlib/seaborn
-# - uv sync --extra full             # All optional dependencies
-
 # NOTE: Native task runner support ([tool.uv.tasks] or [tool.uv.scripts])
 # is planned but not yet available in uv 0.7.9
 #
 # Use these direct uv run commands for common development tasks:
 #
-# Testing workflows (requires dana[testing] or dana[dev]):
-#   uv sync --extra testing                           # Install testing dependencies first
+# Testing workflows:
 #   uv run pytest tests/                              # Run all tests
-#   uv run pytest -m 'not live and not deep' tests/   # Fast tests only  
+#   uv run pytest -m 'not live and not deep' tests/   # Fast tests only
 #   uv run pytest -m 'live' tests/                    # Live/integration tests
-#   uv sync --extra dev && uv run pytest --cov-report=html tests/  # With coverage
+#   uv run pytest --cov-report=html tests/  # With coverage
 #
 # Code quality workflows:
 #   uv run ruff check .                               # Lint code
@@ -202,31 +152,23 @@ dana = ["**/*.py", "**/*.lark"]
 #   uv run ruff format --check .                      # Check formatting
 #   uv run mypy .                                     # Type checking
 #
-# Documentation workflows (requires dana[docs]):
-#   uv sync --extra docs                              # Install documentation dependencies first
+# Documentation workflows (for DevRel team):
 #   uv run python -m mkdocs serve                     # Live preview during writing
 #   uv run python -m mkdocs serve --dev-addr=0.0.0.0:8000  # Live preview (remote accessible)
 #   uv run python -m mkdocs build                     # Build docs
 #   uv run python -m mkdocs build --strict            # Build with warnings as errors
 #   uv run mkdocs gh-deploy --force                   # Build and deploy to GitHub Pages
 #
-# Documentation validation (requires dana[docs] + dana[testing]):
-#   uv sync --extra docs --extra testing              # Install both doc and testing dependencies
+# Documentation validation (catch staleness):
 #   uv run pytest --doctest-modules dana/             # Test code examples in docstrings
 #   uv run python -m linkcheckmd docs/                # Check all markdown links (fast async)
 #   uv run doc8 docs/                                 # Documentation style checking
 #   uv run python -m mkdocs build --strict            # Validate complete build
 #
 # Environment management:
-#   uv sync                                           # Sync core dependencies only
+#   uv sync                                           # Sync dependencies
 #   uv sync --extra dev                               # Sync with dev dependencies
-#   uv sync --extra testing                           # Sync with testing tools
-#   uv sync --extra data                              # Sync with data science libraries
-#   uv sync --extra visualization                     # Sync with plotting libraries
-#   uv sync --extra web                               # Sync with web server tools
-#   uv sync --extra automation                        # Sync with browser automation
 #   uv sync --extra docs                              # Sync with documentation tools
-#   uv sync --extra full                              # Sync with all optional dependencies
 #   uv add <package>                                  # Add new dependency
 #   uv remove <package>                               # Remove dependency
 #

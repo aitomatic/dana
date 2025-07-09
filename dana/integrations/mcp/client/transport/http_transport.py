@@ -4,7 +4,7 @@ Provides HTTP-based streaming communication with MCP servers using the Model Con
 This implementation uses the official MCP Python SDK streamable HTTP client for protocol compliance.
 """
 
-from fastmcp.client.transports import StreamableHttpTransport
+from mcp.client.streamable_http import StreamableHTTPTransport as StreamableHttpTransport
 
 from .base_transport import BaseTransport
 

@@ -28,7 +28,7 @@ Design Notes:
 
 from typing import Any
 
-from fastmcp import Client
+from mcp.client.session import ClientSession as Client
 
 from dana.common.mixins.loggable import Loggable
 from dana.common.utils.misc import Misc
