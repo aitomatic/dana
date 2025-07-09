@@ -2,17 +2,16 @@
 
 from multiprocessing import cpu_count
 from pathlib import Path
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
 from llama_index.core.indices.loading import load_index_from_storage
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.readers.file.base import SimpleDirectoryReader
-from llama_index.embeddings.openai.base import OpenAIEmbedding, OpenAIEmbeddingMode, OpenAIEmbeddingModelType
-from llama_index.llms.openai.base import OpenAI
-
 from llama_index.core.response_synthesizers.type import ResponseMode
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
+from llama_index.embeddings.openai.base import OpenAIEmbedding, OpenAIEmbeddingMode, OpenAIEmbeddingModelType
+from llama_index.llms.openai.base import OpenAI
 
 import opendxa
 

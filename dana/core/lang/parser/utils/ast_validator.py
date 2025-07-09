@@ -24,7 +24,7 @@ from typing import Any
 from lark import Tree
 
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.parser.ast import Program
+from dana.core.lang.ast import Program
 
 
 class AstValidator(Loggable):

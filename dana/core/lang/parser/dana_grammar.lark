@@ -38,6 +38,7 @@ compound_stmt: if_stmt
              | try_stmt
              | with_stmt
              | struct_def
+             | agent_def
 
 block: _NL _INDENT statements _DEDENT
 
@@ -56,13 +57,24 @@ elif_stmt: "elif" expr ":" [COMMENT] block
 while_stmt: "while" expr ":" [COMMENT] block
 for_stmt: "for" NAME "in" expr ":" [COMMENT] block
 function_def: [decorators] "def" NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
-try_stmt: "try" ":" [COMMENT] block "except" ["(" expr ")"] ":" [COMMENT] block ["finally" ":" [COMMENT] block]
+try_stmt: "try" ":" [COMMENT] block except_clause+ ["finally" ":" [COMMENT] block]
+
+// Exception handling clauses
+except_clause: "except" [except_spec] ":" [COMMENT] block
+except_spec: exception_type ["as" NAME] | "as" NAME
+exception_type: expr
+
 with_stmt: "with" (with_context_manager | (NAME | USE) "(" [mixed_arguments] ")") AS NAME ":" [COMMENT] block
 struct_def: "struct" NAME ":" [COMMENT] struct_block -> struct_definition
+agent_def: "agent" NAME ":" [COMMENT] agent_block -> agent_definition
 
 struct_block: _NL _INDENT struct_fields _DEDENT
 struct_fields: struct_field+
 struct_field: NAME ":" basic_type ["=" expr] [COMMENT] _NL -> struct_field
+
+agent_block: _NL _INDENT agent_fields _DEDENT
+agent_fields: agent_field+
+agent_field: NAME ":" basic_type ["=" expr] [COMMENT] _NL -> agent_field
 
 with_context_manager: expr
 mixed_arguments: with_arg ("," with_arg)*

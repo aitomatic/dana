@@ -64,6 +64,7 @@ Statement = Union[
     "TryBlock",
     "FunctionDefinition",
     "StructDefinition",
+    "AgentDefinition",
     "ImportStatement",
     "ImportFromStatement",
     "FunctionCall",  # Can be both an expression and a statement
@@ -391,8 +392,8 @@ class ExceptBlock:
 
     body: list[Statement]
     location: Location | None = None
-    exception_type: Identifier | None = None
-    exception_name: Identifier | None = None
+    exception_type: Expression | None = None  # Can be Identifier, TupleLiteral, or None
+    variable_name: str | None = None  # Variable name from 'as' clause
 
 
 @dataclass
@@ -568,6 +569,28 @@ class AgentPoolStatement:
     args: list[Expression]  # Positional arguments
     kwargs: dict[str, Expression]  # Keyword arguments
     target: Identifier | None = None  # Optional target for assignment
+    location: Location | None = None
+
+
+# === Agent Definitions ===
+
+
+@dataclass
+class AgentDefinition:
+    """Agent definition statement (e.g., agent SemiconductorInspector: process_type: str, tolerance_threshold: float)."""
+
+    name: str
+    fields: list["AgentField"]
+    location: Location | None = None
+
+
+@dataclass
+class AgentField:
+    """A field in an agent definition."""
+
+    name: str
+    type_hint: TypeHint
+    default_value: Expression | None = None
     location: Location | None = None
 
 

@@ -1,14 +1,15 @@
 """Clean Reasoning Agent Implementation in LangGraph - Real LLM Only."""
 
-import os
-from typing import TypedDict, Annotated
-import operator
-from langgraph.graph import StateGraph, END
-from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
-from langchain_openai import ChatOpenAI
-from langchain_mcp_adapters.client import MultiServerMCPClient
 import asyncio
+import operator
+import os
 from dataclasses import dataclass
+from typing import Annotated, TypedDict
+
+from langchain_core.messages import HumanMessage, ToolMessage
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from langchain_openai import ChatOpenAI
+from langgraph.graph import END, StateGraph
 
 
 # Define the state structure for the agent
@@ -232,7 +233,7 @@ class ReasoningAgent:
     
     async def solve(self, question: str) -> str:
         """Solve a question using the agent."""
-        print(f"\n🚀 Starting LangGraph Reasoning Agent")
+        print("\n🚀 Starting LangGraph Reasoning Agent")
         print(f"❓ Question: {question}")
         
         initial_state: ReasoningState = {
@@ -244,7 +245,7 @@ class ReasoningAgent:
         }
         
         result = await self.graph.ainvoke(initial_state)
-        print(f"✅ Agent completed processing")
+        print("✅ Agent completed processing")
         return result["reasoning_result"]
 
 
@@ -273,7 +274,7 @@ async def main():
         
         try:
             answer = await agent.solve(question)
-            print(f"\n📝 ANSWER:")
+            print("\n📝 ANSWER:")
             print(answer)
         except Exception as e:
             print(f"❌ Error: {e}")
@@ -285,7 +286,7 @@ if __name__ == "__main__":
         question = "What is the weather in Tokyo?"
         print("Testing LangGraph implementation with real LLM...")
         result = solve_sync(question)
-        print(f"\n📝 FINAL RESULT:")
+        print("\n📝 FINAL RESULT:")
         print(result)
     except ValueError as e:
         print(f"Configuration Error: {e}")

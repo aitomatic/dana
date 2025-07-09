@@ -2,15 +2,26 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Simple Q&A Example",
-            "type": "python",
+            "name": "Run Dana",
+            "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/examples/basic/simple_qa.py",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}"
-            }
-        }
+            "module": "dana.core.cli",
+            "args": [
+                "${file}"
+            ],
+            "cwd": "${fileDirname}",
+            "console": "integratedTerminal"
+        },
+        {
+         "name": "Python Debugger: Current File",
+         "type": "debugpy",
+         "request": "launch",
+         "program": "${file}",
+         "justMyCode": false,
+         "console": "integratedTerminal",
+         "env": {
+           "PYTHONPATH": "${workspaceFolder}/src"
+         }
+       }
     ]
 }

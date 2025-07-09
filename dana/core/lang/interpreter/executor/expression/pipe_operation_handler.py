@@ -12,7 +12,7 @@ from typing import Any
 
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.parser.ast import BinaryExpression, Identifier
+from dana.core.lang.ast import BinaryExpression, Identifier
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -387,7 +387,7 @@ class PipeOperationHandler(Loggable):
 
         # Handle identifiers - delegate to function executor for consistency
         if isinstance(func, Identifier):
-            from dana.core.lang.parser.ast import FunctionCall
+            from dana.core.lang.ast import FunctionCall
 
             # Convert arguments to FunctionCall format
             function_call_args = {}

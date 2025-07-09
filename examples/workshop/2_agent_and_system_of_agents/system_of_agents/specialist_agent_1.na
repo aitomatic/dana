@@ -14,4 +14,4 @@ def solve(problem):
     return reason(f"{problem} Be aware that today is {date.today()}", resources=[weather_info])
 
 # quick test:
-# solve("How is Tokyo's weather this weekend?")
+solve("How is Tokyo's weather this weekend?")

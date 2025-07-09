@@ -1,0 +1,67 @@
+# Function Composition Demo in Dana
+#
+# This demonstrates the new function composition feature using the pipe operator (|).
+# Function composition allows creating reusable function pipelines.
+#
+# Copyright © 2025 Aitomatic, Inc.
+# MIT License
+
+# Define utility functions for demonstration
+def add_ten(x):
+    return x + 10
+
+def double(x):
+    return x * 2
+
+def stringify(x):
+    return "Result: " + str(x)
+
+def create_person(name):
+    return {"name": name, "age": 0, "skills": []}
+
+def set_age_25(person):
+    # Create a new dict instead of using copy() method
+    person_copy = {
+        "name": person["name"],
+        "age": 25,
+        "skills": person["skills"]
+    }
+    return person_copy
+
+def add_coding_skills(person):
+    # Create a new dict instead of using copy() method
+    person_copy = {
+        "name": person["name"], 
+        "age": person["age"],
+        "skills": person["skills"] + ["Python", "Dana"]
+    }
+    return person_copy
+
+def square(x):
+    return x * x
+
+def to_list(x):
+    return [x]
+
+def append_message(lst):
+    return lst + ["processed"]
+
+# Export the functions so they can be imported
+export add_ten
+export double
+export stringify
+export create_person
+export set_age_25
+export add_coding_skills
+export square
+export to_list
+export append_message
+
+# Define some composed functions for demonstration
+math_pipeline = add_ten | double | stringify
+person_builder = create_person | set_age_25 | add_coding_skills
+mixed_pipeline = square | to_list | append_message
+
+export math_pipeline
+export person_builder  
+export mixed_pipeline

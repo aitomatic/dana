@@ -11,9 +11,10 @@ MIT License
 from typing import Any
 
 from dana.common.mixins.loggable import Loggable
+from dana.core.lang.ast import ExceptBlock, Identifier, TryBlock, TupleLiteral
 from dana.core.lang.interpreter.executor.control_flow.exceptions import ReturnException
-from dana.core.lang.parser.ast import TryBlock
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.core.runtime.exceptions import create_dana_exception
 
 
 class ExceptionHandler(Loggable):
@@ -89,27 +90,40 @@ class ExceptionHandler(Loggable):
 
             # Try to handle the exception with except blocks
             for i, except_block in enumerate(node.except_blocks):
-                try:
-                    # For now, catch all exceptions (exception_type filtering not implemented yet)
-                    # TODO: Add proper exception type matching with caching
-                    self.debug(f"Executing except block {i}")
-                    result = self._execute_statement_list(except_block.body, context)
-                    exception_handled = True
-                    self._add_exception_trace("except_block", exception_type, "handled")
-                    break
+                # Check if this except block matches the exception
+                if self._matches_exception(exception_occurred, except_block, context):
+                    try:
+                        self.debug(f"Executing except block {i}")
+                        
+                        # Create a new scope for the except block if variable assignment is used
+                        except_context = context
+                        self.debug(f"Processing except block with variable_name: {except_block.variable_name}")
+                        if except_block.variable_name:
+                            # Create DanaException object and assign to variable
+                            dana_exception = create_dana_exception(exception_occurred)
+                            self.debug(f"Created DanaException: {dana_exception}")
+                            # Create new context with current as parent
+                            except_context = SandboxContext(parent=context, manager=context.manager)
+                            except_context.set_in_scope(except_block.variable_name, dana_exception, "local")
+                            self.debug(f"Assigned exception to variable '{except_block.variable_name}'")
+                        
+                        result = self._execute_statement_list(except_block.body, except_context)
+                        exception_handled = True
+                        self._add_exception_trace("except_block", exception_type, "handled")
+                        break
 
-                except ReturnException:
-                    # ReturnException from except block should propagate
-                    self.debug("ReturnException in except block, propagating")
-                    self._add_exception_trace("except_block", "ReturnException", "propagated")
-                    raise
+                    except ReturnException:
+                        # ReturnException from except block should propagate
+                        self.debug("ReturnException in except block, propagating")
+                        self._add_exception_trace("except_block", "ReturnException", "propagated")
+                        raise
 
-                except Exception as except_exception:
-                    # If except block raises another exception, continue to next except block
-                    except_type = type(except_exception).__name__
-                    self.debug(f"Exception in except block {i}: {except_type}")
-                    self._add_exception_trace("except_block", except_type, "failed")
-                    continue
+                    except Exception as except_exception:
+                        # If except block raises another exception, continue to next except block
+                        except_type = type(except_exception).__name__
+                        self.debug(f"Exception in except block {i}: {except_type}")
+                        self._add_exception_trace("except_block", except_type, "failed")
+                        continue
 
             # If no except block handled the exception, prepare to re-raise it
             if not exception_handled:
@@ -222,3 +236,44 @@ class ExceptionHandler(Loggable):
             List of recent exception trace entries
         """
         return list(self._exception_traces)
+    
+    def _matches_exception(self, exception: Exception, except_block: ExceptBlock, context: SandboxContext) -> bool:
+        """Check if an exception matches an except block's specification.
+        
+        Args:
+            exception: The exception to check
+            except_block: The except block to match against
+            context: The execution context
+            
+        Returns:
+            True if the exception matches, False otherwise
+        """
+        # If no exception type specified, it's a bare except that catches everything
+        if except_block.exception_type is None:
+            self.debug("Bare except block matches all exceptions")
+            return True
+        
+        # Get the exception type name
+        exception_type_name = type(exception).__name__
+        
+        # Check if exception_type is a single identifier
+        if isinstance(except_block.exception_type, Identifier):
+            expected_type = except_block.exception_type.name
+            matches = exception_type_name == expected_type
+            self.debug(f"Checking single exception type: {expected_type} vs {exception_type_name} = {matches}")
+            return matches
+        
+        # Check if exception_type is a tuple of types
+        if isinstance(except_block.exception_type, TupleLiteral):
+            for expr in except_block.exception_type.items:
+                if isinstance(expr, Identifier) and expr.name == exception_type_name:
+                    self.debug(f"Exception type {exception_type_name} matches in tuple")
+                    return True
+            self.debug(f"Exception type {exception_type_name} not in tuple")
+            return False
+        
+        # For other expression types, evaluate and compare
+        # This is a simplified implementation - a full implementation would
+        # need to handle evaluating the expression to get the exception class
+        self.debug("Complex exception type expression not fully supported yet")
+        return False

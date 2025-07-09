@@ -23,7 +23,7 @@ from typing import Any
 
 from lark import Token, Tree
 
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     AgentPoolStatement,
     AgentStatement,
     Assignment,
@@ -211,7 +211,7 @@ class StatementTransformer(BaseTransformer):
 
     def _is_local_scoped_assignment(self, assignment):
         """Check if an assignment targets a local: scoped variable."""
-        from dana.core.lang.parser.ast import Identifier
+        from dana.core.lang.ast import Identifier
 
         if isinstance(assignment, Assignment) and isinstance(assignment.target, Identifier):
             return assignment.target.name.startswith("local:")
@@ -298,6 +298,14 @@ class StatementTransformer(BaseTransformer):
     def struct_field(self, items):
         """Transform a struct field rule into a StructField node."""
         return self.function_definition_transformer.struct_field(items)
+
+    def agent_definition(self, items):
+        """Transform an agent definition rule into an AgentDefinition node."""
+        return self.function_definition_transformer.agent_definition(items)
+
+    def agent_field(self, items):
+        """Transform an agent field rule into an AgentField node."""
+        return self.function_definition_transformer.agent_field(items)
 
     def try_stmt(self, items):
         """Transform a try-except-finally statement into a TryBlock node."""

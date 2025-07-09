@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any
 
 from dana.common.exceptions import FunctionRegistryError, SandboxError
 from dana.common.runtime_scopes import RuntimeScopes
-from dana.core.lang.parser.ast import FunctionCall
+from dana.core.lang.ast import FunctionCall
 
 if TYPE_CHECKING:
     from dana.core.lang.interpreter.executor.function_executor import FunctionExecutor
