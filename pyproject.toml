@@ -65,7 +65,7 @@ dev = [
     "pre-commit",  # Git hooks for code quality
     "pytest-cov",  # Test coverage reporting
     "numpy",       # Numerical computing (required by above)
-    "sqlachemy",
+    "sqlalchemy",
 ]
 
 # Testing framework - moved from core since not all users need to run tests
