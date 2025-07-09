@@ -8,9 +8,11 @@ without changing any existing code.
 Key Insight: You don't need to rebuild - just enhance!
 """
 
-import pandas as pd
-from opendxa.dana import dana
 import logging
+
+import pandas as pd
+
+from opendxa.dana import dana
 
 # Hide all INFO logs system-wide
 logging.getLogger().setLevel(logging.WARNING)

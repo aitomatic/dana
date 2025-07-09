@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 
-def run_command(cmd: list[str], cwd: str = None) -> tuple[int, str, str]:
+def run_command(cmd: list[str], cwd: str | None = None) -> tuple[int, str, str]:
     """Run a shell command and return exit code, stdout, stderr."""
     try:
         result = subprocess.run(

@@ -8,7 +8,7 @@ Lark Tree nodes remaining in transformed ASTs.
 import pytest
 from lark import Token, Tree
 
-from dana.core.lang.parser.ast import Assignment, Identifier, LiteralExpression, Program
+from dana.core.lang.ast import Assignment, Identifier, LiteralExpression, Program
 from dana.core.lang.parser.dana_parser import DanaParser
 from dana.core.lang.parser.utils.ast_validator import AstValidator, find_tree_nodes, validate_ast
 
@@ -31,7 +31,7 @@ class TestAstValidator:
         """Test detection of Tree nodes in a dirty AST."""
         # Create a dirty AST with a Tree node embedded
         dirty_tree = Tree("some_rule", [Token("TOKEN", "value")])
-        assignment = Assignment(target=Identifier(name="x"), value=dirty_tree)  # This should be detected
+        assignment = Assignment(target=Identifier(name="x"), value=dirty_tree)  # type: ignore  # This should be detected
         program = Program(statements=[assignment])
 
         # Should detect the Tree node

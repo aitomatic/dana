@@ -46,7 +46,7 @@ uv run black --check .
 # Documentation validation (if applicable)
 uv sync --extra docs
 uv run mkdocs build --strict
-uv run pytest --doctest-modules opendxa/
+uv run pytest --doctest-modules dana/
 
 # Dana language validation (if applicable)
 uv run python -m opendxa.dana.exec.dana examples/dana/debug_tests/test_basic.na

@@ -4,7 +4,7 @@ LangChain-based Daytrip Itinerary Generator (Chained: itinerary then cost estima
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from dotenv import load_dotenv
 from langchain.output_parsers import PydanticOutputParser
@@ -39,24 +39,24 @@ class DaytripItinerary:
     location: str
     weather_condition: str
     total_estimated_cost: float
-    itinerary_items: List[ItineraryItem]
-    recommendations: List[str]
-    weather_considerations: List[str]
+    itinerary_items: list[ItineraryItem]
+    recommendations: list[str]
+    weather_considerations: list[str]
 
 class ItineraryNoCostResponse(BaseModel):
     location: str = Field(description="The destination location")
     weather_condition: str = Field(description="The weather condition")
-    itinerary_items: List[Dict[str, Any]] = Field(description="List of itinerary items (no cost)")
-    recommendations: List[str] = Field(description="General recommendations")
-    weather_considerations: List[str] = Field(description="Weather-specific considerations")
+    itinerary_items: list[dict[str, Any]] = Field(description="List of itinerary items (no cost)")
+    recommendations: list[str] = Field(description="General recommendations")
+    weather_considerations: list[str] = Field(description="Weather-specific considerations")
 
 class ItineraryWithCostResponse(BaseModel):
     location: str = Field(description="The destination location")
     weather_condition: str = Field(description="The weather condition")
     total_estimated_cost: float = Field(description="Total estimated cost in USD")
-    itinerary_items: List[Dict[str, Any]] = Field(description="List of itinerary items with time, activity, location, description, and estimated_cost fields")
-    recommendations: List[str] = Field(description="General recommendations")
-    weather_considerations: List[str] = Field(description="Weather-specific considerations")
+    itinerary_items: list[dict[str, Any]] = Field(description="List of itinerary items with time, activity, location, description, and estimated_cost fields")
+    recommendations: list[str] = Field(description="General recommendations")
+    weather_considerations: list[str] = Field(description="Weather-specific considerations")
 
 def generate_daytrip_itinerary(location: str, weather_condition: str) -> DaytripItinerary:
     """

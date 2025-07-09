@@ -51,6 +51,7 @@ class HVACLLMManager:
             # Create LLM resource with automatic model selection
             self.llm = LLMResource(name="hvac_reasoning_llm", preferred_models=self._preferred_models, temperature=0.7, max_tokens=500)
 
+            assert self.llm is not None
             await self.llm.initialize()
             self.initialized = True
 

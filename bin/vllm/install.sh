@@ -1,5 +1,5 @@
 #!/bin/bash
-# Install vLLM for macOS (Apple Silicon and Intel)
+# Install vLLM for macOS and Linux (Ubuntu/Debian-based)
 # Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
 # Usage: ./bin/vllm/install.sh [--env-name ENV_NAME]
 
@@ -20,22 +20,104 @@ if [[ "$1" == "--env-name" && -n "$2" ]]; then
     ENV_NAME="$2"
 fi
 
-echo -e "${BLUE}🚀 Installing vLLM for macOS...${NC}"
-echo -e "${YELLOW}⚠️  Note: vLLM on macOS runs CPU-only (no GPU acceleration yet)${NC}"
+# Detect operating system
+detect_os() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        echo "macos"
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        if command -v apt-get &> /dev/null; then
+            echo "ubuntu"
+        elif command -v yum &> /dev/null; then
+            echo "rhel"
+        else
+            echo "linux"
+        fi
+    else
+        echo "unknown"
+    fi
+}
+
+OS_TYPE=$(detect_os)
+
+case "$OS_TYPE" in
+    "macos")
+        echo -e "${BLUE}🚀 Installing vLLM for macOS...${NC}"
+        echo -e "${YELLOW}⚠️  Note: vLLM on macOS runs CPU-only (no GPU acceleration yet)${NC}"
+        ;;
+    "ubuntu"|"linux")
+        echo -e "${BLUE}🚀 Installing vLLM for Linux...${NC}"
+        echo -e "${GREEN}✅ GPU acceleration available if CUDA is properly configured${NC}"
+        ;;
+    "rhel")
+        echo -e "${BLUE}🚀 Installing vLLM for Linux (RHEL/CentOS)...${NC}"
+        echo -e "${GREEN}✅ GPU acceleration available if CUDA is properly configured${NC}"
+        ;;
+    *)
+        echo -e "${RED}❌ Error: Unsupported operating system: $OSTYPE${NC}"
+        echo -e "${YELLOW}💡 Supported systems: macOS, Ubuntu/Debian, RHEL/CentOS${NC}"
+        exit 1
+        ;;
+esac
 echo ""
 
-# Check macOS version
-MACOS_VERSION=$(sw_vers -productVersion)
-MAJOR_VERSION=$(echo "$MACOS_VERSION" | cut -d '.' -f 1)
-MINOR_VERSION=$(echo "$MACOS_VERSION" | cut -d '.' -f 2)
+# OS-specific system checks
+check_system_requirements() {
+    case "$OS_TYPE" in
+        "macos")
+            # Check macOS version
+            MACOS_VERSION=$(sw_vers -productVersion)
+            MAJOR_VERSION=$(echo "$MACOS_VERSION" | cut -d '.' -f 1)
+            MINOR_VERSION=$(echo "$MACOS_VERSION" | cut -d '.' -f 2)
+            
+            echo -e "${BLUE}🖥️  macOS Version: ${MACOS_VERSION}${NC}"
+            
+            if [[ "$MAJOR_VERSION" -lt 14 || ("$MAJOR_VERSION" -eq 14 && "$MINOR_VERSION" -lt 4) ]]; then
+                echo -e "${RED}❌ Error: macOS Sonoma (14.4) or later is required for vLLM${NC}"
+                echo -e "${YELLOW}💡 Current version: ${MACOS_VERSION}, Required: 14.4+${NC}"
+                exit 1
+            fi
+            ;;
+        "ubuntu"|"linux")
+            # Check Ubuntu/Debian version
+            if command -v lsb_release &> /dev/null; then
+                LINUX_VERSION=$(lsb_release -rs)
+                LINUX_DISTRO=$(lsb_release -is)
+                echo -e "${BLUE}🐧 Linux Distribution: ${LINUX_DISTRO} ${LINUX_VERSION}${NC}"
+            else
+                echo -e "${BLUE}🐧 Linux Distribution: Detected${NC}"
+            fi
+            
+            # Check for CUDA (optional but recommended)
+            if command -v nvidia-smi &> /dev/null; then
+                CUDA_VERSION=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader,nounits | head -1)
+                echo -e "${GREEN}🚀 NVIDIA GPU detected (Driver: ${CUDA_VERSION})${NC}"
+                echo -e "${GREEN}💡 GPU acceleration will be available${NC}"
+            else
+                echo -e "${YELLOW}⚠️  No NVIDIA GPU detected - vLLM will run on CPU${NC}"
+                echo -e "${YELLOW}💡 For GPU acceleration, install NVIDIA drivers and CUDA toolkit${NC}"
+            fi
+            ;;
+        "rhel")
+            # Check RHEL/CentOS version
+            if [[ -f /etc/redhat-release ]]; then
+                RHEL_VERSION=$(cat /etc/redhat-release)
+                echo -e "${BLUE}🔴 Red Hat Distribution: ${RHEL_VERSION}${NC}"
+            fi
+            
+            # Check for CUDA (optional but recommended)
+            if command -v nvidia-smi &> /dev/null; then
+                CUDA_VERSION=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader,nounits | head -1)
+                echo -e "${GREEN}🚀 NVIDIA GPU detected (Driver: ${CUDA_VERSION})${NC}"
+                echo -e "${GREEN}💡 GPU acceleration will be available${NC}"
+            else
+                echo -e "${YELLOW}⚠️  No NVIDIA GPU detected - vLLM will run on CPU${NC}"
+                echo -e "${YELLOW}💡 For GPU acceleration, install NVIDIA drivers and CUDA toolkit${NC}"
+            fi
+            ;;
+    esac
+}
 
-echo -e "${BLUE}🖥️  macOS Version: ${MACOS_VERSION}${NC}"
-
-if [[ "$MAJOR_VERSION" -lt 14 || ("$MAJOR_VERSION" -eq 14 && "$MINOR_VERSION" -lt 4) ]]; then
-    echo -e "${RED}❌ Error: macOS Sonoma (14.4) or later is required for vLLM${NC}"
-    echo -e "${YELLOW}💡 Current version: ${MACOS_VERSION}, Required: 14.4+${NC}"
-    exit 1
-fi
+check_system_requirements
 
 # Check if Python 3 is available
 if ! command -v python3 &> /dev/null; then
@@ -59,30 +141,82 @@ if [[ "$PYTHON_MAJOR" -lt 3 || ("$PYTHON_MAJOR" -eq 3 && "$PYTHON_MINOR" -lt 8) 
     exit 1
 fi
 
-# Check if Xcode Command Line Tools are installed
-echo -e "${BLUE}🔧 Checking Xcode Command Line Tools...${NC}"
-if ! xcode-select -p &> /dev/null; then
-    echo -e "${YELLOW}📦 Installing Xcode Command Line Tools...${NC}"
-    xcode-select --install
-    echo -e "${YELLOW}⏳ Please complete the Xcode Command Line Tools installation and run this script again${NC}"
-    exit 0
-fi
+# OS-specific build tools check
+check_build_tools() {
+    case "$OS_TYPE" in
+        "macos")
+            # Check if Xcode Command Line Tools are installed
+            echo -e "${BLUE}🔧 Checking Xcode Command Line Tools...${NC}"
+            if ! xcode-select -p &> /dev/null; then
+                echo -e "${YELLOW}📦 Installing Xcode Command Line Tools...${NC}"
+                xcode-select --install
+                echo -e "${YELLOW}⏳ Please complete the Xcode Command Line Tools installation and run this script again${NC}"
+                exit 0
+            fi
+            
+            # Check Xcode version
+            if command -v xcodebuild &> /dev/null; then
+                XCODE_VERSION=$(xcodebuild -version | head -n1 | cut -d ' ' -f2)
+                echo -e "${BLUE}🛠️  Xcode Version: ${XCODE_VERSION}${NC}"
+                
+                # Check if Xcode version is 15.4+
+                XCODE_MAJOR=$(echo "$XCODE_VERSION" | cut -d '.' -f 1)
+                XCODE_MINOR=$(echo "$XCODE_VERSION" | cut -d '.' -f 2)
+                
+                if [[ "$XCODE_MAJOR" -lt 15 || ("$XCODE_MAJOR" -eq 15 && "$XCODE_MINOR" -lt 4) ]]; then
+                    echo -e "${YELLOW}⚠️  Warning: Xcode 15.4+ is recommended for vLLM${NC}"
+                    echo -e "${YELLOW}   Current version: ${XCODE_VERSION}, Recommended: 15.4+${NC}"
+                    echo -e "${YELLOW}   Please update Xcode from the App Store if you encounter build issues${NC}"
+                fi
+            fi
+            ;;
+        "ubuntu"|"linux")
+            # Check for essential build tools
+            echo -e "${BLUE}🔧 Checking build tools...${NC}"
+            
+            # Check for basic build tools
+            missing_tools=()
+            if ! command -v make &> /dev/null; then missing_tools+=("make"); fi
+            if ! command -v gcc &> /dev/null; then missing_tools+=("gcc"); fi
+            if ! command -v g++ &> /dev/null; then missing_tools+=("g++"); fi
+            
+            if [[ ${#missing_tools[@]} -gt 0 ]]; then
+                echo -e "${YELLOW}📦 Installing build-essential...${NC}"
+                sudo apt-get update
+                sudo apt-get install -y build-essential
+            else
+                echo -e "${GREEN}✅ Build tools available${NC}"
+            fi
+            
+            # Optional: Check for CUDA development tools
+            if command -v nvidia-smi &> /dev/null && ! command -v nvcc &> /dev/null; then
+                echo -e "${YELLOW}💡 NVIDIA GPU detected but CUDA toolkit not found${NC}"
+                echo -e "${YELLOW}   For GPU acceleration, consider installing CUDA toolkit:${NC}"
+                echo -e "${YELLOW}   sudo apt-get install nvidia-cuda-toolkit${NC}"
+            fi
+            ;;
+        "rhel")
+            # Check for essential build tools on RHEL/CentOS
+            echo -e "${BLUE}🔧 Checking build tools...${NC}"
+            
+            # Check for Development Tools group
+            if ! command -v make &> /dev/null || ! command -v gcc &> /dev/null; then
+                echo -e "${YELLOW}📦 Installing Development Tools...${NC}"
+                sudo yum groupinstall -y "Development Tools"
+            else
+                echo -e "${GREEN}✅ Build tools available${NC}"
+            fi
+            
+            # Optional: Check for CUDA development tools
+            if command -v nvidia-smi &> /dev/null && ! command -v nvcc &> /dev/null; then
+                echo -e "${YELLOW}💡 NVIDIA GPU detected but CUDA toolkit not found${NC}"
+                echo -e "${YELLOW}   For GPU acceleration, consider installing CUDA toolkit${NC}"
+            fi
+            ;;
+    esac
+}
 
-# Check Xcode version
-if command -v xcodebuild &> /dev/null; then
-    XCODE_VERSION=$(xcodebuild -version | head -n1 | cut -d ' ' -f2)
-    echo -e "${BLUE}🛠️  Xcode Version: ${XCODE_VERSION}${NC}"
-    
-    # Check if Xcode version is 15.4+
-    XCODE_MAJOR=$(echo "$XCODE_VERSION" | cut -d '.' -f 1)
-    XCODE_MINOR=$(echo "$XCODE_VERSION" | cut -d '.' -f 2)
-    
-    if [[ "$XCODE_MAJOR" -lt 15 || ("$XCODE_MAJOR" -eq 15 && "$XCODE_MINOR" -lt 4) ]]; then
-        echo -e "${YELLOW}⚠️  Warning: Xcode 15.4+ is recommended for vLLM${NC}"
-        echo -e "${YELLOW}   Current version: ${XCODE_VERSION}, Recommended: 15.4+${NC}"
-        echo -e "${YELLOW}   Please update Xcode from the App Store if you encounter build issues${NC}"
-    fi
-fi
+check_build_tools
 
 # Check if virtual environment already exists
 VENV_PATH="$HOME/${ENV_NAME}"
@@ -138,18 +272,59 @@ echo -e "${BLUE}🏷️  Switching to stable version ${STABLE_VERSION}...${NC}"
 echo -e "${YELLOW}💡 Using stable version instead of main branch for better reliability${NC}"
 git checkout "$STABLE_VERSION"
 
-# Install CPU requirements
-echo -e "${BLUE}📦 Installing CPU requirements...${NC}"
-if [[ -f "requirements-cpu.txt" ]]; then
-    pip install -r requirements-cpu.txt
-else
-    echo -e "${YELLOW}⚠️  requirements-cpu.txt not found, installing basic requirements...${NC}"
-    pip install torch torchvision torchaudio
-fi
+# OS-specific vLLM installation
+install_vllm() {
+    case "$OS_TYPE" in
+        "macos")
+            # Install CPU requirements for macOS
+            echo -e "${BLUE}📦 Installing CPU requirements for macOS...${NC}"
+            if [[ -f "requirements-cpu.txt" ]]; then
+                pip install -r requirements-cpu.txt
+            else
+                echo -e "${YELLOW}⚠️  requirements-cpu.txt not found, installing basic requirements...${NC}"
+                pip install torch torchvision torchaudio
+            fi
+            
+            # Install vLLM in CPU-only mode for macOS
+            echo -e "${BLUE}🔨 Building and installing vLLM for macOS (CPU-only)...${NC}"
+            VLLM_TARGET_DEVICE=cpu pip install -e .
+            ;;
+        "ubuntu"|"linux"|"rhel")
+            # Install requirements for Linux (GPU support if available)
+            if command -v nvidia-smi &> /dev/null; then
+                echo -e "${BLUE}📦 Installing GPU requirements for Linux...${NC}"
+                # Install PyTorch with CUDA support
+                pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+                
+                # Install other requirements
+                if [[ -f "requirements.txt" ]]; then
+                    pip install -r requirements.txt
+                fi
+                
+                # Install vLLM with GPU support
+                echo -e "${BLUE}🔨 Building and installing vLLM with GPU support...${NC}"
+                pip install -e .
+            else
+                echo -e "${BLUE}📦 Installing CPU requirements for Linux...${NC}"
+                # Install CPU-only PyTorch
+                pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+                
+                # Install CPU requirements if available
+                if [[ -f "requirements-cpu.txt" ]]; then
+                    pip install -r requirements-cpu.txt
+                elif [[ -f "requirements.txt" ]]; then
+                    pip install -r requirements.txt
+                fi
+                
+                # Install vLLM in CPU mode
+                echo -e "${BLUE}🔨 Building and installing vLLM (CPU-only)...${NC}"
+                VLLM_TARGET_DEVICE=cpu pip install -e .
+            fi
+            ;;
+    esac
+}
 
-# Install vLLM in editable mode
-echo -e "${BLUE}🔨 Building and installing vLLM (this may take several minutes)...${NC}"
-VLLM_TARGET_DEVICE=cpu pip install -e .
+install_vllm
 
 # Verify installation
 echo -e "${BLUE}✅ Verifying vLLM installation...${NC}"
@@ -164,13 +339,13 @@ fi
 echo -e "${BLUE}📝 Creating convenience start script...${NC}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
-START_SCRIPT="$PROJECT_ROOT/bin/start_vllm.sh"
+START_SCRIPT="$PROJECT_ROOT/bin/vllm/start.sh"
 
 cat > "$START_SCRIPT" << 'EOF'
 #!/bin/bash
-# Start vLLM Server for OpenDXA
+# Start vLLM Server for Dana
 # Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
-# Usage: ./bin/start_vllm.sh [OPTIONS]
+# Usage: ./bin/vllm/start.sh [OPTIONS]
 
 set -e
 
@@ -202,7 +377,7 @@ for arg in "$@"; do
 done
 
 show_help() {
-    echo "Start vLLM Server for OpenDXA"
+    echo "Start vLLM Server for Dana"
     echo ""
     echo "Usage: $0 [OPTIONS]"
     echo ""
@@ -229,8 +404,8 @@ show_help() {
 
 show_model_menu() {
     clear
-    echo -e "${BLUE}🤖 vLLM Model Selection for OpenDXA${NC}"
-    echo -e "${BLUE}════════════════════════════════════${NC}"
+    echo -e "${BLUE}🤖 vLLM Model Selection for Dana${NC}"
+    echo -e "${BLUE}═══════════════════════════════════${NC}"
     echo ""
     echo "Select a model category optimized for your hardware and use case:"
     echo ""
@@ -364,7 +539,7 @@ if [[ "$INTERACTIVE_MODE" == true ]]; then
     MODEL="$MODEL_SELECTED"
 fi
 
-echo -e "${BLUE}🚀 Starting vLLM Server for OpenDXA...${NC}"
+echo -e "${BLUE}🚀 Starting vLLM Server for Dana...${NC}"
 echo -e "${BLUE}📋 Configuration:${NC}"
 echo "  • Model: $MODEL"
 echo "  • Host: $HOST"
@@ -460,7 +635,7 @@ rm -f "$START_SCRIPT.bak"
 
 # Make the start script executable
 chmod +x "$START_SCRIPT"
-echo -e "${GREEN}✅ Created start script: $START_SCRIPT${NC}"
+echo -e "${GREEN}✅ Created start script: ./bin/vllm/start.sh${NC}"
 echo -e "${BLUE}   Environment: $ENV_NAME${NC}"
 
 echo ""
@@ -468,11 +643,11 @@ echo -e "${GREEN}🎉 vLLM installation completed successfully!${NC}"
 echo ""
 echo -e "${YELLOW}📝 Next steps:${NC}"
 echo "1. Start vLLM server with interactive model selection (recommended):"
-echo "   ./bin/start_vllm.sh"
+echo "   ./bin/vllm/start.sh"
 echo "   ⭐ Choose from 19 curated models optimized for different use cases!"
 echo ""
 echo "2. Or start with direct model specification:"
-echo "   ./bin/start_vllm.sh --model microsoft/Phi-4 --port 8080"
+echo "   ./bin/vllm/start.sh --model microsoft/Phi-4 --port 8080"
 echo ""
 echo "3. Recommended models for your system:"
 echo "   • For macOS/CPU: microsoft/Phi-3.5-mini-instruct (fast & efficient)"
@@ -486,22 +661,88 @@ echo ""
 echo "5. Manual activation (if needed):"
 echo "   source $VENV_PATH/bin/activate"
 echo ""
-echo -e "${BLUE}💡 Important Notes:${NC}"
-echo "• vLLM on macOS runs CPU-only (no GPU acceleration)"
-echo "• Only FP32 and FP16 data types are supported"
-echo "• Performance will be slower than CUDA-enabled systems"
-echo "• Installed stable version ${STABLE_VERSION} for better reliability"
-echo "• Multiprocessing disabled to prevent import errors on macOS"
-echo "• Consider alternatives like MLX or llama.cpp for Apple Silicon GPU acceleration"
+# OS-specific installation notes
+show_installation_notes() {
+    echo -e "${BLUE}💡 Important Notes:${NC}"
+    case "$OS_TYPE" in
+        "macos")
+            echo "• vLLM on macOS runs CPU-only (no GPU acceleration)"
+            echo "• Only FP32 and FP16 data types are supported"
+            echo "• Performance will be slower than CUDA-enabled systems"
+            echo "• Multiprocessing disabled to prevent import errors on macOS"
+            echo "• Consider alternatives like MLX or llama.cpp for Apple Silicon GPU acceleration"
+            ;;
+        "ubuntu"|"linux"|"rhel")
+            if command -v nvidia-smi &> /dev/null; then
+                echo "• vLLM installed with GPU support"
+                echo "• CUDA acceleration available for faster inference"
+                echo "• Performance will be significantly faster than CPU-only"
+                echo "• Monitor GPU memory usage during inference"
+            else
+                echo "• vLLM installed in CPU-only mode"
+                echo "• For GPU acceleration, install NVIDIA drivers and CUDA toolkit"
+                echo "• Performance will be slower than GPU-enabled systems"
+            fi
+            echo "• FP32, FP16, and other optimizations available"
+            ;;
+    esac
+    echo "• Installed stable version ${STABLE_VERSION} for better reliability"
+}
+
+show_installation_notes
 echo ""
 echo -e "${YELLOW}📚 For more information:${NC}"
 echo "• vLLM Documentation: https://docs.vllm.ai/"
-echo "• macOS Installation Guide: https://docs.vllm.ai/en/latest/getting_started/installation/cpu-apple.html"
+case "$OS_TYPE" in
+    "macos")
+        echo "• macOS Installation Guide: https://docs.vllm.ai/en/latest/getting_started/installation/cpu-apple.html"
+        ;;
+    "ubuntu"|"linux"|"rhel")
+        echo "• Linux Installation Guide: https://docs.vllm.ai/en/latest/getting_started/installation.html"
+        if command -v nvidia-smi &> /dev/null; then
+            echo "• GPU Installation Guide: https://docs.vllm.ai/en/latest/getting_started/installation/cuda.html"
+        fi
+        ;;
+esac
 echo ""
-echo -e "${BLUE}🗂️  Installation Details:${NC}"
-echo "• Virtual Environment: $VENV_PATH"
-echo "• vLLM Source: $VLLM_DIR"
-echo "• vLLM Version: $STABLE_VERSION (stable)"
-echo "• Start Script: ./bin/start_vllm.sh"
-echo "• Python Version: $PYTHON_VERSION"
-echo "• macOS Version: $MACOS_VERSION" 
+# OS-specific installation summary
+show_installation_summary() {
+    echo -e "${BLUE}🗂️  Installation Details:${NC}"
+    echo "• Virtual Environment: $VENV_PATH"
+    echo "• vLLM Source: $VLLM_DIR"
+    echo "• vLLM Version: $STABLE_VERSION (stable)"
+    echo "• Start Script: ./bin/vllm/start.sh"
+    echo "• Python Version: $PYTHON_VERSION"
+    
+    case "$OS_TYPE" in
+        "macos")
+            echo "• macOS Version: $MACOS_VERSION"
+            ;;
+        "ubuntu"|"linux")
+            if [[ -n "${LINUX_DISTRO:-}" && -n "${LINUX_VERSION:-}" ]]; then
+                echo "• Linux Distribution: $LINUX_DISTRO $LINUX_VERSION"
+            else
+                echo "• Operating System: Linux"
+            fi
+            if command -v nvidia-smi &> /dev/null; then
+                echo "• GPU Support: Available (NVIDIA)"
+            else
+                echo "• GPU Support: Not available (CPU-only)"
+            fi
+            ;;
+        "rhel")
+            if [[ -n "${RHEL_VERSION:-}" ]]; then
+                echo "• System: $RHEL_VERSION"
+            else
+                echo "• Operating System: RHEL/CentOS"
+            fi
+            if command -v nvidia-smi &> /dev/null; then
+                echo "• GPU Support: Available (NVIDIA)"
+            else
+                echo "• GPU Support: Not available (CPU-only)"
+            fi
+            ;;
+    esac
+}
+
+show_installation_summary 

@@ -5,7 +5,6 @@ from pprint import pformat
 
 from fastmcp.client.client import Client
 from fastmcp.client.transports import StreamableHttpTransport
-
 from loguru import logger
 
 WEATHER_MCP_SERVER_URL = "http://127.0.0.1:8000/mcp"

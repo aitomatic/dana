@@ -19,7 +19,7 @@ import textwrap
 
 import pytest
 
-from dana.core.lang.parser.ast import Conditional, FunctionCall, FunctionDefinition, Program, TryBlock, WhileLoop
+from dana.core.lang.ast import Conditional, FunctionCall, FunctionDefinition, Program, TryBlock, WhileLoop
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
 
 CODE_SAMPLES = {

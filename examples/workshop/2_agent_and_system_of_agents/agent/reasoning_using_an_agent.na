@@ -15,7 +15,7 @@ def solve(question: str) -> str:
 
 
 question = "What is the weather in Tokyo?"
-# print(solve(question))
+print(solve(question))
 
 # An AGENT in DANA must have the following components:
 # - name

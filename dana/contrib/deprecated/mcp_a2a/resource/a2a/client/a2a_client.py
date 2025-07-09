@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 from python_a2a import A2AClient
 from python_a2a.models import AgentCard, Message, MessageRole, Metadata, TextContent
 
-from dana.integrations.a2a.resource.a2a.common.message_utils import extract_text_from_response
+from dana.integrations.agent_to_agent.resource.a2a.common.message_utils import extract_text_from_response
 
 
 class BaseA2AClient(A2AClient):
@@ -62,7 +62,7 @@ class BaseA2AClient(A2AClient):
         self.json_agent_card = self.get_json_agent_card()
         self._last_refresh = datetime.now(UTC)
 
-    async def ask_with_metadata(self, message_text: str, metadata: dict[str, any] = None) -> str:
+    async def ask_with_metadata(self, message_text: str, metadata: dict[str, any] | None = None) -> str:
         """Ask a question and return the response with metadata."""
         if metadata is None:
             metadata = {}

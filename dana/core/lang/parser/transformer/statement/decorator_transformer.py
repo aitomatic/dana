@@ -11,7 +11,7 @@ from typing import Any
 
 from lark import Tree
 
-from dana.core.lang.parser.ast import Decorator
+from dana.core.lang.ast import Decorator
 
 
 class DecoratorTransformer:

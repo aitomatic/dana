@@ -31,7 +31,7 @@ from typing import Any, cast
 
 from lark import Token, Tree
 
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     AttributeAccess,
     BinaryExpression,
     BinaryOperator,
@@ -268,7 +268,7 @@ class ExpressionTransformer(BaseTransformer):
                 operand = LiteralExpression(value=None)
 
             # Explicitly cast to Expression
-            from dana.core.lang.parser.ast import Expression
+            from dana.core.lang.ast import Expression
 
             operand_expr = cast(Expression, operand)
             return UnaryExpression(operator="not", operand=operand_expr)
@@ -407,7 +407,7 @@ class ExpressionTransformer(BaseTransformer):
                 return LiteralExpression(value=None)
             if item.data == "collection" and len(item.children) == 1:
                 child = item.children[0]
-                from dana.core.lang.parser.ast import DictLiteral, SetLiteral, TupleLiteral
+                from dana.core.lang.ast import DictLiteral, SetLiteral, TupleLiteral
 
                 if isinstance(child, DictLiteral | TupleLiteral | SetLiteral):
                     return child
@@ -505,7 +505,7 @@ class ExpressionTransformer(BaseTransformer):
         return result
 
     def tuple(self, items):
-        from dana.core.lang.parser.ast import Expression, TupleLiteral
+        from dana.core.lang.ast import Expression, TupleLiteral
 
         flat_items = self.flatten_items(items)
         # Ensure each item is properly cast to Expression type
@@ -520,7 +520,7 @@ class ExpressionTransformer(BaseTransformer):
         """
         Transform a list literal into a ListLiteral AST node.
         """
-        from dana.core.lang.parser.ast import Expression
+        from dana.core.lang.ast import Expression
 
         flat_items = self.flatten_items(items)
         # Ensure each item is properly cast to Expression type
@@ -540,13 +540,13 @@ class ExpressionTransformer(BaseTransformer):
             elif hasattr(item, "data") and item.data == "key_value_pair":
                 pair = self.key_value_pair(item.children)
                 pairs.append(pair)
-        from dana.core.lang.parser.ast import DictLiteral
+        from dana.core.lang.ast import DictLiteral
 
         return DictLiteral(items=pairs)
 
     def set(self, items):
         flat_items = self.flatten_items(items)
-        from dana.core.lang.parser.ast import Expression, SetLiteral
+        from dana.core.lang.ast import Expression, SetLiteral
 
         # Ensure each item is properly cast to Expression type
         set_items: list[Expression] = []
@@ -827,7 +827,7 @@ class ExpressionTransformer(BaseTransformer):
             return items[0]
         else:
             # Multi-dimensional - return a SliceTuple
-            from dana.core.lang.parser.ast import SliceTuple
+            from dana.core.lang.ast import SliceTuple
 
             return SliceTuple(slices=items)
 

@@ -33,7 +33,7 @@ except ImportError:
     exit(1)
 
 # Import the existing ReasoningAgent
-from reasoning_agent_langgraph_fixed import ReasoningAgent, AgentConfig
+from reasoning_agent_langgraph_fixed import AgentConfig, ReasoningAgent
 
 
 @agent(
@@ -89,7 +89,7 @@ class ReasoningAgentA2A(A2AServer):
             asyncio.set_event_loop(loop)
             try:
                 result = loop.run_until_complete(self.reasoning_agent.solve(question))
-                self.logger.info(f"✅ Successfully processed reasoning request")
+                self.logger.info("✅ Successfully processed reasoning request")
                 return result
             finally:
                 loop.close()
@@ -198,7 +198,7 @@ class ReasoningAgentA2A(A2AServer):
                 task.artifacts = [{"parts": [{"type": "text", "text": response}]}]
                 task.status = TaskStatus(state=TaskState.COMPLETED)
                 
-                self.logger.info(f"✅ Successfully processed A2A task")
+                self.logger.info("✅ Successfully processed A2A task")
                 
             except Exception as e:
                 self.logger.error(f"❌ Error processing reasoning task: {e}")

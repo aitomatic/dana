@@ -13,7 +13,7 @@ MIT License
 
 from typing import Any, cast
 
-from dana.core.lang.parser.ast import (
+from dana.core.lang.ast import (
     AgentPoolStatement,
     AgentStatement,
     Assignment,
@@ -112,7 +112,7 @@ class AssignmentTransformer(BaseTransformer):
 
     def typed_parameter(self, items):
         """Transform a typed parameter rule into a Parameter object."""
-        from dana.core.lang.parser.ast import Parameter
+        from dana.core.lang.ast import Parameter
 
         # Grammar: typed_parameter: NAME [":" basic_type] ["=" expr]
         name_item = items[0]

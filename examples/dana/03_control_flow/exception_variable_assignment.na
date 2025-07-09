@@ -1,0 +1,158 @@
+# Exception Variable Assignment Examples
+# Demonstrates the new `except Exception as e:` syntax in Dana
+
+log("=== Exception Variable Assignment Examples ===")
+
+# Example 1: Basic exception variable assignment
+log("\n1. Basic Exception Variable Assignment")
+try:
+    result = 10 / 0
+except as e:
+    log(f"Caught exception: {e.type}")
+    log(f"Error message: {e.message}")
+    log("Exception handled with variable access")
+
+# Example 2: Specific exception type with variable
+log("\n2. Specific Exception Type with Variable")
+def parse_number(text):
+    # This would raise ValueError for invalid input
+    if text == "invalid":
+        raise ValueError("Invalid number format")
+    return int(text)
+
+try:
+    number = parse_number("invalid")
+except ValueError as e:
+    log(f"ValueError caught: {e.message}")
+    log(f"Exception type: {e.type}")
+
+# Example 3: Multiple exception types with variable
+log("\n3. Multiple Exception Types with Variable")
+def risky_operation(operation_type):
+    if operation_type == "type_error":
+        raise TypeError("Type mismatch")
+    elif operation_type == "value_error":
+        raise ValueError("Invalid value")
+    else:
+        raise RuntimeError("Unknown error")
+
+try:
+    risky_operation("type_error")
+except (ValueError, TypeError) as e:
+    log(f"Caught expected error: {e.type} - {e.message}")
+except RuntimeError as e:
+    log(f"Caught runtime error: {e.message}")
+
+# Example 4: Mixed exception handlers (with and without variables)
+log("\n4. Mixed Exception Handlers")
+def database_operation():
+    # Simulate database connection error
+    raise ConnectionError("Database unavailable")
+
+try:
+    database_operation()
+except ValueError as e:
+    log(f"Data validation error: {e.message}")
+except ConnectionError:
+    log("Connection error - retrying with fallback")
+except as e:
+    log(f"Unexpected error: {e.type} - {e.message}")
+
+# Example 5: Exception chaining and re-raising
+log("\n5. Exception Chaining and Re-raising")
+def validate_data(data):
+    if not data:
+        raise ValueError("Data cannot be empty")
+
+def process_data(data):
+    try:
+        validate_data(data)
+        return "processed"
+    except ValueError as e:
+        log(f"Validation failed: {e.message}")
+        # Re-raise with additional context
+        raise RuntimeError(f"Processing failed: {e.message}")
+
+try:
+    process_data("")
+except RuntimeError as e:
+    log(f"Final error: {e.message}")
+
+# Example 6: Nested exception handling
+log("\n6. Nested Exception Handling")
+try:
+    try:
+        inner_result = 1 / 0
+    except ZeroDivisionError as inner_e:
+        log(f"Inner exception: {inner_e.type}")
+        # Raise a different exception
+        raise ValueError("Inner exception converted")
+except ValueError as outer_e:
+    log(f"Outer exception: {outer_e.message}")
+
+# Example 7: Exception handling with finally
+log("\n7. Exception Handling with Finally")
+resource_opened = False
+try:
+    resource_opened = True
+    log("Opening resource...")
+    risky_result = 1 / 0
+except as e:
+    log(f"Error occurred: {e.type}")
+finally:
+    if resource_opened:
+        log("Cleaning up resource...")
+
+# Example 8: Exception variable scope demonstration
+log("\n8. Exception Variable Scope")
+global_error = None
+try:
+    x = 1 / 0
+except as e:
+    log(f"Exception variable 'e' is available: {e.type}")
+    global_error = e.type
+# Note: 'e' is not accessible outside the except block
+log(f"Global error captured: {global_error}")
+
+# Example 9: Backward compatibility - old syntax still works
+log("\n9. Backward Compatibility")
+try:
+    old_style = 1 / 0
+except:
+    log("Old bare except syntax still works")
+
+try:
+    old_typed = 1 / 0
+except ZeroDivisionError:
+    log("Old typed except syntax still works")
+
+# Example 10: Real-world usage pattern
+log("\n10. Real-world Usage Pattern")
+def safe_file_operation(filename):
+    try:
+        # Simulate file operations
+        if filename == "missing.txt":
+            raise FileNotFoundError("File not found")
+        elif filename == "locked.txt":
+            raise PermissionError("Permission denied")
+        else:
+            return f"File {filename} processed successfully"
+    except FileNotFoundError as e:
+        log(f"File error: {e.message}")
+        return "default_content"
+    except PermissionError as e:
+        log(f"Permission error: {e.message}")
+        return "error_accessing_file"
+    except as e:
+        log(f"Unexpected error: {e.type} - {e.message}")
+        return "unknown_error"
+
+result1 = safe_file_operation("missing.txt")
+result2 = safe_file_operation("locked.txt")
+result3 = safe_file_operation("good.txt")
+
+log(f"Results: {result1}, {result2}, {result3}")
+
+log("\n=== Exception Variable Assignment Examples Complete ===")
+log("All examples demonstrate proper exception handling with variable assignment.")
+log("The exception variable provides access to type, message, and traceback information.")

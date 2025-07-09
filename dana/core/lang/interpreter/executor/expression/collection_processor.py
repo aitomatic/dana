@@ -11,7 +11,7 @@ MIT License
 from typing import Any
 
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.parser.ast import DictLiteral, FStringExpression, ListLiteral, SetLiteral, TupleLiteral
+from dana.core.lang.ast import DictLiteral, FStringExpression, ListLiteral, SetLiteral, TupleLiteral
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -36,7 +36,7 @@ class CollectionProcessor(Loggable):
     LARGE_COLLECTION_THRESHOLD = 1000  # Items threshold for lazy evaluation
     FSTRING_TEMPLATE_CACHE_SIZE = 500  # Max cached f-string templates
 
-    def __init__(self, parent_executor=None):
+    def __init__(self, parent_executor):
         """Initialize the collection processor.
 
         Args:
