@@ -68,5 +68,6 @@ node_modules/
 # Data file
 
 local.db
+test.db
 uploads
 dana/api/server/static/

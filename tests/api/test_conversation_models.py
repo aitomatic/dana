@@ -1,18 +1,16 @@
 import pytest
 from sqlalchemy.orm import Session
 from dana.api.server.models import Conversation, Message
-from dana.api.server.db import Base, engine, SessionLocal
 from datetime import datetime
 
 @pytest.fixture(scope="function")
-def db_session():
-    Base.metadata.create_all(bind=engine)
-    session = SessionLocal()
+def db_session(setup_test_database):
+    test_engine, TestSessionLocal = setup_test_database
+    session = TestSessionLocal()
     try:
         yield session
     finally:
         session.close()
-        Base.metadata.drop_all(bind=engine)
 
 def test_conversation_model(db_session: Session):
     convo = Conversation(title="Test Conversation")

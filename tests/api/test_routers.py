@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 from dana.api.server.server import create_app
 from dana.api.server.models import Agent
 from dana.api.server.schemas import AgentCreate
-from dana.api.server.db import Base, engine, SessionLocal
 
 
 @pytest.fixture
@@ -17,15 +16,14 @@ def client():
 
 
 @pytest.fixture
-def db_session():
+def db_session(setup_test_database):
     """Create a test database session."""
-    Base.metadata.create_all(bind=engine)
-    session = SessionLocal()
+    test_engine, TestSessionLocal = setup_test_database
+    session = TestSessionLocal()
     try:
         yield session
     finally:
         session.close()
-        Base.metadata.drop_all(bind=engine)
 
 
 class TestMainRouter:

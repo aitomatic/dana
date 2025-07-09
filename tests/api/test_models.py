@@ -3,7 +3,6 @@
 import pytest
 from sqlalchemy.orm import Session
 from dana.api.server.models import Agent, Topic, Document
-from dana.api.server.db import Base, engine, SessionLocal
 
 
 class TestAgentModel:
@@ -40,34 +39,24 @@ class TestAgentModel:
         assert hasattr(agent, "description")
         assert hasattr(agent, "config")
 
-    def test_agent_id_auto_increment(self):
+    def test_agent_id_auto_increment(self, db_session: Session):
         """Test that ID is auto-incrementing integer."""
-        # Create a test database session
-        Base.metadata.create_all(bind=engine)
-        db = SessionLocal()
+        # Create first agent
+        agent1 = Agent(name="First Agent", description="First test agent", config={"test": True})
+        db_session.add(agent1)
+        db_session.commit()
+        db_session.refresh(agent1)
 
-        try:
-            # Create first agent
-            agent1 = Agent(name="First Agent", description="First test agent", config={"test": True})
-            db.add(agent1)
-            db.commit()
-            db.refresh(agent1)
+        # Create second agent
+        agent2 = Agent(name="Second Agent", description="Second test agent", config={"test": False})
+        db_session.add(agent2)
+        db_session.commit()
+        db_session.refresh(agent2)
 
-            # Create second agent
-            agent2 = Agent(name="Second Agent", description="Second test agent", config={"test": False})
-            db.add(agent2)
-            db.commit()
-            db.refresh(agent2)
-
-            # Check that IDs are integers and incrementing
-            assert isinstance(agent1.id, int)
-            assert isinstance(agent2.id, int)
-            assert agent2.id > agent1.id
-
-        finally:
-            db.close()
-            # Clean up test database
-            Base.metadata.drop_all(bind=engine)
+        # Check that IDs are integers and incrementing
+        assert isinstance(agent1.id, int)
+        assert isinstance(agent2.id, int)
+        assert agent2.id > agent1.id
 
 
 def test_agent_model(db_session: Session):

@@ -1,25 +1,55 @@
 """Pytest configuration for API tests."""
 
+import os
 import pytest
 from sqlalchemy.orm import Session
-from dana.api.server.db import Base, engine, SessionLocal
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from dana.api.server.db import Base
 from dana.api.server.models import Agent
+
+# Set test database URL
+TEST_DATABASE_URL = "sqlite:///./test.db"
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_database():
+    """Set up test database environment for the entire test session."""
+    # Set environment variable for test database
+    os.environ["DANA_DATABASE_URL"] = TEST_DATABASE_URL
+    
+    # Create test engine
+    test_engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
+    TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+    
+    # Create all tables
+    Base.metadata.create_all(bind=test_engine)
+    
+    yield test_engine, TestSessionLocal
+    
+    # Clean up after all tests
+    Base.metadata.drop_all(bind=test_engine)
+    test_engine.dispose()
+    
+    # Remove test database file
+    if os.path.exists("./test.db"):
+        os.remove("./test.db")
+    
+    # Restore original environment
+    if "DANA_DATABASE_URL" in os.environ:
+        del os.environ["DANA_DATABASE_URL"]
 
 
 @pytest.fixture(scope="function")
-def db_session():
+def db_session(setup_test_database):
     """Create a test database session with tables created."""
-    # Create all tables
-    Base.metadata.create_all(bind=engine)
-
+    test_engine, TestSessionLocal = setup_test_database
+    
     # Create session
-    session = SessionLocal()
+    session = TestSessionLocal()
     try:
         yield session
     finally:
         session.close()
-        # Drop all tables after test
-        Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture
