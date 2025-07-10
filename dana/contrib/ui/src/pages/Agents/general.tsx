@@ -168,7 +168,7 @@ export function GeneralAgentPage({
                   setValue("general_agent_config.dana_code", value);
                 }}
                 placeholder={placeholder}
-                onSave={() => { }}
+                onSave={() => {}}
               />
             </div>
           </div>

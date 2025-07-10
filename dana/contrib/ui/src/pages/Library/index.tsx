@@ -3,6 +3,7 @@ import { DataTable } from "@/components/table/data-table";
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +21,7 @@ import {
   IconEye,
   IconFolderPlus,
   IconRefresh,
+  IconArrowLeft,
 } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { LibraryItem, FileItem, FolderItem } from "@/types/library";
@@ -28,6 +30,8 @@ import type { DocumentRead } from "@/types/document";
 import { cn } from "@/lib/utils";
 import { useTopicOperations, useDocumentOperations } from "@/hooks/use-api";
 import { CreateFolderDialog } from "@/components/library/create-folder-dialog";
+
+import { useFolderNavigation } from "@/hooks/use-folder-navigation";
 import FileIcon from "@/components/file-icon";
 
 const formatFileSize = (bytes: number): string => {
@@ -54,9 +58,10 @@ const convertTopicToFolderItem = (topic: TopicRead): FolderItem => ({
   id: `topic-${topic.id}`,
   name: topic.name,
   type: "folder",
-  itemCount: 0, // We'll need to count documents per topic
+  itemCount: 0, // We'll calculate this dynamically
   lastModified: new Date(topic.updated_at),
   path: `/topics/${topic.id}`,
+  topicId: topic.id,
 });
 
 const convertDocumentToFileItem = (document: DocumentRead): FileItem => ({
@@ -67,6 +72,7 @@ const convertDocumentToFileItem = (document: DocumentRead): FileItem => ({
   extension: document.original_filename.split(".").pop() || "unknown",
   lastModified: new Date(document.updated_at),
   path: `/documents/${document.id}`,
+  topicId: document.topic_id || undefined,
 });
 
 export default function LibraryPage() {
@@ -94,10 +100,20 @@ export default function LibraryPage() {
     clearError: clearDocumentsError,
   } = useDocumentOperations();
 
+  // Folder navigation
+  const {
+    folderState,
+    navigateToFolder,
+    navigateToRoot,
+    getItemsInCurrentFolder,
+  } = useFolderNavigation();
+
   // Local state
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"all" | "files" | "folders">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "files" | "folders">(
+    "all",
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch data on component mount
@@ -106,35 +122,69 @@ export default function LibraryPage() {
     fetchDocuments();
   }, [fetchTopics, fetchDocuments]);
 
-  console.log(topics);
-  console.log(documents);
-
   // Convert API data to LibraryItem format
   const libraryItems: LibraryItem[] = [
     ...(topics?.map(convertTopicToFolderItem) || []),
     ...(documents?.map(convertDocumentToFileItem) || []),
   ];
+  console.log("📚 Library items:", {
+    topics: topics?.length || 0,
+    documents: documents?.length || 0,
+    totalItems: libraryItems.length,
+    documentsWithTopics: documents?.filter((d) => d.topic_id).length || 0,
+  });
+
+  // Calculate item counts for folders
+  const itemsWithCounts = libraryItems.map((item) => {
+    if (item.type === "folder") {
+      const topicId = item.topicId;
+      const itemCount =
+        documents?.filter((doc) => doc.topic_id === topicId).length || 0;
+      return { ...item, itemCount };
+    }
+    return item;
+  });
+
+  // Get items in current folder
+  const currentFolderItems = getItemsInCurrentFolder(itemsWithCounts);
+  console.log("📋 Current folder items:", currentFolderItems.length, "items");
 
   // Filter items based on search and type
-  const filteredItems = libraryItems.filter((item) => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType =
-      typeFilter === "all" ||
-      (typeFilter === "folders" && item.type === "folder") ||
-      (typeFilter === "files" && item.type === "file");
+  const filteredItems = currentFolderItems.filter((item) => {
+    const matchesSearch = item.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
+    // When inside a folder, only show files (folders are hidden)
+    let matchesType = true;
+    if (folderState.isInFolder) {
+      matchesType = item.type === "file";
+    } else {
+      matchesType =
+        typeFilter === "all" ||
+        (typeFilter === "folders" && item.type === "folder") ||
+        (typeFilter === "files" && item.type === "file");
+    }
 
     return matchesSearch && matchesType;
   });
+  console.log("🔍 Filtered items:", filteredItems.length, "items");
 
   const columns: ColumnDef<LibraryItem>[] = [
     {
       accessorKey: "name",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Name" />
+      ),
       cell: ({ row }) => {
-        const item: any = row.original;
+        const item = row.original;
         return (
           <div className="flex space-x-3">
-            <FileIcon ext={item?.extension} />
+            <FileIcon
+              ext={
+                item.type === "file" ? (item as FileItem).extension : undefined
+              }
+            />
             <div className="flex flex-col">
               <span className="font-medium text-gray-900">{item.name}</span>
               <span className="text-sm text-gray-500">{item.path}</span>
@@ -145,7 +195,9 @@ export default function LibraryPage() {
     },
     {
       accessorKey: "type",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Type" />
+      ),
       cell: ({ row }) => {
         const item = row.original;
         return (
@@ -153,10 +205,14 @@ export default function LibraryPage() {
             <span
               className={cn(
                 "px-2 py-1 text-xs font-medium rounded-full",
-                item.type === "folder" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"
+                item.type === "folder"
+                  ? "bg-blue-100 text-blue-800"
+                  : "bg-gray-100 text-gray-800",
               )}
             >
-              {item.type === "folder" ? "Topic" : (item as FileItem).extension.toUpperCase()}
+              {item.type === "folder"
+                ? "Topic"
+                : (item as FileItem).extension.toUpperCase()}
             </span>
           </div>
         );
@@ -164,18 +220,30 @@ export default function LibraryPage() {
     },
     {
       accessorKey: "size",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Size" />,
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Size" />
+      ),
       cell: ({ row }) => {
         const item = row.original;
         if (item.type === "folder") {
-          return <span className="text-gray-500">{(item as FolderItem).itemCount} items</span>;
+          return (
+            <span className="text-gray-500">
+              {(item as FolderItem).itemCount} items
+            </span>
+          );
         }
-        return <span className="text-gray-900">{formatFileSize((item as FileItem).size)}</span>;
+        return (
+          <span className="text-gray-900">
+            {formatFileSize((item as FileItem).size)}
+          </span>
+        );
       },
     },
     {
       accessorKey: "lastModified",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Last Modified" />,
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Last Modified" />
+      ),
       cell: ({ row }) => {
         return (
           <span className="text-gray-600">
@@ -186,7 +254,9 @@ export default function LibraryPage() {
     },
     {
       id: "actions",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Actions" />,
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Actions" />
+      ),
       cell: ({ row }) => {
         const item = row.original;
         return (
@@ -211,7 +281,10 @@ export default function LibraryPage() {
                 <IconEdit className="mr-2 w-4 h-4" />
                 Edit
               </DropdownMenuItem>
-              <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteItem(item)}>
+              <DropdownMenuItem
+                className="text-red-600"
+                onClick={() => handleDeleteItem(item)}
+              >
                 <IconTrash className="mr-2 w-4 h-4" />
                 Delete
               </DropdownMenuItem>
@@ -229,8 +302,8 @@ export default function LibraryPage() {
 
   const handleViewItem = (item: LibraryItem) => {
     if (item.type === "folder") {
-      // Navigate to topic view
-      console.log("View topic:", item);
+      // Navigate to folder
+      navigateToFolder(item as FolderItem);
     } else {
       // Open document preview
       console.log("View document:", item);
@@ -291,6 +364,9 @@ export default function LibraryPage() {
         file,
         title: file.name,
         description: `Uploaded: ${file.name}`,
+        topic_id: folderState.currentFolderId
+          ? parseInt(folderState.currentFolderId.replace("topic-", ""))
+          : undefined,
       });
     }
   };
@@ -312,7 +388,9 @@ export default function LibraryPage() {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const files = event.target.files;
     if (files && files.length > 0) {
       const fileArray = Array.from(files);
@@ -334,7 +412,11 @@ export default function LibraryPage() {
           <p className="text-gray-600">Manage your topics and documents</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={isLoading}
+          >
             <IconRefresh className="mr-2 w-4 h-4" />
             Refresh
           </Button>
@@ -352,6 +434,21 @@ export default function LibraryPage() {
           </Button>
         </div>
       </div>
+
+      {/* Breadcrumb Navigation */}
+      {folderState.isInFolder && (
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={navigateToRoot}
+            className="text-gray-600 hover:text-gray-900"
+          >
+            <IconArrowLeft className="w-4 h-4 mr-1" />
+            Back to Library
+          </Button>
+        </div>
+      )}
 
       {/* Error Display */}
       {error && (
@@ -383,25 +480,33 @@ export default function LibraryPage() {
           />
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              <IconFilter className="mr-2 w-4 h-4" />
-              {typeFilter === "all" ? "All" : typeFilter === "files" ? "Documents" : "Topics"}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleTypeFilterChange("all")}>
-              All Items
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleTypeFilterChange("files")}>
-              Documents Only
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleTypeFilterChange("folders")}>
-              Topics Only
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {!folderState.isInFolder && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <IconFilter className="mr-2 w-4 h-4" />
+                {typeFilter === "all"
+                  ? "All"
+                  : typeFilter === "files"
+                    ? "Documents"
+                    : "Topics"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleTypeFilterChange("all")}>
+                All Items
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleTypeFilterChange("files")}>
+                Documents Only
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleTypeFilterChange("folders")}
+              >
+                Topics Only
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       {/* Data Table */}
@@ -430,7 +535,7 @@ export default function LibraryPage() {
         isOpen={showCreateFolder}
         onClose={() => setShowCreateFolder(false)}
         onCreateFolder={handleCreateFolder}
-        currentPath="/"
+        currentPath={folderState.currentPath}
       />
     </div>
   );

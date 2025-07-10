@@ -5,13 +5,9 @@ import type {
   DocumentRead,
   DocumentUpdate,
   DocumentFilters,
-  DocumentUploadData
-} from '@/types/document';
-import type {
-  AgentRead,
-  AgentCreate,
-  AgentFilters,
-} from '@/types/agent';
+  DocumentUploadData,
+} from "@/types/document";
+import type { AgentRead, AgentCreate, AgentFilters } from "@/types/agent";
 
 // API Configuration
 const API_BASE_URL =
@@ -252,10 +248,12 @@ class ApiService {
   // Agent API Methods
   async getAgents(filters?: AgentFilters): Promise<AgentRead[]> {
     const params = new URLSearchParams();
-    if (filters?.skip) params.append('skip', filters.skip.toString());
-    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.skip) params.append("skip", filters.skip.toString());
+    if (filters?.limit) params.append("limit", filters.limit.toString());
 
-    const response = await this.client.get<AgentRead[]>(`/agents/?${params.toString()}`);
+    const response = await this.client.get<AgentRead[]>(
+      `/agents/?${params.toString()}`,
+    );
     return response.data;
   }
 
@@ -265,17 +263,22 @@ class ApiService {
   }
 
   async createAgent(agent: AgentCreate): Promise<AgentRead> {
-    const response = await this.client.post<AgentRead>('/agents/', agent);
+    const response = await this.client.post<AgentRead>("/agents/", agent);
     return response.data;
   }
 
   async updateAgent(agentId: number, agent: AgentCreate): Promise<AgentRead> {
-    const response = await this.client.put<AgentRead>(`/agents/${agentId}`, agent);
+    const response = await this.client.put<AgentRead>(
+      `/agents/${agentId}`,
+      agent,
+    );
     return response.data;
   }
 
   async deleteAgent(agentId: number): Promise<{ message: string }> {
-    const response = await this.client.delete<{ message: string }>(`/agents/${agentId}`);
+    const response = await this.client.delete<{ message: string }>(
+      `/agents/${agentId}`,
+    );
     return response.data;
   }
 

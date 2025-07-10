@@ -25,11 +25,7 @@ const data = {
     {
       name: "DXA DANA",
       logo: () => (
-        <img
-          src={logo}
-          alt="DXA DANA"
-          className="size-8 rounded-md"
-        />
+        <img src={logo} alt="DXA DANA" className="size-8 rounded-md" />
       ),
       plan: "Domain-Expert Agents",
     },
