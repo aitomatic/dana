@@ -33,6 +33,7 @@ export default function SelectKnowledgePage() {
     navigateToRoot,
     uploadDocument,
     clearError,
+    libraryItems, // Add access to all library items
   } = useLibraryTable({
     enableFolderNavigation: true,
     enableSelection: true,
@@ -60,14 +61,14 @@ export default function SelectKnowledgePage() {
   );
 
   return (
-    <div className="flex flex-col h-[calc(100vh-70px)] w-full">
+    <div className="flex flex-col h-[calc(100vh-70px)] w-full gap-4">
       {/* Main Content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden px-6 pt-4 gap-4">
         {/* Left: Library & Upload */}
-        <div className="flex flex-col flex-1 p-6 gap-4 overflow-hidden">
+        <div className="flex flex-col flex-1 gap-6 overflow-hidden">
           <span className="text-lg font-semibold">Assign Knowledge Sources</span>
           {/* Upload */}
-          <div className="mb-4 bg-gray-50">
+          <div className="bg-gray-50">
             <FileUpload
               onFilesSelected={async (files: File[]) => {
                 try {
@@ -86,7 +87,7 @@ export default function SelectKnowledgePage() {
             />
           </div>
           {/* Search and Filters */}
-          <div className="flex items-center space-x-4 mb-4">
+          <div className="flex items-center space-x-4">
             <div className="relative flex-1 max-w-sm">
               <IconSearch className="absolute left-3 top-1/2 w-4 h-4 text-gray-400 transform -translate-y-1/2" />
               <Input
@@ -128,7 +129,7 @@ export default function SelectKnowledgePage() {
 
           {/* Breadcrumb Navigation */}
           {folderState.isInFolder && (
-            <div className="flex items-center space-x-2 mb-4">
+            <div className="flex items-center space-x-2">
               <Button
                 variant="ghost"
                 size="sm"
@@ -150,19 +151,17 @@ export default function SelectKnowledgePage() {
               selectedIds={selectedIds}
               onSelectionChange={setSelectedIds}
               onRowClick={handleRowClick}
+              allLibraryItems={libraryItems}
             />
           </div>
         </div>
         {/* Right: Selected Sidebar */}
-        <div className="w-80 bg-white flex flex-col p-6">
-          <span className="font-semibold mb-2">
-            Selected Items ({filteredSelectedItems.length})
-          </span>
+        <div className="w-80 bg-white flex flex-col gap-2">
+          <span className="font-semibold">Selected Items ({filteredSelectedItems.length})</span>
           <Input
             placeholder="Search"
             value={sidebarSearch}
             onChange={(e) => setSidebarSearch(e.target.value)}
-            className="mb-4"
           />
           <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg p-4">
             {filteredSelectedItems.length === 0 ? (

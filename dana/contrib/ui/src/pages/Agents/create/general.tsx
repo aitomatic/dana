@@ -56,12 +56,12 @@ export function GeneralAgentPage({
   return (
     <div
       className={cn(
-        'flex w-full flex-col h-[calc(100vh-80px)] gap-4 px-6 bg-gray-50',
+        'flex w-full flex-col h-[calc(100vh-70px)] gap-4 bg-gray-50',
         isDragOver && 'opacity-50',
       )}
     >
-      <div className="flex flex-row gap-4 h-full">
-        <div className="flex flex-col justify-between w-[320px] gap-4 pt-4">
+      <div className="flex flex-row gap-4 h-full px-6 pt-4">
+        <div className="flex flex-col justify-between w-[320px] gap-4">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-300 bg-background">
               <img
@@ -112,7 +112,7 @@ export function GeneralAgentPage({
           </div>
         </div>
         {/* Agent Configuration */}
-        <div className="flex flex-col w-[calc(100vw-380px)] h-full gap-2 pt-4">
+        <div className="flex flex-col w-[calc(100vw-380px)] h-full gap-2">
           <div className="flex flex-col gap-2 h-full">
             <div className="flex flex-row gap-1 justify-between">
               <div className="flex flex-col gap-1">
@@ -158,7 +158,7 @@ export function GeneralAgentPage({
         </div>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-4 px-6 py-4 border-t bg-white">
         <Button
           size="lg"
           disabled={isDisabled}

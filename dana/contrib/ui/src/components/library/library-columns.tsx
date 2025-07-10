@@ -26,7 +26,6 @@ export const getCommonColumns = (): ColumnDef<LibraryItem>[] => [
           <FileIcon ext={item.type === 'file' ? (item as FileItem).extension : undefined} />
           <div className="flex flex-col">
             <span className="font-medium text-gray-900">{item.name}</span>
-            <span className="text-sm text-gray-500">{item.path}</span>
           </div>
         </div>
       );
@@ -78,6 +77,7 @@ export const getSelectionColumns = (
   selectedIds: string[],
   onSelectionChange: (ids: string[]) => void,
   filteredItems: LibraryItem[],
+  allLibraryItems?: LibraryItem[], // Add access to all library items for topic selection
 ): ColumnDef<LibraryItem>[] => [
   {
     id: 'select',
@@ -94,33 +94,78 @@ export const getSelectionColumns = (
         }
         onCheckedChange={(checked) => {
           if (checked) {
-            onSelectionChange(
-              Array.from(
-                new Set([...selectedIds, ...filteredItems.map((item: LibraryItem) => item.id)]),
-              ),
-            );
+            // For header checkbox, select all visible items
+            const visibleItemIds = filteredItems.map((item: LibraryItem) => item.id);
+            onSelectionChange(Array.from(new Set([...selectedIds, ...visibleItemIds])));
           } else {
-            onSelectionChange(
-              selectedIds.filter(
-                (id) => !filteredItems.map((item: LibraryItem) => item.id).includes(id),
-              ),
-            );
+            // For header checkbox, deselect all visible items
+            const visibleItemIds = filteredItems.map((item: LibraryItem) => item.id);
+            onSelectionChange(selectedIds.filter((id) => !visibleItemIds.includes(id)));
           }
         }}
       />
     ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={selectedIds.includes(row.original.id)}
-        onCheckedChange={(checked) => {
-          onSelectionChange(
-            checked
-              ? [...selectedIds, row.original.id]
-              : selectedIds.filter((id) => id !== row.original.id),
+    cell: ({ row }) => {
+      const item = row.original;
+
+      // For topics (folders), we need to handle selection of all files within the topic
+      if (item.type === 'folder' && allLibraryItems) {
+        const topicId = item.topicId;
+        if (topicId) {
+          // Find all documents that belong to this topic
+          const topicDocuments = allLibraryItems.filter(
+            (libraryItem) => libraryItem.type === 'file' && libraryItem.topicId === topicId,
           );
-        }}
-      />
-    ),
+          const topicDocumentIds = topicDocuments.map((doc) => doc.id);
+
+          // Check if all files in this topic are selected
+          const allTopicFilesSelected =
+            topicDocumentIds.length > 0 && topicDocumentIds.every((id) => selectedIds.includes(id));
+
+          // Check if some files in this topic are selected
+          const someTopicFilesSelected = topicDocumentIds.some((id) => selectedIds.includes(id));
+
+          return (
+            <div onClick={(e) => e.stopPropagation()}>
+              <Checkbox
+                checked={
+                  allTopicFilesSelected ? true : someTopicFilesSelected ? 'indeterminate' : false
+                }
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    // Select all files in this topic
+                    const newSelectedIds = Array.from(
+                      new Set([...selectedIds, ...topicDocumentIds]),
+                    );
+                    onSelectionChange(newSelectedIds);
+                  } else {
+                    // Deselect all files in this topic
+                    const newSelectedIds = selectedIds.filter(
+                      (id) => !topicDocumentIds.includes(id),
+                    );
+                    onSelectionChange(newSelectedIds);
+                  }
+                }}
+              />
+            </div>
+          );
+        }
+      }
+
+      // For files, use the standard selection behavior
+      return (
+        <div onClick={(e) => e.stopPropagation()}>
+          <Checkbox
+            checked={selectedIds.includes(item.id)}
+            onCheckedChange={(checked) => {
+              onSelectionChange(
+                checked ? [...selectedIds, item.id] : selectedIds.filter((id) => id !== item.id),
+              );
+            }}
+          />
+        </div>
+      );
+    },
   },
   ...getCommonColumns(),
 ];

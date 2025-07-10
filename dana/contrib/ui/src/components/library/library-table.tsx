@@ -14,6 +14,7 @@ interface LibraryTableProps {
   onEditItem?: (item: LibraryItem) => void;
   onDeleteItem?: (item: LibraryItem) => void;
   onDownloadItem?: (item: LibraryItem) => void;
+  allLibraryItems?: LibraryItem[]; // Add prop for all library items
 }
 
 export function LibraryTable({
@@ -27,11 +28,17 @@ export function LibraryTable({
   onEditItem,
   onDeleteItem,
   onDownloadItem,
+  allLibraryItems, // Add to destructuring
 }: LibraryTableProps) {
   // Get appropriate columns based on mode
   const columns = React.useMemo(() => {
     if (mode === 'selection') {
-      return getSelectionColumns(selectedIds, onSelectionChange || (() => {}), data);
+      return getSelectionColumns(
+        selectedIds,
+        onSelectionChange || (() => {}),
+        data,
+        allLibraryItems,
+      );
     } else {
       return getLibraryColumns(
         onViewItem || (() => {}),
@@ -45,6 +52,7 @@ export function LibraryTable({
     selectedIds,
     onSelectionChange,
     data,
+    allLibraryItems, // Add to dependencies
     onViewItem,
     onEditItem,
     onDeleteItem,

@@ -1,6 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { DataTable } from '@/components/table/data-table';
-import { DataTableColumnHeader } from '@/components/table/data-table-column-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -14,18 +12,11 @@ import {
   IconSearch,
   IconFilter,
   IconUpload,
-  IconDotsVertical,
-  IconDownload,
-  IconTrash,
-  IconEdit,
-  IconEye,
   IconFolderPlus,
   IconRefresh,
   IconArrowLeft,
 } from '@tabler/icons-react';
-import type { ColumnDef } from '@tanstack/react-table';
-import type { LibraryItem, FileItem, FolderItem } from '@/types/library';
-import { cn } from '@/lib/utils';
+import type { LibraryItem, FolderItem } from '@/types/library';
 import { useTopicOperations, useDocumentOperations } from '@/hooks/use-api';
 import { CreateFolderDialog } from '@/components/library/create-folder-dialog';
 import { EditTopicDialog } from '@/components/library/edit-topic-dialog';
@@ -33,28 +24,9 @@ import { EditDocumentDialog } from '@/components/library/edit-document-dialog';
 import { ConfirmDialog } from '@/components/library/confirm-dialog';
 
 import { useFolderNavigation } from '@/hooks/use-folder-navigation';
-import FileIcon from '@/components/file-icon';
 import { toast } from 'sonner';
 import { convertTopicToFolderItem, convertDocumentToFileItem } from '@/components/library';
-
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
-
-const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
+import { LibraryTable } from '@/components/library';
 
 export default function LibraryPage() {
   // API hooks
@@ -148,107 +120,6 @@ export default function LibraryPage() {
 
     return matchesSearch && matchesType;
   });
-
-  const columns: ColumnDef<LibraryItem>[] = [
-    {
-      accessorKey: 'name',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
-      cell: ({ row }) => {
-        const item = row.original;
-        return (
-          <div className="flex space-x-3">
-            <FileIcon ext={item.type === 'file' ? (item as FileItem).extension : undefined} />
-            <div className="flex flex-col">
-              <span className="font-medium text-gray-900">{item.name}</span>
-              <span className="text-sm text-gray-500">{item.path}</span>
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'type',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
-      cell: ({ row }) => {
-        const item = row.original;
-        return (
-          <div className="flex items-center">
-            <span
-              className={cn(
-                'px-2 py-1 text-xs font-medium rounded-full',
-                item.type === 'folder' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800',
-              )}
-            >
-              {item.type === 'folder' ? 'Topic' : (item as FileItem).extension.toUpperCase()}
-            </span>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'size',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Size" />,
-      cell: ({ row }) => {
-        const item = row.original;
-        if (item.type === 'folder') {
-          return <span className="text-gray-500">{(item as FolderItem).itemCount} items</span>;
-        }
-        return <span className="text-gray-900">{formatFileSize((item as FileItem).size)}</span>;
-      },
-    },
-    {
-      accessorKey: 'lastModified',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Last Modified" />,
-      cell: ({ row }) => {
-        return (
-          <span className="text-gray-600">
-            {formatDate(row.original.lastModified.toISOString())}
-          </span>
-        );
-      },
-    },
-    {
-      id: 'actions',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Actions" />,
-      cell: ({ row }) => {
-        const item = row.original;
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="p-0 w-8 h-8">
-                <IconDotsVertical className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleViewItem(item)}>
-                <IconEye className="mr-2 w-4 h-4" />
-                View
-              </DropdownMenuItem>
-              {item.type === 'file' && (
-                <DropdownMenuItem onClick={() => handleDownloadDocument(item)}>
-                  <IconDownload className="mr-2 w-4 h-4" />
-                  Download
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onClick={() => handleEditItem(item)}>
-                <IconEdit className="mr-2 w-4 h-4" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteItem(item)}>
-                <IconTrash className="mr-2 w-4 h-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      },
-    },
-  ];
-
-  const handleRowClick = (row: { original: LibraryItem }) => {
-    const item = row.original;
-    handleViewItem(item);
-  };
 
   const handleViewItem = (item: LibraryItem) => {
     if (item.type === 'folder') {
@@ -474,12 +345,15 @@ export default function LibraryPage() {
 
       {/* Data Table */}
       <div className="flex-1">
-        <DataTable
-          columns={columns}
+        <LibraryTable
           data={filteredItems}
           loading={isLoading}
-          handleRowClick={handleRowClick}
-          is_border={true}
+          mode="library"
+          onRowClick={handleViewItem}
+          onViewItem={handleViewItem}
+          onEditItem={handleEditItem}
+          onDeleteItem={handleDeleteItem}
+          onDownloadItem={handleDownloadDocument}
         />
       </div>
 

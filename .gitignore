@@ -71,3 +71,4 @@ local.db
 test.db
 uploads
 dana/api/server/static/
+dana/contrib/ui/public/static/
