@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+"""
+Dana Language Server launcher script.
+
+This script starts the Dana Language Server for VS Code and other LSP-compatible editors.
+
+Copyright © 2025 Aitomatic, Inc.
+MIT License
+"""
+
+import os
+import sys
+from pathlib import Path
+
+# Add the Dana project root to Python path
+script_dir = Path(__file__).parent
+project_root = script_dir.parent
+sys.path.insert(0, str(project_root))
+
+# Set up environment
+os.environ.setdefault('PYTHONPATH', str(project_root))
+
+# Import and run the language server
+try:
+    from dana.core.lang.lsp.server import main
+    main()
+except ImportError as e:
+    print(f"Error: Could not import Dana Language Server: {e}", file=sys.stderr)
+    print("Make sure Dana is properly installed and dependencies are available.", file=sys.stderr)
+    print("Install LSP dependencies with: pip install lsprotocol pygls", file=sys.stderr)
+    sys.exit(1)
+except Exception as e:
+    print(f"Error starting Dana Language Server: {e}", file=sys.stderr)
+    sys.exit(1) 

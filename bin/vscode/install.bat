@@ -33,7 +33,7 @@ if errorlevel 1 (
 
 REM Get the project root directory
 set "PROJECT_ROOT=%~dp0.."
-set "EXTENSION_DIR=%PROJECT_ROOT%\opendxa\dana\integration\vscode"
+set "EXTENSION_DIR=%PROJECT_ROOT%\dana\integrations\vscode"
 
 echo Extension directory: %EXTENSION_DIR%
 
