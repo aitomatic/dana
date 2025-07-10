@@ -103,13 +103,13 @@ class DanaAnalyzer:
         except Exception as e:
             # Handle unexpected parser errors
             logger.warning(f"Parser error: {e}")
-            diagnostic = lsp.Diagnostic(
-                range=lsp.Range(
-                    start=lsp.Position(line=0, character=0),
-                    end=lsp.Position(line=0, character=0)
+            diagnostic = lsp.Diagnostic(  # type: ignore
+                range=lsp.Range(  # type: ignore
+                    start=lsp.Position(line=0, character=0),  # type: ignore
+                    end=lsp.Position(line=0, character=0)  # type: ignore
                 ),
                 message=f"Parse error: {str(e)}",
-                severity=lsp.DiagnosticSeverity.Error,
+                severity=lsp.DiagnosticSeverity.Error,  # type: ignore
                 source="dana-parser"
             )
             diagnostics.append(diagnostic)
@@ -133,39 +133,39 @@ class DanaAnalyzer:
         
         # Check for incorrect scope syntax (dot instead of colon)
         if self._has_incorrect_scope_syntax(line):
-            diagnostic = lsp.Diagnostic(
-                range=lsp.Range(
-                    start=lsp.Position(line=line_num, character=0),
-                    end=lsp.Position(line=line_num, character=len(line))
+            diagnostic = lsp.Diagnostic(  # type: ignore
+                range=lsp.Range(  # type: ignore
+                    start=lsp.Position(line=line_num, character=0),  # type: ignore
+                    end=lsp.Position(line=line_num, character=len(line))  # type: ignore
                 ),
                 message="Use colon ':' for scope access, not dot '.'. Example: private:x instead of private.x",
-                severity=lsp.DiagnosticSeverity.Warning,
+                severity=lsp.DiagnosticSeverity.Warning,  # type: ignore
                 source="dana-style"
             )
             diagnostics.append(diagnostic)
         
         # Check for string concatenation with + operator (suggest f-strings)
         if self._has_string_concatenation(line):
-            diagnostic = lsp.Diagnostic(
-                range=lsp.Range(
-                    start=lsp.Position(line=line_num, character=0),
-                    end=lsp.Position(line=line_num, character=len(line))
+            diagnostic = lsp.Diagnostic(  # type: ignore
+                range=lsp.Range(  # type: ignore
+                    start=lsp.Position(line=line_num, character=0),  # type: ignore
+                    end=lsp.Position(line=line_num, character=len(line))  # type: ignore
                 ),
                 message="Consider using f-strings for string formatting instead of concatenation",
-                severity=lsp.DiagnosticSeverity.Information,
+                severity=lsp.DiagnosticSeverity.Information,  # type: ignore
                 source="dana-style"
             )
             diagnostics.append(diagnostic)
         
         # Check for missing scope prefixes on assignments
         if self._has_unscoped_assignment(line):
-            diagnostic = lsp.Diagnostic(
-                range=lsp.Range(
-                    start=lsp.Position(line=line_num, character=0),
-                    end=lsp.Position(line=line_num, character=len(line))
+            diagnostic = lsp.Diagnostic(  # type: ignore
+                range=lsp.Range(  # type: ignore
+                    start=lsp.Position(line=line_num, character=0),  # type: ignore
+                    end=lsp.Position(line=line_num, character=len(line))  # type: ignore
                 ),
                 message="Consider adding scope prefix (private:, public:, local:, system:) to variable",
-                severity=lsp.DiagnosticSeverity.Hint,
+                severity=lsp.DiagnosticSeverity.Hint,  # type: ignore
                 source="dana-style"
             )
             diagnostics.append(diagnostic)
@@ -328,12 +328,12 @@ class DanaAnalyzer:
         if hasattr(error, 'column') and error.column is not None:
             character = max(0, error.column)
         
-        return lsp.Diagnostic(
-            range=lsp.Range(
-                start=lsp.Position(line=line_num, character=character),
-                end=lsp.Position(line=line_num, character=character + 1)
+        return lsp.Diagnostic(  # type: ignore
+            range=lsp.Range(  # type: ignore
+                start=lsp.Position(line=line_num, character=character),  # type: ignore
+                end=lsp.Position(line=line_num, character=character + 1)  # type: ignore
             ),
             message=str(error),
-            severity=lsp.DiagnosticSeverity.Error,
+            severity=lsp.DiagnosticSeverity.Error,  # type: ignore
             source="dana-parser"
         ) 

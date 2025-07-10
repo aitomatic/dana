@@ -50,6 +50,38 @@ def main():
             self.analyzer = DanaAnalyzer()
             self.parser = ParserCache.get_parser("dana")
 
+        async def _validate_document(self, uri: str, text: str):
+            """Validate a Dana document and publish diagnostics."""
+            try:
+                # Parse the document with the existing Dana parser
+                diagnostics = await self.analyzer.analyze(text)
+                
+                # Publish diagnostics
+                self.publish_diagnostics(uri, diagnostics)
+                
+            except Exception as e:
+                logger.error(f"Error validating document {uri}: {e}")
+                # Publish a diagnostic about the validation error
+                error_diagnostic = lsp.Diagnostic(
+                    range=lsp.Range(
+                        start=lsp.Position(line=0, character=0),
+                        end=lsp.Position(line=0, character=0)
+                    ),
+                    message=f"Language server error: {str(e)}",
+                    severity=lsp.DiagnosticSeverity.Error,
+                    source="dana-ls"
+                )
+                self.publish_diagnostics(uri, [error_diagnostic])
+
+        def _get_document_text(self, uri: str) -> Optional[str]:
+            """Safely get document text from workspace."""
+            try:
+                document = self.workspace.get_document(uri)
+                return document.source
+            except Exception as e:
+                logger.warning(f"Could not retrieve document text for {uri}: {e}")
+                return None
+
     # Create the server instance
     server = DanaLanguageServer()
 
@@ -57,7 +89,7 @@ def main():
     async def did_open(ls: DanaLanguageServer, params: lsp.DidOpenTextDocumentParams):
         """Handle document open events."""
         logger.info(f"Document opened: {params.text_document.uri}")
-        await _validate_document(ls, params.text_document.uri, params.text_document.text)
+        await ls._validate_document(params.text_document.uri, params.text_document.text)
 
     @server.feature(lsp.TEXT_DOCUMENT_DID_CHANGE)
     async def did_change(ls: DanaLanguageServer, params: lsp.DidChangeTextDocumentParams):
@@ -65,14 +97,29 @@ def main():
         # Get the full text from the first change (assuming full document sync)
         if params.content_changes:
             text = params.content_changes[0].text
-            await _validate_document(ls, params.text_document.uri, text)
+            await ls._validate_document(params.text_document.uri, text)
 
     @server.feature(lsp.TEXT_DOCUMENT_DID_SAVE)
     async def did_save(ls: DanaLanguageServer, params: lsp.DidSaveTextDocumentParams):
         """Handle document save events."""
         # Re-validate on save
-        if hasattr(params, 'text') and params.text:
-            await _validate_document(ls, params.text_document.uri, params.text)
+        try:
+            text = None
+            
+            # Check if text is provided in params (when includeText is true)
+            if hasattr(params, 'text') and params.text is not None:
+                text = params.text
+            else:
+                # Fall back to reading from workspace if text not provided
+                text = ls._get_document_text(params.text_document.uri)
+            
+            if text is not None:
+                await ls._validate_document(params.text_document.uri, text)
+            else:
+                logger.warning(f"Could not get document text for validation on save: {params.text_document.uri}")
+                
+        except Exception as e:
+            logger.warning(f"Error re-validating document on save: {e}")
 
     @server.feature(lsp.TEXT_DOCUMENT_HOVER)
     async def hover(ls: DanaLanguageServer, params: lsp.HoverParams) -> Optional[lsp.Hover]:
@@ -129,29 +176,6 @@ def main():
         except Exception as e:
             logger.warning(f"Error providing completions: {e}")
             return lsp.CompletionList(is_incomplete=False, items=[])
-
-    async def _validate_document(ls: DanaLanguageServer, uri: str, text: str):
-        """Validate a Dana document and publish diagnostics."""
-        try:
-            # Parse the document with the existing Dana parser
-            diagnostics = await ls.analyzer.analyze(text)
-            
-            # Publish diagnostics
-            ls.publish_diagnostics(uri, diagnostics)
-            
-        except Exception as e:
-            logger.error(f"Error validating document {uri}: {e}")
-            # Publish a diagnostic about the validation error
-            error_diagnostic = lsp.Diagnostic(
-                range=lsp.Range(
-                    start=lsp.Position(line=0, character=0),
-                    end=lsp.Position(line=0, character=0)
-                ),
-                message=f"Language server error: {str(e)}",
-                severity=lsp.DiagnosticSeverity.Error,
-                source="dana-ls"
-            )
-            ls.publish_diagnostics(uri, [error_diagnostic])
 
     # Start the server
     server.start_io()
