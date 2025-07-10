@@ -12,8 +12,8 @@ UV_CMD = $(shell command -v uv 2>/dev/null || echo ~/.local/bin/uv)
 .DEFAULT_GOAL := help
 
 # All targets are phony (don't create files)
-.PHONY: help help-more quickstart install setup-dev sync test dana clean lint format fix check \
-	install-ollama start-ollama install-vllm start-vllm docs-serve \
+.PHONY: help help-more quickstart install setup-dev sync test dana clean lint format fix check mypy \
+	install-ollama start-ollama install-vllm start-vllm docs-serve docs-build docs-deps \
 	test-fast test-cov update-deps dev security validate-config release-check
 
 # =============================================================================
@@ -64,13 +64,13 @@ help-more: ## Show all available commands including advanced ones
 	@awk 'BEGIN {FS = ":.*?## MORE: "} /^test.*:.*?## MORE:/ {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "\033[1mCode Quality:\033[0m"
-	@awk 'BEGIN {FS = ":.*?## "} /^(lint|format|check|fix).*:.*?## / {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## "} /^(lint|format|check|fix|mypy).*:.*?## / {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "\033[1mLLM Integration:\033[0m"
 	@awk 'BEGIN {FS = ":.*?## "} /^(install-ollama|start-ollama|install-vllm|start-vllm).*:.*?## / {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "\033[1mDevelopment & Release:\033[0m"
-	@awk 'BEGIN {FS = ":.*?## MORE: "} /^(update-deps|dev|security|validate-config|release-check).*:.*?## MORE:/ {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## MORE: "} /^(update-deps|dev|security|validate-config|release-check|docs-build|docs-deps).*:.*?## MORE:/ {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "\033[1mMaintenance:\033[0m"
 	@awk 'BEGIN {FS = ":.*?## "} /^(clean|docs-serve).*:.*?## / {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -164,6 +164,10 @@ fix: ## Auto-fix all fixable code issues
 	$(UV_CMD) run ruff format .
 	@echo "🔧 Applied all auto-fixes!"
 
+mypy: ## Run type checking
+	@echo "🔍 Running type checks..."
+	$(UV_CMD) run mypy .
+
 # =============================================================================
 # LLM Integration
 # =============================================================================
@@ -202,6 +206,18 @@ docs-serve: ## Serve documentation locally
 	else \
 		echo "❌ mkdocs.yml not found. Documentation not configured."; \
 	fi
+
+docs-build: ## MORE: Build documentation with strict validation
+	@echo "📖 Building documentation with strict validation..."
+	@if [ -f mkdocs.yml ]; then \
+		$(UV_CMD) run --extra docs mkdocs build --strict; \
+	else \
+		echo "❌ mkdocs.yml not found. Documentation not configured."; \
+	fi
+
+docs-deps: ## MORE: Install documentation dependencies
+	@echo "📚 Installing documentation dependencies..."
+	$(UV_CMD) sync --extra docs
 
 # =============================================================================
 # Advanced/Comprehensive Targets (shown in help-more)
