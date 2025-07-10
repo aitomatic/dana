@@ -81,7 +81,7 @@ export interface Agent {
   };
 }
 
-export type AgentSteps = "general" | "select-knowledge";
+export type AgentSteps = 'general' | 'select-knowledge';
 
 export interface DanaAgentForm {
   name: string;

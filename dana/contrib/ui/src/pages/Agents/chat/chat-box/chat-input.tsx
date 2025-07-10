@@ -1,12 +1,6 @@
-import {
-  useEffect,
-  useRef,
-  useLayoutEffect,
-  useState,
-  useCallback,
-} from "react";
-import { Textarea } from "@/components/ui/textarea";
-import FileIcon from "@/components/file-icon";
+import { useEffect, useRef, useLayoutEffect, useState, useCallback } from 'react';
+import { Textarea } from '@/components/ui/textarea';
+import FileIcon from '@/components/file-icon';
 
 // Define the mention option type
 interface MentionOption {
@@ -34,7 +28,7 @@ const ChatInput = ({
   mentionOptions,
 }: ChatInputProps) => {
   // Internal state to ensure UI updates immediately
-  const [internalValue, setInternalValue] = useState(message || "");
+  const [internalValue, setInternalValue] = useState(message || '');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const prevBotThinkingRef = useRef(isBotThinking);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -43,7 +37,7 @@ const ChatInput = ({
 
   // Mention popover states
   const [showMentionPopover, setShowMentionPopover] = useState(false);
-  const [mentionQuery, setMentionQuery] = useState("");
+  const [mentionQuery, setMentionQuery] = useState('');
   const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
   const [atPosition, setAtPosition] = useState(-1); // Track the position of @ character
 
@@ -62,7 +56,7 @@ const ChatInput = ({
     if (!textarea) return;
 
     // Reset height to calculate the scrollHeight correctly
-    textarea.style.height = "auto";
+    textarea.style.height = 'auto';
 
     // Set new height (scrollHeight or max 260px)
     const newHeight = Math.min(textarea.scrollHeight, 260);
@@ -78,13 +72,13 @@ const ChatInput = ({
     const text = textarea.value;
 
     // Find the position of the '@' character before cursor
-    const atIndex = text.lastIndexOf("@", cursorPosition - 1);
+    const atIndex = text.lastIndexOf('@', cursorPosition - 1);
 
     // If @ exists and there's no space between @ and cursor
     if (
       atIndex !== -1 &&
       cursorPosition > atIndex &&
-      !text.substring(atIndex, cursorPosition).includes(" ")
+      !text.substring(atIndex, cursorPosition).includes(' ')
     ) {
       // Extract the query after @ for filtering
       const query = text.substring(atIndex + 1, cursorPosition);
@@ -112,11 +106,7 @@ const ChatInput = ({
 
       // Replace @query with the selected mention (keeping the @ symbol)
       const newText =
-        text.substring(0, atPosition) +
-        "@" +
-        option.value +
-        " " +
-        text.substring(cursorPosition);
+        text.substring(0, atPosition) + '@' + option.value + ' ' + text.substring(cursorPosition);
 
       // Update both internal and parent state
       setInternalValue(newText);
@@ -141,14 +131,14 @@ const ChatInput = ({
 
   // Sync internal state with prop - this ensures one-way data flow
   useEffect(() => {
-    setInternalValue(message || "");
+    setInternalValue(message || '');
   }, [message]);
 
   // Adjust height and forcefully sync textarea when message changes
   useLayoutEffect(() => {
     // When message is empty, force the textarea to be empty
-    if (message === "" && textareaRef.current) {
-      textareaRef.current.value = "";
+    if (message === '' && textareaRef.current) {
+      textareaRef.current.value = '';
       adjustTextareaHeight();
     }
   }, [message]);
@@ -182,9 +172,9 @@ const ChatInput = ({
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
@@ -192,8 +182,8 @@ const ChatInput = ({
   useEffect(() => {
     if (showMentionPopover && selectedItemRef.current && popoverRef.current) {
       selectedItemRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
+        behavior: 'smooth',
+        block: 'nearest',
       });
     }
   }, [selectedMentionIndex, showMentionPopover]);
@@ -210,7 +200,7 @@ const ChatInput = ({
 
   // Handle key press to detect @ symbol specifically
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "@") {
+    if (e.key === '@') {
       setTimeout(() => {
         checkForMentionTrigger();
       }, 0);
@@ -221,10 +211,7 @@ const ChatInput = ({
   const handleSelect = () => {
     if (showMentionPopover && textareaRef.current) {
       const cursorPosition = textareaRef.current.selectionEnd;
-      if (
-        cursorPosition <= atPosition ||
-        cursorPosition > atPosition + mentionQuery.length + 1
-      ) {
+      if (cursorPosition <= atPosition || cursorPosition > atPosition + mentionQuery.length + 1) {
         // Cursor moved away from the mention context
         setShowMentionPopover(false);
         setAtPosition(-1);
@@ -233,7 +220,7 @@ const ChatInput = ({
   };
 
   const defaultOnKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey && !isComposing) {
+    if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
       e.preventDefault();
       const form = e.currentTarget.form;
       if (form) {
@@ -253,28 +240,26 @@ const ChatInput = ({
     const totalOptions = filteredMentionOptions.length;
 
     switch (e.key) {
-      case "ArrowDown":
+      case 'ArrowDown':
         e.preventDefault();
         setSelectedMentionIndex((prevIndex) =>
           prevIndex < totalOptions - 1 ? prevIndex + 1 : prevIndex,
         );
         break;
-      case "ArrowUp":
+      case 'ArrowUp':
         e.preventDefault();
-        setSelectedMentionIndex((prevIndex) =>
-          prevIndex > 0 ? prevIndex - 1 : prevIndex,
-        );
+        setSelectedMentionIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : prevIndex));
         break;
-      case "Enter":
+      case 'Enter':
         e.preventDefault();
         insertMention(filteredMentionOptions[selectedMentionIndex]);
         break;
-      case "Escape":
+      case 'Escape':
         e.preventDefault();
         setShowMentionPopover(false);
         setAtPosition(-1);
         break;
-      case "Tab":
+      case 'Tab':
         e.preventDefault();
         insertMention(filteredMentionOptions[selectedMentionIndex]);
         break;
@@ -312,9 +297,9 @@ const ChatInput = ({
           ref={popoverRef}
           className="absolute z-50 py-3 overflow-y-auto border border-gray-200 rounded-md shadow-lg dark:border-gray-300 scrollbar-hide w-80 bg-background max-h-60"
           style={{
-            bottom: "100%", // Position above the textarea
-            left: "0", // Start from the left edge
-            marginBottom: "4px", // Give a bit of space
+            bottom: '100%', // Position above the textarea
+            left: '0', // Start from the left edge
+            marginBottom: '4px', // Give a bit of space
           }}
         >
           <span className="px-4 text-sm text-gray-500">
@@ -328,12 +313,12 @@ const ChatInput = ({
                   onMouseEnter={() => setSelectedMentionIndex(index)}
                   key={file.id}
                   className={`p-4 flex gap-2 cursor-pointer hover:bg-brand-50 ${
-                    index === selectedMentionIndex ? "bg-brand-100" : ""
+                    index === selectedMentionIndex ? 'bg-brand-100' : ''
                   }`}
                   ref={index === selectedMentionIndex ? selectedItemRef : null}
                 >
                   <div className="flex">
-                    <FileIcon ext={file?.value?.split(".").pop()} />
+                    <FileIcon ext={file?.value?.split('.').pop()} />
                   </div>
                   {file.value}
                 </li>
@@ -350,14 +335,12 @@ const ChatInput = ({
                   key={option.id}
                   ref={index === selectedMentionIndex ? selectedItemRef : null}
                   className={`p-4 flex gap-2 cursor-pointer hover:bg-gray-100 ${
-                    index === selectedMentionIndex ? "bg-brand-50" : ""
+                    index === selectedMentionIndex ? 'bg-brand-50' : ''
                   }`}
                   onClick={() => insertMention(option)}
                   onMouseEnter={() => setSelectedMentionIndex(index)}
                 >
-                  {option.icon && (
-                    <span className="text-gray-600">{option.icon}</span>
-                  )}
+                  {option.icon && <span className="text-gray-600">{option.icon}</span>}
                   <span className="font-medium">{option.label}</span>
                 </li>
               ))}

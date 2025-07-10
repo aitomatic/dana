@@ -1,18 +1,18 @@
-import { useMemo, useState, Fragment } from "react";
-import type { ReactNode } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkMath from "remark-math";
-import remarkGfm from "remark-gfm";
-import rehypeKatex from "rehype-katex";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
-import "katex/dist/katex.min.css";
+import { useMemo, useState, Fragment } from 'react';
+import type { ReactNode } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import remarkGfm from 'remark-gfm';
+import rehypeKatex from 'rehype-katex';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import 'katex/dist/katex.min.css';
 
-import { cn } from "@/lib/utils";
-import { IconCheck, IconCopy, IconPlayerPlay } from "@tabler/icons-react";
+import { cn } from '@/lib/utils';
+import { IconCheck, IconCopy, IconPlayerPlay } from '@tabler/icons-react';
 
-import styles from "./MarkdownViewer.module.css";
-import ReactCodeBlock from "./react-code-block";
+import styles from './MarkdownViewer.module.css';
+import ReactCodeBlock from './react-code-block';
 
 // Type definitions for markdown components
 interface CodeProps {
@@ -168,7 +168,7 @@ const MermaidBlock = ({ content }: { content: string }) => {
           margin: 0,
           borderRadius: 0,
           lineHeight: 1.5,
-          padding: "1rem",
+          padding: '1rem',
         }}
         showLineNumbers={true}
         wrapLines={true}
@@ -180,13 +180,7 @@ const MermaidBlock = ({ content }: { content: string }) => {
 };
 
 // Standard Code Block Component
-const CodeBlock = ({
-  content,
-  language,
-}: {
-  content: string;
-  language: string;
-}) => {
+const CodeBlock = ({ content, language }: { content: string; language: string }) => {
   const [copiedContent, setCopiedContent] = useState(false);
   const blockId = `code-block-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -215,13 +209,13 @@ const CodeBlock = ({
       </button>
       <SyntaxHighlighter
         className="text-sm xl:text-base"
-        language={language || "text"}
+        language={language || 'text'}
         style={oneLight}
         customStyle={{
           margin: 0,
           borderRadius: 0,
           lineHeight: 1.5,
-          padding: "1rem",
+          padding: '1rem',
         }}
         showLineNumbers={true}
         wrapLines={true}
@@ -233,8 +227,8 @@ const CodeBlock = ({
 };
 
 export const MarkdownViewerSmall = ({
-  children = "",
-  classname = "",
+  children = '',
+  classname = '',
   useMath = true,
 }: {
   children: string;
@@ -243,23 +237,23 @@ export const MarkdownViewerSmall = ({
   citations?: any[];
 }) => {
   const refinedContent = useMemo(() => {
-    if (children.startsWith("```markdown")) {
+    if (children.startsWith('```markdown')) {
       children = children.substring(12);
     }
-    if (children.startsWith("```") && !children.startsWith("```c")) {
+    if (children.startsWith('```') && !children.startsWith('```c')) {
       children = children.substring(3);
-      if (children.endsWith("```")) {
+      if (children.endsWith('```')) {
         children = children.slice(0, -3);
       }
     }
     return (
-      (children ?? "")
+      (children ?? '')
         // eslint-disable-next-line
         // @ts-ignore
-        .replaceAll("$", "\\$")
-        .replace(/\\\[/g, "\n \n \n $ \n ")
-        .replace(/\\\]/g, "\n $ \n\n")
-        .replaceAll("\n", " \n ")
+        .replaceAll('$', '\\$')
+        .replace(/\\\[/g, '\n \n \n $ \n ')
+        .replace(/\\\]/g, '\n $ \n\n')
+        .replaceAll('\n', ' \n ')
     );
   }, [children]);
 
@@ -272,9 +266,9 @@ export const MarkdownViewerSmall = ({
   return (
     <div
       className={cn(
-        styles["content"],
-        styles["content-small"],
-        "w-full text-sm xl:text-base",
+        styles['content'],
+        styles['content-small'],
+        'w-full text-sm xl:text-base',
         classname,
       )}
     >
@@ -284,21 +278,20 @@ export const MarkdownViewerSmall = ({
         components={{
           code: ({ className, children }: CodeProps) => {
             const content = String(children).trim();
-            const languageMatch = /language-(\w+)/.exec(className || "");
-            const language = languageMatch ? languageMatch[1] : "";
+            const languageMatch = /language-(\w+)/.exec(className || '');
+            const language = languageMatch ? languageMatch[1] : '';
             const isInline = !className;
-            const isMermaid = language === "mermaid";
+            const isMermaid = language === 'mermaid';
             const isReact =
-              language === "jsx" ||
-              language === "tsx" ||
-              content.includes("import React") ||
+              language === 'jsx' ||
+              language === 'tsx' ||
+              content.includes('import React') ||
               content.includes("from 'react'") ||
               content.includes('from "react"');
 
             const isRechart =
-              content.includes("import { ") &&
-              (content.includes(" from 'recharts'") ||
-                content.includes(' from "recharts"'));
+              content.includes('import { ') &&
+              (content.includes(" from 'recharts'") || content.includes(' from "recharts"'));
 
             // Handle inline code
             if (isInline) {
@@ -310,15 +303,15 @@ export const MarkdownViewerSmall = ({
               return (
                 <code
                   className={cn(
-                    "font-mono font-normal px-1.5 py-0.5 rounded text-sm xl:text-base",
+                    'font-mono font-normal px-1.5 py-0.5 rounded text-sm xl:text-base',
                     isHook
-                      ? "bg-purple-100 text-purple-800"
+                      ? 'bg-purple-100 text-purple-800'
                       : isType
-                        ? "bg-yellow-100 text-yellow-800"
+                        ? 'bg-yellow-100 text-yellow-800'
                         : isVariable
-                          ? "bg-gray-100 text-gray-800"
-                          : "bg-gray-50 text-gray-900",
-                    isSingleWord ? "inline-block" : "",
+                          ? 'bg-gray-100 text-gray-800'
+                          : 'bg-gray-50 text-gray-900',
+                    isSingleWord ? 'inline-block' : '',
                   )}
                 >
                   {content}
@@ -344,23 +337,21 @@ export const MarkdownViewerSmall = ({
             if (Array.isArray(children)) {
               // Check if any of the children items contain @ mentions
               const hasAtMention = children.some(
-                (child) => typeof child === "string" && child.includes("@"),
+                (child) => typeof child === 'string' && child.includes('@'),
               );
 
               if (hasAtMention) {
                 return (
                   <p className={`py-1 text-sm xl:text-base text-gray-900`}>
                     {children.map((child, index) => {
-                      if (typeof child === "string" && child.includes("@")) {
+                      if (typeof child === 'string' && child.includes('@')) {
                         const parts = child.split(regex);
                         return (
                           <Fragment key={index}>
                             {parts.map((part, partIndex) => {
-                              if (part.startsWith("@")) {
+                              if (part.startsWith('@')) {
                                 // Use the enhanced MentionSpan component
-                                return (
-                                  <MentionSpan key={partIndex} mention={part} />
-                                );
+                                return <MentionSpan key={partIndex} mention={part} />;
                               }
                               return <span key={partIndex}>{part}</span>;
                             })}
@@ -375,12 +366,12 @@ export const MarkdownViewerSmall = ({
             }
 
             // Handle string children with @ mentions
-            if (typeof children === "string" && children.includes("@")) {
+            if (typeof children === 'string' && children.includes('@')) {
               const parts = children.split(regex);
               return (
                 <p className={`py-1 text-sm xl:text-base text-gray-900`}>
                   {parts.map((part, index) => {
-                    if (part.startsWith("@")) {
+                    if (part.startsWith('@')) {
                       // Use the enhanced MentionSpan component
                       return <MentionSpan key={index} mention={part} />;
                     }
@@ -391,11 +382,7 @@ export const MarkdownViewerSmall = ({
             }
 
             // Default paragraph rendering
-            return (
-              <p className={`py-1 text-sm xl:text-base text-gray-900`}>
-                {children}
-              </p>
-            );
+            return <p className={`py-1 text-sm xl:text-base text-gray-900`}>{children}</p>;
           },
 
           table: ({ children }: TableProps) => (
@@ -405,9 +392,7 @@ export const MarkdownViewerSmall = ({
               </table>
             </div>
           ),
-          thead: ({ children }: TableProps) => (
-            <thead className="bg-gray-50">{children}</thead>
-          ),
+          thead: ({ children }: TableProps) => <thead className="bg-gray-50">{children}</thead>,
           tbody: ({ children }: TableProps) => (
             <tbody className="divide-y divide-gray-200">{children}</tbody>
           ),
@@ -425,16 +410,12 @@ export const MarkdownViewerSmall = ({
             // Handle React elements directly when they're passed as children
             if (
               children &&
-              typeof children === "object" &&
-              "$$typeof" in children &&
-              children.$$typeof === Symbol.for("react.element")
+              typeof children === 'object' &&
+              '$$typeof' in children &&
+              children.$$typeof === Symbol.for('react.element')
             ) {
               return (
-                <td
-                  className={`px-4 py-3 border-b border-gray-200 text-gray-900`}
-                >
-                  {children}
-                </td>
+                <td className={`px-4 py-3 border-b border-gray-200 text-gray-900`}>{children}</td>
               );
             }
 
@@ -443,60 +424,40 @@ export const MarkdownViewerSmall = ({
               const hasReactElements = children.some(
                 (child) =>
                   child &&
-                  typeof child === "object" &&
-                  child.$$typeof === Symbol.for("react.element"),
+                  typeof child === 'object' &&
+                  child.$$typeof === Symbol.for('react.element'),
               );
 
               if (hasReactElements) {
                 return (
-                  <td
-                    className={`px-4 py-3 border-b border-gray-200 text-gray-900`}
-                  >
-                    {children}
-                  </td>
+                  <td className={`px-4 py-3 border-b border-gray-200 text-gray-900`}>{children}</td>
                 );
               }
             }
 
             // For string content, continue with the existing logic
             const content = Array.isArray(children)
-              ? children
-                  .map((child) => (typeof child === "string" ? child : ""))
-                  .join("")
-              : String(children || "");
+              ? children.map((child) => (typeof child === 'string' ? child : '')).join('')
+              : String(children || '');
 
             // Handle bold type formatting with asterisks
-            const formattedContent = content.replace(
-              /\*\*([^*]+)\*\*/g,
-              (_, text) => {
-                return `<strong>${text}</strong>`;
-              },
-            );
+            const formattedContent = content.replace(/\*\*([^*]+)\*\*/g, (_, text) => {
+              return `<strong>${text}</strong>`;
+            });
 
             const parts = formattedContent.split(/(\[\[\d+\]\])/);
 
             if (parts?.length === 1) {
               return (
-                <td
-                  className={`px-4 py-3 border-b border-gray-200 text-gray-900`}
-                >
-                  {children}
-                </td>
+                <td className={`px-4 py-3 border-b border-gray-200 text-gray-900`}>{children}</td>
               );
             }
 
             return (
-              <td
-                className={`px-4 py-3 border-b border-gray-200 text-gray-900`}
-              >
+              <td className={`px-4 py-3 border-b border-gray-200 text-gray-900`}>
                 <span className="inline-flex flex-wrap items-center gap-1">
                   {parts?.map((part, index) => {
-                    return (
-                      <span
-                        key={index}
-                        dangerouslySetInnerHTML={{ __html: part }}
-                      />
-                    );
+                    return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
                   })}
                 </span>
               </td>
@@ -505,18 +466,16 @@ export const MarkdownViewerSmall = ({
 
           text: ({ children }) => {
             const content = Array.isArray(children)
-              ? children
-                  .map((child) => (typeof child === "string" ? child : ""))
-                  .join("")
+              ? children.map((child) => (typeof child === 'string' ? child : '')).join('')
               : String(children);
 
             // Check for @ mentions in text content
-            if (content.includes("@")) {
+            if (content.includes('@')) {
               const parts = content.split(regex);
               return (
                 <span className="inline-flex flex-wrap items-center">
                   {parts.map((part, idx) => {
-                    if (part.startsWith("@")) {
+                    if (part.startsWith('@')) {
                       return <MentionSpan key={idx} mention={part} />;
                     }
                     return <span key={idx}>{part}</span>;
@@ -526,30 +485,20 @@ export const MarkdownViewerSmall = ({
             }
 
             // Handle bold type formatting with asterisks
-            const formattedContent = content.replace(
-              /\*\*([^*]+)\*\*/g,
-              (_, text) => {
-                return `<strong>${text}</strong>`;
-              },
-            );
+            const formattedContent = content.replace(/\*\*([^*]+)\*\*/g, (_, text) => {
+              return `<strong>${text}</strong>`;
+            });
 
             const parts = formattedContent.split(/(\[\[\d+\]\])/);
 
             if (parts.length === 1) {
-              return (
-                <span dangerouslySetInnerHTML={{ __html: formattedContent }} />
-              );
+              return <span dangerouslySetInnerHTML={{ __html: formattedContent }} />;
             }
 
             return (
               <span className="inline-flex flex-wrap items-center gap-1">
                 {parts.map((part, index) => {
-                  return (
-                    <span
-                      key={index}
-                      dangerouslySetInnerHTML={{ __html: part }}
-                    />
-                  );
+                  return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
                 })}
               </span>
             );

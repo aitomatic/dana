@@ -1,12 +1,7 @@
-import { create } from "zustand";
-import type {
-  AgentCreate,
-  AgentFilters,
-  AgentRead,
-  AgentState,
-} from "@/types/agent";
-import { apiService } from "@/lib/api";
-export type { AgentState } from "@/types/agent";
+import { create } from 'zustand';
+import type { AgentCreate, AgentFilters, AgentRead, AgentState } from '@/types/agent';
+import { apiService } from '@/lib/api';
+export type { AgentState } from '@/types/agent';
 
 export const useAgentStore = create<AgentState>((set) => ({
   // State
@@ -37,8 +32,7 @@ export const useAgentStore = create<AgentState>((set) => ({
         limit: filters?.limit || 10,
       });
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to fetch agents";
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch agents';
       set({
         isLoading: false,
         error: errorMessage,
@@ -57,8 +51,7 @@ export const useAgentStore = create<AgentState>((set) => ({
       });
       return agent;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to fetch agent";
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch agent';
       set({
         isLoading: false,
         error: errorMessage,
@@ -78,8 +71,7 @@ export const useAgentStore = create<AgentState>((set) => ({
       }));
       return newAgent;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to create agent";
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create agent';
       set({
         isCreating: false,
         error: errorMessage,
@@ -95,16 +87,12 @@ export const useAgentStore = create<AgentState>((set) => ({
       const updatedAgent = await apiService.updateAgent(agentId, agent);
       set((state) => ({
         agents: state.agents.map((a) => (a.id === agentId ? updatedAgent : a)),
-        selectedAgent:
-          state.selectedAgent?.id === agentId
-            ? updatedAgent
-            : state.selectedAgent,
+        selectedAgent: state.selectedAgent?.id === agentId ? updatedAgent : state.selectedAgent,
         isUpdating: false,
       }));
       return updatedAgent;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to update agent";
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update agent';
       set({
         isUpdating: false,
         error: errorMessage,
@@ -120,13 +108,11 @@ export const useAgentStore = create<AgentState>((set) => ({
       await apiService.deleteAgent(agentId);
       set((state) => ({
         agents: state.agents.filter((a) => a.id !== agentId),
-        selectedAgent:
-          state.selectedAgent?.id === agentId ? null : state.selectedAgent,
+        selectedAgent: state.selectedAgent?.id === agentId ? null : state.selectedAgent,
         isDeleting: false,
       }));
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to delete agent";
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete agent';
       set({
         isDeleting: false,
         error: errorMessage,

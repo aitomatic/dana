@@ -1,14 +1,14 @@
-import { useCallback, useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
-import AgentChatView from "./chat-view";
-import ConversationsSidebar from "./conversations-sidebar";
-import { Tooltip, TooltipContent } from "@/components/ui/tooltip";
-import { TooltipTrigger } from "@/components/ui/tooltip";
-import { TooltipPortal } from "@radix-ui/react-tooltip";
-import { ChatPlusIn, Tools } from "iconoir-react";
-import { IconMenu2 } from "@tabler/icons-react";
+import { useCallback, useEffect, useState } from 'react';
+import { cn } from '@/lib/utils';
+import AgentChatView from './chat-view';
+import ConversationsSidebar from './conversations-sidebar';
+import { Tooltip, TooltipContent } from '@/components/ui/tooltip';
+import { TooltipTrigger } from '@/components/ui/tooltip';
+import { TooltipPortal } from '@radix-ui/react-tooltip';
+import { ChatPlusIn, Tools } from 'iconoir-react';
+import { IconMenu2 } from '@tabler/icons-react';
 
-const SIDEBAR_COLLAPSED_KEY = "agent-sidebar-collapsed";
+const SIDEBAR_COLLAPSED_KEY = 'agent-sidebar-collapsed';
 
 const AgentChat = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
@@ -21,10 +21,7 @@ const AgentChat = () => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(
-      SIDEBAR_COLLAPSED_KEY,
-      JSON.stringify(isSidebarCollapsed),
-    );
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, JSON.stringify(isSidebarCollapsed));
   }, [isSidebarCollapsed]);
 
   return (
@@ -32,20 +29,18 @@ const AgentChat = () => {
       <div className="flex w-full h-full">
         <div
           className={cn(
-            "relative transition-all duration-300 ease-in-out z-31 shrink-0 overflow-x-hidden bg-background [view-transition-name:var(--sidebar-slideover)] max-md:w-0! scrollbar-hide",
-            isSidebarCollapsed ? "w-0 opacity-0" : "w-[260px] opacity-100",
+            'relative transition-all duration-300 ease-in-out z-31 shrink-0 overflow-x-hidden bg-background [view-transition-name:var(--sidebar-slideover)] max-md:w-0! scrollbar-hide',
+            isSidebarCollapsed ? 'w-0 opacity-0' : 'w-[260px] opacity-100',
           )}
         >
           <div className="absolute inset-0 transition-none bg-background">
-            <ConversationsSidebar
-              setIsSidebarCollapsed={setIsSidebarCollapsed}
-            />
+            <ConversationsSidebar setIsSidebarCollapsed={setIsSidebarCollapsed} />
           </div>
         </div>
         <div
           className={cn(
-            "flex transition-all duration-300 ease-in-out",
-            isSidebarCollapsed ? "w-full" : "w-[calc(100%-260px)]",
+            'flex transition-all duration-300 ease-in-out',
+            isSidebarCollapsed ? 'w-full' : 'w-[calc(100%-260px)]',
           )}
         >
           <div className="relative w-full">

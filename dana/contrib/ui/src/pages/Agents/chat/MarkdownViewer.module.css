@@ -102,8 +102,8 @@ a:visited {
   border-radius: 0.25rem; /* 4px */
   background-color: rgb(var(--gray-100)); /* #f3f4f6 */
   font-family:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    "Courier New", monospace;
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
   font-size: 0.875rem; /* 14px */
   color: rgb(var(--gray-800)); /* #1f2937 */
   white-space: nowrap;

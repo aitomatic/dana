@@ -1,9 +1,9 @@
-import { IconChartLine } from "@tabler/icons-react";
-import { useState } from "react";
+import { IconChartLine } from '@tabler/icons-react';
+import { useState } from 'react';
 
 const ReactCodeBlock = ({ content }: { content: string }) => {
   const [_, setIsSplitScreen] = useState(false);
-  const [__, setReactCode] = useState("");
+  const [__, setReactCode] = useState('');
   const blockId = `react-code-${Math.random().toString(36).substring(2, 8)}`;
 
   // Extract meaningful name from the component content
@@ -30,9 +30,7 @@ const ReactCodeBlock = ({ content }: { content: string }) => {
           </div>
           <div className="flex flex-col gap-1">
             <span className="font-medium text-gray-900">{componentName}</span>
-            <span className="text-xs text-gray-600">
-              {componentDescription}
-            </span>
+            <span className="text-xs text-gray-600">{componentDescription}</span>
           </div>
         </div>
       </div>
@@ -58,17 +56,13 @@ const extractComponentName = (content: string): string => {
   }
 
   // Try to find arrow function export
-  const arrowExportMatches = content.match(
-    /export\s+(?:default)?\s*const\s+([A-Za-z0-9_]+)\s*=/,
-  );
+  const arrowExportMatches = content.match(/export\s+(?:default)?\s*const\s+([A-Za-z0-9_]+)\s*=/);
   if (arrowExportMatches && arrowExportMatches[1]) {
     return arrowExportMatches[1];
   }
 
   // Try to find class component
-  const classMatches = content.match(
-    /class\s+([A-Za-z0-9_]+)\s+extends\s+React\.Component/,
-  );
+  const classMatches = content.match(/class\s+([A-Za-z0-9_]+)\s+extends\s+React\.Component/);
   if (classMatches && classMatches[1]) {
     return classMatches[1];
   }
@@ -82,46 +76,42 @@ const extractComponentName = (content: string): string => {
   }
 
   // Look for import statements to identify visualization libraries
-  if (content.includes("recharts")) {
+  if (content.includes('recharts')) {
     // Check for specific chart types
-    if (content.includes("LineChart")) return "Line Chart Component";
-    if (content.includes("BarChart")) return "Bar Chart Component";
-    if (content.includes("PieChart")) return "Pie Chart Component";
-    if (content.includes("AreaChart")) return "Area Chart Component";
-    if (content.includes("ComposedChart")) return "Composed Chart Component";
-    if (content.includes("RadarChart")) return "Radar Chart Component";
-    if (content.includes("Treemap")) return "Treemap Component";
-    if (content.includes("ScatterChart")) return "Scatter Chart Component";
-    return "Recharts Visualization";
+    if (content.includes('LineChart')) return 'Line Chart Component';
+    if (content.includes('BarChart')) return 'Bar Chart Component';
+    if (content.includes('PieChart')) return 'Pie Chart Component';
+    if (content.includes('AreaChart')) return 'Area Chart Component';
+    if (content.includes('ComposedChart')) return 'Composed Chart Component';
+    if (content.includes('RadarChart')) return 'Radar Chart Component';
+    if (content.includes('Treemap')) return 'Treemap Component';
+    if (content.includes('ScatterChart')) return 'Scatter Chart Component';
+    return 'Recharts Visualization';
   }
 
-  if (content.includes("Chart from")) {
-    return "Chart.js Visualization";
+  if (content.includes('Chart from')) {
+    return 'Chart.js Visualization';
   }
 
-  if (content.includes("d3")) {
-    return "D3.js Visualization";
+  if (content.includes('d3')) {
+    return 'D3.js Visualization';
   }
 
   // Check for UI component patterns
-  if (content.includes("<Form") || content.includes("onSubmit")) {
-    return "Form Component";
+  if (content.includes('<Form') || content.includes('onSubmit')) {
+    return 'Form Component';
   }
 
-  if (
-    content.includes("<Table") ||
-    content.includes("<tr") ||
-    content.includes("<td")
-  ) {
-    return "Table Component";
+  if (content.includes('<Table') || content.includes('<tr') || content.includes('<td')) {
+    return 'Table Component';
   }
 
-  if (content.includes("useState") || content.includes("useEffect")) {
-    return "React Hooks Component";
+  if (content.includes('useState') || content.includes('useEffect')) {
+    return 'React Hooks Component';
   }
 
   // Default fallback
-  return "React Component";
+  return 'React Component';
 };
 
 /**
@@ -133,12 +123,8 @@ const generateComponentDescription = (content: string): string => {
   const chartDescription = [];
 
   // Check for chart-related imports
-  if (
-    content.includes("recharts") ||
-    content.includes("Chart") ||
-    content.includes("d3")
-  ) {
-    chartDescription.push("Data visualization");
+  if (content.includes('recharts') || content.includes('Chart') || content.includes('d3')) {
+    chartDescription.push('Data visualization');
 
     // Look for data keys that might reveal what's being shown
     const dataKeysMatch = content.match(/dataKey=["']([A-Za-z0-9_]+)["']/);
@@ -148,40 +134,37 @@ const generateComponentDescription = (content: string): string => {
   }
 
   // Check if it's a form
-  if (content.includes("onSubmit") || content.includes("<Form")) {
-    return "Interactive form component";
+  if (content.includes('onSubmit') || content.includes('<Form')) {
+    return 'Interactive form component';
   }
 
   // Check if it has state
-  if (content.includes("useState")) {
-    if (content.includes("fetch(") || content.includes("axios")) {
-      return "Component with data fetching";
+  if (content.includes('useState')) {
+    if (content.includes('fetch(') || content.includes('axios')) {
+      return 'Component with data fetching';
     }
-    return "Interactive component with state";
+    return 'Interactive component with state';
   }
 
   // Check for specific keywords in the content
-  if (content.toLowerCase().includes("dashboard")) {
-    return "Dashboard component";
+  if (content.toLowerCase().includes('dashboard')) {
+    return 'Dashboard component';
   }
 
-  if (
-    content.toLowerCase().includes("analytics") ||
-    content.toLowerCase().includes("metrics")
-  ) {
-    return "Analytics visualization";
+  if (content.toLowerCase().includes('analytics') || content.toLowerCase().includes('metrics')) {
+    return 'Analytics visualization';
   }
 
   // Calculate component size/complexity as another descriptor
-  const linesOfCode = content.split("\n").length;
-  let complexityDesc = "";
+  const linesOfCode = content.split('\n').length;
+  let complexityDesc = '';
 
-  if (linesOfCode < 30) complexityDesc = "Simple";
-  else if (linesOfCode < 100) complexityDesc = "Moderate";
-  else complexityDesc = "Complex";
+  if (linesOfCode < 30) complexityDesc = 'Simple';
+  else if (linesOfCode < 100) complexityDesc = 'Moderate';
+  else complexityDesc = 'Complex';
 
   if (chartDescription.length > 0) {
-    return `${chartDescription.join(" ")}`;
+    return `${chartDescription.join(' ')}`;
   }
 
   return `${complexityDesc} React component. Click to edit`;

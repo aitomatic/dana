@@ -1,7 +1,7 @@
 export interface FileItem {
   id: string;
   name: string;
-  type: "file";
+  type: 'file';
   size: number;
   extension: string;
   lastModified: Date;
@@ -13,7 +13,7 @@ export interface FileItem {
 export interface FolderItem {
   id: string;
   name: string;
-  type: "folder";
+  type: 'folder';
   itemCount: number;
   lastModified: Date;
   path: string;
@@ -24,7 +24,7 @@ export type LibraryItem = FileItem | FolderItem;
 
 export interface LibraryFilters {
   search: string;
-  type: "all" | "files" | "folders";
+  type: 'all' | 'files' | 'folders';
   extension?: string;
 }
 
@@ -33,7 +33,7 @@ export interface BreadcrumbItem {
   id: string;
   name: string;
   path: string;
-  type: "root" | "folder";
+  type: 'root' | 'folder';
 }
 
 export interface FolderViewState {
@@ -44,6 +44,6 @@ export interface FolderViewState {
 }
 
 export interface BulkOperation {
-  type: "delete" | "download" | "move";
+  type: 'delete' | 'download' | 'move';
   items: LibraryItem[];
 }

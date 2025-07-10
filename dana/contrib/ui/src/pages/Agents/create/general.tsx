@@ -1,11 +1,11 @@
-import { cn } from "@/lib/utils";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Edit } from "iconoir-react";
-import { AgentEditor } from "@/components/agent-editor";
-import { CloudUpload } from "iconoir-react";
-import { useState } from "react";
+import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Edit } from 'iconoir-react';
+import { AgentEditor } from '@/components/agent-editor';
+import { CloudUpload } from 'iconoir-react';
+import { useState } from 'react';
 
 const placeholder = `e.g.
 
@@ -50,14 +50,14 @@ export function GeneralAgentPage({
   const { register, setValue, formState } = form;
   const isDisabled = !formState.isValid;
 
-  const avatar = watch("avatar");
-  const danaCode = watch("general_agent_config.dana_code");
+  const avatar = watch('avatar');
+  const danaCode = watch('general_agent_config.dana_code');
 
   return (
     <div
       className={cn(
-        "flex w-full flex-col h-[calc(100vh-80px)] gap-4 px-6 bg-gray-50",
-        isDragOver && "opacity-50",
+        'flex w-full flex-col h-[calc(100vh-80px)] gap-4 px-6 bg-gray-50',
+        isDragOver && 'opacity-50',
       )}
     >
       <div className="flex flex-row gap-4 h-full">
@@ -72,7 +72,7 @@ export function GeneralAgentPage({
               <div className="flex flex-col gap-1">
                 <input
                   className="py-1 w-full text-xl font-semibold text-gray-900 border-b border-gray-900 bg-background border-l-none border-r-none border-t-none focus:outline-none placeholder:text-gray-300"
-                  {...register("name", { required: true })}
+                  {...register('name', { required: true })}
                   id="name"
                   data-testid="name"
                   placeholder="Agent Name"
@@ -81,11 +81,9 @@ export function GeneralAgentPage({
               <div className="flex flex-col gap-1 h-full">
                 {isEditingDescription ? (
                   <div className="flex flex-col gap-1">
-                    <Label className="text-sm font-semibold text-gray-600">
-                      Description
-                    </Label>
+                    <Label className="text-sm font-semibold text-gray-600">Description</Label>
                     <Textarea
-                      {...register("description")}
+                      {...register('description')}
                       id="description"
                       data-testid="description"
                       placeholder="Describe what can the tool do. E.g. search the web, analyse data, summarise content"
@@ -94,32 +92,21 @@ export function GeneralAgentPage({
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2">
-                    <span className="text-sm text-gray-300">
-                      (no description)
-                    </span>
+                    <span className="text-sm text-gray-300">(no description)</span>
                     <Button
                       variant="tertiary"
                       className="gap-2 w-max"
                       onClick={() => setIsEditingDescription(true)}
                     >
-                      <Edit
-                        className="text-gray-600"
-                        width={18}
-                        height={18}
-                        strokeWidth={2}
-                      />
-                      <span className="text-sm text-gray-600">
-                        Add description
-                      </span>
+                      <Edit className="text-gray-600" width={18} height={18} strokeWidth={2} />
+                      <span className="text-sm text-gray-600">Add description</span>
                     </Button>
                   </div>
                 )}
               </div>
             </div>
             <div className="flex flex-col gap-2 h-full">
-              <span className="text-sm font-medium text-gray-600">
-                Resources
-              </span>
+              <span className="text-sm font-medium text-gray-600">Resources</span>
               {/* <FileSelection /> */}
             </div>
           </div>
@@ -129,12 +116,8 @@ export function GeneralAgentPage({
           <div className="flex flex-col gap-2 h-full">
             <div className="flex flex-row gap-1 justify-between">
               <div className="flex flex-col gap-1">
-                <Label className="text-sm font-semibold text-gray-900">
-                  Agent Configuration
-                </Label>
-                <span className="text-sm text-gray-600">
-                  Use DANA to configure your agent
-                </span>
+                <Label className="text-sm font-semibold text-gray-900">Agent Configuration</Label>
+                <span className="text-sm text-gray-600">Use DANA to configure your agent</span>
               </div>
               <input
                 type="file"
@@ -165,7 +148,7 @@ export function GeneralAgentPage({
                   'query="User query" \n response = reason(f"Help me to answer the question: {query}")'
                 }
                 onChange={(value) => {
-                  setValue("general_agent_config.dana_code", value);
+                  setValue('general_agent_config.dana_code', value);
                 }}
                 placeholder={placeholder}
                 onSave={() => {}}
@@ -181,7 +164,7 @@ export function GeneralAgentPage({
           disabled={isDisabled}
           className="gap-2 w-max"
           onClick={() => {
-            setValue("step", "select-knowledge");
+            setValue('step', 'select-knowledge');
           }}
         >
           Create Agent

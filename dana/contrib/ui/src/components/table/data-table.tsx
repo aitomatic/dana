@@ -1,4 +1,4 @@
-import * as React from "react";
+import * as React from 'react';
 import {
   type ColumnDef,
   type ColumnFiltersState,
@@ -12,18 +12,11 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-} from "@tanstack/react-table";
-import {
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-  Table,
-} from ".";
-import { DataTablePagination } from "./data-table-pagination";
-import { IconLoader } from "@tabler/icons-react";
-import { cn } from "@/lib/utils";
+} from '@tanstack/react-table';
+import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from '.';
+import { DataTablePagination } from './data-table-pagination';
+import { IconLoader } from '@tabler/icons-react';
+import { cn } from '@/lib/utils';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -42,11 +35,8 @@ export function DataTable<TData, TValue>({
   is_border = true,
   defaultSorting = [],
 }: DataTableProps<TData, TValue>) {
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
-  );
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>(defaultSorting);
 
   const table = useReactTable({
@@ -72,8 +62,8 @@ export function DataTable<TData, TValue>({
     <div className="flex flex-col h-full rounded-lg border">
       <div
         className={cn(
-          "flex flex-1 overflow-scroll bg-background scrollbar-hide rounded-t-lg",
-          is_border && "border-b ",
+          'flex flex-1 overflow-scroll bg-background scrollbar-hide rounded-t-lg',
+          is_border && 'border-b ',
         )}
       >
         <Table>
@@ -85,10 +75,7 @@ export function DataTable<TData, TValue>({
                     <TableHead key={header.id} colSpan={header.colSpan}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
+                        : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                   );
                 })}
@@ -103,10 +90,7 @@ export function DataTable<TData, TValue>({
                   className="h-24 text-center text-semibold! text-gray-900!"
                 >
                   <div className="flex justify-center items-center w-full">
-                    <IconLoader
-                      className="animate-spin text-brand-700"
-                      size={30}
-                    />
+                    <IconLoader className="animate-spin text-brand-700" size={30} />
                   </div>
                 </TableCell>
               </TableRow>
@@ -114,18 +98,12 @@ export function DataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
+                  data-state={row.getIsSelected() && 'selected'}
                   className="group"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      onClick={() => handleRowClick && handleRowClick(row)}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
+                    <TableCell key={cell.id} onClick={() => handleRowClick && handleRowClick(row)}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>

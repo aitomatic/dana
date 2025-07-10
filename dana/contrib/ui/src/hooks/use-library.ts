@@ -1,25 +1,22 @@
-import { useState, useMemo } from "react";
-import type { LibraryItem, LibraryFilters } from "@/types/library";
+import { useState, useMemo } from 'react';
+import type { LibraryItem, LibraryFilters } from '@/types/library';
 
 export function useLibrary(initialData: LibraryItem[] = []) {
   const [data, setData] = useState<LibraryItem[]>(initialData);
   const [filters, setFilters] = useState<LibraryFilters>({
-    search: "",
-    type: "all",
+    search: '',
+    type: 'all',
   });
 
   const filteredData = useMemo(() => {
     return data.filter((item) => {
-      const matchesSearch = item.name
-        .toLowerCase()
-        .includes(filters.search.toLowerCase());
+      const matchesSearch = item.name.toLowerCase().includes(filters.search.toLowerCase());
       const matchesType =
-        filters.type === "all" ||
-        (filters.type === "files" && item.type === "file") ||
-        (filters.type === "folders" && item.type === "folder");
+        filters.type === 'all' ||
+        (filters.type === 'files' && item.type === 'file') ||
+        (filters.type === 'folders' && item.type === 'folder');
       const matchesExtension =
-        !filters.extension ||
-        (item.type === "file" && item.extension === filters.extension);
+        !filters.extension || (item.type === 'file' && item.extension === filters.extension);
 
       return matchesSearch && matchesType && matchesExtension;
     });
@@ -39,9 +36,7 @@ export function useLibrary(initialData: LibraryItem[] = []) {
 
   const updateItem = (id: string, updates: Partial<LibraryItem>) => {
     setData((prev) =>
-      prev.map((item) =>
-        item.id === id ? ({ ...item, ...updates } as LibraryItem) : item,
-      ),
+      prev.map((item) => (item.id === id ? ({ ...item, ...updates } as LibraryItem) : item)),
     );
   };
 

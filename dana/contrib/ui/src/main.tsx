@@ -1,16 +1,16 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { Toaster } from "sonner";
-import { Layout } from "./components/layout";
-import AgentsPage from "./pages/Agents";
-import { CreateAgentPage } from "./pages/Agents/create";
-import LibraryPage from "./pages/Library";
-import SelectKnowledgePage from "./pages/Agents/select-knowledge";
-import "./index.css";
-import AgentChat from "./pages/Agents/chat";
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'sonner';
+import { Layout } from './components/layout';
+import AgentsPage from './pages/Agents';
+import { CreateAgentPage } from './pages/Agents/create';
+import LibraryPage from './pages/Library';
+import SelectKnowledgePage from './pages/Agents/create/select-knowledge';
+import './index.css';
+import AgentChat from './pages/Agents/chat';
 
-createRoot(document.getElementById("root")!).render(
+createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <Toaster position="top-right" richColors closeButton duration={4000} />

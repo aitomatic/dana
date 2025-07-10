@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { MarkdownViewerSmall } from "./markdown-viewer";
-import { IconLoader } from "@tabler/icons-react";
-import { cn } from "@/lib/utils";
-import { ArrowLeft, Hourglass } from "iconoir-react";
+import { useEffect, useMemo, useState } from 'react';
+import { MarkdownViewerSmall } from './markdown-viewer';
+import { IconLoader } from '@tabler/icons-react';
+import { cn } from '@/lib/utils';
+import { ArrowLeft, Hourglass } from 'iconoir-react';
 
 // Helper functions to extract message content and sources
 const extractMessageContent = (message: any) => {
@@ -30,12 +30,12 @@ const extractMessageContent = (message: any) => {
   if (message?.meta_data?.solution) {
     return message.meta_data.solution;
   }
-  return message?.data?.message || "";
+  return message?.data?.message || '';
 };
 
 const extractMessageSources = (message: any) => {
   if (
-    typeof message?.data?.citations === "object" &&
+    typeof message?.data?.citations === 'object' &&
     message?.data?.citations !== null &&
     !Array.isArray(message?.data?.citations) &&
     Object.keys(message?.data?.citations).length > 0
@@ -62,23 +62,23 @@ const BotMessage = ({
   className?: string;
 }) => {
   const currentAgent = {
-    avatar: "1",
+    avatar: '1',
   };
   const messages: any[] = [];
   const isSplitScreen = false;
-  const thinkingMessage = "Thinking...";
+  const thinkingMessage = 'Thinking...';
 
   const [_, setIsFinished] = useState(false);
   const [isOldResponse, setIsOldResponse] = useState(false);
 
-  const [displayText, setDisplayText] = useState("");
+  const [displayText, setDisplayText] = useState('');
 
   const messageContent = extractMessageContent(message);
   const messageSources = extractMessageSources(message);
 
   // Typing animation effect
   useEffect(() => {
-    if (message.type === "welcome-message") {
+    if (message.type === 'welcome-message') {
       setDisplayText(messageContent);
       return;
     }
@@ -110,9 +110,9 @@ const BotMessage = ({
   // Avatar image source
   const avatarSrc =
     avatar ||
-    (currentAgent?.avatar !== "1"
-      ? `/assets${currentAgent?.avatar ?? "/agent-avatar.svg"}`
-      : "/assets/agent-avatar.svg");
+    (currentAgent?.avatar !== '1'
+      ? `/assets${currentAgent?.avatar ?? '/agent-avatar.svg'}`
+      : '/assets/agent-avatar.svg');
 
   const isLastMessage = useMemo(() => {
     if (!messages || messages.length === 0) return false;
@@ -127,20 +127,18 @@ const BotMessage = ({
 
       <div
         className={cn(
-          "flex flex-col w-full",
-          isSplitScreen
-            ? "max-w-full 3xl:max-w-full"
-            : "max-w-[630px] 3xl:max-w-[1085px]",
+          'flex flex-col w-full',
+          isSplitScreen ? 'max-w-full 3xl:max-w-full' : 'max-w-[630px] 3xl:max-w-[1085px]',
           className,
         )}
       >
         {displayText ? (
           <div
             className={cn(
-              "flex flex-col",
-              message?.data?.meta_data?.type === "dxa:prosea:user_input" &&
+              'flex flex-col',
+              message?.data?.meta_data?.type === 'dxa:prosea:user_input' &&
                 isLastMessage &&
-                "bg-blue-50 rounded-xl p-4 border border-blue-100",
+                'bg-blue-50 rounded-xl p-4 border border-blue-100',
             )}
           >
             {contributedMessage && (
@@ -149,41 +147,33 @@ const BotMessage = ({
                 className="flex gap-2 items-center cursor-pointer"
               >
                 <ArrowLeft
-                  className={cn(
-                    "w-3 h-3 text-gray-400 transition-transform duration-300",
-                    {
-                      "rotate-180": isOldResponse,
-                    },
-                  )}
+                  className={cn('w-3 h-3 text-gray-400 transition-transform duration-300', {
+                    'rotate-180': isOldResponse,
+                  })}
                   strokeWidth={3}
                 />
                 <span className="text-sm font-medium text-gray-400">
-                  {isOldResponse ? "New response" : "Old response"}
+                  {isOldResponse ? 'New response' : 'Old response'}
                 </span>
               </div>
             )}
             <MarkdownViewerSmall citations={messageSources}>
-              {contributedMessage && !isOldResponse
-                ? contributedMessage
-                : displayText}
+              {contributedMessage && !isOldResponse ? contributedMessage : displayText}
             </MarkdownViewerSmall>
-            {message?.data?.meta_data?.type === "dxa:prosea:user_input" &&
-              isLastMessage && (
-                <div className="flex gap-1 items-center mt-2">
-                  <Hourglass className="w-5 h-5 text-brand-700" />
-                  <span className="font-medium text-brand-700 animate-flash">
-                    Awaiting for your response
-                  </span>
-                </div>
-              )}
+            {message?.data?.meta_data?.type === 'dxa:prosea:user_input' && isLastMessage && (
+              <div className="flex gap-1 items-center mt-2">
+                <Hourglass className="w-5 h-5 text-brand-700" />
+                <span className="font-medium text-brand-700 animate-flash">
+                  Awaiting for your response
+                </span>
+              </div>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-[max-content_1fr] items-start gap-2">
             <IconLoader className="animate-spin text-brand-700" size={20} />
-            <span
-              className={`text-sm font-normal text-gray-900 xl:text-base animate-flash`}
-            >
-              {thinkingMessage ?? "Thinking..."}
+            <span className={`text-sm font-normal text-gray-900 xl:text-base animate-flash`}>
+              {thinkingMessage ?? 'Thinking...'}
             </span>
           </div>
         )}

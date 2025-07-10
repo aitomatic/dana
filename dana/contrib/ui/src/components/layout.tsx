@@ -1,11 +1,7 @@
-import * as React from "react";
-import { useLocation } from "react-router-dom";
-import {
-  SidebarProvider,
-  SidebarInset,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { AppSidebar } from "./app-sidebar";
+import * as React from 'react';
+import { useLocation } from 'react-router-dom';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { AppSidebar } from './app-sidebar';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -18,14 +14,14 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
   // Get page title based on current route - moved before early return
   const getPageTitle = React.useCallback(() => {
     switch (location.pathname) {
-      case "/":
-        return "Home";
-      case "/agents":
-        return "Domain-Expert Agents";
-      case "/library":
-        return "Library";
+      case '/':
+        return 'Home';
+      case '/agents':
+        return 'Domain-Expert Agents';
+      case '/library':
+        return 'Library';
       default:
-        return "Agent workspace";
+        return 'Agent workspace';
     }
   }, [location.pathname]);
 

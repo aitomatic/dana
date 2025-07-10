@@ -1,44 +1,37 @@
-import * as React from "react";
-import { Book, Box3dCenter } from "iconoir-react";
-import { useLocation } from "react-router-dom";
+import * as React from 'react';
+import { Book, Box3dCenter } from 'iconoir-react';
+import { useLocation } from 'react-router-dom';
 
-import { NavMain } from "@/components/nav-main";
-import { TeamSwitcher } from "@/components/team-switcher";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarRail,
-} from "@/components/ui/sidebar";
+import { NavMain } from '@/components/nav-main';
+import { TeamSwitcher } from '@/components/team-switcher';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarRail } from '@/components/ui/sidebar';
 
 // Import logo as a module
-import logo from "/logo.svg";
+import logo from '/logo.svg';
 
 // DXA DANA configuration data
 const data = {
   user: {
-    name: "Username",
-    email: "user@example.com",
-    avatar: "",
+    name: 'Username',
+    email: 'user@example.com',
+    avatar: '',
   },
   teams: [
     {
-      name: "DXA DANA",
-      logo: () => (
-        <img src={logo} alt="DXA DANA" className="size-8 rounded-md" />
-      ),
-      plan: "Domain-Expert Agents",
+      name: 'DXA DANA',
+      logo: () => <img src={logo} alt="DXA DANA" className="size-8 rounded-md" />,
+      plan: 'Domain-Expert Agents',
     },
   ],
   navMain: [
     {
-      title: "Domain-Expert Agents",
-      url: "/agents",
+      title: 'Domain-Expert Agents',
+      url: '/agents',
       icon: Box3dCenter,
     },
     {
-      title: "Library",
-      url: "/library",
+      title: 'Library',
+      url: '/library',
       icon: Book,
     },
   ],

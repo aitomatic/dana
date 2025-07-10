@@ -1,14 +1,12 @@
-import type { Table } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight } from "iconoir-react";
+import type { Table } from '@tanstack/react-table';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, ArrowRight } from 'iconoir-react';
 
 interface DataTablePaginationProps<TData> {
   table: Table<TData>;
 }
 
-export function DataTablePagination<TData>({
-  table,
-}: DataTablePaginationProps<TData>) {
+export function DataTablePagination<TData>({ table }: DataTablePaginationProps<TData>) {
   return (
     <div className="flex overflow-auto justify-between items-center w-full">
       <div className="flex justify-between items-center w-full">
@@ -46,9 +44,7 @@ export function DataTablePagination<TData>({
               <span
                 key={i}
                 className={`cursor-pointer rounded w-10 h-10 flex items-center justify-center ${
-                  currentPage === i
-                    ? "bg-gray-50 text-gray-900"
-                    : "text-gray-600"
+                  currentPage === i ? 'bg-gray-50 text-gray-900' : 'text-gray-600'
                 }`}
                 onClick={() => table.setPageIndex(i)}
               >

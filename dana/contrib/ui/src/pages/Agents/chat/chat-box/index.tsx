@@ -1,27 +1,27 @@
-import { useState, useCallback, useMemo, memo } from "react";
-import { cn } from "@/lib/utils";
+import { useState, useCallback, useMemo, memo } from 'react';
+import { cn } from '@/lib/utils';
 
-import ChatInput from "./chat-input";
-import SendButton from "./send-button";
+import ChatInput from './chat-input';
+import SendButton from './send-button';
 
 // Create separate, memoized components
 const MemoizedChatInput = memo(ChatInput);
 
 const ChatBox = ({ handleSendMessage, placeholder, files, id }: any) => {
-  const [message, setMessage] = useState<string | null>("");
+  const [message, setMessage] = useState<string | null>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const onSubmit = useCallback(() => {
     if (isSubmitting || !message?.trim()) return;
     setIsSubmitting(true);
     const messageToSend = message?.trim();
-    setMessage("");
+    setMessage('');
     requestAnimationFrame(() => {
       handleSendMessage({
         message: messageToSend,
-        role: "user",
+        role: 'user',
       });
-      setMessage("");
+      setMessage('');
       setTimeout(() => {
         setIsSubmitting(false);
       }, 100);
@@ -29,17 +29,12 @@ const ChatBox = ({ handleSendMessage, placeholder, files, id }: any) => {
   }, [handleSendMessage, message, isSubmitting]);
 
   const viewType = useMemo(() => {
-    return "input";
+    return 'input';
   }, []);
 
   const MemoizedSendButton = useMemo(
     () => (
-      <SendButton
-        message={message}
-        files={files}
-        onSubmit={onSubmit}
-        isSubmitting={isSubmitting}
-      />
+      <SendButton message={message} files={files} onSubmit={onSubmit} isSubmitting={isSubmitting} />
     ),
     [message, files, onSubmit, isSubmitting],
   );
@@ -47,10 +42,8 @@ const ChatBox = ({ handleSendMessage, placeholder, files, id }: any) => {
   // Memoized controls area - doesn't rerender when message changes except for the SendButton
   const ControlsArea = useMemo(
     () => (
-      <div className={cn("flex items-end w-full h-10 gap-2 justify-between")}>
-        <div className={cn("flex items-center gap-4")}>
-          {MemoizedSendButton}
-        </div>
+      <div className={cn('flex items-end w-full h-10 gap-2 justify-between')}>
+        <div className={cn('flex items-center gap-4')}>{MemoizedSendButton}</div>
       </div>
     ),
     [MemoizedSendButton],
@@ -67,10 +60,10 @@ const ChatBox = ({ handleSendMessage, placeholder, files, id }: any) => {
       }}
       style={{
         boxShadow:
-          "0px 20px 24px -4px rgba(16, 24, 40, 0.04), 0px 8px 8px -4px rgba(16, 24, 40, 0.03)",
+          '0px 20px 24px -4px rgba(16, 24, 40, 0.04), 0px 8px 8px -4px rgba(16, 24, 40, 0.03)',
       }}
     >
-      {viewType === "input" && (
+      {viewType === 'input' && (
         <div className="flex flex-col w-full gap-2 p-3 bg-background dark:bg-gray-50 rounded-xl">
           <div className="flex flex-col">
             <MemoizedChatInput

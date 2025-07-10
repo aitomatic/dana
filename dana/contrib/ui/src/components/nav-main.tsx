@@ -1,14 +1,10 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { IconChevronRight } from "@tabler/icons-react";
-import { useNavigate } from "react-router-dom";
+import * as React from 'react';
+import { IconChevronRight } from '@tabler/icons-react';
+import { useNavigate } from 'react-router-dom';
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   SidebarGroup,
   SidebarMenu,
@@ -17,7 +13,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from "@/components/ui/sidebar";
+} from '@/components/ui/sidebar';
 
 export function NavMain({
   items,
@@ -41,11 +37,7 @@ export function NavMain({
         {items.map((item) => (
           <React.Fragment key={item.title}>
             {item.items ? (
-              <Collapsible
-                asChild
-                defaultOpen={item.isActive}
-                className="group/collapsible"
-              >
+              <Collapsible asChild defaultOpen={item.isActive} className="group/collapsible">
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton

@@ -32,33 +32,24 @@ This directory contains the API services, Zustand stores, and utilities for the 
 
 ```typescript
 // API Service
-import { apiService } from "@/lib/api";
+import { apiService } from '@/lib/api';
 const health = await apiService.checkHealth();
 
 // Stores
-import {
-  useApiStore,
-  usePoetStore,
-  useTopicStore,
-  useDocumentStore,
-} from "@/stores";
+import { useApiStore, usePoetStore, useTopicStore, useDocumentStore } from '@/stores';
 const { isHealthy } = useApiStore();
 const { configurePoet } = usePoetStore();
 const { topics, createTopic } = useTopicStore();
 const { documents, uploadDocument } = useDocumentStore();
 
 // Hooks
-import {
-  useApiInitialization,
-  useTopicOperations,
-  useDocumentOperations,
-} from "@/hooks/use-api";
+import { useApiInitialization, useTopicOperations, useDocumentOperations } from '@/hooks/use-api';
 useApiInitialization(); // Auto-initialize API
 const { topics, createTopic } = useTopicOperations();
 const { documents, uploadDocument } = useDocumentOperations();
 
 // Utilities
-import { formatApiError, cn } from "@/lib/utils";
+import { formatApiError, cn } from '@/lib/utils';
 ```
 
 ## Environment
@@ -97,14 +88,14 @@ Centralized API service using Axios for all OpenDXA API communications.
 **Usage:**
 
 ```typescript
-import { apiService } from "@/lib/api";
+import { apiService } from '@/lib/api';
 
 // Health check
 const health = await apiService.checkHealth();
 
 // Configure POET
 const config = await apiService.configurePoet({
-  domain: "healthcare",
+  domain: 'healthcare',
   retries: 3,
   enable_training: true,
 });
@@ -126,7 +117,7 @@ Manages API connection state, health checks, and general API status.
 **Usage:**
 
 ```typescript
-import { useApiStore } from "@/stores/api-store";
+import { useApiStore } from '@/stores/api-store';
 
 const { isHealthy, checkHealth, error } = useApiStore();
 ```
@@ -145,7 +136,7 @@ Manages POET service state including configurations and domains.
 **Usage:**
 
 ```typescript
-import { usePoetStore } from "@/stores/poet-store";
+import { usePoetStore } from '@/stores/poet-store';
 
 const { configurePoet, availableDomains, selectedDomain } = usePoetStore();
 ```
@@ -164,7 +155,7 @@ Manages UI state including dialogs, navigation, and notifications.
 **Usage:**
 
 ```typescript
-import { useUIStore } from "@/stores/ui-store";
+import { useUIStore } from '@/stores/ui-store';
 
 const { openCreateAgentDialog, addNotification, theme } = useUIStore();
 ```
@@ -183,7 +174,7 @@ Manages agent-related state and operations.
 **Usage:**
 
 ```typescript
-import { useAgentStore } from "@/stores/agent-store";
+import { useAgentStore } from '@/stores/agent-store';
 
 const { agents, openCreateAgentDialog, selectedAgent } = useAgentStore();
 ```
@@ -259,7 +250,7 @@ await checkHealth();
 
 // Using custom hook
 const { configurePoet } = usePoetOperations();
-await configurePoet({ domain: "healthcare" });
+await configurePoet({ domain: 'healthcare' });
 ```
 
 ### 2. State Management
@@ -273,9 +264,9 @@ const { addNotification } = useUIStore();
 // Combined operations
 if (isHealthy && availableDomains.length > 0) {
   addNotification({
-    type: "success",
-    title: "Ready",
-    message: "System is ready",
+    type: 'success',
+    title: 'Ready',
+    message: 'System is ready',
   });
 }
 ```
@@ -283,15 +274,15 @@ if (isHealthy && availableDomains.length > 0) {
 ### 3. Error Handling
 
 ```typescript
-import { formatApiError } from "@/lib/utils";
+import { formatApiError } from '@/lib/utils';
 
 try {
   await apiService.configurePoet(config);
 } catch (error) {
   const message = formatApiError(error);
   addNotification({
-    type: "error",
-    title: "Configuration Failed",
+    type: 'error',
+    title: 'Configuration Failed',
     message,
   });
 }
