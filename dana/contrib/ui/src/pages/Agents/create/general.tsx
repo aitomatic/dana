@@ -37,6 +37,8 @@ export function GeneralAgentPage({
   fileInputRef,
   handleFileInputChange,
   triggerFileInput,
+  onCreateAgent,
+  isCreating,
 }: {
   form: any;
   watch: any;
@@ -44,11 +46,13 @@ export function GeneralAgentPage({
   fileInputRef: any;
   handleFileInputChange: any;
   triggerFileInput: any;
+  onCreateAgent: () => Promise<void>;
+  isCreating: boolean;
 }) {
   const [isEditingDescription, setIsEditingDescription] = useState(false);
 
   const { register, setValue, formState } = form;
-  const isDisabled = !formState.isValid;
+  const isDisabled = !formState.isValid || isCreating;
 
   const avatar = watch('avatar');
   const danaCode = watch('general_agent_config.dana_code');
@@ -159,15 +163,8 @@ export function GeneralAgentPage({
       </div>
 
       <div className="flex justify-end gap-4 px-6 py-4 border-t bg-white">
-        <Button
-          size="lg"
-          disabled={isDisabled}
-          className="gap-2 w-max"
-          onClick={() => {
-            setValue('step', 'select-knowledge');
-          }}
-        >
-          Create Agent
+        <Button size="lg" disabled={isDisabled} className="gap-2 w-max" onClick={onCreateAgent}>
+          {isCreating ? 'Creating Agent...' : 'Create Agent'}
         </Button>
       </div>
     </div>

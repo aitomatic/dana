@@ -27,6 +27,7 @@ import { useFolderNavigation } from '@/hooks/use-folder-navigation';
 import { toast } from 'sonner';
 import { convertTopicToFolderItem, convertDocumentToFileItem } from '@/components/library';
 import { LibraryTable } from '@/components/library';
+import { PdfViewer } from '@/components/library/pdf-viewer';
 
 export default function LibraryPage() {
   // API hooks
@@ -70,6 +71,9 @@ export default function LibraryPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'files' | 'folders'>('all');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
+  const [pdfFileUrl, setPdfFileUrl] = useState<string | null>(null);
+  const [pdfFileName, setPdfFileName] = useState<string | undefined>(undefined);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -125,8 +129,12 @@ export default function LibraryPage() {
     if (item.type === 'folder') {
       // Navigate to folder
       navigateToFolder(item as FolderItem);
+    } else if (item.type === 'file' && (item as any).extension?.toLowerCase() === 'pdf') {
+      setPdfFileUrl(item.path);
+      setPdfFileName(item.name);
+      setPdfViewerOpen(true);
     } else {
-      // Open document preview
+      // Open document preview (non-PDF)
       console.log('View document:', item);
     }
   };
@@ -354,6 +362,7 @@ export default function LibraryPage() {
           onEditItem={handleEditItem}
           onDeleteItem={handleDeleteItem}
           onDownloadItem={handleDownloadDocument}
+          allLibraryItems={itemsWithCounts}
         />
       </div>
 
@@ -421,6 +430,12 @@ export default function LibraryPage() {
         confirmText="Delete"
         cancelText="Cancel"
         variant="destructive"
+      />
+      <PdfViewer
+        open={pdfViewerOpen}
+        onClose={() => setPdfViewerOpen(false)}
+        fileUrl={pdfFileUrl || ''}
+        fileName={pdfFileName}
       />
     </div>
   );

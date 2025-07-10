@@ -120,6 +120,26 @@
   --warning-950: 69 26 3; /* #451A03 */
 
   --radius: 0.625rem;
+
+  /* Custom shadow variables */
+  --shadow-color: 0, 0, 0;
+  --shadow-opacity-sm: 0.05;
+  --shadow-opacity-default: 0.1;
+  --shadow-opacity-md: 0.1;
+  --shadow-opacity-lg: 0.12;
+  --shadow-opacity-xl: 0.14;
+  --shadow-opacity-2xl: 0.25;
+  --shadow-opacity-inner: 0.06;
+
+  /* Shadow definitions */
+  --shadow-xs: 0 1px 2px 0 rgba(var(--shadow-color), var(--shadow-opacity-sm));
+  --shadow: 0 1px 3px 0 rgba(var(--shadow-color), var(--shadow-opacity-default)), 0 1px 2px 0 rgba(var(--shadow-color), 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(var(--shadow-color), var(--shadow-opacity-md)), 0 2px 4px -1px rgba(var(--shadow-color), 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(var(--shadow-color), var(--shadow-opacity-lg)), 0 4px 6px -2px rgba(var(--shadow-color), 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(var(--shadow-color), var(--shadow-opacity-xl)), 0 10px 10px -5px rgba(var(--shadow-color), 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(var(--shadow-color), var(--shadow-opacity-2xl));
+  --shadow-inner: inset 0 2px 4px 0 rgba(var(--shadow-color), var(--shadow-opacity-inner));
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);

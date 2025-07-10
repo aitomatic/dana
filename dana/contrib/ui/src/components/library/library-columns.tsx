@@ -191,21 +191,47 @@ export const getLibraryColumns = (
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onViewItem(item)}>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewItem(item);
+              }}
+            >
               <IconEye className="mr-2 w-4 h-4" />
               View
             </DropdownMenuItem>
             {item.type === 'file' && onDownloadItem && (
-              <DropdownMenuItem onClick={() => onDownloadItem(item)}>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDownloadItem(item);
+                }}
+              >
                 <IconDownload className="mr-2 w-4 h-4" />
                 Download
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onClick={() => onEditItem(item)}>
+            <DropdownMenuItem
+              disabled={
+                item.type === 'file' && (item as FileItem).extension.toLowerCase() === 'pdf'
+              }
+              onClick={(e) => {
+                e.stopPropagation();
+                if (item.type === 'file' && (item as FileItem).extension.toLowerCase() === 'pdf')
+                  return;
+                onEditItem(item);
+              }}
+            >
               <IconEdit className="mr-2 w-4 h-4" />
               Edit
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-red-600" onClick={() => onDeleteItem(item)}>
+            <DropdownMenuItem
+              className="text-red-600"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteItem(item);
+              }}
+            >
               <IconTrash className="mr-2 w-4 h-4" />
               Delete
             </DropdownMenuItem>

@@ -1,5 +1,8 @@
 import { useForm } from 'react-hook-form';
-import type { AgentSteps, DanaAgentForm } from '@/types/agent';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { useAgentStore } from '@/stores/agent-store';
+import type { AgentSteps, DanaAgentForm, AgentCreate } from '@/types/agent';
 
 const getRandomAvatar = () => {
   const avatarNumbers = Array.from({ length: 20 }, (_, i) => i + 1);
@@ -8,6 +11,9 @@ const getRandomAvatar = () => {
 };
 
 export function useDanaAgentForm() {
+  const navigate = useNavigate();
+  const { createAgent, isCreating, error } = useAgentStore();
+
   const form = useForm<DanaAgentForm>({
     defaultValues: {
       name: '',
@@ -20,14 +26,52 @@ export function useDanaAgentForm() {
     },
   });
 
-  const onCreateAgent = () => {
-    const values = form.getValues();
-    console.log('Creating agent:', values);
-    // TODO: Implement actual agent creation logic
+  const onCreateAgent = async () => {
+    try {
+      const values = form.getValues();
+
+      // Validate required fields
+      if (!values.name.trim()) {
+        toast.error('Agent name is required');
+        return;
+      }
+
+      if (!values.general_agent_config.dana_code.trim()) {
+        toast.error('Agent configuration (DANA code) is required');
+        return;
+      }
+
+      // Transform form data to API format
+      const agentData: AgentCreate = {
+        name: values.name.trim(),
+        description: values.description?.trim() || '',
+        config: {
+          avatar: values.avatar,
+          dana_code: values.general_agent_config.dana_code,
+          // Add any additional config fields here
+        },
+      };
+
+      // Create the agent
+      const newAgent = await createAgent(agentData);
+
+      // Show success message
+      toast.success(`Agent "${newAgent.name}" created successfully!`);
+
+      // Navigate to agents list
+      navigate('/agents');
+    } catch (error) {
+      // Error handling is done by the store, but we can add additional UI feedback
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create agent';
+      toast.error(errorMessage);
+      console.error('Agent creation failed:', error);
+    }
   };
 
   return {
     form,
     onCreateAgent,
+    isCreating,
+    error,
   };
 }

@@ -9,7 +9,7 @@ import SelectKnowledgePage from './select-knowledge';
 import { IconButton } from '@/components/ui/button';
 
 export function CreateAgentPage() {
-  const { form } = useDanaAgentForm();
+  const { form, onCreateAgent, isCreating, error } = useDanaAgentForm();
   const { watch, setValue } = form;
   const navigate = useNavigate();
 
@@ -97,9 +97,13 @@ export function CreateAgentPage() {
           fileInputRef={fileInputRef}
           handleFileInputChange={handleFileInputChange}
           triggerFileInput={triggerFileInput}
+          onCreateAgent={onCreateAgent}
+          isCreating={isCreating}
         />
       )}
-      {step === 'select-knowledge' && <SelectKnowledgePage />}
+      {step === 'select-knowledge' && (
+        <SelectKnowledgePage onCreateAgent={onCreateAgent} isCreating={isCreating} error={error} />
+      )}
     </div>
   );
 }

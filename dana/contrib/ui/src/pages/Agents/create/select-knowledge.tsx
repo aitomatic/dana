@@ -15,7 +15,17 @@ import FileIcon from '@/components/file-icon';
 import { Trash } from 'iconoir-react';
 import { LibraryTable, useLibraryTable } from '@/components/library';
 
-export default function SelectKnowledgePage() {
+interface SelectKnowledgePageProps {
+  onCreateAgent: () => Promise<void>;
+  isCreating: boolean;
+  error: string | null;
+}
+
+export default function SelectKnowledgePage({
+  onCreateAgent,
+  isCreating,
+  error,
+}: SelectKnowledgePageProps) {
   // Use the new library table hook
   const {
     filteredItems,
@@ -25,7 +35,7 @@ export default function SelectKnowledgePage() {
     selectedIds,
     folderState,
     isLoading,
-    error,
+    error: libraryError,
     setSearchTerm,
     setTypeFilter,
     setSelectedIds,
@@ -118,9 +128,9 @@ export default function SelectKnowledgePage() {
           </div>
 
           {/* Error Display */}
-          {error && (
+          {(error || libraryError) && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg mb-4">
-              <p className="text-red-800">{error}</p>
+              <p className="text-red-800">{error || libraryError}</p>
               <Button variant="ghost" size="sm" onClick={clearError} className="mt-2">
                 Dismiss
               </Button>
@@ -200,7 +210,9 @@ export default function SelectKnowledgePage() {
       </div>
       {/* Footer */}
       <div className="flex justify-end gap-4 px-6 py-4 border-t bg-white">
-        <Button variant="default">Save & Finish</Button>
+        <Button variant="default" onClick={onCreateAgent} disabled={isCreating}>
+          {isCreating ? 'Creating Agent...' : 'Save & Finish'}
+        </Button>
       </div>
     </div>
   );

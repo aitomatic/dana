@@ -6,7 +6,6 @@ import { Layout } from './components/layout';
 import AgentsPage from './pages/Agents';
 import { CreateAgentPage } from './pages/Agents/create';
 import LibraryPage from './pages/Library';
-import SelectKnowledgePage from './pages/Agents/create/select-knowledge';
 import './index.css';
 import AgentChat from './pages/Agents/chat';
 
@@ -41,24 +40,7 @@ createRoot(document.getElementById('root')!).render(
           }
         />
         <Route
-          path="/agents/select-knowledge"
-          element={
-            <Layout hideLayout={true}>
-              <SelectKnowledgePage />
-            </Layout>
-          }
-        />
-        {/* NEW: Agent-specific chat routes */}
-        <Route
-          path=":agent_id/chat"
-          element={
-            <Layout>
-              <AgentChat />
-            </Layout>
-          }
-        />
-        <Route
-          path=":agent_id/chat/:conversation_id"
+          path="/chat"
           element={
             <Layout>
               <AgentChat />
