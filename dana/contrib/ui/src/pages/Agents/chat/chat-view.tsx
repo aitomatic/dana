@@ -82,14 +82,14 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agent
       // If this is a new conversation, create a temporary conversation ID and navigate immediately
       if (!conversationId) {
         const tempConversationId = Date.now();
-        navigate(`/${agentId}/chat/${tempConversationId}`);
+        navigate(`/agents/${agentId}/chat/${tempConversationId}`);
       }
 
       const response = await sendMessage(data.message, parseInt(agentId), conversationId ? parseInt(conversationId) : undefined);
 
       // If this was a new conversation, navigate to the actual conversation URL
       if (!conversationId && response.conversation_id) {
-        navigate(`/${agentId}/chat/${response.conversation_id}`);
+        navigate(`/agents/${agentId}/chat/${response.conversation_id}`);
       }
     } catch (error) {
       console.error('Failed to send message:', error);

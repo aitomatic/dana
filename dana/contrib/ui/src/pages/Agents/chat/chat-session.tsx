@@ -68,13 +68,7 @@ const ChatSession: React.FC<ChatSessionProps> = ({
             )}
             ref={listRef}
           >
-            <div className="text-xs text-gray-500 p-2">
-              Messages: {messages?.length || 0}
-            </div>
-
             {messages?.map((message: MessageRead, index: number) => {
-              console.log('Processing message:', message);
-
               // Convert API message format to component format
               const messageForComponent = {
                 id: message.id,

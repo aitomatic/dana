@@ -25,7 +25,7 @@ const AgentChat = () => {
 
   const handleNewChat = useCallback(() => {
     if (agent_id) {
-      navigate(`/${agent_id}/chat`);
+      navigate(`/agents/${agent_id}/chat`);
     }
   }, [agent_id, navigate]);
 

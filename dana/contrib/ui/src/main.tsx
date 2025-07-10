@@ -5,6 +5,7 @@ import { Toaster } from 'sonner';
 import { Layout } from './components/layout';
 import AgentsPage from './pages/Agents';
 import { CreateAgentPage } from './pages/Agents/create';
+import AgentDetailPage from './pages/Agents/detail';
 import LibraryPage from './pages/Library';
 import './index.css';
 import AgentChat from './pages/Agents/chat';
@@ -40,7 +41,23 @@ createRoot(document.getElementById('root')!).render(
           }
         />
         <Route
-          path="/chat"
+          path="/agents/:agent_id"
+          element={
+            <Layout>
+              <AgentDetailPage />
+            </Layout>
+          }
+        />
+        <Route
+          path="/agents/:agent_id/chat"
+          element={
+            <Layout>
+              <AgentChat />
+            </Layout>
+          }
+        />
+        <Route
+          path="/agents/:agent_id/chat/:conversation_id"
           element={
             <Layout>
               <AgentChat />

@@ -134,7 +134,7 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ setIsSideba
         setIsDeleteOpen(false);
         // If we're currently viewing this conversation, navigate to agent chat
         if (conversation_id && parseInt(conversation_id) === selectedConversation.id) {
-          navigate(`/${agentId}/chat`);
+          navigate(`/agents/${agentId}/chat`);
         }
         // Refresh conversations
         if (agentId) {
@@ -147,7 +147,7 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ setIsSideba
   };
 
   const handleSelectConversation = (conversation: ConversationRead) => {
-    navigate(`/${agentId}/chat/${conversation.id}`);
+    navigate(`/agents/${agentId}/chat/${conversation.id}`);
   };
 
   const handleOpenRename = (conversation: ConversationRead) => {
@@ -157,7 +157,7 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ setIsSideba
   };
 
   const handleNewChat = () => {
-    navigate(`/${agentId}/chat`);
+    navigate(`/agents/${agentId}/chat`);
   };
 
   const handleCreateConversation = async () => {

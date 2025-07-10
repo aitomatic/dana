@@ -95,7 +95,7 @@ export default function AgentsPage() {
             <div
               key={agent.id}
               className="bg-white rounded-lg border border-gray-200 p-6 flex hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => navigate(`/agents/${agent.id}`)}
+              onClick={() => navigate(`/agents/${agent.id}/chat`)}
             >
               <div className="flex flex-col gap-4">
                 <img

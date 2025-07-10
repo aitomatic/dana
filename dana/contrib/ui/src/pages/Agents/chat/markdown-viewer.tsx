@@ -180,7 +180,7 @@ const MermaidBlock = ({ content }: { content: string }) => {
 };
 
 // Standard Code Block Component
-const CodeBlock = ({ content, language }: { content: string; language: string }) => {
+export const CodeBlock = ({ content, language }: { content: string; language: string }) => {
   const [copiedContent, setCopiedContent] = useState(false);
   const blockId = `code-block-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -320,9 +320,9 @@ export const MarkdownViewerSmall = ({
             }
 
             // Handle mermaid blocks with separate component
-            if (isMermaid) {
-              return <MermaidBlock content={content} />;
-            }
+            // if (isMermaid) {
+            //   return <MermaidBlock content={content} />;
+            // }
 
             // Handle React code blocks with separate component
             if (isReact && isRechart) {
@@ -330,7 +330,9 @@ export const MarkdownViewerSmall = ({
             }
 
             // Handle regular code blocks with separate component
-            return <CodeBlock content={content} language={language} />;
+            // return <CodeBlock content={content} language={language} />;
+
+            return <pre>{content}</pre>
           },
 
           p: ({ children }: ParagraphProps) => {

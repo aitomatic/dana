@@ -18,9 +18,18 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
         return 'Home';
       case '/agents':
         return 'Domain-Expert Agents';
+      case '/agents/create':
+        return 'Create Agent';
       case '/library':
         return 'Library';
       default:
+        // Handle dynamic routes
+        if (location.pathname.startsWith('/agents/') && location.pathname.includes('/chat')) {
+          return 'Agent Chat';
+        }
+        if (location.pathname.startsWith('/agents/')) {
+          return 'Agent Details';
+        }
         return 'Agent workspace';
     }
   }, [location.pathname]);
