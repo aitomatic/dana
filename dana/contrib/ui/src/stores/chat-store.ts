@@ -45,6 +45,21 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   sendMessage: async (message: string, agentId: number, conversationId?: number) => {
     set({ isSending: true, error: null });
 
+    // Immediately add user message to show it in the UI
+    const { messages } = get();
+    const tempUserMessage: MessageRead = {
+      id: Date.now(), // Temporary ID
+      conversation_id: conversationId || 0,
+      sender: 'user',
+      content: message,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    set({
+      messages: [...messages, tempUserMessage],
+    });
+
     try {
       const request: ChatRequest = {
         message,
@@ -55,10 +70,11 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
       const response = await apiService.chatWithAgent(request);
 
-      // Update messages if we have a conversation
+      // Update messages with the actual response
       if (response.conversation_id) {
-        const { messages } = get();
-        const newMessages: MessageRead[] = [
+        const currentMessages = get().messages;
+        const updatedMessages: MessageRead[] = [
+          ...currentMessages.slice(0, -1), // Remove the temporary user message
           {
             id: response.message_id - 1, // User message ID
             conversation_id: response.conversation_id,
@@ -78,7 +94,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         ];
 
         set({
-          messages: [...messages, ...newMessages],
+          messages: updatedMessages,
           isSending: false
         });
       } else {
@@ -87,9 +103,11 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
       return response;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
+      // Remove the temporary user message on error
+      const currentMessages = get().messages;
       set({
-        error: errorMessage,
+        messages: currentMessages.slice(0, -1),
+        error: error instanceof Error ? error.message : 'Failed to send message',
         isSending: false
       });
       throw error;

@@ -22,7 +22,6 @@ interface AgentChatViewProps {
 const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agentId, conversationId }) => {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const { chat_id } = useParams();
   const [files] = useState<any[]>([]);
 
   const {
@@ -49,8 +48,16 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agent
   useEffect(() => {
     console.log('Chat view: conversationId changed to:', conversationId);
     if (conversationId) {
+      // Check if this is a temporary conversation ID (very large number)
+      const conversationIdNum = parseInt(conversationId);
+      if (conversationIdNum > 1000000000) { // Temporary ID (timestamp-based)
+        console.log('Temporary conversation ID detected, not fetching from API');
+        // Don't fetch, just keep the current messages
+        return;
+      }
+
       console.log('Fetching conversation:', conversationId);
-      fetchConversation(parseInt(conversationId));
+      fetchConversation(conversationIdNum);
     } else {
       console.log('Clearing messages - no conversation ID');
       clearMessages();
@@ -71,9 +78,16 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agent
 
     try {
       clearError();
+
+      // If this is a new conversation, create a temporary conversation ID and navigate immediately
+      if (!conversationId) {
+        const tempConversationId = Date.now();
+        navigate(`/${agentId}/chat/${tempConversationId}`);
+      }
+
       const response = await sendMessage(data.message, parseInt(agentId), conversationId ? parseInt(conversationId) : undefined);
 
-      // If this is a new conversation, navigate to the conversation URL
+      // If this was a new conversation, navigate to the actual conversation URL
       if (!conversationId && response.conversation_id) {
         navigate(`/${agentId}/chat/${response.conversation_id}`);
       }
@@ -134,7 +148,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agent
   return (
     <div className="flex w-full h-full">
       <div className="w-full overflow-y-auto scrollbar-hide h-[calc(100vh-64px)] fade-in">
-        {chat_id ? (
+        {conversationId || messages.length > 0 ? (
           <div className="flex items-center justify-center w-full h-full">
             <div className="relative flex items-center justify-center w-full h-full">
               <div

@@ -1,5 +1,6 @@
 import shutil
 import uuid
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -273,7 +274,7 @@ class ConversationService:
         query = db.query(Conversation)
         if agent_id is not None:
             query = query.filter(Conversation.agent_id == agent_id)
-        return query.offset(skip).limit(limit).all()
+        return query.order_by(Conversation.created_at.desc()).offset(skip).limit(limit).all()
 
     def get_conversation(self, db: Session, conversation_id: int) -> Conversation | None:
         return db.query(Conversation).filter(Conversation.id == conversation_id).first()
@@ -446,7 +447,12 @@ class ChatService:
         # TODO: Replace with actual agent execution
         # This is a placeholder implementation
         print(f"Executing agent {agent_id} with message: '{message}' and context: '{context}'")
+        
         dana_code = "query = \"Hi\"\nresponse = reason(f\"Help me to answer the question: {query}\")"
+        question_pattern = r'query\s*=\s*"([^"]+)"'
+        
+        # Replace the entire query pattern with the new question
+        dana_code = re.sub(question_pattern, f'query = """{message}"""', dana_code)
         print(f"Dana code: {dana_code}")
         # Save dana code to file
         # create a temp folder
