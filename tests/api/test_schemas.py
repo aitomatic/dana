@@ -1,20 +1,22 @@
 """Tests for API server Pydantic schemas."""
 
+from datetime import datetime
+
 import pytest
 from pydantic import ValidationError
+
 from dana.api.server.schemas import (
     AgentBase,
     AgentCreate,
     AgentRead,
-    TopicBase,
-    TopicCreate,
-    TopicRead,
     DocumentBase,
     DocumentCreate,
     DocumentRead,
     DocumentUpdate,
+    TopicBase,
+    TopicCreate,
+    TopicRead,
 )
-from datetime import datetime
 
 
 class TestAgentBase:

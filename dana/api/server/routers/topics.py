@@ -1,7 +1,8 @@
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
-from .. import schemas, db
+
+from .. import db, schemas
 from ..services import TopicService
 
 router = APIRouter(prefix="/topics", tags=["topics"])
@@ -19,7 +20,7 @@ def get_topic_service():
     return TopicService()
 
 
-@router.get("/", response_model=List[schemas.TopicRead])
+@router.get("/", response_model=list[schemas.TopicRead])
 async def list_topics(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), service: TopicService = Depends(get_topic_service)):
     return service.get_topics(db, skip=skip, limit=limit)
 

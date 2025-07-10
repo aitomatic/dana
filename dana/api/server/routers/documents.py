@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from typing import List, Optional
-from pathlib import Path
-from .. import schemas, db
+
+from .. import db, schemas
 from ..services import DocumentService, FileStorageService
 
 router = APIRouter(prefix="/documents", tags=["documents"])
@@ -26,11 +26,11 @@ def get_document_service():
     return DocumentService(file_storage)
 
 
-@router.get("/", response_model=List[schemas.DocumentRead])
+@router.get("/", response_model=list[schemas.DocumentRead])
 async def list_documents(
     skip: int = 0,
     limit: int = 100,
-    topic_id: Optional[int] = None,
+    topic_id: int | None = None,
     db: Session = Depends(get_db),
     document_service: DocumentService = Depends(get_document_service),
 ):
@@ -49,8 +49,8 @@ async def get_document(document_id: int, db: Session = Depends(get_db), document
 async def upload_document(
     file: UploadFile = File(...),
     title: str = Form(...),
-    description: Optional[str] = Form(None),
-    topic_id: Optional[int] = Form(None),
+    description: str | None = Form(None),
+    topic_id: int | None = Form(None),
     db: Session = Depends(get_db),
     document_service: DocumentService = Depends(get_document_service),
 ):

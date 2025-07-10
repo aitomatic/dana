@@ -1,15 +1,17 @@
 """Tests for Document and Topic services."""
 
-import pytest
-import tempfile
 import shutil
+import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
+
+import pytest
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
-from dana.api.server.services import TopicService, DocumentService, FileStorageService
-from dana.api.server.schemas import TopicCreate, DocumentCreate, DocumentUpdate
-from dana.api.server.models import Topic, Document
+
+from dana.api.server.models import Document, Topic
+from dana.api.server.schemas import DocumentCreate, DocumentUpdate, TopicCreate
+from dana.api.server.services import DocumentService, FileStorageService, TopicService
 
 
 class TestFileStorageService:
@@ -72,13 +74,16 @@ class TestFileStorageService:
 
     def test_save_file(self, file_storage, mock_upload_file):
         """Test file saving."""
-        # Mock the file content
-        mock_upload_file.file.read.return_value = b"test content"
+        # Create a proper mock file object that works with copyfileobj
+        from io import BytesIO
+        mock_file_content = b"test content"
+        mock_file_obj = BytesIO(mock_file_content)
+        mock_upload_file.file = mock_file_obj
 
         filename, file_path, file_size = file_storage.save_file(mock_upload_file)
 
         assert filename.endswith(".pdf")
-        assert file_size > 0
+        assert file_size == len(mock_file_content)
         assert Path(file_storage.upload_dir) / file_path in Path(file_storage.upload_dir).rglob("*.pdf")
 
     def test_get_file_path(self, file_storage):
@@ -90,6 +95,12 @@ class TestFileStorageService:
 
     def test_delete_file(self, file_storage, mock_upload_file):
         """Test file deletion."""
+        # Create a proper mock file object that works with copyfileobj
+        from io import BytesIO
+        mock_file_content = b"test content"
+        mock_file_obj = BytesIO(mock_file_content)
+        mock_upload_file.file = mock_file_obj
+        
         # First save a file
         filename, file_path, file_size = file_storage.save_file(mock_upload_file)
 
@@ -218,6 +229,12 @@ class TestDocumentService:
 
     def test_create_document(self, db_session: Session, document_service, mock_upload_file):
         """Test document creation."""
+        # Create a proper mock file object that works with copyfileobj
+        from io import BytesIO
+        mock_file_content = b"test content"
+        mock_file_obj = BytesIO(mock_file_content)
+        mock_upload_file.file = mock_file_obj
+        
         document_data = DocumentCreate(original_filename="test.pdf", topic_id=None, agent_id=None)
 
         document = document_service.create_document(db_session, mock_upload_file, document_data)
@@ -225,7 +242,7 @@ class TestDocumentService:
         assert document.id is not None
         assert document.original_filename == "test.pdf"
         assert document.filename.endswith(".pdf")
-        assert document.file_size > 0
+        assert document.file_size == len(mock_file_content)
         assert document.mime_type == "application/pdf"
         assert document.topic_id is None
         assert document.agent_id is None

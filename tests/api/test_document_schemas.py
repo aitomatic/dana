@@ -1,9 +1,11 @@
 """Tests for Document and Topic Pydantic schemas."""
 
+from datetime import datetime
+
 import pytest
 from pydantic import ValidationError
-from datetime import datetime
-from dana.api.server.schemas import TopicBase, TopicCreate, TopicRead, DocumentBase, DocumentCreate, DocumentRead, DocumentUpdate
+
+from dana.api.server.schemas import DocumentBase, DocumentCreate, DocumentRead, DocumentUpdate, TopicBase, TopicCreate, TopicRead
 
 
 class TestTopicBase:

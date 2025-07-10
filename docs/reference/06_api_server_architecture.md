@@ -53,7 +53,7 @@ The Dana framework currently lacks a standardized way to manage agents, document
 - **Document Editing**: Upload/download only, no in-place editing
 
 ## Proposed Solution
-**Brief Description**: FastAPI-based REST server with SQLAlchemy ORM, Pydantic validation, modular router architecture, and two-tier file storage.
+**Brief Description**: FastAPI-based REST server with SQLAlchemy ORM, Pydantic validation, modular router architecture, two-tier file storage, and agent chat capabilities.
 
 The solution uses modern Python web development patterns:
 - **FastAPI** for high-performance async API framework
@@ -61,12 +61,13 @@ The solution uses modern Python web development patterns:
 - **Pydantic v2** for request/response validation and serialization
 - **Modular Router Architecture** for clean separation of concerns
 - **Two-tier Storage**: SQLite for metadata, local file system for files
+- **Agent Chat System**: Real-time agent interactions with conversation management
 - **Comprehensive Testing** with pytest and database fixtures
 
 **KISS/YAGNI Analysis**: 
-- **Simple**: Single database, basic CRUD operations, local-only deployment, straightforward file storage
-- **Justified Complexity**: Pydantic validation, proper error handling, test infrastructure, file validation
-- **Future-Ready**: Modular design allows easy extension without refactoring
+- **Simple**: Single database, basic CRUD operations, local-only deployment, straightforward file storage, direct agent chat
+- **Justified Complexity**: Pydantic validation, proper error handling, test infrastructure, file validation, conversation management
+- **Future-Ready**: Modular design allows easy extension without refactoring, chat system extensible for real-time features
 
 ## Proposed Design
 **Brief Description**: Layered architecture with clear separation between API, business logic, data access, persistence, and file storage.
@@ -87,6 +88,7 @@ graph TB
         AgentRouter[Agent Router<br/>/agents/*]
         TopicRouter[Topic Router<br/>/topics/*]
         DocRouter[Document Router<br/>/documents/*]
+        ChatRouter[Chat Router<br/>/chat/*]
         StaticFiles[Static Files<br/>/static/*]
     end
     
@@ -95,6 +97,7 @@ graph TB
         TopicService[Topic Service<br/>Topic Management]
         DocService[Document Service<br/>Document Management]
         FileService[File Storage Service<br/>File Operations]
+        ChatService[Chat Service<br/>Agent Interactions]
     end
     
     subgraph "Data Layer"
@@ -122,6 +125,7 @@ graph TB
     TopicRouter --> TopicService
     DocRouter --> DocService
     DocRouter --> FileService
+    ChatRouter --> ChatService
     
     AgentService --> Pydantic
     AgentService --> SQLAlchemy
@@ -129,6 +133,8 @@ graph TB
     TopicService --> SQLAlchemy
     DocService --> Pydantic
     DocService --> SQLAlchemy
+    ChatService --> Pydantic
+    ChatService --> SQLAlchemy
     FileService --> FileSystem
     
     SQLAlchemy --> SQLite
@@ -155,6 +161,7 @@ graph TB
   - `api.py`: Agent-specific endpoints with proper prefixing
   - `topics.py`: Topic management endpoints
   - `documents.py`: Document upload/download and management endpoints
+  - `chat.py`: Chat interactions with agents
   - Dependency injection for database sessions
 - **Alternatives**: Single router file (harder to maintain), Blueprint pattern (Flask-specific)
 
@@ -167,6 +174,7 @@ graph TB
   - SQLAlchemy session dependency injection
   - Clear separation of concerns
   - File storage service for document operations
+  - Chat service for agent interactions and conversation management
 - **Alternatives**: Direct database operations in routers (tight coupling)
 
 #### 4. Data Models (`models.py`, `schemas.py`)
@@ -202,6 +210,18 @@ graph TB
   - Relative path storage in database
 - **Alternatives**: Cloud storage (complexity), direct file paths (security issues)
 
+#### 7. Chat System
+**Purpose**: Agent interaction and conversation management
+- **Why**: Enables real-time communication with agents and maintains conversation history
+- **System Fit**: Integrates agent execution with conversation and message management
+- **Key Decisions**:
+  - Single endpoint for chat interactions (`POST /api/chat/`)
+  - Automatic conversation creation for new chats
+  - Support for existing conversation continuation
+  - Context-aware agent execution with Dana framework integration
+  - Structured request/response with error handling
+- **Alternatives**: Multiple endpoints (complexity), WebSocket-only (overkill for current needs)
+
 ### Data Flow Diagram
 
 ```mermaid
@@ -233,7 +253,24 @@ sequenceDiagram
     Schema-->>Router: Serialized response
     Router-->>FastAPI: JSON response
     FastAPI-->>Client: 201 Created + Document data
-```
+
+    Note over Client,FileSystem: Chat Flow
+    Client->>FastAPI: POST /api/chat/
+    FastAPI->>Router: Route to chat_with_agent
+    Router->>Service: Validate agent exists
+    Service-->>Router: Agent validation result
+    Router->>Service: chat_with_agent(request)
+    Service->>Service: Create/get conversation
+    Service->>Service: Execute agent with Dana framework
+    Service->>Model: Create user message
+    Service->>Model: Create agent response message
+    Service->>Database: db.add(message)
+    Service->>Database: db.commit()
+    Service-->>Router: Chat response data
+    Router->>Schema: Convert to ChatResponse
+    Schema-->>Router: Serialized response
+    Router-->>FastAPI: JSON response
+    FastAPI-->>Client: 200 OK + Chat response
 
 ## Proposed Implementation
 **Brief Description**: Modular implementation with comprehensive testing, modern Python patterns, and file handling capabilities.
@@ -311,6 +348,9 @@ GET    /conversations/{conversation_id}/messages/{id}     # Get specific message
 POST   /conversations/{conversation_id}/messages/         # Create new message
 PUT    /conversations/{conversation_id}/messages/{id}     # Update message
 DELETE /conversations/{conversation_id}/messages/{id}     # Delete message
+
+# Chat Management
+POST   /chat/                                             # Chat with an agent
 ```
 
 #### Data Models
@@ -378,6 +418,9 @@ DocumentBase: original_filename, topic_id, agent_id
 DocumentCreate: extends DocumentBase
 DocumentRead: extends DocumentBase + id, filename, file_size, mime_type, created_at, updated_at
 DocumentUpdate: partial update fields
+
+ChatRequest: message, agent_id, conversation_id (optional), context (optional)
+ChatResponse: success, message, conversation_id, message_id, agent_response, context, error
 ```
 
 #### File Storage Configuration
@@ -533,6 +576,28 @@ curl -O "http://localhost:8080/documents/1/download"
 curl "http://localhost:8080/documents/1"
 ```
 
+### Chat Management
+```bash
+# Chat with an agent (new conversation)
+curl -X POST "http://localhost:8080/chat/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Hello, how can you help me?",
+    "agent_id": 1,
+    "context": {"user_id": 123}
+  }'
+
+# Chat with an agent (existing conversation)
+curl -X POST "http://localhost:8080/chat/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Tell me more about Python",
+    "agent_id": 1,
+    "conversation_id": 1,
+    "context": {"user_id": 123}
+  }'
+```
+
 ### Health Check
 ```bash
 curl http://localhost:8080/health
@@ -545,6 +610,12 @@ uv run pytest tests/api/ -v
 
 # Run specific test file
 uv run pytest tests/api/test_routers.py -v
+
+# Run chat tests
+uv run pytest tests/api/test_chat.py -v
+
+# Run chat integration tests
+uv run pytest tests/api/test_chat_integration.py -v
 
 # Run with coverage
 uv run pytest tests/api/ --cov=dana.api.server --cov-report=html
@@ -592,6 +663,11 @@ $ dana serve --reload
   - Track agent run status and logs
   - API for triggering agent actions and retrieving results
   - Basic run history and status reporting
+- **Enhanced Chat Features**:
+  - Real-time chat with WebSocket support
+  - Chat history and conversation management
+  - Agent memory and context persistence
+  - Multi-agent conversations
 
 ### Phase 3 Features (Future)
 - **Authentication**: JWT-based authentication

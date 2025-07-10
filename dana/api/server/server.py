@@ -7,12 +7,14 @@ import sys
 import time
 from typing import Any, cast
 
-from dana.api.client import APIClient
-from dana.common.config import ConfigLoader
-from dana.common.mixins.loggable import Loggable
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+
+from dana.api.client import APIClient
+from dana.common.config import ConfigLoader
+from dana.common.mixins.loggable import Loggable
+
 from .db import Base, engine
 
 
@@ -30,17 +32,19 @@ def create_app():
     )
 
     # Include routers under /api
-    from .routers.main import router as main_router
     from .routers.api import router as api_router
-    from .routers.topics import router as topics_router
-    from .routers.documents import router as documents_router
+    from .routers.chat import router as chat_router
     from .routers.conversations import router as conversations_router
+    from .routers.documents import router as documents_router
+    from .routers.main import router as main_router
+    from .routers.topics import router as topics_router
 
     app.include_router(main_router)
     app.include_router(api_router, prefix="/api")
     app.include_router(topics_router, prefix="/api")
     app.include_router(documents_router, prefix="/api")
     app.include_router(conversations_router, prefix="/api")
+    app.include_router(chat_router, prefix="/api")
 
     # Serve static files (React build)
     static_dir = os.path.join(os.path.dirname(__file__), "static")
@@ -60,11 +64,11 @@ def create_app():
             from fastapi.responses import JSONResponse
             return JSONResponse({"error": "Not found"}, status_code=404)
         # Serve index.html for all other routes
-        from fastapi.responses import FileResponse
+        from fastapi.responses import FileResponse, JSONResponse
         index_path = os.path.join(static_dir, "index.html")
         if os.path.exists(index_path):
             return FileResponse(index_path)
-        return {"error": "index.html not found"}
+        return JSONResponse({"error": "index.html not found"}, status_code=404)
 
     return app
 

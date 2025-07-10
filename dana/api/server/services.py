@@ -1,16 +1,18 @@
-from sqlalchemy.orm import Session
-from . import models, schemas
-import os
-import uuid
 import shutil
+import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, List
-from fastapi import UploadFile, HTTPException
-# from dana.sandbox.dana_sandbox import DanaSandbox
-from .schemas import RunNAFileRequest, RunNAFileResponse
+from typing import Any
+
+from fastapi import HTTPException, UploadFile
+from sqlalchemy.orm import Session
+
+from dana.core.lang.dana_sandbox import DanaSandbox
+from dana.core.lang.sandbox_context import SandboxContext
+
+from . import models, schemas
 from .models import Conversation, Message
-from .schemas import ConversationCreate, ConversationRead, MessageCreate, MessageRead
+from .schemas import ConversationCreate, MessageCreate, RunNAFileRequest, RunNAFileResponse
 
 
 def get_agent(db: Session, agent_id: int):
@@ -18,7 +20,7 @@ def get_agent(db: Session, agent_id: int):
 
 
 def get_agents(db: Session, skip: int = 0, limit: int = 10):
-    return db.query(models.Agent).offset(skip).limit(limit).all()
+    return db.query(models.Agent).order_by(models.Agent.id).offset(skip).limit(limit).all()
 
 
 def create_agent(db: Session, agent: schemas.AgentCreate):
@@ -37,13 +39,13 @@ class AgentService:
         db.refresh(agent)
         return agent
 
-    def get_agents(self, db: Session, skip: int = 0, limit: int = 100) -> List[models.Agent]:
-        return db.query(models.Agent).offset(skip).limit(limit).all()
+    def get_agents(self, db: Session, skip: int = 0, limit: int = 100) -> list[models.Agent]:
+        return db.query(models.Agent).order_by(models.Agent.id).offset(skip).limit(limit).all()
 
-    def get_agent(self, db: Session, agent_id: int) -> Optional[models.Agent]:
+    def get_agent(self, db: Session, agent_id: int) -> models.Agent | None:
         return db.query(models.Agent).filter(models.Agent.id == agent_id).first()
 
-    def update_agent(self, db: Session, agent_id: int, name: str, description: str, config: dict) -> Optional[models.Agent]:
+    def update_agent(self, db: Session, agent_id: int, name: str, description: str, config: dict) -> models.Agent | None:
         agent = db.query(models.Agent).filter(models.Agent.id == agent_id).first()
         if agent:
             agent.name = name
@@ -131,13 +133,13 @@ class TopicService:
         db.refresh(db_topic)
         return db_topic
 
-    def get_topics(self, db: Session, skip: int = 0, limit: int = 100) -> List[models.Topic]:
+    def get_topics(self, db: Session, skip: int = 0, limit: int = 100) -> list[models.Topic]:
         return db.query(models.Topic).offset(skip).limit(limit).all()
 
-    def get_topic(self, db: Session, topic_id: int) -> Optional[models.Topic]:
+    def get_topic(self, db: Session, topic_id: int) -> models.Topic | None:
         return db.query(models.Topic).filter(models.Topic.id == topic_id).first()
 
-    def update_topic(self, db: Session, topic_id: int, topic: schemas.TopicCreate) -> Optional[models.Topic]:
+    def update_topic(self, db: Session, topic_id: int, topic: schemas.TopicCreate) -> models.Topic | None:
         db_topic = db.query(models.Topic).filter(models.Topic.id == topic_id).first()
         if db_topic:
             db_topic.name = topic.name
@@ -181,16 +183,16 @@ class DocumentService:
         db.refresh(db_document)
         return db_document
 
-    def get_documents(self, db: Session, skip: int = 0, limit: int = 100, topic_id: Optional[int] = None) -> List[models.Document]:
+    def get_documents(self, db: Session, skip: int = 0, limit: int = 100, topic_id: int | None = None) -> list[models.Document]:
         query = db.query(models.Document)
         if topic_id is not None:
             query = query.filter(models.Document.topic_id == topic_id)
         return query.offset(skip).limit(limit).all()
 
-    def get_document(self, db: Session, document_id: int) -> Optional[models.Document]:
+    def get_document(self, db: Session, document_id: int) -> models.Document | None:
         return db.query(models.Document).filter(models.Document.id == document_id).first()
 
-    def update_document(self, db: Session, document_id: int, document_data: schemas.DocumentUpdate) -> Optional[models.Document]:
+    def update_document(self, db: Session, document_id: int, document_data: schemas.DocumentUpdate) -> models.Document | None:
         db_document = db.query(models.Document).filter(models.Document.id == document_id).first()
         if db_document:
             if document_data.original_filename is not None:
@@ -217,7 +219,7 @@ class DocumentService:
             return True
         return False
 
-    def get_file_path(self, document_id: int, db: Session) -> Optional[Path]:
+    def get_file_path(self, document_id: int, db: Session) -> Path | None:
         """Get file path for download"""
         document = self.get_document(db, document_id)
         if document:
@@ -313,9 +315,140 @@ class MessageService:
         return db_msg
 
     def delete_message(self, db: Session, conversation_id: int, message_id: int) -> bool:
-        db_msg = db.query(Message).filter(Message.conversation_id == conversation_id, Message.id == message_id).first()
-        if db_msg:
-            db.delete(db_msg)
+        message = db.query(Message).filter(
+            Message.id == message_id,
+            Message.conversation_id == conversation_id
+        ).first()
+        if message:
+            db.delete(message)
             db.commit()
             return True
         return False
+
+
+class ChatService:
+    """Service for handling chat interactions with agents"""
+    
+    def __init__(self, conversation_service: ConversationService, message_service: MessageService):
+        self.conversation_service = conversation_service
+        self.message_service = message_service
+    
+    async def chat_with_agent(
+        self, 
+        db: Session, 
+        agent_id: int, 
+        user_message: str, 
+        conversation_id: int | None = None,
+        context: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        """
+        Chat with an agent and return the response
+        
+        Args:
+            db: Database session
+            agent_id: ID of the agent to chat with
+            user_message: User's message
+            conversation_id: Optional conversation ID (creates new if None)
+            context: Optional context for the agent
+            
+        Returns:
+            Dictionary containing chat response data
+        """
+        try:
+            # TODO: Implement agent loading and execution logic
+            # 1. Load agent from database using agent_id
+            # 2. Initialize agent with configuration
+            # 3. Execute agent with user message and context
+            # 4. Get agent response
+            
+            # Placeholder for agent execution
+            agent_response = await self._execute_agent(agent_id, user_message, context)
+            
+            # Create or get conversation
+            if conversation_id is None:
+                conversation = self.conversation_service.create_conversation(
+                    db, 
+                    schemas.ConversationCreate(title=f"Chat with Agent {agent_id}")
+                )
+                conversation_id = conversation.id
+            else:
+                conversation = self.conversation_service.get_conversation(db, conversation_id)
+                if not conversation:
+                    raise ValueError(f"Conversation {conversation_id} not found")
+            
+            # Ensure conversation_id is not None at this point
+            if conversation_id is None:
+                raise ValueError("Failed to create or retrieve conversation")
+            
+            # Create user message
+            self.message_service.create_message(
+                db,
+                conversation_id,
+                schemas.MessageCreate(sender="user", content=user_message)
+            )
+            
+            # Create agent response message
+            agent_msg = self.message_service.create_message(
+                db,
+                conversation_id,
+                schemas.MessageCreate(sender="agent", content=agent_response)
+            )
+            
+            return {
+                "success": True,
+                "message": user_message,
+                "conversation_id": conversation_id,
+                "message_id": agent_msg.id,
+                "agent_response": agent_response,
+                "context": context,
+                "error": None
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "message": user_message,
+                "conversation_id": conversation_id or 0,
+                "message_id": 0,
+                "agent_response": "",
+                "context": context,
+                "error": str(e)
+            }
+    
+    async def _execute_agent(self, agent_id: int, message: str, context: dict[str, Any] | None = None) -> str:
+        """
+        Execute agent with the given message and context
+        
+        TODO: Implement actual agent execution logic
+        - Load agent configuration from database
+        - Initialize agent with Dana framework
+        - Execute agent with message and context
+        - Return agent response
+        
+        Args:
+            agent_id: ID of the agent
+            message: User message
+            context: Optional context
+            
+        Returns:
+            Agent response string
+        """
+        # TODO: Replace with actual agent execution
+        # This is a placeholder implementation
+        print(f"Executing agent {agent_id} with message: '{message}' and context: '{context}'")
+        dana_code = "query = \"Hi\"\nresponse = reason(f\"Help me to answer the question: {query}\")"
+        print(f"Dana code: {dana_code}")
+        # Save dana code to file
+        # create a temp folder
+        temp_folder = Path("/tmp/dana_code")
+        temp_folder.mkdir(parents=True, exist_ok=True)
+        full_path = temp_folder / "dana_code.dana"
+        with open(full_path, "w") as f:
+            f.write(dana_code)
+        # Run dana code
+        # Mock response for now
+        sandbox_context = SandboxContext()
+        response = DanaSandbox.quick_run(file_path=full_path, context=sandbox_context)
+        print(f"Response: {response}")
+        print(f"Final context: {sandbox_context}")
+        return response.result

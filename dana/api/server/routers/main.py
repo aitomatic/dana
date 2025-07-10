@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Request
-from fastapi.responses import FileResponse, JSONResponse
 import os
+
+from fastapi import APIRouter
+from fastapi.responses import FileResponse, JSONResponse
 
 router = APIRouter()
 

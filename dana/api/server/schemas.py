@@ -1,12 +1,13 @@
-from pydantic import BaseModel, ConfigDict
-from typing import Dict, Any, Optional, List
 from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict
 
 
 class AgentBase(BaseModel):
     name: str
     description: str
-    config: Dict[str, Any]
+    config: dict[str, Any]
 
 
 class AgentCreate(AgentBase):
@@ -38,8 +39,8 @@ class TopicRead(TopicBase):
 
 class DocumentBase(BaseModel):
     original_filename: str
-    topic_id: Optional[int] = None
-    agent_id: Optional[int] = None
+    topic_id: int | None = None
+    agent_id: int | None = None
 
 
 class DocumentCreate(DocumentBase):
@@ -58,9 +59,9 @@ class DocumentRead(DocumentBase):
 
 
 class DocumentUpdate(BaseModel):
-    original_filename: Optional[str] = None
-    topic_id: Optional[int] = None
-    agent_id: Optional[int] = None
+    original_filename: str | None = None
+    topic_id: int | None = None
+    agent_id: int | None = None
 
 
 class RunNAFileRequest(BaseModel):
@@ -111,4 +112,24 @@ class MessageRead(MessageBase):
 
 
 class ConversationWithMessages(ConversationRead):
-    messages: List[MessageRead] = []
+    messages: list[MessageRead] = []
+
+
+# Chat-specific schemas
+class ChatRequest(BaseModel):
+    """Request schema for chat endpoint"""
+    message: str
+    conversation_id: int | None = None
+    agent_id: int
+    context: dict[str, Any] | None = None
+
+
+class ChatResponse(BaseModel):
+    """Response schema for chat endpoint"""
+    success: bool
+    message: str
+    conversation_id: int
+    message_id: int
+    agent_response: str
+    context: dict[str, Any] | None = None
+    error: str | None = None

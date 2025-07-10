@@ -1,15 +1,8 @@
 """Integration tests for the API server."""
 
-import pytest
-from fastapi.testclient import TestClient
-from dana.api.server.server import create_app
 
 
-@pytest.fixture
-def client():
-    """Create a test client."""
-    app = create_app()
-    return TestClient(app)
+# Use the global client fixture from conftest.py
 
 
 class TestAgentAPIIntegration:
@@ -24,7 +17,7 @@ class TestAgentAPIIntegration:
             "config": {"model": "gpt-4", "temperature": 0.7, "max_tokens": 1000},
         }
 
-        create_response = client.post("/agents/", json=create_data)
+        create_response = client.post("/api/agents/", json=create_data)
         assert create_response.status_code == 200
         created_agent = create_response.json()
 
@@ -35,7 +28,7 @@ class TestAgentAPIIntegration:
         assert created_agent["config"]["model"] == "gpt-4"
 
         # 2. Read the created agent
-        read_response = client.get(f"/agents/{agent_id}")
+        read_response = client.get(f"/api/agents/{agent_id}")
         assert read_response.status_code == 200
         read_agent = read_response.json()
 
@@ -45,7 +38,7 @@ class TestAgentAPIIntegration:
         assert read_agent["config"]["temperature"] == 0.7
 
         # 3. List all agents (should include our created agent)
-        list_response = client.get("/agents/")
+        list_response = client.get("/api/agents/")
         assert list_response.status_code == 200
         agents = list_response.json()
 
@@ -66,7 +59,7 @@ class TestAgentAPIIntegration:
 
         created_agents = []
         for agent_data in agents_data:
-            response = client.post("/agents/", json=agent_data)
+            response = client.post("/api/agents/", json=agent_data)
             assert response.status_code == 200
             created_agents.append(response.json())
 
@@ -75,7 +68,7 @@ class TestAgentAPIIntegration:
         assert len(set(agent_ids)) == 3  # All IDs should be unique
 
         # List all agents
-        list_response = client.get("/agents/")
+        list_response = client.get("/api/agents/")
         assert list_response.status_code == 200
         all_agents = list_response.json()
 
@@ -83,7 +76,7 @@ class TestAgentAPIIntegration:
 
         # Verify we can read each agent individually
         for created_agent in created_agents:
-            read_response = client.get(f"/agents/{created_agent['id']}")
+            read_response = client.get(f"/api/agents/{created_agent['id']}")
             assert read_response.status_code == 200
             read_agent = read_response.json()
             assert read_agent["id"] == created_agent["id"]
@@ -98,11 +91,11 @@ class TestAgentAPIIntegration:
                 "description": f"Agent for pagination test {i}",
                 "config": {"model": f"model-{i}", "index": i},
             }
-            response = client.post("/agents/", json=agent_data)
+            response = client.post("/api/agents/", json=agent_data)
             assert response.status_code == 200
 
         # Test first page (limit 3)
-        response = client.get("/agents/?limit=3")
+        response = client.get("/api/agents/?limit=3")
         assert response.status_code == 200
         first_page = response.json()
         assert len(first_page) == 3
@@ -111,7 +104,7 @@ class TestAgentAPIIntegration:
         assert first_page[2]["name"] == "Pagination Agent 2"
 
         # Test second page (skip 3, limit 3)
-        response = client.get("/agents/?skip=3&limit=3")
+        response = client.get("/api/agents/?skip=3&limit=3")
         assert response.status_code == 200
         second_page = response.json()
         assert len(second_page) == 3
@@ -122,7 +115,7 @@ class TestAgentAPIIntegration:
     def test_error_handling_integration(self, client, db_session):
         """Test error handling in the API."""
         # Test getting non-existent agent
-        response = client.get("/agents/99999")
+        response = client.get("/api/agents/99999")
         assert response.status_code == 404
         error_data = response.json()
         assert error_data["detail"] == "Agent not found"
@@ -132,7 +125,7 @@ class TestAgentAPIIntegration:
             "name": "Test Agent",
             # Missing description and config
         }
-        response = client.post("/agents/", json=invalid_data)
+        response = client.post("/api/agents/", json=invalid_data)
         assert response.status_code == 422  # Validation error
 
         # Test creating agent with invalid config type
@@ -141,7 +134,7 @@ class TestAgentAPIIntegration:
             "description": "Test description",
             "config": "not a dict",  # Should be dict
         }
-        response = client.post("/agents/", json=invalid_config_data)
+        response = client.post("/api/agents/", json=invalid_config_data)
         assert response.status_code == 422  # Validation error
 
     def test_complex_config_integration(self, client, db_session):
@@ -160,12 +153,12 @@ class TestAgentAPIIntegration:
         agent_data = {"name": "Complex Config Agent", "description": "Agent with complex nested configuration", "config": complex_config}
 
         # Create agent
-        create_response = client.post("/agents/", json=agent_data)
+        create_response = client.post("/api/agents/", json=agent_data)
         assert create_response.status_code == 200
         created_agent = create_response.json()
 
         # Read agent back
-        read_response = client.get(f"/agents/{created_agent['id']}")
+        read_response = client.get(f"/api/agents/{created_agent['id']}")
         assert read_response.status_code == 200
         read_agent = read_response.json()
 

@@ -1,17 +1,9 @@
-import pytest
 from sqlalchemy.orm import Session
-from dana.api.server.models import Conversation, Message
-from dana.api.server.services import ConversationService, MessageService
-from dana.api.server.schemas import ConversationCreate, MessageCreate
 
-@pytest.fixture(scope="function")
-def db_session(setup_test_database):
-    test_engine, TestSessionLocal = setup_test_database
-    session = TestSessionLocal()
-    try:
-        yield session
-    finally:
-        session.close()
+from dana.api.server.models import Conversation
+from dana.api.server.schemas import ConversationCreate, MessageCreate
+from dana.api.server.services import ConversationService, MessageService
+
 
 def test_conversation_crud(db_session: Session):
     service = ConversationService()

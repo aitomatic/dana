@@ -2,7 +2,8 @@
 
 import pytest
 from sqlalchemy.orm import Session
-from dana.api.server.models import Agent, Topic, Document
+
+from dana.api.server.models import Agent, Document, Topic
 
 
 class TestAgentModel:
@@ -185,5 +186,5 @@ def test_topic_unique_name_constraint(db_session: Session):
     topic2 = Topic(name="Unique Topic", description="Second topic")
     db_session.add(topic2)
 
-    with pytest.raises(Exception):  # SQLAlchemy will raise an integrity error
+    with pytest.raises(Exception):  # noqa: B017 SQLAlchemy will raise an integrity error
         db_session.commit()

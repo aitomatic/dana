@@ -1,9 +1,15 @@
-import pytest
 from datetime import datetime
+
 from dana.api.server.schemas import (
-    ConversationBase, ConversationCreate, ConversationRead, ConversationWithMessages,
-    MessageBase, MessageCreate, MessageRead
+    ConversationBase,
+    ConversationCreate,
+    ConversationRead,
+    ConversationWithMessages,
+    MessageBase,
+    MessageCreate,
+    MessageRead,
 )
+
 
 def test_conversation_base_schema():
     data = {"title": "Chat 1"}

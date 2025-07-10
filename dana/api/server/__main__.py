@@ -2,7 +2,6 @@
 
 import argparse
 import sys
-from typing import Any
 
 from .server import create_app
 

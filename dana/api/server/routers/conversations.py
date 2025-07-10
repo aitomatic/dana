@@ -1,6 +1,7 @@
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+
 from .. import db, schemas
 from ..services import ConversationService, MessageService
 
@@ -20,7 +21,7 @@ def get_message_service():
     return MessageService()
 
 # Conversation endpoints
-@router.get("/", response_model=List[schemas.ConversationRead])
+@router.get("/", response_model=list[schemas.ConversationRead])
 async def list_conversations(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), service: ConversationService = Depends(get_conversation_service)):
     return service.get_conversations(db, skip=skip, limit=limit)
 
@@ -51,7 +52,7 @@ async def delete_conversation(conversation_id: int, db: Session = Depends(get_db
     return {"message": "Conversation deleted successfully"}
 
 # Message endpoints
-@router.get("/{conversation_id}/messages/", response_model=List[schemas.MessageRead])
+@router.get("/{conversation_id}/messages/", response_model=list[schemas.MessageRead])
 async def list_messages(conversation_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db), service: MessageService = Depends(get_message_service)):
     return service.get_messages(db, conversation_id, skip=skip, limit=limit)
 

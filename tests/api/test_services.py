@@ -1,10 +1,9 @@
 """Tests for API server services."""
 
-import pytest
 from sqlalchemy.orm import Session
-from dana.api.server.services import get_agent, get_agents, create_agent
-from dana.api.server.models import Agent
+
 from dana.api.server.schemas import AgentCreate
+from dana.api.server.services import create_agent, get_agent, get_agents
 
 
 class TestAgentServices:
