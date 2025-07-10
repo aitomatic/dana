@@ -1,0 +1,103 @@
+{
+  "name": "dana-language",
+  "displayName": "Dana AI Agent Language",
+  "description": "Language support for Dana AI Agent Language (.na files)",
+  "version": "0.1.0",
+  "publisher": "Aitomatic",
+  "icon": "images/dana-logo.jpg",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aitomatic/opendxa"
+  },
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "dana",
+    "ai",
+    "neurosymbolic"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:dana",
+    "onCommand:dana.runFile",
+    "workspaceContains:**/*.na"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "dana",
+        "aliases": [
+          "Dana",
+          "dana"
+        ],
+        "extensions": [
+          ".na"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./images/dana-logo.jpg",
+          "dark": "./images/dana-logo.jpg"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "dana",
+        "scopeName": "source.dana",
+        "path": "./syntaxes/dana.tmLanguage.json"
+      },
+      {
+        "scopeName": "markdown.dana.codeblock",
+        "path": "./syntaxes/dana.markdown.json",
+        "injectTo": ["text.html.markdown"],
+        "embeddedLanguages": {
+          "meta.embedded.block.dana": "dana"
+        }
+      }
+    ],
+    "commands": [
+      {
+        "command": "dana.runFile",
+        "title": "Run Dana File",
+        "category": "Dana"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "dana.runFile",
+        "key": "f5",
+        "when": "resourceExtname == .na"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "dana.runFile",
+          "when": "resourceExtname == .na",
+          "group": "navigation"
+        }
+      ]
+    },
+    "markdown.previewScripts": [
+      "./preview/dana-highlight.js"
+    ],
+    "markdown.markdownItPlugins": true
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.60.0",
+    "@types/node": "16.x",
+    "typescript": "^4.9.4"
+  }
+} 

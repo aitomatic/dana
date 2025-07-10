@@ -24,10 +24,11 @@ authors = [
 
 # Core dependencies organized by functionality
 dependencies = [
-    # AI/LLM Integration
+    # AI/LLM Integration - DEPENDENCY CONFLICT ZONE
     "google-cloud-aiplatform",
     "aisuite[openai,anthropic,azure,groq,huggingface,ollama]>=0.1.11",  # Requires httpx<0.28.0 (conflicts with fastmcp)
     "fastmcp>=2.10.2",  # Requires httpx>=0.28.1 (conflicts with aisuite) - resolved by override
+    "httpx>=0.27.0",     # Conflict resolved by override-dependencies forcing >=0.28.1
     "mcp",
     "llm-code-executor",
     "llama-index",
@@ -48,7 +49,6 @@ dependencies = [
     "aiohttp",
     "aioconsole",
     "websockets",
-    "httpx>=0.27.0", # Broad range due to dependency conflict (see override-dependencies)
 
     # Configuration & Utilities
     "python-dotenv",
@@ -69,6 +69,10 @@ dependencies = [
     "pytest",
     "pytest-asyncio",
     "pytest-mock",
+
+    # Language Server Protocol
+    "lsprotocol",
+    "pygls",
 
     # Agent Integration
     "python-a2a>=0.5.9",
@@ -116,6 +120,7 @@ docs = [
 # Command-line entry points
 [project.scripts]
 dana = "dana.core.cli.dana:main"
+dana-ls = "dana.core.lang.lsp.server:main"
 
 # =============================================================================
 # Package Configuration
@@ -143,7 +148,8 @@ python-preference = "only-managed"  # Use uv-managed Python installations
 compile-bytecode = true             # Pre-compile .pyc files for performance
 
 override-dependencies = [
-    "httpx>=0.28.1",  # Force newer httpx for fastmcp, aisuite_patch handles compatibility
+    "httpx>=0.28.1",  # CONFLICT RESOLUTION: aisuite needs <0.28.0, fastmcp needs >=0.28.1
+                      # This forces >=0.28.1, aisuite_patch.py handles aisuite compatibility
 ]
 
 [tool.uv.sources]

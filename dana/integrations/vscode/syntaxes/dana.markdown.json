@@ -1,0 +1,28 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "scopeName": "markdown.dana.codeblock",
+  "injectionSelector": "L:markup.fenced_code.block.markdown",
+  "patterns": [
+    {
+      "include": "#dana-code-block"
+    }
+  ],
+  "repository": {
+    "dana-code-block": {
+      "begin": "(?<=[`~])dana(?=\\s*$)",
+      "end": "(?=^|\\G)(?=\\s*[`~]{3,}\\s*$)",
+      "patterns": [
+        {
+          "begin": "(?<=dana)(?=\\s*$)",
+          "while": "(^|\\G)(?!\\s*[`~]{3,}\\s*$)",
+          "contentName": "meta.embedded.block.dana",
+          "patterns": [
+            {
+              "include": "source.dana"
+            }
+          ]
+        }
+      ]
+    }
+  }
+} 

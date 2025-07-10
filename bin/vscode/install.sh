@@ -40,7 +40,7 @@ fi
 
 # Get the project root directory
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-EXTENSION_DIR="$PROJECT_ROOT/opendxa/dana/integration/vscode"
+EXTENSION_DIR="$PROJECT_ROOT/dana/integrations/vscode"
 
 echo -e "${BLUE}📁 Extension directory: ${EXTENSION_DIR}${NC}"
 
@@ -60,6 +60,16 @@ if ! command -v npm &> /dev/null; then
     echo "   - Download from: https://nodejs.org/"
     echo "   - Or install via brew: brew install node"
     exit 1
+fi
+
+# Check for LSP dependencies
+echo -e "${BLUE}🔍 Checking LSP dependencies...${NC}"
+LSP_AVAILABLE=false
+if python3 -c "import lsprotocol, pygls" 2>/dev/null; then
+    LSP_AVAILABLE=true
+    echo -e "${GREEN}✅ LSP dependencies available${NC}"
+else
+    echo -e "${YELLOW}⚠️  LSP dependencies not found. Install with: pip install lsprotocol pygls${NC}"
 fi
 
 # Install dependencies
@@ -96,10 +106,36 @@ $EDITOR --install-extension "$VSIX_FILE"
 
 echo -e "${GREEN}🎉 Dana Language Support successfully installed in ${EDITOR_NAME}!${NC}"
 echo ""
+
+if [[ "$LSP_AVAILABLE" == "true" ]]; then
+    echo -e "${GREEN}✅ LSP Features Enabled:${NC}"
+    echo "  - Real-time syntax checking"
+    echo "  - Hover documentation"
+    echo "  - Auto-completion"
+    echo "  - Error diagnostics"
+    echo "  - Go-to-definition (coming soon)"
+    echo ""
+else
+    echo -e "${YELLOW}⚠️  Basic Dana support installed (no LSP features)${NC}"
+    echo -e "${BLUE}💡 To enable LSP features:${NC}"
+    echo "  1. Install dependencies: pip install lsprotocol pygls"
+    echo "  2. Restart ${EDITOR_NAME}"
+    echo ""
+fi
+
 echo -e "${YELLOW}📝 Next steps:${NC}"
 echo "1. Open ${EDITOR_NAME}"
 echo "2. Create or open a .na file"
 echo "3. Press F5 to run Dana code"
+echo ""
+echo -e "${BLUE}💡 Dana Features in ${EDITOR_NAME}:${NC}"
+echo "  - F5: Run current Dana file"
+echo "  - Syntax highlighting for .na files"
+if [[ "$LSP_AVAILABLE" == "true" ]]; then
+    echo "  - Real-time error checking"
+    echo "  - Hover help on Dana keywords"
+    echo "  - Smart auto-completion"
+fi
 echo ""
 echo -e "${BLUE}💡 Tip: Make sure 'dana' command is in your PATH${NC}"
 

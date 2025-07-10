@@ -13,8 +13,8 @@ UV_CMD = $(shell command -v uv 2>/dev/null || echo ~/.local/bin/uv)
 
 # All targets are phony (don't create files)
 .PHONY: help help-more quickstart install setup-dev sync test dana clean lint format fix check mypy \
-	install-ollama start-ollama install-vllm start-vllm docs-serve docs-build docs-deps \
-	test-fast test-cov update-deps dev security validate-config release-check
+	install-ollama start-ollama install-vllm start-vllm install-vscode install-cursor install-vim install-emacs \
+	docs-serve docs-build docs-deps test-fast test-cov update-deps dev security validate-config release-check
 
 # =============================================================================
 # Help & Quick Start
@@ -43,6 +43,12 @@ help: ## Show essential Dana commands
 	@echo "  \033[36minstall-ollama\033[0m  🦙 Install Ollama for local inference"
 	@echo "  \033[36minstall-vllm\033[0m    ⚡ Install vLLM for local inference"
 	@echo ""
+	@echo "\033[1mEditor Support:\033[0m"
+	@echo "  \033[36minstall-vscode\033[0m  📝 Install VS Code extension with LSP"
+	@echo "  \033[36minstall-cursor\033[0m  🎯 Install Cursor extension with LSP"
+	@echo "  \033[36minstall-vim\033[0m     ⚡ Install Vim/Neovim support with LSP"
+	@echo "  \033[36minstall-emacs\033[0m   🌟 Install Emacs support with LSP"
+	@echo ""
 	@echo "\033[1mMaintenance:\033[0m"
 	@echo "  \033[36mclean\033[0m           🧹 Clean build artifacts and caches"
 	@echo ""
@@ -68,6 +74,9 @@ help-more: ## Show all available commands including advanced ones
 	@echo ""
 	@echo "\033[1mLLM Integration:\033[0m"
 	@awk 'BEGIN {FS = ":.*?## "} /^(install-ollama|start-ollama|install-vllm|start-vllm).*:.*?## / {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo ""
+	@echo "\033[1mEditor Support:\033[0m"
+	@awk 'BEGIN {FS = ":.*?## "} /^(install-vscode|install-cursor|install-vim|install-emacs).*:.*?## / {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "\033[1mDevelopment & Release:\033[0m"
 	@awk 'BEGIN {FS = ":.*?## MORE: "} /^(update-deps|dev|security|validate-config|release-check|docs-build|docs-deps).*:.*?## MORE:/ {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -123,6 +132,8 @@ setup-dev: ## Install with development dependencies and setup tools
 	$(UV_CMD) sync --extra dev
 	@echo "🔧 Setting up development tools..."
 	$(UV_CMD) run pre-commit install
+	@echo "📝 Installing LSP dependencies..."
+	$(UV_CMD) run pip install lsprotocol pygls
 	@echo "✅ Development environment ready!"
 
 sync: ## Sync dependencies with uv.lock
@@ -187,6 +198,22 @@ install-vllm: ## Install vLLM for local model inference
 start-vllm: ## Start vLLM server with interactive model selection
 	@echo "🚀 Starting vLLM for Dana..."
 	@./bin/vllm/start.sh
+
+install-vscode: ## Install VS Code extension with LSP support
+	@echo "📝 Installing Dana VS Code extension..."
+	@./bin/vscode/install.sh
+
+install-cursor: ## Install Cursor extension with LSP support
+	@echo "🎯 Installing Dana Cursor extension..."
+	@./bin/cursor/install.sh
+
+install-vim: ## Install Vim/Neovim support with LSP
+	@echo "⚡ Installing Dana Vim/Neovim support..."
+	@./bin/vim/install.sh
+
+install-emacs: ## Install Emacs support with LSP
+	@echo "🌟 Installing Dana Emacs support..."
+	@./bin/emacs/install.sh
 
 # =============================================================================
 # Maintenance & Documentation
