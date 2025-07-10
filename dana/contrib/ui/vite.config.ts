@@ -8,6 +8,11 @@ export default defineConfig(({ command }) => {
 
   return {
     plugins: [react(), tailwindcss()],
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: ['./src/test/setup.ts'],
+    },
     build: {
       outDir: '../../api/server/static',
       emptyOutDir: true,
