@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { FileUpload } from '@/components/library/file-upload';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { IconSearch, IconFilter, IconArrowLeft } from '@tabler/icons-react';
+import { IconSearch, IconFilter, IconArrowLeft, IconRefresh } from '@tabler/icons-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,12 +19,14 @@ interface SelectKnowledgePageProps {
   onCreateAgent: () => Promise<void>;
   isCreating: boolean;
   error: string | null;
+  form: any; // Add form prop to access form methods
 }
 
 export default function SelectKnowledgePage({
   onCreateAgent,
   isCreating,
   error,
+  form,
 }: SelectKnowledgePageProps) {
   // Use the new library table hook
   const {
@@ -49,6 +51,21 @@ export default function SelectKnowledgePage({
     enableSelection: true,
   });
 
+  // Get topics and documents counts
+  const topicsCount = libraryItems.filter(item => item.type === 'folder').length;
+  const documentsCount = libraryItems.filter(item => item.type === 'file').length;
+
+  console.log({ selectedItems, selectedIds });
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Library items loaded:', libraryItems);
+    console.log('Topics count:', topicsCount);
+    console.log('Documents count:', documentsCount);
+    console.log('Is loading:', isLoading);
+    console.log('Error:', libraryError);
+  }, [libraryItems, topicsCount, documentsCount, isLoading, libraryError]);
+
   // Local state for sidebar search
   const [sidebarSearch, setSidebarSearch] = useState('');
 
@@ -70,6 +87,31 @@ export default function SelectKnowledgePage({
     [selectedItems, sidebarSearch],
   );
 
+  // Update form with selected knowledge when selection changes
+  useEffect(() => {
+    const selectedTopics: number[] = [];
+    const selectedDocuments: number[] = [];
+
+    selectedItems.forEach((item) => {
+      if (item.type === 'folder') {
+        // Topics are represented as folders
+        const id = item.id.split('-')[1];
+        selectedTopics.push(parseInt(id));
+      } else if (item.type === 'file') {
+        // Documents are represented as files
+        const id = item.id.split('-')[1];
+        selectedDocuments.push(parseInt(id));
+      }
+    });
+
+    form.setValue('selectedKnowledge', {
+      topics: selectedTopics,
+      documents: selectedDocuments,
+    });
+  }, [selectedItems, form]);
+
+  console.log('selectedKnowledge', form.getValues('selectedKnowledge'));
+
   return (
     <div className="flex flex-col h-[calc(100vh-70px)] w-full gap-4">
       {/* Main Content */}
@@ -77,6 +119,29 @@ export default function SelectKnowledgePage({
         {/* Left: Library & Upload */}
         <div className="flex flex-col flex-1 gap-6 overflow-hidden">
           <span className="text-lg font-semibold">Assign Knowledge Sources</span>
+
+          {/* Loading and Data Status */}
+          {isLoading && (
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-blue-800">Loading topics and documents...</p>
+            </div>
+          )}
+
+          {!isLoading && libraryItems.length === 0 && (
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-yellow-800">
+                No topics or documents found. You can upload documents below or create topics first.
+              </p>
+            </div>
+          )}
+
+          {!isLoading && libraryItems.length > 0 && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-green-800">
+                Found {libraryItems.length} items ({topicsCount} topics, {documentsCount} documents)
+              </p>
+            </div>
+          )}
           {/* Upload */}
           <div className="bg-gray-50">
             <FileUpload
@@ -98,6 +163,18 @@ export default function SelectKnowledgePage({
           </div>
           {/* Search and Filters */}
           <div className="flex items-center space-x-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                // Trigger a refresh of the data
+                window.location.reload();
+              }}
+              className="flex items-center gap-2"
+            >
+              <IconRefresh className="w-4 h-4" />
+              Refresh
+            </Button>
             <div className="relative flex-1 max-w-sm">
               <IconSearch className="absolute left-3 top-1/2 w-4 h-4 text-gray-400 transform -translate-y-1/2" />
               <Input

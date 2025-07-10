@@ -20,7 +20,11 @@ export function useDanaAgentForm() {
       description: '',
       avatar: getRandomAvatar(),
       general_agent_config: {
-        dana_code: '',
+        dana_code: 'query = \"Hi\"\n\nresponse = reason(f\"Help me to answer the question: {query}\")',
+      },
+      selectedKnowledge: {
+        topics: [],
+        documents: [],
       },
       step: 'general' as AgentSteps,
     },
@@ -41,6 +45,11 @@ export function useDanaAgentForm() {
         return;
       }
 
+      if (values.step === 'general') {
+        form.setValue('step', 'select-knowledge');
+        return;
+      }
+
       // Transform form data to API format
       const agentData: AgentCreate = {
         name: values.name.trim(),
@@ -48,7 +57,7 @@ export function useDanaAgentForm() {
         config: {
           avatar: values.avatar,
           dana_code: values.general_agent_config.dana_code,
-          // Add any additional config fields here
+          selectedKnowledge: values.selectedKnowledge,
         },
       };
 

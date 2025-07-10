@@ -12,7 +12,6 @@ import type {
   ConversationRead,
   ConversationCreate,
   ConversationWithMessages,
-  ConversationFilters,
 } from '@/types/conversation';
 
 // API Configuration

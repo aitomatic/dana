@@ -55,7 +55,7 @@ export function GeneralAgentPage({
   const isDisabled = !formState.isValid || isCreating;
 
   const avatar = watch('avatar');
-  const danaCode = watch('general_agent_config.dana_code');
+  const danaCode = watch('general_agent_config.dana_code', 'query = \"Hi\"\n\nresponse = reason(f\"Help me to answer the question: {query}\")');
 
   return (
     <div
@@ -155,7 +155,7 @@ export function GeneralAgentPage({
                   setValue('general_agent_config.dana_code', value);
                 }}
                 placeholder={placeholder}
-                onSave={() => {}}
+                onSave={() => { }}
               />
             </div>
           </div>

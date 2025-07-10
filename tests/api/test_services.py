@@ -107,3 +107,73 @@ class TestAgentServices:
         assert created_agent.config == complex_config
         assert created_agent.config["nested"]["array"] == [1, 2, 3]
         assert created_agent.config["nested"]["boolean"] is True
+
+    def test_create_agent_with_selected_knowledge(self, db_session: Session, tmp_path):
+        """Test creating an agent with selected knowledge (documents)."""
+        import shutil
+        from pathlib import Path
+        
+        # Create a test document in the database
+        from dana.api.server.models import Document
+        
+        # Create test file
+        test_file_path = tmp_path / "test_document.txt"
+        test_file_path.write_text("This is a test document content")
+        
+        # Create document record
+        document = Document(
+            filename="test_document.txt",
+            original_filename="test_document.txt",
+            file_path="2025/01/27/test_document.txt",
+            file_size=len(test_file_path.read_text()),
+            mime_type="text/plain"
+        )
+        db_session.add(document)
+        db_session.commit()
+        
+        # Create uploads directory structure
+        uploads_dir = Path("./uploads")
+        uploads_dir.mkdir(exist_ok=True)
+        date_dir = uploads_dir / "2025" / "01" / "27"
+        date_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Copy test file to uploads directory
+        shutil.copy2(test_file_path, date_dir / "test_document.txt")
+        
+        # Create agent with selected knowledge
+        agent_data = AgentCreate(
+            name="Knowledge Agent",
+            description="Agent with selected documents",
+            config={
+                "avatar": "/agent-avatar-1.svg",
+                "dana_code": "query = 'Hi'\nresponse = reason(f'Help me: {query}')",
+                "selectedKnowledge": {
+                    "topics": [],
+                    "documents": [document.id]
+                }
+            }
+        )
+        
+        created_agent = create_agent(db_session, agent_data)
+        
+        # Verify agent was created
+        assert created_agent.name == "Knowledge Agent"
+        assert created_agent.config["selectedKnowledge"]["documents"] == [document.id]
+        
+        # Verify agent folder was created
+        agent_folder = Path(f"./uploads/agents/{created_agent.id}")
+        assert agent_folder.exists()
+        
+        # Verify file was copied to agent folder
+        copied_file = agent_folder / "test_document.txt"
+        assert copied_file.exists()
+        assert copied_file.read_text() == "This is a test document content"
+        
+        # Verify document record was updated
+        db_session.refresh(document)
+        assert document.agent_id == created_agent.id
+        assert document.file_path == f"agents/{created_agent.id}/test_document.txt"
+        
+        # Cleanup
+        shutil.rmtree(agent_folder, ignore_errors=True)
+        shutil.rmtree(uploads_dir, ignore_errors=True)

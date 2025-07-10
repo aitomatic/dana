@@ -11,9 +11,66 @@ from sqlalchemy.orm import Session
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.core.lang.sandbox_context import SandboxContext
 
+import logging
 from . import models, schemas
 from .models import Conversation, Message
 from .schemas import ConversationCreate, MessageCreate, RunNAFileRequest, RunNAFileResponse
+
+# Set up logging
+logger = logging.getLogger(__name__)
+
+
+def _copy_selected_documents_to_agent_folder(db: Session, agent_id: Any, document_ids: list[int]):
+    """
+    Copy selected documents to an agent-specific folder.
+    
+    Args:
+        db: Database session
+        agent_id: ID of the agent
+        document_ids: List of document IDs to copy
+    """
+    if not document_ids:
+        logger.info("No documents to copy")
+        return
+    
+    # Create agent-specific folder
+    agent_folder = Path(f"./uploads/agents/{agent_id}")
+    agent_folder.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Created agent folder: {agent_folder}")
+    
+    # Get documents from database
+    documents = db.query(models.Document).filter(models.Document.id.in_(document_ids)).all()
+    logger.info(f"Found {len(documents)} documents to copy")
+    
+    copied_count = 0
+    for document in documents:
+        try:
+            # Get source file path
+            source_path = Path(f"./uploads/{document.file_path}")
+            
+            if not source_path.exists():
+                logger.warning(f"Source file not found: {source_path}")
+                continue
+            
+            # Create destination path in agent folder
+            dest_path = agent_folder / document.filename
+            
+            # Copy file to agent folder
+            shutil.copy2(str(source_path), str(dest_path))
+            
+            # Update document record to point to agent folder
+            document.file_path = f"agents/{agent_id}/{document.filename}"
+            document.agent_id = int(agent_id)
+            
+            logger.info(f"Copied document {document.id} to agent folder: {dest_path}")
+            copied_count += 1
+            
+        except Exception as e:
+            logger.error(f"Error copying document {document.id}: {e}")
+    
+    # Commit changes to database
+    db.commit()
+    logger.info(f"Successfully copied {copied_count} documents to agent {agent_id} folder")
 
 
 def get_agent(db: Session, agent_id: int):
@@ -29,6 +86,19 @@ def create_agent(db: Session, agent: schemas.AgentCreate):
     db.add(db_agent)
     db.commit()
     db.refresh(db_agent)
+    
+    # Handle selected knowledge (files and topics)
+    if agent.config and 'selectedKnowledge' in agent.config:
+        selected_knowledge = agent.config['selectedKnowledge']
+        
+        logger.info(f"Processing selected knowledge for agent {db_agent.id}: {selected_knowledge}")
+        
+        # Create agent-specific folder and copy selected files
+        if selected_knowledge.get('documents'):
+            agent_id = db_agent.id  # Get the actual integer value
+            logger.info(f"Copying {len(selected_knowledge['documents'])} documents to agent folder")
+            _copy_selected_documents_to_agent_folder(db, agent_id, selected_knowledge['documents'])
+    
     return db_agent
 
 

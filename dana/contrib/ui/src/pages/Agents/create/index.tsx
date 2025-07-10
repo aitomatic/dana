@@ -102,7 +102,12 @@ export function CreateAgentPage() {
         />
       )}
       {step === 'select-knowledge' && (
-        <SelectKnowledgePage onCreateAgent={onCreateAgent} isCreating={isCreating} error={error} />
+        <SelectKnowledgePage
+          onCreateAgent={onCreateAgent}
+          isCreating={isCreating}
+          error={error}
+          form={form}
+        />
       )}
     </div>
   );

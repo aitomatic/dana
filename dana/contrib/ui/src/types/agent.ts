@@ -90,5 +90,9 @@ export interface DanaAgentForm {
   general_agent_config: {
     dana_code: string;
   };
+  selectedKnowledge: {
+    topics: number[];
+    documents: number[];
+  };
   step?: AgentSteps;
 }
