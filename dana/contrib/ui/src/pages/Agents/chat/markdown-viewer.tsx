@@ -5,7 +5,7 @@ import remarkMath from 'remark-math';
 import remarkGfm from 'remark-gfm';
 import rehypeKatex from 'rehype-katex';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+// import oneLight from 'react-syntax-highlighter/dist/esm/styles/prism/one-light';
 import 'katex/dist/katex.min.css';
 
 import { cn } from '@/lib/utils';
@@ -153,7 +153,7 @@ const MermaidBlock = ({ content }: { content: string }) => {
         </button>
         <button
           className="px-2.5 py-1 text-xs bg-background/90 text-brand-700 border border-gray-200 rounded-md shadow-xs hover:bg-gray-50 flex items-center gap-1.5 backdrop-blur-sm"
-          onClick={() => {}}
+          onClick={() => { }}
           aria-label="Run Mermaid diagram"
         >
           <IconPlayerPlay className="w-4 h-4 text-brand-700" />
@@ -163,7 +163,7 @@ const MermaidBlock = ({ content }: { content: string }) => {
       <SyntaxHighlighter
         className="text-sm xl:text-base"
         language="mermaid"
-        style={oneLight}
+        // style={oneLight}
         customStyle={{
           margin: 0,
           borderRadius: 0,
@@ -210,7 +210,7 @@ const CodeBlock = ({ content, language }: { content: string; language: string })
       <SyntaxHighlighter
         className="text-sm xl:text-base"
         language={language || 'text'}
-        style={oneLight}
+        // style={oneLight}
         customStyle={{
           margin: 0,
           borderRadius: 0,

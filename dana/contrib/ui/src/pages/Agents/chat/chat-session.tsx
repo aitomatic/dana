@@ -3,8 +3,23 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import BotMessage from './bot-message';
 import UserMessage from './user-message';
 import BotThinking from './bot-thinking';
+import type { MessageRead } from '@/types/conversation';
 
-const ChatSession = ({ messages, isBotThinking, botAvatar, isMessageFeedback, className }: any) => {
+interface ChatSessionProps {
+  messages: MessageRead[];
+  isBotThinking: boolean;
+  botAvatar?: string;
+  isMessageFeedback?: boolean;
+  className?: string;
+}
+
+const ChatSession: React.FC<ChatSessionProps> = ({
+  messages,
+  isBotThinking,
+  botAvatar,
+  isMessageFeedback = false,
+  className
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [isScrollEnable, setIsScrollEnable] = useState(false);
@@ -53,19 +68,40 @@ const ChatSession = ({ messages, isBotThinking, botAvatar, isMessageFeedback, cl
             )}
             ref={listRef}
           >
-            {messages?.map((message: any, index: number) => {
-              if (['bot', 'ai-agent'].includes(message?.role)) {
+            <div className="text-xs text-gray-500 p-2">
+              Messages: {messages?.length || 0}
+            </div>
+
+            {messages?.map((message: MessageRead, index: number) => {
+              console.log('Processing message:', message);
+
+              // Convert API message format to component format
+              const messageForComponent = {
+                id: message.id,
+                role: message.sender === 'agent' ? 'bot' : 'user',
+                content: message.content,
+                message: message.content,
+                data: {
+                  message: message.content,
+                },
+                timestamp: message.created_at,
+                isNew: false,
+              };
+
+              console.log('Converted message:', messageForComponent);
+
+              if (message.sender === 'agent') {
                 return (
                   <BotMessage
                     key={index}
-                    message={message}
+                    message={messageForComponent}
                     isMessageFeedback={isMessageFeedback}
                     avatar={botAvatar}
                     className={className}
                   />
                 );
               } else {
-                return <UserMessage key={index} message={message} />;
+                return <UserMessage key={index} message={messageForComponent} />;
               }
             })}
             {isBotThinking && <BotThinking avatar={botAvatar} />}

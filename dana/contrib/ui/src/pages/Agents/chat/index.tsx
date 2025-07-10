@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import AgentChatView from './chat-view';
 import ConversationsSidebar from './conversations-sidebar';
@@ -11,6 +12,8 @@ import { IconMenu2 } from '@tabler/icons-react';
 const SIDEBAR_COLLAPSED_KEY = 'agent-sidebar-collapsed';
 
 const AgentChat = () => {
+  const { agent_id, conversation_id } = useParams();
+  const navigate = useNavigate();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     const savedState = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
     return savedState !== null ? JSON.parse(savedState) : true;
@@ -19,6 +22,12 @@ const AgentChat = () => {
   const toggleSidebar = useCallback(() => {
     setIsSidebarCollapsed((prev: boolean) => !prev);
   }, []);
+
+  const handleNewChat = useCallback(() => {
+    if (agent_id) {
+      navigate(`/${agent_id}/chat`);
+    }
+  }, [agent_id, navigate]);
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_COLLAPSED_KEY, JSON.stringify(isSidebarCollapsed));
@@ -34,7 +43,7 @@ const AgentChat = () => {
           )}
         >
           <div className="absolute inset-0 transition-none bg-background">
-            <ConversationsSidebar setIsSidebarCollapsed={setIsSidebarCollapsed} />
+            <ConversationsSidebar setIsSidebarCollapsed={setIsSidebarCollapsed} agentId={agent_id} />
           </div>
         </div>
         <div
@@ -74,6 +83,7 @@ const AgentChat = () => {
                         className="flex items-center justify-center w-[40px] h-[40px] cursor-pointer"
                         role="button"
                         aria-label="New chat"
+                        onClick={handleNewChat}
                       >
                         <ChatPlusIn width={20} height={20} strokeWidth={2} />
                       </div>
@@ -100,7 +110,7 @@ const AgentChat = () => {
                 </>
               </div>
             )}
-            <AgentChatView isSidebarCollapsed={isSidebarCollapsed} />
+            <AgentChatView isSidebarCollapsed={isSidebarCollapsed} agentId={agent_id} conversationId={conversation_id} />
           </div>
         </div>
       </div>

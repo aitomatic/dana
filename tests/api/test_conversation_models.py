@@ -1,20 +1,33 @@
 from sqlalchemy.orm import Session
 
-from dana.api.server.models import Conversation, Message
+from dana.api.server.models import Conversation, Message, Agent
 
 
 def test_conversation_model(db_session: Session):
-    convo = Conversation(title="Test Conversation")
+    # Create an agent first
+    agent = Agent(name="Test Agent", description="A test agent", config={})
+    db_session.add(agent)
+    db_session.commit()
+    db_session.refresh(agent)
+    
+    convo = Conversation(title="Test Conversation", agent_id=agent.id)
     db_session.add(convo)
     db_session.commit()
     db_session.refresh(convo)
     assert convo.id is not None
     assert convo.title == "Test Conversation"
+    assert convo.agent_id == agent.id
     assert convo.created_at is not None
     assert convo.updated_at is not None
 
 def test_message_model(db_session: Session):
-    convo = Conversation(title="Test Conversation")
+    # Create an agent first
+    agent = Agent(name="Test Agent", description="A test agent", config={})
+    db_session.add(agent)
+    db_session.commit()
+    db_session.refresh(agent)
+    
+    convo = Conversation(title="Test Conversation", agent_id=agent.id)
     db_session.add(convo)
     db_session.commit()
     db_session.refresh(convo)
@@ -32,7 +45,13 @@ def test_message_model(db_session: Session):
     assert msg in convo.messages
 
 def test_cascade_delete_conversation_deletes_messages(db_session: Session):
-    convo = Conversation(title="Cascade Test")
+    # Create an agent first
+    agent = Agent(name="Test Agent", description="A test agent", config={})
+    db_session.add(agent)
+    db_session.commit()
+    db_session.refresh(agent)
+    
+    convo = Conversation(title="Cascade Test", agent_id=agent.id)
     db_session.add(convo)
     db_session.commit()
     db_session.refresh(convo)

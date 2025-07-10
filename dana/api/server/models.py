@@ -46,9 +46,11 @@ class Conversation(Base):
     __tablename__ = "conversations"
     id = Column(Integer, primary_key=True, autoincrement=True, index=True)
     title = Column(String, nullable=False)
+    agent_id = Column(Integer, ForeignKey("agents.id"), nullable=False, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
     messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan")
+    agent = relationship("Agent")
 
 
 class Message(Base):

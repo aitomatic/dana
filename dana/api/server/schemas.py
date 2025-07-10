@@ -79,6 +79,7 @@ class RunNAFileResponse(BaseModel):
 
 class ConversationBase(BaseModel):
     title: str
+    agent_id: int
 
 
 class ConversationCreate(ConversationBase):

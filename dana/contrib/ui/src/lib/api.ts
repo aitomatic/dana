@@ -8,6 +8,12 @@ import type {
   DocumentUploadData,
 } from '@/types/document';
 import type { AgentRead, AgentCreate, AgentFilters } from '@/types/agent';
+import type {
+  ConversationRead,
+  ConversationCreate,
+  ConversationWithMessages,
+  ConversationFilters,
+} from '@/types/conversation';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
@@ -59,6 +65,24 @@ export interface ApiError {
   message: string;
   status?: number;
   details?: any;
+}
+
+// Chat Types
+export interface ChatRequest {
+  message: string;
+  conversation_id?: number;
+  agent_id: number;
+  context?: Record<string, any>;
+}
+
+export interface ChatResponse {
+  success: boolean;
+  message: string;
+  conversation_id: number;
+  message_id: number;
+  agent_response: string;
+  context?: Record<string, any>;
+  error?: string;
 }
 
 // API Service Class
@@ -232,6 +256,45 @@ class ApiService {
 
   async deleteAgent(agentId: number): Promise<{ message: string }> {
     const response = await this.client.delete<{ message: string }>(`/agents/${agentId}`);
+    return response.data;
+  }
+
+  // Chat API Methods
+  async chatWithAgent(request: ChatRequest): Promise<ChatResponse> {
+    const response = await this.client.post<ChatResponse>('/chat/', request);
+    return response.data;
+  }
+
+  // Conversation API Methods
+  async getConversations(agentId?: number): Promise<ConversationRead[]> {
+    const params = new URLSearchParams();
+    if (agentId) params.append('agent_id', agentId.toString());
+
+    console.log('Fetching conversations for agent:', agentId);
+    const response = await this.client.get<ConversationRead[]>(`/conversations/?${params.toString()}`);
+    console.log('Conversations response:', response.data);
+    return response.data;
+  }
+
+  async getConversation(conversationId: number): Promise<ConversationWithMessages> {
+    console.log('Fetching conversation:', conversationId);
+    const response = await this.client.get<ConversationWithMessages>(`/conversations/${conversationId}`);
+    console.log('Conversation response:', response.data);
+    return response.data;
+  }
+
+  async createConversation(conversation: ConversationCreate): Promise<ConversationRead> {
+    const response = await this.client.post<ConversationRead>('/conversations/', conversation);
+    return response.data;
+  }
+
+  async updateConversation(conversationId: number, conversation: ConversationCreate): Promise<ConversationRead> {
+    const response = await this.client.put<ConversationRead>(`/conversations/${conversationId}`, conversation);
+    return response.data;
+  }
+
+  async deleteConversation(conversationId: number): Promise<{ message: string }> {
+    const response = await this.client.delete<{ message: string }>(`/conversations/${conversationId}`);
     return response.data;
   }
 

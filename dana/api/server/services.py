@@ -260,14 +260,20 @@ def run_na_file_service(request: RunNAFileRequest):
 
 class ConversationService:
     def create_conversation(self, db: Session, conversation: ConversationCreate) -> Conversation:
-        db_convo = Conversation(title=conversation.title)
+        db_convo = Conversation(
+            title=conversation.title,
+            agent_id=conversation.agent_id
+        )
         db.add(db_convo)
         db.commit()
         db.refresh(db_convo)
         return db_convo
 
-    def get_conversations(self, db: Session, skip: int = 0, limit: int = 100) -> list[Conversation]:
-        return db.query(Conversation).offset(skip).limit(limit).all()
+    def get_conversations(self, db: Session, skip: int = 0, limit: int = 100, agent_id: int | None = None) -> list[Conversation]:
+        query = db.query(Conversation)
+        if agent_id is not None:
+            query = query.filter(Conversation.agent_id == agent_id)
+        return query.offset(skip).limit(limit).all()
 
     def get_conversation(self, db: Session, conversation_id: int) -> Conversation | None:
         return db.query(Conversation).filter(Conversation.id == conversation_id).first()
@@ -276,6 +282,7 @@ class ConversationService:
         db_convo = db.query(Conversation).filter(Conversation.id == conversation_id).first()
         if db_convo:
             db_convo.title = conversation.title
+            db_convo.agent_id = conversation.agent_id
             db_convo.updated_at = datetime.utcnow()
             db.commit()
             db.refresh(db_convo)
@@ -368,7 +375,10 @@ class ChatService:
             if conversation_id is None:
                 conversation = self.conversation_service.create_conversation(
                     db, 
-                    schemas.ConversationCreate(title=f"Chat with Agent {agent_id}")
+                    schemas.ConversationCreate(
+                        title=f"Chat with Agent {agent_id}",
+                        agent_id=agent_id
+                    )
                 )
                 conversation_id = conversation.id
             else:

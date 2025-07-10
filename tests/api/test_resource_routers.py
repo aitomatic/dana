@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from dana.api.server.server import create_app
+from dana.api.server.models import Agent
 
 
 @pytest.fixture
@@ -12,13 +13,19 @@ def client():
     return TestClient(app)
 
 # --- Conversations ---
-def test_conversation_crud(client):
+def test_conversation_crud(client, db_session):
+    # Create an agent first
+    agent = Agent(name="Test Agent", description="A test agent", config={})
+    db_session.add(agent)
+    db_session.commit()
+    db_session.refresh(agent)
     # Create
-    resp = client.post("/api/conversations/", json={"title": "Test Conversation"})
+    resp = client.post("/api/conversations/", json={"title": "Test Conversation", "agent_id": agent.id})
     assert resp.status_code == 200
     convo = resp.json()
     convo_id = convo["id"]
     assert convo["title"] == "Test Conversation"
+    assert convo["agent_id"] == agent.id
 
     # List
     resp = client.get("/api/conversations/")
@@ -31,9 +38,10 @@ def test_conversation_crud(client):
     assert resp.json()["id"] == convo_id
 
     # Update
-    resp = client.put(f"/api/conversations/{convo_id}", json={"title": "Updated Title"})
+    resp = client.put(f"/api/conversations/{convo_id}", json={"title": "Updated Title", "agent_id": agent.id})
     assert resp.status_code == 200
     assert resp.json()["title"] == "Updated Title"
+    assert resp.json()["agent_id"] == agent.id
 
     # Delete
     resp = client.delete(f"/api/conversations/{convo_id}")
@@ -43,9 +51,14 @@ def test_conversation_crud(client):
     assert resp.status_code == 404
 
 # --- Messages ---
-def test_message_crud(client):
+def test_message_crud(client, db_session):
+    # Create an agent first
+    agent = Agent(name="Test Agent", description="A test agent", config={})
+    db_session.add(agent)
+    db_session.commit()
+    db_session.refresh(agent)
     # Create conversation
-    resp = client.post("/api/conversations/", json={"title": "MsgTest"})
+    resp = client.post("/api/conversations/", json={"title": "MsgTest", "agent_id": agent.id})
     convo_id = resp.json()["id"]
     # Create message
     resp = client.post(f"/api/conversations/{convo_id}/messages/", json={"sender": "user", "content": "Hello"})

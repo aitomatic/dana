@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -22,8 +21,14 @@ def get_message_service():
 
 # Conversation endpoints
 @router.get("/", response_model=list[schemas.ConversationRead])
-async def list_conversations(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), service: ConversationService = Depends(get_conversation_service)):
-    return service.get_conversations(db, skip=skip, limit=limit)
+async def list_conversations(
+    skip: int = 0, 
+    limit: int = 100, 
+    agent_id: int | None = None,
+    db: Session = Depends(get_db), 
+    service: ConversationService = Depends(get_conversation_service)
+):
+    return service.get_conversations(db, skip=skip, limit=limit, agent_id=agent_id)
 
 @router.get("/{conversation_id}", response_model=schemas.ConversationWithMessages)
 async def get_conversation(conversation_id: int, db: Session = Depends(get_db), service: ConversationService = Depends(get_conversation_service)):

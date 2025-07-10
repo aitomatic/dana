@@ -1,6 +1,6 @@
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChatPlusIn, Tools } from 'iconoir-react';
 import {
   DropdownMenu,
@@ -13,8 +13,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { IconDotsVertical, IconEdit, IconMenu2, IconTrash } from '@tabler/icons-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
+import { useChatStore } from '@/stores/chat-store';
+import type { ConversationRead } from '@/types/conversation';
 
-const ConversationItem = ({ conversation, isActive, onSelect, onRename, onDelete }: any) => {
+const ConversationItem = ({ conversation, isActive, onSelect, onRename, onDelete }: {
+  conversation: ConversationRead;
+  isActive: boolean;
+  onSelect: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+}) => {
   return (
     <div
       key={conversation.id}
@@ -32,7 +40,7 @@ const ConversationItem = ({ conversation, isActive, onSelect, onRename, onDelete
             isActive ? 'text-gray-700' : 'text-gray-500',
           )}
         >
-          {conversation?.meta_data?.name || 'New conversation'}
+          {conversation.title || 'New conversation'}
         </div>
       </div>
       <ConversationActions conversation={conversation} onRename={onRename} onDelete={onDelete} />
@@ -40,191 +48,226 @@ const ConversationItem = ({ conversation, isActive, onSelect, onRename, onDelete
   );
 };
 
-interface ConversationActionsProps {
-  conversation: any;
-  onRename: (conversation: any) => void;
-  onDelete: (conversation: any) => void;
-}
-
-const ConversationActions = ({ conversation, onRename, onDelete }: ConversationActionsProps) => {
+const ConversationActions = ({ conversation, onRename, onDelete }: {
+  conversation: ConversationRead;
+  onRename: () => void;
+  onDelete: () => void;
+}) => {
   return (
-    <div
-      className="absolute transition-opacity opacity-0 right-2 group-hover:opacity-100"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <IconDotsVertical
-            className="w-4 h-4 text-gray-500 rotate-90"
-            data-testid={`conversation-actions-button-${conversation.id}`}
-          />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuItem onClick={() => onRename(conversation)}>
-            <IconEdit className="w-4 h-4" />
-            Rename
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className="text-error-600 hover:text-error-600"
-            onClick={() => onDelete(conversation)}
-            data-testid="conversation-delete-trigger-button"
-          >
-            <IconTrash className="w-4 h-4" />
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <div className="flex items-center justify-center rounded-md cursor-pointer hover:bg-gray-100 size-8 opacity-0 group-hover:opacity-100 transition-opacity">
+          <IconDotsVertical size={16} className="text-gray-600" />
+        </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={onRename}>
+          <IconEdit size={16} className="mr-2" />
+          Rename
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onDelete} className="text-red-600">
+          <IconTrash size={16} className="mr-2" />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 
-const ConversationsSidebar = ({
-  setIsSidebarCollapsed,
-}: {
-  setIsSidebarCollapsed: (isCollapsed: boolean) => void;
-}) => {
+interface ConversationsSidebarProps {
+  setIsSidebarCollapsed: (collapsed: boolean) => void;
+  agentId?: string;
+}
+
+const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ setIsSidebarCollapsed, agentId }) => {
+  const navigate = useNavigate();
+  const { conversation_id } = useParams();
   const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [selectedConversation, setSelectedConversation] = useState<any | null>(null);
+  const [selectedConversation, setSelectedConversation] = useState<ConversationRead | null>(null);
   const [newName, setNewName] = useState('');
 
-  const { chat_id } = useParams();
+  const {
+    conversations,
+    isLoading,
+    fetchConversations,
+    updateConversation,
+    deleteConversation,
+    createConversation,
+  } = useChatStore();
+
+  // Fetch conversations when agentId changes
+  useEffect(() => {
+    if (agentId) {
+      fetchConversations(parseInt(agentId));
+    }
+  }, [agentId, fetchConversations]);
 
   const handleRename = async () => {
     if (selectedConversation && newName.trim()) {
-      setIsRenameOpen(false);
-      setNewName('');
+      try {
+        await updateConversation(selectedConversation.id, {
+          title: newName.trim(),
+          agent_id: selectedConversation.agent_id,
+        });
+        setIsRenameOpen(false);
+        setNewName('');
+        // Refresh conversations
+        if (agentId) {
+          fetchConversations(parseInt(agentId));
+        }
+      } catch (error) {
+        console.error('Failed to rename conversation:', error);
+      }
     }
   };
 
-  const handleDelete = async (conversation: any) => {
+  const handleDelete = async (conversation: ConversationRead) => {
     setSelectedConversation(conversation);
     setIsDeleteOpen(true);
   };
 
   const confirmDelete = async () => {
     if (selectedConversation) {
-      setIsDeleteOpen(false);
+      try {
+        await deleteConversation(selectedConversation.id);
+        setIsDeleteOpen(false);
+        // If we're currently viewing this conversation, navigate to agent chat
+        if (conversation_id && parseInt(conversation_id) === selectedConversation.id) {
+          navigate(`/${agentId}/chat`);
+        }
+        // Refresh conversations
+        if (agentId) {
+          fetchConversations(parseInt(agentId));
+        }
+      } catch (error) {
+        console.error('Failed to delete conversation:', error);
+      }
     }
   };
 
-  const handleSelectConversation = (conversation: any) => {
-    console.log(conversation);
+  const handleSelectConversation = (conversation: ConversationRead) => {
+    navigate(`/${agentId}/chat/${conversation.id}`);
   };
 
-  const handleOpenRename = (conversation: any) => {
+  const handleOpenRename = (conversation: ConversationRead) => {
     setSelectedConversation(conversation);
-    setNewName(conversation?.meta_data?.name || '');
+    setNewName(conversation.title || '');
     setIsRenameOpen(true);
   };
 
+  const handleNewChat = () => {
+    navigate(`/${agentId}/chat`);
+  };
+
+  const handleCreateConversation = async () => {
+    if (agentId) {
+      try {
+        await createConversation({
+          title: "New conversation",
+          agent_id: parseInt(agentId),
+        });
+        // Refresh conversations
+        fetchConversations(parseInt(agentId));
+      } catch (error) {
+        console.error('Failed to create conversation:', error);
+      }
+    }
+  };
+
   return (
-    <div className="flex flex-col w-full h-full border-r border-gray-200 dark:border-gray-300">
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-row items-center justify-between w-full h-12 px-4 border-b border-gray-200 dark:border-gray-300">
-          <div className="flex items-center gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center justify-center rounded-md cursor-pointer hover:bg-gray-100 size-8">
-                  <IconMenu2
-                    onClick={() => setIsSidebarCollapsed(true)}
-                    size={20}
-                    strokeWidth={2}
-                    className="text-gray-600 cursor-pointer"
-                  />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Close</TooltipContent>
-            </Tooltip>
-
-            <span className="text-sm font-semibold text-gray-600">History</span>
-          </div>
-
-          <div className="flex flex-row items-center">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center justify-center rounded-md cursor-pointer hover:bg-gray-100 size-8">
-                  <Tools
-                    onClick={() => {}}
-                    width={18}
-                    height={18}
-                    className="text-gray-600 cursor-pointer"
-                    strokeWidth={1.5}
-                  />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Manage Agent</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center justify-center rounded-md cursor-pointer hover:bg-gray-100 size-8">
-                  <ChatPlusIn onClick={() => {}} width={18} height={18} className="text-gray-600" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">New chat</TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2 h-[calc(100vh-130px)] overflow-scroll scrollbar-hide">
-          <div className="flex flex-col gap-3 px-2">
-            {[].length > 0 ? (
-              [].map((conversation: any) => (
-                <ConversationItem
-                  key={conversation.id}
-                  conversation={conversation}
-                  isActive={conversation.conversation_id === chat_id}
-                  onSelect={() => handleSelectConversation(conversation)}
-                  onRename={handleOpenRename}
-                  onDelete={handleDelete}
+    <div className="flex flex-col h-full bg-background border-r border-gray-200 dark:border-gray-300">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-300">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Conversations</h2>
+        <div className="flex flex-row items-center">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center justify-center rounded-md cursor-pointer hover:bg-gray-100 size-8">
+                <Tools
+                  onClick={() => { }}
+                  width={18}
+                  height={18}
+                  className="text-gray-600 cursor-pointer"
+                  strokeWidth={1.5}
                 />
-              ))
-            ) : (
-              <span className="pl-3 text-sm text-gray-400">History is empty</span>
-            )}
-          </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Manage Agent</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center justify-center rounded-md cursor-pointer hover:bg-gray-100 size-8">
+                <ChatPlusIn onClick={handleNewChat} width={18} height={18} className="text-gray-600" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">New chat</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
+      <div className="flex flex-col gap-2 h-[calc(100vh-130px)] overflow-scroll scrollbar-hide">
+        <div className="flex flex-col gap-3 px-2">
+          {isLoading ? (
+            <div className="flex items-center justify-center p-4">
+              <div className="text-sm text-gray-500">Loading conversations...</div>
+            </div>
+          ) : conversations.length > 0 ? (
+            conversations.map((conversation: ConversationRead) => (
+              <ConversationItem
+                key={conversation.id}
+                conversation={conversation}
+                isActive={conversation.id === parseInt(conversation_id || '0')}
+                onSelect={() => handleSelectConversation(conversation)}
+                onRename={() => handleOpenRename(conversation)}
+                onDelete={() => handleDelete(conversation)}
+              />
+            ))
+          ) : (
+            <span className="pl-3 text-sm text-gray-400">History is empty</span>
+          )}
+        </div>
+      </div>
+
+      {/* Rename Dialog */}
       <Dialog open={isRenameOpen} onOpenChange={setIsRenameOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Rename Conversation</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col gap-4 p-4">
+          <div className="space-y-4">
             <Input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               placeholder="Enter new name"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleRename();
+                }
+              }}
             />
-            <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setIsRenameOpen(false)}>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsRenameOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleRename}>Save</Button>
+              <Button onClick={handleRename}>Rename</Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
+      {/* Delete Dialog */}
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Conversation</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col gap-4 p-4">
-            <p className="text-sm text-gray-600">
-              Are you sure you want to delete this conversation? This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setIsDeleteOpen(false)}>
+          <div className="space-y-4">
+            <p>Are you sure you want to delete this conversation? This action cannot be undone.</p>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>
                 Cancel
               </Button>
-              <Button
-                variant="destructive"
-                onClick={confirmDelete}
-                data-testid="conversation-delete-button"
-              >
+              <Button variant="destructive" onClick={confirmDelete}>
                 Delete
               </Button>
             </div>

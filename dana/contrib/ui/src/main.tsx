@@ -48,8 +48,17 @@ createRoot(document.getElementById('root')!).render(
             </Layout>
           }
         />
+        {/* NEW: Agent-specific chat routes */}
         <Route
-          path="/chat"
+          path=":agent_id/chat"
+          element={
+            <Layout>
+              <AgentChat />
+            </Layout>
+          }
+        />
+        <Route
+          path=":agent_id/chat/:conversation_id"
           element={
             <Layout>
               <AgentChat />

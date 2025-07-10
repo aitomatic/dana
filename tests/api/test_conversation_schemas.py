@@ -12,21 +12,24 @@ from dana.api.server.schemas import (
 
 
 def test_conversation_base_schema():
-    data = {"title": "Chat 1"}
+    data = {"title": "Chat 1", "agent_id": 1}
     convo = ConversationBase(**data)
     assert convo.title == "Chat 1"
+    assert convo.agent_id == 1
 
 def test_conversation_create_schema():
-    data = {"title": "Chat 2"}
+    data = {"title": "Chat 2", "agent_id": 2}
     convo = ConversationCreate(**data)
     assert convo.title == "Chat 2"
+    assert convo.agent_id == 2
 
 def test_conversation_read_schema():
     now = datetime.utcnow()
-    data = {"id": 1, "title": "Chat 3", "created_at": now, "updated_at": now}
+    data = {"id": 1, "title": "Chat 3", "agent_id": 3, "created_at": now, "updated_at": now}
     convo = ConversationRead(**data)
     assert convo.id == 1
     assert convo.title == "Chat 3"
+    assert convo.agent_id == 3
     assert convo.created_at == now
     assert convo.updated_at == now
 
@@ -44,23 +47,25 @@ def test_message_create_schema():
 
 def test_message_read_schema():
     now = datetime.utcnow()
-    data = {"id": 1, "conversation_id": 2, "sender": "user", "content": "Test", "created_at": now, "updated_at": now}
+    data = {"id": 1, "conversation_id": 2, "sender": "user", "content": "Hello!", "created_at": now, "updated_at": now}
     msg = MessageRead(**data)
     assert msg.id == 1
     assert msg.conversation_id == 2
     assert msg.sender == "user"
-    assert msg.content == "Test"
+    assert msg.content == "Hello!"
     assert msg.created_at == now
     assert msg.updated_at == now
 
 def test_conversation_with_messages_schema():
     now = datetime.utcnow()
-    convo_data = {"id": 1, "title": "Chat", "created_at": now, "updated_at": now, "messages": [
-        {"id": 1, "conversation_id": 1, "sender": "user", "content": "Hi", "created_at": now, "updated_at": now},
-        {"id": 2, "conversation_id": 1, "sender": "bot", "content": "Hello", "created_at": now, "updated_at": now}
+    convo_data = {"id": 1, "title": "Chat", "agent_id": 4, "created_at": now, "updated_at": now, "messages": [
+        {"id": 1, "conversation_id": 1, "sender": "user", "content": "Hi", "created_at": now, "updated_at": now}
     ]}
     convo = ConversationWithMessages(**convo_data)
     assert convo.id == 1
-    assert len(convo.messages) == 2
-    assert convo.messages[0].sender == "user"
-    assert convo.messages[1].sender == "bot" 
+    assert convo.title == "Chat"
+    assert convo.agent_id == 4
+    assert convo.created_at == now
+    assert convo.updated_at == now
+    assert len(convo.messages) == 1
+    assert convo.messages[0].sender == "user" 

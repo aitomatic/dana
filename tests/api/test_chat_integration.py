@@ -80,8 +80,8 @@ class TestChatIntegration:
             # Mock agent execution
             mock_execute.return_value = "I remember our conversation! How can I help you further?"
             
-            # Create existing conversation
-            conversation = models.Conversation(title="Existing Test Conversation")
+            # Create existing conversation with agent_id
+            conversation = models.Conversation(title="Existing Test Conversation", agent_id=sample_agent.id)
             db_session.add(conversation)
             db_session.commit()
             db_session.refresh(conversation)
