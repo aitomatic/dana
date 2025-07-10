@@ -53,7 +53,6 @@ const extractMessageSources = (message: any) => {
 
 const BotMessage = ({
   message,
-  avatar,
   className,
 }: {
   message: any;
@@ -61,9 +60,6 @@ const BotMessage = ({
   avatar?: string;
   className?: string;
 }) => {
-  const currentAgent = {
-    avatar: '1',
-  };
   const messages: any[] = [];
   const isSplitScreen = false;
   const thinkingMessage = 'Thinking...';
@@ -108,11 +104,11 @@ const BotMessage = ({
   }, [messageContent, message]);
 
   // Avatar image source
-  const avatarSrc =
-    avatar ||
-    (currentAgent?.avatar !== '1'
-      ? `/assets${currentAgent?.avatar ?? '/agent-avatar.svg'}`
-      : '/assets/agent-avatar.svg');
+  const avatarSrc = '/agent-avatar/agent-avatar-1.svg';
+  // avatar ||
+  // (currentAgent?.avatar !== '1'
+  //   ? `/assets${currentAgent?.avatar ?? '/agent-avatar.svg'}`
+  //   : '/assets/agent-avatar.svg');
 
   const isLastMessage = useMemo(() => {
     if (!messages || messages.length === 0) return false;
@@ -137,8 +133,8 @@ const BotMessage = ({
             className={cn(
               'flex flex-col',
               message?.data?.meta_data?.type === 'dxa:prosea:user_input' &&
-                isLastMessage &&
-                'bg-blue-50 rounded-xl p-4 border border-blue-100',
+              isLastMessage &&
+              'bg-blue-50 rounded-xl p-4 border border-blue-100',
             )}
           >
             {contributedMessage && (
