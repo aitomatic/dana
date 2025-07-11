@@ -134,3 +134,25 @@ class ChatResponse(BaseModel):
     agent_response: str
     context: dict[str, Any] | None = None
     error: str | None = None
+
+
+# Agent Generation schemas
+class MessageData(BaseModel):
+    """Schema for a single message in conversation"""
+    role: str  # 'user' or 'assistant'
+    content: str
+
+
+class AgentGenerationRequest(BaseModel):
+    """Request schema for agent generation endpoint"""
+    messages: list[MessageData]
+    current_code: str | None = None
+
+
+class AgentGenerationResponse(BaseModel):
+    """Response schema for agent generation endpoint"""
+    success: bool
+    dana_code: str
+    agent_name: str | None = None
+    agent_description: str | None = None
+    error: str | None = None

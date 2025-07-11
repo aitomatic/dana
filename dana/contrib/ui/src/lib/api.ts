@@ -84,6 +84,25 @@ export interface ChatResponse {
   error?: string;
 }
 
+// Agent Generation Types
+export interface MessageData {
+  role: string;
+  content: string;
+}
+
+export interface AgentGenerationRequest {
+  messages: MessageData[];
+  current_code?: string;
+}
+
+export interface AgentGenerationResponse {
+  success: boolean;
+  dana_code: string;
+  agent_name?: string;
+  agent_description?: string;
+  error?: string;
+}
+
 // API Service Class
 class ApiService {
   private client: AxiosInstance;
@@ -255,6 +274,12 @@ class ApiService {
 
   async deleteAgent(agentId: number): Promise<{ message: string }> {
     const response = await this.client.delete<{ message: string }>(`/agents/${agentId}`);
+    return response.data;
+  }
+
+  // Agent Generation API Methods
+  async generateAgent(request: AgentGenerationRequest): Promise<AgentGenerationResponse> {
+    const response = await this.client.post<AgentGenerationResponse>('/agents/generate', request);
     return response.data;
   }
 

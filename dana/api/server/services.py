@@ -515,7 +515,7 @@ class ChatService:
         # This is a placeholder implementation
         print(f"Executing agent {agent_id} with message: '{message}' and context: '{context}'")
         
-        dana_code = "knowledge = use(\"rag\", sources=[\"./uploads\/agents\/7\"]) \nquery = \"Hi\"\nresponse = reason(f\"Help me to answer the question: {query}\")"
+        dana_code = "knowledge = use(\"rag\", sources=[\"./uploads/agents/7\"]) \nquery = \"Hi\"\nresponse = reason(f\"Help me to answer the question: {query}\")"
         # dana_code = "query = \"Hi\"\nresponse = reason(f\"Help me to answer the question: {query}\")"
         question_pattern = r'query\s*=\s*"([^"]+)"'
         
