@@ -166,6 +166,8 @@ export function GeneralAgentPage({
                 onSave={() => {}}
                 enableAnimation={true}
                 animationSpeed={25}
+                enableAutoValidation={true}
+                autoValidationDelay={1000}
               />
             </div>
           </div>

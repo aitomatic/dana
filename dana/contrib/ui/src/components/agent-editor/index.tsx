@@ -4,7 +4,7 @@ import type { editor } from 'monaco-editor';
 import { IconAlertTriangle, IconX } from '@tabler/icons-react';
 import { CodeValidationPopup } from '@/components/code-validation-popup';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api';
@@ -35,6 +35,14 @@ interface ValidationResult {
   responseValue?: string;
 }
 
+// Auto-validation state
+interface AutoValidationState {
+  isChecking: boolean;
+  hasErrors: boolean;
+  errorMessage: string;
+  lastValidationResult: CodeValidationResponse | null;
+}
+
 /**
  * AgentEditor Component
  *
@@ -47,46 +55,41 @@ interface ValidationResult {
  * - Visual indicators for validation status
  * - Theme-aware styling (light/dark mode)
  * - Save functionality with Ctrl+S / Cmd+S shortcut
+ * - Automatic syntax checking with debounce
+ * - Clickable error indicator
+ * - Real-time validation feedback
+ *
+ * Auto-Validation Features:
+ * - Automatically validates code after user stops typing (debounced)
+ * - Shows red error indicator at the bottom when syntax errors are detected
+ * - Clickable error message that opens the validation popup with details
+ * - Loading spinner while validation is in progress
+ * - Configurable debounce delay (default: 1000ms)
  *
  * @example
  * ```tsx
- * // Basic usage with validation
+ * // Basic usage with auto-validation
  * <AgentEditor
  *   value={agentCode}
  *   onChange={setAgentCode}
  *   placeholder="Enter your agent code here..."
+ *   enableAutoValidation={true}
+ *   autoValidationDelay={1000}
  * />
  *
- * // Usage without validation
+ * // Usage without auto-validation
  * <AgentEditor
  *   value={agentCode}
  *   onChange={setAgentCode}
- *   enableValidation={false}
+ *   enableAutoValidation={false}
  * />
  *
- * // Usage with validation callback
+ * // Usage with custom validation delay
  * <AgentEditor
  *   value={agentCode}
  *   onChange={setAgentCode}
- *   onValidationChange={(validation) => {
- *     console.log('Validation state:', validation);
- *     // validation.isValid - boolean
- *     // validation.hasQuery - boolean
- *     // validation.hasResponse - boolean
- *     // validation.queryValue - string | undefined
- *     // validation.responseValue - string | undefined
- *   }}
- * />
- *
- * // Usage with save functionality
- * <AgentEditor
- *   value={agentCode}
- *   onChange={setAgentCode}
- *   onSave={() => {
- *     console.log('Saving agent code...');
- *     // Trigger save logic here
- *     saveAgentCode(agentCode);
- *   }}
+ *   enableAutoValidation={true}
+ *   autoValidationDelay={2000} // 2 second delay
  * />
  *
  * // Example valid content:
@@ -105,6 +108,8 @@ export const AgentEditor = ({
   enableAnimation = false,
   animationSpeed = 30,
   className,
+  enableAutoValidation = true,
+  autoValidationDelay = 1000, // 1 second debounce
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -116,16 +121,29 @@ export const AgentEditor = ({
   enableAnimation?: boolean;
   animationSpeed?: number;
   className?: string;
+  enableAutoValidation?: boolean;
+  autoValidationDelay?: number;
 }) => {
   const monaco = useMonaco();
   const isDark = false;
 
   // Animation state
   const [isAnimating, setIsAnimating] = useState(false);
-  const [animationTarget, setAnimationTarget] = useState('');
+  const [_, setAnimationTarget] = useState('');
   const previousValueRef = useRef(value);
   const editorRef = useRef<any>(null);
   const animationIntervalRef = useRef<number | null>(null);
+
+  // Auto-validation state
+  const [autoValidation, setAutoValidation] = useState<AutoValidationState>({
+    isChecking: false,
+    hasErrors: false,
+    errorMessage: '',
+    lastValidationResult: null,
+  });
+
+  // Debounce timer for auto-validation
+  const autoValidationTimerRef = useRef<number | null>(null);
 
   // Validation function
   const validateContent = useCallback(
@@ -197,6 +215,86 @@ export const AgentEditor = ({
       onValidationChange(validation);
     }
   }, [validation, onValidationChange]);
+
+  // Auto-validation function
+  const performAutoValidation = useCallback(
+    async (code: string) => {
+      if (!enableAutoValidation || !code.trim()) {
+        setAutoValidation((prev) => ({
+          ...prev,
+          isChecking: false,
+          hasErrors: false,
+          errorMessage: '',
+        }));
+        return;
+      }
+
+      setAutoValidation((prev) => ({ ...prev, isChecking: true }));
+
+      try {
+        const result = await apiService.validateCode({
+          code,
+          agent_name: 'Custom Agent',
+          description: 'Agent created via UI',
+        });
+
+        if (result.is_valid) {
+          setAutoValidation({
+            isChecking: false,
+            hasErrors: false,
+            errorMessage: '',
+            lastValidationResult: null,
+          });
+        } else {
+          const errorMessage = result.error || 'Syntax errors detected';
+          setAutoValidation({
+            isChecking: false,
+            hasErrors: true,
+            errorMessage,
+            lastValidationResult: result,
+          });
+        }
+      } catch (error) {
+        setAutoValidation({
+          isChecking: false,
+          hasErrors: false,
+          errorMessage: '',
+          lastValidationResult: null,
+        });
+      }
+    },
+    [enableAutoValidation],
+  );
+
+  // Debounced auto-validation effect
+  useEffect(() => {
+    if (!enableAutoValidation) return;
+
+    // Clear existing timer
+    if (autoValidationTimerRef.current) {
+      clearTimeout(autoValidationTimerRef.current);
+    }
+
+    // Set new timer
+    autoValidationTimerRef.current = setTimeout(() => {
+      performAutoValidation(value);
+    }, autoValidationDelay);
+
+    // Cleanup on unmount
+    return () => {
+      if (autoValidationTimerRef.current) {
+        clearTimeout(autoValidationTimerRef.current);
+      }
+    };
+  }, [value, performAutoValidation, autoValidationDelay, enableAutoValidation]);
+
+  // Handle error indicator click
+  const handleErrorClick = useCallback(() => {
+    if (autoValidation.lastValidationResult) {
+      setValidationResult(autoValidation.lastValidationResult);
+      setIsValidationOpen(true);
+    }
+  }, [autoValidation.lastValidationResult]);
 
   // Animation logic - simplified approach
   useEffect(() => {
@@ -962,7 +1060,7 @@ export const AgentEditor = ({
   };
 
   return (
-    <div className={cn('flex flex-col h-full w-full', className)}>
+    <div className={cn('flex flex-col w-full h-full', className)}>
       {/* Validation Panel */}
       {enableValidation && !validation.isValid && (
         <div
@@ -1048,10 +1146,46 @@ export const AgentEditor = ({
         )}
       </div>
 
+      {/* Auto-Validation Error Indicator */}
+      {enableAutoValidation && (autoValidation.hasErrors || autoValidation.isChecking) && (
+        <div className="px-4 py-2 bg-red-50 border-t border-red-200">
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2 items-center">
+              {autoValidation.isChecking ? (
+                <>
+                  <div className="w-4 h-4 rounded-full border-2 border-red-300 animate-spin border-t-red-600"></div>
+                  <span className="text-sm text-red-700">Checking syntax...</span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="w-4 h-4 text-red-600" />
+                  <button
+                    onClick={handleErrorClick}
+                    className="text-sm font-medium text-red-700 cursor-pointer hover:text-red-800 hover:underline"
+                  >
+                    {autoValidation.errorMessage}
+                  </button>
+                </>
+              )}
+            </div>
+            {autoValidation.hasErrors && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleErrorClick}
+                className="px-2 h-6 text-xs text-red-700 border-red-300 hover:bg-red-100"
+              >
+                View Details
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Code Validation */}
       <div className="flex justify-end mt-4">
         <Button variant="outline" size="sm" onClick={handleValidate} disabled={isValidating}>
-          <RefreshCw className="w-4 h-4 mr-2" />
+          <RefreshCw className="mr-2 w-4 h-4" />
           {isValidating ? 'Validating...' : 'Validate Code'}
         </Button>
       </div>
