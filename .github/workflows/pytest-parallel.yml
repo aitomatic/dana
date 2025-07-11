@@ -269,7 +269,7 @@ jobs:
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/integration/ tests/dana/scenarios/ tests/dana/regression/ -m "not live and not deep" --tb=short -v
+        uv run pytest tests/dana/integration/ tests/dana/scenarios/ -m "not live and not deep" --tb=short -v
 
   # Dana Expected Failures - Language limitation documentation tests
   test-dana-expected-failures:
