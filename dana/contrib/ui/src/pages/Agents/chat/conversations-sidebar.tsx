@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { IconDotsVertical, IconEdit, IconMenu2, IconTrash } from '@tabler/icons-react';
+import { IconDotsVertical, IconEdit, IconTrash } from '@tabler/icons-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { useChatStore } from '@/stores/chat-store';
@@ -48,7 +48,7 @@ const ConversationItem = ({ conversation, isActive, onSelect, onRename, onDelete
   );
 };
 
-const ConversationActions = ({ conversation, onRename, onDelete }: {
+const ConversationActions = ({ onRename, onDelete }: {
   conversation: ConversationRead;
   onRename: () => void;
   onDelete: () => void;
@@ -79,7 +79,7 @@ interface ConversationsSidebarProps {
   agentId?: string;
 }
 
-const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ setIsSidebarCollapsed, agentId }) => {
+const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) => {
   const navigate = useNavigate();
   const { conversation_id } = useParams();
   const [isRenameOpen, setIsRenameOpen] = useState(false);
@@ -93,7 +93,6 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ setIsSideba
     fetchConversations,
     updateConversation,
     deleteConversation,
-    createConversation,
   } = useChatStore();
 
   // Fetch conversations when agentId changes
@@ -160,20 +159,20 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ setIsSideba
     navigate(`/agents/${agentId}/chat`);
   };
 
-  const handleCreateConversation = async () => {
-    if (agentId) {
-      try {
-        await createConversation({
-          title: "New conversation",
-          agent_id: parseInt(agentId),
-        });
-        // Refresh conversations
-        fetchConversations(parseInt(agentId));
-      } catch (error) {
-        console.error('Failed to create conversation:', error);
-      }
-    }
-  };
+  // const handleCreateConversation = async () => {
+  //   if (agentId) {
+  //     try {
+  //       await createConversation({
+  //         title: "New conversation",
+  //         agent_id: parseInt(agentId),
+  //       });
+  //       // Refresh conversations
+  //       fetchConversations(parseInt(agentId));
+  //     } catch (error) {
+  //       console.error('Failed to create conversation:', error);
+  //     }
+  //   }
+  // };
 
   return (
     <div className="flex flex-col h-full bg-background border-r border-gray-200 dark:border-gray-300">

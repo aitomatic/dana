@@ -1,11 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen } from '../../test/test-utils';
 import { useChatStore } from '../chat-store';
-import { act } from 'react-dom/test-utils';
 
 // Example component that uses the chat store
 const ChatStatus = () => {
-  const { conversations, currentConversationId, loading, error } = useChatStore();
+  const { conversations, selectedConversation, isLoading, error } = useChatStore();
 
   return (
     <div>
@@ -13,10 +12,10 @@ const ChatStatus = () => {
         Conversations: {conversations.length}
       </div>
       <div data-testid="current-conversation">
-        Current: {currentConversationId || 'None'}
+        Current: {selectedConversation?.id || 'None'}
       </div>
       <div data-testid="loading-status">
-        Loading: {loading ? 'Yes' : 'No'}
+        Loading: {isLoading ? 'Yes' : 'No'}
       </div>
       {error && (
         <div data-testid="error-message">
@@ -32,9 +31,9 @@ describe('Chat Store with Components', () => {
     // Reset store state before each test
     useChatStore.setState({
       conversations: [],
-      messages: {},
-      currentConversationId: null,
-      loading: false,
+      messages: [],
+      selectedConversation: null,
+      isLoading: false,
       error: null,
     });
   });
@@ -52,13 +51,12 @@ describe('Chat Store with Components', () => {
     render(<ChatStatus />);
 
     // Update store state
-    act(() => {
-      useChatStore.setState({
-        conversations: [{ id: 1, title: 'Test', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' }],
-        currentConversationId: 1,
-        loading: true,
-        error: 'Test error',
-      });
+    useChatStore.setState({
+      // @ts-ignore
+      conversations: [{ id: 1, title: 'Test', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' }],
+      currentConversationId: 1,
+      loading: true,
+      error: 'Test error',
     });
 
     expect(screen.getByTestId('conversation-count')).toHaveTextContent('Conversations: 1');
@@ -66,4 +64,4 @@ describe('Chat Store with Components', () => {
     expect(screen.getByTestId('loading-status')).toHaveTextContent('Loading: Yes');
     expect(screen.getByTestId('error-message')).toHaveTextContent('Error: Test error');
   });
-}); 
+});

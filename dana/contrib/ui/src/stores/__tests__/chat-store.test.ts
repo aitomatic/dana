@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useChatStore } from '../chat-store';
 import { apiService } from '@/lib/api';
 import type { ChatResponse } from '@/lib/api';
-import type { ConversationRead, MessageRead } from '@/types/conversation';
+import type { ConversationRead } from '@/types/conversation';
 
 // Mock the API service
 vi.mock('@/lib/api', () => ({

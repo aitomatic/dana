@@ -319,3 +319,6 @@ build-frontend: ## Build the frontend (Vite React app) and copy to backend stati
 
 build-all: build-frontend ## Build frontend and Python package
 	uv run python -m build
+
+local-server: ## Start the local server
+	uv run python -m dana.api.server

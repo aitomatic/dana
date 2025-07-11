@@ -1,6 +1,6 @@
 // React and React Router
 import { useRef, useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import React from 'react';
 
 // Components
@@ -26,7 +26,6 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agent
 
   const {
     messages,
-    isLoading,
     isSending,
     error,
     sendMessage,

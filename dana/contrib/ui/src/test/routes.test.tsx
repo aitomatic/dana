@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { createRoot } from 'react-dom/client';
 import { StrictMode } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from '../components/layout';
