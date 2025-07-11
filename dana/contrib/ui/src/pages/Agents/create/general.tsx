@@ -155,6 +155,11 @@ export function GeneralAgentPage({
               <AgentEditor
                 value={danaCode ?? DEFAULT_DANA_AGENT_CODE}
                 onChange={(value) => {
+                  console.log('AgentEditor onChange called:', {
+                    value,
+                    currentDanaCode: danaCode,
+                    isDifferent: value !== danaCode,
+                  });
                   setValue('general_agent_config.dana_code', value);
                 }}
                 placeholder={DANA_AGENT_PLACEHOLDER}

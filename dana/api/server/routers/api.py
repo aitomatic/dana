@@ -532,19 +532,19 @@ def _extract_code_from_response(content) -> str:
                 fixed_code = fixed_code[start:end].strip()
     
     return fixed_code.strip()
-        logger.error(f"Error in fix_code endpoint: {e}", exc_info=True)
-        return CodeFixResponse(
-            success=False,
-            fixed_code=request.code,
-            applied_fixes=[],
-            remaining_errors=[{
-                "line": 1,
-                "column": 1,
-                "message": f"Auto-fix failed: {str(e)}",
-                "severity": "error",
-                "code": ""
-            }]
-        )
+        # logger.error(f"Error in fix_code endpoint: {e}", exc_info=True)
+        # return CodeFixResponse(
+        #     success=False,
+        #     fixed_code=request.code,
+        #     applied_fixes=[],
+        #     remaining_errors=[{
+        #         "line": 1,
+        #         "column": 1,
+        #         "message": f"Auto-fix failed: {str(e)}",
+        #         "severity": "error",
+        #         "code": ""
+        #     }]
+        # )
 
 
 async def _apply_rule_based_fixes(request: CodeFixRequest) -> CodeFixResponse:

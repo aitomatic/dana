@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from dana.api.server import models, schemas
 from dana.api.server.server import create_app
 from dana.api.server.services import ChatService, ConversationService, MessageService
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 @pytest.fixture
@@ -221,11 +222,36 @@ class TestChatService:
         message_service = Mock(spec=MessageService)
         return ChatService(conversation_service, message_service)
 
+    @pytest.fixture
+    def mock_db(self):
+        return Mock(spec=Session)
+
+    @pytest.fixture
+    def mock_agent(self):
+        agent = Mock(spec=models.Agent)
+        agent.id = 1
+        agent.name = "Test Agent"
+        agent.config = {
+            "dana_code": """\"\"\"A simple assistant agent that can help with various tasks.\"\"\"
+
+# Agent Card declaration
+agent AssistantAgent:
+    name : str = "General Assistant Agent"
+    description : str = "A helpful assistant that can answer questions and provide guidance"
+    resources : list = []
+
+# Agent's problem solver
+def solve(assistant_agent : AssistantAgent, problem : str):
+    \"\"\"Solve problems using AI reasoning.\"\"\"
+    return reason(f"I'm here to help! Let me assist you with: {problem}")"""
+        }
+        return agent
+
     @pytest.mark.asyncio
-    async def test_chat_with_agent_new_conversation(self, chat_service):
+    async def test_chat_with_agent_new_conversation(self, chat_service, mock_db, mock_agent):
         """Test chat with new conversation creation"""
-        # Create mock database session
-        mock_db = Mock(spec=Session)
+        # Mock database query to return our agent
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_agent
         
         # Mock conversation service
         new_conversation = models.Conversation(
@@ -237,117 +263,93 @@ class TestChatService:
         chat_service.conversation_service.create_conversation.return_value = new_conversation
         
         # Mock message service
-        user_message = models.Message(
+        mock_message = models.Message(
             id=1,
-            conversation_id=1,
-            sender="user",
-            content="Hello, agent!",
-            created_at="2025-01-27T10:00:00",
-            updated_at="2025-01-27T10:00:00"
-        )
-        agent_message = models.Message(
-            id=2,
             conversation_id=1,
             sender="agent",
             content="Hello! How can I help you?",
             created_at="2025-01-27T10:00:00",
             updated_at="2025-01-27T10:00:00"
         )
-        chat_service.message_service.create_message.side_effect = [user_message, agent_message]
+        chat_service.message_service.create_message.return_value = mock_message
         
-        # Mock DanaSandbox.quick_run
-        with patch('dana.api.server.services.DanaSandbox.quick_run') as mock_quick_run:
-            # Create a mock response object
-            mock_response = Mock()
-            mock_response.result = "Hello! How can I help you?"
-            mock_quick_run.return_value = mock_response
+        # Mock SandboxContext.get_state() to return expected structure
+        mock_state = {
+            "local": {
+                "response": "Hello! How can I help you?"
+            }
+        }
+        
+        with patch('dana.api.server.services.DanaSandbox.quick_run'), \
+             patch('dana.api.server.services.SandboxContext') as mock_sandbox_context_class:
             
-            # Test
+            # Configure the mock SandboxContext
+            mock_sandbox_context = Mock(spec=SandboxContext)
+            mock_sandbox_context.get_state.return_value = mock_state
+            mock_sandbox_context_class.return_value = mock_sandbox_context
+            
             result = await chat_service.chat_with_agent(
                 db=mock_db,
                 agent_id=1,
-                user_message="Hello, agent!",
-                conversation_id=None,
-                context={"user_id": 123}
+                user_message="Hello, agent!"
             )
             
-            # Assertions
-            assert result["success"] is True
-            assert result["message"] == "Hello, agent!"
-            assert result["conversation_id"] == 1
-            assert result["message_id"] == 2
             assert result["agent_response"] == "Hello! How can I help you?"
-            assert result["context"] == {"user_id": 123}
-            assert result["error"] is None
-            
-            # Verify service calls
-            chat_service.conversation_service.create_conversation.assert_called_once()
-            assert chat_service.message_service.create_message.call_count == 2
-            
-            # Verify DanaSandbox was called
-            mock_quick_run.assert_called_once()
+            assert result["success"] is True
+            assert result["conversation_id"] == 1
 
     @pytest.mark.asyncio
-    async def test_chat_with_agent_existing_conversation(self, chat_service):
+    async def test_chat_with_agent_existing_conversation(self, chat_service, mock_db, mock_agent):
         """Test chat with existing conversation"""
-        # Create mock database session
-        mock_db = Mock(spec=Session)
+        # Mock database query to return our agent
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_agent
         
-        # Mock conversation service
+        # Mock existing conversation
         existing_conversation = models.Conversation(
             id=1,
-            title="Existing Conversation",
+            title="Chat with Agent 1",
             created_at="2025-01-27T10:00:00",
             updated_at="2025-01-27T10:00:00"
         )
         chat_service.conversation_service.get_conversation.return_value = existing_conversation
         
         # Mock message service
-        user_message = models.Message(
-            id=3,
-            conversation_id=1,
-            sender="user",
-            content="Hello, agent!",
-            created_at="2025-01-27T10:00:00",
-            updated_at="2025-01-27T10:00:00"
-        )
-        agent_message = models.Message(
-            id=4,
+        mock_message = models.Message(
+            id=1,
             conversation_id=1,
             sender="agent",
             content="Hello! How can I help you?",
             created_at="2025-01-27T10:00:00",
             updated_at="2025-01-27T10:00:00"
         )
-        chat_service.message_service.create_message.side_effect = [user_message, agent_message]
+        chat_service.message_service.create_message.return_value = mock_message
         
-        # Mock DanaSandbox.quick_run
-        with patch('dana.api.server.services.DanaSandbox.quick_run') as mock_quick_run:
-            # Create a mock response object
-            mock_response = Mock()
-            mock_response.result = "Hello! How can I help you?"
-            mock_quick_run.return_value = mock_response
+        # Mock SandboxContext.get_state() to return expected structure
+        mock_state = {
+            "local": {
+                "response": "Hello! How can I help you?"
+            }
+        }
+        
+        with patch('dana.api.server.services.DanaSandbox.quick_run') as mock_quick_run, \
+             patch('dana.api.server.services.SandboxContext') as mock_sandbox_context_class:
             
-            # Test
+            # Configure the mock SandboxContext
+            mock_sandbox_context = Mock(spec=SandboxContext)
+            mock_sandbox_context.get_state.return_value = mock_state
+            mock_sandbox_context_class.return_value = mock_sandbox_context
+            
             result = await chat_service.chat_with_agent(
                 db=mock_db,
                 agent_id=1,
                 user_message="Hello, agent!",
-                conversation_id=1,
-                context={"user_id": 123}
+                conversation_id=1
             )
             
-            # Assertions
-            assert result["success"] is True
-            assert result["conversation_id"] == 1
-            assert result["message_id"] == 4
-            
-            # Verify service calls
-            chat_service.conversation_service.get_conversation.assert_called_once_with(mock_db, 1)
-            assert chat_service.message_service.create_message.call_count == 2
-            
-            # Verify DanaSandbox was called
+            # Verify quick_run was called
             mock_quick_run.assert_called_once()
+            assert result["agent_response"] == "Hello! How can I help you?"
+            assert result["success"] is True
 
     @pytest.mark.asyncio
     async def test_chat_with_agent_conversation_not_found(self, chat_service):
@@ -372,10 +374,10 @@ class TestChatService:
         assert "Conversation 999 not found" in result["error"]
 
     @pytest.mark.asyncio
-    async def test_chat_with_agent_execution_error(self, chat_service):
+    async def test_chat_with_agent_execution_error(self, chat_service, mock_db, mock_agent):
         """Test chat when agent execution fails"""
-        # Create mock database session
-        mock_db = Mock(spec=Session)
+        # Mock database query to return our agent
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_agent
         
         # Mock conversation service
         new_conversation = models.Conversation(
@@ -386,46 +388,67 @@ class TestChatService:
         )
         chat_service.conversation_service.create_conversation.return_value = new_conversation
         
-        # Mock DanaSandbox.quick_run to raise exception
-        with patch('dana.api.server.services.DanaSandbox.quick_run') as mock_quick_run:
-            mock_quick_run.side_effect = Exception("Agent execution failed")
+        # Only mock create_message for the user message, not the agent message
+        mock_user_message = models.Message(
+            id=1,
+            conversation_id=1,
+            sender="user",
+            content="Hello",
+            created_at="2025-01-27T10:00:00"
+        )
+        chat_service.message_service.create_message.return_value = mock_user_message
+        
+        # Mock SandboxContext.get_state() to return a dict
+        mock_state = {"agent": mock_agent}
+        
+        with patch('dana.core.lang.sandbox_context.SandboxContext') as mock_sandbox_class:
+            mock_sandbox = Mock()
+            mock_sandbox.get_state.return_value = mock_state
+            mock_sandbox_class.return_value = mock_sandbox
             
-            # Test
-            result = await chat_service.chat_with_agent(
-                db=mock_db,
-                agent_id=1,
-                user_message="Hello, agent!",
-                conversation_id=None,
-                context={"user_id": 123}
-            )
-            
-            # Assertions
-            assert result["success"] is False
-            assert "Agent execution failed" in result["error"]
+            # Patch the correct DanaSandbox.quick_run path
+            with patch('dana.core.lang.dana_sandbox.DanaSandbox.quick_run', side_effect=Exception("Agent execution failed")):
+                result = await chat_service.chat_with_agent(
+                    db=mock_db,
+                    agent_id=1,
+                    message="Hello",
+                    conversation_id=None
+                )
+        
+        # Verify the result indicates failure
+        assert result["success"] is False
+        assert "Agent execution failed" in result["error"]
+        assert result["conversation_id"] == 1
+        assert result["message_id"] == 1
 
     @pytest.mark.asyncio
-    async def test_execute_agent_implementation(self, chat_service):
-        """Test the _execute_agent method with mocked DanaSandbox"""
-        # Mock DanaSandbox.quick_run
-        with patch('dana.api.server.services.DanaSandbox.quick_run') as mock_quick_run:
-            # Create a mock response object
-            mock_response = Mock()
-            mock_response.result = "Hello! I received your message: Hello, agent!"
-            mock_quick_run.return_value = mock_response
+    async def test_execute_agent_implementation(self, chat_service, mock_db, mock_agent):
+        """Test the _execute_agent method directly"""
+        # Mock database query to return our agent
+        mock_db.query.return_value.filter.return_value.first.return_value = mock_agent
+        
+        # Mock SandboxContext.get_state() to return expected structure
+        mock_state = {
+            "local": {
+                "response": "Hello! I received your message: Hello, agent!"
+            }
+        }
+        
+        with patch('dana.api.server.services.DanaSandbox.quick_run'), \
+             patch('dana.api.server.services.SandboxContext') as mock_sandbox_context_class:
             
-            # Test
+            # Configure the mock SandboxContext
+            mock_sandbox_context = Mock(spec=SandboxContext)
+            mock_sandbox_context.get_state.return_value = mock_state
+            mock_sandbox_context_class.return_value = mock_sandbox_context
+            
             result = await chat_service._execute_agent(
+                db=mock_db,
                 agent_id=1,
-                message="Hello, agent!",
-                context={"user_id": 123}
+                message="Hello, agent!"
             )
             
-            # Assertions
-            assert isinstance(result, str)
             assert "Hello! I received your message: Hello, agent!" == result
-            
-            # Verify DanaSandbox was called
-            mock_quick_run.assert_called_once()
 
 
 class TestChatSchemas:

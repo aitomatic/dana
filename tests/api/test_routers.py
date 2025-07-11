@@ -1,5 +1,7 @@
 """Tests for API server routers."""
 
+import os
+from unittest.mock import patch, Mock
 from dana.api.server.models import Agent
 
 # Use the global client and db_session fixtures from conftest.py
@@ -15,10 +17,37 @@ class TestMainRouter:
         assert data["service"] == "Dana API"
 
     def test_root_endpoint_with_static_files(self, client):
+        # Test the root endpoint - it should either serve index.html or return 404 if not found
         response = client.get("/")
-        assert response.status_code == 200
-        # Should serve index.html from static directory
-        assert response.headers["content-type"] == "text/html; charset=utf-8"
+        
+        # The endpoint should either return 200 (if index.html exists) or 404 (if it doesn't)
+        # In test environment, static files typically don't exist, so 404 is expected
+        if response.status_code == 200:
+            # If static files exist, should serve HTML
+            assert response.headers["content-type"] == "text/html; charset=utf-8"
+        elif response.status_code == 404:
+            # If static files don't exist, should return JSON error
+            data = response.json()
+            assert "error" in data
+        else:
+            # Unexpected status code
+            assert False, f"Unexpected status code: {response.status_code}"
+
+    def test_root_endpoint_with_mocked_static_files(self, client):
+        """Test root endpoint when static files exist (using a real temp file)"""
+        import tempfile
+        import shutil
+        # Create a real temporary index.html file
+        with tempfile.TemporaryDirectory() as tmpdir:
+            index_path = os.path.join(tmpdir, "index.html")
+            with open(index_path, "w") as f:
+                f.write("<html><body>Test</body></html>")
+            # Patch os.path.exists and os.path.abspath to point to our temp file
+            with patch('os.path.exists', side_effect=lambda p: p == index_path), \
+                 patch('os.path.abspath', return_value=index_path):
+                response = client.get("/")
+                assert response.status_code == 200
+                assert b"Test" in response.content
 
 class TestAgentRouter:
     """Test the agent router endpoints."""

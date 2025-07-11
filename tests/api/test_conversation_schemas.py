@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from dana.api.server.schemas import (
     ConversationBase,
@@ -24,7 +24,7 @@ def test_conversation_create_schema():
     assert convo.agent_id == 2
 
 def test_conversation_read_schema():
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     data = {"id": 1, "title": "Chat 3", "agent_id": 3, "created_at": now, "updated_at": now}
     convo = ConversationRead(**data)
     assert convo.id == 1
@@ -46,7 +46,7 @@ def test_message_create_schema():
     assert msg.content == "Hi!"
 
 def test_message_read_schema():
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     data = {"id": 1, "conversation_id": 2, "sender": "user", "content": "Hello!", "created_at": now, "updated_at": now}
     msg = MessageRead(**data)
     assert msg.id == 1
@@ -57,7 +57,7 @@ def test_message_read_schema():
     assert msg.updated_at == now
 
 def test_conversation_with_messages_schema():
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     convo_data = {"id": 1, "title": "Chat", "agent_id": 4, "created_at": now, "updated_at": now, "messages": [
         {"id": 1, "conversation_id": 1, "sender": "user", "content": "Hi", "created_at": now, "updated_at": now}
     ]}
