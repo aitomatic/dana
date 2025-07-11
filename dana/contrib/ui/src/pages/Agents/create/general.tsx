@@ -2,12 +2,13 @@ import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Edit } from 'iconoir-react';
+import { Edit, ChatPlusIn, X } from 'iconoir-react';
 import { AgentEditor } from '@/components/agent-editor';
 import { CloudUpload } from 'iconoir-react';
 import { useState } from 'react';
 import AgentGenerationChat from '@/components/agent-generation-chat';
 import { DEFAULT_DANA_AGENT_CODE, DANA_AGENT_PLACEHOLDER } from '@/constants/dana-code';
+import AgentTestChat from '@/components/agent-test-chat';
 
 export function GeneralAgentPage({
   form,
@@ -30,12 +31,15 @@ export function GeneralAgentPage({
 }) {
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
+  const [showTestChat, setShowTestChat] = useState(false);
 
   const { register, setValue, formState } = form;
   const isDisabled = !formState.isValid || isCreating;
 
   const avatar = watch('avatar');
   const danaCode = watch('general_agent_config.dana_code', DEFAULT_DANA_AGENT_CODE);
+  const agentName = watch('name', 'Test Agent');
+  const agentDescription = watch('description', 'A test agent');
 
   const handleCodeGenerated = (code: string, name?: string, description?: string) => {
     // Update the Dana code in the form
@@ -129,14 +133,23 @@ export function GeneralAgentPage({
                 <Label className="text-sm font-semibold text-gray-900">Agent Configuration</Label>
                 <span className="text-sm text-gray-600">Use DANA to configure your agent</span>
               </div>
-              <input
-                type="file"
-                accept=".na"
-                ref={fileInputRef}
-                onChange={handleFileInputChange}
-                className="hidden"
-              />
               <div className="flex gap-2 items-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowTestChat(true)}
+                  className="gap-2"
+                >
+                  <ChatPlusIn className="w-4 h-4" />
+                  Test Agent
+                </Button>
+                <input
+                  type="file"
+                  accept=".na"
+                  ref={fileInputRef}
+                  onChange={handleFileInputChange}
+                  className="hidden"
+                />
                 <Button
                   leftSection={<CloudUpload />}
                   variant="outline"
@@ -173,6 +186,48 @@ export function GeneralAgentPage({
           </div>
         </div>
       </div>
+
+      {/* Test Chat Modal/Drawer */}
+      {showTestChat && (
+        <div className="flex fixed inset-0 z-50 justify-end items-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300"
+            onClick={() => setShowTestChat(false)}
+          />
+
+          {/* Drawer */}
+          <div className="relative w-96 h-full bg-white shadow-2xl transition-transform duration-300 ease-in-out transform">
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="flex justify-between items-center p-4 bg-gray-50 border-b border-gray-200">
+                <div className="flex gap-2 items-center">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <h3 className="text-lg font-semibold text-gray-900">Test Agent</h3>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowTestChat(false)}
+                  className="p-1 hover:bg-gray-200"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              {/* Chat Content */}
+              <div className="overflow-hidden flex-1">
+                <AgentTestChat
+                  agentCode={danaCode}
+                  agentName={agentName}
+                  agentDescription={agentDescription}
+                  className="h-full"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-4 justify-end px-6 py-4 bg-white border-t">
         <Button size="lg" disabled={isDisabled} className="gap-2 w-max" onClick={onCreateAgent}>

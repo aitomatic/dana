@@ -411,7 +411,7 @@ def solve(assistant_agent : AssistantAgent, problem : str):
                 result = await chat_service.chat_with_agent(
                     db=mock_db,
                     agent_id=1,
-                    message="Hello",
+                    user_message="Hello",
                     conversation_id=None
                 )
         

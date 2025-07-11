@@ -38,6 +38,7 @@ def create_app():
     from .routers.documents import router as documents_router
     from .routers.main import router as main_router
     from .routers.topics import router as topics_router
+    from .routers.agent_test import router as agent_test_router
 
     app.include_router(main_router)
     app.include_router(api_router, prefix="/api")
@@ -45,6 +46,7 @@ def create_app():
     app.include_router(documents_router, prefix="/api")
     app.include_router(conversations_router, prefix="/api")
     app.include_router(chat_router, prefix="/api")
+    app.include_router(agent_test_router, prefix="/api")
 
     # Serve static files (React build)
     static_dir = os.path.join(os.path.dirname(__file__), "static")

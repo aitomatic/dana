@@ -418,29 +418,24 @@ class ChatService:
     ) -> dict[str, Any]:
         """
         Chat with an agent and return the response
-        
-        Args:
-            db: Database session
-            agent_id: ID of the agent to chat with
-            user_message: User's message
-            conversation_id: Optional conversation ID (creates new if None)
-            context: Optional context for the agent
-            
-        Returns:
-            Dictionary containing chat response data
         """
+        agent_msg = None
         try:
-            # TODO: Implement agent loading and execution logic
-            # 1. Load agent from database using agent_id
-            # 2. Initialize agent with configuration
-            # 3. Execute agent with user message and context
-            # 4. Get agent response
-            
-            # Placeholder for agent execution
-            agent_response = await self._execute_agent(db, agent_id, user_message, context)
-            
-            # Create or get conversation
-            if conversation_id is None:
+            # 1. If conversation_id is provided, check if it exists before agent execution
+            if conversation_id is not None:
+                conversation = self.conversation_service.get_conversation(db, conversation_id)
+                if not conversation:
+                    return {
+                        "success": False,
+                        "message": user_message,
+                        "conversation_id": conversation_id,
+                        "message_id": 0,
+                        "agent_response": "",
+                        "context": context,
+                        "error": f"Conversation {conversation_id} not found"
+                    }
+            # 2. If conversation_id is None, create the conversation before agent execution
+            else:
                 conversation = self.conversation_service.create_conversation(
                     db, 
                     schemas.ConversationCreate(
@@ -449,29 +444,39 @@ class ChatService:
                     )
                 )
                 conversation_id = conversation.id
-            else:
-                conversation = self.conversation_service.get_conversation(db, conversation_id)
-                if not conversation:
-                    raise ValueError(f"Conversation {conversation_id} not found")
-            
-            # Ensure conversation_id is not None at this point
             if conversation_id is None:
-                raise ValueError("Failed to create or retrieve conversation")
-            
-            # Create user message
-            self.message_service.create_message(
+                return {
+                    "success": False,
+                    "message": user_message,
+                    "conversation_id": 0,
+                    "message_id": 0,
+                    "agent_response": "",
+                    "context": context,
+                    "error": "Failed to create or retrieve conversation"
+                }
+            # Create user message before agent execution
+            user_msg = self.message_service.create_message(
                 db,
                 conversation_id,
                 schemas.MessageCreate(sender="user", content=user_message)
             )
-            
-            # Create agent response message
+            try:
+                agent_response = await self._execute_agent(db, agent_id, user_message, context)
+            except Exception as e:
+                return {
+                    "success": False,
+                    "message": user_message,
+                    "conversation_id": conversation_id,
+                    "message_id": user_msg.id,
+                    "agent_response": "",
+                    "context": context,
+                    "error": str(e)
+                }
             agent_msg = self.message_service.create_message(
                 db,
                 conversation_id,
                 schemas.MessageCreate(sender="agent", content=agent_response)
             )
-            
             return {
                 "success": True,
                 "message": user_message,
@@ -481,13 +486,12 @@ class ChatService:
                 "context": context,
                 "error": None
             }
-            
         except Exception as e:
             return {
                 "success": False,
                 "message": user_message,
                 "conversation_id": conversation_id or 0,
-                "message_id": 0,
+                "message_id": user_msg.id if 'user_msg' in locals() else 0,
                 "agent_response": "",
                 "context": context,
                 "error": str(e)
@@ -506,70 +510,60 @@ class ChatService:
         Returns:
             Agent response string
         """
+        # Load agent from database
+        agent = db.query(models.Agent).filter(models.Agent.id == agent_id).first()
+        if not agent:
+            raise ValueError(f"Agent {agent_id} not found")
+        
+        # Get Dana code from agent configuration
+        dana_code = agent.config.get("dana_code", "")
+        if not dana_code:
+            raise ValueError(f"Agent {agent_id} has no Dana code configured")
+        
+        print(f"Executing agent {agent_id} ({agent.name}) with message: '{message}'")
+        print(f"Using Dana code: {dana_code[:200]}...")
+        
+        # Parse agent name from Dana code
+        agent_name_match = re.search(r'^\s*agent\s+([A-Za-z_][A-Za-z0-9_]*)\s*:', dana_code, re.MULTILINE)
+        if not agent_name_match:
+            raise ValueError("Could not find agent name in Dana code.")
+        agent_name = agent_name_match.group(1)
+        instance_var = agent_name[0].lower() + agent_name[1:]  # e.g., WeatherAgent -> weatherAgent
+        # Append code to instantiate and solve using method call
+        appended_code = f"\n{instance_var} = {agent_name}()\nresponse = {instance_var}.solve(\"{message.replace('\\', '\\\\').replace('"', '\\"')}\")\nprint(response)\n"
+        dana_code_to_run = dana_code + appended_code
+        
+        # Create a temporary file for the Dana code
+        temp_folder = Path("/tmp/dana_code")
+        temp_folder.mkdir(parents=True, exist_ok=True)
+        full_path = temp_folder / f"agent_{agent_id}_code.na"
+
+        print(f"Dana code to run: {dana_code_to_run}")
+        
+        # Write the Dana code to the temporary file
+        with open(full_path, "w") as f:
+            f.write(dana_code_to_run)
+        
+        # Execute the Dana code using DanaSandbox
+        sandbox_context = SandboxContext()
+        
+        # If the agent has selected knowledge (documents), add them to the context
+        selected_knowledge = agent.config.get("selectedKnowledge", {})
+        if selected_knowledge and "documents" in selected_knowledge:
+            # Add document paths to the context if needed
+            print(f"Agent has {len(selected_knowledge['documents'])} selected documents")
+        
         try:
-            # Load agent from database
-            agent = db.query(models.Agent).filter(models.Agent.id == agent_id).first()
-            if not agent:
-                raise ValueError(f"Agent {agent_id} not found")
-            
-            # Get Dana code from agent configuration
-            dana_code = agent.config.get("dana_code", "")
-            if not dana_code:
-                raise ValueError(f"Agent {agent_id} has no Dana code configured")
-            
-            print(f"Executing agent {agent_id} ({agent.name}) with message: '{message}'")
-            print(f"Using Dana code: {dana_code[:200]}...")
-            
-            # Parse agent name from Dana code
-            agent_name_match = re.search(r'^\s*agent\s+([A-Za-z_][A-Za-z0-9_]*)\s*:', dana_code, re.MULTILINE)
-            if not agent_name_match:
-                raise ValueError("Could not find agent name in Dana code.")
-            agent_name = agent_name_match.group(1)
-            instance_var = agent_name[0].lower() + agent_name[1:]  # e.g., WeatherAgent -> weatherAgent
-            # Append code to instantiate and solve using method call
-            appended_code = f"\n{instance_var} = {agent_name}()\nresponse = {instance_var}.solve(\"{message.replace('\\', '\\\\').replace('"', '\\"')}\")\nprint(response)\n"
-            dana_code_to_run = dana_code + appended_code
-            
-            # Create a temporary file for the Dana code
-            temp_folder = Path("/tmp/dana_code")
-            temp_folder.mkdir(parents=True, exist_ok=True)
-            full_path = temp_folder / f"agent_{agent_id}_code.na"
-
-            print(f"Dana code to run: {dana_code_to_run}")
-            
-            # Write the Dana code to the temporary file
-            with open(full_path, "w") as f:
-                f.write(dana_code_to_run)
-            
-            # Execute the Dana code using DanaSandbox
-            sandbox_context = SandboxContext()
-            
-            # If the agent has selected knowledge (documents), add them to the context
-            selected_knowledge = agent.config.get("selectedKnowledge", {})
-            if selected_knowledge and "documents" in selected_knowledge:
-                # Add document paths to the context if needed
-                print(f"Agent has {len(selected_knowledge['documents'])} selected documents")
-            
             DanaSandbox.quick_run(file_path=full_path, context=sandbox_context)
-
-            print("--------------------------------")
-            print(sandbox_context.get_state())
-
-            state = sandbox_context.get_state()
-            response_text = state.get("local", { }).get("response", "")
-
-
-            return response_text
-            # if response.success:
-            #     # print(f"Agent execution successful: {response.result}")
-            #     # return str(response.result)
-            #     return response
-            # else:
-            #     error_msg = f"Agent execution failed: {response.error}"
-            #     print(error_msg)
-            #     return error_msg
-                
         except Exception as e:
-            error_msg = f"Error executing agent {agent_id}: {str(e)}"
+            error_msg = f"Agent execution failed: {str(e)}"
             print(error_msg)
-            return error_msg
+            raise RuntimeError(error_msg)
+
+        print("--------------------------------")
+        print(sandbox_context.get_state())
+
+        state = sandbox_context.get_state()
+        response_text = state.get("local", { }).get("response", "")
+
+        return response_text

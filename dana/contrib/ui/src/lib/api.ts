@@ -157,6 +157,21 @@ export interface CodeFixResponse {
   error?: string;
 }
 
+// Agent Test API Types
+export interface AgentTestRequest {
+  agent_code: string;
+  message: string;
+  agent_name?: string;
+  agent_description?: string;
+  context?: Record<string, any>;
+}
+
+export interface AgentTestResponse {
+  success: boolean;
+  agent_response: string;
+  error?: string;
+}
+
 // API Service Class
 class ApiService {
   private client: AxiosInstance;
@@ -340,6 +355,12 @@ class ApiService {
   // Chat API Methods
   async chatWithAgent(request: ChatRequest): Promise<ChatResponse> {
     const response = await this.client.post<ChatResponse>('/chat/', request);
+    return response.data;
+  }
+
+  // Agent Test API Methods
+  async testAgent(request: AgentTestRequest): Promise<AgentTestResponse> {
+    const response = await this.client.post<AgentTestResponse>('/agent-test/', request);
     return response.data;
   }
 
