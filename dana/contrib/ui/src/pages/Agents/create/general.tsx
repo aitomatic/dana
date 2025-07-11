@@ -6,6 +6,7 @@ import { Edit } from 'iconoir-react';
 import { AgentEditor } from '@/components/agent-editor';
 import { CloudUpload } from 'iconoir-react';
 import { useState } from 'react';
+import AgentGenerationChat from '@/components/agent-generation-chat';
 
 const placeholder = `e.g.
 
@@ -57,6 +58,21 @@ export function GeneralAgentPage({
   const avatar = watch('avatar');
   const danaCode = watch('general_agent_config.dana_code', 'query = \"Hi\"\n\nresponse = reason(f\"Help me to answer the question: {query}\")');
 
+  const handleCodeGenerated = (code: string, name?: string, description?: string) => {
+    // Update the Dana code in the form
+    setValue('general_agent_config.dana_code', code);
+
+    // Update agent name if provided
+    if (name) {
+      setValue('name', name);
+    }
+
+    // Update description if provided
+    if (description) {
+      setValue('description', description);
+    }
+  };
+
   return (
     <div
       className={cn(
@@ -65,58 +81,64 @@ export function GeneralAgentPage({
       )}
     >
       <div className="flex flex-row gap-4 h-full px-6 pt-4">
-        <div className="flex flex-col justify-between w-[320px] gap-4">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-300 bg-background">
-              <img
-                src={`/agent-avatar${avatar}`}
-                alt="agent-placeholder"
-                className="rounded-full size-10"
+        {/* Left side - Agent Info and Chat */}
+        <div className="flex flex-col w-[400px] gap-4">
+          {/* Agent Info Card */}
+          <div className="flex flex-col gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-300 bg-background">
+            <img
+              src={`/agent-avatar${avatar}`}
+              alt="agent-placeholder"
+              className="rounded-full size-10"
+            />
+            <div className="flex flex-col gap-1">
+              <input
+                className="py-1 w-full text-xl font-semibold text-gray-900 border-b border-gray-900 bg-background border-l-none border-r-none border-t-none focus:outline-none placeholder:text-gray-300"
+                {...register('name', { required: true })}
+                id="name"
+                data-testid="name"
+                placeholder="Agent Name"
               />
-              <div className="flex flex-col gap-1">
-                <input
-                  className="py-1 w-full text-xl font-semibold text-gray-900 border-b border-gray-900 bg-background border-l-none border-r-none border-t-none focus:outline-none placeholder:text-gray-300"
-                  {...register('name', { required: true })}
-                  id="name"
-                  data-testid="name"
-                  placeholder="Agent Name"
-                />
-              </div>
-              <div className="flex flex-col gap-1 h-full">
-                {isEditingDescription ? (
-                  <div className="flex flex-col gap-1">
-                    <Label className="text-sm font-semibold text-gray-600">Description</Label>
-                    <Textarea
-                      {...register('description')}
-                      id="description"
-                      data-testid="description"
-                      placeholder="Describe what can the tool do. E.g. search the web, analyse data, summarise content"
-                      className="bg-background min-h-22 border border-gray-300 rounded-lg p-2.5 text-sm text-gray-900 focus:outline-none resize-none"
-                    />
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    <span className="text-sm text-gray-300">(no description)</span>
-                    <Button
-                      variant="tertiary"
-                      className="gap-2 w-max"
-                      onClick={() => setIsEditingDescription(true)}
-                    >
-                      <Edit className="text-gray-600" width={18} height={18} strokeWidth={2} />
-                      <span className="text-sm text-gray-600">Add description</span>
-                    </Button>
-                  </div>
-                )}
-              </div>
             </div>
-            <div className="flex flex-col gap-2 h-full">
-              <span className="text-sm font-medium text-gray-600">Resources</span>
-              {/* <FileSelection /> */}
+            <div className="flex flex-col gap-1 h-full">
+              {isEditingDescription ? (
+                <div className="flex flex-col gap-1">
+                  <Label className="text-sm font-semibold text-gray-600">Description</Label>
+                  <Textarea
+                    {...register('description')}
+                    id="description"
+                    data-testid="description"
+                    placeholder="Describe what can the tool do. E.g. search the web, analyse data, summarise content"
+                    className="bg-background min-h-22 border border-gray-300 rounded-lg p-2.5 text-sm text-gray-900 focus:outline-none resize-none"
+                  />
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm text-gray-300">(no description)</span>
+                  <Button
+                    variant="tertiary"
+                    className="gap-2 w-max"
+                    onClick={() => setIsEditingDescription(true)}
+                  >
+                    <Edit className="text-gray-600" width={18} height={18} strokeWidth={2} />
+                    <span className="text-sm text-gray-600">Add description</span>
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Agent Generation Chat */}
+          <div className="flex-1 min-h-0">
+            <AgentGenerationChat
+              onCodeGenerated={handleCodeGenerated}
+              currentCode={danaCode}
+              className="h-full"
+            />
+          </div>
         </div>
-        {/* Agent Configuration */}
-        <div className="flex flex-col w-[calc(100vw-380px)] h-full gap-2">
+
+        {/* Right side - Agent Configuration */}
+        <div className="flex flex-col flex-1 h-full gap-2">
           <div className="flex flex-col gap-2 h-full">
             <div className="flex flex-row gap-1 justify-between">
               <div className="flex flex-col gap-1">

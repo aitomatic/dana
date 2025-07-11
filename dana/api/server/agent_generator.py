@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.resource.llm.llm_configuration_manager import LLMConfigurationManager
 from dana.common.types import BaseRequest, BaseResponse
+from dana.core.lang.dana_sandbox import DanaSandbox
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +62,7 @@ class AgentGenerator:
             logger.error(f"Failed to initialize LLMResource: {e}")
             return False
     
-    async def generate_agent_code(self, messages: List[Dict[str, Any]], current_code: str = "") -> str:
+    async def generate_agent_code(self, messages: List[Dict[str, Any]], current_code: str = "") -> tuple[str, str | None]:
         """
         Generate Dana agent code from user conversation messages.
         
@@ -70,26 +71,26 @@ class AgentGenerator:
             current_code: Current Dana code to improve upon (default empty string)
             
         Returns:
-            Generated Dana code as string
+            Tuple of (Generated Dana code as string, error message or None)
         """
         # Check if mock mode is enabled
         if os.environ.get("DANA_MOCK_AGENT_GENERATION", "").lower() == "true":
             logger.info("Using mock agent generation mode")
-            return self._generate_mock_agent_code(messages, current_code)
+            return self._generate_mock_agent_code(messages, current_code), None
         
         try:
             # Check if LLM resource is available
             if self.llm_resource is None:
                 logger.warning("LLMResource is not available, using fallback template")
-                return self._get_fallback_template()
+                return self._get_fallback_template(), None
             
             # Check if LLM is properly initialized
             if not hasattr(self.llm_resource, '_is_available') or not self.llm_resource._is_available:
                 logger.warning("LLMResource is not available, using fallback template")
-                return self._get_fallback_template()
+                return self._get_fallback_template(), None
             
             # Extract user requirements and intentions using LLM
-            user_intentions = await self._extract_user_intentions(messages)
+            user_intentions = await self._extract_user_intentions(messages, current_code)
             logger.info(f"Extracted user intentions: {user_intentions[:100]}...")
             
             # Create prompt for LLM based on current code and new intentions
@@ -122,25 +123,32 @@ class AgentGenerator:
                 cleaned_code = self._clean_generated_code(generated_code)
                 logger.info(f"Cleaned code length: {len(cleaned_code)}")
                 
-                if cleaned_code:
-                    return cleaned_code
+                # FINAL FALLBACK: Ensure Dana code is returned
+                if cleaned_code and "agent " in cleaned_code:
+                    # Syntax check using DanaSandbox
+                    syntax_result = DanaSandbox.quick_eval(source_code=cleaned_code)
+                    if not syntax_result.success:
+                        logger.error(f"Dana code syntax error: {syntax_result.error}")
+                        return cleaned_code, str(syntax_result.error)
+                    return cleaned_code, None
                 else:
-                    logger.warning("Generated code is empty, using fallback template")
-                    return self._get_fallback_template()
+                    logger.warning("Generated code is empty or not Dana code, using fallback template")
+                    return self._get_fallback_template(), None
             else:
                 logger.error(f"LLM generation failed: {response.error}")
-                return self._get_fallback_template()
+                return self._get_fallback_template(), None
                 
         except Exception as e:
             logger.error(f"Error generating agent code: {e}")
-            return self._get_fallback_template()
+            return self._get_fallback_template(), str(e)
     
-    async def _extract_user_intentions(self, messages: List[Dict[str, Any]]) -> str:
+    async def _extract_user_intentions(self, messages: List[Dict[str, Any]], current_code: str = "") -> str:
         """
         Use LLM to extract user intentions from conversation messages.
         
         Args:
             messages: List of conversation messages
+            current_code: Current Dana code to provide context for intention extraction
             
         Returns:
             Extracted user intentions as string
@@ -149,8 +157,25 @@ class AgentGenerator:
             # Create a prompt to extract intentions
             conversation_text = "\n".join([f"{msg.get('role', '')}: {msg.get('content', '')}" for msg in messages])
             
-            intention_prompt = f"""
-Analyze the following conversation and extract the user's intentions for creating a Dana agent. Focus on:
+            if current_code:
+                intention_prompt = f"""
+Analyze the following conversation and the current Dana agent code to extract the user's intentions for improving or modifying the agent. Focus on:
+1. What changes or improvements they want to make
+2. What functionality they want to add or modify
+3. Any specific requirements or constraints
+4. How the current code should be enhanced
+
+Current Dana Agent Code:
+{current_code}
+
+Conversation:
+{conversation_text}
+
+Extract and summarize the user's intentions in a clear, concise way that can be used to improve the existing Dana agent code. Consider what aspects of the current code need to be changed or enhanced.
+"""
+            else:
+                intention_prompt = f"""
+Analyze the following conversation and extract the user's intentions for creating a new Dana agent. Focus on:
 1. What type of agent they want
 2. What functionality they need
 3. Any specific requirements or constraints
@@ -229,7 +254,7 @@ Current Dana Agent Code:
 
 Improve the Dana agent code to better match the user's intentions. You can:
 1. Modify the existing agent structure
-2. Add new resources if needed
+2. Add RAG resources ONLY if the user needs document/knowledge retrieval capabilities
 3. Update the solve function
 4. Change the agent name and description
 5. Keep the improvements focused and simple
@@ -239,19 +264,30 @@ Use this template structure:
 ```dana
 \"\"\"[Brief description of what the agent does].\"\"\"
 
-# Agent resources (if needed)
-[resource_name] = use("[resource_type]", [config])
+# Agent resources (ONLY if document/knowledge retrieval is needed)
+[resource_name] = use("rag", sources=[list_of_document_paths_or_urls])
 
 # Agent Card declaration
 agent [AgentName]:
     name : str = "[Descriptive Agent Name]"
     description : str = "[Brief description of what the agent does]"
-    resources : list = [resource_name]  # if resources are used
+    resources : list = [resource_name]  # only if RAG resources are used
 
 # Agent's problem solver
 def solve([agent_name] : [AgentName], problem : str):
-    return reason(f"[How to handle the problem]", resources=[agent_name].resources)
+    return reason(f"[How to handle the problem]", resources=[agent_name].resources if [agent_name].resources else None)
 ```
+
+Available resources:
+- RAG resource: use("rag", sources=[list_of_document_paths_or_urls]) - ONLY for document retrieval and knowledge base access
+
+IMPORTANT: Only use RAG resources if the user specifically needs:
+- Document processing or analysis
+- Knowledge base access
+- Information retrieval from files or web pages
+- Context-aware responses based on documents
+
+For simple agents that just answer questions or perform basic tasks, do NOT use any resources.
 
 Generate only the improved Dana code, no explanations or markdown formatting.
 """
@@ -266,7 +302,7 @@ User Intentions:
 Generate a simple Dana agent that:
 1. Has a descriptive name and description
 2. Uses the 'agent' keyword syntax (not system:agent_name)
-3. Includes appropriate resources if needed (mcp, web_search, etc.)
+3. Includes RAG resources ONLY if document/knowledge retrieval is needed
 4. Has a simple solve function that handles the user's requirements
 5. Uses proper Dana syntax and patterns
 6. Keeps it simple and focused
@@ -276,19 +312,30 @@ Use this template structure:
 ```dana
 \"\"\"[Brief description of what the agent does].\"\"\"
 
-# Agent resources (if needed)
-[resource_name] = use("[resource_type]", [config])
+# Agent resources (ONLY if document/knowledge retrieval is needed)
+[resource_name] = use("rag", sources=[list_of_document_paths_or_urls])
 
 # Agent Card declaration
 agent [AgentName]:
     name : str = "[Descriptive Agent Name]"
     description : str = "[Brief description of what the agent does]"
-    resources : list = [resource_name]  # if resources are used
+    resources : list = [resource_name]  # only if RAG resources are used
 
 # Agent's problem solver
 def solve([agent_name] : [AgentName], problem : str):
-    return reason(f"[How to handle the problem]", resources=[agent_name].resources)
+    return reason(f"[How to handle the problem]")
 ```
+
+Available resources:
+- RAG resource: use("rag", sources=[list_of_document_paths_or_urls]) - ONLY for document retrieval and knowledge base access
+
+IMPORTANT: Only use RAG resources if the user specifically needs:
+- Document processing or analysis
+- Knowledge base access
+- Information retrieval from files or web pages
+- Context-aware responses based on documents
+
+For simple agents that just answer questions or perform basic tasks, do NOT use any resources.
 
 Keep it simple and focused on the specific requirement. Generate only the Dana code, no explanations or markdown formatting.
 """
@@ -333,18 +380,19 @@ Keep it simple and focused on the specific requirement. Generate only the Dana c
         """
         return '''"""Basic Agent Template."""
 
-# Define components of Agent Card
-system:agent_name = "Basic Agent"
-system:agent_description = "A basic agent that can handle general queries."
+# Agent Card declaration
+agent BasicAgent:
+    name : str = "Basic Agent"
+    description : str = "A basic agent that can handle general queries."
 
-# Define solve function
-def solve(input_data: str) -> str:
+# Agent's problem solver
+def solve(basic_agent : BasicAgent, problem : str):
     """Solve a problem using reasoning."""
-    return reason(f"Help me to answer the question: {input_data}")
+    return reason(f"Help me to answer the question: {problem}")
 
 # Example usage
 example_input = "Hello, how can you help me?"
-print(solve(example_input))'''
+print(solve(BasicAgent(), example_input))'''
     
     async def cleanup(self):
         """Clean up resources."""
@@ -377,39 +425,18 @@ print(solve(example_input))'''
         
         # Simple keyword-based agent generation
         if "weather" in requirements_lower:
-            # Check for specific cities mentioned
-            cities = []
-            if "tokyo" in requirements_lower:
-                cities.append("Tokyo")
-            if "new york" in requirements_lower or "nyc" in requirements_lower:
-                cities.append("New York")
-            if "san francisco" in requirements_lower or "sf" in requirements_lower:
-                cities.append("San Francisco")
-            if "london" in requirements_lower:
-                cities.append("London")
-            if "paris" in requirements_lower:
-                cities.append("Paris")
-            
-            # If no specific cities mentioned, use a generic approach
-            if not cities:
-                cities = ["any city"]
-            
-            city_list = ", ".join(cities)
-            
-            return f'''"""Weather information agent for {city_list}."""
-
-# Agent resources
-web_search = use("web_search", {{"api_key": "env:WEB_SEARCH_API_KEY"}})
+            # Weather agents don't typically need RAG - they can use general knowledge
+            return f'''"""Weather information agent."""
 
 # Agent Card declaration
 agent WeatherAgent:
     name : str = "Weather Information Agent"
-    description : str = "Provides weather information and recommendations for {city_list}"
-    resources : list = [web_search]
+    description : str = "Provides weather information and recommendations"
+    resources : list = []
 
 # Agent's problem solver
 def solve(weather_agent : WeatherAgent, problem : str):
-    return reason(f"Get weather information for: {{problem}}", resources=weather_agent.resources)'''
+    return reason(f"Get weather information for: {{problem}}")'''
         
         elif "help" in requirements_lower or "assistant" in requirements_lower:
             return '''"""General assistant agent."""
@@ -425,56 +452,94 @@ def solve(assistant_agent : AssistantAgent, problem : str):
     return reason(f"I'm here to help! Let me assist you with: {{problem}}")'''
         
         elif "data" in requirements_lower or "analysis" in requirements_lower:
+            # Data analysis might need RAG for statistical methods and guides
             return '''"""Data analysis agent."""
 
-# Agent resources
-data_processor = use("data_processor", {"format": "json"})
+# Agent resources for data analysis knowledge
+data_knowledge = use("rag", sources=["data_analysis_guide.md", "statistical_methods.pdf"])
 
 # Agent Card declaration
 agent DataAgent:
     name : str = "Data Analysis Agent"
-    description : str = "Analyzes data and provides insights"
-    resources : list = [data_processor]
+    description : str = "Analyzes data and provides insights using knowledge base"
+    resources : list = [data_knowledge]
 
 # Agent's problem solver
 def solve(data_agent : DataAgent, problem : str):
     return reason(f"Analyze this data and provide insights: {{problem}}", resources=data_agent.resources)'''
         
         elif "email" in requirements_lower or "mail" in requirements_lower:
+            # Email assistance might need templates and guides
             return '''"""Email assistant agent."""
 
-# Agent resources
-email_client = use("email_client", {"provider": "gmail"})
+# Agent resources for email assistance
+email_knowledge = use("rag", sources=["email_templates.txt", "communication_guide.pdf"])
 
 # Agent Card declaration
 agent EmailAgent:
     name : str = "Email Assistant Agent"
     description : str = "Helps with email composition, analysis, and management"
-    resources : list = [email_client]
+    resources : list = [email_knowledge]
 
 # Agent's problem solver
 def solve(email_agent : EmailAgent, problem : str):
     return reason(f"Help me with email tasks: {{problem}}", resources=email_agent.resources)'''
         
         elif "calendar" in requirements_lower or "schedule" in requirements_lower:
+            # Calendar management might need scheduling guides
             return '''"""Calendar assistant agent."""
 
-# Agent resources
-calendar_client = use("calendar_client", {"provider": "google"})
+# Agent resources for calendar management
+calendar_knowledge = use("rag", sources=["scheduling_guide.md", "time_management.pdf"])
 
 # Agent Card declaration
 agent CalendarAgent:
     name : str = "Calendar Assistant Agent"
     description : str = "Helps with calendar management and scheduling"
-    resources : list = [calendar_client]
+    resources : list = [calendar_knowledge]
 
 # Agent's problem solver
 def solve(calendar_agent : CalendarAgent, problem : str):
     return reason(f"Help me with calendar tasks: {{problem}}", resources=calendar_agent.resources)'''
         
+        elif "document" in requirements_lower or "file" in requirements_lower or "pdf" in requirements_lower:
+            # Document processing definitely needs RAG
+            return '''"""Document processing agent."""
+
+# Agent resources for document processing
+document_knowledge = use("rag", sources=["document_processing_guide.md", "file_formats.pdf"])
+
+# Agent Card declaration
+agent DocumentAgent:
+    name : str = "Document Processing Agent"
+    description : str = "Processes and analyzes documents and files"
+    resources : list = [document_knowledge]
+
+# Agent's problem solver
+def solve(document_agent : DocumentAgent, problem : str):
+    return reason(f"Help me process this document: {{problem}}", resources=document_agent.resources)'''
+        
+        elif "knowledge" in requirements_lower or "research" in requirements_lower or "information" in requirements_lower:
+            # Knowledge/research agents need RAG
+            return '''"""Knowledge and research agent."""
+
+# Agent resources for knowledge base
+knowledge_base = use("rag", sources=["general_knowledge.txt", "research_database.pdf"])
+
+# Agent Card declaration
+agent KnowledgeAgent:
+    name : str = "Knowledge and Research Agent"
+    description : str = "Provides information and research capabilities using knowledge base"
+    resources : list = [knowledge_base]
+
+# Agent's problem solver
+def solve(knowledge_agent : KnowledgeAgent, problem : str):
+    return reason(f"Research and provide information about: {{problem}}", resources=knowledge_agent.resources)'''
+        
         else:
             # Generate a more intelligent fallback based on the conversation
             if "question" in requirements_lower or "answer" in requirements_lower:
+                # Simple Q&A doesn't need RAG
                 return '''"""Question answering agent."""
 
 # Agent Card declaration
@@ -487,7 +552,7 @@ agent QuestionAgent:
 def solve(question_agent : QuestionAgent, problem : str):
     return reason(f"Answer this question: {{problem}}")'''
             else:
-                # Default template with more context
+                # Default template without resources for simple tasks
                 return f'''"""Custom agent for your needs."""
 
 # Agent Card declaration
@@ -523,7 +588,7 @@ async def get_agent_generator() -> AgentGenerator:
     return _agent_generator
 
 
-async def generate_agent_code_from_messages(messages: List[Dict[str, Any]], current_code: str = "") -> str:
+async def generate_agent_code_from_messages(messages: List[Dict[str, Any]], current_code: str = "") -> tuple[str, str | None]:
     """
     Generate Dana agent code from user conversation messages.
     
@@ -532,7 +597,10 @@ async def generate_agent_code_from_messages(messages: List[Dict[str, Any]], curr
         current_code: Current Dana code to improve upon (default empty string)
         
     Returns:
-        Generated Dana code
+        Tuple of (Generated Dana code, error message or None)
     """
     generator = await get_agent_generator()
-    return await generator.generate_agent_code(messages, current_code) 
+    result = await generator.generate_agent_code(messages, current_code)
+    if isinstance(result, tuple):
+        return result  # (code, error)
+    return result, None 

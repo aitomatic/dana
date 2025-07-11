@@ -207,10 +207,11 @@ class TestAgentServices:
             assert data["dana_code"] is not None
             assert len(data["dana_code"]) > 0
             
-            # Check if it contains basic Dana structure
+            # Check if it contains basic Dana structure (new agent syntax)
             dana_code = data["dana_code"]
-            assert "system:agent_name" in dana_code
-            assert "system:agent_description" in dana_code
+            assert "agent " in dana_code
+            assert "name : str =" in dana_code
+            assert "description : str =" in dana_code
             assert "def solve" in dana_code
 
     def test_agent_generation_endpoint_mock_mode(self, client, monkeypatch):
@@ -303,4 +304,5 @@ def solve(basic_agent : BasicAgent, problem : str):
         dana_code = data["dana_code"]
         assert "Email Assistant Agent" in dana_code
         assert "agent EmailAgent:" in dana_code
-        assert "email_client" in dana_code
+        assert "email_knowledge" in dana_code
+        assert "use(\"rag\"" in dana_code

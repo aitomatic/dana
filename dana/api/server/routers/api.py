@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from .. import db, schemas, services
-from ..schemas import RunNAFileRequest, RunNAFileResponse, AgentGenerationRequest, AgentGenerationResponse
+from ..schemas import RunNAFileRequest, RunNAFileResponse, AgentGenerationRequest, AgentGenerationResponse, DanaSyntaxCheckRequest, DanaSyntaxCheckResponse
 from ..services import run_na_file_service
 from ..agent_generator import generate_agent_code_from_messages
+from dana.core.lang.dana_sandbox import DanaSandbox
 
 router = APIRouter(prefix="/agents", tags=["agents"])
 
@@ -51,7 +52,7 @@ async def generate_agent(request: AgentGenerationRequest):
         
         # Generate Dana code
         logger.info("Calling generate_agent_code_from_messages...")
-        dana_code = await generate_agent_code_from_messages(messages, request.current_code or "")
+        dana_code, syntax_error = await generate_agent_code_from_messages(messages, request.current_code or "")
         logger.info(f"Generated Dana code length: {len(dana_code)}")
         logger.debug(f"Generated Dana code: {dana_code[:500]}...")
         
@@ -88,10 +89,11 @@ async def generate_agent(request: AgentGenerationRequest):
                 logger.info(f"Extracted agent description (old format): {agent_description}")
         
         response = AgentGenerationResponse(
-            success=True,
+            success=(syntax_error is None),
             dana_code=dana_code,
             agent_name=agent_name,
-            agent_description=agent_description
+            agent_description=agent_description,
+            error=syntax_error
         )
         
         logger.info(f"Returning response with success={response.success}, code_length={len(response.dana_code)}")
@@ -104,3 +106,18 @@ async def generate_agent(request: AgentGenerationRequest):
             dana_code="",
             error=f"Failed to generate agent code: {str(e)}"
         )
+
+@router.post("/syntax-check", response_model=DanaSyntaxCheckResponse)
+def syntax_check(request: DanaSyntaxCheckRequest):
+    """
+    Check the syntax of Dana code using DanaSandbox.eval.
+    Returns success status and error message if any.
+    """
+    try:
+        result = DanaSandbox.quick_eval(request.dana_code)
+        if result.success:
+            return DanaSyntaxCheckResponse(success=True, output=result.output)
+        else:
+            return DanaSyntaxCheckResponse(success=False, error=str(result.error), output=result.output)
+    except Exception as e:
+        return DanaSyntaxCheckResponse(success=False, error=str(e))

@@ -437,7 +437,7 @@ class ChatService:
             # 4. Get agent response
             
             # Placeholder for agent execution
-            agent_response = await self._execute_agent(agent_id, user_message, context)
+            agent_response = await self._execute_agent(db, agent_id, user_message, context)
             
             # Create or get conversation
             if conversation_id is None:
@@ -493,17 +493,12 @@ class ChatService:
                 "error": str(e)
             }
     
-    async def _execute_agent(self, agent_id: int, message: str, context: dict[str, Any] | None = None) -> str:
+    async def _execute_agent(self, db: Session, agent_id: int, message: str, context: dict[str, Any] | None = None) -> str:
         """
         Execute agent with the given message and context
         
-        TODO: Implement actual agent execution logic
-        - Load agent configuration from database
-        - Initialize agent with Dana framework
-        - Execute agent with message and context
-        - Return agent response
-        
         Args:
+            db: Database session
             agent_id: ID of the agent
             message: User message
             context: Optional context
@@ -511,28 +506,70 @@ class ChatService:
         Returns:
             Agent response string
         """
-        # TODO: Replace with actual agent execution
-        # This is a placeholder implementation
-        print(f"Executing agent {agent_id} with message: '{message}' and context: '{context}'")
-        
-        dana_code = "knowledge = use(\"rag\", sources=[\"./uploads/agents/7\"]) \nquery = \"Hi\"\nresponse = reason(f\"Help me to answer the question: {query}\")"
-        # dana_code = "query = \"Hi\"\nresponse = reason(f\"Help me to answer the question: {query}\")"
-        question_pattern = r'query\s*=\s*"([^"]+)"'
-        
-        # Replace the entire query pattern with the new question
-        dana_code = re.sub(question_pattern, f'query = """{message}"""', dana_code)
-        print(f"Dana code: {dana_code}")
-        # Save dana code to file
-        # create a temp folder
-        temp_folder = Path("/tmp/dana_code")
-        temp_folder.mkdir(parents=True, exist_ok=True)
-        full_path = temp_folder / "dana_code.dana"
-        with open(full_path, "w") as f:
-            f.write(dana_code)
-        # Run dana code
-        # Mock response for now
-        sandbox_context = SandboxContext()
-        response = DanaSandbox.quick_run(file_path=full_path, context=sandbox_context)
-        print(f"Response: {response}")
-        print(f"Final context: {sandbox_context}")
-        return response.result
+        try:
+            # Load agent from database
+            agent = db.query(models.Agent).filter(models.Agent.id == agent_id).first()
+            if not agent:
+                raise ValueError(f"Agent {agent_id} not found")
+            
+            # Get Dana code from agent configuration
+            dana_code = agent.config.get("dana_code", "")
+            if not dana_code:
+                raise ValueError(f"Agent {agent_id} has no Dana code configured")
+            
+            print(f"Executing agent {agent_id} ({agent.name}) with message: '{message}'")
+            print(f"Using Dana code: {dana_code[:200]}...")
+            
+            # Parse agent name from Dana code
+            agent_name_match = re.search(r'^\s*agent\s+([A-Za-z_][A-Za-z0-9_]*)\s*:', dana_code, re.MULTILINE)
+            if not agent_name_match:
+                raise ValueError("Could not find agent name in Dana code.")
+            agent_name = agent_name_match.group(1)
+            instance_var = agent_name[0].lower() + agent_name[1:]  # e.g., WeatherAgent -> weatherAgent
+            # Append code to instantiate and solve using method call
+            appended_code = f"\n{instance_var} = {agent_name}()\nresponse = {instance_var}.solve(\"{message.replace('\\', '\\\\').replace('"', '\\"')}\")\nprint(response)\n"
+            dana_code_to_run = dana_code + appended_code
+            
+            # Create a temporary file for the Dana code
+            temp_folder = Path("/tmp/dana_code")
+            temp_folder.mkdir(parents=True, exist_ok=True)
+            full_path = temp_folder / f"agent_{agent_id}_code.na"
+
+            print(f"Dana code to run: {dana_code_to_run}")
+            
+            # Write the Dana code to the temporary file
+            with open(full_path, "w") as f:
+                f.write(dana_code_to_run)
+            
+            # Execute the Dana code using DanaSandbox
+            sandbox_context = SandboxContext()
+            
+            # If the agent has selected knowledge (documents), add them to the context
+            selected_knowledge = agent.config.get("selectedKnowledge", {})
+            if selected_knowledge and "documents" in selected_knowledge:
+                # Add document paths to the context if needed
+                print(f"Agent has {len(selected_knowledge['documents'])} selected documents")
+            
+            DanaSandbox.quick_run(file_path=full_path, context=sandbox_context)
+
+            print("--------------------------------")
+            print(sandbox_context.get_state())
+
+            state = sandbox_context.get_state()
+            response_text = state.get("local", { }).get("response", "")
+
+
+            return response_text
+            # if response.success:
+            #     # print(f"Agent execution successful: {response.result}")
+            #     # return str(response.result)
+            #     return response
+            # else:
+            #     error_msg = f"Agent execution failed: {response.error}"
+            #     print(error_msg)
+            #     return error_msg
+                
+        except Exception as e:
+            error_msg = f"Error executing agent {agent_id}: {str(e)}"
+            print(error_msg)
+            return error_msg

@@ -91,7 +91,7 @@ export const AgentEditor = ({
   value,
   onChange,
   placeholder,
-  enableValidation = true,
+  enableValidation = false,
   onValidationChange,
   onSave,
   readOnly = false,
@@ -853,9 +853,8 @@ export const AgentEditor = ({
       {/* Validation Panel */}
       {enableValidation && !validation.isValid && (
         <div
-          className={`px-4 py-3 border-b ${
-            isDark ? 'bg-[#0c111d] border-gray-700 text-white' : 'bg-gray-50 border-gray-200'
-          }`}
+          className={`px-4 py-3 border-b ${isDark ? 'bg-[#0c111d] border-gray-700 text-white' : 'bg-gray-50 border-gray-200'
+            }`}
         >
           <div className="flex gap-2 items-center mb-2">
             <IconAlertTriangle
@@ -873,9 +872,8 @@ export const AgentEditor = ({
                 <span className={`text-sm ${isDark ? 'text-white' : 'text-gray-600'}`}>
                   Missing or empty{' '}
                   <code
-                    className={`px-1 py-0.5 rounded text-xs ${
-                      isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-200 text-gray-800'
-                    }`}
+                    className={`px-1 py-0.5 rounded text-xs ${isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-200 text-gray-800'
+                      }`}
                   >
                     query = "..."
                   </code>
@@ -888,9 +886,8 @@ export const AgentEditor = ({
                 <span className={`text-sm ${isDark ? 'text-white' : 'text-gray-600'}`}>
                   Missing or empty{' '}
                   <code
-                    className={`px-1 py-0.5 rounded text-xs ${
-                      isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-200 text-gray-800'
-                    }`}
+                    className={`px-1 py-0.5 rounded text-xs ${isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-200 text-gray-800'
+                      }`}
                   >
                     response = "..."
                   </code>

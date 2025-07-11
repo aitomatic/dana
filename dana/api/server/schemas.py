@@ -156,3 +156,15 @@ class AgentGenerationResponse(BaseModel):
     agent_name: str | None = None
     agent_description: str | None = None
     error: str | None = None
+
+
+class DanaSyntaxCheckRequest(BaseModel):
+    """Request schema for Dana code syntax check endpoint"""
+    dana_code: str
+
+
+class DanaSyntaxCheckResponse(BaseModel):
+    """Response schema for Dana code syntax check endpoint"""
+    success: bool
+    error: str | None = None
+    output: str | None = None
