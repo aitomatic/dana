@@ -168,3 +168,64 @@ class DanaSyntaxCheckResponse(BaseModel):
     success: bool
     error: str | None = None
     output: str | None = None
+
+
+# Code Validation schemas
+class CodeError(BaseModel):
+    """Schema for a code error"""
+    line: int
+    column: int
+    message: str
+    severity: str  # 'error' or 'warning'
+    code: str
+
+
+class CodeWarning(BaseModel):
+    """Schema for a code warning"""
+    line: int
+    column: int
+    message: str
+    suggestion: str
+
+
+class CodeSuggestion(BaseModel):
+    """Schema for a code suggestion"""
+    type: str  # 'syntax', 'best_practice', 'performance', 'security'
+    message: str
+    code: str
+    description: str
+
+
+class CodeValidationRequest(BaseModel):
+    """Request schema for code validation endpoint"""
+    code: str
+    agent_name: str | None = None
+    description: str | None = None
+
+
+class CodeValidationResponse(BaseModel):
+    """Response schema for code validation endpoint"""
+    success: bool
+    is_valid: bool
+    errors: list[CodeError] = []
+    warnings: list[CodeWarning] = []
+    suggestions: list[CodeSuggestion] = []
+    fixed_code: str | None = None
+    error: str | None = None
+
+
+class CodeFixRequest(BaseModel):
+    """Request schema for code auto-fix endpoint"""
+    code: str
+    errors: list[CodeError]
+    agent_name: str | None = None
+    description: str | None = None
+
+
+class CodeFixResponse(BaseModel):
+    """Response schema for code auto-fix endpoint"""
+    success: bool
+    fixed_code: str
+    applied_fixes: list[str] = []
+    remaining_errors: list[CodeError] = []
+    error: str | None = None

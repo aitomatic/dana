@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAgentStore } from '@/stores/agent-store';
 import type { AgentSteps, DanaAgentForm, AgentCreate } from '@/types/agent';
+import { DEFAULT_DANA_AGENT_CODE } from '@/constants/dana-code';
 
 const getRandomAvatar = () => {
   const avatarNumbers = Array.from({ length: 20 }, (_, i) => i + 1);
@@ -20,7 +21,7 @@ export function useDanaAgentForm() {
       description: '',
       avatar: getRandomAvatar(),
       general_agent_config: {
-        dana_code: 'query = \"Hi\"\n\nresponse = reason(f\"Help me to answer the question: {query}\")',
+        dana_code: DEFAULT_DANA_AGENT_CODE,
       },
       selectedKnowledge: {
         topics: [],

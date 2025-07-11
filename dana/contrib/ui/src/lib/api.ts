@@ -103,6 +103,60 @@ export interface AgentGenerationResponse {
   error?: string;
 }
 
+// Code Validation Types
+export interface CodeValidationRequest {
+  code: string;
+  agent_name?: string;
+  description?: string;
+}
+
+export interface CodeValidationResponse {
+  success: boolean;
+  is_valid: boolean;
+  errors: CodeError[];
+  warnings: CodeWarning[];
+  suggestions: CodeSuggestion[];
+  fixed_code?: string;
+  error?: string;
+}
+
+export interface CodeError {
+  line: number;
+  column: number;
+  message: string;
+  severity: 'error' | 'warning';
+  code: string;
+}
+
+export interface CodeWarning {
+  line: number;
+  column: number;
+  message: string;
+  suggestion: string;
+}
+
+export interface CodeSuggestion {
+  type: 'syntax' | 'best_practice' | 'performance' | 'security';
+  message: string;
+  code: string;
+  description: string;
+}
+
+export interface CodeFixRequest {
+  code: string;
+  errors: CodeError[];
+  agent_name?: string;
+  description?: string;
+}
+
+export interface CodeFixResponse {
+  success: boolean;
+  fixed_code: string;
+  applied_fixes: string[];
+  remaining_errors: CodeError[];
+  error?: string;
+}
+
 // API Service Class
 class ApiService {
   private client: AxiosInstance;
@@ -295,14 +349,18 @@ class ApiService {
     if (agentId) params.append('agent_id', agentId.toString());
 
     console.log('Fetching conversations for agent:', agentId);
-    const response = await this.client.get<ConversationRead[]>(`/conversations/?${params.toString()}`);
+    const response = await this.client.get<ConversationRead[]>(
+      `/conversations/?${params.toString()}`,
+    );
     console.log('Conversations response:', response.data);
     return response.data;
   }
 
   async getConversation(conversationId: number): Promise<ConversationWithMessages> {
     console.log('Fetching conversation:', conversationId);
-    const response = await this.client.get<ConversationWithMessages>(`/conversations/${conversationId}`);
+    const response = await this.client.get<ConversationWithMessages>(
+      `/conversations/${conversationId}`,
+    );
     console.log('Conversation response:', response.data);
     return response.data;
   }
@@ -312,13 +370,32 @@ class ApiService {
     return response.data;
   }
 
-  async updateConversation(conversationId: number, conversation: ConversationCreate): Promise<ConversationRead> {
-    const response = await this.client.put<ConversationRead>(`/conversations/${conversationId}`, conversation);
+  async updateConversation(
+    conversationId: number,
+    conversation: ConversationCreate,
+  ): Promise<ConversationRead> {
+    const response = await this.client.put<ConversationRead>(
+      `/conversations/${conversationId}`,
+      conversation,
+    );
     return response.data;
   }
 
   async deleteConversation(conversationId: number): Promise<{ message: string }> {
-    const response = await this.client.delete<{ message: string }>(`/conversations/${conversationId}`);
+    const response = await this.client.delete<{ message: string }>(
+      `/conversations/${conversationId}`,
+    );
+    return response.data;
+  }
+
+  // Code Validation API Methods
+  async validateCode(request: CodeValidationRequest): Promise<CodeValidationResponse> {
+    const response = await this.client.post<CodeValidationResponse>('/agents/validate', request);
+    return response.data;
+  }
+
+  async fixCode(request: CodeFixRequest): Promise<CodeFixResponse> {
+    const response = await this.client.post<CodeFixResponse>('/agents/fix', request);
     return response.data;
   }
 

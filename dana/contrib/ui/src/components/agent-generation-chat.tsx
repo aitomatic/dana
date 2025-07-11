@@ -18,14 +18,21 @@ interface AgentGenerationChatProps {
   onCodeGenerated: (code: string, name?: string, description?: string) => void;
   currentCode?: string;
   className?: string;
+  onGenerationStart?: () => void;
 }
 
-const AgentGenerationChat = ({ onCodeGenerated, currentCode, className }: AgentGenerationChatProps) => {
+const AgentGenerationChat = ({
+  onCodeGenerated,
+  currentCode,
+  className,
+  onGenerationStart,
+}: AgentGenerationChatProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
       role: 'assistant',
-      content: "Hi! I'm here to help you create a Dana agent. Tell me what kind of agent you'd like to build, and I'll generate the code for you. You can describe the agent's purpose, capabilities, or any specific requirements you have.",
+      content:
+        "Hi! I'm here to help you create a Dana agent. Tell me what kind of agent you'd like to build, and I'll generate the code for you. You can describe the agent's purpose, capabilities, or any specific requirements you have.",
       timestamp: new Date(),
     },
   ]);
@@ -56,15 +63,20 @@ const AgentGenerationChat = ({ onCodeGenerated, currentCode, className }: AgentG
     };
 
     // Add user message immediately
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInputMessage('');
     setIsGenerating(true);
+
+    // Notify parent that generation is starting
+    if (onGenerationStart) {
+      onGenerationStart();
+    }
 
     try {
       // Convert messages to API format
       const apiMessages: MessageData[] = messages
-        .filter(msg => msg.role === 'user' || msg.role === 'assistant')
-        .map(msg => ({
+        .filter((msg) => msg.role === 'user' || msg.role === 'assistant')
+        .map((msg) => ({
           role: msg.role,
           content: msg.content,
         }));
@@ -90,7 +102,7 @@ const AgentGenerationChat = ({ onCodeGenerated, currentCode, className }: AgentG
           timestamp: new Date(),
         };
 
-        setMessages(prev => [...prev, assistantMessage]);
+        setMessages((prev) => [...prev, assistantMessage]);
 
         // Call the callback to update the editor
         onCodeGenerated(response.dana_code, response.agent_name, response.agent_description);
@@ -110,24 +122,29 @@ const AgentGenerationChat = ({ onCodeGenerated, currentCode, className }: AgentG
         timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
       toast.error('Failed to generate agent code. Please try again.');
     } finally {
       setIsGenerating(false);
     }
   }, [inputMessage, isGenerating, messages, currentCode, onCodeGenerated]);
 
-  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  }, [handleSendMessage]);
+  const handleKeyPress = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSendMessage();
+      }
+    },
+    [handleSendMessage],
+  );
 
   const canSend = inputMessage.trim().length > 0 && !isGenerating;
 
   return (
-    <div className={cn('flex flex-col h-full bg-white border border-gray-200 rounded-lg', className)}>
+    <div
+      className={cn('flex flex-col h-full bg-white border border-gray-200 rounded-lg', className)}
+    >
       {/* Header */}
       <div className="flex items-center gap-2 p-4 border-b border-gray-200">
         <Sparkles className="w-5 h-5 text-blue-600" />
@@ -139,24 +156,21 @@ const AgentGenerationChat = ({ onCodeGenerated, currentCode, className }: AgentG
         {messages.map((message) => (
           <div
             key={message.id}
-            className={cn(
-              'flex gap-3',
-              message.role === 'user' ? 'justify-end' : 'justify-start'
-            )}
+            className={cn('flex gap-3', message.role === 'user' ? 'justify-end' : 'justify-start')}
           >
             <div
               className={cn(
                 'max-w-[80%] rounded-lg px-4 py-2',
-                message.role === 'user'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-900'
+                message.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-900',
               )}
             >
               <div className="whitespace-pre-wrap text-sm">{message.content}</div>
-              <div className={cn(
-                'text-xs mt-1',
-                message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
-              )}>
+              <div
+                className={cn(
+                  'text-xs mt-1',
+                  message.role === 'user' ? 'text-blue-100' : 'text-gray-500',
+                )}
+              >
                 {message.timestamp.toLocaleTimeString()}
               </div>
             </div>
@@ -207,4 +221,4 @@ const AgentGenerationChat = ({ onCodeGenerated, currentCode, className }: AgentG
   );
 };
 
-export default AgentGenerationChat; 
+export default AgentGenerationChat;

@@ -7,29 +7,7 @@ import { AgentEditor } from '@/components/agent-editor';
 import { CloudUpload } from 'iconoir-react';
 import { useState } from 'react';
 import AgentGenerationChat from '@/components/agent-generation-chat';
-
-const placeholder = `e.g.
-
-# Create the complete AI-powered analysis pipeline
-
-def create_action_plan(ai_analysis):
-      # Convert AI insights into actionable recommendations
-      prompt = "Based on this analysis, create an action plan: " + ai_analysis
-      return reason(prompt, {
-        "temperature": 0.5,
-        "format": "structured"
-      })
-
-# Create the complete AI-powered analysis pipeline
-business_intelligence_pipeline = extract_metrics | format_business_summary | analyze_with_ai | create_action_plan
-
-# Example usage with sample data
-sample_data = {
-    "sales": [1200, 1500, 980, 2100, 1800],
-    "ratings": [4.2, 4.5, 3.8, 4.7, 4.1],
-    "products": ["Widget A", "Widget B", "Widget C", "Widget D", "Widget E"],
-    "period": "Q1 2024"
-}`;
+import { DEFAULT_DANA_AGENT_CODE, DANA_AGENT_PLACEHOLDER } from '@/constants/dana-code';
 
 export function GeneralAgentPage({
   form,
@@ -51,12 +29,13 @@ export function GeneralAgentPage({
   isCreating: boolean;
 }) {
   const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
 
   const { register, setValue, formState } = form;
   const isDisabled = !formState.isValid || isCreating;
 
   const avatar = watch('avatar');
-  const danaCode = watch('general_agent_config.dana_code', 'query = \"Hi\"\n\nresponse = reason(f\"Help me to answer the question: {query}\")');
+  const danaCode = watch('general_agent_config.dana_code', DEFAULT_DANA_AGENT_CODE);
 
   const handleCodeGenerated = (code: string, name?: string, description?: string) => {
     // Update the Dana code in the form
@@ -73,6 +52,10 @@ export function GeneralAgentPage({
     }
   };
 
+  const handleGenerationStart = () => {
+    setIsGeneratingCode(true);
+  };
+
   return (
     <div
       className={cn(
@@ -80,7 +63,7 @@ export function GeneralAgentPage({
         isDragOver && 'opacity-50',
       )}
     >
-      <div className="flex flex-row gap-4 h-full px-6 pt-4">
+      <div className="flex flex-row gap-4 px-6 pt-4 h-full">
         {/* Left side - Agent Info and Chat */}
         <div className="flex flex-col w-[400px] gap-4">
           {/* Agent Info Card */}
@@ -133,12 +116,13 @@ export function GeneralAgentPage({
               onCodeGenerated={handleCodeGenerated}
               currentCode={danaCode}
               className="h-full"
+              onGenerationStart={handleGenerationStart}
             />
           </div>
         </div>
 
         {/* Right side - Agent Configuration */}
-        <div className="flex flex-col flex-1 h-full gap-2">
+        <div className="flex flex-col flex-1 gap-2 h-full">
           <div className="flex flex-col gap-2 h-full">
             <div className="flex flex-row gap-1 justify-between">
               <div className="flex flex-col gap-1">
@@ -169,22 +153,21 @@ export function GeneralAgentPage({
 
             <div className="flex-1 min-h-0">
               <AgentEditor
-                value={
-                  danaCode ??
-                  'query="User query" \n response = reason(f"Help me to answer the question: {query}")'
-                }
+                value={danaCode ?? DEFAULT_DANA_AGENT_CODE}
                 onChange={(value) => {
                   setValue('general_agent_config.dana_code', value);
                 }}
-                placeholder={placeholder}
-                onSave={() => { }}
+                placeholder={DANA_AGENT_PLACEHOLDER}
+                onSave={() => {}}
+                enableAnimation={true}
+                animationSpeed={25}
               />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex justify-end gap-4 px-6 py-4 border-t bg-white">
+      <div className="flex gap-4 justify-end px-6 py-4 bg-white border-t">
         <Button size="lg" disabled={isDisabled} className="gap-2 w-max" onClick={onCreateAgent}>
           {isCreating ? 'Creating Agent...' : 'Create Agent'}
         </Button>

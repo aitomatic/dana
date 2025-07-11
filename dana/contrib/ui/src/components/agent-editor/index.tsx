@@ -1,7 +1,14 @@
 import { Editor, useMonaco } from '@monaco-editor/react';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import type { editor } from 'monaco-editor';
 import { IconAlertTriangle, IconX } from '@tabler/icons-react';
+import { CodeValidationPopup } from '@/components/code-validation-popup';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { apiService } from '@/lib/api';
+import type { CodeValidationResponse } from '@/lib/api';
 
 // Define the correct theme type to match Monaco's requirements
 type BuiltinTheme = 'vs' | 'vs-dark' | 'hc-black' | 'hc-light';
@@ -95,6 +102,9 @@ export const AgentEditor = ({
   onValidationChange,
   onSave,
   readOnly = false,
+  enableAnimation = false,
+  animationSpeed = 30,
+  className,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -103,9 +113,19 @@ export const AgentEditor = ({
   onValidationChange?: (validation: ValidationResult) => void;
   onSave?: () => void;
   readOnly?: boolean;
+  enableAnimation?: boolean;
+  animationSpeed?: number;
+  className?: string;
 }) => {
   const monaco = useMonaco();
   const isDark = false;
+
+  // Animation state
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [animationTarget, setAnimationTarget] = useState('');
+  const previousValueRef = useRef(value);
+  const editorRef = useRef<any>(null);
+  const animationIntervalRef = useRef<number | null>(null);
 
   // Validation function
   const validateContent = useCallback(
@@ -177,6 +197,64 @@ export const AgentEditor = ({
       onValidationChange(validation);
     }
   }, [validation, onValidationChange]);
+
+  // Animation logic - simplified approach
+  useEffect(() => {
+    if (!enableAnimation) return;
+
+    // Wait for editor to be properly initialized
+    if (!editorRef.current) return;
+
+    // Check if this is a new code generation (significant change from previous value)
+    const isNewGeneration =
+      value !== previousValueRef.current && value.length > previousValueRef.current.length + 30;
+
+    if (isNewGeneration && !isAnimating) {
+      setIsAnimating(true);
+      setAnimationTarget(value);
+      previousValueRef.current = value;
+
+      // Start smooth animation
+      const speed = animationSpeed || 30;
+      const delay = 1000 / speed;
+      let currentIndex = 0;
+
+      const animate = () => {
+        if (currentIndex < value.length && isAnimating && editorRef.current) {
+          const newText = value.slice(0, currentIndex + 1);
+
+          // Update editor content smoothly
+          const model = editorRef.current.getModel();
+          if (model) {
+            model.setValue(newText);
+          }
+
+          currentIndex++;
+          animationIntervalRef.current = setTimeout(animate, delay);
+        } else {
+          setIsAnimating(false);
+          setAnimationTarget('');
+          if (animationIntervalRef.current) {
+            clearTimeout(animationIntervalRef.current);
+            animationIntervalRef.current = null;
+          }
+        }
+      };
+
+      animationIntervalRef.current = setTimeout(animate, 100);
+    } else if (value !== previousValueRef.current) {
+      previousValueRef.current = value;
+    }
+  }, [value, enableAnimation, isAnimating, animationSpeed]);
+
+  // Cleanup animation on unmount
+  useEffect(() => {
+    return () => {
+      if (animationIntervalRef.current) {
+        clearTimeout(animationIntervalRef.current);
+      }
+    };
+  }, []);
 
   // Theme definitions moved to useEffect for better organization
   useEffect(() => {
@@ -352,6 +430,15 @@ export const AgentEditor = ({
 
   const handleEditorDidMount = useCallback(
     (editor: any, monaco: any) => {
+      // Store editor reference
+      editorRef.current = editor;
+
+      // Ensure Monaco is available
+      if (!monaco) {
+        console.warn('Monaco instance not available');
+        return;
+      }
+
       // Skip interactive features if readOnly
       if (readOnly) {
         // Set enhanced editor options for read-only mode
@@ -848,13 +935,40 @@ export const AgentEditor = ({
     readOnly: readOnly,
   };
 
+  const [isValidationOpen, setIsValidationOpen] = useState(false);
+  const [validationResult, setValidationResult] = useState<CodeValidationResponse | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
+
+  const handleValidate = async () => {
+    setIsValidating(true);
+    try {
+      const result = await apiService.validateCode({
+        code: value,
+        agent_name: 'Custom Agent',
+        description: 'Agent created via UI',
+      });
+      if (result.is_valid) {
+        toast.success('Code is valid!');
+        setValidationResult(null);
+      } else {
+        setValidationResult(result);
+        setIsValidationOpen(true);
+      }
+    } catch (error) {
+      toast.error('Failed to validate code');
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
   return (
-    <div className="flex overflow-hidden flex-col w-full h-full rounded-lg border border-gray-200 shadow-sm">
+    <div className={cn('flex flex-col h-full w-full', className)}>
       {/* Validation Panel */}
       {enableValidation && !validation.isValid && (
         <div
-          className={`px-4 py-3 border-b ${isDark ? 'bg-[#0c111d] border-gray-700 text-white' : 'bg-gray-50 border-gray-200'
-            }`}
+          className={`px-4 py-3 border-b ${
+            isDark ? 'bg-[#0c111d] border-gray-700 text-white' : 'bg-gray-50 border-gray-200'
+          }`}
         >
           <div className="flex gap-2 items-center mb-2">
             <IconAlertTriangle
@@ -872,8 +986,9 @@ export const AgentEditor = ({
                 <span className={`text-sm ${isDark ? 'text-white' : 'text-gray-600'}`}>
                   Missing or empty{' '}
                   <code
-                    className={`px-1 py-0.5 rounded text-xs ${isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-200 text-gray-800'
-                      }`}
+                    className={`px-1 py-0.5 rounded text-xs ${
+                      isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-200 text-gray-800'
+                    }`}
                   >
                     query = "..."
                   </code>
@@ -886,8 +1001,9 @@ export const AgentEditor = ({
                 <span className={`text-sm ${isDark ? 'text-white' : 'text-gray-600'}`}>
                   Missing or empty{' '}
                   <code
-                    className={`px-1 py-0.5 rounded text-xs ${isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-200 text-gray-800'
-                      }`}
+                    className={`px-1 py-0.5 rounded text-xs ${
+                      isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-200 text-gray-800'
+                    }`}
                   >
                     response = "..."
                   </code>
@@ -899,7 +1015,7 @@ export const AgentEditor = ({
       )}
 
       {/* Editor */}
-      <div className="flex-1 min-h-0">
+      <div className="relative flex-1 min-h-0">
         <Editor
           height="100%"
           defaultLanguage="na"
@@ -910,7 +1026,42 @@ export const AgentEditor = ({
           width="100%"
           options={editorOptions}
         />
+        {isAnimating && (
+          <div className="flex absolute top-4 right-4 z-10 gap-2 items-center px-3 py-1 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium text-blue-700">Generating...</span>
+            <div className="flex gap-1">
+              <div
+                className="w-1 h-1 bg-blue-600 rounded-full animate-bounce"
+                style={{ animationDelay: '0ms' }}
+              ></div>
+              <div
+                className="w-1 h-1 bg-blue-600 rounded-full animate-bounce"
+                style={{ animationDelay: '150ms' }}
+              ></div>
+              <div
+                className="w-1 h-1 bg-blue-600 rounded-full animate-bounce"
+                style={{ animationDelay: '300ms' }}
+              ></div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Code Validation */}
+      <div className="flex justify-end mt-4">
+        <Button variant="outline" size="sm" onClick={handleValidate} disabled={isValidating}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          {isValidating ? 'Validating...' : 'Validate Code'}
+        </Button>
+      </div>
+      <CodeValidationPopup
+        code={value}
+        onCodeChange={onChange}
+        isOpen={isValidationOpen}
+        onClose={() => setIsValidationOpen(false)}
+        validationResult={validationResult}
+      />
     </div>
   );
 };
