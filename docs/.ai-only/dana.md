@@ -132,7 +132,7 @@ user.email = "new_email@example.com"  # Structs are mutable
 
 ## Function Composition & Pipelines
 
-Dana's pipeline system enables powerful data transformation workflows:
+Dana's enhanced pipeline system enables powerful data transformation workflows with both sequential and parallel execution:
 
 ### Pipeline Functions
 ```dana
@@ -145,27 +145,68 @@ def double(x):
 
 def stringify(x):
     return f"Result: {x}"
+
+def analyze(x):
+    return {"value": x, "is_even": x % 2 == 0}
+
+def format(x):
+    return f"Formatted: {x}"
 ```
 
-### Function Composition
+### Enhanced Function Composition
 ```dana
-# Function composition (creates reusable pipeline)
+# Sequential composition (creates reusable pipeline)
 math_pipeline = add_ten | double | stringify
 result = math_pipeline(5)  # "Result: 30"
 
-# Data pipeline (immediate execution)
-result = 5 | add_ten | double | stringify  # "Result: 30"
-result = 7 | add_ten | double              # 34
+# Standalone parallel composition
+parallel_pipeline = [analyze, format]
+result = parallel_pipeline(10)  # [{"value": 10, "is_even": true}, "Formatted: 10"]
 
-# Complex data processing
-person_builder = create_person | set_age_25 | add_skills
-alice = "Alice" | person_builder
+# Mixed sequential + parallel
+mixed_pipeline = add_ten | [analyze, format] | stringify
+result = mixed_pipeline(5)  # "Result: [{"value": 15, "is_even": false}, "Formatted: 15"]"
+
+# Complex multi-stage pipeline
+workflow = add_ten | [analyze, double] | format | [stringify, analyze]
+result = workflow(5)  # [{"value": 30, "is_even": true}, {"value": 30, "is_even": true}]
+```
+
+### Reusable Pipeline Objects
+```dana
+# Create reusable pipeline
+data_processor = add_ten | [analyze, format]
+
+# Apply to different datasets
+result1 = data_processor(5)   # [{"value": 15, "is_even": false}, "Formatted: 15"]
+result2 = data_processor(10)  # [{"value": 20, "is_even": true}, "Formatted: 20"]
+result3 = data_processor(15)  # [{"value": 25, "is_even": false}, "Formatted: 25"]
+```
+
+### Error Handling and Validation
+```dana
+# Missing function error
+pipeline = add_ten | non_existent_function  # ❌ Error: "Function 'non_existent_function' not found"
+
+# Non-function composition error  
+pipeline = add_ten | 42  # ❌ Error: "Cannot use non-function 42 of type int in pipe composition"
+
+# Clear error messages help with debugging
+pipeline = func1 | not_a_function  # ❌ Error: "not_a_function is not callable"
 ```
 
 **Pipeline Operators:**
-- `|` - Pipe operator for data flow
-- Supports both function composition (reusable) and immediate execution
+- `|` - Pipe operator for sequential function composition
+- `[func1, func2]` - List syntax for parallel function execution
+- Supports both sequential and parallel composition in clean two-statement approach
 - Left-to-right data flow similar to Unix pipes
+- **Function-only validation**: Only callable functions allowed in composition chains
+
+**Design Philosophy:**
+- **Clean Two-Statement Approach**: Separate function composition from data application
+- **No Mixed Patterns**: All `data | function` patterns removed for clarity
+- **Parallel-Ready**: Sequential execution with parallel-ready architecture
+- **Comprehensive Validation**: Clear error messages for invalid usage
 
 ## Module System
 

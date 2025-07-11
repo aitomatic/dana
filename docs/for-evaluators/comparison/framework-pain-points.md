@@ -232,17 +232,17 @@ Dana Solution:
 ```dana
 # Native function composition with pipe operator
 def extract_metrics(data):
- return {"sales": sum(data["sales"]), "avg_rating": avg(data["ratings"])}
+    return {"sales": sum(data["sales"]), "avg_rating": avg(data["ratings"])}
 
 def analyze_with_ai(metrics):
- return reason("Analyze these business metrics", {"data": metrics})
+    return reason("Analyze these business metrics", {"data": metrics})
 
 def create_report(analysis):
- return f"Business Report: {analysis}"
+    return f"Business Report: {analysis}"
 
-# Compose naturally
+# Compose naturally using clean two-statement approach
 business_pipeline = extract_metrics | analyze_with_ai | create_report
-report = sales_data | business_pipeline
+report = business_pipeline(sales_data)
 ```
 
 **Benefit**: Gives users the function composition they want while adding AI-native capabilities.
@@ -376,9 +376,9 @@ from langgraph import StateGraph
 
 **Dana Approach**:
 ```dana
-# Simple pipeline composition
+# Simple pipeline composition using clean two-statement approach
 workflow = extract_data | validate_data | process_with_ai | send_results
-result = input_data | workflow
+result = workflow(input_data)
 ```
 
 ---
@@ -435,9 +435,9 @@ def classify_emotion(text):
 
 ### From LlamaIndex to Dana
 ```dana
-# LlamaIndex RAG becomes simple composition
+# LlamaIndex RAG becomes simple composition using clean two-statement approach
 knowledge_pipeline = load_documents | search_relevant | reason_with_context
-answer = user_question | knowledge_pipeline
+answer = knowledge_pipeline(user_question)
 ```
 
 ---
