@@ -47,21 +47,18 @@ def _copy_selected_documents_to_agent_folder(db: Session, agent_id: Any, documen
         try:
             # Get source file path
             source_path = Path(f"./uploads/{document.file_path}")
-            
             if not source_path.exists():
                 logger.warning(f"Source file not found: {source_path}")
                 continue
             
             # Create destination path in agent folder
             dest_path = agent_folder / document.filename
-            
             # Copy file to agent folder
             shutil.copy2(str(source_path), str(dest_path))
             
             # Update document record to point to agent folder
             document.file_path = f"agents/{agent_id}/{document.filename}"
             document.agent_id = int(agent_id)
-            
             logger.info(f"Copied document {document.id} to agent folder: {dest_path}")
             copied_count += 1
             
@@ -90,11 +87,11 @@ def create_agent(db: Session, agent: schemas.AgentCreate):
     # Handle selected knowledge (files and topics)
     if agent.config and 'selectedKnowledge' in agent.config:
         selected_knowledge = agent.config['selectedKnowledge']
-        
         logger.info(f"Processing selected knowledge for agent {db_agent.id}: {selected_knowledge}")
         
         # Create agent-specific folder and copy selected files
         if selected_knowledge.get('documents'):
+            print(f"Documents: {selected_knowledge['documents']}")
             agent_id = db_agent.id  # Get the actual integer value
             logger.info(f"Copying {len(selected_knowledge['documents'])} documents to agent folder")
             _copy_selected_documents_to_agent_folder(db, agent_id, selected_knowledge['documents'])
@@ -518,6 +515,7 @@ class ChatService:
         # This is a placeholder implementation
         print(f"Executing agent {agent_id} with message: '{message}' and context: '{context}'")
         
+        # dana_code = "knowledge = use(\"rag\", sources=[\"./uploads\/agents\/7\"]) \nquery = \"Hi\"\nresponse = reason(f\"Help me to answer the question: {query}\")"
         dana_code = "query = \"Hi\"\nresponse = reason(f\"Help me to answer the question: {query}\")"
         question_pattern = r'query\s*=\s*"([^"]+)"'
         
