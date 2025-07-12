@@ -77,10 +77,10 @@ jobs:
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        # Run functional standard library tests (.na files) using Python module
+        # Run functional standard library tests (.na files) using uv run
         for na_file in tests/functional/stdlib/*.na; do
           echo "Running $na_file..."
-          python -m dana.core.cli.dana "$na_file" || exit 1
+          uv run python -m dana.core.cli.dana "$na_file" || exit 1
         done
     - name: Test integration end-to-end tests (comprehensive)
       env:
