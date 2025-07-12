@@ -45,7 +45,7 @@ jobs:
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/sandbox/parser/ -m "not live and not deep" --tb=short -v
+        uv run pytest tests/unit/core/parser/ -m "not live and not deep" --tb=short -v
 
   # Dana Structs - Critical struct implementation tests
   test-dana-structs:
@@ -77,9 +77,9 @@ jobs:
         PYTHONPATH: ${{ github.workspace }}
       run: |
         # Run struct tests comprehensively as they're critical
-        uv run pytest tests/dana/sandbox/interpreter/test_struct_* -v --tb=short
+        uv run pytest tests/unit/core/interpreter/test_struct_* -v --tb=short
         # Also run fast struct tests
-        uv run pytest tests/dana/sandbox/interpreter/test_struct_* -m "not live and not deep" --tb=short -v
+        uv run pytest tests/unit/core/interpreter/test_struct_* -m "not live and not deep" --tb=short -v
 
   # Dana Functions - Built-in functions and function handling
   test-dana-functions:
@@ -110,7 +110,7 @@ jobs:
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/sandbox/interpreter/functions/ -m "not live and not deep" --tb=short -v
+        uv run pytest tests/unit/core/interpreter/functions/ -m "not live and not deep" --tb=short -v
 
   # Dana Imports - Module system and import handling
   test-dana-imports:
@@ -141,7 +141,7 @@ jobs:
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/sandbox/interpreter/test_*import* tests/dana/sandbox/interpreter/test_dana_module* -m "not live and not deep" --tb=short -v
+        uv run pytest tests/unit/core/interpreter/test_*import* tests/unit/core/interpreter/test_dana_module* -m "not live and not deep" --tb=short -v
 
   # Dana Execution - Core execution and runtime features
   test-dana-execution:
@@ -172,8 +172,8 @@ jobs:
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/sandbox/interpreter/ -m "not live and not deep" --tb=short -v \
-          --ignore=tests/dana/sandbox/interpreter/functions/ \
+        uv run pytest tests/unit/core/interpreter/ -m "not live and not deep" --tb=short -v \
+          --ignore=tests/unit/core/interpreter/functions/ \
           -k "not struct and not import and not dana_module"
 
   # Dana Sandbox Core - Sandbox utilities and context management
@@ -205,9 +205,9 @@ jobs:
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/sandbox/ -m "not live and not deep" --tb=short -v \
-          --ignore=tests/dana/sandbox/parser/ \
-          --ignore=tests/dana/sandbox/interpreter/
+        uv run pytest tests/unit/core/ -m "not live and not deep" --tb=short -v \
+          --ignore=tests/unit/core/parser/ \
+          --ignore=tests/unit/core/interpreter/
 
   # Dana Components - REPL, translator, module system, .na files, UX
   test-dana-components:
@@ -238,7 +238,8 @@ jobs:
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/repl/ tests/dana/translator/ tests/dana/module/ tests/dana/na/ tests/dana/ux/ -m "not live and not deep" --tb=short -v
+        # Run REPL, transcoder, and other Dana component tests
+        uv run pytest tests/unit/core/ -k "repl or transcoder" -m "not live and not deep" --tb=short -v
 
   # Dana Integrated Tests - New comprehensive integration and scenario tests
   test-dana-integrated:
@@ -269,7 +270,8 @@ jobs:
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/integration/ tests/dana/scenarios/ -m "not live and not deep" --tb=short -v
+        # Run integration and scenario tests
+        uv run pytest tests/unit/core/ -k "integration or scenario" -m "not live and not deep" --tb=short -v
 
   # Dana Expected Failures - Language limitation documentation tests
   test-dana-expected-failures:
@@ -300,7 +302,8 @@ jobs:
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/expected_failures/ -m "not live and not deep" --tb=short -v
+        # Run expected failure tests
+        uv run pytest tests/unit/core/ -k "expected_failure or limitation" -m "not live and not deep" --tb=short -v
 
   # Functional Tests - Dana language tests (.na files)
   test-functional-language:
@@ -395,8 +398,11 @@ jobs:
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        # Run functional standard library tests
-        uv run pytest tests/functional/stdlib/ -m "not live and not deep" --tb=short -v
+        # Run functional standard library tests (.na files) using dana command
+        for na_file in tests/functional/stdlib/*.na; do
+          echo "Running $na_file..."
+          dana "$na_file" || exit 1
+        done
 
   # Integration Tests - End-to-end system integration
   test-integration-end-to-end:
@@ -491,7 +497,7 @@ jobs:
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/common/resource/ -m "not live and not deep" --tb=short -v
+        uv run pytest tests/unit/common/resource/ -m "not live and not deep" --tb=short -v
 
   # Common Core - Graph, I/O, mixins, config, utils, state (light tests)
   test-common-core:
@@ -522,8 +528,8 @@ jobs:
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/common/ -m "not live and not deep" --tb=short -v \
-          --ignore=tests/common/resource/
+        uv run pytest tests/unit/common/ -m "not live and not deep" --tb=short -v \
+          --ignore=tests/unit/common/resource/
 
   # Agent Framework - Capabilities and resources
   test-agent-framework:
@@ -554,7 +560,7 @@ jobs:
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/agent/ -m "not live and not deep" --tb=short -v
+        uv run pytest tests/unit/agent/ -m "not live and not deep" --tb=short -v
 
   # POET Framework - Domain-driven function enhancement
   test-poet-framework:
@@ -585,7 +591,8 @@ jobs:
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/poet/ -m "poet and not live and not deep" --tb=short -v
+        # Run POET tests from their actual locations (Python tests only)
+        uv run pytest tests/unit/frameworks/ -m "poet and not live and not deep" --tb=short -v
 
   # Execution Engine - Pipeline and reasoning
   test-execution-engine:
@@ -616,7 +623,7 @@ jobs:
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/execution/ -m "not live and not deep" --tb=short -v
+        uv run pytest tests/unit/core/pipeline/ tests/unit/core/reasoning/ -m "not live and not deep" --tb=short -v
 
   # Catch-all for any tests not covered by the above groups
   test-miscellaneous:
@@ -651,10 +658,10 @@ jobs:
         # This includes any top-level test files and future additions
         set +e  # Allow commands to fail without stopping the script
         uv run pytest tests/ -m "not live and not deep" --tb=short -v \
-          --ignore=tests/dana/ \
-          --ignore=tests/common/ \
-          --ignore=tests/agent/ \
-          --ignore=tests/execution/ \
+          --ignore=tests/unit/core/ \
+          --ignore=tests/unit/common/ \
+          --ignore=tests/unit/agent/ \
+          --ignore=tests/unit/frameworks/ \
           --ignore=tests/functional/ \
           --ignore=tests/integration/ \
           --ignore=tests/regression/

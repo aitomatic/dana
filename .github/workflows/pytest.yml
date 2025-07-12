@@ -42,19 +42,23 @@ jobs:
         OPENDXA_MOCK_LLM: "true"
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
-      run: uv run pytest tests/dana/sandbox/interpreter/test_struct_* -v --tb=short
+      run: uv run pytest tests/unit/core/interpreter/test_struct_* -v --tb=short
     - name: Test POET framework (comprehensive)
       env:
         OPENDXA_MOCK_LLM: "true"
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
-      run: uv run pytest tests/dana/poet/ -m "poet" -v --tb=short
+      run: |
+        # Run POET tests from their actual locations (Python tests only)
+        uv run pytest tests/unit/frameworks/ -m "poet" -v --tb=short
     - name: Test Dana integrated tests (comprehensive)
       env:
         OPENDXA_MOCK_LLM: "true"
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
-      run: uv run pytest tests/dana/integration/ tests/dana/scenarios/ tests/dana/expected_failures/ -v --tb=short
+      run: |
+        # Run integration and scenario tests
+        uv run pytest tests/unit/core/ -k "integration or scenario" -v --tb=short
     - name: Test functional language tests (comprehensive)
       env:
         OPENDXA_MOCK_LLM: "true"
@@ -72,7 +76,12 @@ jobs:
         OPENDXA_MOCK_LLM: "true"
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
-      run: uv run pytest tests/functional/stdlib/ -v --tb=short
+      run: |
+        # Run functional standard library tests (.na files) using dana command
+        for na_file in tests/functional/stdlib/*.na; do
+          echo "Running $na_file..."
+          dana "$na_file" || exit 1
+        done
     - name: Test integration end-to-end tests (comprehensive)
       env:
         OPENDXA_MOCK_LLM: "true"
