@@ -367,10 +367,17 @@ jobs:
         PYTHONPATH: ${{ github.workspace }}
       run: |
         # Run functional standard library tests (.na files) using uv run
-        for na_file in tests/functional/stdlib/*.na; do
-          echo "Running $na_file..."
-          uv run python -m dana.core.cli.dana "$na_file" || exit 1
-        done
+        # Enable nullglob to handle case when no .na files exist
+        shopt -s nullglob
+        na_files=(tests/functional/stdlib/*.na)
+        if [ ${#na_files[@]} -eq 0 ]; then
+          echo "No .na files found in tests/functional/stdlib/ - skipping functional stdlib tests"
+        else
+          for na_file in "${na_files[@]}"; do
+            echo "Running $na_file..."
+            uv run python -m dana.core.cli.dana "$na_file" || exit 1
+          done
+        fi
 
   # Integration Tests - End-to-end system integration
   test-integration-end-to-end:
