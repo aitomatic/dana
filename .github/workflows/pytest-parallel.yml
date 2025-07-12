@@ -42,7 +42,7 @@ jobs:
     - name: Test Dana Parser
       env:
         DANA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         uv run pytest tests/unit/core/parser/ -m "not live and not deep" --tb=short -v
@@ -73,7 +73,7 @@ jobs:
     - name: Test Dana Structs (comprehensive)
       env:
         DANA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         # Run struct tests comprehensively as they're critical
@@ -107,7 +107,7 @@ jobs:
     - name: Test Dana Functions
       env:
         DANA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         uv run pytest tests/unit/core/interpreter/functions/ -m "not live and not deep" --tb=short -v
@@ -138,7 +138,7 @@ jobs:
     - name: Test Dana Imports
       env:
         DANA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         uv run pytest tests/unit/core/interpreter/test_*import* tests/unit/core/interpreter/test_dana_module* -m "not live and not deep" --tb=short -v
@@ -169,7 +169,7 @@ jobs:
     - name: Test Dana Execution
       env:
         DANA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         uv run pytest tests/unit/core/interpreter/ -m "not live and not deep" --tb=short -v \
@@ -202,7 +202,7 @@ jobs:
     - name: Test Dana Sandbox Core
       env:
         DANA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         uv run pytest tests/unit/core/ -m "not live and not deep" --tb=short -v \
@@ -235,7 +235,7 @@ jobs:
     - name: Test Dana Components (REPL, translator, modules, na files, UX)
       env:
         DANA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         # Run REPL, transcoder, and other Dana component tests
@@ -266,8 +266,8 @@ jobs:
       run: uv sync --extra dev
     - name: Test Dana Integrated (comprehensive real-world scenarios)
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         # Run integration and scenario tests
@@ -298,8 +298,8 @@ jobs:
       run: uv sync --extra dev
     - name: Test Functional Language Tests (.na files)
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         # Run Dana language tests using the test runner
@@ -330,8 +330,8 @@ jobs:
       run: uv sync --extra dev
     - name: Test Functional Integration Tests
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         # Run functional integration tests
@@ -362,8 +362,8 @@ jobs:
       run: uv sync --extra dev
     - name: Test Functional Standard Library Tests
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         # Run functional standard library tests (.na files) using uv run
@@ -397,8 +397,8 @@ jobs:
       run: uv sync --extra dev
     - name: Test Integration End-to-End Tests
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         # Run integration end-to-end tests
@@ -430,7 +430,7 @@ jobs:
     - name: Test Regression Tests
       env:
         DANA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         # Run regression tests (expected failures)
@@ -462,7 +462,7 @@ jobs:
     - name: Test Dana Expected Failures (language limitations)
       env:
         DANA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         # Run expected failure tests
@@ -493,8 +493,8 @@ jobs:
       run: uv sync --extra dev
     - name: Test Common Resources
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         uv run pytest tests/unit/common/resource/ -m "not live and not deep" --tb=short -v
@@ -524,8 +524,8 @@ jobs:
       run: uv sync --extra dev
     - name: Test Common Core
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         uv run pytest tests/unit/common/ -m "not live and not deep" --tb=short -v \
@@ -556,8 +556,8 @@ jobs:
       run: uv sync --extra dev
     - name: Test Agent Framework
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         uv run pytest tests/unit/agent/ -m "not live and not deep" --tb=short -v
@@ -619,8 +619,8 @@ jobs:
       run: uv sync --extra dev
     - name: Test Execution Engine
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         uv run pytest tests/unit/core/pipeline/ tests/unit/core/reasoning/ -m "not live and not deep" --tb=short -v
@@ -650,8 +650,8 @@ jobs:
       run: uv sync --extra dev
     - name: Test Miscellaneous (catch-all)
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         # Run tests that don't match any of the explicit subsystem filters
