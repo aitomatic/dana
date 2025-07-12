@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { StrictMode } from 'react';
@@ -9,16 +9,9 @@ import { CreateAgentPage } from '../pages/Agents/create';
 import AgentDetailPage from '../pages/Agents/detail';
 import LibraryPage from '../pages/Library';
 import AgentChat from '../pages/Agents/chat';
+import * as agentStore from '../stores/agent-store';
 
 // Mock the stores to avoid API calls during testing
-vi.mock('../stores/agent-store', () => ({
-  useAgentStore: () => ({
-    agents: [],
-    fetchAgents: vi.fn(),
-    isLoading: false,
-  }),
-}));
-
 vi.mock('../stores/chat-store', () => ({
   useChatStore: () => ({
     messages: [],
@@ -44,7 +37,6 @@ vi.mock('../stores/chat-store', () => ({
   }),
 }));
 
-// Test component to render routes
 const TestApp = () => (
   <StrictMode>
     <BrowserRouter>
@@ -111,59 +103,82 @@ const TestApp = () => (
 );
 
 describe('Routes', () => {
+  let agentStoreSpy: ReturnType<typeof vi.spyOn>;
+  const mockAgent = {
+    id: 1,
+    name: 'Test Agent',
+    description: 'A test agent',
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
+  };
+  let originalGetElementById: typeof document.getElementById;
+
+  beforeEach(() => {
+    // Mock document.getElementById to avoid jsdom error from chat-session
+    originalGetElementById = document.getElementById;
+    document.getElementById = vi.fn(() => null);
+  });
+
+  afterEach(() => {
+    if (agentStoreSpy) agentStoreSpy.mockRestore();
+    document.getElementById = originalGetElementById;
+    vi.clearAllTimers();
+  });
+
   it('should render agents page at /agents', () => {
+    agentStoreSpy = vi.spyOn(agentStore, 'useAgentStore').mockReturnValue({
+      agents: [mockAgent],
+      fetchAgents: vi.fn(),
+      isLoading: false,
+    });
     window.history.pushState({}, '', '/agents');
     render(<TestApp />);
-
-    // Check that the agents page content is rendered
-    expect(screen.getByText('Domain-Expert Agents')).toBeInTheDocument();
+    expect(screen.getAllByText('Domain-Expert Agents').length).toBeGreaterThan(0);
   });
 
   it('should render create agent page at /agents/create', () => {
     window.history.pushState({}, '', '/agents/create');
     render(<TestApp />);
-
-    // Check that the create agent page content is rendered
     expect(screen.getByText('Create Agent')).toBeInTheDocument();
   });
 
   it('should render agent detail page at /agents/:agent_id', () => {
+    agentStoreSpy = vi.spyOn(agentStore, 'useAgentStore').mockReturnValue({
+      agents: [],
+      fetchAgents: vi.fn(),
+      isLoading: false,
+    });
     window.history.pushState({}, '', '/agents/1');
-    render(<TestApp />);
-
-    // Check that the agent detail page content is rendered
-    expect(screen.getByText('Agent Not Found')).toBeInTheDocument();
+    const { container } = render(<TestApp />);
+    expect(container.textContent).toContain('Agent Not Found');
   });
 
   it('should render chat page at /agents/:agent_id/chat', () => {
     window.history.pushState({}, '', '/agents/1/chat');
     render(<TestApp />);
-
-    // Check that the chat page content is rendered
     expect(screen.getByText('Agent Chat')).toBeInTheDocument();
   });
 
   it('should render chat page with conversation at /agents/:agent_id/chat/:conversation_id', () => {
     window.history.pushState({}, '', '/agents/1/chat/123');
     render(<TestApp />);
-
-    // Check that the chat page content is rendered
     expect(screen.getByText('Agent Chat')).toBeInTheDocument();
   });
 
   it('should render library page at /library', () => {
     window.history.pushState({}, '', '/library');
     render(<TestApp />);
-
-    // Check that the library page content is rendered
-    expect(screen.getByText('Library')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Library' })).toBeInTheDocument();
   });
 
   it('should redirect from / to /agents', () => {
+    agentStoreSpy = vi.spyOn(agentStore, 'useAgentStore').mockReturnValue({
+      agents: [mockAgent],
+      fetchAgents: vi.fn(),
+      isLoading: false,
+    });
     window.history.pushState({}, '', '/');
     render(<TestApp />);
-
-    // Check that it redirects to agents page
-    expect(screen.getByText('Domain-Expert Agents')).toBeInTheDocument();
+    expect(screen.getAllByText('Domain-Expert Agents').length).toBeGreaterThan(0);
   });
-}); 
+});
