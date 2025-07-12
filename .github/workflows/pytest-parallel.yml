@@ -302,6 +302,166 @@ jobs:
       run: |
         uv run pytest tests/dana/expected_failures/ -m "not live and not deep" --tb=short -v
 
+  # Functional Tests - Dana language tests (.na files)
+  test-functional-language:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5  # Updated version
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Cache uv dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Functional Language Tests (.na files)
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        # Run Dana language tests using the test runner
+        uv run pytest tests/functional/language/ -m "not live and not deep" --tb=short -v
+
+  # Functional Integration Tests - Cross-feature integration scenarios
+  test-functional-integration:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5  # Updated version
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Cache uv dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Functional Integration Tests
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        # Run functional integration tests
+        uv run pytest tests/functional/integration/ -m "not live and not deep" --tb=short -v
+
+  # Functional Standard Library Tests - POET and built-in functions
+  test-functional-stdlib:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5  # Updated version
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Cache uv dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Functional Standard Library Tests
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        # Run functional standard library tests
+        uv run pytest tests/functional/stdlib/ -m "not live and not deep" --tb=short -v
+
+  # Integration Tests - End-to-end system integration
+  test-integration-end-to-end:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5  # Updated version
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Cache uv dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Integration End-to-End Tests
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        # Run integration end-to-end tests
+        uv run pytest tests/integration/end_to_end/ -m "not live and not deep" --tb=short -v
+
+  # Regression Tests - Known issues and expected failures
+  test-regression:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5  # Updated version
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Cache uv dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Regression Tests
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        # Run regression tests (expected failures)
+        uv run pytest tests/regression/ -m "not live and not deep" --tb=short -v
+
   # Common Resources - LLM, AISuite integration, resource management (heavy tests)
   test-common-resources:
     runs-on: ubuntu-latest
@@ -494,7 +654,10 @@ jobs:
           --ignore=tests/dana/ \
           --ignore=tests/common/ \
           --ignore=tests/agent/ \
-          --ignore=tests/execution/
+          --ignore=tests/execution/ \
+          --ignore=tests/functional/ \
+          --ignore=tests/integration/ \
+          --ignore=tests/regression/
         exit_code=$?
         if [ $exit_code -eq 5 ]; then
           echo "✅ No miscellaneous tests found - all tests are covered by explicit subsystem jobs"
@@ -510,7 +673,7 @@ jobs:
 
   # Summary job that depends on all test jobs
   test-summary:
-    needs: [test-dana-parser, test-dana-structs, test-dana-functions, test-dana-imports, test-dana-execution, test-dana-sandbox, test-dana-components, test-dana-integrated, test-dana-expected-failures, test-common-resources, test-common-core, test-agent-framework, test-poet-framework, test-execution-engine, test-miscellaneous]
+    needs: [test-dana-parser, test-dana-structs, test-dana-functions, test-dana-imports, test-dana-execution, test-dana-sandbox, test-dana-components, test-dana-integrated, test-dana-expected-failures, test-functional-language, test-functional-integration, test-functional-stdlib, test-integration-end-to-end, test-regression, test-common-resources, test-common-core, test-agent-framework, test-poet-framework, test-execution-engine, test-miscellaneous]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -525,6 +688,11 @@ jobs:
               "${{ needs.test-dana-components.result }}" == "failure" || 
               "${{ needs.test-dana-integrated.result }}" == "failure" || 
               "${{ needs.test-dana-expected-failures.result }}" == "failure" || 
+              "${{ needs.test-functional-language.result }}" == "failure" || 
+              "${{ needs.test-functional-integration.result }}" == "failure" || 
+              "${{ needs.test-functional-stdlib.result }}" == "failure" || 
+              "${{ needs.test-integration-end-to-end.result }}" == "failure" || 
+              "${{ needs.test-regression.result }}" == "failure" || 
               "${{ needs.test-common-resources.result }}" == "failure" || 
               "${{ needs.test-common-core.result }}" == "failure" || 
               "${{ needs.test-agent-framework.result }}" == "failure" || 

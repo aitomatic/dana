@@ -55,6 +55,36 @@ jobs:
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: uv run pytest tests/dana/integration/ tests/dana/scenarios/ tests/dana/expected_failures/ -v --tb=short
+    - name: Test functional language tests (comprehensive)
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/functional/language/ -v --tb=short
+    - name: Test functional integration tests (comprehensive)
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/functional/integration/ -v --tb=short
+    - name: Test functional standard library tests (comprehensive)
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/functional/stdlib/ -v --tb=short
+    - name: Test integration end-to-end tests (comprehensive)
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/integration/end_to_end/ -v --tb=short
+    - name: Test regression tests (comprehensive)
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/regression/ -v --tb=short
     - name: Test with pytest (fast tests only)
       env:
         OPENDXA_MOCK_LLM: "true"
