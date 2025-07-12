@@ -594,8 +594,8 @@ jobs:
       run: uv sync --extra dev
     - name: Test POET Framework
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         # Run POET tests from their actual locations (Python tests only)
