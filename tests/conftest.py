@@ -156,6 +156,10 @@ def run_dana_test_file(dana_test_file):
         from tests.conftest import run_dana_test_file
         run_dana_test_file(dana_test_file, fresh_dana_sandbox)
     """
+    # Clear struct registry to ensure test isolation
+    from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+    StructTypeRegistry.clear()
+    
     sandbox = DanaSandbox()
     try:
         result = sandbox.run(dana_test_file)

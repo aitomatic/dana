@@ -92,7 +92,6 @@ def test_loader_package_handling(loader, sample_package):
 
     # Test submodule
     submodule_spec = loader.find_spec("sample_pkg.utils", None)
-    assert submodule_spec is not None
     assert submodule_spec.name == "sample_pkg.utils"
     assert submodule_spec.origin == str(sample_package / "utils.na")
 
