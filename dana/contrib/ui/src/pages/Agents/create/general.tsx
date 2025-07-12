@@ -9,6 +9,7 @@ import { useState } from 'react';
 import AgentGenerationChat from '@/components/agent-generation-chat';
 import { DEFAULT_DANA_AGENT_CODE, DANA_AGENT_PLACEHOLDER } from '@/constants/dana-code';
 import AgentTestChat from '@/components/agent-test-chat';
+import AgentTemplateSelector from '@/components/agent-template-selector';
 
 export function GeneralAgentPage({
   form,
@@ -32,6 +33,7 @@ export function GeneralAgentPage({
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
   const [showTestChat, setShowTestChat] = useState(false);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
 
   const { register, setValue, formState } = form;
   const isDisabled = !formState.isValid || isCreating;
@@ -58,6 +60,17 @@ export function GeneralAgentPage({
 
   const handleGenerationStart = () => {
     setIsGeneratingCode(true);
+  };
+
+  const handleTemplateSelect = (
+    templateCode: string,
+    templateName: string,
+    templateDescription: string,
+  ) => {
+    setValue('general_agent_config.dana_code', templateCode);
+    setValue('name', templateName);
+    setValue('description', templateDescription);
+    setShowTemplateSelector(false);
   };
 
   return (
@@ -137,6 +150,14 @@ export function GeneralAgentPage({
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => setShowTemplateSelector(true)}
+                  className="gap-2"
+                >
+                  📋 Templates
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setShowTestChat(true)}
                   className="gap-2"
                 >
@@ -186,6 +207,45 @@ export function GeneralAgentPage({
           </div>
         </div>
       </div>
+
+      {/* Template Selector Modal */}
+      {showTemplateSelector && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300"
+            onClick={() => setShowTemplateSelector(false)}
+          />
+
+          {/* Modal */}
+          <div className="relative w-[90vw] max-w-6xl h-[80vh] bg-white rounded-lg shadow-2xl overflow-hidden">
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="flex justify-between items-center p-6 border-b border-gray-200">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Choose Agent Template</h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Select a template to get started quickly, or start from scratch
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowTemplateSelector(false)}
+                  className="p-2 hover:bg-gray-200"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-hidden p-6">
+                <AgentTemplateSelector onTemplateSelect={handleTemplateSelect} className="h-full" />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Test Chat Modal/Drawer */}
       {showTestChat && (
