@@ -597,4 +597,501 @@ async def generate_agent_code_from_messages(messages: List[Dict[str, Any]], curr
     result = await generator.generate_agent_code(messages, current_code)
     if isinstance(result, tuple):
         return result  # (code, error)
-    return result, None 
+    return result, None
+
+
+async def generate_agent_code_na(messages: List[Dict[str, Any]], current_code: str = "") -> tuple[str, str | None]:
+    """
+    Generate Dana agent code using a .na file executed with DanaSandbox.quick_run.
+    If the generated code has errors, it calls another Dana agent to fix it.
+    
+    Args:
+        messages: List of conversation messages with 'role' and 'content' fields
+        current_code: Current Dana code to improve upon (default empty string)
+        
+    Returns:
+        Tuple of (Generated Dana code as string, error message or None)
+    """
+    try:
+        # Create the .na file content with injected messages and current_code
+        na_code = _create_agent_generator_na_code(messages, current_code)
+        
+        # Write the code to a temporary file
+        import tempfile
+        import os
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.na', delete=False) as temp_file:
+            temp_file.write(na_code)
+            temp_file_path = temp_file.name
+        
+        try:
+            # Execute the .na file using DanaSandbox.quick_run with file path
+            result = DanaSandbox.quick_run(file_path=temp_file_path)
+            
+            if result.success:
+                generated_code = result.result
+                # Strip leading/trailing triple quotes and whitespace
+                if generated_code:
+                    code = generated_code.strip()
+                    if code.startswith('"""') and code.endswith('"""'):
+                        code = code[3:-3].strip()
+                    generated_code = code
+                if generated_code and "agent " in generated_code:
+                    # Test the generated code for syntax errors
+                    test_result = _test_generated_code(generated_code)
+                    if test_result.success:
+                        return generated_code, None
+                    else:
+                        error_msg = str(test_result.error) if hasattr(test_result, 'error') else "Unknown syntax error"
+                        logger.warning(f"Generated code has errors: {error_msg}")
+                        # Try to fix the code using a Dana agent
+                        fixed_code = await _fix_generated_code_with_agent(generated_code, error_msg, messages)
+                        if fixed_code:
+                            return fixed_code, None
+                        else:
+                            logger.warning("Failed to fix code, using fallback template")
+                            return _get_fallback_template(), None
+                else:
+                    logger.warning("Generated code is empty or not Dana code, using fallback template")
+                    return _get_fallback_template(), None
+            else:
+                logger.error(f"NA execution failed: {result.error}")
+                # Try to generate a simple fallback agent based on user intention
+                try:
+                    fallback_code = _generate_simple_fallback_agent(messages)
+                    return fallback_code, None
+                except Exception as fallback_error:
+                    logger.error(f"Fallback generation also failed: {fallback_error}")
+                    return _get_fallback_template(), str(result.error)
+                
+        finally:
+            # Clean up the temporary file
+            try:
+                os.unlink(temp_file_path)
+            except Exception as cleanup_error:
+                logger.warning(f"Failed to cleanup temporary file: {cleanup_error}")
+            
+    except Exception as e:
+        logger.error(f"Error generating agent code with NA: {e}")
+        return _get_fallback_template(), str(e)
+
+
+def _create_agent_generator_na_code(messages: List[Dict[str, Any]], current_code: str) -> str:
+    """
+    Create the .na code that will generate Dana agents using reason() function.
+    
+    Args:
+        messages: List of conversation messages
+        current_code: Current Dana code to improve upon
+        
+    Returns:
+        Dana code as string with injected data
+    """
+    # Inject the messages and current_code into the .na code
+    messages_str = str(messages).replace('"', '\\"')
+    current_code_str = current_code.replace('"', '\\"').replace('\n', '\\n')
+    
+    return f'''"""Agent Generator NA Code
+
+This .na file contains the logic for generating Dana agents based on conversation messages.
+"""
+
+# Injected conversation messages
+messages = {messages_str}
+
+# Injected current Dana code
+current_code = """{current_code_str}"""
+
+# Extract user intentions from conversation
+def extract_intentions(messages: list) -> str:
+    """Extract user intentions from conversation messages."""
+    all_content = ""
+    for msg in messages:
+        if msg.get("role") == "user":
+            all_content = all_content + " " + msg.get("content", "")
+    
+    # Simple keyword-based intention extraction
+    content_lower = all_content.lower()
+    
+    if "weather" in content_lower:
+        return "weather information agent"
+    elif "help" in content_lower or "assistant" in content_lower:
+        return "general assistant agent"
+    elif "data" in content_lower or "analysis" in content_lower:
+        return "data analysis agent"
+    elif "email" in content_lower or "mail" in content_lower:
+        return "email assistant agent"
+    elif "calendar" in content_lower or "schedule" in content_lower:
+        return "calendar assistant agent"
+    elif "document" in content_lower or "file" in content_lower or "pdf" in content_lower:
+        return "document processing agent"
+    elif "knowledge" in content_lower or "research" in content_lower or "information" in content_lower:
+        return "knowledge and research agent"
+    elif "question" in content_lower or "answer" in content_lower:
+        return "question answering agent"
+    elif "finance" in content_lower or "money" in content_lower or "budget" in content_lower or "investment" in content_lower:
+        return "personal finance advisor agent"
+    else:
+        return "custom assistant agent"
+
+# Generate agent code using reason() function
+def generate_agent_code(messages: list, current_code: str) -> str:
+    """Generate Dana agent code using reason() function."""
+    
+    # Extract user intentions first
+    user_intention = extract_intentions(messages)
+    
+    # Create prompt for reason() function
+    prompt = f"""Based on the user's intention to create a {{user_intention}}, generate a complete Dana agent code.
+
+User intention: {{user_intention}}
+Current code (if any): {{current_code}}
+
+Generate a complete, working Dana agent code that:
+1. Has a descriptive name and description based on the intention
+2. Uses the 'agent' keyword syntax (not system:agent_name)
+3. Includes RAG resources ONLY if document/knowledge retrieval is needed
+4. Has a simple solve function that handles the user's requirements
+5. Uses proper Dana syntax and patterns
+6. Keeps it simple and focused
+
+CRITICAL DANA SYNTAX RULES:
+- Agent names must be unquoted: agent PersonalFinanceAgent (NOT agent "PersonalFinanceAgent")
+- String values must be quoted: name : str = "Personal Finance Agent"
+- Function parameters must be unquoted: def solve(agent_name : AgentName, problem : str)
+- Use proper Dana syntax throughout
+- **All function definitions (like def solve(...)) must be outside the agent block. The agent block should only contain attribute assignments.**
+
+EXACT TEMPLATE TO FOLLOW:
+```dana
+\"\"\"[Brief description of what the agent does].\"\"\"
+
+# Agent Card declaration
+agent [AgentName]:
+    name : str = "[Descriptive Agent Name]"
+    description : str = "[Brief description of what the agent does]"
+    resources : list = []
+
+# Agent's problem solver
+def solve([agent_name] : [AgentName], problem : str):
+    return reason(f"[How to handle the problem]")
+```
+
+IMPORTANT: Generate ONLY valid Dana code with:
+- Proper agent declaration syntax (agent Name, not agent "Name")
+- Valid string literals (use double quotes for values)
+- Proper function definitions OUTSIDE the agent block
+- Correct Dana syntax throughout
+
+Available resources:
+- RAG resource: use("rag", sources=[list_of_document_paths_or_urls]) - ONLY for document retrieval and knowledge base access
+
+IMPORTANT: Only use RAG resources if the user specifically needs:
+- Document processing or analysis
+- Knowledge base access
+- Information retrieval from files or web pages
+- Context-aware responses based on documents
+
+For simple agents that just answer questions or perform basic tasks, do NOT use any resources.
+
+Generate only the Dana code, no explanations or markdown formatting. Make sure all strings are properly quoted and all syntax is valid Dana."""
+
+    # Use reason() function to generate the agent code
+    generated_code = reason(prompt)
+    
+    return generated_code
+
+# Execute the main function with injected data
+result = generate_agent_code(messages, current_code)
+result
+'''
+
+
+
+
+
+def _test_generated_code(code: str) -> Any:
+    """
+    Test the generated Dana code for syntax errors.
+    
+    Args:
+        code: Dana code to test
+        
+    Returns:
+        ExecutionResult with success/error information
+    """
+    try:
+        import tempfile
+        import os
+        
+        # Write the code to a temporary file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.na', delete=False) as temp_file:
+            temp_file.write(code)
+            temp_file_path = temp_file.name
+        
+        try:
+            # Test the code using DanaSandbox.quick_run
+            result = DanaSandbox.quick_run(file_path=temp_file_path)
+            return result
+        finally:
+            # Clean up the temporary file
+            try:
+                os.unlink(temp_file_path)
+            except Exception:
+                pass
+                
+    except Exception as e:
+        # Return a mock result indicating failure
+        class MockResult:
+            def __init__(self, success: bool, error: str):
+                self.success = success
+                self.error = error
+        return MockResult(False, str(e))
+
+
+async def _fix_generated_code_with_agent(code: str, error: str, messages: List[Dict[str, Any]]) -> str:
+    """
+    Use a Dana agent to fix the generated code.
+    
+    Args:
+        code: The generated code with errors
+        error: The error message
+        messages: Original conversation messages for context
+        
+    Returns:
+        Fixed Dana code or empty string if fixing failed
+    """
+    try:
+        # Create a code fixing agent using Dana
+        fixer_code = _create_code_fixer_na_code(code, error, messages)
+        
+        # Write the fixer code to a temporary file
+        import tempfile
+        import os
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.na', delete=False) as temp_file:
+            temp_file.write(fixer_code)
+            temp_file_path = temp_file.name
+        
+        try:
+            # Execute the code fixer
+            result = DanaSandbox.quick_run(file_path=temp_file_path)
+            
+            if result.success and result.result:
+                # Test the fixed code
+                test_result = _test_generated_code(result.result)
+                if test_result.success:
+                    return result.result
+                else:
+                    logger.warning(f"Fixed code still has errors: {test_result.error}")
+                    return ""
+            else:
+                logger.warning("Code fixer failed to generate fixed code")
+                return ""
+                
+        finally:
+            # Clean up the temporary file
+            try:
+                os.unlink(temp_file_path)
+            except Exception as cleanup_error:
+                logger.warning(f"Failed to cleanup temporary file: {cleanup_error}")
+                
+    except Exception as e:
+        logger.error(f"Error fixing generated code: {e}")
+        # Try to generate a simple fallback agent instead
+        try:
+            return _generate_simple_fallback_agent(messages)
+        except Exception as fallback_error:
+            logger.error(f"Fallback generation also failed: {fallback_error}")
+            return ""
+
+
+def _create_code_fixer_na_code(code: str, error: str, messages: List[Dict[str, Any]]) -> str:
+    """
+    Create the .na code for a code fixing agent.
+    
+    Args:
+        code: The generated code with errors
+        error: The error message
+        messages: Original conversation messages for context
+        
+    Returns:
+        Dana code for the code fixing agent
+    """
+    # Inject the data into the .na code
+    code_str = code.replace('"', '\\"').replace('\n', '\\n')
+    # Convert error to string and escape it properly - use a simpler approach
+    error_str = str(error).replace('"', '\\"').replace("'", "\\'").replace('\n', '\\n')
+    messages_str = str(messages).replace('"', '\\"')
+    
+    return f'''"""Code Fixer Agent
+
+This .na file contains a Dana agent that fixes Dana code with syntax errors.
+"""
+
+# Injected data
+original_code = """{code_str}"""
+
+# Code fixing agent
+agent CodeFixerAgent:
+    name : str = "Dana Code Fixer Agent"
+    description : str = "Fixes Dana code syntax errors and improves code quality"
+    resources : list = []
+
+def solve(code_fixer : CodeFixerAgent, problem : str):
+    """Fix Dana code with syntax errors."""
+    
+    prompt = f"""You are an expert Dana language developer. Fix the following Dana code that has syntax errors.
+
+Original Code:
+{{original_code}}
+
+Please fix the Dana code by:
+1. Correcting any syntax errors
+2. Ensuring proper Dana syntax and patterns
+3. Maintaining the intended functionality
+4. Using proper agent declaration syntax
+5. Ensuring all functions are properly defined
+6. Fixing any variable scope issues
+7. Ensuring proper resource usage if any
+8. Making sure all strings are properly quoted with double quotes
+9. Ensuring all syntax is valid Dana
+
+CRITICAL DANA SYNTAX RULES:
+- Agent names must be unquoted: agent PersonalFinanceAgent (NOT agent "PersonalFinanceAgent")
+- String values must be quoted: name : str = "Personal Finance Agent"
+- Function parameters must be unquoted: def solve(agent_name : AgentName, problem : str)
+- Use proper Dana syntax throughout
+- **All function definitions (like def solve(...)) must be outside the agent block. The agent block should only contain attribute assignments.**
+
+EXACT TEMPLATE TO FOLLOW:
+```dana
+\"\"\"[Brief description of what the agent does].\"\"\"
+
+# Agent Card declaration
+agent [AgentName]:
+    name : str = "[Descriptive Agent Name]"
+    description : str = "[Brief description of what the agent does]"
+    resources : list = []
+
+# Agent's problem solver
+def solve([agent_name] : [AgentName], problem : str):
+    return reason(f"[How to handle the problem]")
+```
+
+IMPORTANT: Generate ONLY valid Dana code with:
+- Proper agent declaration syntax (agent Name, not agent "Name")
+- Valid string literals (use double quotes for values)
+- Proper function definitions OUTSIDE the agent block
+- Correct Dana syntax throughout
+
+Generate only the corrected Dana code, no explanations or markdown formatting. Make sure all strings are properly quoted and all syntax is valid Dana."""
+
+    fixed_code = reason(prompt)
+    return fixed_code
+
+# Execute the code fixer
+result = solve(CodeFixerAgent(), "Fix the Dana code")
+result
+'''
+
+
+def _generate_simple_fallback_agent(messages: List[Dict[str, Any]]) -> str:
+    """
+    Generate a simple fallback agent based on user messages.
+    
+    Args:
+        messages: List of conversation messages
+        
+    Returns:
+        Simple Dana agent code
+    """
+    # Extract user intention from messages
+    all_content = ""
+    for msg in messages:
+        if msg.get("role") == "user":
+            all_content = all_content + " " + msg.get("content", "")
+    
+    content_lower = all_content.lower()
+    
+    # Determine agent type based on keywords
+    if "weather" in content_lower:
+        agent_name = "WeatherAgent"
+        agent_title = "Weather Information Agent"
+        description = "Provides weather information and recommendations"
+    elif "help" in content_lower or "assistant" in content_lower:
+        agent_name = "AssistantAgent"
+        agent_title = "General Assistant Agent"
+        description = "A helpful assistant that can answer questions and provide guidance"
+    elif "data" in content_lower or "analysis" in content_lower:
+        agent_name = "DataAgent"
+        agent_title = "Data Analysis Agent"
+        description = "Analyzes data and provides insights"
+    elif "email" in content_lower or "mail" in content_lower:
+        agent_name = "EmailAgent"
+        agent_title = "Email Assistant Agent"
+        description = "Helps with email composition and management"
+    elif "calendar" in content_lower or "schedule" in content_lower:
+        agent_name = "CalendarAgent"
+        agent_title = "Calendar Assistant Agent"
+        description = "Helps with calendar management and scheduling"
+    elif "document" in content_lower or "file" in content_lower:
+        agent_name = "DocumentAgent"
+        agent_title = "Document Processing Agent"
+        description = "Processes and analyzes documents and files"
+    elif "knowledge" in content_lower or "research" in content_lower:
+        agent_name = "KnowledgeAgent"
+        agent_title = "Knowledge and Research Agent"
+        description = "Provides information and research capabilities"
+    elif "question" in content_lower or "answer" in content_lower:
+        agent_name = "QuestionAgent"
+        agent_title = "Question Answering Agent"
+        description = "Answers questions on various topics"
+    elif "finance" in content_lower or "money" in content_lower or "budget" in content_lower or "investment" in content_lower:
+        agent_name = "FinanceAgent"
+        agent_title = "Personal Finance Advisor Agent"
+        description = "Provides personal finance advice, budgeting tips, and investment guidance"
+    else:
+        agent_name = "CustomAgent"
+        agent_title = "Custom Assistant Agent"
+        description = "An agent that can help with various tasks"
+    
+    return f'''"""Simple {agent_title}."""
+
+# Agent Card declaration
+agent {agent_name}:
+    name : str = "{agent_title}"
+    description : str = "{description}"
+    resources : list = []
+
+# Agent's problem solver
+def solve({agent_name.lower()} : {agent_name}, problem : str):
+    return reason(f"Help me with: {{problem}}")
+
+# Example usage
+example_input = "Hello, how can you help me?"
+print(solve({agent_name}(), example_input))'''
+
+
+def _get_fallback_template() -> str:
+    """
+    Get a fallback template when generation fails.
+    
+    Returns:
+        Basic Dana agent template
+    """
+    return '''"""Basic Agent Template."""
+
+# Agent Card declaration
+agent BasicAgent:
+    name : str = "Basic Agent"
+    description : str = "A basic agent that can handle general queries."
+
+# Agent's problem solver
+def solve(basic_agent : BasicAgent, problem : str):
+    """Solve a problem using reasoning."""
+    return reason(f"Help me to answer the question: {problem}")
+
+# Example usage
+example_input = "Hello, how can you help me?"
+print(solve(BasicAgent(), example_input))''' 
