@@ -88,7 +88,7 @@ export const useUIStore = create<UIState>((set, get) => ({
     }));
 
     // Auto-remove notification after duration (default: 5000ms)
-    const duration = notification.duration || 5000;
+    const duration = notification.duration === undefined ? 5000 : notification.duration;
     if (duration > 0) {
       setTimeout(() => {
         get().removeNotification(id);

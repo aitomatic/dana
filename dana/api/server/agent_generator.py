@@ -125,11 +125,7 @@ class AgentGenerator:
                 
                 # FINAL FALLBACK: Ensure Dana code is returned
                 if cleaned_code and "agent " in cleaned_code:
-                    # Syntax check using DanaSandbox
-                    syntax_result = DanaSandbox.quick_eval(source_code=cleaned_code)
-                    if not syntax_result.success:
-                        logger.error(f"Dana code syntax error: {syntax_result.error}")
-                        return cleaned_code, str(syntax_result.error)
+                    
                     return cleaned_code, None
                 else:
                     logger.warning("Generated code is empty or not Dana code, using fallback template")
@@ -312,14 +308,12 @@ Use this template structure:
 ```dana
 \"\"\"[Brief description of what the agent does].\"\"\"
 
-# Agent resources (ONLY if document/knowledge retrieval is needed)
-[resource_name] = use("rag", sources=[list_of_document_paths_or_urls])
 
 # Agent Card declaration
 agent [AgentName]:
     name : str = "[Descriptive Agent Name]"
     description : str = "[Brief description of what the agent does]"
-    resources : list = [resource_name]  # only if RAG resources are used
+    resources : list = []  # only if RAG resources are used
 
 # Agent's problem solver
 def solve([agent_name] : [AgentName], problem : str):
