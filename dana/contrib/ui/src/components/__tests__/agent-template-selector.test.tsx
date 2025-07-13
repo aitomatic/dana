@@ -22,7 +22,6 @@ vi.mock('../../stores/chat-store', () => ({
 
 describe('AgentTemplateSelector', () => {
   const mockOnTemplateSelect = vi.fn();
-  const mockOnClose = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();

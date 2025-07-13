@@ -111,10 +111,6 @@ export const CodeValidationPopup = ({
     }
   }, [fixedCode, appliedFixes, onCodeChange, onClose]);
 
-  const handleValidate = () => {
-    validateCode();
-  };
-
   if (!isOpen) return null;
 
   return (

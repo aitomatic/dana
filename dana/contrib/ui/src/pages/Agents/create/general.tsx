@@ -31,7 +31,7 @@ export function GeneralAgentPage({
   isCreating: boolean;
 }) {
   const [isEditingDescription, setIsEditingDescription] = useState(false);
-  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
+  const [_, setIsGeneratingCode] = useState(false);
   const [showTestChat, setShowTestChat] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
 
@@ -210,7 +210,7 @@ export function GeneralAgentPage({
 
       {/* Template Selector Modal */}
       {showTemplateSelector && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="flex fixed inset-0 z-50 justify-center items-center">
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300"
@@ -224,7 +224,7 @@ export function GeneralAgentPage({
               <div className="flex justify-between items-center p-6 border-b border-gray-200">
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900">Choose Agent Template</h2>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="mt-1 text-sm text-gray-600">
                     Select a template to get started quickly, or start from scratch
                   </p>
                 </div>
@@ -239,7 +239,7 @@ export function GeneralAgentPage({
               </div>
 
               {/* Content */}
-              <div className="flex-1 overflow-hidden p-6">
+              <div className="overflow-hidden flex-1 p-6">
                 <AgentTemplateSelector onTemplateSelect={handleTemplateSelect} className="h-full" />
               </div>
             </div>

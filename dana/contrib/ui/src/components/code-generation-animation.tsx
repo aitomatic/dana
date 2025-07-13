@@ -57,7 +57,7 @@ export const CodeGenerationAnimation = ({
 
   return (
     <div className={cn('relative h-full', className)}>
-      <div className="font-mono text-sm whitespace-pre-wrap leading-6 text-gray-900">
+      <div className="font-mono text-sm leading-6 text-gray-900 whitespace-pre-wrap">
         {currentCode}
         {isAnimating && cursorVisible && (
           <span className="inline-block w-0.5 h-5 bg-blue-600 ml-0.5 animate-pulse" />
@@ -77,7 +77,7 @@ export const useCodeGenerationAnimation = () => {
     setGeneratedCode(targetCode);
   }, []);
 
-  const completeGeneration = useCallback((finalCode: string) => {
+  const completeGeneration = useCallback(() => {
     setIsGenerating(false);
     setGeneratedCode('');
   }, []);

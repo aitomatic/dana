@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, memo, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/lib/api';
 import { toast } from 'sonner';
@@ -121,7 +121,7 @@ const AgentTestChat = ({
   return (
     <div className={cn('flex flex-col h-full bg-white', className)}>
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+      <div className="overflow-y-auto flex-1 p-3 space-y-3">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -152,8 +152,8 @@ const AgentTestChat = ({
 
         {isTesting && (
           <div className="flex gap-3 justify-start">
-            <div className="bg-gray-100 text-gray-900 rounded-lg px-3 py-2">
-              <div className="flex items-center gap-2">
+            <div className="px-3 py-2 text-gray-900 bg-gray-100 rounded-lg">
+              <div className="flex gap-2 items-center">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span className="text-sm">Testing agent...</span>
               </div>
@@ -166,15 +166,15 @@ const AgentTestChat = ({
       </div>
 
       {/* Input */}
-      <div className="p-3 border-t border-gray-200 bg-gray-50">
+      <div className="p-3 bg-gray-50 border-t border-gray-200">
         <div className="flex gap-2">
-          <div className="flex-1 relative">
+          <div className="relative flex-1">
             <textarea
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Type a message to test your agent..."
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-3 py-2 w-full text-sm rounded-lg border border-gray-300 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               rows={2}
               disabled={isTesting}
             />
@@ -189,7 +189,7 @@ const AgentTestChat = ({
         </div>
 
         {/* Warning about testing */}
-        <div className="mt-2 flex items-center gap-2 text-xs text-gray-500">
+        <div className="flex gap-2 items-center mt-2 text-xs text-gray-500">
           <AlertCircle className="w-3 h-3" />
           <span>
             This creates a temporary agent for testing. Your changes are not saved until you create

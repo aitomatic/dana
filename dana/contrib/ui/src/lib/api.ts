@@ -187,11 +187,11 @@ class ApiService {
 
     // Request interceptor
     this.client.interceptors.request.use(
-      (config) => {
+      (config: any) => {
         console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`);
         return config;
       },
-      (error) => {
+      (error: any) => {
         console.error('❌ API Request Error:', error);
         return Promise.reject(error);
       },
@@ -203,7 +203,7 @@ class ApiService {
         console.log(`✅ API Response: ${response.status} ${response.config.url}`);
         return response;
       },
-      (error) => {
+      (error: any) => {
         console.error('❌ API Response Error:', error);
         const apiError: ApiError = {
           message: error.response?.data?.detail || error.message || 'Unknown error occurred',

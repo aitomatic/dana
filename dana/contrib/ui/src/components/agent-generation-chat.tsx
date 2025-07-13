@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, memo, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/lib/api';
 import type { MessageData, AgentGenerationResponse } from '@/lib/api';
@@ -143,16 +143,16 @@ const AgentGenerationChat = ({
 
   return (
     <div
-      className={cn('flex flex-col h-full bg-white border border-gray-200 rounded-lg', className)}
+      className={cn('flex flex-col h-full bg-white rounded-lg border border-gray-200', className)}
     >
       {/* Header */}
-      <div className="flex items-center gap-2 p-4 border-b border-gray-200">
+      <div className="flex gap-2 items-center p-4 border-b border-gray-200">
         <Sparkles className="w-5 h-5 text-blue-600" />
         <h3 className="font-semibold text-gray-900">Agent Generator</h3>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="overflow-y-auto flex-1 p-4 space-y-4">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -164,7 +164,7 @@ const AgentGenerationChat = ({
                 message.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-900',
               )}
             >
-              <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+              <div className="text-sm whitespace-pre-wrap">{message.content}</div>
               <div
                 className={cn(
                   'text-xs mt-1',
@@ -179,8 +179,8 @@ const AgentGenerationChat = ({
 
         {isGenerating && (
           <div className="flex gap-3 justify-start">
-            <div className="bg-gray-100 text-gray-900 rounded-lg px-4 py-2">
-              <div className="flex items-center gap-2">
+            <div className="px-4 py-2 text-gray-900 bg-gray-100 rounded-lg">
+              <div className="flex gap-2 items-center">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span className="text-sm">Generating agent code...</span>
               </div>
@@ -200,14 +200,14 @@ const AgentGenerationChat = ({
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Describe the agent you want to create..."
-            className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             rows={2}
             disabled={isGenerating}
           />
           <Button
             onClick={handleSendMessage}
             disabled={!canSend}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isGenerating ? (
               <Loader2 className="w-4 h-4 animate-spin" />

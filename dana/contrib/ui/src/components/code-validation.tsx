@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/lib/api';
-import type { CodeValidationResponse, CodeError, CodeWarning, CodeSuggestion } from '@/lib/api';
+import type { CodeValidationResponse } from '@/lib/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -140,10 +140,10 @@ export const CodeValidation = ({
   return (
     <div className={cn('space-y-4', className)}>
       {/* Validation Status Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex justify-between items-center">
+        <div className="flex gap-2 items-center">
           {isValidating ? (
-            <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+            <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
           ) : validationResult?.is_valid ? (
             <CheckCircle className="w-4 h-4 text-green-500" />
           ) : (
@@ -158,7 +158,7 @@ export const CodeValidation = ({
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2 items-center">
           <Button variant="outline" size="sm" onClick={validateCode} disabled={isValidating}>
             {isValidating ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -189,11 +189,11 @@ export const CodeValidation = ({
             {validationResult.errors.map((error, index) => (
               <div
                 key={index}
-                className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg"
+                className="flex gap-2 items-start p-3 bg-red-50 rounded-lg border border-red-200"
               >
                 {getErrorIcon(error.severity)}
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex gap-2 items-center">
                     <span className="text-sm font-medium text-red-700">
                       Line {error.line}, Column {error.column}
                     </span>
@@ -201,9 +201,9 @@ export const CodeValidation = ({
                       {error.severity}
                     </Badge>
                   </div>
-                  <p className="text-sm text-red-600 mt-1">{error.message}</p>
+                  <p className="mt-1 text-sm text-red-600">{error.message}</p>
                   {error.code && (
-                    <code className="text-xs text-red-500 mt-1 block bg-red-100 p-1 rounded">
+                    <code className="block p-1 mt-1 text-xs text-red-500 bg-red-100 rounded">
                       {error.code}
                     </code>
                   )}
@@ -222,18 +222,18 @@ export const CodeValidation = ({
             {validationResult.warnings.map((warning, index) => (
               <div
                 key={index}
-                className="flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg"
+                className="flex gap-2 items-start p-3 bg-yellow-50 rounded-lg border border-yellow-200"
               >
                 <AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5" />
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex gap-2 items-center">
                     <span className="text-sm font-medium text-yellow-700">
                       Line {warning.line}, Column {warning.column}
                     </span>
                   </div>
-                  <p className="text-sm text-yellow-600 mt-1">{warning.message}</p>
+                  <p className="mt-1 text-sm text-yellow-600">{warning.message}</p>
                   {warning.suggestion && (
-                    <p className="text-sm text-yellow-500 mt-1">Suggestion: {warning.suggestion}</p>
+                    <p className="mt-1 text-sm text-yellow-500">Suggestion: {warning.suggestion}</p>
                   )}
                 </div>
               </div>
@@ -250,11 +250,11 @@ export const CodeValidation = ({
             {validationResult.suggestions.map((suggestion, index) => (
               <div
                 key={index}
-                className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg"
+                className="flex gap-2 items-start p-3 bg-blue-50 rounded-lg border border-blue-200"
               >
                 {getSuggestionIcon(suggestion.type)}
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex gap-2 items-center">
                     <span className="text-sm font-medium text-blue-700">
                       {suggestion.type.replace('_', ' ').toUpperCase()}
                     </span>
@@ -262,12 +262,12 @@ export const CodeValidation = ({
                       suggestion
                     </Badge>
                   </div>
-                  <p className="text-sm text-blue-600 mt-1">{suggestion.message}</p>
+                  <p className="mt-1 text-sm text-blue-600">{suggestion.message}</p>
                   {suggestion.description && (
-                    <p className="text-sm text-blue-500 mt-1">{suggestion.description}</p>
+                    <p className="mt-1 text-sm text-blue-500">{suggestion.description}</p>
                   )}
                   {suggestion.code && (
-                    <code className="text-xs text-blue-500 mt-1 block bg-blue-100 p-1 rounded">
+                    <code className="block p-1 mt-1 text-xs text-blue-500 bg-blue-100 rounded">
                       {suggestion.code}
                     </code>
                   )}

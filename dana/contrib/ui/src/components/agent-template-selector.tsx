@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { IconEye, IconCode, IconCheck } from '@tabler/icons-react';
-import { AGENT_TEMPLATES, TEMPLATE_CATEGORIES } from '@/constants/dana-code';
+import { AGENT_TEMPLATES } from '@/constants/dana-code';
 
 interface AgentTemplateSelectorProps {
   onTemplateSelect: (
@@ -93,14 +93,14 @@ const AgentTemplateSelector = ({ onTemplateSelect, className }: AgentTemplateSel
   return (
     <div className={className}>
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">Choose a Template</h3>
+        <h3 className="mb-2 text-lg font-semibold text-gray-900">Choose a Template</h3>
         <p className="text-sm text-gray-600">
           Select a template to get started quickly, or start from scratch with a blank template.
         </p>
       </div>
 
       {/* Category Tabs */}
-      <div className="flex gap-2 mb-4 overflow-x-auto">
+      <div className="flex overflow-x-auto gap-2 mb-4">
         {categories.map((category) => (
           <Button
             key={category.id}
@@ -142,7 +142,7 @@ const AgentTemplateSelector = ({ onTemplateSelect, className }: AgentTemplateSel
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-2">
+              <div className="flex gap-2 items-center">
                 <Badge variant="secondary">
                   {AGENT_TEMPLATES[previewTemplate as keyof typeof AGENT_TEMPLATES]?.category}
                 </Badge>
@@ -158,7 +158,7 @@ const AgentTemplateSelector = ({ onTemplateSelect, className }: AgentTemplateSel
                   {AGENT_TEMPLATES[previewTemplate as keyof typeof AGENT_TEMPLATES]?.code}
                 </pre>
               </div>
-              <div className="flex justify-end gap-2">
+              <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => setPreviewTemplate(null)}>
                   Cancel
                 </Button>
@@ -215,11 +215,11 @@ function TemplateCard({ template, isSelected, onSelect, onPreview }: TemplateCar
   return (
     <div
       className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 hover:shadow-md ${
-        isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : 'bg-white'
+        isSelected ? 'bg-blue-50 ring-2 ring-blue-500' : 'bg-white'
       }`}
     >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex justify-between items-start mb-3">
+        <div className="flex gap-2 items-center">
           <span className="text-2xl">{getCategoryIcon(template.category)}</span>
           <div>
             <h3 className="text-base font-semibold">{template.name}</h3>
@@ -230,7 +230,7 @@ function TemplateCard({ template, isSelected, onSelect, onPreview }: TemplateCar
         </div>
         {isSelected && <IconCheck className="w-5 h-5 text-blue-600" />}
       </div>
-      <p className="text-sm text-gray-600 mb-3">{template.description}</p>
+      <p className="mb-3 text-sm text-gray-600">{template.description}</p>
       <div className="flex gap-2">
         <Button
           size="sm"
@@ -241,7 +241,7 @@ function TemplateCard({ template, isSelected, onSelect, onPreview }: TemplateCar
           }}
           className="flex-1"
         >
-          <IconEye className="w-4 h-4 mr-1" />
+          <IconEye className="mr-1 w-4 h-4" />
           Preview
         </Button>
         <Button
@@ -252,7 +252,7 @@ function TemplateCard({ template, isSelected, onSelect, onPreview }: TemplateCar
           }}
           className="flex-1"
         >
-          <IconCode className="w-4 h-4 mr-1" />
+          <IconCode className="mr-1 w-4 h-4" />
           Use
         </Button>
       </div>
