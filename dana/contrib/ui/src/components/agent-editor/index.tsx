@@ -396,6 +396,7 @@ export const AgentEditor = ({
         { token: 'method', foreground: '8250df' },
         { token: 'property', foreground: '953800' },
         { token: 'string.escape', foreground: '0969da' },
+        { token: 'entity.name.type.class', foreground: '8250df', fontStyle: 'bold' },
       ],
       colors: {
         'editor.background': '#ffffff',
@@ -452,6 +453,7 @@ export const AgentEditor = ({
         { token: 'method', foreground: 'd2a8ff' },
         { token: 'property', foreground: 'ffa657' },
         { token: 'string.escape', foreground: '79c0ff' },
+        { token: 'entity.name.type.class', foreground: 'd2a8ff', fontStyle: 'bold' },
       ],
       colors: {
         'editor.background': '#0c111d',
@@ -872,12 +874,22 @@ export const AgentEditor = ({
           'knowledge',
           'resources',
           'format',
+          'agent',
+          'struct',
+          'use',
+          'export',
         ],
 
         tokenizer: {
           root: [
             // Knowledge blocks
             [/\bwith\s+knowledge\s*\(/, { token: 'keyword', next: '@knowledge_block' }],
+
+            // Agent declarations - use custom state
+            [/\bagent\s+([a-zA-Z_]\w*)\s*:/, { token: 'keyword', next: '@agent_declaration' }],
+
+            // Struct declarations - use custom state
+            [/\bstruct\s+([a-zA-Z_]\w*)\s*:/, { token: 'keyword', next: '@struct_declaration' }],
 
             // @ mentions for resources
             [/@[a-zA-Z_]\w*:?/, 'mention'],
@@ -893,7 +905,7 @@ export const AgentEditor = ({
 
             // Regular keywords
             [
-              /\b(?:with|as|private|log|while|True|False|None|break|continue|if|elif|else|for|in|return|input|print|def|class|import|from|try|except|finally|raise|and|or|not)\b/,
+              /\b(?:with|as|private|log|while|True|False|None|break|continue|if|elif|else|for|in|return|input|print|def|class|import|from|try|except|finally|raise|and|or|not|agent|struct|use|export)\b/,
               'keyword',
             ],
 
@@ -937,6 +949,20 @@ export const AgentEditor = ({
             [/[a-zA-Z_]\w*/, 'identifier'],
 
             // Whitespace
+            [/\s+/, 'white'],
+          ],
+
+          // Agent declaration state
+          agent_declaration: [
+            [/[a-zA-Z_]\w*/, 'entity.name.type.class'],
+            [/:/, 'delimiter.bracket', '@pop'],
+            [/\s+/, 'white'],
+          ],
+
+          // Struct declaration state
+          struct_declaration: [
+            [/[a-zA-Z_]\w*/, 'entity.name.type.class'],
+            [/:/, 'delimiter.bracket', '@pop'],
             [/\s+/, 'white'],
           ],
 
