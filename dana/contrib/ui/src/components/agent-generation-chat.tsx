@@ -5,6 +5,7 @@ import type { MessageData, AgentGenerationResponse } from '@/lib/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Send, Sparkles, Loader2 } from 'lucide-react';
+import { MarkdownViewerSmall } from '@/pages/Agents/chat/markdown-viewer';
 
 // Message interface for the chat
 interface ChatMessage {
@@ -158,20 +159,32 @@ const AgentGenerationChat = ({
             key={message.id}
             className={cn('flex gap-3', message.role === 'user' ? 'justify-end' : 'justify-start')}
           >
-            <div
-              className={cn(
-                'max-w-[80%] rounded-lg px-4 py-2',
-                message.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-900',
-              )}
-            >
-              <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+            <div className="flex flex-col">
+              {/* Message bubble with sender label inside */}
               <div
                 className={cn(
-                  'text-xs mt-1',
-                  message.role === 'user' ? 'text-blue-100' : 'text-gray-500',
+                  'max-w-[80%] rounded-lg px-4 py-2',
+                  message.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-900',
                 )}
               >
-                {message.timestamp.toLocaleTimeString()}
+                {/* Sender label inside bubble */}
+                <div
+                  className={cn(
+                    'text-xs font-medium mb-1',
+                    message.role === 'user' ? 'text-blue-100 opacity-80' : 'text-gray-500 opacity-80',
+                  )}
+                >
+                  {message.role === 'user' ? 'User' : 'DANA Agent'}
+                </div>
+                {message.role === 'user' ? <div className="text-sm whitespace-pre-wrap">{message.content}</div> : <MarkdownViewerSmall>{message.content}</MarkdownViewerSmall>}
+                <div
+                  className={cn(
+                    'text-xs mt-1',
+                    message.role === 'user' ? 'text-blue-100' : 'text-gray-500',
+                  )}
+                >
+                  {message.timestamp.toLocaleTimeString()}
+                </div>
               </div>
             </div>
           </div>
@@ -179,10 +192,14 @@ const AgentGenerationChat = ({
 
         {isGenerating && (
           <div className="flex gap-3 justify-start">
-            <div className="px-4 py-2 text-gray-900 bg-gray-100 rounded-lg">
-              <div className="flex gap-2 items-center">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-sm">Generating agent code...</span>
+            <div className="flex flex-col">
+              {/* Loading message bubble with sender label inside */}
+              <div className="px-4 py-2 text-gray-900 bg-gray-100 rounded-lg">
+                <div className="text-xs font-medium mb-1 text-gray-500 opacity-80">DANA Agent</div>
+                <div className="flex gap-2 items-center">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm">Generating agent code...</span>
+                </div>
               </div>
             </div>
           </div>
