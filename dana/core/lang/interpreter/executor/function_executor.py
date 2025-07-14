@@ -115,6 +115,13 @@ class FunctionExecutor(BaseExecutor):
             body=node.body, parameters=param_names, context=context, return_type=return_type, defaults=param_defaults, name=node.name.name
         )
 
+        # Check if this function should be associated with an agent type
+        # Import here to avoid circular imports
+        from dana.agent.agent_system import register_agent_method_from_function_def
+        
+        # Try to register as agent method if first parameter is an agent type
+        register_agent_method_from_function_def(node, dana_func)
+
         # Apply decorators if present
         if node.decorators:
             wrapped_func = self._apply_decorators(dana_func, node.decorators, context)

@@ -262,7 +262,6 @@ class AgentHandler(Loggable):
         return None
 
     def execute_function_definition(self, node: FunctionDefinition, context: SandboxContext) -> Any:
-        # print(f"[DEBUG] execute_function_definition called for: {getattr(node.name, 'name', node.name)}")
         """Execute a function definition, potentially associating it with the last agent type.
 
         Args:
@@ -308,8 +307,12 @@ class AgentHandler(Loggable):
             body=node.body, parameters=param_names, context=context, return_type=return_type, defaults=param_defaults, name=node.name.name
         )
 
-        # Remove all agent method association logic here. Only register the function in the context and handle decorators.
-        # (No code for agent method association remains in this function.)
+        # Check if this function should be associated with an agent type
+        # Import here to avoid circular imports
+        from dana.agent.agent_system import register_agent_method_from_function_def
+        
+        # Try to register as agent method if first parameter is an agent type
+        register_agent_method_from_function_def(node, dana_func)
 
         # Apply decorators if present
         if node.decorators:
