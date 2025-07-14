@@ -4,6 +4,7 @@ import { apiService } from '@/lib/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Send, Loader2, AlertCircle } from 'lucide-react';
+import { MarkdownViewerSmall } from '@/pages/Agents/chat/markdown-viewer';
 
 // Message interface for the test chat
 interface TestChatMessage {
@@ -137,7 +138,11 @@ const AgentTestChat = ({
                     : 'bg-gray-100 text-gray-900',
               )}
             >
-              <div className="whitespace-pre-wrap">{message.content}</div>
+              {message.role === 'agent' ? (
+                <MarkdownViewerSmall>{message.content}</MarkdownViewerSmall>
+              ) : (
+                <div className="whitespace-pre-wrap">{message.content}</div>
+              )}
               <div
                 className={cn(
                   'text-xs mt-1',
