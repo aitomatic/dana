@@ -14,8 +14,36 @@ class AgentCreate(AgentBase):
     pass
 
 
+class AgentDeployRequest(BaseModel):
+    """Request schema for agent deployment endpoint"""
+    name: str
+    description: str
+    config: dict[str, Any]
+    dana_code: str | None = None  # For single file deployment
+    multi_file_project: 'MultiFileProject' | None = None  # For multi-file deployment
+    
+    def __init__(self, **data):
+        # Ensure at least one deployment method is provided
+        super().__init__(**data)
+        if not self.dana_code and not self.multi_file_project:
+            raise ValueError("Either 'dana_code' or 'multi_file_project' must be provided")
+        if self.dana_code and self.multi_file_project:
+            raise ValueError("Cannot provide both 'dana_code' and 'multi_file_project'")
+
+
+class AgentDeployResponse(BaseModel):
+    """Response schema for agent deployment endpoint"""
+    success: bool
+    agent: AgentRead | None = None
+    error: str | None = None
+
+
 class AgentRead(AgentBase):
     id: int
+    folder_path: str | None = None
+    files: list[str] | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

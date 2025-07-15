@@ -8,7 +8,7 @@ import io
 from pathlib import Path
 
 from .. import db, schemas, services
-from ..schemas import RunNAFileRequest, RunNAFileResponse, AgentGenerationRequest, AgentGenerationResponse, DanaSyntaxCheckRequest, DanaSyntaxCheckResponse, CodeValidationRequest, CodeValidationResponse, CodeFixRequest, CodeFixResponse, MultiFileProject
+from ..schemas import RunNAFileRequest, RunNAFileResponse, AgentGenerationRequest, AgentGenerationResponse, DanaSyntaxCheckRequest, DanaSyntaxCheckResponse, CodeValidationRequest, CodeValidationResponse, CodeFixRequest, CodeFixResponse, MultiFileProject, AgentDeployRequest, AgentDeployResponse
 from ..services import run_na_file_service
 from ..agent_generator import generate_agent_code_from_messages, analyze_agent_capabilities
 from dana.core.lang.dana_sandbox import DanaSandbox
@@ -31,6 +31,127 @@ def get_agent(agent_id: int, db: Session = Depends(db.get_db)):
 @router.post("/", response_model=schemas.AgentRead)
 def create_agent(agent: schemas.AgentCreate, db: Session = Depends(db.get_db)):
     return services.create_agent(db, agent)
+
+
+@router.post("/deploy", response_model=AgentDeployResponse)
+async def deploy_agent(request: AgentDeployRequest, db: Session = Depends(db.get_db)):
+    """
+    Deploy an agent by creating database record and storing .na files in organized folder structure.
+    
+    This endpoint:
+    1. Creates agent folder: agents/{agent_id}_{sanitized_name}/
+    2. Writes .na files to the folder
+    3. Creates metadata.json with agent info  
+    4. Creates database record with folder path
+    5. Returns agent info + file paths
+    """
+    import logging
+    import json
+    import re
+    logger = logging.getLogger(__name__)
+    
+    try:
+        logger.info(f"Deploying agent: {request.name}")
+        
+        # Create the agent in database first to get ID
+        agent_create_data = schemas.AgentCreate(
+            name=request.name,
+            description=request.description,
+            config=request.config
+        )
+        
+        # Create agent record
+        agent = services.create_agent(db, agent_create_data)
+        logger.info(f"Created agent record with ID: {agent.id}")
+        
+        # Create sanitized folder name
+        sanitized_name = re.sub(r'[^a-zA-Z0-9_\-]', '_', request.name.lower())
+        folder_name = f"agent_{agent.id}_{sanitized_name}"
+        
+        # Create agents directory if it doesn't exist
+        agents_dir = Path("agents")
+        agents_dir.mkdir(exist_ok=True)
+        
+        # Create agent folder
+        agent_folder = agents_dir / folder_name
+        agent_folder.mkdir(exist_ok=True)
+        logger.info(f"Created agent folder: {agent_folder}")
+        
+        # Store file paths
+        file_paths = []
+        
+        # Handle single file deployment
+        if request.dana_code:
+            agent_file = agent_folder / "agent.na"
+            with open(agent_file, 'w', encoding='utf-8') as f:
+                f.write(request.dana_code)
+            file_paths.append(str(agent_file))
+            logger.info(f"Created agent.na file: {agent_file}")
+        
+        # Handle multi-file deployment
+        elif request.multi_file_project:
+            project = request.multi_file_project
+            for file_info in project.files:
+                # Ensure .na extension
+                filename = file_info.filename
+                if not filename.endswith('.na'):
+                    filename += '.na'
+                
+                file_path = agent_folder / filename
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(file_info.content)
+                file_paths.append(str(file_path))
+                logger.info(f"Created file: {file_path}")
+        
+        # Create metadata.json
+        metadata = {
+            "agent_id": agent.id,
+            "name": request.name,
+            "description": request.description,
+            "created_at": agent.created_at.isoformat() if agent.created_at else None,
+            "config": request.config,
+            "files": [str(Path(p).name) for p in file_paths],  # Store relative filenames
+            "folder_path": str(agent_folder),
+            "deployment_type": "multi_file" if request.multi_file_project else "single_file"
+        }
+        
+        metadata_file = agent_folder / "metadata.json"
+        with open(metadata_file, 'w', encoding='utf-8') as f:
+            json.dump(metadata, f, indent=2)
+        file_paths.append(str(metadata_file))
+        logger.info(f"Created metadata.json: {metadata_file}")
+        
+        # Update agent record with file info
+        agent.folder_path = str(agent_folder)
+        agent.files = file_paths
+        db.commit()
+        db.refresh(agent)
+        
+        logger.info(f"Agent deployed successfully: {agent.name} at {agent.folder_path}")
+        
+        return AgentDeployResponse(
+            success=True,
+            agent=agent
+        )
+        
+    except Exception as e:
+        logger.error(f"Error deploying agent: {e}", exc_info=True)
+        # Rollback database changes
+        db.rollback()
+        
+        # Clean up created files if any
+        try:
+            if 'agent_folder' in locals() and agent_folder.exists():
+                import shutil
+                shutil.rmtree(agent_folder)
+                logger.info(f"Cleaned up agent folder: {agent_folder}")
+        except Exception as cleanup_error:
+            logger.error(f"Error cleaning up files: {cleanup_error}")
+        
+        return AgentDeployResponse(
+            success=False,
+            error=f"Failed to deploy agent: {str(e)}"
+        )
 
 
 @router.post("/run-na-file", response_model=RunNAFileResponse)

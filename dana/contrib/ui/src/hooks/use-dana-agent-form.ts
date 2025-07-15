@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAgentStore } from '@/stores/agent-store';
-import type { AgentSteps, DanaAgentForm, AgentCreate } from '@/types/agent';
+import type { AgentSteps, DanaAgentForm } from '@/types/agent';
 import { DEFAULT_DANA_AGENT_CODE } from '@/constants/dana-code';
 
 const getRandomAvatar = () => {
@@ -13,7 +13,7 @@ const getRandomAvatar = () => {
 
 export function useDanaAgentForm() {
   const navigate = useNavigate();
-  const { createAgent, isCreating, error } = useAgentStore();
+  const { deployAgent, isCreating, error } = useAgentStore();
 
   const form = useForm<DanaAgentForm>({
     defaultValues: {
@@ -31,7 +31,7 @@ export function useDanaAgentForm() {
     },
   });
 
-  const onCreateAgent = async () => {
+  const onCreateAgent = async (multiFileProject?: any) => {
     try {
       const values = form.getValues();
 
@@ -41,7 +41,7 @@ export function useDanaAgentForm() {
         return;
       }
 
-      if (!values.general_agent_config.dana_code.trim()) {
+      if (!values.general_agent_config.dana_code.trim() && !multiFileProject) {
         toast.error('Agent configuration (DANA code) is required');
         return;
       }
@@ -51,30 +51,35 @@ export function useDanaAgentForm() {
         return;
       }
 
-      // Transform form data to API format
-      const agentData: AgentCreate = {
+      // Prepare deployment request
+      const deployRequest = {
         name: values.name.trim(),
         description: values.description?.trim() || '',
         config: {
           avatar: values.avatar,
-          dana_code: values.general_agent_config.dana_code,
           selectedKnowledge: values.selectedKnowledge,
         },
+        // Include either single file code or multi-file project
+        ...(multiFileProject 
+          ? { multi_file_project: multiFileProject }
+          : { dana_code: values.general_agent_config.dana_code }
+        )
       };
 
-      // Create the agent
-      const newAgent = await createAgent(agentData);
+      // Deploy the agent with .na file storage
+      const newAgent = await deployAgent(deployRequest);
 
-      // Show success message
-      toast.success(`Agent "${newAgent.name}" created successfully!`);
+      // Show success message with file storage info
+      const deploymentType = multiFileProject ? 'multi-file' : 'single-file';
+      toast.success(`Agent "${newAgent.name}" deployed successfully as ${deploymentType} project!`);
 
       // Navigate to agents list
       navigate('/agents');
     } catch (error) {
       // Error handling is done by the store, but we can add additional UI feedback
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create agent';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to deploy agent';
       toast.error(errorMessage);
-      console.error('Agent creation failed:', error);
+      console.error('Agent deployment failed:', error);
     }
   };
 

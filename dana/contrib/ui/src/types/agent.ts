@@ -11,6 +11,10 @@ export interface AgentCreate extends AgentBase {
 
 export interface AgentRead extends AgentBase {
   id: number;
+  folder_path?: string;
+  files?: string[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Agent API Response Types
@@ -62,6 +66,13 @@ export interface AgentState {
   fetchAgents: (filters?: AgentFilters) => Promise<void>;
   fetchAgent: (agentId: number) => Promise<AgentRead>;
   createAgent: (agent: AgentCreate) => Promise<AgentRead>;
+  deployAgent: (deployRequest: {
+    name: string;
+    description: string;
+    config: Record<string, any>;
+    dana_code?: string;
+    multi_file_project?: any;
+  }) => Promise<AgentRead>;
   updateAgent: (agentId: number, agent: AgentCreate) => Promise<AgentRead>;
   deleteAgent: (agentId: number) => Promise<void>;
   setSelectedAgent: (agent: AgentRead | null) => void;

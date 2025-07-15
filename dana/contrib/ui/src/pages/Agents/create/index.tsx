@@ -8,11 +8,16 @@ import { GeneralAgentPage } from './general';
 import SelectKnowledgePage from './select-knowledge';
 import { IconButton } from '@/components/ui/button';
 import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import type { MultiFileProject } from '@/lib/api';
 
 export function CreateAgentPage() {
   const { form, onCreateAgent, isCreating, error } = useDanaAgentForm();
   const { watch, setValue } = form;
   const navigate = useNavigate();
+  
+  // Multi-file project state at the top level
+  const [multiFileProject, setMultiFileProject] = useState<MultiFileProject | null>(null);
 
   const handleFileUpload = (file: File) => {
     const reader = new FileReader();
@@ -89,11 +94,11 @@ export function CreateAgentPage() {
               <Button
                 variant="default"
                 size="sm"
-                onClick={onCreateAgent}
+                onClick={() => onCreateAgent(multiFileProject)}
                 disabled={isCreating}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
-                {isCreating ? 'Creating...' : 'Deploy Agent'}
+                {isCreating ? 'Deploying...' : 'Deploy Agent'}
               </Button>
             </>
           )}
@@ -121,11 +126,13 @@ export function CreateAgentPage() {
           fileInputRef={fileInputRef}
           handleFileInputChange={handleFileInputChange}
           triggerFileInput={triggerFileInput}
+          multiFileProject={multiFileProject}
+          setMultiFileProject={setMultiFileProject}
         />
       )}
       {step === 'select-knowledge' && (
         <SelectKnowledgePage
-          onCreateAgent={onCreateAgent}
+          onCreateAgent={() => onCreateAgent(multiFileProject)}
           isCreating={isCreating}
           error={error}
           form={form}

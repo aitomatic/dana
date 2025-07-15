@@ -195,6 +195,21 @@ export interface CodeFixResponse {
   error?: string;
 }
 
+// Agent Deployment Types
+export interface AgentDeployRequest {
+  name: string;
+  description: string;
+  config: Record<string, any>;
+  dana_code?: string;
+  multi_file_project?: MultiFileProject;
+}
+
+export interface AgentDeployResponse {
+  success: boolean;
+  agent?: AgentRead;
+  error?: string;
+}
+
 // Agent Test API Types
 export interface AgentTestRequest {
   agent_code: string;
@@ -371,6 +386,12 @@ class ApiService {
 
   async createAgent(agent: AgentCreate): Promise<AgentRead> {
     const response = await this.client.post<AgentRead>('/agents/', agent);
+    return response.data;
+  }
+
+  // Agent Deployment API Methods
+  async deployAgent(request: AgentDeployRequest): Promise<AgentDeployResponse> {
+    const response = await this.client.post<AgentDeployResponse>('/agents/deploy', request);
     return response.data;
   }
 

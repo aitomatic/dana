@@ -12,6 +12,10 @@ class Agent(Base):
     name = Column(String, index=True)
     description = Column(Text)
     config = Column(JSON)
+    folder_path = Column(String, nullable=True)  # Path to agent folder
+    files = Column(JSON, nullable=True)  # List of .na file paths
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
     documents = relationship("Document", back_populates="agent")
 
 

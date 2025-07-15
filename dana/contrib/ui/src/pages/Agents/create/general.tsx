@@ -184,6 +184,8 @@ export function GeneralAgentPage({
   form,
   watch,
   isDragOver,
+  multiFileProject,
+  setMultiFileProject,
 }: {
   form: any;
   watch: any;
@@ -191,11 +193,12 @@ export function GeneralAgentPage({
   fileInputRef: any;
   handleFileInputChange: any;
   triggerFileInput: any;
+  multiFileProject: MultiFileProject | null;
+  setMultiFileProject: (project: MultiFileProject | null) => void;
 }) {
   const [_, setIsGeneratingCode] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   // const [isRightPanelMaximized, setIsRightPanelMaximized] = useState(false);
-  const [multiFileProject, setMultiFileProject] = useState<MultiFileProject | null>(null);
 
   const { setValue } = form;
 
