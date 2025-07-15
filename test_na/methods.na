@@ -1,0 +1,24 @@
+def plan(query: str) -> list:
+    answer : list = reason(f"Create a plan with maximum 3 steps to solve the problem: {query}")
+    return answer
+
+def execute(plan: list) -> str:
+    context = ""
+    for step in plan:
+        answer : str = reason(f"Execute the step: {step}")
+        context = context + answer
+    return reason(f"Create a comprehensive report based on the context: {context}")
+
+def answer(query: str) -> str:
+    answer : str = reason(f"Answer the question: {query}")
+    return answer
+
+def decide(query: str) -> bool:
+    prompt = f"""Given the question: {query}.
+    Decide if the question is a complex problem or a question.
+    If it is a complex problem, return True
+    If it is a question, return False
+    """
+    answer : bool = reason(prompt)
+    print(f"Is this a complex problem ? Answer : {answer}")
+    return answer
