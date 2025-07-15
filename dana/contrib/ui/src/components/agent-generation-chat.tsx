@@ -1,11 +1,12 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/lib/api';
-import type { MessageData, AgentGenerationResponse } from '@/lib/api';
+import type { MessageData, AgentGenerationResponse, AgentCapabilities } from '@/lib/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Send, Sparkles, Loader2 } from 'lucide-react';
 import { MarkdownViewerSmall } from '@/pages/Agents/chat/markdown-viewer';
+import { useAgentCapabilitiesStore } from '@/stores/agent-capabilities-store';
 
 // Message interface for the chat
 interface ChatMessage {
@@ -22,12 +23,71 @@ interface AgentGenerationChatProps {
   onGenerationStart?: () => void;
 }
 
+// Helper function to format capabilities into a readable message
+const formatCapabilitiesMessage = (
+  agentName: string,
+  agentDescription: string,
+  capabilities?: AgentCapabilities,
+): string => {
+  console.log('🏗️ Formatting capabilities:', { agentName, agentDescription, capabilities });
+
+  let message = `I've generated Dana code for your agent! Here's what I created:\n\n`;
+  message += `**Agent Name:** ${agentName}\n`;
+  message += `**Description:** ${agentDescription}\n\n`;
+
+  if (capabilities) {
+    console.log('✅ Capabilities found, adding to message');
+    message += `## Agent Analysis\n\n`;
+
+    if (capabilities.summary) {
+      console.log('📊 Adding summary:', capabilities.summary);
+      message += `**Summary:** ${capabilities.summary}\n\n`;
+    }
+
+    if (capabilities.knowledge && capabilities.knowledge.length > 0) {
+      console.log('🧠 Adding knowledge domains:', capabilities.knowledge);
+      message += `**Knowledge Domains:**\n`;
+      capabilities.knowledge.forEach((domain) => {
+        message += `• ${domain}\n`;
+      });
+      message += `\n`;
+    }
+
+    if (capabilities.workflow && capabilities.workflow.length > 0) {
+      console.log('🔄 Adding workflow:', capabilities.workflow);
+      message += `**Workflow:**\n`;
+      capabilities.workflow.forEach((step, index) => {
+        message += `${index + 1}. ${step}\n`;
+      });
+      message += `\n`;
+    }
+
+    if (capabilities.tools && capabilities.tools.length > 0) {
+      console.log('🛠️ Adding tools:', capabilities.tools);
+      message += `**Available Tools & Capabilities:**\n`;
+      capabilities.tools.forEach((tool) => {
+        message += `• ${tool}\n`;
+      });
+      message += `\n`;
+    }
+  } else {
+    console.log('❌ No capabilities found');
+  }
+
+  message += `The code has been loaded into the editor on the right. You can review and modify it as needed.`;
+  console.log('🔚 Final formatted message:', message);
+  return message;
+};
+
 const AgentGenerationChat = ({
   onCodeGenerated,
   currentCode,
   className,
   onGenerationStart,
 }: AgentGenerationChatProps) => {
+  // Zustand store for capabilities
+  const { setCapabilities, setLoading, setError } = useAgentCapabilitiesStore();
+
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
@@ -68,6 +128,10 @@ const AgentGenerationChat = ({
     setInputMessage('');
     setIsGenerating(true);
 
+    // Update store loading state
+    setLoading(true);
+    setError(null);
+
     // Notify parent that generation is starting
     if (onGenerationStart) {
       onGenerationStart();
@@ -95,11 +159,46 @@ const AgentGenerationChat = ({
       });
 
       if (response.success && response.dana_code) {
+        // Debug logging
+        console.log('🔍 Agent Generation Response:', response);
+        console.log('🎯 Capabilities:', response.capabilities);
+
+        // Store capabilities in Zustand store
+        if (response.capabilities) {
+          setCapabilities(response.capabilities);
+          console.log('✅ Capabilities stored in Zustand store');
+        }
+
+        // Format the assistant message with capabilities
+        let formattedMessage = formatCapabilitiesMessage(
+          response.agent_name || 'Custom Agent',
+          response.agent_description || 'A specialized agent for your needs',
+          response.capabilities,
+        );
+
+        // If API needs more information, add follow-up questions
+        if (response.needs_more_info) {
+          console.log('❓ API suggests gathering more information');
+
+          formattedMessage += "\n\n---\n\n";
+          formattedMessage += response.follow_up_message || "I could create an even better agent with more details. Could you provide additional information?";
+
+          // Pick one suggested question if available
+          if (response.suggested_questions && response.suggested_questions.length > 0) {
+            // Select a random question from the suggestions
+            const randomIndex = Math.floor(Math.random() * response.suggested_questions.length);
+            const selectedQuestion = response.suggested_questions[randomIndex];
+            formattedMessage += `\n\n**${selectedQuestion}**`;
+          }
+        }
+
+        console.log('📝 Formatted Message:', formattedMessage);
+
         // Add assistant response
         const assistantMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: `I've generated Dana code for your agent! Here's what I created:\n\n**Agent Name:** ${response.agent_name || 'Custom Agent'}\n**Description:** ${response.agent_description || 'A specialized agent for your needs'}\n\nThe code has been loaded into the editor on the right. You can review and modify it as needed.`,
+          content: formattedMessage,
           timestamp: new Date(),
         };
 
@@ -108,12 +207,19 @@ const AgentGenerationChat = ({
         // Call the callback to update the editor
         onCodeGenerated(response.dana_code, response.agent_name, response.agent_description);
 
-        toast.success('Agent code generated successfully!');
+        if (response.needs_more_info) {
+          toast.success('Agent created! Feel free to provide more details to enhance it further.');
+        } else {
+          toast.success('Agent code generated successfully!');
+        }
       } else {
         throw new Error(response.error || 'Failed to generate agent code');
       }
     } catch (error) {
       console.error('Failed to generate agent:', error);
+
+      // Update store error state
+      setError(error instanceof Error ? error.message : 'Failed to generate agent code');
 
       // Add error message
       const errorMessage: ChatMessage = {
@@ -127,6 +233,7 @@ const AgentGenerationChat = ({
       toast.error('Failed to generate agent code. Please try again.');
     } finally {
       setIsGenerating(false);
+      setLoading(false);
     }
   }, [inputMessage, isGenerating, messages, currentCode, onCodeGenerated]);
 
@@ -198,7 +305,7 @@ const AgentGenerationChat = ({
                 <div className="text-xs font-medium mb-1 text-gray-500 opacity-80">DANA Agent</div>
                 <div className="flex gap-2 items-center">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-sm">Generating agent code...</span>
+                  <span className="text-sm">Building Georgia...</span>
                 </div>
               </div>
             </div>

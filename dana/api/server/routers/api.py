@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from .. import db, schemas, services
 from ..schemas import RunNAFileRequest, RunNAFileResponse, AgentGenerationRequest, AgentGenerationResponse, DanaSyntaxCheckRequest, DanaSyntaxCheckResponse, CodeValidationRequest, CodeValidationResponse, CodeFixRequest, CodeFixResponse
 from ..services import run_na_file_service
-from ..agent_generator import generate_agent_code_from_messages
+from ..agent_generator import generate_agent_code_from_messages, analyze_agent_capabilities
 from dana.core.lang.dana_sandbox import DanaSandbox
 
 router = APIRouter(prefix="/agents", tags=["agents"])
@@ -50,11 +50,19 @@ async def generate_agent(request: AgentGenerationRequest):
         messages = [{"role": msg.role, "content": msg.content} for msg in request.messages]
         logger.info(f"Converted messages: {messages}")
         
-        # Generate Dana code
+        # Generate Dana code first
         logger.info("Calling generate_agent_code_from_messages...")
-        dana_code, syntax_error = await generate_agent_code_from_messages(messages, request.current_code or "")
+        dana_code, syntax_error, conversation_analysis = await generate_agent_code_from_messages(messages, request.current_code or "")
         logger.info(f"Generated Dana code length: {len(dana_code)}")
         logger.debug(f"Generated Dana code: {dana_code[:500]}...")
+        
+        if syntax_error:
+            logger.error(f"Syntax error in generated code: {syntax_error}")
+            return AgentGenerationResponse(
+                success=False,
+                dana_code="",
+                error=syntax_error
+            )
         
         # Extract agent name and description from the generated code
         agent_name = None
@@ -88,15 +96,34 @@ async def generate_agent(request: AgentGenerationRequest):
                 agent_description = line.split('=')[1].strip().strip('"')
                 logger.info(f"Extracted agent description (old format): {agent_description}")
         
+        # Analyze agent capabilities
+        capabilities_data = await analyze_agent_capabilities(dana_code, messages)
+        from ..schemas import AgentCapabilities
+        capabilities = AgentCapabilities(
+            summary=capabilities_data.get("summary"),
+            knowledge=capabilities_data.get("knowledge", []),
+            workflow=capabilities_data.get("workflow", []),
+            tools=capabilities_data.get("tools", [])
+        )
+        
+        # Check if we need more information and include follow-up questions
+        needs_more_info = conversation_analysis.get("needs_more_info", False)
+        follow_up_message = conversation_analysis.get("follow_up_message") if needs_more_info else None
+        suggested_questions = conversation_analysis.get("suggested_questions", []) if needs_more_info else None
+        
         response = AgentGenerationResponse(
             success=(syntax_error is None),
             dana_code=dana_code,
             agent_name=agent_name,
             agent_description=agent_description,
+            capabilities=capabilities,
+            needs_more_info=needs_more_info,
+            follow_up_message=follow_up_message,
+            suggested_questions=suggested_questions,
             error=syntax_error
         )
         
-        logger.info(f"Returning response with success={response.success}, code_length={len(response.dana_code)}")
+        logger.info(f"Returning response with success={response.success}, code_length={len(response.dana_code)}, needs_more_info={needs_more_info}")
         return response
         
     except Exception as e:

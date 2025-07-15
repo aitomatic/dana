@@ -62,7 +62,7 @@ class AgentGenerator:
             logger.error(f"Failed to initialize LLMResource: {e}")
             return False
     
-    async def generate_agent_code(self, messages: List[Dict[str, Any]], current_code: str = "") -> tuple[str, str | None]:
+    async def generate_agent_code(self, messages: List[Dict[str, Any]], current_code: str = "") -> tuple[str, str | None, Dict[str, Any]]:
         """
         Generate Dana agent code from user conversation messages.
         
@@ -71,23 +71,26 @@ class AgentGenerator:
             current_code: Current Dana code to improve upon (default empty string)
             
         Returns:
-            Tuple of (Generated Dana code as string, error message or None)
+            Tuple of (Generated Dana code as string, error message or None, conversation analysis)
         """
+        # First, analyze if we need more information
+        conversation_analysis = await analyze_conversation_completeness(messages)
+        
         # Check if mock mode is enabled
         if os.environ.get("DANA_MOCK_AGENT_GENERATION", "").lower() == "true":
             logger.info("Using mock agent generation mode")
-            return self._generate_mock_agent_code(messages, current_code), None
+            return self._generate_mock_agent_code(messages, current_code), None, conversation_analysis
         
         try:
             # Check if LLM resource is available
             if self.llm_resource is None:
                 logger.warning("LLMResource is not available, using fallback template")
-                return self._get_fallback_template(), None
+                return self._get_fallback_template(), None, conversation_analysis
             
             # Check if LLM is properly initialized
             if not hasattr(self.llm_resource, '_is_available') or not self.llm_resource._is_available:
                 logger.warning("LLMResource is not available, using fallback template")
-                return self._get_fallback_template(), None
+                return self._get_fallback_template(), None, conversation_analysis
             
             # Extract user requirements and intentions using LLM
             user_intentions = await self._extract_user_intentions(messages, current_code)
@@ -126,17 +129,17 @@ class AgentGenerator:
                 # FINAL FALLBACK: Ensure Dana code is returned
                 if cleaned_code and "agent " in cleaned_code:
                     
-                    return cleaned_code, None
+                    return cleaned_code, None, conversation_analysis
                 else:
                     logger.warning("Generated code is empty or not Dana code, using fallback template")
-                    return self._get_fallback_template(), None
+                    return self._get_fallback_template(), None, conversation_analysis
             else:
                 logger.error(f"LLM generation failed: {response.error}")
-                return self._get_fallback_template(), None
+                return self._get_fallback_template(), None, conversation_analysis
                 
         except Exception as e:
             logger.error(f"Error generating agent code: {e}")
-            return self._get_fallback_template(), str(e)
+            return self._get_fallback_template(), str(e), conversation_analysis
     
     async def _extract_user_intentions(self, messages: List[Dict[str, Any]], current_code: str = "") -> str:
         """
@@ -582,7 +585,7 @@ async def get_agent_generator() -> AgentGenerator:
     return _agent_generator
 
 
-async def generate_agent_code_from_messages(messages: List[Dict[str, Any]], current_code: str = "") -> tuple[str, str | None]:
+async def generate_agent_code_from_messages(messages: List[Dict[str, Any]], current_code: str = "") -> tuple[str, str | None, Dict[str, Any]]:
     """
     Generate Dana agent code from user conversation messages.
     
@@ -591,13 +594,15 @@ async def generate_agent_code_from_messages(messages: List[Dict[str, Any]], curr
         current_code: Current Dana code to improve upon (default empty string)
         
     Returns:
-        Tuple of (Generated Dana code, error message or None)
+        Tuple of (Generated Dana code, error message or None, conversation analysis)
     """
     generator = await get_agent_generator()
     result = await generator.generate_agent_code(messages, current_code)
-    if isinstance(result, tuple):
-        return result  # (code, error)
-    return result, None
+    if isinstance(result, tuple) and len(result) == 3:
+        return result  # (code, error, analysis)
+    elif isinstance(result, tuple) and len(result) == 2:
+        return result[0], result[1], {}  # backward compatibility
+    return result, None, {}
 
 
 async def generate_agent_code_na(messages: List[Dict[str, Any]], current_code: str = "") -> tuple[str, str | None]:
@@ -1071,6 +1076,307 @@ def solve({agent_name.lower()} : {agent_name}, problem : str):
 # Example usage
 example_input = "Hello, how can you help me?"
 print(solve({agent_name}(), example_input))'''
+
+
+async def analyze_conversation_completeness(messages: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Analyze if the conversation has enough information to generate a meaningful agent.
+    
+    Args:
+        messages: List of conversation messages
+        
+    Returns:
+        Dictionary with analysis results including whether more info is needed
+    """
+    try:
+        # Extract user messages only
+        user_messages = [msg.get('content', '') for msg in messages if msg.get('role') == 'user']
+        conversation_text = ' '.join(user_messages).lower()
+        
+        # Check for vague or insufficient requests
+        vague_indicators = [
+            'help', 'assistant', 'agent', 'create', 'make', 'build', 'something', 'anything'
+        ]
+        
+        specific_indicators = [
+            'weather', 'data', 'analysis', 'email', 'calendar', 'document', 'research',
+            'finance', 'customer', 'sales', 'support', 'translate', 'schedule', 'appointment'
+        ]
+        
+        # Calculate vagueness score
+        vague_count = sum(1 for indicator in vague_indicators if indicator in conversation_text)
+        specific_count = sum(1 for indicator in specific_indicators if indicator in conversation_text)
+        word_count = len(conversation_text.split())
+        
+        # Determine if more information is needed
+        needs_more_info = False
+        follow_up_message = ""
+        suggested_questions = []
+        
+        # Too vague if mostly generic terms and few specific terms
+        if word_count < 10 or (vague_count > specific_count and word_count < 20):
+            needs_more_info = True
+            follow_up_message = "I'd love to help you create a Dana agent! To build something that's truly useful for you, could you tell me more about what you'd like this agent to do? The more specific you can be, the better I can tailor it to your needs."
+            
+            suggested_questions = [
+                "What specific task should this agent help you with?",
+                "What kind of data or information will the agent work with?",
+                "Who will be using this agent and in what context?",
+                "Do you have any existing tools or systems it should integrate with?"
+            ]
+        
+        # Check for unclear domain or purpose
+        elif 'help' in conversation_text and specific_count == 0:
+            needs_more_info = True
+            follow_up_message = "I can help you create an agent! What specific area would you like the agent to assist with? For example, are you looking for help with business processes, data analysis, communication, or something else?"
+            
+            suggested_questions = [
+                "What's the main purpose of this agent?",
+                "What industry or domain is this for?",
+                "What are the key features you need?"
+            ]
+        
+        # Check for missing technical details if it's a complex request
+        elif any(term in conversation_text for term in ['integration', 'api', 'database', 'system']) and 'how' not in conversation_text:
+            needs_more_info = True
+            follow_up_message = "I can see you want to create an agent with some technical integrations. To build this properly, I'll need some more details about your technical requirements."
+            
+            suggested_questions = [
+                "What APIs or systems should the agent connect to?",
+                "What data formats will you be working with?",
+                "Are there any specific authentication requirements?",
+                "What's your preferred way of receiving results?"
+            ]
+        
+        return {
+            "needs_more_info": needs_more_info,
+            "follow_up_message": follow_up_message,
+            "suggested_questions": suggested_questions,
+            "analysis": {
+                "word_count": word_count,
+                "vague_count": vague_count,
+                "specific_count": specific_count,
+                "conversation_text": conversation_text[:100] + "..." if len(conversation_text) > 100 else conversation_text
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error analyzing conversation completeness: {e}")
+        return {
+            "needs_more_info": False,
+            "follow_up_message": None,
+            "suggested_questions": [],
+            "analysis": {"error": str(e)}
+        }
+
+
+async def analyze_agent_capabilities(dana_code: str, messages: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Analyze the generated Dana code and conversation to extract agent capabilities.
+    
+    Args:
+        dana_code: Generated Dana agent code
+        messages: Original conversation messages
+        
+    Returns:
+        Dictionary containing summary, knowledge, workflow, and tools
+    """
+    try:
+        # Extract conversation context
+        conversation_text = "\n".join([f"{msg.get('role', '')}: {msg.get('content', '')}" for msg in messages])
+        
+        # Basic analysis from code structure
+        capabilities = {
+            "summary": _extract_summary_from_code_and_conversation(dana_code, conversation_text),
+            "knowledge": _extract_knowledge_domains(dana_code, conversation_text),
+            "workflow": _extract_workflow_steps(dana_code, conversation_text), 
+            "tools": _extract_agent_tools(dana_code)
+        }
+        
+        return capabilities
+        
+    except Exception as e:
+        logger.error(f"Error analyzing agent capabilities: {e}")
+        return {
+            "summary": "Unable to analyze agent capabilities",
+            "knowledge": [],
+            "workflow": [],
+            "tools": []
+        }
+
+
+def _extract_summary_from_code_and_conversation(dana_code: str, conversation_text: str) -> str:
+    """Extract a comprehensive summary of what the agent does."""
+    # Try to get description from agent code first
+    lines = dana_code.split('\n')
+    agent_description = None
+    
+    for line in lines:
+        if 'description : str =' in line:
+            agent_description = line.split('=')[1].strip().strip('"')
+            break
+    
+    # Analyze conversation to understand user intent
+    conversation_lower = conversation_text.lower()
+    
+    # Create a comprehensive summary
+    if agent_description:
+        base_summary = agent_description
+    else:
+        base_summary = "A Dana agent"
+    
+    # Add context from conversation
+    context_keywords = []
+    if "weather" in conversation_lower:
+        context_keywords.append("weather information")
+    if "data" in conversation_lower or "analysis" in conversation_lower:
+        context_keywords.append("data analysis")
+    if "email" in conversation_lower:
+        context_keywords.append("email assistance")
+    if "calendar" in conversation_lower or "schedule" in conversation_lower:
+        context_keywords.append("scheduling")
+    if "document" in conversation_lower or "file" in conversation_lower:
+        context_keywords.append("document processing")
+    if "research" in conversation_lower or "knowledge" in conversation_lower:
+        context_keywords.append("research and knowledge")
+    if "finance" in conversation_lower or "money" in conversation_lower:
+        context_keywords.append("financial advice")
+    
+    if context_keywords:
+        summary = f"{base_summary}. Specializes in {', '.join(context_keywords)}."
+    else:
+        summary = f"{base_summary}. Provides general assistance and reasoning capabilities."
+    
+    return summary
+
+
+def _extract_knowledge_domains(dana_code: str, conversation_text: str) -> List[str]:
+    """Extract knowledge domains the agent can work with."""
+    domains = []
+    
+    # Analyze code for RAG resources
+    if 'use("rag"' in dana_code:
+        domains.append("Document-based knowledge retrieval")
+        
+    # Analyze conversation for domain expertise
+    conversation_lower = conversation_text.lower()
+    
+    if "weather" in conversation_lower:
+        domains.append("Weather and climate information")
+    if "data" in conversation_lower or "analysis" in conversation_lower:
+        domains.append("Data analysis and statistics")
+    if "email" in conversation_lower:
+        domains.append("Email communication and management")
+    if "calendar" in conversation_lower or "schedule" in conversation_lower:
+        domains.append("Time management and scheduling")
+    if "document" in conversation_lower or "file" in conversation_lower:
+        domains.append("Document processing and analysis")
+    if "research" in conversation_lower or "knowledge" in conversation_lower:
+        domains.append("Research and information gathering")
+    if "finance" in conversation_lower or "money" in conversation_lower or "investment" in conversation_lower:
+        domains.append("Personal finance and investment")
+    if "code" in conversation_lower or "programming" in conversation_lower:
+        domains.append("Software development and programming")
+    if "health" in conversation_lower or "medical" in conversation_lower:
+        domains.append("Health and wellness information")
+    if "travel" in conversation_lower:
+        domains.append("Travel planning and recommendations")
+    
+    # Default general knowledge if no specific domains found
+    if not domains:
+        domains.append("General knowledge and reasoning")
+    
+    return domains
+
+
+def _extract_workflow_steps(dana_code: str, conversation_text: str) -> List[str]:
+    """Extract the typical workflow steps the agent follows."""
+    workflow = []
+    
+    # Analyze the solve function to understand workflow
+    lines = dana_code.split('\n')
+    in_solve_function = False
+    
+    for line in lines:
+        if 'def solve(' in line:
+            in_solve_function = True
+            workflow.append("1. Receive user input/problem")
+            continue
+        elif in_solve_function:
+            if line.strip() and not line.startswith('    '):
+                break
+            if 'reason(' in line:
+                workflow.append("2. Apply reasoning to understand the problem")
+                workflow.append("3. Generate appropriate response or solution")
+            elif 'resources=' in line:
+                workflow.append("2. Query knowledge base for relevant information")
+    
+    # Add common workflow steps based on agent type
+    conversation_lower = conversation_text.lower()
+    
+    if "document" in conversation_lower or "file" in conversation_lower:
+        if "2. Process and analyze document content" not in workflow:
+            workflow.insert(-1, "2. Process and analyze document content")
+    
+    if "data" in conversation_lower or "analysis" in conversation_lower:
+        if "2. Analyze data patterns and trends" not in workflow:
+            workflow.insert(-1, "2. Analyze data patterns and trends")
+            workflow.append("4. Present insights and recommendations")
+    
+    if "email" in conversation_lower:
+        workflow.append("4. Format response appropriately for email context")
+    
+    # Default workflow if nothing specific found
+    if not workflow:
+        workflow = [
+            "1. Receive user query or request",
+            "2. Apply reasoning to understand the context",
+            "3. Generate helpful response or guidance"
+        ]
+    
+    return workflow
+
+
+def _extract_agent_tools(dana_code: str) -> List[str]:
+    """Extract tools and capabilities available to the agent."""
+    tools = []
+    
+    # Core Dana capabilities
+    tools.append("Reasoning engine (reason function)")
+    
+    # Check for specific resources
+    if 'use("rag"' in dana_code:
+        tools.append("RAG (Retrieval-Augmented Generation)")
+        tools.append("Document search and retrieval")
+    
+    # Check for common function patterns
+    if 'def ' in dana_code and 'solve(' not in dana_code:
+        tools.append("Custom utility functions")
+    
+    # Check for imports that indicate additional capabilities
+    if 'import' in dana_code:
+        tools.append("External library integration")
+    
+    # Check for error handling
+    if 'try:' in dana_code or 'except:' in dana_code:
+        tools.append("Error handling and recovery")
+    
+    # Check for data structures
+    if 'list' in dana_code or 'dict' in dana_code:
+        tools.append("Data structure manipulation")
+    
+    # Check for private variables (state management)
+    if 'private:' in dana_code:
+        tools.append("State management")
+    
+    # Always include basic capabilities
+    tools.extend([
+        "Natural language processing",
+        "Context understanding",
+        "Response generation"
+    ])
+    
+    return list(set(tools))  # Remove duplicates
 
 
 def _get_fallback_template() -> str:

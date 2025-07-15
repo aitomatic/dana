@@ -31,7 +31,7 @@ const AgentTestChat = ({
     {
       id: '1',
       role: 'agent',
-      content: "Hi! I'm here to help you find the perfect products for your needs. What are you looking for today?",
+      content: "Hi! How can I help you today?",
       timestamp: new Date(),
     },
   ]);

@@ -149,12 +149,24 @@ class AgentGenerationRequest(BaseModel):
     current_code: str | None = None
 
 
+class AgentCapabilities(BaseModel):
+    """Agent capabilities extracted from analysis"""
+    summary: str | None = None
+    knowledge: list[str] | None = None
+    workflow: list[str] | None = None
+    tools: list[str] | None = None
+
+
 class AgentGenerationResponse(BaseModel):
     """Response schema for agent generation endpoint"""
     success: bool
     dana_code: str
     agent_name: str | None = None
     agent_description: str | None = None
+    capabilities: AgentCapabilities | None = None
+    needs_more_info: bool = False
+    follow_up_message: str | None = None
+    suggested_questions: list[str] | None = None
     error: str | None = None
 
 

@@ -95,11 +95,22 @@ export interface AgentGenerationRequest {
   current_code?: string;
 }
 
+export interface AgentCapabilities {
+  summary?: string;
+  knowledge?: string[];
+  workflow?: string[];
+  tools?: string[];
+}
+
 export interface AgentGenerationResponse {
   success: boolean;
   dana_code: string;
   agent_name?: string;
   agent_description?: string;
+  capabilities?: AgentCapabilities;
+  needs_more_info?: boolean;
+  follow_up_message?: string;
+  suggested_questions?: string[];
   error?: string;
 }
 

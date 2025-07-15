@@ -10,9 +10,13 @@ import AgentGenerationChat from '@/components/agent-generation-chat';
 import { DEFAULT_DANA_AGENT_CODE, DANA_AGENT_PLACEHOLDER } from '@/constants/dana-code';
 import AgentTestChat from '@/components/agent-test-chat';
 import AgentTemplateSelector from '@/components/agent-template-selector';
+import { useAgentCapabilitiesStore } from '@/stores/agent-capabilities-store';
+import { MarkdownViewerSmall } from '../chat/markdown-viewer';
 
-function AgentMiddlePane() {
+function AgentMiddlePane({ danaCode, setValue }: { danaCode: string; setValue: any }) {
   const [activeTab, setActiveTab] = useState('Summary');
+  const { capabilities } = useAgentCapabilitiesStore();
+
   const tabs = [
     { label: 'Summary', icon: <List className="w-4 h-4 mr-1" /> },
     { label: 'Knowledge', icon: <Book className="w-4 h-4 mr-1" /> },
@@ -60,12 +64,37 @@ function AgentMiddlePane() {
         ))}
       </div>
       {/* Tab content */}
-      <div className="flex-1 p-6 overflow-auto">
-        {activeTab === 'Summary' && <div className="text-gray-700">Summary content goes here.</div>}
-        {activeTab === 'Knowledge' && <div className="text-gray-700">Knowledge content goes here.</div>}
-        {activeTab === 'Workflow' && <div className="text-gray-700">Workflow content goes here.</div>}
-        {activeTab === 'Tools' && <div className="text-gray-700">Tools content goes here.</div>}
-        {activeTab === 'Code' && <div className="text-gray-700">Code content goes here.</div>}
+      <div className="flex-1 p-6 overflow-auto h-full">
+        {activeTab === 'Summary' && <div className="text-gray-700">
+          <MarkdownViewerSmall>{capabilities?.summary ?? ''}</MarkdownViewerSmall>
+        </div>}
+        {activeTab === 'Knowledge' && <div className="text-gray-700">
+          <MarkdownViewerSmall>{capabilities?.knowledge?.join('\n -') ?? ''}</MarkdownViewerSmall>
+        </div>}
+        {activeTab === 'Workflow' && <div className="text-gray-700">
+          <MarkdownViewerSmall>{capabilities?.workflow?.join('\n') ?? ''}</MarkdownViewerSmall>
+        </div>}
+        {activeTab === 'Tools' && <div className="text-gray-700">
+          <MarkdownViewerSmall>{capabilities?.tools?.join('\n - ') ?? ''}</MarkdownViewerSmall>
+        </div>}
+        {activeTab === 'Code' && <div className="text-gray-700 h-full">
+          <AgentEditor
+            value={danaCode ?? DEFAULT_DANA_AGENT_CODE}
+            onChange={(value) => {
+              console.log('AgentEditor onChange called:', {
+                value,
+                currentDanaCode: danaCode,
+                isDifferent: value !== danaCode,
+              });
+              setValue('general_agent_config.dana_code', value);
+            }}
+            placeholder={DANA_AGENT_PLACEHOLDER}
+            onSave={() => { }}
+            enableAnimation={true}
+            animationSpeed={25}
+            enableAutoValidation={true}
+            autoValidationDelay={1000}
+          /></div>}
       </div>
     </div>
   );
@@ -285,7 +314,7 @@ export function GeneralAgentPage({
         </div>
 
         {/* Middle Pane - Tabs */}
-        <AgentMiddlePane />
+        <AgentMiddlePane danaCode={danaCode} setValue={setValue} />
 
         {/* Right Panel - Product Assistant */}
         <div className={cn(
