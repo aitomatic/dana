@@ -409,6 +409,8 @@ IMPORTANT: Only use RAG resources if the user specifically needs:
 For simple agents that just answer questions or perform basic tasks, do NOT use any resources.
 
 Generate only the improved Dana code, no explanations or markdown formatting.
+
+IMPORTANT: Do NOT use ```python code blocks. This is Dana language code, not Python. Use ```dana or no code blocks at all.
 """
         else:
             # If no existing code, create new agent
@@ -455,6 +457,8 @@ IMPORTANT: Only use RAG resources if the user specifically needs:
 For simple agents that just answer questions or perform basic tasks, do NOT use any resources.
 
 Keep it simple and focused on the specific requirement. Generate only the Dana code, no explanations or markdown formatting.
+
+IMPORTANT: Do NOT use ```python code blocks. This is Dana language code, not Python. Use ```dana or no code blocks at all.
 """
         return prompt
     
@@ -471,14 +475,28 @@ Keep it simple and focused on the specific requirement. Generate only the Dana c
         if not code:
             return ""
             
-        # Remove markdown code blocks
+        # Remove markdown code blocks - prioritize Dana, then handle other formats
         if "```dana" in code:
             start = code.find("```dana") + 7
             end = code.find("```", start)
             if end != -1:
                 code = code[start:end].strip()
+        elif "```python" in code:
+            start = code.find("```python") + 9
+            end = code.find("```", start)
+            if end != -1:
+                code = code[start:end].strip()
+        elif "```na" in code:
+            start = code.find("```na") + 5
+            end = code.find("```", start)
+            if end != -1:
+                code = code[start:end].strip()
         elif "```" in code:
             start = code.find("```") + 3
+            # Skip language specification if present
+            newline_pos = code.find("\n", start)
+            if newline_pos != -1:
+                start = newline_pos + 1
             end = code.find("```", start)
             if end != -1:
                 code = code[start:end].strip()
@@ -1042,7 +1060,9 @@ IMPORTANT: Only use RAG resources if the user specifically needs:
 
 For simple agents that just answer questions or perform basic tasks, do NOT use any resources.
 
-Generate only the Dana code, no explanations or markdown formatting. Make sure all strings are properly quoted and all syntax is valid Dana."""
+Generate only the Dana code, no explanations or markdown formatting. Make sure all strings are properly quoted and all syntax is valid Dana.
+
+IMPORTANT: Do NOT use ```python code blocks. This is Dana language code, not Python. Use ```dana or no code blocks at all."""
 
     # Use reason() function to generate the agent code
     generated_code = reason(prompt)
@@ -1233,7 +1253,9 @@ IMPORTANT: Generate ONLY valid Dana code with:
 - Proper function definitions OUTSIDE the agent block
 - Correct Dana syntax throughout
 
-Generate only the corrected Dana code, no explanations or markdown formatting. Make sure all strings are properly quoted and all syntax is valid Dana."""
+Generate only the corrected Dana code, no explanations or markdown formatting. Make sure all strings are properly quoted and all syntax is valid Dana.
+
+IMPORTANT: Do NOT use ```python code blocks. This is Dana language code, not Python. Use ```dana or no code blocks at all."""
 
     fixed_code = reason(prompt)
     return fixed_code
@@ -1428,12 +1450,12 @@ async def analyze_agent_capabilities(dana_code: str, messages: List[Dict[str, An
         # Extract conversation context
         conversation_text = "\n".join([f"{msg.get('role', '')}: {msg.get('content', '')}" for msg in messages])
         
-        # Basic analysis from code structure
+        # Advanced analysis that aligns with the actual generated code
         capabilities = {
             "summary": _extract_summary_from_code_and_conversation(dana_code, conversation_text),
-            "knowledge": _extract_knowledge_domains(dana_code, conversation_text),
-            "workflow": _extract_workflow_steps(dana_code, conversation_text), 
-            "tools": _extract_agent_tools(dana_code)
+            "knowledge": _extract_knowledge_domains_from_code(dana_code, conversation_text),
+            "workflow": _extract_workflow_steps_from_code(dana_code, conversation_text), 
+            "tools": _extract_agent_tools_from_code(dana_code)
         }
         
         return capabilities
@@ -1449,81 +1471,118 @@ async def analyze_agent_capabilities(dana_code: str, messages: List[Dict[str, An
 
 
 def _extract_summary_from_code_and_conversation(dana_code: str, conversation_text: str) -> str:
-    """Extract a comprehensive summary of what the agent does."""
-    # Try to get description from agent code first
+    """Extract a comprehensive summary of what the agent does based on actual code."""
+    # Extract agent name and description from code
     lines = dana_code.split('\n')
+    agent_name = None
     agent_description = None
     
     for line in lines:
-        if 'description : str =' in line:
+        if line.strip().startswith('agent ') and line.strip().endswith(':'):
+            # Extract agent name
+            agent_name = line.strip().replace('agent ', '').replace(':', '').strip()
+        elif 'description : str =' in line:
             agent_description = line.split('=')[1].strip().strip('"')
             break
     
-    # Analyze conversation to understand user intent
-    conversation_lower = conversation_text.lower()
+    # Analyze what the agent actually does based on the solve function
+    solve_function_content = _extract_solve_function_content(dana_code)
     
-    # Create a comprehensive summary
+    # Build comprehensive summary
     if agent_description:
         base_summary = agent_description
+    elif agent_name:
+        base_summary = f"A {agent_name} that provides specialized assistance"
     else:
         base_summary = "A Dana agent"
     
-    # Add context from conversation
-    context_keywords = []
-    if "weather" in conversation_lower:
-        context_keywords.append("weather information")
-    if "data" in conversation_lower or "analysis" in conversation_lower:
-        context_keywords.append("data analysis")
-    if "email" in conversation_lower:
-        context_keywords.append("email assistance")
-    if "calendar" in conversation_lower or "schedule" in conversation_lower:
-        context_keywords.append("scheduling")
-    if "document" in conversation_lower or "file" in conversation_lower:
-        context_keywords.append("document processing")
-    if "research" in conversation_lower or "knowledge" in conversation_lower:
-        context_keywords.append("research and knowledge")
-    if "finance" in conversation_lower or "money" in conversation_lower:
-        context_keywords.append("financial advice")
+    # Analyze actual capabilities from solve function
+    capabilities = []
+    if 'reason(' in solve_function_content:
+        if 'resources=' in solve_function_content:
+            capabilities.append("uses knowledge base for informed responses")
+        else:
+            capabilities.append("uses AI reasoning for problem-solving")
     
-    if context_keywords:
-        summary = f"{base_summary}. Specializes in {', '.join(context_keywords)}."
+    # Check for resource usage
+    if 'use("rag"' in dana_code:
+        capabilities.append("can access and retrieve information from documents")
+    
+    # Check for specific processing patterns
+    if 'weather' in solve_function_content.lower():
+        capabilities.append("provides weather information and forecasts")
+    if 'data' in solve_function_content.lower() or 'analysis' in solve_function_content.lower():
+        capabilities.append("performs data analysis and insights")
+    if 'email' in solve_function_content.lower():
+        capabilities.append("assists with email composition and management")
+    if 'calendar' in solve_function_content.lower() or 'schedule' in solve_function_content.lower():
+        capabilities.append("helps with scheduling and time management")
+    if 'document' in solve_function_content.lower() or 'file' in solve_function_content.lower():
+        capabilities.append("processes and analyzes documents")
+    if 'finance' in solve_function_content.lower() or 'money' in solve_function_content.lower():
+        capabilities.append("provides financial advice and guidance")
+    
+    if capabilities:
+        summary = f"{base_summary}. This agent {', '.join(capabilities)}."
     else:
         summary = f"{base_summary}. Provides general assistance and reasoning capabilities."
     
     return summary
 
 
-def _extract_knowledge_domains(dana_code: str, conversation_text: str) -> List[str]:
-    """Extract knowledge domains the agent can work with."""
+def _extract_knowledge_domains_from_code(dana_code: str, conversation_text: str) -> List[str]:
+    """Extract knowledge domains the agent can work with based on actual code."""
     domains = []
     
-    # Analyze code for RAG resources
+    # Analyze code for RAG resources and their sources
     if 'use("rag"' in dana_code:
         domains.append("Document-based knowledge retrieval")
         
-    # Analyze conversation for domain expertise
-    conversation_lower = conversation_text.lower()
+        # Extract specific sources if mentioned
+        import re
+        sources_match = re.search(r'sources=\[([^\]]+)\]', dana_code)
+        if sources_match:
+            sources = sources_match.group(1)
+            if 'pdf' in sources.lower():
+                domains.append("PDF document analysis")
+            if 'txt' in sources.lower():
+                domains.append("Text file processing")
+            if 'md' in sources.lower():
+                domains.append("Markdown documentation")
+            if 'guide' in sources.lower():
+                domains.append("Reference guides and manuals")
     
-    if "weather" in conversation_lower:
+    # Analyze agent name and description for domain expertise
+    agent_name = _extract_agent_name_from_code(dana_code)
+    agent_description = _extract_agent_description_from_code(dana_code)
+    
+    code_content = f"{agent_name} {agent_description}".lower()
+    
+    # Extract domains based on actual agent characteristics
+    if "weather" in code_content:
         domains.append("Weather and climate information")
-    if "data" in conversation_lower or "analysis" in conversation_lower:
+    if "data" in code_content or "analysis" in code_content:
         domains.append("Data analysis and statistics")
-    if "email" in conversation_lower:
+    if "email" in code_content:
         domains.append("Email communication and management")
-    if "calendar" in conversation_lower or "schedule" in conversation_lower:
+    if "calendar" in code_content or "schedule" in code_content:
         domains.append("Time management and scheduling")
-    if "document" in conversation_lower or "file" in conversation_lower:
+    if "document" in code_content or "file" in code_content:
         domains.append("Document processing and analysis")
-    if "research" in conversation_lower or "knowledge" in conversation_lower:
+    if "research" in code_content or "knowledge" in code_content:
         domains.append("Research and information gathering")
-    if "finance" in conversation_lower or "money" in conversation_lower or "investment" in conversation_lower:
+    if "finance" in code_content or "money" in code_content or "investment" in code_content:
         domains.append("Personal finance and investment")
-    if "code" in conversation_lower or "programming" in conversation_lower:
+    if "code" in code_content or "programming" in code_content:
         domains.append("Software development and programming")
-    if "health" in conversation_lower or "medical" in conversation_lower:
+    if "health" in code_content or "medical" in code_content:
         domains.append("Health and wellness information")
-    if "travel" in conversation_lower:
+    if "travel" in code_content:
         domains.append("Travel planning and recommendations")
+    if "customer" in code_content or "support" in code_content:
+        domains.append("Customer service and support")
+    if "sales" in code_content or "marketing" in code_content:
+        domains.append("Sales and marketing assistance")
     
     # Default general knowledge if no specific domains found
     if not domains:
@@ -1532,45 +1591,50 @@ def _extract_knowledge_domains(dana_code: str, conversation_text: str) -> List[s
     return domains
 
 
-def _extract_workflow_steps(dana_code: str, conversation_text: str) -> List[str]:
-    """Extract the typical workflow steps the agent follows."""
+def _extract_workflow_steps_from_code(dana_code: str, conversation_text: str) -> List[str]:
+    """Extract the typical workflow steps the agent follows based on actual code."""
     workflow = []
     
-    # Analyze the solve function to understand workflow
-    lines = dana_code.split('\n')
-    in_solve_function = False
+    # Analyze the solve function to understand actual workflow
+    solve_function_content = _extract_solve_function_content(dana_code)
     
-    for line in lines:
-        if 'def solve(' in line:
-            in_solve_function = True
-            workflow.append("1. Receive user input/problem")
-            continue
-        elif in_solve_function:
-            if line.strip() and not line.startswith('    '):
-                break
-            if 'reason(' in line:
-                workflow.append("2. Apply reasoning to understand the problem")
-                workflow.append("3. Generate appropriate response or solution")
-            elif 'resources=' in line:
-                workflow.append("2. Query knowledge base for relevant information")
+    # Always start with input reception
+    workflow.append("1. Receive user input/problem")
     
-    # Add common workflow steps based on agent type
-    conversation_lower = conversation_text.lower()
+    # Analyze the solve function for specific processing steps
+    if 'resources=' in solve_function_content:
+        workflow.append("2. Query knowledge base for relevant information")
+        workflow.append("3. Apply reasoning with retrieved context")
+        workflow.append("4. Generate informed response based on knowledge base")
+    elif 'reason(' in solve_function_content:
+        workflow.append("2. Apply AI reasoning to understand the problem")
+        workflow.append("3. Generate appropriate response or solution")
     
-    if "document" in conversation_lower or "file" in conversation_lower:
-        if "2. Process and analyze document content" not in workflow:
-            workflow.insert(-1, "2. Process and analyze document content")
+    # Add specific workflow steps based on agent characteristics
+    agent_name = _extract_agent_name_from_code(dana_code)
+    agent_description = _extract_agent_description_from_code(dana_code)
     
-    if "data" in conversation_lower or "analysis" in conversation_lower:
-        if "2. Analyze data patterns and trends" not in workflow:
-            workflow.insert(-1, "2. Analyze data patterns and trends")
-            workflow.append("4. Present insights and recommendations")
+    code_content = f"{agent_name} {agent_description} {solve_function_content}".lower()
     
-    if "email" in conversation_lower:
+    # Insert specific processing steps based on agent type
+    if "weather" in code_content:
+        workflow.insert(-1, "2. Analyze weather patterns and conditions")
+    elif "data" in code_content or "analysis" in code_content:
+        workflow.insert(-1, "2. Process and analyze data patterns")
+        workflow.append("4. Present insights and recommendations")
+    elif "document" in code_content or "file" in code_content:
+        workflow.insert(-1, "2. Process and analyze document content")
+    elif "email" in code_content:
+        workflow.insert(-1, "2. Analyze email context and requirements")
         workflow.append("4. Format response appropriately for email context")
+    elif "calendar" in code_content or "schedule" in code_content:
+        workflow.insert(-1, "2. Analyze scheduling requirements and constraints")
+    elif "finance" in code_content or "money" in code_content:
+        workflow.insert(-1, "2. Analyze financial situation and requirements")
+        workflow.append("4. Provide personalized financial recommendations")
     
     # Default workflow if nothing specific found
-    if not workflow:
+    if len(workflow) <= 1:
         workflow = [
             "1. Receive user query or request",
             "2. Apply reasoning to understand the context",
@@ -1580,37 +1644,95 @@ def _extract_workflow_steps(dana_code: str, conversation_text: str) -> List[str]
     return workflow
 
 
-def _extract_agent_tools(dana_code: str) -> List[str]:
-    """Extract tools and capabilities available to the agent."""
+def _extract_agent_tools_from_code(dana_code: str) -> List[str]:
+    """Extract tools and capabilities available to the agent based on actual code."""
     tools = []
     
-    # Core Dana capabilities
+    # Core Dana capabilities that are always present
     tools.append("Reasoning engine (reason function)")
     
-    # Check for specific resources
+    # Check for specific resources and their capabilities
     if 'use("rag"' in dana_code:
         tools.append("RAG (Retrieval-Augmented Generation)")
         tools.append("Document search and retrieval")
+        tools.append("Knowledge base querying")
+        
+        # Extract specific source types
+        import re
+        sources_match = re.search(r'sources=\[([^\]]+)\]', dana_code)
+        if sources_match:
+            sources = sources_match.group(1)
+            if 'pdf' in sources.lower():
+                tools.append("PDF document processing")
+            if 'txt' in sources.lower():
+                tools.append("Text file analysis")
+            if 'md' in sources.lower():
+                tools.append("Markdown parsing")
     
-    # Check for common function patterns
-    if 'def ' in dana_code and 'solve(' not in dana_code:
-        tools.append("Custom utility functions")
+    # Check for custom functions (beyond solve)
+    custom_functions = []
+    lines = dana_code.split('\n')
+    for line in lines:
+        if line.strip().startswith('def ') and 'solve(' not in line:
+            func_name = line.strip().split('(')[0].replace('def ', '')
+            custom_functions.append(func_name)
+    
+    if custom_functions:
+        tools.append(f"Custom utility functions ({', '.join(custom_functions)})")
     
     # Check for imports that indicate additional capabilities
-    if 'import' in dana_code:
+    imports = []
+    for line in lines:
+        if line.strip().startswith('import ') or line.strip().startswith('from '):
+            imports.append(line.strip())
+    
+    if imports:
         tools.append("External library integration")
+        for imp in imports:
+            if 'json' in imp:
+                tools.append("JSON data processing")
+            elif 'os' in imp:
+                tools.append("System operations")
+            elif 'datetime' in imp:
+                tools.append("Date and time handling")
     
     # Check for error handling
     if 'try:' in dana_code or 'except:' in dana_code:
         tools.append("Error handling and recovery")
     
     # Check for data structures
-    if 'list' in dana_code or 'dict' in dana_code:
-        tools.append("Data structure manipulation")
+    if 'list' in dana_code and 'resources : list' not in dana_code:
+        tools.append("List data processing")
+    if 'dict' in dana_code:
+        tools.append("Dictionary data manipulation")
     
     # Check for private variables (state management)
     if 'private:' in dana_code:
         tools.append("State management")
+    
+    # Analyze agent-specific capabilities based on agent type
+    agent_name = _extract_agent_name_from_code(dana_code)
+    agent_description = _extract_agent_description_from_code(dana_code)
+    
+    code_content = f"{agent_name} {agent_description}".lower()
+    
+    if "weather" in code_content:
+        tools.append("Weather data interpretation")
+    elif "data" in code_content or "analysis" in code_content:
+        tools.append("Data analysis and visualization")
+        tools.append("Statistical computation")
+    elif "email" in code_content:
+        tools.append("Email composition assistance")
+        tools.append("Communication optimization")
+    elif "calendar" in code_content or "schedule" in code_content:
+        tools.append("Time management algorithms")
+        tools.append("Scheduling optimization")
+    elif "finance" in code_content or "money" in code_content:
+        tools.append("Financial calculation")
+        tools.append("Investment analysis")
+    elif "document" in code_content or "file" in code_content:
+        tools.append("Document parsing and analysis")
+        tools.append("Content extraction")
     
     # Always include basic capabilities
     tools.extend([
@@ -1620,6 +1742,43 @@ def _extract_agent_tools(dana_code: str) -> List[str]:
     ])
     
     return list(set(tools))  # Remove duplicates
+
+
+def _extract_solve_function_content(dana_code: str) -> str:
+    """Extract the content of the solve function from Dana code."""
+    lines = dana_code.split('\n')
+    solve_content = []
+    in_solve_function = False
+    
+    for line in lines:
+        if 'def solve(' in line:
+            in_solve_function = True
+            solve_content.append(line)
+            continue
+        elif in_solve_function:
+            if line.strip() and not line.startswith('    '):
+                break
+            solve_content.append(line)
+    
+    return '\n'.join(solve_content)
+
+
+def _extract_agent_name_from_code(dana_code: str) -> str:
+    """Extract the agent name from Dana code."""
+    lines = dana_code.split('\n')
+    for line in lines:
+        if line.strip().startswith('agent ') and line.strip().endswith(':'):
+            return line.strip().replace('agent ', '').replace(':', '').strip()
+    return ""
+
+
+def _extract_agent_description_from_code(dana_code: str) -> str:
+    """Extract the agent description from Dana code."""
+    lines = dana_code.split('\n')
+    for line in lines:
+        if 'description : str =' in line:
+            return line.split('=')[1].strip().strip('"')
+    return ""
 
 
 def _get_fallback_template() -> str:

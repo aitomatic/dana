@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/button';
 import {
   Edit,
   X,
-  Expand,
-  Collapse,
+  // Expand,
+  // Collapse,
   Book,
   Network,
   Tools,
@@ -22,6 +22,8 @@ import { useAgentCapabilitiesStore } from '@/stores/agent-capabilities-store';
 import { MarkdownViewerSmall } from '../chat/markdown-viewer';
 import MultiFileCodeEditor from '@/components/multi-file-code-editor';
 import type { MultiFileProject } from '@/lib/api';
+import DanaAvatar from '/agent-avatar/javis-avatar.svg';
+import GeorgiaAvatar from '/agent-avatar/georgia-avatar.svg';
 
 function AgentMiddlePane({
   danaCode,
@@ -192,7 +194,7 @@ export function GeneralAgentPage({
 }) {
   const [_, setIsGeneratingCode] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
-  const [isRightPanelMaximized, setIsRightPanelMaximized] = useState(false);
+  // const [isRightPanelMaximized, setIsRightPanelMaximized] = useState(false);
   const [multiFileProject, setMultiFileProject] = useState<MultiFileProject | null>(null);
 
   const { setValue } = form;
@@ -255,15 +257,13 @@ export function GeneralAgentPage({
         <div
           className={cn(
             'flex flex-col w-[30%] border-r border-gray-200',
-            isRightPanelMaximized && 'hidden',
+            // isRightPanelMaximized && 'hidden',
           )}
         >
           {/* Header */}
           <div className="flex justify-between items-center p-4 bg-gray-50 border-b border-gray-200">
             <div className="flex gap-2 items-center">
-              <div className="flex justify-center items-center w-8 h-8 bg-blue-500 rounded-lg">
-                <span className="text-sm font-bold text-white">D</span>
-              </div>
+              <img className="w-8 h-8" src={DanaAvatar} alt="Agent avatar" />
               <h2 className="text-lg font-semibold text-gray-900">Chat with Dana</h2>
             </div>
           </div>
@@ -288,16 +288,19 @@ export function GeneralAgentPage({
         />
 
         {/* Right Panel - Product Assistant */}
-        <div className={cn('flex flex-col flex-1', isRightPanelMaximized && 'w-full')}>
+        <div
+          className={cn(
+            'flex flex-col flex-1',
+            // isRightPanelMaximized && 'w-full'
+          )}
+        >
           {/* Header */}
           <div className="flex justify-between items-center p-4 bg-gray-50 border-b border-gray-200">
             <div className="flex gap-2 items-center">
-              <div className="flex justify-center items-center w-8 h-8 bg-purple-500 rounded-lg">
-                <span className="text-sm font-bold text-white">P</span>
-              </div>
-              <h2 className="text-lg font-semibold text-gray-900">{agentName}</h2>
+              <img className="w-8 h-8" src={GeorgiaAvatar} alt="Georgia avatar" />
+              <h2 className="text-lg font-semibold text-gray-900">Georgia</h2>
             </div>
-            <div className="flex gap-2">
+            {/* <div className="flex gap-2">
               <Button
                 variant="ghost"
                 size="sm"
@@ -313,7 +316,7 @@ export function GeneralAgentPage({
               <Button variant="ghost" size="sm" className="p-1">
                 <X className="w-4 h-4" />
               </Button>
-            </div>
+            </div> */}
           </div>
 
           {/* Chat Content */}

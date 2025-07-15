@@ -9,7 +9,7 @@ import type {
 } from '@/lib/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Send, Sparkles, Loader2 } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
 import { MarkdownViewerSmall } from '@/pages/Agents/chat/markdown-viewer';
 import { useAgentCapabilitiesStore } from '@/stores/agent-capabilities-store';
 

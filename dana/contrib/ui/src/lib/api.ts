@@ -135,9 +135,12 @@ export interface AgentGenerationResponse {
 
 // Code Validation Types
 export interface CodeValidationRequest {
-  code: string;
+  code?: string;  // For single-file validation (backward compatibility)
   agent_name?: string;
   description?: string;
+  
+  // Multi-file validation support
+  multi_file_project?: MultiFileProject;
 }
 
 export interface CodeValidationResponse {
@@ -148,6 +151,11 @@ export interface CodeValidationResponse {
   suggestions: CodeSuggestion[];
   fixed_code?: string;
   error?: string;
+  
+  // Multi-file validation results
+  file_results?: any[];  // Results for each file in multi-file project
+  dependency_errors?: any[];  // Dependency validation errors
+  overall_errors?: any[];  // Project-level errors
 }
 
 export interface CodeError {

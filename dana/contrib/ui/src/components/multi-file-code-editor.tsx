@@ -2,16 +2,29 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Settings, GitBranch, Package, Zap, Copy, Check, Download } from 'lucide-react';
+import {
+  FileText,
+  Settings,
+  GitBranch,
+  Package,
+  Zap,
+  Copy,
+  Check,
+  Download,
+  RefreshCw,
+  AlertCircle,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { AgentEditor } from '@/components/agent-editor';
-import type { MultiFileProject, DanaFile } from '@/lib/api';
+import { apiService } from '@/lib/api';
+import type { MultiFileProject, DanaFile, CodeValidationResponse } from '@/lib/api';
 
 interface MultiFileCodeEditorProps {
   project: MultiFileProject;
   onFileChange?: (file: DanaFile, newContent: string) => void;
   onDownload?: (project: MultiFileProject) => void;
   className?: string;
+  enableValidation?: boolean;
 }
 
 // File type icons
@@ -55,10 +68,14 @@ const MultiFileCodeEditor = ({
   onFileChange,
   onDownload,
   className,
+  enableValidation = true,
 }: MultiFileCodeEditorProps) => {
   const [activeFile, setActiveFile] = useState<DanaFile>(project.files[0]);
   const [copiedFile, setCopiedFile] = useState<string | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
+  const [validationResult, setValidationResult] = useState<CodeValidationResponse | null>(null);
 
+  console.log('Multiple file');
   const handleFileSelect = (file: DanaFile) => {
     setActiveFile(file);
   };
@@ -83,6 +100,35 @@ const MultiFileCodeEditor = ({
   const handleDownload = () => {
     if (onDownload) {
       onDownload(project);
+    }
+  };
+
+  const handleValidation = async () => {
+    setIsValidating(true);
+    try {
+      console.log({
+        multi_file_project: project,
+        agent_name: project.name,
+        description: project.description,
+      });
+      const result = await apiService.validateCode({
+        multi_file_project: project,
+        agent_name: project.name,
+        description: project.description,
+      });
+
+      setValidationResult(result);
+
+      if (result.is_valid) {
+        toast.success('All files are valid!');
+      } else {
+        toast.error('Validation errors detected. Check the results below.');
+      }
+    } catch (error) {
+      toast.error('Failed to validate project');
+      console.error('Validation error:', error);
+    } finally {
+      setIsValidating(false);
     }
   };
 
@@ -130,6 +176,22 @@ const MultiFileCodeEditor = ({
               <Copy className="w-4 h-4" />
             )}
           </Button>
+          {enableValidation && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleValidation}
+              className="p-1"
+              title="Validate project"
+              disabled={isValidating}
+            >
+              {isValidating ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4" />
+              )}
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
@@ -180,10 +242,87 @@ const MultiFileCodeEditor = ({
           className="h-full"
           enableAnimation={true}
           animationSpeed={25}
-          enableAutoValidation={true}
+          enableAutoValidation={false} // Disable auto-validation for multi-file
           autoValidationDelay={1000}
         />
       </div>
+
+      {/* Validation results */}
+      {validationResult && !validationResult.is_valid && (
+        <div className="p-3 bg-red-50 border-t border-gray-200">
+          <div className="flex gap-2 items-center mb-2">
+            <AlertCircle className="w-4 h-4 text-red-600" />
+            <span className="text-sm font-medium text-red-700">Project Validation Issues</span>
+          </div>
+
+          {/* File-specific errors */}
+          {validationResult.file_results && validationResult.file_results.length > 0 && (
+            <div className="space-y-2">
+              {validationResult.file_results.map((fileResult: any, index: number) => (
+                <div key={index} className="text-sm">
+                  <span className="font-medium text-red-700">{fileResult.filename}:</span>
+                  {fileResult.errors && fileResult.errors.length > 0 && (
+                    <ul className="mt-1 ml-4 space-y-1">
+                      {fileResult.errors.map((error: any, errorIndex: number) => (
+                        <li key={errorIndex} className="text-red-600">
+                          • {error.message}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {fileResult.warnings && fileResult.warnings.length > 0 && (
+                    <ul className="mt-1 ml-4 space-y-1">
+                      {fileResult.warnings.map((warning: any, warningIndex: number) => (
+                        <li key={warningIndex} className="text-orange-600">
+                          ⚠ {warning.message}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Dependency errors */}
+          {validationResult.dependency_errors && validationResult.dependency_errors.length > 0 && (
+            <div className="mt-3">
+              <span className="text-sm font-medium text-red-700">Dependency Issues:</span>
+              <ul className="mt-1 ml-4 space-y-1">
+                {validationResult.dependency_errors.map((depError: any, index: number) => (
+                  <li key={index} className="text-sm text-red-600">
+                    • {depError.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Overall errors */}
+          {validationResult.overall_errors && validationResult.overall_errors.length > 0 && (
+            <div className="mt-3">
+              <span className="text-sm font-medium text-red-700">Project Issues:</span>
+              <ul className="mt-1 ml-4 space-y-1">
+                {validationResult.overall_errors.map((overallError: any, index: number) => (
+                  <li key={index} className="text-sm text-red-600">
+                    • {overallError.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Success message */}
+      {validationResult && validationResult.is_valid && (
+        <div className="p-3 bg-green-50 border-t border-gray-200">
+          <div className="flex gap-2 items-center">
+            <Check className="w-4 h-4 text-green-600" />
+            <span className="text-sm font-medium text-green-700">All files are valid!</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

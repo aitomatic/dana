@@ -233,9 +233,20 @@ class CodeSuggestion(BaseModel):
 
 class CodeValidationRequest(BaseModel):
     """Request schema for code validation endpoint"""
-    code: str
+    code: str | None = None  # For single-file validation (backward compatibility)
     agent_name: str | None = None
     description: str | None = None
+    
+    # New multi-file support
+    multi_file_project: MultiFileProject | None = None  # For multi-file validation
+    
+    def __init__(self, **data):
+        # Ensure at least one validation method is provided
+        super().__init__(**data)
+        if not self.code and not self.multi_file_project:
+            raise ValueError("Either 'code' or 'multi_file_project' must be provided")
+        if self.code and self.multi_file_project:
+            raise ValueError("Cannot provide both 'code' and 'multi_file_project'")
 
 
 class CodeValidationResponse(BaseModel):
@@ -247,6 +258,11 @@ class CodeValidationResponse(BaseModel):
     suggestions: list[CodeSuggestion] = []
     fixed_code: str | None = None
     error: str | None = None
+    
+    # Multi-file validation results
+    file_results: list[dict] | None = None  # Results for each file in multi-file project
+    dependency_errors: list[dict] | None = None  # Dependency validation errors
+    overall_errors: list[dict] | None = None  # Project-level errors
 
 
 class CodeFixRequest(BaseModel):

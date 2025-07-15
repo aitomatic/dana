@@ -191,87 +191,171 @@ def syntax_check(request: DanaSyntaxCheckRequest):
 async def validate_code(request: CodeValidationRequest):
     """
     Validate Dana agent code and provide detailed feedback.
+    Supports both single-file and multi-file validation.
     Returns validation status, errors, warnings, and suggestions.
     """
     import logging
     logger = logging.getLogger(__name__)
     
     try:
-        logger.info(f"Validating code for agent: {request.agent_name}")
-        print(request.code)
-        print("--------------------------------")
-        
-        # Basic syntax validation
-        syntax_result = DanaSandbox.quick_eval(request.code)
-
-        print("--------------------------------")
-        print(syntax_result)
-
-        print("--------------------------------")
-        
-        errors = []
-        warnings = []
-        suggestions = []
-
-        print("--------------------------------")
-        print(syntax_result.success)
-        print("--------------------------------")
-        
-        if not syntax_result.success:
-            # Just return the raw error text
-            error_text = str(syntax_result.error)
-            errors.append({
-                "line": 1,
-                "column": 1,
-                "message": error_text,
-                "severity": "error",
-                "code": error_text
-            })
-        
-        # Check for common issues and provide suggestions
-        lines = request.code.split('\n')
-        for i, line in enumerate(lines, 1):
-            stripped_line = line.strip()
+        # Handle multi-file validation
+        if request.multi_file_project:
+            print("validate multi file project")
+            logger.info(f"Validating multi-file project: {request.multi_file_project.name}")
             
-            # Check for missing agent definition
-            if i == 1 and not stripped_line.startswith('agent ') and not stripped_line.startswith('system:'):
-                suggestions.append({
-                    "type": "syntax",
-                    "message": "Consider adding an agent definition",
-                    "code": "agent MyAgent:\n    name: str = \"My Agent\"\n    description: str = \"A custom agent\"",
-                    "description": "Add a proper agent definition at the beginning of your code"
+            # Create temporary directory for multi-file validation
+            temp_dir = tempfile.mkdtemp(prefix=f"dana_validation_{request.multi_file_project.name.replace(' ', '_')}_")
+            print("temp_dir", temp_dir)
+            
+            try:
+                # Set DANA_PATH to the temporary directory
+                original_dana_path = os.environ.get('DANA_PATH')
+                os.environ['DANA_PATH'] = temp_dir
+                
+                # Write all files to temporary directory
+                for dana_file in request.multi_file_project.files:
+                    file_path = Path(temp_dir) / dana_file.filename
+                    logger.info(f"Writing file for validation: {file_path}")
+                    with open(file_path, 'w', encoding='utf-8') as f:
+                        f.write(dana_file.content)
+                
+                # Run validation on the main file
+                main_file_path = Path(temp_dir) / request.multi_file_project.main_file
+                logger.info(f"Validating main file: {main_file_path}")
+                
+                with open(main_file_path, 'r', encoding='utf-8') as f:
+                    main_file_content = f.read()
+                
+                # Basic syntax validation using DanaSandbox
+                syntax_result = DanaSandbox.quick_eval(main_file_content)
+                
+                errors = []
+                warnings = []
+                suggestions = []
+                
+                if not syntax_result.success:
+                    error_text = str(syntax_result.error)
+                    errors.append({
+                        "line": 1,
+                        "column": 1,
+                        "message": error_text,
+                        "severity": "error",
+                        "code": error_text
+                    })
+                
+                # Call the multi-file validation function
+                multi_file_result = await validate_multi_file_project(request.multi_file_project)
+                
+                # Combine results
+                is_valid = len(errors) == 0 and multi_file_result.get('success', False)
+                
+                return CodeValidationResponse(
+                    success=True,
+                    is_valid=is_valid,
+                    errors=errors,
+                    warnings=warnings,
+                    suggestions=suggestions,
+                    file_results=multi_file_result.get('file_results', []),
+                    dependency_errors=multi_file_result.get('dependency_errors', []),
+                    overall_errors=multi_file_result.get('overall_errors', [])
+                )
+                
+            finally:
+                # Restore original DANA_PATH
+                if original_dana_path is not None:
+                    os.environ['DANA_PATH'] = original_dana_path
+                elif 'DANA_PATH' in os.environ:
+                    del os.environ['DANA_PATH']
+                
+                # Clean up temporary directory
+                import shutil
+                try:
+                    shutil.rmtree(temp_dir)
+                    logger.info(f"Cleaned up temporary directory: {temp_dir}")
+                except Exception as cleanup_error:
+                    logger.warning(f"Failed to clean up temporary directory {temp_dir}: {cleanup_error}")
+        
+        # Handle single-file validation (backward compatibility)
+        elif request.code:
+            logger.info(f"Validating single-file code for agent: {request.agent_name}")
+            
+            # Basic syntax validation
+            syntax_result = DanaSandbox.quick_eval(request.code)
+            
+            errors = []
+            warnings = []
+            suggestions = []
+            
+            if not syntax_result.success:
+                error_text = str(syntax_result.error)
+                errors.append({
+                    "line": 1,
+                    "column": 1,
+                    "message": error_text,
+                    "severity": "error",
+                    "code": error_text
                 })
             
-            # Check for missing solve function
-            if 'def solve(' in stripped_line:
-                break
+            # Check for common issues and provide suggestions
+            lines = request.code.split('\n')
+            for i, line in enumerate(lines, 1):
+                stripped_line = line.strip()
+                
+                # Check for missing agent definition
+                if i == 1 and not stripped_line.startswith('agent ') and not stripped_line.startswith('system:'):
+                    suggestions.append({
+                        "type": "syntax",
+                        "message": "Consider adding an agent definition",
+                        "code": "agent MyAgent:\n    name: str = \"My Agent\"\n    description: str = \"A custom agent\"",
+                        "description": "Add a proper agent definition at the beginning of your code"
+                    })
+                
+                # Check for missing solve function
+                if 'def solve(' in stripped_line:
+                    break
+            else:
+                suggestions.append({
+                    "type": "best_practice",
+                    "message": "Consider adding a solve function",
+                    "code": "def solve(query: str) -> str:\n    return reason(f\"Process query: {query}\")",
+                    "description": "Add a solve function to make your agent functional"
+                })
+            
+            # Check for proper imports
+            if 'reason(' in request.code and 'import' not in request.code:
+                suggestions.append({
+                    "type": "syntax",
+                    "message": "Consider importing required modules",
+                    "code": "# Add imports if needed\n# import some_module",
+                    "description": "Make sure all required modules are imported"
+                })
+            
+            is_valid = len(errors) == 0
+            logger.info(f"Single-file validation result: is_valid={is_valid}, errors={len(errors)}")
+            
+            return CodeValidationResponse(
+                success=True,
+                is_valid=is_valid,
+                errors=errors,
+                warnings=warnings,
+                suggestions=suggestions
+            )
+        
         else:
-            suggestions.append({
-                "type": "best_practice",
-                "message": "Consider adding a solve function",
-                "code": "def solve(query: str) -> str:\n    return reason(f\"Process query: {query}\")",
-                "description": "Add a solve function to make your agent functional"
-            })
-        
-        # Check for proper imports
-        if 'reason(' in request.code and 'import' not in request.code:
-            suggestions.append({
-                "type": "syntax",
-                "message": "Consider importing required modules",
-                "code": "# Add imports if needed\n# import some_module",
-                "description": "Make sure all required modules are imported"
-            })
-        
-        is_valid = len(errors) == 0
-        print(f"Validation result: is_valid={is_valid}, errors={len(errors)}")
-        
-        return CodeValidationResponse(
-            success=True,
-            is_valid=is_valid,
-            errors=errors,
-            warnings=warnings,
-            suggestions=suggestions
-        )
+            # Neither code nor multi_file_project provided
+            return CodeValidationResponse(
+                success=False,
+                is_valid=False,
+                errors=[{
+                    "line": 1,
+                    "column": 1,
+                    "message": "Either 'code' or 'multi_file_project' must be provided",
+                    "severity": "error",
+                    "code": ""
+                }],
+                warnings=[],
+                suggestions=[]
+            )
         
     except Exception as e:
         logger.error(f"Error in validate_code endpoint: {e}", exc_info=True)
