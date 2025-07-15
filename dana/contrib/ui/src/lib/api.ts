@@ -93,6 +93,7 @@ export interface MessageData {
 export interface AgentGenerationRequest {
   messages: MessageData[];
   current_code?: string;
+  multi_file?: boolean;
 }
 
 export interface AgentCapabilities {
@@ -100,6 +101,22 @@ export interface AgentCapabilities {
   knowledge?: string[];
   workflow?: string[];
   tools?: string[];
+}
+
+export interface DanaFile {
+  filename: string;
+  content: string;
+  file_type: 'agent' | 'workflow' | 'resources' | 'methods' | 'common' | 'other';
+  description?: string;
+  dependencies?: string[];
+}
+
+export interface MultiFileProject {
+  name: string;
+  description: string;
+  files: DanaFile[];
+  main_file: string;
+  structure_type: 'simple' | 'modular' | 'complex';
 }
 
 export interface AgentGenerationResponse {
@@ -112,6 +129,8 @@ export interface AgentGenerationResponse {
   follow_up_message?: string;
   suggested_questions?: string[];
   error?: string;
+  multi_file_project?: MultiFileProject;
+  is_multi_file?: boolean;
 }
 
 // Code Validation Types

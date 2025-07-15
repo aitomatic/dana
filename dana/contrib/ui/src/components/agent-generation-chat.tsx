@@ -1,7 +1,12 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/lib/api';
-import type { MessageData, AgentGenerationResponse, AgentCapabilities } from '@/lib/api';
+import type {
+  MessageData,
+  AgentGenerationResponse,
+  AgentCapabilities,
+  MultiFileProject,
+} from '@/lib/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Send, Sparkles, Loader2 } from 'lucide-react';
@@ -17,10 +22,16 @@ interface ChatMessage {
 }
 
 interface AgentGenerationChatProps {
-  onCodeGenerated: (code: string, name?: string, description?: string) => void;
+  onCodeGenerated: (
+    code: string,
+    name?: string,
+    description?: string,
+    multiFileProject?: MultiFileProject,
+  ) => void;
   currentCode?: string;
   className?: string;
   onGenerationStart?: () => void;
+  enableMultiFile?: boolean;
 }
 
 // Helper function to format capabilities into a readable message
@@ -28,6 +39,7 @@ const formatCapabilitiesMessage = (
   agentName: string,
   agentDescription: string,
   capabilities?: AgentCapabilities,
+  multiFileProject?: MultiFileProject,
 ): string => {
   console.log('🏗️ Formatting capabilities:', { agentName, agentDescription, capabilities });
 
@@ -72,6 +84,20 @@ const formatCapabilitiesMessage = (
     }
   } else {
     console.log('❌ No capabilities found');
+  }
+
+  // Add multi-file project information
+  if (multiFileProject) {
+    message += `## Project Structure\n\n`;
+    message += `**Project Type:** ${multiFileProject.structure_type}\n`;
+    message += `**Main File:** ${multiFileProject.main_file}\n`;
+    message += `**Files Generated:** ${multiFileProject.files.length}\n\n`;
+
+    message += `**Project Files:**\n`;
+    multiFileProject.files.forEach((file) => {
+      message += `• **${file.filename}** (${file.file_type}): ${file.description || 'Dana code file'}\n`;
+    });
+    message += `\n`;
   }
 
   message += `The code has been loaded into the editor on the right. You can review and modify it as needed.`;
@@ -156,6 +182,7 @@ const AgentGenerationChat = ({
       const response: AgentGenerationResponse = await apiService.generateAgent({
         messages: apiMessages,
         current_code: currentCode,
+        multi_file: true,
       });
 
       if (response.success && response.dana_code) {
@@ -174,14 +201,17 @@ const AgentGenerationChat = ({
           response.agent_name || 'Custom Agent',
           response.agent_description || 'A specialized agent for your needs',
           response.capabilities,
+          response.multi_file_project,
         );
 
         // If API needs more information, add follow-up questions
         if (response.needs_more_info) {
           console.log('❓ API suggests gathering more information');
 
-          formattedMessage += "\n\n---\n\n";
-          formattedMessage += response.follow_up_message || "I could create an even better agent with more details. Could you provide additional information?";
+          formattedMessage += '\n\n---\n\n';
+          formattedMessage +=
+            response.follow_up_message ||
+            'I could create an even better agent with more details. Could you provide additional information?';
 
           // Pick one suggested question if available
           if (response.suggested_questions && response.suggested_questions.length > 0) {
@@ -205,7 +235,12 @@ const AgentGenerationChat = ({
         setMessages((prev) => [...prev, assistantMessage]);
 
         // Call the callback to update the editor
-        onCodeGenerated(response.dana_code, response.agent_name, response.agent_description);
+        onCodeGenerated(
+          response.dana_code,
+          response.agent_name,
+          response.agent_description,
+          response.multi_file_project,
+        );
 
         if (response.needs_more_info) {
           toast.success('Agent created! Feel free to provide more details to enhance it further.');
@@ -253,12 +288,6 @@ const AgentGenerationChat = ({
     <div
       className={cn('flex flex-col h-full bg-white rounded-lg border border-gray-200', className)}
     >
-      {/* Header */}
-      <div className="flex gap-2 items-center p-4 border-b border-gray-200">
-        <Sparkles className="w-5 h-5 text-blue-600" />
-        <h3 className="font-semibold text-gray-900">Agent Generator</h3>
-      </div>
-
       {/* Messages */}
       <div className="overflow-y-auto flex-1 p-4 space-y-4">
         {messages.map((message) => (
@@ -278,12 +307,18 @@ const AgentGenerationChat = ({
                 <div
                   className={cn(
                     'text-xs font-medium mb-1',
-                    message.role === 'user' ? 'text-blue-100 opacity-80' : 'text-gray-500 opacity-80',
+                    message.role === 'user'
+                      ? 'text-blue-100 opacity-80'
+                      : 'text-gray-500 opacity-80',
                   )}
                 >
                   {message.role === 'user' ? 'User' : 'DANA Agent'}
                 </div>
-                {message.role === 'user' ? <div className="text-sm whitespace-pre-wrap">{message.content}</div> : <MarkdownViewerSmall>{message.content}</MarkdownViewerSmall>}
+                {message.role === 'user' ? (
+                  <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+                ) : (
+                  <MarkdownViewerSmall>{message.content}</MarkdownViewerSmall>
+                )}
                 <div
                   className={cn(
                     'text-xs mt-1',
@@ -302,7 +337,7 @@ const AgentGenerationChat = ({
             <div className="flex flex-col">
               {/* Loading message bubble with sender label inside */}
               <div className="px-4 py-2 text-gray-900 bg-gray-100 rounded-lg">
-                <div className="text-xs font-medium mb-1 text-gray-500 opacity-80">DANA Agent</div>
+                <div className="mb-1 text-xs font-medium text-gray-500 opacity-80">DANA Agent</div>
                 <div className="flex gap-2 items-center">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span className="text-sm">Building Georgia...</span>

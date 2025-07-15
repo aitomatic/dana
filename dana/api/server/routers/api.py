@@ -1,8 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+import os
+import tempfile
+import zipfile
+import io
+from pathlib import Path
 
 from .. import db, schemas, services
-from ..schemas import RunNAFileRequest, RunNAFileResponse, AgentGenerationRequest, AgentGenerationResponse, DanaSyntaxCheckRequest, DanaSyntaxCheckResponse, CodeValidationRequest, CodeValidationResponse, CodeFixRequest, CodeFixResponse
+from ..schemas import RunNAFileRequest, RunNAFileResponse, AgentGenerationRequest, AgentGenerationResponse, DanaSyntaxCheckRequest, DanaSyntaxCheckResponse, CodeValidationRequest, CodeValidationResponse, CodeFixRequest, CodeFixResponse, MultiFileProject
 from ..services import run_na_file_service
 from ..agent_generator import generate_agent_code_from_messages, analyze_agent_capabilities
 from dana.core.lang.dana_sandbox import DanaSandbox
@@ -52,9 +58,15 @@ async def generate_agent(request: AgentGenerationRequest):
         
         # Generate Dana code first
         logger.info("Calling generate_agent_code_from_messages...")
-        dana_code, syntax_error, conversation_analysis = await generate_agent_code_from_messages(messages, request.current_code or "")
+        dana_code, syntax_error, conversation_analysis, multi_file_project = await generate_agent_code_from_messages(messages, request.current_code or "", request.multi_file)
         logger.info(f"Generated Dana code length: {len(dana_code)}")
         logger.debug(f"Generated Dana code: {dana_code[:500]}...")
+        
+        # Log multi-file info
+        if multi_file_project:
+            logger.info(f"Generated multi-file project with {len(multi_file_project['files'])} files")
+        else:
+            logger.info("Generated single-file agent")
         
         if syntax_error:
             logger.error(f"Syntax error in generated code: {syntax_error}")
@@ -111,6 +123,29 @@ async def generate_agent(request: AgentGenerationRequest):
         follow_up_message = conversation_analysis.get("follow_up_message") if needs_more_info else None
         suggested_questions = conversation_analysis.get("suggested_questions", []) if needs_more_info else None
         
+        # Create multi-file project object if available
+        multi_file_project_obj = None
+        if multi_file_project:
+            from ..schemas import DanaFile, MultiFileProject
+            dana_files = [
+                DanaFile(
+                    filename=file_info['filename'],
+                    content=file_info['content'],
+                    file_type=file_info['file_type'],
+                    description=file_info.get('description'),
+                    dependencies=file_info.get('dependencies', [])
+                )
+                for file_info in multi_file_project['files']
+            ]
+            
+            multi_file_project_obj = MultiFileProject(
+                name=multi_file_project['name'],
+                description=multi_file_project['description'],
+                files=dana_files,
+                main_file=multi_file_project['main_file'],
+                structure_type=multi_file_project['structure_type']
+            )
+        
         response = AgentGenerationResponse(
             success=(syntax_error is None),
             dana_code=dana_code,
@@ -120,7 +155,9 @@ async def generate_agent(request: AgentGenerationRequest):
             needs_more_info=needs_more_info,
             follow_up_message=follow_up_message,
             suggested_questions=suggested_questions,
-            error=syntax_error
+            error=syntax_error,
+            multi_file_project=multi_file_project_obj,
+            is_multi_file=multi_file_project is not None
         )
         
         logger.info(f"Returning response with success={response.success}, code_length={len(response.dana_code)}, needs_more_info={needs_more_info}")
@@ -687,3 +724,351 @@ from dana.core.lang import reason
         applied_fixes=applied_fixes,
         remaining_errors=remaining_errors
     )
+
+
+@router.post("/write-files")
+async def write_multi_file_project(project: MultiFileProject):
+    """
+    Write multi-file Dana project to temporary directory and return as ZIP.
+    
+    Args:
+        project: MultiFileProject containing files to write
+        
+    Returns:
+        ZIP file containing all project files
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        logger.info(f"Creating ZIP for project: {project.name}")
+        
+        # Create in-memory ZIP file
+        zip_buffer = io.BytesIO()
+        
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            # Add each file to the ZIP
+            for dana_file in project.files:
+                logger.info(f"Adding file to ZIP: {dana_file.filename}")
+                zip_file.writestr(dana_file.filename, dana_file.content)
+                
+            # Add project metadata
+            metadata = f"""# {project.name}
+
+{project.description}
+
+## Project Structure
+Structure Type: {project.structure_type}
+Main File: {project.main_file}
+
+## Files
+"""
+            for dana_file in project.files:
+                metadata += f"- **{dana_file.filename}** ({dana_file.file_type}): {dana_file.description or 'Dana code file'}\n"
+                if dana_file.dependencies:
+                    metadata += f"  Dependencies: {', '.join(dana_file.dependencies)}\n"
+            
+            zip_file.writestr("README.md", metadata)
+            logger.info("Added README.md to ZIP")
+        
+        zip_buffer.seek(0)
+        
+        # Return as streaming response
+        return StreamingResponse(
+            io.BytesIO(zip_buffer.read()),
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename={project.name.replace(' ', '_')}.zip"}
+        )
+        
+    except Exception as e:
+        logger.error(f"Error creating ZIP file: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to create project files: {str(e)}")
+
+
+@router.post("/write-files-temp")
+async def write_multi_file_project_temp(project: MultiFileProject):
+    """
+    Write multi-file Dana project to temporary directory and return paths.
+    
+    Args:
+        project: MultiFileProject containing files to write
+        
+    Returns:
+        Dictionary with temporary directory path and file paths
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        logger.info(f"Creating temporary directory for project: {project.name}")
+        
+        # Create temporary directory
+        temp_dir = tempfile.mkdtemp(prefix=f"dana_project_{project.name.replace(' ', '_')}_")
+        file_paths = []
+        
+        # Write each file
+        for dana_file in project.files:
+            file_path = Path(temp_dir) / dana_file.filename
+            logger.info(f"Writing file: {file_path}")
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(dana_file.content)
+            file_paths.append(str(file_path))
+        
+        # Write project metadata
+        metadata_path = Path(temp_dir) / "README.md"
+        metadata = f"""# {project.name}
+
+{project.description}
+
+## Project Structure
+Structure Type: {project.structure_type}
+Main File: {project.main_file}
+
+## Files
+"""
+        for dana_file in project.files:
+            metadata += f"- **{dana_file.filename}** ({dana_file.file_type}): {dana_file.description or 'Dana code file'}\n"
+            if dana_file.dependencies:
+                metadata += f"  Dependencies: {', '.join(dana_file.dependencies)}\n"
+        
+        with open(metadata_path, 'w', encoding='utf-8') as f:
+            f.write(metadata)
+        
+        logger.info(f"Project written to: {temp_dir}")
+        
+        return {
+            "success": True,
+            "temp_directory": temp_dir,
+            "file_paths": file_paths,
+            "metadata_path": str(metadata_path),
+            "main_file_path": str(Path(temp_dir) / project.main_file)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error writing temporary files: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to write project files: {str(e)}")
+
+
+@router.post("/validate-multi-file")
+async def validate_multi_file_project(project: MultiFileProject):
+    """
+    Validate all files in a multi-file Dana project.
+    
+    Args:
+        project: MultiFileProject containing files to validate
+        
+    Returns:
+        Dictionary with validation results for each file
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        logger.info(f"Validating multi-file project: {project.name}")
+        
+        validation_results = {
+            "success": True,
+            "project_name": project.name,
+            "file_results": [],
+            "dependency_errors": [],
+            "overall_errors": []
+        }
+        
+        # Validate each file individually
+        for dana_file in project.files:
+            logger.info(f"Validating file: {dana_file.filename}")
+            
+            file_result = {
+                "filename": dana_file.filename,
+                "file_type": dana_file.file_type,
+                "success": True,
+                "errors": [],
+                "warnings": [],
+                "suggestions": []
+            }
+            
+            try:
+                # Use Dana sandbox to validate syntax
+                syntax_result = DanaSandbox.quick_eval(dana_file.content)
+                
+                if not syntax_result.success:
+                    file_result["success"] = False
+                    file_result["errors"].append({
+                        "line": 1,
+                        "column": 1,
+                        "message": f"Syntax error: {syntax_result.error}",
+                        "severity": "error",
+                        "code": ""
+                    })
+                    validation_results["success"] = False
+                    logger.error(f"Syntax error in {dana_file.filename}: {syntax_result.error}")
+                else:
+                    logger.info(f"Syntax validation passed for {dana_file.filename}")
+                
+                # Check for file-specific patterns
+                content = dana_file.content
+                
+                # Check for missing imports
+                if "import" in content and not any(line.strip().startswith("import") or line.strip().startswith("from") for line in content.split('\n')):
+                    file_result["warnings"].append({
+                        "line": 1,
+                        "column": 1,
+                        "message": "File may be missing import statements",
+                        "suggestion": "Add required imports at the top of the file"
+                    })
+                
+                # Check for dependency consistency
+                declared_deps = set(dana_file.dependencies)
+                actual_imports = set()
+                
+                for line in content.split('\n'):
+                    line = line.strip()
+                    if line.startswith('import ') and not line.endswith('.py'):
+                        module = line.replace('import ', '').strip()
+                        actual_imports.add(module)
+                    elif line.startswith('from ') and ' import ' in line:
+                        module = line.split(' import ')[0].replace('from ', '').strip()
+                        if not module.endswith('.py'):
+                            actual_imports.add(module)
+                
+                # Check for missing dependencies
+                missing_deps = actual_imports - declared_deps
+                if missing_deps:
+                    file_result["warnings"].append({
+                        "line": 1,
+                        "column": 1,
+                        "message": f"Missing dependencies: {', '.join(missing_deps)}",
+                        "suggestion": "Update file dependencies in project structure"
+                    })
+                
+                # Check for unused dependencies
+                unused_deps = declared_deps - actual_imports
+                if unused_deps:
+                    file_result["warnings"].append({
+                        "line": 1,
+                        "column": 1,
+                        "message": f"Unused dependencies: {', '.join(unused_deps)}",
+                        "suggestion": "Remove unused dependencies from project structure"
+                    })
+                
+                # File-type specific validation
+                if dana_file.file_type == "agent":
+                    # Check for agent definition
+                    if "agent " not in content:
+                        file_result["errors"].append({
+                            "line": 1,
+                            "column": 1,
+                            "message": "Agent file must contain an agent definition",
+                            "severity": "error",
+                            "code": ""
+                        })
+                        validation_results["success"] = False
+                    
+                    # Check for solve function
+                    if "def solve(" not in content:
+                        file_result["suggestions"].append({
+                            "type": "best_practice",
+                            "message": "Agent should have a solve function",
+                            "code": "def solve(problem: str) -> str:\n    return reason(f\"Handle: {problem}\")",
+                            "description": "Add a solve function to make the agent functional"
+                        })
+                
+                elif dana_file.file_type == "resources":
+                    # Check for resource usage patterns
+                    if "use(" not in content:
+                        file_result["warnings"].append({
+                            "line": 1,
+                            "column": 1,
+                            "message": "Resources file should define resource usage",
+                            "suggestion": "Add resource definitions using use() function"
+                        })
+                
+                elif dana_file.file_type == "workflow":
+                    # Check for workflow patterns
+                    if "def " not in content:
+                        file_result["warnings"].append({
+                            "line": 1,
+                            "column": 1,
+                            "message": "Workflow file should define workflow functions",
+                            "suggestion": "Add workflow function definitions"
+                        })
+                
+                elif dana_file.file_type == "methods":
+                    # Check for method definitions
+                    if "def " not in content:
+                        file_result["warnings"].append({
+                            "line": 1,
+                            "column": 1,
+                            "message": "Methods file should define utility functions",
+                            "suggestion": "Add utility function definitions"
+                        })
+                
+            except Exception as e:
+                logger.error(f"Error validating {dana_file.filename}: {e}")
+                file_result["success"] = False
+                file_result["errors"].append({
+                    "line": 1,
+                    "column": 1,
+                    "message": f"Validation error: {str(e)}",
+                    "severity": "error",
+                    "code": ""
+                })
+                validation_results["success"] = False
+            
+            validation_results["file_results"].append(file_result)
+        
+        # Validate project-level dependencies
+        all_filenames = {f.filename.replace('.na', '') for f in project.files}
+        
+        for dana_file in project.files:
+            for dep in dana_file.dependencies:
+                if dep not in all_filenames:
+                    validation_results["dependency_errors"].append({
+                        "file": dana_file.filename,
+                        "missing_dependency": dep,
+                        "message": f"File {dana_file.filename} depends on {dep} but {dep}.na is not in the project"
+                    })
+                    validation_results["success"] = False
+        
+        # Check for circular dependencies
+        def has_circular_deps(filename, visited=None, path=None):
+            if visited is None:
+                visited = set()
+            if path is None:
+                path = []
+            
+            if filename in path:
+                return True
+            
+            if filename in visited:
+                return False
+            
+            visited.add(filename)
+            path.append(filename)
+            
+            # Find file and check its dependencies
+            for f in project.files:
+                if f.filename.replace('.na', '') == filename:
+                    for dep in f.dependencies:
+                        if has_circular_deps(dep, visited, path.copy()):
+                            return True
+            
+            path.pop()
+            return False
+        
+        for dana_file in project.files:
+            filename = dana_file.filename.replace('.na', '')
+            if has_circular_deps(filename):
+                validation_results["overall_errors"].append({
+                    "type": "circular_dependency",
+                    "message": f"Circular dependency detected involving {dana_file.filename}",
+                    "file": dana_file.filename
+                })
+                validation_results["success"] = False
+        
+        logger.info(f"Validation complete. Success: {validation_results['success']}")
+        return validation_results
+        
+    except Exception as e:
+        logger.error(f"Error validating multi-file project: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to validate project: {str(e)}")

@@ -62,16 +62,17 @@ class AgentGenerator:
             logger.error(f"Failed to initialize LLMResource: {e}")
             return False
     
-    async def generate_agent_code(self, messages: List[Dict[str, Any]], current_code: str = "") -> tuple[str, str | None, Dict[str, Any]]:
+    async def generate_agent_code(self, messages: List[Dict[str, Any]], current_code: str = "", multi_file: bool = False) -> tuple[str, str | None, Dict[str, Any], Dict[str, Any] | None]:
         """
         Generate Dana agent code from user conversation messages.
         
         Args:
             messages: List of conversation messages with 'role' and 'content' fields
             current_code: Current Dana code to improve upon (default empty string)
+            multi_file: Whether to generate multi-file structure
             
         Returns:
-            Tuple of (Generated Dana code as string, error message or None, conversation analysis)
+            Tuple of (Generated Dana code as string, error message or None, conversation analysis, multi-file project or None)
         """
         # First, analyze if we need more information
         conversation_analysis = await analyze_conversation_completeness(messages)
@@ -79,25 +80,25 @@ class AgentGenerator:
         # Check if mock mode is enabled
         if os.environ.get("DANA_MOCK_AGENT_GENERATION", "").lower() == "true":
             logger.info("Using mock agent generation mode")
-            return self._generate_mock_agent_code(messages, current_code), None, conversation_analysis
+            return self._generate_mock_agent_code(messages, current_code), None, conversation_analysis, None
         
         try:
             # Check if LLM resource is available
             if self.llm_resource is None:
                 logger.warning("LLMResource is not available, using fallback template")
-                return self._get_fallback_template(), None, conversation_analysis
+                return self._get_fallback_template(), None, conversation_analysis, None
             
             # Check if LLM is properly initialized
             if not hasattr(self.llm_resource, '_is_available') or not self.llm_resource._is_available:
                 logger.warning("LLMResource is not available, using fallback template")
-                return self._get_fallback_template(), None, conversation_analysis
+                return self._get_fallback_template(), None, conversation_analysis, None
             
             # Extract user requirements and intentions using LLM
             user_intentions = await self._extract_user_intentions(messages, current_code)
             logger.info(f"Extracted user intentions: {user_intentions[:100]}...")
             
             # Create prompt for LLM based on current code and new intentions
-            prompt = self._create_generation_prompt(user_intentions, current_code)
+            prompt = self._create_generation_prompt(user_intentions, current_code, multi_file)
             logger.debug(f"Generated prompt: {prompt[:200]}...")
             
             # Generate code using LLM
@@ -122,24 +123,39 @@ class AgentGenerator:
                 
                 logger.info(f"Generated code length: {len(generated_code)}")
                 
-                # Clean up the generated code
+                # Handle multi-file response
+                if multi_file and "FILE_START:" in generated_code:
+                    multi_file_project = self._parse_multi_file_response(generated_code)
+                    # Extract main file content for backward compatibility
+                    main_file_content = ""
+                    for file_info in multi_file_project['files']:
+                        if file_info['filename'] == multi_file_project['main_file']:
+                            main_file_content = file_info['content']
+                            break
+                    
+                    if main_file_content:
+                        return main_file_content, None, conversation_analysis, multi_file_project
+                    else:
+                        logger.warning("No main file found in multi-file response")
+                        return self._get_fallback_template(), None, conversation_analysis, None
+                
+                # Clean up the generated code (single file)
                 cleaned_code = self._clean_generated_code(generated_code)
                 logger.info(f"Cleaned code length: {len(cleaned_code)}")
                 
                 # FINAL FALLBACK: Ensure Dana code is returned
                 if cleaned_code and "agent " in cleaned_code:
-                    
-                    return cleaned_code, None, conversation_analysis
+                    return cleaned_code, None, conversation_analysis, None
                 else:
                     logger.warning("Generated code is empty or not Dana code, using fallback template")
-                    return self._get_fallback_template(), None, conversation_analysis
+                    return self._get_fallback_template(), None, conversation_analysis, None
             else:
                 logger.error(f"LLM generation failed: {response.error}")
-                return self._get_fallback_template(), None, conversation_analysis
+                return self._get_fallback_template(), None, conversation_analysis, None
                 
         except Exception as e:
             logger.error(f"Error generating agent code: {e}")
-            return self._get_fallback_template(), str(e), conversation_analysis
+            return self._get_fallback_template(), str(e), conversation_analysis, None
     
     async def _extract_user_intentions(self, messages: List[Dict[str, Any]], current_code: str = "") -> str:
         """
@@ -229,18 +245,122 @@ Extract and summarize the user's intentions in a clear, concise way that can be 
         
         return "\n".join(requirements)
     
-    def _create_generation_prompt(self, intentions: str, current_code: str = "") -> str:
+    def _create_generation_prompt(self, intentions: str, current_code: str = "", multi_file: bool = False) -> str:
         """
         Create a prompt for the LLM to generate Dana agent code.
         
         Args:
             intentions: User intentions extracted by LLM
             current_code: Current Dana code to improve upon
+            multi_file: Whether to generate multi-file structure
             
         Returns:
             Formatted prompt for LLM
         """
-        if current_code:
+        if multi_file:
+            # Multi-file generation prompt
+            prompt = f"""
+You are an expert Dana language developer. Based on the user's intentions, generate a well-structured multi-file Dana agent project.
+
+User Intentions:
+{intentions}
+
+Generate a multi-file Dana agent project with the following structure:
+
+For complex agents, organize code into these files:
+1. **agent.na** - Main agent definition and orchestration
+2. **resources.na** - Resource configurations (RAG, databases, APIs)
+3. **methods.na** - Core processing methods and utilities
+4. **workflows.na** - Workflow orchestration and pipelines
+5. **common.na** - Shared data structures and utilities
+
+For simpler agents, use a minimal structure:
+1. **agent.na** - Main agent definition
+2. **methods.na** - Helper methods (if needed)
+
+RESPONSE FORMAT:
+Generate your response in this exact format with FILE_START and FILE_END markers:
+
+FILE_START:agent.na
+\"\"\"Main agent definition and orchestration.\"\"\"
+
+import methods
+import resources  # only if needed
+import workflows  # only if needed
+
+agent [AgentName]:
+    name: str = "[Descriptive Agent Name]"
+    description: str = "[Brief description]"
+    resources: list = []  # populate if resources needed
+
+def solve(agent_instance: [AgentName], problem: str) -> str:
+    return main_workflow(problem)
+FILE_END:agent.na
+
+FILE_START:methods.na
+\"\"\"Core processing methods and utilities.\"\"\"
+
+def process_request(request: str) -> str:
+    # Processing logic
+    return result
+
+def validate_input(input_data: str) -> bool:
+    return len(input_data.strip()) > 0
+FILE_END:methods.na
+
+FILE_START:resources.na
+\"\"\"Resource configurations (only if needed).\"\"\"
+
+# RAG resources (only if document retrieval needed)
+knowledge_base = use("rag", sources=["document.pdf"])
+
+# Database resources (only if data persistence needed)
+# database = use("database", connection_string="...")
+
+# API resources (only if external APIs needed)
+# api_service = use("api", endpoint="...")
+FILE_END:resources.na
+
+FILE_START:workflows.na
+\"\"\"Workflow orchestration and pipelines (only if needed).\"\"\"
+
+import methods
+from resources import knowledge_base  # only if resources used
+
+def main_workflow(request: str) -> str:
+    # Workflow logic
+    if not methods.validate_input(request):
+        return "Invalid input"
+    
+    result = methods.process_request(request)
+    return result
+FILE_END:workflows.na
+
+FILE_START:common.na
+\"\"\"Shared data structures and utilities (only if needed).\"\"\"
+
+struct AgentRequest:
+    content: str
+    timestamp: str
+    priority: str = "normal"
+
+def log_request(request: AgentRequest) -> None:
+    log(f"Processing request: {{request.content}}")
+FILE_END:common.na
+
+IMPORTANT GUIDELINES:
+1. Only create files that are actually needed for the agent
+2. Use proper Dana import syntax: `import methods` (no .na extension)
+3. For Python imports: `import json.py`
+4. Only add RAG resources if document/knowledge retrieval is specifically needed
+5. Keep files focused and avoid unnecessary complexity
+6. Use proper Dana syntax and patterns
+7. Include FILE_START and FILE_END markers exactly as shown
+
+Current code to improve (if any):
+{current_code}
+"""
+        elif current_code:
             # If there's existing code, ask for improvements
             prompt = f"""
 You are an expert Dana language developer. Based on the user's intentions and the existing Dana agent code, improve or modify the agent to better meet their needs.
@@ -367,6 +487,126 @@ Keep it simple and focused on the specific requirement. Generate only the Dana c
         code = code.strip()
         
         return code
+    
+    def _parse_multi_file_response(self, response: str) -> Dict[str, Any]:
+        """
+        Parse multi-file response from LLM into structured format.
+        
+        Args:
+            response: Raw LLM response with FILE_START/FILE_END markers
+            
+        Returns:
+            Dictionary containing parsed files and project info
+        """
+        files = []
+        project_name = "Generated Agent"
+        project_description = "Dana agent generated from user requirements"
+        main_file = "agent.na"
+        
+        # Parse files using FILE_START/FILE_END markers
+        lines = response.split('\n')
+        current_file = None
+        current_content = []
+        
+        for line in lines:
+            if line.startswith('FILE_START:'):
+                # Start of new file
+                if current_file:
+                    # Save previous file
+                    files.append({
+                        'filename': current_file,
+                        'content': '\n'.join(current_content).strip(),
+                        'file_type': self._determine_file_type(current_file),
+                        'description': self._get_file_description(current_file),
+                        'dependencies': self._extract_dependencies('\n'.join(current_content))
+                    })
+                
+                current_file = line.split(':', 1)[1].strip()
+                current_content = []
+                
+            elif line.startswith('FILE_END:'):
+                # End of current file
+                if current_file:
+                    files.append({
+                        'filename': current_file,
+                        'content': '\n'.join(current_content).strip(),
+                        'file_type': self._determine_file_type(current_file),
+                        'description': self._get_file_description(current_file),
+                        'dependencies': self._extract_dependencies('\n'.join(current_content))
+                    })
+                    current_file = None
+                    current_content = []
+                    
+            elif current_file:
+                # Add line to current file content
+                current_content.append(line)
+        
+        # Handle case where last file doesn't have FILE_END
+        if current_file and current_content:
+            files.append({
+                'filename': current_file,
+                'content': '\n'.join(current_content).strip(),
+                'file_type': self._determine_file_type(current_file),
+                'description': self._get_file_description(current_file),
+                'dependencies': self._extract_dependencies('\n'.join(current_content))
+            })
+        
+        # Determine project complexity
+        structure_type = "simple" if len(files) <= 2 else "modular" if len(files) <= 4 else "complex"
+        
+        return {
+            'name': project_name,
+            'description': project_description,
+            'files': files,
+            'main_file': main_file,
+            'structure_type': structure_type
+        }
+    
+    def _determine_file_type(self, filename: str) -> str:
+        """Determine file type based on filename."""
+        if filename == 'agent.na':
+            return 'agent'
+        elif filename == 'workflows.na':
+            return 'workflow'
+        elif filename == 'resources.na':
+            return 'resources'
+        elif filename == 'methods.na':
+            return 'methods'
+        elif filename == 'common.na':
+            return 'common'
+        else:
+            return 'other'
+    
+    def _get_file_description(self, filename: str) -> str:
+        """Get description for file type."""
+        descriptions = {
+            'agent.na': 'Main agent definition and orchestration',
+            'workflows.na': 'Workflow orchestration and pipelines',
+            'resources.na': 'Resource configurations (RAG, databases, APIs)',
+            'methods.na': 'Core processing methods and utilities',
+            'common.na': 'Shared data structures and utilities'
+        }
+        return descriptions.get(filename, 'Dana code file')
+    
+    def _extract_dependencies(self, content: str) -> List[str]:
+        """Extract import dependencies from Dana code."""
+        dependencies = []
+        lines = content.split('\n')
+        
+        for line in lines:
+            line = line.strip()
+            if line.startswith('import ') and not line.endswith('.py'):
+                # Dana module import
+                dep = line.replace('import ', '').strip()
+                if dep not in dependencies:
+                    dependencies.append(dep)
+            elif line.startswith('from ') and ' import ' in line:
+                # From import
+                dep = line.split(' import ')[0].replace('from ', '').strip()
+                if not dep.endswith('.py') and dep not in dependencies:
+                    dependencies.append(dep)
+        
+        return dependencies
     
     def _get_fallback_template(self) -> str:
         """
@@ -585,24 +825,27 @@ async def get_agent_generator() -> AgentGenerator:
     return _agent_generator
 
 
-async def generate_agent_code_from_messages(messages: List[Dict[str, Any]], current_code: str = "") -> tuple[str, str | None, Dict[str, Any]]:
+async def generate_agent_code_from_messages(messages: List[Dict[str, Any]], current_code: str = "", multi_file: bool = False) -> tuple[str, str | None, Dict[str, Any], Dict[str, Any] | None]:
     """
     Generate Dana agent code from user conversation messages.
     
     Args:
         messages: List of conversation messages
         current_code: Current Dana code to improve upon (default empty string)
+        multi_file: Whether to generate multi-file structure
         
     Returns:
-        Tuple of (Generated Dana code, error message or None, conversation analysis)
+        Tuple of (Generated Dana code, error message or None, conversation analysis, multi-file project or None)
     """
     generator = await get_agent_generator()
-    result = await generator.generate_agent_code(messages, current_code)
-    if isinstance(result, tuple) and len(result) == 3:
-        return result  # (code, error, analysis)
+    result = await generator.generate_agent_code(messages, current_code, multi_file)
+    if isinstance(result, tuple) and len(result) == 4:
+        return result  # (code, error, analysis, multi_file_project)
+    elif isinstance(result, tuple) and len(result) == 3:
+        return result[0], result[1], result[2], None  # backward compatibility
     elif isinstance(result, tuple) and len(result) == 2:
-        return result[0], result[1], {}  # backward compatibility
-    return result, None, {}
+        return result[0], result[1], {}, None  # backward compatibility
+    return result, None, {}, None
 
 
 async def generate_agent_code_na(messages: List[Dict[str, Any]], current_code: str = "") -> tuple[str, str | None]:

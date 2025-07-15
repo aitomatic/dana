@@ -147,6 +147,7 @@ class AgentGenerationRequest(BaseModel):
     """Request schema for agent generation endpoint"""
     messages: list[MessageData]
     current_code: str | None = None
+    multi_file: bool = False  # New field to enable multi-file generation
 
 
 class AgentCapabilities(BaseModel):
@@ -157,10 +158,28 @@ class AgentCapabilities(BaseModel):
     tools: list[str] | None = None
 
 
+class DanaFile(BaseModel):
+    """Schema for a single Dana file"""
+    filename: str
+    content: str
+    file_type: str  # 'agent', 'workflow', 'resources', 'methods', 'common'
+    description: str | None = None
+    dependencies: list[str] = []  # Files this file depends on
+
+
+class MultiFileProject(BaseModel):
+    """Schema for a multi-file Dana project"""
+    name: str
+    description: str
+    files: list[DanaFile]
+    main_file: str  # Primary entry point file
+    structure_type: str  # 'simple', 'modular', 'complex'
+    
+
 class AgentGenerationResponse(BaseModel):
     """Response schema for agent generation endpoint"""
     success: bool
-    dana_code: str
+    dana_code: str  # Legacy single-file code (for backward compatibility)
     agent_name: str | None = None
     agent_description: str | None = None
     capabilities: AgentCapabilities | None = None
@@ -168,6 +187,10 @@ class AgentGenerationResponse(BaseModel):
     follow_up_message: str | None = None
     suggested_questions: list[str] | None = None
     error: str | None = None
+    
+    # New multi-file support
+    multi_file_project: MultiFileProject | None = None
+    is_multi_file: bool = False
 
 
 class DanaSyntaxCheckRequest(BaseModel):

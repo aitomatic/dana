@@ -31,7 +31,7 @@ const AgentTestChat = ({
     {
       id: '1',
       role: 'agent',
-      content: "Hi! How can I help you today?",
+      content: "Hi, I'm Georgia! How can I help you today?",
       timestamp: new Date(),
     },
   ]);
@@ -120,7 +120,7 @@ const AgentTestChat = ({
   const canSend = inputMessage.trim().length > 0 && !isTesting;
 
   return (
-    <div className={cn('flex flex-col h-full bg-white', className)}>
+    <div className={cn('flex flex-col h-full bg-[#EFF4FE]', className)}>
       {/* Messages */}
       <div className="overflow-y-auto flex-1 p-3 space-y-3">
         {messages.map((message) => (
@@ -145,7 +145,7 @@ const AgentTestChat = ({
                   message.role === 'user' ? 'text-blue-100 opacity-80' : 'text-gray-500 opacity-80',
                 )}
               >
-                {message.role === 'user' ? 'User' : 'DANA Agent'}
+                {message.role === 'user' ? 'User' : 'Georgia'}
               </div>
               {message.role === 'agent' ? (
                 <MarkdownViewerSmall>{message.content}</MarkdownViewerSmall>
@@ -201,8 +201,6 @@ const AgentTestChat = ({
             )}
           </Button>
         </div>
-
-
       </div>
     </div>
   );
