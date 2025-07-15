@@ -17,6 +17,7 @@ build-backend = "setuptools.build_meta"
 name = "dana-lang"
 version = "0.25.7.14"
 description = "Dana programming language for Domain-Aware Neurosymbolic Agents"
+readme = "README.md"
 requires-python = ">=3.12"
 authors = [
     {name = "Christopher Nguyen", email = "ctn@aitomatic.com"},
@@ -81,11 +82,13 @@ dependencies = [
 # Optional dependency groups
 [project.optional-dependencies]
 dev = [
-    "ruff",        # Fast Python linter
-    "pylint",      # Additional code analysis
-    "mypy",        # Static type checking
-    "pre-commit",  # Git hooks for code quality
+    "ruff",       # Fast Python linter
+    "pylint",     # Additional code analysis
+    "mypy",       # Static type checking
+    "pre-commit", # Git hooks for code quality
     "pytest-cov", # Test coverage reporting
+    "build",      # Package building tool
+    "twine",      # PyPI upload tool
 ]
 
 docs = [
@@ -158,6 +161,8 @@ override-dependencies = [
 [dependency-groups]
 dev = [
     "pre-commit",
+    "build",
+    "twine",
 ]
 
 # =============================================================================
