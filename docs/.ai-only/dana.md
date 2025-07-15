@@ -10,6 +10,123 @@ Dana is built for building domain-expert multi-agent systems with key AI-first f
 - Built-in AI reasoning capabilities
 - Seamless Python interoperability
 - Type safety with modern syntax
+- **Agent Capability Packs** for domain-specific expertise infusion
+
+## Dana's GoLang-like Functional Nature
+
+Dana follows a **functional programming paradigm** similar to Go, where functions are **standalone entities** rather than methods bound to objects. This design promotes clean separation of concerns and composable code.
+
+### Key Principles
+
+1. **Functions are First-Class Citizens**: Functions can be passed as arguments, returned from other functions, and composed together
+2. **Structs are Data Containers**: Structs hold data but don't contain methods
+3. **Explicit Dependencies**: Functions explicitly receive the data they operate on as parameters
+4. **Composable Design**: Functions can be easily combined into pipelines and workflows
+
+### Function Definition and Usage
+
+```dana
+# Functions are standalone - they don't belong to structs
+def calculate_area(rectangle: Rectangle) -> float:
+    return rectangle.width * rectangle.height
+
+def validate_rectangle(rectangle: Rectangle) -> bool:
+    return rectangle.width > 0 and rectangle.height > 0
+
+# Functions can be composed and passed around
+area_calculator = calculate_area
+validator = validate_rectangle
+
+# Functions can be used in pipelines
+result = rectangle | validate_rectangle | calculate_area
+```
+
+### Structs as Pure Data Containers
+
+```dana
+# Structs only contain data fields - no methods
+struct Rectangle:
+    width: float
+    height: float
+    color: str
+
+# Creating instances with named arguments
+rect = Rectangle(width=10.0, height=5.0, color="blue")
+
+# Accessing fields
+area = rect.width * rect.height
+```
+
+### Agent Keyword and Type Declaration
+
+The `agent` keyword in Dana is a **type declaration** that creates a specialized struct type for agents:
+
+```dana
+# agent keyword creates a new agent type
+agent ProSEAAgent:
+    DanaAgent  # Inherits from base DanaAgent struct
+    
+    # Declarative properties define agent capabilities
+    domains: list[str] = ["semiconductor_manufacturing"]
+    tasks: list[str] = ["wafer_inspection", "defect_classification"]
+    capabilities: list[str] = ["optical_analysis", "pattern_recognition"]
+    knowledge_sources: list[str] = ["equipment_specs", "historical_data"]
+
+# This creates a new type 'ProSEAAgent' that can be used in function signatures
+def diagnose_wafer(agent: ProSEAAgent, image_data: bytes) -> DefectReport:
+    # Function operates on the agent instance
+    pass
+```
+
+### Function Parameters and Agent Usage
+
+Functions that work with agents receive the agent instance as an explicit parameter:
+
+```dana
+# Functions explicitly receive agent as parameter (GoLang-style)
+def solve_request(agent: ProSEAAgent, request: str) -> str:
+    # Access agent properties
+    if request in agent.tasks:
+        return process_request(agent, request)
+    else:
+        return "Cannot handle this request"
+
+def initialize_agent(agent: ProSEAAgent) -> bool:
+    # Set up agent resources
+    agent.is_active = true
+    return true
+
+# Usage - pass agent instance explicitly
+my_agent = ProSEAAgent()
+initialize_agent(my_agent)
+response = solve_request(my_agent, "inspect wafer")
+```
+
+### Contrast with Object-Oriented Languages
+
+```dana
+# Dana (Functional/GoLang-style) - Functions are standalone
+def process_data(agent: MyAgent, data: list) -> list:
+    return agent.transform(data)
+
+# Usage
+result = process_data(my_agent, raw_data)
+
+# vs Object-Oriented (Python/Java) - Methods belong to objects
+# class MyAgent:
+#     def process_data(self, data):
+#         return self.transform(data)
+# 
+# result = my_agent.process_data(raw_data)
+```
+
+### Benefits of This Approach
+
+1. **Explicit Dependencies**: It's clear what data each function needs
+2. **Easy Testing**: Functions can be tested in isolation
+3. **Composability**: Functions can be easily combined into pipelines
+4. **No Hidden State**: All dependencies are explicit parameters
+5. **Type Safety**: Clear function signatures with type hints
 
 ## Core Syntax Rules
 
@@ -183,6 +300,134 @@ result2 = data_processor(10)  # [{"value": 20, "is_even": true}, "Formatted: 20"
 result3 = data_processor(15)  # [{"value": 25, "is_even": false}, "Formatted: 25"]
 ```
 
+### Argument Passing in Pipelines
+
+Dana provides three flexible ways to pass arguments in pipelines and function composition:
+
+#### 1. Implicit First Parameter (Default)
+```dana
+# Functions receive the pipeline value as their first parameter
+def add_ten(x: int) -> int:
+    return x + 10
+
+def double(x: int) -> int:
+    return x * 2
+
+def stringify(x: int) -> str:
+    return f"Result: {x}"
+
+# Pipeline automatically passes the value as first parameter
+pipeline = add_ten | double | stringify
+result = pipeline(5)  # "Result: 30"
+# Flow: 5 → add_ten(5) → 15 → double(15) → 30 → stringify(30) → "Result: 30"
+```
+
+#### 2. Explicit Position with $$ Placeholder
+```dana
+# Use $$ to specify where the pipeline value should be inserted
+def format_with_prefix(prefix: str, value: int) -> str:
+    return f"{prefix}: {value}"
+
+def multiply_by_factor(factor: int, value: int) -> int:
+    return value * factor
+
+# $$ represents the result of the immediately preceding function
+pipeline = add_ten | multiply_by_factor(3, $$)
+result = pipeline(10)  # 20 → 60
+# Flow: 10 → add_ten(10) = 20 → multiply_by_factor(3, 20) = 60
+
+# Example with string formatting
+def format_number(value: int) -> str:
+    return f"Number: {value}"
+
+def append_suffix(text: str, suffix: str) -> str:
+    return f"{text} {suffix}"
+
+pipeline = format_number | append_suffix($$, "is ready")
+result = pipeline(42)  # "Number: 42" → "Number: 42 is ready"
+# Flow: 42 → format_number(42) = "Number: 42" → append_suffix("Number: 42", "is ready") = "Number: 42 is ready"
+
+# $$ changes value at each step based on previous function's output
+pipeline = add_ten | double | stringify
+result = pipeline(5)  # 15 → 30 → "Result: 30"
+# Step 1: $$ = 5 → add_ten(5) = 15
+# Step 2: $$ = 15 → double(15) = 30  
+# Step 3: $$ = 30 → stringify(30) = "Result: 30"
+```
+
+#### 3. Named Parameters with "as parameter_name"
+```dana
+# Named parameters persist for the duration of the pipeline
+def calculate_area(width: int, height: int) -> int:
+    return width * height
+
+def format_dimensions(width: int, height: int, area: int) -> str:
+    return f"{width}x{height} = {area}"
+
+# Named parameters are available throughout the pipeline
+pipeline = calculate_area(as width=10, as height=5) | format_dimensions(as width=10, as height=5, as area=$$)
+result = pipeline()  # "10x5 = 50"
+# Note: No input needed since all parameters are named
+```
+
+#### 4. Capturing Intermediate Results with "as result_name"
+```dana
+# Capture intermediate results for later use in the pipeline
+def validate_input(value: int) -> bool:
+    return 0 <= value <= 100
+
+def process_data(value: int) -> str:
+    return f"Processed: {value}"
+
+def format_output(is_valid: bool, processed: str) -> str:
+    return f"{processed} (valid: {is_valid})"
+
+# Capture f2_result for use in f4
+pipeline = validate_input | process_data as f2_result | format_output($$, f2_result)
+result = pipeline(42)  # true → "Processed: 42" → "Processed: 42 (valid: true)"
+
+# Multiple captures
+pipeline = validate_input as validation_result | process_data as processed_result | format_output(validation_result, processed_result)
+result = pipeline(42)  # true → "Processed: 42" → "Processed: 42 (valid: true)"
+```
+
+### Complex Pipeline Examples
+
+#### Mixed Argument Passing
+```dana
+def validate_range(min_val: int, value: int, max_val: int) -> bool:
+    return min_val <= value <= max_val
+
+def format_validation(result: bool, value: int) -> str:
+    return f"Value {value} is {'valid' if result else 'invalid'}"
+
+# Combine implicit, explicit, and named parameters
+# Combine implicit, explicit, and named parameters
+pipeline = validate_range(0, $$, 100) | format_validation($$, 42)
+result = pipeline(42)  # true → "Value 42 is valid"
+# Flow: 42 → validate_range(0, 42, 100) = true → format_validation(true, 42) = "Value 42 is valid"
+```
+
+#### Agent Pipelines with Named Parameters
+```dana
+def process_image(agent: ProSEAAgent, image_data: bytes) -> DefectReport:
+    pass
+
+def validate_report(agent: ProSEAAgent, report: DefectReport) -> bool:
+    pass
+
+def format_results(agent: ProSEAAgent, report: DefectReport, is_valid: bool) -> str:
+    pass
+
+# Agent parameter persists throughout pipeline
+pipeline = process_image(as agent=my_agent, as image_data=$$) | validate_report(as agent=my_agent, as report=$$) | format_results(as agent=my_agent, as report=$$, as is_valid=$$)
+result = pipeline(image_bytes)
+
+# Using captured results
+pipeline = process_image(as agent=my_agent, as image_data=$$) as report | validate_report(as agent=my_agent, as report=report) as is_valid | format_results(as agent=my_agent, as report=report, as is_valid=is_valid)
+result = pipeline(image_bytes)
+```
+
 ### Error Handling and Validation
 ```dana
 # Missing function error
@@ -191,6 +436,12 @@ pipeline = add_ten | non_existent_function  # ❌ Error: "Function 'non_existent
 # Non-function composition error  
 pipeline = add_ten | 42  # ❌ Error: "Cannot use non-function 42 of type int in pipe composition"
 
+# Invalid $$ placement error
+pipeline = func1($$, extra_param) | func2  # ❌ Error: "$$ placeholder must be a complete parameter"
+
+# Missing named parameter error
+pipeline = func1(as width=10) | func2(as height=$$)  # ❌ Error: "Missing required parameter 'width' in func2"
+
 # Clear error messages help with debugging
 pipeline = func1 | not_a_function  # ❌ Error: "not_a_function is not callable"
 ```
@@ -198,13 +449,24 @@ pipeline = func1 | not_a_function  # ❌ Error: "not_a_function is not callable"
 **Pipeline Operators:**
 - `|` - Pipe operator for sequential function composition
 - `[func1, func2]` - List syntax for parallel function execution
+- `$$` - Placeholder for explicit parameter positioning
+- `as parameter_name=value` - Named parameter binding
 - Supports both sequential and parallel composition in clean two-statement approach
 - Left-to-right data flow similar to Unix pipes
 - **Function-only validation**: Only callable functions allowed in composition chains
 
+**Argument Passing Rules:**
+1. **Implicit First**: Default behavior - pipeline value becomes first parameter
+2. **Explicit $$**: Use $$ to specify exact parameter position ($$ = result of immediately preceding function)
+3. **Named as**: Bind parameters by name for pipeline duration
+4. **Result Capture as**: Use `function as result_name` to capture intermediate results for later use
+5. **Mixed Usage**: Combine all approaches in complex pipelines
+6. **Agent Persistence**: Agent parameters can be bound once and reused
+
 **Design Philosophy:**
 - **Clean Two-Statement Approach**: Separate function composition from data application
 - **No Mixed Patterns**: All `data | function` patterns removed for clarity
+- **Flexible Arguments**: Multiple ways to pass parameters based on function needs
 - **Parallel-Ready**: Sequential execution with parallel-ready architecture
 - **Comprehensive Validation**: Clear error messages for invalid usage
 
@@ -325,6 +587,119 @@ log("Critical error occurred", "error")
 - `"warn"` - Warning messages
 - `"error"` - Error conditions
 - `"debug"` - Debug information
+
+## Agent Capabilities
+
+Dana introduces **Agent Capability Packs** - comprehensive packages that infuse agents with domain-specific expertise, similar to Matrix "Training Packs". These packs contain all the elements needed to transform a basic agent into a specialized domain expert.
+
+### Agent Capability Pack Structure
+```dana
+agent_capability_pack/
+├── common.na               # Shared types and helper functions
+├── agent.na                # Agent type definition with declarative properties
+├── resources.na            # Direct knowledge store references
+├── methods.na              # Agent-bound functions
+├── workflows.na            # Reusable task patterns
+└── metadata.json           # Pack metadata and load order
+```
+
+### Agent Declaration with Capabilities
+```dana
+# agent.na - Agent type definition with declarative properties
+agent ProSEAAgent:
+    DanaAgent
+    
+    # Domains this agent works in
+    domains: list[str] = ["semiconductor_manufacturing"]
+    
+    # Problem domains this agent works on
+    tasks: list[str] = [
+        "wafer_inspection",
+        "defect_classification", 
+        "process_troubleshooting",
+        "equipment_maintenance",
+        "quality_control",
+        "yield_optimization"
+    ]
+    
+    # Specific capabilities within the domain
+    capabilities: list[str] = [
+        "optical_inspection_analysis",
+        "defect_pattern_recognition",
+        "process_parameter_optimization",
+        "equipment_diagnosis",
+        "quality_metric_assessment",
+        "yield_prediction"
+    ]
+    
+    # Knowledge sources this agent relies on
+    knowledge_sources: list[str] = [
+        "equipment_specifications",
+        "process_parameters", 
+        "historical_defect_data",
+        "quality_standards",
+        "maintenance_procedures",
+        "yield_analytics"
+    ]
+```
+
+### Base Agent Struct
+```dana
+# dana_agent.na - Base struct for all Dana agents
+struct DanaAgent:
+    """
+    Base agent struct that all specialized agents inherit from.
+    """
+    id: str
+    name: str
+    domains: list[str]
+    tasks: list[str]
+    capabilities: list[str]
+    knowledge_sources: list[str]
+```
+
+### Knowledge Integration
+```dana
+# resources.na - Direct knowledge store references
+specs_db = SqlResource(dsn = "postgres://prx_specs")           # Direct DB reference
+cases_db = VectorDBResource(index = "prx_cases")              # Direct vector DB
+docs_store = DocStoreResource(bucket = "prx_docs")            # Direct document store
+lab_api = MCPResource(url = "http://lab-controller:9000")     # Direct API
+
+# methods.na - Agent-bound functions using knowledge sources
+@poet
+def diagnose_defect(agent: ProSEAAgent, image_data: bytes) -> DefectReport:
+    """
+    Diagnose defects using knowledge from multiple sources.
+    """
+    # Use equipment_specifications from specs_db
+    # Use historical_defect_data from cases_db
+    # Use quality_standards from docs_store
+    pass
+```
+
+### Agent Creation Workflow
+```dana
+# dana_agent/ - The agent that creates other agents
+def create_agent_workflow(agent: DanaAgent, user_request: str) -> AgentCapabilityPack:
+    """
+    Main workflow for creating specialized agents.
+    """
+    requirements = analyze_requirements(agent, user_request)
+    knowledge_plan = assess_knowledge_requirements(agent, requirements)
+    design = design_agent(agent, requirements, knowledge_plan)
+    knowledge_pack = curate_knowledge(agent, design)
+    capability_pack = generate_agent(agent, design, knowledge_pack)
+    
+    return capability_pack
+```
+
+**Key Benefits:**
+- **Domain Expertise**: Agents gain specialized knowledge and capabilities
+- **Modular Design**: Capability packs can be shared, versioned, and reused
+- **Declarative Properties**: Clear definition of what agents can do and what knowledge they use
+- **Knowledge Optimization**: Knowledge is organized for specific tasks and domains
+- **Agent Creation**: Meta-agents can create specialized agents automatically
 
 ## Dana vs Python Key Differences
 

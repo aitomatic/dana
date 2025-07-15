@@ -1,0 +1,17 @@
+import "common.na"
+import "agent.na"
+
+def gather_context(agent: RIEAgent, q: Question) -> dict
+
+@poet
+def craft_fact_reply(agent: RIEAgent, q: Question, ctx: dict) -> Answer
+
+def build_case_context(agent: RIEAgent, q: Question) -> CaseContext
+
+@poet
+def generate_plan(agent: RIEAgent, case: CaseContext) -> list[Step]
+
+def execute(agent: RIEAgent, plan: list[Step], case: CaseContext) -> None
+
+@poet
+def summarise_outcome(agent: RIEAgent, case: CaseContext) -> Answer 

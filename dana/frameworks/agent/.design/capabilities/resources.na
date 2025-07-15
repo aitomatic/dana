@@ -1,0 +1,7 @@
+specs = SqlResource(dsn = "postgres://prx_specs")
+docs = DocStoreResource(bucket = "prx_docs")
+cases = VectorDBResource(index = "prx_cases")
+metrics = TSDBResource(uri = "influx://lab_results")
+lab = MCPResource(url = "http://lab-controller:9000")
+rag = RagResource(sources = [docs, cases])
+web = WebSearchResource(engine = "serpapi") 
