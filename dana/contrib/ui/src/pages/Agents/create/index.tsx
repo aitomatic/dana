@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { GeneralAgentPage } from './general';
 import SelectKnowledgePage from './select-knowledge';
 import { IconButton } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 
 export function CreateAgentPage() {
   const { form, onCreateAgent, isCreating, error } = useDanaAgentForm();
@@ -68,12 +69,35 @@ export function CreateAgentPage() {
 
           <div className="flex flex-col">
             <h1 className="text-xl font-bold text-gray-900 leading-tight">
-              {step === 'general' ? 'Create Domain-Expert Agent' : name || 'Agent'}
+              {step === 'general' ? 'Agent Builder' : name || 'Agent'}
             </h1>
           </div>
         </div>
         <div className="flex items-center gap-3">
           {step === 'general' && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  navigate('/agents');
+                }}
+                className="text-gray-600 hover:text-gray-900"
+              >
+                Discard
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={onCreateAgent}
+                disabled={isCreating}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {isCreating ? 'Creating...' : 'Deploy Agent'}
+              </Button>
+            </>
+          )}
+          {step === 'select-knowledge' && (
             <IconButton
               variant="ghost"
               size="sm"
@@ -97,8 +121,6 @@ export function CreateAgentPage() {
           fileInputRef={fileInputRef}
           handleFileInputChange={handleFileInputChange}
           triggerFileInput={triggerFileInput}
-          onCreateAgent={onCreateAgent}
-          isCreating={isCreating}
         />
       )}
       {step === 'select-knowledge' && (

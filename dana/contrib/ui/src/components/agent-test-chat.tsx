@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { apiService } from '@/lib/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Send, Loader2, AlertCircle } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
 import { MarkdownViewerSmall } from '@/pages/Agents/chat/markdown-viewer';
 
 // Message interface for the test chat
@@ -31,7 +31,7 @@ const AgentTestChat = ({
     {
       id: '1',
       role: 'agent',
-      content: `Hi! I'm ${agentName || 'your agent'}. ${agentDescription ? `I can help you with: ${agentDescription}` : "I'm ready to help you test my capabilities."} Try asking me something!`,
+      content: "Hi! I'm here to help you find the perfect products for your needs. What are you looking for today?",
       timestamp: new Date(),
     },
   ]);
@@ -138,6 +138,15 @@ const AgentTestChat = ({
                     : 'bg-gray-100 text-gray-900',
               )}
             >
+              {/* Sender label inside bubble */}
+              <div
+                className={cn(
+                  'text-xs font-medium mb-1',
+                  message.role === 'user' ? 'text-blue-100 opacity-80' : 'text-gray-500 opacity-80',
+                )}
+              >
+                {message.role === 'user' ? 'User' : 'DANA Agent'}
+              </div>
               {message.role === 'agent' ? (
                 <MarkdownViewerSmall>{message.content}</MarkdownViewerSmall>
               ) : (
@@ -178,7 +187,7 @@ const AgentTestChat = ({
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Type a message to test your agent..."
+              placeholder="Chat with agent"
               className="px-3 py-2 w-full text-sm rounded-lg border border-gray-300 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               rows={2}
               disabled={isTesting}
@@ -193,14 +202,7 @@ const AgentTestChat = ({
           </Button>
         </div>
 
-        {/* Warning about testing */}
-        <div className="flex gap-2 items-center mt-2 text-xs text-gray-500">
-          <AlertCircle className="w-3 h-3" />
-          <span>
-            This creates a temporary agent for testing. Your changes are not saved until you create
-            the agent.
-          </span>
-        </div>
+
       </div>
     </div>
   );
