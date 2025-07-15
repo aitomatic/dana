@@ -63,6 +63,51 @@ Quick Dana reminders:
 - **Named arguments for structs**: `Point(x=5, y=10)` not `Point(5, 10)`
 - **Prefer `.na` (Dana) test files over `.py`** for Dana-specific functionality
 
+### Exception Handling Syntax
+
+Dana supports comprehensive exception handling with variable assignment:
+
+```dana
+# Exception variable assignment - access exception details
+try:
+    result = process_data(user_input)
+except Exception as e:
+    log(f"Error: {e.message}", "error")
+    log(f"Exception type: {e.type}", "debug")
+    log(f"Traceback: {e.traceback}", "debug")
+    result = default_value
+
+# Multiple exception types with variables
+try:
+    result = complex_operation()
+except ValueError as validation_error:
+    log(f"Validation failed: {validation_error.message}", "warn")
+    result = handle_validation_error(validation_error)
+except RuntimeError as runtime_error:
+    log(f"Runtime error: {runtime_error.message}", "error")
+    result = handle_runtime_error(runtime_error)
+
+# Generic exception catching
+try:
+    result = unsafe_operation()
+except as error:
+    log(f"Caught exception: {error.type} - {error.message}", "error")
+    result = fallback_value
+```
+
+**Exception Object Properties:**
+- `e.type` - Exception class name (string)
+- `e.message` - Error message (string) 
+- `e.traceback` - Stack trace lines (list of strings)
+- `e.original` - Original Python exception object
+
+**Supported Syntax:**
+- `except ExceptionType as var:` - Catch specific type with variable
+- `except (Type1, Type2) as var:` - Catch multiple types with variable
+- `except as var:` - Catch any exception with variable
+- `except ExceptionType:` - Catch specific type without variable
+- `except:` - Catch any exception without variable
+
 ## 3D Methodology (Design-Driven Development)
 
 For comprehensive 3D methodology guidelines including design documents, implementation phases, quality gates, example creation, and unit testing standards, see:
