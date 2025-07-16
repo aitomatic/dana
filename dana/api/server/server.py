@@ -32,14 +32,14 @@ def create_app():
     )
 
     # Include routers under /api
+    from .routers.agent_generator_na import router as agent_generator_na_router
+    from .routers.agent_test import router as agent_test_router
     from .routers.api import router as api_router
     from .routers.chat import router as chat_router
     from .routers.conversations import router as conversations_router
     from .routers.documents import router as documents_router
     from .routers.main import router as main_router
     from .routers.topics import router as topics_router
-    from .routers.agent_test import router as agent_test_router
-    from .routers.agent_generator_na import router as agent_generator_na_router
 
     app.include_router(main_router)
     app.include_router(api_router, prefix="/api")
@@ -66,9 +66,11 @@ def create_app():
         # If the path starts with api or static, return 404 (should be handled by routers or static mount)
         if full_path.startswith("api") or full_path.startswith("static"):
             from fastapi.responses import JSONResponse
+
             return JSONResponse({"error": "Not found"}, status_code=404)
         # Serve index.html for all other routes
         from fastapi.responses import FileResponse, JSONResponse
+
         index_path = os.path.join(static_dir, "index.html")
         if os.path.exists(index_path):
             return FileResponse(index_path)

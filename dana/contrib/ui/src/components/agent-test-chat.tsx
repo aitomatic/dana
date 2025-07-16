@@ -19,6 +19,7 @@ interface AgentTestChatProps {
   agentName: string;
   agentDescription: string;
   className?: string;
+  currentFolder?: string;
 }
 
 const AgentTestChat = ({
@@ -26,6 +27,7 @@ const AgentTestChat = ({
   agentName,
   agentDescription,
   className,
+  currentFolder,
 }: AgentTestChatProps) => {
   const [messages, setMessages] = useState<TestChatMessage[]>([
     {
@@ -74,6 +76,7 @@ const AgentTestChat = ({
         agent_name: agentName || 'Test Agent',
         agent_description: agentDescription || 'A test agent',
         context: { user_id: 1, test_mode: true },
+        folder_path: currentFolder,
       });
 
       if (response.success) {
@@ -105,7 +108,7 @@ const AgentTestChat = ({
     } finally {
       setIsTesting(false);
     }
-  }, [inputMessage, isTesting, agentCode, agentName, agentDescription]);
+  }, [inputMessage, isTesting, agentCode, agentName, agentDescription, currentFolder]);
 
   const handleKeyPress = useCallback(
     (e: React.KeyboardEvent) => {

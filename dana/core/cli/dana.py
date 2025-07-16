@@ -139,23 +139,50 @@ async def start_repl(debug=False):
         sys.exit(1)
 
 
-def handle_serve_command(args):
+def handle_start_command(args):
     """Start the Dana API server using uvicorn."""
-    host = args.host or "127.0.0.1"
-    port = args.port or 8080
-    reload = args.reload
-    log_level = args.log_level or "info"
-    print(f"\n🌐 Starting Dana API server on http://{host}:{port}")
-    print(f"📊 Health check: http://{host}:{port}/health")
-    print(f"🔗 Root endpoint: http://{host}:{port}/")
-    uvicorn.run(
-        "dana.api.server.server:create_app",
-        host=host,
-        port=port,
-        reload=reload,
-        log_level=log_level,
-        factory=True,
-    )
+    try:
+        # First validate configuration
+        from dana.core.cli.config_manager import ConfigurationManager
+
+        print(f"{colors.accent('🔧 Validating Dana configuration...')}")
+        manager = ConfigurationManager(output_file=".env", debug=False)
+
+        # Check if configuration is valid
+        if not manager.validate_configuration():
+            print(f"{colors.accent('⚠️  Configuration validation failed')}\n")
+            print(f"{colors.accent('🛠️  Running configuration wizard...')}")
+
+            # Run the configuration wizard
+            success = manager.run_configuration_wizard()
+            if not success:
+                print(f"{colors.error('❌ Configuration setup failed. Cannot start server.')}")
+                return 1
+
+            print(f"{colors.accent('✅ Configuration completed successfully')}")
+
+        # Configuration is valid, start the server
+        host = args.host or "127.0.0.1"
+        port = args.port or 8080
+        reload = args.reload
+        log_level = args.log_level or "info"
+
+        print(f"\n🌐 Starting Dana API server on http://{host}:{port}")
+        print(f"📊 Health check: http://{host}:{port}/health")
+        print(f"🔗 Root endpoint: http://{host}:{port}/")
+
+        uvicorn.run(
+            "dana.api.server.server:create_app",
+            host=host,
+            port=port,
+            reload=reload,
+            log_level=log_level,
+            factory=True,
+        )
+
+    except Exception as e:
+        print(f"{colors.error(f'❌ Server startup error: {str(e)}')}")
+        return 1
 
 
 def main():
@@ -202,7 +229,7 @@ def main():
         if args.subcommand == "deploy":
             return handle_deploy_command(args)
         elif args.subcommand == "start":
-            return handle_serve_command(args)
+            return handle_start_command(args)
         elif args.subcommand == "config":
             return handle_config_command(args)
 

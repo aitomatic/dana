@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
@@ -89,7 +88,9 @@ async def update_document(
 
 
 @router.delete("/{document_id}")
-async def delete_document(document_id: int, db: Session = Depends(get_db), document_service: DocumentService = Depends(get_document_service)):
+async def delete_document(
+    document_id: int, db: Session = Depends(get_db), document_service: DocumentService = Depends(get_document_service)
+):
     success = document_service.delete_document(db, document_id)
     if not success:
         raise HTTPException(status_code=404, detail="Document not found")

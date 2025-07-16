@@ -1,7 +1,8 @@
 """Tests for API server routers."""
 
 import os
-from unittest.mock import patch, Mock
+from unittest.mock import patch
+
 from dana.api.server.models import Agent
 
 # Use the global client and db_session fixtures from conftest.py
@@ -36,7 +37,6 @@ class TestMainRouter:
     def test_root_endpoint_with_mocked_static_files(self, client):
         """Test root endpoint when static files exist (using a real temp file)"""
         import tempfile
-        import shutil
         # Create a real temporary index.html file
         with tempfile.TemporaryDirectory() as tmpdir:
             index_path = os.path.join(tmpdir, "index.html")

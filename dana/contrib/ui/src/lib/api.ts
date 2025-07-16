@@ -131,6 +131,9 @@ export interface AgentGenerationResponse {
   error?: string;
   multi_file_project?: MultiFileProject;
   is_multi_file?: boolean;
+  auto_stored_files?: string[];
+  agent_id?: number;
+  agent_folder?: string;
 }
 
 // Code Validation Types
@@ -138,7 +141,7 @@ export interface CodeValidationRequest {
   code?: string;  // For single-file validation (backward compatibility)
   agent_name?: string;
   description?: string;
-  
+
   // Multi-file validation support
   multi_file_project?: MultiFileProject;
 }
@@ -151,7 +154,7 @@ export interface CodeValidationResponse {
   suggestions: CodeSuggestion[];
   fixed_code?: string;
   error?: string;
-  
+
   // Multi-file validation results
   file_results?: any[];  // Results for each file in multi-file project
   dependency_errors?: any[];  // Dependency validation errors
@@ -217,6 +220,7 @@ export interface AgentTestRequest {
   agent_name?: string;
   agent_description?: string;
   context?: Record<string, any>;
+  folder_path?: string;
 }
 
 export interface AgentTestResponse {
@@ -414,7 +418,7 @@ class ApiService {
 
   // Agent Generation API Methods
   async generateAgent(request: AgentGenerationRequest): Promise<AgentGenerationResponse> {
-    const response = await this.client.post<AgentGenerationResponse>('/agents/generate', request);
+    const response = await this.client.post<AgentGenerationResponse>('/agents/generate', request, { timeout: 300000 });
     return response.data;
   }
 

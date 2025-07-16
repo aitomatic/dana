@@ -39,13 +39,13 @@ function AgentMiddlePane({
   // Set default subTab based on mainTab
   const mainTabToSubTabs: Record<string, string[]> = {
     'Agent Be': ['Summary', 'Agent'],
-    'Agent Know': ['Knowledge'],
-    'Agent Do': ['Tools', 'Workflow', 'Others'],
+    'Agent Know': ['Knowledges'],
+    'Agent Do': ['Workflows', 'Tools', 'Others'],
   };
   const defaultSubTab: Record<string, string> = {
     'Agent Be': 'Summary',
-    'Agent Know': 'Knowledge',
-    'Agent Do': 'Tools',
+    'Agent Know': 'Knowledges',
+    'Agent Do': 'Workflows',
   };
   const [subTab, setSubTab] = useState('Summary');
   const { capabilities } = useAgentCapabilitiesStore();
@@ -65,7 +65,7 @@ function AgentMiddlePane({
   // Others: files not in main tabs
   const others = (multiFileProject?.files || []).filter(
     f =>
-      !['agents.na', 'knowledges.na', 'workflows.na', 'tools.na'].includes(f.filename)
+      !['main.na', 'knowledges.na', 'workflows.na', 'tools.na'].includes(f.filename)
   );
 
 
@@ -156,13 +156,13 @@ function AgentMiddlePane({
         )}
         {subTab === 'Agent' && (
           <DescriptionCodeViewer
-            description={getDescription('agents.na')}
-            code={getCode('agents.na')}
-            filename="agents.na"
+            description={getDescription('main.na')}
+            code={getCode('main.na')}
+            filename="main.na"
             projectName={multiFileProject?.name}
           />
         )}
-        {subTab === 'Knowledge' && (
+        {subTab === 'Knowledges' && (
           <DescriptionCodeViewer
             description={getDescription('knowledges.na')}
             code={getCode('knowledges.na')}
@@ -170,7 +170,7 @@ function AgentMiddlePane({
             projectName={multiFileProject?.name}
           />
         )}
-        {subTab === 'Workflow' && (
+        {subTab === 'Workflows' && (
           <DescriptionCodeViewer
             description={getDescription('workflows.na')}
             code={getCode('workflows.na')}
@@ -221,6 +221,8 @@ export function GeneralAgentPage({
   const [_, setIsGeneratingCode] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   // const [isRightPanelMaximized, setIsRightPanelMaximized] = useState(false);
+  const [agentId, setAgentId] = useState<string | undefined>(undefined);
+  const [agentFolder, setAgentFolder] = useState<string | undefined>(undefined);
 
   const { setValue } = form;
 
@@ -235,6 +237,8 @@ export function GeneralAgentPage({
     name?: string,
     description?: string,
     multiFileProject?: MultiFileProject,
+    agentIdResp?: string,
+    agentFolderResp?: string,
   ) => {
     // Update the Dana code in the form
     setValue('general_agent_config.dana_code', code);
@@ -253,6 +257,10 @@ export function GeneralAgentPage({
     if (multiFileProject) {
       setMultiFileProject(multiFileProject);
     }
+
+    // Store agentId and agentFolder for test chat
+    if (agentIdResp) setAgentId(agentIdResp);
+    if (agentFolderResp) setAgentFolder(agentFolderResp);
   };
 
   const handleGenerationStart = () => {
@@ -269,6 +277,7 @@ export function GeneralAgentPage({
     setValue('description', templateDescription);
     setShowTemplateSelector(false);
   };
+
 
   return (
     <div
@@ -348,6 +357,7 @@ export function GeneralAgentPage({
               agentName={agentName}
               agentDescription={agentDescription}
               className="h-full"
+              currentFolder={agentFolder}
             />
           </div>
         </div>

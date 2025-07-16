@@ -18,12 +18,13 @@ class AgentCreate(AgentBase):
 
 class AgentDeployRequest(BaseModel):
     """Request schema for agent deployment endpoint"""
+
     name: str
     description: str
     config: dict[str, Any]
     dana_code: str | None = None  # For single file deployment
     multi_file_project: MultiFileProject | None = None  # For multi-file deployment
-    
+
     def __init__(self, **data):
         # Ensure at least one deployment method is provided
         super().__init__(**data)
@@ -35,6 +36,7 @@ class AgentDeployRequest(BaseModel):
 
 class AgentDeployResponse(BaseModel):
     """Response schema for agent deployment endpoint"""
+
     success: bool
     agent: AgentRead | None = None
     error: str | None = None
@@ -120,7 +122,7 @@ class ConversationRead(ConversationBase):
     id: int
     created_at: datetime
     updated_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -138,7 +140,7 @@ class MessageRead(MessageBase):
     conversation_id: int
     created_at: datetime
     updated_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -149,6 +151,7 @@ class ConversationWithMessages(ConversationRead):
 # Chat-specific schemas
 class ChatRequest(BaseModel):
     """Request schema for chat endpoint"""
+
     message: str
     conversation_id: int | None = None
     agent_id: int
@@ -157,6 +160,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     """Response schema for chat endpoint"""
+
     success: bool
     message: str
     conversation_id: int
@@ -169,12 +173,14 @@ class ChatResponse(BaseModel):
 # Agent Generation schemas
 class MessageData(BaseModel):
     """Schema for a single message in conversation"""
+
     role: str  # 'user' or 'assistant'
     content: str
 
 
 class AgentGenerationRequest(BaseModel):
     """Request schema for agent generation endpoint"""
+
     messages: list[MessageData]
     current_code: str | None = None
     multi_file: bool = False  # New field to enable multi-file generation
@@ -182,6 +188,7 @@ class AgentGenerationRequest(BaseModel):
 
 class AgentCapabilities(BaseModel):
     """Agent capabilities extracted from analysis"""
+
     summary: str | None = None
     knowledge: list[str] | None = None
     workflow: list[str] | None = None
@@ -190,6 +197,7 @@ class AgentCapabilities(BaseModel):
 
 class DanaFile(BaseModel):
     """Schema for a single Dana file"""
+
     filename: str
     content: str
     file_type: str  # 'agent', 'workflow', 'resources', 'methods', 'common'
@@ -199,42 +207,53 @@ class DanaFile(BaseModel):
 
 class MultiFileProject(BaseModel):
     """Schema for a multi-file Dana project"""
+
     name: str
     description: str
     files: list[DanaFile]
     main_file: str  # Primary entry point file
     structure_type: str  # 'simple', 'modular', 'complex'
-    
+
 
 class AgentGenerationResponse(BaseModel):
     """Response schema for agent generation endpoint"""
+
     success: bool
     dana_code: str
     error: str | None = None
-    
+
     # Essential agent info
     agent_name: str | None = None
     agent_description: str | None = None
-    
+
+    # Agent capabilities analysis
+    capabilities: AgentCapabilities | None = None
+
     # File paths for opening in explorer
     auto_stored_files: list[str] | None = None
-    
+
     # Multi-file support (minimal)
     multi_file_project: MultiFileProject | None = None
-    
+
     # Conversation guidance (only when needed)
     needs_more_info: bool = False
     follow_up_message: str | None = None
     suggested_questions: list[str] | None = None
 
+    # New fields for agent folder and id
+    agent_id: int | None = None
+    agent_folder: str | None = None
+
 
 class DanaSyntaxCheckRequest(BaseModel):
     """Request schema for Dana code syntax check endpoint"""
+
     dana_code: str
 
 
 class DanaSyntaxCheckResponse(BaseModel):
     """Response schema for Dana code syntax check endpoint"""
+
     success: bool
     error: str | None = None
     output: str | None = None
@@ -243,6 +262,7 @@ class DanaSyntaxCheckResponse(BaseModel):
 # Code Validation schemas
 class CodeError(BaseModel):
     """Schema for a code error"""
+
     line: int
     column: int
     message: str
@@ -252,6 +272,7 @@ class CodeError(BaseModel):
 
 class CodeWarning(BaseModel):
     """Schema for a code warning"""
+
     line: int
     column: int
     message: str
@@ -260,6 +281,7 @@ class CodeWarning(BaseModel):
 
 class CodeSuggestion(BaseModel):
     """Schema for a code suggestion"""
+
     type: str  # 'syntax', 'best_practice', 'performance', 'security'
     message: str
     code: str
@@ -268,13 +290,14 @@ class CodeSuggestion(BaseModel):
 
 class CodeValidationRequest(BaseModel):
     """Request schema for code validation endpoint"""
+
     code: str | None = None  # For single-file validation (backward compatibility)
     agent_name: str | None = None
     description: str | None = None
-    
+
     # New multi-file support
     multi_file_project: MultiFileProject | None = None  # For multi-file validation
-    
+
     def __init__(self, **data):
         # Ensure at least one validation method is provided
         super().__init__(**data)
@@ -286,6 +309,7 @@ class CodeValidationRequest(BaseModel):
 
 class CodeValidationResponse(BaseModel):
     """Response schema for code validation endpoint"""
+
     success: bool
     is_valid: bool
     errors: list[CodeError] = []
@@ -293,7 +317,7 @@ class CodeValidationResponse(BaseModel):
     suggestions: list[CodeSuggestion] = []
     fixed_code: str | None = None
     error: str | None = None
-    
+
     # Multi-file validation results
     file_results: list[dict] | None = None  # Results for each file in multi-file project
     dependency_errors: list[dict] | None = None  # Dependency validation errors
@@ -302,6 +326,7 @@ class CodeValidationResponse(BaseModel):
 
 class CodeFixRequest(BaseModel):
     """Request schema for code auto-fix endpoint"""
+
     code: str
     errors: list[CodeError]
     agent_name: str | None = None
@@ -310,6 +335,7 @@ class CodeFixRequest(BaseModel):
 
 class CodeFixResponse(BaseModel):
     """Response schema for code auto-fix endpoint"""
+
     success: bool
     fixed_code: str
     applied_fixes: list[str] = []
