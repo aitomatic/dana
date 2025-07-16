@@ -24,16 +24,37 @@ system:debug_mode = true
 
 ## Core Functions
 ```dana
-# AI reasoning
+# AI reasoning with semantic type coercion
 analysis = reason("Analyze this data")
 summary = reason("Summarize", context=documents, temperature=0.7)
+count: int = reason("How many items?")          # Returns integer
+data: dict = reason("Get structured data")      # Returns dictionary
 
-# Resource loading
+# Resource loading and management
 websearch = use("mcp", url="http://localhost:8880/websearch")
-rag = use("rag", sources=["docs/"])
+rag = use("rag", sources=["docs/"], force_reload=True)
+weather = use("mcp", url="http://127.0.0.1:8000/mcp")
 
-# State setting
+# Agent creation and management
+my_agent = agent(module=agent_module)
+agent_pool = agent_pool(agents=[agent1, agent2])
+
+# Enhanced reasoning with resources and agents
+result = reason("Query", resources=[weather], agents=pool)
+
+# Logging and output
+log("Processing started", level="INFO")
+log_level("DEBUG", "dana")                     # Set logging level
+print("Hello, world!")                         # Standard output
+
+# POET enhancement (fault tolerance)
+@poet(domain="data_analysis", retries=3)
+def analyze_data(data):
+    return reason(f"Analyze: {data}")
+
+# State management
 set("system:agent_status", "ready")
+set_model("claude-3-5-sonnet-20241022")        # Set LLM model
 ```
 
 ## Control Flow
@@ -148,20 +169,30 @@ array = np.array([1, 2, 3, 4, 5])
 mean_val = np.mean(array)               # → 3.0
 ```
 
-## Object Method Calls
+## Resource Management & Method Calls
 ```dana
 # MCP services
 websearch = use("mcp", url="http://localhost:8880/websearch")
 tools = websearch.list_openai_functions()
 results = websearch.search("query")
 
-# RAG services
+# RAG services with context management
 rag = use("rag", sources=["docs/"])
 answer = rag.retrieve("What is DANA?")
 
-# With statements
+# Multi-source RAG
+with use("rag", sources=["docs/", "https://example.com"], force_reload=True) as docs:
+    answer = reason("What is the latest feature?", resources=[docs])
+
+# Resource context management
 with use("mcp", url="http://localhost:8080/sse") as mcp:
     functions = mcp.list_openai_functions()
+    result = reason("Get weather", resources=[mcp])
+
+# Multi-resource reasoning
+weather_svc = use("mcp", url="http://127.0.0.1:8000/mcp")
+docs_svc = use("rag", sources=["docs/"])
+answer = reason("Plan trip using weather and docs", resources=[weather_svc, docs_svc])
 
 # Python library objects
 import pandas.py as pd
@@ -172,9 +203,19 @@ first_row = df.iloc[0]                  # Row selection
 
 ## Output & Logging
 ```dana
-# Print (log() doesn't work in DANA)
+# Standard output
 print("Hello, world!")
 print(f"Result: {result}")
+
+# Enhanced logging with color coding
+log("Processing started")                      # Default INFO level
+log("Debug info", level="DEBUG")
+log("Warning message", level="WARNING")
+log("Error occurred", level="ERROR")
+
+# Set logging levels
+log_level("DEBUG", "dana")                     # Set Dana namespace to DEBUG
+log_level("INFO", "my_module")                 # Set specific module level
 ```
 
 ## Collections
@@ -205,6 +246,153 @@ for key, value in data.items():
 | **private** | `private:variable = value` | Agent private |
 | **public** | `public:variable = value` | World state |
 | **system** | `system:variable = value` | System state |
+
+## Agent System
+```dana
+# Agent definition (required components)
+system:agent_name = "Weather Agent"
+system:agent_description = "Provides weather information and forecasts"
+
+# Agent resources
+weather_info = use("mcp", url="http://127.0.0.1:8000/mcp")
+
+# Agent solve function (required)
+def solve(question: str) -> str:
+    return reason(question, resources=[weather_info])
+
+# Agent creation and management
+weather_agent = agent(module=weather_module)
+search_agent = agent(module=search_module)
+remote_agent = agent(url="http://localhost:5009", timeout=1800)
+
+# Agent pools for multi-agent systems
+pool = agent_pool(agents=[weather_agent, search_agent, remote_agent])
+available_agents = pool.get_agent_cards()
+
+# Multi-agent reasoning
+answer = reason("Complex task", agents=pool)
+
+# Agent keyword syntax (alternative)
+agent WeatherAgent:
+    name : str = "Weather Reporter"
+    description : str = "Weather information provider"
+    resources : list = [weather_info]
+
+# Agent deployment
+# dana deploy agent_file.na --port 5001
+```
+
+## Function Composition & Pipelines
+```dana
+# Define composable functions
+def plan_trip(location: str, weather: str) -> str:
+    return reason(f"Plan a day trip in {location} with weather: {weather}")
+
+def estimate_cost(trip: str) -> str:
+    return reason(f"Estimate cost for trip: {trip}")
+
+# Pipeline composition with pipe operator
+pipeline = plan_trip | estimate_cost
+result = pipeline("Tokyo", "sunny")
+
+# Complex workflow patterns
+def plan(task: str, agents: list) -> dict:
+    steps = reason(f"Create plan for {task} using agents: {agents}")
+    return {"task": task, "steps": json.loads(steps)}
+
+def execute(data: dict) -> str:
+    context = ""
+    for step in data["steps"]:
+        answer = reason(f"Step: {step}. Context: {context}", agents=pool)
+        context += answer
+    return reason(f"Final answer: {context}")
+
+workflow = plan | execute
+```
+
+## Python Interoperability
+```dana
+# In Python code
+from opendxa.dana import dana
+
+# Enable Dana module imports
+dana.enable_module_imports()
+try:
+    import order_intelligence  # Dana module (.na file)
+    
+    # Use Dana functions from Python
+    analysis = order_intelligence.analyze_order(order_data)
+    risk = order_intelligence.assess_risk(customer_data)
+    
+finally:
+    dana.disable_module_imports()
+
+# Direct reasoning from Python
+ai_insights = dana.reason(f"Analyze this data: {data}")
+
+# Dana module structure (order_intelligence.na)
+def analyze_order(order_data):
+    return reason(f"Analyze order: {order_data}")
+
+def assess_risk(customer_data):
+    return reason(f"Assess risk: {customer_data}")
+```
+
+## POET Framework (Fault Tolerance)
+```dana
+# POET decorator for enhanced functions
+@poet(domain="data_analysis", retries=3, timeout=30)
+def analyze_data(data):
+    return reason(f"Analyze this data: {data}")
+
+# POET configuration options
+@poet(
+    domain="web_search",           # Domain specialization
+    retries=2,                     # Retry attempts
+    timeout=60,                    # Timeout in seconds
+    enable_training=True           # Enable learning
+)
+def search_and_analyze(query):
+    return reason(f"Search and analyze: {query}")
+
+# Feedback for POET-enhanced functions
+result = analyze_data(my_data)
+feedback(result, {"quality": "good", "accuracy": 0.95})
+```
+
+## Advanced Features
+```dana
+# Semantic type coercion
+count: int = reason("How many items?")          # Auto-converts to int
+data: dict = reason("Get structured data")      # Auto-converts to dict
+float_val: float = reason("What's the price?")  # Auto-converts to float
+
+# Model configuration
+set_model("claude-3-5-sonnet-20241022")
+set_model("gpt-4")
+
+# Enhanced reasoning with context
+result = reason(
+    "Complex query",
+    resources=[weather_svc, docs_svc],
+    agents=agent_pool,
+    temperature=0.7,
+    max_tokens=1000
+)
+
+# Resource configuration
+rag_svc = use("rag", 
+    sources=["docs/", "https://example.com"], 
+    force_reload=True,
+    cache_timeout=3600
+)
+
+mcp_svc = use("mcp", 
+    url="http://localhost:8880/search",
+    timeout=30,
+    retries=3
+)
+```
 
 ## DANA Limitations (Not Supported)
 ```dana
@@ -240,9 +428,6 @@ for key, value in data.items():
 # Must import individually:
 # from math.py import sin
 # from math.py import cos
-
-# No log() function
-# log("message")                  # ❌ ERROR (use print)
 ```
 
 ## Quick Rules
@@ -250,12 +435,16 @@ for key, value in data.items():
 - **❌ Avoid:** `private.status = "ready"` (dot notation)
 - **✅ Use:** `f"Hello, {name}!"` (f-strings)
 - **❌ Avoid:** `"Hello, " + name` (concatenation)
-- **✅ Use:** Type hints in functions
+- **✅ Use:** Type hints for semantic coercion: `result: int = reason("count")`
 - **✅ Use:** Named arguments for structs
-- **✅ Use:** `print()` for output (not `log()`)
+- **✅ Use:** `log()` for colored output, `print()` for standard output
 - **✅ Use:** `struct` instead of `class`
 - **✅ Use:** `import math.py` (Python modules need .py)
 - **❌ Avoid:** `import math` (for Python modules)
 - **✅ Use:** `import dana_module` (Dana modules no extension)
 - **✅ Use:** `from math.py import sqrt` (single imports)
-- **❌ Avoid:** `from math.py import sin, cos` (multi-import) 
+- **❌ Avoid:** `from math.py import sin, cos` (multi-import)
+- **✅ Use:** `with use()` for resource management
+- **✅ Use:** `@poet()` for fault-tolerant functions
+- **✅ Use:** `agent()` and `agent_pool()` for multi-agent systems
+- **✅ Use:** `reason()` with resources and agents for complex queries 
