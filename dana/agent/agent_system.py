@@ -89,7 +89,7 @@ class AgentType:
 
 # --- AgentInstance: Like StructInstance ---
 class AgentInstance(AbstractDanaAgent):
-    def __init__(self, agent_type: AgentType, values: dict[str, Any], context: SandboxContext):
+    def __init__(self, agent_type: AgentType, values: dict[str, Any], context: SandboxContext, instance_id: str = None):
         # Apply defaults, evaluating complex expressions if needed
         final_values = {}
         for field_name, default_value in agent_type.defaults.items():
@@ -120,6 +120,20 @@ class AgentInstance(AbstractDanaAgent):
         self._type = agent_type
         self._values = final_values
         self._context = context
+        self._instance_id = instance_id
+        
+        # Initialize context management
+        self._context_manager = None
+        self._initialize_context_management()
+    
+    def _initialize_context_management(self):
+        """Initialize the context management system for this agent"""
+        try:
+            from dana.agent.context.agent_context_manager import AgentContextManager
+            self._context_manager = AgentContextManager(self, instance_id=self._instance_id)
+        except ImportError:
+            # Context management not available, agent will work without it
+            pass
 
     @property
     def agent_card(self) -> dict[str, Any]:
@@ -146,17 +160,48 @@ class AgentInstance(AbstractDanaAgent):
     def agent_type(self) -> AgentType:
         return self._type
     
-    async def solve(self, task: str) -> str:
+    def solve(self, task: str) -> str:
         """Solve a problem by delegating to the agent."""
-        # Use the internal method resolution to avoid recursion
-        method = self._type.get_method("solve")
-        if method is not None:
-            result = self._call_method(method, task)
-            return str(result)
-        return "No solve method available"
+        # If context manager is available, it will handle the solve call
+        if self._context_manager:
+            # Context manager will wrap the original solve method
+            return self._context_manager._context_aware_solve(task)
+        else:
+            # Fallback to original behavior
+            method = self._type.get_method("solve")
+            if method is not None:
+                result = self._call_method(method, task)
+                return str(result)
+            return "No solve method available"
 
     def plan(self, task: str, user_context: dict | None = None) -> Any:
         return self.__getattr__("plan")(task, user_context)
+    
+    def get_context_info(self) -> dict:
+        """Get context information for debugging"""
+        if self._context_manager:
+            return self._context_manager.get_context_info()
+        else:
+            return {"context_manager": "not_available"}
+    
+    def get_conversation_summary(self) -> str:
+        """Get conversation summary for debugging"""
+        if self._context_manager:
+            return self._context_manager.get_conversation_summary()
+        else:
+            return "Context manager not available"
+    
+    def reset_context(self):
+        """Reset context for testing"""
+        if self._context_manager:
+            self._context_manager.reset_context()
+    
+    def get_persistence_status(self) -> dict:
+        """Get Phase 3 persistence status information"""
+        if self._context_manager:
+            return self._context_manager.get_persistence_status()
+        else:
+            return {"persistence": "not_available", "context_manager": "not_initialized"}
 
     def _call_method(self, method, *args, **kwargs):
         """Helper to call method with correct parameters."""
@@ -387,11 +432,11 @@ class AgentTypeRegistry:
         cls._types.clear()
 
     @classmethod
-    def create_instance(cls, agent_name: str, values: dict[str, Any], context: SandboxContext) -> AgentInstance:
+    def create_instance(cls, agent_name: str, values: dict[str, Any], context: SandboxContext, instance_id: str = None) -> AgentInstance:
         agent_type = cls.get(agent_name)
         if agent_type is None:
             raise ValueError(f"Unknown agent type '{agent_name}'")
-        return AgentInstance(agent_type, values, context=context)
+        return AgentInstance(agent_type, values, context=context, instance_id=instance_id)
 
 # --- Helper for AST-based registration (mirroring struct_system) ---
 def create_agent_type_from_ast(agent_def) -> AgentType:
