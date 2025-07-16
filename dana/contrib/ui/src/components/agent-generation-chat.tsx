@@ -9,9 +9,10 @@ import type {
 } from '@/lib/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, Upload } from 'lucide-react';
 import { MarkdownViewerSmall } from '@/pages/Agents/chat/markdown-viewer';
 import { useAgentCapabilitiesStore } from '@/stores/agent-capabilities-store';
+import { FileUpload } from '@/components/file-upload';
 
 // Message interface for the chat
 interface ChatMessage {
@@ -81,6 +82,7 @@ const AgentGenerationChat = ({
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showFileUpload, setShowFileUpload] = useState(false);
 
   // Ref for the messages container to enable auto-scroll
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -320,6 +322,38 @@ const AgentGenerationChat = ({
 
       {/* Input */}
       <div className="p-4 border-t border-gray-200">
+        {showFileUpload && (
+          <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-medium text-gray-900">Upload Knowledge Files</h4>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowFileUpload(false)}
+              >
+                ×
+              </Button>
+            </div>
+            <FileUpload
+              agentId={window.latestGeneratedAgentId?.toString()}
+              agentFolder={window.latestGeneratedAgentFolder}
+              onFilesUploaded={(files) => {
+                console.log('Files uploaded in chat:', files);
+                setShowFileUpload(false);
+                // Add a message about uploaded files
+                const fileMessage: ChatMessage = {
+                  id: Date.now().toString(),
+                  role: 'user',
+                  content: `Uploaded ${files.length} knowledge file(s): ${files.map(f => f.name).join(', ')}`,
+                  timestamp: new Date(),
+                };
+                setMessages(prev => [...prev, fileMessage]);
+              }}
+              compact={true}
+            />
+          </div>
+        )}
+        
         <div className="flex gap-2">
           <textarea
             value={inputMessage}
@@ -330,6 +364,15 @@ const AgentGenerationChat = ({
             rows={2}
             disabled={isGenerating}
           />
+          <Button
+            variant="outline"
+            onClick={() => setShowFileUpload(!showFileUpload)}
+            disabled={isGenerating}
+            className="px-3 py-2"
+            title="Upload knowledge files"
+          >
+            <Upload className="w-4 h-4" />
+          </Button>
           <Button
             onClick={handleSendMessage}
             disabled={!canSend}

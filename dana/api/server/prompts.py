@@ -3,12 +3,19 @@ Prompt templates for agent generation and related server logic.
 """
 
 
-def get_multi_file_agent_generation_prompt(intentions: str, current_code: str = "") -> str:
+def get_multi_file_agent_generation_prompt(intentions: str, current_code: str = "", has_docs_folder: bool = False) -> str:
     """
-    Returns the multi-file agent generation prompt for the LLM.
+    Returns the multi-file agent generation prompt for the LLM, aligned with the normal_chat_with_document example, but including knowledges.na as a required file and conditional RAG resource usage.
     """
+    rag_tools_block = (
+        'rag_resource = use("rag", sources=["./docs"])' if has_docs_folder else '# No RAG resource defined because there is no docs folder in the agent directory.'
+    )
+    rag_import_block = 'from tools import rag_resource\n' if has_docs_folder else ''
+    rag_search_block = (
+        '    package.retrieval_result = str(rag_resource.query(query))' if has_docs_folder else '    # No RAG resource available; retrieval_result remains empty'
+    )
     return f'''
-You are an expert Dana language developer. Based on the user's intentions, generate a well-structured multi-file Dana agent project following proven patterns.
+You are an expert Dana language developer. Based on the user's intentions, generate a Dana agent project that follows the modular, workflow-based pattern as in the 'normal_chat_with_document' example.
 
 User Intentions:
 {intentions}
@@ -17,17 +24,12 @@ IMPORTANT: You MUST generate EXACTLY 6 files: main.na, workflows.na, methods.na,
 
 Generate a multi-file Dana agent project with the following structure, following the established patterns:
 
-For complex agents, organize code into these files:
-1. **main.na**        - Main agent definition and orchestration (replaces agents.na)
+1. **main.na**        - Main agent definition and orchestration (entrypoint)
 2. **workflows.na**   - Workflow orchestration using pipe operators
 3. **methods.na**     - Core processing methods and utilities
-4. **common.na**      - Shared data structures, prompts, and utilities (must include structs and constants)
-5. **knowledges.na**  - Knowledge base/resource configurations
-6. **tools.na**       - Tool definitions and integrations
-
-For simpler agents, use a minimal structure:
-1. **main.na**        - Main agent definition with solve() method
-2. **methods.na**     - Helper methods (if needed)
+4. **common.na**      - Shared data structures, prompt templates, and constants (must include structs and constants)
+5. **knowledges.na**  - Knowledge base/resource configurations (describe or define knowledge sources, or explain if not needed)
+6. **tools.na**       - Tool/resource definitions and integrations (conditionally define rag_resource only if a docs folder exists)
 
 RESPONSE FORMAT:
 You MUST generate ALL 6 files in this exact format with FILE_START and FILE_END markers. Do not skip any files.
@@ -35,67 +37,73 @@ IMPORTANT: Generate ONLY pure Dana code between the markers - NO markdown code b
 
 FILE_START:main.na
 from workflows import workflow
-from common import [YourDataStruct]
+from common import RetrievalPackage
 
-agent [AgentName]:
-    name: str = "[Descriptive Agent Name]"
-    description: str = "[Brief description of what the agent does]"
+agent RetrievalExpertAgent:
+    name: str = "RetrievalExpertAgent"
+    description: str = "A retrieval expert agent that can answer questions about documents"
 
-def solve(self : [AgentName], query: str) -> str:
-    package = [YourDataStruct](query=query)
+def solve(self : RetrievalExpertAgent, query: str) -> str:
+    package = RetrievalPackage(query=query)
     return workflow(package)
 
-this_agent = [AgentName]()
+this_agent = RetrievalExpertAgent()
 
-print(this_agent.solve("Example query"))
+# Use this_agent.solve() in your application
+# print(this_agent.solve("What is Dana language?"))
 FILE_END:main.na
 
 FILE_START:workflows.na
-from methods import [method1]
-from methods import [method2]
-from methods import [method3]
+from methods import should_use_rag
+from methods import refine_query
+from methods import search_document
+from methods import get_answer
 
-workflow = [method1] | [method2] | [method3]
+workflow = should_use_rag | refine_query | search_document | get_answer
 FILE_END:workflows.na
 
 FILE_START:methods.na
-from tools import [tool_name]
-from common import [PROMPT_CONSTANT]
-from common import [DataStruct]
+{rag_import_block}from common import QUERY_GENERATION_PROMPT
+from common import QUERY_DECISION_PROMPT
+from common import ANSWER_PROMPT
+from common import RetrievalPackage
 
-def [method_name](package: [DataStruct]) -> [DataStruct]:
-    # Process the package and return modified version
-    result = reason([PROMPT_CONSTANT].format(user_input=package.query))
-    package.field = result
+def search_document(package: RetrievalPackage) -> RetrievalPackage:
+    query = package.query
+    if package.refined_query != "":
+        query = package.refined_query
+{rag_search_block}    return package
+
+def refine_query(package: RetrievalPackage) -> RetrievalPackage:
+    if package.should_use_rag:
+        package.refined_query = reason(QUERY_GENERATION_PROMPT.format(user_input=package.query))
     return package
 
-def [another_method](package: [DataStruct]) -> [DataStruct]:
-    # Example method that uses tools
-    if package.some_condition:
-        package.result = str([tool_name].query(package.query))
+def should_use_rag(package: RetrievalPackage) -> RetrievalPackage:
+    package.should_use_rag = reason(QUERY_DECISION_PROMPT.format(user_input=package.query))
     return package
 
-def [final_method](package: [DataStruct]) -> str:
-    # Final method that returns the result
-    prompt = [PROMPT_CONSTANT].format(user_input=package.query, data=package.result)
+def get_answer(package: RetrievalPackage) -> str:
+    prompt = ANSWER_PROMPT.format(user_input=package.query, retrieved_docs=package.retrieval_result)
     return reason(prompt)
 FILE_END:methods.na
 
 FILE_START:common.na
-# Define prompt constants first
-[PROMPT_NAME] = """
-You are [RoleDescription], an expert [domain] for [purpose].
+QUERY_GENERATION_PROMPT = """
+You are **QuerySmith**, an expert search-query engineer for a Retrieval-Augmented Generation (RAG) pipeline.
 
-**Task**
-[Clear task description]
+**Task**  
+Given the USER_REQUEST below, craft **one** concise query string (≤ 12 tokens) that will maximize recall of the most semantically relevant documents.
 
-**Process**
-1. [Step 1]
-2. [Step 2]
-3. [Step 3]
+**Process**  
+1. **Extract Core Concepts** – identify the main entities, actions, and qualifiers.  
+2. **Select High-Signal Terms** – keep nouns/verbs with the strongest discriminative power; drop stop-words and vague modifiers.  
+3. **Synonym Check** – if a well-known synonym outperforms the original term in typical search engines, substitute it.  
+4. **Context Packing** – arrange terms from most to least important; group multi-word entities in quotes (“like this”).  
+5. **Final Polish** – ensure the string is lowercase, free of punctuation except quotes, and contains **no** explanatory text.
 
-**Output Format**
-[Clear output format instructions]
+**Output Format**  
+Return **only** the final query string on a single line. No markdown, labels, or additional commentary.
 
 ---
 
@@ -103,21 +111,83 @@ USER_REQUEST:
 {{user_input}}
 """
 
-[ANOTHER_PROMPT] = """
-[Another well-structured prompt template]
+QUERY_DECISION_PROMPT = """
+You are **RetrievalGate**, a binary decision agent guarding a Retrieval-Augmented Generation (RAG) pipeline.
+
+Task  
+Analyze the USER_REQUEST below and decide whether external document retrieval is required to answer it accurately.
+
+Decision Rules  
+1. External-Knowledge Need – Does the request demand up-to-date facts, statistics, citations, or niche info unlikely to be in the model’s parameters?  
+2. Internal Sufficiency – Could the model satisfy the request with its own reasoning, creativity, or general knowledge?  
+3. Explicit User Cue – If the user explicitly asks to “look up,” “cite,” “fetch,” “search,” or mentions a source/corpus, retrieval is required.  
+4. Ambiguity Buffer – When uncertain, default to retrieval (erring on completeness).
+
+Output Format  
+Return **only** one lowercase Boolean literal on a single line:  
+- `true`  → retrieval is needed  
+- `false` → retrieval is not needed
+
+---
 
 USER_REQUEST: 
 {{user_input}}
-DATA: 
-{{data}}
 """
 
-# Define data structures
-struct [YourDataStruct]:
+ANSWER_PROMPT = """
+You are **RAGResponder**, an expert answer-composer for a Retrieval-Augmented Generation pipeline.
+
+────────────────────────────────────────
+INPUTS
+• USER_REQUEST: The user’s natural-language question.  
+• RETRIEVED_DOCS: *Optional* — multiple objects, each with:
+    - metadata
+    - content
+  If no external retrieval was performed, RETRIEVED_DOCS will be empty.
+
+────────────────────────────────────────
+TASK  
+Produce a single, well-structured answer that satisfies USER_REQUEST.
+
+────────────────────────────────────────
+GUIDELINES  
+1. **Grounding Strategy**  
+   • If RETRIEVED_DOCS is **non-empty**, read the top-scoring snippets first.  
+   • Extract only the facts truly relevant to the question.  
+   • Integrate those facts into your reasoning and cite them inline as **[doc_id]**.
+
+2. **Fallback Strategy**  
+   • If RETRIEVED_DOCS is **empty**, rely on your internal knowledge.  
+   • Answer confidently but avoid invented specifics (no hallucinations).
+
+3. **Citation Rules**  
+   • Cite **every** external fact or quotation with its matching [doc_id].  
+   • Do **not** cite when drawing solely from internal knowledge.  
+   • Never reference retrieval *scores* or expose raw snippets.
+
+4. **Answer Quality**  
+   • Prioritize clarity, accuracy, and completeness.  
+   • Use short paragraphs, bullets, or headings if it helps readability.  
+   • Maintain a neutral, informative tone unless the user requests otherwise.
+
+────────────────────────────────────────
+OUTPUT FORMAT  
+Return **only** the answer text—no markdown fences, JSON, or additional labels.
+Citations must appear inline in square brackets, e.g.:
+    Solar power capacity grew by 24 % in 2024 [energy_outlook_2025].
+
+────────────────────────────────────────
+USER_REQUEST: 
+{{user_input}}
+RETRIEVED_DOCS: 
+{{retrieved_docs}}
+"""
+
+struct RetrievalPackage:
     query: str
-    field1: str = ""
-    field2: bool = False
-    result: str = "<empty>"
+    refined_query: str = ""
+    should_use_rag: bool = False
+    retrieval_result: str = "<empty>"
 FILE_END:common.na
 
 FILE_START:knowledges.na
@@ -129,7 +199,7 @@ Knowledge Description:
 """
 
 # Example knowledge resource definitions (include only if needed):
-# knowledge_base = use("rag", sources=["path/to/documents"])
+# knowledge_base = use("rag", sources=["./docs"])
 # database = use("database", connection_string="...")
 # api_knowledge = use("api", endpoint="...")
 
@@ -138,34 +208,20 @@ Knowledge Description:
 FILE_END:knowledges.na
 
 FILE_START:tools.na
-"""Tool definitions and integrations.
-
-Tools Description:
-- List and describe each tool or integration, its purpose, and how it is used in the agent.
-- If no external tools are needed, explain why the agent can work without them.
-"""
-
-# Example tool definitions (include only if needed):
-# rag_resource = use("rag", sources=["path/to/documents"])
-# database_tool = use("database", connection_string="...")
-# api_service = use("api", endpoint="...")
-
-# If no tools are needed, you can include this comment:
-# No external tools required - this agent uses only built-in reasoning capabilities
-FILE_END:tools.na
+{rag_tools_block}FILE_END:tools.na
 
 CRITICAL GUIDELINES - FOLLOW THESE EXACTLY:
 1. **GENERATE ALL 6 FILES**: You MUST generate all 6 files (main.na, workflows.na, methods.na, common.na, knowledges.na, tools.na) even if some only contain comments
-2. **File Structure**: Use main.na instead of agents.na
+2. **File Structure**: Use main.na as the entrypoint
 3. **Agent Pattern**: Include solve(self: AgentName, query: str) -> str method
-4. **Workflow Pattern**: Use pipe operators (|) to chain methods: method1 | method2 | method3
+4. **Workflow Pattern**: Use pipe operators (|) to chain methods: should_use_rag | refine_query | search_document | get_answer
 5. **Data Flow**: Pass a struct through the pipeline, each method modifying and returning it
-6. **Common.na**: Must include both prompt constants and data structures
+6. **common.na**: Must include both prompt constants and data structures
 7. **Prompts**: Use structured prompts with clear task descriptions, process steps, and output formats
-8. **Tools File**: ALWAYS generate tools.na - if no tools needed, include only comments explaining this
-9. **Imports**: Use proper Dana syntax: `import methods` (no .na extension)
+8. **tools.na**: ALWAYS generate tools.na - if no tools needed, include only comments explaining this
+9. **Imports**: Use proper Dana syntax: import methods (no .na extension)
 10. **Final Method**: Last method in pipeline should return final result (string)
-11. **Agent Instance**: Create instance with `this_agent = AgentName()` and include example usage
+11. **Agent Instance**: Create instance with this_agent = AgentName() and include example usage
 
 MANDATORY FILE REQUIREMENTS:
 - main.na: ALWAYS required - main agent definition

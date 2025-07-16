@@ -406,6 +406,15 @@ class ApiService {
     return response.data;
   }
 
+  async uploadKnowledgeFile(formData: FormData): Promise<{ success: boolean; file_path?: string; error?: string }> {
+    const response = await this.client.post<{ success: boolean; file_path?: string; error?: string }>('/agents/upload-knowledge', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
+
   async updateAgent(agentId: number, agent: AgentCreate): Promise<AgentRead> {
     const response = await this.client.put<AgentRead>(`/agents/${agentId}`, agent);
     return response.data;

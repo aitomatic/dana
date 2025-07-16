@@ -1,15 +1,6 @@
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import {
-  X,
-  Book,
-  Network,
-  Tools,
-  List,
-  User,
-  Page,
-  Box3dCenter,
-} from 'iconoir-react';
+import { X, Book, Network, Tools, List, User, Page, Box3dCenter } from 'iconoir-react';
 import { useState, useMemo } from 'react';
 import type { ReactElement } from 'react';
 import AgentGenerationChat from '@/components/agent-generation-chat';
@@ -23,6 +14,7 @@ import DanaAvatar from '/agent-avatar/javis-avatar.svg';
 import GeorgiaAvatar from '/agent-avatar/georgia-avatar.svg';
 import DescriptionCodeViewer from './DescriptionCodeViewer';
 import MultiFileViewer from '@/components/multi-file-viewer';
+import { FileUpload } from '@/components/file-upload';
 
 function extractDescription(content: string): string {
   const match = content.match(/"""([\s\S]*?)"""/);
@@ -31,8 +23,12 @@ function extractDescription(content: string): string {
 
 function AgentMiddlePane({
   multiFileProject,
+  agentId,
+  agentFolder,
 }: {
   multiFileProject?: MultiFileProject | null;
+  agentId?: string;
+  agentFolder?: string;
 }) {
   // Add main tab logic
   const [mainTab] = useState<'Agent Be' | 'Agent Know' | 'Agent Do'>('Agent Be');
@@ -52,22 +48,24 @@ function AgentMiddlePane({
 
   // Update subTab when mainTab changes
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useMemo(() => { setSubTab(defaultSubTab[mainTab]); }, [mainTab]);
+  useMemo(() => {
+    setSubTab(defaultSubTab[mainTab]);
+  }, [mainTab]);
 
   // Categorize files
   const filesByType = useMemo(() => {
     const files = multiFileProject?.files || [];
     const map: Record<string, any> = {};
-    files.forEach(f => { map[f.filename] = f; });
+    files.forEach((f) => {
+      map[f.filename] = f;
+    });
     return map;
   }, [multiFileProject]);
 
   // Others: files not in main tabs
   const others = (multiFileProject?.files || []).filter(
-    f =>
-      !['main.na', 'knowledges.na', 'workflows.na', 'tools.na'].includes(f.filename)
+    (f) => !['main.na', 'knowledges.na', 'workflows.na', 'tools.na'].includes(f.filename),
   );
-
 
   // Helper to get file content/description
   const getFile = (filename: string) => filesByType[filename];
@@ -85,57 +83,57 @@ function AgentMiddlePane({
   ];
 
   const subtabToTabs: Record<string, string> = {
-    'Summary': 'Agent Be',
-    'Agent': 'Agent Be',
-    'Knowledge': 'Agent Know',
-    'Tools': 'Agent Do',
-    'Workflow': 'Agent Do',
-    'Others': 'Agent Do',
+    Summary: 'Agent Be',
+    Agent: 'Agent Be',
+    Knowledge: 'Agent Know',
+    Tools: 'Agent Do',
+    Workflow: 'Agent Do',
+    Others: 'Agent Do',
   };
 
   // Sub-tab icons
   const subTabIcons: Record<string, ReactElement> = {
-    'Summary': <List className="mr-1 w-4 h-4" />,
-    'Agent': <Box3dCenter className="mr-1 w-4 h-4" />,
-    'Knowledge': <Book className="mr-1 w-4 h-4" />,
-    'Tools': <Tools className="mr-1 w-4 h-4" />,
-    'Workflow': <Network className="mr-1 w-4 h-4" />,
-    'Others': <Page className="mr-1 w-4 h-4" />,
+    Summary: <List className="mr-1 w-4 h-4" />,
+    Agent: <Box3dCenter className="mr-1 w-4 h-4" />,
+    Knowledge: <Book className="mr-1 w-4 h-4" />,
+    Tools: <Tools className="mr-1 w-4 h-4" />,
+    Workflow: <Network className="mr-1 w-4 h-4" />,
+    Others: <Page className="mr-1 w-4 h-4" />,
   };
 
   return (
-    <div className="flex flex-col w-[40%] border-r border-gray-200 bg-white h-full ">
+    <div className="flex flex-col w-[45%] border-r border-gray-200 bg-white h-full ">
       {/* Main Tabs */}
-      <div className="flex flex-row bg-gray-100 px-4 pt-2 gap-2">
-        {mainTabs.map(tab => (
-          <div className={cn('flex flex-col gap-1 px-3', {
-            'border-b-2 border-blue-500': subtabToTabs[subTab] === tab.label,
-          })}>
-
+      <div className="flex flex-row gap-2 px-2 pt-2 bg-gray-100">
+        {mainTabs.map((tab) => (
+          <div
+            className={cn('flex flex-col gap-1 px-3', {
+              'border-b-2 border-blue-500': subtabToTabs[subTab] === tab.label,
+            })}
+          >
             <button
               key={tab.label}
-              className={cn(
-                'flex items-center font-semibold text-base text-sm p-1 rounded-md',
-
-              )}
+              className={cn('flex items-center p-1 text-sm font-semibold rounded-md')}
             >
-              <span className={cn('px-2 py-1 rounded-md', {
-                'bg-[#E1EBFE]': tab.label === 'Agent Be',
-                'bg-[#FBE8FF]': tab.label === 'Agent Know',
-                'bg-[#CCFBEF]': tab.label === 'Agent Do',
-              })}>
+              <span
+                className={cn('px-2 py-1 rounded-md truncate', {
+                  'bg-[#E1EBFE]': tab.label === 'Agent Be',
+                  'bg-[#FBE8FF]': tab.label === 'Agent Know',
+                  'bg-[#CCFBEF]': tab.label === 'Agent Do',
+                })}
+              >
                 {tab.label}
               </span>
             </button>
-            <div className='flex gap-1'>
-              {mainTabToSubTabs[tab.label].map(subTabItem => (
+            <div className="flex gap-1">
+              {mainTabToSubTabs[tab.label].map((subTabItem) => (
                 <button
                   key={subTabItem}
                   className={cn(
                     'flex items-center font-medium text-sm p-1 -mb-[2px] px-2 rounded-t-md',
                     {
-                      'border-white border border-[#1570EF] border-b-white bg-white': subTab === subTabItem,
-                    }
+                      ' border border-[#1570EF] border-b-white bg-white': subTab === subTabItem,
+                    },
                   )}
                   onClick={() => {
                     setSubTab(subTabItem);
@@ -163,12 +161,27 @@ function AgentMiddlePane({
           />
         )}
         {subTab === 'Knowledges' && (
-          <DescriptionCodeViewer
-            description={getDescription('knowledges.na')}
-            code={getCode('knowledges.na')}
-            filename="knowledges.na"
-            projectName={multiFileProject?.name}
-          />
+          <div className="flex flex-col justify-between">
+            <DescriptionCodeViewer
+              description={getDescription('knowledges.na')}
+              code={getCode('knowledges.na')}
+              filename="knowledges.na"
+              projectName={multiFileProject?.name}
+            />
+
+            {/* <div className="pt-6 border-t">
+              <h3 className="mb-4 text-lg font-medium text-gray-900">Upload Knowledge Files</h3>
+              <FileUpload
+                agentId={agentId}
+                agentFolder={agentFolder}
+                onFilesUploaded={(files) => {
+                  console.log('Files uploaded:', files);
+                  // TODO: Update knowledges.na file with RAG declarations
+                }}
+                className="w-full"
+              />
+            </div> */}
+          </div>
         )}
         {subTab === 'Workflows' && (
           <DescriptionCodeViewer
@@ -278,7 +291,6 @@ export function GeneralAgentPage({
     setShowTemplateSelector(false);
   };
 
-
   return (
     <div
       className={cn(
@@ -316,6 +328,8 @@ export function GeneralAgentPage({
         {/* Middle Pane - Tabs */}
         <AgentMiddlePane
           multiFileProject={multiFileProject}
+          agentId={agentId}
+          agentFolder={agentFolder}
         />
 
         {/* Right Panel - Product Assistant */}

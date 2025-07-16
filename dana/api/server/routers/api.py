@@ -5,7 +5,7 @@ import zipfile
 from pathlib import Path
 import json
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -1536,3 +1536,118 @@ async def open_file_location(file_path: str):
     except Exception as e:
         logger.error(f"Error opening file location: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/upload-knowledge")
+async def upload_knowledge_file(
+    file: UploadFile = File(...),
+    agent_id: str = Form(None),
+    agent_folder: str = Form(None),
+):
+    """
+    Upload a knowledge file for an agent.
+    Creates a docs folder in the agent directory and stores the file there.
+    Also updates the tools.na file with RAG declarations.
+    """
+    import logging
+    import shutil
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        logger.info(f"Uploading knowledge file: {file.filename}")
+        
+        # Determine the agent folder path
+        if agent_folder:
+            agent_folder_path = Path(agent_folder)
+        elif agent_id:
+            # Try to find agent folder by ID pattern
+            agents_dir = Path("agents")
+            if agents_dir.exists():
+                for folder in agents_dir.iterdir():
+                    if folder.is_dir() and folder.name.startswith(f"agent_{agent_id}_"):
+                        agent_folder_path = folder
+                        break
+                else:
+                    raise HTTPException(status_code=404, detail="Agent folder not found")
+            else:
+                raise HTTPException(status_code=404, detail="Agents directory not found")
+        else:
+            # Fall back to generated directory
+            generated_dir = Path("generated")
+            if generated_dir.exists():
+                # Find the most recent generated agent folder
+                agent_folders = sorted([f for f in generated_dir.iterdir() if f.is_dir() and f.name.startswith("generated_")], 
+                                     key=lambda x: x.stat().st_mtime, reverse=True)
+                if agent_folders:
+                    agent_folder_path = agent_folders[0]
+                else:
+                    raise HTTPException(status_code=404, detail="No generated agent folders found")
+            else:
+                raise HTTPException(status_code=404, detail="No agent folder specified or found")
+        
+        # Create docs folder if it doesn't exist
+        docs_folder = agent_folder_path / "docs"
+        docs_folder.mkdir(exist_ok=True)
+        
+        # Save the uploaded file
+        file_path = docs_folder / file.filename
+        logger.info(f"Saving file to: {file_path}")
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        # Update tools.na file with RAG declaration (idempotent, always points to ./docs)
+        await _update_tools_with_rag(agent_folder_path)
+        
+        logger.info(f"Successfully uploaded knowledge file: {file.filename}")
+        
+        return {
+            "success": True,
+            "file_path": str(file_path),
+            "message": f"File {file.filename} uploaded successfully"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error uploading knowledge file: {e}", exc_info=True)
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
+async def _update_tools_with_rag(agent_folder_path: Path):
+    """
+    Ensure tools.na contains a single rag_resource = use("rag", sources=["./docs"]) declaration.
+    Idempotent: only adds if not present.
+    """
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        tools_file = agent_folder_path / "tools.na"
+        rag_declaration = 'rag_resource = use("rag", sources=["./docs"])'  # No trailing newline
+        # Read existing tools.na content
+        if tools_file.exists():
+            with open(tools_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            if rag_declaration not in content:
+                # Remove any old rag_resource lines
+                import re
+                content = re.sub(r'^.*rag_resource\s*=.*$', '', content, flags=re.MULTILINE)
+                # Add the correct rag_resource at the end
+                if not content.endswith('\n'):
+                    content += '\n'
+                content += rag_declaration + '\n'
+                with open(tools_file, 'w', encoding='utf-8') as f:
+                    f.write(content)
+                logger.info(f"Updated tools.na with RAG resource for ./docs")
+            else:
+                logger.info(f"tools.na already contains correct RAG resource")
+        else:
+            with open(tools_file, 'w', encoding='utf-8') as f:
+                f.write(rag_declaration + '\n')
+            logger.info(f"Created tools.na with RAG resource for ./docs")
+    except Exception as e:
+        logger.error(f"Error updating tools.na with RAG: {e}")

@@ -180,7 +180,8 @@ def solve(self : GeneratedAgent, query: str) -> str:
 
 this_agent = GeneratedAgent()
 
-print(this_agent.solve("Example query"))""",
+# Use this_agent.solve() in your application
+# response = this_agent.solve("Your query here")""",
             "workflows.na": """from methods import process_request
 from methods import generate_response
 

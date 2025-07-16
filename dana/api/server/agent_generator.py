@@ -882,9 +882,9 @@ agent {agent_name}:
 def solve({agent_name.lower()} : {agent_name}, problem : str):
     return reason(f"Help me with: {{problem}}")
 
-# Example usage
-example_input = "Hello, how can you help me?"
-print(solve({agent_name}(), example_input))'''
+# Use solve() in your application
+# example_input = "Hello, how can you help me?"
+# response = solve({agent_name}(), example_input)'''
 
 
 async def analyze_conversation_completeness(messages: list[dict[str, Any]]) -> dict[str, Any]:
@@ -1540,6 +1540,6 @@ def solve(basic_agent : BasicAgent, problem : str):
     """Solve a problem using reasoning."""
     return reason(f"Help me to answer the question: {problem}")
 
-# Example usage
-example_input = "Hello, how can you help me?"
-print(solve(BasicAgent(), example_input))'''
+# Use solve() in your application
+# example_input = "Hello, how can you help me?"
+# response = solve(BasicAgent(), example_input)'''
