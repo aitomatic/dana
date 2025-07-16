@@ -15,7 +15,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dana-agent"
-version = "0.25.7.16"
+version = "0.25.7.19"
 description = "Dana programming language for Domain-Aware Neurosymbolic Agents"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -125,7 +125,7 @@ include = ["dana*"]
 exclude = ["tests*", "examples*", "docs*", "tmp*"]
 
 [tool.setuptools.package-data]
-dana = ["**/*.py", "**/*.lark", "**/*.json"]
+dana = ["**/*.py", "**/*.lark", "**/*.json", "**/api/server/static/**/*"]
 
 # =============================================================================
 # Package Manager Configuration (uv)
