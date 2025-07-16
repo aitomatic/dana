@@ -301,8 +301,7 @@ FILE_START:methods.na
 \"\"\"Core processing methods and utilities.\"\"\"
 
 def process_request(request: str) -> str:
-    # Processing logic
-    return result
+    return reason(f\"Process this request: \" + request)
 
 def validate_input(input_data: str) -> bool:
     return len(input_data.strip()) > 0
@@ -328,12 +327,10 @@ import methods
 from resources import knowledge_base  # only if resources used
 
 def main_workflow(request: str) -> str:
-    # Workflow logic
     if not methods.validate_input(request):
         return "Invalid input"
     
-    result = methods.process_request(request)
-    return result
+    return reason(f"Execute workflow for: {request}", context=methods.process_request(request))
 FILE_END:workflows.na
 
 FILE_START:common.na

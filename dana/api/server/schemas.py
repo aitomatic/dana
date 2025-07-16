@@ -22,7 +22,7 @@ class AgentDeployRequest(BaseModel):
     description: str
     config: dict[str, Any]
     dana_code: str | None = None  # For single file deployment
-    multi_file_project: 'MultiFileProject' | None = None  # For multi-file deployment
+    multi_file_project: 'MultiFileProject | None' = None  # For multi-file deployment
     
     def __init__(self, **data):
         # Ensure at least one deployment method is provided
