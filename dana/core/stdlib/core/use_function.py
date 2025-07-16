@@ -25,6 +25,25 @@ def use_function(context: SandboxContext, function_name: str, *args, _name: str 
         return resource
     elif function_name.lower() == "rag":
         from dana.common.resource.rag.rag_resource import RAGResource
+        import os
+        from pathlib import Path
+
+        # Make sources DANAPATH-aware if DANAPATH is set and sources are relative
+        danapath = os.environ.get("DANAPATH")
+        sources = args[0] if args else kwargs.get("sources", [])
+        if danapath and sources:
+            new_sources = []
+            for src in sources:
+                # If src is absolute, leave as is; if relative, join with DANAPATH
+                if not os.path.isabs(src):
+                    new_sources.append(str(Path(danapath) / src))
+                else:
+                    new_sources.append(src)
+            # Replace sources in args or kwargs
+            if args:
+                args = (new_sources,) + args[1:]
+            else:
+                kwargs["sources"] = new_sources
 
         resource = RAGResource(*args, name=_name, **kwargs)
         context.set_resource(_name, resource)

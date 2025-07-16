@@ -14,7 +14,6 @@ import DanaAvatar from '/agent-avatar/javis-avatar.svg';
 import GeorgiaAvatar from '/agent-avatar/georgia-avatar.svg';
 import DescriptionCodeViewer from './DescriptionCodeViewer';
 import MultiFileViewer from '@/components/multi-file-viewer';
-import { FileUpload } from '@/components/file-upload';
 
 function extractDescription(content: string): string {
   const match = content.match(/"""([\s\S]*?)"""/);
@@ -23,12 +22,8 @@ function extractDescription(content: string): string {
 
 function AgentMiddlePane({
   multiFileProject,
-  agentId,
-  agentFolder,
 }: {
   multiFileProject?: MultiFileProject | null;
-  agentId?: string;
-  agentFolder?: string;
 }) {
   // Add main tab logic
   const [mainTab] = useState<'Agent Be' | 'Agent Know' | 'Agent Do'>('Agent Be');
@@ -234,7 +229,6 @@ export function GeneralAgentPage({
   const [_, setIsGeneratingCode] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   // const [isRightPanelMaximized, setIsRightPanelMaximized] = useState(false);
-  const [agentId, setAgentId] = useState<string | undefined>(undefined);
   const [agentFolder, setAgentFolder] = useState<string | undefined>(undefined);
 
   const { setValue } = form;
@@ -250,7 +244,7 @@ export function GeneralAgentPage({
     name?: string,
     description?: string,
     multiFileProject?: MultiFileProject,
-    agentIdResp?: string,
+    _agentIdResp?: string,
     agentFolderResp?: string,
   ) => {
     // Update the Dana code in the form
@@ -271,8 +265,7 @@ export function GeneralAgentPage({
       setMultiFileProject(multiFileProject);
     }
 
-    // Store agentId and agentFolder for test chat
-    if (agentIdResp) setAgentId(agentIdResp);
+    // Store agentFolder for test chat
     if (agentFolderResp) setAgentFolder(agentFolderResp);
   };
 
@@ -328,8 +321,6 @@ export function GeneralAgentPage({
         {/* Middle Pane - Tabs */}
         <AgentMiddlePane
           multiFileProject={multiFileProject}
-          agentId={agentId}
-          agentFolder={agentFolder}
         />
 
         {/* Right Panel - Product Assistant */}

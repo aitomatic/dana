@@ -1421,6 +1421,17 @@ async def _auto_store_multi_file_agent(agent_name: str, agent_description: str, 
     agent_folder.mkdir(exist_ok=True)
     logger.info(f"Created multi-file agent folder: {agent_folder}")
 
+    # Always create docs folder inside agent folder
+    docs_folder = agent_folder / "docs"
+    docs_folder.mkdir(exist_ok=True)
+    logger.info(f"Ensured docs folder exists: {docs_folder}")
+
+    # Add a temp.txt file in the docs folder with a number
+    temp_file = docs_folder / "temp.txt"
+    with open(temp_file, "w", encoding="utf-8") as f:
+        f.write("42\n")
+    logger.info(f"Created temp.txt in docs folder: {temp_file}")
+
     file_paths = []
 
     # Create files from multi-file project
@@ -1558,6 +1569,7 @@ async def upload_knowledge_file(
         logger.info(f"Uploading knowledge file: {file.filename}")
         
         # Determine the agent folder path
+        print("agent_folder", agent_folder)
         if agent_folder:
             agent_folder_path = Path(agent_folder)
         elif agent_id:
@@ -1597,9 +1609,17 @@ async def upload_knowledge_file(
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
-        # Update tools.na file with RAG declaration (idempotent, always points to ./docs)
+        # Update tools.na file with RAG declaration (always points to ./docs)
         await _update_tools_with_rag(agent_folder_path)
-        
+
+        # Remove the .cache directory in the agent folder to force RAG re-indexing
+        import shutil
+        import os
+        rag_cache_dir = agent_folder_path / ".cache"
+        if rag_cache_dir.exists() and rag_cache_dir.is_dir():
+            shutil.rmtree(rag_cache_dir)
+            logger.info(f"Deleted RAG cache at {rag_cache_dir} to force re-indexing.")
+
         logger.info(f"Successfully uploaded knowledge file: {file.filename}")
         
         return {

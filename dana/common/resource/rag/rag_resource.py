@@ -1,3 +1,4 @@
+import os
 from dana.common.mixins.tool_callable import ToolCallable
 from dana.common.resource.base_resource import BaseResource
 from dana.common.resource.rag.pipeline.rag_orchestrator import RAGOrchestrator
@@ -11,13 +12,23 @@ class RAGResource(BaseResource):
         self,
         sources: list[str],
         name: str = "rag_resource",
-        cache_dir: str = ".cache/rag",
+        cache_dir: str = None,  # Changed default to None
         force_reload: bool = False,
         description: str | None = None,
     ):
         super().__init__(name, description)
         self.sources = sources
         self.force_reload = force_reload
+        # Use DANAPATH if set, otherwise default to .cache/rag
+        # if cache_dir is None:
+        danapath = os.environ.get("DANAPATH")
+        
+        if danapath:
+            if cache_dir:
+                cache_dir = os.path.join(danapath, cache_dir)
+            else:
+                cache_dir = os.path.join(danapath, ".cache", 'rag')
+
         self._cache_manager = UnifiedCacheManager(cache_dir)
         self._orchestrator = RAGOrchestrator(cache_manager=self._cache_manager)
         self._is_ready = False

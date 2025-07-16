@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { MarkdownViewerSmall } from '../chat/markdown-viewer';
 import { AgentEditor } from '@/components/agent-editor';
@@ -21,17 +21,17 @@ export default function DescriptionCodeViewer({
 
   const handleFileClick = async () => {
     if (!filename) return;
-    
+
     try {
       // Construct file path based on auto-storage pattern
       // This matches the backend auto-storage folder structure
       const sanitizedName = (projectName || 'Generated_Agent')
         .toLowerCase()
         .replace(/[^a-zA-Z0-9_\-]/g, '_');
-      
+
       // Use the same pattern as file-paths component
       const filePath = `generated/generated_${sanitizedName}*/${filename}`;
-      
+
       const result = await apiService.openFileLocation(filePath);
       if (result.success) {
         toast.success('Opened file location!');
@@ -44,42 +44,58 @@ export default function DescriptionCodeViewer({
     }
   };
 
-  return (
-    <div className='flex flex-col gap-2 h-full'>
+  useEffect(() => {
+    if (!description || description === '') {
+      setViewMode('code');
+    }
+  }, [code, description]);
 
+  return (
+    <div className="flex flex-col gap-2 h-full">
       <div className="flex justify-between text-gray-500">
-        <div 
+        <div
           className={cn('flex items-center', {
-            'cursor-pointer hover:text-blue-600 hover:underline': filename
+            'cursor-pointer hover:text-blue-600 hover:underline': filename,
           })}
           onClick={handleFileClick}
           title={filename ? 'Click to open file location' : undefined}
         >
           {filename}
         </div>
-        <div className='flex p-1 text-sm items-center'>
-          <div className={
-            cn('flex items-center px-2 py-1 bg-gray-50 border border-gray-200 rounded-l-sm cursor-pointer', {
-              'font-semibold bg-white text-gray-800': viewMode === 'description',
-            })}
+        <div className="flex items-center p-1 text-sm">
+          <div
+            className={cn(
+              'flex items-center px-2 py-1 bg-gray-50 border border-gray-200 rounded-l-sm cursor-pointer',
+              {
+                'font-semibold bg-white text-gray-800': viewMode === 'description',
+              },
+            )}
             onClick={() => setViewMode('description')}
-          > <File className='w-4 h-4 mr-1' /> Description</div>
-          <div className={
-            cn('flex items-center px-2 py-1 bg-gray-50 border border-gray-200 rounded-r-sm cursor-pointer', {
-              'font-semibold bg-white text-gray-800': viewMode === 'code',
-            })}
+          >
+            {' '}
+            <File className="mr-1 w-4 h-4" /> Description
+          </div>
+          <div
+            className={cn(
+              'flex items-center px-2 py-1 bg-gray-50 border border-gray-200 rounded-r-sm cursor-pointer',
+              {
+                'font-semibold bg-white text-gray-800': viewMode === 'code',
+              },
+            )}
             onClick={() => setViewMode('code')}
-          > <Code className='w-4 h-4 mr-1' /> Code</div>
+          >
+            {' '}
+            <Code className="mr-1 w-4 h-4" /> Code
+          </div>
         </div>
-
       </div>
-      <div className='flex-1 h-full'>
+      <div className="flex-1 h-full">
         {viewMode === 'description' ? (
           <MarkdownViewerSmall>{description}</MarkdownViewerSmall>
         ) : (
-          <AgentEditor value={code} onChange={() => { }} readOnly={true} />
+          <AgentEditor value={code} onChange={() => {}} readOnly={true} />
         )}
       </div>
     </div>
   );
-} 
+}

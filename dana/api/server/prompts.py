@@ -7,13 +7,9 @@ def get_multi_file_agent_generation_prompt(intentions: str, current_code: str = 
     """
     Returns the multi-file agent generation prompt for the LLM, aligned with the normal_chat_with_document example, but including knowledges.na as a required file and conditional RAG resource usage.
     """
-    rag_tools_block = (
-        'rag_resource = use("rag", sources=["./docs"])' if has_docs_folder else '# No RAG resource defined because there is no docs folder in the agent directory.'
-    )
-    rag_import_block = 'from tools import rag_resource\n' if has_docs_folder else ''
-    rag_search_block = (
-        '    package.retrieval_result = str(rag_resource.query(query))' if has_docs_folder else '    # No RAG resource available; retrieval_result remains empty'
-    )
+    rag_tools_block = 'rag_resource = use("rag", sources=["./docs"])'
+    rag_import_block = 'from tools import rag_resource\n'
+    rag_search_block = '    package.retrieval_result = str(rag_resource.query(query))'
     return f'''
 You are an expert Dana language developer. Based on the user's intentions, generate a Dana agent project that follows the modular, workflow-based pattern as in the 'normal_chat_with_document' example.
 
@@ -29,7 +25,7 @@ Generate a multi-file Dana agent project with the following structure, following
 3. **methods.na**     - Core processing methods and utilities
 4. **common.na**      - Shared data structures, prompt templates, and constants (must include structs and constants)
 5. **knowledges.na**  - Knowledge base/resource configurations (describe or define knowledge sources, or explain if not needed)
-6. **tools.na**       - Tool/resource definitions and integrations (conditionally define rag_resource only if a docs folder exists)
+6. **tools.na**       - Tool/resource definitions and integrations (always define rag_resource for ./docs)
 
 RESPONSE FORMAT:
 You MUST generate ALL 6 files in this exact format with FILE_START and FILE_END markers. Do not skip any files.
@@ -49,7 +45,7 @@ def solve(self : RetrievalExpertAgent, query: str) -> str:
 
 this_agent = RetrievalExpertAgent()
 
-# Use this_agent.solve() in your application
+# Example usage
 # print(this_agent.solve("What is Dana language?"))
 FILE_END:main.na
 
@@ -72,7 +68,8 @@ def search_document(package: RetrievalPackage) -> RetrievalPackage:
     query = package.query
     if package.refined_query != "":
         query = package.refined_query
-{rag_search_block}    return package
+{rag_search_block}
+    return package
 
 def refine_query(package: RetrievalPackage) -> RetrievalPackage:
     if package.should_use_rag:
@@ -208,7 +205,9 @@ Knowledge Description:
 FILE_END:knowledges.na
 
 FILE_START:tools.na
-{rag_tools_block}FILE_END:tools.na
+{rag_tools_block}
+
+FILE_END:tools.na
 
 CRITICAL GUIDELINES - FOLLOW THESE EXACTLY:
 1. **GENERATE ALL 6 FILES**: You MUST generate all 6 files (main.na, workflows.na, methods.na, common.na, knowledges.na, tools.na) even if some only contain comments

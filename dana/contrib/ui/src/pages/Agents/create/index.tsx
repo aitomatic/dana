@@ -2,7 +2,6 @@ import { ArrowLeft, Xmark } from 'iconoir-react';
 import { useDanaAgentForm } from '@/hooks/use-dana-agent-form';
 import { useDragDrop } from '@/hooks/use-drag-drop';
 import { cn } from '@/lib/utils';
-import { DragOverComponent } from '@/components/drag-over-component';
 import { useNavigate } from 'react-router-dom';
 import { GeneralAgentPage } from './general';
 import SelectKnowledgePage from './select-knowledge';

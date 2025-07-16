@@ -138,7 +138,7 @@ export interface AgentGenerationResponse {
 
 // Code Validation Types
 export interface CodeValidationRequest {
-  code?: string;  // For single-file validation (backward compatibility)
+  code?: string; // For single-file validation (backward compatibility)
   agent_name?: string;
   description?: string;
 
@@ -156,9 +156,9 @@ export interface CodeValidationResponse {
   error?: string;
 
   // Multi-file validation results
-  file_results?: any[];  // Results for each file in multi-file project
-  dependency_errors?: any[];  // Dependency validation errors
-  overall_errors?: any[];  // Project-level errors
+  file_results?: any[]; // Results for each file in multi-file project
+  dependency_errors?: any[]; // Dependency validation errors
+  overall_errors?: any[]; // Project-level errors
 }
 
 export interface CodeError {
@@ -402,12 +402,20 @@ class ApiService {
   // File Operations API Methods
   async openFileLocation(filePath: string): Promise<{ success: boolean; message: string }> {
     const encodedPath = encodeURIComponent(filePath);
-    const response = await this.client.get<{ success: boolean; message: string }>(`/agents/open-file/${encodedPath}`);
+    const response = await this.client.get<{ success: boolean; message: string }>(
+      `/agents/open-file/${encodedPath}`,
+    );
     return response.data;
   }
 
-  async uploadKnowledgeFile(formData: FormData): Promise<{ success: boolean; file_path?: string; error?: string }> {
-    const response = await this.client.post<{ success: boolean; file_path?: string; error?: string }>('/agents/upload-knowledge', formData, {
+  async uploadKnowledgeFile(
+    formData: FormData,
+  ): Promise<{ success: boolean; file_path?: string; error?: string }> {
+    const response = await this.client.post<{
+      success: boolean;
+      file_path?: string;
+      error?: string;
+    }>('/agents/upload-knowledge', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -427,7 +435,9 @@ class ApiService {
 
   // Agent Generation API Methods
   async generateAgent(request: AgentGenerationRequest): Promise<AgentGenerationResponse> {
-    const response = await this.client.post<AgentGenerationResponse>('/agents/generate', request, { timeout: 300000 });
+    const response = await this.client.post<AgentGenerationResponse>('/agents/generate', request, {
+      timeout: 300000,
+    });
     return response.data;
   }
 
@@ -439,7 +449,9 @@ class ApiService {
 
   // Agent Test API Methods
   async testAgent(request: AgentTestRequest): Promise<AgentTestResponse> {
-    const response = await this.client.post<AgentTestResponse>('/agent-test/', request);
+    const response = await this.client.post<AgentTestResponse>('/agent-test/', request, {
+      timeout: 300000,
+    });
     return response.data;
   }
 
