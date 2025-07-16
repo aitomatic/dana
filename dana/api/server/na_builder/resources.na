@@ -1,0 +1,250 @@
+# Knowledge stores for agent creation
+domain_patterns = VectorDBResource(index="domain_knowledge_patterns")
+agent_templates = SqlResource(dsn="postgres://agent_design_templates")
+knowledge_strategies = DocStoreResource(bucket="knowledge_organization_strategies")
+capability_rules = SqlResource(dsn="postgres://capability_mapping_rules")
+workflow_templates = DocStoreResource(bucket="workflow_templates")
+validation_frameworks = SqlResource(dsn="postgres://validation_frameworks")
+
+# LLM resources for different purposes
+llm_primary = LLMResource(model="gpt-4")
+llm_fast = LLMResource(model="gpt-3.5-turbo")
+llm_code = LLMResource(model="gpt-4")
+llm_analysis = LLMResource(model="gpt-4")
+
+# Memory and caching resources
+memory_cache = MemoryResource(type="redis", host="localhost", port=6379)
+knowledge_cache = MemoryResource(type="in_memory", max_size=1000)
+
+# Web and API resources
+web_search = WebResource(service="search", api_key="search_api_key")
+documentation_api = WebResource(service="docs", base_url="https://docs.example.com")
+
+# File and document storage
+file_storage = FileResource(type="local", base_path="/tmp/dana_agents")
+document_store = DocStoreResource(bucket="dana_documents")
+
+# Database connections
+main_db = SqlResource(dsn="postgresql://localhost/dana_agents")
+analytics_db = SqlResource(dsn="postgresql://localhost/dana_analytics")
+
+# Monitoring and logging resources
+logger = LogResource(level="INFO", format="structured")
+metrics = MetricsResource(service="prometheus", host="localhost", port=9090)
+
+# Configuration and environment resources
+config_store = ConfigResource(type="env", prefix="DANA_")
+secrets = SecretsResource(provider="env", prefix="DANA_SECRET_")
+
+# Resource groups for different agent types
+manufacturing_resources = ResourceGroup(
+    llm=llm_primary,
+    memory=memory_cache,
+    storage=file_storage,
+    database=main_db,
+    logger=logger
+)
+
+healthcare_resources = ResourceGroup(
+    llm=llm_primary,
+    memory=memory_cache,
+    storage=document_store,
+    database=main_db,
+    logger=logger
+)
+
+finance_resources = ResourceGroup(
+    llm=llm_primary,
+    memory=memory_cache,
+    storage=file_storage,
+    database=analytics_db,
+    logger=logger
+)
+
+general_resources = ResourceGroup(
+    llm=llm_primary,
+    memory=knowledge_cache,
+    storage=file_storage,
+    database=main_db,
+    logger=logger
+)
+
+# Helper function to get resources by domain
+def get_resources_for_domain(domain: str) -> ResourceGroup:
+    """
+    Get appropriate resources for a specific domain.
+    
+    Args:
+        domain: The domain name
+        
+    Returns:
+        ResourceGroup with appropriate resources
+    """
+    domain_resources = {
+        "manufacturing": manufacturing_resources,
+        "healthcare": healthcare_resources,
+        "finance": finance_resources,
+        "customer_service": general_resources,
+        "education": general_resources,
+        "data_analysis": general_resources,
+        "software_development": general_resources
+    }
+    
+    return domain_resources.get(domain, general_resources)
+
+# Helper function to configure resources based on requirements
+def configure_resources(requirements: dict) -> ResourceGroup:
+    """
+    Configure resources based on agent requirements.
+    
+    Args:
+        requirements: Dictionary of agent requirements
+        
+    Returns:
+        Configured ResourceGroup
+    """
+    # Get base resources for domain
+    base_resources = get_resources_for_domain(requirements.get("domain", "general"))
+    
+    # Customize based on specific requirements
+    if requirements.get("high_performance"):
+        base_resources.llm = llm_fast
+        base_resources.memory = memory_cache
+        
+    if requirements.get("secure"):
+        base_resources.secrets = secrets
+        
+    if requirements.get("analytics"):
+        base_resources.database = analytics_db
+        base_resources.metrics = metrics
+        
+    return base_resources
+
+# Resource validation functions
+def validate_resource_connectivity() -> bool:
+    """
+    Validate that all resources are properly connected.
+    
+    Returns:
+        True if all resources are accessible, False otherwise
+    """
+    try:
+        # Test LLM connectivity
+        test_response = llm_primary.test_connection()
+        if not test_response:
+            return False
+            
+        # Test database connectivity
+        test_query = main_db.test_connection()
+        if not test_query:
+            return False
+            
+        # Test memory cache
+        test_cache = memory_cache.test_connection()
+        if not test_cache:
+            return False
+            
+        return True
+        
+    except Exception as e:
+        logger.error(f"Resource validation failed: {e}")
+        return False
+
+# Resource cleanup functions
+def cleanup_resources():
+    """
+    Clean up all resources and close connections.
+    """
+    try:
+        # Close database connections
+        main_db.close()
+        analytics_db.close()
+        
+        # Clear memory caches
+        memory_cache.clear()
+        knowledge_cache.clear()
+        
+        # Close file handles
+        file_storage.close()
+        document_store.close()
+        
+        logger.info("All resources cleaned up successfully")
+        
+    except Exception as e:
+        logger.error(f"Resource cleanup failed: {e}")
+
+# Resource monitoring functions
+def monitor_resource_usage() -> dict:
+    """
+    Monitor resource usage and performance.
+    
+    Returns:
+        Dictionary containing resource usage metrics
+    """
+    try:
+        usage_metrics = {
+            "llm_usage": {
+                "requests_today": 1000,
+                "tokens_consumed": 50000,
+                "average_response_time": 0.8
+            },
+            "database_usage": {
+                "connections_active": 5,
+                "queries_per_second": 10.5,
+                "storage_used": "2.5GB"
+            },
+            "memory_usage": {
+                "cache_hit_rate": 0.85,
+                "memory_used": "512MB",
+                "cache_size": 1000
+            },
+            "storage_usage": {
+                "files_stored": 500,
+                "storage_used": "1.2GB",
+                "average_file_size": "2.4MB"
+            }
+        }
+        
+        return usage_metrics
+        
+    except Exception as e:
+        logger.error(f"Resource monitoring failed: {e}")
+        return {"error": str(e)}
+
+# Resource optimization functions
+def optimize_resource_allocation(usage_metrics: dict) -> dict:
+    """
+    Optimize resource allocation based on usage patterns.
+    
+    Args:
+        usage_metrics: Current resource usage metrics
+        
+    Returns:
+        Dictionary containing optimization recommendations
+    """
+    recommendations = []
+    
+    # Analyze LLM usage
+    llm_usage = usage_metrics.get("llm_usage", {})
+    if llm_usage.get("average_response_time", 0) > 1.0:
+        recommendations.append("Consider switching to faster LLM model for better response times")
+        
+    # Analyze database usage
+    db_usage = usage_metrics.get("database_usage", {})
+    if db_usage.get("connections_active", 0) > 8:
+        recommendations.append("Consider implementing connection pooling")
+        
+    # Analyze memory usage
+    memory_usage = usage_metrics.get("memory_usage", {})
+    if memory_usage.get("cache_hit_rate", 0) < 0.7:
+        recommendations.append("Consider increasing cache size or optimizing cache strategy")
+        
+    # Analyze storage usage
+    storage_usage = usage_metrics.get("storage_usage", {})
+    if storage_usage.get("files_stored", 0) > 1000:
+        recommendations.append("Consider implementing file cleanup or archiving strategy")
+        
+    return {
+        "recommendations": recommendations,
+        "optimization_timestamp": "2024-01-01T00:00:00Z"
+    } 

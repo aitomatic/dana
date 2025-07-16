@@ -107,7 +107,7 @@ def pytest_generate_tests(metafunc):
             metafunc.parametrize("dana_test_file", na_files, ids=test_ids)
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def api_server():
     """Session-scoped fixture that starts a single API server for the entire test session."""
     logger = logging.getLogger(__name__)

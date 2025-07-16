@@ -242,6 +242,12 @@ class AgentInstance(AbstractDanaAgent):
             method = self._type.get_method(name)
             if method is not None:
                 return lambda *args, **kwargs: self._call_method_with_current_context(method, *args, **kwargs)
+        
+        # NEW: Type-based fallback to global function registry
+        fallback_method = self._try_global_function_fallback(name)
+        if fallback_method is not None:
+            return fallback_method
+        
         raise AttributeError(f"Agent '{self._type.name}' has no field or method '{name}'")
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -266,6 +272,95 @@ class AgentInstance(AbstractDanaAgent):
     def __repr__(self) -> str:
         field_strs = [f"{name}={repr(self._values.get(name))}" for name in self._type.field_order]
         return f"{self._type.name}({', '.join(field_strs)})"
+
+    def _try_global_function_fallback(self, method_name: str) -> Any | None:
+        """Try to find a global function that matches the agent type."""
+        
+        # Get the function registry from the context
+        function_registry = self._get_function_registry()
+        if not function_registry:
+            return None
+        
+        # Check if a function with this name exists in the registry
+        if not function_registry.has(method_name):
+            return None
+        
+        try:
+            # Get the function from the registry
+            func, func_type, metadata = function_registry.resolve(method_name)
+            
+            # Check if the function's first parameter type matches this agent's type
+            if self._function_matches_agent_type(func, self._type.name):
+                # Create a wrapper that calls the function with the agent as first argument
+                def agent_method_wrapper(*args, **kwargs):
+                    return function_registry.call(method_name, self._context, None, self, *args, **kwargs)
+                
+                return agent_method_wrapper
+        
+        except Exception:
+            # If anything goes wrong, return None to fall back to normal error handling
+            pass
+        
+        return None
+
+    def _function_matches_agent_type(self, func: Any, agent_type_name: str) -> bool:
+        """Check if a function's first parameter type hint matches the agent type."""
+        
+        try:
+            # For Dana functions, we need to check the signature differently
+            if hasattr(func, 'parameters') and func.parameters:
+                first_param = func.parameters[0]
+                if hasattr(first_param, 'type_hint') and first_param.type_hint:
+                    return first_param.type_hint.name == agent_type_name
+            
+            # For Python functions, use inspect
+            if hasattr(func, 'func') and callable(func.func):
+                import inspect
+                sig = inspect.signature(func.func)
+                params = list(sig.parameters.values())
+                
+                if params:
+                    first_param = params[0]
+                    if first_param.annotation != inspect.Parameter.empty:
+                        # Check if the annotation matches the agent type name
+                        annotation_name = getattr(first_param.annotation, '__name__', str(first_param.annotation))
+                        return annotation_name == agent_type_name
+            
+            # For other callable types, try to get signature info
+            if callable(func):
+                import inspect
+                sig = inspect.signature(func)
+                params = list(sig.parameters.values())
+                
+                if params:
+                    first_param = params[0]
+                    if first_param.annotation != inspect.Parameter.empty:
+                        annotation_name = getattr(first_param.annotation, '__name__', str(first_param.annotation))
+                        return annotation_name == agent_type_name
+        
+        except Exception:
+            # If we can't determine the type, don't match
+            pass
+        
+        return False
+
+    def _get_function_registry(self):
+        """Get the function registry from the context."""
+        try:
+            # Try to get the function registry from the context
+            if hasattr(self._context, '_interpreter') and self._context._interpreter:
+                return getattr(self._context._interpreter, 'function_registry', None)
+            
+            # Alternative: try to get it from thread-local storage
+            import threading
+            current_thread = threading.current_thread()
+            if hasattr(current_thread, 'dana_function_registry'):
+                return current_thread.dana_function_registry
+        
+        except Exception:
+            pass
+        
+        return None
 
 # --- AgentTypeRegistry: Like StructTypeRegistry ---
 class AgentTypeRegistry:
