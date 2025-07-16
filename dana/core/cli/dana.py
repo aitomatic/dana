@@ -79,6 +79,7 @@ def show_help():
     print(f"  {colors.accent('dana deploy [file.na]')}  Deploy a .na file as an agent endpoint")
     print(f"  {colors.accent('dana -h, --help')}        Show this help message")
     print(f"  {colors.accent('dana --debug')}           Enable debug logging")
+    print(f"  {colors.accent('dana start')}             Start the Dana API server")
     print("")
 
 
@@ -177,14 +178,14 @@ def main():
         parser_deploy.add_argument("--port", type=int, default=8000, help="Port to bind the server (default: 8000)")
 
         # Serve subcommand for API server
-        parser_serve = subparsers.add_parser("serve", help="Start the Dana API server")
+        parser_serve = subparsers.add_parser("start", help="Start the Dana API server")
         parser_serve.add_argument("--host", default="127.0.0.1", help="Host to bind the server (default: 127.0.0.1)")
         parser_serve.add_argument("--port", type=int, default=8080, help="Port to bind the server (default: 8080)")
         parser_serve.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
         parser_serve.add_argument("--log-level", default="info", help="Log level (default: info)")
 
         # Handle default behavior
-        if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] not in ("deploy", "serve")):
+        if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] not in ("deploy", "start")):
             return handle_main_command()
 
         # Parse subcommand
@@ -192,7 +193,7 @@ def main():
 
         if args.subcommand == "deploy":
             return handle_deploy_command(args)
-        if args.subcommand == "serve":
+        if args.subcommand == "start":
             return handle_serve_command(args)
 
         return 0
