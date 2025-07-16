@@ -194,21 +194,6 @@ async def generate_agent(request: AgentGenerationRequest):
                 error=syntax_error
             )
         
-        # Multi-file projects are always generated now, auto-store them
-        auto_stored_files = []
-        if multi_file_project:
-            try:
-                logger.info("Auto-storing multi-file project")
-                auto_stored_files = await _auto_store_multi_file_agent(
-                    agent_name or "Generated_Agent", 
-                    agent_description or "Auto-generated agent",
-                    multi_file_project
-                )
-                logger.info(f"Auto-stored files: {auto_stored_files}")
-            except Exception as e:
-                logger.warning(f"Auto-storage failed (non-critical): {e}", exc_info=True)
-                # Continue with response even if auto-storage fails
-        
         # Extract agent name and description from the generated code
         agent_name = None
         agent_description = None
@@ -251,6 +236,33 @@ async def generate_agent(request: AgentGenerationRequest):
             tools=capabilities_data.get("tools", [])
         )
         
+        # Auto-store generated agents now that we have the names
+        auto_stored_files = []
+        if multi_file_project:
+            try:
+                logger.info("Auto-storing multi-file project")
+                auto_stored_files = await _auto_store_multi_file_agent(
+                    agent_name or "Generated_Agent", 
+                    agent_description or "Auto-generated agent",
+                    multi_file_project
+                )
+                logger.info(f"Auto-stored files: {auto_stored_files}")
+            except Exception as e:
+                logger.warning(f"Auto-storage failed (non-critical): {e}", exc_info=True)
+                # Continue with response even if auto-storage fails
+        else:
+            # Auto-store single-file agents too
+            try:
+                logger.info("Auto-storing single-file agent")
+                auto_stored_files = await _auto_store_single_file_agent(
+                    agent_name or "Generated_Agent",
+                    agent_description or "Auto-generated agent", 
+                    dana_code
+                )
+                logger.info(f"Auto-stored single-file: {auto_stored_files}")
+            except Exception as e:
+                logger.warning(f"Single-file auto-storage failed (non-critical): {e}", exc_info=True)
+        
         # Check if we need more information and include follow-up questions
         needs_more_info = conversation_analysis.get("needs_more_info", False)
         follow_up_message = conversation_analysis.get("follow_up_message") if needs_more_info else None
@@ -290,7 +302,8 @@ async def generate_agent(request: AgentGenerationRequest):
             suggested_questions=suggested_questions,
             error=syntax_error,
             multi_file_project=multi_file_project_obj,
-            is_multi_file=multi_file_project is not None
+            is_multi_file=multi_file_project is not None,
+            auto_stored_files=auto_stored_files if auto_stored_files else None
         )
         
         logger.info(f"Returning response with success={response.success}, code_length={len(response.dana_code)}, needs_more_info={needs_more_info}")
@@ -1307,7 +1320,10 @@ async def _auto_store_single_file_agent(agent_name: str, agent_description: str,
     import re
     import json
     import uuid
+    import logging
     from datetime import datetime
+    
+    logger = logging.getLogger(__name__)
     
     # Create unique folder for this generation
     sanitized_name = re.sub(r'[^a-zA-Z0-9_\-]', '_', agent_name.lower())
@@ -1367,7 +1383,10 @@ async def _auto_store_multi_file_agent(agent_name: str, agent_description: str, 
     import re
     import json
     import uuid
+    import logging
     from datetime import datetime
+    
+    logger = logging.getLogger(__name__)
     
     # Create unique folder for this generation
     sanitized_name = re.sub(r'[^a-zA-Z0-9_\-]', '_', agent_name.lower())
@@ -1381,6 +1400,7 @@ async def _auto_store_multi_file_agent(agent_name: str, agent_description: str, 
     # Create agent folder
     agent_folder = generation_dir / folder_name
     agent_folder.mkdir(exist_ok=True)
+    logger.info(f"Created multi-file agent folder: {agent_folder}")
     
     file_paths = []
     
@@ -1394,6 +1414,7 @@ async def _auto_store_multi_file_agent(agent_name: str, agent_description: str, 
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(file_info['content'])
         file_paths.append(str(file_path))
+        logger.info(f"Created file: {file_path}")
     
     # Create metadata.json
     metadata = {
@@ -1412,7 +1433,9 @@ async def _auto_store_multi_file_agent(agent_name: str, agent_description: str, 
     with open(metadata_file, 'w', encoding='utf-8') as f:
         json.dump(metadata, f, indent=2)
     file_paths.append(str(metadata_file))
+    logger.info(f"Created metadata.json: {metadata_file}")
     
+    logger.info(f"Multi-file auto-storage completed. Created {len(file_paths)} files: {file_paths}")
     return file_paths
 
 
