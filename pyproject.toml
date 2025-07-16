@@ -14,9 +14,10 @@ build-backend = "setuptools.build_meta"
 # =============================================================================
 
 [project]
-name = "dana"
-version = "0.4.0"
-description = "Domain-Aware Neurosymbolic Architecture"
+name = "dana-agent"
+version = "0.25.7.16"
+description = "Dana programming language for Domain-Aware Neurosymbolic Agents"
+readme = "README.md"
 requires-python = ">=3.12"
 authors = [
     {name = "Christopher Nguyen", email = "ctn@aitomatic.com"},
@@ -24,56 +25,45 @@ authors = [
 
 # Core dependencies organized by functionality
 dependencies = [
-    # AI/LLM Integration - DEPENDENCY CONFLICT ZONE
+    # AI/LLM Integration
     "google-cloud-aiplatform",
-    "aisuite[openai,anthropic,azure,groq,huggingface,ollama]>=0.1.11",  # Requires httpx<0.28.0 (conflicts with fastmcp)
-    "fastmcp>=2.10.2",  # Requires httpx>=0.28.1 (conflicts with aisuite) - resolved by override
-    "httpx>=0.27.0",     # Conflict resolved by override-dependencies forcing >=0.28.1
+    "aisuite[openai,anthropic,azure,groq,huggingface,ollama]>=0.1.11",
+    "httpx>=0.27.0",
     "mcp",
     "llm-code-executor",
     "llama-index",
     "openai>=1.55.3",
-
     # Language Processing
     "lark",
-
     # Data Processing
     "pandas",
     "matplotlib",
     "seaborn",
-
     # Database & Storage
     "sqlalchemy",
-
     # Networking & I/O
     "aiohttp",
     "aioconsole",
     "websockets",
-
     # Configuration & Utilities
     "python-dotenv",
     "pyyaml",
     "structlog",
-
     # Interactive Features
     "prompt-toolkit",
     "pygments",
-
     # Web Automation
     "playwright",
-
     # API Server
     "fastapi",
-
+    "uvicorn",
     # Testing Framework (needed for Dana runtime)
     "pytest",
     "pytest-asyncio",
     "pytest-mock",
-
     # Language Server Protocol
     "lsprotocol",
     "pygls",
-
     # Agent Integration
     "python-a2a>=0.5.9",
 ]
@@ -81,11 +71,13 @@ dependencies = [
 # Optional dependency groups
 [project.optional-dependencies]
 dev = [
-    "ruff",        # Fast Python linter
-    "pylint",      # Additional code analysis
-    "mypy",        # Static type checking
-    "pre-commit",  # Git hooks for code quality
+    "ruff",       # Fast Python linter
+    "pylint",     # Additional code analysis
+    "mypy",       # Static type checking
+    "pre-commit", # Git hooks for code quality
     "pytest-cov", # Test coverage reporting
+    "build",      # Package building tool
+    "twine",      # PyPI upload tool
 ]
 
 docs = [
@@ -133,7 +125,7 @@ include = ["dana*"]
 exclude = ["tests*", "examples*", "docs*", "tmp*"]
 
 [tool.setuptools.package-data]
-dana = ["**/*.py", "**/*.lark"]
+dana = ["**/*.py", "**/*.lark", "**/*.json"]
 
 # =============================================================================
 # Package Manager Configuration (uv)
@@ -147,10 +139,6 @@ prerelease = "disallow"             # Avoid pre-release versions
 python-preference = "only-managed"  # Use uv-managed Python installations
 compile-bytecode = true             # Pre-compile .pyc files for performance
 
-override-dependencies = [
-    "httpx>=0.28.1",  # CONFLICT RESOLUTION: aisuite needs <0.28.0, fastmcp needs >=0.28.1
-                      # This forces >=0.28.1, aisuite_patch.py handles aisuite compatibility
-]
 
 [tool.uv.sources]
 # Future: Custom dependency sources
@@ -158,6 +146,8 @@ override-dependencies = [
 [dependency-groups]
 dev = [
     "pre-commit",
+    "build",
+    "twine",
 ]
 
 # =============================================================================
