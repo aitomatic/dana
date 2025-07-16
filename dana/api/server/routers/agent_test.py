@@ -104,6 +104,9 @@ async def test_agent(request: AgentTestRequest):
         if request.folder_path:
             abs_folder_path = str(Path(request.folder_path).resolve())
             os.environ["DANAPATH"] = abs_folder_path
+        print("--------------------------------")
+        print(f"DANAPATH: {os.environ.get('DANAPATH')}")
+        print("--------------------------------")
         try:
             sandbox_context = SandboxContext()
             DanaSandbox.quick_run(file_path=full_path, context=sandbox_context)

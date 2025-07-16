@@ -122,10 +122,13 @@ class CodeHandler:
             # Add stubs for missing tools
             missing_tools = imported_tools - defined_tools
             if missing_tools:
-                stub_lines = [f"{tool} = object()  # Auto-generated stub" for tool in missing_tools]
+                stub_lines = [
+                    f"def {tool}(query: str) -> str:\n    return reason(f'Reasoning for: {{query}}')  # Auto-generated stub"
+                    for tool in missing_tools
+                ]
                 if tools_file["content"] and not tools_file["content"].endswith("\n"):
                     tools_file["content"] += "\n"
-                tools_file["content"] += "\n" + "\n".join(stub_lines)
+                tools_file["content"] += "\n" + "\n\n".join(stub_lines)
         # --- END PATCH ---
 
         # Clean up any remaining markdown artifacts from all files
