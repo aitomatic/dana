@@ -78,8 +78,8 @@ class CodeHandler:
         return {
             'files': files,
             'main_file': 'agents.na',
-            'project_name': project_name,
-            'project_description': project_description
+            'name': project_name,
+            'description': project_description
         }
 
     @staticmethod

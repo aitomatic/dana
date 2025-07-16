@@ -280,7 +280,7 @@ async def generate_agent(request: AgentGenerationRequest):
                 description=multi_file_project['description'],
                 files=dana_files,
                 main_file=multi_file_project['main_file'],
-                structure_type=multi_file_project['structure_type']
+                structure_type=multi_file_project.get('structure_type', 'complex')
             )
         
         # Build minimal response

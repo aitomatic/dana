@@ -39,75 +39,12 @@ const formatCapabilitiesMessage = (
   agentName: string,
   agentDescription: string,
   capabilities?: AgentCapabilities,
-  multiFileProject?: MultiFileProject,
 ): string => {
   console.log('🏗️ Formatting capabilities:', { agentName, agentDescription, capabilities });
 
   let message = `I've generated Dana code for your agent! Here's what I created:\n\n`;
   message += `**Agent Name:** ${agentName}\n`;
   message += `**Description:** ${agentDescription}\n\n`;
-
-  if (capabilities) {
-    console.log('✅ Capabilities found, adding to message');
-    message += `## Agent Analysis\n\n`;
-
-    if (capabilities.summary) {
-      console.log('📊 Adding summary:', capabilities.summary);
-      message += `**Summary:** ${capabilities.summary}\n\n`;
-    }
-
-    if (capabilities.knowledge && capabilities.knowledge.length > 0) {
-      console.log('🧠 Adding knowledge domains:', capabilities.knowledge);
-      message += `**Knowledge Domains:**\n`;
-      capabilities.knowledge.forEach((domain) => {
-        message += `• ${domain}\n`;
-      });
-      message += `\n`;
-    }
-
-    if (capabilities.workflow && capabilities.workflow.length > 0) {
-      console.log('🔄 Adding workflow:', capabilities.workflow);
-      message += `**Workflow:**\n`;
-      capabilities.workflow.forEach((step, index) => {
-        message += `${index + 1}. ${step}\n`;
-      });
-      message += `\n`;
-    }
-
-    if (capabilities.tools && capabilities.tools.length > 0) {
-      console.log('🛠️ Adding tools:', capabilities.tools);
-      message += `**Available Tools & Capabilities:**\n`;
-      capabilities.tools.forEach((tool) => {
-        message += `• ${tool}\n`;
-      });
-      message += `\n`;
-    }
-  } else {
-    console.log('❌ No capabilities found');
-  }
-
-  // Add multi-file project information
-  if (multiFileProject) {
-    message += `## Project Structure\n\n`;
-    message += `**Project Type:** ${multiFileProject.structure_type}\n`;
-    message += `**Main File:** ${multiFileProject.main_file}\n`;
-    message += `**Files Generated:** ${multiFileProject.files.length}\n\n`;
-
-    message += `**Project Files:**\n`;
-    multiFileProject.files.forEach((file) => {
-      message += `• **${file.filename}** (${file.file_type}): ${file.description || 'Dana code file'}\n`;
-    });
-    message += `\n`;
-  }
-
-  // Add file information from multi-file project
-  if (multiFileProject && multiFileProject.files.length > 0) {
-    message += `\n**Generated Files:**\n`;
-    multiFileProject.files.forEach((file) => {
-      message += `• \`${file.filename}\` - Click to open in Finder/Explorer\n`;
-    });
-    message += `\n💡 All files have been automatically saved to your file system. You can click any filename in the Files tab to open its location.\n\n`;
-  }
 
   message += `The code has been loaded into the editor on the right. You can review and modify it as needed.`;
   console.log('🔚 Final formatted message:', message);
@@ -204,7 +141,7 @@ const AgentGenerationChat = ({
           setCapabilities(response.capabilities);
           console.log('✅ Capabilities stored in Zustand store');
         }
-        
+
         // Multi-file projects are always generated now, no need for separate auto_stored_files
 
         // Format the assistant message with capabilities
@@ -212,7 +149,6 @@ const AgentGenerationChat = ({
           response.agent_name || 'Custom Agent',
           response.agent_description || 'A specialized agent for your needs',
           response.capabilities,
-          response.multi_file_project,
         );
 
         // If API needs more information, add follow-up questions

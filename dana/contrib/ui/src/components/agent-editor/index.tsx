@@ -539,6 +539,118 @@ export const AgentEditor = ({
         return;
       }
 
+      // Register the .na language (always, even in readOnly)
+      monaco.languages.register({ id: 'na' });
+      monaco.languages.setMonarchTokensProvider('na', {
+        keywords: [
+          'with', 'as', 'private', 'log', 'while', 'True', 'False', 'None', 'break', 'continue', 'if', 'elif', 'else', 'for', 'in', 'return', 'input', 'print', 'def', 'class', 'import', 'from', 'try', 'except', 'finally', 'raise', 'and', 'or', 'not', 'knowledge', 'resources', 'format', 'agent', 'struct', 'use', 'export',
+        ],
+        tokenizer: {
+          root: [
+            // Knowledge blocks
+            [/\bwith\s+knowledge\s*\(/, { token: 'keyword', next: '@knowledge_block' }],
+            // Agent declarations - use custom state
+            [/\bagent\s+([a-zA-Z_]\w*)\s*:/, { token: 'keyword', next: '@agent_declaration' }],
+            // Struct declarations - use custom state
+            [/\bstruct\s+([a-zA-Z_]\w*)\s*:/, { token: 'keyword', next: '@struct_declaration' }],
+            // @ mentions for resources
+            [/@[a-zA-Z_]\w*:?/, 'mention'],
+            // Private variables (private.variable_name)
+            [/\bprivate\.[a-zA-Z_]\w*/, 'variable.private.name'],
+            // Log statements (log.info, log.debug, etc.)
+            [/\blog\.(info|debug|warning|error|critical)/, 'function.log'],
+            // Special .na functions
+            [/\b(call_resources|reason|plan)\s*(?=\()/, 'function.special'],
+            // Regular keywords
+            [/\b(?:with|as|private|log|while|True|False|None|break|continue|if|elif|else|for|in|return|input|print|def|class|import|from|try|except|finally|raise|and|or|not|agent|struct|use|export)\b/, 'keyword'],
+            // Function definitions and calls
+            [/\b[a-zA-Z_]\w*(?=\s*\()/, 'function'],
+            // Method calls
+            [/\.[a-zA-Z_]\w*(?=\s*\()/, 'method'],
+            // Properties and attributes
+            [/\.[a-zA-Z_]\w*/, 'property'],
+            // Variables (after = sign)
+            [/[a-zA-Z_]\w*(?=\s*=)/, 'variable'],
+            // F-strings with variable interpolation
+            [/f"/, { token: 'string', next: '@fstring_double' }],
+            [/f'/, { token: 'string', next: '@fstring_single' }],
+            // Regular strings
+            [/"/, { token: 'string', next: '@string_double' }],
+            [/'/, { token: 'string', next: '@string_single' }],
+            // Triple quoted strings
+            [/"""/, { token: 'string', next: '@string_triple_double' }],
+            [/'''/, { token: 'string', next: '@string_triple_single' }],
+            // Comments
+            [/#.*$/, 'comment'],
+            // Numbers
+            [/\b\d+\.?\d*\b/, 'number'],
+            // Operators
+            [/[+\-*/=<>!&|%^~]/, 'operator'],
+            // Brackets
+            [/[(\){}\[\]]/, 'delimiter.bracket'],
+            // Identifiers
+            [/[a-zA-Z_]\w*/, 'identifier'],
+            // Whitespace
+            [/\s+/, 'white'],
+          ],
+          // Agent declaration state
+          agent_declaration: [
+            [/[a-zA-Z_]\w*/, 'entity.name.type.class'],
+            [/:/, 'delimiter.bracket', '@pop'],
+            [/\s+/, 'white'],
+          ],
+          // Struct declaration state
+          struct_declaration: [
+            [/[a-zA-Z_]\w*/, 'entity.name.type.class'],
+            [/:/, 'delimiter.bracket', '@pop'],
+            [/\s+/, 'white'],
+          ],
+          // Knowledge block state
+          knowledge_block: [
+            [/"[^"]*"/, 'string'],
+            [/'[^']*'/, 'string'],
+            [/\)/, { token: 'delimiter.bracket', next: '@pop' }],
+            [/[^)"']+/, 'white'],
+          ],
+          // F-string states with variable interpolation
+          fstring_double: [
+            [/\{[^}]*\}/, 'variable.interpolation'],
+            [/[^"\\{]+/, 'string'],
+            [/\\./, 'string.escape'],
+            [/"/, { token: 'string', next: '@pop' }],
+          ],
+          fstring_single: [
+            [/\{[^}]*\}/, 'variable.interpolation'],
+            [/[^'\\{]+/, 'string'],
+            [/\\./, 'string.escape'],
+            [/'/, { token: 'string', next: '@pop' }],
+          ],
+          // Regular string states
+          string_double: [
+            [/[^"\\]+/, 'string'],
+            [/\\./, 'string.escape'],
+            [/"/, { token: 'string', next: '@pop' }],
+          ],
+          string_single: [
+            [/[^'\\]+/, 'string'],
+            [/\\./, 'string.escape'],
+            [/'/, { token: 'string', next: '@pop' }],
+          ],
+          string_triple_double: [
+            [/[^"\\]+/, 'string'],
+            [/\\./, 'string.escape'],
+            [/"""/, { token: 'string', next: '@pop' }],
+            [/"/, 'string'],
+          ],
+          string_triple_single: [
+            [/[^'\\]+/, 'string'],
+            [/\\./, 'string.escape'],
+            [/'''/, { token: 'string', next: '@pop' }],
+            [/'/, 'string'],
+          ],
+        },
+      });
+
       // Skip interactive features if readOnly
       if (readOnly) {
         // Set enhanced editor options for read-only mode
@@ -569,9 +681,6 @@ export const AgentEditor = ({
         });
         return;
       }
-
-      // Register the .na language
-      monaco.languages.register({ id: 'na' });
 
       // Define sample resources for @ mentions
       const sampleAgents = ['agent 1', 'agent 2'];
@@ -839,185 +948,6 @@ export const AgentEditor = ({
         }
       };
 
-      // Enhanced language configuration with more token types
-      monaco.languages.setMonarchTokensProvider('na', {
-        keywords: [
-          'with',
-          'as',
-          'private',
-          'log',
-          'while',
-          'True',
-          'False',
-          'None',
-          'break',
-          'continue',
-          'if',
-          'elif',
-          'else',
-          'for',
-          'in',
-          'return',
-          'input',
-          'print',
-          'def',
-          'class',
-          'import',
-          'from',
-          'try',
-          'except',
-          'finally',
-          'raise',
-          'and',
-          'or',
-          'not',
-          'knowledge',
-          'resources',
-          'format',
-          'agent',
-          'struct',
-          'use',
-          'export',
-        ],
-
-        tokenizer: {
-          root: [
-            // Knowledge blocks
-            [/\bwith\s+knowledge\s*\(/, { token: 'keyword', next: '@knowledge_block' }],
-
-            // Agent declarations - use custom state
-            [/\bagent\s+([a-zA-Z_]\w*)\s*:/, { token: 'keyword', next: '@agent_declaration' }],
-
-            // Struct declarations - use custom state
-            [/\bstruct\s+([a-zA-Z_]\w*)\s*:/, { token: 'keyword', next: '@struct_declaration' }],
-
-            // @ mentions for resources
-            [/@[a-zA-Z_]\w*:?/, 'mention'],
-
-            // Private variables (private.variable_name)
-            [/\bprivate\.[a-zA-Z_]\w*/, 'variable.private.name'],
-
-            // Log statements (log.info, log.debug, etc.)
-            [/\blog\.(info|debug|warning|error|critical)/, 'function.log'],
-
-            // Special .na functions
-            [/\b(call_resources|reason|plan)\s*(?=\()/, 'function.special'],
-
-            // Regular keywords
-            [
-              /\b(?:with|as|private|log|while|True|False|None|break|continue|if|elif|else|for|in|return|input|print|def|class|import|from|try|except|finally|raise|and|or|not|agent|struct|use|export)\b/,
-              'keyword',
-            ],
-
-            // Function definitions and calls
-            [/\b[a-zA-Z_]\w*(?=\s*\()/, 'function'],
-
-            // Method calls
-            [/\.[a-zA-Z_]\w*(?=\s*\()/, 'method'],
-
-            // Properties and attributes
-            [/\.[a-zA-Z_]\w*/, 'property'],
-
-            // Variables (after = sign)
-            [/[a-zA-Z_]\w*(?=\s*=)/, 'variable'],
-
-            // F-strings with variable interpolation
-            [/f"/, { token: 'string', next: '@fstring_double' }],
-            [/f'/, { token: 'string', next: '@fstring_single' }],
-
-            // Regular strings
-            [/"/, { token: 'string', next: '@string_double' }],
-            [/'/, { token: 'string', next: '@string_single' }],
-
-            // Triple quoted strings
-            [/"""/, { token: 'string', next: '@string_triple_double' }],
-            [/'''/, { token: 'string', next: '@string_triple_single' }],
-
-            // Comments
-            [/#.*$/, 'comment'],
-
-            // Numbers
-            [/\b\d+\.?\d*\b/, 'number'],
-
-            // Operators
-            [/[+\-*/=<>!&|%^~]/, 'operator'],
-
-            // Brackets
-            [/[(){}\[\]]/, 'delimiter.bracket'],
-
-            // Identifiers
-            [/[a-zA-Z_]\w*/, 'identifier'],
-
-            // Whitespace
-            [/\s+/, 'white'],
-          ],
-
-          // Agent declaration state
-          agent_declaration: [
-            [/[a-zA-Z_]\w*/, 'entity.name.type.class'],
-            [/:/, 'delimiter.bracket', '@pop'],
-            [/\s+/, 'white'],
-          ],
-
-          // Struct declaration state
-          struct_declaration: [
-            [/[a-zA-Z_]\w*/, 'entity.name.type.class'],
-            [/:/, 'delimiter.bracket', '@pop'],
-            [/\s+/, 'white'],
-          ],
-
-          // Knowledge block state
-          knowledge_block: [
-            [/"[^"]*"/, 'string'],
-            [/'[^']*'/, 'string'],
-            [/\)/, { token: 'delimiter.bracket', next: '@pop' }],
-            [/[^)"']+/, 'white'],
-          ],
-
-          // F-string states with variable interpolation
-          fstring_double: [
-            [/\{[^}]*\}/, 'variable.interpolation'],
-            [/[^"\\{]+/, 'string'],
-            [/\\./, 'string.escape'],
-            [/"/, { token: 'string', next: '@pop' }],
-          ],
-
-          fstring_single: [
-            [/\{[^}]*\}/, 'variable.interpolation'],
-            [/[^'\\{]+/, 'string'],
-            [/\\./, 'string.escape'],
-            [/'/, { token: 'string', next: '@pop' }],
-          ],
-
-          // Regular string states
-          string_double: [
-            [/[^"\\]+/, 'string'],
-            [/\\./, 'string.escape'],
-            [/"/, { token: 'string', next: '@pop' }],
-          ],
-
-          string_single: [
-            [/[^'\\]+/, 'string'],
-            [/\\./, 'string.escape'],
-            [/'/, { token: 'string', next: '@pop' }],
-          ],
-
-          string_triple_double: [
-            [/[^"\\]+/, 'string'],
-            [/\\./, 'string.escape'],
-            [/"""/, { token: 'string', next: '@pop' }],
-            [/"/, 'string'],
-          ],
-
-          string_triple_single: [
-            [/[^'\\]+/, 'string'],
-            [/\\./, 'string.escape'],
-            [/'''/, { token: 'string', next: '@pop' }],
-            [/'/, 'string'],
-          ],
-        },
-      });
-
       // Set enhanced editor options
       editor.updateOptions({
         fontSize: 14,
@@ -1090,9 +1020,8 @@ export const AgentEditor = ({
       {/* Validation Panel */}
       {enableValidation && !validation.isValid && (
         <div
-          className={`px-4 py-3 border-b ${
-            isDark ? 'bg-[#0c111d] border-gray-700 text-white' : 'bg-gray-50 border-gray-200'
-          }`}
+          className={`px-4 py-3 border-b ${isDark ? 'bg-[#0c111d] border-gray-700 text-white' : 'bg-gray-50 border-gray-200'
+            }`}
         >
           <div className="flex gap-2 items-center mb-2">
             <IconAlertTriangle
@@ -1110,9 +1039,8 @@ export const AgentEditor = ({
                 <span className={`text-sm ${isDark ? 'text-white' : 'text-gray-600'}`}>
                   Missing or empty{' '}
                   <code
-                    className={`px-1 py-0.5 rounded text-xs ${
-                      isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-200 text-gray-800'
-                    }`}
+                    className={`px-1 py-0.5 rounded text-xs ${isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-200 text-gray-800'
+                      }`}
                   >
                     query = "..."
                   </code>
@@ -1125,9 +1053,8 @@ export const AgentEditor = ({
                 <span className={`text-sm ${isDark ? 'text-white' : 'text-gray-600'}`}>
                   Missing or empty{' '}
                   <code
-                    className={`px-1 py-0.5 rounded text-xs ${
-                      isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-200 text-gray-800'
-                    }`}
+                    className={`px-1 py-0.5 rounded text-xs ${isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-200 text-gray-800'
+                      }`}
                   >
                     response = "..."
                   </code>
