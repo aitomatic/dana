@@ -325,7 +325,14 @@ class StructTypeRegistry:
     def register(cls, struct_type: StructType) -> None:
         """Register a new struct type."""
         if struct_type.name in cls._types:
-            raise ValueError(f"Struct type '{struct_type.name}' is already registered. Struct names must be unique.")
+            # Check if this is the same struct definition
+            existing_struct = cls._types[struct_type.name]
+            if (existing_struct.fields == struct_type.fields and 
+                existing_struct.field_order == struct_type.field_order):
+                # Same struct definition - allow idempotent registration
+                return
+            else:
+                raise ValueError(f"Struct type '{struct_type.name}' is already registered with different definition. Struct names must be unique.")
 
         cls._types[struct_type.name] = struct_type
 
