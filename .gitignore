@@ -61,8 +61,6 @@ node_modules/
 .ipynb_checkpoints/
 .cursor/
 
-.vscode/launch.json
-.vscode/settings.json
 .deprecated_opendxa
 
 # Data file
@@ -73,3 +71,12 @@ uploads
 dana/api/server/static/
 dana/contrib/ui/public/static/
 generated/
+
+# Contributors-oriented configs
+# =============================
+
+# Visual Studio Code configs
+# --------------------------
+.vscode/extensions.json
+# .vscode/launch.json
+# .vscode/settings.json
