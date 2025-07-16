@@ -317,8 +317,8 @@ run: dana ## Alias for 'dana' command
 build-frontend: ## Build the frontend (Vite React app) and copy to backend static
 	cd dana/contrib/ui && npm i && npm run build
 
-build-all: build-frontend ## Build frontend and Python package
-	uv run python -m build
+build-all: ## Build frontend and Python package
+	build-frontend & uv run python -m build
 
 local-server: ## Start the local server
 	uv run python -m dana.api.server
