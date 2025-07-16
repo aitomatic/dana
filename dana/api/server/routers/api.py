@@ -121,11 +121,8 @@ async def deploy_agent(request: AgentDeployRequest, db: Session = Depends(db.get
         file_paths.append(str(metadata_file))
         logger.info(f"Created metadata.json: {metadata_file}")
         
-        # Update agent record with file info
-        agent.folder_path = str(agent_folder)
-        agent.files = file_paths
-        db.commit()
-        db.refresh(agent)
+        # Note: These are temporary files for generation preview only
+        # No database operations needed for generation auto-storage
         
         logger.info(f"Agent deployed successfully: {agent.name} at {agent.folder_path}")
         
@@ -196,6 +193,21 @@ async def generate_agent(request: AgentGenerationRequest):
                 dana_code="",
                 error=syntax_error
             )
+        
+        # Multi-file projects are always generated now, auto-store them
+        auto_stored_files = []
+        if multi_file_project:
+            try:
+                logger.info("Auto-storing multi-file project")
+                auto_stored_files = await _auto_store_multi_file_agent(
+                    agent_name or "Generated_Agent", 
+                    agent_description or "Auto-generated agent",
+                    multi_file_project
+                )
+                logger.info(f"Auto-stored files: {auto_stored_files}")
+            except Exception as e:
+                logger.warning(f"Auto-storage failed (non-critical): {e}", exc_info=True)
+                # Continue with response even if auto-storage fails
         
         # Extract agent name and description from the generated code
         agent_name = None
@@ -1277,3 +1289,189 @@ async def validate_multi_file_project(project: MultiFileProject):
     except Exception as e:
         logger.error(f"Error validating multi-file project: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to validate project: {str(e)}")
+
+
+# Auto-storage helper functions for agent generation
+async def _auto_store_single_file_agent(agent_name: str, agent_description: str, dana_code: str) -> list[str]:
+    """
+    Auto-store a single-file agent to temporary generation folder.
+    
+    Args:
+        agent_name: Name of the agent
+        agent_description: Description of the agent
+        dana_code: Dana code content
+        
+    Returns:
+        List of file paths created
+    """
+    import re
+    import json
+    import uuid
+    from datetime import datetime
+    
+    # Create unique folder for this generation
+    sanitized_name = re.sub(r'[^a-zA-Z0-9_\-]', '_', agent_name.lower())
+    unique_id = str(uuid.uuid4())[:8]
+    folder_name = f"generated_{sanitized_name}_{unique_id}"
+    
+    # Create generation directory if it doesn't exist
+    generation_dir = Path("generated")
+    generation_dir.mkdir(exist_ok=True)
+    
+    # Create agent folder
+    agent_folder = generation_dir / folder_name
+    agent_folder.mkdir(exist_ok=True)
+    
+    file_paths = []
+    
+    # Create agent.na file
+    agent_file = agent_folder / "agent.na"
+    with open(agent_file, 'w', encoding='utf-8') as f:
+        f.write(dana_code)
+    file_paths.append(str(agent_file))
+    logger.info(f"Created agent.na file: {agent_file}")
+    
+    # Create metadata.json
+    metadata = {
+        "agent_name": agent_name,
+        "description": agent_description,
+        "generated_at": datetime.now().isoformat(),
+        "files": ["agent.na"],
+        "folder_path": str(agent_folder),
+        "generation_type": "single_file",
+        "temporary": True
+    }
+    
+    metadata_file = agent_folder / "metadata.json"
+    with open(metadata_file, 'w', encoding='utf-8') as f:
+        json.dump(metadata, f, indent=2)
+    file_paths.append(str(metadata_file))
+    logger.info(f"Created metadata.json: {metadata_file}")
+    
+    logger.info(f"Auto-storage completed. Created {len(file_paths)} files: {file_paths}")
+    return file_paths
+
+
+async def _auto_store_multi_file_agent(agent_name: str, agent_description: str, multi_file_project: dict) -> list[str]:
+    """
+    Auto-store a multi-file agent to temporary generation folder.
+    
+    Args:
+        agent_name: Name of the agent
+        agent_description: Description of the agent
+        multi_file_project: Multi-file project data
+        
+    Returns:
+        List of file paths created
+    """
+    import re
+    import json
+    import uuid
+    from datetime import datetime
+    
+    # Create unique folder for this generation
+    sanitized_name = re.sub(r'[^a-zA-Z0-9_\-]', '_', agent_name.lower())
+    unique_id = str(uuid.uuid4())[:8]
+    folder_name = f"generated_{sanitized_name}_{unique_id}"
+    
+    # Create generation directory if it doesn't exist
+    generation_dir = Path("generated")
+    generation_dir.mkdir(exist_ok=True)
+    
+    # Create agent folder
+    agent_folder = generation_dir / folder_name
+    agent_folder.mkdir(exist_ok=True)
+    
+    file_paths = []
+    
+    # Create files from multi-file project
+    for file_info in multi_file_project['files']:
+        filename = file_info['filename']
+        if not filename.endswith('.na'):
+            filename += '.na'
+        
+        file_path = agent_folder / filename
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(file_info['content'])
+        file_paths.append(str(file_path))
+    
+    # Create metadata.json
+    metadata = {
+        "agent_name": agent_name,
+        "description": agent_description,
+        "generated_at": datetime.now().isoformat(),
+        "files": [Path(p).name for p in file_paths],
+        "folder_path": str(agent_folder),
+        "generation_type": "multi_file",
+        "main_file": multi_file_project.get('main_file', 'agent.na'),
+        "structure_type": multi_file_project.get('structure_type', 'modular'),
+        "temporary": True
+    }
+    
+    metadata_file = agent_folder / "metadata.json"
+    with open(metadata_file, 'w', encoding='utf-8') as f:
+        json.dump(metadata, f, indent=2)
+    file_paths.append(str(metadata_file))
+    
+    return file_paths
+
+
+@router.get("/open-file/{file_path:path}")
+async def open_file_location(file_path: str):
+    """
+    Open file location in Finder/Explorer.
+    
+    Args:
+        file_path: Encoded file path to open
+        
+    Returns:
+        Success status
+    """
+    import subprocess
+    import platform
+    import urllib.parse
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Decode the file path
+        decoded_path = urllib.parse.unquote(file_path)
+        file_path_obj = Path(decoded_path)
+        
+        # Security check - ensure path is within allowed directories
+        allowed_dirs = [Path("agents"), Path("generated"), Path("tmp")]
+        is_allowed = any(
+            str(file_path_obj.resolve()).startswith(str((Path.cwd() / allowed_dir).resolve()))
+            for allowed_dir in allowed_dirs
+        )
+        
+        if not is_allowed:
+            raise HTTPException(status_code=403, detail="Access to this file path is not allowed")
+        
+        if not file_path_obj.exists():
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Get the directory containing the file
+        directory = file_path_obj.parent if file_path_obj.is_file() else file_path_obj
+        
+        # Open based on platform
+        system = platform.system()
+        if system == "Darwin":  # macOS
+            subprocess.run(["open", str(directory)], check=True)
+        elif system == "Windows":
+            subprocess.run(["explorer", str(directory)], check=True)
+        elif system == "Linux":
+            subprocess.run(["xdg-open", str(directory)], check=True)
+        else:
+            raise HTTPException(status_code=501, detail=f"Opening files not supported on {system}")
+        
+        logger.info(f"Opened file location: {directory}")
+        return {"success": True, "message": f"Opened {directory}"}
+        
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to open file location: {e}")
+        raise HTTPException(status_code=500, detail="Failed to open file location")
+    except Exception as e:
+        logger.error(f"Error opening file location: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

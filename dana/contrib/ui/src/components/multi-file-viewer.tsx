@@ -2,18 +2,18 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Download, 
-  FileText, 
-  Settings, 
-  GitBranch, 
-  Package, 
+import {
+  Download,
+  FileText,
+  Settings,
+  GitBranch,
+  Package,
   Zap,
   Copy,
   Check,
   Edit,
   Save,
-  X
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AgentEditor } from '@/components/agent-editor';
@@ -31,17 +31,17 @@ interface MultiFileViewerProps {
 const getFileTypeIcon = (fileType: string) => {
   switch (fileType) {
     case 'agent':
-      return <Zap className="h-4 w-4" />;
+      return <Zap className="w-4 h-4" />;
     case 'workflow':
-      return <GitBranch className="h-4 w-4" />;
+      return <GitBranch className="w-4 h-4" />;
     case 'resources':
-      return <Package className="h-4 w-4" />;
+      return <Package className="w-4 h-4" />;
     case 'methods':
-      return <Settings className="h-4 w-4" />;
+      return <Settings className="w-4 h-4" />;
     case 'common':
-      return <FileText className="h-4 w-4" />;
+      return <FileText className="w-4 h-4" />;
     default:
-      return <FileText className="h-4 w-4" />;
+      return <FileText className="w-4 h-4" />;
   }
 };
 
@@ -63,12 +63,12 @@ const getFileTypeColor = (fileType: string) => {
   }
 };
 
-const MultiFileViewer = ({ 
-  project, 
-  onFileSelect, 
+const MultiFileViewer = ({
+  project,
+  onFileSelect,
   onFileChange,
-  onDownload, 
-  className 
+  onDownload,
+  className,
 }: MultiFileViewerProps) => {
   const [selectedFile, setSelectedFile] = useState<DanaFile | null>(null);
   const [copiedFile, setCopiedFile] = useState<string | null>(null);
@@ -125,27 +125,20 @@ const MultiFileViewer = ({
   };
 
   return (
-    <div className={cn('w-full border rounded-lg bg-white', className)}>
+    <div className={cn('w-full bg-white rounded-lg border', className)}>
       <div className="p-4 border-b">
-        <div className="flex items-center justify-between">
+        <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Package className="h-5 w-5" />
+            <h2 className="flex gap-2 items-center text-lg font-semibold">
+              <Package className="w-5 h-5" />
               {project.name}
             </h2>
             <p className="text-sm text-muted-foreground">{project.description}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline">
-              {project.structure_type}
-            </Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDownload}
-              className="gap-2"
-            >
-              <Download className="h-4 w-4" />
+          <div className="flex gap-2 items-center">
+            <Badge variant="outline">{project.structure_type}</Badge>
+            <Button variant="outline" size="sm" onClick={handleDownload} className="gap-2">
+              <Download className="w-4 h-4" />
               Download
             </Button>
           </div>
@@ -157,9 +150,9 @@ const MultiFileViewer = ({
             <button
               className={cn(
                 'px-4 py-2 text-sm font-medium',
-                activeTab === 'files' 
-                  ? 'border-b-2 border-blue-500 text-blue-600' 
-                  : 'text-gray-500 hover:text-gray-700'
+                activeTab === 'files'
+                  ? 'border-b-2 border-blue-500 text-blue-600'
+                  : 'text-gray-500 hover:text-gray-700',
               )}
               onClick={() => setActiveTab('files')}
             >
@@ -168,16 +161,16 @@ const MultiFileViewer = ({
             <button
               className={cn(
                 'px-4 py-2 text-sm font-medium',
-                activeTab === 'preview' 
-                  ? 'border-b-2 border-blue-500 text-blue-600' 
-                  : 'text-gray-500 hover:text-gray-700'
+                activeTab === 'preview'
+                  ? 'border-b-2 border-blue-500 text-blue-600'
+                  : 'text-gray-500 hover:text-gray-700',
               )}
               onClick={() => setActiveTab('preview')}
             >
               Preview
             </button>
           </div>
-          
+
           {activeTab === 'files' && (
             <div className="mt-4 space-y-4">
               <div className="grid gap-2">
@@ -186,15 +179,17 @@ const MultiFileViewer = ({
                     key={file.filename}
                     className={cn(
                       'flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors',
-                      selectedFile?.filename === file.filename && 'border-blue-500 bg-blue-50'
+                      selectedFile?.filename === file.filename && 'border-blue-500 bg-blue-50',
                     )}
                     onClick={() => handleFileSelect(file)}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        'p-2 rounded-full text-white',
-                        getFileTypeColor(file.file_type)
-                      )}>
+                    <div className="flex gap-3 items-center">
+                      <div
+                        className={cn(
+                          'p-2 rounded-full text-white',
+                          getFileTypeColor(file.file_type),
+                        )}
+                      >
                         {getFileTypeIcon(file.file_type)}
                       </div>
                       <div>
@@ -203,7 +198,7 @@ const MultiFileViewer = ({
                           {file.description || 'Dana code file'}
                         </p>
                         {file.dependencies && file.dependencies.length > 0 && (
-                          <div className="flex items-center gap-1 mt-1">
+                          <div className="flex gap-1 items-center mt-1">
                             <span className="text-xs text-gray-500">Depends on:</span>
                             {file.dependencies.map((dep) => (
                               <Badge key={dep} variant="secondary" className="text-xs">
@@ -214,7 +209,7 @@ const MultiFileViewer = ({
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex gap-2 items-center">
                       <Badge variant="outline" className="text-xs">
                         {file.file_type}
                       </Badge>
@@ -227,9 +222,9 @@ const MultiFileViewer = ({
                         }}
                       >
                         {copiedFile === file.filename ? (
-                          <Check className="h-4 w-4 text-green-500" />
+                          <Check className="w-4 h-4 text-green-500" />
                         ) : (
-                          <Copy className="h-4 w-4" />
+                          <Copy className="w-4 h-4" />
                         )}
                       </Button>
                     </div>
@@ -238,17 +233,19 @@ const MultiFileViewer = ({
               </div>
             </div>
           )}
-          
+
           {activeTab === 'preview' && (
             <div className="mt-4 space-y-4">
               {selectedFile ? (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className={cn(
-                        'p-2 rounded-full text-white',
-                        getFileTypeColor(selectedFile.file_type)
-                      )}>
+                  <div className="flex justify-between items-center">
+                    <div className="flex gap-2 items-center">
+                      <div
+                        className={cn(
+                          'p-2 rounded-full text-white',
+                          getFileTypeColor(selectedFile.file_type),
+                        )}
+                      >
                         {getFileTypeIcon(selectedFile.file_type)}
                       </div>
                       <div>
@@ -258,7 +255,7 @@ const MultiFileViewer = ({
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex gap-2 items-center">
                       {isEditing ? (
                         <>
                           <Button
@@ -267,7 +264,7 @@ const MultiFileViewer = ({
                             onClick={handleEditSave}
                             className="gap-2"
                           >
-                            <Save className="h-4 w-4" />
+                            <Save className="w-4 h-4" />
                             Save
                           </Button>
                           <Button
@@ -276,7 +273,7 @@ const MultiFileViewer = ({
                             onClick={handleEditCancel}
                             className="gap-2"
                           >
-                            <X className="h-4 w-4" />
+                            <X className="w-4 h-4" />
                             Cancel
                           </Button>
                         </>
@@ -288,7 +285,7 @@ const MultiFileViewer = ({
                             onClick={handleEditStart}
                             className="gap-2"
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="w-4 h-4" />
                             Edit
                           </Button>
                           <Button
@@ -297,17 +294,17 @@ const MultiFileViewer = ({
                             onClick={() => handleCopyFile(selectedFile)}
                           >
                             {copiedFile === selectedFile.filename ? (
-                              <Check className="h-4 w-4 text-green-500" />
+                              <Check className="w-4 h-4 text-green-500" />
                             ) : (
-                              <Copy className="h-4 w-4" />
+                              <Copy className="w-4 h-4" />
                             )}
                           </Button>
                         </>
                       )}
                     </div>
                   </div>
-                  
-                  <div className="h-96 w-full rounded-md border">
+
+                  <div className="w-full h-96 rounded-md border">
                     {isEditing ? (
                       <AgentEditor
                         value={editedContent}
@@ -318,8 +315,8 @@ const MultiFileViewer = ({
                         autoValidationDelay={1000}
                       />
                     ) : (
-                      <div className="h-full overflow-auto">
-                        <pre className="p-4 text-sm font-mono">
+                      <div className="overflow-auto h-full">
+                        <pre className="p-4 font-mono text-sm">
                           <code>{selectedFile.content}</code>
                         </pre>
                       </div>
@@ -327,8 +324,8 @@ const MultiFileViewer = ({
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <div className="py-8 text-center text-gray-500">
+                  <FileText className="mx-auto mb-4 w-12 h-12 opacity-50" />
                   <p>Select a file to preview its contents</p>
                 </div>
               )}

@@ -100,6 +100,15 @@ const formatCapabilitiesMessage = (
     message += `\n`;
   }
 
+  // Add file information from multi-file project
+  if (multiFileProject && multiFileProject.files.length > 0) {
+    message += `\n**Generated Files:**\n`;
+    multiFileProject.files.forEach((file) => {
+      message += `• \`${file.filename}\` - Click to open in Finder/Explorer\n`;
+    });
+    message += `\n💡 All files have been automatically saved to your file system. You can click any filename in the Files tab to open its location.\n\n`;
+  }
+
   message += `The code has been loaded into the editor on the right. You can review and modify it as needed.`;
   console.log('🔚 Final formatted message:', message);
   return message;
@@ -195,6 +204,8 @@ const AgentGenerationChat = ({
           setCapabilities(response.capabilities);
           console.log('✅ Capabilities stored in Zustand store');
         }
+        
+        // Multi-file projects are always generated now, no need for separate auto_stored_files
 
         // Format the assistant message with capabilities
         let formattedMessage = formatCapabilitiesMessage(

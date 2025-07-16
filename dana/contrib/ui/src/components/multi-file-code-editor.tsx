@@ -220,17 +220,6 @@ const MultiFileCodeEditor = ({
             </>
           )}
         </div>
-
-        {activeFile.dependencies && activeFile.dependencies.length > 0 && (
-          <div className="flex gap-1 items-center mt-1">
-            <span className="text-xs text-gray-500">Dependencies:</span>
-            {activeFile.dependencies.map((dep) => (
-              <Badge key={dep} variant="outline" className="text-xs">
-                {dep}
-              </Badge>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Code editor */}

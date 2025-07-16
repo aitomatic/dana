@@ -395,6 +395,13 @@ class ApiService {
     return response.data;
   }
 
+  // File Operations API Methods
+  async openFileLocation(filePath: string): Promise<{ success: boolean; message: string }> {
+    const encodedPath = encodeURIComponent(filePath);
+    const response = await this.client.get<{ success: boolean; message: string }>(`/agents/open-file/${encodedPath}`);
+    return response.data;
+  }
+
   async updateAgent(agentId: number, agent: AgentCreate): Promise<AgentRead> {
     const response = await this.client.put<AgentRead>(`/agents/${agentId}`, agent);
     return response.data;

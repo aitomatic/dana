@@ -24,6 +24,8 @@ import MultiFileCodeEditor from '@/components/multi-file-code-editor';
 import type { MultiFileProject } from '@/lib/api';
 import DanaAvatar from '/agent-avatar/javis-avatar.svg';
 import GeorgiaAvatar from '/agent-avatar/georgia-avatar.svg';
+import { FilePaths } from '@/components/file-paths';
+import { Page } from 'iconoir-react';
 
 function AgentMiddlePane({
   danaCode,
@@ -44,6 +46,7 @@ function AgentMiddlePane({
     { label: 'Knowledge', icon: <Book className="mr-1 w-4 h-4" /> },
     { label: 'Workflow', icon: <Network className="mr-1 w-4 h-4" /> },
     { label: 'Tools', icon: <Tools className="mr-1 w-4 h-4" /> },
+    { label: 'Files', icon: <Page className="mr-1 w-4 h-4" /> },
     { label: 'Code', icon: <Code className="mr-1 w-4 h-4" /> },
   ];
   return (
@@ -104,6 +107,19 @@ function AgentMiddlePane({
         {activeTab === 'Tools' && (
           <div className="text-gray-700">
             <MarkdownViewerSmall>{capabilities?.tools?.join('\n - ') ?? ''}</MarkdownViewerSmall>
+          </div>
+        )}
+        {activeTab === 'Files' && (
+          <div className="text-gray-700">
+            {multiFileProject ? (
+              <FilePaths multiFileProject={multiFileProject} />
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Page className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p>No files generated yet</p>
+                <p className="text-sm mt-2">Files will appear here when you generate agent code</p>
+              </div>
+            )}
           </div>
         )}
         {activeTab === 'Code' && (

@@ -330,7 +330,7 @@ def main_workflow(request: str) -> str:
     if not methods.validate_input(request):
         return "Invalid input"
     
-    return reason(f"Execute workflow for: {request}", context=methods.process_request(request))
+    return reason(f"Execute workflow for: request", context=methods.process_request(request))
 FILE_END:workflows.na
 
 FILE_START:common.na
