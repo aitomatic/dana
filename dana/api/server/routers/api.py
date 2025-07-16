@@ -10,7 +10,7 @@ from pathlib import Path
 from .. import db, schemas, services
 from ..schemas import RunNAFileRequest, RunNAFileResponse, AgentGenerationRequest, AgentGenerationResponse, DanaSyntaxCheckRequest, DanaSyntaxCheckResponse, CodeValidationRequest, CodeValidationResponse, CodeFixRequest, CodeFixResponse, MultiFileProject, AgentDeployRequest, AgentDeployResponse
 from ..services import run_na_file_service
-from ..agent_generator import generate_agent_code_from_messages, analyze_agent_capabilities
+from ..agent_generator import generate_agent_code_from_messages
 from dana.core.lang.dana_sandbox import DanaSandbox
 
 router = APIRouter(prefix="/agents", tags=["agents"])
@@ -194,21 +194,6 @@ async def generate_agent(request: AgentGenerationRequest):
                 error=syntax_error
             )
         
-        # Multi-file projects are always generated now, auto-store them
-        auto_stored_files = []
-        if multi_file_project:
-            try:
-                logger.info("Auto-storing multi-file project")
-                auto_stored_files = await _auto_store_multi_file_agent(
-                    agent_name or "Generated_Agent", 
-                    agent_description or "Auto-generated agent",
-                    multi_file_project
-                )
-                logger.info(f"Auto-stored files: {auto_stored_files}")
-            except Exception as e:
-                logger.warning(f"Auto-storage failed (non-critical): {e}", exc_info=True)
-                # Continue with response even if auto-storage fails
-        
         # Extract agent name and description from the generated code
         agent_name = None
         agent_description = None
@@ -241,15 +226,34 @@ async def generate_agent(request: AgentGenerationRequest):
                 agent_description = line.split('=')[1].strip().strip('"')
                 logger.info(f"Extracted agent description (old format): {agent_description}")
         
-        # Analyze agent capabilities
-        capabilities_data = await analyze_agent_capabilities(dana_code, messages)
-        from ..schemas import AgentCapabilities
-        capabilities = AgentCapabilities(
-            summary=capabilities_data.get("summary"),
-            knowledge=capabilities_data.get("knowledge", []),
-            workflow=capabilities_data.get("workflow", []),
-            tools=capabilities_data.get("tools", [])
-        )
+        # Skip detailed capabilities analysis for cleaner response
+        
+        # Auto-store generated agents now that we have the names
+        auto_stored_files = []
+        if multi_file_project:
+            try:
+                logger.info("Auto-storing multi-file project")
+                auto_stored_files = await _auto_store_multi_file_agent(
+                    agent_name or "Generated_Agent", 
+                    agent_description or "Auto-generated agent",
+                    multi_file_project
+                )
+                logger.info(f"Auto-stored files: {auto_stored_files}")
+            except Exception as e:
+                logger.warning(f"Auto-storage failed (non-critical): {e}", exc_info=True)
+                # Continue with response even if auto-storage fails
+        else:
+            # Auto-store single-file agents too
+            try:
+                logger.info("Auto-storing single-file agent")
+                auto_stored_files = await _auto_store_single_file_agent(
+                    agent_name or "Generated_Agent",
+                    agent_description or "Auto-generated agent", 
+                    dana_code
+                )
+                logger.info(f"Auto-stored single-file: {auto_stored_files}")
+            except Exception as e:
+                logger.warning(f"Single-file auto-storage failed (non-critical): {e}", exc_info=True)
         
         # Check if we need more information and include follow-up questions
         needs_more_info = conversation_analysis.get("needs_more_info", False)
@@ -279,19 +283,26 @@ async def generate_agent(request: AgentGenerationRequest):
                 structure_type=multi_file_project['structure_type']
             )
         
-        response = AgentGenerationResponse(
-            success=(syntax_error is None),
-            dana_code=dana_code,
-            agent_name=agent_name,
-            agent_description=agent_description,
-            capabilities=capabilities,
-            needs_more_info=needs_more_info,
-            follow_up_message=follow_up_message,
-            suggested_questions=suggested_questions,
-            error=syntax_error,
-            multi_file_project=multi_file_project_obj,
-            is_multi_file=multi_file_project is not None
-        )
+        # Build minimal response
+        response_data = {
+            "success": syntax_error is None,
+            "dana_code": dana_code,
+            "error": syntax_error,
+            "agent_name": agent_name,
+            "agent_description": agent_description,
+            "auto_stored_files": auto_stored_files if auto_stored_files else None,
+            "multi_file_project": multi_file_project_obj
+        }
+        
+        # Only include conversation guidance if needed
+        if needs_more_info:
+            response_data.update({
+                "needs_more_info": True,
+                "follow_up_message": follow_up_message,
+                "suggested_questions": suggested_questions
+            })
+        
+        response = AgentGenerationResponse(**response_data)
         
         logger.info(f"Returning response with success={response.success}, code_length={len(response.dana_code)}, needs_more_info={needs_more_info}")
         return response
@@ -1307,7 +1318,10 @@ async def _auto_store_single_file_agent(agent_name: str, agent_description: str,
     import re
     import json
     import uuid
+    import logging
     from datetime import datetime
+    
+    logger = logging.getLogger(__name__)
     
     # Create unique folder for this generation
     sanitized_name = re.sub(r'[^a-zA-Z0-9_\-]', '_', agent_name.lower())
@@ -1367,7 +1381,10 @@ async def _auto_store_multi_file_agent(agent_name: str, agent_description: str, 
     import re
     import json
     import uuid
+    import logging
     from datetime import datetime
+    
+    logger = logging.getLogger(__name__)
     
     # Create unique folder for this generation
     sanitized_name = re.sub(r'[^a-zA-Z0-9_\-]', '_', agent_name.lower())
@@ -1381,6 +1398,7 @@ async def _auto_store_multi_file_agent(agent_name: str, agent_description: str, 
     # Create agent folder
     agent_folder = generation_dir / folder_name
     agent_folder.mkdir(exist_ok=True)
+    logger.info(f"Created multi-file agent folder: {agent_folder}")
     
     file_paths = []
     
@@ -1394,6 +1412,7 @@ async def _auto_store_multi_file_agent(agent_name: str, agent_description: str, 
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(file_info['content'])
         file_paths.append(str(file_path))
+        logger.info(f"Created file: {file_path}")
     
     # Create metadata.json
     metadata = {
@@ -1412,7 +1431,9 @@ async def _auto_store_multi_file_agent(agent_name: str, agent_description: str, 
     with open(metadata_file, 'w', encoding='utf-8') as f:
         json.dump(metadata, f, indent=2)
     file_paths.append(str(metadata_file))
+    logger.info(f"Created metadata.json: {metadata_file}")
     
+    logger.info(f"Multi-file auto-storage completed. Created {len(file_paths)} files: {file_paths}")
     return file_paths
 
 
@@ -1449,8 +1470,30 @@ async def open_file_location(file_path: str):
         if not is_allowed:
             raise HTTPException(status_code=403, detail="Access to this file path is not allowed")
         
+        # Check if file exists, if not try pattern matching
         if not file_path_obj.exists():
-            raise HTTPException(status_code=404, detail="File not found")
+            # Try pattern matching for wildcard paths (e.g., generated_agent*/agent.na)
+            import glob
+            if '*' in decoded_path or '?' in decoded_path:
+                logger.info(f"File not found, trying pattern matching for: {decoded_path}")
+                matches = glob.glob(decoded_path)
+                if matches:
+                    # Use the first match
+                    actual_file_path = matches[0]
+                    file_path_obj = Path(actual_file_path)
+                    logger.info(f"Pattern matched to: {actual_file_path}")
+                    
+                    # Re-validate security for the resolved path
+                    is_allowed = any(
+                        str(file_path_obj.resolve()).startswith(str((Path.cwd() / allowed_dir).resolve()))
+                        for allowed_dir in allowed_dirs
+                    )
+                    if not is_allowed:
+                        raise HTTPException(status_code=403, detail="Resolved file path is not allowed")
+                else:
+                    raise HTTPException(status_code=404, detail=f"No files match pattern: {decoded_path}")
+            else:
+                raise HTTPException(status_code=404, detail="File not found")
         
         # Get the directory containing the file
         directory = file_path_obj.parent if file_path_obj.is_file() else file_path_obj

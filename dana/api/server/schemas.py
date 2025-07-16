@@ -22,7 +22,7 @@ class AgentDeployRequest(BaseModel):
     description: str
     config: dict[str, Any]
     dana_code: str | None = None  # For single file deployment
-    multi_file_project: 'MultiFileProject | None' = None  # For multi-file deployment
+    multi_file_project: MultiFileProject | None = None  # For multi-file deployment
     
     def __init__(self, **data):
         # Ensure at least one deployment method is provided
@@ -209,18 +209,23 @@ class MultiFileProject(BaseModel):
 class AgentGenerationResponse(BaseModel):
     """Response schema for agent generation endpoint"""
     success: bool
-    dana_code: str  # Legacy single-file code (for backward compatibility)
+    dana_code: str
+    error: str | None = None
+    
+    # Essential agent info
     agent_name: str | None = None
     agent_description: str | None = None
-    capabilities: AgentCapabilities | None = None
+    
+    # File paths for opening in explorer
+    auto_stored_files: list[str] | None = None
+    
+    # Multi-file support (minimal)
+    multi_file_project: MultiFileProject | None = None
+    
+    # Conversation guidance (only when needed)
     needs_more_info: bool = False
     follow_up_message: str | None = None
     suggested_questions: list[str] | None = None
-    error: str | None = None
-    
-    # New multi-file support
-    multi_file_project: MultiFileProject | None = None
-    is_multi_file: bool = False
 
 
 class DanaSyntaxCheckRequest(BaseModel):
