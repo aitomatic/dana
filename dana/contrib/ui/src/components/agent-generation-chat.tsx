@@ -27,6 +27,8 @@ interface AgentGenerationChatProps {
     name?: string,
     description?: string,
     multiFileProject?: MultiFileProject,
+    agentId?: string,
+    agentFolder?: string,
   ) => void;
   currentCode?: string;
   className?: string;
@@ -50,6 +52,14 @@ const formatCapabilitiesMessage = (
   console.log('🔚 Final formatted message:', message);
   return message;
 };
+
+// Add type declarations for window properties
+declare global {
+  interface Window {
+    latestGeneratedAgentId?: number;
+    latestGeneratedAgentFolder?: string;
+  }
+}
 
 const AgentGenerationChat = ({
   onCodeGenerated,
@@ -142,6 +152,14 @@ const AgentGenerationChat = ({
           console.log('✅ Capabilities stored in Zustand store');
         }
 
+        // Store agent_id and agent_folder for test chat
+        if (response.agent_id) {
+          window.latestGeneratedAgentId = response.agent_id;
+        }
+        if (response.agent_folder) {
+          window.latestGeneratedAgentFolder = response.agent_folder;
+        }
+
         // Multi-file projects are always generated now, no need for separate auto_stored_files
 
         // Format the assistant message with capabilities
@@ -187,6 +205,8 @@ const AgentGenerationChat = ({
           response.agent_name,
           response.agent_description,
           response.multi_file_project,
+          response.agent_id ? String(response.agent_id) : undefined,
+          response.agent_folder,
         );
 
         if (response.needs_more_info) {

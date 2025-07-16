@@ -3,8 +3,8 @@ import uuid
 import pytest
 from fastapi.testclient import TestClient
 
-from dana.api.server.server import create_app
 from dana.api.server.models import Agent
+from dana.api.server.server import create_app
 
 
 @pytest.fixture

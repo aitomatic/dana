@@ -2,7 +2,6 @@
 Utility functions for agent generation and related server logic.
 """
 
-from .code_handler import CodeHandler
 
 def generate_mock_agent_code(messages, current_code=""):
     """
@@ -105,4 +104,4 @@ agent CustomAgent:
 
 # Agent's problem solver
 def solve(custom_agent : CustomAgent, problem : str):
-    return reason(f"Help me with: {{problem}}")''' 
+    return reason(f"Help me with: {{problem}}")'''

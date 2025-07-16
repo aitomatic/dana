@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from dana.api.server.models import Conversation, Agent
+from dana.api.server.models import Agent, Conversation
 from dana.api.server.schemas import ConversationCreate, MessageCreate
 from dana.api.server.services import ConversationService, MessageService
 
