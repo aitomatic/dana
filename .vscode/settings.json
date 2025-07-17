@@ -70,4 +70,10 @@
     "**/.DS_Store": true,  // MacOS file metadata
     "**/Thumbs.db": true,  // Windows file metadata
   },
+
+  // LINTING
+  // =======
+  "flake8.enabled": false,  // Flake8
+  "pylint.enabled": false,  // Pylint
+  "ruff.enable": true,  // Ruff
 }
