@@ -55,11 +55,17 @@ class MCPClient(Loggable):
         else:
             raise ValueError(f"Invalid transport type: {type(self.transport)}")
 
-        # Get the streams
-        streams = await self._streams_context.__aenter__()
+        # Get the streams - handle different return patterns
+        streams_result = await self._streams_context.__aenter__()
+        if isinstance(self.transport, MCPSSETransport):
+            read_stream, write_stream = streams_result
+        elif isinstance(self.transport, MCPHTTPTransport):
+            read_stream, write_stream, _ = streams_result
+        else:
+            raise ValueError(f"Invalid transport type: {type(self.transport)}")
 
         # Create and initialize the session
-        self._session = ClientSession(*streams)
+        self._session = ClientSession(read_stream, write_stream)
         session = await self._session.__aenter__()
         await session.initialize()
 
@@ -99,14 +105,15 @@ class MCPClient(Loggable):
             # Create streams context based on transport type
             if isinstance(transport, MCPSSETransport):
                 streams_context = sse_client(url=transport.url)
+                read_stream, write_stream = await streams_context.__aenter__()
             elif isinstance(transport, MCPHTTPTransport):
                 streams_context = streamablehttp_client(url=transport.url)
+                read_stream, write_stream, _ = await streams_context.__aenter__()
             else:
                 raise ValueError(f"Invalid transport type: {type(transport)}")
 
             # Test the connection
-            streams = await streams_context.__aenter__()
-            session_context = ClientSession(*streams)
+            session_context = ClientSession(read_stream, write_stream)
             session = await session_context.__aenter__()
 
             # Initialize and test connection
