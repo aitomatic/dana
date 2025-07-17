@@ -177,7 +177,7 @@ class TestAgentServices:
         shutil.rmtree(uploads_dir, ignore_errors=True)
 
     def test_agent_generation_endpoint(self, client):
-        """Test the agent generation endpoint."""
+        """Test the agent generation endpoint with code generation phase."""
         from dana.api.server.schemas import AgentGenerationRequest, MessageData
 
         # Test data
@@ -187,7 +187,16 @@ class TestAgentServices:
             MessageData(role="user", content="I want it to get current weather and provide recommendations based on conditions"),
         ]
 
-        request_data = AgentGenerationRequest(messages=messages)
+        # Create mock agent data for Phase 2 (code_generation requires agent_data)
+        agent_data = {
+            "id": 1,
+            "name": "WeatherAgent",
+            "description": "A weather information agent",
+            "folder_path": "/tmp/test_agent",
+            "generation_metadata": {"conversation_context": []},
+        }
+
+        request_data = AgentGenerationRequest(messages=messages, phase="code_generation", agent_data=agent_data)
 
         # Make request to the endpoint
         response = client.post("/api/agents/generate", json=request_data.model_dump())
@@ -226,7 +235,16 @@ class TestAgentServices:
             MessageData(role="user", content="I want it to get current weather and provide recommendations based on conditions"),
         ]
 
-        request_data = AgentGenerationRequest(messages=messages)
+        # Create mock agent data for Phase 2 (code_generation requires agent_data)
+        agent_data = {
+            "id": 1,
+            "name": "WeatherAgent",
+            "description": "A weather information agent",
+            "folder_path": "/tmp/test_agent_mock",
+            "generation_metadata": {"conversation_context": []},
+        }
+
+        request_data = AgentGenerationRequest(messages=messages, phase="code_generation", agent_data=agent_data)
 
         # Make request to the endpoint
         response = client.post("/api/agents/generate", json=request_data.model_dump())
