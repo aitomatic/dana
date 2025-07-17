@@ -2,11 +2,11 @@ import { Editor, useMonaco } from '@monaco-editor/react';
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import type { editor } from 'monaco-editor';
 import { IconAlertTriangle, IconX } from '@tabler/icons-react';
-import { CodeValidationPopup } from '@/components/code-validation-popup';
-import { Button } from '@/components/ui/button';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+// import { CodeValidationPopup } from '@/components/code-validation-popup';
+// import { Button } from '@/components/ui/button';
+// import { RefreshCw, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+// import { toast } from 'sonner';
 import { apiService } from '@/lib/api';
 import type { CodeValidationResponse } from '@/lib/api';
 
@@ -135,7 +135,7 @@ export const AgentEditor = ({
   const animationIntervalRef = useRef<number | null>(null);
 
   // Auto-validation state
-  const [autoValidation, setAutoValidation] = useState<AutoValidationState>({
+  const [_autoValidation, setAutoValidation] = useState<AutoValidationState>({
     isChecking: false,
     hasErrors: false,
     errorMessage: '',
@@ -289,12 +289,12 @@ export const AgentEditor = ({
   }, [value, performAutoValidation, autoValidationDelay, enableAutoValidation]);
 
   // Handle error indicator click
-  const handleErrorClick = useCallback(() => {
-    if (autoValidation.lastValidationResult) {
-      setValidationResult(autoValidation.lastValidationResult);
-      setIsValidationOpen(true);
-    }
-  }, [autoValidation.lastValidationResult]);
+  // const handleErrorClick = useCallback(() => {
+  //   if (autoValidation.lastValidationResult) {
+  //     setValidationResult(autoValidation.lastValidationResult);
+  //     setIsValidationOpen(true);
+  //   }
+  // }, [autoValidation.lastValidationResult]);
 
   // Animation logic - simplified approach
   useEffect(() => {
@@ -989,31 +989,31 @@ export const AgentEditor = ({
     readOnly: readOnly,
   };
 
-  const [isValidationOpen, setIsValidationOpen] = useState(false);
-  const [validationResult, setValidationResult] = useState<CodeValidationResponse | null>(null);
-  const [isValidating, setIsValidating] = useState(false);
+  // const [isValidationOpen, setIsValidationOpen] = useState(false);
+  // const [validationResult, setValidationResult] = useState<CodeValidationResponse | null>(null);
+  // const [isValidating, setIsValidating] = useState(false);
 
-  const handleValidate = async () => {
-    setIsValidating(true);
-    try {
-      const result = await apiService.validateCode({
-        code: value,
-        agent_name: 'Custom Agent',
-        description: 'Agent created via UI',
-      });
-      if (result.is_valid) {
-        toast.success('Code is valid!');
-        setValidationResult(null);
-      } else {
-        setValidationResult(result);
-        setIsValidationOpen(true);
-      }
-    } catch (error) {
-      toast.error('Failed to validate code');
-    } finally {
-      setIsValidating(false);
-    }
-  };
+  // const handleValidate = async () => {
+  //   setIsValidating(true);
+  //   try {
+  //     const result = await apiService.validateCode({
+  //       code: value,
+  //       agent_name: 'Custom Agent',
+  //       description: 'Agent created via UI',
+  //     });
+  //     if (result.is_valid) {
+  //       toast.success('Code is valid!');
+  //       setValidationResult(null);
+  //     } else {
+  //       setValidationResult(result);
+  //       setIsValidationOpen(true);
+  //     }
+  //   } catch (error) {
+  //     toast.error('Failed to validate code');
+  //   } finally {
+  //     setIsValidating(false);
+  //   }
+  // };
 
   return (
     <div className={cn('flex flex-col w-full h-full', className)}>
@@ -1100,7 +1100,7 @@ export const AgentEditor = ({
       </div>
 
       {/* Auto-Validation Error Indicator */}
-      {enableAutoValidation && (autoValidation.hasErrors || autoValidation.isChecking) && (
+      {/* {enableAutoValidation && (autoValidation.hasErrors || autoValidation.isChecking) && (
         <div className="px-4 py-2 bg-red-50 border-t border-red-200">
           <div className="flex justify-between items-center">
             <div className="flex gap-2 items-center">
@@ -1133,10 +1133,10 @@ export const AgentEditor = ({
             )}
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Code Validation */}
-      <div className="flex justify-end mt-4">
+      {/* <div className="flex justify-end mt-4">
         <Button variant="outline" size="sm" onClick={handleValidate} disabled={isValidating}>
           <RefreshCw className="mr-2 w-4 h-4" />
           {isValidating ? 'Validating...' : 'Validate Code'}
@@ -1148,7 +1148,7 @@ export const AgentEditor = ({
         isOpen={isValidationOpen}
         onClose={() => setIsValidationOpen(false)}
         validationResult={validationResult}
-      />
+      /> */}
     </div>
   );
 };

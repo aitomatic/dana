@@ -94,6 +94,9 @@ export interface AgentGenerationRequest {
   messages: MessageData[];
   current_code?: string;
   multi_file?: boolean;
+  // Two-phase generation fields
+  phase?: 'description' | 'code_generation';
+  agent_id?: number;
 }
 
 export interface AgentCapabilities {
@@ -121,7 +124,7 @@ export interface MultiFileProject {
 
 export interface AgentGenerationResponse {
   success: boolean;
-  dana_code: string;
+  dana_code?: string;  // Optional in Phase 1
   agent_name?: string;
   agent_description?: string;
   capabilities?: AgentCapabilities;
@@ -133,7 +136,9 @@ export interface AgentGenerationResponse {
   is_multi_file?: boolean;
   auto_stored_files?: string[];
   agent_id?: number;
+  ready_for_code_generation?: boolean;
   agent_folder?: string;
+  folder_path?: string;
 }
 
 // Code Validation Types
@@ -196,6 +201,33 @@ export interface CodeFixResponse {
   applied_fixes: string[];
   remaining_errors: CodeError[];
   error?: string;
+}
+
+// Phase 1 specific schemas
+export interface AgentDescriptionRequest {
+  messages: MessageData[];
+  agent_id?: number;
+  agent_data?: any; // Current agent object for modification
+}
+
+export interface AgentDescriptionResponse {
+  success: boolean;
+  agent_id: number;
+  agent_name?: string;
+  agent_description?: string;
+  capabilities?: AgentCapabilities;
+  follow_up_message?: string;
+  suggested_questions?: string[];
+  ready_for_code_generation: boolean;
+  error?: string;
+  folder_path?: string;
+  agent_folder?: string;
+}
+
+// Phase 2 specific schemas
+export interface AgentCodeGenerationRequest {
+  agent_id: number;
+  multi_file?: boolean;
 }
 
 // Agent Deployment Types
@@ -410,11 +442,21 @@ class ApiService {
 
   async uploadKnowledgeFile(
     formData: FormData,
-  ): Promise<{ success: boolean; file_path?: string; error?: string }> {
+  ): Promise<{
+    success: boolean;
+    file_path?: string;
+    error?: string;
+    generated_response?: string;
+    updated_capabilities?: any;
+    ready_for_code_generation?: boolean;
+  }> {
     const response = await this.client.post<{
       success: boolean;
       file_path?: string;
       error?: string;
+      generated_response?: string;
+      updated_capabilities?: any;
+      ready_for_code_generation?: boolean;
     }>('/agents/upload-knowledge', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -436,6 +478,51 @@ class ApiService {
   // Agent Generation API Methods
   async generateAgent(request: AgentGenerationRequest): Promise<AgentGenerationResponse> {
     const response = await this.client.post<AgentGenerationResponse>('/agents/generate', request, {
+      timeout: 300000,
+    });
+    return response.data;
+  }
+
+  // Phase 1: Agent description refinement
+  async describeAgent(request: AgentDescriptionRequest): Promise<AgentDescriptionResponse> {
+    const response = await this.client.post<AgentDescriptionResponse>('/agents/describe', request, {
+      timeout: 300000,
+    });
+    return response.data;
+  }
+
+  // Phase 2: Code generation from existing description
+  async generateAgentCode(agentId: number, request: AgentCodeGenerationRequest): Promise<AgentGenerationResponse> {
+    const response = await this.client.post<AgentGenerationResponse>(`/agents/${agentId}/generate-code`, request, {
+      timeout: 300000,
+    });
+    return response.data;
+  }
+
+  // Phase 2: Generate agent from prompt with conversation context and agent summary
+  async generateAgentFromPrompt(request: {
+    prompt: string;
+    messages: MessageData[];
+    agent_summary: {
+      name: string;
+      description: string;
+      capabilities: {
+        knowledge?: string[];
+        workflow?: string[];
+        tools?: string[];
+      };
+    };
+    multi_file?: boolean;
+  }): Promise<AgentGenerationResponse> {
+    const response = await this.client.post<AgentGenerationResponse>('/agents/generate-from-prompt', request, {
+      timeout: 300000,
+    });
+    return response.data;
+  }
+
+  // Update agent description during Phase 1
+  async updateAgentDescription(agentId: number, request: AgentDescriptionRequest): Promise<AgentDescriptionResponse> {
+    const response = await this.client.post<AgentDescriptionResponse>(`/agents/${agentId}/update-description`, request, {
       timeout: 300000,
     });
     return response.data;

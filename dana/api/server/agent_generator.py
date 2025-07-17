@@ -1030,7 +1030,7 @@ async def analyze_agent_capabilities(
                 raise Exception("LLM not available")
 
             analysis_prompt = f"""
-Analyze the following Dana agent code and conversation context to generate a comprehensive markdown summary.
+Analyze the following Dana agent code and conversation context to generate a focused, accurate summary.
 
 **Conversation Context:**
 {conversation_text}
@@ -1038,26 +1038,28 @@ Analyze the following Dana agent code and conversation context to generate a com
 **Dana Agent Code:**
 {all_code_content}
 
-Generate a detailed markdown summary that includes:
+Generate a brief, focused markdown summary that includes ONLY information that actually exists in the code or conversation:
 
-1. **Agent Overview**: Name, purpose, and description
-2. **Core Capabilities**: What the agent can do
-3. **Knowledge Sources**: What knowledge bases, documents, or data sources it uses
-4. **Workflow Process**: Step-by-step process of how the agent works
-5. **Tools & Integrations**: What tools, APIs, or external services it uses
-6. **Technical Specifications**: Architecture, data structures, patterns used
+1. **Agent Overview**: Name and description (only if explicitly defined)
+2. **Core Capabilities**: What the agent can actually do based on the code
+3. **Knowledge Sources**: What knowledge bases or documents it actually uses (only if present in code)
+4. **Workflow Process**: How the agent actually works (only if defined in code)
 
-Format the response as a comprehensive markdown document with clear sections and bullet points.
-Make sure to analyze the actual code structure, imports, functions, and patterns used.
+IMPORTANT RULES:
+- Only include information that is explicitly present in the code or conversation
+- Do NOT generate information about future integrations or capabilities
+- Do NOT include generic capabilities that aren't specifically implemented
+- Do NOT mention tools or integrations unless they are actually used in the code
+- Keep the summary concise and factual
+- If a section has no relevant information, omit it entirely
 
-Focus on:
-- What the agent actually does based on the code
-- How it processes information (workflows, pipelines)
-- What knowledge sources it accesses
-- What tools and integrations it uses
-- Technical architecture and patterns
+Focus on analyzing:
+- What the agent actually does based on the code structure
+- What resources it actually uses (RAG, LLM, etc.)
+- What functions and workflows are actually implemented
+- What knowledge domains are actually referenced
 
-Generate a professional, detailed markdown summary that would be suitable for documentation.
+Generate a brief, accurate summary that reflects the current state of the agent, not future possibilities.
 """
 
             # Create a request for the LLM
@@ -1175,33 +1177,36 @@ def _extract_summary_from_code_and_conversation(dana_code: str, conversation_tex
     if "finance" in solve_function_content.lower() or "money" in solve_function_content.lower():
         domain_capabilities.append("provides financial advice and guidance")
 
-    # Core capabilities section
+    # Core capabilities section - only include if actually present
     if capabilities or domain_capabilities:
         markdown_summary.append("\n## Core Capabilities")
         all_capabilities = capabilities + domain_capabilities
         for capability in all_capabilities:
             markdown_summary.append(f"- {capability.capitalize()}")
 
-    # Knowledge sources section
+    # Knowledge sources section - only include if actually present in code
     knowledge_sources = _extract_knowledge_domains_from_code(dana_code, conversation_text)
-    if knowledge_sources:
+    if knowledge_sources and any(source.strip() for source in knowledge_sources):
         markdown_summary.append("\n## Knowledge Sources")
         for source in knowledge_sources:
-            markdown_summary.append(f"- {source}")
+            if source.strip():  # Only include non-empty sources
+                markdown_summary.append(f"- {source}")
 
-    # Workflow section
+    # Workflow section - only include if actually defined
     workflow_steps = _extract_workflow_steps_from_code(dana_code, conversation_text)
-    if workflow_steps:
+    if workflow_steps and any(step.strip() for step in workflow_steps):
         markdown_summary.append("\n## Workflow Process")
         for i, step in enumerate(workflow_steps, 1):
-            markdown_summary.append(f"{i}. {step}")
+            if step.strip():  # Only include non-empty steps
+                markdown_summary.append(f"{i}. {step}")
 
-    # Tools section
+    # Tools section - only include if actually used in code
     tools = _extract_agent_tools_from_code(dana_code)
-    if tools:
+    if tools and any(tool.strip() for tool in tools):
         markdown_summary.append("\n## Tools & Integrations")
         for tool in tools:
-            markdown_summary.append(f"- {tool}")
+            if tool.strip():  # Only include non-empty tools
+                markdown_summary.append(f"- {tool}")
 
     # Technical specifications
     markdown_summary.append("\n## Technical Specifications")
@@ -1280,10 +1285,8 @@ def _extract_knowledge_domains_from_code(dana_code: str, conversation_text: str)
     if "sales" in code_content or "marketing" in code_content:
         domains.append("Sales and marketing assistance")
 
-    # Default general knowledge if no specific domains found
-    if not domains:
-        domains.append("General knowledge and reasoning")
-
+    # Only return domains if we actually found specific ones
+    # Don't add generic defaults that don't exist in the code
     return domains
 
 
@@ -1351,14 +1354,8 @@ def _extract_workflow_steps_from_code(dana_code: str, conversation_text: str) ->
         workflow.insert(-1, "2. Analyze financial situation and requirements")
         workflow.append("4. Provide personalized financial recommendations")
 
-    # Default workflow if nothing specific found
-    if len(workflow) <= 1:
-        workflow = [
-            "1. Receive user query or request",
-            "2. Apply reasoning to understand the context",
-            "3. Generate helpful response or guidance",
-        ]
-
+    # Only return workflow if we actually found specific steps
+    # Don't add generic defaults that don't exist in the code
     return workflow
 
 
@@ -1478,9 +1475,8 @@ def _extract_agent_tools_from_code(dana_code: str) -> list[str]:
         tools.append("Document parsing and analysis")
         tools.append("Content extraction")
 
-    # Always include basic capabilities
-    tools.extend(["Natural language processing", "Context understanding", "Response generation"])
-
+    # Only return tools that are actually present in the code
+    # Don't add generic capabilities that aren't specifically implemented
     return list(set(tools))  # Remove duplicates
 
 
@@ -1543,3 +1539,401 @@ def solve(basic_agent : BasicAgent, problem : str):
 # Use solve() in your application
 # example_input = "Hello, how can you help me?"
 # response = solve(BasicAgent(), example_input)'''
+
+
+async def generate_agent_files_from_prompt(
+    prompt: str,
+    messages: list[dict[str, Any]], 
+    agent_summary: dict[str, Any],
+    multi_file: bool = False
+) -> tuple[str, str | None, dict[str, Any] | None]:
+    """
+    Generate Dana agent files from a specific prompt, conversation messages, and agent summary.
+    
+    This function is designed for Phase 2 of the agent generation flow, where we have
+    a refined agent description and want to generate the actual .na files.
+    
+    Args:
+        prompt: Specific prompt for generating the agent files
+        messages: List of conversation messages with 'role' and 'content' fields
+        agent_summary: Dictionary containing agent description, capabilities, etc.
+        multi_file: Whether to generate multi-file structure
+        
+    Returns:
+        Tuple of (Generated Dana code as string, error message or None, multi-file project or None)
+    """
+    logger.info("Generating agent files from prompt for Phase 2")
+    
+    try:
+        # Check if mock mode is enabled
+        if os.environ.get("DANA_MOCK_AGENT_GENERATION", "").lower() == "true":
+            logger.info("Using mock agent generation mode for Phase 2")
+            return generate_mock_agent_code(messages, ""), None, None
+
+        # Get agent generator instance
+        generator = await get_agent_generator()
+        
+        # Check if LLM resource is available
+        if generator.llm_resource is None:
+            logger.warning("LLMResource is not available, using fallback template")
+            return CodeHandler.get_fallback_template(), None, None
+
+        # Check if LLM is properly initialized
+        if not hasattr(generator.llm_resource, "_is_available") or not generator.llm_resource._is_available:
+            logger.warning("LLMResource is not available, using fallback template")
+            return CodeHandler.get_fallback_template(), None, None
+
+        # Create enhanced prompt with context
+        enhanced_prompt = _create_phase_2_prompt(prompt, messages, agent_summary, multi_file)
+        print(f"Enhanced Phase 2 prompt: {enhanced_prompt}")
+        logger.debug(f"Enhanced Phase 2 prompt: {enhanced_prompt[:200]}...")
+
+        # Generate code using LLM
+        request = BaseRequest(arguments={"prompt": enhanced_prompt, "messages": [{"role": "user", "content": enhanced_prompt}]})
+        logger.info("Sending Phase 2 request to LLM...")
+
+        response = await generator.llm_resource.query(request)
+        logger.info(f"LLM response success: {response.success}")
+        print("--------------------------------")
+        print("LLM Success: ", response.success)
+        print(f"LLM response: {response}")
+        print(f"LLM response content: {response.content}")
+        print("--------------------------------")
+
+        if response.success:
+            generated_code = response.content.get("choices", "")[0].get("message", {}).get("content", "")
+            print("--------------------------------")
+            print("Generated code: ", generated_code)
+            print("--------------------------------")
+            if not generated_code:
+                # Try alternative response formats
+                if isinstance(response.content, str):
+                    generated_code = response.content
+                elif isinstance(response.content, dict):
+                    # Look for common response fields
+                    for key in ["content", "text", "message", "result"]:
+                        if key in response.content:
+                            generated_code = response.content[key]
+                            break
+
+            logger.info(f"Generated Phase 2 code length: {len(generated_code)}")
+
+            # Handle multi-file response (always the case)
+            logger.info("Parsing multi-file response...")
+            multi_file_project = CodeHandler.parse_multi_file_response(generated_code)
+            logger.info(f"Parsed multi-file project: {multi_file_project}")
+            
+            # Extract main file content for backward compatibility
+            main_file_content = ""
+            for file_info in multi_file_project["files"]:
+                if file_info["filename"] == multi_file_project["main_file"]:
+                    main_file_content = file_info["content"]
+                    break
+            
+            print("--------------------------------")
+            print("Multi-file project: ", multi_file_project)
+            print("--------------------------------")
+
+            if main_file_content:
+                print("--------------------------------")
+                print("Main file content: ", main_file_content)
+                print("--------------------------------")
+                logger.info(f"Returning multi-file project with {len(multi_file_project['files'])} files")
+                return main_file_content, None, multi_file_project
+            else:
+                logger.warning("No main file found in multi-file response")
+                print("--------------------------------")
+                print("No main file found in multi-file response")
+                print("--------------------------------")
+                return CodeHandler.get_fallback_template(), None, None
+        else:
+            logger.error(f"LLM generation failed for Phase 2: {response.error}")
+            print("--------------------------------")
+            print("LLM generation failed for Phase 2: ", response.error)
+            print("--------------------------------")
+            return CodeHandler.get_fallback_template(), None, None
+
+    except Exception as e:
+        logger.error(f"Error generating Phase 2 agent code: {e}")
+        logger.exception(e)
+        return CodeHandler.get_fallback_template(), str(e), None
+
+
+def _create_phase_2_prompt(
+    prompt: str, 
+    messages: list[dict[str, Any]], 
+    agent_summary: dict[str, Any], 
+    multi_file: bool
+) -> str:
+    """
+    Create an enhanced prompt for Phase 2 agent generation.
+    
+    Args:
+        prompt: The specific prompt for generating agent files
+        messages: Conversation messages for context
+        agent_summary: Agent description and capabilities
+        multi_file: Whether to generate multi-file structure
+        
+    Returns:
+        Enhanced prompt string
+    """
+    # Extract conversation context
+    conversation_text = "\n".join([f"{msg.get('role', '')}: {msg.get('content', '')}" for msg in messages])
+    
+    # Extract agent information
+    agent_name = agent_summary.get("name", "Custom Agent")
+    agent_description = agent_summary.get("description", "A specialized agent for your needs")
+    agent_summary_description = agent_summary.get("summary")
+    capabilities = agent_summary.get("capabilities", {})
+    knowledge_domains = capabilities.get("knowledge", [])
+    workflow_steps = capabilities.get("workflow", [])
+    tools = capabilities.get("tools", [])
+
+    agent_class = agent_name.replace(" ", "")
+    # Try to get docs files from agent_summary if available
+    docs_files = agent_summary.get("docs_files") or agent_summary.get("knowledge_files") or []
+    if not isinstance(docs_files, list):
+        docs_files = []
+    
+    # Create context section
+    context_section = f"""
+AGENT SUMMARY:
+- Name: {agent_name}
+- Description: {agent_description}
+- Knowledge Domains: {', '.join(knowledge_domains) if knowledge_domains else 'None specified'}
+- Workflow Steps: {', '.join(workflow_steps) if workflow_steps else 'None specified'}
+- Tools: {', '.join(tools) if tools else 'None specified'}
+- Summary: {agent_summary_description}
+
+CONVERSATION CONTEXT:
+{conversation_text}
+
+SPECIFIC REQUIREMENTS:
+{prompt}
+"""
+    
+    # Sample file templates (rag_resource moved to knowledges.na)
+    main_na = f'''
+from workflows import workflow
+from common import RetrievalPackage
+
+agent {agent_class}:
+    name: str = "{agent_name}"
+    description: str = "{agent_description}"
+
+def solve(self : {agent_class}, query: str) -> str:
+    package = RetrievalPackage(query=query)
+    return workflow(package)
+
+this_agent = {agent_class}()
+'''
+
+    methods_na = '''
+from knowledges import rag_resource
+from common import QUERY_GENERATION_PROMPT
+from common import QUERY_DECISION_PROMPT
+from common import ANSWER_PROMPT
+from common import RetrievalPackage
+
+def search_document(package: RetrievalPackage) -> RetrievalPackage:
+    query = package.query
+    if package.refined_query != "":
+        query = package.refined_query
+    package.retrieval_result = str(rag_resource.query(query))
+    return package
+
+def refine_query(package: RetrievalPackage) -> RetrievalPackage:
+    if package.should_use_rag:
+        package.refined_query = reason(QUERY_GENERATION_PROMPT.format(user_input=package.query))
+    return package
+
+def should_use_rag(package: RetrievalPackage) -> RetrievalPackage:
+    package.should_use_rag = reason(QUERY_DECISION_PROMPT.format(user_input=package.query))
+    return package
+
+def get_answer(package: RetrievalPackage) -> str:
+    prompt = ANSWER_PROMPT.format(user_input=package.query, retrieved_docs=package.retrieval_result)
+    return reason(prompt)
+'''
+
+    workflows_na = '''
+from methods import should_use_rag
+from methods import refine_query
+from methods import search_document
+from methods import get_answer
+
+workflow = should_use_rag | refine_query | search_document | get_answer
+'''
+
+    # Build knowledges.na with rag_resource and comments about docs files
+    knowledges_na_lines = [
+        '"""',
+        'Knowledge sources for this agent. The following files are available in the ./docs folder:',
+    ]
+    if docs_files:
+        for f in docs_files:
+            knowledges_na_lines.append(f'- {f}')
+    else:
+        knowledges_na_lines.append('- (No files currently listed. Add files to ./docs to make them available.)')
+    knowledges_na_lines.append('"""\n')
+    knowledges_na_lines.append('rag_resource = use("rag", sources=["./docs"])')
+    knowledges_na = "\n".join(knowledges_na_lines)
+
+    tools_na = ''  # No rag_resource here; left intentionally empty or for other tools
+
+    common_na = '''
+QUERY_GENERATION_PROMPT = """
+You are **QuerySmith**, an expert search-query engineer for a Retrieval-Augmented Generation (RAG) pipeline.
+
+**Task**  
+Given the USER_REQUEST below, craft **one** concise query string (≤ 12 tokens) that will maximize recall of the most semantically relevant documents.
+
+**Process**  
+1. **Extract Core Concepts** – identify the main entities, actions, and qualifiers.  
+2. **Select High-Signal Terms** – keep nouns/verbs with the strongest discriminative power; drop stop-words and vague modifiers.  
+3. **Synonym Check** – if a well-known synonym outperforms the original term in typical search engines, substitute it.  
+4. **Context Packing** – arrange terms from most to least important; group multi-word entities in quotes (“like this”).  
+5. **Final Polish** – ensure the string is lowercase, free of punctuation except quotes, and contains **no** explanatory text.
+
+**Output Format**  
+Return **only** the final query string on a single line. No markdown, labels, or additional commentary.
+
+---
+
+USER_REQUEST: 
+{user_input}
+"""
+
+QUERY_DECISION_PROMPT = """
+You are **RetrievalGate**, a binary decision agent guarding a Retrieval-Augmented Generation (RAG) pipeline.
+
+Task  
+Analyze the USER_REQUEST below and decide whether external document retrieval is required to answer it accurately.
+
+Decision Rules  
+1. External-Knowledge Need – Does the request demand up-to-date facts, statistics, citations, or niche info unlikely to be in the model's parameters?  
+2. Internal Sufficiency – Could the model satisfy the request with its own reasoning, creativity, or general knowledge?  
+3. Explicit User Cue – If the user explicitly asks to "look up," "cite," "fetch," "search," or mentions a source/corpus, retrieval is required.  
+4. Ambiguity Buffer – When uncertain, default to retrieval (erring on completeness).
+
+Output Format  
+Return **only** one lowercase Boolean literal on a single line:  
+- `true`  → retrieval is needed  
+- `false` → retrieval is not needed
+
+---
+
+USER_REQUEST: 
+{user_input}
+"""
+
+ANSWER_PROMPT = """
+You are **RAGResponder**, an expert answer-composer for a Retrieval-Augmented Generation pipeline.
+
+────────────────────────────────────────────────────────────
+INPUTS
+• USER_REQUEST: The user's natural-language question.  
+• RETRIEVED_DOCS: *Optional*— multiple objects, each with:
+    - metadata
+    - content
+  If no external retrieval was performed, RETRIEVED_DOCS will be empty.
+
+────────────────────────────────────────────────────────────
+TASK  
+Produce a single, well-structured answer that satisfies USER_REQUEST.
+
+────────────────────────────────────────────────────────────
+GUIDELINES  
+1. **Grounding Strategy**  
+   • If RETRIEVED_DOCS is **non-empty**, read the top-scoring snippets first.  
+   • Extract only the facts truly relevant to the question.  
+   • Integrate those facts into your reasoning and cite them inline as **[doc_id]**.
+
+2. **Fallback Strategy**  
+   • If RETRIEVED_DOCS is **empty**, rely on your internal knowledge.  
+   • Answer confidently but avoid invented specifics (no hallucinations).
+
+3. **Citation Rules**  
+   • Cite **every** external fact or quotation with its matching [doc_id].  
+   • Do **not** cite when drawing solely from internal knowledge.  
+   • Never reference retrieval *scores* or expose raw snippets.
+
+4. **Answer Quality**  
+   • Prioritize clarity, accuracy, and completeness.  
+   • Use short paragraphs, bullets, or headings if it helps readability.  
+   • Maintain a neutral, informative tone unless the user requests otherwise.
+
+────────────────────────────────────────────────────────────
+OUTPUT FORMAT  
+Return **only** the answer text—no markdown fences, JSON, or additional labels.
+Citations must appear inline in square brackets, e.g.:
+    Solar power capacity grew by 24 % in 2024 [energy_outlook_2025].
+
+────────────────────────────────────────────────────────────
+USER_REQUEST: 
+{user_input}
+RETRIEVED_DOCS: 
+{retrieved_docs}
+"""
+
+struct RetrievalPackage:
+    query: str
+    refined_query: str = ""
+    should_use_rag: bool = False
+    retrieval_result: str = "<empty>"
+'''
+
+    # Prompt assembly
+    prompt = f"""
+You are an expert Dana language developer. Based on the provided agent summary, conversation context, and specific requirements, generate a complete multi-file Dana agent project.
+
+{context_section}
+
+IMPORTANT: You MUST generate EXACTLY 6 files: main.na, workflows.na, methods.na, common.na, knowledges.na, and tools.na. Even if some files only contain comments, all 6 files must be present.
+
+The main agent declaration must use the exact name: {agent_name} (do not invent a new name).
+
+Use the following as templates for each file. Adapt the agent/function names and details to match the agent description and requirements, but follow the structure and style shown. The rag_resource must be defined in knowledges.na, not tools.na.
+
+---
+main.na (example):
+{main_na}
+---
+methods.na (example):
+{methods_na}
+---
+workflows.na (example):
+{workflows_na}
+---
+knowledges.na (example):
+{knowledges_na}
+---
+tools.na (example):
+{tools_na}
+---
+common.na (example):
+{common_na}
+---
+
+RESPONSE FORMAT:
+You MUST return a valid JSON object with the following structure:
+{{
+  "main.na": "content of main.na file",
+  "workflows.na": "content of workflows.na file", 
+  "methods.na": "content of methods.na file",
+  "common.na": "content of common.na file",
+  "knowledges.na": "content of knowledges.na file",
+  "tools.na": "content of tools.na file"
+}}
+
+IMPORTANT: 
+- Generate ONLY a valid JSON object - NO markdown code blocks, NO ```json, NO explanatory text!
+- The JSON values must contain pure Dana code content for each file
+- Ensure all string values are properly escaped (quotes, newlines, etc.)
+- All 6 files must be present in the JSON object
+
+Use the agent summary and conversation context to ensure the generated code matches the intended functionality and requirements.
+
+Generate only the JSON object, no explanations or markdown formatting.
+"""
+    return prompt

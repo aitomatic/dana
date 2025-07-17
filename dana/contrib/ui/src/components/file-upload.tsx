@@ -13,28 +13,44 @@ interface UploadedFile {
   status: 'uploading' | 'success' | 'error';
   path?: string;
   error?: string;
+  generatedResponse?: string;
+  updatedCapabilities?: any;
+  readyForCodeGeneration?: boolean;
 }
 
 interface FileUploadProps {
   agentId?: string;
-  agentFolder?: string;
   onFilesUploaded?: (files: UploadedFile[]) => void;
   className?: string;
   compact?: boolean;
+  conversationContext?: Array<{ role: string; content: string }>;
+  agentInfo?: any;
 }
 
-export function FileUpload({ 
-  agentId, 
-  agentFolder, 
-  onFilesUploaded, 
+export function FileUpload({
+  agentId,
+  onFilesUploaded,
   className = '',
-  compact = false 
+  compact = false,
+  conversationContext,
+  agentInfo
 }: FileUploadProps) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const uploadFile = useCallback(async (file: File): Promise<UploadedFile> => {
+    if (agentInfo && !agentInfo.folder_path) {
+      toast.error('Agent folder path is missing. Please complete agent creation before uploading knowledge files.');
+      return {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        status: 'error',
+        error: 'Missing agent folder path',
+      };
+    }
     const uploadedFile: UploadedFile = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       name: file.name,
@@ -48,14 +64,33 @@ export function FileUpload({
       const formData = new FormData();
       formData.append('file', file);
       if (agentId) formData.append('agent_id', agentId);
-      if (agentFolder) formData.append('agent_folder', agentFolder);
+      // Add conversation context and agent info for regeneration
+      if (conversationContext) {
+        formData.append('conversation_context', JSON.stringify(conversationContext));
+      }
+      if (agentInfo) {
+        formData.append('agent_info', JSON.stringify(agentInfo));
+      }
 
       // Upload file to backend
       const response = await apiService.uploadKnowledgeFile(formData);
-      
+
       if (response.success) {
         uploadedFile.status = 'success';
         uploadedFile.path = response.file_path;
+        uploadedFile.generatedResponse = response.generated_response;
+        uploadedFile.updatedCapabilities = response.updated_capabilities;
+        uploadedFile.readyForCodeGeneration = response.ready_for_code_generation;
+
+        // Debug logging
+        console.log('📁 File Upload Response:', {
+          filename: file.name,
+          success: response.success,
+          ready_for_code_generation: response.ready_for_code_generation,
+          updated_capabilities: response.updated_capabilities,
+          generated_response: response.generated_response
+        });
+
         toast.success(`Uploaded ${file.name} successfully`);
       } else {
         uploadedFile.status = 'error';
@@ -69,13 +104,13 @@ export function FileUpload({
     }
 
     return uploadedFile;
-  }, [agentId, agentFolder]);
+  }, [agentId, conversationContext, agentInfo]);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
 
     setIsUploading(true);
-    
+
     // Create initial file entries
     const initialFiles: UploadedFile[] = acceptedFiles.map(file => ({
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
@@ -90,7 +125,7 @@ export function FileUpload({
     // Upload files one by one
     try {
       const results = await Promise.all(acceptedFiles.map(uploadFile));
-      
+
       // Update the uploaded files with results
       setUploadedFiles(prev => {
         const updated = [...prev];
@@ -156,11 +191,10 @@ export function FileUpload({
       <div className={`${className}`}>
         <div
           {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
-            isDragActive
-              ? 'border-blue-400 bg-blue-50'
-              : 'border-gray-300 hover:border-gray-400'
-          }`}
+          className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${isDragActive
+            ? 'border-blue-400 bg-blue-50'
+            : 'border-gray-300 hover:border-gray-400'
+            }`}
         >
           <input {...getInputProps()} />
           <Upload className="w-6 h-6 mx-auto mb-2 text-gray-400" />
@@ -203,11 +237,10 @@ export function FileUpload({
     <div className={`${className}`}>
       <div
         {...getRootProps()}
-        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-          isDragActive
-            ? 'border-blue-400 bg-blue-50'
-            : 'border-gray-300 hover:border-gray-400'
-        }`}
+        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${isDragActive
+          ? 'border-blue-400 bg-blue-50'
+          : 'border-gray-300 hover:border-gray-400'
+          }`}
       >
         <input {...getInputProps()} />
         <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
@@ -225,7 +258,7 @@ export function FileUpload({
           variant="outline"
           className="mt-4"
           onClick={() => fileInputRef.current?.click()}
-          disabled={isUploading}
+          disabled={isUploading || (agentInfo && !agentInfo.folder_path)}
         >
           {isUploading ? 'Uploading...' : 'Browse Files'}
         </Button>

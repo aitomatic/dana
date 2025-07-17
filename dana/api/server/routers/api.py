@@ -2,8 +2,18 @@ import io
 import os
 import tempfile
 import zipfile
+import shutil
+import platform
+import subprocess
+import urllib.parse
+import glob
 from pathlib import Path
 import json
+import re
+import uuid
+import time
+from datetime import UTC, datetime
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
@@ -12,7 +22,7 @@ from sqlalchemy.orm import Session
 from dana.core.lang.dana_sandbox import DanaSandbox
 
 from .. import db, schemas, services
-from ..agent_generator import analyze_agent_capabilities, generate_agent_code_from_messages
+from ..agent_generator import analyze_agent_capabilities, generate_agent_code_from_messages, analyze_conversation_completeness
 from ..schemas import (
     AgentDeployRequest,
     AgentDeployResponse,
@@ -27,6 +37,11 @@ from ..schemas import (
     MultiFileProject,
     RunNAFileRequest,
     RunNAFileResponse,
+    AgentDescriptionRequest,
+    AgentDescriptionResponse,
+    AgentCodeGenerationRequest,
+    AgentCapabilities,
+    DanaFile,
 )
 from ..services import run_na_file_service
 
@@ -63,8 +78,6 @@ async def deploy_agent(request: AgentDeployRequest, db: Session = Depends(db.get
     4. Creates database record with folder path
     5. Returns agent info + file paths
     """
-    import logging
-    import re
 
     logger = logging.getLogger(__name__)
 
@@ -166,228 +179,738 @@ def run_na_file(request: RunNAFileRequest):
 
 
 @router.post("/generate", response_model=AgentGenerationResponse)
-async def generate_agent(request: AgentGenerationRequest):
+async def generate_agent(request: AgentGenerationRequest, db: Session = Depends(db.get_db)):
     """
     Generate Dana agent code from user conversation messages.
-
-    This endpoint takes a list of conversation messages and generates
-    appropriate Dana code for creating an agent based on the user's requirements.
+    
+    This endpoint now supports two-phase generation:
+    - Phase 1 (description): Focus on agent description refinement
+    - Phase 2 (code_generation): Generate actual .na files
+    
+    Args:
+        request: AgentGenerationRequest with phase and messages
+        db: Database session for storing agent data
+    
+    Returns:
+        AgentGenerationResponse with phase-appropriate data
     """
-    import logging
 
     logger = logging.getLogger(__name__)
 
     try:
-        logger.info(f"Received agent generation request with {len(request.messages)} messages")
+        logger.info(f"Received agent generation request with {len(request.messages)} messages, phase: {request.phase}")
 
         # Convert Pydantic models to dictionaries
         messages = [{"role": msg.role, "content": msg.content} for msg in request.messages]
         logger.info(f"Converted messages: {messages}")
 
-        # Generate Dana code first
-        logger.info("Calling generate_agent_code_from_messages...")
-        dana_code, syntax_error, conversation_analysis, multi_file_project = await generate_agent_code_from_messages(
-            messages, request.current_code or "", request.multi_file
-        )
-        logger.info(f"Generated Dana code length: {len(dana_code)}")
-        logger.debug(f"Generated Dana code: {dana_code[:500]}...")
-
-        # Log multi-file info
-        if multi_file_project:
-            logger.info(f"Generated multi-file project with {len(multi_file_project['files'])} files")
+        if request.phase == "description":
+            # Phase 1: Focus on description refinement
+            return await _handle_phase_1_generation(request, messages, db)
+        elif request.phase == "code_generation":
+            # Phase 2: Generate actual code
+            return await _handle_phase_2_generation(request, messages, db, logger)
         else:
-            logger.info("Generated single-file agent")
-
-        if syntax_error:
-            logger.error(f"Syntax error in generated code: {syntax_error}")
-            return AgentGenerationResponse(success=False, dana_code="", error=syntax_error)
-
-        # Extract agent name and description from the generated code
-        agent_name = None
-        agent_description = None
-
-        lines = dana_code.split("\n")
-        for i, line in enumerate(lines):
-            # Look for agent keyword syntax: agent AgentName:
-            if line.strip().startswith("agent ") and line.strip().endswith(":"):
-                # Next few lines should contain name and description
-                for j in range(i + 1, min(i + 5, len(lines))):
-                    next_line = lines[j].strip()
-                    if "name : str =" in next_line:
-                        agent_name = next_line.split("=")[1].strip().strip('"')
-                        logger.info(f"Extracted agent name: {agent_name}")
-                    elif "description : str =" in next_line:
-                        agent_description = next_line.split("=")[1].strip().strip('"')
-                        logger.info(f"Extracted agent description: {agent_description}")
-                    elif next_line.startswith("#"):  # Skip comments
-                        continue
-                    elif next_line == "":  # Skip empty lines
-                        continue
-                    elif not next_line.startswith("    "):  # Stop at non-indented lines
-                        break
-                break
-            # Fallback: also check for old system: syntax
-            elif "system:agent_name" in line:
-                agent_name = line.split("=")[1].strip().strip('"')
-                logger.info(f"Extracted agent name (old format): {agent_name}")
-            elif "system:agent_description" in line:
-                agent_description = line.split("=")[1].strip().strip('"')
-                logger.info(f"Extracted agent description (old format): {agent_description}")
-
-        # Analyze agent capabilities for better UI experience
-        capabilities = None
-        try:
-            logger.info("Analyzing agent capabilities...")
-            capabilities_data = await analyze_agent_capabilities(dana_code, messages, multi_file_project)
-            from ..schemas import AgentCapabilities
-
-            capabilities = AgentCapabilities(
-                summary=capabilities_data.get("summary"),
-                knowledge=capabilities_data.get("knowledge", []),
-                workflow=capabilities_data.get("workflow", []),
-                tools=capabilities_data.get("tools", []),
-            )
-            logger.info(f"Generated capabilities summary: {capabilities.summary}")
-        except Exception as e:
-            logger.warning(f"Failed to analyze capabilities (non-critical): {e}")
-            capabilities = None
-
-        # Auto-store generated agents now that we have the names
-        auto_stored_files = []
-        if multi_file_project:
-            try:
-                logger.info("Auto-storing multi-file project")
-                auto_stored_files = await _auto_store_multi_file_agent(
-                    agent_name or "Generated_Agent", agent_description or "Auto-generated agent", multi_file_project
-                )
-                logger.info(f"Auto-stored files: {auto_stored_files}")
-            except Exception as e:
-                logger.warning(f"Auto-storage failed (non-critical): {e}", exc_info=True)
-                # Continue with response even if auto-storage fails
-        else:
-            # Auto-store single-file agents too
-            try:
-                logger.info("Auto-storing single-file agent")
-                auto_stored_files = await _auto_store_single_file_agent(
-                    agent_name or "Generated_Agent", agent_description or "Auto-generated agent", dana_code
-                )
-                logger.info(f"Auto-stored single-file: {auto_stored_files}")
-            except Exception as e:
-                logger.warning(f"Single-file auto-storage failed (non-critical): {e}", exc_info=True)
-
-        # Check if we need more information and include follow-up questions
-        needs_more_info = conversation_analysis.get("needs_more_info", False)
-        follow_up_message = conversation_analysis.get("follow_up_message") if needs_more_info else None
-        suggested_questions = conversation_analysis.get("suggested_questions", []) if needs_more_info else None
-
-        # Create multi-file project object if available
-        multi_file_project_obj = None
-        if multi_file_project:
-            from ..schemas import DanaFile, MultiFileProject
-
-            dana_files = [
-                DanaFile(
-                    filename=file_info["filename"],
-                    content=file_info["content"],
-                    file_type=file_info["file_type"],
-                    description=file_info.get("description"),
-                    dependencies=file_info.get("dependencies", []),
-                )
-                for file_info in multi_file_project["files"]
-            ]
-
-            multi_file_project_obj = MultiFileProject(
-                name=multi_file_project["name"],
-                description=multi_file_project["description"],
-                files=dana_files,
-                main_file=multi_file_project["main_file"],
-                structure_type=multi_file_project.get("structure_type", "complex"),
-            )
-
-        # Build minimal response
-        response_data = {
-            "success": syntax_error is None,
-            "dana_code": dana_code,
-            "error": syntax_error,
-            "agent_name": agent_name,
-            "agent_description": agent_description,
-            "capabilities": capabilities,
-            "auto_stored_files": auto_stored_files if auto_stored_files else None,
-            "multi_file_project": multi_file_project_obj,
-        }
-
-        # Extract agent_id and agent_folder from auto-stored files
-        agent_id = None
-        agent_folder = None
-
-        if auto_stored_files:
-            logger.info(f"Auto-stored files: {auto_stored_files}")
-
-            # Look for metadata.json file
-            metadata_file_path = None
-            for f in auto_stored_files:
-                if f.endswith("metadata.json") and os.path.exists(f):
-                    metadata_file_path = f
-                    break
-
-            if metadata_file_path:
-                try:
-                    logger.info(f"Reading metadata from: {metadata_file_path}")
-                    with open(metadata_file_path, "r", encoding="utf-8") as meta_f:
-                        meta = json.load(meta_f)
-                        agent_folder = meta.get("folder_path")
-                        agent_id = meta.get("agent_id")
-
-                        logger.info(f"Extracted from metadata - agent_folder: {agent_folder}, agent_id: {agent_id}")
-
-                        # If no agent_id in metadata, try to extract from folder path pattern
-                        if not agent_id and agent_folder:
-                            import re
-
-                            # Try pattern for deployed agents: agent_123_name
-                            m = re.search(r"agent_(\d+)_", str(agent_folder))
-                            if m:
-                                agent_id = int(m.group(1))
-                                logger.info(f"Extracted agent_id from folder pattern: {agent_id}")
-
-                except Exception as e:
-                    logger.error(f"Failed to parse metadata.json at {metadata_file_path}: {e}")
-            else:
-                # Fallback: try to get folder from the first non-metadata file
-                for f in auto_stored_files:
-                    if not f.endswith("metadata.json") and os.path.exists(f):
-                        # Get the parent directory of the file
-                        file_path = Path(f)
-                        agent_folder = str(file_path.parent)
-                        logger.info(f"Fallback: extracted agent_folder from file path: {agent_folder}")
-                        break
-
-        # Ensure agent_folder is an absolute path
-        if agent_folder and not os.path.isabs(agent_folder):
-            agent_folder = str(Path.cwd() / agent_folder)
-            logger.info(f"Converted to absolute path: {agent_folder}")
-
-        response_data["agent_id"] = agent_id
-        response_data["agent_folder"] = agent_folder
-
-        logger.info(f"Final response - agent_id: {agent_id}, agent_folder: {agent_folder}")
-
-        # Only include conversation guidance if needed
-        if needs_more_info:
-            response_data.update(
-                {"needs_more_info": True, "follow_up_message": follow_up_message, "suggested_questions": suggested_questions}
-            )
-
-        response = AgentGenerationResponse(**response_data)
-
-        logger.info(
-            f"Returning response with success={response.success}, code_length={len(response.dana_code)}, needs_more_info={needs_more_info}"
-        )
-        return response
+            raise HTTPException(status_code=400, detail=f"Invalid phase: {request.phase}. Must be 'description' or 'code_generation'")
 
     except Exception as e:
         logger.error(f"Error in generate_agent endpoint: {e}", exc_info=True)
         return AgentGenerationResponse(success=False, dana_code="", error=f"Failed to generate agent code: {str(e)}")
+
+
+async def _handle_phase_1_generation(
+    request: AgentGenerationRequest, 
+    messages: list[dict], 
+    db: Session, 
+) -> AgentGenerationResponse:
+    """
+    Handle Phase 1 generation: Focus on agent description refinement
+    
+    Note: In Phase 1, we don't store the agent to the database yet.
+    We just return the agent object to the client, and the client will
+    send the full agent object in the next chat message.
+    """
+    
+    logger = logging.getLogger(__name__)
+    logger.info("Processing Phase 1: Agent description refinement")
+    
+    # Use AgentManager for consistent handling
+    from ..agent_manager import get_agent_manager
+    agent_manager = get_agent_manager()
+    
+    # Convert messages to the format expected by AgentManager
+    messages_dict = [{"role": msg.role, "content": msg.content} for msg in request.messages]
+    
+    # Create agent description using AgentManager
+    result = await agent_manager.create_agent_description(
+        messages=messages_dict,
+        agent_id=request.agent_id,
+        existing_agent_data=request.agent_data
+    )
+    
+    # Convert result to AgentGenerationResponse
+    return AgentGenerationResponse(
+        success=result["success"],
+        dana_code=None,  # No code in Phase 1
+        agent_name=result["agent_name"],
+        agent_description=result["agent_description"],
+        capabilities=result["capabilities"],
+        agent_id=result["agent_id"],
+        agent_folder=result["agent_folder"],
+        phase="description",
+        ready_for_code_generation=result["ready_for_code_generation"],
+        needs_more_info=result["needs_more_info"],
+        follow_up_message=result["follow_up_message"],
+        suggested_questions=result["suggested_questions"],
+        error=None,
+        temp_agent_data=result["agent_metadata"]
+    )
+
+
+async def _handle_phase_2_generation(
+    request: AgentGenerationRequest, 
+    messages: list[dict], 
+    db: Session, 
+    logger: logging.Logger
+) -> AgentGenerationResponse:
+    """
+    Handle Phase 2 generation: Generate actual .na files and store in Phase 1 folder
+    
+    Note: In Phase 2, we don't touch the database yet. We just generate the .na files
+    and store them in the same folder that was created in Phase 1.
+    """
+    logger.info("Processing Phase 2: Code generation (no database operations)")
+    
+    # Get agent data from client (no database operations in Phase 2)
+    agent_name = None
+    agent_description = None
+    conversation_context = []
+    agent_folder = None
+    agent_id = None
+    
+    if request.agent_data:
+        agent_name = request.agent_data.get("name", "Custom Agent")
+        agent_description = request.agent_data.get("description", "A specialized agent for your needs")
+        conversation_context = request.agent_data.get("generation_metadata", {}).get("conversation_context", [])
+        agent_id = request.agent_data.get("id")
+        agent_folder = request.agent_data.get("folder_path")
+        logger.info(f"Using agent data from client: {agent_name}")
+    else:
+        raise HTTPException(status_code=400, detail="agent_data must be provided for Phase 2 generation")
+    
+    # Combine conversation context with new messages
+    all_messages = conversation_context + messages
+    
+    # Generate Dana code
+    logger.info("Calling generate_agent_code_from_messages...")
+    dana_code, syntax_error, conversation_analysis, multi_file_project = await generate_agent_code_from_messages(
+        all_messages, request.current_code or "", True
+    )
+    logger.info(f"Generated Dana code length: {len(dana_code)}")
+    
+    if syntax_error:
+        logger.error(f"Syntax error in generated code: {syntax_error}")
+        return AgentGenerationResponse(success=False, dana_code="", error=syntax_error)
+    
+    # Extract agent name and description from the generated code
+    extracted_name, extracted_description = _extract_agent_info_from_code(dana_code, logger)
+    
+    # Use extracted info or fall back to existing info
+    final_agent_name = extracted_name or agent_name
+    final_agent_description = extracted_description or agent_description
+    
+    # Store generated files in the Phase 1 folder (no database operations)
+    stored_files = []
+    if agent_folder:
+        try:
+            if multi_file_project:
+                logger.info(f"Storing multi-file project in Phase 1 folder: {agent_folder}")
+                stored_files = await _store_multi_file_in_phase1_folder(
+                    agent_folder, final_agent_name, final_agent_description, multi_file_project
+                )
+            else:
+                logger.info(f"Storing single-file agent in Phase 1 folder: {agent_folder}")
+                stored_files = await _store_single_file_in_phase1_folder(
+                    agent_folder, final_agent_name, final_agent_description, dana_code
+                )
+            logger.info(f"Stored files in Phase 1 folder: {stored_files}")
+        except Exception as e:
+            logger.error(f"Failed to store files in Phase 1 folder: {e}", exc_info=True)
+            return AgentGenerationResponse(success=False, dana_code="", error=f"Failed to store files: {str(e)}")
+    else:
+        logger.warning("No agent folder provided, cannot store files")
+    
+    # Analyze agent capabilities
+    capabilities = None
+    try:
+        logger.info("Analyzing agent capabilities...")
+        capabilities_data = await analyze_agent_capabilities(dana_code, all_messages, multi_file_project)
+        capabilities = AgentCapabilities(
+            summary=capabilities_data.get("summary"),
+            knowledge=capabilities_data.get("knowledge", []),
+            workflow=capabilities_data.get("workflow", []),
+            tools=capabilities_data.get("tools", []),
+        )
+        logger.info(f"Generated capabilities summary: {capabilities.summary}")
+    except Exception as e:
+        logger.warning(f"Failed to analyze capabilities (non-critical): {e}")
+        capabilities = None
+    
+    # Create multi-file project object if available
+    multi_file_project_obj = None
+    if multi_file_project:
+        dana_files = [
+            DanaFile(
+                filename=file_info["filename"],
+                content=file_info["content"],
+                file_type=file_info["file_type"],
+                description=file_info.get("description"),
+                dependencies=file_info.get("dependencies", []),
+            )
+            for file_info in multi_file_project["files"]
+        ]
+        multi_file_project_obj = MultiFileProject(
+            name=multi_file_project["name"],
+            description=multi_file_project["description"],
+            files=dana_files,
+            main_file=multi_file_project["main_file"],
+            structure_type=multi_file_project.get("structure_type", "complex"),
+        )
+    
+    return AgentGenerationResponse(
+        success=True,
+        dana_code=dana_code,
+        agent_name=final_agent_name,
+        agent_description=final_agent_description,
+        capabilities=capabilities,
+        auto_stored_files=stored_files if stored_files else None,
+        multi_file_project=multi_file_project_obj,
+        agent_id=agent_id,
+        agent_folder=agent_folder,
+        phase="code_generated",
+        ready_for_code_generation=True,
+        error=None
+    )
+
+
+async def _extract_agent_requirements(messages: list[dict]) -> dict:
+    """
+    Extract agent requirements from conversation messages using LLM for better alignment
+    """
+    logger = logging.getLogger(__name__)
+    
+    # Default requirements
+    requirements = {
+        "name": "Custom Agent",
+        "description": "A specialized agent for your needs",
+        "capabilities": [],
+        "knowledge_domains": [],
+        "workflows": [],
+        "tools": [],
+        "is_complete": False
+    }
+    
+    try:
+        # Try to use LLM for intelligent extraction
+        from dana.common.resource.llm.llm_resource import LLMResource
+        from dana.common.types import BaseRequest
+
+        # Create LLM resource
+        llm_config = {"model": "gpt-4o", "temperature": 0.3, "max_tokens": 800}
+        llm = LLMResource(
+            name="agent_requirements_extractor", 
+            description="LLM for extracting agent requirements from conversation", 
+            config=llm_config
+        )
+
+        # Initialize the LLM resource
+        await llm.initialize()
+
+        # Check if LLM is available
+        if not hasattr(llm, "_is_available") or not llm._is_available:
+            logger.warning("LLM resource is not available, falling back to regex extraction")
+            raise Exception("LLM not available")
+
+        # Create conversation text
+        conversation_text = "\n".join([f"{msg.get('role', '')}: {msg.get('content', '')}" for msg in messages])
+
+        # Create prompt for intelligent extraction
+        prompt = f"""
+You are an expert at analyzing conversations to extract agent requirements. Based on the conversation below, extract the agent name and description that best aligns with what the user wants.
+
+Conversation:
+{conversation_text}
+
+Please extract:
+1. **Agent Name**: A clear, descriptive name that reflects what the agent does (e.g., "Data Analysis Agent", "Customer Support Bot", "Code Review Assistant")
+2. **Agent Description**: A concise description (1-2 sentences) that explains what the agent does and its main purpose
+
+Guidelines:
+- The name should be specific and descriptive, not generic like "Custom Agent"
+- The description should capture the essence of what the user wants the agent to do
+- If the user mentions specific domains, tools, or workflows, include those in the description
+- Keep the description focused and actionable
+- If the user hasn't provided enough information, use reasonable defaults but make them more specific than "Custom Agent"
+
+Respond in this exact JSON format:
+{{
+    "name": "Specific Agent Name",
+    "description": "Clear description of what the agent does and its purpose"
+}}
+
+Only return the JSON, no additional text or explanations.
+"""
+
+        # Create request for LLM
+        request = BaseRequest(arguments={"prompt": prompt, "messages": [{"role": "user", "content": prompt}]})
+
+        result = await llm.query(request)
+
+        if result and result.success:
+            # Extract content from response
+            response_text = ""
+            if hasattr(result, "content") and result.content:
+                if isinstance(result.content, dict):
+                    if "choices" in result.content:
+                        response_text = result.content["choices"][0]["message"]["content"]
+                    elif "response" in result.content:
+                        response_text = result.content["response"]
+                    elif "content" in result.content:
+                        response_text = result.content["content"]
+                elif isinstance(result.content, str):
+                    response_text = result.content
+
+            if response_text:
+                # Try to parse JSON response
+                try:
+                    import json
+                    extracted_data = json.loads(response_text.strip())
+                    
+                    if "name" in extracted_data and extracted_data["name"]:
+                        requirements["name"] = extracted_data["name"]
+                        logger.info(f"LLM extracted agent name: {requirements['name']}")
+                    
+                    if "description" in extracted_data and extracted_data["description"]:
+                        requirements["description"] = extracted_data["description"]
+                        logger.info(f"LLM extracted agent description: {requirements['description']}")
+                    
+                    logger.info("Successfully extracted agent requirements using LLM")
+                    return requirements
+                    
+                except json.JSONDecodeError as json_error:
+                    logger.warning(f"Failed to parse LLM JSON response: {json_error}")
+                    logger.debug(f"Raw LLM response: {response_text}")
+
+    except Exception as llm_error:
+        logger.warning(f"LLM extraction failed: {llm_error}")
+
+    # Fallback to regex-based extraction
+    logger.info("Using fallback regex extraction")
+    conversation_text = " ".join([msg["content"] for msg in messages])
+    
+    # Extract potential agent name
+    if "agent" in conversation_text.lower():
+        # Look for patterns like "create a [name] agent" or "I need a [name]"
+        name_match = re.search(r'(?:create|need|want)\s+(?:a\s+)?([a-zA-Z\s]+?)(?:\s+agent|\s+that|\s+to)', conversation_text, re.IGNORECASE)
+        if name_match:
+            extracted_name = name_match.group(1).strip().title()
+            if extracted_name and extracted_name != "Custom":
+                requirements["name"] = extracted_name
+    
+    # Extract description from user messages
+    user_messages = [msg["content"] for msg in messages if msg["role"] == "user"]
+    if user_messages:
+        last_user_message = user_messages[-1]
+        if len(last_user_message) > 50:  # Only use if it's substantial
+            requirements["description"] = last_user_message[:200] + "..." if len(last_user_message) > 200 else last_user_message
+    
+    # Simple completeness check
+    requirements["is_complete"] = len(conversation_text) > 50  # Basic heuristic
+    
+    return requirements
+
+
+async def _generate_intelligent_response(messages: list[dict], agent_requirements: dict, conversation_analysis: dict) -> str:
+    """
+    Generate an intelligent response message using LLM based on the conversation context.
+    """
+    logger = logging.getLogger(__name__)
+    try:
+        # Extract conversation context
+        conversation_text = "\n".join([f"{msg.get('role', '')}: {msg.get('content', '')}" for msg in messages])
+        
+        # Get analysis details
+        needs_more_info = conversation_analysis.get("needs_more_info", False)
+        analysis_details = conversation_analysis.get("analysis", {})
+        
+        # Create context for LLM
+        context = f"""
+Conversation History:
+{conversation_text}
+
+Extracted Agent Requirements:
+- Name: {agent_requirements.get('name', 'Custom Agent')}
+- Description: {agent_requirements.get('description', 'A specialized agent')}
+- Capabilities: {', '.join(agent_requirements.get('capabilities', []))}
+- Knowledge Domains: {', '.join(agent_requirements.get('knowledge_domains', []))}
+- Workflows: {', '.join(agent_requirements.get('workflows', []))}
+
+Analysis Results:
+- Needs More Info: {needs_more_info}
+- Word Count: {analysis_details.get('word_count', 0)}
+- Vague Terms: {analysis_details.get('vague_count', 0)}
+- Specific Terms: {analysis_details.get('specific_count', 0)}
+"""
+
+        # Try to use LLM to generate intelligent response
+        try:
+            from dana.common.resource.llm.llm_resource import LLMResource
+            from dana.common.types import BaseRequest
+
+            # Create LLM resource
+            llm_config = {"model": "gpt-4o", "temperature": 0.7, "max_tokens": 1000}
+            llm = LLMResource(
+                name="intelligent_response_generator", 
+                description="LLM for generating intelligent agent creation responses", 
+                config=llm_config
+            )
+
+            # Initialize the LLM resource
+            await llm.initialize()
+
+            # Check if LLM is available
+            if not hasattr(llm, "_is_available") or not llm._is_available:
+                logger.warning("LLM resource is not available, falling back to template response")
+                raise Exception("LLM not available")
+
+            # Create prompt for intelligent response
+            if needs_more_info:
+                prompt = f"""
+You are an AI assistant helping users create Dana agents. Based on the conversation context below, generate a brief understanding of what the user wants and provide ONE specific follow-up question to gather more information.
+
+Context:
+{context}
+
+Requirements:
+1. Start with a brief understanding of what the user has described so far, using the extracted agent name "{agent_requirements.get('name', 'Custom Agent')}" and description "{agent_requirements.get('description', 'A specialized agent')}"
+2. Acknowledge their request positively and specifically reference their agent concept
+3. Ask ONE specific, relevant question to gather missing information
+4. Keep the tone friendly and helpful
+5. Make the question specific to their domain/use case and the agent they're describing
+6. Don't ask generic questions like "What specific area would you like help with?"
+7. Use the agent name and description to make the question more personalized
+
+Generate a natural, conversational response that flows well and guides the user to provide more specific details about their {agent_requirements.get('name', 'agent')}.
+"""
+            else:
+                prompt = f"""
+You are an AI assistant helping users create Dana agents. Based on the conversation context below, generate a brief summary of what you understand about their agent requirements and confirm that you have enough information to proceed.
+
+Context:
+{context}
+
+Requirements:
+1. Briefly summarize what you understand about their {agent_requirements.get('name', 'agent')} that {agent_requirements.get('description', 'A specialized agent')}
+2. Confirm that you have enough information to generate the agent
+3. Mention that they can proceed to generate the code by clicking the "Build Agent" button
+4. Keep it concise and positive
+5. End with a clear call-to-action about building the agent
+6. Use the specific agent name and description to make the response more personalized
+
+Generate a natural, conversational response that encourages them to proceed with code generation for their {agent_requirements.get('name', 'agent')}.
+"""
+
+            # Create request for LLM
+            request = BaseRequest(arguments={"prompt": prompt, "messages": [{"role": "user", "content": prompt}]})
+
+            result = await llm.query(request)
+
+            if result and result.success:
+                # Extract content from response
+                response_text = ""
+                if hasattr(result, "content") and result.content:
+                    if isinstance(result.content, dict):
+                        if "choices" in result.content:
+                            response_text = result.content["choices"][0]["message"]["content"]
+                        elif "response" in result.content:
+                            response_text = result.content["response"]
+                        elif "content" in result.content:
+                            response_text = result.content["content"]
+                    elif isinstance(result.content, str):
+                        response_text = result.content
+
+                if response_text:
+                    logger.info("Successfully generated intelligent response using LLM")
+                    return response_text.strip()
+
+        except Exception as llm_error:
+            logger.warning(f"LLM response generation failed: {llm_error}")
+
+        # Fallback to template-based response
+        return _generate_fallback_response(agent_requirements, needs_more_info, analysis_details)
+
+    except Exception as e:
+        logger.error(f"Error generating intelligent response: {e}")
+        return _generate_fallback_response(agent_requirements, True, {})
+
+
+def _generate_fallback_response(agent_requirements: dict, needs_more_info: bool, analysis_details: dict) -> str:
+    """
+    Generate a fallback response when LLM is not available.
+    """
+    agent_name = agent_requirements.get('name', 'Custom Agent')
+    agent_description = agent_requirements.get('description', 'A specialized agent')
+    
+    if needs_more_info:
+        word_count = analysis_details.get('word_count', 0)
+        if word_count < 10:
+            return f"I understand you want to create a {agent_name}. To make this agent truly useful for you, could you tell me more about what specific tasks it should help you with?"
+        else:
+            return f"Thanks for sharing your idea for a {agent_name}! I can see you want {agent_description}. To create the best possible agent for your needs, could you provide a bit more detail about the specific workflows, data sources, or tools it should work with?"
+    else:
+        return f"Perfect! I understand you want to create a {agent_name} that {agent_description}. I have enough information to generate your agent code. You can now proceed to build the agent by clicking the 'Build Agent' button."
+
+
+def _extract_agent_info_from_code(dana_code: str, logger: logging.Logger) -> tuple[str | None, str | None]:
+    """
+    Extract agent name and description from generated Dana code
+    """
+    agent_name = None
+    agent_description = None
+
+    lines = dana_code.split("\n")
+    for i, line in enumerate(lines):
+        # Look for agent keyword syntax: agent AgentName:
+        if line.strip().startswith("agent ") and line.strip().endswith(":"):
+            # Next few lines should contain name and description
+            for j in range(i + 1, min(i + 5, len(lines))):
+                next_line = lines[j].strip()
+                if "name : str =" in next_line:
+                    agent_name = next_line.split("=")[1].strip().strip('"')
+                    logger.info(f"Extracted agent name: {agent_name}")
+                elif "description : str =" in next_line:
+                    agent_description = next_line.split("=")[1].strip().strip('"')
+                    logger.info(f"Extracted agent description: {agent_description}")
+                elif next_line.startswith("#"):  # Skip comments
+                    continue
+                elif next_line == "":  # Skip empty lines
+                    continue
+                elif not next_line.startswith("    "):  # Stop at non-indented lines
+                    break
+            break
+        # Fallback: also check for old system: syntax
+        elif "system:agent_name" in line:
+            agent_name = line.split("=")[1].strip().strip('"')
+            logger.info(f"Extracted agent name (old format): {agent_name}")
+        elif "system:agent_description" in line:
+            agent_description = line.split("=")[1].strip().strip('"')
+            logger.info(f"Extracted agent description (old format): {agent_description}")
+
+    return agent_name, agent_description
+
+
+def _extract_agent_paths_from_files(auto_stored_files: list[str], logger: logging.Logger) -> tuple[int | None, str | None]:
+    """
+    Extract agent_id and agent_folder from auto-stored files
+    """
+    agent_id = None
+    agent_folder = None
+
+    if auto_stored_files:
+        logger.info(f"Auto-stored files: {auto_stored_files}")
+
+        # Look for metadata.json file
+        metadata_file_path = None
+        for f in auto_stored_files:
+            if f.endswith("metadata.json") and os.path.exists(f):
+                metadata_file_path = f
+                break
+
+        if metadata_file_path:
+            try:
+                logger.info(f"Reading metadata from: {metadata_file_path}")
+                with open(metadata_file_path, "r", encoding="utf-8") as meta_f:
+                    meta = json.load(meta_f)
+                    agent_folder = meta.get("folder_path")
+                    agent_id = meta.get("agent_id")
+
+                    logger.info(f"Extracted from metadata - agent_folder: {agent_folder}, agent_id: {agent_id}")
+
+                    # If no agent_id in metadata, try to extract from folder path pattern
+                    if not agent_id and agent_folder:
+                        # Try pattern for deployed agents: agent_123_name
+                        m = re.search(r"agent_(\d+)_", str(agent_folder))
+                        if m:
+                            agent_id = int(m.group(1))
+                            logger.info(f"Extracted agent_id from folder pattern: {agent_id}")
+
+            except Exception as e:
+                logger.error(f"Failed to parse metadata.json at {metadata_file_path}: {e}")
+        else:
+            # Fallback: try to get folder from the first non-metadata file
+            for f in auto_stored_files:
+                if not f.endswith("metadata.json") and os.path.exists(f):
+                    # Get the parent directory of the file
+                    file_path = Path(f)
+                    agent_folder = str(file_path.parent)
+                    logger.info(f"Fallback: extracted agent_folder from file path: {agent_folder}")
+                    break
+
+    # Ensure agent_folder is an absolute path
+    if agent_folder and not os.path.isabs(agent_folder):
+        agent_folder = str(Path.cwd() / agent_folder)
+        logger.info(f"Converted to absolute path: {agent_folder}")
+
+    return agent_id, agent_folder
+
+
+@router.post("/describe", response_model=AgentDescriptionResponse)
+async def describe_agent(request: AgentDescriptionRequest, db: Session = Depends(db.get_db)):
+    """
+    Phase 1 specific endpoint for agent description refinement.
+    
+    This endpoint focuses on understanding user requirements and refining
+    the agent description without generating code.
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        logger.info(f"Received agent description request with {len(request.messages)} messages")
+        
+        # Use AgentManager for consistent handling
+        from ..agent_manager import get_agent_manager
+        agent_manager = get_agent_manager()
+        
+        # Convert messages to the format expected by AgentManager
+        messages_dict = [{"role": msg.role, "content": msg.content} for msg in request.messages]
+        
+        # Create agent description using AgentManager
+        result = await agent_manager.create_agent_description(
+            messages=messages_dict,
+            agent_id=request.agent_id,
+            existing_agent_data=request.agent_data
+        )
+        
+        # Convert to AgentDescriptionResponse
+        return AgentDescriptionResponse(
+            success=result["success"],
+            agent_id=result["agent_id"] or 0,
+            agent_name=result["agent_name"],
+            agent_description=result["agent_description"],
+            capabilities=result["capabilities"],
+            follow_up_message=result["follow_up_message"],
+            suggested_questions=result["suggested_questions"],
+            ready_for_code_generation=result["ready_for_code_generation"],
+            agent_folder=result["agent_folder"],  # <-- Ensure this is included
+            error=result.get("error")
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in describe_agent endpoint: {e}", exc_info=True)
+        return AgentDescriptionResponse(
+            success=False,
+            agent_id=0,
+            error=f"Failed to process agent description: {str(e)}"
+        )
+
+
+@router.post("/{agent_id}/generate-code", response_model=AgentGenerationResponse)
+async def generate_agent_code(agent_id: int, request: AgentCodeGenerationRequest, db: Session = Depends(db.get_db)):
+    """
+    Phase 2 specific endpoint for generating code from existing agent description.
+    
+    This endpoint takes an existing agent description and generates the actual .na files.
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        logger.info(f"Received code generation request for agent {agent_id}")
+        
+        # Get existing agent
+        agent = services.get_agent(db, agent_id)
+        if not agent:
+            raise HTTPException(status_code=404, detail=f"Agent {agent_id} not found")
+        
+        if agent.generation_phase != "description":
+            raise HTTPException(status_code=400, detail="Agent must be in description phase before code generation")
+        
+        # Convert to AgentGenerationRequest format for reuse
+        generation_request = AgentGenerationRequest(
+            messages=[],  # Will use stored conversation context
+            phase="code_generation",
+            agent_id=agent_id,
+            multi_file=request.multi_file
+        )
+        
+        # Use the Phase 2 logic
+        return await _handle_phase_2_generation(generation_request, [], db, logger)
+        
+    except Exception as e:
+        logger.error(f"Error in generate_agent_code endpoint: {e}", exc_info=True)
+        return AgentGenerationResponse(
+            success=False,
+            dana_code="",
+            error=f"Failed to generate agent code: {str(e)}"
+        )
+
+
+@router.post("/{agent_id}/update-description", response_model=AgentDescriptionResponse)
+async def update_agent_description(
+    agent_id: int, 
+    request: AgentDescriptionRequest, 
+    db: Session = Depends(db.get_db)
+):
+    """
+    Update agent description during Phase 1.
+    
+    This endpoint allows updating the agent description and conversation context
+    during the description refinement phase.
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        logger.info(f"Received description update request for agent {agent_id}")
+        
+        # Get existing agent
+        agent = services.get_agent(db, agent_id)
+        if not agent:
+            raise HTTPException(status_code=404, detail=f"Agent {agent_id} not found")
+        
+        if agent.generation_phase != "description":
+            raise HTTPException(status_code=400, detail="Can only update description in description phase")
+        
+        # Convert to AgentGenerationRequest format for reuse
+        generation_request = AgentGenerationRequest(
+            messages=request.messages,
+            phase="description",
+            agent_id=agent_id
+        )
+        
+        # Use the Phase 1 logic
+        response = await _handle_phase_1_generation(generation_request, 
+            [{"role": msg.role, "content": msg.content} for msg in request.messages], 
+            db)
+        
+        # Convert to AgentDescriptionResponse
+        return AgentDescriptionResponse(
+            success=response.success,
+            agent_id=response.agent_id or agent_id,
+            agent_name=response.agent_name,
+            agent_description=response.agent_description,
+            capabilities=response.capabilities,
+            follow_up_message=response.follow_up_message,
+            suggested_questions=response.suggested_questions,
+            ready_for_code_generation=response.ready_for_code_generation,
+            error=response.error
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in update_agent_description endpoint: {e}", exc_info=True)
+        return AgentDescriptionResponse(
+            success=False,
+            agent_id=agent_id,
+            error=f"Failed to update agent description: {str(e)}"
+        )
 
 
 @router.post("/syntax-check", response_model=DanaSyntaxCheckResponse)
@@ -413,7 +936,6 @@ async def validate_code(request: CodeValidationRequest):
     Supports both single-file and multi-file validation.
     Returns validation status, errors, warnings, and suggestions.
     """
-    import logging
 
     logger = logging.getLogger(__name__)
 
@@ -585,7 +1107,6 @@ async def fix_code(request: CodeFixRequest):
     Automatically fix Dana code issues using iterative LLM approach.
     Returns fixed code and list of applied fixes.
     """
-    import logging
 
     logger = logging.getLogger(__name__)
 
@@ -869,19 +1390,6 @@ def _extract_code_from_response(content) -> str:
                 fixed_code = fixed_code[start:end].strip()
 
     return fixed_code.strip()
-    # logger.error(f"Error in fix_code endpoint: {e}", exc_info=True)
-    # return CodeFixResponse(
-    #     success=False,
-    #     fixed_code=request.code,
-    #     applied_fixes=[],
-    #     remaining_errors=[{
-    #         "line": 1,
-    #         "column": 1,
-    #         "message": f"Auto-fix failed: {str(e)}",
-    #         "severity": "error",
-    #         "code": ""
-    #     }]
-    # )
 
 
 async def _apply_rule_based_fixes(request: CodeFixRequest) -> CodeFixResponse:
@@ -1003,7 +1511,6 @@ async def write_multi_file_project(project: MultiFileProject):
     Returns:
         ZIP file containing all project files
     """
-    import logging
 
     logger = logging.getLogger(__name__)
 
@@ -1063,7 +1570,6 @@ async def write_multi_file_project_temp(project: MultiFileProject):
     Returns:
         Dictionary with temporary directory path and file paths
     """
-    import logging
 
     logger = logging.getLogger(__name__)
 
@@ -1128,7 +1634,6 @@ async def validate_multi_file_project(project: MultiFileProject):
     Returns:
         Dictionary with validation results for each file
     """
-    import logging
 
     logger = logging.getLogger(__name__)
 
@@ -1370,9 +1875,6 @@ async def _auto_store_single_file_agent(agent_name: str, agent_description: str,
     Returns:
         List of file paths created
     """
-    import logging
-    import re
-    import uuid
     from datetime import datetime
 
     logger = logging.getLogger(__name__)
@@ -1432,9 +1934,6 @@ async def _auto_store_multi_file_agent(agent_name: str, agent_description: str, 
     Returns:
         List of file paths created
     """
-    import logging
-    import re
-    import uuid
     from datetime import datetime
 
     logger = logging.getLogger(__name__)
@@ -1513,9 +2012,6 @@ async def open_agent_folder(request: dict):
     Returns:
         Success status
     """
-    import logging
-    import platform
-    import subprocess
     
     logger = logging.getLogger(__name__)
     
@@ -1614,10 +2110,6 @@ async def open_file_location(file_path: str):
     Returns:
         Success status
     """
-    import logging
-    import platform
-    import subprocess
-    import urllib.parse
 
     logger = logging.getLogger(__name__)
 
@@ -1636,7 +2128,6 @@ async def open_file_location(file_path: str):
         # Check if file exists, if not try pattern matching
         if not file_path_obj.exists():
             # Try pattern matching for wildcard paths (e.g., generated_agent*/agent.na)
-            import glob
 
             if "*" in decoded_path or "?" in decoded_path:
                 logger.info(f"File not found, trying pattern matching for: {decoded_path}")
@@ -1687,80 +2178,54 @@ async def open_file_location(file_path: str):
 async def upload_knowledge_file(
     file: UploadFile = File(...),
     agent_id: str = Form(None),
-    agent_folder: str = Form(None),
+    conversation_context: str = Form(None),  # JSON string of conversation context
+    agent_info: str = Form(None),  # JSON string of agent info (must include folder_path)
 ):
     """
     Upload a knowledge file for an agent.
     Creates a docs folder in the agent directory and stores the file there.
     Also updates the tools.na file with RAG declarations.
+    Requires agent_info to include folder_path.
     """
-    import logging
-    import shutil
 
     logger = logging.getLogger(__name__)
 
     try:
         logger.info(f"Uploading knowledge file: {file.filename}")
 
-        # Determine the agent folder path
-        print("agent_folder", agent_folder)
-        if agent_folder:
-            agent_folder_path = Path(agent_folder)
-        elif agent_id:
-            # Try to find agent folder by ID pattern
-            agents_dir = Path("agents")
-            if agents_dir.exists():
-                for folder in agents_dir.iterdir():
-                    if folder.is_dir() and folder.name.startswith(f"agent_{agent_id}_"):
-                        agent_folder_path = folder
-                        break
-                else:
-                    raise HTTPException(status_code=404, detail="Agent folder not found")
-            else:
-                raise HTTPException(status_code=404, detail="Agents directory not found")
-        else:
-            # Fall back to generated directory
-            generated_dir = Path("generated")
-            if generated_dir.exists():
-                # Find the most recent generated agent folder
-                agent_folders = sorted(
-                    [f for f in generated_dir.iterdir() if f.is_dir() and f.name.startswith("generated_")],
-                    key=lambda x: x.stat().st_mtime,
-                    reverse=True,
-                )
-                if agent_folders:
-                    agent_folder_path = agent_folders[0]
-                else:
-                    raise HTTPException(status_code=404, detail="No generated agent folders found")
-            else:
-                raise HTTPException(status_code=404, detail="No agent folder specified or found")
+        # Use AgentManager for consistent handling
+        from ..agent_manager import get_agent_manager
+        agent_manager = get_agent_manager()
 
-        # Create docs folder if it doesn't exist
-        docs_folder = agent_folder_path / "docs"
-        docs_folder.mkdir(exist_ok=True)
+        # Parse conversation context and agent info
+        conv_context = json.loads(conversation_context) if conversation_context else []
+        agent_data = json.loads(agent_info) if agent_info else {}
+        if not agent_data.get('folder_path'):
+            logger.error('Missing folder_path in agent_info for knowledge upload')
+            return {"success": False, "error": "Missing folder_path in agent_info. Please complete agent creation before uploading knowledge files."}
 
-        # Save the uploaded file
-        file_path = docs_folder / file.filename
-        logger.info(f"Saving file to: {file_path}")
+        # Read file content
+        file_content = await file.read()
 
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-
-        # Update tools.na file with RAG declaration (always points to ./docs)
-        await _update_tools_with_rag(agent_folder_path)
-
-        # Remove the .cache directory in the agent folder to force RAG re-indexing
-        import shutil
-        import os
-
-        rag_cache_dir = agent_folder_path / ".cache"
-        if rag_cache_dir.exists() and rag_cache_dir.is_dir():
-            shutil.rmtree(rag_cache_dir)
-            logger.info(f"Deleted RAG cache at {rag_cache_dir} to force re-indexing.")
+        # Upload file using AgentManager
+        result = await agent_manager.upload_knowledge_file(
+            file_content=file_content,
+            filename=file.filename,
+            agent_metadata=agent_data,
+            conversation_context=conv_context
+        )
 
         logger.info(f"Successfully uploaded knowledge file: {file.filename}")
 
-        return {"success": True, "file_path": str(file_path), "message": f"File {file.filename} uploaded successfully"}
+        return {
+            "success": result["success"],
+            "file_path": result["file_path"],
+            "message": result["message"],
+            "updated_capabilities": result["updated_capabilities"],
+            "generated_response": result["generated_response"],
+            "ready_for_code_generation": result["ready_for_code_generation"],
+            "agent_metadata": result["agent_metadata"]
+        }
 
     except Exception as e:
         logger.error(f"Error uploading knowledge file: {e}", exc_info=True)
@@ -1772,7 +2237,6 @@ async def _update_tools_with_rag(agent_folder_path: Path):
     Ensure tools.na contains a single rag_resource = use("rag", sources=["./docs"]) declaration.
     Idempotent: only adds if not present.
     """
-    import logging
 
     logger = logging.getLogger(__name__)
 
@@ -1785,7 +2249,6 @@ async def _update_tools_with_rag(agent_folder_path: Path):
                 content = f.read()
             if rag_declaration not in content:
                 # Remove any old rag_resource lines
-                import re
 
                 content = re.sub(r"^.*rag_resource\s*=.*$", "", content, flags=re.MULTILINE)
                 # Add the correct rag_resource at the end
@@ -1803,3 +2266,411 @@ async def _update_tools_with_rag(agent_folder_path: Path):
             logger.info(f"Created tools.na with RAG resource for ./docs")
     except Exception as e:
         logger.error(f"Error updating tools.na with RAG: {e}")
+
+
+async def _regenerate_agent_with_knowledge(
+    conversation_context: list[dict], 
+    agent_data: dict, 
+    agent_folder_path: Path,
+    uploaded_filename: str
+) -> dict | None:
+    """
+    Regenerate agent capabilities and summary after uploading knowledge files.
+    This updates the agent's knowledge domains and capabilities based on new files.
+    """
+
+    logger = logging.getLogger(__name__)
+
+    try:
+        # Get the list of uploaded files
+        docs_folder = agent_folder_path / "docs"
+        if not docs_folder.exists():
+            logger.warning("Docs folder does not exist")
+            return None
+
+        # Get all files in the folder
+        all_files_in_folder = [f.name for f in docs_folder.iterdir() if f.is_file()]
+        
+        # For this specific regeneration, we want to focus on the newly uploaded file
+        # and any files that were mentioned in the conversation context
+        current_session_files = [uploaded_filename]
+        
+        # Check conversation context for other files uploaded in this session
+        for message in conversation_context:
+            if message.get('role') == 'user' and 'uploaded knowledge file:' in message.get('content', ''):
+                content = message.get('content', '')
+                prev_filename = content.split('uploaded knowledge file:')[-1].strip()
+                if prev_filename and prev_filename not in current_session_files:
+                    current_session_files.append(prev_filename)
+        
+        logger.info(f"Current session files: {current_session_files}")
+        logger.info(f"All files in folder: {all_files_in_folder}")
+
+        # Create a message about the new knowledge
+        knowledge_message = {
+            "role": "assistant",
+            "content": f"I've uploaded the knowledge file '{uploaded_filename}' to your agent. This file contains additional information that will help your agent provide more accurate and comprehensive responses. The agent now has access to {len(current_session_files)} knowledge files from this session: {', '.join(current_session_files)}."
+        }
+        conversation_context.append(knowledge_message)
+
+        # Use existing agent_data to maintain consistency
+        existing_agent_name = agent_data.get("name", "Custom Agent")
+        existing_agent_description = agent_data.get("description", "A specialized agent for your needs")
+        existing_capabilities = agent_data.get("capabilities", {})
+        
+        # Merge new knowledge with existing agent requirements
+        # Don't re-extract requirements from scratch - use existing ones and enhance them
+        agent_requirements = {
+            "name": existing_agent_name,
+            "description": existing_agent_description,
+            "capabilities": existing_capabilities.get("capabilities", []),
+            "knowledge_domains": existing_capabilities.get("knowledge", []),
+            "workflows": existing_capabilities.get("workflow", []),
+            "tools": existing_capabilities.get("tools", []),
+            "is_complete": True  # Assume complete since we're enhancing existing agent
+        }
+        
+        # Add new knowledge domains from uploaded files
+        for filename in current_session_files:
+            file_knowledge = f"Knowledge from {filename}"
+            if file_knowledge not in agent_requirements["knowledge_domains"]:
+                agent_requirements["knowledge_domains"].append(file_knowledge)
+        
+        # Analyze conversation completeness with new knowledge
+        conversation_analysis = await analyze_conversation_completeness(conversation_context)
+        
+        # Generate updated capabilities using existing agent context
+        # Create enhanced Dana code that reflects the existing agent + new knowledge
+        enhanced_dana_code = f'''
+agent {existing_agent_name.replace(" ", "_").lower()}:
+    description : str = "{existing_agent_description}"
+    
+    solve(input : str) -> str:
+        # This agent has access to knowledge files in ./docs
+        # Original capabilities: {", ".join(agent_requirements["capabilities"])}
+        # Knowledge domains: {", ".join(agent_requirements["knowledge_domains"])}
+        # Workflows: {", ".join(agent_requirements["workflows"])}
+        # Tools: {", ".join(agent_requirements["tools"])}
+        # Additional knowledge files: {", ".join(current_session_files)}
+        return "Enhanced agent with additional knowledge capabilities"
+'''
+        
+        updated_capabilities = await analyze_agent_capabilities(
+            enhanced_dana_code,
+            conversation_context,
+            None  # No multi_file_project for this regeneration
+        )
+
+        # Update the knowledges.na file with new knowledge domains
+        if updated_capabilities:
+            # Preserve existing capabilities and merge with new ones
+            existing_knowledge = existing_capabilities.get("knowledge", [])
+            existing_workflow = existing_capabilities.get("workflow", [])
+            existing_tools = existing_capabilities.get("tools", [])
+            existing_summary = existing_capabilities.get("summary", "")
+            
+            # Merge new knowledge domains with existing ones
+            merged_knowledge = list(set(existing_knowledge + agent_requirements["knowledge_domains"]))
+            
+            # Update the capabilities to preserve existing information
+            updated_capabilities.update({
+                "knowledge": merged_knowledge,
+                "workflow": existing_workflow,  # Preserve existing workflows
+                "tools": existing_tools,  # Preserve existing tools
+                "summary": existing_summary if existing_summary else updated_capabilities.get("summary", "")  # Preserve existing summary
+            })
+            
+            await _update_knowledges_file(agent_folder_path, merged_knowledge)
+            
+            logger.info(f"Preserved existing capabilities: {existing_capabilities}")
+            logger.info(f"Updated capabilities: {updated_capabilities}")
+
+        logger.info(f"Successfully regenerated agent capabilities with new knowledge")
+        return updated_capabilities
+
+    except Exception as e:
+        logger.error(f"Error regenerating agent with knowledge: {e}", exc_info=True)
+        return None
+
+
+async def _update_knowledges_file(agent_folder_path: Path, knowledge_domains: list[str]):
+    """
+    Update the knowledges.na file with new knowledge domains.
+    """
+
+    logger = logging.getLogger(__name__)
+
+    try:
+        knowledges_file = agent_folder_path / "knowledges.na"
+        
+        # Create or update knowledges.na content
+        content = '"""\n'
+        content += 'Knowledge domains for this agent:\n\n'
+        
+        for domain in knowledge_domains:
+            content += f"- {domain}\n"
+        
+        content += '\nThis agent has access to knowledge files in the ./docs folder.\n'
+        content += '"""\n\n'
+        content += '# Knowledge domains are automatically managed based on uploaded files\n'
+        content += '# and conversation context.\n'
+
+        with open(knowledges_file, "w", encoding="utf-8") as f:
+            f.write(content)
+        
+        logger.info(f"Updated knowledges.na with {len(knowledge_domains)} knowledge domains")
+        
+    except Exception as e:
+        logger.error(f"Error updating knowledges.na: {e}")
+
+
+async def _generate_upload_response(
+    filename: str, 
+    agent_folder_path: Path, 
+    updated_capabilities: dict | None,
+    conversation_context: list[dict] = None
+) -> str:
+    """
+    Generate a simple response about the uploaded knowledge file and ask relevant questions.
+    """
+
+    logger = logging.getLogger(__name__)
+
+    try:
+        # Simple confirmation
+        response = f"✅ I received your knowledge file: `{filename}`\n\n"
+        
+        # Ask relevant questions to complete the description phase
+        response += "**To help complete your agent description, please tell me:**\n\n"
+        
+        # Generate contextual questions based on the file type
+        file_extension = filename.split('.')[-1].lower()
+        
+        if file_extension in ['pdf', 'doc', 'docx']:
+            response += "• What specific information from this document should your agent focus on?\n"
+            response += "• How should your agent use this knowledge to help users?\n"
+        elif file_extension in ['csv', 'json']:
+            response += "• What kind of data analysis should your agent perform with this information?\n"
+            response += "• What insights should your agent provide from this data?\n"
+        elif file_extension in ['txt', 'md']:
+            response += "• What key topics or concepts from this text should your agent understand?\n"
+            response += "• How should your agent apply this knowledge in conversations?\n"
+        else:
+            response += "• What specific capabilities should your agent have with this knowledge?\n"
+            response += "• How should your agent use this information to help users?\n"
+        
+        response += "\nOnce you provide these details, we can proceed to build your agent!"
+        
+        return response
+
+    except Exception as e:
+        logger.error(f"Error generating upload response: {e}")
+        return f"✅ I received your knowledge file: `{filename}`. Please tell me how your agent should use this information."
+
+
+@router.post("/generate-from-prompt", response_model=AgentGenerationResponse)
+async def generate_agent_from_prompt(request: dict, db: Session = Depends(db.get_db)):
+    """
+    Phase 2 specific endpoint for generating agent files from a prompt.
+    
+    This endpoint takes a prompt, conversation messages, and agent summary to generate
+    the actual .na files for Phase 2 of the agent generation flow.
+    
+    Expected request format:
+    {
+        "prompt": "Specific prompt for generating agent files",
+        "messages": [{"role": "user", "content": "..."}, ...],
+        "agent_summary": {
+            "name": "Agent Name",
+            "description": "Agent description",
+            "capabilities": {
+                "knowledge": ["domain1", "domain2"],
+                "workflow": ["step1", "step2"],
+                "tools": ["tool1", "tool2"]
+            }
+        },
+        "multi_file": false
+    }
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        logger.info("Received Phase 2 generation request with prompt")
+        
+        # Extract request data
+        prompt = request.get("prompt", "")
+        messages = request.get("messages", [])
+        agent_summary = request.get("agent_summary", {})
+        
+        if not prompt:
+            raise HTTPException(status_code=400, detail="Prompt is required for Phase 2 generation")
+        
+        if not messages:
+            raise HTTPException(status_code=400, detail="Messages are required for Phase 2 generation")
+        
+        if not agent_summary:
+            raise HTTPException(status_code=400, detail="Agent summary is required for Phase 2 generation")
+        
+        logger.info(f"Processing Phase 2 generation with prompt: {prompt[:100]}...")
+        logger.info(f"Agent summary: {agent_summary.get('name', 'Unknown')}")
+        
+        # Use AgentManager for consistent handling
+        from ..agent_manager import get_agent_manager
+        agent_manager = get_agent_manager()
+        
+        # Generate agent code using AgentManager
+        result = await agent_manager.generate_agent_code(
+            agent_metadata=agent_summary,
+            messages=messages,
+            prompt=prompt
+        )
+        
+        # Convert result to AgentGenerationResponse
+        return AgentGenerationResponse(
+            success=result["success"],
+            dana_code=result["dana_code"],
+            agent_name=result["agent_name"],
+            agent_description=result["agent_description"],
+            capabilities=result["capabilities"],
+            auto_stored_files=result["auto_stored_files"],
+            multi_file_project=result["multi_file_project"],
+            agent_id=result["agent_id"],
+            agent_folder=result["agent_folder"],
+            phase=result["phase"],
+            ready_for_code_generation=result["ready_for_code_generation"],
+            error=result.get("error")
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in generate_agent_from_prompt endpoint: {e}", exc_info=True)
+        return AgentGenerationResponse(
+            success=False,
+            dana_code="",
+            error=f"Failed to generate agent from prompt: {str(e)}"
+        )
+
+
+async def _store_single_file_in_phase1_folder(
+    agent_folder: str, 
+    agent_name: str, 
+    agent_description: str, 
+    dana_code: str
+) -> list[str]:
+    """
+    Store a single-file agent in the Phase 1 folder.
+    
+    Args:
+        agent_folder: Path to the Phase 1 folder
+        agent_name: Name of the agent
+        agent_description: Description of the agent
+        dana_code: Dana code content
+        
+    Returns:
+        List of file paths created
+    """
+    from datetime import datetime
+    
+    logger = logging.getLogger(__name__)
+    
+    # Create agent folder if it doesn't exist
+    agent_folder_path = Path(agent_folder)
+    agent_folder_path.mkdir(parents=True, exist_ok=True)
+    
+    file_paths = []
+    
+    # Create agent.na file
+    agent_file = agent_folder_path / "agent.na"
+    with open(agent_file, "w", encoding="utf-8") as f:
+        f.write(dana_code)
+    file_paths.append(str(agent_file))
+    logger.info(f"Created agent.na file: {agent_file}")
+    
+    # Create or update metadata.json
+    metadata_file = agent_folder_path / "metadata.json"
+    metadata = {
+        "agent_name": agent_name,
+        "description": agent_description,
+        "generated_at": datetime.now().isoformat(),
+        "files": ["agent.na"],
+        "folder_path": str(agent_folder_path.resolve()),
+        "generation_type": "single_file",
+        "phase": "code_generated",
+        "phase_1_folder": True
+    }
+    
+    with open(metadata_file, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, indent=2)
+    file_paths.append(str(metadata_file))
+    logger.info(f"Updated metadata.json: {metadata_file}")
+    
+    logger.info(f"Stored single-file agent in Phase 1 folder. Created {len(file_paths)} files: {file_paths}")
+    return file_paths
+
+
+async def _store_multi_file_in_phase1_folder(
+    agent_folder: str, 
+    agent_name: str, 
+    agent_description: str, 
+    multi_file_project: dict
+) -> list[str]:
+    """
+    Store a multi-file agent in the Phase 1 folder.
+    
+    Args:
+        agent_folder: Path to the Phase 1 folder
+        agent_name: Name of the agent
+        agent_description: Description of the agent
+        multi_file_project: Multi-file project data
+        
+    Returns:
+        List of file paths created
+    """
+    from datetime import datetime
+    
+    logger = logging.getLogger(__name__)
+    
+    # Create agent folder if it doesn't exist
+    agent_folder_path = Path(agent_folder)
+    agent_folder_path.mkdir(parents=True, exist_ok=True)
+    
+    # Ensure docs folder exists
+    docs_folder = agent_folder_path / "docs"
+    docs_folder.mkdir(exist_ok=True)
+    logger.info(f"Ensured docs folder exists: {docs_folder}")
+    
+    file_paths = []
+    
+    # Create files from multi-file project
+    for file_info in multi_file_project["files"]:
+        filename = file_info["filename"]
+        if not filename.endswith(".na"):
+            filename += ".na"
+        
+        file_path = agent_folder_path / filename
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(file_info["content"])
+        file_paths.append(str(file_path))
+        logger.info(f"Created file: {file_path}")
+    
+    # Create or update metadata.json
+    metadata_file = agent_folder_path / "metadata.json"
+    metadata = {
+        "agent_name": agent_name,
+        "description": agent_description,
+        "generated_at": datetime.now().isoformat(),
+        "files": [str(Path(p).name) for p in file_paths],
+        "folder_path": str(agent_folder_path.resolve()),
+        "generation_type": "multi_file",
+        "phase": "code_generated",
+        "phase_1_folder": True,
+        "main_file": multi_file_project.get("main_file", "main.na"),
+        "structure_type": multi_file_project.get("structure_type", "complex")
+    }
+    
+    with open(metadata_file, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, indent=2)
+    file_paths.append(str(metadata_file))
+    logger.info(f"Updated metadata.json: {metadata_file}")
+    
+    logger.info(f"Stored multi-file agent in Phase 1 folder. Created {len(file_paths)} files: {file_paths}")
+    return file_paths
