@@ -1,0 +1,5 @@
+---
+alwaysApply: false
+---
+
+All Dana code example files (`.na`) located in the `examples/` directory and its subdirectories must be directly runnable using the `dana` command from their respective directory. For example, running `cd examples/path/to/ && dana example.na` should execute the file without errors.
