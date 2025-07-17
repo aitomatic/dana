@@ -2,12 +2,12 @@
   "name": "dana-language",
   "displayName": "Dana AI Agent Language",
   "description": "Language support for Dana AI Agent Language (.na files)",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "Aitomatic",
   "icon": "images/dana-logo.jpg",
   "repository": {
     "type": "git",
-    "url": "https://github.com/aitomatic/opendxa"
+    "url": "https://github.com/aitomatic/dana"
   },
   "engines": {
     "vscode": "^1.60.0"
@@ -23,8 +23,8 @@
   "main": "./out/extension.js",
   "activationEvents": [
     "onLanguage:dana",
-    "onCommand:dana.runFile",
-    "workspaceContains:**/*.na"
+    "workspaceContains:**/*.na",
+    "onStartupFinished"
   ],
   "contributes": {
     "languages": [
@@ -93,7 +93,7 @@
     "watch": "tsc -watch -p ./"
   },
   "dependencies": {
-    "vscode-languageclient": "^9.0.1"
+    "vscode-languageclient": "^8.1.0"
   },
   "devDependencies": {
     "@types/vscode": "^1.60.0",
