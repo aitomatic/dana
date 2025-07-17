@@ -227,6 +227,7 @@ const AgentGenerationChat = ({
             description: descriptionResponse.agent_description,
             config: {},
             generation_phase: 'description',
+            folder_path: descriptionResponse.agent_folder, // Include folder_path so backend can reuse it
             agent_description_draft: {
               name: descriptionResponse.agent_name,
               description: descriptionResponse.agent_description,

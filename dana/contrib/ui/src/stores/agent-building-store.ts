@@ -62,7 +62,7 @@ export interface AgentBuildingState {
   reset: () => void;
 }
 
-export const useAgentBuildingStore = create<AgentBuildingState>((set, get) => ({
+export const useAgentBuildingStore = create<AgentBuildingState>((set) => ({
   // State
   currentAgent: null,
   isGenerating: false,
