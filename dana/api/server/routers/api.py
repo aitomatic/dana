@@ -1784,7 +1784,7 @@ async def _process_documents_with_context(
     # Find and replace the topic line
     curate_content = re.sub(
         r'^topic = ".*"$',
-        f'topic = "{topic}"',
+        f'topic = """{topic}"""',
         curate_content,
         flags=re.MULTILINE
     )
@@ -1805,8 +1805,13 @@ async def _process_documents_with_context(
         flags=re.MULTILINE
     )
     
-    # Create a temporary modified curate.na file
-    temp_curate_path = doc_folder / "curate_modified.na"
+    # Create curate folder at the same level as doc_folder
+    curate_target_dir = doc_folder.parent / "curate"
+    curate_target_dir.mkdir(exist_ok=True)
+    logger.info(f"Created curate directory at: {curate_target_dir}")
+    
+    # Create a temporary modified curate.na file in the curate folder
+    temp_curate_path = curate_target_dir / "curate_modified.na"
     temp_curate_path.write_text(curate_content)
     logger.info(f"Created modified curate.na at {temp_curate_path}")
     
@@ -1817,7 +1822,7 @@ async def _process_documents_with_context(
         "progress": 60
     }
     
-    # Copy all .na files from the curate directory to the document folder
+    # Copy all .na files from the curate directory to the curate folder
     curate_dir = curate_path.parent  # Get the directory containing curate.na
     
     # Use glob to find all .na files in the curate directory
@@ -1830,7 +1835,7 @@ async def _process_documents_with_context(
         if src.name == "curate.na":
             continue
             
-        dst = doc_folder / src.name
+        dst = curate_target_dir / src.name
         
         # Special handling for senior_agent.na to replace document_folder path
         if src.name == "senior_agent.na":
@@ -1845,7 +1850,7 @@ async def _process_documents_with_context(
             logger.info(f"Modified and copied {src.name} with doc_folder path: {doc_folder}")
         else:
             shutil.copy2(src, dst)
-            logger.info(f"Copied {src.name} to document folder")
+            logger.info(f"Copied {src.name} to curate folder")
     
     # Update task status
     processing_status[task_id] = {
@@ -1856,11 +1861,11 @@ async def _process_documents_with_context(
     
     # Run the modified curate.na script using subprocess
     try:
-        # Set DANAPATH to include the document folder
+        # Set DANAPATH to include the curate folder
         import os
         import subprocess
         env = os.environ.copy()
-        env["DANAPATH"] = str(doc_folder)
+        env["DANAPATH"] = str(curate_target_dir)
         
         # Run dana with the modified script
         result = subprocess.run(
@@ -1868,7 +1873,7 @@ async def _process_documents_with_context(
             capture_output=True,
             text=True,
             env=env,
-            cwd=str(doc_folder)
+            cwd=str(curate_target_dir)
         )
         
         if result.returncode != 0:
@@ -1941,15 +1946,25 @@ async def _extract_role_and_topic(conversation: list[str], summary: str) -> tupl
     context = "\n".join(conversation) + "\n\nSummary: " + summary
     
     # Use LLMResource to extract role and topic
-    extraction_prompt = f"""Based on the following conversation and summary, extract:
-1. The ROLE that the agent should take (e.g., "Process Engineer", "Data Scientist", "Medical Expert", etc.)
-2. The TOPIC that the agent should handle (be specific about the domain and task)
+    extraction_prompt = f"""
+You will receive **{context}** — a conversation transcript and its summary.
 
-Conversation and Summary:
-{context}
+### Task
+1. **ROLE** – Extract the single most relevant professional role the assistant should adopt  
+   (e.g., “AML/BSA Compliance Specialist”, “Process Engineer”).
 
-Return ONLY a JSON object with exactly these two fields:
-{{"role": "extracted role", "topic": "extracted topic"}}
+2. **TOPIC** – Extract the full topic the user cares about.  
+   • Capture every major facet mentioned (sub-topics, scope notes, timelines, carve-outs, acronyms, etc.).  
+   • Separate distinct facets with semicolons “;” to keep the string readable yet complete.  
+   • Do not omit any detail that could affect relevance or compliance.
+
+### Output
+Return **exactly** this JSON object—no extra text, markdown, or code fencing:
+
+{{
+  "role": "<extracted role>",
+  "topic": "<extracted topic with all facets; separated by semicolons>"
+}}
 """
     
     try:
