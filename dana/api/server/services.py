@@ -526,6 +526,10 @@ class ChatService:
         # Execute the Dana code using DanaSandbox
         sandbox_context = SandboxContext()
 
+        sandbox_context.set("system:user_id", "Lam")
+        sandbox_context.set("system:session_id", "Testing Retrieval")
+        sandbox_context.set("system:agent_instance_id", "instance_1")
+
         # If the agent has selected knowledge (documents), add them to the context
         selected_knowledge = agent.config.get("selectedKnowledge", {})
         if selected_knowledge and "documents" in selected_knowledge:

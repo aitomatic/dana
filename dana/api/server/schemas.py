@@ -341,3 +341,21 @@ class CodeFixResponse(BaseModel):
     applied_fixes: list[str] = []
     remaining_errors: list[CodeError] = []
     error: str | None = None
+
+
+class ProcessAgentDocumentsRequest(BaseModel):
+    """Request schema for processing agent documents"""
+    
+    document_folder: str
+    conversation: str | list[str]
+    summary: str
+
+
+class ProcessAgentDocumentsResponse(BaseModel):
+    """Response schema for processing agent documents"""
+    
+    success: bool
+    message: str
+    agent_name: str | None = None
+    agent_description: str | None = None
+    processing_details: dict | None = None

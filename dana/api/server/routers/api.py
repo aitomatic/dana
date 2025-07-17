@@ -5,7 +5,7 @@ import zipfile
 from pathlib import Path
 import json
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -27,10 +27,15 @@ from ..schemas import (
     MultiFileProject,
     RunNAFileRequest,
     RunNAFileResponse,
+    ProcessAgentDocumentsRequest,
+    ProcessAgentDocumentsResponse,
 )
 from ..services import run_na_file_service
 
 router = APIRouter(prefix="/agents", tags=["agents"])
+
+# Simple in-memory task status tracker
+processing_status = {}
 
 
 @router.get("/", response_model=list[schemas.AgentRead])
@@ -1636,6 +1641,386 @@ async def upload_knowledge_file(
         }
 
 
+@router.get("/task-status/{task_id}")
+async def get_task_status(task_id: str):
+    """
+    Get the status of a background processing task.
+    
+    Returns:
+        Task status including progress and messages
+    """
+    if task_id not in processing_status:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    return processing_status[task_id]
+
+
+@router.post("/process-agent-documents", response_model=ProcessAgentDocumentsResponse)
+async def process_agent_documents(request: ProcessAgentDocumentsRequest, background_tasks: BackgroundTasks):
+    """
+    Process uploaded documents with conversation context to enhance agent creation.
+    
+    Args:
+        request: Contains document_folder, conversation, and summary
+        
+    Returns:
+        Processing results with agent details
+    """
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        logger.info(f"Processing agent documents from: {request.document_folder}")
+        
+        # Validate document folder exists
+        doc_folder = Path(request.document_folder)
+        if not doc_folder.exists() or not doc_folder.is_dir():
+            raise HTTPException(status_code=404, detail=f"Document folder not found: {request.document_folder}")
+        
+        # Process conversation (normalize to list)
+        conversation_list = []
+        if isinstance(request.conversation, str):
+            conversation_list = [request.conversation]
+        else:
+            conversation_list = request.conversation
+        
+        # Generate task ID for tracking
+        import uuid
+        task_id = str(uuid.uuid4())
+        
+        # Initialize task status
+        processing_status[task_id] = {
+            "status": "pending",
+            "message": "Starting document processing...",
+            "progress": 0
+        }
+        
+        # Start background task
+        background_tasks.add_task(
+            _process_documents_with_context,
+            task_id,
+            doc_folder,
+            conversation_list,
+            request.summary
+        )
+        
+        return ProcessAgentDocumentsResponse(
+            success=True,
+            message="Document processing started in background",
+            processing_details={
+                "task_id": task_id,
+                "status_url": f"/agents/task-status/{task_id}",
+                "document_folder": str(doc_folder)
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error starting document processing: {e}", exc_info=True)
+        return ProcessAgentDocumentsResponse(
+            success=False,
+            message=f"Failed to start document processing: {str(e)}",
+            processing_details={"error": str(e)}
+        )
+
+
+async def _process_documents_with_context(
+    task_id: str,
+    doc_folder: Path,
+    conversation: list[str],
+    summary: str
+) -> dict:
+    """
+    Process documents with conversation context using the curate.na script.
+    """
+    import logging
+    import shutil
+    import subprocess
+    import re
+    from pathlib import Path as PyPath
+    
+    logger = logging.getLogger(__name__)
+    
+    # Get list of documents in folder
+    documents = []
+    for file_path in doc_folder.iterdir():
+        if file_path.is_file():
+            documents.append(file_path.name)
+    
+    logger.info(f"Found {len(documents)} documents to process")
+    
+    # Update task status
+    processing_status[task_id] = {
+        "status": "processing",
+        "message": "Extracting role and topic from conversation...",
+        "progress": 20
+    }
+    
+    # Extract role and topic from conversation and summary
+    role, topic = await _extract_role_and_topic(conversation, summary)
+    logger.info(f"Extracted role: {role}, topic: {topic}")
+    
+    # Update task status
+    processing_status[task_id] = {
+        "status": "processing",
+        "message": f"Preparing curate script for role: {role}, topic: {topic}",
+        "progress": 40
+    }
+    
+    # Use __file__ to find the curate.na path relative to this module
+    current_file = PyPath(__file__)
+    # Go up from routers/api.py to the project root
+    project_root = current_file.parent.parent.parent.parent.parent  # dana/api/server/routers -> project root
+    curate_path = project_root / "dana" / "frameworks" / "knows" / "corral" / "curate" / "curate.na"
+    
+    if not curate_path.exists():
+        raise FileNotFoundError(f"curate.na not found at {curate_path}")
+    
+    curate_content = curate_path.read_text()
+    
+    # Replace topic and role in the content
+    # Find and replace the topic line
+    curate_content = re.sub(
+        r'^topic = ".*"$',
+        f'topic = "{topic}"',
+        curate_content,
+        flags=re.MULTILINE
+    )
+    
+    # Find and replace the role line
+    curate_content = re.sub(
+        r'^role = ".*"$', 
+        f'role = "{role}"',
+        curate_content,
+        flags=re.MULTILINE
+    )
+    
+    # Also update the output folder to use the document folder
+    curate_content = re.sub(
+        r'^output_folder_name = .*$',
+        f'output_folder_name = "{doc_folder.parent}/knows"',
+        curate_content,
+        flags=re.MULTILINE
+    )
+    
+    # Create a temporary modified curate.na file
+    temp_curate_path = doc_folder / "curate_modified.na"
+    temp_curate_path.write_text(curate_content)
+    logger.info(f"Created modified curate.na at {temp_curate_path}")
+    
+    # Update task status
+    processing_status[task_id] = {
+        "status": "processing",
+        "message": "Copying utility files...",
+        "progress": 60
+    }
+    
+    # Copy all .na files from the curate directory to the document folder
+    curate_dir = curate_path.parent  # Get the directory containing curate.na
+    
+    # Use glob to find all .na files in the curate directory
+    import glob
+    na_files = glob.glob(str(curate_dir / "*.na"))
+    
+    for na_file_path in na_files:
+        src = PyPath(na_file_path)
+        # Skip the main curate.na file since we're creating a modified version
+        if src.name == "curate.na":
+            continue
+            
+        dst = doc_folder / src.name
+        
+        # Special handling for senior_agent.na to replace document_folder path
+        if src.name == "senior_agent.na":
+            content = src.read_text()
+            # Replace document_folder assignment with the actual doc_folder path
+            content = re.sub(
+                r'document_folder\s*=\s*["\'].*?["\']',
+                f'document_folder = "{doc_folder}"',
+                content
+            )
+            dst.write_text(content)
+            logger.info(f"Modified and copied {src.name} with doc_folder path: {doc_folder}")
+        else:
+            shutil.copy2(src, dst)
+            logger.info(f"Copied {src.name} to document folder")
+    
+    # Update task status
+    processing_status[task_id] = {
+        "status": "processing",
+        "message": "Running dana curate script...",
+        "progress": 80
+    }
+    
+    # Run the modified curate.na script using subprocess
+    try:
+        # Set DANAPATH to include the document folder
+        import os
+        import subprocess
+        env = os.environ.copy()
+        env["DANAPATH"] = str(doc_folder)
+        
+        # Run dana with the modified script
+        result = subprocess.run(
+            ["dana", str(temp_curate_path)],
+            capture_output=True,
+            text=True,
+            env=env,
+            cwd=str(doc_folder)
+        )
+        
+        if result.returncode != 0:
+            logger.error(f"Dana script failed: {result.stderr}")
+            processing_status[task_id] = {
+                "status": "failed",
+                "message": f"Dana script execution failed: {result.stderr}",
+                "progress": 0
+            }
+            raise RuntimeError(f"Dana script execution failed: {result.stderr}")
+        
+        logger.info(f"Dana script output: {result.stdout}")
+        
+    except Exception as e:
+        logger.error(f"Error running curate.na: {e}")
+        processing_status[task_id] = {
+            "status": "failed",
+            "message": f"Error running curate.na: {str(e)}",
+            "progress": 0
+        }
+        raise
+    
+    # Extract agent details from the processing
+    agent_name = f"{role} Expert"
+    agent_description = f"An expert {role} specializing in {topic}"
+    
+    # Read generated files if any
+    processed_folder = doc_folder / "processed"
+    generated_files = []
+    if processed_folder.exists():
+        for file_path in processed_folder.iterdir():
+            if file_path.is_file():
+                generated_files.append(file_path.name)
+    
+    processing_results = {
+        "documents_processed": len(documents),
+        "document_list": documents,
+        "conversation_length": len(conversation),
+        "summary_provided": summary,
+        "agent_name": agent_name,
+        "agent_description": agent_description,
+        "role": role,
+        "topic": topic,
+        "generated_files": generated_files,
+        "output_folder": str(processed_folder) if processed_folder.exists() else None
+    }
+    
+    # Update task status to completed
+    processing_status[task_id] = {
+        "status": "completed",
+        "message": f"Successfully processed {len(documents)} documents for {agent_name}",
+        "progress": 100,
+        "result": processing_results
+    }
+    
+    logger.info(f"Processing complete: {processing_results}")
+    
+    return processing_results
+
+
+async def _extract_role_and_topic(conversation: list[str], summary: str) -> tuple[str, str]:
+    """
+    Extract role and topic from conversation and summary using LLM.
+    """
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    # Combine conversation and summary for context
+    context = "\n".join(conversation) + "\n\nSummary: " + summary
+    
+    # Use LLMResource to extract role and topic
+    extraction_prompt = f"""Based on the following conversation and summary, extract:
+1. The ROLE that the agent should take (e.g., "Process Engineer", "Data Scientist", "Medical Expert", etc.)
+2. The TOPIC that the agent should handle (be specific about the domain and task)
+
+Conversation and Summary:
+{context}
+
+Return ONLY a JSON object with exactly these two fields:
+{{"role": "extracted role", "topic": "extracted topic"}}
+"""
+    
+    try:
+        from dana.common.resource.llm.llm_resource import LLMResource
+        from dana.common.resource.llm.llm_configuration_manager import LLMConfigurationManager
+        from dana.common.types import BaseRequest
+        
+        # Initialize LLM resource
+        llm_config = LLMConfigurationManager().get_model_config()
+        llm_resource = LLMResource(
+            name="role_topic_extractor",
+            description="LLM for extracting role and topic",
+            config=llm_config
+        )
+        
+        # Create request
+        request_data = BaseRequest(
+            arguments={
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You are an expert at analyzing conversations and extracting key information.",
+                    },
+                    {"role": "user", "content": extraction_prompt}
+                ],
+                "temperature": 0.1,
+                "max_tokens": 2000,
+            }
+        )
+
+        # Use query_sync for synchronous execution
+        response = llm_resource.query_sync(request_data)
+        
+        if response.success and response.content:
+            # Parse the response using Misc.text_to_dict
+            from dana.common.utils import Misc
+            
+            result = Misc.get_response_content(response)
+            if isinstance(result, str):
+                # Use text_to_dict to parse the JSON
+                extracted = Misc.text_to_dict(result)
+            else:
+                extracted = result
+                
+            role = extracted.get("role", "Expert")
+            topic = extracted.get("topic", "General Knowledge Processing")
+            
+            logger.info(f"Extracted role: {role}, topic: {topic}")
+            return role, topic
+        else:
+            raise Exception(f"LLM query failed: {response.error if hasattr(response, 'error') else 'Unknown error'}")
+        
+    except Exception as e:
+        logger.warning(f"Failed to extract role and topic using LLM: {e}")
+        # Fallback extraction from summary
+        role = "Expert"
+        topic = summary[:100] if len(summary) > 100 else summary
+        
+        # Simple heuristic extraction
+        if "engineer" in summary.lower():
+            role = "Engineer"
+        elif "scientist" in summary.lower():
+            role = "Scientist"
+        elif "analyst" in summary.lower():
+            role = "Analyst"
+        elif "developer" in summary.lower():
+            role = "Developer"
+            
+        return role, topic
+
+
 async def _update_tools_with_rag(agent_folder_path: Path):
     """
     Ensure tools.na contains a single rag_resource = use("rag", sources=["./docs"]) declaration.
@@ -1671,3 +2056,59 @@ async def _update_tools_with_rag(agent_folder_path: Path):
             logger.info(f"Created tools.na with RAG resource for ./docs")
     except Exception as e:
         logger.error(f"Error updating tools.na with RAG: {e}")
+
+
+async def process_knowledge_in_background(task_id: str, agent_folder_path: Path, filename: str):
+    """
+    Background task to process uploaded knowledge files.
+    This is where you can add your long preprocessing script.
+    """
+    import logging
+    import time
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Update status to processing
+        processing_status[task_id] = {
+            "status": "processing",
+            "message": f"Processing {filename}...",
+            "progress": 0
+        }
+        
+        # Simulate long preprocessing - replace this with your actual script
+        logger.info(f"Starting preprocessing for {filename}")
+        
+        # Example: simulate progress updates
+        for i in range(5):
+            time.sleep(2)  # Replace with actual processing
+            processing_status[task_id] = {
+                "status": "processing",
+                "message": f"Processing {filename}... Step {i+1}/5",
+                "progress": (i + 1) * 20
+            }
+            logger.info(f"Processing progress: {(i + 1) * 20}%")
+        
+        # Add your actual preprocessing logic here
+        # For example:
+        # - Extract text from documents
+        # - Generate embeddings
+        # - Update vector database
+        # - Process with NLP models
+        # - etc.
+        
+        # Mark as completed
+        processing_status[task_id] = {
+            "status": "completed",
+            "message": f"Successfully processed {filename}",
+            "progress": 100
+        }
+        logger.info(f"Completed preprocessing for {filename}")
+        
+    except Exception as e:
+        logger.error(f"Error processing {filename}: {e}", exc_info=True)
+        processing_status[task_id] = {
+            "status": "failed",
+            "message": f"Failed to process {filename}: {str(e)}",
+            "progress": 0
+        }

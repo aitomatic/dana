@@ -185,7 +185,7 @@ FRESHER_CONFIDENCE_PROMPT = """
 
   Focus and analyze the response from fresher. Following these instructions :
   1. Verify if fresher is confident enough to stop asking questions.
-  2. If the confidence level is above 85%, continue_asking will be False.
+  2. If the confidence level is above {target_confidence_level}%, continue_asking will be False.
   3. Identify and focus on the question that fresher want to ask, do not modify the question in any circumstances. Add the exact question to the output in the "question" field.
   4. Then check the fresher reasoning for redundancy. `redundant` and `redundant_reason` will be based on the fresher response. Do not make your own reasoning.
 

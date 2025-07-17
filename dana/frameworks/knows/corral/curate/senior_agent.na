@@ -1,4 +1,6 @@
-specialized_kb = use("rag", sources=["/Users/lam/Desktop/repos/opendxa/proposal/medial_house_wife.md"])
+document_folder = "/Users/lam/Desktop/repos/opendxa/proposal"
+specialized_kb = use("rag", sources=[document_folder])
+
 
 agent SeniorAgent:
     name : str = "Senior Agent"
