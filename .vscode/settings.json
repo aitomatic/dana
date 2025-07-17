@@ -1,7 +1,7 @@
 {
   "files.exclude": {
-    // DANA & RELATED
-    // ==============
+    // DANA-RELATED
+    // ============
     "**/*.db": true,  // SQLite database files
 
     // AUTOMATION- & IDE-RELATED
