@@ -16,23 +16,40 @@ from pathlib import Path
 
 
 def get_current_version():
-    """Get current version from pyproject.toml"""
+    """Get current version from pyproject.toml [project] section"""
     pyproject_path = Path("pyproject.toml")
     if not pyproject_path.exists():
         raise FileNotFoundError("pyproject.toml not found")
 
     content = pyproject_path.read_text()
-    match = re.search(r'version\s*=\s*"([^"]+)"', content)
-    if not match:
-        raise ValueError("Could not find version in pyproject.toml")
-    return match.group(1)
+    # Look specifically for version in [project] section
+    project_section_match = re.search(r"\[project\](.*?)(?=\[|\Z)", content, re.DOTALL)
+    if not project_section_match:
+        raise ValueError("Could not find [project] section in pyproject.toml")
+
+    project_content = project_section_match.group(1)
+    version_match = re.search(r'version\s*=\s*"([^"]+)"', project_content)
+    if not version_match:
+        raise ValueError("Could not find version in [project] section")
+    return version_match.group(1)
 
 
 def set_version(new_version):
-    """Update version in pyproject.toml"""
+    """Update version in pyproject.toml [project] section only"""
     pyproject_path = Path("pyproject.toml")
     content = pyproject_path.read_text()
-    updated_content = re.sub(r'version\s*=\s*"[^"]+"', f'version = "{new_version}"', content)
+
+    # Find the [project] section and update only the version within it
+    def replace_project_version(match):
+        project_section = match.group(1)
+        updated_section = re.sub(
+            r'version\s*=\s*"[^"]+"', f'version = "{new_version}"', project_section
+        )
+        return f"[project]{updated_section}"
+
+    updated_content = re.sub(
+        r"\[project\](.*?)(?=\[|\Z)", replace_project_version, content, flags=re.DOTALL
+    )
     pyproject_path.write_text(updated_content)
     print(f"✅ Updated version to {new_version}")
 
@@ -66,8 +83,14 @@ def bump_version(current_version, bump_type):
 def commit_changes(version):
     """Commit the version change"""
     try:
-        subprocess.run(["git", "add", "pyproject.toml"], check=True, capture_output=True)
-        subprocess.run(["git", "commit", "-m", f"Bump version to {version}"], check=True, capture_output=True)
+        subprocess.run(
+            ["git", "add", "pyproject.toml"], check=True, capture_output=True
+        )
+        subprocess.run(
+            ["git", "commit", "-m", f"Bump version to {version}"],
+            check=True,
+            capture_output=True,
+        )
         print("✅ Committed version bump")
     except subprocess.CalledProcessError as e:
         print(f"❌ Failed to commit: {e}")
@@ -77,9 +100,19 @@ def commit_changes(version):
 
 def main():
     parser = argparse.ArgumentParser(description="Simple version bumper for Dana Agent")
-    parser.add_argument("bump_type", choices=["major", "minor", "patch", "build"], help="Type of version bump")
-    parser.add_argument("--dry-run", action="store_true", help="Show what would be done without making changes")
-    parser.add_argument("--commit", action="store_true", help="Commit the version change")
+    parser.add_argument(
+        "bump_type",
+        choices=["major", "minor", "patch", "build"],
+        help="Type of version bump",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be done without making changes",
+    )
+    parser.add_argument(
+        "--commit", action="store_true", help="Commit the version change"
+    )
 
     args = parser.parse_args()
 

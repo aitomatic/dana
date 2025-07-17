@@ -31,6 +31,13 @@ This repository includes an automated PyPI release pipeline that:
 ```bash
 # Bump version and deploy
 ./bin/bump-version.py patch --commit
+# Output:
+# Current version: 0.25.7.19
+# New version: 0.25.8.0
+# ✅ Updated version to 0.25.8.0
+# ✅ Committed version bump
+# 🎉 Version updated to 0.25.8.0
+
 git push origin release/pypi
 
 # Monitor deployment
@@ -40,13 +47,16 @@ git push origin release/pypi
 ## 📦 Release Types
 
 ```bash
-# Patch release: 0.25.7.19 → 0.25.7.20
+# Build release: 0.25.7.19 → 0.25.7.20
+./bin/bump-version.py build --commit
+
+# Patch release: 0.25.7.19 → 0.25.8.0
 ./bin/bump-version.py patch --commit
 
-# Minor release: 0.25.7.19 → 0.25.8.0  
+# Minor release: 0.25.7.19 → 0.26.0.0  
 ./bin/bump-version.py minor --commit
 
-# Major release: 0.25.7.19 → 0.26.0.0
+# Major release: 0.25.7.19 → 1.0.0.0
 ./bin/bump-version.py major --commit
 
 # Push to deploy
@@ -120,7 +130,7 @@ fi
 
 **"File already exists" error**
 - PyPI doesn't allow re-uploading same version
-- Bump version: `./bin/bump-version.py patch --commit`
+- Bump version: `./bin/bump-version.py build --commit` (quickest) or `./bin/bump-version.py patch --commit`
 
 **Node.js version conflicts**
 - Pipeline uses Node.js 23.9.0 for Vite compatibility
