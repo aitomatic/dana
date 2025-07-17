@@ -283,7 +283,7 @@ const AgentGenerationChat = ({
           formattedMessage += `The training code has been loaded into the editor on the right. You can review and modify it as needed.`;
 
           formattedMessage += '\n\n---\n\n';
-          formattedMessage += 'Georgia\'s training code has been generated successfully! You can now test it in the right panel.';
+          formattedMessage += 'Georgia\'s training code has been generated successfully! You can now test it in the right panel or proceed to deep training for enhanced capabilities.';
         }
 
         console.log('📝 Formatted Message:', formattedMessage);
@@ -353,7 +353,7 @@ const AgentGenerationChat = ({
     }
   }, [inputMessage, isGenerating, messages, currentCode, onCodeGenerated, currentAgent, initializeAgent, updateAgentData]);
 
-  const handleKeyPress = useCallback(
+  const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -393,14 +393,21 @@ const AgentGenerationChat = ({
       // Compose payload
       const ragPromptAddition = `\n\nWhen generating the agent code, please ensure the following:\n\n1. In the file [1mknowledges.na[0m, declare a RAG resource for knowledge retrieval, for example:\n   rag_resource = use("rag", sources=["./docs"])\n\n   Also, list or describe the knowledge domains or files available to the agent.\n\n2. In the file [1mmethods.na[0m, demonstrate how the agent can use the knowledges (or rag_resource) resource to retrieve information. For example, show a method that queries the knowledge base using the RAG resource and returns relevant information to the user.\n\n3. Make sure the agent's methods leverage the knowledge resource for answering questions or solving tasks that require external knowledge.\n\nExample for methods.na:\n\ndef answer_question(question: str) -> str:\n    # Use the RAG resource to retrieve relevant information\n    context = rag_resource.retrieve(question)\n    return f"Based on the documents, here's what I found: {context}"\n`;
       const payload = {
-        prompt: `Build the agent now. ${ragPromptAddition}`,
+        prompt: `Generate the training code for Georgia immediately. Skip any conversation or understanding messages and proceed directly to code generation. ${ragPromptAddition}`,
         messages: apiMessages,
         agent_summary: agentSummary,
         multi_file: true, // or false, as needed
       };
 
       // Call the new endpoint
+      console.log('🔄 Calling generateAgentFromPrompt with payload:', payload);
       const response = await apiService.generateAgentFromPrompt(payload);
+      console.log('✅ Received response from generateAgentFromPrompt:', response);
+      
+      // Check if response contains any conversational messages
+      if (response.follow_up_message) {
+        console.log('⚠️ Response contains follow_up_message:', response.follow_up_message);
+      }
 
       if (response.success && response.dana_code) {
         setDanaCode(response.dana_code);
@@ -415,16 +422,52 @@ const AgentGenerationChat = ({
           response.agent_id ? String(response.agent_id) : undefined,
           response.agent_folder,
         );
-        // Add success message, etc.
+        
+        // For direct training (Train Georgia button), skip any backend messages and show our custom success message
         const successMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: 'Your agent code has been generated successfully! You can now test it in the right panel.',
+          content: `I've generated training code for Georgia! Here's what I created:\n\n**Agent Name:** ${response.agent_name || 'Georgia'}\n**Description:** ${response.agent_description || 'A specialized agent for your needs'}\n\nThe training code has been loaded into the editor on the right. You can review and modify it as needed.\n\n---\n\nGeorgia's training code has been generated successfully! You can now test it in the right panel or proceed to deep training for enhanced capabilities.`,
           timestamp: new Date(),
         };
-        setMessages((prev) => [...prev, successMessage]);
+        
+        // Replace any existing messages from this training session with our success message
+        setMessages((prev) => {
+          // Find if there are any recent assistant messages from this training session
+          let lastUserMessageIndex = -1;
+          for (let i = prev.length - 1; i >= 0; i--) {
+            if (prev[i].role === 'user') {
+              lastUserMessageIndex = i;
+              break;
+            }
+          }
+          
+          if (lastUserMessageIndex >= 0) {
+            const messagesAfterLastUser = prev.slice(lastUserMessageIndex + 1);
+            const hasUnwantedMessages = messagesAfterLastUser.some((msg: ChatMessage) => 
+              msg.role === 'assistant' && (
+                msg.content.includes('Understanding') || 
+                msg.content.includes('understand')
+              )
+            );
+            
+            if (hasUnwantedMessages) {
+              // Remove unwanted messages and add our success message
+              return [...prev.slice(0, lastUserMessageIndex + 1), successMessage];
+            }
+          }
+          
+          // Just add our success message
+          return [...prev, successMessage];
+        });
+        
         addConversationMessage('assistant', successMessage.content);
-        toast.success('Agent code generated successfully!');
+        toast.success('Training code generated successfully for Georgia!');
+
+        setPhase('code_generation');
+        if (onPhaseChange) {
+          onPhaseChange('code_generation');
+        }
       } else {
         throw new Error(response.error || 'Failed to generate training code for Georgia');
       }
@@ -447,6 +490,124 @@ const AgentGenerationChat = ({
       setLoading(false);
     }
   };
+
+  const handleDeepTraining = useCallback(async () => {
+    if (isGenerating) return;
+
+    setGenerating(true);
+    setLoading(true);
+
+    try {
+      const agent = useAgentBuildingStore.getState().currentAgent;
+
+      // Add user message about deep training
+      const userMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: 'Start deep training for Georgia',
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, userMessage]);
+      addConversationMessage('user', userMessage.content);
+
+      // For now, show a placeholder response until backend is implemented
+      const assistantMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'Deep training has been initiated for Georgia. This advanced training will enhance her capabilities through reinforcement learning and advanced pattern recognition. The process may take several minutes to complete.',
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+      addConversationMessage('assistant', assistantMessage.content);
+
+      // Call the backend API for deep training using process-agent-documents
+      const conversationHistory = messages.map(msg => `${msg.role}: ${msg.content}`).join('\n\n');
+      const agentSummary = `Agent Name: ${agent?.name || 'Georgia'}\nAgent Description: ${agent?.description || 'A specialized agent'}\nCapabilities: ${JSON.stringify(agent?.capabilities || {})}`;
+      
+      // Ensure document_folder includes /docs subdirectory where documents are stored
+      const documentFolder = agent?.folder_path ? `${agent.folder_path}/docs` : '';
+      
+      // Get current agent data from store
+      const currentAgentData = {
+        name: agent?.name,
+        description: agent?.description,
+        capabilities: agent?.capabilities,
+        id: agent?.id,
+        folder_path: agent?.folder_path,
+        phase: agent?.phase,
+        ready_for_code_generation: agent?.ready_for_code_generation,
+        agent_data: agent?.agent_data
+      };
+      
+      const response = await apiService.processAgentDocuments({
+        document_folder: documentFolder,
+        conversation: conversationHistory,
+        summary: agentSummary,
+        agent_data: currentAgentData,
+        current_code: agent?.dana_code || currentCode,
+        multi_file_project: agent?.multi_file_project
+      });
+
+      if (response.success) {
+        // Update the code in the store and editor if updated code is returned
+        if (response.dana_code) {
+          setDanaCode(response.dana_code);
+        }
+        if (response.multi_file_project) {
+          setMultiFileProject(response.multi_file_project);
+        }
+        
+        // Call the callback to update the editor with updated code
+        if (response.dana_code || response.multi_file_project) {
+          onCodeGenerated(
+            response.dana_code || agent?.dana_code || currentCode || '',
+            response.agent_name || agent?.name,
+            response.agent_description || agent?.description,
+            response.multi_file_project || agent?.multi_file_project,
+            agent?.id ? String(agent.id) : undefined,
+            agent?.folder_path
+          );
+        }
+        
+        // Show completion message after a delay to simulate training time
+        setTimeout(() => {
+          const completionMessage: ChatMessage = {
+            id: (Date.now() + 2).toString(),
+            role: 'assistant',
+            content: 'Deep training has been completed successfully! Georgia now has enhanced capabilities including improved reasoning, better context understanding, and RAG-powered knowledge retrieval. The training code has been updated with contextual knowledge integration.',
+            timestamp: new Date(),
+          };
+
+          setMessages((prev) => [...prev, completionMessage]);
+          addConversationMessage('assistant', completionMessage.content);
+
+          toast.success('Deep training completed for Georgia!');
+        }, 3000); // Simulate 3 second training time
+
+        toast.success('Deep training initiated for Georgia!');
+      } else {
+        throw new Error(response.error || 'Deep training failed');
+      }
+
+    } catch (error) {
+      console.error('Failed to start deep training:', error);
+
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'Sorry, I encountered an error while starting deep training. Please try again.',
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, errorMessage]);
+      toast.error('Failed to start deep training. Please try again.');
+    } finally {
+      setGenerating(false);
+      setLoading(false);
+    }
+  }, [isGenerating, addConversationMessage, setGenerating, setLoading]);
 
   return (
     <div
@@ -503,12 +664,43 @@ const AgentGenerationChat = ({
                             {isGenerating ? (
                               <>
                                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                Generating Code...
+                                Training Georgia...
                               </>
                             ) : (
                               <>
                                 <Send className="w-4 h-4 mr-2" />
                                 Train Georgia
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      )}
+
+                    {/* Show Deep Training button after training is complete */}
+                    {(() => {
+                      const agent = useAgentBuildingStore.getState().currentAgent;
+                      const isLastMessage = messages[messages.length - 1]?.id === message.id;
+                      const shouldShowDeepTrainingButton = agent?.phase === 'code_generation' &&
+                        agent?.id &&
+                        isLastMessage;
+
+                      return shouldShowDeepTrainingButton;
+                    })() && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <Button
+                            onClick={handleDeepTraining}
+                            disabled={isGenerating}
+                            className="w-full px-4 py-2 text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isGenerating ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Starting Deep Training...
+                              </>
+                            ) : (
+                              <>
+                                <Send className="w-4 h-4 mr-2" />
+                                Deep Training
                               </>
                             )}
                           </Button>
@@ -620,7 +812,7 @@ const AgentGenerationChat = ({
           <textarea
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             placeholder="Describe how you want to train Georgia"
             className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             rows={2}

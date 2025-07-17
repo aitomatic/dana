@@ -400,6 +400,9 @@ class ProcessAgentDocumentsRequest(BaseModel):
     document_folder: str
     conversation: str | list[str]
     summary: str
+    agent_data: dict | None = None  # Include current agent data (name, description, capabilities, etc.)
+    current_code: str | None = None  # Current dana code to be updated
+    multi_file_project: dict | None = None  # Current multi-file project structure
 
 
 class ProcessAgentDocumentsResponse(BaseModel):
@@ -410,6 +413,10 @@ class ProcessAgentDocumentsResponse(BaseModel):
     agent_name: str | None = None
     agent_description: str | None = None
     processing_details: dict | None = None
+    # Include updated code with RAG integration
+    dana_code: str | None = None  # Updated single-file code
+    multi_file_project: dict | None = None  # Updated multi-file project with RAG integration
+    error: str | None = None
 class KnowledgeUploadRequest(BaseModel):
     """Request schema for knowledge file upload with conversation context"""
     

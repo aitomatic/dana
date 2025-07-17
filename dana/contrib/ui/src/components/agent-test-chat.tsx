@@ -136,9 +136,10 @@ const AgentTestChat = ({
                 'max-w-[80%] rounded-lg px-3 py-2 text-sm',
                 message.role === 'user'
                   ? 'bg-blue-600 text-white'
-                  : message.content.includes('error') || message.content.includes('Sorry')
-                    ? 'bg-red-100 text-red-800 border border-red-200'
-                    : 'bg-gray-100 text-gray-900',
+                  : 'bg-gray-100 text-gray-900'
+                // : message.content.includes('error') || message.content.includes('Sorry')
+                //   ? 'bg-red-100 text-red-800 border border-red-200'
+                //   : 'bg-gray-100 text-gray-900',
               )}
             >
               {/* Sender label inside bubble */}

@@ -1058,6 +1058,8 @@ Focus on analyzing:
 - What resources it actually uses (RAG, LLM, etc.)
 - What functions and workflows are actually implemented
 - What knowledge domains are actually referenced
+- Do not include the headline
+- Do not mention Dana Code or Conversation Context in the summary
 
 Generate a brief, accurate summary that reflects the current state of the agent, not future possibilities.
 """
@@ -1729,7 +1731,7 @@ this_agent = {agent_class}()
 '''
 
     methods_na = '''
-from knowledges import rag_resource
+from knowledges import knowledge
 from common import QUERY_GENERATION_PROMPT
 from common import QUERY_DECISION_PROMPT
 from common import ANSWER_PROMPT
@@ -1739,7 +1741,7 @@ def search_document(package: RetrievalPackage) -> RetrievalPackage:
     query = package.query
     if package.refined_query != "":
         query = package.refined_query
-    package.retrieval_result = str(rag_resource.query(query))
+    package.retrieval_result = str(knowledge.query(query))
     return package
 
 def refine_query(package: RetrievalPackage) -> RetrievalPackage:
@@ -1776,7 +1778,7 @@ workflow = should_use_rag | refine_query | search_document | get_answer
     else:
         knowledges_na_lines.append('- (No files currently listed. Add files to ./docs to make them available.)')
     knowledges_na_lines.append('"""\n')
-    knowledges_na_lines.append('rag_resource = use("rag", sources=["./docs"])')
+    knowledges_na_lines.append('knowledge = use("rag", sources=["./docs"])')
     knowledges_na = "\n".join(knowledges_na_lines)
 
     tools_na = ''  # No rag_resource here; left intentionally empty or for other tools

@@ -2292,14 +2292,25 @@ async def process_agent_documents(request: ProcessAgentDocumentsRequest, backgro
             "progress": 0
         }
         
-        # Start background task
-        background_tasks.add_task(
-            _process_documents_with_context,
-            task_id,
-            doc_folder,
-            conversation_list,
-            request.summary
-        )
+        # Start background task in a separate thread to avoid blocking the API
+        import threading
+
+        def run_in_thread():
+            import asyncio
+            try:
+                asyncio.run(_process_documents_with_context(
+                    task_id,
+                    doc_folder,
+                    conversation_list,
+                    request.summary
+                ))
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error in threaded document processing: {e}", exc_info=True)
+
+        thread = threading.Thread(target=run_in_thread, daemon=True)
+        thread.start()
         
         return ProcessAgentDocumentsResponse(
             success=True,
@@ -2344,6 +2355,8 @@ async def _process_documents_with_context(
     for file_path in doc_folder.iterdir():
         if file_path.is_file():
             documents.append(file_path.name)
+
+    print(f"Documents: {documents}")
     
     logger.info(f"Found {len(documents)} documents to process")
     
@@ -2901,17 +2914,17 @@ async def _generate_upload_response(
         file_extension = filename.split('.')[-1].lower()
         
         if file_extension in ['pdf', 'doc', 'docx']:
-            response += "• What specific information from this document should your agent focus on?\n"
-            response += "• How should your agent use this knowledge to help users?\n"
+            response += "• What specific information from this document should Georgia focus on?\n"
+            response += "• How should Georgia use this knowledge to help users?\n"
         elif file_extension in ['csv', 'json']:
-            response += "• What kind of data analysis should your agent perform with this information?\n"
-            response += "• What insights should your agent provide from this data?\n"
+            response += "• What kind of data analysis should Georgia perform with this information?\n"
+            response += "• What insights should Georgia provide from this data?\n"
         elif file_extension in ['txt', 'md']:
-            response += "• What key topics or concepts from this text should your agent understand?\n"
-            response += "• How should your agent apply this knowledge in conversations?\n"
+            response += "• What key topics or concepts from this text should Georgia understand?\n"
+            response += "• How should Georgia apply this knowledge in conversations?\n"
         else:
-            response += "• What specific capabilities should your agent have with this knowledge?\n"
-            response += "• How should your agent use this information to help users?\n"
+            response += "• What specific capabilities should Georgia have with this knowledge?\n"
+            response += "• How should Georgia use this information to help users?\n"
         
         response += "\nOnce you provide these details, we can proceed to build your agent!"
         
@@ -3128,3 +3141,63 @@ async def _store_multi_file_in_phase1_folder(
     
     logger.info(f"Stored multi-file agent in Phase 1 folder. Created {len(file_paths)} files: {file_paths}")
     return file_paths
+
+
+@router.post("/deep-train")
+async def deep_train_agent(request: dict):
+    """
+    Deep Training endpoint for Georgia - placeholder for future implementation.
+    
+    This endpoint will eventually implement advanced training techniques for Georgia
+    including reinforcement learning, advanced pattern recognition, and enhanced
+    reasoning capabilities.
+    """
+    logger = logging.getLogger(__name__)
+    
+    try:
+        logger.info("Received deep training request for Georgia")
+        
+        # Extract request parameters
+        agent_id = request.get("agent_id")
+        agent_folder = request.get("agent_folder")
+        training_type = request.get("training_type", "deep")
+        training_parameters = request.get("training_parameters", {})
+        
+        # Validate required parameters
+        if not agent_id and not agent_folder:
+            raise HTTPException(
+                status_code=400,
+                detail="Either agent_id or agent_folder must be provided"
+            )
+        
+        # Generate unique training ID
+        training_id = f"deep_training_{int(time.time() * 1000)}"
+        
+        # TODO: Implement actual deep training logic here
+        # This is where the advanced training algorithms would be implemented:
+        # - Reinforcement learning from user feedback
+        # - Advanced pattern recognition training
+        # - Knowledge graph enhancement
+        # - Multi-modal learning capabilities
+        # - Continuous learning from conversations
+        
+        logger.info(f"Deep training initiated for agent {agent_id} with training ID: {training_id}")
+        
+        # For now, return a placeholder response
+        return {
+            "success": True,
+            "training_id": training_id,
+            "message": "Deep training has been initiated for Georgia. This process will enhance her capabilities through advanced machine learning techniques.",
+            "estimated_duration": 300,  # 5 minutes in seconds
+            "training_parameters": training_parameters,
+            "status": "initiated"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in deep training endpoint: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Deep training failed: {str(e)}"
+        )

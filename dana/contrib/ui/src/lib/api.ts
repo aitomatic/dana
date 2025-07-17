@@ -261,6 +261,27 @@ export interface AgentTestResponse {
   error?: string;
 }
 
+export interface ProcessAgentDocumentsRequest {
+  document_folder: string;
+  conversation: string | string[];
+  summary: string;
+  agent_data?: Record<string, any>;  // Include current agent data (name, description, capabilities, etc.)
+  current_code?: string;  // Current dana code to be updated
+  multi_file_project?: MultiFileProject;  // Current multi-file project structure
+}
+
+export interface ProcessAgentDocumentsResponse {
+  success: boolean;
+  message: string;
+  agent_name?: string;
+  agent_description?: string;
+  processing_details?: Record<string, any>;
+  // Include updated code with RAG integration
+  dana_code?: string;  // Updated single-file code
+  multi_file_project?: MultiFileProject;  // Updated multi-file project with RAG integration
+  error?: string;
+}
+
 // API Service Class
 class ApiService {
   private client: AxiosInstance;
@@ -495,6 +516,14 @@ class ApiService {
   async generateAgentCode(agentId: number, request: AgentCodeGenerationRequest): Promise<AgentGenerationResponse> {
     const response = await this.client.post<AgentGenerationResponse>(`/agents/${agentId}/generate-code`, request, {
       timeout: 300000,
+    });
+    return response.data;
+  }
+
+  // Process Agent Documents for Deep Training
+  async processAgentDocuments(request: ProcessAgentDocumentsRequest): Promise<ProcessAgentDocumentsResponse> {
+    const response = await this.client.post<ProcessAgentDocumentsResponse>('/agents/process-agent-documents', request, {
+      timeout: 600000, // 10 minutes timeout for document processing
     });
     return response.data;
   }
