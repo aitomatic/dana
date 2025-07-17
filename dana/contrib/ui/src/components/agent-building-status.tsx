@@ -14,17 +14,7 @@ export function AgentBuildingStatus() {
 
   return (
     <div className="p-4 bg-white border border-gray-200 rounded-lg">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-lg font-medium text-gray-900">Agent Building Status</h3>
-        <div className={cn(
-          'px-2 py-1 text-xs font-medium rounded-full',
-          currentAgent.phase === 'description'
-            ? 'bg-blue-100 text-blue-800'
-            : 'bg-green-100 text-green-800'
-        )}>
-          {currentAgent.phase === 'description' ? 'Phase 1: Description' : 'Phase 2: Code Generation'}
-        </div>
-      </div>
+
 
       <div className="space-y-2">
         <div>
