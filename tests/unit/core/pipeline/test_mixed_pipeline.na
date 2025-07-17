@@ -1,0 +1,46 @@
+# Test mixed pipeline modes and edge cases
+# This file tests combining implicit and explicit modes in pipelines
+
+def test_mixed_modes():
+    def identity(x: Any) -> Any:
+        return x
+
+    def add_numbers(a: int, b: int) -> int:
+        return a + b
+
+    def combine_strings(args: list) -> str:
+        return "-".join(args)
+
+    def process_list(items: list, prefix: str = "item:") -> list:
+        result = []
+        for item in items:
+            result.append(prefix + " " + str(item))
+        return result
+
+    # Test numeric pipeline
+    result = 5 | add_numbers(10) | add_numbers(3)
+    expected = 18  # 5 + 10 + 3
+    assert result == expected, f"Expected {expected}, got {result}"
+
+    # Test list processing
+    result = [1, 2, 3] | process_list("num:")
+    expected = ["num: 1", "num: 2", "num: 3"]
+    assert result == expected, f"Expected {expected}, got {result}"
+
+    # Test string operations with mixed modes
+    result = "hello" | identity | combine_strings(["world", "test"])
+    expected = "hello-world-test"
+    assert result == expected, f"Expected {expected}, got {result}"
+
+    # Test numeric with placeholder (should default to implicit)
+    def multiply_by(a: int, multiplier: int = 2) -> int:
+        return a * multiplier
+
+    result = 7 | multiply_by(3)
+    expected = 21  # 7 * 3
+    assert result == expected, f"Expected {expected}, got {result}"
+
+    log("✅ All mixed mode tests passed")
+
+if __name__ == "__main__":
+    test_mixed_modes()

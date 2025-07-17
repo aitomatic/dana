@@ -29,10 +29,13 @@ from dana.core.lang.ast import (
     BinaryOperator,
     DictLiteral,
     FStringExpression,
+    FunctionCall,
     Identifier,
     ListLiteral,
     LiteralExpression,
     ObjectFunctionCall,
+    PlaceholderExpression,
+    PipelineExpression,
     SetLiteral,
     SubscriptExpression,
     TupleLiteral,
@@ -100,6 +103,8 @@ class ExpressionExecutor(BaseExecutor):
             AttributeAccess: self.execute_attribute_access,
             SubscriptExpression: self.execute_subscript_expression,
             ObjectFunctionCall: self.execute_object_function_call,
+            PlaceholderExpression: self.execute_placeholder_expression,
+            PipelineExpression: self.execute_pipeline_expression,
         }
 
     def execute_literal_expression(self, node: LiteralExpression, context: SandboxContext) -> Any:
@@ -662,3 +667,150 @@ class ExpressionExecutor(BaseExecutor):
             The list value
         """
         return self.collection_processor.execute_list_literal(node, context)
+
+    def execute_placeholder_expression(self, node: PlaceholderExpression, context: SandboxContext) -> Any:
+        """Execute a placeholder expression.
+
+        This method should not be called directly, as placeholders are only
+        meaningful within pipeline contexts.
+
+        Args:
+            node: The placeholder expression
+            context: The execution context
+
+        Returns:
+            Should raise an error as placeholders are not standalone expressions
+        """
+        raise SandboxError("Placeholder expressions ($) can only be used within pipeline operations")
+
+    def execute_pipeline_expression(self, node: PipelineExpression, context: SandboxContext) -> Any:
+        """Execute a pipeline expression as a function composition.
+
+        Args:
+            node: The pipeline expression containing stages
+            context: The execution context
+
+        Returns:
+            A composed function that can be called with an initial value
+        """
+        if not node.stages:
+            # Return identity function for empty pipeline
+            def identity_function(initial_value):
+                return initial_value
+            return identity_function
+        
+        # Create a composed function
+        def composed_function(initial_value):
+            current_value = initial_value
+            
+            for stage in node.stages:
+                current_value = self._execute_pipeline_stage(current_value, stage, context)
+            
+            return current_value
+        
+        return composed_function
+
+    def _execute_pipeline_stage(self, current_value: Any, stage: Any, context: SandboxContext) -> Any:
+        """Execute a single pipeline stage with argument substitution.
+
+        Args:
+            current_value: The current value from previous stage
+            stage: The stage to execute (typically a FunctionCall)
+            context: The execution context
+
+        Returns:
+            The result of executing this stage
+        """
+        
+        # Handle different stage types
+        if isinstance(stage, FunctionCall):
+            return self._execute_function_call_stage(current_value, stage, context)
+        elif isinstance(stage, PlaceholderExpression):
+            # This shouldn't happen in a proper pipeline, but handle defensively
+            return current_value
+        else:
+            # For other expression types, just evaluate them
+            return self.parent.execute(stage, context)
+
+    def _execute_function_call_stage(self, current_value: Any, func_call: FunctionCall, context: SandboxContext) -> Any:
+        """Execute a function call stage with pipeline argument substitution.
+
+        Args:
+            current_value: The value to substitute into the function call
+            func_call: The function call to execute
+            context: The execution context
+
+        Returns:
+            The result of the function call
+        """
+        
+        # Resolve the function
+        func_name = func_call.name
+        if isinstance(func_name, str):
+            func = self.parent.execute(Identifier(name=func_name), context)
+        else:
+            # Handle attribute access or other callable expressions
+            func = self.parent.execute(func_name, context)
+        
+        if not callable(func):
+            raise SandboxError(f"'{func_name}' is not callable")
+        
+        # Process arguments with placeholder substitution
+        args = []
+        kwargs = {}
+        
+        if isinstance(func_call.args, dict):
+            # Handle positional arguments
+            if "__positional" in func_call.args:
+                for arg_expr in func_call.args["__positional"]:
+                    if self._contains_placeholder(arg_expr):
+                        args.append(current_value)
+                    else:
+                        args.append(self.parent.execute(arg_expr, context))
+            
+            # Handle keyword arguments
+            for key, arg_expr in func_call.args.items():
+                if key != "__positional":
+                    if self._contains_placeholder(arg_expr):
+                        kwargs[key] = current_value
+                    else:
+                        kwargs[key] = self.parent.execute(arg_expr, context)
+        else:
+            # Fallback for other argument formats
+            args = [current_value]
+        
+        # Check if we need implicit first-argument insertion
+        has_placeholder = any(
+            self._contains_placeholder(arg) 
+            for arg in func_call.args.get("__positional", [])
+        )
+        
+        if not has_placeholder:
+            # No placeholders found, insert current_value as first argument
+            args.insert(0, current_value)
+        
+        # Execute the function
+        return self.run_function(func, *args, **kwargs)
+
+    def _contains_placeholder(self, expr: Any) -> bool:
+        """Check if an expression contains a placeholder.
+
+        Args:
+            expr: The expression to check
+
+        Returns:
+            True if the expression contains a PlaceholderExpression
+        """
+        if isinstance(expr, PlaceholderExpression):
+            return True
+        
+        # Recursively check nested expressions
+        if hasattr(expr, 'args') and isinstance(expr.args, dict):
+            for arg in expr.args.get("__positional", []):
+                if isinstance(arg, PlaceholderExpression):
+                    return True
+            for arg in expr.args.values():
+                if isinstance(arg, PlaceholderExpression):
+                    return True
+        
+        return False

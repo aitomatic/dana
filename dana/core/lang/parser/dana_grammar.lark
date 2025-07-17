@@ -247,6 +247,7 @@ DIV: "/"
 FDIV: "//"
 MOD: "%"
 PIPE: "|"
+DOLLAR_DOLLAR: "$"
 
 // Expression precedence structure (lowest to highest)
 sum_expr: product ((ADD | SUB) product)*
@@ -282,6 +283,9 @@ arguments: argument ("," argument)* [","]
 
 argument: kw_arg
         | expr
+
+// ===== PLACEHOLDER =====
+placeholder: DOLLAR_DOLLAR -> placeholder_expression
 
 // ===== STRING LITERALS =====
 // Regular string literals, referenced from common
@@ -336,6 +340,7 @@ atom: variable trailer*
     | FALSE
     | NONE
     | collection
+    | placeholder
     | "(" expr ")"
 
 // ===== COLLECTIONS =====
