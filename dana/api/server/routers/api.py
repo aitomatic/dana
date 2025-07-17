@@ -2251,16 +2251,224 @@ async def get_task_status(task_id: str):
     return processing_status[task_id]
 
 
+async def _update_agent_code_with_rag(
+    agent_folder: Path,
+    agent_data: dict | None = None,
+    current_code: str | None = None,
+    multi_file_project: dict | None = None
+) -> tuple[str | None, dict | None]:
+    """
+    Update agent code files with RAG integration.
+    
+    Args:
+        agent_folder: Path to the agent's folder
+        agent_data: Current agent data
+        current_code: Current single-file Dana code
+        multi_file_project: Current multi-file project structure
+        
+    Returns:
+        Tuple of (updated_code, updated_multi_file_project)
+    """
+    import logging
+    import json
+    from ..code_handler import CodeHandler
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        updated_code = None
+        updated_multi_file_project = None
+        
+        # Handle multi-file project updates
+        if multi_file_project:
+            logger.info("Updating multi-file project with RAG integration")
+            
+            # Create a copy of the project
+            updated_project = multi_file_project.copy()
+            
+            # Update knowledges.na file
+            knowledges_file = None
+            for file_info in updated_project.get("files", []):
+                if file_info.get("filename") == "knowledges.na":
+                    knowledges_file = file_info
+                    break
+            
+            if knowledges_file:
+                # Update knowledges.na by adding contextual_knowledge while preserving existing content
+                current_content = knowledges_file.get("content", "")
+                
+                # Check if contextual_knowledge already exists
+                if "contextual_knowledge" not in current_content:
+                    # Add contextual_knowledge to existing content
+                    if current_content.strip():
+                        # Add to existing content with proper spacing
+                        if not current_content.endswith("\n"):
+                            current_content += "\n"
+                        current_content += "\n# RAG resource for contextual knowledge retrieval from uploaded documents\n"
+                        current_content += 'contextual_knowledge = use("rag", sources=["./knows"])'
+                    else:
+                        # Create new content if file is empty
+                        current_content = '''"""Knowledge base/resource configurations.
+
+Knowledge Description:
+- Uses RAG (Retrieval Augmented Generation) for contextual knowledge retrieval
+- Accesses uploaded documents and knowledge sources
+"""
+
+# Original knowledge resource (preserved)
+knowledge = use("rag", sources=["./docs"])
+
+# Additional contextual knowledge from uploaded documents
+contextual_knowledge = use("rag", sources=["./knows"])'''
+                    
+                    knowledges_file["content"] = current_content
+                    logger.info("Updated knowledges.na with contextual_knowledge while preserving existing knowledge")
+            
+            # Update methods.na file to use contextual knowledge
+            methods_file = None
+            for file_info in updated_project.get("files", []):
+                if file_info.get("filename") == "methods.na":
+                    methods_file = file_info
+                    break
+            
+            if methods_file:
+                # Add RAG integration to methods
+                current_content = methods_file.get("content", "")
+                
+                # Update imports to include both knowledge sources
+                if "from knowledges import knowledge, contextual_knowledge" not in current_content:
+                    lines = current_content.split("\n")
+                    
+                    # Remove any existing individual imports
+                    lines = [line for line in lines if not (
+                        "from knowledges import knowledge" in line or 
+                        "from knowledges import contextual_knowledge" in line
+                    )]
+                    
+                    # Add combined import at the top
+                    import_line = "from knowledges import knowledge, contextual_knowledge"
+                    
+                    # Find where to insert import (after existing imports)
+                    insert_index = 0
+                    for i, line in enumerate(lines):
+                        if line.strip().startswith("from ") or line.strip().startswith("import "):
+                            insert_index = i + 1
+                        elif line.strip() and not line.strip().startswith("#"):
+                            break
+                    
+                    lines.insert(insert_index, import_line)
+                    current_content = "\n".join(lines)
+                
+                # Modify existing search_document function to use both knowledge sources
+                if "def search_document" in current_content:
+                    # Find and replace the existing search_document function
+                    import re
+                    
+                    # Pattern to match the search_document function
+                    pattern = r'def search_document\([^)]*\)[^:]*:.*?(?=\n\ndef|\n\n[a-zA-Z]|\Z)'
+                    
+                    enhanced_search_function = '''def search_document(package: AgentPackage) -> AgentPackage:
+    """Search documents using both knowledge sources and combine results."""
+    package.retrieval_result = str(knowledge.query(package.query)) + str(contextual_knowledge.query(package.query))
+    return package'''
+                    
+                    # Replace the existing function
+                    updated_content = re.sub(pattern, enhanced_search_function, current_content, flags=re.DOTALL)
+                    current_content = updated_content
+                    logger.info("Modified existing search_document function to use both knowledge sources")
+                elif "def search_document" not in current_content:
+                    # Add the search_document function if it doesn't exist
+                    search_method = '''
+def search_document(package: AgentPackage) -> AgentPackage:
+    """Search documents using both knowledge sources and combine results."""
+    package.retrieval_result = str(knowledge.query(package.query)) + str(contextual_knowledge.query(package.query))
+    return package'''
+                    
+                    current_content += search_method
+                    logger.info("Added search_document function with combined knowledge sources")
+                
+                methods_file["content"] = current_content
+                logger.info("Updated methods.na with combined knowledge sources and search function")
+            
+            # Update workflows.na to include contextual processing
+            workflows_file = None
+            for file_info in updated_project.get("files", []):
+                if file_info.get("filename") == "workflows.na":
+                    workflows_file = file_info
+                    break
+            
+            if workflows_file:
+                current_content = workflows_file.get("content", "")
+                
+                # Update workflow to include document search processing
+                if "search_document" not in current_content:
+                    enhanced_workflow = '''from methods import process_request, search_document, enhanced_response
+
+workflow = process_request | search_document | enhanced_response'''
+                    
+                    workflows_file["content"] = enhanced_workflow
+                    logger.info("Updated workflows.na with combined knowledge search processing")
+                elif "search_document" in current_content and "enhanced_response" not in current_content:
+                    # If search_document exists but enhanced_response doesn't, update the workflow
+                    import re
+                    # Replace existing workflow definition
+                    workflow_pattern = r'workflow\s*=.*'
+                    enhanced_workflow_line = 'workflow = process_request | search_document | enhanced_response'
+                    
+                    if re.search(workflow_pattern, current_content):
+                        current_content = re.sub(workflow_pattern, enhanced_workflow_line, current_content)
+                        workflows_file["content"] = current_content
+                        logger.info("Updated existing workflow to include enhanced_response")
+            
+            # Write updated files to disk
+            await _write_multi_file_project_to_disk(agent_folder, updated_project)
+            updated_multi_file_project = updated_project
+        
+        # Handle single-file code updates (if needed)
+        elif current_code:
+            logger.info("Updating single-file code with RAG integration")
+            # For single file, we could add RAG integration here
+            # For now, return the current code as-is since multi-file is preferred
+            updated_code = current_code
+        
+        return updated_code, updated_multi_file_project
+        
+    except Exception as e:
+        logger.error(f"Error updating agent code with RAG: {e}", exc_info=True)
+        return None, None
+
+
+async def _write_multi_file_project_to_disk(agent_folder: Path, project: dict) -> None:
+    """Write multi-file project to disk."""
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        for file_info in project.get("files", []):
+            filename = file_info.get("filename")
+            content = file_info.get("content", "")
+            
+            if filename:
+                file_path = agent_folder / filename
+                file_path.write_text(content, encoding="utf-8")
+                logger.info(f"Written {filename} to {file_path}")
+                
+    except Exception as e:
+        logger.error(f"Error writing project files to disk: {e}", exc_info=True)
+
+
 @router.post("/process-agent-documents", response_model=ProcessAgentDocumentsResponse)
 async def process_agent_documents(request: ProcessAgentDocumentsRequest, background_tasks: BackgroundTasks):
     """
     Process uploaded documents with conversation context to enhance agent creation.
+    Also updates agent code files with RAG integration.
     
     Args:
-        request: Contains document_folder, conversation, and summary
+        request: Contains document_folder, conversation, summary, agent_data, and current_code
         
     Returns:
-        Processing results with agent details
+        Processing results with updated agent code
     """
     import logging
     
@@ -2274,6 +2482,23 @@ async def process_agent_documents(request: ProcessAgentDocumentsRequest, backgro
         if not doc_folder.exists() or not doc_folder.is_dir():
             raise HTTPException(status_code=404, detail=f"Document folder not found: {request.document_folder}")
         
+        # Get agent folder (parent of docs folder)
+        agent_folder = doc_folder.parent
+        logger.info(f"Agent folder: {agent_folder}")
+        
+        # Update agent code files with RAG integration if agent data is provided
+        updated_code = None
+        updated_multi_file_project = None
+        
+        if request.agent_data or request.current_code or request.multi_file_project:
+            logger.info("Updating agent code with RAG integration...")
+            updated_code, updated_multi_file_project = await _update_agent_code_with_rag(
+                agent_folder=agent_folder,
+                agent_data=request.agent_data,
+                current_code=request.current_code,
+                multi_file_project=request.multi_file_project
+            )
+        
         # Process conversation (normalize to list)
         conversation_list = []
         if isinstance(request.conversation, str):
@@ -2281,7 +2506,7 @@ async def process_agent_documents(request: ProcessAgentDocumentsRequest, backgro
         else:
             conversation_list = request.conversation
         
-        # Generate task ID for tracking
+        # Generate task ID for tracking background document processing
         import uuid
         task_id = str(uuid.uuid4())
         
@@ -2292,7 +2517,7 @@ async def process_agent_documents(request: ProcessAgentDocumentsRequest, backgro
             "progress": 0
         }
         
-        # Start background task in a separate thread to avoid blocking the API
+        # Start background task for document processing (curate.na workflow)
         import threading
 
         def run_in_thread():
@@ -2312,15 +2537,25 @@ async def process_agent_documents(request: ProcessAgentDocumentsRequest, backgro
         thread = threading.Thread(target=run_in_thread, daemon=True)
         thread.start()
         
-        return ProcessAgentDocumentsResponse(
-            success=True,
-            message="Document processing started in background",
-            processing_details={
+        # Return updated agent code immediately while document processing continues in background
+        response_data = {
+            "success": True,
+            "message": "Agent code updated with RAG integration. Document processing started in background.",
+            "processing_details": {
                 "task_id": task_id,
                 "status_url": f"/agents/task-status/{task_id}",
-                "document_folder": str(doc_folder)
+                "document_folder": str(doc_folder),
+                "agent_folder": str(agent_folder)
             }
-        )
+        }
+        
+        # Include updated code in response
+        if updated_code:
+            response_data["dana_code"] = updated_code
+        if updated_multi_file_project:
+            response_data["multi_file_project"] = updated_multi_file_project
+            
+        return ProcessAgentDocumentsResponse(**response_data)
         
     except HTTPException:
         raise

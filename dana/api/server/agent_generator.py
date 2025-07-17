@@ -1685,8 +1685,8 @@ def _create_phase_2_prompt(
     # Extract agent information
     agent_name = agent_summary.get("name", "Custom Agent")
     agent_description = agent_summary.get("description", "A specialized agent for your needs")
-    agent_summary_description = agent_summary.get("summary")
     capabilities = agent_summary.get("capabilities", {})
+    agent_summary_description = capabilities.get("summary", "")
     knowledge_domains = capabilities.get("knowledge", [])
     workflow_steps = capabilities.get("workflow", [])
     tools = capabilities.get("tools", [])
@@ -1721,7 +1721,7 @@ from common import RetrievalPackage
 
 agent {agent_class}:
     name: str = "{agent_name}"
-    description: str = "{agent_description}"
+    description: str = "Get from agent description and summary"
 
 def solve(self : {agent_class}, query: str) -> str:
     package = RetrievalPackage(query=query)

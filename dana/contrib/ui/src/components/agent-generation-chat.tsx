@@ -403,7 +403,7 @@ const AgentGenerationChat = ({
       console.log('🔄 Calling generateAgentFromPrompt with payload:', payload);
       const response = await apiService.generateAgentFromPrompt(payload);
       console.log('✅ Received response from generateAgentFromPrompt:', response);
-      
+
       // Check if response contains any conversational messages
       if (response.follow_up_message) {
         console.log('⚠️ Response contains follow_up_message:', response.follow_up_message);
@@ -422,7 +422,7 @@ const AgentGenerationChat = ({
           response.agent_id ? String(response.agent_id) : undefined,
           response.agent_folder,
         );
-        
+
         // For direct training (Train Georgia button), skip any backend messages and show our custom success message
         const successMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
@@ -430,7 +430,7 @@ const AgentGenerationChat = ({
           content: `I've generated training code for Georgia! Here's what I created:\n\n**Agent Name:** ${response.agent_name || 'Georgia'}\n**Description:** ${response.agent_description || 'A specialized agent for your needs'}\n\nThe training code has been loaded into the editor on the right. You can review and modify it as needed.\n\n---\n\nGeorgia's training code has been generated successfully! You can now test it in the right panel or proceed to deep training for enhanced capabilities.`,
           timestamp: new Date(),
         };
-        
+
         // Replace any existing messages from this training session with our success message
         setMessages((prev) => {
           // Find if there are any recent assistant messages from this training session
@@ -441,26 +441,26 @@ const AgentGenerationChat = ({
               break;
             }
           }
-          
+
           if (lastUserMessageIndex >= 0) {
             const messagesAfterLastUser = prev.slice(lastUserMessageIndex + 1);
-            const hasUnwantedMessages = messagesAfterLastUser.some((msg: ChatMessage) => 
+            const hasUnwantedMessages = messagesAfterLastUser.some((msg: ChatMessage) =>
               msg.role === 'assistant' && (
-                msg.content.includes('Understanding') || 
+                msg.content.includes('Understanding') ||
                 msg.content.includes('understand')
               )
             );
-            
+
             if (hasUnwantedMessages) {
               // Remove unwanted messages and add our success message
               return [...prev.slice(0, lastUserMessageIndex + 1), successMessage];
             }
           }
-          
+
           // Just add our success message
           return [...prev, successMessage];
         });
-        
+
         addConversationMessage('assistant', successMessage.content);
         toast.success('Training code generated successfully for Georgia!');
 
@@ -525,10 +525,10 @@ const AgentGenerationChat = ({
       // Call the backend API for deep training using process-agent-documents
       const conversationHistory = messages.map(msg => `${msg.role}: ${msg.content}`).join('\n\n');
       const agentSummary = `Agent Name: ${agent?.name || 'Georgia'}\nAgent Description: ${agent?.description || 'A specialized agent'}\nCapabilities: ${JSON.stringify(agent?.capabilities || {})}`;
-      
+
       // Ensure document_folder includes /docs subdirectory where documents are stored
       const documentFolder = agent?.folder_path ? `${agent.folder_path}/docs` : '';
-      
+
       // Get current agent data from store
       const currentAgentData = {
         name: agent?.name,
@@ -540,7 +540,7 @@ const AgentGenerationChat = ({
         ready_for_code_generation: agent?.ready_for_code_generation,
         agent_data: agent?.agent_data
       };
-      
+
       const response = await apiService.processAgentDocuments({
         document_folder: documentFolder,
         conversation: conversationHistory,
@@ -558,7 +558,7 @@ const AgentGenerationChat = ({
         if (response.multi_file_project) {
           setMultiFileProject(response.multi_file_project);
         }
-        
+
         // Call the callback to update the editor with updated code
         if (response.dana_code || response.multi_file_project) {
           onCodeGenerated(
@@ -570,21 +570,21 @@ const AgentGenerationChat = ({
             agent?.folder_path
           );
         }
-        
+
         // Show completion message after a delay to simulate training time
-        setTimeout(() => {
-          const completionMessage: ChatMessage = {
-            id: (Date.now() + 2).toString(),
-            role: 'assistant',
-            content: 'Deep training has been completed successfully! Georgia now has enhanced capabilities including improved reasoning, better context understanding, and RAG-powered knowledge retrieval. The training code has been updated with contextual knowledge integration.',
-            timestamp: new Date(),
-          };
+        // setTimeout(() => {
+        //   const completionMessage: ChatMessage = {
+        //     id: (Date.now() + 2).toString(),
+        //     role: 'assistant',
+        //     content: 'Deep training has been completed successfully! Georgia now has enhanced capabilities including improved reasoning, better context understanding, and RAG-powered knowledge retrieval. The training code has been updated with contextual knowledge integration.',
+        //     timestamp: new Date(),
+        //   };
 
-          setMessages((prev) => [...prev, completionMessage]);
-          addConversationMessage('assistant', completionMessage.content);
+        //   setMessages((prev) => [...prev, completionMessage]);
+        //   addConversationMessage('assistant', completionMessage.content);
 
-          toast.success('Deep training completed for Georgia!');
-        }, 3000); // Simulate 3 second training time
+        //   toast.success('Deep training completed for Georgia!');
+        // }, 3000); // Simulate 3 second training time
 
         toast.success('Deep training initiated for Georgia!');
       } else {
