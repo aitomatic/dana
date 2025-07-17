@@ -50,6 +50,13 @@
     "**/uv.lock": true,  // UV project lock file
     "**/.venv": true,  // Python virtual environment
 
+    // NODE & RELATED
+    // ==============
+    "**/node_modules": true,  // Node.js package files
+    "**/.eslintcache": false,  // ESLint cache
+    "**/package.json": false,  // Node.js package file
+    "**/package-lock.json": false,  // Node.js package lock file
+
     // VERSION CONTROL
     // ===============
     "**/.git": true,  // Git repository
