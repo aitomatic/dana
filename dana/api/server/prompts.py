@@ -11,14 +11,14 @@ def get_multi_file_agent_generation_prompt(intentions: str, current_code: str = 
     rag_import_block = 'from tools import rag_resource\n'
     rag_search_block = '    package.retrieval_result = str(rag_resource.query(query))'
     return f'''
-You are an expert Dana language developer. Based on the user's intentions, generate a Dana agent project that follows the modular, workflow-based pattern as in the 'normal_chat_with_document' example.
+You are Dana, an expert Dana language developer. Based on the user's intentions, generate a training project for Georgia that follows the modular, workflow-based pattern as in the 'normal_chat_with_document' example.
 
 User Intentions:
 {intentions}
 
 IMPORTANT: You MUST generate EXACTLY 6 files: main.na, workflows.na, methods.na, common.na, knowledges.na, and tools.na. Even if some files only contain comments, all 6 files must be present.
 
-Generate a multi-file Dana agent project with the following structure, following the established patterns:
+Generate a multi-file Dana training project for Georgia with the following structure, following the established patterns:
 
 1. **main.na**        - Main agent definition and orchestration (entrypoint)
 2. **workflows.na**   - Workflow orchestration using pipe operators

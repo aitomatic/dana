@@ -113,7 +113,7 @@ function AgentMiddlePane({
               'border-gray-900': subTab === 'Workflows',
               'border-gray-300': subTab !== 'Workflows',
             })}
-              onClick={() => setSubTab('Workflows')}>workflow.na</div>
+              onClick={() => setSubTab('Workflows')}>workflows.na</div>
             <div className={cn('px-3 border-2 border-b-0  rounded-t-md', {
               'border-gray-900': subTab === 'Methods',
               'border-gray-300': subTab !== 'Methods',

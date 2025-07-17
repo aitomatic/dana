@@ -34,10 +34,10 @@ export function AgentBuildingStatus() {
           </div>
         )}
 
-        {currentAgent.agent_folder && (
+        {currentAgent.folder_path && (
           <div>
             <span className="text-sm font-medium text-gray-700">Folder:</span>
-            <span className="ml-2 text-sm text-gray-900">{currentAgent.agent_folder}</span>
+            <span className="ml-2 text-sm text-gray-900">{currentAgent.folder_path}</span>
           </div>
         )}
 

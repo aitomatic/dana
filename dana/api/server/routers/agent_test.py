@@ -71,10 +71,10 @@ async def _llm_fallback(agent_name: str, agent_description: str, message: str) -
         # Check if LLM is available
         if not hasattr(llm, "_is_available") or not llm._is_available:
             logger.warning("LLM resource is not available for fallback")
-            return "I'm sorry, I'm currently unavailable. Please try again later or ensure the agent code is generated."
+            return "I'm sorry, I'm currently unavailable. Please try again later or ensure the training code is generated."
         
         # Build system prompt based on agent description
-        system_prompt = f"""You are {agent_name}, a helpful assistant.
+        system_prompt = f"""You are {agent_name}, trained by Dana to be a helpful assistant.
 
 {agent_description}
 

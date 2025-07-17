@@ -935,33 +935,33 @@ async def analyze_conversation_completeness(messages: list[dict[str, Any]]) -> d
         # Too vague if mostly generic terms and few specific terms
         if word_count < 10 or (vague_count > specific_count and word_count < 20):
             needs_more_info = True
-            follow_up_message = "I'd love to help you create a Dana agent! To build something that's truly useful for you, could you tell me more about what you'd like this agent to do? The more specific you can be, the better I can tailor it to your needs."
+            follow_up_message = "I'm Dana, and I'd love to help you train Georgia! To build something that's truly useful for you, could you tell me more about what you'd like Georgia to do? The more specific you can be, the better I can tailor her training to your needs."
 
             suggested_questions = [
-                "What specific task should this agent help you with?",
-                "What kind of data or information will the agent work with?",
-                "Who will be using this agent and in what context?",
-                "Do you have any existing tools or systems it should integrate with?",
+                "What specific task should Georgia help you with?",
+                "What kind of data or information will Georgia work with?",
+                "Who will be using Georgia and in what context?",
+                "Do you have any existing tools or systems Georgia should integrate with?",
             ]
 
         # Check for unclear domain or purpose
         elif "help" in conversation_text and specific_count == 0:
             needs_more_info = True
-            follow_up_message = "I can help you create an agent! What specific area would you like the agent to assist with? For example, are you looking for help with business processes, data analysis, communication, or something else?"
+            follow_up_message = "I can help you train Georgia! What specific area would you like Georgia to assist with? For example, are you looking for help with business processes, data analysis, communication, or something else?"
 
             suggested_questions = [
-                "What's the main purpose of this agent?",
+                "What's the main purpose for Georgia?",
                 "What industry or domain is this for?",
-                "What are the key features you need?",
+                "What are the key features you need Georgia to have?",
             ]
 
         # Check for missing technical details if it's a complex request
         elif any(term in conversation_text for term in ["integration", "api", "database", "system"]) and "how" not in conversation_text:
             needs_more_info = True
-            follow_up_message = "I can see you want to create an agent with some technical integrations. To build this properly, I'll need some more details about your technical requirements."
+            follow_up_message = "I can see you want to train Georgia with some technical integrations. To build this properly, I'll need some more details about your technical requirements."
 
             suggested_questions = [
-                "What APIs or systems should the agent connect to?",
+                "What APIs or systems should Georgia connect to?",
                 "What data formats will you be working with?",
                 "Are there any specific authentication requirements?",
                 "What's your preferred way of receiving results?",
@@ -1782,6 +1782,13 @@ workflow = should_use_rag | refine_query | search_document | get_answer
     tools_na = ''  # No rag_resource here; left intentionally empty or for other tools
 
     common_na = '''
+
+struct RetrievalPackage:
+    query: str
+    refined_query: str = ""
+    should_use_rag: bool = False
+    retrieval_result: str = "<empty>"
+    
 QUERY_GENERATION_PROMPT = """
 You are **QuerySmith**, an expert search-query engineer for a Retrieval-Augmented Generation (RAG) pipeline.
 
@@ -1792,7 +1799,7 @@ Given the USER_REQUEST below, craft **one** concise query string (≤ 12 tokens)
 1. **Extract Core Concepts** – identify the main entities, actions, and qualifiers.  
 2. **Select High-Signal Terms** – keep nouns/verbs with the strongest discriminative power; drop stop-words and vague modifiers.  
 3. **Synonym Check** – if a well-known synonym outperforms the original term in typical search engines, substitute it.  
-4. **Context Packing** – arrange terms from most to least important; group multi-word entities in quotes (“like this”).  
+4. **Context Packing** – arrange terms from most to least important; group multi-word entities in quotes (like this).  
 5. **Final Polish** – ensure the string is lowercase, free of punctuation except quotes, and contains **no** explanatory text.
 
 **Output Format**  
@@ -1876,22 +1883,17 @@ RETRIEVED_DOCS:
 {retrieved_docs}
 """
 
-struct RetrievalPackage:
-    query: str
-    refined_query: str = ""
-    should_use_rag: bool = False
-    retrieval_result: str = "<empty>"
 '''
 
     # Prompt assembly
     prompt = f"""
-You are an expert Dana language developer. Based on the provided agent summary, conversation context, and specific requirements, generate a complete multi-file Dana agent project.
+You are Dana, an expert Dana language developer. Based on the provided summary, conversation context, and specific requirements, generate a complete multi-file training project for Georgia.
 
 {context_section}
 
 IMPORTANT: You MUST generate EXACTLY 6 files: main.na, workflows.na, methods.na, common.na, knowledges.na, and tools.na. Even if some files only contain comments, all 6 files must be present.
 
-The main agent declaration must use the exact name: {agent_name} (do not invent a new name).
+The main agent declaration must use the exact name: {agent_name} (do not invent a new name). Remember, you are Dana training Georgia.
 
 Use the following as templates for each file. Adapt the agent/function names and details to match the agent description and requirements, but follow the structure and style shown. The rag_resource must be defined in knowledges.na, not tools.na.
 
