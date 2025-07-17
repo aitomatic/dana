@@ -7,15 +7,13 @@ system:agent_description = "A general-management agent that can manage a team of
 import json.py
 
 # Register other agents
-import specialist_agent_1
-import specialist_agent_2
-import specialist_agent_3
+from specialist_agent_1 import WeatherAgent
+from specialist_agent_2 import WebSearcherAgent
+from specialist_agent_3 import FlightTicketAgent
 
-weather_agent = agent(module=specialist_agent_1)
-search_agent = agent(module=specialist_agent_2)
-# A2A Agent
-ticketing_agent = agent(url="http://localhost:5009", timeout=1800)
-# agent_3 = agent(module=specialist_agent_3)
+weather_agent = WeatherAgent()
+search_agent = WebSearcherAgent()
+ticketing_agent = FlightTicketAgent()
 
 # Create a pool of agents
 pool = agent_pool(agents=[weather_agent, search_agent, ticketing_agent])
