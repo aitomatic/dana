@@ -28,6 +28,8 @@ class RAGResource(BaseResource):
                 cache_dir = os.path.join(danapath, cache_dir)
             else:
                 cache_dir = os.path.join(danapath, ".cache", 'rag')
+        else:
+            cache_dir = ".cache/rag"
 
         self._cache_manager = UnifiedCacheManager(cache_dir)
         self._orchestrator = RAGOrchestrator(cache_manager=self._cache_manager)

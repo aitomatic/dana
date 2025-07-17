@@ -101,7 +101,12 @@ async def test_agent(request: AgentTestRequest):
                     os.environ["DANAPATH"] = abs_folder_path
                     try:
                         print("os DANAPATH", os.environ.get("DANAPATH"))
-                        result = DanaSandbox.quick_run(file_path=temp_file_path)
+                        sandbox_context = SandboxContext()
+                        sandbox_context.set("system:user_id", str(request.context.get("user_id", "Lam")))
+                        sandbox_context.set("system:session_id", "test-agent-creation")
+                        sandbox_context.set("system:agent_instance_id", str(Path(request.folder_path).stem))
+                        print(f"sandbox_context: {sandbox_context.get_scope("system")}")
+                        result = DanaSandbox.quick_run(file_path=temp_file_path, context=sandbox_context)
                         
                         # Get the response from the execution
                         if result.success and result.output:
