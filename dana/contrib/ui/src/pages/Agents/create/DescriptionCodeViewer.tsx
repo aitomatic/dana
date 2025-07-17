@@ -11,11 +11,13 @@ export default function DescriptionCodeViewer({
   code,
   filename,
   projectName,
+  agentFolder,
 }: {
   description: string;
   code: string;
   filename?: string;
   projectName?: string;
+  agentFolder?: string;
 }) {
   const [viewMode, setViewMode] = useState<'description' | 'code'>('description');
 
@@ -23,14 +25,27 @@ export default function DescriptionCodeViewer({
     if (!filename) return;
 
     try {
-      // Construct file path based on auto-storage pattern
-      // This matches the backend auto-storage folder structure
-      const sanitizedName = (projectName || 'Generated_Agent')
-        .toLowerCase()
-        .replace(/[^a-zA-Z0-9_\-]/g, '_');
-
-      // Use the same pattern as file-paths component
-      const filePath = `generated/generated_${sanitizedName}*/${filename}`;
+      let filePath: string;
+      
+      if (agentFolder) {
+        // Use the actual agent folder from the API response
+        // Extract the relative path from the absolute path
+        let relativePath = agentFolder;
+        if (agentFolder.includes('/generated/')) {
+          // Extract everything from 'generated/' onwards
+          relativePath = agentFolder.substring(agentFolder.indexOf('generated/'));
+        } else if (agentFolder.includes('/agents/')) {
+          // Extract everything from 'agents/' onwards
+          relativePath = agentFolder.substring(agentFolder.indexOf('agents/'));
+        }
+        filePath = `${relativePath}/${filename}`;
+      } else {
+        // Fallback to the old pattern-matching approach
+        const sanitizedName = (projectName || 'Generated_Agent')
+          .toLowerCase()
+          .replace(/[^a-zA-Z0-9_\-]/g, '_');
+        filePath = `generated/generated_${sanitizedName}*/${filename}`;
+      }
 
       const result = await apiService.openFileLocation(filePath);
       if (result.success) {

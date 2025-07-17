@@ -316,29 +316,61 @@ async def generate_agent(request: AgentGenerationRequest):
             "multi_file_project": multi_file_project_obj,
         }
 
-        # Try to extract agent_id and agent_folder from auto-stored files (metadata.json)
+        # Extract agent_id and agent_folder from auto-stored files
         agent_id = None
         agent_folder = None
+
         if auto_stored_files:
+            logger.info(f"Auto-stored files: {auto_stored_files}")
+
+            # Look for metadata.json file
+            metadata_file_path = None
             for f in auto_stored_files:
                 if f.endswith("metadata.json") and os.path.exists(f):
-                    try:
-                        with open(f, "r", encoding="utf-8") as meta_f:
-                            meta = json.load(meta_f)
-                            agent_folder = meta.get("folder_path")
-                            # Try to get agent_id from folder_path or metadata
-                            if "agent_id" in meta:
-                                agent_id = meta["agent_id"]
-                            elif agent_folder:
-                                import re
-                                m = re.search(r"agent_(\d+)_", agent_folder)
-                                if m:
-                                    agent_id = int(m.group(1))
-                    except Exception as e:
-                        logger.warning(f"Failed to parse metadata.json for agent folder/id: {e}")
+                    metadata_file_path = f
                     break
+
+            if metadata_file_path:
+                try:
+                    logger.info(f"Reading metadata from: {metadata_file_path}")
+                    with open(metadata_file_path, "r", encoding="utf-8") as meta_f:
+                        meta = json.load(meta_f)
+                        agent_folder = meta.get("folder_path")
+                        agent_id = meta.get("agent_id")
+
+                        logger.info(f"Extracted from metadata - agent_folder: {agent_folder}, agent_id: {agent_id}")
+
+                        # If no agent_id in metadata, try to extract from folder path pattern
+                        if not agent_id and agent_folder:
+                            import re
+
+                            # Try pattern for deployed agents: agent_123_name
+                            m = re.search(r"agent_(\d+)_", str(agent_folder))
+                            if m:
+                                agent_id = int(m.group(1))
+                                logger.info(f"Extracted agent_id from folder pattern: {agent_id}")
+
+                except Exception as e:
+                    logger.error(f"Failed to parse metadata.json at {metadata_file_path}: {e}")
+            else:
+                # Fallback: try to get folder from the first non-metadata file
+                for f in auto_stored_files:
+                    if not f.endswith("metadata.json") and os.path.exists(f):
+                        # Get the parent directory of the file
+                        file_path = Path(f)
+                        agent_folder = str(file_path.parent)
+                        logger.info(f"Fallback: extracted agent_folder from file path: {agent_folder}")
+                        break
+
+        # Ensure agent_folder is an absolute path
+        if agent_folder and not os.path.isabs(agent_folder):
+            agent_folder = str(Path.cwd() / agent_folder)
+            logger.info(f"Converted to absolute path: {agent_folder}")
+
         response_data["agent_id"] = agent_id
         response_data["agent_folder"] = agent_folder
+
+        logger.info(f"Final response - agent_id: {agent_id}, agent_folder: {agent_folder}")
 
         # Only include conversation guidance if needed
         if needs_more_info:
@@ -1373,7 +1405,7 @@ async def _auto_store_single_file_agent(agent_name: str, agent_description: str,
         "description": agent_description,
         "generated_at": datetime.now().isoformat(),
         "files": ["agent.na"],
-        "folder_path": str(agent_folder),
+        "folder_path": str(agent_folder.resolve()),  # Store absolute path
         "generation_type": "single_file",
         "temporary": True,
     }
@@ -1452,7 +1484,7 @@ async def _auto_store_multi_file_agent(agent_name: str, agent_description: str, 
         "description": agent_description,
         "generated_at": datetime.now().isoformat(),
         "files": [Path(p).name for p in file_paths],
-        "folder_path": str(agent_folder),
+        "folder_path": str(agent_folder.resolve()),  # Store absolute path
         "generation_type": "multi_file",
         "main_file": multi_file_project.get("main_file", "agent.na"),
         "structure_type": multi_file_project.get("structure_type", "modular"),
@@ -1467,6 +1499,108 @@ async def _auto_store_multi_file_agent(agent_name: str, agent_description: str, 
 
     logger.info(f"Multi-file auto-storage completed. Created {len(file_paths)} files: {file_paths}")
     return file_paths
+
+
+@router.post("/open-agent-folder")
+async def open_agent_folder(request: dict):
+    """
+    Open agent folder in file explorer.
+    Accepts either agent_folder (absolute path) or agent_id.
+    
+    Args:
+        request: Dict with either 'agent_folder' or 'agent_id'
+    
+    Returns:
+        Success status
+    """
+    import logging
+    import platform
+    import subprocess
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        agent_folder = request.get("agent_folder")
+        agent_id = request.get("agent_id")
+        
+        if not agent_folder and not agent_id:
+            raise HTTPException(status_code=400, detail="Either agent_folder or agent_id must be provided")
+        
+        # If agent_id provided, try to find the folder
+        if agent_id and not agent_folder:
+            # Try to find agent folder by ID
+            agents_dir = Path("agents")
+            generated_dir = Path("generated")
+            
+            found_folder = None
+            
+            # Check agents directory first
+            if agents_dir.exists():
+                for folder in agents_dir.iterdir():
+                    if folder.is_dir() and folder.name.startswith(f"agent_{agent_id}_"):
+                        found_folder = folder
+                        break
+            
+            # Check generated directory
+            if not found_folder and generated_dir.exists():
+                for folder in generated_dir.iterdir():
+                    if folder.is_dir() and f"_{agent_id}" in folder.name:
+                        found_folder = folder
+                        break
+            
+            if found_folder:
+                agent_folder = str(found_folder)
+            else:
+                raise HTTPException(status_code=404, detail=f"Agent folder not found for ID: {agent_id}")
+        
+        # Validate agent_folder
+        if not agent_folder:
+            raise HTTPException(status_code=400, detail="agent_folder is required")
+        
+        # Convert to Path object
+        folder_path = Path(agent_folder)
+        
+        # If relative path, make it absolute
+        if not folder_path.is_absolute():
+            folder_path = Path.cwd() / folder_path
+        
+        # Security check - ensure path is within allowed directories
+        allowed_dirs = [Path("agents"), Path("generated"), Path("tmp")]
+        is_allowed = any(
+            str(folder_path.resolve()).startswith(str((Path.cwd() / allowed_dir).resolve())) 
+            for allowed_dir in allowed_dirs
+        )
+        
+        if not is_allowed:
+            raise HTTPException(status_code=403, detail="Access to this folder path is not allowed")
+        
+        # Check if folder exists
+        if not folder_path.exists():
+            raise HTTPException(status_code=404, detail=f"Folder not found: {folder_path}")
+        
+        if not folder_path.is_dir():
+            raise HTTPException(status_code=400, detail=f"Path is not a directory: {folder_path}")
+        
+        # Open folder based on platform
+        system = platform.system()
+        if system == "Darwin":  # macOS
+            subprocess.run(["open", str(folder_path)], check=True)
+        elif system == "Windows":
+            subprocess.run(["explorer", str(folder_path)], check=True)
+        elif system == "Linux":
+            subprocess.run(["xdg-open", str(folder_path)], check=True)
+        else:
+            raise HTTPException(status_code=501, detail=f"Opening folders not supported on {system}")
+        
+        logger.info(f"Opened agent folder: {folder_path}")
+        return {"success": True, "message": f"Opened {folder_path}"}
+        
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to open agent folder: {e}")
+        raise HTTPException(status_code=500, detail="Failed to open folder")
+    except Exception as e:
+        logger.error(f"Error opening agent folder: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/open-file/{file_path:path}")
@@ -1562,12 +1696,12 @@ async def upload_knowledge_file(
     """
     import logging
     import shutil
-    
+
     logger = logging.getLogger(__name__)
-    
+
     try:
         logger.info(f"Uploading knowledge file: {file.filename}")
-        
+
         # Determine the agent folder path
         print("agent_folder", agent_folder)
         if agent_folder:
@@ -1589,51 +1723,48 @@ async def upload_knowledge_file(
             generated_dir = Path("generated")
             if generated_dir.exists():
                 # Find the most recent generated agent folder
-                agent_folders = sorted([f for f in generated_dir.iterdir() if f.is_dir() and f.name.startswith("generated_")], 
-                                     key=lambda x: x.stat().st_mtime, reverse=True)
+                agent_folders = sorted(
+                    [f for f in generated_dir.iterdir() if f.is_dir() and f.name.startswith("generated_")],
+                    key=lambda x: x.stat().st_mtime,
+                    reverse=True,
+                )
                 if agent_folders:
                     agent_folder_path = agent_folders[0]
                 else:
                     raise HTTPException(status_code=404, detail="No generated agent folders found")
             else:
                 raise HTTPException(status_code=404, detail="No agent folder specified or found")
-        
+
         # Create docs folder if it doesn't exist
         docs_folder = agent_folder_path / "docs"
         docs_folder.mkdir(exist_ok=True)
-        
+
         # Save the uploaded file
         file_path = docs_folder / file.filename
         logger.info(f"Saving file to: {file_path}")
-        
+
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        
+
         # Update tools.na file with RAG declaration (always points to ./docs)
         await _update_tools_with_rag(agent_folder_path)
 
         # Remove the .cache directory in the agent folder to force RAG re-indexing
         import shutil
         import os
+
         rag_cache_dir = agent_folder_path / ".cache"
         if rag_cache_dir.exists() and rag_cache_dir.is_dir():
             shutil.rmtree(rag_cache_dir)
             logger.info(f"Deleted RAG cache at {rag_cache_dir} to force re-indexing.")
 
         logger.info(f"Successfully uploaded knowledge file: {file.filename}")
-        
-        return {
-            "success": True,
-            "file_path": str(file_path),
-            "message": f"File {file.filename} uploaded successfully"
-        }
-        
+
+        return {"success": True, "file_path": str(file_path), "message": f"File {file.filename} uploaded successfully"}
+
     except Exception as e:
         logger.error(f"Error uploading knowledge file: {e}", exc_info=True)
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        return {"success": False, "error": str(e)}
 
 
 async def _update_tools_with_rag(agent_folder_path: Path):
@@ -1642,32 +1773,33 @@ async def _update_tools_with_rag(agent_folder_path: Path):
     Idempotent: only adds if not present.
     """
     import logging
-    
+
     logger = logging.getLogger(__name__)
-    
+
     try:
         tools_file = agent_folder_path / "tools.na"
         rag_declaration = 'rag_resource = use("rag", sources=["./docs"])'  # No trailing newline
         # Read existing tools.na content
         if tools_file.exists():
-            with open(tools_file, 'r', encoding='utf-8') as f:
+            with open(tools_file, "r", encoding="utf-8") as f:
                 content = f.read()
             if rag_declaration not in content:
                 # Remove any old rag_resource lines
                 import re
-                content = re.sub(r'^.*rag_resource\s*=.*$', '', content, flags=re.MULTILINE)
+
+                content = re.sub(r"^.*rag_resource\s*=.*$", "", content, flags=re.MULTILINE)
                 # Add the correct rag_resource at the end
-                if not content.endswith('\n'):
-                    content += '\n'
-                content += rag_declaration + '\n'
-                with open(tools_file, 'w', encoding='utf-8') as f:
+                if not content.endswith("\n"):
+                    content += "\n"
+                content += rag_declaration + "\n"
+                with open(tools_file, "w", encoding="utf-8") as f:
                     f.write(content)
                 logger.info(f"Updated tools.na with RAG resource for ./docs")
             else:
                 logger.info(f"tools.na already contains correct RAG resource")
         else:
-            with open(tools_file, 'w', encoding='utf-8') as f:
-                f.write(rag_declaration + '\n')
+            with open(tools_file, "w", encoding="utf-8") as f:
+                f.write(rag_declaration + "\n")
             logger.info(f"Created tools.na with RAG resource for ./docs")
     except Exception as e:
         logger.error(f"Error updating tools.na with RAG: {e}")

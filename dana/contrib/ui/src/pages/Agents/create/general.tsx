@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { X, Book, Network, Tools, List, User, Page, Box3dCenter } from 'iconoir-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { ReactElement } from 'react';
 import AgentGenerationChat from '@/components/agent-generation-chat';
 import { DEFAULT_DANA_AGENT_CODE } from '@/constants/dana-code';
@@ -22,8 +22,10 @@ function extractDescription(content: string): string {
 
 function AgentMiddlePane({
   multiFileProject,
+  agentFolder,
 }: {
   multiFileProject?: MultiFileProject | null;
+  agentFolder?: string;
 }) {
   // Add main tab logic
   const [mainTab] = useState<'Agent Be' | 'Agent Know' | 'Agent Do'>('Agent Be');
@@ -153,6 +155,7 @@ function AgentMiddlePane({
             code={getCode('main.na')}
             filename="main.na"
             projectName={multiFileProject?.name}
+            agentFolder={agentFolder}
           />
         )}
         {subTab === 'Knowledges' && (
@@ -162,6 +165,7 @@ function AgentMiddlePane({
               code={getCode('knowledges.na')}
               filename="knowledges.na"
               projectName={multiFileProject?.name}
+              agentFolder={agentFolder}
             />
 
             {/* <div className="pt-6 border-t">
@@ -184,6 +188,7 @@ function AgentMiddlePane({
             code={getCode('workflows.na')}
             filename="workflows.na"
             projectName={multiFileProject?.name}
+            agentFolder={agentFolder}
           />
         )}
         {subTab === 'Tools' && (
@@ -192,6 +197,7 @@ function AgentMiddlePane({
             code={getCode('tools.na')}
             filename="tools.na"
             projectName={multiFileProject?.name}
+            agentFolder={agentFolder}
           />
         )}
         {subTab === 'Others' && (
@@ -231,13 +237,32 @@ export function GeneralAgentPage({
   // const [isRightPanelMaximized, setIsRightPanelMaximized] = useState(false);
   const [agentFolder, setAgentFolder] = useState<string | undefined>(undefined);
 
+  // Monitor window object for agentFolder changes
+  useEffect(() => {
+    const checkWindowAgentFolder = () => {
+      const windowAgentFolder = (window as any).latestGeneratedAgentFolder;
+      if (windowAgentFolder && windowAgentFolder !== agentFolder) {
+        console.log('👀 Window agentFolder changed:', windowAgentFolder);
+        setAgentFolder(windowAgentFolder);
+      }
+    };
+
+    // Check initially
+    checkWindowAgentFolder();
+
+    // Set up interval to check periodically
+    const interval = setInterval(checkWindowAgentFolder, 1000);
+
+    return () => clearInterval(interval);
+  }, [agentFolder]);
+
   const { setValue } = form;
 
   const danaCode = watch('general_agent_config.dana_code', DEFAULT_DANA_AGENT_CODE);
   const agentName = watch('name', 'Product Assistant');
   const agentDescription = watch('description', 'A test agent');
 
-  console.log({ multiFileProject });
+  console.log({ multiFileProject, agentFolder });
 
   const handleCodeGenerated = (
     code: string,
@@ -266,7 +291,18 @@ export function GeneralAgentPage({
     }
 
     // Store agentFolder for test chat
-    if (agentFolderResp) setAgentFolder(agentFolderResp);
+    if (agentFolderResp) {
+      console.log('🔧 Setting agentFolder:', agentFolderResp);
+      setAgentFolder(agentFolderResp);
+    } else {
+      console.log('⚠️ No agentFolderResp received');
+      // Fallback: try to get from window object
+      const windowAgentFolder = (window as any).latestGeneratedAgentFolder;
+      if (windowAgentFolder) {
+        console.log('🔄 Using fallback agentFolder from window:', windowAgentFolder);
+        setAgentFolder(windowAgentFolder);
+      }
+    }
   };
 
   const handleGenerationStart = () => {
@@ -321,6 +357,7 @@ export function GeneralAgentPage({
         {/* Middle Pane - Tabs */}
         <AgentMiddlePane
           multiFileProject={multiFileProject}
+          agentFolder={agentFolder}
         />
 
         {/* Right Panel - Product Assistant */}
