@@ -1,0 +1,72 @@
+# TO EVALUATE, WE ASK AN LLM WITH AND WITHOUT PRIOR KNOWLEDGE
+
+
+documentary_kb = use("rag", sources=["/Users/lam/Desktop/repos/opendxa/proposal/medial_house_wife.md"], debug=True)
+prio_kb = use("rag", sources=["/Users/lam/Desktop/repos/opendxa/proposal/KNOWS/medical_assistant/kb"], debug=True)
+
+agent TestAgent:
+    name : str = "Test Agent"
+    description : str = "A test agent with specialized knowledge in the domain of the topic"
+    topic : str
+    role : str
+    current_step : str = "Default"
+    resources : list[str] = [documentary_kb, prio_kb]
+
+def solve(senior_agent: SeniorAgent, problem: str) -> str:
+    answer : str = reason(f"{problem}. Ultilize the tools provided to you to get more information", resources=senior_agent.resources, temperature=0.1, max_tokens=8000)
+    return answer
+
+def solve_without_prio_kb(test_agent: TestAgent, problem: str) -> str:
+    answer : str = reason(f"{problem}. Ultilize the tools provided to you to get more information", resources=test_agent.resources[:-1], temperature=0.1, max_tokens=8000)
+    return answer
+
+
+test_agent = TestAgent(topic="Identify symtomps and treatment of common diseases (fatal, non-fatal, chronic, acute) for family members", role="Housewife")
+
+import pandas.py as pd
+from ragas.py import metrics
+from ragas.py import evaluate
+
+df = pd.read_csv("/Users/lam/Desktop/repos/opendxa/proposal/KNOWS/medical_assistant/questions_dataset.csv")
+
+len_df = df.shape[0]
+
+output_datas = {"question": [], "answer": [], "ground_truth": [], "type": []}
+
+metric_list = [metrics.answer_similarity, metrics.answer_relevancy]
+
+for i in range(len_df):
+    question = df.iloc[i]["question"]
+    ground_truth = df.iloc[i]["ground_truth"]
+    answer_without_prio_kb = solve_without_prio_kb(test_agent, question)
+    answer_with_prio_kb = solve(test_agent, question)
+    # WITHOUT PRIOR KNOWLEDGE
+    output_datas["question"].append(question)
+    output_datas["answer"].append(answer_without_prio_kb)
+    output_datas["ground_truth"].append(ground_truth)
+    output_datas["type"].append("without_prio_kb")
+
+    # WITH PRIOR KNOWLEDGE
+    output_datas["question"].append(question)
+    output_datas["answer"].append(answer_with_prio_kb)
+    output_datas["ground_truth"].append(ground_truth)
+    output_datas["type"].append("with_prio_kb")
+
+df = pd.DataFrame(output_datas)
+
+df.to_csv("llm_result.csv", index=False)
+
+# result = evaluate(df, metrics=metric_list)
+# print(result)
+
+# scores_df = result.examples_to_pandas()
+# combined_df = pd.merge(df, scores_df, on=["question", "answer"])
+# combined_df.to_csv("evaluation_result.csv", index=False)
+
+
+
+
+
+
+
+    
