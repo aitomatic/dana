@@ -136,9 +136,9 @@ class DanaSandbox(Loggable):
             self._context.set("system:llm_resource", self._llm_resource)
 
             # Register started APIClient as default POET client
-            poet_client = POETClient.__new__(POETClient)  # Create without calling __init__
-            poet_client.api = self._api_client  # Use our started APIClient
-            set_default_client(poet_client)
+            # poet_client = POETClient.__new__(POETClient)  # Create without calling __init__
+            # poet_client.api = self._api_client  # Use our started APIClient
+            # set_default_client(poet_client)
 
             self._initialized = True
             self.debug("DanaSandbox resources ready")

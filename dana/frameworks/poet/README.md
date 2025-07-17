@@ -1,6 +1,6 @@
 # POET Framework - Simplified Directory Structure
 
-**P**erceive → **O**perate → **E**nforce  
+**P**erceive → **O**perate → **E**nforce → **T**rain  
 *Simple, Focused Function Enhancement for Dana*
 
 ## 🎯 KISS Design Philosophy
@@ -15,7 +15,7 @@ poet/
 ├── config/         # ⚙️ Simple domain configuration helpers
 ├── utils/          # 🛠️ Basic testing and debugging tools
 ├── domains/        # 🎯 Domain-specific templates (base only)
-├── phases/         # 🔄 Simple P→O→E phase implementations
+├── phases/         # 🔄 Simple P→O→E→T phase implementations
 └── README.md       # 📖 This file
 ```
 
@@ -83,7 +83,7 @@ poet/
 
 ---
 
-## 🔄 `phases/` - Simple P→O→E Implementation
+## 🔄 `phases/` - Simple P→O→E→T Implementation
 
 **Purpose**: Core phases that enhance function execution
 
@@ -101,6 +101,10 @@ poet/
   - *Why needed*: Ensure outputs meet basic quality standards
   - *Contains*: `EnforcePhase` for output validation
 
+- **`train.py`** - Learning and feedback collection
+  - *Why needed*: Complete the POET pattern with simple learning
+  - *Contains*: `TrainPhase` for basic performance tracking and insights
+
 ---
 
 ## 🔗 Simple Import Pattern
@@ -110,6 +114,7 @@ poet/
 from dana.frameworks.poet import poet, POETConfig
 from dana.frameworks.poet import financial_services, healthcare  
 from dana.frameworks.poet import debug_poet_function, test_poet_function
+from dana.frameworks.poet import perceive, operate, enforce, train  # Full P→O→E→T
 ```
 
 ---
@@ -120,7 +125,7 @@ from dana.frameworks.poet import debug_poet_function, test_poet_function
 ```python
 from dana.frameworks.poet import poet
 
-@poet(domain="financial_services", retries=3)
+@poet(domain="financial_services", retries=3, enable_training=True)
 def calculate_portfolio_value(holdings, market_data):
     return sum(h.shares * market_data[h.symbol].price for h in holdings)
 ```

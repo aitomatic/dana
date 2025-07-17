@@ -1,0 +1,31 @@
+# Basic Workflow Example - Dana Function Composition
+# Uses Dana's native | operator for function composition
+
+log("🚀 Starting Basic Dana Workflow with Function Composition")
+
+# Define standalone functions (GoLang-style)
+def add_ten(x: int) -> int:
+    return x + 10
+
+def multiply_two(x: int) -> int:
+    return x * 2
+
+def format_result(x: int) -> str:
+    return "Final result: " + str(x)
+
+# Create function composition pipeline using | operator
+basic_pipeline = add_ten | multiply_two | format_result
+
+# Execute pipeline
+log("📊 Executing basic pipeline: add_ten | multiply_two | format_result")
+result = basic_pipeline(5)
+log(f"✅ Basic pipeline result: {result}")
+
+# Alternative: step-by-step execution
+log("\n🔍 Step-by-step breakdown:")
+step1 = add_ten(5)        # 5 → 15
+step2 = multiply_two(15)  # 15 → 30
+step3 = format_result(30) # 30 → "Final result: 30"
+log(f"Step 1: {step1}, Step 2: {step2}, Step 3: {step3}")
+
+log("🎉 Basic Dana workflow complete!")

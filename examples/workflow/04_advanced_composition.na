@@ -1,0 +1,86 @@
+# Advanced Function Composition Example - Dana Workflows
+# Demonstrates complex pipeline patterns with parallel and conditional execution
+
+log("⚡ Starting Advanced Dana Composition Patterns")
+
+# Define utility functions
+def add_prefix(text: str, prefix: str = "Result: ") -> str:
+    return f"{prefix}{text}"
+
+def add_suffix(text: str, suffix: str = " → OK") -> str:
+    return f"{text}{suffix}"
+
+def double_value(x: int) -> int:
+    return x * 2
+
+def square_value(x: int) -> int:
+    return x ** 2
+
+def check_even(x: int) -> bool:
+    return x % 2 == 0
+
+def create_analysis(x: int) -> dict:
+    return {
+        "value": x,
+        "is_even": check_even(x),
+        "double": double_value(x),
+        "square": square_value(x)
+    }
+
+def format_analysis(analysis: dict) -> str:
+    return f"Value: {analysis['value']} → Even: {analysis['is_even']} → Double: {analysis['double']} → Square: {analysis['square']}"
+
+# Create complex composition patterns
+log("🎯 Demonstrating composition patterns:")
+
+# Pattern 1: Simple sequential pipeline
+basic_pipeline = double_value | square_value | str | add_prefix
+log("1️⃣ Sequential: double → square → string → prefix")
+result1 = basic_pipeline(3)
+log(f"   3 → {result1}")
+
+# Pattern 2: Analysis pipeline
+analysis_pipeline = create_analysis | format_analysis
+log("2️⃣ Analysis: create_analysis → format_analysis")
+result2 = analysis_pipeline(7)
+log(f"   7 → {result2}")
+
+# Pattern 3: String processing pipeline
+string_pipeline = str | add_prefix("Data: ") | add_suffix(" ✓")
+log("3️⃣ String: str → prefix → suffix")
+result3 = string_pipeline(42)
+log(f"   42 → {result3}")
+
+# Pattern 4: Conditional processing based on even/odd
+def conditional_process(x: int) -> str:
+    if check_even(x):
+        return f"{x} is even → {double_value(x)}"
+    else:
+        return f"{x} is odd → {square_value(x)}"
+
+conditional_pipeline = conditional_process
+log("4️⃣ Conditional processing")
+result4a = conditional_pipeline(4)  # even
+result4b = conditional_pipeline(5)  # odd
+log(f"   4 → {result4a}")
+log(f"   5 → {result4b}")
+
+# Pattern 5: Batch processing with pipeline
+log("\n📦 Batch processing with pipeline:")
+numbers = [1, 2, 3, 4, 5]
+batch_results = [analysis_pipeline(n) for n in numbers]
+for i, result in enumerate(batch_results):
+    log(f"   {numbers[i]} → {result}")
+
+# Pattern 6: Pipeline composition for different stages
+log("\n🔄 Multi-stage pipeline:")
+stage1 = double_value
+stage2 = square_value  
+stage3 = str | add_prefix("Processed: ")
+full_pipeline = stage1 | stage2 | stage3
+
+for value in [1, 2, 3]:
+    final = full_pipeline(value)
+    log(f"   {value} → {final}")
+
+log("⚡ Advanced composition patterns complete!")

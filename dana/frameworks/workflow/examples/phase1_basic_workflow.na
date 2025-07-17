@@ -1,0 +1,170 @@
+# Phase 1: Basic Workflow Examples
+# Dana Workflows - Foundation Phase
+
+print("🚀 Dana Workflows Phase 1 Examples")
+print("=" * 40)
+
+# Import workflow components
+from dana.frameworks.workflow.core import WorkflowEngine, WorkflowStep
+
+print("1. Basic Function Composition")
+print("-" * 20)
+
+# Define simple workflow functions
+def add_ten(x):
+    """Add 10 to input."""
+    return x + 10
+
+def double(x):
+    """Double the input."""
+    return x * 2
+
+def stringify(x):
+    """Convert to string with prefix."""
+    return f"Result: {x}"
+
+# Create workflow steps
+step1 = WorkflowStep(name="add_ten", function=add_ten)
+step2 = WorkflowStep(name="double", function=double)
+step3 = WorkflowStep(name="stringify", function=stringify)
+
+# Execute individual steps
+log("Step 1 (add_ten): 5 → " + str(step1.execute(5)))
+log("Step 2 (double): 15 → " + str(step2.execute(15)))
+log("Step 3 (stringify): 30 → " + str(step3.execute(30)))
+
+print("\n2. Workflow Engine Usage")
+print("-" * 20)
+
+# Initialize workflow engine
+engine = WorkflowEngine()
+
+# Execute workflow as step list
+workflow = [step1, step2, step3]
+result = engine.execute(workflow, 5, workflow_id="basic_workflow")
+log("Workflow [add_ten, double, stringify](5) = " + str(result))
+
+print("\n3. Composed Function Usage")
+print("-" * 20)
+
+# Use Dana's existing | operator for composition
+composed_workflow = add_ten | double | stringify
+result = engine.execute(composed_workflow, 5)
+log("Composed function: 5 | add_ten | double | stringify = " + str(result))
+
+print("\n4. Context Integration")
+print("-" * 20)
+
+# Example with context-aware steps
+def step_with_context(x, context):
+    """Step that uses context data."""
+    # Add intermediate result to context
+    context.add_context("step1_result", x + 10)
+    intermediate = context.get_context("step1_result")
+    return intermediate * 2
+
+# Create context-aware workflow
+context_step = WorkflowStep(name="context_aware", function=step_with_context)
+result = engine.execute([context_step], 5, workflow_id="context_workflow")
+log("Context-aware step: 5 → " + str(result))
+
+print("\n5. Error Handling")
+print("-" * 20)
+
+# Example with error handling
+def failing_step(x):
+    """Step that will fail."""
+    if x < 10:
+        raise ValueError("Input too small")
+    return x * 2
+
+def error_handler(error, input_data, context):
+    """Handle step errors gracefully."""
+    log(f"Handled error: {error}")
+    return input_data * 3  # Fallback calculation
+
+# Create step with error handling
+error_step = WorkflowStep(
+    name="error_handled_step",
+    function=failing_step,
+    error_handler=error_handler
+)
+
+# This will succeed due to error handler
+result = engine.execute([error_step], 5, workflow_id="error_workflow")
+log("Error-handled workflow: 5 → " + str(result))
+
+print("\n6. Pre/Post Conditions")
+print("-" * 20)
+
+def validate_positive(x, context):
+    """Pre-condition: input must be positive."""
+    return x > 0
+
+def validate_result_positive(result, context):
+    """Post-condition: result must be positive."""
+    return result > 0
+
+def safe_calculation(x):
+    """Safe calculation that always produces positive results."""
+    return abs(x) + 1
+
+# Create step with conditions
+conditioned_step = WorkflowStep(
+    name="conditioned",
+    function=safe_calculation,
+    pre_conditions=[validate_positive],
+    post_conditions=[validate_result_positive]
+)
+
+result = engine.execute([conditioned_step], -5, workflow_id="conditioned_workflow")
+log("Conditioned step: -5 → " + str(result))
+
+print("\n7. Complex Workflow Example")
+print("-" * 20)
+
+# Data processing pipeline
+def extract_data(input_data):
+    """Extract data from input."""
+    return {"raw": input_data, "length": len(str(input_data))}
+
+def transform_data(data):
+    """Transform extracted data."""
+    return {
+        "processed": data["raw"],
+        "processed_length": data["length"] * 2,
+        "timestamp": "2024-01-01"
+    }
+
+def validate_data(data):
+    """Validate transformed data."""
+    return data["processed_length"] > 0
+
+def format_output(data):
+    """Format final output."""
+    return f"Processed: {data['processed']} (length: {data['processed_length']})"
+
+# Create data processing workflow
+extract_step = WorkflowStep(name="extract", function=extract_data)
+transform_step = WorkflowStep(name="transform", function=transform_data)
+validate_step = WorkflowStep(name="validate", function=validate_data)
+format_step = WorkflowStep(name="format", function=format_output)
+
+data_workflow = [extract_step, transform_step, validate_step, format_step]
+result = engine.execute(data_workflow, "Hello", workflow_id="data_pipeline")
+log("Data pipeline: 'Hello' → " + str(result))
+
+print("\n8. Using Decorator Pattern")
+print("-" * 20)
+
+# Using the from_function decorator
+@WorkflowStep.from_function(name="decorated_calculation")
+def decorated_calc(x):
+    """Calculation using decorator pattern."""
+    return x ** 2
+
+result = engine.execute([decorated_calc], 4, workflow_id="decorated_workflow")
+log("Decorated step: 4 → " + str(result))
+
+print("\n✅ Phase 1 Examples Complete!")
+print("All basic workflow functionality demonstrated successfully.")

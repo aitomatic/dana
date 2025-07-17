@@ -5,7 +5,9 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from dana.frameworks.poet.phases.perceive import PerceivePhase, PerceiveResult
+import pytest
+
+from dana.frameworks.poet.phases.perceive import PerceivePhase
 from dana.frameworks.poet.types import POETConfig
 
 
@@ -22,23 +24,18 @@ def test_perceive_basic_validation():
     phase = PerceivePhase(config)
 
     # Test valid inputs
-    result = phase.perceive((1, 2), {"a": 3})
-    assert result.is_valid
-    assert not result.validation_errors
-    assert result.processed_args == (1, 2)
-    assert result.processed_kwargs == {"a": 3}
+    processed_args, processed_kwargs, context = phase.perceive((1, 2), {"a": 3})
+    assert processed_args == (1, 2)
+    assert processed_kwargs == {"a": 3}
+    assert context["domain"] is None
 
-    # Test None in args
-    result = phase.perceive((1, None), {"a": 3})
-    assert not result.is_valid
-    assert len(result.validation_errors) == 1
-    assert "Positional argument 1 cannot be None" in result.validation_errors
+    # Test None in args - should raise ValueError
+    with pytest.raises(ValueError, match="Positional argument 1 cannot be None"):
+        phase.perceive((1, None), {"a": 3})
 
-    # Test None in kwargs
-    result = phase.perceive((1, 2), {"a": None})
-    assert not result.is_valid
-    assert len(result.validation_errors) == 1
-    assert "Keyword argument 'a' cannot be None" in result.validation_errors
+    # Test None in kwargs - should raise ValueError
+    with pytest.raises(ValueError, match="Keyword argument 'a' cannot be None"):
+        phase.perceive((1, 2), {"a": None})
 
 
 def test_perceive_domain_processing():
@@ -46,9 +43,10 @@ def test_perceive_domain_processing():
     config = POETConfig(domain="test_domain")
     phase = PerceivePhase(config)
 
-    result = phase.perceive((1, 2), {"a": 3})
-    assert result.is_valid
-    assert result.context["domain"] == "test_domain"
+    processed_args, processed_kwargs, context = phase.perceive((1, 2), {"a": 3})
+    assert processed_args == (1, 2)
+    assert processed_kwargs == {"a": 3}
+    assert context["domain"] == "test_domain"
 
 
 def test_perceive_context_gathering():
@@ -61,13 +59,13 @@ def test_perceive_context_gathering():
     )
     phase = PerceivePhase(config)
 
-    result = phase.perceive((1, 2), {"a": 3})
-    assert result.is_valid
-    assert result.context == {
+    processed_args, processed_kwargs, context = phase.perceive((1, 2), {"a": 3})
+    assert processed_args == (1, 2)
+    assert processed_kwargs == {"a": 3}
+    assert context == {
         "domain": "test_domain",
         "retries": 3,
         "timeout": 30.0,
-        "enable_training": True,
     }
 
 
@@ -77,40 +75,28 @@ def test_perceive_error_handling():
     phase = PerceivePhase(config)
 
     # Mock a failure in domain processing
-    def mock_process_domain_inputs(result: PerceiveResult) -> None:
+    def mock_process_domain_inputs(args, kwargs, context):
         raise ValueError("Test error")
 
     phase._process_domain_inputs = mock_process_domain_inputs
     config.domain = "test_domain"  # Enable domain processing
 
-    result = phase.perceive((1, 2), {"a": 3})
-    assert not result.is_valid
-    assert len(result.validation_errors) == 1
-    assert "Perceive phase error: Test error" in result.validation_errors
+    with pytest.raises(ValueError, match="Test error"):
+        phase.perceive((1, 2), {"a": 3})
 
 
-def test_perceive_result_error_handling():
-    """Test PerceiveResult error handling."""
-    result = PerceiveResult(
-        processed_args=(),
-        processed_kwargs={},
-        context={},
-        validation_errors=[],
-    )
+def test_validate_inputs_method():
+    """Test the _validate_inputs method."""
+    config = POETConfig()
+    phase = PerceivePhase(config)
 
-    # Test initial state
-    assert result.is_valid
-    assert not result.validation_errors
+    # Test valid inputs
+    phase._validate_inputs((1, 2), {"a": 3})
 
-    # Test adding error
-    result.add_error("Test error")
-    assert not result.is_valid
-    assert len(result.validation_errors) == 1
-    assert "Test error" in result.validation_errors
+    # Test None in args
+    with pytest.raises(ValueError, match="Positional argument 1 cannot be None"):
+        phase._validate_inputs((1, None), {"a": 3})
 
-    # Test adding multiple errors
-    result.add_error("Another error")
-    assert not result.is_valid
-    assert len(result.validation_errors) == 2
-    assert "Test error" in result.validation_errors
-    assert "Another error" in result.validation_errors
+    # Test None in kwargs
+    with pytest.raises(ValueError, match="Keyword argument 'a' cannot be None"):
+        phase._validate_inputs((1, 2), {"a": None})

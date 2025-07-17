@@ -1,0 +1,93 @@
+#!/usr/bin/env dana
+"""
+Phase 2: POET Integration Example
+
+This demonstrates the POET-powered workflow system with:
+1. Runtime objective inference
+2. Dynamic validation gates  
+3. Enhanced step execution
+4. Context-aware optimization
+
+Usage: dana phase2_poet_integration.na
+"""
+
+log("🚀 Phase 2: POET Integration Demo")
+log("=" * 50)
+
+# Import the workflow components
+import dana.frameworks.workflow as workflow
+from dana.frameworks.workflow.phases import POETWorkflowEngine, POETObjective
+
+# Create POET-powered workflow engine
+engine = POETWorkflowEngine()
+
+# Define sample workflow steps
+def extract_data(input_data):
+    log(f"Extracting data from: {input_data}")
+    return {"raw": str(input_data), "length": len(str(input_data))}
+
+def transform_data(data):
+    log(f"Transforming data: {data}")
+    return {
+        "processed": data["raw"].upper(),
+        "processed_length": data["length"] * 2,
+        "metadata": {"source": "workflow", "timestamp": "2025-07-17"}
+    }
+
+def format_output(data):
+    log(f"Formatting output: {data}")
+    return f"Processed: {data['processed']} (length: {data['processed_length']})"
+
+# Create workflow steps
+steps = [
+    workflow.WorkflowStep(name="extract", function=extract_data),
+    workflow.WorkflowStep(name="transform", function=transform_data), 
+    workflow.WorkflowStep(name="format", function=format_output)
+]
+
+# Add runtime objectives
+engine.add_objective(
+    name="performance_optimization",
+    description="Optimize for performance with timeout limits",
+    criteria={"max_steps": 3, "timeout": 30},
+    priority=2
+)
+
+engine.add_objective(
+    name="reliability_guarantee", 
+    description="Ensure reliable execution with retry logic",
+    criteria={"retry_count": 2, "fallback_enabled": True},
+    priority=1
+)
+
+# Execute with POET enhancement
+log("\n📊 Executing workflow with POET objectives...")
+result = engine.run(steps, "HelloWorld", context={"business_critical": True})
+
+log(f"\n✅ Final result: {result}")
+log("\n🎯 POET objectives applied:")
+log("   - Performance optimization (max 3 steps, 30s timeout)")
+log("   - Reliability guarantee (2 retries, fallback enabled)")
+log("   - Context-aware optimization for business-critical workflow")
+
+# Test with sensitive data detection
+log("\n" + "=" * 50)
+log("🔒 Testing security objective detection...")
+
+# Create steps that might trigger security objectives
+def process_secret(data):
+    return {"secret_data": data, "processed": True}
+
+security_steps = [
+    workflow.WorkflowStep(name="process_user_secret", function=process_secret)
+]
+
+# This should trigger security objectives
+try:
+    result = engine.run(security_steps, "user_password", context={"business_critical": True})
+    log(f"Security processing result: {result}")
+except Exception as e:
+    log(f"Security validation triggered: {e}")
+
+log("\n🎉 Phase 2 POET Integration demo complete!")
+log("The system now supports runtime objectives and validation gates.")

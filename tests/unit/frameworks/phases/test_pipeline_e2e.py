@@ -5,6 +5,8 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
+import pytest
+
 from dana.frameworks.poet.phases.enforce import EnforcePhase
 from dana.frameworks.poet.phases.operate import OperatePhase
 from dana.frameworks.poet.phases.perceive import PerceivePhase
@@ -23,33 +25,27 @@ def test_poet_pipeline_e2e_success():
     enforce = EnforcePhase(config)
 
     # Step 1: Perceive
-    perceive_result = perceive.perceive((2, 3), {})
-    assert perceive_result.is_valid
-    assert perceive_result.processed_args == (2, 3)
-    assert perceive_result.processed_kwargs == {}
+    processed_args, processed_kwargs, context = perceive.perceive((2, 3), {})
+    assert processed_args == (2, 3)
+    assert processed_kwargs == {}
 
     # Step 2: Operate
-    operate_result = operate.operate(dummy_func, perceive_result.processed_args, perceive_result.processed_kwargs, perceive_result.context)
-    assert operate_result.is_success
-    assert operate_result.output == 5
+    output = operate.operate(dummy_func, processed_args, processed_kwargs, context)
+    assert output == 5
 
     # Step 3: Enforce
-    enforce_result = enforce.enforce(operate_result.output, perceive_result.context, expected_type=int)
-    assert enforce_result.is_valid
-    assert enforce_result.output == 5
+    result = enforce.enforce(output, context, expected_type=int)
+    assert result == 5
 
 
 def test_poet_pipeline_e2e_perceive_error():
     """Test the pipeline with invalid input (None in args)."""
     config = POETConfig(domain="test")
     perceive = PerceivePhase(config)
-    OperatePhase(config)
-    EnforcePhase(config)
 
-    # Step 1: Perceive (invalid input)
-    perceive_result = perceive.perceive((1, None), {})
-    assert not perceive_result.is_valid
-    assert any("cannot be None" in e for e in perceive_result.validation_errors)
+    # Step 1: Perceive (invalid input) - should raise ValueError
+    with pytest.raises(ValueError, match="Positional argument 1 cannot be None"):
+        perceive.perceive((1, None), {})
 
 
 def test_poet_pipeline_e2e_operate_error():
@@ -57,19 +53,16 @@ def test_poet_pipeline_e2e_operate_error():
     config = POETConfig(domain="test")
     perceive = PerceivePhase(config)
     operate = OperatePhase(config)
-    EnforcePhase(config)
 
     def error_func(x, y):
         raise ValueError("Test error in operate phase")
 
     # Step 1: Perceive
-    perceive_result = perceive.perceive((2, 3), {})
-    assert perceive_result.is_valid
+    processed_args, processed_kwargs, context = perceive.perceive((2, 3), {})
 
-    # Step 2: Operate (error)
-    operate_result = operate.operate(error_func, perceive_result.processed_args, perceive_result.processed_kwargs, perceive_result.context)
-    assert not operate_result.is_success
-    assert any("Operate phase error" in e for e in operate_result.errors)
+    # Step 2: Operate (error) - should raise ValueError
+    with pytest.raises(ValueError, match="Test error in operate phase"):
+        operate.operate(error_func, processed_args, processed_kwargs, context)
 
 
 def test_poet_pipeline_e2e_enforce_error():
@@ -80,14 +73,12 @@ def test_poet_pipeline_e2e_enforce_error():
     enforce = EnforcePhase(config)
 
     # Step 1: Perceive
-    perceive_result = perceive.perceive((2, 3), {})
-    assert perceive_result.is_valid
+    processed_args, processed_kwargs, context = perceive.perceive((2, 3), {})
 
     # Step 2: Operate
-    operate_result = operate.operate(dummy_func, perceive_result.processed_args, perceive_result.processed_kwargs, perceive_result.context)
-    assert operate_result.is_success
+    output = operate.operate(dummy_func, processed_args, processed_kwargs, context)
+    assert output == 5
 
-    # Step 3: Enforce (expecting str, but got int)
-    enforce_result = enforce.enforce(operate_result.output, perceive_result.context, expected_type=str)
-    assert not enforce_result.is_valid
-    assert any("Output type mismatch" in e for e in enforce_result.validation_errors)
+    # Step 3: Enforce (expecting str, but got int) - should raise TypeError
+    with pytest.raises(TypeError, match="Output type mismatch"):
+        enforce.enforce(output, context, expected_type=str)

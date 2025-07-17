@@ -1,0 +1,87 @@
+# Context-Aware Workflow Example - Dana with KNOWS Integration
+# Demonstrates workflow execution with knowledge extraction and context management
+
+log("🧠 Starting Context-Aware Dana Workflow")
+
+# Import necessary modules
+import dana.frameworks.workflow.core.context.context_engine as ctx
+import dana.frameworks.workflow.phases.context_engineering as ce
+
+# Define workflow functions with knowledge extraction
+def extract_metadata(data: dict) -> dict:
+    metadata = {
+        "input_type": type(data).__name__,
+        "input_size": len(data) if hasattr(data, '__len__') else 1,
+        "timestamp": str(datetime.now())
+    }
+    log(f"📊 Extracted metadata: {metadata}")
+    return {"data": data, "metadata": metadata}
+
+def process_with_context(input_dict: dict) -> dict:
+    data = input_dict["data"]
+    metadata = input_dict["metadata"]
+    
+    # Process based on data type
+    if isinstance(data, list):
+        processed = [x * 2 for x in data]
+        operation = "list_doubling"
+    elif isinstance(data, dict):
+        processed = {k: v * 2 for k, v in data.items()}
+        operation = "dict_doubling"
+    else:
+        processed = data * 2
+        operation = "scalar_doubling"
+    
+    result = {
+        "processed": processed,
+        "operation": operation,
+        "metadata": metadata,
+        "processing_time": str(datetime.now())
+    }
+    
+    log(f"🔄 Processed with {operation}: {processed}")
+    return result
+
+def generate_summary(processed_dict: dict) -> str:
+    processed = processed_dict["processed"]
+    operation = processed_dict["operation"]
+    metadata = processed_dict["metadata"]
+    
+    if isinstance(processed, list):
+        summary = f"Processed {len(processed)} items via {operation}"
+    elif isinstance(processed, dict):
+        summary = f"Processed {len(processed)} key-value pairs via {operation}"
+    else:
+        summary = f"Processed single value via {operation}: {processed}"
+    
+    return summary
+
+def create_context_snapshot(context_engine: ce.ContextEngineeringEngine, workflow_id: str):
+    # Create knowledge extraction point
+    snapshot = context_engine.create_context_snapshot(workflow_id, "processing_complete")
+    log(f"📸 Context snapshot created: {snapshot.snapshot_id}")
+    return snapshot
+
+# Main workflow execution
+log("🔧 Setting up context-aware workflow...")
+
+# Create context-aware pipeline
+context_pipeline = extract_metadata | process_with_context | generate_summary
+
+# Test with different data types
+log("\n📦 Testing with list data:")
+list_data = [1, 2, 3, 4, 5]
+list_result = context_pipeline(list_data)
+log(f"✅ List result: {list_result}")
+
+log("\n📦 Testing with dict data:")
+dict_data = {"a": 10, "b": 20, "c": 30}
+dict_result = context_pipeline(dict_data)
+log(f"✅ Dict result: {dict_result}")
+
+log("\n📦 Testing with scalar data:")
+scalar_data = 42
+scalar_result = context_pipeline(scalar_data)
+log(f"✅ Scalar result: {scalar_result}")
+
+log("🧠 Context-aware workflow complete!")
