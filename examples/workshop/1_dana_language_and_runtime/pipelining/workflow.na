@@ -6,6 +6,6 @@ def plan_trip(location, weather):
 def estimate_cost(trip):
     return reason(f"Estimate the cost of the trip: {trip}. Include a summary of the trip for ease of understanding.")
 
-pipeline = plan_trip | estimate_cost
+workflow = plan_trip | estimate_cost
 
-pipeline("Tokyo", "sunny")
+workflow("Tokyo", "sunny")
