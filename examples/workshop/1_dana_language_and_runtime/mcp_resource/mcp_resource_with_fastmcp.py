@@ -10,8 +10,8 @@ from mcp.client.streamable_http import streamablehttp_client
 WEATHER_MCP_SERVER_URL = "http://127.0.0.1:8000/mcp"
 
 CITY = "Tokyo"
-START_DATE = "2025-06-26"
-END_DATE = "2025-06-30"
+# START_DATE = "2025-06-26"
+# END_DATE = "2025-06-30"
 
 
 # inspect server
@@ -65,7 +65,10 @@ async def get_weather():
         try:
             await session.initialize()
             return await session.call_tool(
-                name="get_weather_by_datetime_range", arguments={"city": CITY, "start_date": START_DATE, "end_date": END_DATE}
+                name="get_current_weather", arguments={
+                    "city": CITY,
+                    # "start_date": START_DATE, "end_date": END_DATE
+                }
             )
         finally:
             await client_session.__aexit__(None, None, None)
