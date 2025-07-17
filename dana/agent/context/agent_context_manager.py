@@ -141,9 +141,8 @@ class AgentContextManager:
     def _initialize_simplified_memory_system(self):
         """Initialize the simplified 3-level Dana memory system"""
         # Check if the agent has memory enabled
-        memory_enabled = getattr(self.agent, 'memory_enabled', True)
+        memory_enabled = getattr(self.agent, 'memory_enabled', False)
         if not memory_enabled:
-            self.info("Memory system disabled for this agent (memory_enabled = False)")
             self._memory_manager = None
             return
             
