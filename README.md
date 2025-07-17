@@ -6,23 +6,24 @@
 *Beyond AI coding assistants: write agents that learn, adapt, and improve themselves in production*
 
 ---
-> **What if your code could learn, adapt, and improve itself in production—without you?**
+> **What if your agents could learn, adapt, and improve itself in production—without you?**
 
 AI coding assistants help write better code. Agentic AI systems execute tasks autonomously. Dana represents the convergence: agent-native programming where you write `agent` instead of `class`, use context-aware `reason()` calls that intelligently adapt their output types, compose self-improving pipelines with `|` operators, and deploy functions that learn from production through POET.
 
 ## TL;DR - Get Running in 30 Seconds! 🚀
 
 ```bash
-git clone https://github.com/aitomatic/dana.git
-cd dana
-make  # This installs everything and creates your .env file
+pip install dana-agent
+# If you see an 'externally-managed-environment' error on macOS/Homebrew Python, use:
+# pip install dana-agent --break-system-packages
+# Or use a virtual environment:
+# python3 -m venv venv && source venv/bin/activate && pip install dana-agent
+dana start
 ```
 
-Then:
-1. Add your API key to `.env` 
-2. Run `make dana` to start the Dana REPL (interactive shell)
+*No repo clone required. This launches the Dana REPL instantly.*
 
-See the full documentation at: [https://aitomatic.github.io/dana/](https://aitomatic.github.io/dana/)
+See the full documentation at: [https://aitomatic.github.io/opendxa/](https://aitomatic.github.io/opendxa/)
 
 ---
 
