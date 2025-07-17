@@ -20,22 +20,30 @@ def validate_agent_module(na_file_path: str, na_module):
         tuple: (agent_name, agent_description, solve_function) if valid, raises exception if invalid
     """
     try:
-        # Validate required components
-        if not hasattr(na_module, "agent_name"):
-            raise ValueError(f"Agent file {na_file_path} missing required 'system:agent_name' variable")
+        # Find all agent classes in the module
+        agents = []
+        for attr in dir(na_module):
+            attr_value = getattr(na_module, attr)
+            if callable(attr_value):
+                try:
+                    agent = attr_value()
+                    # Check if it has the required agent attributes
+                    if hasattr(agent, "name") and hasattr(agent, "description") and hasattr(agent, "solve"):
+                        agents.append(agent)
+                except Exception:
+                    continue
 
-        if not hasattr(na_module, "agent_description"):
-            raise ValueError(f"Agent file {na_file_path} missing required 'system:agent_description' variable")
+        if not agents:
+            raise ValueError(f"No valid agents found in {na_file_path}")
 
-        if not hasattr(na_module, "solve"):
-            raise ValueError(f"Agent file {na_file_path} missing required 'solve(query: str) -> str' function")
+        if len(agents) > 1:
+            raise ValueError(f"Multiple agents found in {na_file_path}, only one agent is allowed")
 
-        if not callable(na_module.solve):
-            raise ValueError(f"Agent file {na_file_path} 'solve' is not a callable function")
-
-        agent_name = str(na_module.agent_name)
-        agent_description = str(na_module.agent_description)
-        solve_function = na_module.solve
+        # Use the first agent found
+        agent = agents[0]
+        agent_name = str(agent.name)
+        agent_description = str(agent.description)
+        solve_function = agent.solve
 
         print("✅ Agent validation successful:")
         print(f"   Name: {agent_name}")
