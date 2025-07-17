@@ -2286,7 +2286,7 @@ async def _update_agent_code_with_rag(
             # Create a copy of the project
             updated_project = multi_file_project.copy()
             
-            # Update knowledges.na file
+            # Update knowledges.na to add contextual_knowledge if it doesn't exist
             knowledges_file = None
             for file_info in updated_project.get("files", []):
                 if file_info.get("filename") == "knowledges.na":
@@ -2294,12 +2294,11 @@ async def _update_agent_code_with_rag(
                     break
             
             if knowledges_file:
-                # Update knowledges.na by adding contextual_knowledge while preserving existing content
                 current_content = knowledges_file.get("content", "")
                 
                 # Check if contextual_knowledge already exists
                 if "contextual_knowledge" not in current_content:
-                    # Add contextual_knowledge to existing content
+                    # Add contextual_knowledge to existing content while preserving existing knowledge
                     if current_content.strip():
                         # Add to existing content with proper spacing
                         if not current_content.endswith("\n"):
@@ -2307,22 +2306,19 @@ async def _update_agent_code_with_rag(
                         current_content += "\n# RAG resource for contextual knowledge retrieval from uploaded documents\n"
                         current_content += 'contextual_knowledge = use("rag", sources=["./knows"])'
                     else:
-                        # Create new content if file is empty
-                        current_content = '''"""Knowledge base/resource configurations.
+                        # Create new content if file is empty (shouldn't happen but handle gracefully)
+                        current_content = '''"""Knowledge base/resource configurations."""
 
-Knowledge Description:
-- Uses RAG (Retrieval Augmented Generation) for contextual knowledge retrieval
-- Accesses uploaded documents and knowledge sources
-"""
-
-# Original knowledge resource (preserved)
+# Original knowledge resource
 knowledge = use("rag", sources=["./docs"])
 
-# Additional contextual knowledge from uploaded documents
+# RAG resource for contextual knowledge retrieval from uploaded documents
 contextual_knowledge = use("rag", sources=["./knows"])'''
                     
                     knowledges_file["content"] = current_content
-                    logger.info("Updated knowledges.na with contextual_knowledge while preserving existing knowledge")
+                    logger.info("Added contextual_knowledge to knowledges.na while preserving existing content")
+                else:
+                    logger.info("contextual_knowledge already exists in knowledges.na")
             
             # Update methods.na file to use contextual knowledge
             methods_file = None
@@ -2335,28 +2331,30 @@ contextual_knowledge = use("rag", sources=["./knows"])'''
                 # Add RAG integration to methods
                 current_content = methods_file.get("content", "")
                 
-                # Update imports to include both knowledge sources
-                if "from knowledges import knowledge, contextual_knowledge" not in current_content:
+                # Update imports to include both knowledge sources on separate lines
+                if "from knowledges import contextual_knowledge" not in current_content:
                     lines = current_content.split("\n")
                     
-                    # Remove any existing individual imports
-                    lines = [line for line in lines if not (
-                        "from knowledges import knowledge" in line or 
-                        "from knowledges import contextual_knowledge" in line
-                    )]
-                    
-                    # Add combined import at the top
-                    import_line = "from knowledges import knowledge, contextual_knowledge"
-                    
-                    # Find where to insert import (after existing imports)
+                    # Find where to insert imports (after existing imports)
                     insert_index = 0
+                    has_knowledge_import = False
+                    
                     for i, line in enumerate(lines):
-                        if line.strip().startswith("from ") or line.strip().startswith("import "):
+                        if "from knowledges import knowledge" in line:
+                            has_knowledge_import = True
+                            insert_index = i + 1
+                        elif line.strip().startswith("from ") or line.strip().startswith("import "):
                             insert_index = i + 1
                         elif line.strip() and not line.strip().startswith("#"):
                             break
                     
-                    lines.insert(insert_index, import_line)
+                    # Add knowledge import if it doesn't exist
+                    if not has_knowledge_import:
+                        lines.insert(insert_index, "from knowledges import knowledge")
+                        insert_index += 1
+                    
+                    # Add contextual_knowledge import
+                    lines.insert(insert_index, "from knowledges import contextual_knowledge")
                     current_content = "\n".join(lines)
                 
                 # Modify existing search_document function to use both knowledge sources
@@ -2390,35 +2388,8 @@ def search_document(package: AgentPackage) -> AgentPackage:
                 methods_file["content"] = current_content
                 logger.info("Updated methods.na with combined knowledge sources and search function")
             
-            # Update workflows.na to include contextual processing
-            workflows_file = None
-            for file_info in updated_project.get("files", []):
-                if file_info.get("filename") == "workflows.na":
-                    workflows_file = file_info
-                    break
-            
-            if workflows_file:
-                current_content = workflows_file.get("content", "")
-                
-                # Update workflow to include document search processing
-                if "search_document" not in current_content:
-                    enhanced_workflow = '''from methods import process_request, search_document, enhanced_response
-
-workflow = process_request | search_document | enhanced_response'''
-                    
-                    workflows_file["content"] = enhanced_workflow
-                    logger.info("Updated workflows.na with combined knowledge search processing")
-                elif "search_document" in current_content and "enhanced_response" not in current_content:
-                    # If search_document exists but enhanced_response doesn't, update the workflow
-                    import re
-                    # Replace existing workflow definition
-                    workflow_pattern = r'workflow\s*=.*'
-                    enhanced_workflow_line = 'workflow = process_request | search_document | enhanced_response'
-                    
-                    if re.search(workflow_pattern, current_content):
-                        current_content = re.sub(workflow_pattern, enhanced_workflow_line, current_content)
-                        workflows_file["content"] = current_content
-                        logger.info("Updated existing workflow to include enhanced_response")
+            # Note: Only modifying methods.na - not touching other .na files like workflows.na
+            logger.info("Deep training enhancement complete - only modified methods.na file")
             
             # Write updated files to disk
             await _write_multi_file_project_to_disk(agent_folder, updated_project)

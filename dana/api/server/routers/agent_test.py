@@ -227,7 +227,7 @@ async def test_agent(request: AgentTestRequest):
                     # Clean up temporary file
                     try:
                         if temp_file_path.exists():
-                            temp_file_path.unlink()
+                            # temp_file_path.unlink()
                             print(f"Cleaned up temporary file: {temp_file_path}")
                     except Exception as cleanup_error:
                         print(f"Warning: Failed to cleanup temporary file {temp_file_path}: {cleanup_error}")
