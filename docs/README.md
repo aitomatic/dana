@@ -6,18 +6,18 @@
   <img src="images/dana-logo.jpg" alt="Dana Logo" width="60">
   <span>
     <div style="font-size: 18px; font-style: italic; font-weight: 600; color: #666;">Agent-native programming language and runtime</div>
-    <div style="font-size: 12px; font-style: italic; color: #999;">powered by OpenDXA</div>
   </span>
 </div>
 
 # Dana — The Agent-Native Evolution of AI Development
 *Beyond AI coding assistants: Write agents that learn, adapt, and improve themselves in production*
 
+
 *Brought to you by [Aitomatic](https://aitomatic.com/) and other [AI Alliance](https://thealliance.ai/) members.*
 
 ---
 
-> **What if your code could learn, adapt, and improve itself in production—without you?**
+> **What if your agents could learn, adapt, and improve itself in production—without you?**
 
 Dana bridges the gap between AI coding assistance and autonomous agents through agent-native programming: native `agent` primitives, context-aware `reason()` calls that adapt output types automatically, self-improving pipelines with compositional `|` operators, and functions that evolve through POET feedback loops.
 
@@ -95,7 +95,7 @@ Contact: [investors@aitomatic.com](mailto:investors@aitomatic.com)
 
 ## Why Dana?
 
-Dana transforms AI development from brittle, unpredictable systems to reliable, auditable automations through agent-native architecture:
+Dana transforms AI development from brittle, unpredictable systems to reliable, auditable automations through agent-native, domain-aware neurosymbolic architecture:
 
 - **🔍 Transparent**: Every step is visible and debuggable through imperative programming
 - **🛡️ Reliable**: Built-in verification and error correction with structured state management
@@ -127,7 +127,7 @@ use("tools.report.generate", input=public:result)
 **Context-Aware Intelligence**: Same reasoning, different output types based on usage:
 ```dana
 risk_score: float = reason("assess portfolio risk", context=portfolio)
-risk_details: dict = reason("assess portfolio risk", context=portfolio) 
+risk_details: dict = reason("assess portfolio risk", context=portfolio)
 risk_report: str = reason("assess portfolio risk", context=portfolio)
 ```
 
@@ -189,8 +189,8 @@ agent FinancialAnalyst:
 
 ### ⚡ 5-Minute Demo
 ```bash
-pip install opendxa
-opendxa demo chatbot
+pip install dana-agent
+dana start
 ```
 [Try the demo →](for-engineers/README.md#path-1-quick-demo-5-minutes)
 

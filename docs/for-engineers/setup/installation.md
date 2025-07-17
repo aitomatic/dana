@@ -1,17 +1,8 @@
 # Installation Guide
 
-## Overview
-Status: Under Development
-Complete installation and setup instructions for OpenDXA.
+> **Coming Soon:**
 
-## Coming Soon
-
-- System requirements
-- Installation methods (pip, conda, source)
-- Environment setup
-- Configuration options
-- Verification steps
-- Troubleshooting common issues
+_This guide is under development. Complete installation and setup instructions for Dana will be provided soon._
 
 ## Quick Install (Preview)
 
@@ -20,7 +11,8 @@ Complete installation and setup instructions for OpenDXA.
 pip install opendxa # (when available)
 ```
 
+<!--
 ## Related Documentation
-
 - [Setup Overview](README.md)
 - [Troubleshooting](../troubleshooting/README.md)
+-->
