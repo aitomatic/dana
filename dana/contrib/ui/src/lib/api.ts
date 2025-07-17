@@ -465,29 +465,6 @@ class ApiService {
     return response.data;
   }
 
-  async processAgentDocuments(data: {
-    document_folder: string;
-    conversation: string | string[];
-    summary: string;
-  }): Promise<{
-    success: boolean;
-    message: string;
-    agent_name?: string;
-    agent_description?: string;
-    processing_details?: any;
-  }> {
-    const response = await this.client.post<{
-      success: boolean;
-      message: string;
-      agent_name?: string;
-      agent_description?: string;
-      processing_details?: any;
-    }>('/agents/process-agent-documents', data, {
-      timeout: 300000, // 5 minutes timeout for long processing
-    });
-    return response.data;
-  }
-
   async updateAgent(agentId: number, agent: AgentCreate): Promise<AgentRead> {
     const response = await this.client.put<AgentRead>(`/agents/${agentId}`, agent);
     return response.data;

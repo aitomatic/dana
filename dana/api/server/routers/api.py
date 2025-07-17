@@ -2270,7 +2270,7 @@ async def process_agent_documents(request: ProcessAgentDocumentsRequest, backgro
         logger.info(f"Processing agent documents from: {request.document_folder}")
         
         # Validate document folder exists
-        doc_folder = Path(request.document_folder)
+        doc_folder = Path(request.document_folder).absolute()
         if not doc_folder.exists() or not doc_folder.is_dir():
             raise HTTPException(status_code=404, detail=f"Document folder not found: {request.document_folder}")
         
@@ -2396,7 +2396,7 @@ async def _process_documents_with_context(
     # Also update the output folder to use the document folder
     curate_content = re.sub(
         r'^output_folder_name = .*$',
-        f'output_folder_name = "{doc_folder.parent}/knows"',
+        f'output_folder_name = "{doc_folder.parent.absolute()}/knows"',
         curate_content,
         flags=re.MULTILINE
     )

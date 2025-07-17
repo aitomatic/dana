@@ -91,52 +91,6 @@ export function FileUpload({
           generated_response: response.generated_response
         });
 
-        // If we have a successful upload with file_path, trigger document processing
-        if (response.file_path && conversationContext && agentInfo) {
-          try {
-            // Extract document folder from file path
-            const documentFolder = response.file_path.split('/').slice(0, -1).join('/');
-            
-            // Convert conversation context to string array
-            const conversation = conversationContext.map(msg => 
-              `${msg.role}: ${msg.content}`
-            );
-            
-            // Create summary from agent info and conversation
-            const conversationSummary = conversationContext.length > 0 
-              ? `Recent conversation:\n${conversationContext.slice(-3).map(msg => `${msg.role}: ${msg.content}`).join('\n')}`
-              : 'No recent conversation available.';
-            
-            const summary = `Agent: ${agentInfo.name || 'Unknown'}\n` +
-                          `Description: ${agentInfo.description || 'No description'}\n` +
-                          `${conversationSummary}\n` +
-                          `Context: User is uploading knowledge files to enhance the agent's capabilities.`;
-            
-            console.log('🔄 Starting document processing for:', {
-              document_folder: documentFolder,
-              conversation: conversation,
-              summary: summary
-            });
-            
-            const processResponse = await apiService.processAgentDocuments({
-              document_folder: documentFolder,
-              conversation: conversation,
-              summary: summary
-            });
-            
-            if (processResponse.success) {
-              console.log('✅ Document processing started:', processResponse);
-              toast.success(`Document processing started for ${file.name}`);
-            } else {
-              console.warn('⚠️ Document processing failed:', processResponse);
-              toast.error('Document processing failed to start');
-            }
-          } catch (processError) {
-            console.error('❌ Document processing error:', processError);
-            toast.error('Failed to start document processing');
-          }
-        }
-
         toast.success(`Uploaded ${file.name} successfully`);
       } else {
         uploadedFile.status = 'error';
