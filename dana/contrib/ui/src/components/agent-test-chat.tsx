@@ -19,6 +19,7 @@ interface AgentTestChatProps {
   agentName: string;
   agentDescription: string;
   className?: string;
+  currentFolder?: string;
 }
 
 const AgentTestChat = ({
@@ -26,6 +27,7 @@ const AgentTestChat = ({
   agentName,
   agentDescription,
   className,
+  currentFolder,
 }: AgentTestChatProps) => {
   const [messages, setMessages] = useState<TestChatMessage[]>([
     {
@@ -74,6 +76,7 @@ const AgentTestChat = ({
         agent_name: agentName || 'Test Agent',
         agent_description: agentDescription || 'A test agent',
         context: { user_id: 1, test_mode: true },
+        folder_path: currentFolder,
       });
 
       if (response.success) {
@@ -105,7 +108,7 @@ const AgentTestChat = ({
     } finally {
       setIsTesting(false);
     }
-  }, [inputMessage, isTesting, agentCode, agentName, agentDescription]);
+  }, [inputMessage, isTesting, agentCode, agentName, agentDescription, currentFolder]);
 
   const handleKeyPress = useCallback(
     (e: React.KeyboardEvent) => {
@@ -133,9 +136,10 @@ const AgentTestChat = ({
                 'max-w-[80%] rounded-lg px-3 py-2 text-sm',
                 message.role === 'user'
                   ? 'bg-blue-600 text-white'
-                  : message.content.includes('error') || message.content.includes('Sorry')
-                    ? 'bg-red-100 text-red-800 border border-red-200'
-                    : 'bg-gray-100 text-gray-900',
+                  : 'bg-gray-100 text-gray-900'
+                // : message.content.includes('error') || message.content.includes('Sorry')
+                //   ? 'bg-red-100 text-red-800 border border-red-200'
+                //   : 'bg-gray-100 text-gray-900',
               )}
             >
               {/* Sender label inside bubble */}
