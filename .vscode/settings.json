@@ -1,0 +1,62 @@
+{
+  "files.exclude": {
+    // AUTOMATION- & IDE-RELATED
+    // =========================
+    "**/.claude": true,
+    "**/.github": false,  // GitHub Actions configuration
+    "**/.vscode": false,  // VSCode configuration
+    "**/Makefile": false,  // Makefile
+    "**/.pre-commit-config.yaml": false,  // Pre-commit configuration
+
+    // DOCUMENTATION
+    // =============
+    "**/docs/.ai-only": true,
+    "**/docs/.archive": true,
+    "**/docs/images": true,
+    "**/docs/javascripts": true,
+    "**/docs/stylesheets": true,
+
+    "**/mkdocs.yml": true,  // MkDocs configuration
+
+    // ENVIRONMENT
+    // ===========
+    "**/.env": false,  // Environment variables
+    "**/.env.example": false,  // Environment variables example
+
+    // LINTING
+    // =======
+    "**/.markdownlint.yaml": false,  // Markdown linting configuration
+
+    // PYHON & RELATED
+    // ===============
+    "**/__pycache__": true,  // compiled Python files
+    "**/pyproject.toml": false,  // Python project configuration
+    "**/dist": true,  // Python package distribution files
+    "**/*.egg-info": true,  // Python package metadata
+    "**/.python-version": true,  // Python version
+
+    "**/.mypy_cache": true,  // MyPy cache
+
+    "**/.pytest_cache": true,  // PyTest cache
+    "**/pytest.ini": false,  // PyTest configuration
+    "**/.coverage": true,  // Coverage report
+
+    "**/.ruff_cache": true,  // Ruff cache
+
+    "**/uv.lock": true,  // UV project lock file
+    "**/.venv": true,  // Python virtual environment
+
+    // VERSION CONTROL
+    // ===============
+    "**/.git": true,  // Git repository
+    "**/.gitignore": false,
+    "**/CVS": true,  // CVS repository
+    "**/.svn": true,  // Subversion repository
+    "**/.hg": true,  // Mercurial repository
+
+    // MISC / OTHER
+    // ============
+    "**/.DS_Store": true,  // MacOS file metadata
+    "**/Thumbs.db": true,  // Windows file metadata
+  },
+}
