@@ -59,7 +59,6 @@ node_modules/
 .refactoring_*/
 .cache/
 .ipynb_checkpoints/
-.cursor/
 
 .deprecated_opendxa
 
@@ -80,3 +79,7 @@ generated/
 .vscode/extensions.json
 # .vscode/launch.json
 # .vscode/settings.json
+
+# Cursor configs
+# --------------
+# .cursor/
