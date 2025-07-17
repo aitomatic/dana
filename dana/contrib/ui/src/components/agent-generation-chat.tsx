@@ -4,7 +4,6 @@ import { apiService } from '@/lib/api';
 import type {
   MessageData,
   AgentGenerationResponse,
-  AgentCapabilities,
   MultiFileProject,
 } from '@/lib/api';
 import { toast } from 'sonner';
@@ -41,40 +40,6 @@ interface AgentGenerationChatProps {
   onReadyForCodeGeneration?: (agentId: number) => void;
 }
 
-// Helper function to format suggested questions into a readable message
-const formatSuggestedQuestionsMessage = (
-  agentName: string,
-  agentDescription: string,
-  suggestedQuestions?: string[],
-  followUpMessage?: string,
-): string => {
-  console.log('🏗️ Formatting suggested questions:', { agentName, agentDescription, suggestedQuestions, followUpMessage });
-
-  let message = '';
-
-  // Add follow-up message if available
-  if (followUpMessage) {
-    message += `${followUpMessage}\n\n`;
-  }
-
-  // Add suggested questions if available
-  if (suggestedQuestions && suggestedQuestions.length > 0) {
-    message += '**Here are some questions to help me understand your agent better:**\n\n';
-    suggestedQuestions.forEach((question, index) => {
-      message += `${index + 1}. ${question}\n`;
-    });
-  } else {
-    // Fallback message if no suggested questions
-    message += `I'm working on understanding your requirements for the **${agentName}** agent. Could you provide more details about:\n\n`;
-    message += `1. What specific tasks should this agent perform?\n`;
-    message += `2. What knowledge or data sources should it have access to?\n`;
-    message += `3. Are there any specific workflows or processes it should follow?\n`;
-  }
-
-  console.log('🔚 Final formatted message:', message);
-  return message;
-};
-
 // Add type declarations for window properties
 declare global {
   interface Window {
@@ -97,7 +62,6 @@ const AgentGenerationChat = ({
     currentAgent,
     isGenerating,
     setGenerating,
-    setAnalyzing,
     setError: setBuildingError,
     initializeAgent,
     updateAgentData,
@@ -116,7 +80,7 @@ const AgentGenerationChat = ({
       id: '1',
       role: 'assistant',
       content:
-        "Hi! I'm here to help you create a Dana agent. Let's start by describing what kind of agent you'd like to build. Tell me about the agent's purpose, capabilities, or any specific requirements you have.",
+        "Hi! We're training Georgia together. Let's begin by describing what Georgia should do. What is its purpose, what capabilities should it have, and are there any specific requirements?",
       timestamp: new Date(),
     },
   ]);
@@ -304,22 +268,22 @@ const AgentGenerationChat = ({
 
         if (agent?.phase === 'description' || !agent) {
           // Phase 1: Display the message directly from backend
-          formattedMessage = response.follow_up_message || 'I understand your request. Let me help you create an agent.';
+          formattedMessage = response.follow_up_message || 'I understand your request. Let me help you train Georgia.';
 
-          // Add "Build Agent" button message if ready for code generation
+          // Add "Train Georgia" button message if ready for code generation
           if (response.ready_for_code_generation) {
             formattedMessage += '\n\n---\n\n';
-            formattedMessage += '**Ready to build your agent!** You can now: Click the "Build Agent" button to generate the code';
+            formattedMessage += '**Ready to train Georgia!** You can now: Click the "Train Georgia" button to generate the training code';
           }
         } else {
           // Phase 2: Code generation completed
-          formattedMessage = `I've generated Dana code for your agent! Here's what I created:\n\n`;
-          formattedMessage += `**Agent Name:** ${response.agent_name || 'Custom Agent'}\n`;
+          formattedMessage = `I've generated training code for Georgia! Here's what I created:\n\n`;
+          formattedMessage += `**Agent Name:** ${response.agent_name || 'Georgia'}\n`;
           formattedMessage += `**Description:** ${response.agent_description || 'A specialized agent for your needs'}\n\n`;
-          formattedMessage += `The code has been loaded into the editor on the right. You can review and modify it as needed.`;
+          formattedMessage += `The training code has been loaded into the editor on the right. You can review and modify it as needed.`;
 
           formattedMessage += '\n\n---\n\n';
-          formattedMessage += 'Your agent code has been generated successfully! You can now test it in the right panel.';
+          formattedMessage += 'Georgia\'s training code has been generated successfully! You can now test it in the right panel.';
         }
 
         console.log('📝 Formatted Message:', formattedMessage);
@@ -364,14 +328,14 @@ const AgentGenerationChat = ({
           toast.success('Agent code generated successfully!');
         }
       } else {
-        throw new Error(response.error || 'Failed to generate agent code');
+        throw new Error(response.error || 'Failed to generate training code for Georgia');
       }
     } catch (error) {
-      console.error('Failed to generate agent:', error);
+      console.error('Failed to train Georgia:', error);
 
       // Update store error state
-      setError(error instanceof Error ? error.message : 'Failed to generate agent code');
-      setBuildingError(error instanceof Error ? error.message : 'Failed to generate agent code');
+      setError(error instanceof Error ? error.message : 'Failed to generate training code for Georgia');
+      setBuildingError(error instanceof Error ? error.message : 'Failed to generate training code for Georgia');
 
       // Add error message
       const errorMessage: ChatMessage = {
@@ -462,10 +426,10 @@ const AgentGenerationChat = ({
         addConversationMessage('assistant', successMessage.content);
         toast.success('Agent code generated successfully!');
       } else {
-        throw new Error(response.error || 'Failed to generate agent code');
+        throw new Error(response.error || 'Failed to generate training code for Georgia');
       }
     } catch (error) {
-      console.error('Failed to generate agent code:', error);
+      console.error('Failed to generate training code for Georgia:', error);
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -519,7 +483,7 @@ const AgentGenerationChat = ({
                 ) : (
                   <div>
                     <MarkdownViewerSmall>{message.content}</MarkdownViewerSmall>
-                    {/* Show Build Agent button in the most recent assistant message when ready */}
+                    {/* Show Train Georgia button in the most recent assistant message when ready */}
                     {(() => {
                       const agent = useAgentBuildingStore.getState().currentAgent;
                       const isLastMessage = messages[messages.length - 1]?.id === message.id;
@@ -544,7 +508,7 @@ const AgentGenerationChat = ({
                             ) : (
                               <>
                                 <Send className="w-4 h-4 mr-2" />
-                                Build Agent
+                                Train Georgia
                               </>
                             )}
                           </Button>
@@ -657,7 +621,7 @@ const AgentGenerationChat = ({
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Describe how you want to create the agent"
+            placeholder="Describe how you want to train Georgia"
             className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             rows={2}
             disabled={isGenerating}

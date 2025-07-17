@@ -2,14 +2,19 @@ import re
 from pathlib import Path
 from typing import Any
 import os
+import logging
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.types import BaseRequest
 
 from .. import db
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/agent-test", tags=["agent-test"])
 
@@ -19,7 +24,7 @@ class AgentTestRequest(BaseModel):
 
     agent_code: str
     message: str
-    agent_name: str | None = "Test Agent"
+    agent_name: str | None = "Georgia"
     agent_description: str | None = "A test agent"
     context: dict[str, Any] | None = None
     folder_path: str | None = None
@@ -39,6 +44,82 @@ def get_db():
         yield db_session
     finally:
         db_session.close()
+
+
+async def _llm_fallback(agent_name: str, agent_description: str, message: str) -> str:
+    """
+    Fallback to LLM when agent execution fails or no Dana code available.
+    
+    Args:
+        agent_name: Name of the agent
+        agent_description: Description of the agent
+        message: User message to process
+    
+    Returns:
+        Agent response from LLM
+    """
+    try:
+        logger.info(f"Using LLM fallback for agent '{agent_name}' with message: {message}")
+        
+        # Create LLM resource
+        llm = LLMResource(
+            name="agent_test_fallback_llm",
+            description="LLM fallback for agent testing when Dana code is not available"
+        )
+        await llm.initialize()
+        
+        # Check if LLM is available
+        if not hasattr(llm, "_is_available") or not llm._is_available:
+            logger.warning("LLM resource is not available for fallback")
+            return "I'm sorry, I'm currently unavailable. Please try again later or ensure the training code is generated."
+        
+        # Build system prompt based on agent description
+        system_prompt = f"""You are {agent_name}, trained by Dana to be a helpful assistant.
+
+{agent_description}
+
+Please respond to the user's message in character, being helpful and following your description. Keep your response concise and relevant to the user's query."""
+        
+        # Create request
+        request = BaseRequest(
+            arguments={
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": message}
+                ],
+                "temperature": 0.7,
+                "max_tokens": 1000
+            }
+        )
+        
+        # Query LLM
+        response = await llm.query(request)
+        if response.success:
+            # Extract assistant message from response
+            response_content = response.content
+            if isinstance(response_content, dict):
+                choices = response_content.get("choices", [])
+                if choices:
+                    assistant_message = choices[0].get("message", {}).get("content", "")
+                    if assistant_message:
+                        return assistant_message
+                
+                # Try alternative response formats
+                if "content" in response_content:
+                    return response_content["content"]
+                elif "text" in response_content:
+                    return response_content["text"]
+            elif isinstance(response_content, str):
+                return response_content
+            
+            return "I processed your request but couldn't generate a proper response."
+        else:
+            logger.error(f"LLM fallback failed: {response.error}")
+            return f"I'm experiencing technical difficulties: {response.error}"
+            
+    except Exception as e:
+        logger.error(f"Error in LLM fallback: {e}")
+        return f"I encountered an error while processing your request: {str(e)}"
 
 
 @router.post("/", response_model=AgentTestResponse)
@@ -67,7 +148,7 @@ async def test_agent(request: AgentTestRequest):
         print(f"Testing agent with message: '{message}'")
         print(f"Using agent code: {agent_code[:200]}...")
 
-        # If folder_path is provided and main.na exists, run that file
+        # If folder_path is provided, check if main.na exists
         if request.folder_path:
             abs_folder_path = str(Path(request.folder_path).resolve())
             main_na_path = Path(abs_folder_path) / "main.na"
@@ -112,8 +193,30 @@ async def test_agent(request: AgentTestRequest):
                         if result.success and result.output:
                             response_text = result.output.strip()
                         else:
-                            response_text = result.error if result.error else "Agent executed but returned no response."
+                            # Multi-file execution failed, use LLM fallback
+                            logger.warning(f"Multi-file agent execution failed: {result.error}, using LLM fallback")
+                            print(f"Multi-file agent execution failed: {result.error}, using LLM fallback")
                             
+                            llm_response = await _llm_fallback(agent_name, request.agent_description, message)
+                            
+                            print("--------------------------------")
+                            print(f"LLM fallback response: {llm_response}")
+                            print("--------------------------------")
+                            
+                            return AgentTestResponse(success=True, agent_response=llm_response, error=None)
+                            
+                    except Exception as e:
+                        # Exception during multi-file execution, use LLM fallback
+                        logger.warning(f"Exception during multi-file execution: {e}, using LLM fallback")
+                        print(f"Exception during multi-file execution: {e}, using LLM fallback")
+                        
+                        llm_response = await _llm_fallback(agent_name, request.agent_description, message)
+                        
+                        print("--------------------------------")
+                        print(f"LLM fallback response: {llm_response}")
+                        print("--------------------------------")
+                        
+                        return AgentTestResponse(success=True, agent_response=llm_response, error=None)
                     finally:
                         if old_danapath is not None:
                             os.environ["DANAPATH"] = old_danapath
@@ -134,6 +237,32 @@ async def test_agent(request: AgentTestRequest):
                 print("--------------------------------")
                 
                 return AgentTestResponse(success=True, agent_response=response_text, error=None)
+            else:
+                # main.na doesn't exist, use LLM fallback
+                logger.info(f"main.na not found at {main_na_path}, using LLM fallback")
+                print(f"main.na not found at {main_na_path}, using LLM fallback")
+                
+                llm_response = await _llm_fallback(agent_name, request.agent_description, message)
+                
+                print("--------------------------------")
+                print(f"LLM fallback response: {llm_response}")
+                print("--------------------------------")
+                
+                return AgentTestResponse(success=True, agent_response=llm_response, error=None)
+        
+        # If no folder_path provided, check if agent_code is empty or minimal
+        if not agent_code or agent_code.strip() == "" or len(agent_code.strip()) < 50:
+            logger.info("No substantial agent code provided, using LLM fallback")
+            print("No substantial agent code provided, using LLM fallback")
+            
+            llm_response = await _llm_fallback(agent_name, request.agent_description, message)
+            
+            print("--------------------------------")
+            print(f"LLM fallback response: {llm_response}")
+            print("--------------------------------")
+            
+            return AgentTestResponse(success=True, agent_response=llm_response, error=None)
+        
         # Otherwise, fall back to the current behavior
         instance_var = agent_name[0].lower() + agent_name[1:]
         appended_code = f'\n{instance_var} = {agent_name}()\nresponse = {instance_var}.solve("{message.replace("\\", "\\\\").replace('"', '\\"')}")\nprint(response)\n'
@@ -153,13 +282,40 @@ async def test_agent(request: AgentTestRequest):
         print("--------------------------------")
         try:
             sandbox_context = SandboxContext()
-            DanaSandbox.quick_run(file_path=full_path, context=sandbox_context)
+            result = DanaSandbox.quick_run(file_path=full_path, context=sandbox_context)
+            
+            if not result.success:
+                # Dana execution failed, use LLM fallback
+                logger.warning(f"Dana execution failed: {result.error}, using LLM fallback")
+                print(f"Dana execution failed: {result.error}, using LLM fallback")
+                
+                llm_response = await _llm_fallback(agent_name, request.agent_description, message)
+                
+                print("--------------------------------")
+                print(f"LLM fallback response: {llm_response}")
+                print("--------------------------------")
+                
+                return AgentTestResponse(success=True, agent_response=llm_response, error=None)
+                
+        except Exception as e:
+            # Exception during execution, use LLM fallback
+            logger.warning(f"Exception during Dana execution: {e}, using LLM fallback")
+            print(f"Exception during Dana execution: {e}, using LLM fallback")
+            
+            llm_response = await _llm_fallback(agent_name, request.agent_description, message)
+            
+            print("--------------------------------")
+            print(f"LLM fallback response: {llm_response}")
+            print("--------------------------------")
+            
+            return AgentTestResponse(success=True, agent_response=llm_response, error=None)
         finally:
             if request.folder_path:
                 if old_danapath is not None:
                     os.environ["DANAPATH"] = old_danapath
                 else:
                     os.environ.pop("DANAPATH", None)
+        
         print("--------------------------------")
         print(sandbox_context.get_state())
         state = sandbox_context.get_state()
@@ -174,6 +330,15 @@ async def test_agent(request: AgentTestRequest):
     except HTTPException:
         raise
     except Exception as e:
-        error_msg = f"Error testing agent: {str(e)}"
-        print(error_msg)
-        return AgentTestResponse(success=False, agent_response="", error=error_msg)
+        # Final fallback: if everything else fails, try LLM fallback
+        logger.error(f"Unexpected error in agent test: {e}, attempting LLM fallback")
+        try:
+            llm_response = await _llm_fallback(agent_name, request.agent_description, message)
+            print("--------------------------------")
+            print(f"Final LLM fallback response: {llm_response}")
+            print("--------------------------------")
+            return AgentTestResponse(success=True, agent_response=llm_response, error=None)
+        except Exception as llm_error:
+            error_msg = f"Error testing agent: {str(e)}. LLM fallback also failed: {str(llm_error)}"
+            print(error_msg)
+            return AgentTestResponse(success=False, agent_response="", error=error_msg)

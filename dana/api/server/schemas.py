@@ -176,7 +176,7 @@ class ChatResponse(BaseModel):
     error: str | None = None
 
 
-# Agent Generation schemas
+# Georgia Training schemas
 class MessageData(BaseModel):
     """Schema for a single message in conversation"""
 
@@ -185,13 +185,13 @@ class MessageData(BaseModel):
 
 
 class AgentGenerationRequest(BaseModel):
-    """Request schema for agent generation endpoint"""
+    """Request schema for Georgia training endpoint"""
 
     messages: list[MessageData]
     current_code: str | None = None
-    multi_file: bool = False  # New field to enable multi-file generation
+    multi_file: bool = False  # New field to enable multi-file training
     
-    # Two-phase generation fields
+    # Two-phase training fields
     phase: str = "description"  # 'description' | 'code_generation'
     agent_id: int | None = None  # For Phase 2 requests
     
