@@ -11,27 +11,11 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from dataclasses import dataclass
 from typing import Any
 
 from dana.common.utils.logging import DANA_LOGGER
-from dana.frameworks.poet.types import POETConfig
 
-
-@dataclass
-class PerceiveResult:
-    """Result of the Perceive phase."""
-
-    processed_args: tuple[Any, ...]
-    processed_kwargs: dict[str, Any]
-    context: dict[str, Any]
-    validation_errors: list[str]
-    is_valid: bool = True
-
-    def add_error(self, error: str) -> None:
-        """Add a validation error."""
-        self.validation_errors.append(error)
-        self.is_valid = False
+from ..core.types import POETConfig
 
 
 class PerceivePhase:
@@ -42,7 +26,7 @@ class PerceivePhase:
         self.config = config
         self.logger = DANA_LOGGER.getLogger(__name__)
 
-    def perceive(self, args: tuple[Any, ...], kwargs: dict[str, Any]) -> PerceiveResult:
+    def perceive(self, args: tuple[Any, ...], kwargs: dict[str, Any]) -> tuple[tuple[Any, ...], dict[str, Any], dict[str, Any]]:
         """
         Process and validate inputs.
 
@@ -51,67 +35,42 @@ class PerceivePhase:
             kwargs: Keyword arguments to process
 
         Returns:
-            PerceiveResult with processed inputs and validation status
+            Tuple of (processed_args, processed_kwargs, context)
         """
-        result = PerceiveResult(
-            processed_args=args,
-            processed_kwargs=kwargs,
-            context={},
-            validation_errors=[],
-        )
+        context = {
+            "domain": self.config.domain,
+            "retries": self.config.retries,
+            "timeout": self.config.timeout,
+        }
 
         try:
             # Basic input validation
-            self._validate_inputs(result)
+            self._validate_inputs(args, kwargs)
 
             # Domain-specific processing if domain is specified
             if self.config.domain:
-                self._process_domain_inputs(result)
-
-            # Gather context
-            self._gather_context(result)
-
-            # Optimize inputs
-            self._optimize_inputs(result)
+                self._process_domain_inputs(args, kwargs, context)
 
         except Exception as e:
             self.logger.error(f"Perceive phase failed: {e}")
-            result.add_error(f"Perceive phase error: {e}")
+            raise
 
-        return result
+        return args, kwargs, context
 
-    def _validate_inputs(self, result: PerceiveResult) -> None:
+    def _validate_inputs(self, args: tuple[Any, ...], kwargs: dict[str, Any]) -> None:
         """Basic input validation."""
         # Validate args
-        for i, arg in enumerate(result.processed_args):
+        for i, arg in enumerate(args):
             if arg is None:
-                result.add_error(f"Positional argument {i} cannot be None")
+                raise ValueError(f"Positional argument {i} cannot be None")
 
         # Validate kwargs
-        for key, value in result.processed_kwargs.items():
+        for key, value in kwargs.items():
             if value is None:
-                result.add_error(f"Keyword argument '{key}' cannot be None")
+                raise ValueError(f"Keyword argument '{key}' cannot be None")
 
-    def _process_domain_inputs(self, result: PerceiveResult) -> None:
+    def _process_domain_inputs(self, args: tuple[Any, ...], kwargs: dict[str, Any], context: dict[str, Any]) -> None:
         """Process inputs using domain-specific rules."""
         # TODO: Implement domain-specific processing
         # For now, just log that we would process domain inputs
         self.logger.info(f"Would process inputs for domain: {self.config.domain}")
-
-    def _gather_context(self, result: PerceiveResult) -> None:
-        """Gather execution context."""
-        # Add basic context
-        result.context.update(
-            {
-                "domain": self.config.domain,
-                "retries": self.config.retries,
-                "timeout": self.config.timeout,
-                "enable_training": self.config.enable_training,
-            }
-        )
-
-    def _optimize_inputs(self, result: PerceiveResult) -> None:
-        """Optimize inputs for the Operate phase."""
-        # TODO: Implement input optimization
-        # For now, just log that we would optimize inputs
-        self.logger.info("Would optimize inputs for Operate phase")

@@ -2,7 +2,7 @@
 POET Enhancement Logic - Pure Dana language enhancement
 """
 
-from dana.frameworks.poet.types import POETConfig
+from .types import POETConfig
 
 
 class POETEnhancer:

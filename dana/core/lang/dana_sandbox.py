@@ -21,7 +21,7 @@ from dana.common.resource.llm.llm_resource import LLMResource
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.frameworks.poet.client import POETClient, set_default_client
+# from dana.frameworks.poet.core.client import POETClient, set_default_client  # Removed for KISS
 
 
 @dataclass

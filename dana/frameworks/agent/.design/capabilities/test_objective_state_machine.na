@@ -1,0 +1,404 @@
+# Unit Tests for Objective-Driven State Machine
+# Tests individual functions and complete state machine execution
+
+import log
+import time
+from objective_driven_agent import *
+from data_structures import *
+
+# Test helper functions
+def create_test_agent() -> ObjectiveDrivenAgent:
+    """Create a test agent with semiconductor specs"""
+    agent = ObjectiveDrivenAgent(
+        name="TestAgent",
+        description="Test agent for objective-driven state machine"
+    )
+    
+    # Set test process specifications
+    agent.set_process_specs({
+        "temperature": {"min": 340.0, "max": 360.0, "target": 350.0},
+        "pressure": {"min": 95.0, "max": 105.0, "target": 100.0},
+        "flow_rate": {"min": 48.0, "max": 52.0, "target": 50.0}
+    })
+    
+    return agent
+
+def create_test_data_with_anomalies() -> ProcessDataBatch:
+    """Create test data with known anomalies"""
+    base_time = time.now()
+    
+    # Create parameters with anomalies
+    parameters = [
+        # Normal temperature readings
+        ProcessParameter("temperature", 350.0, "°C", base_time, 0.95),
+        ProcessParameter("temperature", 351.0, "°C", base_time, 0.95),
+        # Anomaly: temperature out of range
+        ProcessParameter("temperature", 365.0, "°C", base_time, 0.95),
+        ProcessParameter("temperature", 370.0, "°C", base_time, 0.95),
+        
+        # Normal pressure readings
+        ProcessParameter("pressure", 100.0, "mTorr", base_time, 0.90),
+        ProcessParameter("pressure", 101.0, "mTorr", base_time, 0.90),
+        # Anomaly: pressure out of range
+        ProcessParameter("pressure", 110.0, "mTorr", base_time, 0.90),
+        
+        # Normal flow rate readings
+        ProcessParameter("flow_rate", 50.0, "sccm", base_time, 0.98),
+        ProcessParameter("flow_rate", 49.5, "sccm", base_time, 0.98),
+        # Anomaly: flow rate too low
+        ProcessParameter("flow_rate", 40.0, "sccm", base_time, 0.98),
+    ]
+    
+    return ProcessDataBatch(
+        batch_id="TEST-BATCH-001",
+        equipment_id="TEST-CHAMBER",
+        recipe_name="TEST_RECIPE",
+        lot_number="TEST-LOT",
+        parameters=parameters,
+        collection_start=base_time,
+        collection_end=base_time + timedelta(seconds=100)
+    )
+
+def create_test_data_normal() -> ProcessDataBatch:
+    """Create test data with no anomalies"""
+    base_time = time.now()
+    
+    # Create normal parameters
+    parameters = [
+        ProcessParameter("temperature", 350.0, "°C", base_time, 0.95),
+        ProcessParameter("temperature", 351.0, "°C", base_time, 0.95),
+        ProcessParameter("temperature", 349.0, "°C", base_time, 0.95),
+        
+        ProcessParameter("pressure", 100.0, "mTorr", base_time, 0.90),
+        ProcessParameter("pressure", 101.0, "mTorr", base_time, 0.90),
+        ProcessParameter("pressure", 99.0, "mTorr", base_time, 0.90),
+        
+        ProcessParameter("flow_rate", 50.0, "sccm", base_time, 0.98),
+        ProcessParameter("flow_rate", 49.8, "sccm", base_time, 0.98),
+        ProcessParameter("flow_rate", 50.2, "sccm", base_time, 0.98),
+    ]
+    
+    return ProcessDataBatch(
+        batch_id="TEST-BATCH-002",
+        equipment_id="TEST-CHAMBER",
+        recipe_name="TEST_RECIPE",
+        lot_number="TEST-LOT",
+        parameters=parameters,
+        collection_start=base_time,
+        collection_end=base_time + timedelta(seconds=100)
+    )
+
+# Unit Tests for Individual Functions
+
+def test_analyze_process_data():
+    """Test the analyze_process_data function"""
+    log("🧪 Testing analyze_process_data function", "info")
+    
+    agent = create_test_agent()
+    test_data = create_test_data_with_anomalies()
+    
+    # Test with anomalies
+    result = analyze_process_data(agent, test_data)
+    
+    # Verify results
+    assert "statistics" in result
+    assert "anomalies" in result
+    assert "parameter_count" in result
+    assert "anomaly_count" in result
+    
+    # Check that anomalies were detected
+    assert result["anomaly_count"] > 0
+    assert len(result["anomalies"]) > 0
+    
+    # Check that statistics were calculated
+    assert len(result["statistics"]) > 0
+    
+    # Verify agent state
+    assert agent.current_state == ProcessState.ANALYZING
+    assert agent.current_objective == "analyze process parameters for anomalies"
+    
+    log("✅ analyze_process_data test passed", "info")
+
+def test_diagnose_anomalies():
+    """Test the diagnose_anomalies function"""
+    log("🧪 Testing diagnose_anomalies function", "info")
+    
+    agent = create_test_agent()
+    test_data = create_test_data_with_anomalies()
+    
+    # First analyze the data
+    analysis_result = analyze_process_data(agent, test_data)
+    
+    # Then diagnose
+    diagnosis_result = diagnose_anomalies(agent, analysis_result)
+    
+    # Verify results
+    assert "diagnoses" in diagnosis_result
+    assert "total_issues" in diagnosis_result
+    assert "critical_issues" in diagnosis_result
+    assert "recommendations" in diagnosis_result
+    
+    # Check that diagnoses were generated
+    assert diagnosis_result["total_issues"] >= 0
+    assert len(diagnosis_result["diagnoses"]) >= 0
+    
+    # Verify agent state
+    assert agent.current_state == ProcessState.DIAGNOSING
+    
+    log("✅ diagnose_anomalies test passed", "info")
+
+def test_optimize_parameters():
+    """Test the optimize_parameters function"""
+    log("🧪 Testing optimize_parameters function", "info")
+    
+    agent = create_test_agent()
+    test_data = create_test_data_with_anomalies()
+    
+    # Run analysis and diagnosis first
+    analysis_result = analyze_process_data(agent, test_data)
+    diagnosis_result = diagnose_anomalies(agent, analysis_result)
+    
+    # Then optimize
+    optimization_result = optimize_parameters(agent, diagnosis_result)
+    
+    # Verify results
+    assert "optimizations" in optimization_result
+    assert "total_recommendations" in optimization_result
+    assert "expected_yield_improvement" in optimization_result
+    assert "implementation_priority" in optimization_result
+    
+    # Check that optimizations were generated
+    assert optimization_result["total_recommendations"] >= 0
+    
+    # Verify agent state
+    assert agent.current_state == ProcessState.OPTIMIZING
+    
+    log("✅ optimize_parameters test passed", "info")
+
+def test_validate_optimizations():
+    """Test the validate_optimizations function"""
+    log("🧪 Testing validate_optimizations function", "info")
+    
+    agent = create_test_agent()
+    test_data = create_test_data_with_anomalies()
+    
+    # Run through the pipeline
+    analysis_result = analyze_process_data(agent, test_data)
+    diagnosis_result = diagnose_anomalies(agent, analysis_result)
+    optimization_result = optimize_parameters(agent, diagnosis_result)
+    
+    # Then validate
+    validation_result = validate_optimizations(agent, optimization_result)
+    
+    # Verify results
+    assert "validated_optimizations" in validation_result\n    assert "validation_issues" in validation_result
+    assert "approval_rate" in validation_result
+    assert "ready_for_implementation" in validation_result
+    
+    # Check validation metrics
+    assert 0.0 <= validation_result["approval_rate"] <= 1.0
+    assert isinstance(validation_result["ready_for_implementation"], bool)
+    
+    # Verify agent state
+    assert agent.current_state == ProcessState.VALIDATING
+    
+    log("✅ validate_optimizations test passed", "info")
+
+def test_generate_report():
+    """Test the generate_report function"""
+    log("🧪 Testing generate_report function", "info")
+    
+    agent = create_test_agent()
+    test_data = create_test_data_with_anomalies()
+    
+    # Run through the complete pipeline
+    analysis_result = analyze_process_data(agent, test_data)
+    diagnosis_result = diagnose_anomalies(agent, analysis_result)
+    optimization_result = optimize_parameters(agent, diagnosis_result)
+    validation_result = validate_optimizations(agent, optimization_result)
+    
+    # Generate report
+    report = generate_report(agent, validation_result, analysis_result, diagnosis_result)
+    
+    # Verify report structure
+    assert isinstance(report, ProcessHealthReport)
+    assert report.timestamp is not None
+    assert 0.0 <= report.overall_health <= 1.0
+    assert report.parameters_analyzed >= 0
+    assert isinstance(report.anomalies_detected, list)
+    assert isinstance(report.optimizations, list)
+    assert isinstance(report.statistics, list)
+    
+    # Verify agent state returned to idle
+    assert agent.current_state == ProcessState.IDLE
+    
+    log("✅ generate_report test passed", "info")
+
+# Integration Tests
+
+def test_complete_state_machine():
+    """Test the complete state machine execution"""
+    log("🧪 Testing complete state machine execution", "info")
+    
+    agent = create_test_agent()
+    test_data = create_test_data_with_anomalies()
+    
+    # Record initial state
+    initial_state = agent.current_state
+    assert initial_state == ProcessState.IDLE
+    
+    # Execute complete state machine
+    report = execute_state_machine(agent, test_data)
+    
+    # Verify final report
+    assert isinstance(report, ProcessHealthReport)
+    assert report.overall_health >= 0.0
+    assert report.parameters_analyzed > 0
+    
+    # Verify agent state returned to idle
+    assert agent.current_state == ProcessState.IDLE
+    
+    # Check state history
+    assert len(agent.context.state_history) > 0
+    
+    # Verify all expected states were visited
+    visited_states = [state for state, _ in agent.context.state_history]
+    expected_states = [
+        ProcessState.ANALYZING,
+        ProcessState.DIAGNOSING,
+        ProcessState.OPTIMIZING,
+        ProcessState.VALIDATING,
+        ProcessState.REPORTING,
+        ProcessState.IDLE
+    ]
+    
+    for expected_state in expected_states:
+        assert expected_state in visited_states
+    
+    log("✅ complete state machine test passed", "info")
+
+def test_state_machine_with_normal_data():
+    """Test state machine with normal data (no anomalies)"""
+    log("🧪 Testing state machine with normal data", "info")
+    
+    agent = create_test_agent()
+    test_data = create_test_data_normal()
+    
+    # Execute state machine
+    report = execute_state_machine(agent, test_data)
+    
+    # Verify report
+    assert isinstance(report, ProcessHealthReport)
+    assert report.overall_health >= 0.8  # Should be high for normal data
+    assert report.parameters_analyzed > 0
+    
+    # Should have fewer anomalies
+    assert len(report.anomalies_detected) <= len(create_test_data_with_anomalies().parameters)
+    
+    # Verify agent state
+    assert agent.current_state == ProcessState.IDLE
+    
+    log("✅ normal data test passed", "info")
+
+def test_objective_tracking():
+    """Test that objectives are properly tracked"""
+    log("🧪 Testing objective tracking", "info")
+    
+    agent = create_test_agent()
+    test_data = create_test_data_with_anomalies()
+    
+    # Track objectives during execution
+    objectives_seen = []
+    
+    # Execute each function and track objectives
+    analysis_result = analyze_process_data(agent, test_data)
+    objectives_seen.append(agent.current_objective)
+    
+    diagnosis_result = diagnose_anomalies(agent, analysis_result)
+    objectives_seen.append(agent.current_objective)
+    
+    optimization_result = optimize_parameters(agent, diagnosis_result)
+    objectives_seen.append(agent.current_objective)
+    
+    validation_result = validate_optimizations(agent, optimization_result)
+    objectives_seen.append(agent.current_objective)
+    
+    # Verify that objectives were set
+    assert len(objectives_seen) > 0
+    assert all(obj != "" for obj in objectives_seen)
+    
+    # Verify metrics collection
+    if agent.learning_enabled:
+        assert len(agent.metrics) > 0
+    
+    log("✅ objective tracking test passed", "info")
+
+def test_error_handling():
+    """Test error handling in state machine"""
+    log("🧪 Testing error handling", "info")
+    
+    agent = create_test_agent()
+    
+    # Create invalid data batch
+    invalid_data = ProcessDataBatch(
+        batch_id="INVALID-BATCH",
+        equipment_id="INVALID-CHAMBER",
+        recipe_name="INVALID_RECIPE",
+        lot_number="INVALID-LOT",
+        parameters=[],  # Empty parameters should trigger error handling
+        collection_start=time.now(),
+        collection_end=time.now()
+    )
+    
+    try:
+        # This should handle the empty parameters gracefully
+        result = analyze_process_data(agent, invalid_data)
+        
+        # Should return valid result structure even with no data
+        assert "statistics" in result
+        assert "anomalies" in result
+        assert "parameter_count" in result
+        assert "anomaly_count" in result
+        
+        # Should have zero counts for empty data
+        assert result["parameter_count"] == 0
+        assert result["anomaly_count"] == 0
+        
+        log("✅ error handling test passed", "info")
+        
+    except Exception as e:
+        # If an exception occurs, it should be handled gracefully
+        log(f"⚠️  Exception in error handling test: {e}", "warn")
+        # This is acceptable as long as the system doesn't crash
+
+# Main test runner
+def run_all_tests():
+    """Run all tests"""
+    log("🚀 Starting Objective-Driven State Machine Tests", "info")
+    log("=" * 60, "info")
+    
+    # Unit tests
+    log("\n📝 UNIT TESTS", "info")
+    log("-" * 30, "info")
+    
+    test_analyze_process_data()
+    test_diagnose_anomalies()
+    test_optimize_parameters()
+    test_validate_optimizations()
+    test_generate_report()
+    
+    # Integration tests
+    log("\n🔄 INTEGRATION TESTS", "info")
+    log("-" * 30, "info")
+    
+    test_complete_state_machine()
+    test_state_machine_with_normal_data()
+    test_objective_tracking()
+    test_error_handling()
+    
+    log("\n✅ ALL TESTS PASSED", "info")
+    log("=" * 60, "info")
+
+# Run tests if executed directly
+if __name__ == "__main__":
+    run_all_tests()

@@ -1,0 +1,18 @@
+{
+  "version": "1.0.0",
+  "logging": {
+    "level": "INFO"
+  },
+  "api": {
+    "enabled": false
+  },
+  "llm": {
+    "default_provider": "openai",
+    "providers": {
+      "openai": {
+        "api_key": "test-key",
+        "model": "gpt-4"
+      }
+    }
+  }
+}

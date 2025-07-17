@@ -10,12 +10,24 @@ from uuid import uuid4
 class POETConfig:
     """Configuration for POET function enhancement"""
 
+    # Core configuration
     domain: str | None = None
     optimize_for: str | None = None  # When set, enables Train phase
     enable_training: bool = False  # Explicitly enable training
     retries: int = 1
     timeout: float | None = None
     enable_monitoring: bool = True
+
+    # Phase-specific configuration
+    perceive: dict[str, Any] = field(default_factory=dict)
+    operate: dict[str, Any] = field(default_factory=dict)
+    enforce: dict[str, Any] = field(default_factory=dict)
+    train: dict[str, Any] = field(default_factory=dict)
+
+    # Observability and debugging
+    debug: bool = False
+    trace_phases: bool = False
+    performance_tracking: bool = True
 
     def dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization"""
@@ -26,6 +38,13 @@ class POETConfig:
             "retries": self.retries,
             "timeout": self.timeout,
             "enable_monitoring": self.enable_monitoring,
+            "perceive": self.perceive,
+            "operate": self.operate,
+            "enforce": self.enforce,
+            "train": self.train,
+            "debug": self.debug,
+            "trace_phases": self.trace_phases,
+            "performance_tracking": self.performance_tracking,
         }
 
     @classmethod
@@ -50,11 +69,31 @@ class TranspiledFunction:
 
 
 class POETResult:
-    """Wrapper for POET function results with execution context"""
+    """Simplified POET result that behaves like the original result but with POET metadata"""
 
-    def __init__(self, result: Any, function_name: str, version: str = "v1"):
+    def __init__(
+        self,
+        result: Any,
+        function_name: str,
+        version: str = "v1",
+        phase_timings: dict[str, float] | None = None,
+        confidence: float | None = None,
+    ):
         self._result = result
-        self._poet = {"execution_id": str(uuid4()), "function_name": function_name, "version": version, "enhanced": True}
+        self._poet = {
+            "execution_id": str(uuid4()),
+            "function_name": function_name,
+            "version": version,
+            "enhanced": True,
+            "phase_timings": phase_timings or {},
+            "confidence": confidence,
+            "total_execution_time": sum(phase_timings.values()) if phase_timings else None,
+        }
+
+    @property
+    def poet(self) -> dict[str, Any]:
+        """Access POET metadata - cleaner than _poet"""
+        return self._poet
 
     def __getattr__(self, name: str) -> Any:
         """Delegate attribute access to wrapped result"""
@@ -156,7 +195,11 @@ class POETResult:
         return other**self._result
 
     def unwrap(self) -> Any:
-        """Get the original result without POET wrapper"""
+        """Get the original result without POET wrapper (deprecated - use direct access)"""
+        return self._result
+
+    def raw(self) -> Any:
+        """Get the raw result without POET wrapper - cleaner name"""
         return self._result
 
 

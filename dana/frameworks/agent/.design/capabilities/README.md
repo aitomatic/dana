@@ -1,237 +1,281 @@
-# Objective-Driven Agent State Machine with POET Architecture
+# Objective-Driven State Machine Agent
 
 ## Overview
 
-This design demonstrates how to build an **executable state machine** using DanaFunctions with explicit objectives and the POET (Perceive-Operate-Enforce-Train) architecture. Each function has a clear `objective=` parameter and `optimize_for=` target, enabling systematic problem-solving with continuous learning.
+This design implements an **Objective-Driven State Machine** using Dana's POET (Perceive-Operate-Enforce-Train) architecture. The system demonstrates how to create agents with explicit objectives and optimization targets for each function, orchestrated through a well-defined state machine.
 
-## Core Design Principles
+## Architecture
 
-### 1. Objective-Driven Functions
-Every DanaFunction has explicit objectives that define what it's trying to achieve:
+### Core Concepts
+
+1. **Objective-Driven Functions**: Every function has:
+   - **Domain**: Context for domain-specific intelligence (e.g., "semiconductor")
+   - **Objective**: Clear purpose stating what the function aims to achieve
+   - **Optimize For**: Specific target like "accuracy", "speed", "reliability", or "efficiency"
+
+2. **State Machine Pattern**: 6-phase execution cycle:
+   ```
+   IDLE → ANALYZING → DIAGNOSING → OPTIMIZING → VALIDATING → REPORTING → IDLE
+   ```
+
+3. **POET Integration**: Each function leverages the 4-phase POET pipeline:
+   - **Perceive**: Input validation and context preparation
+   - **Operate**: Core business logic execution
+   - **Enforce**: Output validation and quality assurance
+   - **Train**: Metrics collection for continuous improvement
+
+## File Structure
+
+```
+.design/capabilities/
+├── enhanced_poet.na              # Extended POET decorator with objectives
+├── data_structures.na            # Domain-specific data types
+├── objective_driven_agent.na     # Main agent and state machine implementation
+├── demo_objective_state_machine.na # Usage examples and demos
+└── README.md                     # This file
+```
+
+## Key Components
+
+### 1. Enhanced POET Decorator
+
+The `objective_poet` decorator extends the standard POET decorator with:
 
 ```dana
-@poet(domain="semiconductor", objective="analyze_process_data", optimize_for="accuracy")
-def analyze_process_data(agent: ObjectiveDrivenAgent, data: ProcessData) -> AnalysisResult:
-    """Analyze semiconductor process data to identify patterns and anomalies."""
-    # Function implementation with clear objective
+@objective_poet(
+    domain="semiconductor",
+    objective="analyze process parameters for anomalies",
+    optimize_for="accuracy"
+)
+def analyze_process_data(agent: ObjectiveDrivenAgent, data: ProcessDataBatch) -> dict:
+    # Function implementation
 ```
 
-### 2. POET Enhancement
-The `@poet` decorator provides the P→O→E→T pipeline:
-- **P (Perceive)**: Input validation and context preparation
-- **O (Operate)**: Core business logic execution
-- **E (Enforce)**: Output validation and quality assurance
-- **T (Train)**: Optional learning and improvement
+### 2. Data Structures
 
-### 3. State Machine Pattern
-Functions transition through well-defined states:
-```
-idle → analyzing → diagnosing → optimizing → validating → reporting → idle
-```
+Domain-specific types for semiconductor manufacturing:
 
-## Architecture Components
+- `ProcessParameter`: Individual sensor measurements
+- `ProcessAnomaly`: Detected anomalies with severity and recommendations
+- `OptimizationRecommendation`: Parameter optimization suggestions
+- `ProcessHealthReport`: Comprehensive analysis results
+- `StateMachineContext`: Execution state and history tracking
 
-### Agent Structure
-```dana
-agent ObjectiveDrivenAgent:
-    current_state: str = "idle"
-    current_objective: str = "wait_for_task"
-    domains: list[str] = ["Semiconductor Manufacturing", ...]
-    tasks: list[str] = ["Analyze Process Data", ...]
-    state_transitions: dict[str, str] = {...}
-```
+### 3. State Machine Functions
 
-### State Machine Functions
-1. **`analyze_process_data`** - Objective: Extract insights from raw data
-2. **`diagnose_root_causes`** - Objective: Determine underlying causes
-3. **`optimize_process_parameters`** - Objective: Improve efficiency
-4. **`validate_optimization`** - Objective: Ensure safety and effectiveness
-5. **`generate_execution_report`** - Objective: Communicate results
-6. **`execute_state_machine`** - Objective: Orchestrate the complete process
+Each function represents a state in the execution cycle:
 
-### Data Structures
-- **`ProcessData`**: Raw manufacturing data
-- **`AnalysisResult`**: Pattern, anomaly, and trend analysis
-- **`DiagnosisResult`**: Root cause identification
-- **`OptimizationResult`**: Parameter optimization
-- **`ValidationResult`**: Safety and performance validation
-- **`ExecutionResult`**: Complete state machine results
-
-## Key Benefits
-
-### 1. Explicit Objectives
-Each function knows exactly what it's trying to achieve:
-- `objective="analyze_process_data"` - Clear purpose
-- `optimize_for="accuracy"` - Specific optimization target
-
-### 2. POET Reliability
-Automatic enhancement through the POET pipeline:
-- **Perceive**: Domain-specific input processing
-- **Operate**: Reliable execution with retry logic
-- **Enforce**: Output validation and compliance
-- **Train**: Continuous learning from feedback
-
-### 3. Traceable State Transitions
-Clear progression through problem-solving phases:
-```dana
-agent.current_state = "analyzing"
-agent.current_objective = "identify_data_patterns"
-```
-
-### 4. Domain Intelligence
-POET domain plugins provide industry-specific expertise:
-- Semiconductor manufacturing knowledge
-- Process optimization algorithms
-- Safety and compliance validation
+1. **analyze_process_data**: Analyzes parameters for patterns and anomalies
+2. **diagnose_anomalies**: Performs root cause analysis
+3. **optimize_parameters**: Generates optimization recommendations
+4. **validate_optimizations**: Validates recommendations for safety
+5. **generate_report**: Creates comprehensive health report
+6. **execute_state_machine**: Orchestrates the complete cycle
 
 ## Usage Examples
 
-### Basic Problem Solving
+### Basic Usage
+
 ```dana
-# Define a manufacturing problem
-problem = ManufacturingProblem(
-    problem_type="quality_degradation",
-    description="Yield has dropped from 95% to 87%",
-    affected_equipment=["RIE_Chamber_01"],
-    urgency="high"
+# Create an objective-driven agent
+agent = ObjectiveDrivenAgent(
+    name="ProcessControlAgent",
+    description="Semiconductor process optimization"
 )
 
-# Solve using objective-driven state machine
-solution = solve(agent, problem)
-```
+# Set process specifications
+agent.set_process_specs({
+    "temperature": {"min": 340.0, "max": 360.0, "target": 350.0},
+    "pressure": {"min": 95.0, "max": 105.0, "target": 100.0}
+})
 
-### Direct State Machine Execution
-```dana
 # Execute state machine with process data
-execution_result = execute_state_machine(agent, process_data)
+report = execute_state_machine(agent, process_data)
 
-# Check results for each phase
-for phase_name, phase_result in execution_result.results.items():
-    print(f"{phase_name}: {phase_result}")
+# Check results
+log(f"Process Health: {report.overall_health:.1%}")
+log(f"Anomalies: {len(report.anomalies_detected)}")
+log(f"Optimizations: {len(report.optimizations)}")
 ```
 
-### Individual Function Execution
+### Individual State Execution
+
 ```dana
-# Execute specific phases with objectives
-analysis = analyze_process_data(agent, data)      # Objective: accuracy
-diagnosis = diagnose_root_causes(agent, analysis) # Objective: speed
-optimization = optimize_process_parameters(agent, diagnosis) # Objective: efficiency
+# Execute individual states for testing
+analysis = analyze_process_data(agent, data)
+diagnosis = diagnose_anomalies(agent, analysis)
+optimization = optimize_parameters(agent, diagnosis)
+validation = validate_optimizations(agent, optimization)
+report = generate_report(agent, validation, analysis, diagnosis)
 ```
 
-## Implementation Details
+### Custom Objectives
 
-### POET Configuration
-Each function uses domain-specific POET configuration:
 ```dana
-@poet(
-    domain="semiconductor",           # Industry domain
-    objective="analyze_process_data", # Function objective
-    optimize_for="accuracy",          # Optimization target
-    retries=3,                        # Reliability settings
-    timeout=30.0,
-    enable_training=true              # Learning enabled
+@objective_poet(
+    domain="semiconductor",
+    objective="minimize parameter drift",
+    optimize_for="stability"
 )
+def custom_drift_analysis(agent: ObjectiveDrivenAgent, data: ProcessDataBatch) -> dict:
+    agent.current_state = ProcessState.ANALYZING
+    # Custom analysis logic focused on drift detection
 ```
 
-### State Management
-Agent state is updated throughout execution:
+## Design Patterns
+
+### 1. Objective Tracking
+
+Each function sets the agent's current objective:
+
 ```dana
-def analyze_process_data(agent: ObjectiveDrivenAgent, data: ProcessData):
-    agent.current_state = "analyzing"
-    agent.current_objective = "identify_data_patterns"
-    # ... function logic
+agent.current_objective = "analyze process parameters for anomalies"
+agent.objective_status = "in_progress"
+# ... perform work ...
+agent.objective_status = "completed"
 ```
 
-### Error Handling
-POET provides automatic error handling and retry logic:
-- Automatic retries on failure
-- Timeout protection
-- Domain-specific error recovery
-- Graceful degradation
+### 2. State Management
 
-### Learning and Feedback
-The T-stage enables continuous improvement:
-- Parameter optimization based on execution patterns
-- Feedback collection and processing
-- Performance monitoring and adjustment
+State transitions are tracked in the context:
 
-## Extensibility
-
-### Adding New States
-To add new states to the state machine:
-
-1. **Define the state function**:
 ```dana
-@poet(domain="semiconductor", objective="new_phase", optimize_for="specific_target")
-def new_phase_function(agent: ObjectiveDrivenAgent, input_data) -> OutputType:
-    agent.current_state = "new_phase"
-    agent.current_objective = "new_objective"
-    # Implementation
+agent.context.add_state_transition(ProcessState.ANALYZING)
+# This updates current_state, previous_state, and state_history
 ```
 
-2. **Update state transitions**:
+### 3. Metrics Collection
+
+Functions collect metrics for learning:
+
 ```dana
-state_transitions: dict[str, str] = {
-    "idle": "analyzing",
-    "analyzing": "new_phase",  # Add new transition
-    "new_phase": "diagnosing", # Add new transition
-    # ... rest of transitions
-}
+agent.collect_metrics({
+    "objective": objective,
+    "optimize_for": optimize_for,
+    "success": True,
+    "duration": execution_time,
+    "timestamp": time.now()
+})
 ```
 
-3. **Update orchestrator**:
-```dana
-def execute_state_machine(agent: ObjectiveDrivenAgent, initial_data):
-    # ... existing phases
-    new_phase_result = new_phase_function(agent, previous_result)
-    results["new_phase"] = new_phase_result
-    # ... continue with next phases
-```
+## Domain Intelligence
 
-### Adding New Domains
-To support new domains:
+### Semiconductor-Specific Features
 
-1. **Create domain-specific POET plugin**
-2. **Update agent domains list**
-3. **Add domain-specific data structures**
-4. **Implement domain-specific logic**
+1. **Parameter Correlation Detection**: Identifies coupled parameters (e.g., temperature-power)
+2. **Drift Analysis**: Detects systematic parameter drift over time
+3. **Variability Assessment**: Uses coefficient of variation for stability analysis
+4. **Safety Margins**: Applies safety factors to optimization recommendations
+
+### Statistical Methods
+
+- **Trend Detection**: Linear regression for identifying increasing/decreasing trends
+- **Anomaly Severity**: Multi-level classification based on deviation magnitude
+- **Optimization Ranking**: Priority scoring based on impact and confidence
 
 ## Best Practices
 
-### 1. Clear Objectives
-- Make objectives specific and measurable
+### 1. Objective Definition
+
+- Be specific and measurable in objectives
 - Align objectives with business goals
-- Use consistent naming conventions
-
-### 2. Optimization Targets
 - Choose appropriate optimization targets
-- Balance competing objectives (speed vs accuracy)
-- Consider domain-specific requirements
 
-### 3. State Management
-- Keep state transitions simple and predictable
-- Validate state changes
-- Provide clear state documentation
+### 2. Error Handling
 
-### 4. Error Handling
-- Use POET's built-in error handling
-- Add domain-specific error recovery
-- Provide meaningful error messages
+- Each state function should handle errors gracefully
+- Failed objectives should update agent status
+- State machine should transition to ERROR state on failures
 
-### 5. Testing
-- Test individual functions with objectives
-- Test complete state machine execution
-- Test error conditions and edge cases
+### 3. Optimization Safety
+
+- Always validate recommendations against safety limits
+- Apply safety factors to prevent aggressive optimizations
+- Check for conflicting optimizations
+
+### 4. Learning Integration
+
+- Enable metrics collection for continuous improvement
+- Track success rates and execution times
+- Use historical data to improve future decisions
+
+## Extension Points
+
+### 1. Custom Domains
+
+Create domain plugins for other industries:
+
+```dana
+@objective_poet(
+    domain="healthcare",
+    objective="diagnose patient symptoms",
+    optimize_for="accuracy"
+)
+```
+
+### 2. Additional States
+
+Extend the state machine with new phases:
+
+```dana
+enum ProcessState:
+    # ... existing states ...
+    SIMULATING = "simulating"
+    PREDICTING = "predicting"
+```
+
+### 3. Advanced Optimization
+
+Implement sophisticated optimization algorithms:
+
+- Multi-objective optimization
+- Constraint-based optimization
+- Machine learning-based recommendations
+
+## Testing
+
+### Unit Tests
+
+Test individual functions with mock data:
+
+```dana
+def test_analyze_anomalies():
+    agent = ObjectiveDrivenAgent("TestAgent")
+    test_data = create_test_batch_with_anomalies()
+    result = analyze_process_data(agent, test_data)
+    assert result["anomaly_count"] > 0
+```
+
+### Integration Tests
+
+Test complete state machine execution:
+
+```dana
+def test_full_cycle():
+    agent = create_configured_agent()
+    data = generate_realistic_data()
+    report = execute_state_machine(agent, data)
+    assert report.overall_health >= 0.0
+    assert agent.current_state == ProcessState.IDLE
+```
+
+## Performance Considerations
+
+1. **Batch Processing**: Process parameters in batches for efficiency
+2. **Caching**: Cache statistical calculations when possible
+3. **Parallel Analysis**: Consider parallel execution for independent analyses
+4. **Memory Management**: Limit metric history to prevent memory growth
+
+## Future Enhancements
+
+1. **Real-time Processing**: Stream processing for continuous monitoring
+2. **Distributed Execution**: Scale across multiple agents
+3. **Advanced Learning**: Implement reinforcement learning for optimization
+4. **Visualization**: Add real-time dashboards and alerts
+5. **Integration**: Connect with actual manufacturing systems
 
 ## Conclusion
 
-This objective-driven state machine design provides:
+This objective-driven state machine design provides a robust framework for building intelligent agents that can analyze, diagnose, optimize, and report on complex processes. The combination of explicit objectives, POET architecture, and domain intelligence creates a system that is both powerful and maintainable.
 
-✅ **Clear objectives** for every function  
-✅ **POET reliability** through P→O→E→T pipeline  
-✅ **Traceable state transitions**  
-✅ **Domain intelligence** through POET plugins  
-✅ **Continuous learning** through feedback loops  
-✅ **Extensible architecture** for new states and domains  
-
-The combination of explicit objectives, POET enhancement, and state machine patterns creates a robust, maintainable, and intelligent system for complex problem-solving in manufacturing and other domains. 
+For questions or contributions, please refer to the main Dana documentation. 
