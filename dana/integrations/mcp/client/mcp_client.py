@@ -124,8 +124,7 @@ class MCPClient(Loggable):
 
             return True
 
-        except Exception as e:
-            print(f"Transport validation failed: {e}")
+        except Exception:
             return False
         finally:
             # Clean up test connection
