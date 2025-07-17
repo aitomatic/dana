@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { MarkdownViewerSmall } from '../chat/markdown-viewer';
 import { AgentEditor } from '@/components/agent-editor';
 import { cn } from '@/lib/utils';
-import { Code, File } from 'lucide-react';
+// import { Code, File } from 'lucide-react';
 import { apiService } from '@/lib/api';
 
 export default function DescriptionCodeViewer({
@@ -11,26 +11,41 @@ export default function DescriptionCodeViewer({
   code,
   filename,
   projectName,
+  agentFolder,
 }: {
   description: string;
   code: string;
   filename?: string;
   projectName?: string;
+  agentFolder?: string;
 }) {
-  const [viewMode, setViewMode] = useState<'description' | 'code'>('description');
+  const [viewMode, setViewMode] = useState<'description' | 'code'>('code');
 
   const handleFileClick = async () => {
     if (!filename) return;
 
     try {
-      // Construct file path based on auto-storage pattern
-      // This matches the backend auto-storage folder structure
-      const sanitizedName = (projectName || 'Generated_Agent')
-        .toLowerCase()
-        .replace(/[^a-zA-Z0-9_\-]/g, '_');
+      let filePath: string;
 
-      // Use the same pattern as file-paths component
-      const filePath = `generated/generated_${sanitizedName}*/${filename}`;
+      if (agentFolder) {
+        // Use the actual agent folder from the API response
+        // Extract the relative path from the absolute path
+        let relativePath = agentFolder;
+        if (agentFolder.includes('/generated/')) {
+          // Extract everything from 'generated/' onwards
+          relativePath = agentFolder.substring(agentFolder.indexOf('generated/'));
+        } else if (agentFolder.includes('/agents/')) {
+          // Extract everything from 'agents/' onwards
+          relativePath = agentFolder.substring(agentFolder.indexOf('agents/'));
+        }
+        filePath = `${relativePath}/${filename}`;
+      } else {
+        // Fallback to the old pattern-matching approach
+        const sanitizedName = (projectName || 'Generated_Agent')
+          .toLowerCase()
+          .replace(/[^a-zA-Z0-9_\-]/g, '_');
+        filePath = `generated/generated_${sanitizedName}*/${filename}`;
+      }
 
       const result = await apiService.openFileLocation(filePath);
       if (result.success) {
@@ -62,7 +77,7 @@ export default function DescriptionCodeViewer({
         >
           {filename}
         </div>
-        <div className="flex items-center p-1 text-sm">
+        {/* <div className="flex items-center p-1 text-sm">
           <div
             className={cn(
               'flex items-center px-2 py-1 bg-gray-50 border border-gray-200 rounded-l-sm cursor-pointer',
@@ -87,13 +102,13 @@ export default function DescriptionCodeViewer({
             {' '}
             <Code className="mr-1 w-4 h-4" /> Code
           </div>
-        </div>
+        </div> */}
       </div>
       <div className="flex-1 h-full">
         {viewMode === 'description' ? (
           <MarkdownViewerSmall>{description}</MarkdownViewerSmall>
         ) : (
-          <AgentEditor value={code} onChange={() => {}} readOnly={true} />
+          <AgentEditor value={code} onChange={() => { }} readOnly={true} />
         )}
       </div>
     </div>

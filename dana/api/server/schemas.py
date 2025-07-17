@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -46,6 +46,12 @@ class AgentRead(AgentBase):
     id: int
     folder_path: str | None = None
     files: list[str] | None = None
+    
+    # Two-phase generation fields
+    generation_phase: str = "description"
+    agent_description_draft: dict | None = None
+    generation_metadata: dict | None = None
+    
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -184,6 +190,13 @@ class AgentGenerationRequest(BaseModel):
     messages: list[MessageData]
     current_code: str | None = None
     multi_file: bool = False  # New field to enable multi-file generation
+    
+    # Two-phase generation fields
+    phase: str = "description"  # 'description' | 'code_generation'
+    agent_id: int | None = None  # For Phase 2 requests
+    
+    # Agent data from client (for Phase 2 when agent not yet in DB)
+    agent_data: dict | None = None
 
 
 class AgentCapabilities(BaseModel):
@@ -219,7 +232,7 @@ class AgentGenerationResponse(BaseModel):
     """Response schema for agent generation endpoint"""
 
     success: bool
-    dana_code: str
+    dana_code: str | None = None  # Optional in Phase 1
     error: str | None = None
 
     # Essential agent info
@@ -243,6 +256,44 @@ class AgentGenerationResponse(BaseModel):
     # New fields for agent folder and id
     agent_id: int | None = None
     agent_folder: str | None = None
+    
+    # Two-phase generation fields
+    phase: str = "description"  # Current phase of generation
+    ready_for_code_generation: bool = False  # Whether description is sufficient for Phase 2
+    
+    # Temporary agent data for Phase 1 (not stored in DB yet)
+    temp_agent_data: dict | None = None
+
+
+# Phase 1 specific schemas
+class AgentDescriptionRequest(BaseModel):
+    """Request schema for Phase 1 agent description refinement"""
+    
+    messages: list[MessageData]
+    agent_id: int | None = None  # For updating existing draft
+    agent_data: dict | None = None  # Current agent object for modification
+
+
+class AgentDescriptionResponse(BaseModel):
+    """Response schema for Phase 1 agent description refinement"""
+    
+    success: bool
+    agent_id: int
+    agent_name: Optional[str] = None
+    agent_description: Optional[str] = None
+    capabilities: Optional[AgentCapabilities] = None
+    follow_up_message: Optional[str] = None
+    suggested_questions: Optional[list[str]] = None
+    ready_for_code_generation: Optional[bool] = None
+    agent_folder: Optional[str] = None
+    error: Optional[str] = None
+
+
+class AgentCodeGenerationRequest(BaseModel):
+    """Request schema for Phase 2 code generation"""
+    
+    agent_id: int
+    multi_file: bool = False
 
 
 class DanaSyntaxCheckRequest(BaseModel):
@@ -359,3 +410,10 @@ class ProcessAgentDocumentsResponse(BaseModel):
     agent_name: str | None = None
     agent_description: str | None = None
     processing_details: dict | None = None
+class KnowledgeUploadRequest(BaseModel):
+    """Request schema for knowledge file upload with conversation context"""
+    
+    agent_id: str | None = None
+    agent_folder: str | None = None
+    conversation_context: list[MessageData] | None = None  # Current conversation
+    agent_info: dict | None = None  # Current agent info for regeneration

@@ -2,7 +2,10 @@
 CodeHandler: Utilities for code build, extraction, and manipulation in agent generation.
 """
 
+import logging
 import re
+
+logger = logging.getLogger(__name__)
 
 class CodeHandler:
     @staticmethod
@@ -53,51 +56,74 @@ class CodeHandler:
         files = []
         project_name = "Generated Agent"
         project_description = "Dana agent generated from user requirements"
-        lines = response.split("\n")
-        current_file = None
-        current_content = []
-        for line in lines:
-            if line.startswith("FILE_START:"):
-                if current_file:
+        
+        try:
+            # Try parsing as JSON first
+            import json
+            json_data = json.loads(response.strip())
+            
+            # Extract file contents from JSON
+            for filename, content in json_data.items():
+                if filename.endswith('.na'):
                     files.append(
                         {
-                            "filename": current_file,
-                            "content": "\n".join(current_content).strip(),
-                            "file_type": CodeHandler.determine_file_type(current_file),
-                            "description": CodeHandler.get_file_description(current_file),
-                            "dependencies": CodeHandler.extract_dependencies("\n".join(current_content)),
+                            "filename": filename,
+                            "content": content.strip(),
+                            "file_type": CodeHandler.determine_file_type(filename),
+                            "description": CodeHandler.get_file_description(filename),
+                            "dependencies": CodeHandler.extract_dependencies(content),
                         }
                     )
-                current_file = line.split(":", 1)[1].strip()
-                current_content = []
-            elif line.startswith("FILE_END:"):
-                if current_file:
-                    files.append(
-                        {
-                            "filename": current_file,
-                            "content": "\n".join(current_content).strip(),
-                            "file_type": CodeHandler.determine_file_type(current_file),
-                            "description": CodeHandler.get_file_description(current_file),
-                            "dependencies": CodeHandler.extract_dependencies("\n".join(current_content)),
-                        }
-                    )
-                    current_file = None
+                    
+        except (json.JSONDecodeError, ValueError) as e:
+            # Fallback to FILE_START/FILE_END format if JSON parsing fails
+            logger.warning(f"Failed to parse JSON response, falling back to FILE_START/FILE_END format: {e}")
+            
+            lines = response.split("\n")
+            current_file = None
+            current_content = []
+            for line in lines:
+                if line.startswith("FILE_START:"):
+                    if current_file:
+                        files.append(
+                            {
+                                "filename": current_file,
+                                "content": "\n".join(current_content).strip(),
+                                "file_type": CodeHandler.determine_file_type(current_file),
+                                "description": CodeHandler.get_file_description(current_file),
+                                "dependencies": CodeHandler.extract_dependencies("\n".join(current_content)),
+                            }
+                        )
+                    current_file = line.split(":", 1)[1].strip()
                     current_content = []
-            elif current_file:
-                # Skip markdown code block markers
-                if line.strip().startswith("```"):
-                    continue
-                current_content.append(line)
-        if current_file and current_content:
-            files.append(
-                {
-                    "filename": current_file,
-                    "content": "\n".join(current_content).strip(),
-                    "file_type": CodeHandler.determine_file_type(current_file),
-                    "description": CodeHandler.get_file_description(current_file),
-                    "dependencies": CodeHandler.extract_dependencies("\n".join(current_content)),
-                }
-            )
+                elif line.startswith("FILE_END:"):
+                    if current_file:
+                        files.append(
+                            {
+                                "filename": current_file,
+                                "content": "\n".join(current_content).strip(),
+                                "file_type": CodeHandler.determine_file_type(current_file),
+                                "description": CodeHandler.get_file_description(current_file),
+                                "dependencies": CodeHandler.extract_dependencies("\n".join(current_content)),
+                            }
+                        )
+                        current_file = None
+                        current_content = []
+                elif current_file:
+                    # Skip markdown code block markers
+                    if line.strip().startswith("```"):
+                        continue
+                    current_content.append(line)
+            if current_file and current_content:
+                files.append(
+                    {
+                        "filename": current_file,
+                        "content": "\n".join(current_content).strip(),
+                        "file_type": CodeHandler.determine_file_type(current_file),
+                        "description": CodeHandler.get_file_description(current_file),
+                        "dependencies": CodeHandler.extract_dependencies("\n".join(current_content)),
+                    }
+                )
 
         # Ensure all required files are present
         project = {"files": files, "main_file": "main.na", "name": project_name, "description": project_description}

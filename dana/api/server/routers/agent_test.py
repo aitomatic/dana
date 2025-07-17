@@ -75,7 +75,6 @@ async def test_agent(request: AgentTestRequest):
                 print(f"Running main.na from folder: {main_na_path}")
                 
                 # Create temporary file in the same folder
-                import tempfile
                 import uuid
                 temp_filename = f"temp_main_{uuid.uuid4().hex[:8]}.na"
                 temp_file_path = Path(abs_folder_path) / temp_filename
@@ -99,6 +98,7 @@ async def test_agent(request: AgentTestRequest):
                     # Execute the temporary file
                     old_danapath = os.environ.get("DANAPATH")
                     os.environ["DANAPATH"] = abs_folder_path
+                    print("os DANAPATH", os.environ.get("DANAPATH"))
                     try:
                         print("os DANAPATH", os.environ.get("DANAPATH"))
                         sandbox_context = SandboxContext()

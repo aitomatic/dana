@@ -45,8 +45,6 @@ def solve(self : RetrievalExpertAgent, query: str) -> str:
 
 this_agent = RetrievalExpertAgent()
 
-# Example usage
-# print(this_agent.solve("What is Dana language?"))
 FILE_END:main.na
 
 FILE_START:workflows.na

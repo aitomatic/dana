@@ -1,13 +1,14 @@
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { X, Book, Network, Tools, List, User, Page, Box3dCenter } from 'iconoir-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { ReactElement } from 'react';
 import AgentGenerationChat from '@/components/agent-generation-chat';
 import { DEFAULT_DANA_AGENT_CODE } from '@/constants/dana-code';
 import AgentTestChat from '@/components/agent-test-chat';
 import AgentTemplateSelector from '@/components/agent-template-selector';
 import { useAgentCapabilitiesStore } from '@/stores/agent-capabilities-store';
+import { useAgentBuildingStore } from '@/stores/agent-building-store';
 import { MarkdownViewerSmall } from '../chat/markdown-viewer';
 import type { MultiFileProject } from '@/lib/api';
 import DanaAvatar from '/agent-avatar/javis-avatar.svg';
@@ -156,27 +157,17 @@ function AgentMiddlePane({
           />
         )}
         {subTab === 'Knowledges' && (
-          <div className="flex flex-col justify-between">
+          // <div className="flex flex-col justify-between">
+          <div className="flex flex-col flex-1 h-full">
             <DescriptionCodeViewer
               description={getDescription('knowledges.na')}
               code={getCode('knowledges.na')}
               filename="knowledges.na"
               projectName={multiFileProject?.name}
             />
-
-            {/* <div className="pt-6 border-t">
-              <h3 className="mb-4 text-lg font-medium text-gray-900">Upload Knowledge Files</h3>
-              <FileUpload
-                agentId={agentId}
-                agentFolder={agentFolder}
-                onFilesUploaded={(files) => {
-                  console.log('Files uploaded:', files);
-                  // TODO: Update knowledges.na file with RAG declarations
-                }}
-                className="w-full"
-              />
-            </div> */}
           </div>
+
+
         )}
         {subTab === 'Workflows' && (
           <DescriptionCodeViewer
@@ -226,10 +217,17 @@ export function GeneralAgentPage({
   multiFileProject: MultiFileProject | null;
   setMultiFileProject: (project: MultiFileProject | null) => void;
 }) {
+  // Zustand stores
+  const { setCapabilities } = useAgentCapabilitiesStore();
+  const {
+    currentAgent,
+    initializeAgent,
+    updateAgentData,
+    setMultiFileProject: setBuildingMultiFileProject,
+  } = useAgentBuildingStore();
   const [_, setIsGeneratingCode] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   // const [isRightPanelMaximized, setIsRightPanelMaximized] = useState(false);
-  const [agentFolder, setAgentFolder] = useState<string | undefined>(undefined);
 
   const { setValue } = form;
 
@@ -245,7 +243,6 @@ export function GeneralAgentPage({
     description?: string,
     multiFileProject?: MultiFileProject,
     _agentIdResp?: string,
-    agentFolderResp?: string,
   ) => {
     // Update the Dana code in the form
     setValue('general_agent_config.dana_code', code);
@@ -263,14 +260,22 @@ export function GeneralAgentPage({
     // Store multi-file project if provided
     if (multiFileProject) {
       setMultiFileProject(multiFileProject);
+      setBuildingMultiFileProject(multiFileProject);
     }
-
-    // Store agentFolder for test chat
-    if (agentFolderResp) setAgentFolder(agentFolderResp);
   };
 
   const handleGenerationStart = () => {
     setIsGeneratingCode(true);
+  };
+
+  const handlePhaseChange = (phase: 'description' | 'code_generation') => {
+    // The phase is now managed by the Zustand store in the chat component
+    console.log('Phase changed to:', phase);
+  };
+
+  const handleReadyForCodeGeneration = (agentId: number) => {
+    // The agent ID is now managed by the Zustand store in the chat component
+    console.log('Ready for code generation, agent ID:', agentId);
   };
 
   const handleTemplateSelect = (
@@ -303,7 +308,19 @@ export function GeneralAgentPage({
           <div className="flex justify-between items-center p-4 bg-gray-50 border-b border-gray-200">
             <div className="flex gap-2 items-center">
               <img className="w-8 h-8" src={DanaAvatar} alt="Agent avatar" />
-              <h2 className="text-lg font-semibold text-gray-900">Chat with Dana</h2>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Chat with Dana</h2>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className={cn(
+                    'px-2 py-1 text-xs font-medium rounded-full',
+                    !currentAgent || currentAgent.phase === 'description'
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-green-100 text-green-800'
+                  )}>
+                    {!currentAgent || currentAgent.phase === 'description' ? 'Phase 1: Description' : 'Phase 2: Code Generation'}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -314,6 +331,8 @@ export function GeneralAgentPage({
               currentCode={danaCode}
               className="h-full"
               onGenerationStart={handleGenerationStart}
+              onPhaseChange={handlePhaseChange}
+              onReadyForCodeGeneration={handleReadyForCodeGeneration}
             />
           </div>
         </div>
@@ -362,7 +381,7 @@ export function GeneralAgentPage({
               agentName={agentName}
               agentDescription={agentDescription}
               className="h-full"
-              currentFolder={agentFolder}
+              currentFolder={currentAgent?.folder_path}
             />
           </div>
         </div>
