@@ -1,11 +1,11 @@
 # Business Workflow Example - Dana Function Composition
 # Demonstrates real-world business processing with pipelines
 
-log("💼 Starting Business Dana Workflow")
+print("💼 Starting Business Dana Workflow")
 
 # Define business logic functions
 def calculate_tax(amount: float) -> float:
-    return amount * 0.15
+    return amount * 1.15
 
 def add_processing_fee(amount: float) -> float:
     return amount + 25.00
@@ -20,20 +20,20 @@ def apply_discount(amount: float, discount_rate: float = 0.1) -> float:
 invoice_pipeline = apply_discount | calculate_tax | add_processing_fee | format_invoice
 
 # Execute business workflow
-log("📊 Executing business pipeline: discount → tax → fee → format")
+print("📊 Executing business pipeline: discount → tax → fee → format")
 original_amount = 100.00
 result = invoice_pipeline(original_amount)
 
-log(f"💰 Original amount: ${original_amount}")
-log(f"✅ Final invoice: {result}")
+print(f"💰 Original amount: ${original_amount}")
+print(f"✅ Final invoice: {result}")
 
 # Alternative with different discount rate via separate function
 def apply_twenty_percent_discount(amount: float) -> float:
     return apply_discount(amount, 0.2)
 
-log("\n🔧 Testing with 20% discount:")
+print("\n🔧 Testing with 20% discount:")
 discounted_pipeline = apply_twenty_percent_discount | calculate_tax | add_processing_fee | format_invoice
 custom_result = discounted_pipeline(100.00)
-log(f"✅ 20% discount invoice: {custom_result}")
+print(f"✅ 20% discount invoice: {custom_result}")
 
-log("💼 Business workflow complete!")
+print("💼 Business workflow complete!")

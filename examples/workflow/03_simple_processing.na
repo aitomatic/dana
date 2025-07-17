@@ -1,7 +1,7 @@
 # Simple Processing Workflow - Dana Function Composition
 # Demonstrates basic data transformation with pipelines
 
-log("📊 Starting Simple Dana Processing Workflow")
+print("📊 Starting Simple Dana Processing Workflow")
 
 # Define simple processing functions
 def double_list(data: list[int]) -> list[int]:
@@ -31,7 +31,7 @@ def safe_sum_list(numbers: list[int]) -> int:
     return total
 
 # Create different processing pipelines
-log("🔍 Creating processing pipelines...")
+print("🔍 Creating processing pipelines...")
 
 # Pipeline 1: Full processing
 full_pipeline = double_list | sum_list | create_report
@@ -43,22 +43,22 @@ count_pipeline = count_items | str | create_report
 safe_pipeline = double_list | safe_sum_list | create_report
 
 # Test with sample data
-log("\n📈 Testing full pipeline:")
+print("\n📈 Testing full pipeline:")
 sample_data = [1, 2, 3, 4, 5]
 result1 = full_pipeline(sample_data)
-log(f"Input: {sample_data}")
-log(f"Result: {result1}")
+print(f"Input: {sample_data}")
+print(f"Result: {result1}")
 
-log("\n📊 Testing count pipeline:")
+print("\n📊 Testing count pipeline:")
 result2 = count_pipeline(sample_data)
-log(f"Count result: {result2}")
+print(f"Count result: {result2}")
 
-log("\n🔄 Testing safe pipeline with empty list:")
+print("\n🔄 Testing safe pipeline with empty list:")
 empty_result = safe_pipeline([])
-log(f"Empty list result: {empty_result}")
+print(f"Empty list result: {empty_result}")
 
 # Demonstrate reusability
-log("\n🎯 Testing all pipelines with different data:")
+print("\n🎯 Testing all pipelines with different data:")
 test_cases = [
     [1, 2, 3],
     [10, 20],
@@ -69,6 +69,6 @@ test_cases = [
 for data in test_cases:
     full_result = full_pipeline(data)
     safe_result = safe_pipeline(data)
-    log(f"Data {data} → Full: {full_result}, Safe: {safe_result}")
+    print(f"Data {data} → Full: {full_result}, Safe: {safe_result}")
 
-log("📊 Simple processing workflow complete!")
+print("📊 Simple processing workflow complete!")

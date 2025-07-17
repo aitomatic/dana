@@ -1,7 +1,7 @@
 # Data Processing Workflow Example - Dana Function Composition
 # Demonstrates data transformation with simple Dana syntax
 
-log("📊 Starting Data Processing Dana Workflow")
+print("📊 Starting Data Processing Dana Workflow")
 
 # Define simple data processing functions
 def double_list(data: list[int]) -> list[int]:
@@ -21,29 +21,29 @@ def create_report(sum_result: int) -> str:
 
 def validate_input(data: list[int]) -> list[int]:
     if len(data) == 0:
-        raise ValueError("Empty input not allowed")
+        raise "Empty input not allowed"
     return data
 
 # Create data processing pipeline
 data_pipeline = validate_input | double_list | sum_list | create_report
 
 # Test with sample data
-log("🔍 Executing data processing pipeline")
+print("🔍 Executing data processing pipeline")
 sample_data = [1, 2, 3, 4, 5]
 result = data_pipeline(sample_data)
-log(f"📈 Input data: {sample_data}")
-log(f"✅ Processing result: {result}")
+print(f"📈 Input data: {sample_data}")
+print(f"✅ Processing result: {result}")
 
 # Test with edge case
-log("\n🧪 Testing edge case (empty data):")
+print("\n🧪 Testing edge case (empty data):")
 try:
     empty_result = data_pipeline([])
-    log(f"✅ Empty result: {empty_result}")
-except ValueError as e:
-    log(f"❌ Error handled: {str(e)}")
+    print(f"✅ Empty result: {empty_result}")
+except as e:
+    print(f"❌ Error handled: {str(e)}")
 
 # Demonstrate pipeline reusability
-log("\n🔄 Reusing pipeline with different data:")
+print("\n🔄 Reusing pipeline with different data:")
 test_cases = [
     [10, 20, 30],
     [5],
@@ -53,8 +53,8 @@ test_cases = [
 for data in test_cases:
     try:
         output = data_pipeline(data)
-        log(f"✅ Data {data} → {output}")
-    except ValueError as e:
-        log(f"❌ Data {data} → Error: {str(e)}")
+        print(f"✅ Data {data} → {output}")
+    except as e:
+        print(f"❌ Data {data} → Error: {str(e)}")
 
-log("📊 Data processing workflow complete!")
+print("📊 Data processing workflow complete!")
