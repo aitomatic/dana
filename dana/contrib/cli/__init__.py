@@ -1,6 +1,7 @@
 import argparse
 import json
 from pathlib import Path
+import re
 
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.util.env import load_dana_env
@@ -8,7 +9,8 @@ from dana.util.env import load_dana_env
 from .dana_input_args_parser import parse_dana_input_args
 
 MAIN_FUNC_NAME: str = "__main__"
-DEF_MAIN_STR_PATTERN: str = f"def {MAIN_FUNC_NAME}("
+# Regex pattern to match "def __main__(" at the beginning of a line with zero whitespace before "def"
+DEF_MAIN_PATTERN: re.Pattern = re.compile(r'^def\s+__main__\s*\(')
 
 def main():
     """
@@ -28,7 +30,7 @@ def main():
         source_code = f.read()
 
     # if there is a special `def __main__(...)` function, run it with the input arguments
-    if DEF_MAIN_STR_PATTERN in source_code:
+    if any(DEF_MAIN_PATTERN.search(line) for line in source_code.splitlines()):
         # Parse input arguments into a dictionary
         input_dict = parse_dana_input_args(args.inputs)
 
@@ -36,17 +38,17 @@ def main():
         source_code_with_main_call = f"""
 {source_code}
 
-__main__({", ".join([f"{key}={json.dumps(obj=value,
-                                         skipkeys=False,
-                                         ensure_ascii=False,
-                                         check_circular=True,
-                                         allow_nan=False,
-                                         cls=None,
-                                         indent=None,
-                                         separators=None,
-                                         default=None,
-                                         sort_keys=False)}"
-                     for key, value in input_dict.items()])})
+{MAIN_FUNC_NAME}({", ".join([f"{key}={json.dumps(obj=value,
+                                                 skipkeys=False,
+                                                 ensure_ascii=False,
+                                                 check_circular=True,
+                                                 allow_nan=False,
+                                                 cls=None,
+                                                 indent=None,
+                                                 separators=None,
+                                                 default=None,
+                                                 sort_keys=False)}"
+                             for key, value in input_dict.items()])})
 """
 
         # run the appended source code
