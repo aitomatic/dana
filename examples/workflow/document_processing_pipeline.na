@@ -1,0 +1,241 @@
+# Document Processing Pipeline - Enterprise Workflow Example
+# 
+# This example demonstrates a real-world document processing workflow
+# that combines OCR, content analysis, and knowledge extraction using
+# Dana's enterprise workflow capabilities.
+#
+# Features demonstrated:
+# - Hierarchical workflow composition
+# - Safety validation at each step
+# - Context-aware processing
+# - Error handling and recovery
+# - Knowledge curation integration
+
+# Initialize workflow components
+log("🔧 Initializing Document Processing Pipeline...")
+
+context = ContextEngine(max_knowledge_points=5000)
+safety = SafetyValidator(strict_mode=True)
+engine = WorkflowEngine(context_engine=context, safety_validator=safety)
+
+# Step 1: Document Ingestion
+log("📄 Step 1: Document Ingestion")
+
+def ingest_document(file_path):
+    """Ingest document from file system with validation."""
+    log("📂 Ingesting document: " + file_path)
+    
+    # Simulate document ingestion
+    if not file_path.endswith(".pdf") and not file_path.endswith(".docx") and not file_path.endswith(".txt"):
+        raise ValueError("Unsupported file format: " + file_path)
+    
+    return {
+        "file_path": file_path,
+        "file_type": file_path.split(".").last(),
+        "size_mb": 2.5,
+        "ingest_timestamp": "2025-07-17T10:30:00Z"
+    }
+
+# Add metadata as function attributes
+ingest_document.metadata = {"description": "Ingest and validate document", "retry_count": 3}
+ingest_document.step_name = "ingest_document"
+
+# Step 2: OCR Processing
+log("🔍 Step 2: OCR Processing")
+
+def perform_ocr(document):
+    """Perform OCR on ingested document."""
+    log("🔍 Processing " + document.file_type + " document with OCR")
+    
+    # Simulate OCR processing
+    ocr_result = {
+        "raw_text": "This is a sample document containing important business insights...",
+        "confidence": 0.95,
+        "pages": 3,
+        "processing_time": "2.3s"
+    }
+    
+    # Store knowledge about processing
+    context.add_knowledge(
+        content="OCR processed " + document.file_path + " with " + ocr_result.confidence + " confidence",
+        source="ocr_engine",
+        tags=["ocr", "document_processing", document.file_type]
+    )
+    
+    return document.merge(ocr_result)
+
+# Add metadata as function attributes
+perform_ocr.metadata = {"description": "Perform OCR processing", "timeout": 30}
+perform_ocr.step_name = "perform_ocr"
+
+# Step 3: Content Analysis
+log("🧠 Step 3: Content Analysis")
+
+def analyze_content(ocr_result):
+    """Analyze content for key insights and topics."""
+    log("🧠 Analyzing document content for insights")
+    
+    # Simulate content analysis
+    analysis = {
+        "topics": ["business_strategy", "market_analysis", "competitive_intelligence"],
+        "key_insights": [
+            "Market growing at 15% annually",
+            "Competitive advantage in AI capabilities",
+            "Customer retention improving"
+        ],
+        "sentiment": "positive",
+        "urgency": "medium"
+    }
+    
+    # Store analyzed insights
+    for insight in analysis.key_insights:
+        context.add_knowledge(
+            content=insight,
+            source="content_analyzer",
+            tags=["insight", analysis.sentiment].concat(analysis.topics)
+        )
+    
+    return ocr_result.merge(analysis)
+
+# Add metadata as function attributes
+analyze_content.metadata = {"description": "Analyze document content", "model": "gpt-4"}
+analyze_content.step_name = "analyze_content"
+
+# Step 4: Knowledge Extraction
+log("📚 Step 4: Knowledge Extraction")
+
+def extract_knowledge(analysis):
+    """Extract structured knowledge from analysis."""
+    log("📚 Extracting structured knowledge")
+    
+    # Simulate knowledge extraction
+    knowledge = {
+        "entities": [
+            {"type": "company", "name": "Acme Corp", "confidence": 0.92},
+            {"type": "metric", "name": "growth_rate", "value": "15%", "confidence": 0.88}
+        ],
+        "relationships": [
+            {"from": "Acme Corp", "to": "growth_rate", "type": "has_metric"}
+        ],
+        "knowledge_graph": "acme_growth_analysis"
+    }
+    
+    # Store extracted entities
+    for entity in knowledge.entities:
+        context.add_knowledge(
+            content="Entity: " + entity.name + " (" + entity.type + ") - " + entity.confidence + " confidence",
+            source="knowledge_extractor",
+            tags=["entity", entity.type, "confidence_" + entity.confidence]
+        )
+    
+    return analysis.merge(knowledge)
+
+# Add metadata as function attributes
+extract_knowledge.metadata = {"description": "Extract structured knowledge", "confidence_threshold": 0.8}
+extract_knowledge.step_name = "extract_knowledge"
+
+# Step 5: Report Generation
+log("📊 Step 5: Report Generation")
+
+def generate_report(final_data):
+    """Generate comprehensive processing report."""
+    log("📊 Generating final processing report")
+    
+    # Calculate confidence scores
+    confidence_scores = []
+    for entity in final_data.entities:
+        confidence_scores.push(entity.confidence)
+    
+    report = {
+        "processing_summary": {
+            "document": final_data.file_path,
+            "total_processing_time": "8.7s",
+            "insights_extracted": final_data.key_insights.length(),
+            "entities_found": final_data.entities.length()
+        },
+        "knowledge_base_stats": {
+            "total_knowledge_points": context.get_stats().total_knowledge_points,
+            "topics_covered": final_data.topics.length(),
+            "confidence_scores": confidence_scores
+        },
+        "recommendations": [
+            "Schedule follow-up analysis in 30 days",
+            "Focus on competitive intelligence insights",
+            "Consider customer retention strategies"
+        ]
+    }
+    
+    # Store final report
+    context.add_knowledge(
+        content="Document processing report for " + final_data.file_path,
+        source="report_generator",
+        tags=["report", "document_processing", "summary"],
+        metadata=report
+    )
+    
+    return report
+
+# Add metadata as function attributes
+generate_report.metadata = {"description": "Generate comprehensive report", "format": "json"}
+generate_report.step_name = "generate_report"
+
+# Alternative: Create a metadata wrapper function
+def with_metadata(func, metadata):
+    """Wrap a function with metadata for workflow tracking."""
+    func.metadata = metadata
+    func.step_name = metadata.name if metadata.has_key("name") else func.name
+    return func
+
+# Alternative: Define workflow metadata separately
+workflow_metadata = {
+    "workflow_id": "doc_processing_001",
+    "description": "Enterprise document processing pipeline",
+    "version": "1.0.0",
+    "steps": [
+        {"name": "ingest_document", "description": "Ingest and validate document", "retry_count": 3},
+        {"name": "perform_ocr", "description": "Perform OCR processing", "timeout": 30},
+        {"name": "analyze_content", "description": "Analyze document content", "model": "gpt-4"},
+        {"name": "extract_knowledge", "description": "Extract structured knowledge", "confidence_threshold": 0.8},
+        {"name": "generate_report", "description": "Generate comprehensive report", "format": "json"}
+    ]
+}
+
+# Create workflow using pipe syntax
+log("🛡️ Creating workflow with pipe syntax...")
+
+# Define the complete workflow pipeline using Dana's pipe operator
+document_processing_workflow = ingest_document | perform_ocr | analyze_content | extract_knowledge | generate_report
+
+# Add workflow-level metadata
+document_processing_workflow.workflow_metadata = workflow_metadata
+
+# Execute the complete workflow
+log("🚀 Executing Document Processing Workflow...")
+
+input_document = "quarterly_report_2025_q2.pdf"
+result = document_processing_workflow(input_document)
+
+log("✅ Document Processing Complete!")
+log("📊 Final Report: " + result)
+
+# Demonstrate metadata access
+log("📋 Workflow Metadata:")
+log("Workflow ID: " + document_processing_workflow.workflow_metadata.workflow_id)
+log("Description: " + document_processing_workflow.workflow_metadata.description)
+
+# Show step metadata
+log("🔍 Step Metadata:")
+for step_info in document_processing_workflow.workflow_metadata.steps:
+    log("Step: " + step_info.name + " - " + step_info.description)
+
+# Demonstrate knowledge retrieval
+log("🔍 Retrieving processed knowledge...")
+python_knowledge = context.search_knowledge("python", limit=3)
+log("Found " + python_knowledge.length() + " Python-related knowledge points")
+
+# Show workflow statistics
+log("📈 Workflow Statistics:")
+stats = context.get_stats()
+log("Total knowledge points: " + stats.total_knowledge_points)
+log("Unique sources: " + stats.sources.length())
+log("Topics covered: " + stats.unique_tags)
