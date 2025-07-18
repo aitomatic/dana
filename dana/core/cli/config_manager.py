@@ -50,10 +50,9 @@ class ConfigurationManager:
         self.provider_info = {
             "openai": {
                 "name": "OpenAI",
-                "description": "OpenAI GPT models (GPT-4, GPT-4o, etc.) + REQUIRED for embeddings",
+                "description": "OpenAI GPT models (GPT-4, GPT-4o, etc.)",
                 "env_vars": ["OPENAI_API_KEY"],
                 "signup_url": "https://platform.openai.com/api-keys",
-                "priority": True,  # Mark as high priority due to embedding requirements
             },
             "anthropic": {
                 "name": "Anthropic",
@@ -63,10 +62,9 @@ class ConfigurationManager:
             },
             "azure": {
                 "name": "Azure OpenAI",
-                "description": "Microsoft Azure OpenAI Service (includes both chat and embedding models)",
+                "description": "Microsoft Azure OpenAI Service",
                 "env_vars": ["AZURE_OPENAI_API_KEY", "AZURE_OPENAI_API_URL"],
                 "signup_url": "https://azure.microsoft.com/en-us/products/ai-services/openai-service",
-                "priority": True,  # Also supports embeddings
             },
             "groq": {
                 "name": "Groq",
@@ -123,8 +121,6 @@ class ConfigurationManager:
         print()
         print("This wizard will help you configure DANA providers and create a .env file.")
         print("You need at least one provider configured to use DANA's reason() function.")
-        print(f"{self.colors.accent('📝 Note:')} OpenAI or Azure OpenAI are {self.colors.bold('REQUIRED')} for embedding functionality")
-        print("   (used for vector databases, RAG, and semantic memory features)")
         print()
 
         while True:
@@ -168,26 +164,15 @@ class ConfigurationManager:
             List of selected provider names
         """
         print(f"{self.colors.bold('Available Providers:')}")
-        print(f"{self.colors.accent('⭐ Priority providers (support embeddings):')}")
         print()
 
-        # Display providers with numbers, prioritizing embedding-capable providers
+        # Display providers with numbers
         available_providers = []
         current_index = 1
 
-        # First show priority providers
+        # Show all providers in order
         for provider_key, provider_info in self.provider_info.items():
-            if provider_key in self.providers and provider_info.get("priority", False):
-                available_providers.append(provider_key)
-                marker = "⭐" if provider_info.get("priority") else "  "
-                print(f"{self.colors.accent(f'{current_index:2d}.')} {marker} {provider_info['name']} - {provider_info['description']}")
-                current_index += 1
-
-        print(f"\n{self.colors.accent('Other providers:')}")
-
-        # Then show other providers
-        for provider_key, provider_info in self.provider_info.items():
-            if provider_key in self.providers and not provider_info.get("priority", False):
+            if provider_key in self.providers:
                 available_providers.append(provider_key)
                 print(f"{self.colors.accent(f'{current_index:2d}.')} {provider_info['name']} - {provider_info['description']}")
                 current_index += 1
@@ -336,7 +321,7 @@ class ConfigurationManager:
             sandbox = DanaSandbox()
             sandbox.logger.setLevel(logging.CRITICAL)
 
-            # Test 1: Basic reason function
+            # Test: Basic reason function
             print(f"{self.colors.accent('🧠 Testing reason function...')}")
             test_prompt = "Hello, can you respond with just 'Configuration test successful'?"
 
@@ -354,40 +339,6 @@ class ConfigurationManager:
             print(f"{self.colors.accent('✓ Reason function validation successful')}")
             if self.debug:
                 print(f"Response: {result.result}")
-
-            # Test 2: Embedding functionality (if OpenAI API key is available)
-            openai_key = os.getenv("OPENAI_API_KEY")
-            azure_key = os.getenv("AZURE_OPENAI_API_KEY")
-
-            if openai_key or azure_key:
-                print(f"{self.colors.accent('🔍 Testing embedding functionality...')}")
-                try:
-                    if openai_key:
-                        # Test OpenAI embeddings
-                        embed_test = self._test_openai_embeddings()
-                    elif azure_key:
-                        # Test Azure OpenAI embeddings
-                        embed_test = self._test_azure_embeddings()
-
-                    if embed_test:
-                        print(f"{self.colors.accent('✓ Embedding functionality validation successful')}")
-                    else:
-                        print(f"{self.colors.error('✗ Embedding functionality validation failed')}")
-                        print(f"{self.colors.accent('⚠️  Note: Embeddings are required for vector databases and RAG features')}")
-                        return False
-
-                except Exception as e:
-                    print(f"{self.colors.error('✗ Embedding functionality validation failed')}")
-                    print(f"Error: {str(e)}")
-                    if self.debug:
-                        import traceback
-
-                        traceback.print_exc()
-                    return False
-            else:
-                print(f"{self.colors.accent('⚠️  No OpenAI/Azure API key found - skipping embedding validation')}")
-                print(f"{self.colors.accent('   Embeddings will be required for vector databases and RAG features')}")
-                return False
 
             print(f"{self.colors.accent('✓ Overall configuration validation successful')}")
             return True
@@ -413,78 +364,3 @@ class ConfigurationManager:
         except Exception as e:
             if self.debug:
                 print(f"Warning: Could not load .env file: {e}")
-
-    def _test_openai_embeddings(self) -> bool:
-        """Test OpenAI embedding functionality.
-
-        Returns:
-            True if embeddings work, False otherwise
-        """
-        try:
-            import openai
-
-            client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-            # Test with a simple text
-            response = client.embeddings.create(model="text-embedding-3-small", input="test embedding")
-
-            # Check if we got a valid embedding
-            if response.data and len(response.data) > 0 and len(response.data[0].embedding) > 0:
-                if self.debug:
-                    print(f"OpenAI embedding dimension: {len(response.data[0].embedding)}")
-                return True
-            return False
-
-        except ImportError:
-            if self.debug:
-                print("OpenAI package not available for embedding test")
-            return False  # Don't fail if openai package not installed
-        except Exception as e:
-            if self.debug:
-                print(f"OpenAI embedding test failed: {e}")
-            return False
-
-    def _test_azure_embeddings(self) -> bool:
-        """Test Azure OpenAI embedding functionality.
-
-        Returns:
-            True if embeddings work, False otherwise
-        """
-        try:
-            import openai
-
-            azure_endpoint = os.getenv("AZURE_OPENAI_API_URL")
-            if not azure_endpoint:
-                if self.debug:
-                    print("Azure endpoint not found in environment")
-                return False
-
-            client = openai.AzureOpenAI(api_key=os.getenv("AZURE_OPENAI_API_KEY"), azure_endpoint=azure_endpoint, api_version="2024-02-01")
-
-            # Test with a simple text - try common Azure embedding deployment names
-            deployment_names = ["text-embedding-ada-002", "text-embedding-3-small", "embedding"]
-
-            for deployment in deployment_names:
-                try:
-                    response = client.embeddings.create(model=deployment, input="test embedding")
-
-                    # Check if we got a valid embedding
-                    if response.data and len(response.data) > 0 and len(response.data[0].embedding) > 0:
-                        if self.debug:
-                            print(f"Azure embedding dimension: {len(response.data[0].embedding)} (deployment: {deployment})")
-                        return True
-                except Exception as e:
-                    if self.debug:
-                        print(f"Failed with deployment {deployment}: {e}")
-                    continue
-
-            return False
-
-        except ImportError:
-            if self.debug:
-                print("OpenAI package not available for embedding test")
-            return False
-        except Exception as e:
-            if self.debug:
-                print(f"Azure embedding test failed: {e}")
-            return False

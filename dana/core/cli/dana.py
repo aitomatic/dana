@@ -85,10 +85,6 @@ def show_help():
     print("")
     print(f"{colors.bold('Requirements:')}")
     print(f"  {colors.accent('🔑 API Keys:')} At least one LLM provider API key required")
-    print(f"  {colors.accent('📝 Embeddings:')} OpenAI or Azure OpenAI API key {colors.bold('REQUIRED')} for:")
-    print("     • Vector databases and semantic search")
-    print("     • RAG (Retrieval-Augmented Generation)")
-    print("     • Memory systems with embeddings")
     print("")
     print(f"{colors.accent('💡 Tip:')} Run {colors.bold('dana config')} to set up your API keys interactively")
     print("")
@@ -175,18 +171,6 @@ def handle_start_command(args):
         port = args.port or 8080
         reload = args.reload
         log_level = args.log_level or "info"
-
-        # Check for embedding capability
-        import os
-
-        openai_key = os.getenv("OPENAI_API_KEY")
-        azure_key = os.getenv("AZURE_OPENAI_API_KEY")
-
-        if not (openai_key or azure_key):
-            print(f"{colors.accent('⚠️  Warning: No OpenAI/Azure API key found')}")
-            print("   Vector databases, RAG, and embedding features will not work")
-            print(f"   Run {colors.bold('dana config')} to configure embedding support")
-            print()
 
         print(f"\n🌐 Starting Dana API server on http://{host}:{port}")
         print(f"📊 Health check: http://{host}:{port}/health")
