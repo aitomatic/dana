@@ -69,7 +69,6 @@ nav:
         - Scoping: for-engineers/reference/api/scoping.md
         - Sandbox Security: for-engineers/reference/api/sandbox-security.md
         - Dana Sandbox: for-engineers/reference/api/dana-sandbox.md
-        - Dana Common: for-engineers/reference/api/dana-common.md
     - Recipes:
       - Overview: for-engineers/recipes/README.md
       - First Agent: for-engineers/recipes/first-agent.md

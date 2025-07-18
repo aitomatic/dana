@@ -2,7 +2,6 @@
   <img src="../images/dana-logo.jpg" alt="Dana Logo" width="60">
   <span>
     <div style="font-size: 18px; font-style: italic; font-weight: 600; color: #666;">Agent-native programming language and runtime</div>
-    <div style="font-size: 12px; font-style: italic; color: #999;">powered by OpenDXA</div>
   </span>
 </div>
 
@@ -10,13 +9,13 @@
 *Beyond AI coding assistants: Write agents that learn, adapt, and improve themselves in production*
 
 ---
-> **What if your code could learn, adapt, and improve itself in production—without you?**
+> **What if your agents could learn, adapt, and improve itself in production—without you?**
 
 Welcome to the contributor guide for Dana! This is your comprehensive resource for understanding the architecture, extending capabilities, and contributing to the agent-native programming ecosystem.
 
-# OpenDXA for Contributors
+# Dana for Contributors
 
-Whether you're looking to contribute code, extend functionality, or deeply understand OpenDXA's agent-native architecture that bridges AI coding assistance with autonomous systems, this guide provides everything you need to become an effective contributor to the OpenDXA ecosystem.
+Whether you're looking to contribute code, extend functionality, or deeply understand Dana's agent-native architecture that bridges AI coding assistance with autonomous systems, this guide provides everything you need to become an effective contributor to the Dana ecosystem.
 
 ---
 
@@ -35,7 +34,7 @@ make dev
 Note: Use `uv run` before commands or activate the venv: `source .venv/bin/activate`
 
 ### 2. Understand the Agent-Native Architecture and Codebase
-OpenDXA represents the convergence of development-time AI assistance and runtime autonomy through:
+Dana represents the convergence of development-time AI assistance and runtime autonomy through:
 - Native `agent` primitives (not classes with AI bolted on)
 - Context-aware execution that adapts `reason()` output types automatically  
 - Self-improving pipeline composition with `|` operators
@@ -53,7 +52,7 @@ OpenDXA represents the convergence of development-time AI assistance and runtime
 
 ## Overview
 
-OpenDXA is built on an agent-native, modular, extensible architecture that represents the convergence of AI coding assistance and autonomous execution:
+Dana is built on an agent-native, modular, extensible architecture that represents the convergence of AI coding assistance and autonomous execution:
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -85,7 +84,7 @@ OpenDXA is built on an agent-native, modular, extensible architecture that repre
 #### `opendxa/dana/`
 The heart of the Dana language implementation:
 ```
-dana/
+opendxa/
 ├── parser/ # Dana language parser and AST
 ├── interpreter/ # Dana program execution engine
 ├── sandbox/ # Execution context and state management
@@ -248,96 +247,84 @@ def custom_transform(data, transformation_type="default"):
 ## 🧪 Testing and Quality Assurance
 
 ### Testing Strategy
-- Unit Tests: Test individual components in isolation
-- Integration Tests: Test component interactions
-- End-to-End Tests: Test complete user workflows
-- Performance Tests: Validate performance characteristics
-- Regression Tests: Prevent breaking changes
 
-### Test Structure
-```
-tests/
-├── unit/ # Unit tests for individual components
-│ ├── dana/ # Dana language tests
-│ ├── agent/ # Agent system tests
-│ └── common/ # Common utilities tests
-├── integration/ # Integration tests
-├── e2e/ # End-to-end tests
-├── performance/ # Performance and load tests
-└── fixtures/ # Test data and fixtures
-```
+Dana uses a comprehensive testing strategy to ensure reliability and quality:
 
-### Writing Tests
 ```python
-import pytest
 from opendxa.dana.interpreter import DanaInterpreter
 
-class TestDanaInterpreter:
- """Test suite for Dana interpreter functionality."""
+# Unit tests for Dana functions
+def test_custom_function():
+    interpreter = DanaInterpreter()
+    result = interpreter.eval("custom_transform([1, 2, 3])")
+    assert result == [1, 2, 3]
 
- def test_basic_assignment(self):
- """Test basic variable assignment."""
- interpreter = DanaInterpreter()
- result = interpreter.execute("x = 42")
- assert result.success
- assert interpreter.context.get("x") == 42
-
- def test_function_call(self):
- """Test function call execution."""
- interpreter = DanaInterpreter()
- result = interpreter.execute('result = reason("test prompt")')
- assert result.success
- assert "result" in interpreter.context
+# Integration tests for capabilities
+def test_capability_integration():
+    capability = CustomAnalysisCapability()
+    functions = capability.get_functions()
+    assert "analyze_data" in functions
 ```
 
----
+### Quality Gates
 
-## 🤝 Community and Contribution
-
-### Contribution Process
-1. Fork the Repository: Create your own fork of OpenDXA
-2. Create Feature Branch: Work on a dedicated branch for your changes
-3. Make Changes: Implement your feature or fix
-4. Write Tests: Ensure your changes are well-tested
-5. Update Documentation: Document new features or changes
-6. Submit Pull Request: Create a PR with clear description
-7. Code Review: Collaborate with maintainers on feedback
-8. Merge: Once approved, your changes are merged
-
-### Code Review Guidelines
-- Clear Description: Explain what your changes do and why
-- Small, Focused PRs: Keep changes focused and reviewable
-- Test Coverage: Include tests for new functionality
-- Documentation: Update docs for user-facing changes
-- Backward Compatibility: Avoid breaking existing functionality
+1. **Code Coverage**: Minimum 80% coverage for new features
+2. **Type Safety**: All Python code must pass mypy checks
+3. **Documentation**: All public APIs must be documented
+4. **Performance**: New features must not degrade performance by >5%
 
 ---
 
-## Roadmap and Future Development
+## 🤝 Contributing Process
 
-### Current Focus Areas
-- Performance Optimization: Improving execution speed and memory usage
-- Language Features: Expanding Dana language capabilities
-- Integration Ecosystem: More resource providers and capabilities
-- Developer Experience: Better tooling and debugging support
+### 1. Fork the Repository: Create your own fork of Dana
 
-### Upcoming Features
-- Visual Debugging: Graphical debugging and state inspection
-- Distributed Execution: Multi-node agent execution
-- Advanced Analytics: Built-in performance and behavior analytics
-- IDE Integration: Enhanced support for popular development environments
+### 2. Create a Feature Branch
+```bash
+git checkout -b feature/your-feature-name
+```
+
+### 3. Make Your Changes
+- Follow the coding standards
+- Add tests for new functionality
+- Update documentation as needed
+
+### 4. Test Your Changes
+```bash
+make test
+make lint
+make typecheck
+```
+
+### 5. Submit a Pull Request
+- Provide a clear description of changes
+- Link any related issues
+- Ensure all tests pass
 
 ---
 
-## 📞 Getting Help
+## 📚 Learning Resources
 
+### Architecture Deep Dives
+- [System Design](architecture/system-design.md) - High-level architecture
+- [Codebase Overview](codebase/README.md) - Code organization
+- [Extension Development](extending/extension-development.md) - Building extensions
+
+### Development Guides
+- [Development Setup](development/README.md) - Environment setup
+- [Contribution Guide](development/contribution-guide.md) - Contribution process
+
+### Community and Support
 - [GitHub Discussions](https://github.com/aitomatic/opendxa/discussions)
 - [GitHub Issues](https://github.com/aitomatic/opendxa/issues)
 - [Discord Community](https://discord.gg/opendxa)
 
+### Getting Started
+- Look for issues labeled [good first issue](https://github.com/aitomatic/opendxa/labels/good%20first%20issue).*
+
 ---
 
-*Ready to contribute? Start with our [Development Guide](development/README.md) or check out [Good First Issues](https://github.com/aitomatic/opendxa/labels/good%20first%20issue).*
+*Ready to contribute? Start with the [Quick Start](#quick-start-for-contributors) or explore our [Extension Development Guide](extending/extension-development.md).*
 
 <p align="center">
 Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">MIT License</a>.

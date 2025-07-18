@@ -2,7 +2,6 @@
   <img src="../images/dana-logo.jpg" alt="Dana Logo" width="60">
   <span>
     <div style="font-size: 18px; font-style: italic; font-weight: 600; color: #666;">Agent-native programming language and runtime</div>
-    <div style="font-size: 12px; font-style: italic; color: #999;">powered by OpenDXA</div>
   </span>
 </div>
 
@@ -10,13 +9,13 @@
 *Beyond AI coding assistants: Write agents that learn, adapt, and improve themselves in production*
 
 ---
-> **What if your code could learn, adapt, and improve itself in production—without you?**
+> **What if your agents could learn, adapt, and improve itself in production—without you?**
 
 AI coding assistants help write better code. Agentic AI systems execute tasks autonomously. Dana represents the convergence: agent-native programming where enterprises write `agent` instead of `class`, use context-aware `reason()` calls that intelligently adapt their output types, compose self-improving pipelines with `|` operators, and deploy functions that learn from production through POET.
 
 This guide helps technical leaders and decision makers evaluate Dana for their organizations through comprehensive analysis, proof of concepts, and ROI calculations.
 
-# OpenDXA for Evaluators
+# Dana for Evaluators
 
 *Technical evaluation guide for decision makers, team leads, and technology evaluators*
 
@@ -24,7 +23,7 @@ This guide helps technical leaders and decision makers evaluate Dana for their o
 
 ## Executive Summary
 
-OpenDXA's agent-native architecture represents the convergence of AI coding assistance and autonomous systems, transforming AI development from unpredictable, brittle systems to reliable, auditable automations. For teams evaluating AI solutions, OpenDXA offers:
+Dana's agent-native architecture represents the convergence of AI coding assistance and autonomous systems, transforming AI development from unpredictable, brittle systems to reliable, auditable automations. For teams evaluating AI solutions, OpenDXA offers:
 
 - Predictable ROI: Measurable productivity gains and reduced maintenance costs
 - Risk Mitigation: Transparent, debuggable systems with built-in verification
