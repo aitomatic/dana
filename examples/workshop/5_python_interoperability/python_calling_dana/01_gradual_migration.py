@@ -12,7 +12,7 @@ import logging
 
 import pandas as pd
 
-from dana import dana
+from dana import dana_module
 
 # Hide all INFO logs system-wide
 logging.getLogger().setLevel(logging.WARNING)
@@ -44,7 +44,7 @@ def main():
 
     for equipment_id, readings in processed_data.iterrows():
         # THIS IS THE ONLY LINE YOU NEED TO ADD!
-        ai_insights = dana.reason(f"""
+        ai_insights = dana_module.reason(f"""
             Analyze equipment health:
             Equipment: {equipment_id}
             Temperature: {readings["temperature"]:.1f}°C

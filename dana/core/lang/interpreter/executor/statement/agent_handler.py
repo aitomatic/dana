@@ -271,7 +271,9 @@ class AgentHandler(Loggable):
             # Register agent constructor function in the context
             # This allows `agent_instance = TestAgent(name="test")` syntax
             def agent_constructor(**kwargs):
-                return AgentTypeRegistry.create_instance(agent_type.name, kwargs, context=context)
+                # Extract instance_id if provided
+                instance_id = kwargs.pop('instance_id', None)
+                return AgentTypeRegistry.create_instance(agent_type.name, kwargs, context=context, instance_id=instance_id)
 
             context.set(f"local:{node.name}", agent_constructor)
 

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from python_a2a import A2AServer, TaskState, TaskStatus, agent, run_server, skill
 
-from dana import dana
+from dana import dana_module
 
 
 def validate_agent_module(na_file_path: str, na_module):
@@ -20,22 +20,30 @@ def validate_agent_module(na_file_path: str, na_module):
         tuple: (agent_name, agent_description, solve_function) if valid, raises exception if invalid
     """
     try:
-        # Validate required components
-        if not hasattr(na_module, "agent_name"):
-            raise ValueError(f"Agent file {na_file_path} missing required 'system:agent_name' variable")
+        # Find all agent classes in the module
+        agents = []
+        for attr in dir(na_module):
+            attr_value = getattr(na_module, attr)
+            if callable(attr_value):
+                try:
+                    agent = attr_value()
+                    # Check if it has the required agent attributes
+                    if hasattr(agent, "name") and hasattr(agent, "description") and hasattr(agent, "solve"):
+                        agents.append(agent)
+                except Exception:
+                    continue
 
-        if not hasattr(na_module, "agent_description"):
-            raise ValueError(f"Agent file {na_file_path} missing required 'system:agent_description' variable")
+        if not agents:
+            raise ValueError(f"No valid agents found in {na_file_path}")
 
-        if not hasattr(na_module, "solve"):
-            raise ValueError(f"Agent file {na_file_path} missing required 'solve(query: str) -> str' function")
+        if len(agents) > 1:
+            raise ValueError(f"Multiple agents found in {na_file_path}, only one agent is allowed")
 
-        if not callable(na_module.solve):
-            raise ValueError(f"Agent file {na_file_path} 'solve' is not a callable function")
-
-        agent_name = str(na_module.agent_name)
-        agent_description = str(na_module.agent_description)
-        solve_function = na_module.solve
+        # Use the first agent found
+        agent = agents[0]
+        agent_name = str(agent.name)
+        agent_description = str(agent.description)
+        solve_function = agent.solve
 
         print("✅ Agent validation successful:")
         print(f"   Name: {agent_name}")
@@ -135,7 +143,7 @@ def deploy_dana_agents_thru_a2a(na_file_path, host, port):
     try:
         # Add the directory containing the .na file to search paths
         file_dir = str(Path(na_file_path).parent)
-        dana.enable_module_imports(search_paths=[file_dir])
+        dana_module.enable_module_imports(search_paths=[file_dir])
 
         # Import the Dana module (without .na extension)
         module_name = Path(na_file_path).stem
@@ -161,4 +169,4 @@ def deploy_dana_agents_thru_a2a(na_file_path, host, port):
         print("  - system:agent_description variable")
         print("  - solve(query: str) -> str function")
     finally:
-        dana.close()
+        dana_module.close()

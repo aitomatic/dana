@@ -50,7 +50,7 @@ uv run python -m pytest tests/
 
 For comprehensive Dana language documentation including syntax, scoping, data types, functions, structs, pipelines, module system, and AI integration, see:
 
-**📖 [docs/.ai-only/dana.md](dana.md) - Complete Dana Language Reference**
+**📖 [docs/.ai-only/dana-lang.md](dana-lang.md) - Complete Dana Language Reference**
 
 Dana is a Domain-Aware NeuroSymbolic Architecture language for AI-driven automation and agent systems.
 

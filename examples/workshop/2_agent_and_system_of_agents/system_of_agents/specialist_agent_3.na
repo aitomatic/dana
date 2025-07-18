@@ -1,16 +1,17 @@
 """Specialist Agent #3."""
-
-# Agent Card declaration
-system:agent_name = "Flight Ticket Agent"
-system:agent_description = "Agent that can find the best tickets for a flight"
-
-# Agent resources
 search_service = use("mcp", url="https://demo.mcp.aitomatic.com/websearch_v2")
 
-# Agent's problem solver
-def plan(request):
+# Agent Card declaration
+agent FlightTicketAgent:
+    name : str = "Flight Ticket Agent"
+    description : str = "Agent that can find the best tickets for a flight"
+    resources : list = [search_service]
+
+# Agent's plan
+def plan(ticket_agent : FlightTicketAgent, request : str):
     return {"plan": reason(f"Create a plan to find the best tickets based on the following request: {request}"), "request": request}
 
+# This doesn't bind to the agent, it's a standalone function
 def execute(data):
     request = data["request"]
     plan = data["plan"]
@@ -24,9 +25,10 @@ def execute(data):
         print(result)
     return result
 
-def solve(request):
-    workflow = plan | execute
-    return workflow(request)
+# Agent's problem solver
+def solve(ticket_agent : FlightTicketAgent, request : str):
+    data = ticket_agent.plan(request)
+    return execute(data)
 
 # quick test:
 # solve("Find the best tickets for a flight from San Francisco to Tokyo on June 26th 2025")

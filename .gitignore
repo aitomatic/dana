@@ -62,15 +62,16 @@ node_modules/
 .cursor/
 
 .deprecated_opendxa
+docs/.ai-only/ai_output/
 
-# Data file
-
+# Data files
 local.db
 test.db
 uploads
 dana/api/server/static/
 dana/contrib/ui/public/static/
 generated/
+agents/
 
 # Contributors-oriented configs
 # =============================

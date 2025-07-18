@@ -14,6 +14,12 @@ class Agent(Base):
     config = Column(JSON)
     folder_path = Column(String, nullable=True)  # Path to agent folder
     files = Column(JSON, nullable=True)  # List of .na file paths
+    
+    # Two-phase generation fields
+    generation_phase = Column(String, default="description", nullable=False)  # 'description', 'code_generated'
+    agent_description_draft = Column(JSON, nullable=True)  # Structured description data during Phase 1
+    generation_metadata = Column(JSON, nullable=True)  # Conversation context and requirements
+    
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
     documents = relationship("Document", back_populates="agent")

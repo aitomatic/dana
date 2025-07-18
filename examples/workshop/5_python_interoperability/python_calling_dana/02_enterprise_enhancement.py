@@ -9,8 +9,9 @@ Key Insight: AI enhancement, not replacement!
 """
 
 import logging
+from pathlib import Path
 
-from dana import dana
+from dana import dana_module
 
 # Hide all INFO logs system-wide
 logging.getLogger().setLevel(logging.WARNING)
@@ -38,7 +39,10 @@ class ProductionOrderSystem:
 
         # NEW: ADD AI SUPERPOWERS USING DANA MODULES (ZERO RISK!)
         print("\n\033[1;35m  🤖 Adding AI insights...\033[0m")
-        dana.enable_module_imports()
+        # get the directory of the current file
+        current_dir = Path(__file__).parent
+        # enable module imports in the current directory
+        dana_module.enable_module_imports([f"{str(current_dir)}/dana_files"])
         try:
             import order_intelligence  # Dana module for organized AI logic
 
@@ -49,7 +53,7 @@ class ProductionOrderSystem:
             print(f"\033[38;5;147m  💡 AI Insights: {ai_analysis}\033[0m")
 
         finally:
-            dana.disable_module_imports()
+            dana_module.disable_module_imports()
 
         # EXISTING: Continue with your normal flow (unchanged)
         self.send_confirmation_email(order_data)

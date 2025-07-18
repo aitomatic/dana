@@ -2,7 +2,6 @@
 Utility functions for agent generation and related server logic.
 """
 
-from .code_handler import CodeHandler
 
 def generate_mock_agent_code(messages, current_code=""):
     """
@@ -78,6 +77,22 @@ agent DocumentAgent:
 # Agent's problem solver
 def solve(document_agent : DocumentAgent, problem : str):
     return reason(f"Help me process this document: {{problem}}", resources=document_agent.resources)'''
+    elif "email" in requirements_lower:
+        # Email agents need RAG for email templates and best practices
+        return '''"""Email assistant agent."""
+
+# Agent resources for email knowledge
+email_knowledge = use("rag", sources=["email_templates.md", "communication_best_practices.pdf"])
+
+# Agent Card declaration
+agent EmailAgent:
+    name : str = "Email Assistant Agent"
+    description : str = "Assists with email composition and communication"
+    resources : list = [email_knowledge]
+
+# Agent's problem solver
+def solve(email_agent : EmailAgent, problem : str):
+    return reason(f"Help with email: {{problem}}", resources=email_agent.resources)'''
     elif "knowledge" in requirements_lower or "research" in requirements_lower or "information" in requirements_lower:
         # Knowledge/research agents need RAG
         return '''"""Knowledge and research agent."""
@@ -105,4 +120,4 @@ agent CustomAgent:
 
 # Agent's problem solver
 def solve(custom_agent : CustomAgent, problem : str):
-    return reason(f"Help me with: {{problem}}")''' 
+    return reason(f"Help me with: {{problem}}")'''

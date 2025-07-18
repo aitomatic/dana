@@ -19,7 +19,7 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
       case '/agents':
         return 'Domain-Expert Agents';
       case '/agents/create':
-        return 'Create Agent';
+        return 'Train Georgia';
       case '/library':
         return 'Library';
       default:
