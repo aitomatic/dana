@@ -12,7 +12,7 @@
 
   "configurations": [
     {
-      "name": "Run Dana",
+      "name": "Run Dana File",
       "type": "debugpy",
       "request": "launch",
       "module": "dana.contrib.cli",
