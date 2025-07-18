@@ -1,4 +1,4 @@
-# OpenDXA and Dana Design Documentation
+# Dana and OpenDXA Design Documentation
 
 This directory contains the authoritative design specifications for the OpenDXA framework and the Dana language. These documents define the agent-native architecture that enables the convergence of AI coding assistance with autonomous execution, implementation details, and design decisions that guide the project.
 

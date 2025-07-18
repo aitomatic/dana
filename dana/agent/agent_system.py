@@ -333,9 +333,12 @@ def register_agent_method_from_function_def(node, dana_func):
     """Register function as agent method if first parameter is an agent type."""
     if not hasattr(node, 'parameters') or not node.parameters:
         return
+    
     first_param = node.parameters[0]
+    
     if hasattr(first_param, 'type_hint') and first_param.type_hint and hasattr(first_param.type_hint, 'name'):
         agent_type_name = first_param.type_hint.name
+        
         agent_type = AgentTypeRegistry.get(agent_type_name)
         if agent_type is not None:
             method_name = node.name.name if hasattr(node.name, 'name') else str(node.name)

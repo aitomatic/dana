@@ -558,4 +558,5 @@ class StatementExecutor(BaseExecutor):
         """
         # Route to agent handler which can associate methods with agent types
         self.debug(f"Routing function definition '{node.name.name}' to agent handler")
-        return self.agent_handler.execute_function_definition(node, context)
+        result = self.agent_handler.execute_function_definition(node, context)
+        return result

@@ -2,7 +2,7 @@
   <img src="../images/dana-logo.jpg" alt="Dana Logo" width="60">
   <span>
     <div style="font-size: 18px; font-style: italic; font-weight: 600; color: #666;">Agent-native programming language and runtime</div>
-    <div style="font-size: 12px; font-style: italic; color: #999;">powered by OpenDXA</div>
+    <div style="font-size: 12px; font-style: italic; color: #999;">powered by Dana</div>
   </span>
 </div>
 

@@ -41,11 +41,11 @@ jobs:
       run: uv sync --extra dev
     - name: Test Dana Parser
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/sandbox/parser/ -m "not live and not deep" --tb=short -v
+        uv run pytest tests/unit/core/parser/ -m "not live and not deep" --tb=short -v
 
   # Dana Structs - Critical struct implementation tests
   test-dana-structs:
@@ -72,14 +72,14 @@ jobs:
       run: uv sync --extra dev
     - name: Test Dana Structs (comprehensive)
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         # Run struct tests comprehensively as they're critical
-        uv run pytest tests/dana/sandbox/interpreter/test_struct_* -v --tb=short
+        uv run pytest tests/unit/core/interpreter/test_struct_* -v --tb=short
         # Also run fast struct tests
-        uv run pytest tests/dana/sandbox/interpreter/test_struct_* -m "not live and not deep" --tb=short -v
+        uv run pytest tests/unit/core/interpreter/test_struct_* -m "not live and not deep" --tb=short -v
 
   # Dana Functions - Built-in functions and function handling
   test-dana-functions:
@@ -106,11 +106,11 @@ jobs:
       run: uv sync --extra dev
     - name: Test Dana Functions
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/sandbox/interpreter/functions/ -m "not live and not deep" --tb=short -v
+        uv run pytest tests/unit/core/interpreter/functions/ -m "not live and not deep" --tb=short -v
 
   # Dana Imports - Module system and import handling
   test-dana-imports:
@@ -137,11 +137,11 @@ jobs:
       run: uv sync --extra dev
     - name: Test Dana Imports
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/sandbox/interpreter/test_*import* tests/dana/sandbox/interpreter/test_dana_module* -m "not live and not deep" --tb=short -v
+        uv run pytest tests/unit/core/interpreter/test_*import* tests/unit/core/interpreter/test_dana_module* -m "not live and not deep" --tb=short -v
 
   # Dana Execution - Core execution and runtime features
   test-dana-execution:
@@ -168,12 +168,12 @@ jobs:
       run: uv sync --extra dev
     - name: Test Dana Execution
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/sandbox/interpreter/ -m "not live and not deep" --tb=short -v \
-          --ignore=tests/dana/sandbox/interpreter/functions/ \
+        uv run pytest tests/unit/core/interpreter/ -m "not live and not deep" --tb=short -v \
+          --ignore=tests/unit/core/interpreter/functions/ \
           -k "not struct and not import and not dana_module"
 
   # Dana Sandbox Core - Sandbox utilities and context management
@@ -201,13 +201,13 @@ jobs:
       run: uv sync --extra dev
     - name: Test Dana Sandbox Core
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/sandbox/ -m "not live and not deep" --tb=short -v \
-          --ignore=tests/dana/sandbox/parser/ \
-          --ignore=tests/dana/sandbox/interpreter/
+        uv run pytest tests/unit/core/ -m "not live and not deep" --tb=short -v \
+          --ignore=tests/unit/core/parser/ \
+          --ignore=tests/unit/core/interpreter/
 
   # Dana Components - REPL, translator, module system, .na files, UX
   test-dana-components:
@@ -234,11 +234,12 @@ jobs:
       run: uv sync --extra dev
     - name: Test Dana Components (REPL, translator, modules, na files, UX)
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/repl/ tests/dana/translator/ tests/dana/module/ tests/dana/na/ tests/dana/ux/ -m "not live and not deep" --tb=short -v
+        # Run REPL, transcoder, and other Dana component tests
+        uv run pytest tests/unit/core/ -k "repl or transcoder" -m "not live and not deep" --tb=short -v
 
   # Dana Integrated Tests - New comprehensive integration and scenario tests
   test-dana-integrated:
@@ -265,13 +266,184 @@ jobs:
       run: uv sync --extra dev
     - name: Test Dana Integrated (comprehensive real-world scenarios)
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/integration/ tests/dana/scenarios/ tests/dana/regression/ -m "not live and not deep" --tb=short -v
+        # Run integration and scenario tests
+        uv run pytest tests/unit/core/ -k "integration or scenario" -m "not live and not deep" --tb=short -v
 
-  # Dana Expected Failures - Language limitation documentation tests
+  # Functional Tests - Dana language tests (.na files)
+  test-functional-language:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5  # Updated version
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Cache uv dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Functional Language Tests (.na files)
+      env:
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        # Run Dana language tests using the test runner
+        uv run pytest tests/functional/language/ -m "not live and not deep" --tb=short -v
+
+  # Functional Integration Tests - Cross-feature integration scenarios
+  test-functional-integration:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5  # Updated version
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Cache uv dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Functional Integration Tests
+      env:
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        # Run functional integration tests
+        uv run pytest tests/functional/integration/ -m "not live and not deep" --tb=short -v
+
+  # Functional Standard Library Tests - POET and built-in functions
+  test-functional-stdlib:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5  # Updated version
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Cache uv dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Functional Standard Library Tests
+      env:
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        # Run functional standard library tests (.na files) using uv run
+        # Enable nullglob to handle case when no .na files exist
+        shopt -s nullglob
+        na_files=(tests/functional/stdlib/*.na)
+        if [ ${#na_files[@]} -eq 0 ]; then
+          echo "No .na files found in tests/functional/stdlib/ - skipping functional stdlib tests"
+        else
+          for na_file in "${na_files[@]}"; do
+            echo "Running $na_file..."
+            uv run python -m dana.core.cli.dana "$na_file" || exit 1
+          done
+        fi
+
+  # Integration Tests - End-to-end system integration
+  test-integration-end-to-end:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5  # Updated version
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Cache uv dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Integration End-to-End Tests
+      env:
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        # Run integration end-to-end tests
+        uv run pytest tests/integration/end_to_end/ -m "not live and not deep" --tb=short -v
+
+  # Regression Tests - Known issues and expected failures
+  test-regression:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5  # Updated version
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Cache uv dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Regression Tests
+      env:
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        # Run regression tests (expected failures)
+        uv run pytest tests/regression/ -m "not live and not deep" --tb=short -v
+
+  # Dana Expected Failures - Language limitations and known issues
   test-dana-expected-failures:
     runs-on: ubuntu-latest
     strategy:
@@ -296,11 +468,12 @@ jobs:
       run: uv sync --extra dev
     - name: Test Dana Expected Failures (language limitations)
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/expected_failures/ -m "not live and not deep" --tb=short -v
+        # Run expected failure tests
+        uv run pytest tests/regression/language_limitations/ -m "not live and not deep" --tb=short -v
 
   # Common Resources - LLM, AISuite integration, resource management (heavy tests)
   test-common-resources:
@@ -327,11 +500,11 @@ jobs:
       run: uv sync --extra dev
     - name: Test Common Resources
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/common/resource/ -m "not live and not deep" --tb=short -v
+        uv run pytest tests/unit/common/resource/ -m "not live and not deep" --tb=short -v
 
   # Common Core - Graph, I/O, mixins, config, utils, state (light tests)
   test-common-core:
@@ -358,12 +531,12 @@ jobs:
       run: uv sync --extra dev
     - name: Test Common Core
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/common/ -m "not live and not deep" --tb=short -v \
-          --ignore=tests/common/resource/
+        uv run pytest tests/unit/common/ -m "not live and not deep" --tb=short -v \
+          --ignore=tests/unit/common/resource/
 
   # Agent Framework - Capabilities and resources
   test-agent-framework:
@@ -390,11 +563,11 @@ jobs:
       run: uv sync --extra dev
     - name: Test Agent Framework
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/agent/ -m "not live and not deep" --tb=short -v
+        uv run pytest tests/unit/agent/ -m "not live and not deep" --tb=short -v
 
   # POET Framework - Domain-driven function enhancement
   test-poet-framework:
@@ -421,11 +594,12 @@ jobs:
       run: uv sync --extra dev
     - name: Test POET Framework
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/poet/ -m "poet and not live and not deep" --tb=short -v
+        # Run POET tests from their actual locations (Python tests only)
+        uv run pytest tests/unit/frameworks/ -m "poet and not live and not deep" --tb=short -v
 
   # Execution Engine - Pipeline and reasoning
   test-execution-engine:
@@ -452,11 +626,11 @@ jobs:
       run: uv sync --extra dev
     - name: Test Execution Engine
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/execution/ -m "not live and not deep" --tb=short -v
+        uv run pytest tests/unit/core/pipeline/ tests/unit/core/reasoning/ -m "not live and not deep" --tb=short -v
 
   # Catch-all for any tests not covered by the above groups
   test-miscellaneous:
@@ -483,18 +657,21 @@ jobs:
       run: uv sync --extra dev
     - name: Test Miscellaneous (catch-all)
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         # Run tests that don't match any of the explicit subsystem filters
         # This includes any top-level test files and future additions
         set +e  # Allow commands to fail without stopping the script
         uv run pytest tests/ -m "not live and not deep" --tb=short -v \
-          --ignore=tests/dana/ \
-          --ignore=tests/common/ \
-          --ignore=tests/agent/ \
-          --ignore=tests/execution/
+          --ignore=tests/unit/core/ \
+          --ignore=tests/unit/common/ \
+          --ignore=tests/unit/agent/ \
+          --ignore=tests/unit/frameworks/ \
+          --ignore=tests/functional/ \
+          --ignore=tests/integration/ \
+          --ignore=tests/regression/
         exit_code=$?
         if [ $exit_code -eq 5 ]; then
           echo "✅ No miscellaneous tests found - all tests are covered by explicit subsystem jobs"
@@ -510,7 +687,7 @@ jobs:
 
   # Summary job that depends on all test jobs
   test-summary:
-    needs: [test-dana-parser, test-dana-structs, test-dana-functions, test-dana-imports, test-dana-execution, test-dana-sandbox, test-dana-components, test-dana-integrated, test-dana-expected-failures, test-common-resources, test-common-core, test-agent-framework, test-poet-framework, test-execution-engine, test-miscellaneous]
+    needs: [test-dana-parser, test-dana-structs, test-dana-functions, test-dana-imports, test-dana-execution, test-dana-sandbox, test-dana-components, test-dana-integrated, test-dana-expected-failures, test-functional-language, test-functional-integration, test-functional-stdlib, test-integration-end-to-end, test-regression, test-common-resources, test-common-core, test-agent-framework, test-poet-framework, test-execution-engine, test-miscellaneous]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -525,6 +702,11 @@ jobs:
               "${{ needs.test-dana-components.result }}" == "failure" || 
               "${{ needs.test-dana-integrated.result }}" == "failure" || 
               "${{ needs.test-dana-expected-failures.result }}" == "failure" || 
+              "${{ needs.test-functional-language.result }}" == "failure" || 
+              "${{ needs.test-functional-integration.result }}" == "failure" || 
+              "${{ needs.test-functional-stdlib.result }}" == "failure" || 
+              "${{ needs.test-integration-end-to-end.result }}" == "failure" || 
+              "${{ needs.test-regression.result }}" == "failure" || 
               "${{ needs.test-common-resources.result }}" == "failure" || 
               "${{ needs.test-common-core.result }}" == "failure" || 
               "${{ needs.test-agent-framework.result }}" == "failure" || 

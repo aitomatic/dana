@@ -59,7 +59,7 @@ class MCPClient(Client, Loggable, metaclass=MCPMetaclass):
     @classmethod
     async def _try_client_with_valid_transport(cls, transport: BaseTransport) -> bool:
         try:
-            async with Client(transport=transport) as test_client:
+            async with Client(read_stream=transport.read_stream, write_stream=transport.write_stream) as test_client:
                 await test_client.list_tools()
                 await test_client.list_resources()
                 await test_client.list_prompts()

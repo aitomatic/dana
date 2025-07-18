@@ -39,26 +39,72 @@ jobs:
       run: uv sync --extra dev
     - name: Test struct implementation (comprehensive)
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
-      run: uv run pytest tests/dana/sandbox/interpreter/test_struct_* -v --tb=short
+      run: uv run pytest tests/unit/core/interpreter/test_struct_* -v --tb=short
     - name: Test POET framework (comprehensive)
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
-      run: uv run pytest tests/dana/poet/ -m "poet" -v --tb=short
+      run: |
+        # Run POET tests from their actual locations (Python tests only)
+        uv run pytest tests/unit/frameworks/ -m "poet" -v --tb=short
     - name: Test Dana integrated tests (comprehensive)
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
-      run: uv run pytest tests/dana/integration/ tests/dana/scenarios/ tests/dana/regression/ tests/dana/expected_failures/ -v --tb=short
+      run: |
+        # Run integration and scenario tests
+        uv run pytest tests/unit/core/ -k "integration or scenario" -v --tb=short
+    - name: Test functional language tests (comprehensive)
+      env:
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/functional/language/ -v --tb=short
+    - name: Test functional integration tests (comprehensive)
+      env:
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/functional/integration/ -v --tb=short
+    - name: Test functional standard library tests (comprehensive)
+      env:
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        # Run functional standard library tests (.na files) using uv run
+        # Enable nullglob to handle case when no .na files exist
+        shopt -s nullglob
+        na_files=(tests/functional/stdlib/*.na)
+        if [ ${#na_files[@]} -eq 0 ]; then
+          echo "No .na files found in tests/functional/stdlib/ - skipping functional stdlib tests"
+        else
+          for na_file in "${na_files[@]}"; do
+            echo "Running $na_file..."
+            uv run python -m dana.core.cli.dana "$na_file" || exit 1
+          done
+        fi
+    - name: Test integration end-to-end tests (comprehensive)
+      env:
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/integration/end_to_end/ -v --tb=short
+    - name: Test regression tests (comprehensive)
+      env:
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/regression/ -v --tb=short
     - name: Test with pytest (fast tests only)
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: uv run pytest -m "not live and not deep" tests/ --tb=short -v
     - name: Upload test results
