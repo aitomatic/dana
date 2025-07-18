@@ -1,11 +1,14 @@
 import argparse
+import json
 from pathlib import Path
 
 from dana.core.lang.dana_sandbox import DanaSandbox
-from dana.core.lang.sandbox_context import SandboxContext
 from dana.util.env import load_dana_env
 
 from .dana_input_args_parser import parse_dana_input_args
+
+MAIN_FUNC_NAME: str = "__main__"
+DEF_MAIN_STR_PATTERN: str = f"def {MAIN_FUNC_NAME}("
 
 def main():
     """
@@ -18,15 +21,38 @@ def main():
     arg_parser.add_argument("inputs", nargs=argparse.REMAINDER, help="Input arguments as key=value pairs")
     args = arg_parser.parse_args()
 
-    # Parse input arguments into a dictionary
-    input_dict = parse_dana_input_args(args.inputs)
-
-    # Prepare a SandboxContext and inject input variables into local scope
-    context = SandboxContext()
-    for key, value in input_dict.items():
-        context.set(key, value)
-
+    # load the .env file if it exists in the same directory as the script
     load_dana_env(dot_env_file_path=Path(args.file_path).parent / '.env')
 
-    # Run the Dana script with the prepared context
-    DanaSandbox.quick_run(file_path=args.file_path, debug_mode=args.debug, context=context)
+    with open(args.file_path, encoding="utf-8") as f:
+        source_code = f.read()
+
+    # if there is a special `def __main__(...)` function, run it with the input arguments
+    if DEF_MAIN_STR_PATTERN in source_code:
+        # Parse input arguments into a dictionary
+        input_dict = parse_dana_input_args(args.inputs)
+
+        # append source code
+        source_code_with_main_call = f"""
+{source_code}
+
+__main__({", ".join([f"{key}={json.dumps(obj=value,
+                                         skipkeys=False,
+                                         ensure_ascii=False,
+                                         check_circular=True,
+                                         allow_nan=False,
+                                         cls=None,
+                                         indent=None,
+                                         separators=None,
+                                         default=None,
+                                         sort_keys=False)}"
+                     for key, value in input_dict.items()])})
+"""
+
+        # run the appended source code
+        DanaSandbox.quick_eval(source_code=source_code_with_main_call,
+                               filename=args.file_path, debug_mode=args.debug)
+
+    # otherwise, run the script
+    else:
+        DanaSandbox.quick_run(file_path=args.file_path, debug_mode=args.debug)
