@@ -2,7 +2,6 @@
   <img src="../images/dana-logo.jpg" alt="Dana Logo" width="60">
   <span>
     <div style="font-size: 18px; font-style: italic; font-weight: 600; color: #666;">Agent-native programming language and runtime</div>
-    <div style="font-size: 12px; font-style: italic; color: #999;">powered by OpenDXA</div>
   </span>
 </div>
 
@@ -10,13 +9,13 @@
 *Beyond AI coding assistants: Write agents that learn, adapt, and improve themselves in production*
 
 ---
-> **What if your code could learn, adapt, and improve itself in production—without you?**
+> **What if your agents could learn, adapt, and improve itself in production—without you?**
 
 AI coding assistants help write better code. Agentic AI systems execute tasks autonomously. Dana represents the convergence: agent-native programming where you write `agent` instead of `class`, use context-aware `reason()` calls that intelligently adapt their output types, compose self-improving pipelines with `|` operators, and deploy functions that learn from production through POET.
 
 Welcome to the engineering guide for Dana! This is your comprehensive resource for building agent-native applications, from quick 5-minute demos to production enterprise deployments.
 
-## OpenDXA
+## Dana
 Get from zero to working agent in 15 minutes with the agent-native framework.
 
 The next evolution beyond AI coding assistants and traditional agents: write `agent` instead of `class`, use context-aware `reason()` that adapts output types automatically, and deploy self-improving functions.
@@ -24,7 +23,6 @@ The next evolution beyond AI coding assistants and traditional agents: write `ag
 - [5-Minute Setup](setup/installation.md) - Install and verify OpenDXA
 - [Build Your First Agent](recipes/first-agent.md) - Working code in 10 minutes
 - [Dana Language Basics](reference/dana-syntax.md) - Essential syntax reference
-- [Structs and Methods Guide](reference/structs-and-methods.md) - Complete struct system guide
 
 ## 📋 Common Tasks
 Jump directly to solutions for typical engineering problems.
@@ -33,26 +31,25 @@ Jump directly to solutions for typical engineering problems.
 - 📄 [Process Documents](recipes/document-processor/README.md) - Extract, analyze, transform content
 - [Create Workflows](recipes/workflow-agent/README.md) - Multi-step automated processes
 - [Integrate APIs](recipes/api-integration/README.md) - Connect external services
-- [Struct Patterns Cookbook](recipes/structs-cookbook.md) - Real-world struct patterns and examples
 - [Debug Issues](troubleshooting/README.md) - Common problems and solutions
 
 ## Reference
 Quick lookup for syntax, functions, and commands.
 
 - [Dana Language Reference](reference/dana-syntax.md) - Complete syntax guide
-- [Structs and Methods Guide](reference/structs-and-methods.md) - Comprehensive struct system reference
+<!-- - [Structs and Methods Guide](reference/structs-and-methods.md) - Comprehensive struct system reference -->
 - [API Reference](reference/api/README.md) - All available functions with examples
 - [REPL Commands](reference/repl-guide.md) - Interactive development environment
 - [Troubleshooting](troubleshooting/README.md) - Common problems and solutions
 
 ## By Experience Level
-- New to OpenDXA: Start with [Getting Started](#getting-started-paths)
+- New to Dana: Start with [Getting Started](#getting-started-paths)
 - Experienced Developer: Jump to [Common Tasks](#common-tasks)
 - Debugging Issue: Check [Troubleshooting](troubleshooting/README.md)
 
-## What Makes OpenDXA Different
+## What Makes Dana Different
 
-OpenDXA's agent-native architecture represents the convergence of AI coding assistance and autonomous systems:
+Dana's agent-native architecture represents the convergence of AI coding assistance and autonomous systems:
 
 - Transparent: Every step is visible and debuggable
 - Reliable: Built-in verification and error correction
@@ -146,11 +143,11 @@ public:completion_status = "ready" # Shared state
 
 ### Path 1: Quick Demo (5 minutes)
 ```bash
-# Install OpenDXA
-pip install opendxa
+# Install Dana
+pip install dana-agent
 
 # Run your first agent
-opendxa demo chatbot
+dana start
 ```
 
 ### Path 2: Build from Scratch (15 minutes)

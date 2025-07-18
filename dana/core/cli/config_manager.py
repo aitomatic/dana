@@ -168,10 +168,14 @@ class ConfigurationManager:
 
         # Display providers with numbers
         available_providers = []
-        for i, (provider_key, provider_info) in enumerate(self.provider_info.items(), 1):
-            if provider_key in self.providers:  # Only show providers that are in the config
+        current_index = 1
+
+        # Show all providers in order
+        for provider_key, provider_info in self.provider_info.items():
+            if provider_key in self.providers:
                 available_providers.append(provider_key)
-                print(f"{self.colors.accent(f'{i:2d}.')} {provider_info['name']} - {provider_info['description']}")
+                print(f"{self.colors.accent(f'{current_index:2d}.')} {provider_info['name']} - {provider_info['description']}")
+                current_index += 1
 
         print()
 
@@ -317,7 +321,8 @@ class ConfigurationManager:
             sandbox = DanaSandbox()
             sandbox.logger.setLevel(logging.CRITICAL)
 
-            # Test with a simple prompt
+            # Test: Basic reason function
+            print(f"{self.colors.accent('🧠 Testing reason function...')}")
             test_prompt = "Hello, can you respond with just 'Configuration test successful'?"
 
             if self.debug:
@@ -325,16 +330,18 @@ class ConfigurationManager:
 
             result = sandbox.eval(f'reason("{test_prompt}")', filename="<config-test>")
 
-            if result.success and result.result:
-                print(f"{self.colors.accent('✓ Configuration validation successful')}")
-                if self.debug:
-                    print(f"Response: {result.result}")
-                return True
-            else:
-                print(f"{self.colors.error('✗ Configuration validation failed')}")
+            if not (result.success and result.result):
+                print(f"{self.colors.error('✗ Reason function validation failed')}")
                 if result.error:
                     print(f"Error: {result.error}")
                 return False
+
+            print(f"{self.colors.accent('✓ Reason function validation successful')}")
+            if self.debug:
+                print(f"Response: {result.result}")
+
+            print(f"{self.colors.accent('✓ Overall configuration validation successful')}")
+            return True
 
         except Exception as e:
             print(f"{self.colors.error('✗ Configuration validation failed')}")

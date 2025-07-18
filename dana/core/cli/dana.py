@@ -83,6 +83,11 @@ def show_help():
     print(f"  {colors.accent('dana --debug')}           Enable debug logging")
     print(f"  {colors.accent('dana start')}             Start the Dana API server")
     print("")
+    print(f"{colors.bold('Requirements:')}")
+    print(f"  {colors.accent('🔑 API Keys:')} At least one LLM provider API key required")
+    print("")
+    print(f"{colors.accent('💡 Tip:')} Run {colors.bold('dana config')} to set up your API keys interactively")
+    print("")
 
 
 def execute_file(file_path, debug=False):

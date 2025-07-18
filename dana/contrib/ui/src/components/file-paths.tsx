@@ -4,21 +4,34 @@ import { apiService, type MultiFileProject } from '@/lib/api';
 
 interface FilePathsProps {
   multiFileProject: MultiFileProject | null;
+  agentFolder?: string;
   className?: string;
 }
 
-export function FilePaths({ multiFileProject, className = '' }: FilePathsProps) {
+export function FilePaths({ multiFileProject, agentFolder, className = '' }: FilePathsProps) {
   const handleFileClick = async (fileName: string) => {
     try {
-      // Construct file path based on auto-storage pattern
-      // This matches the backend auto-storage folder structure
-      const sanitizedName = (multiFileProject?.name || 'Generated_Agent')
-        .toLowerCase()
-        .replace(/[^a-zA-Z0-9_\-]/g, '_');
+      let filePath: string;
       
-      // Since we don't have the exact unique ID, we'll use a pattern that the backend can match
-      // The backend will need to handle partial path matching for the generated folders
-      const filePath = `generated/generated_${sanitizedName}*/${fileName}`;
+      if (agentFolder) {
+        // Use the actual agent folder from the API response
+        // Extract the relative path from the absolute path
+        let relativePath = agentFolder;
+        if (agentFolder.includes('/generated/')) {
+          // Extract everything from 'generated/' onwards
+          relativePath = agentFolder.substring(agentFolder.indexOf('generated/'));
+        } else if (agentFolder.includes('/agents/')) {
+          // Extract everything from 'agents/' onwards
+          relativePath = agentFolder.substring(agentFolder.indexOf('agents/'));
+        }
+        filePath = `${relativePath}/${fileName}`;
+      } else {
+        // Fallback to the old pattern-matching approach
+        const sanitizedName = (multiFileProject?.name || 'Generated_Agent')
+          .toLowerCase()
+          .replace(/[^a-zA-Z0-9_\-]/g, '_');
+        filePath = `generated/generated_${sanitizedName}*/${fileName}`;
+      }
       
       const result = await apiService.openFileLocation(filePath);
       if (result.success) {

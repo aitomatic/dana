@@ -1,6 +1,7 @@
+import logging
+import re
 import shutil
 import uuid
-import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -11,7 +12,6 @@ from sqlalchemy.orm import Session
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.core.lang.sandbox_context import SandboxContext
 
-import logging
 from . import models, schemas
 from .models import Conversation, Message
 from .schemas import ConversationCreate, MessageCreate, RunNAFileRequest, RunNAFileResponse
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 def _copy_selected_documents_to_agent_folder(db: Session, agent_id: Any, document_ids: list[int]):
     """
     Copy selected documents to an agent-specific folder.
-    
+
     Args:
         db: Database session
         agent_id: ID of the agent
@@ -32,16 +32,16 @@ def _copy_selected_documents_to_agent_folder(db: Session, agent_id: Any, documen
     if not document_ids:
         logger.info("No documents to copy")
         return
-    
+
     # Create agent-specific folder
     agent_folder = Path(f"./uploads/agents/{agent_id}")
     agent_folder.mkdir(parents=True, exist_ok=True)
     logger.info(f"Created agent folder: {agent_folder}")
-    
+
     # Get documents from database
     documents = db.query(models.Document).filter(models.Document.id.in_(document_ids)).all()
     logger.info(f"Found {len(documents)} documents to copy")
-    
+
     copied_count = 0
     for document in documents:
         try:
@@ -50,21 +50,21 @@ def _copy_selected_documents_to_agent_folder(db: Session, agent_id: Any, documen
             if not source_path.exists():
                 logger.warning(f"Source file not found: {source_path}")
                 continue
-            
+
             # Create destination path in agent folder
             dest_path = agent_folder / document.filename
             # Copy file to agent folder
             shutil.copy2(str(source_path), str(dest_path))
-            
+
             # Update document record to point to agent folder
             document.file_path = f"agents/{agent_id}/{document.filename}"
             document.agent_id = int(agent_id)
             logger.info(f"Copied document {document.id} to agent folder: {dest_path}")
             copied_count += 1
-            
+
         except Exception as e:
             logger.error(f"Error copying document {document.id}: {e}")
-    
+
     # Commit changes to database
     db.commit()
     logger.info(f"Successfully copied {copied_count} documents to agent {agent_id} folder")
@@ -83,19 +83,19 @@ def create_agent(db: Session, agent: schemas.AgentCreate):
     db.add(db_agent)
     db.commit()
     db.refresh(db_agent)
-    
+
     # Handle selected knowledge (files and topics)
-    if agent.config and 'selectedKnowledge' in agent.config:
-        selected_knowledge = agent.config['selectedKnowledge']
+    if agent.config and "selectedKnowledge" in agent.config:
+        selected_knowledge = agent.config["selectedKnowledge"]
         logger.info(f"Processing selected knowledge for agent {db_agent.id}: {selected_knowledge}")
-        
+
         # Create agent-specific folder and copy selected files
-        if selected_knowledge.get('documents'):
+        if selected_knowledge.get("documents"):
             print(f"Documents: {selected_knowledge['documents']}")
             agent_id = db_agent.id  # Get the actual integer value
             logger.info(f"Copying {len(selected_knowledge['documents'])} documents to agent folder")
-            _copy_selected_documents_to_agent_folder(db, agent_id, selected_knowledge['documents'])
-    
+            _copy_selected_documents_to_agent_folder(db, agent_id, selected_knowledge["documents"])
+
     return db_agent
 
 
@@ -328,10 +328,7 @@ def run_na_file_service(request: RunNAFileRequest):
 
 class ConversationService:
     def create_conversation(self, db: Session, conversation: ConversationCreate) -> Conversation:
-        db_convo = Conversation(
-            title=conversation.title,
-            agent_id=conversation.agent_id
-        )
+        db_convo = Conversation(title=conversation.title, agent_id=conversation.agent_id)
         db.add(db_convo)
         db.commit()
         db.refresh(db_convo)
@@ -390,10 +387,7 @@ class MessageService:
         return db_msg
 
     def delete_message(self, db: Session, conversation_id: int, message_id: int) -> bool:
-        message = db.query(Message).filter(
-            Message.id == message_id,
-            Message.conversation_id == conversation_id
-        ).first()
+        message = db.query(Message).filter(Message.id == message_id, Message.conversation_id == conversation_id).first()
         if message:
             db.delete(message)
             db.commit()
@@ -403,18 +397,13 @@ class MessageService:
 
 class ChatService:
     """Service for handling chat interactions with agents"""
-    
+
     def __init__(self, conversation_service: ConversationService, message_service: MessageService):
         self.conversation_service = conversation_service
         self.message_service = message_service
-    
+
     async def chat_with_agent(
-        self, 
-        db: Session, 
-        agent_id: int, 
-        user_message: str, 
-        conversation_id: int | None = None,
-        context: dict[str, Any] | None = None
+        self, db: Session, agent_id: int, user_message: str, conversation_id: int | None = None, context: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         """
         Chat with an agent and return the response
@@ -432,16 +421,12 @@ class ChatService:
                         "message_id": 0,
                         "agent_response": "",
                         "context": context,
-                        "error": f"Conversation {conversation_id} not found"
+                        "error": f"Conversation {conversation_id} not found",
                     }
             # 2. If conversation_id is None, create the conversation before agent execution
             else:
                 conversation = self.conversation_service.create_conversation(
-                    db, 
-                    schemas.ConversationCreate(
-                        title=f"Chat with Agent {agent_id}",
-                        agent_id=agent_id
-                    )
+                    db, schemas.ConversationCreate(title=f"Chat with Agent {agent_id}", agent_id=agent_id)
                 )
                 conversation_id = conversation.id
             if conversation_id is None:
@@ -452,14 +437,10 @@ class ChatService:
                     "message_id": 0,
                     "agent_response": "",
                     "context": context,
-                    "error": "Failed to create or retrieve conversation"
+                    "error": "Failed to create or retrieve conversation",
                 }
             # Create user message before agent execution
-            user_msg = self.message_service.create_message(
-                db,
-                conversation_id,
-                schemas.MessageCreate(sender="user", content=user_message)
-            )
+            user_msg = self.message_service.create_message(db, conversation_id, schemas.MessageCreate(sender="user", content=user_message))
             try:
                 agent_response = await self._execute_agent(db, agent_id, user_message, context)
             except Exception as e:
@@ -470,12 +451,10 @@ class ChatService:
                     "message_id": user_msg.id,
                     "agent_response": "",
                     "context": context,
-                    "error": str(e)
+                    "error": str(e),
                 }
             agent_msg = self.message_service.create_message(
-                db,
-                conversation_id,
-                schemas.MessageCreate(sender="agent", content=agent_response)
+                db, conversation_id, schemas.MessageCreate(sender="agent", content=agent_response)
             )
             return {
                 "success": True,
@@ -484,29 +463,29 @@ class ChatService:
                 "message_id": agent_msg.id,
                 "agent_response": agent_response,
                 "context": context,
-                "error": None
+                "error": None,
             }
         except Exception as e:
             return {
                 "success": False,
                 "message": user_message,
                 "conversation_id": conversation_id or 0,
-                "message_id": user_msg.id if 'user_msg' in locals() else 0,
+                "message_id": user_msg.id if "user_msg" in locals() else 0,
                 "agent_response": "",
                 "context": context,
-                "error": str(e)
+                "error": str(e),
             }
-    
+
     async def _execute_agent(self, db: Session, agent_id: int, message: str, context: dict[str, Any] | None = None) -> str:
         """
         Execute agent with the given message and context
-        
+
         Args:
             db: Database session
             agent_id: ID of the agent
             message: User message
             context: Optional context
-            
+
         Returns:
             Agent response string
         """
@@ -514,45 +493,49 @@ class ChatService:
         agent = db.query(models.Agent).filter(models.Agent.id == agent_id).first()
         if not agent:
             raise ValueError(f"Agent {agent_id} not found")
-        
+
         # Get Dana code from agent configuration
         dana_code = agent.config.get("dana_code", "")
         if not dana_code:
             raise ValueError(f"Agent {agent_id} has no Dana code configured")
-        
+
         print(f"Executing agent {agent_id} ({agent.name}) with message: '{message}'")
         print(f"Using Dana code: {dana_code[:200]}...")
-        
+
         # Parse agent name from Dana code
-        agent_name_match = re.search(r'^\s*agent\s+([A-Za-z_][A-Za-z0-9_]*)\s*:', dana_code, re.MULTILINE)
+        agent_name_match = re.search(r"^\s*agent\s+([A-Za-z_][A-Za-z0-9_]*)\s*:", dana_code, re.MULTILINE)
         if not agent_name_match:
             raise ValueError("Could not find agent name in Dana code.")
         agent_name = agent_name_match.group(1)
         instance_var = agent_name[0].lower() + agent_name[1:]  # e.g., WeatherAgent -> weatherAgent
         # Append code to instantiate and solve using method call
-        appended_code = f"\n{instance_var} = {agent_name}()\nresponse = {instance_var}.solve(\"{message.replace('\\', '\\\\').replace('"', '\\"')}\")\nprint(response)\n"
+        appended_code = f'\n{instance_var} = {agent_name}()\nresponse = {instance_var}.solve("{message.replace("\\", "\\\\").replace('"', '\\"')}")\nprint(response)\n'
         dana_code_to_run = dana_code + appended_code
-        
+
         # Create a temporary file for the Dana code
         temp_folder = Path("/tmp/dana_code")
         temp_folder.mkdir(parents=True, exist_ok=True)
         full_path = temp_folder / f"agent_{agent_id}_code.na"
 
         print(f"Dana code to run: {dana_code_to_run}")
-        
+
         # Write the Dana code to the temporary file
         with open(full_path, "w") as f:
             f.write(dana_code_to_run)
-        
+
         # Execute the Dana code using DanaSandbox
         sandbox_context = SandboxContext()
-        
+
+        sandbox_context.set("system:user_id", "Lam")
+        sandbox_context.set("system:session_id", "Testing Retrieval")
+        sandbox_context.set("system:agent_instance_id", "instance_1")
+
         # If the agent has selected knowledge (documents), add them to the context
         selected_knowledge = agent.config.get("selectedKnowledge", {})
         if selected_knowledge and "documents" in selected_knowledge:
             # Add document paths to the context if needed
             print(f"Agent has {len(selected_knowledge['documents'])} selected documents")
-        
+
         try:
             DanaSandbox.quick_run(file_path=full_path, context=sandbox_context)
         except Exception as e:
@@ -564,6 +547,6 @@ class ChatService:
         print(sandbox_context.get_state())
 
         state = sandbox_context.get_state()
-        response_text = state.get("local", { }).get("response", "")
+        response_text = state.get("local", {}).get("response", "")
 
         return response_text

@@ -2,7 +2,6 @@ import { ArrowLeft, Xmark } from 'iconoir-react';
 import { useDanaAgentForm } from '@/hooks/use-dana-agent-form';
 import { useDragDrop } from '@/hooks/use-drag-drop';
 import { cn } from '@/lib/utils';
-import { DragOverComponent } from '@/components/drag-over-component';
 import { useNavigate } from 'react-router-dom';
 import { GeneralAgentPage } from './general';
 import SelectKnowledgePage from './select-knowledge';
@@ -15,7 +14,7 @@ export function CreateAgentPage() {
   const { form, onCreateAgent, isCreating, error } = useDanaAgentForm();
   const { watch, setValue } = form;
   const navigate = useNavigate();
-  
+
   // Multi-file project state at the top level
   const [multiFileProject, setMultiFileProject] = useState<MultiFileProject | null>(null);
 
@@ -40,14 +39,14 @@ export function CreateAgentPage() {
 
   return (
     <div className="flex flex-col w-full h-full" {...dragOverProps}>
-      {isDragOver && <DragOverComponent title="Drag file here" description="(only .na file)" />}
+      {/* {isDragOver && <DragOverComponent title="Drag file here" description="(only .na file)" />} */}
       <header
         className={cn(
           'h-[70px] flex items-center justify-between px-8 py-4 bg-white border-b border-gray-200 shadow-sm',
           isDragOver && 'opacity-50',
         )}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex gap-4 items-center">
           {step === 'select-knowledge' && (
             <IconButton
               variant="ghost"
@@ -55,7 +54,7 @@ export function CreateAgentPage() {
               onClick={() => {
                 setValue('step', 'general');
               }}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 rounded-lg transition-colors hover:bg-gray-100"
               aria-label="Go back"
             >
               <ArrowLeft className="size-5" strokeWidth={2} />
@@ -67,18 +66,18 @@ export function CreateAgentPage() {
               <img
                 src={`/agent-avatar${avatar}`}
                 alt="Agent avatar"
-                className="rounded-full size-10 border-2 border-gray-100"
+                className="rounded-full border-2 border-gray-100 size-10"
               />
             </div>
           )}
 
           <div className="flex flex-col">
-            <h1 className="text-xl font-bold text-gray-900 leading-tight">
+            <h1 className="text-xl font-bold leading-tight text-gray-900">
               {step === 'general' ? 'Agent Builder' : name || 'Agent'}
             </h1>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex gap-3 items-center">
           {step === 'general' && (
             <>
               <Button
@@ -96,7 +95,7 @@ export function CreateAgentPage() {
                 size="sm"
                 onClick={() => onCreateAgent(multiFileProject)}
                 disabled={isCreating}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="text-white bg-blue-600 hover:bg-blue-700"
               >
                 {isCreating ? 'Deploying...' : 'Deploy Agent'}
               </Button>
@@ -109,10 +108,10 @@ export function CreateAgentPage() {
               onClick={() => {
                 navigate('/agents');
               }}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 rounded-lg transition-colors hover:bg-gray-100"
               aria-label="Close and return to agents"
             >
-              <Xmark className="size-5 text-gray-500" strokeWidth={2} />
+              <Xmark className="text-gray-500 size-5" strokeWidth={2} />
             </IconButton>
           )}
         </div>

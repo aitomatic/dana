@@ -1,16 +1,7 @@
 import uuid
 
-import pytest
-from fastapi.testclient import TestClient
-
-from dana.api.server.server import create_app
 from dana.api.server.models import Agent
 
-
-@pytest.fixture
-def client():
-    app = create_app()
-    return TestClient(app)
 
 # --- Conversations ---
 def test_conversation_crud(client, db_session):
@@ -50,6 +41,7 @@ def test_conversation_crud(client, db_session):
     resp = client.get(f"/api/conversations/{convo_id}")
     assert resp.status_code == 404
 
+
 # --- Messages ---
 def test_message_crud(client, db_session):
     # Create an agent first
@@ -84,8 +76,9 @@ def test_message_crud(client, db_session):
     resp = client.get(f"/api/conversations/{convo_id}/messages/{msg_id}")
     assert resp.status_code == 404
 
+
 # --- Topics ---
-def test_topic_crud(client):
+def test_topic_crud(client, db_session):
     # Create
     resp = client.post("/api/topics/", json={"name": "Test Topic", "description": "desc"})
     assert resp.status_code == 200
@@ -109,8 +102,9 @@ def test_topic_crud(client):
     resp = client.get(f"/api/topics/{topic_id}")
     assert resp.status_code == 404
 
+
 # --- Documents ---
-def test_document_crud(client, tmp_path):
+def test_document_crud(client, db_session, tmp_path):
     # Create topic for document with a unique name
     unique_topic_name = f"DocTopic_{uuid.uuid4()}"
     resp = client.post("/api/topics/", json={"name": unique_topic_name, "description": "desc"})
@@ -139,4 +133,4 @@ def test_document_crud(client, tmp_path):
     assert resp.status_code == 200
     # Confirm gone
     resp = client.get(f"/api/documents/{doc_id}")
-    assert resp.status_code == 404 
+    assert resp.status_code == 404

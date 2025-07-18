@@ -13,6 +13,7 @@ Base = declarative_base()
 
 # Add get_db for dependency injection and testing
 
+
 def get_db():
     db = SessionLocal()
     try:

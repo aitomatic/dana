@@ -94,6 +94,9 @@ export interface AgentGenerationRequest {
   messages: MessageData[];
   current_code?: string;
   multi_file?: boolean;
+  // Two-phase generation fields
+  phase?: 'description' | 'code_generation';
+  agent_id?: number;
 }
 
 export interface AgentCapabilities {
@@ -121,7 +124,7 @@ export interface MultiFileProject {
 
 export interface AgentGenerationResponse {
   success: boolean;
-  dana_code: string;
+  dana_code?: string;  // Optional in Phase 1
   agent_name?: string;
   agent_description?: string;
   capabilities?: AgentCapabilities;
@@ -131,14 +134,19 @@ export interface AgentGenerationResponse {
   error?: string;
   multi_file_project?: MultiFileProject;
   is_multi_file?: boolean;
+  auto_stored_files?: string[];
+  agent_id?: number;
+  ready_for_code_generation?: boolean;
+  agent_folder?: string;
+  folder_path?: string;
 }
 
 // Code Validation Types
 export interface CodeValidationRequest {
-  code?: string;  // For single-file validation (backward compatibility)
+  code?: string; // For single-file validation (backward compatibility)
   agent_name?: string;
   description?: string;
-  
+
   // Multi-file validation support
   multi_file_project?: MultiFileProject;
 }
@@ -151,11 +159,11 @@ export interface CodeValidationResponse {
   suggestions: CodeSuggestion[];
   fixed_code?: string;
   error?: string;
-  
+
   // Multi-file validation results
-  file_results?: any[];  // Results for each file in multi-file project
-  dependency_errors?: any[];  // Dependency validation errors
-  overall_errors?: any[];  // Project-level errors
+  file_results?: any[]; // Results for each file in multi-file project
+  dependency_errors?: any[]; // Dependency validation errors
+  overall_errors?: any[]; // Project-level errors
 }
 
 export interface CodeError {
@@ -195,6 +203,33 @@ export interface CodeFixResponse {
   error?: string;
 }
 
+// Phase 1 specific schemas
+export interface AgentDescriptionRequest {
+  messages: MessageData[];
+  agent_id?: number;
+  agent_data?: any; // Current agent object for modification
+}
+
+export interface AgentDescriptionResponse {
+  success: boolean;
+  agent_id: number;
+  agent_name?: string;
+  agent_description?: string;
+  capabilities?: AgentCapabilities;
+  follow_up_message?: string;
+  suggested_questions?: string[];
+  ready_for_code_generation: boolean;
+  error?: string;
+  folder_path?: string;
+  agent_folder?: string;
+}
+
+// Phase 2 specific schemas
+export interface AgentCodeGenerationRequest {
+  agent_id: number;
+  multi_file?: boolean;
+}
+
 // Agent Deployment Types
 export interface AgentDeployRequest {
   name: string;
@@ -217,11 +252,33 @@ export interface AgentTestRequest {
   agent_name?: string;
   agent_description?: string;
   context?: Record<string, any>;
+  folder_path?: string;
 }
 
 export interface AgentTestResponse {
   success: boolean;
   agent_response: string;
+  error?: string;
+}
+
+export interface ProcessAgentDocumentsRequest {
+  document_folder: string;
+  conversation: string | string[];
+  summary: string;
+  agent_data?: Record<string, any>;  // Include current agent data (name, description, capabilities, etc.)
+  current_code?: string;  // Current dana code to be updated
+  multi_file_project?: MultiFileProject;  // Current multi-file project structure
+}
+
+export interface ProcessAgentDocumentsResponse {
+  success: boolean;
+  message: string;
+  agent_name?: string;
+  agent_description?: string;
+  processing_details?: Record<string, any>;
+  // Include updated code with RAG integration
+  dana_code?: string;  // Updated single-file code
+  multi_file_project?: MultiFileProject;  // Updated multi-file project with RAG integration
   error?: string;
 }
 
@@ -398,7 +455,34 @@ class ApiService {
   // File Operations API Methods
   async openFileLocation(filePath: string): Promise<{ success: boolean; message: string }> {
     const encodedPath = encodeURIComponent(filePath);
-    const response = await this.client.get<{ success: boolean; message: string }>(`/agents/open-file/${encodedPath}`);
+    const response = await this.client.get<{ success: boolean; message: string }>(
+      `/agents/open-file/${encodedPath}`,
+    );
+    return response.data;
+  }
+
+  async uploadKnowledgeFile(
+    formData: FormData,
+  ): Promise<{
+    success: boolean;
+    file_path?: string;
+    error?: string;
+    generated_response?: string;
+    updated_capabilities?: any;
+    ready_for_code_generation?: boolean;
+  }> {
+    const response = await this.client.post<{
+      success: boolean;
+      file_path?: string;
+      error?: string;
+      generated_response?: string;
+      updated_capabilities?: any;
+      ready_for_code_generation?: boolean;
+    }>('/agents/upload-knowledge', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   }
 
@@ -414,7 +498,62 @@ class ApiService {
 
   // Agent Generation API Methods
   async generateAgent(request: AgentGenerationRequest): Promise<AgentGenerationResponse> {
-    const response = await this.client.post<AgentGenerationResponse>('/agents/generate', request);
+    const response = await this.client.post<AgentGenerationResponse>('/agents/generate', request, {
+      timeout: 300000,
+    });
+    return response.data;
+  }
+
+  // Phase 1: Agent description refinement
+  async describeAgent(request: AgentDescriptionRequest): Promise<AgentDescriptionResponse> {
+    const response = await this.client.post<AgentDescriptionResponse>('/agents/describe', request, {
+      timeout: 300000,
+    });
+    return response.data;
+  }
+
+  // Phase 2: Code generation from existing description
+  async generateAgentCode(agentId: number, request: AgentCodeGenerationRequest): Promise<AgentGenerationResponse> {
+    const response = await this.client.post<AgentGenerationResponse>(`/agents/${agentId}/generate-code`, request, {
+      timeout: 300000,
+    });
+    return response.data;
+  }
+
+  // Process Agent Documents for Deep Training
+  async processAgentDocuments(request: ProcessAgentDocumentsRequest): Promise<ProcessAgentDocumentsResponse> {
+    const response = await this.client.post<ProcessAgentDocumentsResponse>('/agents/process-agent-documents', request, {
+      timeout: 600000, // 10 minutes timeout for document processing
+    });
+    return response.data;
+  }
+
+  // Phase 2: Generate agent from prompt with conversation context and agent summary
+  async generateAgentFromPrompt(request: {
+    prompt: string;
+    messages: MessageData[];
+    agent_summary: {
+      name: string;
+      description: string;
+      capabilities: {
+        knowledge?: string[];
+        workflow?: string[];
+        tools?: string[];
+      };
+    };
+    multi_file?: boolean;
+  }): Promise<AgentGenerationResponse> {
+    const response = await this.client.post<AgentGenerationResponse>('/agents/generate-from-prompt', request, {
+      timeout: 300000,
+    });
+    return response.data;
+  }
+
+  // Update agent description during Phase 1
+  async updateAgentDescription(agentId: number, request: AgentDescriptionRequest): Promise<AgentDescriptionResponse> {
+    const response = await this.client.post<AgentDescriptionResponse>(`/agents/${agentId}/update-description`, request, {
+      timeout: 300000,
+    });
     return response.data;
   }
 
@@ -426,7 +565,9 @@ class ApiService {
 
   // Agent Test API Methods
   async testAgent(request: AgentTestRequest): Promise<AgentTestResponse> {
-    const response = await this.client.post<AgentTestResponse>('/agent-test/', request);
+    const response = await this.client.post<AgentTestResponse>('/agent-test/', request, {
+      timeout: 300000,
+    });
     return response.data;
   }
 

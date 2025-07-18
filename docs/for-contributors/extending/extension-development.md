@@ -1,48 +1,34 @@
 # Extension Development Guide
 
-*Comprehensive guide for building OpenDXA extensions, capabilities, and resources*
+*Comprehensive guide for building Dana extensions, capabilities, and resources*
 
 ---
 
 ## Overview
 
-This guide provides detailed instructions for extending OpenDXA through custom capabilities, resources, and functions. Learn how to build reusable, composable extensions that integrate seamlessly with the OpenDXA ecosystem.
+This guide provides detailed instructions for extending Dana through custom capabilities, resources, and functions. Learn how to build reusable, composable extensions that integrate seamlessly with the Dana ecosystem.
 
-## Extension Architecture
+## Extension Types
 
-### Extension Types
+### 1. Capabilities
+Capabilities extend agent functionality with reusable, composable modules:
+- **Definition**: Reusable agent functionality
+- **Registration**: Register with Dana system
+- **Integration**: Seamless agent integration
 
-**Capabilities**: Modular functionality that agents can use
-```python
-# Example: Custom analysis capability
-class DataAnalysisCapability(BaseCapability):
- def get_functions(self):
- return {"analyze": self.analyze_data}
-```
+### 2. Resources
+Resources provide external service integration:
+- **Definition**: External service connectors
+- **Registration**: Register with resource manager
+- **Integration**: Available to all agents
 
-**Resources**: External service integrations
-```python
-# Example: Custom API resource
-class WeatherAPIResource(BaseResource):
- def get_functions(self):
- return {"get_weather": self.fetch_weather}
-```
+### 3. Functions
+Functions extend the Dana language:
+- **Definition**: Custom Dana language functions
+- **Registration**: Register with function registry
+- **Integration**: Available in Dana code
 
-**Functions**: Custom Dana language functions
-```python
-# Example: Custom transformation function
-@register_function("transform_data")
-def transform_data(data, method="normalize"):
- return apply_transformation(data, method)
-```
-
-### Extension Lifecycle
-1. **Development**: Build and test extension locally
-2. **Registration**: Register with OpenDXA system
-3. **Distribution**: Package and share with community
-4. **Maintenance**: Update and support extension
-
-## Developing Capabilities
+## Creating Capabilities
 
 ### Basic Capability Structure
 
@@ -52,556 +38,745 @@ from opendxa.common.mixins.configurable import Configurable
 from opendxa.common.mixins.loggable import Loggable
 
 class CustomAnalysisCapability(BaseCapability, Configurable, Loggable):
- """Custom capability for specialized data analysis."""
-
- def __init__(self, config: dict = None):
- super().__init__(config)
- self.setup_logging()
-
- # Initialize capability-specific resources
- self.models = self._load_analysis_models()
- self.cache = self._setup_cache()
-
- def get_functions(self) -> dict:
- """Return Dana functions provided by this capability."""
- return {
- "analyze_trends": self.analyze_trends,
- "detect_anomalies": self.detect_anomalies,
- "generate_forecast": self.generate_forecast,
- }
-
- def get_metadata(self) -> dict:
- """Return capability metadata for discovery."""
- return {
- "name": "custom_analysis",
- "version": "1.0.0",
- "description": "Advanced data analysis and forecasting",
- "author": "Your Organization",
- "tags": ["analysis", "forecasting", "anomaly-detection"],
- "requirements": ["numpy>=1.21.0", "pandas>=1.3.0"]
- }
-
- def analyze_trends(self, data, window_size=30, method="linear"):
- """Analyze trends in time series data."""
- self.log_info(f"Analyzing trends with method: {method}")
-
- try:
- # Implement trend analysis logic
- trends = self._calculate_trends(data, window_size, method)
-
- self.log_info(f"Trend analysis complete: {len(trends)} trends found")
- return {
- "trends": trends,
- "method": method,
- "confidence": self._calculate_confidence(trends)
- }
- except Exception as e:
- self.log_error(f"Trend analysis failed: {e}")
- raise
-
- def detect_anomalies(self, data, threshold=2.0, method="zscore"):
- """Detect anomalies in data using statistical methods."""
- self.log_info(f"Detecting anomalies with threshold: {threshold}")
-
- anomalies = self._detect_anomalies(data, threshold, method)
-
- return {
- "anomalies": anomalies,
- "count": len(anomalies),
- "threshold": threshold,
- "method": method
- }
-
- def generate_forecast(self, data, periods=30, confidence_level=0.95):
- """Generate forecasts based on historical data."""
- self.log_info(f"Generating forecast for {periods} periods")
-
- forecast = self._generate_forecast(data, periods, confidence_level)
-
- return {
- "forecast": forecast,
- "periods": periods,
- "confidence_level": confidence_level,
- "model_info": self._get_model_info()
- }
-
- # Private helper methods
- def _load_analysis_models(self):
- """Load pre-trained analysis models."""
- # Implementation here
- pass
-
- def _setup_cache(self):
- """Set up caching for expensive operations."""
- # Implementation here
- pass
-
- def _calculate_trends(self, data, window_size, method):
- """Core trend calculation logic."""
- # Implementation here
- pass
+    """Custom capability for specialized data analysis."""
+    
+    def __init__(self, config: dict = None):
+        super().__init__(config)
+        self.analysis_model = self._load_model()
+        self.info("CustomAnalysisCapability initialized")
+    
+    def get_functions(self) -> dict:
+        """Return Dana functions provided by this capability."""
+        return {
+            "analyze_data": self.analyze_data,
+            "generate_insights": self.generate_insights,
+            "validate_data": self.validate_data
+        }
+    
+    def analyze_data(self, data: list, analysis_type: str = "standard") -> dict:
+        """Analyze data using custom algorithms."""
+        self.info(f"Analyzing {len(data)} data points with {analysis_type} analysis")
+        
+        if analysis_type == "statistical":
+            result = self._statistical_analysis(data)
+        elif analysis_type == "ml":
+            result = self._ml_analysis(data)
+        else:
+            result = self._standard_analysis(data)
+        
+        return {
+            "analysis_type": analysis_type,
+            "data_points": len(data),
+            "result": result,
+            "confidence": self._calculate_confidence(result)
+        }
+    
+    def generate_insights(self, analysis_results: dict) -> list:
+        """Generate insights from analysis results."""
+        self.info("Generating insights from analysis results")
+        
+        insights = []
+        if analysis_results.get("confidence", 0) > 0.8:
+            insights.append("High confidence in analysis results")
+        
+        if analysis_results.get("data_points", 0) > 1000:
+            insights.append("Large dataset provides robust analysis")
+        
+        return insights
+    
+    def validate_data(self, data: list) -> dict:
+        """Validate data quality and structure."""
+        self.info(f"Validating {len(data)} data points")
+        
+        validation_result = {
+            "valid": True,
+            "issues": [],
+            "quality_score": 1.0
+        }
+        
+        # Check for missing values
+        missing_count = sum(1 for item in data if item is None)
+        if missing_count > 0:
+            validation_result["issues"].append(f"{missing_count} missing values")
+            validation_result["quality_score"] -= 0.1 * (missing_count / len(data))
+        
+        # Check data types
+        if not all(isinstance(item, (int, float)) for item in data if item is not None):
+            validation_result["issues"].append("Non-numeric values found")
+            validation_result["quality_score"] -= 0.2
+        
+        validation_result["valid"] = validation_result["quality_score"] > 0.7
+        return validation_result
+    
+    def _load_model(self):
+        """Load analysis model."""
+        # Implementation for loading ML model or analysis tools
+        return None
+    
+    def _statistical_analysis(self, data: list) -> dict:
+        """Perform statistical analysis."""
+        return {
+            "mean": sum(data) / len(data),
+            "median": sorted(data)[len(data) // 2],
+            "std": self._calculate_std(data)
+        }
+    
+    def _ml_analysis(self, data: list) -> dict:
+        """Perform machine learning analysis."""
+        # Implementation for ML analysis
+        return {"ml_result": "placeholder"}
+    
+    def _standard_analysis(self, data: list) -> dict:
+        """Perform standard analysis."""
+        return {
+            "min": min(data),
+            "max": max(data),
+            "count": len(data)
+        }
+    
+    def _calculate_std(self, data: list) -> float:
+        """Calculate standard deviation."""
+        mean = sum(data) / len(data)
+        variance = sum((x - mean) ** 2 for x in data) / len(data)
+        return variance ** 0.5
+    
+    def _calculate_confidence(self, result: dict) -> float:
+        """Calculate confidence score for analysis."""
+        # Simple confidence calculation
+        return 0.85
 ```
 
 ### Advanced Capability Features
 
-**State Management**:
 ```python
-class StatefulCapability(BaseCapability):
- def __init__(self, config: dict = None):
- super().__init__(config)
- self.state = {}
-
- def get_functions(self):
- return {
- "store_state": self.store_state,
- "retrieve_state": self.retrieve_state,
- }
-
- def store_state(self, key, value):
- """Store state for later retrieval."""
- self.state[key] = value
- return f"Stored {key}"
-
- def retrieve_state(self, key):
- """Retrieve previously stored state."""
- return self.state.get(key, None)
+class AdvancedAnalysisCapability(BaseCapability):
+    """Advanced capability with async support and caching."""
+    
+    def __init__(self, config: dict = None):
+        super().__init__(config)
+        self.cache = {}
+        self.cache_ttl = self.get_config("cache_ttl", 3600)
+    
+    async def async_analyze_data(self, data: list) -> dict:
+        """Async data analysis for large datasets."""
+        cache_key = hash(str(data))
+        
+        if cache_key in self.cache:
+            return self.cache[cache_key]
+        
+        # Perform async analysis
+        result = await self._perform_async_analysis(data)
+        
+        # Cache result
+        self.cache[cache_key] = result
+        return result
+    
+    def get_metadata(self) -> dict:
+        """Return capability metadata."""
+        return {
+            "name": "AdvancedAnalysisCapability",
+            "version": "1.0.0",
+            "description": "Advanced data analysis with async support",
+            "author": "Your Name",
+            "dependencies": ["numpy", "pandas"]
+        }
 ```
 
-**Configuration Management**:
-```python
-class ConfigurableCapability(BaseCapability):
- def __init__(self, config: dict = None):
- super().__init__(config)
-
- # Set default configuration
- self.default_config = {
- "api_timeout": 30,
- "retry_attempts": 3,
- "cache_ttl": 3600
- }
-
- # Merge with user configuration
- self.effective_config = {**self.default_config, **(config or {})}
-
- def validate_config(self, config: dict) -> bool:
- """Validate configuration parameters."""
- required_keys = ["api_key", "base_url"]
- return all(key in config for key in required_keys)
-```
-
-## 🌐 Developing Resources
+## Creating Resources
 
 ### Basic Resource Structure
 
 ```python
 from opendxa.common.resource.base_resource import BaseResource
 from opendxa.common.mixins.configurable import Configurable
+import requests
+import json
 
-class WeatherAPIResource(BaseResource, Configurable):
- """Resource for weather data integration."""
-
- def __init__(self, api_key: str, base_url: str = "https://api.weather.com"):
- super().__init__()
- self.api_key = api_key
- self.base_url = base_url
- self.client = self._initialize_client()
-
- def get_functions(self) -> dict:
- """Return Dana functions for weather operations."""
- return {
- "get_current_weather": self.get_current_weather,
- "get_forecast": self.get_forecast,
- "get_historical": self.get_historical_weather,
- }
-
- def get_metadata(self) -> dict:
- """Return resource metadata."""
- return {
- "name": "weather_api",
- "version": "1.0.0",
- "description": "Weather data API integration",
- "provider": "WeatherAPI.com",
- "endpoints": ["current", "forecast", "historical"]
- }
-
- def get_current_weather(self, location: str, units: str = "metric"):
- """Get current weather for a location."""
- try:
- response = self.client.get(
- f"{self.base_url}/current",
- params={
- "key": self.api_key,
- "q": location,
- "units": units
- }
- )
- return self._process_response(response)
- except Exception as e:
- self.log_error(f"Weather API error: {e}")
- raise
-
- def get_forecast(self, location: str, days: int = 7):
- """Get weather forecast for a location."""
- response = self.client.get(
- f"{self.base_url}/forecast",
- params={
- "key": self.api_key,
- "q": location,
- "days": days
- }
- )
- return self._process_response(response)
-
- def _initialize_client(self):
- """Initialize HTTP client with proper configuration."""
- import requests
- session = requests.Session()
- session.headers.update({
- "User-Agent": "OpenDXA-WeatherResource/1.0",
- "Accept": "application/json"
- })
- return session
-
- def _process_response(self, response):
- """Process API response and handle errors."""
- if response.status_code == 200:
- return response.json()
- else:
- raise Exception(f"API error: {response.status_code} - {response.text}")
+class WeatherResource(BaseResource, Configurable):
+    """Resource for weather data integration."""
+    
+    def __init__(self, api_key: str, base_url: str = "https://api.weatherapi.com/v1"):
+        super().__init__()
+        self.api_key = api_key
+        self.base_url = base_url
+        self.session = requests.Session()
+        self.session.headers.update({
+            "User-Agent": "Dana-WeatherResource/1.0",
+            "Accept": "application/json"
+        })
+    
+    def get_functions(self) -> dict:
+        """Return Dana functions for weather operations."""
+        return {
+            "get_current_weather": self.get_current_weather,
+            "get_forecast": self.get_forecast,
+            "get_weather_history": self.get_weather_history
+        }
+    
+    def get_current_weather(self, location: str) -> dict:
+        """Get current weather for a location."""
+        try:
+            response = self.session.get(
+                f"{self.base_url}/current.json",
+                params={
+                    "key": self.api_key,
+                    "q": location,
+                    "aqi": "no"
+                }
+            )
+            response.raise_for_status()
+            
+            data = response.json()
+            return {
+                "location": data["location"]["name"],
+                "temperature": data["current"]["temp_c"],
+                "condition": data["current"]["condition"]["text"],
+                "humidity": data["current"]["humidity"],
+                "wind_speed": data["current"]["wind_kph"]
+            }
+        except requests.RequestException as e:
+            raise ResourceError(f"Weather API request failed: {e}")
+    
+    def get_forecast(self, location: str, days: int = 3) -> list:
+        """Get weather forecast for multiple days."""
+        try:
+            response = self.session.get(
+                f"{self.base_url}/forecast.json",
+                params={
+                    "key": self.api_key,
+                    "q": location,
+                    "days": days,
+                    "aqi": "no"
+                }
+            )
+            response.raise_for_status()
+            
+            data = response.json()
+            forecast = []
+            
+            for day in data["forecast"]["forecastday"]:
+                forecast.append({
+                    "date": day["date"],
+                    "max_temp": day["day"]["maxtemp_c"],
+                    "min_temp": day["day"]["mintemp_c"],
+                    "condition": day["day"]["condition"]["text"],
+                    "chance_of_rain": day["day"]["daily_chance_of_rain"]
+                })
+            
+            return forecast
+        except requests.RequestException as e:
+            raise ResourceError(f"Weather forecast request failed: {e}")
+    
+    def get_weather_history(self, location: str, date: str) -> dict:
+        """Get historical weather data."""
+        try:
+            response = self.session.get(
+                f"{self.base_url}/history.json",
+                params={
+                    "key": self.api_key,
+                    "q": location,
+                    "dt": date
+                }
+            )
+            response.raise_for_status()
+            
+            data = response.json()
+            return {
+                "date": date,
+                "max_temp": data["forecast"]["forecastday"][0]["day"]["maxtemp_c"],
+                "min_temp": data["forecast"]["forecastday"][0]["day"]["mintemp_c"],
+                "total_precip": data["forecast"]["forecastday"][0]["day"]["totalprecip_mm"]
+            }
+        except requests.RequestException as e:
+            raise ResourceError(f"Weather history request failed: {e}")
+    
+    def cleanup(self):
+        """Clean up resources."""
+        self.session.close()
 ```
 
-### Resource Best Practices
+## Creating Dana Functions
 
-**Error Handling**:
-```python
-class RobustResource(BaseResource):
- def api_call_with_retry(self, func, *args, **kwargs):
- """Make API calls with automatic retry logic."""
- max_retries = 3
- for attempt in range(max_retries):
- try:
- return func(*args, **kwargs)
- except Exception as e:
- if attempt == max_retries - 1:
- raise
- self.log_warning(f"Attempt {attempt + 1} failed: {e}")
- time.sleep(2 ** attempt) # Exponential backoff
-```
-
-**Caching**:
-```python
-class CachedResource(BaseResource):
- def __init__(self):
- super().__init__()
- self.cache = {}
- self.cache_ttl = 300 # 5 minutes
-
- def cached_call(self, key, func, *args, **kwargs):
- """Make cached function calls."""
- if key in self.cache and not self._is_expired(key):
- return self.cache[key]["data"]
-
- result = func(*args, **kwargs)
- self.cache[key] = {
- "data": result,
- "timestamp": time.time()
- }
- return result
-```
-
-## ⚙️ Developing Dana Functions
-
-### Function Registration
+### Basic Function Registration
 
 ```python
 from opendxa.dana.interpreter.function_registry import register_function
 
 @register_function("custom_transform")
-def custom_transform(data, transformation_type="normalize", options=None):
- """Custom data transformation function for Dana."""
+def custom_transform(data: list, transformation_type: str = "default") -> list:
+    """Custom data transformation function for Dana."""
+    if transformation_type == "normalize":
+        return normalize_data(data)
+    elif transformation_type == "aggregate":
+        return aggregate_data(data)
+    elif transformation_type == "filter":
+        return filter_data(data)
+    else:
+        return apply_default_transform(data)
 
- # Validate inputs
- if not data:
- raise ValueError("Data cannot be empty")
+def normalize_data(data: list) -> list:
+    """Normalize data to 0-1 range."""
+    if not data:
+        return []
+    
+    min_val = min(data)
+    max_val = max(data)
+    
+    if max_val == min_val:
+        return [0.5] * len(data)
+    
+    return [(x - min_val) / (max_val - min_val) for x in data]
 
- options = options or {}
+def aggregate_data(data: list) -> dict:
+    """Aggregate data with statistics."""
+    if not data:
+        return {"count": 0, "sum": 0, "mean": 0}
+    
+    return {
+        "count": len(data),
+        "sum": sum(data),
+        "mean": sum(data) / len(data),
+        "min": min(data),
+        "max": max(data)
+    }
 
- # Apply transformation based on type
- if transformation_type == "normalize":
- return normalize_data(data, **options)
- elif transformation_type == "standardize":
- return standardize_data(data, **options)
- elif transformation_type == "scale":
- return scale_data(data, **options)
- else:
- raise ValueError(f"Unknown transformation type: {transformation_type}")
+def filter_data(data: list) -> list:
+    """Filter out invalid data points."""
+    return [x for x in data if x is not None and not (isinstance(x, float) and math.isnan(x))]
 
-@register_function("batch_process")
-def batch_process(items, processor_func, batch_size=10, parallel=False):
- """Process items in batches with optional parallelization."""
-
- results = []
- batches = [items[i:i+batch_size] for i in range(0, len(items), batch_size)]
-
- if parallel:
- import concurrent.futures
- with concurrent.futures.ThreadPoolExecutor() as executor:
- future_to_batch = {
- executor.submit(processor_func, batch): batch
- for batch in batches
- }
- for future in concurrent.futures.as_completed(future_to_batch):
- results.extend(future.result())
- else:
- for batch in batches:
- results.extend(processor_func(batch))
-
- return results
+def apply_default_transform(data: list) -> list:
+    """Apply default transformation."""
+    return data
 ```
 
 ### Advanced Function Features
 
-**Type Validation**:
 ```python
-from typing import Union, List, Dict, Any
+@register_function("advanced_analysis")
+def advanced_analysis(data: list, options: dict = None) -> dict:
+    """Advanced data analysis with multiple algorithms."""
+    if options is None:
+        options = {}
+    
+    algorithms = options.get("algorithms", ["statistical", "outlier_detection"])
+    result = {}
+    
+    if "statistical" in algorithms:
+        result["statistical"] = statistical_analysis(data)
+    
+    if "outlier_detection" in algorithms:
+        result["outliers"] = detect_outliers(data)
+    
+    if "trend_analysis" in algorithms:
+        result["trends"] = analyze_trends(data)
+    
+    return result
 
-@register_function("typed_function")
-def typed_function(
- data: Union[List[int], List[float]],
- config: Dict[str, Any] = None
-) -> Dict[str, Any]:
- """Function with explicit type hints for better validation."""
+def statistical_analysis(data: list) -> dict:
+    """Perform comprehensive statistical analysis."""
+    if not data:
+        return {}
+    
+    n = len(data)
+    mean = sum(data) / n
+    variance = sum((x - mean) ** 2 for x in data) / n
+    std = variance ** 0.5
+    
+    return {
+        "count": n,
+        "mean": mean,
+        "median": sorted(data)[n // 2],
+        "std": std,
+        "variance": variance,
+        "min": min(data),
+        "max": max(data),
+        "range": max(data) - min(data)
+    }
 
- # Runtime type validation
- if not isinstance(data, list):
- raise TypeError(f"Expected list, got {type(data)}")
+def detect_outliers(data: list, threshold: float = 2.0) -> list:
+    """Detect outliers using z-score method."""
+    if len(data) < 3:
+        return []
+    
+    mean = sum(data) / len(data)
+    std = (sum((x - mean) ** 2 for x in data) / len(data)) ** 0.5
+    
+    outliers = []
+    for i, value in enumerate(data):
+        z_score = abs((value - mean) / std) if std > 0 else 0
+        if z_score > threshold:
+            outliers.append({"index": i, "value": value, "z_score": z_score})
+    
+    return outliers
 
- if not all(isinstance(x, (int, float)) for x in data):
- raise TypeError("All data elements must be numeric")
+def analyze_trends(data: list) -> dict:
+    """Analyze trends in time series data."""
+    if len(data) < 2:
+        return {"trend": "insufficient_data"}
+    
+    # Simple linear trend analysis
+    x_values = list(range(len(data)))
+    n = len(data)
+    
+    sum_x = sum(x_values)
+    sum_y = sum(data)
+    sum_xy = sum(x * y for x, y in zip(x_values, data))
+    sum_x2 = sum(x * x for x in x_values)
+    
+    slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x)
+    
+    if slope > 0.01:
+        trend = "increasing"
+    elif slope < -0.01:
+        trend = "decreasing"
+    else:
+        trend = "stable"
+    
+    return {
+        "trend": trend,
+        "slope": slope,
+        "correlation": calculate_correlation(x_values, data)
+    }
 
- # Function implementation
- return {"processed": True, "count": len(data)}
+def calculate_correlation(x: list, y: list) -> float:
+    """Calculate Pearson correlation coefficient."""
+    if len(x) != len(y) or len(x) < 2:
+        return 0.0
+    
+    n = len(x)
+    sum_x = sum(x)
+    sum_y = sum(y)
+    sum_xy = sum(xi * yi for xi, yi in zip(x, y))
+    sum_x2 = sum(xi * xi for xi in x)
+    sum_y2 = sum(yi * yi for yi in y)
+    
+    numerator = n * sum_xy - sum_x * sum_y
+    denominator = ((n * sum_x2 - sum_x * sum_x) * (n * sum_y2 - sum_y * sum_y)) ** 0.5
+    
+    return numerator / denominator if denominator != 0 else 0.0
 ```
 
-**Documentation Integration**:
-```python
-@register_function("documented_function")
-def documented_function(input_data, mode="default"):
- """
- Process input data with specified mode.
+## Using Capabilities in Dana Code
 
- Args:
- input_data: The data to process (any type)
- mode: Processing mode - "default", "advanced", or "minimal"
+### Basic Usage
 
- Returns:
- dict: Processing results with metadata
+```dana
+# Load and use custom capability
+analysis_capability = load_capability("custom_analysis")
 
- Examples:
- >>> result = documented_function([1, 2, 3], mode="advanced")
- >>> print(result["summary"])
+# Analyze data
+data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+result = analysis_capability.analyze_data(data, "statistical")
 
- Raises:
- ValueError: If mode is not supported
- """
- # Implementation here
- pass
+# Generate insights
+insights = analysis_capability.generate_insights(result)
+log(f"Analysis insights: {insights}", level="INFO")
+
+# Validate data
+validation = analysis_capability.validate_data(data)
+if validation.valid:
+    log("Data validation passed", level="INFO")
+else:
+    log(f"Data validation failed: {validation.issues}", level="ERROR")
 ```
 
-## Extension Packaging
+### Advanced Usage with POET
 
-### Package Structure
+```dana
+# Use capability with POET enhancement
+@poet(domain="data_analysis", timeout=60.0)
+def comprehensive_analysis(data, analysis_type="comprehensive"):
+    # Load capability
+    analysis_cap = load_capability("custom_analysis")
+    
+    # Perform analysis with domain intelligence
+    result = analysis_cap.analyze_data(data, analysis_type)
+    
+    # Generate AI-powered insights
+    insights = reason(f"Analyze these results: {result}")
+    
+    return {
+        "analysis": result,
+        "ai_insights": insights,
+        "confidence": result.confidence
+    }
+
+# Execute enhanced analysis
+data = load_large_dataset()
+analysis_result = comprehensive_analysis(data, "ml")
 ```
-my_extension/
+
+## Using Resources in Dana Code
+
+### Weather Resource Example
+
+```dana
+# Load weather resource
+weather = load_resource("weather", api_key="your_api_key")
+
+# Get current weather
+current = weather.get_current_weather("San Francisco")
+log(f"Current weather in SF: {current.temperature}°C, {current.condition}", level="INFO")
+
+# Get forecast
+forecast = weather.get_forecast("San Francisco", 5)
+for day in forecast:
+    log(f"Forecast for {day.date}: {day.max_temp}°C, {day.condition}", level="INFO")
+
+# Get historical data
+history = weather.get_weather_history("San Francisco", "2024-01-15")
+log(f"Historical weather: {history.max_temp}°C, {history.total_precip}mm rain", level="INFO")
+```
+
+### Resource Error Handling
+
+```dana
+# Robust resource usage
+try:
+    weather = load_resource("weather", api_key="your_api_key")
+    current = weather.get_current_weather("San Francisco")
+    return current
+except ResourceError as error:
+    log(f"Weather service unavailable: {error}", level="ERROR")
+    return {"error": "weather_service_unavailable"}
+except Exception as error:
+    log(f"Unexpected error: {error}", level="ERROR")
+    return {"error": "unexpected_error"}
+```
+
+## Using Custom Functions in Dana Code
+
+### Basic Function Usage
+
+```dana
+# Use custom transformation function
+data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+# Normalize data
+normalized = custom_transform(data, "normalize")
+log(f"Normalized data: {normalized}", level="DEBUG")
+
+# Aggregate data
+aggregated = custom_transform(data, "aggregate")
+log(f"Data summary: {aggregated}", level="INFO")
+
+# Filter data
+filtered = custom_transform(data, "filter")
+log(f"Filtered data: {filtered}", level="DEBUG")
+```
+
+### Advanced Analysis Usage
+
+```dana
+# Use advanced analysis function
+data = [10, 15, 20, 25, 30, 35, 40, 45, 50, 1000]  # Note the outlier
+
+# Perform comprehensive analysis
+analysis = advanced_analysis(data, {
+    "algorithms": ["statistical", "outlier_detection", "trend_analysis"]
+})
+
+# Process results
+if "outliers" in analysis:
+    for outlier in analysis.outliers:
+        log(f"Outlier detected at index {outlier.index}: {outlier.value}", level="WARNING")
+
+if "trends" in analysis:
+    log(f"Data trend: {analysis.trends.trend}", level="INFO")
+    log(f"Trend slope: {analysis.trends.slope}", level="DEBUG")
+
+# Use AI to interpret results
+interpretation = reason(f"""
+Analyze these statistical results:
+- Statistical: {analysis.statistical}
+- Outliers: {analysis.outliers}
+- Trends: {analysis.trends}
+
+Provide insights about this dataset.
+""")
+
+log(f"AI interpretation: {interpretation}", level="INFO")
+```
+
+## Packaging and Distribution
+
+### Extension Package Structure
+
+```
+my-dana-extension/
 ├── setup.py
 ├── README.md
-├── requirements.txt
+├── LICENSE
 ├── my_extension/
-│ ├── __init__.py
-│ ├── capabilities/
-│ │ ├── __init__.py
-│ │ └── analysis_capability.py
-│ ├── resources/
-│ │ ├── __init__.py
-│ │ └── weather_resource.py
-│ └── functions/
-│ ├── __init__.py
-│ └── transform_functions.py
+│   ├── __init__.py
+│   ├── capabilities/
+│   │   ├── __init__.py
+│   │   └── analysis_capability.py
+│   ├── resources/
+│   │   ├── __init__.py
+│   │   └── weather_resource.py
+│   └── functions/
+│       ├── __init__.py
+│       └── custom_functions.py
 └── tests/
- ├── test_capabilities.py
- ├── test_resources.py
- └── test_functions.py
+    ├── __init__.py
+    ├── test_capabilities.py
+    ├── test_resources.py
+    └── test_functions.py
 ```
 
 ### Setup Configuration
+
 ```python
 # setup.py
 from setuptools import setup, find_packages
 
 setup(
- name="opendxa-my-extension",
- version="1.0.0",
- description="Custom OpenDXA extension for specialized functionality",
- author="Your Name",
- author_email="your.email@example.com",
- packages=find_packages(),
- install_requires=[
- "opendxa>=1.0.0",
- "requests>=2.25.0",
- "pandas>=1.3.0",
- ],
- entry_points={
- "opendxa.capabilities": [
- "analysis = my_extension.capabilities:AnalysisCapability",
- ],
- "opendxa.resources": [
- "weather = my_extension.resources:WeatherResource",
- ],
- "opendxa.functions": [
- "transforms = my_extension.functions:register_functions",
- ],
- },
- classifiers=[
- "Development Status :: 5 - Production/Stable",
- "Intended Audience :: Developers",
- "License :: OSI Approved :: MIT License",
- "Programming Language :: Python :: 3.8",
- "Programming Language :: Python :: 3.9",
- "Programming Language :: Python :: 3.10",
- ],
+    name="opendxa-my-extension",
+    version="1.0.0",
+    description="Custom Dana extension for specialized functionality",
+    author="Your Name",
+    author_email="your.email@example.com",
+    packages=find_packages(),
+    install_requires=[
+        "opendxa>=1.0.0",
+        "requests>=2.25.0",
+        "numpy>=1.20.0"
+    ],
+    entry_points={
+        "opendxa.capabilities": [
+            "my_analysis = my_extension.capabilities.analysis_capability:CustomAnalysisCapability",
+        ],
+        "opendxa.resources": [
+            "weather = my_extension.resources.weather_resource:WeatherResource",
+        ],
+        "opendxa.functions": [
+            "custom_transform = my_extension.functions.custom_functions:custom_transform",
+            "advanced_analysis = my_extension.functions.custom_functions:advanced_analysis",
+        ],
+    },
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+    ],
 )
 ```
 
-## 🧪 Testing Extensions
+## Testing Extensions
 
-### Unit Testing
+### Unit Tests
+
 ```python
+# tests/test_capabilities.py
 import pytest
-from my_extension.capabilities import AnalysisCapability
+from my_extension.capabilities.analysis_capability import CustomAnalysisCapability
 
-class TestAnalysisCapability:
- def setup_method(self):
- """Set up test fixtures."""
- self.capability = AnalysisCapability()
-
- def test_analyze_trends(self):
- """Test trend analysis functionality."""
- data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
- result = self.capability.analyze_trends(data)
-
- assert "trends" in result
- assert result["confidence"] > 0
- assert len(result["trends"]) > 0
-
- def test_invalid_data_handling(self):
- """Test handling of invalid data."""
- with pytest.raises(ValueError):
- self.capability.analyze_trends([])
+class TestCustomAnalysisCapability:
+    def test_initialization(self):
+        """Test capability initialization."""
+        capability = CustomAnalysisCapability()
+        assert capability is not None
+        assert "analyze_data" in capability.get_functions()
+    
+    def test_analyze_data(self):
+        """Test data analysis functionality."""
+        capability = CustomAnalysisCapability()
+        data = [1, 2, 3, 4, 5]
+        
+        result = capability.analyze_data(data, "statistical")
+        
+        assert result["analysis_type"] == "statistical"
+        assert result["data_points"] == 5
+        assert "result" in result
+        assert "confidence" in result
+    
+    def test_generate_insights(self):
+        """Test insight generation."""
+        capability = CustomAnalysisCapability()
+        analysis_results = {"confidence": 0.9, "data_points": 1500}
+        
+        insights = capability.generate_insights(analysis_results)
+        
+        assert isinstance(insights, list)
+        assert len(insights) > 0
 ```
 
-### Integration Testing
+### Integration Tests
+
 ```python
+# tests/test_integration.py
+import pytest
 from opendxa.agent import Agent
-from my_extension.capabilities import AnalysisCapability
 
-def test_agent_integration():
- """Test capability integration with agents."""
- # Create agent with custom capability
- agent = Agent()
- agent.add_capability(AnalysisCapability())
-
- # Test Dana code execution
- result = agent.execute("""
- data = [1, 2, 3, 4, 5]
- trends = analyze_trends(data, method="linear")
- log(f"Found {len(trends['trends'])} trends", level="INFO")
- """)
-
- assert result.success
- assert "trends" in agent.context
+class TestExtensionIntegration:
+    def test_capability_integration(self):
+        """Test capability integration with agent."""
+        agent = Agent("test_agent")
+        agent.add_capability("my_analysis")
+        
+        # Test that capability functions are available
+        functions = agent.get_available_functions()
+        assert "analyze_data" in functions
+    
+    def test_resource_integration(self):
+        """Test resource integration."""
+        # Test resource loading and usage
+        pass
+    
+    def test_function_integration(self):
+        """Test function integration in Dana code."""
+        # Test custom functions in Dana execution
+        pass
 ```
 
-## Extension Documentation
+## Best Practices
 
-### API Documentation
-```python
-class DocumentedCapability(BaseCapability):
- """
- A well-documented capability for demonstration purposes.
+### 1. Error Handling
+- Use appropriate exception types
+- Provide meaningful error messages
+- Implement graceful degradation
 
- This capability provides advanced analysis functions that can be used
- in Dana programs for data processing and insight generation.
+### 2. Configuration
+- Make extensions configurable
+- Use sensible defaults
+- Validate configuration parameters
 
- Configuration:
- api_key (str): API key for external services
- cache_size (int): Maximum cache size (default: 1000)
- timeout (int): Request timeout in seconds (default: 30)
+### 3. Logging
+- Use appropriate log levels
+- Include context in log messages
+- Avoid logging sensitive information
 
- Available Functions:
- - analyze_data: Perform comprehensive data analysis
- - generate_report: Create formatted analysis reports
- - validate_results: Validate analysis results for quality
+### 4. Performance
+- Optimize for common use cases
+- Implement caching where appropriate
+- Monitor resource usage
 
- Examples:
- >>> from my_extension import DocumentedCapability
- >>> capability = DocumentedCapability(config={"api_key": "key123"})
- >>> agent.add_capability(capability)
- """
+### 5. Documentation
+- Document all public APIs
+- Provide usage examples
+- Include configuration options
 
- def analyze_data(self, data, analysis_type="comprehensive"):
- """
- Perform data analysis with specified type.
+## Publishing Extensions
 
- Args:
- data (list): Input data for analysis
- analysis_type (str): Type of analysis to perform
- - "comprehensive": Full statistical analysis
- - "basic": Simple descriptive statistics
- - "advanced": Advanced statistical modeling
+### 1. Prepare for Release
+- Update version numbers
+- Write release notes
+- Test thoroughly
 
- Returns:
- dict: Analysis results containing:
- - summary: Statistical summary
- - insights: Key findings
- - recommendations: Actionable recommendations
- - confidence: Confidence score (0-1)
+### 2. Package and Distribute
+- Build distribution packages
+- Upload to PyPI
+- Update documentation
 
- Raises:
- ValueError: If data is empty or invalid
- RuntimeError: If analysis fails due to computation errors
-
- Examples:
- >>> result = analyze_data([1, 2, 3, 4, 5])
- >>> print(result["summary"])
- >>> print(f"Confidence: {result['confidence']}")
- """
- # Implementation here
- pass
-```
-
-## Extension Distribution
-
-### Publishing to PyPI
-```bash
-# Build distribution packages
-python setup.py sdist bdist_wheel
-
-# Upload to PyPI
-twine upload dist/*
-```
-
-### Community Registry
-- Submit extension to OpenDXA community registry
-- Provide comprehensive documentation
-- Include usage examples and tutorials
-- Maintain compatibility with OpenDXA updates
-
-### Best Practices
-- Follow semantic versioning
-- Maintain backward compatibility
-- Provide migration guides for breaking changes
-- Include comprehensive test suites
-- Document configuration options thoroughly
+### 3. Community Integration
+- Submit extension to Dana community registry
+- Maintain compatibility with Dana updates
+- Respond to user feedback
 
 ---
 
