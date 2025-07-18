@@ -6,7 +6,7 @@ import pytest
 from datetime import datetime
 from typing import Any
 
-from dana.frameworks.workflow.core.context.context_engine import (
+from dana.frameworks.workflow.context_engine import (
     ContextEngine, KnowledgePoint, ContextSnapshot
 )
 

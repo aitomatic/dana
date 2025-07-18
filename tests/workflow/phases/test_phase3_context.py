@@ -14,7 +14,7 @@ from dana.frameworks.workflow.phases.context_engineering import (
     ContextEngineeringEngine, ContextAwareWorkflowEngine, 
     KnowledgeTrace, ContextSnapshot, KNOWSExtractor
 )
-from dana.frameworks.workflow.core import WorkflowStep, WorkflowEngine, ContextEngine
+from dana.frameworks.workflow import WorkflowStep, WorkflowEngine, ContextEngine
 
 
 class TestKNOWSExtractor:

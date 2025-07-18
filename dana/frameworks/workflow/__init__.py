@@ -1,8 +1,8 @@
 """
 Dana Workflows - Agentic Workflow Framework
 
-This package provides enterprise-grade agentic workflow capabilities built on top of Dana's 
-existing composition framework. It enables domain experts to specify workflows naturally 
+This package provides enterprise-grade agentic workflow capabilities built on top of Dana's
+existing composition framework. It enables domain experts to specify workflows naturally
 while maintaining deterministic control and safety.
 
 Key Features:
@@ -16,14 +16,14 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from .core.engine.workflow_engine import WorkflowEngine
-from .core.steps.workflow_step import WorkflowStep
-from .core.context.context_engine import ContextEngine
-from .core.validation.safety_validator import SafetyValidator
+from .context_engine import ContextEngine
+from .safety_validator import SafetyValidator
+from .workflow_engine import WorkflowEngine
+from .workflow_step import WorkflowStep
 
 __all__ = [
     "WorkflowEngine",
-    "WorkflowStep", 
+    "WorkflowStep",
     "ContextEngine",
     "SafetyValidator",
 ]

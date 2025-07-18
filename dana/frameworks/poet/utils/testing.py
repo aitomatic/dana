@@ -174,7 +174,7 @@ class POETPhaseDebugger:
         operate_result = self.debug_operate(*args, **kwargs)
         enforce_result = self.debug_enforce(operate_result["result"])
 
-        if self.config.enable_training:
+        if self.config.train:
             train_result = self.debug_train(operate_result["result"])
         else:
             train_result = {"phase": "train", "skipped": True}

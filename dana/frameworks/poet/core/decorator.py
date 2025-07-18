@@ -21,7 +21,6 @@ def poet(
     # Legacy compatibility
     retries: int = 1,
     timeout: float | None = None,
-    enable_training: bool = False,
     # Observability
     debug: bool = False,
     trace_phases: bool = False,
@@ -57,7 +56,6 @@ def poet(
         train: Configuration for learning phase
         retries: Number of retry attempts (legacy)
         timeout: Timeout in seconds (legacy)
-        enable_training: Enable learning phase (legacy)
         debug: Enable debug logging
         trace_phases: Log detailed phase execution
         performance_tracking: Track phase timings
@@ -76,7 +74,6 @@ def poet(
         train=train or {},
         retries=retries,
         timeout=timeout,
-        enable_training=enable_training,
         debug=debug,
         trace_phases=trace_phases,
         performance_tracking=performance_tracking,
@@ -193,7 +190,7 @@ def poet(
                 phase_timings["enforce"] = time.time() - enforce_start
 
             # TRAIN PHASE: Learning and improvement (if enabled)
-            if config.enable_training or config.train:
+            if config.train:
                 if config.trace_phases or config.debug:
                     print(f"🎓 POET({func_name}): Train phase started")
 

@@ -3,7 +3,7 @@ Simple Phase 1 tests - Core functionality verification
 """
 
 import pytest
-from dana.frameworks.workflow.core import WorkflowEngine, WorkflowStep, ContextEngine, SafetyValidator
+from dana.frameworks.workflow import WorkflowEngine, WorkflowStep, ContextEngine, SafetyValidator
 
 
 def test_basic_workflow():

@@ -3,7 +3,7 @@ Integration tests for Phase 1 - Basic functionality verification
 """
 
 import pytest
-from dana.frameworks.workflow.core import WorkflowEngine, WorkflowStep, ContextEngine, SafetyValidator
+from dana.frameworks.workflow import WorkflowEngine, WorkflowStep, ContextEngine, SafetyValidator
 
 
 class TestPhase1Integration:
@@ -216,7 +216,7 @@ class TestPhase1EdgeCases:
     
     def test_safety_validator_strict_mode(self):
         """Test safety validator in strict mode."""
-        from dana.frameworks.workflow.core.validation.safety_validator import SafetyLevel
+        from dana.frameworks.workflow.safety_validator import SafetyLevel
         
         validator = SafetyValidator(strict_mode=True)
         

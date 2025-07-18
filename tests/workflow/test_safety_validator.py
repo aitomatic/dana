@@ -6,10 +6,10 @@ import pytest
 from unittest.mock import Mock
 from typing import Any
 
-from dana.frameworks.workflow.core.validation.safety_validator import (
+from dana.frameworks.workflow.safety_validator import (
     SafetyValidator, SafetyResult, SafetyLevel
 )
-from dana.frameworks.workflow.core.steps.workflow_step import WorkflowStep
+from dana.frameworks.workflow.workflow_step import WorkflowStep
 
 
 class TestSafetyResult:
@@ -160,7 +160,7 @@ class TestSafetyValidator:
     
     def test_validate_step_too_many_steps_error_strict(self):
         """Test error for too many steps in strict mode."""
-        from dana.frameworks.workflow.core.validation.safety_validator import SafetyLevel
+        from dana.frameworks.workflow.safety_validator import SafetyLevel
         
         validator = SafetyValidator(strict_mode=True)
         

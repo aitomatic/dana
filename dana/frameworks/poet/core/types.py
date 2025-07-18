@@ -13,7 +13,6 @@ class POETConfig:
     # Core configuration
     domain: str | None = None
     optimize_for: str | None = None  # When set, enables Train phase
-    enable_training: bool = False  # Explicitly enable training
     retries: int = 1
     timeout: float | None = None
     enable_monitoring: bool = True
@@ -34,7 +33,6 @@ class POETConfig:
         return {
             "domain": self.domain,
             "optimize_for": self.optimize_for,
-            "enable_training": self.enable_training,
             "retries": self.retries,
             "timeout": self.timeout,
             "enable_monitoring": self.enable_monitoring,

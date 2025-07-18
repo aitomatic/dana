@@ -13,10 +13,10 @@ def financial_services(**kwargs) -> dict[str, Any]:
     Pre-configured POET setup for financial services domain.
 
     Automatically configures:
-    - Input validation for financial data
-    - Compliance checking for FCRA, ECOA, etc.
-    - Retry logic for critical operations
-    - Enhanced monitoring and audit trails
+    - FCRA compliance checking
+    - Financial data validation
+    - Risk assessment
+    - Audit logging
 
     Args:
         **kwargs: Additional configuration to override defaults
@@ -28,14 +28,14 @@ def financial_services(**kwargs) -> dict[str, Any]:
         "domain": "financial_services",
         "perceive": {
             "input_validation": True,
-            "normalize_formats": True,
-            "data_cleansing": True,
-            "range_validation": True,
+            "financial_data_validation": True,
+            "risk_assessment": True,
+            "compliance_check": True,
         },
         "operate": {
             "retries": 3,
             "timeout": 30,
-            "circuit_breaker": True,
+            "fail_safe": True,
         },
         "enforce": {
             "output_validation": True,
@@ -48,7 +48,6 @@ def financial_services(**kwargs) -> dict[str, Any]:
             "feedback_threshold": 0.8,
             "model_updates": True,
         },
-        "enable_training": True,
         "performance_tracking": True,
     }
 
@@ -97,7 +96,6 @@ def healthcare(**kwargs) -> dict[str, Any]:
             "feedback_threshold": 0.9,
             "clinical_feedback": True,
         },
-        "enable_training": True,
         "performance_tracking": True,
     }
 
@@ -145,7 +143,6 @@ def retail_ecommerce(**kwargs) -> dict[str, Any]:
             "feedback_threshold": 0.7,
             "recommendation_learning": True,
         },
-        "enable_training": True,
         "performance_tracking": True,
     }
 
@@ -193,7 +190,6 @@ def data_processing(**kwargs) -> dict[str, Any]:
             "feedback_threshold": 0.85,
             "pattern_learning": True,
         },
-        "enable_training": True,
         "performance_tracking": True,
     }
 
@@ -237,11 +233,10 @@ def security(**kwargs) -> dict[str, Any]:
             "risk_assessment": True,
         },
         "train": {
-            "learning_rate": 0.05,
-            "feedback_threshold": 0.95,
+            "learning_rate": 0.1,
+            "feedback_threshold": 0.9,
             "threat_learning": True,
         },
-        "enable_training": True,
         "performance_tracking": True,
     }
 
@@ -273,7 +268,7 @@ def quick_setup(domain: str, **kwargs) -> dict[str, Any]:
         return domain_configs[domain](**kwargs)
     else:
         # Generic configuration for unknown domains
-        return {"domain": domain, "retries": 2, "timeout": 30, "enable_training": True, "performance_tracking": True, **kwargs}
+        return {"domain": domain, "retries": 2, "timeout": 30, "performance_tracking": True, **kwargs}
 
 
 def poet_for_domain(domain: str, **kwargs):

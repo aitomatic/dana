@@ -6,10 +6,10 @@ import pytest
 from unittest.mock import Mock
 from typing import Any
 
-from dana.frameworks.workflow.core.steps.workflow_step import (
+from dana.frameworks.workflow.workflow_step import (
     WorkflowStep, StepResult, StepExecutionContext
 )
-from dana.frameworks.workflow.core.engine.workflow_engine import WorkflowEngine
+from dana.frameworks.workflow.workflow_engine import WorkflowEngine
 
 
 class TestWorkflowStep:

@@ -68,7 +68,7 @@ def poet_wrapper_{function_name}(*args, **kwargs):
     enforced_result = operation_result  # Pass-through for now
     
     # TRAIN PHASE (if enabled)
-    if {str(config.enable_training).lower()}:
+    if {str(config.train).lower()}:
         log(f"POET({function_name}): Starting Train phase")
         # Domain-specific learning would go here
         pass
@@ -99,11 +99,18 @@ def poet_wrapper_{function_name}(*args, **kwargs):
         enhanced_code = f"""# POET-enhanced function
 # Domain: {config.domain or "general"}
 # Retries: {config.retries}
-# Training: {config.enable_training}
+# Training: {config.train}
 
 {original_function_code}
 
 # POET phases are handled by the @poet decorator at runtime
 """
+
+        # Training phase configuration
+        if config.train:
+            train_config = f"""
+# Training: {config.train}
+"""
+            enhanced_code += train_config
 
         return enhanced_code

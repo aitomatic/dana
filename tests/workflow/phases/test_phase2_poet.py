@@ -11,7 +11,7 @@ from unittest.mock import Mock, patch
 from dana.frameworks.workflow.phases.poet_integration import (
     POETRuntimeEngine, POETWorkflowEngine, POETObjective
 )
-from dana.frameworks.workflow.core import WorkflowStep, WorkflowEngine
+from dana.frameworks.workflow import WorkflowStep, WorkflowEngine
 from dana.frameworks.poet.core.types import POETConfig
 
 

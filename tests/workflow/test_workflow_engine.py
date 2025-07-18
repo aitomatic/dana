@@ -6,12 +6,12 @@ import pytest
 from unittest.mock import Mock, patch
 from typing import Any
 
-from dana.frameworks.workflow.core.engine.workflow_engine import (
+from dana.frameworks.workflow.workflow_engine import (
     WorkflowEngine, WorkflowExecutionContext
 )
-from dana.frameworks.workflow.core.steps.workflow_step import WorkflowStep
-from dana.frameworks.workflow.core.context.context_engine import ContextEngine
-from dana.frameworks.workflow.core.validation.safety_validator import SafetyValidator
+from dana.frameworks.workflow.workflow_step import WorkflowStep
+from dana.frameworks.workflow.context_engine import ContextEngine
+from dana.frameworks.workflow.safety_validator import SafetyValidator
 
 
 class TestWorkflowEngine:
