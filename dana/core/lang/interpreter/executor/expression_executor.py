@@ -729,8 +729,30 @@ class ExpressionExecutor(BaseExecutor):
             # This shouldn't happen in a proper pipeline, but handle defensively
             return current_value
         else:
-            # For other expression types, just evaluate them
-            return self.parent.execute(stage, context)
+            # For other expression types (like direct function identifiers), execute them as function calls
+            # This handles the case where we have function identifiers like 'f1' in the pipeline
+            func = self.parent.execute(stage, context)
+            if callable(func):
+                # Special handling for ParallelFunction - pass the current_value to each function
+                from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import ParallelFunction
+                if isinstance(func, ParallelFunction):
+                    return func.execute(context, current_value)
+                else:
+                    return func(current_value)
+            else:
+                # Handle ListLiteral that gets converted to ParallelFunction
+                from dana.core.lang.ast import ListLiteral
+                if isinstance(stage, ListLiteral):
+                    # Convert list to ParallelFunction and execute it
+                    from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import ParallelFunction
+                    functions = []
+                    for item in stage.items:
+                        func = self.parent.execute(item, context)
+                        functions.append(func)
+                    parallel_func = ParallelFunction(functions, context)
+                    return parallel_func.execute(context, current_value)
+                else:
+                    return self.parent.execute(stage, context)
 
     def _execute_function_call_stage(self, current_value: Any, func_call: FunctionCall, context: SandboxContext) -> Any:
         """Execute a function call stage with pipeline argument substitution.

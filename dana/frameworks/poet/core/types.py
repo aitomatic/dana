@@ -97,6 +97,8 @@ class POETResult:
 
     def __getattr__(self, name: str) -> Any:
         """Delegate attribute access to wrapped result"""
+        if name in self._poet:
+            return self._poet[name]
         return getattr(self._result, name)
 
     def __getitem__(self, key: Any) -> Any:

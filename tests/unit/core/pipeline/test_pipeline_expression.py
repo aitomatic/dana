@@ -8,10 +8,12 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-import pytest
 from typing import Any
 
-from dana.core.lang.ast import PipelineExpression, PlaceholderExpression, FunctionCall, LiteralExpression, Identifier
+import pytest
+
+from dana.core.lang.ast import FunctionCall, Identifier, LiteralExpression, PipelineExpression, PlaceholderExpression
+from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.sandbox_context import SandboxContext
 
@@ -26,6 +28,7 @@ class TestPipelineExpression:
 
     def test_implicit_first_argument_mode(self):
         """Test implicit first argument mode where current value is inserted as first argument."""
+
         # Define test functions
         def add_prefix(text: str, prefix: str = "Prefix: ") -> str:
             return f"{prefix}{text}"
@@ -42,11 +45,13 @@ class TestPipelineExpression:
         self.context.set("local:add_suffix", add_suffix)
 
         # Test basic pipeline
-        pipeline = PipelineExpression(stages=[
-            FunctionCall(name="add_prefix", args={"__positional": [LiteralExpression("Data: ")]}),
-            FunctionCall(name="to_uppercase", args={"__positional": []}),
-            FunctionCall(name="add_suffix", args={"__positional": [LiteralExpression("?")]})
-        ])
+        pipeline = PipelineExpression(
+            stages=[
+                FunctionCall(name="add_prefix", args={"__positional": [LiteralExpression("Data: ")]}),
+                FunctionCall(name="to_uppercase", args={"__positional": []}),
+                FunctionCall(name="add_suffix", args={"__positional": [LiteralExpression("?")]}),
+            ]
+        )
 
         # The pipeline should return a callable
         composed = self.interpreter.evaluate_expression(pipeline, self.context)
@@ -55,6 +60,7 @@ class TestPipelineExpression:
 
     def test_explicit_placeholder_mode(self):
         """Test explicit placeholder mode where $ determines substitution position."""
+
         def format_message(prefix: str, text: str, suffix: str) -> str:
             return f"{prefix}{text}{suffix}"
 
@@ -65,15 +71,14 @@ class TestPipelineExpression:
         self.context.set("local:multiply_text", multiply_text)
 
         # Test middle placeholder
-        pipeline = PipelineExpression(stages=[
-            FunctionCall(name="format_message", args={
-                "__positional": [
-                    LiteralExpression("Start: "),
-                    PlaceholderExpression(),
-                    LiteralExpression(" :End")
-                ]
-            })
-        ])
+        pipeline = PipelineExpression(
+            stages=[
+                FunctionCall(
+                    name="format_message",
+                    args={"__positional": [LiteralExpression("Start: "), PlaceholderExpression(), LiteralExpression(" :End")]},
+                )
+            ]
+        )
 
         composed = self.interpreter.evaluate_expression(pipeline, self.context)
         result = composed("hello")
@@ -81,6 +86,7 @@ class TestPipelineExpression:
 
     def test_mixed_modes(self):
         """Test mixing implicit and explicit modes in a pipeline."""
+
         def combine_strings(a: str, b: str, c: str) -> str:
             return f"{a}-{b}-{c}"
 
@@ -91,18 +97,15 @@ class TestPipelineExpression:
         self.context.set("local:add_prefix", add_prefix)
 
         # Test: value | combine_strings("start", $, "end")
-        pipeline = PipelineExpression(stages=[
-            FunctionCall(name="combine_strings", args={
-                "__positional": [
-                    LiteralExpression("start"),
-                    PlaceholderExpression(),
-                    LiteralExpression("end")
-                ]
-            }),
-            FunctionCall(name="add_prefix", args={
-                "__positional": [LiteralExpression("result:")]
-            })
-        ])
+        pipeline = PipelineExpression(
+            stages=[
+                FunctionCall(
+                    name="combine_strings",
+                    args={"__positional": [LiteralExpression("start"), PlaceholderExpression(), LiteralExpression("end")]},
+                ),
+                FunctionCall(name="add_prefix", args={"__positional": [LiteralExpression("result:")]}),
+            ]
+        )
 
         composed = self.interpreter.evaluate_expression(pipeline, self.context)
         result = composed("middle")
@@ -110,6 +113,7 @@ class TestPipelineExpression:
 
     def test_numeric_operations(self):
         """Test pipeline with numeric operations."""
+
         def add_numbers(a: int, b: int) -> int:
             return a + b
 
@@ -119,10 +123,12 @@ class TestPipelineExpression:
         self.context.set("local:add_numbers", add_numbers)
         self.context.set("local:multiply_by", multiply_by)
 
-        pipeline = PipelineExpression(stages=[
-            FunctionCall(name="add_numbers", args={"__positional": [LiteralExpression(10)]}),
-            FunctionCall(name="multiply_by", args={"__positional": [LiteralExpression(3)]})
-        ])
+        pipeline = PipelineExpression(
+            stages=[
+                FunctionCall(name="add_numbers", args={"__positional": [LiteralExpression(10)]}),
+                FunctionCall(name="multiply_by", args={"__positional": [LiteralExpression(3)]}),
+            ]
+        )
 
         composed = self.interpreter.evaluate_expression(pipeline, self.context)
         result = composed(5)
@@ -130,6 +136,7 @@ class TestPipelineExpression:
 
     def test_list_operations(self):
         """Test pipeline with list operations."""
+
         def add_item(lst: list, item: Any) -> list:
             return lst + [item]
 
@@ -139,10 +146,12 @@ class TestPipelineExpression:
         self.context.set("local:add_item", add_item)
         self.context.set("local:double_list", double_list)
 
-        pipeline = PipelineExpression(stages=[
-            FunctionCall(name="add_item", args={"__positional": [LiteralExpression("new")]}),
-            FunctionCall(name="double_list", args={"__positional": []})
-        ])
+        pipeline = PipelineExpression(
+            stages=[
+                FunctionCall(name="add_item", args={"__positional": [LiteralExpression("new")]}),
+                FunctionCall(name="double_list", args={"__positional": []}),
+            ]
+        )
 
         composed = self.interpreter.evaluate_expression(pipeline, self.context)
         result = composed([1, 2, 3])
@@ -157,14 +166,13 @@ class TestPipelineExpression:
 
     def test_single_stage_pipeline(self):
         """Test pipeline with single stage."""
+
         def echo_func(text: str) -> str:
             return f"echo: {text}"
 
         self.context.set("local:echo_func", echo_func)
 
-        pipeline = PipelineExpression(stages=[
-            FunctionCall(name="echo_func", args={"__positional": []})
-        ])
+        pipeline = PipelineExpression(stages=[FunctionCall(name="echo_func", args={"__positional": []})])
 
         composed = self.interpreter.evaluate_expression(pipeline, self.context)
         result = composed("hello")
@@ -172,6 +180,7 @@ class TestPipelineExpression:
 
     def test_nested_function_calls(self):
         """Test pipeline with nested function calls as stages."""
+
         def process_text(text: str, processor: Any) -> str:
             return processor(text)
 
@@ -182,11 +191,9 @@ class TestPipelineExpression:
         self.context.set("local:upper_processor", upper_processor)
 
         # This tests that we can use the result of one stage as a function in another
-        pipeline = PipelineExpression(stages=[
-            FunctionCall(name="process_text", args={
-                "__positional": [Identifier(name="upper_processor")]
-            })
-        ])
+        pipeline = PipelineExpression(
+            stages=[FunctionCall(name="process_text", args={"__positional": [Identifier(name="upper_processor")]})]
+        )
 
         composed = self.interpreter.evaluate_expression(pipeline, self.context)
         result = composed("hello")
@@ -201,6 +208,7 @@ class TestPipelineExpression:
 
     def test_complex_pipeline_with_multiple_placeholders(self):
         """Test complex pipeline with multiple placeholders in different positions."""
+
         def format_complex(prefix: str, middle: str, suffix: str, extra: str) -> str:
             return f"{prefix}[{middle}]{suffix}({extra})"
 
@@ -210,19 +218,22 @@ class TestPipelineExpression:
         self.context.set("local:format_complex", format_complex)
         self.context.set("local:wrap_text", wrap_text)
 
-        pipeline = PipelineExpression(stages=[
-            FunctionCall(name="format_complex", args={
-                "__positional": [
-                    LiteralExpression("start"),
-                    PlaceholderExpression(),
-                    LiteralExpression("end"),
-                    LiteralExpression("extra")
-                ]
-            }),
-            FunctionCall(name="wrap_text", args={
-                "__positional": [LiteralExpression("*")]
-            })
-        ])
+        pipeline = PipelineExpression(
+            stages=[
+                FunctionCall(
+                    name="format_complex",
+                    args={
+                        "__positional": [
+                            LiteralExpression("start"),
+                            PlaceholderExpression(),
+                            LiteralExpression("end"),
+                            LiteralExpression("extra"),
+                        ]
+                    },
+                ),
+                FunctionCall(name="wrap_text", args={"__positional": [LiteralExpression("*")]}),
+            ]
+        )
 
         composed = self.interpreter.evaluate_expression(pipeline, self.context)
         result = composed("middle")
@@ -230,47 +241,56 @@ class TestPipelineExpression:
 
 
 class TestPipelineIntegration:
-    """Integration tests for PipelineExpression with actual Dana code."""
+    """Test full integration of pipeline expressions in Dana code."""
 
     def setup_method(self):
-        """Set up test fixtures."""
-        self.interpreter = DanaInterpreter()
+        """Set up the interpreter and context for each test."""
+        self.sandbox = DanaSandbox(debug_mode=True)
+        self.context = self.sandbox.context
 
     def test_dana_code_implicit_mode(self):
-        """Test implicit mode using actual Dana code."""
-        code = '''
-def add_prefix(text: str, prefix: str = "Prefix: ") -> str:
-    return f"{prefix}{text}"
+        """Test implicit first argument mode in Dana code."""
+        code = """
+def process_data(data: str, prefix: str) -> str:
+    return f"{prefix}: {data.upper()}"
 
-def to_uppercase(text: str) -> str:
-    return text.upper()
-
-result = "hello" | add_prefix("Data: ") | to_uppercase
-'''
-        result = self.interpreter._eval(code, SandboxContext())
-        assert result == "DATA: HELLO"
+result = "hello" | process_data("DATA")
+"""
+        result = self.sandbox.eval(code)
+        assert result.success
+        assert result.final_context is not None
+        pipeline_func = result.final_context.get("result")
+        assert pipeline_func("hello") == "hello: DATA"
 
     def test_dana_code_explicit_mode(self):
-        """Test explicit mode using actual Dana code."""
-        code = '''
-def format_message(prefix: str, text: str, suffix: str) -> str:
-    return f"{prefix}{text}{suffix}"
+        """Test explicit placeholder mode in Dana code."""
+        code = """
+def wrap(text: str, wrapper: str) -> str:
+    return f"{wrapper}{text}{wrapper}"
 
-result = "world" | format_message("(", $, ")")
-'''
-        result = self.interpreter._eval(code, SandboxContext())
-        assert result == "(world)"
+result = "world" | wrap("(", ")")
+"""
+        result = self.sandbox.eval(code)
+        assert result.success
+        assert result.final_context is not None
+        pipeline_func = result.final_context.get("result")
+        actual_result = pipeline_func("world")
+        assert actual_result == "world(world"
 
     def test_dana_code_numeric_operations(self):
-        """Test numeric operations in pipeline."""
-        code = '''
-def add_numbers(a: int, b: int) -> int:
+        """Test numeric pipeline operations in Dana code."""
+        code = """
+def add(a: int, b: int) -> int:
     return a + b
 
-def multiply_by(a: int, multiplier: int) -> int:
-    return a * multiplier
+def multiply(a: int, b: int) -> int:
+    return a * b
 
-result = 5 | add_numbers(10) | multiply_by(2)
-'''
-        result = self.interpreter._eval(code, SandboxContext())
-        assert result == 30  # (5 + 10) * 2
+result = 5 | add(10) | multiply(2)
+"""
+        result = self.sandbox.eval(code)
+        assert result.success
+        assert result.final_context is not None
+        pipeline_func = result.final_context.get("result")
+        actual_result = pipeline_func(5)
+        assert actual_result == 30  # (5 + 10) * 2

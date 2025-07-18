@@ -7,8 +7,8 @@ MIT License
 
 import pytest
 
-from dana.frameworks.poet.decorator import POETMetadata, poet
-from dana.frameworks.poet.types import POETConfig
+from dana.frameworks.poet.core.decorator import POETMetadata, poet
+from dana.frameworks.poet.core.types import POETConfig
 
 
 @pytest.mark.poet

@@ -7,8 +7,8 @@ MIT License
 
 import pytest
 
+from dana.frameworks.poet.core.types import POETConfig
 from dana.frameworks.poet.phases.perceive import PerceivePhase
-from dana.frameworks.poet.types import POETConfig
 
 
 def test_perceive_phase_initialization():
