@@ -6,7 +6,7 @@
       "name": "Run Dana",
       "type": "debugpy",
       "request": "launch",
-      "module": "dana.core.cli",
+      "module": "dana.core.cli.dana",
       "args": ["${file}"],
       "cwd": "${fileDirname}",
       "console": "integratedTerminal"
