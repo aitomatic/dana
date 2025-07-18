@@ -125,7 +125,7 @@ quickstart: check-uv ## 🚀 QUICK START: Get Dana running in 30 seconds!
 
 install: ## Install package and dependencies
 	@echo "📦 Installing dependencies..."
-	$(UV_CMD) sync
+	$(UV_CMD) sync --extra dev
 
 setup-dev: ## Install with development dependencies and setup tools
 	@echo "🛠️  Installing development dependencies..."
@@ -301,7 +301,7 @@ release-check: clean check test-fast security validate-config ## MORE: Complete 
 	@echo "=================================="
 	@echo ""
 	@echo "✅ Code quality checks passed"
-	@echo "✅ Tests passed" 
+	@echo "✅ Tests passed"
 	@echo "✅ Security checks completed"
 	@echo "✅ Configuration validated"
 	@echo ""
@@ -309,7 +309,30 @@ release-check: clean check test-fast security validate-config ## MORE: Complete 
 	@echo ""
 
 # =============================================================================
-# Legacy Aliases (for backward compatibility)
+# Package Building & Publishing
 # =============================================================================
 
+build: ## Build package distribution files
+	@echo "📦 Building package..."
+	$(UV_CMD) run python -m build
+
+dist: clean build ## Clean and build distribution files
+	@echo "✅ Distribution files ready in dist/"
+
+check-dist: ## Validate built distribution files
+	@echo "🔍 Checking distribution files..."
+	$(UV_CMD) run twine check dist/*
+
+publish: check-dist ## Upload to PyPI
+	@echo "🚀 Publishing to PyPI..."
+	$(UV_CMD) run twine upload --verbose dist/*
 run: dana ## Alias for 'dana' command 
+
+build-frontend: ## Build the frontend (Vite React app) and copy to backend static
+	cd dana/contrib/ui && npm i && npm run build
+
+build-all: ## Build frontend and Python package
+	build-frontend & uv run python -m build
+
+local-server: ## Start the local server
+	uv run python -m dana.api.server

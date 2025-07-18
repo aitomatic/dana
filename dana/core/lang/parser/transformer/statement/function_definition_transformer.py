@@ -327,7 +327,13 @@ class FunctionDefinitionTransformer(BaseTransformer):
         else:
             type_hint = type_hint_node
 
-        return StructField(name=field_name, type_hint=type_hint)
+        # Handle optional default value
+        default_value = None
+        if len(items) > 2:
+            # We have a default value expression
+            default_value = self.main_transformer.expression_transformer.transform(items[2])
+
+        return StructField(name=field_name, type_hint=type_hint, default_value=default_value)
 
         # === Agent Definitions ===
 

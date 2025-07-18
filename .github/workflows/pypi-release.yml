@@ -1,0 +1,229 @@
+# GitHub Actions workflow for automated PyPI releases
+name: PyPI Release
+
+# Trigger workflow on:
+# 1. Push to release/pypi branch
+# 2. Manual trigger via GitHub UI
+on:
+  push:
+    branches: [ release/pypi ]
+  workflow_dispatch:  # Allow manual triggering
+
+# Global environment variables
+env:
+  PYTHON_VERSION: "3.12"  # Python version to use for all jobs
+  NODE_VERSION: "23.9.0"      # Node.js version for UI build
+
+jobs:
+  # First job: Test and build the package
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      # Get the code from repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      # Setup Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      # Install Node.js 23.9.0 manually to avoid caching issues in act
+      - name: Install Node.js 23.9.0
+        run: |
+          # Download and install Node.js 23.9.0 manually
+          NODE_VERSION="23.9.0"
+          wget -q https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz
+          tar -xf node-v${NODE_VERSION}-linux-x64.tar.xz
+          sudo cp -r node-v${NODE_VERSION}-linux-x64/* /usr/local/
+          rm -rf node-v${NODE_VERSION}-linux-x64*
+          
+          # Update PATH to prioritize our Node.js installation
+          echo "/usr/local/bin" >> $GITHUB_PATH
+          export PATH="/usr/local/bin:$PATH"
+          
+          # Verify installation
+          node --version
+          npm --version
+      
+      # Install uv manually to avoid caching issues in act
+      - name: Install uv
+        run: |
+          # Install uv directly without caching
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+        
+      # Install project dependencies and run test suite
+      - name: Install dependencies and run tests
+        run: |
+          # Create virtual environment if it doesn't exist (for act compatibility)
+          if [ ! -d ".venv" ]; then
+            echo "Creating virtual environment for act compatibility..."
+            uv venv .venv
+          fi
+          
+          # Activate virtual environment
+          source .venv/bin/activate
+          
+          # Install dependencies
+          uv sync --all-extras
+          
+          # Run tests
+          pytest tests/ -v --tb=short
+          
+      # Build package distributions (wheel and sdist)
+      - name: Build package
+        run: |
+          # Activate virtual environment
+          source .venv/bin/activate
+          
+          # Install build tools
+          uv add --group dev build twine
+          
+          # Clean previous builds
+          rm -rf dist/ build/ *.egg-info/
+          
+          # Build UI if exists
+          if [ -d "dana/contrib/ui" ]; then
+            echo "Building UI components..."
+            echo "Node.js version: $(node --version)"
+            echo "npm version: $(npm --version)"
+            cd dana/contrib/ui && npm i && npm run build
+            cd ../../..
+            echo "UI build completed"
+          else
+            echo "No UI components found, skipping UI build"
+          fi
+          
+          # Build Python package
+          python -m build
+          python -m twine check dist/*
+          
+      # Save built packages for later jobs
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-packages
+          path: dist/
+          retention-days: 7
+
+  # Second job: Security scanning
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      # Install uv manually to avoid caching issues in act
+      - name: Install uv and security tools
+        run: |
+          # Install uv directly without caching
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+        
+      # Install dependencies and security tools
+      - name: Install dependencies
+        run: |
+          # Create virtual environment if it doesn't exist (for act compatibility)
+          if [ ! -d ".venv" ]; then
+            echo "Creating virtual environment for act compatibility..."
+            uv venv .venv
+          fi
+          
+          # Activate virtual environment
+          source .venv/bin/activate
+          
+          # Install dependencies and security tools
+          uv sync --all-extras
+          uv add --group dev safety bandit
+          
+      # Check for known vulnerabilities in dependencies
+      - name: Run safety check (dependency vulnerabilities)
+        run: |
+          source .venv/bin/activate
+          echo "🔍 Checking for known vulnerabilities in dependencies..."
+          safety check || echo "⚠️ Some vulnerabilities found (non-blocking)"
+        continue-on-error: true
+          
+      # Scan code for security issues using bandit
+      - name: Run bandit security scan
+        run: |
+          source .venv/bin/activate
+          echo "🔍 Running bandit security scan..."
+          bandit -r dana/ -ll || echo "⚠️ Some security issues found (non-blocking)"
+        continue-on-error: true
+          
+      # Check for hardcoded secrets in codebase
+      - name: Check for secrets
+        run: |
+          echo "🔍 Checking for potential secrets..."
+          if grep -r -i "password\|secret\|key\|token\|api_key" --include="*.{py,yaml,yml,json,toml,ini,env,sh,md,txt,conf,cfg,config}" .; then
+            echo "⚠️ Found potential secrets in code - please review"
+            echo "💡 Consider using environment variables or secret management"
+          else
+            echo "✅ No obvious secrets found in code"
+          fi
+        continue-on-error: true
+
+  # Third job: Publish to PyPI
+  publish:
+    runs-on: ubuntu-latest
+    needs: [test-and-build, security-scan]  # Only run after previous jobs succeed
+    steps:
+      # Get the built packages from artifacts
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-packages
+          path: dist/
+          
+      # Upload to PyPI using official GitHub Action
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+
+  # Fourth job: Create GitHub release
+  # release:
+  #   runs-on: ubuntu-latest
+  #   needs: publish  # Only run after successful PyPI publish
+  #   permissions:
+  #     contents: write  # Needed for creating releases
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+        
+  #     # Extract version from pyproject.toml
+  #     - name: Get version
+  #       id: version
+  #       run: |
+  #         VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+  #         echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
+  #     # Create GitHub release with installation instructions
+  #     - name: Create Release
+  #       uses: actions/create-release@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         tag_name: v${{ steps.version.outputs.version }}
+  #         release_name: v${{ steps.version.outputs.version }}
+  #         body: |
+  #           ## Dana Agent v${{ steps.version.outputs.version }}
+            
+  #           📦 **Installation:**
+  #           ```bash
+  #           pip install dana-agent==${{ steps.version.outputs.version }}
+  #           ```
+            
+  #           🔗 **Links:**
+  #           - [PyPI Package](https://pypi.org/project/dana-agent/${{ steps.version.outputs.version }}/)
+  #           - [GitHub Repository](https://github.com/${{ github.repository }})
+  #         draft: false
+  #         prerelease: false 

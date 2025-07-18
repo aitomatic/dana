@@ -12,6 +12,7 @@ The design documents are organized into the following main sections:
 4. **Core Capabilities and Resources**: Core capabilities and resources abstraction model for Dana programs to interact with internal and external functionalities in multi-agent environments with context-aware adaptation.
 5. **Agent and Orchestration**: Higher-level constructs for building intelligent agents and orchestrating complex workflows using Dana's agent-native features, self-improving pipelines, and convergence architecture.
 6. **Tooling and Developer Experience**: Developer tools, IDE integration, debugging, testing frameworks, and other developer experience improvements for agent-native development that unifies assistance with autonomous execution.
+7. **API Server Architecture**: [Dana API Server Architecture](06_api_server_architecture.md) — Design and implementation of the local API server for agent management and web integration.
 
 ## Document Status
 

@@ -4,7 +4,7 @@ This directory contains an enhanced implementation of the Model Context Protocol
 
 ## Overview
 
-The `MCPClient` class inherits from `fastmcp.Client` and provides intelligent transport detection and initialization. It meets the following requirements:
+The `MCPClient` class inherits from `mcp.Client` and provides intelligent transport detection and initialization. It meets the following requirements:
 
 - ✅ **Receive any kind of arguments**: Accepts URLs, file paths, FastMCP instances, MCP configs, and more
 - ✅ **Identify SSE or Streamable HTTP**: Automatically detects transport type based on URL patterns  
@@ -19,7 +19,7 @@ The client automatically detects the appropriate transport based on input argume
 ```python
 from mcp_client import MCPClient
 
-# FastMCP server instance → FastMCPTransport
+# MCP server instance → FastMCPTransport
 server = FastMCP("MyServer")
 client = MCPClient(server)
 
@@ -97,7 +97,7 @@ The client uses regex patterns to identify transport types from URLs:
 - `/rpc` or `/rpc/`
 - Paths ending with `-mcp`
 - Paths ending with `.mcp`
-- **Default for unknown URL patterns** (aligns with FastMCP 2.3.0+ behavior)
+- **Default for unknown URL patterns** (aligns with MCP SDK standard behavior)
 
 ### File Path Detection
 
@@ -112,11 +112,11 @@ For file paths, the client detects the appropriate interpreter:
 
 The detection follows this priority order:
 
-1. **FastMCP/FastMCP1Server instances** → `FastMCPTransport`
+1. **MCP server instances** → `FastMCPTransport`
 2. **MCP configuration dicts** → `MCPConfigTransport`
 3. **URL strings** → SSE or HTTP based on patterns
 4. **File path strings** → `StdioTransport`
-5. **Fallback** → Use fastmcp's built-in inference
+5. **Fallback** → Use MCP SDK's built-in inference
 
 ## Usage Examples
 
@@ -172,10 +172,10 @@ async with client:
     event = await client.call_tool("calendar_create_event", {"title": "Meeting"})
 ```
 
-### Testing with FastMCP
+### Testing with MCP Python SDK
 
 ```python
-from fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP
 
 # Create a test server
 server = FastMCP("TestServer")
@@ -243,8 +243,7 @@ pytest tests/test_mcp_client.py -v
 
 The implementation requires:
 
-- `fastmcp` - FastMCP library with transport implementations
-- `mcp` - Official MCP Python SDK (for FastMCP 1.0 compatibility)
+- `mcp` - Official MCP Python SDK with transport implementations
 - `pydantic` - For URL validation
 - `pathlib` - For file path handling
 
@@ -254,7 +253,7 @@ This enhanced MCPClient is designed to integrate seamlessly with the Dana framew
 
 1. **Resource Integration** - MCP servers as Dana resources
 2. **Protocol Federation** - Connecting different MCP implementations  
-3. **Development Testing** - Easy testing with in-memory FastMCP servers
+3. **Development Testing** - Easy testing with in-memory MCP servers
 4. **Production Deployment** - Robust HTTP-based connections
 
 ## References

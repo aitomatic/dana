@@ -1,4 +1,4 @@
 """MCP Querying."""
 
 with use("mcp", url="http://127.0.0.1:8000/mcp") as weather_info:
-    reason("What is the weather in Tokyo from June 26th to 30th, 2025?")
+    reason("What is the weather in Tokyo like today?")

@@ -89,7 +89,7 @@ class AgentType:
 
 # --- AgentInstance: Like StructInstance ---
 class AgentInstance(AbstractDanaAgent):
-    def __init__(self, agent_type: AgentType, values: dict[str, Any], context: SandboxContext):
+    def __init__(self, agent_type: AgentType, values: dict[str, Any], context: SandboxContext, instance_id: str = None):
         # Apply defaults, evaluating complex expressions if needed
         final_values = {}
         for field_name, default_value in agent_type.defaults.items():
@@ -120,6 +120,20 @@ class AgentInstance(AbstractDanaAgent):
         self._type = agent_type
         self._values = final_values
         self._context = context
+        self._instance_id = instance_id
+        
+        # Initialize context management
+        self._context_manager = None
+        self._initialize_context_management()
+    
+    def _initialize_context_management(self):
+        """Initialize the context management system for this agent"""
+        try:
+            from dana.agent.context.agent_context_manager import AgentContextManager
+            self._context_manager = AgentContextManager(self, instance_id=self._instance_id)
+        except ImportError:
+            # Context management not available, agent will work without it
+            pass
 
     @property
     def agent_card(self) -> dict[str, Any]:
@@ -146,17 +160,48 @@ class AgentInstance(AbstractDanaAgent):
     def agent_type(self) -> AgentType:
         return self._type
     
-    async def solve(self, task: str) -> str:
+    def solve(self, task: str) -> str:
         """Solve a problem by delegating to the agent."""
-        # Use the internal method resolution to avoid recursion
-        method = self._type.get_method("solve")
-        if method is not None:
-            result = self._call_method(method, task)
-            return str(result)
-        return "No solve method available"
+        # If context manager is available, it will handle the solve call
+        if self._context_manager:
+            # Context manager will wrap the original solve method
+            return self._context_manager._context_aware_solve(task)
+        else:
+            # Fallback to original behavior
+            method = self._type.get_method("solve")
+            if method is not None:
+                result = self._call_method(method, task)
+                return str(result)
+            return "No solve method available"
 
     def plan(self, task: str, user_context: dict | None = None) -> Any:
         return self.__getattr__("plan")(task, user_context)
+    
+    def get_context_info(self) -> dict:
+        """Get context information for debugging"""
+        if self._context_manager:
+            return self._context_manager.get_context_info()
+        else:
+            return {"context_manager": "not_available"}
+    
+    def get_conversation_summary(self) -> str:
+        """Get conversation summary for debugging"""
+        if self._context_manager:
+            return self._context_manager.get_conversation_summary()
+        else:
+            return "Context manager not available"
+    
+    def reset_context(self):
+        """Reset context for testing"""
+        if self._context_manager:
+            self._context_manager.reset_context()
+    
+    def get_persistence_status(self) -> dict:
+        """Get Phase 3 persistence status information"""
+        if self._context_manager:
+            return self._context_manager.get_persistence_status()
+        else:
+            return {"persistence": "not_available", "context_manager": "not_initialized"}
 
     def _call_method(self, method, *args, **kwargs):
         """Helper to call method with correct parameters."""
@@ -242,6 +287,12 @@ class AgentInstance(AbstractDanaAgent):
             method = self._type.get_method(name)
             if method is not None:
                 return lambda *args, **kwargs: self._call_method_with_current_context(method, *args, **kwargs)
+        
+        # NEW: Type-based fallback to global function registry
+        fallback_method = self._try_global_function_fallback(name)
+        if fallback_method is not None:
+            return fallback_method
+        
         raise AttributeError(f"Agent '{self._type.name}' has no field or method '{name}'")
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -266,6 +317,95 @@ class AgentInstance(AbstractDanaAgent):
     def __repr__(self) -> str:
         field_strs = [f"{name}={repr(self._values.get(name))}" for name in self._type.field_order]
         return f"{self._type.name}({', '.join(field_strs)})"
+
+    def _try_global_function_fallback(self, method_name: str) -> Any | None:
+        """Try to find a global function that matches the agent type."""
+        
+        # Get the function registry from the context
+        function_registry = self._get_function_registry()
+        if not function_registry:
+            return None
+        
+        # Check if a function with this name exists in the registry
+        if not function_registry.has(method_name):
+            return None
+        
+        try:
+            # Get the function from the registry
+            func, func_type, metadata = function_registry.resolve(method_name)
+            
+            # Check if the function's first parameter type matches this agent's type
+            if self._function_matches_agent_type(func, self._type.name):
+                # Create a wrapper that calls the function with the agent as first argument
+                def agent_method_wrapper(*args, **kwargs):
+                    return function_registry.call(method_name, self._context, None, self, *args, **kwargs)
+                
+                return agent_method_wrapper
+        
+        except Exception:
+            # If anything goes wrong, return None to fall back to normal error handling
+            pass
+        
+        return None
+
+    def _function_matches_agent_type(self, func: Any, agent_type_name: str) -> bool:
+        """Check if a function's first parameter type hint matches the agent type."""
+        
+        try:
+            # For Dana functions, we need to check the signature differently
+            if hasattr(func, 'parameters') and func.parameters:
+                first_param = func.parameters[0]
+                if hasattr(first_param, 'type_hint') and first_param.type_hint:
+                    return first_param.type_hint.name == agent_type_name
+            
+            # For Python functions, use inspect
+            if hasattr(func, 'func') and callable(func.func):
+                import inspect
+                sig = inspect.signature(func.func)
+                params = list(sig.parameters.values())
+                
+                if params:
+                    first_param = params[0]
+                    if first_param.annotation != inspect.Parameter.empty:
+                        # Check if the annotation matches the agent type name
+                        annotation_name = getattr(first_param.annotation, '__name__', str(first_param.annotation))
+                        return annotation_name == agent_type_name
+            
+            # For other callable types, try to get signature info
+            if callable(func):
+                import inspect
+                sig = inspect.signature(func)
+                params = list(sig.parameters.values())
+                
+                if params:
+                    first_param = params[0]
+                    if first_param.annotation != inspect.Parameter.empty:
+                        annotation_name = getattr(first_param.annotation, '__name__', str(first_param.annotation))
+                        return annotation_name == agent_type_name
+        
+        except Exception:
+            # If we can't determine the type, don't match
+            pass
+        
+        return False
+
+    def _get_function_registry(self):
+        """Get the function registry from the context."""
+        try:
+            # Try to get the function registry from the context
+            if hasattr(self._context, '_interpreter') and self._context._interpreter:
+                return getattr(self._context._interpreter, 'function_registry', None)
+            
+            # Alternative: try to get it from thread-local storage
+            import threading
+            current_thread = threading.current_thread()
+            if hasattr(current_thread, 'dana_function_registry'):
+                return current_thread.dana_function_registry
+        
+        except Exception:
+            pass
+        
+        return None
 
 # --- AgentTypeRegistry: Like StructTypeRegistry ---
 class AgentTypeRegistry:
@@ -292,11 +432,11 @@ class AgentTypeRegistry:
         cls._types.clear()
 
     @classmethod
-    def create_instance(cls, agent_name: str, values: dict[str, Any], context: SandboxContext) -> AgentInstance:
+    def create_instance(cls, agent_name: str, values: dict[str, Any], context: SandboxContext, instance_id: str = None) -> AgentInstance:
         agent_type = cls.get(agent_name)
         if agent_type is None:
             raise ValueError(f"Unknown agent type '{agent_name}'")
-        return AgentInstance(agent_type, values, context=context)
+        return AgentInstance(agent_type, values, context=context, instance_id=instance_id)
 
 # --- Helper for AST-based registration (mirroring struct_system) ---
 def create_agent_type_from_ast(agent_def) -> AgentType:

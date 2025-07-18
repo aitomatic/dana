@@ -25,19 +25,20 @@ import asyncio
 import sys
 from typing import Any
 
-from fastmcp import Client
+from mcp.client.session import ClientSession
+from mcp.client.streamable_http import streamablehttp_client
 
 
 def check_dependencies() -> bool:
     """Check if required dependencies are installed."""
     try:
-        import fastmcp  # noqa: F401
+        import mcp  # noqa: F401
 
         print("✅ All dependencies installed correctly")
         return True
     except ImportError:
-        print("❌ Missing dependency: fastmcp")
-        print("Please install: pip install fastmcp")
+        print("❌ Missing dependency: mcp")
+        print("Please install: pip install mcp")
         return False
 
 
@@ -57,14 +58,29 @@ class MCPDanaClient:
         self.agent_name = agent_name
         self.mcp_endpoint = f"{base_url}/{agent_name}/mcp"
         print(f"MCP endpoint: {self.mcp_endpoint}")
-        self.client = Client(self.mcp_endpoint)
 
     async def get_tools(self) -> dict[str, Any] | None:
         """Get available tools from the MCP server."""
         try:
-            async with self.client:
-                result = await self.client.list_tools()
-                return {"tools": result} if result else None
+            # Use the same pattern as Dana's MCP client implementation
+            streams_context = streamablehttp_client(self.mcp_endpoint)
+            streams = await streams_context.__aenter__()
+
+            try:
+                # Create session from first two streams only (read_stream, write_stream)
+                # The third item is a callable function that causes the timeout error
+                read_stream, write_stream = streams[:2]
+                client_session = ClientSession(read_stream, write_stream)
+                session = await client_session.__aenter__()
+
+                try:
+                    await session.initialize()
+                    result = await session.list_tools()
+                    return {"tools": result} if result else None
+                finally:
+                    await client_session.__aexit__(None, None, None)
+            finally:
+                await streams_context.__aexit__(None, None, None)
 
         except Exception as e:
             print(f"❌ Error getting tools: {e}")
@@ -73,14 +89,30 @@ class MCPDanaClient:
     async def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> str | None:
         """Call a tool on the MCP server."""
         try:
-            async with self.client:
-                result = await self.client.call_tool(tool_name, arguments)
-                if result and isinstance(result, list) and len(result) > 0:
-                    content = result[0]
-                    if hasattr(content, "text"):
-                        return content.text
-                    return str(content)
-                return "No result content"
+            # Use the same pattern as Dana's MCP client implementation
+            streams_context = streamablehttp_client(self.mcp_endpoint)
+            streams = await streams_context.__aenter__()
+
+            try:
+                # Create session from first two streams only (read_stream, write_stream)
+                # The third item is a callable function that causes the timeout error
+                read_stream, write_stream = streams[:2]
+                client_session = ClientSession(read_stream, write_stream)
+                session = await client_session.__aenter__()
+
+                try:
+                    await session.initialize()
+                    result = await session.call_tool(tool_name, arguments)
+                    if result and isinstance(result, list) and len(result) > 0:
+                        content = result[0]
+                        if hasattr(content, "text"):
+                            return content.text
+                        return str(content)
+                    return "No result content"
+                finally:
+                    await client_session.__aexit__(None, None, None)
+            finally:
+                await streams_context.__aexit__(None, None, None)
 
         except Exception as e:
             print(f"❌ Error calling tool: {e}")

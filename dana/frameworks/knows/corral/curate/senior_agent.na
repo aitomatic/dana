@@ -1,0 +1,19 @@
+document_folder = "/Users/lam/Desktop/repos/opendxa/proposal"
+
+websearch = use("mcp", url="https://demo.mcp.aitomatic.com/websearch_v2")
+specialized_kb = use("rag", sources=[document_folder])
+
+
+agent SeniorAgent:
+    name : str = "Senior Agent"
+    description : str = "A senior agent with specialized knowledge in the domain of the topic. Your responsibility is to on board a new fresher agent to the domain."
+    topic : str
+    role : str
+    current_step : str = "Default"
+    resources : list[str] = [specialized_kb, websearch]
+
+def solve(senior_agent: SeniorAgent, problem: str) -> str:
+    answer : str = reason(f"{problem}. Ultilize the tools provided to you to get more information", resources=senior_agent.resources, temperature=0.1, max_tokens=8000)
+    return answer
+
+

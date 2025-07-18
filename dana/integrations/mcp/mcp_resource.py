@@ -34,11 +34,14 @@ class MCPResource(BaseResource):
             *client_args: Additional MCP client parameters
             **client_kwargs: Additional MCP client parameters
         """
+        # Initialize the cache attribute FIRST to prevent recursion
+        self._mcp_tools_cache: list[McpTool] | None = None
+
+        # Now call parent __init__
         super().__init__(name, description, config)
 
         self.client = MCPClient(*client_args, **client_kwargs)
-        self._mcp_tools_cache: list[McpTool] | None = None
-        self.list_tools()  # Pre-fetch the MCP tools first
+        # Don't pre-fetch tools immediately - defer until needed
 
     def mcp_tool_decorator(self, func_name: str) -> Any:
         """Decorator to wrap a function as an MCP tool."""
@@ -52,14 +55,25 @@ class MCPResource(BaseResource):
         return wrapper
 
     def __getattr__(self, name: str) -> Any:
+        # Check if it's a private attribute - don't try to find it as a tool
+        if name.startswith("_"):
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+
         try:
-            return BaseResource.__getattribute__(self, name)
+            return super().__getattribute__(name)
         except AttributeError:
-            tools = BaseResource.__getattribute__(self, "_mcp_tools_cache")
-            for tool in tools:
-                if tool.name == name:
-                    return self.mcp_tool_decorator(tool.name)
-            raise
+            # Ensure tools are discovered first - use object.__getattribute__ to avoid recursion
+            tools_cache = object.__getattribute__(self, "_mcp_tools_cache")
+            if tools_cache is None:
+                Misc.safe_asyncio_run(self._discover_tools)
+                tools_cache = object.__getattribute__(self, "_mcp_tools_cache")
+
+            if tools_cache:
+                for tool in tools_cache:
+                    if tool.name == name:
+                        return self.mcp_tool_decorator(tool.name)
+
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     async def initialize(self) -> None:
         """Initialize the MCP resource."""
@@ -70,14 +84,16 @@ class MCPResource(BaseResource):
         """Discover and cache tools from MCP server."""
         try:
             async with self.client as _client:
-                self._mcp_tools_cache = await _client.list_tools()
-        except Exception:
+                response = await _client.list_tools()
+                self._mcp_tools_cache = response.tools
+        except Exception as e:
+            self.log_error(f"Failed to discover tools: {e}")
             self._is_available = False
-            raise
+            self._mcp_tools_cache = []
 
     def _list_tools(self, format_converter: OpenAIToolFormat) -> list[Any]:
         """Return cached tools in OpenAI format."""
-        if not self._mcp_tools_cache:
+        if self._mcp_tools_cache is None:
             Misc.safe_asyncio_run(self._discover_tools)
         if not self._mcp_tools_cache:
             return []
@@ -92,8 +108,7 @@ class MCPResource(BaseResource):
         print(f"Calling tool {tool_name} with arguments {arguments}")
         async with self.client as _client:
             response = await _client.call_tool(tool_name, arguments)  # This will raise ToolError if the tool call fails.
-        await self.client._disconnect()
-        
+
         results = response.content
 
         assert len(results) == 1, (
@@ -152,4 +167,5 @@ if __name__ == "__main__":
     Misc.safe_asyncio_run(main)
 
     import time
+
     time.sleep(20)
