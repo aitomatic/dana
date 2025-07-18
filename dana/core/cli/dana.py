@@ -51,6 +51,8 @@ import logging
 import os
 import sys
 
+import uvicorn
+
 # Set up compatibility layer for new dana structure
 # Resolve the real path to avoid symlink issues
 real_file = os.path.realpath(__file__)
@@ -76,8 +78,15 @@ def show_help():
     print(f"  {colors.accent('dana')}                   Start the DANA REPL")
     print(f"  {colors.accent('dana [file.na]')}         Execute a DANA file")
     print(f"  {colors.accent('dana deploy [file.na]')}  Deploy a .na file as an agent endpoint")
+    print(f"  {colors.accent('dana config')}            Configure providers and create .env file")
     print(f"  {colors.accent('dana -h, --help')}        Show this help message")
     print(f"  {colors.accent('dana --debug')}           Enable debug logging")
+    print(f"  {colors.accent('dana start')}             Start the Dana API server")
+    print("")
+    print(f"{colors.bold('Requirements:')}")
+    print(f"  {colors.accent('🔑 API Keys:')} At least one LLM provider API key required")
+    print("")
+    print(f"{colors.accent('💡 Tip:')} Run {colors.bold('dana config')} to set up your API keys interactively")
     print("")
 
 
@@ -135,9 +144,54 @@ async def start_repl(debug=False):
         sys.exit(1)
 
 
+def handle_start_command(args):
+    """Start the Dana API server using uvicorn."""
+    try:
+        # First validate configuration
+        from dana.core.cli.config_manager import ConfigurationManager
+
+        print(f"{colors.accent('🔧 Validating Dana configuration...')}")
+        manager = ConfigurationManager(output_file=".env", debug=False)
+
+        # Check if configuration is valid
+        if not manager.validate_configuration():
+            print(f"{colors.accent('⚠️  Configuration validation failed')}\n")
+            print(f"{colors.accent('🛠️  Running configuration wizard...')}")
+
+            # Run the configuration wizard
+            success = manager.run_configuration_wizard()
+            if not success:
+                print(f"{colors.error('❌ Configuration setup failed. Cannot start server.')}")
+                return 1
+
+            print(f"{colors.accent('✅ Configuration completed successfully')}")
+
+        # Configuration is valid, start the server
+        host = args.host or "127.0.0.1"
+        port = args.port or 8080
+        reload = args.reload
+        log_level = args.log_level or "info"
+
+        print(f"\n🌐 Starting Dana API server on http://{host}:{port}")
+        print(f"📊 Health check: http://{host}:{port}/health")
+        print(f"🔗 Root endpoint: http://{host}:{port}/")
+
+        uvicorn.run(
+            "dana.api.server.server:create_app",
+            host=host,
+            port=port,
+            reload=reload,
+            log_level=log_level,
+            factory=True,
+        )
+
+    except Exception as e:
+        print(f"{colors.error(f'❌ Server startup error: {str(e)}')}")
+        return 1
+
+
 def main():
     """Main entry point for the DANA CLI."""
-
     try:
         parser = argparse.ArgumentParser(description="DANA Command Line Interface", add_help=False)
         subparsers = parser.add_subparsers(dest="subcommand")
@@ -157,8 +211,21 @@ def main():
         parser_deploy.add_argument("--host", default="0.0.0.0", help="Host to bind the server (default: 0.0.0.0)")
         parser_deploy.add_argument("--port", type=int, default=8000, help="Port to bind the server (default: 8000)")
 
+        # Config subcommand for provider configuration
+        parser_config = subparsers.add_parser("config", help="Configure DANA providers and create .env file")
+        parser_config.add_argument("--output", "-o", default=".env", help="Output file for environment variables (default: .env)")
+        parser_config.add_argument("--validate", action="store_true", help="Only validate current configuration without prompting")
+        parser_config.add_argument("--debug", action="store_true", help="Enable debug logging")
+
+        # Serve subcommand for API server
+        parser_serve = subparsers.add_parser("start", help="Start the Dana API server")
+        parser_serve.add_argument("--host", default="127.0.0.1", help="Host to bind the server (default: 127.0.0.1)")
+        parser_serve.add_argument("--port", type=int, default=8080, help="Port to bind the server (default: 8080)")
+        parser_serve.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
+        parser_serve.add_argument("--log-level", default="info", help="Log level (default: info)")
+
         # Handle default behavior
-        if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] not in ("deploy")):
+        if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] not in ("deploy", "start", "config")):
             return handle_main_command()
 
         # Parse subcommand
@@ -166,6 +233,10 @@ def main():
 
         if args.subcommand == "deploy":
             return handle_deploy_command(args)
+        elif args.subcommand == "start":
+            return handle_start_command(args)
+        elif args.subcommand == "config":
+            return handle_config_command(args)
 
         return 0
 
@@ -174,7 +245,7 @@ def main():
         return 0
     except Exception as e:
         print(f"\n{colors.error(f'Unexpected error: {str(e)}')}")
-        if args.debug:
+        if hasattr(args, "debug") and args.debug:
             import traceback
 
             traceback.print_exc()
@@ -246,17 +317,45 @@ def handle_deploy_command(args):
         return 1
 
 
+def handle_config_command(args):
+    """Handle the config subcommand."""
+    try:
+        from dana.core.cli.config_manager import ConfigurationManager
+
+        # Configure debug logging if requested
+        if args.debug:
+            configure_debug_logging()
+
+        manager = ConfigurationManager(output_file=args.output, debug=args.debug)
+
+        if args.validate:
+            # Only validate current configuration
+            success = manager.validate_configuration()
+            return 0 if success else 1
+        else:
+            # Interactive configuration setup
+            success = manager.run_configuration_wizard()
+            return 0 if success else 1
+
+    except Exception as e:
+        print(f"\n{colors.error(f'Configuration error: {str(e)}')}")
+        if args.debug:
+            import traceback
+
+            traceback.print_exc()
+        return 1
+
+
 def deploy_thru_mcp(file_path, args):
     """Deploy file using MCP protocol."""
     try:
-        from dana.contrib.mcp_a2a.deploy.mcp import deploy_dana_agents_thru_mcp
+        from dana.core.cli.deploy.mcp import deploy_dana_agents_thru_mcp
 
         deploy_dana_agents_thru_mcp(file_path, args.host, args.port)
         return 0
-    except ImportError:
+    except ImportError as e:
         print(f"\n{colors.error('Error: Required packages missing')}")
-        print(f"{colors.bold('Please install required packages:')}")
-        print("  pip install mcp fastapi uvicorn")
+        print(f"{colors.bold(f'Please install required packages: {e}')}")
         return 1
     except Exception as e:
         print(f"\n{colors.error('MCP Server Error:')}")
@@ -267,7 +366,7 @@ def deploy_thru_mcp(file_path, args):
 def deploy_thru_a2a(file_path, args):
     """Deploy file using A2A protocol."""
     try:
-        from dana.contrib.mcp_a2a.deploy.a2a import deploy_dana_agents_thru_a2a
+        from dana.core.cli.deploy.a2a import deploy_dana_agents_thru_a2a
 
         deploy_dana_agents_thru_a2a(file_path, args.host, args.port)
         return 0

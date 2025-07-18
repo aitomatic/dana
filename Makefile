@@ -12,9 +12,9 @@ UV_CMD = $(shell command -v uv 2>/dev/null || echo ~/.local/bin/uv)
 .DEFAULT_GOAL := help
 
 # All targets are phony (don't create files)
-.PHONY: help help-more quickstart install setup-dev sync test dana clean lint format fix check \
-	install-ollama start-ollama install-vllm start-vllm docs-serve \
-	test-fast test-cov update-deps dev security validate-config release-check
+.PHONY: help help-more quickstart install setup-dev sync test dana clean lint format fix check mypy \
+	install-ollama start-ollama install-vllm start-vllm install-vscode install-cursor install-vim install-emacs \
+	docs-serve docs-build docs-deps test-fast test-cov update-deps dev security validate-config release-check
 
 # =============================================================================
 # Help & Quick Start
@@ -43,6 +43,12 @@ help: ## Show essential Dana commands
 	@echo "  \033[36minstall-ollama\033[0m  🦙 Install Ollama for local inference"
 	@echo "  \033[36minstall-vllm\033[0m    ⚡ Install vLLM for local inference"
 	@echo ""
+	@echo "\033[1mEditor Support:\033[0m"
+	@echo "  \033[36minstall-vscode\033[0m  📝 Install VS Code extension with LSP"
+	@echo "  \033[36minstall-cursor\033[0m  🎯 Install Cursor extension with LSP"
+	@echo "  \033[36minstall-vim\033[0m     ⚡ Install Vim/Neovim support with LSP"
+	@echo "  \033[36minstall-emacs\033[0m   🌟 Install Emacs support with LSP"
+	@echo ""
 	@echo "\033[1mMaintenance:\033[0m"
 	@echo "  \033[36mclean\033[0m           🧹 Clean build artifacts and caches"
 	@echo ""
@@ -64,13 +70,16 @@ help-more: ## Show all available commands including advanced ones
 	@awk 'BEGIN {FS = ":.*?## MORE: "} /^test.*:.*?## MORE:/ {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "\033[1mCode Quality:\033[0m"
-	@awk 'BEGIN {FS = ":.*?## "} /^(lint|format|check|fix).*:.*?## / {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## "} /^(lint|format|check|fix|mypy).*:.*?## / {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "\033[1mLLM Integration:\033[0m"
 	@awk 'BEGIN {FS = ":.*?## "} /^(install-ollama|start-ollama|install-vllm|start-vllm).*:.*?## / {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
+	@echo "\033[1mEditor Support:\033[0m"
+	@awk 'BEGIN {FS = ":.*?## "} /^(install-vscode|install-cursor|install-vim|install-emacs).*:.*?## / {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo ""
 	@echo "\033[1mDevelopment & Release:\033[0m"
-	@awk 'BEGIN {FS = ":.*?## MORE: "} /^(update-deps|dev|security|validate-config|release-check).*:.*?## MORE:/ {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## MORE: "} /^(update-deps|dev|security|validate-config|release-check|docs-build|docs-deps).*:.*?## MORE:/ {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "\033[1mMaintenance:\033[0m"
 	@awk 'BEGIN {FS = ":.*?## "} /^(clean|docs-serve).*:.*?## / {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -116,13 +125,15 @@ quickstart: check-uv ## 🚀 QUICK START: Get Dana running in 30 seconds!
 
 install: ## Install package and dependencies
 	@echo "📦 Installing dependencies..."
-	$(UV_CMD) sync
+	$(UV_CMD) sync --extra dev
 
 setup-dev: ## Install with development dependencies and setup tools
 	@echo "🛠️  Installing development dependencies..."
 	$(UV_CMD) sync --extra dev
 	@echo "🔧 Setting up development tools..."
 	$(UV_CMD) run pre-commit install
+	@echo "📝 Installing LSP dependencies..."
+	$(UV_CMD) run pip install lsprotocol pygls
 	@echo "✅ Development environment ready!"
 
 sync: ## Sync dependencies with uv.lock
@@ -164,6 +175,10 @@ fix: ## Auto-fix all fixable code issues
 	$(UV_CMD) run ruff format .
 	@echo "🔧 Applied all auto-fixes!"
 
+mypy: ## Run type checking
+	@echo "🔍 Running type checks..."
+	$(UV_CMD) run mypy .
+
 # =============================================================================
 # LLM Integration
 # =============================================================================
@@ -184,6 +199,22 @@ start-vllm: ## Start vLLM server with interactive model selection
 	@echo "🚀 Starting vLLM for Dana..."
 	@./bin/vllm/start.sh
 
+install-vscode: ## Install VS Code extension with LSP support
+	@echo "📝 Installing Dana VS Code extension..."
+	@./bin/vscode/install.sh
+
+install-cursor: ## Install Cursor extension with LSP support
+	@echo "🎯 Installing Dana Cursor extension..."
+	@./bin/cursor/install.sh
+
+install-vim: ## Install Vim/Neovim support with LSP
+	@echo "⚡ Installing Dana Vim/Neovim support..."
+	@./bin/vim/install.sh
+
+install-emacs: ## Install Emacs support with LSP
+	@echo "🌟 Installing Dana Emacs support..."
+	@./bin/emacs/install.sh
+
 # =============================================================================
 # Maintenance & Documentation
 # =============================================================================
@@ -202,6 +233,18 @@ docs-serve: ## Serve documentation locally
 	else \
 		echo "❌ mkdocs.yml not found. Documentation not configured."; \
 	fi
+
+docs-build: ## MORE: Build documentation with strict validation
+	@echo "📖 Building documentation with strict validation..."
+	@if [ -f mkdocs.yml ]; then \
+		$(UV_CMD) run --extra docs mkdocs build --strict; \
+	else \
+		echo "❌ mkdocs.yml not found. Documentation not configured."; \
+	fi
+
+docs-deps: ## MORE: Install documentation dependencies
+	@echo "📚 Installing documentation dependencies..."
+	$(UV_CMD) sync --extra docs
 
 # =============================================================================
 # Advanced/Comprehensive Targets (shown in help-more)
@@ -258,7 +301,7 @@ release-check: clean check test-fast security validate-config ## MORE: Complete 
 	@echo "=================================="
 	@echo ""
 	@echo "✅ Code quality checks passed"
-	@echo "✅ Tests passed" 
+	@echo "✅ Tests passed"
 	@echo "✅ Security checks completed"
 	@echo "✅ Configuration validated"
 	@echo ""
@@ -266,7 +309,30 @@ release-check: clean check test-fast security validate-config ## MORE: Complete 
 	@echo ""
 
 # =============================================================================
-# Legacy Aliases (for backward compatibility)
+# Package Building & Publishing
 # =============================================================================
 
+build: ## Build package distribution files
+	@echo "📦 Building package..."
+	$(UV_CMD) run python -m build
+
+dist: clean build ## Clean and build distribution files
+	@echo "✅ Distribution files ready in dist/"
+
+check-dist: ## Validate built distribution files
+	@echo "🔍 Checking distribution files..."
+	$(UV_CMD) run twine check dist/*
+
+publish: check-dist ## Upload to PyPI
+	@echo "🚀 Publishing to PyPI..."
+	$(UV_CMD) run twine upload --verbose dist/*
 run: dana ## Alias for 'dana' command 
+
+build-frontend: ## Build the frontend (Vite React app) and copy to backend static
+	cd dana/contrib/ui && npm i && npm run build
+
+build-all: ## Build frontend and Python package
+	build-frontend & uv run python -m build
+
+local-server: ## Start the local server
+	uv run python -m dana.api.server

@@ -64,3 +64,13 @@ node_modules/
 .vscode/launch.json
 .vscode/settings.json
 .deprecated_opendxa
+docs/.ai-only/ai_output/
+
+# Data files
+local.db
+test.db
+uploads
+dana/api/server/static/
+dana/contrib/ui/public/static/
+generated/
+agents/

@@ -75,6 +75,16 @@ else
     VIMRC_FILE="$HOME/.vimrc"
 fi
 
+# Check for LSP dependencies
+echo -e "${BLUE}🔍 Checking LSP dependencies...${NC}"
+LSP_AVAILABLE=false
+if python3 -c "import lsprotocol, pygls" 2>/dev/null; then
+    LSP_AVAILABLE=true
+    echo -e "${GREEN}✅ LSP dependencies available${NC}"
+else
+    echo -e "${YELLOW}⚠️  LSP dependencies not found. Install with: pip install lsprotocol pygls${NC}"
+fi
+
 # Add Dana configuration to vimrc
 echo -e "${BLUE}⚙️  Configuring ${VIM_TYPE}...${NC}"
 
@@ -90,7 +100,10 @@ else
     fi
     
     # Add Dana configuration
-    cat >> "$VIMRC_FILE" << 'EOF'
+    if [[ "$LSP_AVAILABLE" == "true" ]]; then
+        if [[ "$VIM_TYPE" == "Neovim" ]]; then
+            # Neovim with built-in LSP
+            cat >> "$VIMRC_FILE" << 'EOF'
 
 " ===== OpenDXA Dana Language Support =====
 " Auto-installed by bin/vim/install.sh
@@ -100,6 +113,88 @@ augroup dana_filetype
   autocmd!
   autocmd BufRead,BufNewFile *.na setfiletype dana
 augroup END
+
+" Dana LSP setup (Neovim built-in LSP)
+lua << LUAEOF
+-- Configure Dana Language Server
+require('lspconfig').configs.dana = {
+  default_config = {
+    cmd = {'dana-ls'},
+    filetypes = {'dana'},
+    root_dir = require('lspconfig.util').root_pattern('.git', 'pyproject.toml', 'setup.py'),
+    settings = {},
+  }
+}
+
+-- Setup Dana LSP
+require('lspconfig').dana.setup{
+  on_attach = function(client, bufnr)
+    -- Enable completion triggered by <c-x><c-o>
+    vim.api.nvim_buf_set_option(bufnr, 'omnifunc', 'v:lua.vim.lsp.omnifunc')
+    
+    -- LSP key mappings
+    local opts = { noremap=true, silent=true }
+    vim.api.nvim_buf_set_keymap(bufnr, 'n', 'gd', '<cmd>lua vim.lsp.buf.definition()<CR>', opts)
+    vim.api.nvim_buf_set_keymap(bufnr, 'n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', opts)
+    vim.api.nvim_buf_set_keymap(bufnr, 'n', '<C-k>', '<cmd>lua vim.lsp.buf.signature_help()<CR>', opts)
+    vim.api.nvim_buf_set_keymap(bufnr, 'n', '<space>e', '<cmd>lua vim.lsp.diagnostic.show_line_diagnostics()<CR>', opts)
+    
+    print('Dana LSP attached successfully!')
+  end,
+  capabilities = require('cmp_nvim_lsp').default_capabilities(vim.lsp.protocol.make_client_capabilities()),
+}
+LUAEOF
+EOF
+        else
+            # Regular Vim with vim-lsp
+            cat >> "$VIMRC_FILE" << 'EOF'
+
+" ===== OpenDXA Dana Language Support =====
+" Auto-installed by bin/vim/install.sh
+
+" Dana file type detection
+augroup dana_filetype
+  autocmd!
+  autocmd BufRead,BufNewFile *.na setfiletype dana
+augroup END
+
+" Dana LSP setup (vim-lsp)
+if executable('dana-ls')
+    au User lsp_setup call lsp#register_server({
+        \ 'name': 'dana-ls',
+        \ 'cmd': {server_info->['dana-ls']},
+        \ 'allowlist': ['dana'],
+        \ })
+    
+    " LSP settings for Dana files
+    augroup dana_lsp
+        autocmd!
+        autocmd FileType dana setlocal omnifunc=lsp#complete
+        autocmd FileType dana nnoremap <buffer> gd <plug>(lsp-definition)
+        autocmd FileType dana nnoremap <buffer> K <plug>(lsp-hover)
+        autocmd FileType dana nnoremap <buffer> <C-k> <plug>(lsp-signature-help)
+        autocmd FileType dana nnoremap <buffer> <space>e <plug>(lsp-document-diagnostics)
+    augroup END
+endif
+EOF
+        fi
+    else
+        # No LSP - basic configuration only
+        cat >> "$VIMRC_FILE" << 'EOF'
+
+" ===== OpenDXA Dana Language Support =====
+" Auto-installed by bin/vim/install.sh
+
+" Dana file type detection
+augroup dana_filetype
+  autocmd!
+  autocmd BufRead,BufNewFile *.na setfiletype dana
+augroup END
+EOF
+    fi
+
+    # Common configuration for all setups
+    cat >> "$VIMRC_FILE" << 'EOF'
 
 " Dana key mappings (only for .na files)
 augroup dana_mappings
@@ -145,6 +240,32 @@ fi
 
 echo -e "${GREEN}🎉 Dana Language Support successfully installed for ${VIM_TYPE}!${NC}"
 echo ""
+
+if [[ "$LSP_AVAILABLE" == "true" ]]; then
+    echo -e "${GREEN}✅ LSP Features Enabled:${NC}"
+    echo "  - Real-time syntax checking"
+    echo "  - Hover documentation (K)"
+    echo "  - Go-to-definition (gd)"
+    echo "  - Auto-completion (<C-x><C-o>)"
+    echo "  - Error diagnostics (<space>e)"
+    echo ""
+    if [[ "$VIM_TYPE" == "Neovim" ]]; then
+        echo -e "${BLUE}💡 Neovim LSP Requirements:${NC}"
+        echo "  - nvim-lspconfig plugin"
+        echo "  - Optional: nvim-cmp for enhanced completion"
+    else
+        echo -e "${BLUE}💡 Vim LSP Requirements:${NC}"
+        echo "  - vim-lsp plugin"
+        echo "  - Install with: :PlugInstall prabirshrestha/vim-lsp"
+    fi
+else
+    echo -e "${YELLOW}⚠️  Basic Dana support installed (no LSP features)${NC}"
+    echo -e "${BLUE}💡 To enable LSP features:${NC}"
+    echo "  1. Install dependencies: pip install lsprotocol pygls"
+    echo "  2. Re-run this installer"
+fi
+
+echo ""
 echo -e "${YELLOW}📝 Next steps:${NC}"
 echo "1. Open ${VIM_TYPE}: vim or nvim"
 echo "2. Create or open a .na file"
@@ -155,6 +276,11 @@ echo "  - F5: Run current file with Dana"
 echo "  - <leader>dr: Run current file with Dana"
 echo "  - <leader>dc: Check current file with Dana"
 echo "  - <leader>dd: Debug current file with Dana"
+if [[ "$LSP_AVAILABLE" == "true" ]]; then
+    echo "  - K: Hover documentation"
+    echo "  - gd: Go to definition"
+    echo "  - <space>e: Show diagnostics"
+fi
 echo ""
 echo -e "${BLUE}💡 Dana Abbreviations:${NC}"
 echo "  - pub: → public:"

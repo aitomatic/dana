@@ -1,0 +1,25 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "scopeName": "markdown.dana.injection",
+  "injectionSelector": "L:comment.line.number-sign.dana, L:string.quoted.docstring.multi.dana",
+  "patterns": [
+    {
+      "include": "#markdown-content"
+    }
+  ],
+  "repository": {
+    "markdown-content": {
+      "patterns": [
+        {
+          "include": "text.html.markdown#inline"
+        },
+        {
+          "include": "text.html.markdown#block"
+        },
+        {
+          "include": "text.html.markdown#lists"
+        }
+      ]
+    }
+  }
+} 

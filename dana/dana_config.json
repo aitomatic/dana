@@ -13,6 +13,13 @@
             "deepseek:deepseek-chat",
             "cohere:command",
             "ibm_watsonx:ibm/granite-20b-multilingual",
+            "xai:grok-3-mini-fast",
+            "xai:grok-4-0709",
+            "xai:grok-3",
+            "xai:grok-3-mini",
+            "xai:grok-3-fast",
+            "xai:grok-2-vision-1212",
+            "xai:grok-beta",
             "azure:gpt-4"
         ],
         "provider_configs": {
@@ -58,6 +65,10 @@
                 "api_type": "watsonx",
                 "deploymentId": "env:WATSONX_DEPLOYMENT_ID",
                 "apiVersion": "2024-03-14"
+            },
+            "xai": {
+                "api_key": "env:XAI_API_KEY",
+                "base_url": "https://api.x.ai/v1"
             }
         },
         "query_strategy": "iterative",

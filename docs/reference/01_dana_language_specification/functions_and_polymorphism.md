@@ -265,55 +265,162 @@ The exact naming and parameters of the built-in POET-related decorators will be 
 
 Function composition is a powerful capability in Dana for building complex operations by chaining simpler, reusable functions. This approach enhances code clarity, promotes modularity, and simplifies the management of sequential data processing tasks.
 
-### 7.1. Function Composition in Action: Planning and Costing a Trip
+### 7.1. Enhanced Function Composition with Parallel Support
 
-A common scenario where function composition shines is in multi-step data transformations or workflow execution. Consider planning a day trip:
+Dana supports both sequential and parallel function composition using a clean two-statement approach:
 
 ```dana
-# Assume these functions are defined elsewhere:
-# def plan_a_day(location: str, weather_condition: str) -> PlanDetails:
-# # ... returns some structured plan details (e.g., a dict or struct) ...
-#
-# def estimate_trip_cost(details: PlanDetails) -> CostEstimate:
-# # ... returns a cost estimation (e.g., a float or struct) ...
+# Define pipeline functions
+def add_ten(x: int) -> int:
+    return x + 10
 
-# Compose the functions to create a reusable pipeline
->>> daily_trip_planner_and_estimator = plan_a_day | estimate_trip_cost
-# daily_trip_planner_and_estimator is now a new callable
+def double(x: int) -> int:
+    return x * 2
 
-# Execute the pipeline with initial arguments
->>> cost_for_hmb_foggy = daily_trip_planner_and_estimator("half moon bay", "foggy")
-# This single call executes:
-# 1. plan_a_day("half moon bay", "foggy") to get PlanDetails
-# 2. estimate_trip_cost(output_from_plan_a_day) to get the final CostEstimate
-#
-# cost_for_hmb_foggy now holds the CostEstimate.
+def stringify(x: int) -> str:
+    return f"Result: {x}"
+
+def analyze(x: int) -> dict:
+    return {"value": x, "is_even": x % 2 == 0}
+
+def format(x: int) -> str:
+    return f"Formatted: {x}"
 ```
-This example demonstrates how easily two distinct steps (`plan_a_day` and `estimate_trip_cost`) can be combined into a single, coherent operation (`daily_trip_planner_and_estimator`).
 
-### 7.2. Why Use Function Composition?
+### 7.2. Sequential Composition
 
-* Readability: Chains like `process_data | filter_results | format_output` clearly express the flow of data and operations.
-* Reusability: Individual functions in the chain remain simple and can be reused in other compositions or standalone.
-* Modularity: Complex tasks are broken down into smaller, manageable, and testable units.
-* Maintainability: Changes to one step in the pipeline are localized to the specific function, reducing the risk of unintended side effects.
-* Expressiveness: It provides a natural way to represent sequential workflows and data transformations directly in the language.
+Chain functions in sequence using the `|` operator:
 
-### 7.3. Syntax and Behavior: The `|` Operator
+```dana
+# Sequential composition
+pipeline = add_ten | double | stringify
+result = pipeline(5)  # "Result: 30"
+
+# Complex sequential pipeline
+processor = add_ten | double | analyze | format
+result = processor(5)  # "Formatted: 30"
+```
+
+### 7.3. Parallel Composition
+
+Execute multiple functions in parallel using list syntax:
+
+```dana
+# Standalone parallel composition
+parallel_pipeline = [analyze, format]
+result = parallel_pipeline(10)  # [{"value": 10, "is_even": true}, "Formatted: 10"]
+
+# Mixed sequential + parallel
+mixed_pipeline = add_ten | [analyze, format] | stringify
+result = mixed_pipeline(5)  # "Result: [{"value": 15, "is_even": false}, "Formatted: 15"]"
+```
+
+### 7.4. Complex Multi-Stage Pipelines
+
+Combine sequential and parallel operations in complex workflows:
+
+```dana
+# Complex multi-stage pipeline
+workflow = (
+    add_ten | 
+    [analyze, double] | 
+    format | 
+    [stringify, analyze]
+)
+result = workflow(5)  # [{"value": 30, "is_even": true}, {"value": 30, "is_even": true}]
+```
+
+### 7.5. Reusable Pipeline Objects
+
+Create reusable pipeline objects that can be applied to different data:
+
+```dana
+# Create reusable pipeline
+data_processor = add_ten | [analyze, format]
+
+# Apply to different datasets
+result1 = data_processor(5)   # [{"value": 15, "is_even": false}, "Formatted: 15"]
+result2 = data_processor(10)  # [{"value": 20, "is_even": true}, "Formatted: 20"]
+result3 = data_processor(15)  # [{"value": 25, "is_even": false}, "Formatted: 25"]
+```
+
+### 7.6. Why Use Function Composition?
+
+* **Readability**: Chains like `process_data | filter_results | format_output` clearly express the flow of data and operations.
+* **Reusability**: Individual functions in the chain remain simple and can be reused in other compositions or standalone.
+* **Modularity**: Complex tasks are broken down into smaller, manageable, and testable units.
+* **Maintainability**: Changes to one step in the pipeline are localized to the specific function, reducing the risk of unintended side effects.
+* **Expressiveness**: It provides a natural way to represent sequential workflows and data transformations directly in the language.
+* **Parallel Processing**: Support for parallel execution enables efficient processing of multiple operations simultaneously.
+
+### 7.7. Syntax and Behavior: The `|` Operator
 
 Dana uses the `|` (pipe) operator for function composition:
 
 ```dana
+# Sequential composition
 local:composed_function = function_one | function_two | function_three
+
+# Parallel composition  
+local:parallel_function = [function_one, function_two, function_three]
+
+# Mixed composition
+local:mixed_function = function_one | [function_two, function_three] | function_four
 ```
 
-* Execution Order: Functions are executed from left to right.
-* Data Flow: The return value of `function_one` is passed as the first (and often only) argument to `function_two`. The return value of `function_two` is passed to `function_three`, and so on.
-* Signature of Composed Function:
- * The `composed_function` accepts the same arguments as the *first* function in the chain (`function_one` in the example above).
- * The return type of the `composed_function` is the return type of the *last* function in the chain (`function_three` above).
-* Type Compatibility: For a composition to be valid at compile-time or runtime, the return type of each function (except the last) must be compatible with the input parameter type of the immediately following function. Dana's type system will aim to verify this. If `function_one` returns a `TypeA`, and `function_two` expects a `TypeB` as its first argument, then `TypeA` must be assignable to or convertible to `TypeB`.
-* Result: The expression `function_one | function_two` evaluates to a new callable (the composed function). This composed function can be stored in a variable, passed as an argument, or called immediately.
+**Execution Behavior:**
+* **Sequential Execution**: Functions are executed from left to right, with each function's output becoming the input to the next.
+* **Parallel Execution**: Functions in lists execute conceptually in parallel, with results collected as a list for the next stage.
+* **Data Flow**: The return value of each function is passed as the first argument to the next function in the chain.
+* **Type Compatibility**: For a composition to be valid, the return type of each function (except the last) must be compatible with the input parameter type of the immediately following function.
+
+**Composed Function Signature:**
+* The composed function accepts the same arguments as the *first* function in the chain.
+* The return type of the composed function is the return type of the *last* function in the chain.
+* Parallel functions return lists of results that are passed to subsequent functions.
+
+### 7.8. Error Handling and Validation
+
+Dana provides comprehensive error handling for function composition:
+
+```dana
+# Missing function error
+pipeline = add_ten | non_existent_function  # ❌ Error: "Function 'non_existent_function' not found"
+
+# Non-function composition error  
+pipeline = add_ten | 42  # ❌ Error: "Cannot use non-function 42 of type int in pipe composition"
+
+# Clear error messages help with debugging
+pipeline = func1 | not_a_function  # ❌ Error: "not_a_function is not callable"
+```
+
+**Validation Features:**
+* **Function-Only Composition**: Only callable functions can be used in composition chains
+* **Missing Function Detection**: Clear error messages when functions are not found
+* **Type Validation**: Automatic validation of function signatures and return types
+* **Parallel Function Validation**: Ensures all items in parallel lists are callable functions
+
+### 7.9. Design Philosophy: Clean Two-Statement Approach
+
+Dana's function composition follows a clean separation of concerns:
+
+```dana
+# ✅ SUPPORTED: Clean two-statement approach
+pipeline = f1 | f2 | [f3, f4]    # Statement 1: Pure function composition
+result = pipeline(data)          # Statement 2: Pure data application
+
+# ❌ NOT SUPPORTED: Mixed data/function patterns (removed for clarity)
+# 5 | double                     # REJECTED - mixed data/function
+# data | [func1, func2]          # REJECTED - mixed data/function  
+# (f1 | f2)(data)                # REJECTED - unnecessary complexity
+```
+
+**Benefits of This Approach:**
+* **Clear Separation**: Function composition is separate from data application
+* **Reduced Ambiguity**: No confusion between data pipelines and function composition
+* **Better Debugging**: Clear error messages and predictable execution flow
+* **Functional Programming**: Follows functional programming best practices
+* **Maintainability**: Simpler, more focused implementation
 
 ## 8. Modules and Imports
 

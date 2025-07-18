@@ -13,14 +13,14 @@ from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from llama_index.embeddings.openai.base import OpenAIEmbedding, OpenAIEmbeddingMode, OpenAIEmbeddingModelType
 from llama_index.llms.openai.base import OpenAI
 
-import opendxa
+import dana
 
-load_dotenv(dotenv_path=Path(opendxa.__path__[0]).parent / ".env",
+load_dotenv(dotenv_path=Path(dana.__path__[0]).parent / ".env",
             verbose=True,
             override=True,
             encoding="utf-8")
 
-DOCS_DIR_PATH = Path(__file__).parent.parent.parent.parent.parent.parent / "docs" / "for-engineers"
+DOCS_DIR_PATH = Path(__file__).parent.parent.parent.parent.parent / "docs" / "for-engineers"
 INDEX_PERSIST_DIR_PATH = ".cache/llama_index_vector_store_index"
 
 reader = SimpleDirectoryReader(

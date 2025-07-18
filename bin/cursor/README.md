@@ -58,7 +58,7 @@ If the scripts don't work, you can install manually:
 
 1. Navigate to the extension directory:
    ```bash
-   cd opendxa/dana/integration/vscode
+   cd dana/integrations/vscode
    ```
 
 2. Install dependencies and build:

@@ -2,7 +2,6 @@
   <img src="../images/dana-logo.jpg" alt="Dana Logo" width="60">
   <span>
     <div style="font-size: 18px; font-style: italic; font-weight: 600; color: #666;">Agent-native programming language and runtime</div>
-    <div style="font-size: 12px; font-style: italic; color: #999;">powered by OpenDXA</div>
   </span>
 </div>
 
@@ -10,13 +9,13 @@
 *Beyond AI coding assistants: Write agents that learn, adapt, and improve themselves in production*
 
 ---
-> **What if your code could learn, adapt, and improve itself in production—without you?**
+> **What if your agents could learn, adapt, and improve itself in production—without you?**
 
 Dana opens new research frontiers in agent-native neurosymbolic AI, bridging the gap between development assistance and autonomous execution through transparent, auditable reasoning systems.
 
 Welcome to the research guide for Dana! This resource covers theoretical foundations, research opportunities, and collaboration frameworks for advancing agent-native programming.
 
-# OpenDXA for Researchers
+# Dana for Researchers
 
 *Exploring the theoretical foundations, research implications, and academic opportunities in agent-native neurosymbolic AI at the convergence of development assistance and autonomous execution*
 
@@ -37,14 +36,14 @@ A key publication outlining the principles behind OpenDXA is:
 
 - [DANA: Domain-Aware Neurosymbolic Agents for Consistency and Accuracy](https://arxiv.org/abs/2410.02823). *V. Luong, S. Dinh, S. Raghavan, et al.* (arXiv:2410.02823) - This paper introduces DANA (Domain-Aware Neurosymbolic Agent), an architecture that addresses inconsistency and inaccuracy in LLMs by integrating domain-specific knowledge with neurosymbolic approaches. It demonstrates how DANA achieves high accuracy and consistency, for example, on financial benchmarks. [[DOI](https://doi.org/10.48550/arXiv.2410.02823)]
 
- ![DANA Accuracy and Consistency](../images/dana-accuracy-consistency.png)
+![DANA Accuracy and Consistency](../images/dana-accuracy-consistency.png)
 
 ---
 
 ## Research Domains
 
 ### Neurosymbolic Computing
-OpenDXA provides a unique platform for advancing neurosymbolic research:
+Dana provides a unique platform for advancing neurosymbolic research:
 
 - Hybrid Architectures: Study the integration of symbolic and neural components
 - Reasoning Patterns: Analyze how systems combine logical and probabilistic reasoning
@@ -60,7 +59,7 @@ Dana's design offers insights into cognitive computing principles:
 - Meta-Cognition: Self-awareness and self-improvement in AI systems
 
 ### Human-AI Interaction
-OpenDXA enables new research in collaborative intelligence:
+Dana enables new research in collaborative intelligence:
 
 - Transparency Effects: Impact of system transparency on trust and adoption
 - Collaborative Patterns: Effective human-AI workflow designs
@@ -96,7 +95,7 @@ Key Innovations:
 
 ### Neurosymbolic Integration Model
 
-OpenDXA implements a novel agent-native approach to neurosymbolic integration that unifies development-time assistance with runtime autonomy:
+Dana implements a novel agent-native approach to neurosymbolic integration that unifies development-time assistance with runtime autonomy:
 
 ```
 Symbolic Layer (Dana Language)
@@ -135,7 +134,7 @@ The CORRAL framework represents a systematic approach to domain knowledge manage
 
 ### Development-Runtime Continuity
 
-OpenDXA's unified model enables new research into continuous AI systems:
+Dana's unified model enables new research into continuous AI systems:
 
 Research Questions:
 - How do AI systems maintain consistency when transitioning from development assistance to autonomous execution?
@@ -149,7 +148,7 @@ Experimental Opportunities:
 
 ### Adaptive Function Research
 
-OpenDXA's POET-enabled self-improvement provides unique research opportunities:
+Dana's POET-enabled self-improvement provides unique research opportunities:
 
 Research Questions:
 - How do functions optimize themselves while maintaining reliability guarantees?
@@ -167,7 +166,7 @@ Research Directions:
 
 ### Formal Verification in Probabilistic Systems
 
-OpenDXA's architecture enables new approaches to formal verification:
+Dana's architecture enables new approaches to formal verification:
 
 Research Questions:
 - How can we formally verify properties of systems that include probabilistic components?
@@ -181,7 +180,7 @@ Potential Approaches:
 
 ### Cognitive Load and System Transparency
 
-OpenDXA's transparency features provide opportunities to study cognitive effects:
+Dana's transparency features provide opportunities to study cognitive effects:
 
 Research Questions:
 - How does system transparency affect user trust and decision-making?
@@ -195,7 +194,7 @@ Experimental Opportunities:
 
 ### Adaptive Learning in Production Systems
 
-OpenDXA's self-improving capabilities enable research into adaptive systems:
+Dana's self-improving capabilities enable research into adaptive systems:
 
 Research Questions:
 - How do AI systems learn and adapt in real-world environments?
@@ -213,7 +212,7 @@ Research Directions:
 
 ### Data Collection and Analysis
 
-OpenDXA provides rich data for empirical research:
+Dana provides rich data for empirical research:
 
 Available Data Types:
 - Execution Traces: Complete logs of agent execution and decision-making
@@ -229,7 +228,7 @@ Research Applications:
 
 ### Benchmarking and Evaluation
 
-OpenDXA enables new approaches to AI system evaluation:
+Dana enables new approaches to AI system evaluation:
 
 Novel Evaluation Metrics:
 - Transparency Score: Quantifying system explainability
@@ -249,7 +248,7 @@ Benchmark Development:
 
 ### Research Partnerships
 
-OpenDXA actively collaborates with academic institutions:
+Dana actively collaborates with academic institutions:
 
 Current Partnerships:
 - University research labs studying neurosymbolic computing
@@ -265,7 +264,7 @@ Collaboration Opportunities:
 
 ### Publication and Dissemination
 
-OpenDXA research contributes to multiple academic venues:
+Dana research contributes to multiple academic venues:
 
 Target Conferences:
 - AAAI (Artificial Intelligence)
@@ -282,7 +281,7 @@ Journal Publications:
 
 ### Educational Applications
 
-OpenDXA serves as an educational platform for AI concepts:
+Dana serves as an educational platform for AI concepts:
 
 Course Integration:
 - AI and Machine Learning courses
@@ -348,7 +347,7 @@ Ethics and Governance:
 
 ### Datasets and Benchmarks
 
-OpenDXA Research Datasets:
+Dana Research Datasets:
 - Production execution traces from diverse domains
 - Human-AI interaction logs and annotations
 - Performance benchmarks across different tasks

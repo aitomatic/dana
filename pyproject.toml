@@ -10,29 +10,32 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 # =============================================================================
-# Project Metadata & Dependencies
+# Project Metadata
 # =============================================================================
 
 [project]
-name = "dana"
-version = "0.4.0"
-description = "Domain-Aware Neurosymbolic Architecture"
+name = "dana-agent"
+version = "0.25.7.22"
+description = "Dana programming language for Domain-Aware Neurosymbolic Agents"
+readme = "README.md"
 requires-python = ">=3.12"
 authors = [
     {name = "Christopher Nguyen", email = "ctn@aitomatic.com"},
 ]
 
-# Production dependencies - keep minimal and well-organized
+# Core dependencies organized by functionality
 dependencies = [
-    # AI/LLM Integration - Core functionality for agent reasoning
+    # AI/LLM Integration
     "google-cloud-aiplatform",
-    # "google-genai<1.20.0",  # Temporarily disabled to test httpx compatibility
     "aisuite[openai,anthropic,azure,groq,huggingface,ollama]>=0.1.11",
+    "httpx>=0.27.0",
     "mcp",
-    # "fastmcp>=2.6.1,<2.9.0",  # Temporarily disabled to test httpx compatibility
     "llm-code-executor",
     "llama-index",
-    # Data Processing - Required for agent data handling
+    "openai>=1.55.3",
+    # Language Processing
+    "lark",
+    # Data Processing
     "pandas",
     "matplotlib",
     "seaborn",
@@ -42,197 +45,155 @@ dependencies = [
     "aiohttp",
     "aioconsole",
     "websockets",
-    "httpx==0.27.2", # Pin to fix AISuite/Anthropic compatibility issue
     # Configuration & Utilities
     "python-dotenv",
     "pyyaml",
     "structlog",
-    # Language Processing - Dana language parser
-    "lark",
-    # Interactive Features - REPL and user interface
+    # Interactive Features
     "prompt-toolkit",
     "pygments",
-    # Webcrawler
+    # Web Automation
     "playwright",
-    # Testing - Core testing framework (needed for Dana runtime)
+    # API Server
+    "fastapi",
+    "uvicorn",
+    # Testing Framework (needed for Dana runtime)
     "pytest",
     "pytest-asyncio",
     "pytest-mock",
-    "mkdocs>=1.6.1",
-    "mkdocs-material>=9.6.14",
-    "mkdocs-mermaid2-plugin>=1.2.1",
-    "mkdocs-section-index>=0.3.10",
-    "mkdocstrings>=0.29.1",
-    "mkdocstrings-python>=1.16.12",
-    "mkdocs-git-revision-date-localized-plugin>=1.4.7",
-    "pymdown-extensions[extra]>=10.15",
+    # Language Server Protocol
+    "lsprotocol",
+    "pygls",
+    # Agent Integration
     "python-a2a>=0.5.9",
-    # API Server - Required for Dana sandbox operations
-    "fastapi",
-    "openai>=1.55.3",
-    "fastmcp>=2.10.2",
 ]
 
-# Development-only dependencies
+# Optional dependency groups
 [project.optional-dependencies]
 dev = [
-    "ruff",        # Fast Python linter (replaces flake8, isort, etc.)
-    "pylint",      # Additional code analysis
-    "mypy",        # Static type checking
-    "pre-commit",  # Git hooks for code quality
+    "ruff",       # Fast Python linter
+    "pylint",     # Additional code analysis
+    "mypy",       # Static type checking
+    "pre-commit", # Git hooks for code quality
     "pytest-cov", # Test coverage reporting
+    "build",      # Package building tool
+    "twine",      # PyPI upload tool
 ]
 
-# Documentation tooling - focused on auto-sync and validation
 docs = [
-    # Core: MkDocs for DevRel team productivity
-    "mkdocs-material>=9.0",
+    # Core Documentation
+    "mkdocs",
+    "mkdocs-material",
     "mkdocs-mermaid2-plugin",
+    "mkdocs-section-index",
+    "mkdocstrings",
+    "mkdocstrings-python",
+    "mkdocs-git-revision-date-localized-plugin",
+    "pymdown-extensions[extra]",
 
-    # Auto-sync with code (solves staleness problem)
-    "mkdocstrings[python]>=0.24",    # API docs from docstrings (auto-update)
+    # Auto-sync and Generation
     "mkdocs-gen-files",              # Generate docs from code structure
     "mkdocs-literate-nav",           # Auto-generate navigation
-    "mkdocs-section-index",          # Clickable sections
 
-    # Validation tools (catch problems early)
+    # Validation Tools
     "mkdocs-htmlproofer-plugin",     # Broken link detection
     "linkcheckmd",                   # Fast async link checking
     "doc8",                          # Documentation style checking
 
-    # Multi-constituency features
+    # Advanced Features
     "mkdocs-redirects",              # Handle URL changes
     "mkdocs-awesome-nav",            # Advanced navigation control
     "mkdocs-print-site-plugin",      # PDF export for offline reading
-
-    # Content enhancement
     "mkdocs-include-markdown-plugin",# Reusable content blocks
     "mkdocs-macros-plugin",          # Variables and templating
     "mkdocs-table-reader-plugin",    # Data tables from CSV/JSON
-    "mkdocs-git-revision-date-localized-plugin", # Last updated dates
 ]
 
-# Command-line entry points for end users
+# Command-line entry points
 [project.scripts]
 dana = "dana.core.cli.dana:main"
+dana-ls = "dana.core.lang.lsp.server:main"
 
 # =============================================================================
 # Package Configuration
 # =============================================================================
 
 [tool.setuptools]
-# Use find_packages to automatically discover all subpackages
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["dana*"]
 exclude = ["tests*", "examples*", "docs*", "tmp*"]
 
 [tool.setuptools.package-data]
-dana = ["**/*.py", "**/*.lark"]
+dana = ["**/*.py", "**/*.lark", "**/*.json", "**/api/server/static/**/*"]
 
 # =============================================================================
-# Development Tools & Scripts (uv-specific)
+# Package Manager Configuration (uv)
 # =============================================================================
 
-# NOTE: Native task runner support ([tool.uv.tasks] or [tool.uv.scripts])
-# is planned but not yet available in uv 0.7.9
-#
-# Use these direct uv run commands for common development tasks:
-#
-# Testing workflows:
-#   uv run pytest tests/                              # Run all tests
-#   uv run pytest -m 'not live and not deep' tests/   # Fast tests only
-#   uv run pytest -m 'live' tests/                    # Live/integration tests
-#   uv run pytest --cov-report=html tests/  # With coverage
-#
-# Code quality workflows:
-#   uv run ruff check .                               # Lint code
-#   uv run ruff check --fix .                         # Lint and auto-fix
-#   uv run ruff format .                              # Format code
-#   uv run ruff format --check .                      # Check formatting
-#   uv run mypy .                                     # Type checking
-#
-# Documentation workflows (for DevRel team):
-#   uv run python -m mkdocs serve                     # Live preview during writing
-#   uv run python -m mkdocs serve --dev-addr=0.0.0.0:8000  # Live preview (remote accessible)
-#   uv run python -m mkdocs build                     # Build docs
-#   uv run python -m mkdocs build --strict            # Build with warnings as errors
-#   uv run mkdocs gh-deploy --force                   # Build and deploy to GitHub Pages
-#
-# Documentation validation (catch staleness):
-#   uv run pytest --doctest-modules dana/             # Test code examples in docstrings
-#   uv run python -m linkcheckmd docs/                # Check all markdown links (fast async)
-#   uv run doc8 docs/                                 # Documentation style checking
-#   uv run python -m mkdocs build --strict            # Validate complete build
-#
-# Environment management:
-#   uv sync                                           # Sync dependencies
-#   uv sync --extra dev                               # Sync with dev dependencies
-#   uv sync --extra docs                              # Sync with documentation tools
-#   uv add <package>                                  # Add new dependency
-#   uv remove <package>                               # Remove dependency
-#
-# Dana-specific commands:
-#   uv run python -m dana.core.repl.dana examples/dana/debug_tests/test_basic.na
-#   uv run python -m dana.core.repl.repl.repl
-#
-# When native task support is added, these will become:
-# [tool.uv.tasks]
-# test = "pytest tests/"
-# lint = "ruff check ."
-# format = "black ."
+[tool.uv]
+package = true
+preview = true                      # Enable preview features
+resolution = "highest"              # Use highest compatible versions
+prerelease = "disallow"             # Avoid pre-release versions
+python-preference = "only-managed"  # Use uv-managed Python installations
+compile-bytecode = true             # Pre-compile .pyc files for performance
+
+
+[tool.uv.sources]
+# Future: Custom dependency sources
+
+[dependency-groups]
+dev = [
+    "pre-commit",
+    "build",
+    "twine",
+]
 
 # =============================================================================
 # Code Quality Tools
 # =============================================================================
 
-# Code Formatting
 [tool.black]
 line-length = 140
-target-version = ["py312"]  # Align with requires-python
+target-version = ["py312"]
 
-# Linting (Primary)
 [tool.ruff]
 line-length = 140
-target-version = "py312"    # Align with requires-python
+target-version = "py312"
 
 [tool.ruff.lint]
-# Enable these rule categories
 select = [
     "E",   # pycodestyle errors
     "F",   # pyflakes
     "I",   # isort (import sorting)
     "B",   # bugbear (common Python gotchas)
     "UP",  # pyupgrade (modern Python features)
-    "N801", "N803", "N804",  # naming conventions (classes & functions only)
+    "N801", "N803", "N804",  # naming conventions
     "F821", "F822", "F841", "F401",  # undefined names, unused variables/imports
 ]
 
-# Disable these specific rules
 ignore = [
     "E203",  # Whitespace before ':' (conflicts with Black)
-    "E501",  # Line too long (handled by line-length setting)
-    "B008",  # Function call in default argument (common in frameworks)
-    "B010",  # setattr in class body (common in frameworks)
-    "B904",  # raise ... from ... (not always needed)
-    "N802",  # Function name should be lowercase (conflicts with transformers)
+    "E501",  # Line too long (handled by line-length)
+    "B008",  # Function call in default argument
+    "B010",  # setattr in class body
+    "B904",  # raise ... from ...
+    "N802",  # Function name should be lowercase
 ]
 
-# Files/directories to skip
 exclude = [
-    "*.na",              # Dana language files (not Python)
-    ".git",              # Version control
-    ".venv",             # Virtual environment
+    "*.na",           # Dana language files
+    ".git",           # Version control
+    ".venv",          # Virtual environment
     "dana.egg-info",  # Build artifacts
 ]
 
-# Type Checking
 [tool.pyright]
 reportAttributeAccessIssue = false
 reportGeneralTypeIssues = false
 reportAssignmentType = false
 
-# MyPy Configuration
 [tool.mypy]
 python_version = "3.12"
 warn_return_any = true
@@ -243,45 +204,10 @@ disallow_any_generics = true
 check_untyped_defs = true
 no_implicit_reexport = true
 
-# Per-module options for gradual adoption
 [[tool.mypy.overrides]]
 module = "tests.*"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = "dana.core.lang.interpreter.*"
-disallow_untyped_defs = true  # Strict checking for core interpreter
-
-# =============================================================================
-# Package Manager Configuration (uv)
-# =============================================================================
-
-[tool.uv]
-package = true
-override-dependencies = [
-    "httpx>=0.28.1",  # Force newer httpx to resolve aisuite/fastmcp conflict
-]
-
-# Enable preview features for scripts support
-preview = true
-
-# Dependency resolution strategy
-resolution = "highest"      # Always use highest compatible versions
-prerelease = "disallow"     # Avoid pre-release versions in production
-
-# Python environment preferences
-python-preference = "only-managed"  # Use uv-managed Python installations
-compile-bytecode = true             # Pre-compile .pyc files for performance
-
-# Future: Custom dependency sources
-[tool.uv.sources]
-
-[dependency-groups]
-dev = [
-    "pre-commit>=4.2.0",
-]
-# dana = { workspace = true }  # For workspace/monorepo setup
-
-# Future: Workspace configuration for multi-package projects
-# [tool.uv.workspace]
-# members = ["dana", "extensions/*"]
+disallow_untyped_defs = true

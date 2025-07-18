@@ -8,152 +8,162 @@
 
 # Dana Test Suite
 
-## dana.tests Module
-
-Comprehensive test coverage for the Dana framework.
+This directory contains the comprehensive test suite for the Dana language and runtime system.
 
 ## Test Organization
 
-- **agent/**: Agent system tests
-  - Agent configuration
+The test suite is organized into four main categories:
 
-- **execution/**: Execution system tests
-  - Workflow implementation
-  - Factory patterns
+### 1. Unit Tests (`tests/unit/`)
+Python-based unit tests for individual modules and components.
 
-- **integration/**: Cross-component tests
-  - Default strategies
-  - Workflow integration
+- **`core/`** - Tests for `dana/core/` modules (language, runtime, repl, stdlib)
+- **`agent/`** - Tests for `dana/agent/` modules (agent system, capabilities)
+- **`api/`** - Tests for `dana/api/` modules (server, client)
+- **`frameworks/`** - Tests for `dana/frameworks/` modules (knows, poet, agent frameworks)
+- **`integrations/`** - Tests for `dana/integrations/` modules (vscode, mcp, python)
+- **`common/`** - Tests for `dana/common/` modules (shared utilities)
+- **`contrib/`** - Tests for `dana/contrib/` modules (community contributions)
 
-## Test Categories
+### 2. Functional Tests (`tests/functional/`)
+Dana language tests (`.na` files) that test the language features directly.
 
-The test suite is organized into two main categories to optimize CI performance:
+- **`language/`** - Core language features (syntax, semantics, control flow)
+- **`stdlib/`** - Standard library features (poet, built-in functions)
+- **`agent/`** - Agent language features (reasoning, agent keywords)
+- **`integration/`** - Cross-feature integration tests and scenarios
 
-### Fast Tests (CI)
-- **Purpose**: Quick regression testing for CI/CD pipelines
-- **Characteristics**: Unit tests, simple integration tests, fast execution
-- **Runtime**: ~55 seconds
-- **Count**: ~486 tests
-- **Usage**: Default for CI, local development
+### 3. Integration Tests (`tests/integration/`)
+Python-based integration tests that test multiple components working together.
 
-### Deep Tests (Local)
-- **Purpose**: Comprehensive testing for local development
-- **Characteristics**: Large test files (>300 lines), integration tests, comprehensive scenarios
-- **Runtime**: ~23 seconds
-- **Count**: ~79 tests
-- **Usage**: Local development, thorough validation
+- **`end_to_end/`** - Full system integration tests
+- **`api/`** - API integration tests
+- **`frameworks/`** - Framework integration tests
+
+### 4. Regression Tests (`tests/regression/`)
+Tests for known issues, expected failures, and regression prevention.
+
+- **`known_issues/`** - Tests for known bugs and limitations
+- **`expected_failures/`** - Tests that are expected to fail (syntax limitations, etc.)
 
 ## Running Tests
 
-### Default (Fast Tests Only)
+### All Tests
 ```bash
-# Run fast tests (excludes deep and live tests)
-pytest
-
-# Explicit fast tests only
-pytest -m "not live and not deep"
+python -m pytest tests/
 ```
 
-### All Tests (Local Development)
+### Unit Tests Only
 ```bash
-# Run all tests except live tests
-pytest -m "not live"
-
-# Run only deep tests
-pytest -m "deep"
-
-# Run all tests including live tests (requires external services)
-pytest -m ""
+python -m pytest tests/unit/
 ```
 
-### Specific Test Categories
+### Functional Tests Only
 ```bash
-# Run specific module
-pytest tests/execution/
-
-# Run specific test file
-pytest tests/execution/test_pipeline.py
-
-# Run specific test case
-pytest tests/execution/test_pipeline.py::TestPipeline::test_placeholder
-
-# Run with coverage
-pytest --cov=dana
-
-# Run with verbose output
-pytest -v
+python -m pytest tests/functional/
 ```
 
-## Test Markers
-
-- `fast`: Quick regression tests suitable for CI
-- `deep`: Comprehensive/integration tests for local development
-- `live`: Tests requiring external services (LLM, APIs)
-- `unit`: Pure unit tests
-- `na_file`: Tests that execute .na files
-
-## CI/CD Integration
-
-Dana uses a parallelized testing strategy to optimize CI/CD performance:
-- **Parallel CI Runtime**: ~6-8 minutes (all fast tests across 6 jobs)
-- **Sequential CI Runtime**: ~15-20 minutes (single job)
-- **Full Suite**: ~78 seconds (all tests including deep)
-- **Deep Tests**: ~23 seconds (comprehensive tests)
-
-For detailed information about the parallel testing strategy, see [CI/CD Testing Strategy](../docs/for-contributors/development/ci-cd-testing.md).
-
-## Managing Test Categories
-
-Use the categorization script to analyze and update test categories:
-
+### Integration Tests Only
 ```bash
-# Analyze current test categorization
-python scripts/categorize_tests.py --dry-run
-
-# Apply suggested categorizations
-python scripts/categorize_tests.py --apply
+python -m pytest tests/integration/
 ```
 
-The script automatically identifies tests that should be marked as "deep" based on:
-- File size (>300 lines)
-- Class names containing: integration, comprehensive, advanced, scenario, etc.
-- Test method names suggesting complex scenarios
-- Files with many test methods (>15 per class)
+### Specific Module Tests
+```bash
+python -m pytest tests/unit/core/
+python -m pytest tests/functional/language/
+```
 
-## Writing Tests
+### Dana Language Tests
+```bash
+# Run all .na files
+find tests/functional -name "*.na" -exec dana {} \;
 
-1. Follow existing patterns in similar test files
-2. Use fixtures for common setup
-3. Test both success and error cases
+# Run specific .na file
+dana tests/functional/language/test_simple.na
+```
+
+## Test Categories
+
+### Unit Tests
+- **Purpose**: Test individual functions, classes, and modules in isolation
+- **Language**: Python
+- **Scope**: Single module or component
+- **Speed**: Fast execution
+
+### Functional Tests
+- **Purpose**: Test Dana language features and behavior
+- **Language**: Dana (`.na` files)
+- **Scope**: Language features, syntax, semantics
+- **Speed**: Medium execution (requires Dana interpreter)
+
+### Integration Tests
+- **Purpose**: Test multiple components working together
+- **Language**: Python
+- **Scope**: End-to-end workflows, API interactions
+- **Speed**: Slower execution (involves multiple components)
+
+### Regression Tests
+- **Purpose**: Prevent regressions and test known limitations
+- **Language**: Python and Dana
+- **Scope**: Known issues, edge cases, failure modes
+- **Speed**: Variable
+
+## Test Naming Conventions
+
+### Python Tests
+- `test_*.py` - Test files
+- `test_*` - Test functions
+- `Test*` - Test classes
+
+### Dana Tests
+- `test_*.na` - Test files
+- Descriptive names that indicate what feature is being tested
+
+## Adding New Tests
+
+### Unit Tests
+1. Create test file in appropriate `tests/unit/` subdirectory
+2. Follow pytest conventions
+3. Use descriptive test names
 4. Include docstrings explaining test purpose
-5. Mark comprehensive tests with `@pytest.mark.deep`
-6. Keep fast tests focused and lightweight
 
-### Example Test Structure
+### Functional Tests
+1. Create `.na` file in appropriate `tests/functional/` subdirectory
+2. Use clear, descriptive names
+3. Include comments explaining test purpose
+4. Test both success and failure cases
 
-```python
-import pytest
-from dana.common.exceptions import SandboxError
+### Integration Tests
+1. Create test file in appropriate `tests/integration/` subdirectory
+2. Test realistic workflows
+3. Include setup and teardown as needed
+4. Test error conditions and edge cases
 
-class TestBasicFunctionality:
-    """Fast regression tests for basic functionality."""
-    
-    def test_simple_case(self):
-        """Test simple case that should run quickly."""
-        # Fast, focused test
-        pass
+## Test Configuration
 
-@pytest.mark.deep
-class TestComprehensiveFunctionality:
-    """Comprehensive tests for complex scenarios."""
-    
-    def test_integration_scenario(self):
-        """Test complex integration scenario."""
-        # More comprehensive test
-        pass
+- `pytest.ini` - Pytest configuration
+- `conftest.py` - Shared fixtures and configuration
+- `tests/conftest.py` - Test-specific fixtures
+
+## Continuous Integration
+
+Tests are automatically run on:
+- Pull requests
+- Main branch commits
+- Release tags
+
+## Coverage
+
+Test coverage is tracked and reported for:
+- Line coverage
+- Branch coverage
+- Function coverage
+
+Run coverage report:
+```bash
+python -m pytest --cov=dana tests/
 ```
-
-See individual test files for examples.
 
 ---
 <p align="center">

@@ -12,9 +12,9 @@ from langchain.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
-import opendxa
+import dana
 
-load_dotenv(dotenv_path=Path(opendxa.__path__[0]).parent / ".env",
+load_dotenv(dotenv_path=Path(dana.__path__[0]).parent / ".env",
             verbose=True,
             override=True,
             encoding="utf-8")

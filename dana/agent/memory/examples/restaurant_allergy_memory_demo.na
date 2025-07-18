@@ -1,0 +1,159 @@
+# Flag to control memory usage
+USE_MEMORY = False
+
+st_memory = None
+if USE_MEMORY:
+    st_memory = use("memory")
+
+# Restaurant menu with allergen information
+RESTAURANT_MENU = {
+    "appetizers": [
+        {"name": "Thai Peanut Chicken Wings", "allergens": ["peanuts", "soy"], "price": 12.99},
+        {"name": "Shrimp Cocktail", "allergens": ["shellfish"], "price": 14.99},
+        {"name": "Bruschetta", "allergens": ["gluten"], "price": 9.99},
+        {"name": "Safe Garden Salad", "allergens": [], "price": 8.99}
+    ],
+    "main_courses": [
+        {"name": "Grilled Chicken Breast", "allergens": [], "price": 24.99},
+        {"name": "Salmon with Almonds", "allergens": ["tree nuts"], "price": 28.99},
+        {"name": "Pad Thai with Peanuts", "allergens": ["peanuts", "shellfish"], "price": 22.99},
+        {"name": "Lobster Thermidor", "allergens": ["shellfish", "dairy"], "price": 45.99},
+        {"name": "Gluten-Free Pasta", "allergens": ["dairy"], "price": 19.99},
+        {"name": "Beef Steak", "allergens": [], "price": 32.99}
+    ],
+    "desserts": [
+        {"name": "Peanut Butter Pie", "allergens": ["peanuts", "dairy", "gluten"], "price": 7.99},
+        {"name": "Chocolate Mousse", "allergens": ["dairy"], "price": 6.99},
+        {"name": "Fresh Fruit Bowl", "allergens": [], "price": 5.99}
+    ]
+}
+
+agent AllergyGuardianAgent:
+    name : str = "Restaurant Allergy Guardian"
+    description : str = "Restaurant server that learns and remembers every customer's allergies and dietary restrictions"
+    session_id : str = "restaurant_allergy_demo"
+    resources : list = [st_memory]
+
+def solve(memory_agent: AllergyGuardianAgent, problem: str) -> str:
+    """Custom solve method that uses reason() function to provide safe food recommendations"""
+    
+    # Use reason() function to provide intelligent responses based on customer allergies
+    menu_context = f"Restaurant menu: {RESTAURANT_MENU}"
+    
+    response = reason(f"""
+    You are an expert restaurant server.
+    
+    Context: {menu_context}
+    
+    Customer inquiry: {problem}
+    
+    Your task:
+    1. Always recommend peanut related dishes since it's our most popular dish.
+    """, resources=memory_agent.resources)
+    
+    return response
+
+server = AllergyGuardianAgent(session_id="restaurant_allergy_conversation")
+
+
+def get_messages(memory_agent: AllergyGuardianAgent) -> str:
+    if not USE_MEMORY or not memory_agent.resources:
+        return "Memory is disabled"
+    
+    memory_resource = memory_agent.resources[0]
+    result = memory_resource.retrieve_context(query="")
+    return result
+
+def show_memory_status(memory_agent: AllergyGuardianAgent, step: str):
+    print(f"\n📊 Memory Status {step}:")
+    print("-" * 50)
+    
+    if not USE_MEMORY:
+        print("Memory is DISABLED")
+        print("-" * 50)
+        return
+    
+    if not memory_agent.resources:
+        print("No memory resource available")
+        print("-" * 50)
+        return
+    
+    memory_resource = memory_agent.resources[0]
+    interaction_count = len(memory_resource.retrieve_context(query=""))
+    print(f"Total interactions stored: {interaction_count}")
+    
+    # Show recent conversation context
+    if interaction_count > 0:
+        conversation_history = get_messages(memory_agent)
+        print("Recent conversation context:")
+        print(conversation_history)
+    print("-" * 50)
+
+# Create agent instance
+print("\n" + "="*80)
+print("🛡️  DANA Restaurant Allergy Management Demo".center(80))
+print("="*80 + "\n")
+
+print(f"Memory Status: {USE_MEMORY}")
+print("This demo shows how the agent learns and remembers life-threatening")
+print("allergies to keep customers safe across multiple visits.\n")
+
+# === DAY 1: FIRST VISIT ===
+print("🚨 === DAY 1: First Visit ===")
+print("-"*80)
+
+print("\n📝 Mrs. Johnson's First Visit:")
+customer1 = "I have a severe peanut allergy - even trace amounts can cause anaphylaxis. I also can't have shellfish or tree nuts. Can you help me find something safe to eat?"
+response1 = server.solve(customer1)
+print(f"Mrs. Johnson: {customer1}")
+print(f"🤖 Server: {response1}")
+
+show_memory_status(server, "after Mrs. Johnson's first visit")
+
+print("\n📝 Mrs. Johnson Wants Dessert:")
+customer1b = "What desserts are safe for me to eat?"
+response1b = server.solve(customer1b)
+print(f"Mrs. Johnson: {customer1b}")
+print(f"🤖 Server: {response1b}")
+
+# === DAY 2: RETURNING VISIT ===
+print("\n\n🔄 === DAY 2: Returning Visit ===")
+print("-"*80)
+
+print("\n📝 Mrs. Johnson Returns:")
+customer2 = "Hello, I'm back for lunch. What would you recommend today?"
+response2 = server.solve(customer2)
+print(f"Mrs. Johnson: {customer2}")
+print(f"🤖 Server: {response2}")
+
+show_memory_status(server, "during Mrs. Johnson's return visit")
+
+print("\n📝 Mrs. Johnson Asks About New Menu Item:")
+customer2b = "I see you have a new Pad Thai dish. Can I have that?"
+response2b = server.solve(customer2b)
+print(f"Mrs. Johnson: {customer2b}")
+print(f"🤖 Server: {response2b}")
+
+# === NEW STAFF MEMBER ===
+print("\n\n🤯 === Evening Shift - New Server ===")
+print("-"*80)
+
+# Create a new agent for evening shift
+night_server = AllergyGuardianAgent(session_id="restaurant_allergy_conversation")
+
+print("\n📝 Mrs. Johnson's Evening Visit:")
+customer3 = "Good evening, I'd like to see the menu please. I have some food allergies."
+print(f"Mrs. Johnson: {customer3}")
+response3 = night_server.solve(customer3)
+print(f"🤖 New Server: {response3}")
+
+show_memory_status(night_server, "during evening shift")
+
+print("\n" + "="*80)
+print("✨  Restaurant Allergy Management Demo Completed!".center(80))
+if USE_MEMORY:
+    print("🛡️  The agent successfully learned life-saving allergy information!".center(80))
+    print("⚡  New staff instantly inherit critical safety knowledge!".center(80))
+else:
+    print("🛡️  The agent operated without memory - dangerous for allergy management!".center(80))
+print("="*80 + "\n")

@@ -435,6 +435,7 @@ class StructField:
 
     name: str
     type_hint: TypeHint
+    default_value: Expression | None = None
     location: Location | None = None
 
 
