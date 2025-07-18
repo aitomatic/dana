@@ -29,7 +29,4 @@ def main():
     load_dana_env(dot_env_file_path=Path(args.file_path).parent / '.env')
 
     # Run the Dana script with the prepared context
-    result = DanaSandbox.quick_run(file_path=args.file_path, debug_mode=args.debug, context=context)
-
-    # Print the result
-    print(result)
+    DanaSandbox.quick_run(file_path=args.file_path, debug_mode=args.debug, context=context)
