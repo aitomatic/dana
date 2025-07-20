@@ -10,15 +10,11 @@ from pathlib import Path
 from typing import Any, ClassVar, TypeVar
 
 import yaml
-from dotenv import load_dotenv
 
 from dana.common.exceptions import ConfigurationError
 from dana.common.mixins.loggable import Loggable
 from dana.common.utils.misc import Misc
 from dana.common.utils.validation import ValidationUtilities
-
-# Load environment variables when module is imported
-load_dotenv()
 
 T = TypeVar("T")
 
