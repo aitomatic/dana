@@ -49,6 +49,7 @@ import argparse
 import asyncio
 import logging
 import os
+from pathlib import Path
 import sys
 
 import uvicorn
@@ -65,6 +66,7 @@ from dana.common.terminal_utils import ColorScheme, print_header, supports_color
 from dana.common.utils.logging import DANA_LOGGER
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.core.lang.log_manager import LogLevel, SandboxLogger
+from dana.util.env import load_dana_env
 
 # Initialize color scheme
 colors = ColorScheme(supports_color())
@@ -92,6 +94,9 @@ def show_help():
 
 def execute_file(file_path, debug=False):
     """Execute a DANA file using the new DanaSandbox API."""
+    # if developer puts an .env file in the script's directory, load it
+    load_dana_env(dot_env_file_path=Path(file_path).parent / ".env")
+
     print_header(f"DANA Execution: {os.path.basename(file_path)}", colors=colors)
 
     # Use the new DanaSandbox API
@@ -192,6 +197,9 @@ def handle_start_command(args):
 
 def main():
     """Main entry point for the DANA CLI."""
+    # if developer puts an .env file in the current working directory, load it
+    load_dana_env(dot_env_file_path=Path.cwd() / ".env")
+
     try:
         parser = argparse.ArgumentParser(description="DANA Command Line Interface", add_help=False)
         subparsers = parser.add_subparsers(dest="subcommand")
