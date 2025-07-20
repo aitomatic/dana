@@ -638,12 +638,26 @@ class SandboxContext:
         Returns:
             A dictionary of resources
         """
-        resource_names = self.list_resources()
-        if included is not None:
-            # Convert to list of strings
-            included = [resource.name if isinstance(resource, BaseResource) else resource for resource in included]
-        resource_names = filter(lambda name: (included is None or name in included), resource_names)
-        return {name: self.get_resource(name) for name in resource_names}
+        if included is None:
+            # Return all resources from context
+            resource_names = self.list_resources()
+            return {name: self.get_resource(name) for name in resource_names}
+        
+        # Handle mixed list of BaseResource objects and string names
+        resources = {}
+        for item in included:
+            if isinstance(item, BaseResource):
+                # Direct resource object - use it directly
+                resources[item.name] = item
+            else:
+                # String name - look it up in context
+                try:
+                    resources[item] = self.get_resource(item)
+                except Exception:
+                    # Resource not found in context - skip it
+                    pass
+        
+        return resources
 
     def soft_delete_resource(self, name: str) -> None:
         # resource will remain in private variable self.__resources but will be removed from the local scope

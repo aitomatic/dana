@@ -1,51 +1,83 @@
-"""MCP Querying with FastMCP."""
+"""MCP Querying with MCP Python SDK."""
 
 import asyncio
 from pprint import pformat
 
-from fastmcp.client.client import Client
-from fastmcp.client.transports import StreamableHttpTransport
 from loguru import logger
+from mcp.client.session import ClientSession
+from mcp.client.streamable_http import streamablehttp_client
 
 WEATHER_MCP_SERVER_URL = "http://127.0.0.1:8000/mcp"
 
 CITY = "Tokyo"
-START_DATE = "2025-06-26"
-END_DATE = "2025-06-30"
+# START_DATE = "2025-06-26"
+# END_DATE = "2025-06-30"
 
-# instantiate MCP client
-mcp_client = Client(transport=StreamableHttpTransport(url=WEATHER_MCP_SERVER_URL),
-                    roots=None,
-                    sampling_handler=None,
-                    log_handler=None,
-                    message_handler=None,
-                    progress_handler=None,
-                    timeout=None)
 
 # inspect server
 async def inspect_server():
     """Inspect prompts, resources and tools available on the MCP server."""
-    async with mcp_client:
-        prompts, resources, resource_templates, tools = \
-            await asyncio.gather(mcp_client.list_prompts(),
-                                 mcp_client.list_resources(),
-                                 mcp_client.list_resource_templates(),
-                                 mcp_client.list_tools(),
-                                 return_exceptions=True)
+    # Use the same pattern as Dana's MCP client implementation
+    streams_context = streamablehttp_client(WEATHER_MCP_SERVER_URL)
+    streams = await streams_context.__aenter__()
 
-        logger.debug(f"MCP Prompts:\n\n{pformat(prompts, indent=2)}\n")
-        logger.debug(f"MCP Resources:\n\n{pformat(resources, indent=2)}\n")
-        logger.debug(f"MCP Resource templates:\n\n{pformat(resource_templates, indent=2)}\n")
-        logger.debug(f"MCP Tools:\n\n{pformat(tools, indent=2)}\n")
+    try:
+        # Create session from first two streams only (read_stream, write_stream)
+        # The third item is a callable function that causes the timeout error
+        read_stream, write_stream = streams[:2]
+        client_session = ClientSession(read_stream, write_stream)
+        session = await client_session.__aenter__()
 
-asyncio.run(inspect_server())
+        try:
+            await session.initialize()
+
+            prompts, resources, resource_templates, tools = await asyncio.gather(
+                session.list_prompts(),
+                session.list_resources(),
+                session.list_resource_templates(),
+                session.list_tools(),
+                return_exceptions=True,
+            )
+
+            logger.debug(f"MCP Prompts:\n\n{pformat(prompts, indent=2)}\n")
+            logger.debug(f"MCP Resources:\n\n{pformat(resources, indent=2)}\n")
+            logger.debug(f"MCP Resource templates:\n\n{pformat(resource_templates, indent=2)}\n")
+            logger.debug(f"MCP Tools:\n\n{pformat(tools, indent=2)}\n")
+        finally:
+            await client_session.__aexit__(None, None, None)
+    finally:
+        await streams_context.__aexit__(None, None, None)
+
 
 # call tool
 async def get_weather():
-    async with mcp_client:
-        return await mcp_client.call_tool(name="get_weather_by_datetime_range",
-                                          arguments={'city': CITY, 'start_date': START_DATE, 'end_date': END_DATE},
-                                          timeout=None,
-                                          progress_handler=None)
+    # Use the same pattern as Dana's MCP client implementation
+    streams_context = streamablehttp_client(WEATHER_MCP_SERVER_URL)
+    streams = await streams_context.__aenter__()
 
-print(asyncio.run(get_weather()))
+    try:
+        # Create session from first two streams only (read_stream, write_stream)
+        # The third item is a callable function that causes the timeout error
+        read_stream, write_stream = streams[:2]
+        client_session = ClientSession(read_stream, write_stream)
+        session = await client_session.__aenter__()
+
+        try:
+            await session.initialize()
+            return await session.call_tool(
+                name="get_current_weather", arguments={
+                    "city": CITY,
+                    # "start_date": START_DATE, "end_date": END_DATE
+                }
+            )
+        finally:
+            await client_session.__aexit__(None, None, None)
+    finally:
+        await streams_context.__aexit__(None, None, None)
+
+
+if __name__ == "__main__":
+    # Only run if executed directly, not when imported
+    print("Running MCP client examples...")
+    asyncio.run(inspect_server())
+    print(asyncio.run(get_weather()))

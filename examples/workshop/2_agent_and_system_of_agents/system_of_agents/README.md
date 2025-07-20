@@ -10,27 +10,22 @@ cd examples/dana/202506_workshop/2_agent_and_system_of_agents/system_of_agents
 
 ## How to Run the Demo
 
-### 1. Start the A2A (Agent-to-Agent) Specialist Agent
+### Multi-Agent
 
-First, deploy the flight ticket agent as a standalone service:
-
-```bash
-uv run dana deploy specialist_agent_3.na --port 5009
-```
-
-This will start the Flight Ticket Agent on port 5009, which can be accessed by other agents via HTTP.
-
-### 2. Run the General-Management Agent
-
-Execute the main orchestration agent:
+For multi-agent scenarios, agents are **imported**.
 
 ```bash
 dana gma.na
 ```
 
-This will run a complete example where the GMA plans a trip to Tokyo by coordinating multiple specialist agents.
+This will run the General-Management Agent, which automatically imports and coordinates multiple specialist agents:
+- Weather Agent (specialist_agent_1.na) - imported as module
+- Search Agent (specialist_agent_2.na) - imported as module  
+- Flight Agent (specialist_agent_3.na) - imported as module
 
-### 3. Explore Multi-Agent Syntax (Optional)
+All agents work together within the same process, sharing context and coordinating seamlessly.
+
+### Explore Multi-Agent Syntax (Optional)
 
 To understand different patterns of multi-agent interaction:
 
@@ -48,7 +43,7 @@ dana multi_agent_syntax.na
   - Creates an agent pool with weather, search, and ticketing agents
   - Plans complex tasks by breaking them into steps
   - Executes plans by coordinating specialist agents
-  - Demonstrates both local module-based agents and remote A2A agents
+  - Demonstrates both local module-based agents
 - **Example Task**: Plans a trip to Tokyo by coordinating weather, search, and flight booking agents
 
 #### `specialist_agent_1.na` - Weather Reporter/Forecaster
@@ -67,7 +62,6 @@ dana multi_agent_syntax.na
 - **Functionality**: 
   - Creates plans for flight ticket searches
   - Executes searches iteratively until satisfactory results are found
-  - Can be deployed as a standalone A2A service
 
 ### Demo and Reference Files
 
@@ -85,9 +79,8 @@ dana multi_agent_syntax.na
 ## Key Concepts Demonstrated
 
 ### Agent Types
-1. **Module-based Agents**: Imported from Dana modules (specialist_agent_1, specialist_agent_2)
-2. **A2A (Agent-to-Agent) Agents**: Remote agents accessed via HTTP endpoints
-3. **Agent Pools**: Collections of agents that can be automatically selected based on task requirements
+1. **Module-based Agents**: Imported from Dana modules (specialist_agent_1, specialist_agent_2, specialist_agent_3)
+2. **Agent Pools**: Collections of agents that can be automatically selected based on task requirements
 
 ### Multi-Agent Patterns
 - **Orchestration**: GMA coordinates multiple specialist agents
@@ -99,7 +92,7 @@ dana multi_agent_syntax.na
 - Agent card declarations with names and descriptions
 - Resource integration with MCP services
 - Workflow composition using pipelines (`plan | execute`)
-- Cross-agent communication and coordination
+- Agent coordination and data exchange
 - JSON handling for structured data exchange
 
 ## Architecture Overview
@@ -108,7 +101,7 @@ dana multi_agent_syntax.na
 General-Management Agent (gma.na)
 ├── Weather Agent (specialist_agent_1.na) → MCP Weather Service
 ├── Search Agent (specialist_agent_2.na) → MCP Web Search
-└── Flight Agent (specialist_agent_3.na) → A2A Service (port 5009)
+└── Flight Agent (specialist_agent_3.na)
 ```
 
-The system demonstrates how Dana enables seamless integration of local and remote agents, automatic task planning, and coordinated execution across multiple specialized capabilities.
+The system demonstrates how Dana enables seamless integration of multiple agents, automatic task planning, and coordinated execution across specialized capabilities.

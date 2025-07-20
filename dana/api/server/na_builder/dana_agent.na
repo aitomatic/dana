@@ -1,0 +1,223 @@
+import common
+
+"""
+Base struct for all Dana agents.
+Provides common properties, methods, and capabilities that every agent inherits.
+"""
+
+struct DanaAgent:
+    id: str
+    name: str
+    version: str
+    domains: list[str]
+    tasks: list[str]
+    capabilities: list[str]
+    knowledge_sources: list[str]
+    is_active: bool = true
+    created_at: str
+    last_updated: str
+    llm_resource: LLMResource
+    memory_resource: MemoryResource
+    human_resource: HumanResource
+    max_iterations: int = 10
+    timeout_seconds: int = 300
+    confidence_threshold: float = 0.8
+    total_requests: int = 0
+    successful_requests: int = 0
+    average_response_time: float = 0.0
+    error_count: int = 0
+    last_error: str
+
+# Agent lifecycle functions
+def initialize_agent(dana_agent: DanaAgent) -> bool:
+    """
+    Initialize the agent with required resources and configuration.
+    
+    Args:
+        agent: The agent to initialize
+        
+    Returns:
+        True if initialization successful, False otherwise
+    """
+    pass
+
+def activate_agent(dana_agent: DanaAgent) -> bool:
+    """
+    Activate the agent for processing requests.
+    
+    Args:
+        agent: The agent to activate
+        
+    Returns:
+        True if activation successful, False otherwise
+    """
+    pass
+
+def deactivate_agent(dana_agent: DanaAgent) -> bool:
+    """
+    Deactivate the agent and clean up resources.
+    
+    Args:
+        agent: The agent to deactivate
+        
+    Returns:
+        True if deactivation successful, False otherwise
+    """
+    pass
+
+# Core agent functions
+@poet
+def solve_request(dana_agent: DanaAgent, request: str) -> str:
+    """
+    Main solve function that all agents must implement.
+    Processes user requests and returns responses.
+    
+    Args:
+        agent: The agent to use for solving
+        request: The user's request string
+        
+    Returns:
+        The agent's response to the request
+    """
+    pass
+
+def can_handle_request(dana_agent: DanaAgent, request: str) -> bool:
+    """
+    Check if this agent can handle the given request.
+    
+    Args:
+        agent: The agent to check
+        request: The user's request string
+        
+    Returns:
+        True if agent can handle the request, False otherwise
+    """
+    pass
+
+def get_agent_capabilities(dana_agent: DanaAgent) -> list[str]:
+    """
+    Get list of agent capabilities.
+    
+    Args:
+        agent: The agent to get capabilities for
+        
+    Returns:
+        List of capability strings
+    """
+    pass
+
+def get_agent_domains(dana_agent: DanaAgent) -> list[str]:
+    """
+    Get list of agent domains.
+    
+    Args:
+        agent: The agent to get domains for
+        
+    Returns:
+        List of domain strings
+    """
+    pass
+
+# Resource management functions
+def connect_resource_to_agent(dana_agent: DanaAgent, resource_type: str, resource_config: dict) -> bool:
+    """
+    Connect a resource to the agent.
+    
+    Args:
+        agent: The agent to connect resource to
+        resource_type: Type of resource to connect
+        resource_config: Configuration for the resource
+        
+    Returns:
+        True if connection successful, False otherwise
+    """
+    pass
+
+def disconnect_resource_from_agent(dana_agent: DanaAgent, resource_type: str) -> bool:
+    """
+    Disconnect a resource from the agent.
+    
+    Args:
+        agent: The agent to disconnect resource from
+        resource_type: Type of resource to disconnect
+        
+    Returns:
+        True if disconnection successful, False otherwise
+    """
+    pass
+
+# Performance and monitoring functions
+def get_agent_performance_metrics(dana_agent: DanaAgent) -> dict:
+    """
+    Get current performance metrics for the agent.
+    
+    Args:
+        agent: The agent to get metrics for
+        
+    Returns:
+        Dictionary containing performance metrics
+    """
+    pass
+
+def reset_agent_metrics(dana_agent: DanaAgent):
+    """
+    Reset performance metrics to initial values.
+    
+    Args:
+        agent: The agent to reset metrics for
+        
+    Returns:
+        True if reset successful, False otherwise
+    """
+    pass
+
+# Error handling functions
+def handle_agent_error(dana_agent: DanaAgent, error: str) -> bool:
+    """
+    Handle errors that occur during agent operation.
+    
+    Args:
+        agent: The agent to handle error for
+        error: Error message or description
+        
+    Returns:
+        True if error handled successfully, False otherwise
+    """
+    pass
+
+def get_agent_error_log(dana_agent: DanaAgent) -> list[str]:
+    """
+    Get list of recent errors.
+    
+    Args:
+        agent: The agent to get error log for
+        
+    Returns:
+        List of error messages
+    """
+    pass
+
+# Agent introspection functions
+def get_agent_status(dana_agent: DanaAgent) -> dict:
+    """
+    Get current status of the agent.
+    
+    Args:
+        agent: The agent to get status for
+        
+    Returns:
+        Dictionary containing agent status information
+    """
+    pass
+
+def validate_agent_configuration(dana_agent: DanaAgent) -> bool:
+    """
+    Validate agent configuration and resources.
+    
+    Args:
+        agent: The agent to validate
+        
+    Returns:
+        True if configuration is valid, False otherwise
+    """
+    pass 

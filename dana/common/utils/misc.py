@@ -4,6 +4,10 @@ import asyncio
 import base64
 import hashlib
 import inspect
+
+# Configure asyncio to only warn about tasks taking longer than 30 seconds
+# (LLM operations typically take 1-10 seconds, so this avoids false warnings)
+import logging
 import uuid
 import warnings
 from collections.abc import Callable
@@ -17,9 +21,6 @@ from pydantic import BaseModel
 
 from dana.common.types import BaseResponse
 
-# Configure asyncio to only warn about tasks taking longer than 30 seconds
-# (LLM operations typically take 1-10 seconds, so this avoids false warnings)
-import logging
 asyncio_logger = logging.getLogger("asyncio")
 asyncio_logger.setLevel(logging.ERROR)
 

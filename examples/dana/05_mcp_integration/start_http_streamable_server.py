@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Simple SSE MCP Server for DANA Testing
+Simple HTTP Streamable MCP Server for DANA Testing
 
 This server provides 3 basic tools for testing DANA's MCP integration
-over Server-Sent Events (SSE) transport.
+over HTTP Streamable transport.
 
 Usage:
-    python examples/dana/mcp/start_sse_server.py
+    python examples/dana/05_mcp_integration/start_http_streamable_server.py
 
-The server will start on http://localhost:8080/sse and provide:
+The server will start on http://localhost:8081/mcp and provide:
 - echo: Echo messages back
 - ping: Test connectivity
 - get_current_time: Get current timestamp
@@ -17,9 +17,9 @@ The server will start on http://localhost:8080/sse and provide:
 import sys
 from datetime import datetime
 
-from fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP
 
-# Initialize FastMCP server for SSE transport
+# Initialize FastMCP server for HTTP Streamable transport
 mcp = FastMCP("DANA Test Server")
 
 
@@ -59,20 +59,20 @@ def get_current_time() -> str:
 def main():
     """Main function to start the HTTP Streamable MCP server."""
     print("🚀 Starting DANA Test HTTP Streamable MCP Server...")
-    print("📡 Server will be available at: http://localhost:8081/mcp")
+    print("📡 Server will be available at default MCP port (typically 8000)")
     print("🔧 Available tools:")
     print("   - echo: Echo messages back")
     print("   - ping: Test connectivity")
     print("   - get_current_time: Get current timestamp")
     print()
     print("🔄 To test with DANA, use an MCP resource with HTTP Streamable transport:")
-    print("   HttpTransportParams(url='http://localhost:8081/mcp')")
+    print("   HttpTransportParams(url='http://localhost:8000/mcp') (default port)")
     print()
     print("Press Ctrl+C to stop the server")
     print("-" * 60)
     try:
-        # Run the server with SSE transport
-        mcp.run(transport="streamable-http", port=8081)
+        # Run the server with Streamable HTTP transport using official MCP SDK API
+        mcp.run(transport="streamable-http")
     except KeyboardInterrupt:
         print("\n👋 Server stopped by user")
     except Exception as e:

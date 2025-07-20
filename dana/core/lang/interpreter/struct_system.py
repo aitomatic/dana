@@ -30,6 +30,7 @@ class StructType:
     name: str
     fields: dict[str, str]  # Maps field name to type name string
     field_order: list[str]  # Maintain field declaration order
+    field_defaults: dict[str, Any] = None  # Maps field name to default value
 
     def __post_init__(self):
         """Validate struct type after initialization."""
@@ -45,11 +46,16 @@ class StructType:
 
     def validate_instantiation(self, args: dict[str, Any]) -> bool:
         """Validate that provided arguments match struct field requirements."""
-        # Check all required fields are present
-        missing_fields = set(self.fields.keys()) - set(args.keys())
+        # Check all required fields are present (fields without defaults)
+        required_fields = set()
+        for field_name in self.fields.keys():
+            if self.field_defaults is None or field_name not in self.field_defaults:
+                required_fields.add(field_name)
+        
+        missing_fields = required_fields - set(args.keys())
         if missing_fields:
             raise ValueError(
-                f"Missing required fields for struct '{self.name}': {sorted(missing_fields)}. Required fields: {sorted(self.fields.keys())}"
+                f"Missing required fields for struct '{self.name}': {sorted(missing_fields)}. Required fields: {sorted(required_fields)}"
             )
 
         # Check no extra fields are provided
@@ -128,13 +134,23 @@ class StructInstance:
             struct_type: The struct type definition
             values: Field values (must match struct type requirements)
         """
+        # Apply default values for missing fields
+        complete_values = {}
+        if struct_type.field_defaults:
+            # Start with defaults
+            for field_name, default_value in struct_type.field_defaults.items():
+                complete_values[field_name] = default_value
+        
+        # Override with provided values
+        complete_values.update(values)
+        
         # Validate values match struct type
-        struct_type.validate_instantiation(values)
+        struct_type.validate_instantiation(complete_values)
 
         self._type = struct_type
         # Apply type coercion during instantiation
         coerced_values = {}
-        for field_name, value in values.items():
+        for field_name, value in complete_values.items():
             field_type = struct_type.fields.get(field_name)
             coerced_values[field_name] = self._coerce_value(value, field_type)
         self._values = coerced_values
@@ -325,7 +341,14 @@ class StructTypeRegistry:
     def register(cls, struct_type: StructType) -> None:
         """Register a new struct type."""
         if struct_type.name in cls._types:
-            raise ValueError(f"Struct type '{struct_type.name}' is already registered. Struct names must be unique.")
+            # Check if this is the same struct definition
+            existing_struct = cls._types[struct_type.name]
+            if (existing_struct.fields == struct_type.fields and 
+                existing_struct.field_order == struct_type.field_order):
+                # Same struct definition - allow idempotent registration
+                return
+            else:
+                raise ValueError(f"Struct type '{struct_type.name}' is already registered with different definition. Struct names must be unique.")
 
         cls._types[struct_type.name] = struct_type
 
@@ -466,8 +489,16 @@ class StructTypeRegistry:
         return cls.create_instance(struct_name, json_data)
 
 
-def create_struct_type_from_ast(struct_def) -> StructType:
-    """Create a StructType from a StructDefinition AST node."""
+def create_struct_type_from_ast(struct_def, context=None) -> StructType:
+    """Create a StructType from a StructDefinition AST node.
+    
+    Args:
+        struct_def: The StructDefinition AST node
+        context: Optional sandbox context for evaluating default values
+    
+    Returns:
+        StructType with fields and default values
+    """
     from dana.core.lang.ast import StructDefinition
 
     if not isinstance(struct_def, StructDefinition):
@@ -476,6 +507,7 @@ def create_struct_type_from_ast(struct_def) -> StructType:
     # Convert StructField list to dict and field order
     fields = {}
     field_order = []
+    field_defaults = {}
 
     for field in struct_def.fields:
         if field.type_hint is None:
@@ -484,8 +516,13 @@ def create_struct_type_from_ast(struct_def) -> StructType:
             raise ValueError(f"Field {field.name} type hint {field.type_hint} has no name attribute")
         fields[field.name] = field.type_hint.name  # Store the type name string, not the TypeHint object
         field_order.append(field.name)
+        
+        # Handle default value if present
+        if field.default_value is not None:
+            # For now, store the AST node - it will be evaluated when needed
+            field_defaults[field.name] = field.default_value
 
-    return StructType(name=struct_def.name, fields=fields, field_order=field_order)
+    return StructType(name=struct_def.name, fields=fields, field_order=field_order, field_defaults=field_defaults or None)
 
 
 # Convenience functions for common operations
