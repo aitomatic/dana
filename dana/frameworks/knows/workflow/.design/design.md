@@ -1,4 +1,4 @@
-# Dana Workflows Design
+# Dana Workflow Design (with POET)
 
 ```text
 By: Christopher Nguyen
@@ -15,7 +15,7 @@ Industrial, financial, and enterprise environments require agentic workflows tha
 
 The critical gap is the absence of a system that enables **domain experts** (process engineers, compliance officers, subject matter experts) to encode their well-defined, regulated workflows using **natural language specifications** while the **runtime guarantees** reproducibility, provides full explainability, and maintains deterministic control over all execution paths.
 
-**How might we enable domain experts to specify enterprise-grade agentic workflows at the right level of abstraction—declarative enough for reliability and transparency, yet flexible enough for neural adaptability—while the runtime absorbs all complexity of neurosymbolic coordination, verification, and state management?**
+**How might we enable domain experts to specify intelligent agentic workflows at the right level of abstraction—declarative enough for reliability and transparency, yet flexible enough for adaptive processing—while the runtime provides context injection, fault tolerance, output validation, and adaptive learning?**
 
 ## Goals
 
@@ -54,8 +54,8 @@ The critical gap is the absence of a system that enables **domain experts** (pro
 ### Secondary Goals
 
 7. **Zero-Cognitive-Load Runtime**
-   - All neurosymbolic coordination complexity absorbed by the runtime
-   - Automatic handling of LLM rate limits, retries, context management, and error handling
+   - All intelligent processing complexity absorbed by the runtime
+   - Automatic handling of context injection, fault tolerance, and adaptive learning
    - Transparent resource management including tool access, database connections, and user interactions
 
 8. **First-Class User Interaction**
@@ -63,76 +63,193 @@ The critical gap is the absence of a system that enables **domain experts** (pro
    - Natural integration of human clarification, approval, and decision points
    - Automatic context preservation across user interaction boundaries
 
-## Solution Options
+## Architecture: Clear Separation of Responsibilities
 
-### Option 1: Neural-Symbolic Step Engine (Dana Pipeline-Based)
+### **Workflow vs POET: Core Relationship**
 
-**Core Concept:** Leverage Dana's function composition system to create neurosymbolic step engines that combine neural execution with symbolic validation in deterministic pipelines.
+**POET** = **Intelligent Function Enhancement**
+- Adds context injection, fault tolerance, output validation, adaptive learning
+- Works on individual functions OR workflows
+- Always active when you use `@poet()`
+
+**Workflow** = **Pipeline Creation**
+- Combines functions using Dana's `|` operator to create workflows
+- Creates a single callable from multiple steps
+- The result is just another function (that can be POETed too!)
+
+### Core Concept
+
+A workflow is a composed function created using Dana's `|` operator:
+
+```dana
+# Individual functions
+def step1(data): return process(data)
+def step2(data): return analyze(data)
+def step3(data): return report(data)
+
+# Workflow creates a composed function
+workflow = step1 | step2 | step3
+
+# Can be called like any function
+result = workflow(input_data)
+
+# The beautiful relationship: workflows can be POETed too!
+@poet(domain="enterprise_workflow")
+def enhanced_workflow = step1 | step2 | step3
+```
+
+```mermaid
+graph TD
+    subgraph "Individual Functions"
+        A1["@poet()<br/>function1"] --> B1["Enhanced with<br/>- Context injection<br/>- Fault tolerance<br/>- Output validation"]
+    end
+    
+    subgraph "Workflows"
+        A2["Workflow Creation<br/>step1 | step2 | step3"] --> B2["Workflow<br/>(can be called like<br/>any other function)"]
+        B2 --> C2["@poet() can enhance<br/>the workflow"]
+    end
+    
+    A1 -.-> A2
+    B1 -.-> C2
+    
+    style A1 fill:#e3f2fd
+    style B1 fill:#e3f2fd
+    style A2 fill:#f3e5f5
+    style B2 fill:#f3e5f5
+    style C2 fill:#fff3e0
+```
+
+### The Beautiful Relationship: POET + Workflow
+
+#### POET Enhancement
+**Always Active**: Every @poet() decorated function has intelligent processing regardless of how it's called.
+
+**What POET Provides:**
+- **P**erceive: Context injection & normalization (`"excellent"` → 780, `"$50K"` → 50000)
+- **O**perate: Deterministic execution with fault tolerance
+- **E**nforce: Output formatting, validation, and structured results
+- **T**rain: Learning from execution patterns to improve over time
+
+```dana
+@poet(domain="document_processing", retries=3)
+def ingest_document(file_path: str) -> Document:
+    """Function enhanced with intelligent processing"""
+    # Has context injection, fault tolerance, output validation, adaptive learning
+    # Works whether called directly OR as part of a workflow
+    return Document(file_path)
+```
+
+#### Workflow Creation
+**Pure Composition**: Dana's `|` operator creates workflows from individual functions.
+
+**What Workflows Provide:**
+- Combine multiple functions into a single callable
+- Sequential execution with data flow
+- The result is just another function
+- Can be enhanced with POET too!
+
+```dana
+# Create workflow
+document_pipeline = ingest_document | analyze_content | generate_report
+
+# Enhance the entire workflow
+@poet(domain="enterprise_pipeline")
+def enhanced_pipeline = ingest_document | analyze_content | generate_report
+```
+
+#### WorkflowEngine - Advanced Orchestration (Optional)
+**When needed**: For complex workflows requiring cross-step context and validation.
+
+**What WorkflowEngine Provides:**
+- Cross-function context sharing
+- Pipeline-level safety validation
+- Advanced error handling and recovery
+- Audit trails and monitoring
+
+### Solution Options
+
+### Option 1: Intelligent Step Engine (Dana Pipeline-Based)
+
+**Core Concept:** Leverage Dana's architecture where @poet() provides intelligent function enhancement, | provides workflow composition, and WorkflowEngine provides optional orchestration.
 
 **Architecture:**
 ```mermaid
 graph TD
-    A[Workflow Specification] --> B[Compiled Dana Pipeline]
-    B --> C[Step Engine Chain]
-    C --> D[Final Result]
-    
-    C --> E[Neural Step 1]
-    E --> F[Symbolic Validator 1]
-    F --> G{Decision Gate}
-    G -->|Pass| H[Neural Step 2]
-    G -->|Fail| I[Recovery Handler]
-    I --> E
-    
-    H --> J[Symbolic Validator 2]
-    J --> K{Decision Gate}
-    K -->|Pass| L[Continue...]
-    K -->|Fail| M[Human Input]
+    A["User Functions with
+    @poet()"] --> B["Automatic Enhancement"]
+    B --> C["Enhanced Functions"]
+    C --> D["| Composition"]
+    D --> E{Complex Pipeline?}
+    E -->|Yes| F[WorkflowEngine Activation]
+    E -->|No| G[Direct Execution]
+    F --> H[Orchestrated Execution]
+    G --> H
     
     style A fill:#e1f5fe
     style B fill:#f3e5f5
-    style C fill:#fff3e0
-    style D fill:#c8e6c9
+    style C fill:#e3f2fd
+    style D fill:#fff3e0
+    style F fill:#c8e6c9
     style G fill:#ffebee
-    style K fill:#ffebee
-    style M fill:#e8f5e8
 ```
 
 **Dana Pipeline Implementation:**
 ```dana
-# User specifies workflow declaratively
-workflow = (
-    analyze_invoice as step1 | 
-    validate_compliance as step1_validation |
-    extract_entities as step2 |
-    verify_entities as step2_validation |
-    generate_report as final_step
-)
+# User specifies workflow using natural language + @poet()
+@poet(domain="invoice_processing", retries=3)
+def analyze_invoice(invoice_data):
+    """Extract financial data from invoice with domain expertise"""
+    return neural_extract(invoice_data)
 
-# Runtime compiles to neurosymbolic pipeline
-compiled_workflow = (
-    neural_execute(analyze_invoice) | symbolic_validate(compliance_rules) |
-    neural_execute(extract_entities) | symbolic_validate(entity_schema) |
-    neural_execute(generate_report) | symbolic_validate(report_format)
-)
+@poet(domain="compliance", validate_output=True)
+def validate_compliance(analysis):
+    """Ensure invoice meets regulatory requirements"""
+    return validate_against_rules(analysis)
 
-# Execution with automatic state capture
-result = compiled_workflow(invoice_data) as audit_trail
+@poet(domain="entity_extraction")
+def extract_entities(analysis):
+    """Extract key entities from invoice analysis"""
+    return extract_key_data(analysis)
+
+# Simple composition - WorkflowEngine activates automatically
+invoice_workflow = analyze_invoice | validate_compliance | extract_entities
+
+# Direct execution - each function has full POET behaviors
+result = invoice_workflow(invoice_data)
+
+# Individual function call - still has POET enhancement
+single_result = analyze_invoice(invoice_data)  # Full POET capabilities active
+
+# Complex workflow triggers orchestration
+complex_workflow = (
+    analyze_invoice | validate_compliance | 
+    extract_entities | generate_report | 
+    send_notifications | archive_document
+)
 ```
 
 **Key Features:**
-- **Dana-native**: Leverages existing pipeline composition system
-- **Explicit contracts**: Each step has clear neural objective + symbolic constraints
-- **Automatic state capture**: `as result_name` captures intermediate states for audit trails
-- **Deterministic execution**: Pipeline ensures consistent step ordering despite neural components
-- **Failure recovery**: Failed validations trigger recovery handlers within pipeline structure
-- **Progressive rigor**: Users can mark steps as `strict` or `flexible` within same pipeline
+- **Clean separation**: POET enhances functions, Workflow creates pipelines
+- **Always-on POET**: Every @poet() function has intelligent processing regardless of invocation context
+- **Workflows are functions**: Created with `|` operator, can be POETed like any function
+- **Zero learning curve**: Developers write normal functions with @poet(), compose with `|`
+- **Intelligent capabilities**: Context injection, fault tolerance, output validation, adaptive learning
+- **Progressive complexity**: Start simple, add WorkflowEngine orchestration when needed
 
-**Pros:** Built on proven Dana composition, natural for Dana users, automatic state management
-**Cons:** Requires understanding of Dana pipeline syntax, performance overhead from validation gates
+**Pros:** 
+- Natural Dana development experience
+- Consistent patterns (same @poet() works on functions and workflows)
+- No boilerplate or configuration complexity
+- Seamless progression from simple functions to complex workflows
+- Full auditability without explicit tracking
+
+**Cons:** 
+- Advanced orchestration features require WorkflowEngine understanding
+- Learning behavior may need tuning for specific domains
 
 ### Option 2: Declarative Workflow Compiler
 
-**Core Concept:** Natural language workflow specification compiles to deterministic state machine with neural subroutines, ensuring enterprise-grade determinism while preserving neural capabilities.
+**Core Concept:** Natural language workflow specification compiles to deterministic state machine with intelligent processing, ensuring reliable determinism while preserving adaptive capabilities.
 
 **Architecture:**
 ```mermaid

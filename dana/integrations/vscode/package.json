@@ -23,7 +23,9 @@
   "main": "./out/extension.js",
   "activationEvents": [
     "onLanguage:dana",
+    "onLanguage:markdown",
     "workspaceContains:**/*.na",
+    "workspaceContains:**/*.md",
     "onStartupFinished"
   ],
   "contributes": {
@@ -53,7 +55,10 @@
       {
         "scopeName": "markdown.dana.codeblock",
         "path": "./syntaxes/dana.markdown.json",
-        "injectTo": ["text.html.markdown"],
+        "injectTo": [
+          "text.html.markdown",
+          "markup.fenced_code.block.markdown"
+        ],
         "embeddedLanguages": {
           "meta.embedded.block.dana": "dana"
         }
@@ -63,6 +68,11 @@
       {
         "command": "dana.runFile",
         "title": "Run Dana File",
+        "category": "Dana"
+      },
+      {
+        "command": "dana.testMPE",
+        "title": "Test Dana MPE Integration",
         "category": "Dana"
       }
     ],
@@ -84,6 +94,9 @@
     },
     "markdown.previewScripts": [
       "./preview/dana-highlight.js"
+    ],
+    "markdown.previewStyles": [
+      "./preview/dana-preview.css"
     ],
     "markdown.markdownItPlugins": true
   },

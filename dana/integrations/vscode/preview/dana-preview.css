@@ -1,0 +1,141 @@
+/* Dana syntax highlighting styles for markdown preview */
+
+/* Ensure Dana code blocks are properly styled */
+.markdown-body pre code.language-dana,
+.markdown-body code.language-dana {
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Dana syntax highlighting token styles */
+.markdown-body .token.scope { 
+    color: #C586C0; 
+    font-weight: bold; 
+}
+
+.markdown-body .token.keyword { 
+    color: #569CD6; 
+    font-weight: bold; 
+}
+
+.markdown-body .token.builtin { 
+    color: #DCDCAA; 
+    font-weight: bold; 
+}
+
+.markdown-body .token.function { 
+    color: #DCDCAA; 
+}
+
+.markdown-body .token.boolean { 
+    color: #569CD6; 
+}
+
+.markdown-body .token.type { 
+    color: #4EC9B0; 
+    font-weight: bold; 
+}
+
+.markdown-body .token.custom-type { 
+    color: #4EC9B0; 
+}
+
+.markdown-body .token.string { 
+    color: #CE9178; 
+}
+
+.markdown-body .token.fstring { 
+    color: #CE9178; 
+}
+
+.markdown-body .token.comment { 
+    color: #6A9955; 
+    font-style: italic; 
+}
+
+.markdown-body .token.number { 
+    color: #B5CEA8; 
+}
+
+.markdown-body .token.operator { 
+    color: #D4D4D4; 
+}
+
+.markdown-body .token.punctuation { 
+    color: #D4D4D4; 
+}
+
+.markdown-body .token.variable { 
+    color: #9CDCFE; 
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .markdown-body .token.scope { color: #C586C0; }
+[data-theme="dark"] .markdown-body .token.keyword { color: #569CD6; }
+[data-theme="dark"] .markdown-body .token.builtin { color: #DCDCAA; }
+[data-theme="dark"] .markdown-body .token.function { color: #DCDCAA; }
+[data-theme="dark"] .markdown-body .token.boolean { color: #569CD6; }
+[data-theme="dark"] .markdown-body .token.type { color: #4EC9B0; }
+[data-theme="dark"] .markdown-body .token.custom-type { color: #4EC9B0; }
+[data-theme="dark"] .markdown-body .token.string { color: #CE9178; }
+[data-theme="dark"] .markdown-body .token.fstring { color: #CE9178; }
+[data-theme="dark"] .markdown-body .token.comment { color: #6A9955; }
+[data-theme="dark"] .markdown-body .token.number { color: #B5CEA8; }
+[data-theme="dark"] .markdown-body .token.operator { color: #D4D4D4; }
+[data-theme="dark"] .markdown-body .token.punctuation { color: #D4D4D4; }
+[data-theme="dark"] .markdown-body .token.variable { color: #9CDCFE; }
+
+/* Light theme adjustments */
+[data-theme="light"] .markdown-body .token.scope { color: #AF00DB; }
+[data-theme="light"] .markdown-body .token.keyword { color: #0000FF; }
+[data-theme="light"] .markdown-body .token.builtin { color: #795E26; }
+[data-theme="light"] .markdown-body .token.function { color: #795E26; }
+[data-theme="light"] .markdown-body .token.boolean { color: #0000FF; }
+[data-theme="light"] .markdown-body .token.type { color: #267f99; }
+[data-theme="light"] .markdown-body .token.custom-type { color: #267f99; }
+[data-theme="light"] .markdown-body .token.string { color: #A31515; }
+[data-theme="light"] .markdown-body .token.fstring { color: #A31515; }
+[data-theme="light"] .markdown-body .token.comment { color: #008000; }
+[data-theme="light"] .markdown-body .token.number { color: #098658; }
+[data-theme="light"] .markdown-body .token.operator { color: #000000; }
+[data-theme="light"] .markdown-body .token.punctuation { color: #000000; }
+[data-theme="light"] .markdown-body .token.variable { color: #001080; }
+
+/* High contrast theme adjustments */
+[data-theme="high-contrast"] .markdown-body .token.scope { color: #C586C0; }
+[data-theme="high-contrast"] .markdown-body .token.keyword { color: #569CD6; }
+[data-theme="high-contrast"] .markdown-body .token.builtin { color: #DCDCAA; }
+[data-theme="high-contrast"] .markdown-body .token.function { color: #DCDCAA; }
+[data-theme="high-contrast"] .markdown-body .token.boolean { color: #569CD6; }
+[data-theme="high-contrast"] .markdown-body .token.type { color: #4EC9B0; }
+[data-theme="high-contrast"] .markdown-body .token.custom-type { color: #4EC9B0; }
+[data-theme="high-contrast"] .markdown-body .token.string { color: #CE9178; }
+[data-theme="high-contrast"] .markdown-body .token.fstring { color: #CE9178; }
+[data-theme="high-contrast"] .markdown-body .token.comment { color: #6A9955; }
+[data-theme="high-contrast"] .markdown-body .token.number { color: #B5CEA8; }
+[data-theme="high-contrast"] .markdown-body .token.operator { color: #D4D4D4; }
+[data-theme="high-contrast"] .markdown-body .token.punctuation { color: #D4D4D4; }
+[data-theme="high-contrast"] .markdown-body .token.variable { color: #9CDCFE; }
+
+/* Ensure proper spacing and formatting */
+.markdown-body pre code.language-dana {
+    padding: 16px;
+    border-radius: 6px;
+    background-color: var(--vscode-editor-background);
+    border: 1px solid var(--vscode-panel-border);
+}
+
+/* Improve readability for Dana-specific elements */
+.markdown-body .token.scope {
+    text-shadow: 0 0 1px rgba(197, 134, 192, 0.3);
+}
+
+.markdown-body .token.keyword {
+    text-shadow: 0 0 1px rgba(86, 156, 214, 0.3);
+}
+
+/* Ensure f-strings are visually distinct */
+.markdown-body .token.fstring {
+    border-bottom: 1px dotted rgba(206, 145, 120, 0.5);
+} 

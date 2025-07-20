@@ -1,0 +1,105 @@
+# Automatic Workflow Metadata Construction Example
+# 
+# This example demonstrates how workflow metadata is now automatically
+# constructed from function docstrings and poet() decorator parameters,
+# eliminating the need for manual metadata definition.
+
+# Import the automatic metadata construction helpers
+from dana.frameworks.poet.core.workflow_helpers import create_workflow_metadata, create_pipeline_metadata
+
+# Step 1: Document Ingestion with poet() decorator
+@poet(domain="document_processing", retries=3)
+def ingest_document(file_path):
+    """Ingest document from file system with validation."""
+    log("📂 Ingesting document: " + file_path)
+    return {"file": file_path, "type": "pdf", "size": 1024}
+
+# Step 2: OCR Processing with poet() decorator
+@poet(domain="ocr", timeout=30)
+def perform_ocr(document):
+    """Perform OCR on ingested document."""
+    log("🔍 Processing document with OCR")
+    return {"text": "Sample content", "confidence": 0.95}
+
+# Step 3: Content Analysis with poet() decorator
+@poet(domain="content_analysis", operate={"model": "gpt-4"})
+def analyze_content(ocr_result):
+    """Analyze content for key insights and topics."""
+    log("🧠 Analyzing document content")
+    return {"insights": ["key point 1", "key point 2"]}
+
+# Step 4: Report Generation with poet() decorator
+@poet(domain="reporting", operate={"format": "json"})
+def generate_report(data):
+    """Generate comprehensive processing report."""
+    log("📊 Generating final report")
+    return {"summary": "Complete", "insights": data["insights"]}
+
+# Method 1: Create workflow using pipe operator
+log("🛡️ Creating workflow with pipe syntax...")
+document_processing_workflow = ingest_document | perform_ocr | analyze_content | generate_report
+
+# Automatically construct metadata from the pipeline
+workflow_metadata = create_pipeline_metadata(
+    document_processing_workflow,
+    workflow_id="auto_metadata_example",
+    description="Example workflow with automatic metadata construction",
+    version="1.0.0"
+)
+
+# Add metadata to the workflow
+document_processing_workflow.workflow_metadata = workflow_metadata
+
+# Execute the workflow
+log("🚀 Executing workflow...")
+result = document_processing_workflow("sample_document.pdf")
+log("✅ Workflow complete!")
+
+# Display automatically generated metadata
+log("📋 Automatically Generated Workflow Metadata:")
+log("Workflow ID: " + workflow_metadata.workflow_id)
+log("Description: " + workflow_metadata.description)
+log("Version: " + workflow_metadata.version)
+
+# Show automatically extracted step metadata
+log("🔍 Automatically Extracted Step Metadata:")
+for step_info in workflow_metadata.steps:
+    log("Step: " + step_info.name + " - " + step_info.description)
+    if step_info.has_key("retry_count"):
+        log("  Retry Count: " + step_info.retry_count)
+    if step_info.has_key("timeout"):
+        log("  Timeout: " + step_info.timeout + "s")
+    if step_info.has_key("domain"):
+        log("  Domain: " + step_info.domain)
+
+# Method 2: Create metadata from individual functions
+log("🔄 Alternative: Manual function list metadata construction")
+functions = [ingest_document, perform_ocr, analyze_content, generate_report]
+manual_metadata = create_workflow_metadata(
+    functions,
+    workflow_id="manual_list_example",
+    description="Manual function list metadata construction"
+)
+
+log("Manual metadata constructed for " + manual_metadata.steps.length() + " steps")
+
+# Method 3: Using convenience decorators
+log("🎯 Using convenience decorators...")
+
+@workflow_step(name="custom_step", retry_count=5, timeout=60)
+def custom_function(data):
+    """Custom function with workflow step metadata."""
+    return data
+
+# The function now has metadata attached
+log("Custom function metadata: " + custom_function.metadata.name)
+log("Custom function retry count: " + custom_function.metadata.retry_count)
+
+# Demonstrate the improvement over manual metadata
+log("🎉 Benefits of Automatic Metadata Construction:")
+log("✅ No more manual metadata definition")
+log("✅ Metadata automatically extracted from docstrings")
+log("✅ Poet decorator parameters automatically included")
+log("✅ Consistent metadata structure across all workflows")
+log("✅ Reduced maintenance and potential for errors")
+log("✅ Better developer experience with less boilerplate") 

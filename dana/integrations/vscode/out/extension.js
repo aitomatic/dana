@@ -9,41 +9,31 @@ let LanguageClientOptions;
 let ServerOptions;
 try {
     const lsp = require('vscode-languageclient/node');
-    console.log('📦 vscode-languageclient/node module loaded:', lsp);
     LanguageClient = lsp.LanguageClient;
-    console.log('🔧 typeof LanguageClient:', typeof LanguageClient);
     LanguageClientOptions = lsp.LanguageClientOptions;
     ServerOptions = lsp.ServerOptions;
 }
 catch (error) {
-    console.log('⚠️ Language server dependencies not available, LSP features disabled. Error:', error);
+    // Language server dependencies not available, LSP features disabled
 }
 let client;
 function activate(context) {
-    console.log('🔧 Dana language extension ACTIVATE function called');
-    console.log('📦 Extension context:', context.extension.id, 'version:', context.extension.packageJSON.version);
     // Start the Dana Language Server only if available
     if (LanguageClient) {
         startLanguageServer(context);
     }
-    else {
-        console.log('🚫 Skipping Language Server initialization because `LanguageClient` is not available.');
-    }
+    // Register markdown preview enhancement
+    registerMarkdownPreviewEnhancement(context);
     // Register the "Run Dana File" command
-    console.log('🎯 Registering dana.runFile command...');
     const runFileCommand = vscode.commands.registerCommand('dana.runFile', () => {
-        console.log('🚀 dana.runFile command executed!');
         const activeEditor = vscode.window.activeTextEditor;
         if (!activeEditor) {
-            console.log('❌ No active editor found');
             vscode.window.showErrorMessage('No active Dana file to run');
             return;
         }
         const document = activeEditor.document;
-        console.log('📄 Active document:', document.fileName);
         // Check if it's a .na file
         if (!document.fileName.endsWith('.na')) {
-            console.log('❌ Document is not a .na file:', document.fileName);
             vscode.window.showErrorMessage('Please open a Dana (.na) file to run');
             return;
         }
@@ -70,17 +60,99 @@ function activate(context) {
                 // Fallback to 'dana' in PATH
             }
         }
-        console.log('🎯 Executing Dana command:', danaCommand, 'on file:', document.fileName);
         terminal.sendText(`"${danaCommand}" "${document.fileName}"`);
-        console.log('✅ Dana command sent to terminal');
     });
-    context.subscriptions.push(runFileCommand);
-    console.log('✅ dana.runFile command successfully registered and added to subscriptions');
-    console.log('🔧 Dana language extension is now fully active');
+    // Register a command to test Markdown Preview Enhanced integration
+    const testMPECommand = vscode.commands.registerCommand('dana.testMPE', () => {
+        const activeEditor = vscode.window.activeTextEditor;
+        if (!activeEditor || activeEditor.document.languageId !== 'markdown') {
+            vscode.window.showErrorMessage('Please open a markdown file to test MPE integration');
+            return;
+        }
+        // Create a test markdown file with Dana code blocks
+        const testContent = `# Dana Syntax Highlighting Test for Markdown Preview Enhanced
+
+This is a test of Dana syntax highlighting in Markdown Preview Enhanced.
+
+## Basic Dana Code
+
+\`\`\`dana
+# Basic knowledge curation
+context = {"domain": "general", "task": "knowledge_extraction"}
+sources = ["./docs/api.md", "./docs/architecture.md"]
+ecosystem = curate_knowledge_ecosystem(context, sources)
+\`\`\`
+
+## Dana Functions
+
+\`\`\`dana
+def analyze_defects(process_data: dict, equipment_logs: list) -> dict:
+    """Analyze semiconductor defects from process data."""
+    
+    results = {
+        "defect_count": 0,
+        "critical_defects": [],
+        "recommendations": []
+    }
+    
+    for log in equipment_logs:
+        if log.get("defect_detected", False):
+            results["defect_count"] += 1
+            
+            if log["severity"] == "critical":
+                results["critical_defects"].append(log)
+    
+    return results
+\`\`\`
+
+## Dana with Scopes
+
+\`\`\`dana
+private: user_data = {"name": "John", "age": 30}
+public: config = {"api_key": "abc123", "endpoint": "https://api.example.com"}
+system: logger = log("system", "info")
+
+def process_user(user: dict) -> bool:
+    if user.get("age", 0) >= 18:
+        return True
+    return False
+
+result = process_user(user_data)
+\`\`\`
+
+## Dana with Pipes
+
+\`\`\`dana
+def double(x: int) -> int:
+    return x * 2
+
+def stringify(x: int) -> str:
+    return str(x)
+
+# Sequential pipeline
+result1 = 5 | double | stringify
+
+# Parallel pipeline
+pipeline = double | [stringify, lambda x: x + 10]
+result2 = pipeline(5)
+\`\`\`
+
+The highlighting should work automatically in Markdown Preview Enhanced. Look for the green "Dana Highlight (MPE) ✓" indicator in the top-right corner.`;
+        // Create and show the test document
+        const testUri = vscode.Uri.parse('untitled:test-dana-mpe.md');
+        vscode.workspace.openTextDocument(testUri).then(doc => {
+            vscode.window.showTextDocument(doc).then(editor => {
+                editor.edit(editBuilder => {
+                    editBuilder.insert(new vscode.Position(0, 0), testContent);
+                });
+                vscode.window.showInformationMessage('Dana MPE test created! Open Markdown Preview Enhanced to see syntax highlighting.');
+            });
+        });
+    });
+    context.subscriptions.push(runFileCommand, testMPECommand);
 }
 exports.activate = activate;
 function startLanguageServer(context) {
-    console.log('🌐 Starting Dana Language Server...');
     // Find the Dana Language Server command
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     let serverCommand = 'dana-ls';
@@ -122,7 +194,7 @@ function startLanguageServer(context) {
     client = new LanguageClient('dana-language-server', 'Dana Language Server', serverOptions, clientOptions);
     // Start the client and server
     client.start().then(() => {
-        console.log('✅ Dana Language Server started successfully');
+        // Language server started successfully
     }).catch((error) => {
         console.error('Failed to start Dana Language Server:', error);
         vscode.window.showWarningMessage('Dana Language Server failed to start. Advanced features may not be available. ' +
@@ -136,13 +208,20 @@ function startLanguageServer(context) {
         }
     });
 }
+function registerMarkdownPreviewEnhancement(context) {
+    // Register a markdown preview provider that enhances Dana code blocks
+    const markdownPreviewProvider = vscode.workspace.registerTextDocumentContentProvider('dana-preview', {
+        provideTextDocumentContent(uri) {
+            // This is a placeholder - the actual enhancement is done via markdown.previewScripts
+            return '';
+        }
+    });
+    context.subscriptions.push(markdownPreviewProvider);
+}
 function deactivate() {
-    console.log('🛑 Dana language extension DEACTIVATE function called');
     if (!client) {
-        console.log('⚠️ No language client to stop');
         return undefined;
     }
-    console.log('🛑 Stopping Dana Language Server...');
     return client.stop();
 }
 exports.deactivate = deactivate;

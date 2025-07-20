@@ -7,6 +7,7 @@ POET works entirely within Dana's execution model with no Python dependencies.
 
 from typing import Any
 
+from dana.frameworks.poet.core.metadata_extractor import MetadataExtractor
 from dana.frameworks.poet.core.types import POETConfig, POETResult
 
 
@@ -235,9 +236,30 @@ def poet(
         # Store POET metadata in a way that's accessible to Dana
         poet_enhanced_function._poet_config = config.dict()
 
+        # Add metadata extraction capability
+        poet_enhanced_function.get_metadata = lambda: MetadataExtractor().extract_function_metadata(poet_enhanced_function)
+
         return poet_enhanced_function
 
     return dana_decorator
+
+
+def extract_poet_metadata(func: Any) -> dict[str, Any]:
+    """
+    Extract metadata from a poet-decorated function.
+
+    Args:
+        func: A function decorated with @poet
+
+    Returns:
+        Dictionary containing function metadata
+    """
+    if hasattr(func, "get_metadata"):
+        return func.get_metadata().to_dict()
+    else:
+        # Fallback for non-poet functions
+        extractor = MetadataExtractor()
+        return extractor.extract_function_metadata(func).to_dict()
 
 
 class POETMetadata:
