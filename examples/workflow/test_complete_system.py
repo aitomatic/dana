@@ -10,7 +10,7 @@ This demonstrates the full workflow system with:
 
 from dana.frameworks.workflow.core.workflow_engine import WorkflowEngine
 from dana.frameworks.workflow.core.workflow_step import WorkflowStep
-from dana.frameworks.workflow.phases.context_engineering import ContextAwareWorkflowEngine
+from dana.frameworks.workflow.context_engineering import ContextAwareWorkflowEngine
 
 def add_ten(x):
     """Add 10 to input."""

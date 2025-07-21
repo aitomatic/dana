@@ -66,7 +66,10 @@ def poet(
         A function that wraps the original Dana function with POET phases
     """
 
-    # Create configuration object
+    # Create configuration object - filter out unsupported kwargs
+    supported_kwargs = {k: v for k, v in kwargs.items() 
+                       if k in ['optimize_for', 'enable_monitoring']}
+    
     config = POETConfig(
         domain=domain,
         perceive=perceive or {},
@@ -78,7 +81,7 @@ def poet(
         debug=debug,
         trace_phases=trace_phases,
         performance_tracking=performance_tracking,
-        **kwargs,
+        **supported_kwargs,
     )
 
     def dana_decorator(original_func: Any) -> Any:

@@ -113,10 +113,10 @@ class SafetyValidator:
         """
         logger.debug(f"Validating step: {getattr(step, 'name', 'unknown')}")
 
-        # Check if it's a valid WorkflowStep
-        from dana.frameworks.workflow.workflow_step import WorkflowStep
-
-        if not isinstance(step, WorkflowStep):
+        # Check if it's a valid step (any object with name and function attributes)
+        # Note: WorkflowStep import removed as workflow framework is not needed
+        
+        if not hasattr(step, 'name') or not hasattr(step, 'function'):
             return SafetyResult(
                 is_safe=False,
                 level=SafetyLevel.ERROR,

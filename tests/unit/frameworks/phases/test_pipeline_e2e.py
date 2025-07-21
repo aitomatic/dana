@@ -8,9 +8,9 @@ MIT License
 import pytest
 
 from dana.frameworks.poet.core.types import POETConfig
-from dana.frameworks.poet.phases.enforce import EnforcePhase
-from dana.frameworks.poet.phases.operate import OperatePhase
-from dana.frameworks.poet.phases.perceive import PerceivePhase
+from dana.frameworks.poet.enforce import EnforcePhase
+from dana.frameworks.poet.operate import OperatePhase
+from dana.frameworks.poet.perceive import PerceivePhase
 
 
 def dummy_func(x, y):
@@ -19,7 +19,7 @@ def dummy_func(x, y):
 
 def test_poet_pipeline_e2e_success():
     """Test the full POET pipeline with valid input and function."""
-    config = POETConfig(domain="test", retries=2, timeout=10.0, enable_training=True)
+    config = POETConfig(domain="test", retries=2, timeout=10.0)
     perceive = PerceivePhase(config)
     operate = OperatePhase(config)
     enforce = EnforcePhase(config)

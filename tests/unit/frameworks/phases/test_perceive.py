@@ -8,7 +8,7 @@ MIT License
 import pytest
 
 from dana.frameworks.poet.core.types import POETConfig
-from dana.frameworks.poet.phases.perceive import PerceivePhase
+from dana.frameworks.poet.perceive import PerceivePhase
 
 
 def test_perceive_phase_initialization():
@@ -55,7 +55,6 @@ def test_perceive_context_gathering():
         domain="test_domain",
         retries=3,
         timeout=30.0,
-        enable_training=True,
     )
     phase = PerceivePhase(config)
 

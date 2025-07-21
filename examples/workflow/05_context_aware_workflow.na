@@ -5,7 +5,7 @@ log("🧠 Starting Context-Aware Dana Workflow")
 
 # Import necessary modules
 import dana.frameworks.workflow.core.context.context_engine as ctx
-import dana.frameworks.workflow.phases.context_engineering as ce
+import dana.frameworks.workflow.context_engineering as ce
 
 # Define workflow functions with knowledge extraction
 def extract_metadata(data: dict) -> dict:

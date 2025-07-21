@@ -15,7 +15,7 @@ from typing import Any
 
 from dana.common.utils.logging import DANA_LOGGER
 
-from ..core.types import POETConfig
+from .core import POETConfig
 
 
 class PerceivePhase:

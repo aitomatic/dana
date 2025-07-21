@@ -8,7 +8,7 @@ MIT License
 import pytest
 
 from dana.frameworks.poet.core.types import POETConfig
-from dana.frameworks.poet.phases.operate import OperatePhase
+from dana.frameworks.poet.operate import OperatePhase
 
 
 def dummy_func(x, y):

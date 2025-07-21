@@ -16,7 +16,7 @@ from .config import (
 )
 from .core import POETConfig, POETEnhancer, POETError, POETResult, POETTranspilationError, poet
 from .domains import DomainRegistry
-from .phases import enforce, operate, perceive, train
+from . import enforce, operate, perceive, train
 
 # Development and testing utilities
 from .utils import (
