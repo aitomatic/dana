@@ -53,6 +53,8 @@ Expression = Union[
     "TupleLiteral",
     "StructLiteral",
     "UseStatement",
+    "PlaceholderExpression",
+    "PipelineExpression",
 ]
 
 # A Statement is any node that primarily performs an action, but still produces a value.
@@ -181,6 +183,21 @@ class Identifier:
 
 
 # === Expressions ===
+@dataclass
+class PlaceholderExpression:
+    """A placeholder expression representing the $ symbol in pipeline operations."""
+    
+    location: Location | None = None
+
+
+@dataclass
+class PipelineExpression:
+    """A pipeline expression representing function composition via the | operator."""
+    
+    stages: list[Expression]
+    location: Location | None = None
+
+
 @dataclass
 class UnaryExpression:
     """A unary operation (e.g., -x, not y)."""

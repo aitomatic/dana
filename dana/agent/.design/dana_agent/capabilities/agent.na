@@ -1,0 +1,58 @@
+import "common.na"
+
+# Agent declarative properties
+agent DanaAgent:
+    
+    # Domains this agent KNOWS ABOUT
+    domains: list[str] = [
+        "Agent Creation",
+        "Agent Management",
+        "Agent Deployment",
+        "Agent Monitoring",
+        "Agent Evaluation",
+        "Agent Optimization",
+        "Agent Documentation",
+        "Agent Training"
+    ]
+    
+    # Work that this agent CAN DO
+    tasks: list[str] = [
+        "Analyze Requirements",
+        "Assess Knowledge Requirements",
+        "Design Agent",
+        "Curate Knowledge",
+        "Generate Agent Capability Pack"
+    ]
+    
+    # Specific capabilities within the domain
+    capabilities: list[str] = [
+        "Extract Domain",
+        "Identify Tasks",
+        "Analyze Knowledge Gap",
+        "Design Agent Structure",
+        "Organize Knowledge",
+        "Generate Capability Pack"
+    ]
+    
+    # Knowledge sources this agent relies on
+    knowledge_sources: list[str] = [
+        "Domain Knowledge Patterns",
+        "Agent Design Templates", 
+        "Knowledge Organization Strategies",
+        "Capability Mapping Rules",
+        "Workflow Templates",
+        "Validation Frameworks"
+    ]
+
+@poet
+def solve(agent: DanaAgent, user_request: str) -> AgentCapabilityPack:
+    # Main workflow for creating agents
+    with agent {
+        capability_pack = analyze_requirements(user_request) |
+            assess_knowledge_requirements |
+            design_agent |
+            curate_knowledge |
+            generate_agent
+    }
+    
+    return capability_pack 

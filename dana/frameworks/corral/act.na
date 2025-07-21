@@ -1,0 +1,650 @@
+# CORRAL Phase 5: Act
+# Execute workflows with intelligent processing
+
+# Action execution struct
+struct ActionExecution:
+    """
+    Represents the action execution phase of CORRAL lifecycle.
+    Handles intelligent workflow execution and processing.
+    """
+    execution_config: dict
+    timeout_settings: dict
+    retry_config: dict
+    performance_metrics: dict
+
+# Workflow management struct
+struct WorkflowManager:
+    """
+    Manages workflow definitions, validation, and execution.
+    """
+    workflow_registry: dict
+    validation_rules: dict
+    optimization_config: dict
+
+# Intelligent function execution struct
+struct IntelligentFunctionExecutor:
+    """
+    Executes functions with intelligent processing capabilities.
+    """
+    function_registry: dict
+    processing_config: dict
+    context_cache: dict
+
+# Core action functions
+def execute_workflow(executor: ActionExecution, workflow: dict, context: dict, reasoning: dict) -> dict:
+    """
+    Execute a workflow with intelligent processing based on context and reasoning.
+    """
+    execution_result = {
+        "workflow_id": workflow.get("id", "unknown"),
+        "status": "pending",
+        "steps_executed": [],
+        "results": {},
+        "errors": [],
+        "performance_metrics": {},
+        "execution_timestamp": current_timestamp()
+    }
+    
+    try:
+        # Step 1: Validate workflow
+        manager = WorkflowManager(
+            workflow_registry={},
+            validation_rules={},
+            optimization_config={}
+        )
+        validation_result = validate_workflow(manager, workflow, context)
+        if not validation_result["valid"]:
+            execution_result["status"] = "failed"
+            execution_result["errors"].extend(validation_result["errors"])
+            return execution_result
+        
+        # Step 2: Prepare execution environment
+        environment = prepare_execution_environment(workflow, context)
+        
+        # Step 3: Execute workflow steps
+        for step in workflow["steps"]:
+            step_result = execute_workflow_step(step, environment, context, reasoning)
+            execution_result["steps_executed"].append(step_result)
+            
+            if step_result["status"] == "failed":
+                execution_result["status"] = "failed"
+                execution_result["errors"].append(step_result["error"])
+                break
+        
+        # Step 4: Collect results
+        if execution_result["status"] != "failed":
+            execution_result["status"] = "completed"
+            execution_result["results"] = collect_workflow_results(execution_result["steps_executed"])
+        
+        # Step 5: Calculate performance metrics
+        execution_result["performance_metrics"] = calculate_performance_metrics(execution_result)
+        
+    except Exception as e:
+        execution_result["status"] = "failed"
+        execution_result["errors"].append(str(e))
+    
+    return execution_result
+
+def execute_intelligent_function(executor: IntelligentFunctionExecutor, function: dict, inputs: dict, context: dict) -> dict:
+    """
+    Execute an intelligent function with context-aware processing.
+    """
+    function_result = {
+        "function_id": function.get("id", "unknown"),
+        "status": "pending",
+        "inputs": inputs,
+        "outputs": {},
+        "processing_steps": [],
+        "confidence": 0.0,
+        "execution_time": 0.0
+    }
+    
+    start_time = get_current_time()
+    
+    try:
+        # Step 1: Apply context-aware input processing
+        processed_inputs = apply_context_processing(inputs, context)
+        
+        # Step 2: Execute function with intelligent processing
+        if function["type"] == "data_processing":
+            result = execute_data_processing_function(executor, function, processed_inputs, context)
+        elif function["type"] == "analysis":
+            result = execute_analysis_function(executor, function, processed_inputs, context)
+        elif function["type"] == "decision":
+            result = execute_decision_function(executor, function, processed_inputs, context)
+        else:
+            result = execute_generic_function(executor, function, processed_inputs, context)
+        
+        # Step 3: Apply post-processing
+        processed_outputs = apply_post_processing(result, context)
+        
+        function_result["outputs"] = processed_outputs
+        function_result["status"] = "completed"
+        function_result["confidence"] = calculate_function_confidence(result, context)
+        
+    except Exception as e:
+        function_result["status"] = "failed"
+        function_result["error"] = str(e)
+    
+    function_result["execution_time"] = get_current_time() - start_time
+    return function_result
+
+def orchestrate_actions(executor: ActionExecution, actions: list, context: dict, reasoning: dict) -> dict:
+    """
+    Orchestrate multiple actions with intelligent coordination.
+    """
+    orchestration_result = {
+        "orchestration_id": generate_orchestration_id(),
+        "status": "pending",
+        "actions": [],
+        "dependencies": {},
+        "execution_order": [],
+        "results": {},
+        "coordination_metrics": {}
+    }
+    
+    # Step 1: Analyze action dependencies
+    dependencies = analyze_action_dependencies(actions)
+    orchestration_result["dependencies"] = dependencies
+    
+    # Step 2: Determine execution order
+    execution_order = determine_execution_order(actions, dependencies)
+    orchestration_result["execution_order"] = execution_order
+    
+    # Step 3: Execute actions in order
+    for action_id in execution_order:
+        action = find_action_by_id(actions, action_id)
+        if action:
+            action_result = execute_single_action(executor, action, context, reasoning)
+            orchestration_result["actions"].append(action_result)
+            
+            if action_result["status"] == "failed":
+                orchestration_result["status"] = "failed"
+                break
+    
+    # Step 4: Collect orchestration results
+    if orchestration_result["status"] != "failed":
+        orchestration_result["status"] = "completed"
+        orchestration_result["results"] = collect_orchestration_results(orchestration_result["actions"])
+    
+    # Step 5: Calculate coordination metrics
+    orchestration_result["coordination_metrics"] = calculate_coordination_metrics(orchestration_result)
+    
+    return orchestration_result
+
+# Workflow management functions
+def create_workflow(manager: WorkflowManager, name: str, steps: list, metadata: dict) -> dict:
+    """
+    Create a new workflow definition.
+    """
+    workflow = {
+        "id": generate_workflow_id(),
+        "name": name,
+        "steps": steps,
+        "metadata": metadata,
+        "created_at": current_timestamp(),
+        "version": "1.0"
+    }
+    
+    return workflow
+
+def validate_workflow(manager: WorkflowManager, workflow: dict, context: dict) -> dict:
+    """
+    Validate a workflow definition.
+    """
+    validation_result = {
+        "valid": True,
+        "errors": [],
+        "warnings": []
+    }
+    
+    # Check required fields
+    required_fields = ["id", "name", "steps"]
+    for field in required_fields:
+        if field not in workflow:
+            validation_result["valid"] = False
+            validation_result["errors"].append(f"Missing required field: {field}")
+    
+    # Validate steps
+    if "steps" in workflow:
+        for i, step in enumerate(workflow["steps"]):
+            step_validation = validate_workflow_step(step, context)
+            if not step_validation["valid"]:
+                validation_result["valid"] = False
+                validation_result["errors"].extend([
+                    f"Step {i}: {error}" for error in step_validation["errors"]
+                ])
+    
+    return validation_result
+
+def optimize_workflow(manager: WorkflowManager, workflow: dict, context: dict) -> dict:
+    """
+    Optimize workflow for better performance.
+    """
+    optimized_workflow = workflow.copy()
+    
+    # Analyze workflow performance
+    performance_analysis = analyze_workflow_performance(workflow, context)
+    
+    # Apply optimizations
+    if performance_analysis["bottlenecks"]:
+        optimized_workflow["steps"] = optimize_workflow_steps(workflow["steps"], performance_analysis)
+    
+    # Add optimization metadata
+    optimized_workflow["optimization_metadata"] = {
+        "original_performance": performance_analysis["estimated_performance"],
+        "optimizations_applied": performance_analysis["bottlenecks"],
+        "optimized_at": current_timestamp()
+    }
+    
+    return optimized_workflow
+
+# Intelligent function execution functions
+def execute_data_processing_function(executor: IntelligentFunctionExecutor, function: dict, inputs: dict, context: dict) -> dict:
+    """
+    Execute data processing functions with intelligent handling.
+    """
+    result = {
+        "processed_data": {},
+        "data_quality_metrics": {},
+        "processing_insights": []
+    }
+    
+    # Apply intelligent data processing
+    if function["operation"] == "load":
+        result["processed_data"] = intelligent_data_loading(inputs, context)
+    elif function["operation"] == "transform":
+        result["processed_data"] = intelligent_data_transformation(inputs, context)
+    elif function["operation"] == "filter":
+        result["processed_data"] = intelligent_data_filtering(inputs, context)
+    elif function["operation"] == "aggregate":
+        result["processed_data"] = intelligent_data_aggregation(inputs, context)
+    
+    # Calculate data quality metrics
+    result["data_quality_metrics"] = calculate_data_quality_metrics(result["processed_data"])
+    
+    # Generate processing insights
+    result["processing_insights"] = generate_processing_insights(result["processed_data"], context)
+    
+    return result
+
+def execute_analysis_function(executor: IntelligentFunctionExecutor, function: dict, inputs: dict, context: dict) -> dict:
+    """
+    Execute analysis functions with intelligent insights.
+    """
+    result = {
+        "analysis_results": {},
+        "insights": [],
+        "recommendations": [],
+        "confidence_scores": {}
+    }
+    
+    # Apply intelligent analysis
+    if function["operation"] == "statistical":
+        result["analysis_results"] = intelligent_statistical_analysis(inputs, context)
+    elif function["operation"] == "pattern":
+        result["analysis_results"] = intelligent_pattern_analysis(inputs, context)
+    elif function["operation"] == "trend":
+        result["analysis_results"] = intelligent_trend_analysis(inputs, context)
+    elif function["operation"] == "anomaly":
+        result["analysis_results"] = intelligent_anomaly_detection(inputs, context)
+    
+    # Generate insights
+    result["insights"] = generate_analysis_insights(result["analysis_results"], context)
+    
+    # Generate recommendations
+    result["recommendations"] = generate_analysis_recommendations(result["insights"], context)
+    
+    # Calculate confidence scores
+    result["confidence_scores"] = calculate_analysis_confidence(result["analysis_results"], context)
+    
+    return result
+
+def execute_decision_function(executor: IntelligentFunctionExecutor, function: dict, inputs: dict, context: dict) -> dict:
+    """
+    Execute decision functions with intelligent reasoning.
+    """
+    result = {
+        "decision": "",
+        "reasoning": [],
+        "alternatives": [],
+        "confidence": 0.0,
+        "risk_assessment": {}
+    }
+    
+    # Apply intelligent decision making
+    if function["operation"] == "classification":
+        result["decision"] = intelligent_classification(inputs, context)
+    elif function["operation"] == "optimization":
+        result["decision"] = intelligent_optimization(inputs, context)
+    elif function["operation"] == "prioritization":
+        result["decision"] = intelligent_prioritization(inputs, context)
+    elif function["operation"] == "selection":
+        result["decision"] = intelligent_selection(inputs, context)
+    
+    # Generate reasoning
+    result["reasoning"] = generate_decision_reasoning(result["decision"], inputs, context)
+    
+    # Consider alternatives
+    result["alternatives"] = generate_decision_alternatives(inputs, context)
+    
+    # Calculate confidence
+    result["confidence"] = calculate_decision_confidence(result["decision"], inputs, context)
+    
+    # Assess risks
+    result["risk_assessment"] = assess_decision_risks(result["decision"], inputs, context)
+    
+    return result
+
+# Workflow execution utilities
+def prepare_execution_environment(workflow: dict, context: dict) -> dict:
+    """Prepare execution environment for workflow."""
+    environment = {
+        "variables": {},
+        "resources": {},
+        "dependencies": {},
+        "configuration": {}
+    }
+    
+    # Set up environment variables
+    environment["variables"] = extract_workflow_variables(workflow, context)
+    
+    # Allocate resources
+    environment["resources"] = allocate_execution_resources(workflow)
+    
+    # Resolve dependencies
+    environment["dependencies"] = resolve_workflow_dependencies(workflow)
+    
+    # Load configuration
+    environment["configuration"] = load_workflow_configuration(workflow)
+    
+    return environment
+
+def execute_workflow_step(step: dict, environment: dict, context: dict, reasoning: dict) -> dict:
+    """Execute a single workflow step."""
+    step_result = {
+        "step_id": step.get("id", "unknown"),
+        "status": "pending",
+        "inputs": step.get("inputs", {}),
+        "outputs": {},
+        "execution_time": 0.0,
+        "error": None
+    }
+    
+    start_time = get_current_time()
+    
+    try:
+        # Prepare step inputs
+        prepared_inputs = prepare_step_inputs(step["inputs"], environment, context)
+        
+        # Execute step based on type
+        if step["type"] == "function":
+            executor = IntelligentFunctionExecutor(
+                function_registry={},
+                processing_config={},
+                context_cache={}
+            )
+            result = execute_intelligent_function(executor, step, prepared_inputs, context)
+        elif step["type"] == "condition":
+            result = execute_condition_step(step, prepared_inputs, context)
+        elif step["type"] == "loop":
+            result = execute_loop_step(step, prepared_inputs, context)
+        else:
+            result = execute_generic_step(step, prepared_inputs, context)
+        
+        step_result["outputs"] = result
+        step_result["status"] = "completed"
+        
+    except Exception as e:
+        step_result["status"] = "failed"
+        step_result["error"] = str(e)
+    
+    step_result["execution_time"] = get_current_time() - start_time
+    return step_result
+
+def collect_workflow_results(steps_executed: list) -> dict:
+    """Collect results from executed workflow steps."""
+    results = {
+        "final_outputs": {},
+        "intermediate_results": {},
+        "execution_summary": {}
+    }
+    
+    # Collect final outputs from last step
+    if steps_executed:
+        last_step = steps_executed[-1]
+        if last_step["status"] == "completed":
+            results["final_outputs"] = last_step["outputs"]
+    
+    # Collect intermediate results
+    for step in steps_executed:
+        if step["status"] == "completed":
+            results["intermediate_results"][step["step_id"]] = step["outputs"]
+    
+    # Generate execution summary
+    results["execution_summary"] = {
+        "total_steps": len(steps_executed),
+        "completed_steps": len([s for s in steps_executed if s["status"] == "completed"]),
+        "failed_steps": len([s for s in steps_executed if s["status"] == "failed"]),
+        "total_execution_time": sum(s["execution_time"] for s in steps_executed)
+    }
+    
+    return results
+
+def calculate_performance_metrics(execution_result: dict) -> dict:
+    """Calculate performance metrics for workflow execution."""
+    metrics = {
+        "total_execution_time": 0.0,
+        "average_step_time": 0.0,
+        "success_rate": 0.0,
+        "resource_utilization": {},
+        "bottlenecks": []
+    }
+    
+    if execution_result["steps_executed"]:
+        total_time = sum(step["execution_time"] for step in execution_result["steps_executed"])
+        metrics["total_execution_time"] = total_time
+        metrics["average_step_time"] = total_time / len(execution_result["steps_executed"])
+        
+        completed_steps = len([s for s in execution_result["steps_executed"] if s["status"] == "completed"])
+        metrics["success_rate"] = completed_steps / len(execution_result["steps_executed"])
+        
+        # Identify bottlenecks
+        slow_steps = [s for s in execution_result["steps_executed"] if s["execution_time"] > metrics["average_step_time"] * 2]
+        metrics["bottlenecks"] = [s["step_id"] for s in slow_steps]
+    
+    return metrics
+
+# Action orchestration utilities
+def analyze_action_dependencies(actions: list) -> dict:
+    """Analyze dependencies between actions."""
+    dependencies = {}
+    
+    for action in actions:
+        action_id = action.get("id", "unknown")
+        dependencies[action_id] = {
+            "depends_on": action.get("depends_on", []),
+            "required_by": [],
+            "parallel_with": action.get("parallel_with", [])
+        }
+    
+    # Build reverse dependencies
+    for action_id, deps in dependencies.items():
+        for dep in deps["depends_on"]:
+            if dep in dependencies:
+                dependencies[dep]["required_by"].append(action_id)
+    
+    return dependencies
+
+def determine_execution_order(actions: list, dependencies: dict) -> list:
+    """Determine optimal execution order for actions."""
+    execution_order = []
+    visited = set()
+    
+    # Topological sort
+    def visit(action_id):
+        if action_id in visited:
+            return
+        
+        # Visit dependencies first
+        for dep in dependencies.get(action_id, {}).get("depends_on", []):
+            visit(dep)
+        
+        visited.add(action_id)
+        execution_order.append(action_id)
+    
+    # Visit all actions
+    for action in actions:
+        action_id = action.get("id", "unknown")
+        if action_id not in visited:
+            visit(action_id)
+    
+    return execution_order
+
+def execute_single_action(executor: ActionExecution, action: dict, context: dict, reasoning: dict) -> dict:
+    """Execute a single action."""
+    action_result = {
+        "action_id": action.get("id", "unknown"),
+        "status": "pending",
+        "inputs": action.get("inputs", {}),
+        "outputs": {},
+        "execution_time": 0.0,
+        "error": None
+    }
+    
+    start_time = get_current_time()
+    
+    try:
+        # Execute action based on type
+        if action["type"] == "workflow":
+            result = execute_workflow(executor, action, context, reasoning)
+        elif action["type"] == "function":
+            function_executor = IntelligentFunctionExecutor(
+                function_registry={},
+                processing_config={},
+                context_cache={}
+            )
+            result = execute_intelligent_function(function_executor, action, action.get("inputs", {}), context)
+        else:
+            result = execute_generic_action(action, context)
+        
+        action_result["outputs"] = result
+        action_result["status"] = "completed"
+        
+    except Exception as e:
+        action_result["status"] = "failed"
+        action_result["error"] = str(e)
+    
+    action_result["execution_time"] = get_current_time() - start_time
+    return action_result
+
+# Utility functions
+def generate_workflow_id() -> str:
+    """Generate unique workflow ID."""
+    return f"workflow_{get_current_time()}"
+
+def generate_orchestration_id() -> str:
+    """Generate unique orchestration ID."""
+    return f"orchestration_{get_current_time()}"
+
+def current_timestamp() -> str:
+    """Get current timestamp."""
+    return get_current_time()
+
+# Placeholder functions for intelligent processing
+def intelligent_data_loading(inputs: dict, context: dict) -> dict:
+    """Intelligent data loading with context awareness."""
+    return {"data": "loaded_data", "metadata": {"source": inputs.get("source", "unknown")}}
+
+def intelligent_data_transformation(inputs: dict, context: dict) -> dict:
+    """Intelligent data transformation."""
+    return {"transformed_data": "processed_data"}
+
+def intelligent_data_filtering(inputs: dict, context: dict) -> dict:
+    """Intelligent data filtering."""
+    return {"filtered_data": "filtered_results"}
+
+def intelligent_data_aggregation(inputs: dict, context: dict) -> dict:
+    """Intelligent data aggregation."""
+    return {"aggregated_data": "summary_results"}
+
+def intelligent_statistical_analysis(inputs: dict, context: dict) -> dict:
+    """Intelligent statistical analysis."""
+    return {"statistics": "analysis_results"}
+
+def intelligent_pattern_analysis(inputs: dict, context: dict) -> dict:
+    """Intelligent pattern analysis."""
+    return {"patterns": "identified_patterns"}
+
+def intelligent_trend_analysis(inputs: dict, context: dict) -> dict:
+    """Intelligent trend analysis."""
+    return {"trends": "trend_results"}
+
+def intelligent_anomaly_detection(inputs: dict, context: dict) -> dict:
+    """Intelligent anomaly detection."""
+    return {"anomalies": "detected_anomalies"}
+
+def intelligent_classification(inputs: dict, context: dict) -> str:
+    """Intelligent classification."""
+    return "classified_result"
+
+def intelligent_optimization(inputs: dict, context: dict) -> str:
+    """Intelligent optimization."""
+    return "optimized_solution"
+
+def intelligent_prioritization(inputs: dict, context: dict) -> str:
+    """Intelligent prioritization."""
+    return "prioritized_list"
+
+def intelligent_selection(inputs: dict, context: dict) -> str:
+    """Intelligent selection."""
+    return "selected_option"
+
+# Main action workflow
+def execute_actions_with_intelligence(actions: list, context: dict, reasoning: dict) -> dict:
+    """
+    Main workflow for executing actions with intelligence.
+    Implements the complete action phase of CORRAL.
+    """
+    executor = ActionExecution(
+        execution_config={"enable_parallel_execution": True},
+        timeout_settings={"default": 30, "long_running": 300},
+        retry_config={"max_retries": 3, "backoff_factor": 2},
+        performance_metrics={}
+    )
+    
+    # Step 1: Orchestrate actions
+    orchestration_result = orchestrate_actions(executor, actions, context, reasoning)
+    
+    # Step 2: Execute individual actions
+    action_results = []
+    for action in actions:
+        if action["type"] == "workflow":
+            result = execute_workflow(executor, action, context, reasoning)
+        else:
+            function_executor = IntelligentFunctionExecutor(
+                function_registry={},
+                processing_config={},
+                context_cache={}
+            )
+            result = execute_intelligent_function(function_executor, action, action.get("inputs", {}), context)
+        action_results.append(result)
+    
+    return {
+        "orchestration_result": orchestration_result,
+        "action_results": action_results,
+        "execution_summary": {
+            "total_actions": len(actions),
+            "successful_actions": len([r for r in action_results if r["status"] == "completed"]),
+            "failed_actions": len([r for r in action_results if r["status"] == "failed"]),
+            "execution_timestamp": current_timestamp()
+        }
+    }
+
+# Example usage
+# actions = [
+#     {"id": "load_data", "type": "function", "operation": "load", "inputs": {"source": "database"}},
+#     {"id": "analyze_data", "type": "function", "operation": "statistical", "inputs": {"data": "load_data.output"}},
+#     {"id": "make_decision", "type": "function", "operation": "classification", "inputs": {"analysis": "analyze_data.output"}}
+# ]
+# execution_result = execute_actions_with_intelligence(actions, context, reasoning)

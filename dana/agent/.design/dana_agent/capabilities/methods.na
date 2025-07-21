@@ -1,0 +1,29 @@
+import "common.na"
+import "agent.na"
+
+def analyze_requirements(agent: DanaAgent, user_request: str) -> AgentRequirements
+
+def assess_knowledge_requirements(agent: DanaAgent, requirements: AgentRequirements) -> KnowledgePlan
+
+def design_agent(agent: DanaAgent, requirements: AgentRequirements, knowledge_plan: KnowledgePlan) -> AgentDesign
+
+def curate_knowledge(agent: DanaAgent, design: AgentDesign) -> KnowledgePack
+
+def generate_agent(agent: DanaAgent, design: AgentDesign, knowledge_pack: KnowledgePack) -> AgentCapabilityPack
+
+@poet
+def generate_agent_na(agent: DanaAgent, agent_declaration: AgentDeclaration) -> str
+
+@poet
+def generate_common_na(agent: DanaAgent, organized_knowledge: dict) -> str
+
+@poet
+def generate_resources_na(agent: DanaAgent, organized_knowledge: dict) -> str
+
+@poet
+def generate_methods_na(agent: DanaAgent, agent_declaration: AgentDeclaration) -> str
+
+@poet
+def generate_workflows_na(agent: DanaAgent, agent_declaration: AgentDeclaration) -> str
+
+def generate_metadata(agent: DanaAgent, design: AgentDesign, knowledge_pack: KnowledgePack) -> dict 

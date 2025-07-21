@@ -1,13 +1,15 @@
 """
-Context expansion and similarity search components for Dana KNOWS system.
-
-This module handles similarity search, context expansion, and semantic matching.
+Context expansion and similarity search utilities.
 """
 
-from .expander import ContextExpander
-from .similarity import SimilaritySearcher
+from .expander import ContextExpander, ContextExpansion, ContextValidation
+from .similarity import SemanticMatch, SimilarityResult, SimilaritySearcher
 
 __all__ = [
-    "SimilaritySearcher",
-    "ContextExpander"
+    "ContextExpander", 
+    "ContextExpansion", 
+    "ContextValidation",
+    "SemanticMatch", 
+    "SimilarityResult", 
+    "SimilaritySearcher"
 ] 

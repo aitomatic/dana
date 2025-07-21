@@ -1,0 +1,358 @@
+# CORRAL Phase 2: Organize
+# Structure and categorize knowledge for efficient retrieval
+
+# Knowledge organization struct
+struct KnowledgeOrganization:
+    """
+    Represents the knowledge organization phase of CORRAL lifecycle.
+    Handles structuring, indexing, and categorizing knowledge for optimal retrieval.
+    """
+    knowledge_index: dict
+    knowledge_graph: dict
+    taxonomy: dict
+    optimization_config: dict
+
+# Knowledge categorization and classification struct
+struct KnowledgeClassifier:
+    """
+    Classifies and categorizes knowledge content.
+    """
+    domain_keywords: dict
+    complexity_thresholds: dict
+    classification_rules: dict
+
+# Core organization functions
+def create_knowledge_index(organizer: KnowledgeOrganization, curated_knowledge: dict) -> dict:
+    """
+    Create a searchable index from curated knowledge.
+    """
+    index = {
+        "by_keyword": {},
+        "by_entity": {},
+        "by_category": {},
+        "by_source": {},
+        "by_timestamp": {}
+    }
+    
+    for source, content_data in curated_knowledge.items():
+        content = content_data["content"]
+        metadata = content_data["metadata"]
+        
+        # Index by keywords
+        for keyword in metadata["keywords"]:
+            if keyword not in index["by_keyword"]:
+                index["by_keyword"][keyword] = []
+            index["by_keyword"][keyword].append(source)
+        
+        # Index by entities
+        for entity in metadata["entities"]:
+            if entity not in index["by_entity"]:
+                index["by_entity"][entity] = []
+            index["by_entity"][entity].append(source)
+        
+        # Index by category
+        category = determine_content_category(content)
+        if category not in index["by_category"]:
+            index["by_category"][category] = []
+        index["by_category"][category].append(source)
+        
+        # Index by source
+        index["by_source"][source] = content_data
+        
+        # Index by timestamp
+        timestamp = metadata["extraction_date"]
+        if timestamp not in index["by_timestamp"]:
+            index["by_timestamp"][timestamp] = []
+        index["by_timestamp"][timestamp].append(source)
+    
+    return index
+
+def build_knowledge_graph(organizer: KnowledgeOrganization, curated_knowledge: dict) -> dict:
+    """
+    Build a knowledge graph showing relationships between concepts.
+    """
+    graph = {
+        "nodes": {},
+        "edges": [],
+        "clusters": {}
+    }
+    
+    # Create nodes from entities and concepts
+    for source, content_data in curated_knowledge.items():
+        content = content_data["content"]
+        entities = content_data["metadata"]["entities"]
+        
+        for entity in entities:
+            if entity not in graph["nodes"]:
+                graph["nodes"][entity] = {
+                    "type": "entity",
+                    "sources": [],
+                    "connections": 0
+                }
+            graph["nodes"][entity]["sources"].append(source)
+    
+    # Create edges based on co-occurrence and relationships
+    for source, content_data in curated_knowledge.items():
+        entities = content_data["metadata"]["entities"]
+        for i, entity1 in enumerate(entities):
+            for entity2 in entities[i+1:]:
+                edge = {
+                    "from": entity1,
+                    "to": entity2,
+                    "weight": calculate_relationship_strength(entity1, entity2, content_data),
+                    "source": source
+                }
+                graph["edges"].append(edge)
+    
+    # Identify clusters
+    graph["clusters"] = identify_concept_clusters(graph["nodes"], graph["edges"])
+    
+    return graph
+
+def create_taxonomy(organizer: KnowledgeOrganization, curated_knowledge: dict) -> dict:
+    """
+    Create a hierarchical taxonomy of knowledge concepts.
+    """
+    taxonomy = {
+        "root": {
+            "name": "Knowledge Base",
+            "children": {},
+            "concepts": []
+        }
+    }
+    
+    # Extract concepts and their relationships
+    all_concepts = extract_all_concepts(curated_knowledge)
+    
+    # Build hierarchical structure
+    for concept in all_concepts:
+        parent = find_parent_concept(concept, all_concepts)
+        if parent:
+            add_to_taxonomy(taxonomy, parent, concept)
+        else:
+            add_to_taxonomy(taxonomy, "root", concept)
+    
+    return taxonomy
+
+def optimize_retrieval_structure(organizer: KnowledgeOrganization, knowledge_index: dict) -> dict:
+    """
+    Optimize the knowledge structure for fast and accurate retrieval.
+    """
+    optimized = {
+        "fast_lookup": {},
+        "semantic_index": {},
+        "contextual_groups": {},
+        "priority_queues": {}
+    }
+    
+    # Create fast lookup tables
+    for keyword, sources in knowledge_index["by_keyword"].items():
+        optimized["fast_lookup"][keyword] = {
+            "sources": sources,
+            "relevance_scores": calculate_relevance_scores(keyword, sources),
+            "last_accessed": None
+        }
+    
+    # Create semantic index
+    optimized["semantic_index"] = build_semantic_index(knowledge_index)
+    
+    # Group by context
+    optimized["contextual_groups"] = group_by_context(knowledge_index)
+    
+    # Create priority queues for common queries
+    optimized["priority_queues"] = create_priority_queues(knowledge_index)
+    
+    return optimized
+
+# Knowledge categorization and classification functions
+def classify_by_domain(classifier: KnowledgeClassifier, content: str) -> str:
+    """
+    Classify content by domain (technical, business, etc.).
+    """
+    domain_keywords = {
+        "technical": ["api", "code", "function", "class", "method", "algorithm"],
+        "business": ["strategy", "market", "customer", "revenue", "profit"],
+        "procedural": ["step", "process", "workflow", "procedure", "instruction"],
+        "reference": ["definition", "specification", "documentation", "guide"]
+    }
+    
+    content_lower = content.lower()
+    scores = {}
+    
+    for domain, keywords in domain_keywords.items():
+        scores[domain] = sum(1 for keyword in keywords if keyword in content_lower)
+    
+    return max(scores, key=scores.get)
+
+def classify_by_complexity(classifier: KnowledgeClassifier, content: str) -> str:
+    """
+    Classify content by complexity level.
+    """
+    word_count = len(content.split())
+    sentence_count = len(content.split('.'))
+    avg_sentence_length = word_count / max(sentence_count, 1)
+    
+    if avg_sentence_length > 25:
+        return "advanced"
+    elif avg_sentence_length > 15:
+        return "intermediate"
+    else:
+        return "beginner"
+
+def classify_by_type(classifier: KnowledgeClassifier, content: str) -> str:
+    """
+    Classify content by type (tutorial, reference, example, etc.).
+    """
+    if "example" in content.lower() or "sample" in content.lower():
+        return "example"
+    elif "tutorial" in content.lower() or "guide" in content.lower():
+        return "tutorial"
+    elif "api" in content.lower() or "reference" in content.lower():
+        return "reference"
+    else:
+        return "general"
+
+# Knowledge indexing utilities
+def determine_content_category(content: str) -> str:
+    """Determine the category of content."""
+    classifier = KnowledgeClassifier(
+        domain_keywords={},
+        complexity_thresholds={},
+        classification_rules={}
+    )
+    return classify_by_domain(classifier, content)
+
+def calculate_relationship_strength(entity1: str, entity2: str, content_data: dict) -> float:
+    """Calculate the strength of relationship between two entities."""
+    content = content_data["content"]
+    # Simple co-occurrence based strength
+    entity1_count = content.lower().count(entity1.lower())
+    entity2_count = content.lower().count(entity2.lower())
+    return min(entity1_count, entity2_count) / max(entity1_count, entity2_count, 1)
+
+def identify_concept_clusters(nodes: dict, edges: list) -> dict:
+    """Identify clusters of related concepts."""
+    clusters = {}
+    visited = set()
+    
+    for node in nodes:
+        if node not in visited:
+            cluster = find_connected_nodes(node, nodes, edges)
+            clusters[f"cluster_{len(clusters)}"] = cluster
+            visited.update(cluster)
+    
+    return clusters
+
+def find_connected_nodes(start_node: str, nodes: dict, edges: list) -> list:
+    """Find all nodes connected to start_node."""
+    connected = [start_node]
+    to_visit = [start_node]
+    
+    while to_visit:
+        current = to_visit.pop(0)
+        for edge in edges:
+            if edge["from"] == current and edge["to"] not in connected:
+                connected.append(edge["to"])
+                to_visit.append(edge["to"])
+            elif edge["to"] == current and edge["from"] not in connected:
+                connected.append(edge["from"])
+                to_visit.append(edge["from"])
+    
+    return connected
+
+# Taxonomy building functions
+def extract_all_concepts(curated_knowledge: dict) -> list:
+    """Extract all concepts from curated knowledge."""
+    concepts = []
+    for content_data in curated_knowledge.values():
+        concepts.extend(content_data["metadata"]["entities"])
+    return list(set(concepts))
+
+def find_parent_concept(concept: str, all_concepts: list) -> str:
+    """Find the parent concept for a given concept."""
+    # Simple hierarchical logic - can be enhanced with ML
+    if "api" in concept.lower():
+        return "technical"
+    elif "business" in concept.lower():
+        return "business"
+    return None
+
+def add_to_taxonomy(taxonomy: dict, parent: str, concept: str):
+    """Add a concept to the taxonomy under the specified parent."""
+    if parent not in taxonomy:
+        taxonomy[parent] = {"children": {}, "concepts": []}
+    taxonomy[parent]["concepts"].append(concept)
+
+# Optimization functions
+def calculate_relevance_scores(keyword: str, sources: list) -> dict:
+    """Calculate relevance scores for sources given a keyword."""
+    scores = {}
+    for source in sources:
+        # Simple TF-IDF like scoring
+        scores[source] = calculate_tfidf_score(keyword, source)
+    return scores
+
+def build_semantic_index(knowledge_index: dict) -> dict:
+    """Build a semantic index for better retrieval."""
+    semantic_index = {}
+    # Implementation would use embeddings or semantic analysis
+    return semantic_index
+
+def group_by_context(knowledge_index: dict) -> dict:
+    """Group knowledge by contextual similarity."""
+    context_groups = {}
+    # Implementation would use clustering algorithms
+    return context_groups
+
+def create_priority_queues(knowledge_index: dict) -> dict:
+    """Create priority queues for common query patterns."""
+    queues = {}
+    # Implementation would analyze query patterns and create optimized queues
+    return queues
+
+# Main organization workflow
+def organize_knowledge(curated_knowledge: dict) -> dict:
+    """
+    Main workflow for organizing curated knowledge.
+    Implements the complete organization phase of CORRAL.
+    """
+    organizer = KnowledgeOrganization(
+        knowledge_index={},
+        knowledge_graph={},
+        taxonomy={},
+        optimization_config={"enable_semantic_index": True}
+    )
+    
+    # Step 1: Create knowledge index
+    knowledge_index = create_knowledge_index(organizer, curated_knowledge)
+    
+    # Step 2: Build knowledge graph
+    knowledge_graph = build_knowledge_graph(organizer, curated_knowledge)
+    
+    # Step 3: Create taxonomy
+    taxonomy = create_taxonomy(organizer, curated_knowledge)
+    
+    # Step 4: Optimize for retrieval
+    optimized_structure = optimize_retrieval_structure(organizer, knowledge_index)
+    
+    return {
+        "knowledge_index": knowledge_index,
+        "knowledge_graph": knowledge_graph,
+        "taxonomy": taxonomy,
+        "optimized_structure": optimized_structure,
+        "organization_timestamp": current_timestamp()
+    }
+
+# Utility functions
+def calculate_tfidf_score(keyword: str, source: str) -> float:
+    """Calculate TF-IDF score for a keyword in a source."""
+    # Simplified implementation
+    return 0.5  # Placeholder
+
+def current_timestamp() -> str:
+    """Get current timestamp."""
+    return get_current_time()
+
+# Example usage
+# curated = curate_knowledge_sources(sources)
+# organized = organize_knowledge(curated["curated_knowledge"])

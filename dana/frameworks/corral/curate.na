@@ -1,0 +1,312 @@
+"""
+Curate Knowledge Recipe
+
+Curate_knowledge_recipe: Simulate knowledge curation and agent execution to derive an optimal
+knowledge transformation recipe that maximizes agent performance on a given domain-task pair.
+"""
+
+# --- Data Structures ---
+
+struct KnowledgeRecipe:
+    transformation_steps: list[str] # Explicit, layered combination rules
+    data_structures: list[str]      # Structured object types (graph, table, tree, etc.)
+    storage_formats: list[str]      # Mapped formats w/ justification
+    query_patterns: list[str]       # Logic + fallback strategy
+    performance_notes: str          # Latency, confidence, resource
+    runtime_queries: list[str]      # NEW: executable examples (optional)
+
+struct KnowledgeAsset:
+    id: str
+    type: str                       # One of: ["Log Data", "Manual", "IoT Stream", "Workflow", "Domain Ontology", "PromptTemplate", ...]
+    source: str                     # One of: ["Enterprise", "Aitomatic", "Synthetic", "IoT"]
+    content: str
+    trust_tier: str
+    metadata: dict[str, str]        # schema, timestamp range, provenance, etc.
+
+struct TaskSignature:
+    entities: list[str]
+    knowledge_needs: list[str]
+    success_criteria: list[str]
+
+struct AgentRunResult:
+    results: list[KnowledgeAsset]
+    score: float
+
+struct EvaluationSummary:
+    comments: str
+    score: float
+
+# --- Main Pipeline ---
+
+def curate_knowledge_recipe(domain: str = "General",
+                            task: str = "Q&A",
+                            documentary_knowledge: list[KnowledgeAsset] = [],
+                            include_iot_data: bool = False,
+                            use_aitomatic_domain_knowledge: bool = False,
+                            use_aitomatic_task_knowledge: bool = False) -> KnowledgeRecipe:
+    """
+    Curate knowledge for a given domain and task, with fine-grained control over knowledge sources.
+    """
+    # 1. Extract task signature
+    task_sig = _extract_task_signature(domain, task, "None suggested")
+
+    # 2. Curate enterprise (documentary) knowledge
+    kb_assets = {}
+    for asset in documentary_knowledge:
+        kb_assets[f"dk_{asset.type.lower().replace(' ', '_')}"] = asset
+
+    # 3. Optionally ingest IoT data
+    if include_iot_data:
+        iot_asset = KnowledgeAsset(
+            id="iot_stream_1",
+            type="IoT Stream",
+            source="IoT",
+            content="Simulated IoT sensor stream",
+            trust_tier="Medium",
+            metadata={"schema": "sensor_reading_v1", "timestamp_range": "2023-01-01/2023-01-31", "provenance": "IoT Gateway"}
+        )
+        kb_assets["dk_iot_stream"] = iot_asset
+
+    # 4. Simulate contextual knowledge
+    if "dk_manual" in kb_assets:
+        ck_asset = _simulate_ck_curation(domain, task, task_sig, kb_assets["dk_manual"], "None suggested")
+        kb_assets["ck_templates"] = ck_asset
+
+    # 5. Optionally enrich with Aitomatic knowledge
+    if use_aitomatic_domain_knowledge:
+        ak_domain = _simulate_ak_domain_knowledge(domain, task, task_sig, kb_assets, "None suggested")
+        kb_assets["ak_domain"] = ak_domain
+    if use_aitomatic_task_knowledge:
+        ak_task = _simulate_ak_task_knowledge(domain, task, task_sig, kb_assets, "None suggested")
+        kb_assets["ak_task"] = ak_task
+
+    # 6. Simulate agent run
+    agent_run = _simulate_agent(domain, task, kb_assets)
+
+    # 7. Evaluate agent run
+    eval_summary = _evaluate_agent_run(domain, task, agent_run)
+
+    # 8. Generate recipe
+    recipe = _emit_recipe(eval_summary, kb_assets)
+    return recipe
+
+# --- Step Implementations ---
+
+def _extract_task_signature(domain: str,
+                            task: str,
+                            improvements: str) -> TaskSignature:
+    """
+    Parse the domain-task pair for entities, knowledge needs, and success criteria
+
+    Args:
+        domain: The domain of the task
+        task: The task to extract the signature for
+        improvements: The improvements to the previous task signature
+
+    Returns:
+        A task signature object containing the entities, knowledge needs,
+        and success criteria
+    """
+    
+    prompt = f"""
+    Analyze the domain-task pair and extract key information.
+    If improvements are provided, use them to improve the task signature.
+    
+    Domain: {domain}
+    Task: {task}
+    Improvements: {improvements}
+    
+    Extract:
+    1. Key entities (people, systems, processes, tools, data sources)
+    2. Knowledge needs (what specific information is required)
+    3. Success criteria (how to measure successful completion)
+
+    Provide a structured response with the extracted information.
+    """
+    return cast(TaskSignature, reason(prompt))
+
+def _simulate_dk_curation(domain: str,
+                          task: str,
+                          task_sig: TaskSignature,
+                          documentary_knowledge: list[KnowledgeAsset],
+                          improvements: str) -> KnowledgeAsset:
+    """
+    Simulate organizing enterprise DK into structured formats
+
+    Args:
+        domain: The domain of the task
+        task: The task to curate knowledge for
+        task_sig: The task signature
+        documentary_knowledge: The documentary knowledge to use
+        improvements: The improvements to the previous task signature
+
+    Returns:
+        A KnowledgeAsset object containing the structured enterprise DK
+    """
+
+    prompt = f"""
+    Simulate the result of processing and organizing documentary knowledge.
+
+    Domain: {domain}
+    Task: {task}
+    Task Signature: {task_sig}
+    Documentary Knowledge: {documentary_knowledge}
+    Improvements: {improvements}
+
+    Simulate what the processed documentary knowledge would look like after:
+    - Document processing and content extraction
+    - Pattern identification and relationship mapping
+    - Content categorization and hierarchy creation
+    - Structured data extraction
+    - Indexing and tagging
+
+    Provide the simulated structured knowledge asset that would result from this processing.
+    """
+    return cast(KnowledgeAsset, reason(prompt))
+
+def _simulate_ck_curation(domain: str,
+                          task: str,
+                          task_sig: TaskSignature,
+                          dk_struct: KnowledgeAsset,
+                          improvements: str) -> KnowledgeAsset:
+    """
+    Simulate generating contextual knowledge (patterns, workflows, templates)
+
+    Args:
+        domain: The domain of the task
+        task: The task to generate contextual knowledge for
+        task_sig: The task signature
+        dk_struct: The documentary knowledge to use
+        improvements: The improvements to the previous task signature
+
+    Returns:
+        A KnowledgeAsset object containing the contextual knowledge
+    """
+
+    prompt = f"""
+    Simulate the result of generating contextual knowledge from documentary knowledge.
+
+    Domain: {domain}
+    Task: {task}
+    Task Signature: {task_sig}
+    Documentary Knowledge: {dk_struct}
+    Improvements: {improvements}
+
+    Simulate what the contextual knowledge would look like after:
+    - Workflow pattern and template creation
+    - Scenario identification and solution mapping
+    - Decision tree and rule-based logic generation
+    - Contextual prompt and example development
+    - Task-specific heuristic creation
+
+    Provide the simulated contextual knowledge asset that would result from this generation.
+    """
+    return cast(KnowledgeAsset, reason(prompt))
+
+def _simulate_ak_domain_knowledge(domain: str, task: str, task_sig: TaskSignature, kb_assets: dict[str, KnowledgeAsset], improvements: str) -> KnowledgeAsset:
+    """
+    Simulate retrieval of Aitomatic domain knowledge (e.g., ontologies, patterns).
+    """
+    prompt = f"""
+    Simulate the result of retrieving domain-level knowledge for this domain.
+    Domain: {domain}
+    Task: {task}
+    Task Signature: {task_sig}
+    Existing KB Assets: {kb_assets}
+    Improvements: {improvements}
+    Simulate a KnowledgeAsset of type 'Domain Ontology' and source 'Aitomatic' with relevant metadata.
+    """
+    return cast(KnowledgeAsset, reason(prompt))
+
+def _simulate_ak_task_knowledge(domain: str, task: str, task_sig: TaskSignature, kb_assets: dict[str, KnowledgeAsset], improvements: str) -> KnowledgeAsset:
+    """
+    Simulate retrieval of Aitomatic task knowledge (e.g., workflows, protocols).
+    """
+    prompt = f"""
+    Simulate the result of retrieving task-level knowledge for this task.
+    Domain: {domain}
+    Task: {task}
+    Task Signature: {task_sig}
+    Existing KB Assets: {kb_assets}
+    Improvements: {improvements}
+    Simulate a KnowledgeAsset of type 'Workflow' and source 'Aitomatic' with relevant metadata.
+    """
+    return cast(KnowledgeAsset, reason(prompt))
+
+def _simulate_agent(domain: str, task: str, kb_assets: dict[str, KnowledgeAsset]) -> AgentRunResult:
+    """
+    Simulate agent run for this KB variant using a map of knowledge assets.
+    """
+    prompt = f"""
+    Simulate the result of an agent performing the task using the following knowledge assets:
+    Domain: {domain}
+    Task: {task}
+    Knowledge Assets: {kb_assets}
+    Describe how the agent would use each asset, how they are fused, and the expected performance.
+    Provide the simulated agent run result with performance metrics and outcomes.
+    """
+    return cast(AgentRunResult, reason(prompt))
+
+def _evaluate_agent_run(domain: str,
+                        task: str,
+                        agent_run: AgentRunResult) -> EvaluationSummary:
+    """
+    Evaluate the agent run
+
+    Args:
+        domain: The domain of the task
+        task: The task to evaluate the agent run for
+        agent_run: The agent run to evaluate
+
+    Returns:
+        A EvaluationSummary object containing the evaluation summary
+    """
+
+    prompt = f"""
+    Evaluate the agent's simulated performance across key dimensions.
+
+    Domain: {domain}
+    Task: {task}
+    Agent Run: {agent_run}
+
+    Evaluate:
+    1. ACCURACY: How well does the knowledge support correct task completion?
+    2. COMPLETENESS: Does the knowledge cover all required aspects of the task?
+    3. EFFICIENCY: How quickly can the agent access and use the knowledge?
+    4. RELIABILITY: How consistent and dependable are the results?
+    5. SCALABILITY: How well does the knowledge structure support growth?
+
+    Provide specific scores and detailed reasoning for each dimension.
+    """
+    return cast(EvaluationSummary, reason(prompt))
+
+def _emit_recipe(eval_summary: EvaluationSummary, kb_assets: dict[str, KnowledgeAsset]) -> KnowledgeRecipe:
+    """
+    Generate a KnowledgeRecipe to optimize agent performance, using all available knowledge assets.
+    """
+    prompt = f"""
+    You are generating a KnowledgeRecipe to optimize agent performance.
+    Evaluation Summary: {eval_summary}
+    Knowledge Base Assets: {kb_assets}
+    Provide concrete, implementable outputs for the following:
+    1. TRANSFORMATION STEPS:
+    - How to combine DK, CK, and optionally AK (including IoT if present)
+    - What to extract from each (e.g., patterns, logs, prompts, graphs)
+    - How to normalize, tag, and validate
+    2. DATA STRUCTURES:
+    - What structured representations should be created (e.g., LogTable, DefectGraph)
+    - How each relates to the knowledge assets
+    3. STORAGE FORMATS:
+    - Which store is best for each structure: [vector, RDBMS, KV-pair, graph]
+    - Rationale and access patterns
+    4. QUERY PATTERNS:
+    - How an agent queries these at runtime (e.g., "Given a symptom, find matching root causes")
+    - Optimization (caching, fallback strategies)
+    5. PERFORMANCE NOTES:
+    - Expected latency, throughput, quality confidence
+    - Resource and scale notes
+    6. RUNTIME QUERIES (New - Optional):
+    - Sample structured queries (SQL, graph, KV, vector) based on agent behavior
+    Return a `KnowledgeRecipe` with rich, multi-paragraph content per field.
+    """
+    return cast(KnowledgeRecipe, reason(prompt))

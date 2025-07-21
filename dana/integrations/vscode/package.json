@@ -2,12 +2,12 @@
   "name": "dana-language",
   "displayName": "Dana AI Agent Language",
   "description": "Language support for Dana AI Agent Language (.na files)",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "Aitomatic",
   "icon": "images/dana-logo.jpg",
   "repository": {
     "type": "git",
-    "url": "https://github.com/aitomatic/opendxa"
+    "url": "https://github.com/aitomatic/dana"
   },
   "engines": {
     "vscode": "^1.60.0"
@@ -23,8 +23,10 @@
   "main": "./out/extension.js",
   "activationEvents": [
     "onLanguage:dana",
-    "onCommand:dana.runFile",
-    "workspaceContains:**/*.na"
+    "onLanguage:markdown",
+    "workspaceContains:**/*.na",
+    "workspaceContains:**/*.md",
+    "onStartupFinished"
   ],
   "contributes": {
     "languages": [
@@ -53,7 +55,10 @@
       {
         "scopeName": "markdown.dana.codeblock",
         "path": "./syntaxes/dana.markdown.json",
-        "injectTo": ["text.html.markdown"],
+        "injectTo": [
+          "text.html.markdown",
+          "markup.fenced_code.block.markdown"
+        ],
         "embeddedLanguages": {
           "meta.embedded.block.dana": "dana"
         }
@@ -63,6 +68,11 @@
       {
         "command": "dana.runFile",
         "title": "Run Dana File",
+        "category": "Dana"
+      },
+      {
+        "command": "dana.testMPE",
+        "title": "Test Dana MPE Integration",
         "category": "Dana"
       }
     ],
@@ -85,6 +95,9 @@
     "markdown.previewScripts": [
       "./preview/dana-highlight.js"
     ],
+    "markdown.previewStyles": [
+      "./preview/dana-preview.css"
+    ],
     "markdown.markdownItPlugins": true
   },
   "scripts": {
@@ -93,7 +106,7 @@
     "watch": "tsc -watch -p ./"
   },
   "dependencies": {
-    "vscode-languageclient": "^9.0.1"
+    "vscode-languageclient": "^8.1.0"
   },
   "devDependencies": {
     "@types/vscode": "^1.60.0",

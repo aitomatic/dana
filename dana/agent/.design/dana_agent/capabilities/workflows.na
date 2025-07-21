@@ -1,0 +1,21 @@
+import "common.na"
+import "agent.na"
+import "methods.na"
+
+def create_agent_workflow(agent: DanaAgent, user_request: str) -> AgentCapabilityPack:
+    # Main workflow for creating agents
+    requirements = analyze_requirements(agent, user_request)
+    knowledge_plan = assess_knowledge_requirements(agent, requirements)
+    design = design_agent(agent, requirements, knowledge_plan)
+    knowledge_pack = curate_knowledge(agent, design)
+    capability_pack = generate_agent(agent, design, knowledge_pack)
+    
+    return capability_pack
+
+def validate_agent_workflow(agent: DanaAgent, capability_pack: AgentCapabilityPack) -> bool:
+    # Validate the generated agent capability pack
+    return validate_capability_pack(agent, capability_pack)
+
+def optimize_agent_workflow(agent: DanaAgent, capability_pack: AgentCapabilityPack) -> AgentCapabilityPack:
+    # Optimize the generated agent if needed
+    return optimize_capability_pack(agent, capability_pack) 
