@@ -4,8 +4,14 @@
 # API Documentation: See curate.md for comprehensive usage examples and API reference
 #
 # Quick Start:
-#   sources = ["./docs/api.md", "./docs/architecture.md"]
-#   curated = curate_knowledge_sources(sources, domain="semiconductor_fabrication", task="defect_analysis")
+#   kb = curate_knowledge(domain="semiconductor manufacturing", task="defect analysis")
+#   kb = curate_knowledge(sources=["./docs/", "./data/"], domain="software development", task="knowledge extraction")
+
+# Import required modules
+import dana.common.utils.time_utils
+import dana.common.utils.file_utils
+import dana.core.lang.llm
+import dana.core.lang.reason
 
 # Knowledge types according to CORRAL paradigm
 struct ContextualKnowledge:
@@ -21,9 +27,9 @@ struct ContextualKnowledge:
     extraction_conditions: dict
     synthesis_requirements: dict
 
-struct ExistingKnowledge:
+struct DocumentaryKnowledge:
     """
-    Existing Knowledge (EK): Documents, expert interviews, databases, and other 
+    Documentary Knowledge (DK): Documents, expert interviews, databases, and other 
     knowledge sources that we have access to and will continue to add over time.
     """
     source_id: str
@@ -35,7 +41,7 @@ struct ExistingKnowledge:
 
 struct ExperientialKnowledge:
     """
-    eXperiential Knowledge (XK): Learned knowledge that gets better over time 
+    Experiential Knowledge (XK): Learned knowledge that gets better over time 
     through experience, feedback, and continuous learning.
     """
     knowledge_id: str
@@ -45,19 +51,197 @@ struct ExperientialKnowledge:
     applicability_conditions: dict
     last_updated: str
 
-# Knowledge curation orchestrator
-struct KnowledgeCurationOrchestrator:
+struct KnowledgeBase:
     """
-    Orchestrates the curation of all three knowledge types (CK, EK, XK) 
-    with LLM assistance for intelligent synthesis and organization.
+    Complete knowledge base containing all three knowledge types and synthesis insights.
     """
     contextual_knowledge: ContextualKnowledge
-    existing_knowledge_sources: list
-    experiential_knowledge_base: dict
-    llm_config: dict
-    curation_strategy: dict
+    documentary_knowledge: list
+    experiential_knowledge: list
+    synthesis_insights: dict
+    curation_timestamp: str
+    
+    # Convenience properties for easy access
+    @property
+    def domain(self) -> str:
+        """Get the domain from contextual knowledge."""
+        return self.contextual_knowledge.domain
+    
+    @property
+    def task(self) -> str:
+        """Get the task from contextual knowledge."""
+        return self.contextual_knowledge.task
+    
+    @property
+    def gaps(self) -> list:
+        """Get knowledge gaps from synthesis insights."""
+        return self.synthesis_insights.get("knowledge_gaps", [])
+    
+    @property
+    def quality_score(self) -> float:
+        """Get overall quality score."""
+        return self.synthesis_insights.get("quality_score", 0.0)
+
+# Main API functions matching curate.md design
+
+def curate_knowledge(sources: list = None, domain: str = None, task: str = None, learning_data: dict = None, llm_assisted: bool = True) -> KnowledgeBase:
+    """
+    Main entry point for knowledge curation with natural language domain/task specification.
+    
+    Args:
+        sources: Optional list of file paths to extract knowledge from
+        domain: Natural language domain description
+        task: Natural language task description  
+        learning_data: Optional dictionary with historical patterns and feedback
+        llm_assisted: Whether to use LLM for intelligent curation (default: True)
+    
+    Returns:
+        KnowledgeBase containing curated knowledge across all three types (CK, DK, XK)
+    
+    Examples:
+        # Hiring a specialist - no sources needed
+        kb = curate_knowledge(domain="semiconductor manufacturing", task="defect analysis")
+        
+        # Basic usage with sources
+        kb = curate_knowledge(sources=["./docs/", "./data/"], domain="software development", task="knowledge extraction")
+        
+        # With experiential knowledge
+        kb = curate_knowledge(sources=["./process_logs/"], domain="semiconductor manufacturing", 
+                             task="defect analysis with historical patterns", learning_data={"historical_patterns": [...]})
+    """
+    # Infer context if not provided
+    if domain is None or task is None:
+        inferred_context = infer_context_from_sources(sources)
+        domain = domain or inferred_context["domain"]
+        task = task or inferred_context["task"]
+    
+    # Create context dictionary
+    context = {
+        "domain": domain,
+        "task": task
+    }
+    
+    # Step 1: Curate Contextual Knowledge (CK)
+    contextual_knowledge = curate_contextual_knowledge(context, llm_assisted)
+    
+    # Step 2: Curate Documentary Knowledge (DK) - conditioned by CK
+    documentary_knowledge = curate_documentary_knowledge(sources or [], contextual_knowledge, llm_assisted)
+    
+    # Step 3: Curate Experiential Knowledge (XK) - if available
+    experiential_knowledge = []
+    if learning_data:
+        experiential_knowledge = curate_experiential_knowledge(learning_data, contextual_knowledge, llm_assisted)
+    
+    # Step 4: Synthesize cross-knowledge insights
+    synthesis_result = synthesize_cross_knowledge_insights(
+        contextual_knowledge, documentary_knowledge, experiential_knowledge, llm_assisted
+    )
+    
+    return KnowledgeBase(
+        contextual_knowledge=contextual_knowledge,
+        documentary_knowledge=documentary_knowledge,
+        experiential_knowledge=experiential_knowledge,
+        synthesis_insights=synthesis_result,
+        curation_timestamp=dana.common.utils.time_utils.get_current_timestamp()
+    )
+
+# Domain-specific functions matching curate.md
+
+def curate_semiconductor_knowledge(sources: list = None, domain: str = None, task: str = None, learning_data: dict = None) -> KnowledgeBase:
+    """
+    Specialized curation for semiconductor manufacturing knowledge.
+    
+    Args:
+        sources: Optional list of file paths to extract knowledge from
+        domain: Natural language domain description (enhanced with semiconductor context)
+        task: Natural language task description
+        learning_data: Optional dictionary with historical patterns and feedback
+    
+    Returns:
+        KnowledgeBase specialized for semiconductor manufacturing
+    """
+    # Enhance domain with semiconductor context if not provided
+    if domain is None:
+        domain = "semiconductor manufacturing and fabrication"
+    
+    # Add semiconductor-specific context factors
+    enhanced_context = {
+        "domain": domain,
+        "task": task or "defect analysis and quality control",
+        "domain_specific_factors": {
+            "process_parameters": ["temperature", "pressure", "gas_flow"],
+            "equipment_metrics": ["plasma_power", "etch_rate", "uniformity"],
+            "defect_types": ["pattern_defects", "particle_defects", "electrical_defects"],
+            "quality_metrics": ["yield", "defect_density", "process_stability"]
+        }
+    }
+    
+    return curate_knowledge(sources, enhanced_context["domain"], enhanced_context["task"], learning_data, llm_assisted=True)
+
+def curate_banking_knowledge(sources: list = None, domain: str = None, task: str = None, learning_data: dict = None) -> KnowledgeBase:
+    """
+    Specialized curation for banking and financial services knowledge.
+    
+    Args:
+        sources: Optional list of file paths to extract knowledge from
+        domain: Natural language domain description (enhanced with banking context)
+        task: Natural language task description
+        learning_data: Optional dictionary with historical patterns and feedback
+    
+    Returns:
+        KnowledgeBase specialized for banking and financial services
+    """
+    # Enhance domain with banking context if not provided
+    if domain is None:
+        domain = "retail banking and financial services"
+    
+    # Add banking-specific context factors
+    enhanced_context = {
+        "domain": domain,
+        "task": task or "fraud detection and risk management",
+        "domain_specific_factors": {
+            "transaction_patterns": ["frequency", "amount", "location", "time"],
+            "risk_indicators": ["velocity", "deviation", "anomaly_score"],
+            "customer_behavior": ["historical_patterns", "profile_changes"],
+            "fraud_types": ["identity_theft", "account_takeover", "money_laundering"]
+        }
+    }
+    
+    return curate_knowledge(sources, enhanced_context["domain"], enhanced_context["task"], learning_data, llm_assisted=True)
+
+def curate_ic_design_knowledge(sources: list = None, domain: str = None, task: str = None, learning_data: dict = None) -> KnowledgeBase:
+    """
+    Specialized curation for IC design and verification knowledge.
+    
+    Args:
+        sources: Optional list of file paths to extract knowledge from
+        domain: Natural language domain description (enhanced with IC design context)
+        task: Natural language task description
+        learning_data: Optional dictionary with historical patterns and feedback
+    
+    Returns:
+        KnowledgeBase specialized for IC design and verification
+    """
+    # Enhance domain with IC design context if not provided
+    if domain is None:
+        domain = "integrated circuit design and verification"
+    
+    # Add IC design-specific context factors
+    enhanced_context = {
+        "domain": domain,
+        "task": task or "physical design optimization and DRC compliance",
+        "domain_specific_factors": {
+            "design_tools": ["synthesis", "place_route", "verification"],
+            "common_issues": ["timing_violations", "power_issues", "area_constraints"],
+            "design_methodologies": ["rtl_design", "physical_design", "verification"],
+            "support_metrics": ["resolution_time", "customer_satisfaction", "knowledge_reuse"]
+        }
+    }
+    
+    return curate_knowledge(sources, enhanced_context["domain"], enhanced_context["task"], learning_data, llm_assisted=True)
 
 # Core curation functions for the three knowledge types
+
 def curate_contextual_knowledge(context: dict, llm_assisted: bool = True) -> ContextualKnowledge:
     """
     Curate Contextual Knowledge (CK) - extract and synthesize context about 
@@ -68,19 +252,19 @@ def curate_contextual_knowledge(context: dict, llm_assisted: bool = True) -> Con
     else:
         return curate_contextual_knowledge_rule_based(context)
 
-def curate_existing_knowledge(sources: list, contextual_knowledge: ContextualKnowledge, llm_assisted: bool = True) -> list:
+def curate_documentary_knowledge(sources: list, contextual_knowledge: ContextualKnowledge, llm_assisted: bool = True) -> list:
     """
-    Curate Existing Knowledge (EK) - extract and organize from documents, 
+    Curate Documentary Knowledge (DK) - extract and organize from documents, 
     interviews, databases, etc., conditioned by contextual knowledge.
     """
     if llm_assisted:
-        return curate_existing_knowledge_with_llm(sources, contextual_knowledge)
+        return curate_documentary_knowledge_with_llm(sources, contextual_knowledge)
     else:
-        return curate_existing_knowledge_rule_based(sources, contextual_knowledge)
+        return curate_documentary_knowledge_rule_based(sources, contextual_knowledge)
 
 def curate_experiential_knowledge(learning_data: dict, contextual_knowledge: ContextualKnowledge, llm_assisted: bool = True) -> list:
     """
-    Curate eXperiential Knowledge (XK) - extract and synthesize learned 
+    Curate Experiential Knowledge (XK) - extract and synthesize learned 
     knowledge from experience, feedback, and continuous learning.
     """
     if llm_assisted:
@@ -88,36 +272,8 @@ def curate_experiential_knowledge(learning_data: dict, contextual_knowledge: Con
     else:
         return curate_experiential_knowledge_rule_based(learning_data, contextual_knowledge)
 
-# Main orchestration function
-def curate_knowledge_ecosystem(context: dict, sources: list, learning_data: dict = None, llm_assisted: bool = True) -> dict:
-    """
-    Main entry point for curating the complete knowledge ecosystem (CK + EK + XK).
-    """
-    # Step 1: Curate Contextual Knowledge (CK)
-    contextual_knowledge = curate_contextual_knowledge(context, llm_assisted)
-    
-    # Step 2: Curate Existing Knowledge (EK) - conditioned by CK
-    existing_knowledge = curate_existing_knowledge(sources, contextual_knowledge, llm_assisted)
-    
-    # Step 3: Curate Experiential Knowledge (XK) - if available
-    experiential_knowledge = []
-    if learning_data:
-        experiential_knowledge = curate_experiential_knowledge(learning_data, contextual_knowledge, llm_assisted)
-    
-    # Step 4: Synthesize cross-knowledge insights
-    synthesis_result = synthesize_cross_knowledge_insights(
-        contextual_knowledge, existing_knowledge, experiential_knowledge, llm_assisted
-    )
-    
-    return {
-        "contextual_knowledge": contextual_knowledge,
-        "existing_knowledge": existing_knowledge,
-        "experiential_knowledge": experiential_knowledge,
-        "synthesis_insights": synthesis_result,
-        "curation_timestamp": current_timestamp()
-    }
+# LLM-assisted knowledge curation functions
 
-# LLM-assisted contextual knowledge curation
 def curate_contextual_knowledge_with_llm(context: dict) -> ContextualKnowledge:
     """
     Use LLM to intelligently extract and synthesize contextual knowledge.
@@ -138,16 +294,15 @@ def curate_contextual_knowledge_with_llm(context: dict) -> ContextualKnowledge:
     Return as structured ContextualKnowledge object.
     """
     
-    llm_response = call_llm(prompt)
+    llm_response = dana.core.lang.llm.llm(prompt)
     return parse_contextual_knowledge(llm_response)
 
-# LLM-assisted existing knowledge curation
-def curate_existing_knowledge_with_llm(sources: list, contextual_knowledge: ContextualKnowledge) -> list:
+def curate_documentary_knowledge_with_llm(sources: list, contextual_knowledge: ContextualKnowledge) -> list:
     """
-    Use LLM to intelligently extract and organize existing knowledge 
+    Use LLM to intelligently extract and organize documentary knowledge 
     conditioned by contextual knowledge.
     """
-    existing_knowledge_list = []
+    documentary_knowledge_list = []
     
     for source in sources:
         # Extract content based on source type
@@ -173,16 +328,15 @@ def curate_existing_knowledge_with_llm(sources: list, contextual_knowledge: Cont
         4. Quality and reliability
         5. Applicability to the context
         
-        Return structured ExistingKnowledge object.
+        Return structured DocumentaryKnowledge object.
         """
         
-        llm_response = call_llm(prompt)
-        existing_knowledge = parse_existing_knowledge(llm_response, source)
-        existing_knowledge_list.append(existing_knowledge)
+        llm_response = dana.core.lang.llm.llm(prompt)
+        documentary_knowledge = parse_documentary_knowledge(llm_response, source)
+        documentary_knowledge_list.append(documentary_knowledge)
     
-    return existing_knowledge_list
+    return documentary_knowledge_list
 
-# LLM-assisted experiential knowledge curation
 def curate_experiential_knowledge_with_llm(learning_data: dict, contextual_knowledge: ContextualKnowledge) -> list:
     """
     Use LLM to extract and synthesize experiential knowledge from 
@@ -211,39 +365,40 @@ def curate_experiential_knowledge_with_llm(learning_data: dict, contextual_knowl
     Return list of ExperientialKnowledge objects.
     """
     
-    llm_response = call_llm(prompt)
+    llm_response = dana.core.lang.llm.llm(prompt)
     return parse_experiential_knowledge_list(llm_response)
 
 # Cross-knowledge synthesis
-def synthesize_cross_knowledge_insights(contextual_knowledge: ContextualKnowledge, existing_knowledge: list, experiential_knowledge: list, llm_assisted: bool) -> dict:
+
+def synthesize_cross_knowledge_insights(contextual_knowledge: ContextualKnowledge, documentary_knowledge: list, experiential_knowledge: list, llm_assisted: bool) -> dict:
     """
     Synthesize insights across all three knowledge types.
     """
     if llm_assisted:
-        return synthesize_cross_knowledge_with_llm(contextual_knowledge, existing_knowledge, experiential_knowledge)
+        return synthesize_cross_knowledge_with_llm(contextual_knowledge, documentary_knowledge, experiential_knowledge)
     else:
-        return synthesize_cross_knowledge_rule_based(contextual_knowledge, existing_knowledge, experiential_knowledge)
+        return synthesize_cross_knowledge_rule_based(contextual_knowledge, documentary_knowledge, experiential_knowledge)
 
-def synthesize_cross_knowledge_with_llm(contextual_knowledge: ContextualKnowledge, existing_knowledge: list, experiential_knowledge: list) -> dict:
+def synthesize_cross_knowledge_with_llm(contextual_knowledge: ContextualKnowledge, documentary_knowledge: list, experiential_knowledge: list) -> dict:
     """
-    Use LLM to synthesize insights across CK, EK, and XK.
+    Use LLM to synthesize insights across CK, DK, and XK.
     """
     # Prepare knowledge summaries
     ck_summary = summarize_contextual_knowledge(contextual_knowledge)
-    ek_summary = summarize_existing_knowledge(existing_knowledge)
+    dk_summary = summarize_documentary_knowledge(documentary_knowledge)
     xk_summary = summarize_experiential_knowledge(experiential_knowledge)
     
     prompt = f"""
     Synthesize insights across all three knowledge types:
     
     Contextual Knowledge (CK): {ck_summary}
-    Existing Knowledge (EK): {ek_summary}
+    Documentary Knowledge (DK): {dk_summary}
     Experiential Knowledge (XK): {xk_summary}
     
     Generate cross-knowledge insights including:
-    1. How CK conditions the interpretation of EK and XK
-    2. How EK validates or challenges XK patterns
-    3. How XK enhances understanding of EK
+    1. How CK conditions the interpretation of DK and XK
+    2. How DK validates or challenges XK patterns
+    3. How XK enhances understanding of DK
     4. New insights that emerge from combining all three
     5. Recommendations for knowledge gaps and improvements
     6. Predictive insights based on combined knowledge
@@ -251,67 +406,35 @@ def synthesize_cross_knowledge_with_llm(contextual_knowledge: ContextualKnowledg
     Return structured synthesis with confidence levels.
     """
     
-    llm_response = call_llm(prompt)
+    llm_response = dana.core.lang.llm.llm(prompt)
     return parse_synthesis_result(llm_response)
 
-# Domain-specific knowledge curation functions
-def curate_semiconductor_defect_analysis(sources: list, context: dict, learning_data: dict = None) -> dict:
-    """
-    Domain-specific curation for semiconductor defect analysis.
-    """
-    # Enhance context with domain-specific factors
-    enhanced_context = {
-        **context,
-        "domain": "semiconductor_fabrication",
-        "task": "defect_analysis",
-        "domain_specific_factors": {
-            "process_parameters": ["temperature", "pressure", "gas_flow"],
-            "equipment_metrics": ["plasma_power", "etch_rate", "uniformity"],
-            "defect_types": ["pattern_defects", "particle_defects", "electrical_defects"],
-            "quality_metrics": ["yield", "defect_density", "process_stability"]
-        }
-    }
-    
-    return curate_knowledge_ecosystem(enhanced_context, sources, learning_data, llm_assisted=True)
+# Inference and context extraction functions
 
-def curate_banking_fraud_detection(sources: list, context: dict, learning_data: dict = None) -> dict:
+def infer_context_from_sources(sources: list) -> dict:
     """
-    Domain-specific curation for banking fraud detection.
+    Use Dana's reasoning to infer context from source paths and content.
     """
-    enhanced_context = {
-        **context,
-        "domain": "consumer_banking",
-        "task": "fraud_detection",
-        "domain_specific_factors": {
-            "transaction_patterns": ["frequency", "amount", "location", "time"],
-            "risk_indicators": ["velocity", "deviation", "anomaly_score"],
-            "customer_behavior": ["historical_patterns", "profile_changes"],
-            "fraud_types": ["identity_theft", "account_takeover", "money_laundering"]
-        }
-    }
+    if not sources:
+        return {"domain": "general", "task": "knowledge extraction"}
     
-    return curate_knowledge_ecosystem(enhanced_context, sources, learning_data, llm_assisted=True)
-
-def curate_ic_design_support(sources: list, context: dict, learning_data: dict = None) -> dict:
-    """
-    Domain-specific curation for IC design support.
-    """
-    enhanced_context = {
-        **context,
-        "domain": "ic_design_support",
-        "task": "customer_support",
-        "domain_specific_factors": {
-            "design_tools": ["synthesis", "place_route", "verification"],
-            "common_issues": ["timing_violations", "power_issues", "area_constraints"],
-            "design_methodologies": ["rtl_design", "physical_design", "verification"],
-            "support_metrics": ["resolution_time", "customer_satisfaction", "knowledge_reuse"]
-        }
-    }
+    # Analyze source paths to infer context
+    source_analysis = dana.core.lang.reason.reason(f"""
+    Analyze these source paths and infer the domain and task:
+    {sources}
     
-    return curate_knowledge_ecosystem(enhanced_context, sources, learning_data, llm_assisted=True)
+    Return a JSON object with:
+    {{
+        "domain": "natural language domain description",
+        "task": "natural language task description"
+    }}
+    """)
+    
+    return parse_context_inference(source_analysis)
 
-# Knowledge gap analysis across all types
-def analyze_knowledge_gaps(contextual_knowledge: ContextualKnowledge, existing_knowledge: list, experiential_knowledge: list) -> dict:
+# Knowledge gap analysis
+
+def analyze_knowledge_gaps(contextual_knowledge: ContextualKnowledge, documentary_knowledge: list, experiential_knowledge: list) -> dict:
     """
     Analyze gaps across all three knowledge types.
     """
@@ -319,31 +442,32 @@ def analyze_knowledge_gaps(contextual_knowledge: ContextualKnowledge, existing_k
     Analyze knowledge gaps across all three knowledge types:
     
     Contextual Knowledge: {summarize_contextual_knowledge(contextual_knowledge)}
-    Existing Knowledge: {summarize_existing_knowledge(existing_knowledge)}
+    Documentary Knowledge: {summarize_documentary_knowledge(documentary_knowledge)}
     Experiential Knowledge: {summarize_experiential_knowledge(experiential_knowledge)}
     
     Identify gaps in:
     1. Contextual Knowledge: Missing context factors, unclear requirements
-    2. Existing Knowledge: Missing sources, incomplete coverage
+    2. Documentary Knowledge: Missing sources, incomplete coverage
     3. Experiential Knowledge: Insufficient learning, outdated patterns
     4. Cross-knowledge gaps: Missing connections between knowledge types
     
     Prioritize gaps by impact and provide recommendations for filling them.
     """
     
-    llm_response = call_llm(prompt)
+    llm_response = dana.core.lang.llm.llm(prompt)
     return parse_gap_analysis(llm_response)
 
-# Knowledge quality assessment across types
-def assess_knowledge_ecosystem_quality(contextual_knowledge: ContextualKnowledge, existing_knowledge: list, experiential_knowledge: list) -> dict:
+# Knowledge quality assessment
+
+def assess_knowledge_base_quality(contextual_knowledge: ContextualKnowledge, documentary_knowledge: list, experiential_knowledge: list) -> dict:
     """
-    Assess quality across the entire knowledge ecosystem.
+    Assess quality across the entire knowledge base.
     """
     prompt = f"""
-    Assess the quality of the knowledge ecosystem:
+    Assess the quality of the knowledge base:
     
     Contextual Knowledge: {contextual_knowledge}
-    Existing Knowledge: {len(existing_knowledge)} sources
+    Documentary Knowledge: {len(documentary_knowledge)} sources
     Experiential Knowledge: {len(experiential_knowledge)} patterns
     
     Evaluate:
@@ -357,14 +481,10 @@ def assess_knowledge_ecosystem_quality(contextual_knowledge: ContextualKnowledge
     Provide scores (0-1) and improvement recommendations.
     """
     
-    llm_response = call_llm(prompt)
+    llm_response = dana.core.lang.llm.llm(prompt)
     return parse_quality_assessment(llm_response)
 
 # Utility functions for LLM integration
-def call_llm(prompt: str) -> str:
-    """Call LLM with prompt and return response."""
-    # Implementation would integrate with actual LLM service
-    return "LLM response placeholder"
 
 def parse_contextual_knowledge(llm_response: str) -> ContextualKnowledge:
     """Parse LLM response into ContextualKnowledge struct."""
@@ -378,9 +498,9 @@ def parse_contextual_knowledge(llm_response: str) -> ContextualKnowledge:
         synthesis_requirements={}
     )
 
-def parse_existing_knowledge(llm_response: str, source: str) -> ExistingKnowledge:
-    """Parse LLM response into ExistingKnowledge struct."""
-    return ExistingKnowledge(
+def parse_documentary_knowledge(llm_response: str, source: str) -> DocumentaryKnowledge:
+    """Parse LLM response into DocumentaryKnowledge struct."""
+    return DocumentaryKnowledge(
         source_id=source,
         source_type="parsed_type",
         content={},
@@ -405,55 +525,57 @@ def parse_quality_assessment(llm_response: str) -> dict:
     """Parse LLM response into quality assessment dict."""
     return {"scores": {}, "recommendations": []}
 
+def parse_context_inference(llm_response: str) -> dict:
+    """Parse LLM response into context inference dict."""
+    return {"domain": "general", "task": "knowledge extraction"}
+
 # Summary functions for LLM prompts
+
 def summarize_contextual_knowledge(ck: ContextualKnowledge) -> str:
     """Create summary of contextual knowledge for LLM prompts."""
     return f"Domain: {ck.domain}, Task: {ck.task}, Requirements: {ck.knowledge_requirements}"
 
-def summarize_existing_knowledge(ek_list: list) -> str:
-    """Create summary of existing knowledge for LLM prompts."""
-    return f"{len(ek_list)} sources with various content types and quality metrics"
+def summarize_documentary_knowledge(dk_list: list) -> str:
+    """Create summary of documentary knowledge for LLM prompts."""
+    return f"{len(dk_list)} sources with various content types and quality metrics"
 
 def summarize_experiential_knowledge(xk_list: list) -> str:
     """Create summary of experiential knowledge for LLM prompts."""
     return f"{len(xk_list)} learned patterns and insights with confidence levels"
 
-# Legacy compatibility functions
-def curate_knowledge_sources(sources: list) -> dict:
-    """
-    Legacy function for backward compatibility.
-    Maps to new ecosystem-based approach.
-    """
-    context = {"domain": "general", "task": "knowledge_extraction"}
-    return curate_knowledge_ecosystem(context, sources, None, llm_assisted=False)
-
-def curate_knowledge_for_domain(sources: list, domain: str, task: str) -> dict:
-    """
-    Legacy function for backward compatibility.
-    Maps to new ecosystem-based approach.
-    """
-    context = {"domain": domain, "task": task}
-    return curate_knowledge_ecosystem(context, sources, None, llm_assisted=True)
-
 # Utility functions
+
 def extract_source_content(source: str) -> str:
     """Extract content from source file."""
     # Implementation would read and parse source content
     return "extracted content"
 
-def current_timestamp() -> str:
-    """Get current timestamp."""
-    return get_current_time()
+# Rule-based fallback functions (simplified implementations)
+
+def curate_contextual_knowledge_rule_based(context: dict) -> ContextualKnowledge:
+    """Rule-based contextual knowledge curation."""
+    return ContextualKnowledge(
+        domain=context.get("domain", "general"),
+        task=context.get("task", "knowledge_extraction"),
+        context_factors=context,
+        knowledge_requirements={},
+        extraction_conditions={},
+        synthesis_requirements={}
+    )
+
+def curate_documentary_knowledge_rule_based(sources: list, contextual_knowledge: ContextualKnowledge) -> list:
+    """Rule-based documentary knowledge curation."""
+    return []
+
+def curate_experiential_knowledge_rule_based(learning_data: dict, contextual_knowledge: ContextualKnowledge) -> list:
+    """Rule-based experiential knowledge curation."""
+    return []
+
+def synthesize_cross_knowledge_rule_based(contextual_knowledge: ContextualKnowledge, documentary_knowledge: list, experiential_knowledge: list) -> dict:
+    """Rule-based cross-knowledge synthesis."""
+    return {"insights": [], "recommendations": [], "confidence": 0.0}
 
 # Example usage
-# context = {"domain": "semiconductor_fabrication", "task": "defect_analysis", "location": "fab_floor_3"}
-# sources = ["./process_logs/", "./equipment_data/", "./defect_maps/"]
-# learning_data = {"historical_defects": [...], "process_improvements": [...], "expert_feedback": [...]}
-# 
-# curated_ecosystem = curate_knowledge_ecosystem(context, sources, learning_data)
-# 
-# # Access different knowledge types
-# ck = curated_ecosystem["contextual_knowledge"]
-# ek = curated_ecosystem["existing_knowledge"]
-# xk = curated_ecosystem["experiential_knowledge"]
-# insights = curated_ecosystem["synthesis_insights"]
+# kb = curate_knowledge(domain="semiconductor manufacturing", task="defect analysis")
+# kb = curate_knowledge(sources=["./process_logs/", "./equipment_data/"], domain="semiconductor manufacturing", task="defect analysis")
+# kb = curate_knowledge(sources=["./process_logs/"], domain="semiconductor manufacturing", task="defect analysis with historical patterns", learning_data={"historical_patterns": [...]})
