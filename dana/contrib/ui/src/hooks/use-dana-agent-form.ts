@@ -73,8 +73,8 @@ export function useDanaAgentForm() {
       const deploymentType = multiFileProject ? 'multi-file' : 'single-file';
       toast.success(`Agent "${newAgent.name}" deployed successfully as ${deploymentType} project!`);
 
-      // Navigate to agents list
-      navigate('/agents');
+      // Navigate to the specific agent page instead of agents list
+      navigate(`/agents/${newAgent.id}`);
     } catch (error) {
       // Error handling is done by the store, but we can add additional UI feedback
       const errorMessage = error instanceof Error ? error.message : 'Failed to deploy agent';

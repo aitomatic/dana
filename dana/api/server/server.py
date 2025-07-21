@@ -71,10 +71,16 @@ def create_app():
     if os.path.exists(static_dir):
         app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-    # Create tables on startup
+    # Create tables and run migrations on startup
     @app.on_event("startup")
     def on_startup():
+        from ..core.migrations import run_migrations
+        
+        # Create base tables first
         Base.metadata.create_all(bind=engine)
+        
+        # Run any pending migrations
+        run_migrations()
 
     # Catch-all route for SPA (serves index.html for all non-API, non-static routes)
     @app.get("/{full_path:path}")

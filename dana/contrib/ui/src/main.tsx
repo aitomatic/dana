@@ -43,7 +43,7 @@ createRoot(document.getElementById('root')!).render(
         <Route
           path="/agents/:agent_id"
           element={
-            <Layout>
+            <Layout hideLayout={true}>
               <AgentDetailPage />
             </Layout>
           }
