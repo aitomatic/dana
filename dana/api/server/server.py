@@ -7,16 +7,19 @@ import sys
 import time
 from typing import Any, cast
 
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
 from dana.api.client import APIClient
 from dana.common.config import ConfigLoader
 from dana.common.mixins.loggable import Loggable
 
+from ..core.database import Base, engine
+
 
 def create_app():
-    """Create FastAPI app with POET routes integrated"""
-    from fastapi import FastAPI
-    from fastapi.middleware.cors import CORSMiddleware
-
+    """Create FastAPI app with routers and static file serving"""
     app = FastAPI(title="Dana API Server", version="1.0.0")
 
     # Add CORS middleware
@@ -28,29 +31,66 @@ def create_app():
         allow_headers=["*"],
     )
 
-    # Register POET routes
-    try:
-        from dana.api.poet_routes import router as poet_router
+    # Include routers under /api
+    # New consolidated routers (preferred)
+    from ..routers.agents import router as agents_router
+    from ..routers.chat import router as new_chat_router
+    from ..routers.conversations import router as new_conversations_router
+    from ..routers.documents import router as new_documents_router
+    from ..routers.topics import router as new_topics_router
+    from ..routers.poet import router as poet_router
+    
+    # Legacy routers (for endpoints not yet migrated)
+    from .routers.api import router as api_router
+    from .routers.main import router as main_router
+    from .routers.agent_test import router as agent_test_router
 
-        app.include_router(poet_router, prefix="/poet", tags=["POET"])
-    except ImportError:
-        # POET routes not available
-        pass
+    app.include_router(main_router)
+    
+    # Use new consolidated routers
+    app.include_router(agents_router, prefix="/api")
+    app.include_router(new_chat_router, prefix="/api")
+    app.include_router(new_conversations_router, prefix="/api")
+    app.include_router(new_documents_router, prefix="/api")
+    app.include_router(new_topics_router, prefix="/api")
+    app.include_router(poet_router, prefix="/api")
+    
+    # Keep legacy api router for endpoints not yet migrated:
+    # - /run-na-file - Run Dana files
+    # - /write-files - Write multi-file projects to disk
+    # - /write-files-temp - Write multi-file projects to temp directory
+    # - /validate-multi-file - Validate multi-file project structure
+    # - /open-agent-folder - Open agent folder in file explorer
+    # - /task-status/{task_id} - Get background task status
+    # - /deep-train - Perform deep training on agents
+    app.include_router(api_router, prefix="/api/legacy")
+    app.include_router(agent_test_router, prefix="/api")
 
-    @app.get("/health")
-    async def health():
-        """Health check endpoint"""
-        return {"status": "healthy", "service": "Dana API"}
+    # Serve static files (React build)
+    static_dir = os.path.join(os.path.dirname(__file__), "static")
+    if os.path.exists(static_dir):
+        app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-    @app.get("/")
-    async def root():
-        """Root endpoint with service information"""
-        return {
-            "service": "Dana API Server",
-            "version": "1.0.0",
-            "status": "running",
-            "endpoints": {"health": "/health", "poet": "/poet/*"},
-        }
+    # Create tables on startup
+    @app.on_event("startup")
+    def on_startup():
+        Base.metadata.create_all(bind=engine)
+
+    # Catch-all route for SPA (serves index.html for all non-API, non-static routes)
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        # If the path starts with api or static, return 404 (should be handled by routers or static mount)
+        if full_path.startswith("api") or full_path.startswith("static"):
+            from fastapi.responses import JSONResponse
+
+            return JSONResponse({"error": "Not found"}, status_code=404)
+        # Serve index.html for all other routes
+        from fastapi.responses import FileResponse, JSONResponse
+
+        index_path = os.path.join(static_dir, "index.html")
+        if os.path.exists(index_path):
+            return FileResponse(index_path)
+        return JSONResponse({"error": "index.html not found"}, status_code=404)
 
     return app
 

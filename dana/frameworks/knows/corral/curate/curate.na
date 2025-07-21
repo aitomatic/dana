@@ -1,0 +1,131 @@
+from utility import WORKFLOW_GENERATOR_PROMPT
+from utility import MERMAID_TO_PYTHON_CONVERSION_PROMPT
+from utility import FRESHER_ASKING_PROMPT
+from utility import FRESHER_CONFIDENCE_PROMPT
+from utility import SENIOR_ANSWER_PROMPT
+import pandas.py as pd
+from pathlib.py import Path
+import json.py as json
+
+# workflow_knowledge = use("rag", sources=["/Users/lam/Desktop/repos/opendxa/examples/dana/10_agent_keyword/KnS_multi_agents/docs"])
+
+# topic = "semiconductor etching root cause analysis"
+# topic = "semiconductor recipe creation and parameter optimization for dispensing process"
+topic = "Identify symtomps and treatment of common diseases (fatal, non-fatal, chronic, acute) for family members"
+
+# role = "Process Engineer and Field Application Engineer"
+role = "Housewife"
+
+TARGET_CONFIDENCE_LEVEL = 50
+MAX_NODE_ITERATION = 3
+
+output_folder_name = f"data/{topic}"
+output_folder = Path(output_folder_name)
+output_folder.mkdir(parents=True, exist_ok=True)
+
+def create_expert_workflow(topic: str, role: str) -> dict:
+    workflow_prompt = WORKFLOW_GENERATOR_PROMPT.format(topic=topic, role=role)
+    workflow_in_mermaid : str = reason(workflow_prompt, resources=[])
+    data = {"mermaid": workflow_in_mermaid, "topic": topic, "role": role}
+    return data
+
+def mermaid_to_python(data: dict) -> dict:
+    mermaid_to_python_prompt = MERMAID_TO_PYTHON_CONVERSION_PROMPT.format(mermaid=data["mermaid"], topic=data["topic"], role=data["role"])
+    python_dict : dict = reason(mermaid_to_python_prompt)
+    data["python_graph"] = python_dict
+    return data
+
+python_graph_workflow = create_expert_workflow | mermaid_to_python
+
+full_workflow = python_graph_workflow(topic, role)
+
+workflow = Path(f"{output_folder_name}/workflow.json")
+workflow.write_text(json.dumps(full_workflow))
+
+nodes = full_workflow["python_graph"]["nodes"]
+
+print(nodes)
+
+from senior_agent import SeniorAgent
+from fresher_agent import FresherAgent
+
+senior_agent = SeniorAgent(topic=topic, role=role)
+fresher_agent = FresherAgent(topic=topic, role=role)
+
+
+def conversational_knowledge_transfer(senior_agent: SeniorAgent, fresher_agent: FresherAgent, node: dict) -> str:
+    count = 0
+    satisfied = False
+    fresher_agent.current_step = str(node)
+    senior_agent.current_step = str(node)
+    confidence_level = 0
+    decisions = []
+    responses = []
+    asked_questions = []
+    answers = []
+    question_prompts = []
+    knowledge = []
+    while satisfied != True:
+        question_prompt = FRESHER_ASKING_PROMPT.format(topic=topic, subtopic=node, role=role, existing_knowledge=asked_questions, description=fresher_agent.description, confidence_level=confidence_level)
+        response : str = fresher_agent.solve(question_prompt)
+        confidence_prompt = FRESHER_CONFIDENCE_PROMPT.format(response=response, target_confidence_level=TARGET_CONFIDENCE_LEVEL)
+        decision : dict = reason(confidence_prompt)
+        question = decision["question"]
+        # fresher_agent.add_memory(question)
+        print(">"*100)
+        print("Current confidence level: ", confidence_level)
+        continue_asking = decision["continue_asking"]
+        confidence_level = decision["confidence"]
+        print(f"New confidence level: {confidence_level}")
+        print(">"*100)
+        redundant = decision["redundant"]
+        if redundant == True:
+            continue
+        answer_prompt = SENIOR_ANSWER_PROMPT.format(topic=topic, subtopic=node, role=role, question=question, description=senior_agent.description, previous_questions=asked_questions)
+        answer = senior_agent.solve(answer_prompt)
+        responses.append(response)
+        answers.append(answer)
+        decisions.append(decision)
+        asked_questions.append(question)
+        question_prompts.append(question_prompt)
+        knowledge.append(f"Question: {question} \n Answer: {answer}")
+        if len(knowledge) > 3:
+            summarized_knowledge = reason(f"Summarize the following knowledge: {knowledge} by providing a concise high level summary of what concept in the question has been answered by the answer. For example : Knowing key components of symptom assessment and how it influence the diagnosis and treatment of the disease, knowing symptom assessment steps, ....")
+            knowledge = [summarized_knowledge]
+        print("="*100)
+        print(f"Fresher response: {response}")
+        print("-"*100)
+        print(f"Fresher confidence")
+        print(decision)
+        print("-"*100)
+        print(f"Senior answer: {answer}")
+        print("="*100)
+        if continue_asking == False:
+            satisfied = True
+            break
+        count = count + 1
+        if count > 120:
+            satisfied = True
+            break
+        finish_batch = len(asked_questions) % 10
+        if finish_batch == 0:
+            df = pd.DataFrame({"asked_questions": asked_questions, "answers": answers, "decisions": decisions, "question_prompts": question_prompts, "responses": responses})
+            df.to_csv(f"{output_folder_name}/temp_transfer_{node_name}.csv", index=False)
+    return {"asked_questions": asked_questions, "answers": answers, "decisions": decisions, "question_prompts": question_prompts, "responses": responses}
+
+
+i = 1
+for node_name in nodes.keys():
+    # fresher_agent.clear_memory()
+    node = nodes[node_name]
+    node_name = node["label"].strip().replace(" / ", "_").replace("/", "")
+    result = conversational_knowledge_transfer(senior_agent, fresher_agent, node)
+    df = pd.DataFrame(result)
+    for key in node.keys():
+        df[key] = node[key]
+    df.loc[:,"answers"].to_csv(f"{output_folder_name}/knowledge_transfer_{node_name}.csv", index=False)
+    i = i + 1
+    if i > MAX_NODE_ITERATION:
+        break
+    # break
+

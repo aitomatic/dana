@@ -1,0 +1,524 @@
+@poet
+def extract_domain(user_request: str) -> str:
+  """
+  Extract the primary domain from a user request.
+  
+  Args:
+      user_request: The user's request string
+      
+  Returns:
+      The identified domain (e.g., "semiconductor_manufacturing", "medical_diagnosis")
+  """
+  # Use AI reasoning to identify the domain
+  domain_analysis = reason(f"""
+  Analyze this request and identify the primary domain:
+  Request: {user_request}
+  
+  Consider domains like:
+  - manufacturing
+  - healthcare
+  - finance
+  - education
+  - customer_service
+  - data_analysis
+  - software_development
+  - logistics
+  - marketing
+  - legal
+  - research
+  - entertainment
+  
+  Return only the domain name (e.g., "manufacturing", "healthcare")
+  """)
+  
+  return domain_analysis.strip().lower()
+
+@poet
+def identify_tasks(user_request: str) -> list[str]:
+  """
+  Identify specific tasks from a user request.
+  
+  Args:
+      user_request: The user's request string
+      
+  Returns:
+      List of identified tasks (e.g., ["defect_classification", "troubleshooting"])
+  """
+  # Use AI reasoning to identify specific tasks
+  task_analysis = reason(f"""
+  Analyze this request and identify specific tasks the agent should perform:
+  Request: {user_request}
+  
+  Break down the request into concrete, actionable tasks. For example:
+  - "analyze data" 
+  - "generate reports"
+  - "classify items"
+  - "provide recommendations"
+  - "monitor systems"
+  - "troubleshoot issues"
+  - "validate inputs"
+  - "process requests"
+  
+  Return a Python list of task strings like: ["task1", "task2", "task3"]
+  """)
+  
+  # Parse the AI response to extract task list
+  try:
+    # Try to evaluate as Python list if it's formatted that way
+    if "[" in task_analysis and "]" in task_analysis:
+      start = task_analysis.find("[")
+      end = task_analysis.rfind("]") + 1
+      task_list_str = task_analysis[start:end]
+      tasks = eval(task_list_str)
+      return tasks
+    else:
+      # Fallback: split by lines and clean up
+      tasks = []
+      lines = split(task_analysis, "\n")
+      for line in lines:
+          trimmed = trim(line)
+          if trimmed != "":
+              if starts_with(trimmed, "-"):
+                  trimmed = trim(substring(trimmed, 1))
+              else:
+                  trimmed = trim(trimmed)
+              if trimmed != "":
+                  tasks.append(trimmed)
+      
+      return tasks
+  except:
+    # Final fallback: return generic tasks
+    return ["analyze_request", "process_data", "generate_response"]
+
+@poet
+def extract_constraints(user_request: str) -> dict:
+  """
+  Extract constraints and requirements from a user request.
+  
+  Args:
+      user_request: The user's request string
+      
+  Returns:
+      Dictionary of constraints (e.g., {"accuracy": 0.95, "latency": "real_time"})
+  """
+  # Use AI reasoning to identify constraints
+  constraint_analysis = reason(f"""
+  Analyze this request and extract any constraints or requirements:
+  Request: {user_request}
+  
+  Look for constraints like:
+  - Performance requirements (speed, accuracy, latency)
+  - Resource limitations (memory, CPU, cost)
+  - Quality requirements (precision, reliability)
+  - Time constraints (deadlines, response times)
+  - Business rules (compliance, security)
+  - User requirements (accessibility, usability)
+  
+  Return a Python dictionary with constraint names as keys and values as constraints.
+  Example: {{"accuracy": "high", "response_time": "fast", "cost": "low"}}
+  """)
+  
+  # Parse the AI response to extract constraints
+  try:
+    # Try to evaluate as Python dict if it's formatted that way
+    if "{" in constraint_analysis and "}" in constraint_analysis:
+      start = constraint_analysis.find("{")
+      end = constraint_analysis.rfind("}") + 1
+      constraint_dict_str = constraint_analysis[start:end]
+      constraints = eval(constraint_dict_str)
+      return constraints
+    else:
+      # Fallback: return empty dict
+      return {}
+  except:
+    # Final fallback: return basic constraints
+    return {"priority": "medium", "complexity": "standard"}
+
+@poet
+def derive_capabilities_from_tasks(tasks: list[str]) -> list[str]:
+  """
+  Derive required capabilities from identified tasks.
+  
+  Args:
+      tasks: List of tasks the agent needs to perform
+      
+  Returns:
+      List of required capabilities (e.g., ["image_analysis", "pattern_recognition"])
+  """
+  # Use AI reasoning to derive capabilities from tasks
+  capability_analysis = reason(f"""
+  Given these tasks, what capabilities does the agent need?
+  Tasks: {tasks}
+  
+  For each task, identify the underlying capabilities required. For example:
+  - "analyze data" requires "data_analysis", "pattern_recognition"
+  - "generate reports" requires "text_generation", "formatting"
+  - "classify items" requires "classification", "decision_making"
+  - "provide recommendations" requires "reasoning", "knowledge_retrieval"
+  
+  Return a Python list of capability strings like: ["capability1", "capability2"]
+  """)
+  
+  # Parse the AI response to extract capabilities
+  try:
+    # Try to evaluate as Python list if it's formatted that way
+    if "[" in capability_analysis and "]" in capability_analysis:
+      start = capability_analysis.find("[")
+      end = capability_analysis.rfind("]") + 1
+      capability_list_str = capability_analysis[start:end]
+      capabilities = eval(capability_list_str)
+      return capabilities
+    else:
+      # Fallback: split by lines and clean up
+      capabilities = []
+      lines = split(capability_analysis, "\n")
+      for line in lines:
+          trimmed = trim(line)
+          if trimmed != "":
+              if starts_with(trimmed, "-"):
+                  trimmed = trim(substring(trimmed, 1))
+              else:
+                  trimmed = trim(trimmed)
+              if trimmed != "":
+                  capabilities.append(trimmed)
+      
+      return capabilities
+  except:
+    # Final fallback: return generic capabilities based on tasks
+    generic_capabilities = []
+    for task in tasks:
+      if "analyze" in task.lower():
+        generic_capabilities.append("data_analysis")
+      if "generate" in task.lower() or "create" in task.lower():
+        generic_capabilities.append("content_generation")
+      if "classify" in task.lower():
+        generic_capabilities.append("classification")
+      if "recommend" in task.lower():
+        generic_capabilities.append("recommendation")
+    
+    print(generic_capabilities)
+    if generic_capabilities:
+      return generic_capabilities
+    else:
+      return ["reasoning", "problem_solving"]
+
+@poet
+def map_knowledge_sources(knowledge_plan: dict) -> list[str]:
+  """
+  Map knowledge requirements to specific knowledge sources.
+  
+  Args:
+      knowledge_plan: Plan containing knowledge requirements
+      
+  Returns:
+      List of required knowledge sources (e.g., ["equipment_specs", "historical_data"])
+  """
+  # Use AI reasoning to map knowledge requirements to sources
+  mapping_analysis = reason(f"""
+  Given this knowledge plan, what specific knowledge sources are needed?
+  Knowledge Plan: {knowledge_plan}
+  
+  Consider knowledge sources like:
+  - Documentation and manuals
+  - Historical data and logs
+  - Best practices and procedures
+  - Regulations and compliance rules
+  - Industry standards and specifications
+  - Training materials and examples
+  - Expert knowledge and insights
+  
+  Return a Python list of knowledge source names like: ["source1", "source2"]
+  """)
+  
+  # Parse the AI response to extract knowledge sources
+  try:
+    if "[" in mapping_analysis and "]" in mapping_analysis:
+      start = mapping_analysis.find("[")
+      end = mapping_analysis.rfind("]") + 1
+      sources_list_str = mapping_analysis[start:end]
+      sources = eval(sources_list_str)
+      return sources
+    else:
+      # Fallback: split by lines and clean up
+      sources = []
+      lines = split(mapping_analysis, "\n")
+      for line in lines:
+          trimmed = trim(line)
+          if trimmed != "":
+              if starts_with(trimmed, "-"):
+                  trimmed = trim(substring(trimmed, 1))
+              else:
+                  trimmed = trim(trimmed)
+              if trimmed != "":
+                  sources.append(trimmed)    
+      return sources
+  except:
+    # Final fallback: return generic knowledge sources
+    return ["documentation", "best_practices", "historical_data", "domain_expertise"]
+
+@poet
+def scan_available_knowledge(domain: str) -> list[str]:
+  """
+  Scan for available knowledge sources in a given domain.
+  
+  Args:
+      domain: The domain to scan for knowledge
+      
+  Returns:
+      List of available knowledge sources in the domain
+  """
+  # Use AI reasoning to identify available knowledge sources for domain
+  scan_analysis = reason(f"""
+  What knowledge sources are typically available in the {domain} domain?
+  
+  Consider sources like:
+  - Industry documentation
+  - Standards and regulations
+  - Best practices guides
+  - Case studies and examples
+  - Training materials
+  - API documentation
+  - Product specifications
+  - Historical performance data
+  
+  Return a Python list of available knowledge source names for this domain.
+  """)
+  
+  # Parse the AI response to extract available sources
+  try:
+    if "[" in scan_analysis and "]" in scan_analysis:
+      start = scan_analysis.find("[")
+      end = scan_analysis.rfind("]") + 1
+      sources_list_str = scan_analysis[start:end]
+      sources = eval(sources_list_str)
+      return sources
+    else:
+      # Fallback: split by lines and clean up
+      sources = []
+      lines = split(scan_analysis, "\n")
+      for line in lines:
+          trimmed = trim(line)
+          if trimmed != "":
+              if starts_with(trimmed, "-"):
+                  trimmed = trim(substring(trimmed, 1))
+              else:
+                  trimmed = trim(trimmed)
+              if trimmed != "":
+                  sources.append(trimmed)
+      
+      return sources
+  except:
+    # Final fallback: return domain-specific knowledge sources
+    domain_sources = {
+      "manufacturing": ["equipment_manuals", "quality_standards", "process_guidelines"],
+      "healthcare": ["medical_guidelines", "patient_data", "clinical_protocols"],
+      "finance": ["market_data", "regulations", "risk_models"],
+      "education": ["curriculum_standards", "learning_resources", "assessment_tools"],
+      "customer_service": ["product_knowledge", "troubleshooting_guides", "policy_documents"]
+    }
+    return domain_sources.get(domain, ["general_knowledge", "domain_documentation", "best_practices"])
+
+@poet
+def identify_knowledge_gaps(requirements: dict, existing_knowledge: list[str]) -> dict:
+  """
+  Identify gaps between required and existing knowledge.
+  
+  Args:
+      requirements: Knowledge requirements dictionary
+      existing_knowledge: List of available knowledge sources
+      
+  Returns:
+      Dictionary of knowledge gaps and synthesis needs
+  """
+  # Use AI reasoning to identify knowledge gaps
+  gap_analysis = reason(f"""
+  Analyze the gap between required knowledge and existing knowledge:
+  Requirements: {requirements}
+  Existing Knowledge: {existing_knowledge}
+  
+  Identify:
+  1. Missing knowledge sources that are required but not available
+  2. Knowledge synthesis needs where existing sources need to be combined
+  3. Knowledge gaps where new information needs to be acquired
+  
+  Return a Python dictionary with:
+  - "missing_sources": list of missing knowledge sources
+  - "synthesis_needed": list of sources that need to be synthesized
+  - "gaps": list of knowledge gaps that need to be filled
+  """)
+  
+  # Parse the AI response to extract gaps
+  try:
+    if "{" in gap_analysis and "}" in gap_analysis:
+      start = gap_analysis.find("{")
+      end = gap_analysis.rfind("}") + 1
+      gaps_dict_str = gap_analysis[start:end]
+      gaps = eval(gaps_dict_str)
+      return gaps
+    else:
+      # Fallback: create basic gap analysis
+      synthesis_needed = []
+      if len(existing_knowledge) > 1:
+
+        synthesis_needed = existing_knowledge[:2]
+      else:
+        synthesis_needed = existing_knowledge
+      print(synthesis_needed)
+      return {
+        "missing_sources": [],
+        "synthesis_needed": synthesis_needed,
+        "gaps": ["domain_specific_knowledge"]
+      }
+  except:
+    # Final fallback: return basic gap structure
+    return {
+      "missing_sources": ["specialized_knowledge"],
+      "synthesis_needed": ["general_knowledge", "domain_knowledge"],
+      "gaps": ["implementation_details"]
+    }
+
+def gather_knowledge(required_sources: list[str]) -> dict:
+  """
+  Gather knowledge from required sources.
+  
+  Args:
+      required_sources: List of knowledge sources to gather from
+      
+  Returns:
+      Dictionary of gathered knowledge organized by source
+  """
+  # Simulate gathering knowledge from sources
+  gathered_knowledge = {}
+  
+  for source in required_sources:
+    # In a real implementation, this would fetch from actual knowledge sources
+    # For now, we'll create placeholder knowledge based on source type
+    if "documentation" in source.lower():
+      gathered_knowledge[source] = {
+        "type": "documentation",
+        "content": f"Documentation knowledge for {source}",
+        "format": "text"
+      }
+    elif "data" in source.lower():
+      gathered_knowledge[source] = {
+        "type": "data",
+        "content": f"Historical data from {source}",
+        "format": "structured"
+      }
+    elif "best_practices" in source.lower():
+      gathered_knowledge[source] = {
+        "type": "best_practices",
+        "content": f"Best practices from {source}",
+        "format": "guidelines"
+      }
+    else:
+      gathered_knowledge[source] = {
+        "type": "general",
+        "content": f"Knowledge from {source}",
+        "format": "mixed"
+      }
+  
+  return gathered_knowledge
+
+@poet
+def organize_knowledge(raw_knowledge: dict, tasks: list[str]) -> dict:
+  """
+  Organize raw knowledge for optimal task performance.
+  
+  Args:
+      raw_knowledge: Dictionary of raw knowledge from sources
+      tasks: List of tasks the knowledge will be used for
+      
+  Returns:
+      Organized knowledge optimized for the specified tasks
+  """
+  # Use AI reasoning to organize knowledge for tasks
+  organization_analysis = reason(f"""
+  Organize this raw knowledge to optimize it for these tasks:
+  Raw Knowledge: {raw_knowledge}
+  Tasks: {tasks}
+  
+  Create an organized structure that:
+  1. Groups related knowledge together
+  2. Prioritizes knowledge most relevant to the tasks
+  3. Creates easy-to-access formats for each task
+  4. Eliminates redundancy and conflicts
+  
+  Return a Python dictionary with organized knowledge structure.
+  """)
+  
+  # Parse the AI response to extract organized knowledge
+  try:
+    if "{" in organization_analysis and "}" in organization_analysis:
+      start = organization_analysis.find("{")
+      end = organization_analysis.rfind("}") + 1
+      organized_dict_str = organization_analysis[start:end]
+      organized = eval(organized_dict_str)
+      return organized
+    else:
+      # Fallback: create basic organization by task
+      organized = {}
+      for task in tasks:
+        organized[task] = {
+          "relevant_knowledge": [],
+          "supporting_data": [],
+          "best_practices": []
+        }
+        
+        # Map knowledge to tasks
+        for source in raw_knowledge.keys():
+          is_match = False
+          is_in_keywords = True
+          if task.lower() in source.lower():
+            is_match = True
+          
+          if source.lower() == "general" or source.lower() == "documentation":
+            is_in_keywords = True
+          
+          if is_match or is_in_keywords:
+            is_match = True
+          
+          if is_match:
+            organized[task]["relevant_knowledge"].append(source)
+            organized[task]["supporting_data"].append(raw_knowledge[source]["content"])
+            organized[task]["best_practices"].append(raw_knowledge[source]["format"])
+      
+      return organized
+  except:
+    # Final fallback: return basic organized structure
+    return {
+      "task_knowledge": raw_knowledge,
+      "priority_order": list(raw_knowledge.keys()),
+      "organization_method": "source_based"
+    }
+
+struct AgentRequirements:
+  domain: str
+  tasks: list[str]
+  constraints: dict
+
+struct KnowledgePlan:
+  required_sources: list[str]
+  synthesis_needed: list[str]
+
+struct AgentDeclaration:
+  domains: list[str]
+  tasks: list[str]
+  capabilities: list[str]
+  knowledge_sources: list[str]
+
+struct AgentDesign:
+  agent_declaration: AgentDeclaration
+  knowledge_plan: KnowledgePlan
+
+struct KnowledgePack:
+  common_na: str
+  resources_na: str
+  methods_na: str
+  workflows_na: str
+  metadata: dict
+
+struct AgentCapabilityPack:
+  agent_na: str
+  knowledge_pack: KnowledgePack
+  metadata: dict 

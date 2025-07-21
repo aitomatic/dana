@@ -208,12 +208,34 @@ class AgentHandler(Loggable):
             None (struct definitions don't produce a value, they register a type)
         """
         # Import here to avoid circular imports
-        from dana.core.lang.interpreter.struct_system import register_struct_from_ast
+        from dana.core.lang.interpreter.struct_system import create_struct_type_from_ast, StructTypeRegistry
 
-        # Register the struct type in the global registry
+        # Create the struct type and evaluate default values
         try:
-            struct_type = register_struct_from_ast(node)
+            struct_type = create_struct_type_from_ast(node)
+            
+            # Evaluate default values in the current context
+            if struct_type.field_defaults:
+                evaluated_defaults = {}
+                for field_name, default_expr in struct_type.field_defaults.items():
+                    try:
+                        # Evaluate the default value expression
+                        default_value = self.parent_executor.parent.execute(default_expr, context)
+                        evaluated_defaults[field_name] = default_value
+                    except Exception as e:
+                        raise SandboxError(f"Failed to evaluate default value for field '{field_name}': {e}")
+                struct_type.field_defaults = evaluated_defaults
+            
+            # Register the struct type
+            StructTypeRegistry.register(struct_type)
             self.debug(f"Registered struct type: {struct_type.name}")
+
+            # Register struct constructor function in the context
+            # This allows `instance = MyStruct(field1=value1, field2=value2)` syntax
+            def struct_constructor(**kwargs):
+                return StructTypeRegistry.create_instance(struct_type.name, kwargs)
+
+            context.set(f"local:{node.name}", struct_constructor)
 
             # Trace struct registration
             self._trace_resource_operation("struct", node.name, len(node.fields), 0)
@@ -249,7 +271,9 @@ class AgentHandler(Loggable):
             # Register agent constructor function in the context
             # This allows `agent_instance = TestAgent(name="test")` syntax
             def agent_constructor(**kwargs):
-                return AgentTypeRegistry.create_instance(agent_type.name, kwargs, context=context)
+                # Extract instance_id if provided
+                instance_id = kwargs.pop('instance_id', None)
+                return AgentTypeRegistry.create_instance(agent_type.name, kwargs, context=context, instance_id=instance_id)
 
             context.set(f"local:{node.name}", agent_constructor)
 

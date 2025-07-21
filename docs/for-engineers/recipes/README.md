@@ -17,10 +17,8 @@
 - [API Integration](api-integration/README.md) - Connect external services
 
 ### 🤖 Multi-Agent Systems
-- [**Multi-Agent Collaboration**](multi-agent-collaboration/README.md) - **A2A and module agents working together**
 
 ### 📚 Advanced Agent-Native Convergence Patterns
-- [**Structs Cookbook**](structs-cookbook.md) - **Real-world struct patterns and examples**
 - [MCP Integration](mcp-integration.md) - Model Context Protocol connections
 
 ---
@@ -63,7 +61,7 @@ customer = Customer(id="C001", name="Alice", email="alice@example.com", status="
 engagement = customer.analyze_engagement()
 ```
 
-**See**: [Structs Cookbook](structs-cookbook.md) for complete business domain examples
+This recipe is not available.
 
 ### Self-Improving Pipeline Patterns
 Compositional operations that optimize themselves through POET:
@@ -159,37 +157,37 @@ Start with simple patterns and combine them:
 ### Business Applications
 | Recipe | Use Case | Complexity |
 |--------|----------|------------|
-| [CRM System](structs-cookbook.md#business-domain-models) | Customer relationship management | Intermediate |
-| [Portfolio Manager](structs-cookbook.md#financial-portfolio-management) | Financial portfolio analysis | Advanced |
-| [Order Processing](structs-cookbook.md#business-domain-models) | E-commerce order handling | Intermediate |
+<!-- | [CRM System](structs-cookbook.md#business-domain-models) | Customer relationship management | Intermediate | -->
+<!-- | [Portfolio Manager](structs-cookbook.md#financial-portfolio-management) | Financial portfolio analysis | Advanced | -->
+<!-- | [Order Processing](structs-cookbook.md#business-domain-models) | E-commerce order handling | Intermediate | -->
 
 ### Data Processing  
 | Recipe | Use Case | Complexity |
 |--------|----------|------------|
-| [ETL Pipeline](structs-cookbook.md#data-processing-pipelines) | Extract, transform, load operations | Advanced |
-| [Document Analysis](structs-cookbook.md#data-processing-pipelines) | AI-powered document processing | Intermediate |
-| [Data Validation](structs-cookbook.md#error-handling-strategies) | Input validation and cleaning | Beginner |
+<!-- | [ETL Pipeline](structs-cookbook.md#data-processing-pipelines) | Extract, transform, load operations | Advanced | -->
+<!-- | [Document Analysis](structs-cookbook.md#data-processing-pipelines) | AI-powered document processing | Intermediate | -->
+<!-- | [Data Validation](structs-cookbook.md#error-handling-strategies) | Input validation and cleaning | Beginner | -->
 
 ### System Patterns
 | Recipe | Use Case | Complexity |
 |--------|----------|------------|
-| [Configuration Management](structs-cookbook.md#configuration-management) | App config and environment handling | Intermediate |
-| [Error Handling](structs-cookbook.md#error-handling-strategies) | Robust error management | Beginner |
-| [Performance Optimization](structs-cookbook.md#performance-patterns) | Optimizing Dana applications | Advanced |
+<!-- | [Configuration Management](structs-cookbook.md#configuration-management) | App config and environment handling | Intermediate | -->
+<!-- | [Error Handling](structs-cookbook.md#error-handling-strategies) | Robust error management | Beginner | -->
+<!-- | [Performance Optimization](structs-cookbook.md#performance-patterns) | Optimizing Dana applications | Advanced | -->
 
 ### Multi-Agent Systems
 | Recipe | Use Case | Complexity |
 |--------|----------|------------|
-| [Multi-Agent Collaboration](multi-agent-collaboration/README.md) | A2A and module agent orchestration | Advanced |
-| [Agent Pool Management](multi-agent-collaboration/README.md#agent-pool-management) | Dynamic agent selection | Intermediate |
-| [Reason Function Integration](multi-agent-collaboration/README.md#reason-function-integration) | AI reasoning with agents | Intermediate |
+<!-- | [Multi-Agent Collaboration](multi-agent-collaboration/README.md) | A2A and module agent orchestration | Advanced | -->
+<!-- | [Agent Pool Management](multi-agent-collaboration/README.md#agent-pool-management) | Dynamic agent selection | Intermediate | -->
+<!-- | [Reason Function Integration](multi-agent-collaboration/README.md#reason-function-integration) | AI reasoning with agents | Intermediate | -->
 
 ### Integration
 | Recipe | Use Case | Complexity |
 |--------|----------|------------|
 | [API Clients](api-integration/README.md) | REST API integration | Beginner |
 | [MCP Services](mcp-integration.md) | Model Context Protocol | Intermediate |
-| [Database Access](structs-cookbook.md#data-processing-pipelines) | Database operations | Intermediate |
+<!-- | [Database Access](structs-cookbook.md#data-processing-pipelines) | Database operations | Intermediate | -->
 
 ---
 
@@ -236,7 +234,7 @@ Each recipe should include:
 3. **Build**: Combine patterns for larger applications
 4. **Share**: Contribute back patterns you find useful
 
-Ready to build? Start with [First Agent](first-agent.md) or dive into the [Structs Cookbook](structs-cookbook.md) for advanced patterns.
+<!-- Ready to build? Start with [First Agent](first-agent.md) or dive into the [Structs Cookbook](structs-cookbook.md) for advanced patterns. -->
 
 ---
 

@@ -16,9 +16,9 @@ This directory contains:
 - pip package manager
 
 ### 2. Required Dependencies
-Install the FastMCP library:
+Install the official MCP Python SDK:
 ```bash
-pip install fastmcp
+pip install mcp
 ```
 
 ### 3. DANA Language Support
@@ -48,8 +48,8 @@ Both servers provide the same three test tools:
 # Navigate to the project root
 cd /path/to/dana
 
-# Install FastMCP
-pip install fastmcp
+# Install MCP Python SDK
+pip install mcp
 ```
 
 ### Step 2: Start a Test Server
@@ -156,8 +156,8 @@ print(functions)
 ### Common Issues
 
 #### 1. Server Won't Start
-- **Error**: `ModuleNotFoundError: No module named 'fastmcp'`
-- **Solution**: Install FastMCP: `pip install fastmcp`
+- **Error**: `ModuleNotFoundError: No module named 'mcp'`
+- **Solution**: Install MCP Python SDK: `pip install mcp`
 
 #### 2. Port Already in Use
 - **Error**: `[Errno 48] Address already in use`
@@ -228,7 +228,7 @@ After successful setup:
 ## Support
 
 If you encounter issues not covered in this guide:
-1. Check the FastMCP documentation
+1. Check the MCP Python SDK documentation
 2. Review DANA MCP integration documentation
 3. Verify your Python and DANA versions meet requirements
 4. Check for updated dependencies

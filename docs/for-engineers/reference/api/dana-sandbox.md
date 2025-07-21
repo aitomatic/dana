@@ -5,7 +5,7 @@ The Dana Sandbox is the primary public API for executing Dana code safely. It pr
 ## Quick Start
 
 ```python
-# Import the Dana module
+# Import the dana module
 import opendxa.dana as dana
 
 # Method 1: Convenience functions (recommended for simple use)

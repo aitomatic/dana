@@ -1,0 +1,360 @@
+import common
+import dana_agent
+
+def analyze_requirements(dana_agent: DanaAgent, user_request: str) -> AgentRequirements:
+    """
+    Analyze user request to extract agent requirements.
+    
+    Args:
+        agent: The DanaAgent instance
+        user_request: The user's request string
+        
+    Returns:
+        AgentRequirements struct with domain, tasks, and constraints
+    """
+    # Extract domain from user request
+    domain = extract_domain(user_request)
+    
+    # Identify tasks from user request
+    tasks = identify_tasks(user_request)
+    
+    # Extract constraints from user request
+    constraints = extract_constraints(user_request)
+    
+    # Create and return AgentRequirements struct
+    return AgentRequirements(
+        domain=domain,
+        tasks=tasks,
+        constraints=constraints
+    )
+
+def assess_knowledge_requirements(dana_agent: DanaAgent, requirements: AgentRequirements) -> KnowledgePlan:
+    """
+    Assess knowledge requirements based on agent requirements.
+    
+    Args:
+        agent: The DanaAgent instance
+        requirements: AgentRequirements struct
+        
+    Returns:
+        KnowledgePlan struct with required sources and synthesis needs
+    """
+    # Scan available knowledge in the domain
+    available_knowledge = scan_available_knowledge(requirements.domain)
+    
+    # Identify knowledge gaps
+    knowledge_gaps = identify_knowledge_gaps(requirements.constraints, available_knowledge)
+    
+    # Map knowledge requirements to sources
+    required_sources = map_knowledge_sources(knowledge_gaps)
+    
+    # Determine synthesis needs
+    synthesis_needed = knowledge_gaps.get("synthesis_needed", [])
+    
+    # Create and return KnowledgePlan struct
+    return KnowledgePlan(
+        required_sources=required_sources,
+        synthesis_needed=synthesis_needed
+    )
+
+def design_agent(dana_agent: DanaAgent, requirements: AgentRequirements, knowledge_plan: KnowledgePlan) -> AgentDesign:
+    """
+    Design the agent based on requirements and knowledge plan.
+    
+    Args:
+        agent: The DanaAgent instance
+        requirements: AgentRequirements struct
+        knowledge_plan: KnowledgePlan struct
+        
+    Returns:
+        AgentDesign struct with agent declaration and knowledge plan
+    """
+    # Derive capabilities from tasks
+    capabilities = derive_capabilities_from_tasks(requirements.tasks)
+    
+    # Create agent declaration
+    agent_declaration = AgentDeclaration(
+        domains=[requirements.domain],
+        tasks=requirements.tasks,
+        capabilities=capabilities,
+        knowledge_sources=knowledge_plan.required_sources
+    )
+    
+    # Create and return AgentDesign struct
+    return AgentDesign(
+        agent_declaration=agent_declaration,
+        knowledge_plan=knowledge_plan
+    )
+
+def curate_knowledge(dana_agent: DanaAgent, design: AgentDesign) -> KnowledgePack:
+    """
+    Curate knowledge based on agent design.
+    
+    Args:
+        agent: The DanaAgent instance
+        design: AgentDesign struct
+        
+    Returns:
+        KnowledgePack struct with organized knowledge
+    """
+    # Gather knowledge from required sources
+    raw_knowledge = gather_knowledge(design.agent_declaration.knowledge_sources)
+    
+    # Organize knowledge for optimal task performance
+    organized_knowledge = organize_knowledge(raw_knowledge, design.agent_declaration.tasks)
+    
+    # Generate knowledge pack components
+    common_na = generate_common_na(dana_agent, organized_knowledge)
+    resources_na = generate_resources_na(dana_agent, organized_knowledge)
+    methods_na = generate_methods_na(dana_agent, design.agent_declaration)
+    workflows_na = generate_workflows_na(dana_agent, design.agent_declaration)
+    
+    domain = 'general'
+    if design.agent_declaration.domains:
+        domain = design.agent_declaration.domains[0]
+    # Create metadata
+    metadata = {
+        "domain": domain,
+        "tasks": design.agent_declaration.tasks,
+        "capabilities": design.agent_declaration.capabilities,
+        "knowledge_sources": design.agent_declaration.knowledge_sources,
+        "created_at": "2024-01-01T00:00:00Z",
+        "version": "1.0.0"
+    }
+    
+    # Create and return KnowledgePack struct
+    return KnowledgePack(
+        common_na=common_na,
+        resources_na=resources_na,
+        methods_na=methods_na,
+        workflows_na=workflows_na,
+        metadata=metadata
+    )
+
+def generate_agent(dana_agent: DanaAgent, design: AgentDesign, knowledge_pack: KnowledgePack) -> AgentCapabilityPack:
+    """
+    Generate the final agent capability pack.
+    
+    Args:
+        agent: The DanaAgent instance
+        design: AgentDesign struct
+        knowledge_pack: KnowledgePack struct
+        
+    Returns:
+        AgentCapabilityPack struct with complete agent components
+    """
+    # Generate main agent.na file
+    agent_na = generate_agent_na(dana_agent, design.agent_declaration)
+    
+    # Generate metadata for the capability pack
+    metadata = generate_metadata(dana_agent, design, knowledge_pack)
+    
+    # Create and return AgentCapabilityPack struct
+    return AgentCapabilityPack(
+        agent_na=agent_na,
+        knowledge_pack=knowledge_pack,
+        metadata=metadata
+    )
+
+@poet
+def generate_agent_na(dana_agent: DanaAgent, agent_declaration: AgentDeclaration) -> str:
+    """
+    Generate the main agent.na file content.
+    
+    Args:
+        agent: The DanaAgent instance
+        agent_declaration: AgentDeclaration struct
+        
+    Returns:
+        String content of the agent.na file
+    """
+    # Generate agent file content based on declaration
+    agent_content = reason(f"""
+    Generate a complete Dana agent file (.na) based on this declaration:
+    
+    Agent Declaration: {agent_declaration}
+    
+    The agent file should include:
+    1. Agent definition with proper Dana syntax
+    2. System variables (agent_name, agent_description)
+    3. Required solve function
+    4. Helper functions for each task
+    5. Proper imports and resource usage
+    6. Error handling and validation
+    
+    Follow Dana language best practices and include proper type hints.
+    Return only the Dana code without markdown formatting.
+    """)
+    
+    return agent_content
+
+@poet
+def generate_common_na(dana_agent: DanaAgent, organized_knowledge: dict) -> str:
+    """
+    Generate the common.na file with shared utilities.
+    
+    Args:
+        agent: The DanaAgent instance
+        organized_knowledge: Dictionary of organized knowledge
+        
+    Returns:
+        String content of the common.na file
+    """
+    # Generate common utilities based on organized knowledge
+    common_content = reason(f"""
+    Generate a Dana common.na file with shared utilities based on this knowledge:
+    
+    Organized Knowledge: {organized_knowledge}
+    
+    The common.na file should include:
+    1. Shared data structures and constants
+    2. Common utility functions
+    3. Data validation functions
+    4. Error handling utilities
+    5. Logging and debugging helpers
+    
+    Follow Dana language best practices and include proper type hints.
+    Return only the Dana code without markdown formatting.
+    """)
+    
+    return common_content
+
+@poet
+def generate_resources_na(dana_agent: DanaAgent, organized_knowledge: dict) -> str:
+    """
+    Generate the resources.na file with resource configurations.
+    
+    Args:
+        agent: The DanaAgent instance
+        organized_knowledge: Dictionary of organized knowledge
+        
+    Returns:
+        String content of the resources.na file
+    """
+    # Generate resource configurations based on knowledge
+    resources_content = reason(f"""
+    Generate a Dana resources.na file with resource configurations based on this knowledge:
+    
+    Organized Knowledge: {organized_knowledge}
+    
+    The resources.na file should include:
+    1. LLM resource configurations
+    2. Database and storage resource configurations
+    3. API and web service resource configurations
+    4. Memory and caching resource configurations
+    5. File and document resource configurations
+    
+    Follow Dana language best practices for resource definitions.
+    Return only the Dana code without markdown formatting.
+    """)
+    
+    return resources_content
+
+@poet
+def generate_methods_na(dana_agent: DanaAgent, agent_declaration: AgentDeclaration) -> str:
+    """
+    Generate the methods.na file with agent methods.
+    
+    Args:
+        agent: The DanaAgent instance
+        agent_declaration: AgentDeclaration struct
+        
+    Returns:
+        String content of the methods.na file
+    """
+    # Generate methods based on agent declaration
+    methods_content = reason(f"""
+    Generate a Dana methods.na file with agent methods based on this declaration:
+    
+    Agent Declaration: {agent_declaration}
+    
+    The methods.na file should include:
+    1. Core processing methods for each task
+    2. Data transformation and analysis methods
+    3. Validation and verification methods
+    4. Integration and communication methods
+    5. Monitoring and logging methods
+    
+    Follow Dana language best practices and include proper type hints.
+    Return only the Dana code without markdown formatting.
+    """)
+    
+    return methods_content
+
+@poet
+def generate_workflows_na(dana_agent: DanaAgent, agent_declaration: AgentDeclaration) -> str:
+    """
+    Generate the workflows.na file with agent workflows.
+    
+    Args:
+        agent: The DanaAgent instance
+        agent_declaration: AgentDeclaration struct
+        
+    Returns:
+        String content of the workflows.na file
+    """
+    # Generate workflows based on agent declaration
+    workflows_content = reason(f"""
+    Generate a Dana workflows.na file with agent workflows based on this declaration:
+    
+    Agent Declaration: {agent_declaration}
+    
+    The workflows.na file should include:
+    1. Main workflow orchestration functions
+    2. Task-specific workflow implementations
+    3. Error handling and recovery workflows
+    4. Monitoring and reporting workflows
+    5. Integration and coordination workflows
+    
+    Follow Dana language best practices and include proper type hints.
+    Return only the Dana code without markdown formatting.
+    """)
+    
+    return workflows_content
+
+def generate_metadata(dana_agent: DanaAgent, design: AgentDesign, knowledge_pack: KnowledgePack) -> dict:
+    """
+    Generate metadata for the agent capability pack.
+    
+    Args:
+        agent: The DanaAgent instance
+        design: AgentDesign struct
+        knowledge_pack: KnowledgePack struct
+        
+    Returns:
+        Dictionary containing metadata
+    """
+    # Generate comprehensive metadata
+    name = 'general_agent'
+    if design.agent_declaration.domains:
+        name = f"{design.agent_declaration.domains[0]}_agent"
+    domains = "General purpose"
+    if design.agent_declaration.domains:
+        domains = design.agent_declaration.domains[0]
+    metadata = {
+        "agent_info": {
+            "name": name,
+            "version": "1.0.0",
+            "description": f"Agent for {domains} domain",
+            "domains": design.agent_declaration.domains,
+            "tasks": design.agent_declaration.tasks,
+            "capabilities": design.agent_declaration.capabilities
+        },
+        "knowledge_info": {
+            "sources": design.agent_declaration.knowledge_sources,
+            "synthesis_needed": design.knowledge_plan.synthesis_needed,
+            "organization_method": "task_optimized"
+        },
+        "generation_info": {
+            "created_at": "2024-01-01T00:00:00Z",
+            "generator": "DanaAgentBuilder",
+            "generator_version": "1.0.0"
+        },
+        "usage_info": {
+            "deployment_ready": True,
+            "requires_training": False,
+            "performance_monitoring": True
+        }
+    }
+    
+    return metadata 

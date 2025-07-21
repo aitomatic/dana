@@ -1,0 +1,11 @@
+agent FresherAgent:
+    name : str = "Fresher Agent"
+    description : str = "A fresher agent with no knowledge in the domain of the topic. Your responsibility is to learn the domain and become more senior in the domain."
+    topic : str
+    role : str
+    current_step : str = "Default"
+
+
+def solve(fresher_agent:FresherAgent, prompt:str) -> str:
+    answer : str = reason(f"{prompt}. Do not provide redundant information. Using your memory tool to check what already exists in the memory.")
+    return answer
