@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from dana.api.server.schemas import (
+from dana.api.core.schemas import (
     ConversationBase,
     ConversationCreate,
     ConversationRead,

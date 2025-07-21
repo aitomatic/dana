@@ -5,7 +5,7 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from dana.api.server.schemas import (
+from dana.api.core.schemas import (
     AgentBase,
     AgentCreate,
     AgentRead,

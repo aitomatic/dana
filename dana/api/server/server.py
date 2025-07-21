@@ -15,7 +15,7 @@ from dana.api.client import APIClient
 from dana.common.config import ConfigLoader
 from dana.common.mixins.loggable import Loggable
 
-from .db import Base, engine
+from ..core.database import Base, engine
 
 
 def create_app():
@@ -32,23 +32,39 @@ def create_app():
     )
 
     # Include routers under /api
-    from .routers.agent_generator_na import router as agent_generator_na_router
-    from .routers.agent_test import router as agent_test_router
+    # New consolidated routers (preferred)
+    from ..routers.agents import router as agents_router
+    from ..routers.chat import router as new_chat_router
+    from ..routers.conversations import router as new_conversations_router
+    from ..routers.documents import router as new_documents_router
+    from ..routers.topics import router as new_topics_router
+    from ..routers.poet import router as poet_router
+    
+    # Legacy routers (for endpoints not yet migrated)
     from .routers.api import router as api_router
-    from .routers.chat import router as chat_router
-    from .routers.conversations import router as conversations_router
-    from .routers.documents import router as documents_router
     from .routers.main import router as main_router
-    from .routers.topics import router as topics_router
+    from .routers.agent_test import router as agent_test_router
 
     app.include_router(main_router)
-    app.include_router(api_router, prefix="/api")
-    app.include_router(topics_router, prefix="/api")
-    app.include_router(documents_router, prefix="/api")
-    app.include_router(conversations_router, prefix="/api")
-    app.include_router(chat_router, prefix="/api")
+    
+    # Use new consolidated routers
+    app.include_router(agents_router, prefix="/api")
+    app.include_router(new_chat_router, prefix="/api")
+    app.include_router(new_conversations_router, prefix="/api")
+    app.include_router(new_documents_router, prefix="/api")
+    app.include_router(new_topics_router, prefix="/api")
+    app.include_router(poet_router, prefix="/api")
+    
+    # Keep legacy api router for endpoints not yet migrated:
+    # - /run-na-file - Run Dana files
+    # - /write-files - Write multi-file projects to disk
+    # - /write-files-temp - Write multi-file projects to temp directory
+    # - /validate-multi-file - Validate multi-file project structure
+    # - /open-agent-folder - Open agent folder in file explorer
+    # - /task-status/{task_id} - Get background task status
+    # - /deep-train - Perform deep training on agents
+    app.include_router(api_router, prefix="/api/legacy")
     app.include_router(agent_test_router, prefix="/api")
-    app.include_router(agent_generator_na_router, prefix="/api")
 
     # Serve static files (React build)
     static_dir = os.path.join(os.path.dirname(__file__), "static")
