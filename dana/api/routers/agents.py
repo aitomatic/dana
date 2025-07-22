@@ -28,6 +28,226 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/agents", tags=["agents"])
 
 
+async def _auto_generate_basic_agent_code(
+    agent_id: int,
+    agent_name: str,
+    agent_description: str,
+    agent_config: dict,
+    agent_manager
+) -> str | None:
+    """Auto-generate basic Dana code for a newly created agent."""
+    try:
+        from pathlib import Path
+        import time
+        
+        logger.info(f"Auto-generating basic Dana code for agent {agent_id}: {agent_name}")
+        
+        # Create agent folder
+        agents_dir = Path("agents")
+        agents_dir.mkdir(exist_ok=True)
+        
+        # Create unique folder name
+        safe_name = agent_name.lower().replace(" ", "_").replace("-", "_")
+        safe_name = "".join(c for c in safe_name if c.isalnum() or c == "_")
+        folder_name = f"agent_{agent_id}_{safe_name}"
+        agent_folder = agents_dir / folder_name
+        agent_folder.mkdir(exist_ok=True)
+        
+        # Create docs folder
+        docs_folder = agent_folder / "docs"
+        docs_folder.mkdir(exist_ok=True)
+        
+        # Generate basic Dana files
+        await _create_basic_dana_files(
+            agent_folder=agent_folder,
+            agent_name=agent_name,
+            agent_description=agent_description,
+            agent_config=agent_config
+        )
+        
+        logger.info(f"Successfully created agent folder and basic Dana code at: {agent_folder}")
+        return str(agent_folder)
+        
+    except Exception as e:
+        logger.error(f"Error auto-generating basic Dana code: {e}")
+        raise e
+
+
+async def _create_basic_dana_files(
+    agent_folder,  # Path object
+    agent_name: str,
+    agent_description: str,
+    agent_config: dict
+):
+    """Create basic Dana files for the agent."""
+    
+    # Get specialties and skills from config
+    specialties = agent_config.get("specialties", "general assistance")
+    skills = agent_config.get("skills", "problem solving")
+    
+    # TODO: Correct the content
+    # Create main.na - the entry point
+    main_content = f'''/*
+ * {agent_name} - Main Entry Point
+ * {agent_description if agent_description else "A helpful AI agent"}
+ * 
+ * Specialties: {specialties}
+ * Skills: {skills}
+ */
+
+import common
+import tools
+import knowledge
+import workflows
+
+def main(input: str) -> str {{
+    log(f"{{agent_name}} received input: {{input}}")
+    
+    # Process the input using available knowledge and tools
+    result = process_request(input)
+    
+    log(f"{{agent_name}} responding with: {{result}}")
+    return result
+}}
+
+def process_request(input: str) -> str {{
+    /*
+     * Main processing logic for the agent
+     * Customize this function based on your agent's specific needs
+     */
+    
+    # Check if this is a greeting
+    if input.lower() in ["hello", "hi", "hey"] {{
+        return f"Hello! I'm {{agent_name}}, and I specialize in {specialties}. How can I help you today?"
+    }}
+    
+    # Default response with agent capabilities
+    return f"I'm {{agent_name}}, ready to help with {specialties}. You asked: {{input}}. How can I assist you further?"
+}}
+
+# Agent metadata for reference
+agent_name = "{agent_name}"
+agent_description = "{agent_description if agent_description else 'A helpful AI agent'}"
+agent_specialties = "{specialties}"
+agent_skills = "{skills}"
+'''
+    
+    # Create common.na - shared utilities
+    common_content = '''/*
+ * Common utilities and shared functions
+ */
+
+def format_response(message: str, agent_name: str) -> str {
+    return f"[{agent_name}]: {message}"
+}
+
+def log_interaction(input: str, output: str) {
+    log(f"Input: {input}")
+    log(f"Output: {output}")
+}
+
+def validate_input(input: str) -> bool {
+    return input != null and input != ""
+}
+'''
+    
+    # Create tools.na - agent tools and capabilities
+    tools_content = '''/*
+ * Agent tools and capabilities
+ * Add your custom tools and integrations here
+ */
+
+def get_current_time() -> str {
+    # Placeholder for time functionality
+    return "Current time functionality not implemented"
+}
+
+def search_knowledge(query: str) -> str {
+    # Placeholder for knowledge search
+    return f"Knowledge search for '{query}' - implement knowledge base integration"
+}
+
+def calculate(expression: str) -> str {
+    # Placeholder for calculation functionality
+    return f"Calculation '{expression}' - implement math operations"
+}
+'''
+    
+    # Create knowledge.na - knowledge base
+    knowledge_content = '''/*
+ * Agent knowledge base
+ * Define your agent's knowledge and expertise here
+ */
+
+def get_expertise_areas() -> list[str] {
+    return [
+        "General assistance",
+        "Problem solving",
+        "Information processing"
+    ]
+}
+
+def get_agent_background() -> str {
+    return """
+    I am an AI agent designed to be helpful, harmless, and honest.
+    I can assist with various tasks and provide information on many topics.
+    """
+}
+
+def answer_question(question: str) -> str {
+    # Placeholder for knowledge-based question answering
+    return f"I received your question: '{question}'. Please implement specific knowledge handling for better responses."
+}
+'''
+    
+    # Create workflows.na - agent workflows
+    workflows_content = '''/*
+ * Agent workflows and processes
+ * Define complex multi-step processes here
+ */
+
+def standard_workflow(input: str) -> str {
+    # Standard processing workflow
+    log("Starting standard workflow")
+    
+    # Step 1: Validate input
+    if not validate_input(input) {
+        return "Invalid input provided"
+    }
+    
+    # Step 2: Process request
+    result = process_with_context(input)
+    
+    # Step 3: Format response
+    formatted_result = format_response(result, agent_name)
+    
+    log("Completed standard workflow")
+    return formatted_result
+}
+
+def process_with_context(input: str) -> str {
+    # Add context-aware processing here
+    return f"Processed: {input}"
+}
+'''
+    
+    # Write all files
+    with open(agent_folder / "main.na", "w") as f:
+        f.write(main_content)
+    
+    with open(agent_folder / "common.na", "w") as f:
+        f.write(common_content)
+        
+    with open(agent_folder / "tools.na", "w") as f:
+        f.write(tools_content)
+        
+    with open(agent_folder / "knowledge.na", "w") as f:
+        f.write(knowledge_content)
+        
+    with open(agent_folder / "workflows.na", "w") as f:
+        f.write(workflows_content)
+
+
 @router.post("/generate", response_model=AgentGenerationResponse)
 async def generate_agent(
     request: AgentGenerationRequest,
@@ -465,12 +685,14 @@ async def get_agent(
 @router.post("/", response_model=AgentRead)
 async def create_agent(
     agent: AgentCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    agent_manager: AgentManager = Depends(get_agent_manager)
 ):
-    """Create a new agent."""
+    """Create a new agent with auto-generated basic Dana code."""
     try:
         from dana.api.core.models import Agent
         
+        # Create the agent in database first
         db_agent = Agent(
             name=agent.name,
             description=agent.description,
@@ -481,11 +703,47 @@ async def create_agent(
         db.commit()
         db.refresh(db_agent)
         
+        # Auto-generate basic Dana code and agent folder
+        try:
+            folder_path = await _auto_generate_basic_agent_code(
+                agent_id=db_agent.id,
+                agent_name=agent.name,
+                agent_description=agent.description,
+                agent_config=agent.config or {},
+                agent_manager=agent_manager
+            )
+            
+            # Update agent with folder path
+            if folder_path:
+                # Update config with folder_path
+                updated_config = db_agent.config.copy() if db_agent.config else {}
+                updated_config["folder_path"] = folder_path
+                
+                # Update database record
+                db_agent.config = updated_config
+                db_agent.generation_phase = "code_generated"
+                
+                # Force update by marking as dirty
+                from sqlalchemy.orm.attributes import flag_modified
+                flag_modified(db_agent, "config")
+                
+                db.commit()
+                db.refresh(db_agent)
+                logger.info(f"Updated agent {db_agent.id} with folder_path: {folder_path}")
+                logger.info(f"Agent config after update: {db_agent.config}")
+                
+        except Exception as code_gen_error:
+            logger.error(f"Failed to auto-generate code for agent {db_agent.id}: {code_gen_error}")
+            import traceback
+            logger.error(f"Full traceback: {traceback.format_exc()}")
+            # Don't fail the agent creation if code generation fails
+        
         return AgentRead(
             id=db_agent.id,
             name=db_agent.name,
             description=db_agent.description,
             config=db_agent.config,
+            folder_path=db_agent.config.get("folder_path") if db_agent.config else None,
             generation_phase=db_agent.generation_phase,
             created_at=db_agent.created_at,
             updated_at=db_agent.updated_at
