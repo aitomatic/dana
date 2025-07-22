@@ -72,7 +72,7 @@ async def write_multi_file_project(project: MultiFileProject):
             "written_files": written_files,
             "metadata_file": str(metadata_path)
         }
-
+        
     except Exception as e:
         logger.error(f"Error writing multi-file project: {e}")
         return {"success": False, "error": str(e)}
@@ -224,7 +224,7 @@ async def validate_multi_file_project(project: MultiFileProject):
                         if other_file.filename != filename:
                             if other_file.filename.replace(".na", "") in content:
                                 if has_circular_deps(other_file.filename, visited, path):
-                                    return True
+                                   return True
                     break
 
             path.pop()
@@ -255,7 +255,7 @@ async def open_agent_folder(request: dict):
     This endpoint opens the specified agent folder in the user's default file explorer.
     """
     logger = logging.getLogger(__name__)
-    
+
     try:
         agent_folder = request.get("agent_folder")
         if not agent_folder:
@@ -316,7 +316,7 @@ async def deep_train_agent(request: dict):
     machine learning techniques.
     """
     logger = logging.getLogger(__name__)
-
+    
     try:
         agent_id = request.get("agent_id")
         training_data = request.get("training_data", [])
@@ -353,13 +353,13 @@ async def deep_train_agent(request: dict):
         }
         
         logger.info(f"Deep training completed for agent {agent_id}")
-
+        
         return {
             "success": True,
             "message": "Deep training completed successfully",
             "result": training_result
         }
-
+        
     except Exception as e:
         logger.error(f"Error in deep training: {e}")
         return {"success": False, "error": str(e)}

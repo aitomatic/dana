@@ -118,7 +118,7 @@ export default function AgentDetailPage() {
 
   // --- Step 2: Training view ---
   return (
-    <div className="h-screen w-full flex flex-col">
+    <div className="h-screen w-full flex flex-col bg-gray-50">
       <AgentDetailHeader
         onBack={() => navigate('/agents')}
         title="Train Your Agent"

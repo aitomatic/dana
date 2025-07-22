@@ -41,9 +41,9 @@ def create_app():
     from ..routers.poet import router as poet_router
     
     # Legacy routers (for endpoints not yet migrated)
-    from .routers.api import router as api_router
-    from .routers.main import router as main_router
-    from .routers.agent_test import router as agent_test_router
+    from ..routers.api import router as api_router
+    from ..routers.main import router as main_router
+    from ..routers.agent_test import router as agent_test_router
 
     app.include_router(main_router)
     
