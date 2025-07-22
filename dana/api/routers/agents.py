@@ -5,6 +5,7 @@ Thin routing layer that delegates business logic to services.
 
 import logging
 from typing import Any, List
+import os
 
 from fastapi import APIRouter, Depends, HTTPException, File, Form, UploadFile
 from sqlalchemy.orm import Session
@@ -15,10 +16,11 @@ from dana.api.core.schemas import (
     AgentDescriptionRequest, AgentDescriptionResponse, AgentCodeGenerationRequest,
     AgentDeployRequest, AgentDeployResponse, DanaSyntaxCheckRequest, DanaSyntaxCheckResponse,
     CodeValidationRequest, CodeValidationResponse, CodeFixRequest, CodeFixResponse,
-    ProcessAgentDocumentsRequest, ProcessAgentDocumentsResponse
+    ProcessAgentDocumentsRequest, ProcessAgentDocumentsResponse, DocumentRead
 )
 from dana.api.services.agent_service import get_agent_service, AgentService
 from dana.api.services.agent_manager import get_agent_manager, AgentManager
+from dana.api.services.document_service import get_document_service, DocumentService
 
 logger = logging.getLogger(__name__)
 
@@ -715,6 +717,47 @@ async def upload_knowledge_file(
     except Exception as e:
         logger.error(f"Error uploading knowledge file: {e}", exc_info=True)
         return {"success": False, "error": str(e)}
+
+
+@router.post("/{agent_id}/documents", response_model=DocumentRead)
+async def upload_agent_document(
+    agent_id: int,
+    file: UploadFile = File(...),
+    topic_id: int | None = Form(None),
+    db: Session = Depends(get_db),
+    document_service: DocumentService = Depends(get_document_service)
+):
+    """Upload a document to a specific agent's folder."""
+    try:
+        # Get the agent to find its folder_path
+        from dana.api.core.models import Agent
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+        if not agent.folder_path:
+            folder_path = os.path.join("agents", f"agent_{agent_id}")
+            os.makedirs(folder_path, exist_ok=True)
+            agent.folder_path = folder_path
+            db.commit()
+            db.refresh(agent)
+        else:
+            folder_path = agent.folder_path
+
+        # Use the agent's folder as the upload directory
+        document = await document_service.upload_document(
+            file=file.file,
+            filename=file.filename,
+            topic_id=topic_id,
+            agent_id=agent_id,
+            db_session=db,
+            upload_directory=folder_path
+        )
+        return document
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error uploading document to agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/open-file/{file_path:path}")

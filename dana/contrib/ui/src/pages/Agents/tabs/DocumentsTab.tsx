@@ -1,81 +1,128 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams } from 'react-router-dom';
 import { LibraryTable } from '@/components/library';
 import type { LibraryItem } from '@/types/library';
+import type { DocumentRead } from '@/types/document';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { IconSearch, IconRefresh } from '@tabler/icons-react';
+import { IconSearch, IconPlus } from '@tabler/icons-react';
+import { apiService } from '@/lib/api';
 
-// Mock data for demonstration
-const mockDocuments: LibraryItem[] = [
-  {
-    id: 'doc-1',
-    name: 'SOX Compliance Audit Report',
+// Convert DocumentRead to LibraryItem format
+const convertDocumentToLibraryItem = (doc: DocumentRead): LibraryItem => {
+  const extension = doc.original_filename.split('.').pop() || '';
+  return {
+    id: doc.id.toString(),
+    name: doc.original_filename,
     type: 'file',
-    size: 2.2 * 1024 * 1024,
-    extension: 'pdf',
-    lastModified: new Date(),
-    path: '/documents/1',
-    topicId: 1,
-  },
-  {
-    id: 'doc-2',
-    name: 'Internal Control Assessment Checklist',
-    type: 'file',
-    size: 40.1 * 1024 * 1024,
-    extension: 'docx',
-    lastModified: new Date(Date.now() - 1000 * 60 * 60 * 2),
-    path: '/documents/2',
-    topicId: 2,
-  },
-  {
-    id: 'doc-3',
-    name: 'SOX Compliance Audit Report',
-    type: 'file',
-    size: 2.2 * 1024 * 1024,
-    extension: 'pdf',
-    lastModified: new Date(Date.now() - 1000 * 60 * 60 * 4),
-    path: '/documents/3',
-    topicId: 3,
-  },
-  // Add more mock items as needed
-];
+    size: doc.file_size,
+    extension,
+    lastModified: new Date(doc.updated_at),
+    path: `/documents/${doc.id}`,
+    topicId: doc.topic_id,
+  };
+};
 
 const DocumentsTab: React.FC = () => {
+  const { agent_id } = useParams<{ agent_id: string }>();
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<LibraryItem[]>(mockDocuments);
+  const [data, setData] = useState<LibraryItem[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load agent-specific documents
+  useEffect(() => {
+    if (agent_id) {
+      loadDocuments();
+    }
+  }, [agent_id]);
+
+  const loadDocuments = async () => {
+    if (!agent_id) return;
+
+    setLoading(true);
+    try {
+      // Note: The API getDocuments doesn't currently support agent_id filtering
+      // So we fetch all documents and filter client-side for now
+      // TODO: Update API to support agent_id filtering in DocumentFilters
+      const documents = await apiService.getDocuments();
+
+      // Filter documents by agent_id (client-side filtering for now)
+      const agentDocuments = documents.filter((doc) => doc.agent_id?.toString() === agent_id);
+
+      const libraryItems = agentDocuments.map(convertDocumentToLibraryItem);
+      setData(libraryItems);
+    } catch (error) {
+      console.error('Failed to load agent documents:', error);
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
 
   const handleRefresh = () => {
-    setLoading(true);
-    // Simulate refresh delay
-    setTimeout(() => {
-      setData([...mockDocuments]);
-      setLoading(false);
-    }, 500);
+    loadDocuments();
+  };
+
+  const handleAddFileClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !agent_id) return;
+    try {
+      for (const file of Array.from(files)) {
+        await apiService.uploadAgentDocument(agent_id, file);
+      }
+      loadDocuments();
+    } catch (error) {
+      console.error('Failed to upload file:', error);
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const filteredData = data.filter((item) =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+    item.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  if (!agent_id) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <div className="text-gray-500">No agent selected</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col p-6 space-y-6 h-full">
+    <div className="flex flex-col gap-4 p-6 h-full">
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        multiple
+        onChange={handleFileInputChange}
+      />
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Documents</h1>
-          <p className="text-gray-600">Browse and manage your documents</p>
+          <div className="text-lg font-semibold text-gray-700">Documents</div>
         </div>
         <div className="flex items-center space-x-2">
           <Button variant="outline" onClick={handleRefresh} disabled={loading}>
-            <IconRefresh className="mr-2 w-4 h-4" />
-            Refresh
+            {loading ? 'Loading...' : 'Refresh'}
+          </Button>
+          <Button onClick={handleAddFileClick}>
+            <IconPlus className="mr-2 w-4 h-4" />
+            Add file
           </Button>
         </div>
       </div>
+
       <div className="flex items-center space-x-4">
         <div className="relative flex-1 max-w-sm">
           <IconSearch className="absolute left-3 top-1/2 w-4 h-4 text-gray-400 transform -translate-y-1/2" />
@@ -88,14 +135,10 @@ const DocumentsTab: React.FC = () => {
         </div>
       </div>
       <div className="flex-1">
-        <LibraryTable
-          data={filteredData}
-          loading={loading}
-          mode="library"
-        />
+        <LibraryTable data={filteredData} loading={loading} mode="library" />
       </div>
     </div>
   );
 };
 
-export default DocumentsTab; 
+export default DocumentsTab;

@@ -33,7 +33,7 @@ class DocumentService:
 
     async def upload_document(
         self, file: BinaryIO, filename: str, topic_id: int | None = None, 
-        agent_id: int | None = None, db_session=None
+        agent_id: int | None = None, db_session=None, upload_directory: str | None = None
     ) -> DocumentRead:
         """
         Upload and store a document.
@@ -44,6 +44,7 @@ class DocumentService:
             topic_id: Optional topic ID to associate with
             agent_id: Optional agent ID to associate with
             db_session: Database session
+            upload_directory: Optional directory to store the file (overrides default)
 
         Returns:
             DocumentRead object with the stored document information
@@ -52,7 +53,9 @@ class DocumentService:
             # Generate unique filename
             file_extension = os.path.splitext(filename)[1]
             unique_filename = f"{uuid.uuid4()}{file_extension}"
-            file_path = os.path.join(self.upload_directory, unique_filename)
+            target_dir = upload_directory if upload_directory else self.upload_directory
+            os.makedirs(target_dir, exist_ok=True)
+            file_path = os.path.join(target_dir, unique_filename)
 
             # Save file to disk
             with open(file_path, "wb") as f:

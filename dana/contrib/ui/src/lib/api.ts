@@ -124,7 +124,7 @@ export interface MultiFileProject {
 
 export interface AgentGenerationResponse {
   success: boolean;
-  dana_code?: string;  // Optional in Phase 1
+  dana_code?: string; // Optional in Phase 1
   agent_name?: string;
   agent_description?: string;
   capabilities?: AgentCapabilities;
@@ -265,9 +265,9 @@ export interface ProcessAgentDocumentsRequest {
   document_folder: string;
   conversation: string | string[];
   summary: string;
-  agent_data?: Record<string, any>;  // Include current agent data (name, description, capabilities, etc.)
-  current_code?: string;  // Current dana code to be updated
-  multi_file_project?: MultiFileProject;  // Current multi-file project structure
+  agent_data?: Record<string, any>; // Include current agent data (name, description, capabilities, etc.)
+  current_code?: string; // Current dana code to be updated
+  multi_file_project?: MultiFileProject; // Current multi-file project structure
 }
 
 export interface ProcessAgentDocumentsResponse {
@@ -277,8 +277,8 @@ export interface ProcessAgentDocumentsResponse {
   agent_description?: string;
   processing_details?: Record<string, any>;
   // Include updated code with RAG integration
-  dana_code?: string;  // Updated single-file code
-  multi_file_project?: MultiFileProject;  // Updated multi-file project with RAG integration
+  dana_code?: string; // Updated single-file code
+  multi_file_project?: MultiFileProject; // Updated multi-file project with RAG integration
   error?: string;
 }
 
@@ -461,9 +461,7 @@ class ApiService {
     return response.data;
   }
 
-  async uploadKnowledgeFile(
-    formData: FormData,
-  ): Promise<{
+  async uploadKnowledgeFile(formData: FormData): Promise<{
     success: boolean;
     file_path?: string;
     error?: string;
@@ -513,18 +511,31 @@ class ApiService {
   }
 
   // Phase 2: Code generation from existing description
-  async generateAgentCode(agentId: number, request: AgentCodeGenerationRequest): Promise<AgentGenerationResponse> {
-    const response = await this.client.post<AgentGenerationResponse>(`/agents/${agentId}/generate-code`, request, {
-      timeout: 300000,
-    });
+  async generateAgentCode(
+    agentId: number,
+    request: AgentCodeGenerationRequest,
+  ): Promise<AgentGenerationResponse> {
+    const response = await this.client.post<AgentGenerationResponse>(
+      `/agents/${agentId}/generate-code`,
+      request,
+      {
+        timeout: 300000,
+      },
+    );
     return response.data;
   }
 
   // Process Agent Documents for Deep Training
-  async processAgentDocuments(request: ProcessAgentDocumentsRequest): Promise<ProcessAgentDocumentsResponse> {
-    const response = await this.client.post<ProcessAgentDocumentsResponse>('/agents/process-agent-documents', request, {
-      timeout: 600000, // 10 minutes timeout for document processing
-    });
+  async processAgentDocuments(
+    request: ProcessAgentDocumentsRequest,
+  ): Promise<ProcessAgentDocumentsResponse> {
+    const response = await this.client.post<ProcessAgentDocumentsResponse>(
+      '/agents/process-agent-documents',
+      request,
+      {
+        timeout: 600000, // 10 minutes timeout for document processing
+      },
+    );
     return response.data;
   }
 
@@ -543,17 +554,28 @@ class ApiService {
     };
     multi_file?: boolean;
   }): Promise<AgentGenerationResponse> {
-    const response = await this.client.post<AgentGenerationResponse>('/agents/generate-from-prompt', request, {
-      timeout: 300000,
-    });
+    const response = await this.client.post<AgentGenerationResponse>(
+      '/agents/generate-from-prompt',
+      request,
+      {
+        timeout: 300000,
+      },
+    );
     return response.data;
   }
 
   // Update agent description during Phase 1
-  async updateAgentDescription(agentId: number, request: AgentDescriptionRequest): Promise<AgentDescriptionResponse> {
-    const response = await this.client.post<AgentDescriptionResponse>(`/agents/${agentId}/update-description`, request, {
-      timeout: 300000,
-    });
+  async updateAgentDescription(
+    agentId: number,
+    request: AgentDescriptionRequest,
+  ): Promise<AgentDescriptionResponse> {
+    const response = await this.client.post<AgentDescriptionResponse>(
+      `/agents/${agentId}/update-description`,
+      request,
+      {
+        timeout: 300000,
+      },
+    );
     return response.data;
   }
 
@@ -636,6 +658,26 @@ class ApiService {
       console.warn('API not available:', error);
       return false;
     }
+  }
+
+  async uploadAgentDocument(
+    agentId: string | number,
+    file: File,
+    topicId?: string | number,
+  ): Promise<DocumentRead> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (topicId) formData.append('topic_id', topicId.toString());
+    const response = await this.client.post<DocumentRead>(
+      `/agents/${agentId}/documents`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      },
+    );
+    return response.data;
   }
 }
 
