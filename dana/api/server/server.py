@@ -39,6 +39,8 @@ def create_app():
     from ..routers.documents import router as new_documents_router
     from ..routers.topics import router as new_topics_router
     from ..routers.poet import router as poet_router
+    from ..routers.domain_knowledge import router as domain_knowledge_router
+    from ..routers.smart_chat import router as smart_chat_router
     
     # Legacy routers (for endpoints not yet migrated)
     from ..routers.api import router as api_router
@@ -54,6 +56,8 @@ def create_app():
     app.include_router(new_documents_router, prefix="/api")
     app.include_router(new_topics_router, prefix="/api")
     app.include_router(poet_router, prefix="/api")
+    app.include_router(domain_knowledge_router, prefix="/api")
+    app.include_router(smart_chat_router, prefix="/api")
     
     # Keep legacy api router for endpoints not yet migrated:
     # - /run-na-file - Run Dana files

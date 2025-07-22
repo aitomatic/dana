@@ -426,3 +426,75 @@ class KnowledgeUploadRequest(BaseModel):
     agent_folder: str | None = None
     conversation_context: list[MessageData] | None = None  # Current conversation
     agent_info: dict | None = None  # Current agent info for regeneration
+
+
+# Domain Knowledge Schemas
+class DomainNode(BaseModel):
+    """A single node in the domain knowledge tree"""
+    topic: str
+    children: list['DomainNode'] = []
+
+
+class DomainKnowledgeTree(BaseModel):
+    """Complete domain knowledge tree structure"""
+    root: DomainNode
+    last_updated: datetime | None = None
+    version: int = 1
+
+
+class IntentDetectionRequest(BaseModel):
+    """Request for LLM-based intent detection"""
+    user_message: str
+    chat_history: list[MessageData] = []
+    current_domain_tree: DomainKnowledgeTree | None = None
+    agent_id: int
+
+
+class IntentDetectionResponse(BaseModel):
+    """Response from LLM intent detection"""
+    intent: str  # 'add_information', 'refresh_domain_knowledge', 'general_query'
+    entities: dict[str, Any] = {}  # Extracted entities (topic, parent, etc.)
+    confidence: float | None = None
+    explanation: str | None = None
+
+
+class DomainKnowledgeUpdateRequest(BaseModel):
+    """Request to update domain knowledge tree"""
+    agent_id: int
+    intent: str
+    entities: dict[str, Any] = {}
+    user_message: str = ""
+
+
+class DomainKnowledgeUpdateResponse(BaseModel):
+    """Response for domain knowledge update"""
+    success: bool
+    updated_tree: DomainKnowledgeTree | None = None
+    changes_summary: str | None = None
+    error: str | None = None
+
+
+class ChatWithIntentRequest(BaseModel):
+    """Extended chat request with intent detection"""
+    message: str
+    conversation_id: int | None = None
+    agent_id: int
+    context: dict[str, Any] = {}
+    detect_intent: bool = True  # Whether to run intent detection
+
+
+class ChatWithIntentResponse(BaseModel):
+    """Extended chat response with intent handling"""
+    success: bool
+    message: str
+    conversation_id: int
+    message_id: int
+    agent_response: str
+    context: dict[str, Any] = {}
+    
+    # Intent detection results
+    detected_intent: str | None = None
+    domain_tree_updated: bool = False
+    updated_tree: DomainKnowledgeTree | None = None
+    
+    error: str | None = None
