@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { apiService } from '@/lib/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, Trash2 } from 'lucide-react';
 import { MarkdownViewerSmall } from '@/pages/Agents/chat/markdown-viewer';
 
 // Message interface for the test chat
@@ -52,6 +52,18 @@ const AgentTestChat = ({
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
+
+  // Clear messages function
+  const handleClearMessages = useCallback(() => {
+    setMessages([
+      {
+        id: '1',
+        role: 'agent',
+        content: "Hi, I'm Georgia! How can I help you today?",
+        timestamp: new Date(),
+      },
+    ]);
+  }, []);
 
   const handleSendMessage = useCallback(async () => {
     if (!inputMessage.trim() || isTesting) return;
@@ -124,6 +136,19 @@ const AgentTestChat = ({
 
   return (
     <div className={cn('flex flex-col h-full bg-[#EFF4FE]', className)}>
+      {/* Header with clear button */}
+      <div className="flex justify-between items-center bg-gray-50 border-b border-gray-200">
+        <Button
+          onClick={handleClearMessages}
+          variant="ghost"
+          size="sm"
+          className="p-0 w-8 h-8 text-gray-50 cursor-pointer hover:text-red-500 hover:bg-red-50"
+          title="Clear messages"
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button>
+      </div>
+
       {/* Messages */}
       <div className="overflow-y-auto flex-1 p-3 space-y-3">
         {messages.map((message) => (
@@ -134,9 +159,7 @@ const AgentTestChat = ({
             <div
               className={cn(
                 'max-w-[80%] rounded-lg px-3 py-2 text-sm',
-                message.role === 'user'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-900'
+                message.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-900',
                 // : message.content.includes('error') || message.content.includes('Sorry')
                 //   ? 'bg-red-100 text-red-800 border border-red-200'
                 //   : 'bg-gray-100 text-gray-900',

@@ -20,7 +20,7 @@ def test_db():
     """Create a temp SQLite DB, engine, and session factory for each test. Clean up after."""
     temp_db, test_database_url = _make_temp_db_url()
     os.environ["DANA_DATABASE_URL"] = test_database_url
-    from dana.api.server.models import Base
+    from dana.api.core.models import Base
     engine = create_engine(test_database_url, connect_args={"check_same_thread": False})
     Base.metadata.create_all(bind=engine)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -32,10 +32,15 @@ def test_db():
 
 @pytest.fixture(scope="function")
 def db_session(test_db):
-    """Yield a session using the test DB. Clear agents table before each test."""
+    """Yield a session using the test DB. Clear all tables before each test."""
     _, SessionLocal, _ = test_db
     session = SessionLocal()
-    from dana.api.server.models import Agent
+    from dana.api.core.models import Agent, Topic, Document, Conversation, Message
+    # Clear all tables in reverse dependency order
+    session.query(Message).delete()
+    session.query(Document).delete()
+    session.query(Conversation).delete()
+    session.query(Topic).delete()
     session.query(Agent).delete()
     session.commit()
     try:
@@ -50,7 +55,7 @@ def client(test_db):
     engine, SessionLocal, _ = test_db
     from unittest.mock import patch
 
-    from dana.api.server.db import get_db
+    from dana.api.core.database import get_db
     from dana.api.server.server import create_app
     app = create_app()
     # Remove all startup event handlers to prevent demo data insertion
@@ -62,8 +67,8 @@ def client(test_db):
         finally:
             session.close()
     app.dependency_overrides[get_db] = override_get_db
-    with patch('dana.api.server.db.engine', engine), \
-         patch('dana.api.server.db.SessionLocal', SessionLocal):
+    with patch('dana.api.core.database.engine', engine), \
+         patch('dana.api.core.database.SessionLocal', SessionLocal):
         with TestClient(app) as test_client:
             yield test_client
     app.dependency_overrides.clear()
@@ -76,7 +81,7 @@ def mock_db():
 @pytest.fixture
 def sample_agent():
     """Create a sample agent for testing without database."""
-    from dana.api.server.models import Agent
+    from dana.api.core.models import Agent
     return Agent(
         id=1,
         name="Sample Agent", 
@@ -87,7 +92,7 @@ def sample_agent():
 @pytest.fixture
 def sample_conversation():
     """Create a sample conversation for testing without database."""
-    from dana.api.server.models import Conversation
+    from dana.api.core.models import Conversation
     return Conversation(
         id=1,
         title="Test Conversation",
@@ -98,7 +103,7 @@ def sample_conversation():
 @pytest.fixture
 def sample_message():
     """Create a sample message for testing without database."""
-    from dana.api.server.models import Message
+    from dana.api.core.models import Message
     return Message(
         id=1,
         conversation_id=1,
@@ -118,6 +123,6 @@ def mock_get_db(mock_db):
 @pytest.fixture
 def mock_chat_service():
     """Mock the chat service dependency."""
-    from dana.api.server.services import ChatService
+    from dana.api.services.chat_service import ChatService
     chat_service = Mock(spec=ChatService)
     return chat_service

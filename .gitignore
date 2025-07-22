@@ -71,6 +71,7 @@ dana/api/server/static/
 dana/contrib/ui/public/static/
 generated/
 agents/
+docs/.ai-only/ai_output/
 
 # Contributors-oriented configs
 # =============================

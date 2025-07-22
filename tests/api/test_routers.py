@@ -3,7 +3,7 @@
 import os
 from unittest.mock import patch
 
-from dana.api.server.models import Agent
+from dana.api.core.models import Agent
 
 # Use the global client and db_session fixtures from conftest.py
 
