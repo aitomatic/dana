@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from dana.api.core.database import get_db
-from dana.api.core.models import Agent
+from dana.api.core.models import Agent, AgentChatHistory
 from dana.api.core.schemas import (
     DomainKnowledgeTree,
     IntentDetectionRequest,
@@ -60,6 +60,18 @@ async def smart_chat(
         if not agent:
             raise HTTPException(status_code=404, detail="Agent not found")
         
+        # --- Save user message to AgentChatHistory ---
+        user_history = AgentChatHistory(
+            agent_id=agent_id,
+            sender="user",
+            text=user_message,
+            type="smart_chat"
+        )
+        db.add(user_history)
+        db.commit()
+        db.refresh(user_history)
+        # --- End save user message ---
+        
         # Get current domain knowledge for context
         current_domain_tree = await domain_service.get_agent_domain_knowledge(agent_id, db)
         
@@ -77,33 +89,84 @@ async def smart_chat(
         
         logger.info(f"Intent detected: {detected_intent} with entities: {entities}")
         
-        # Step 2: Route to appropriate processor based on intent
-        processing_result = await _process_based_on_intent(
-            intent=detected_intent,
-            entities=entities,
+        # Get all intents for multi-intent processing
+        all_intents = intent_response.additional_data.get("all_intents", [
+            {
+                "intent": detected_intent,
+                "entities": entities,
+                "confidence": intent_response.confidence,
+                "explanation": intent_response.explanation
+            }
+        ])
+        
+        logger.info(f"Processing {len(all_intents)} intents: {[i.get('intent') for i in all_intents]}")
+        
+        # Step 2: Process all detected intents
+        processing_results = []
+        for intent_data in all_intents:
+            result = await _process_based_on_intent(
+                intent=intent_data.get("intent"),
+                entities=intent_data.get("entities", {}),
+                user_message=user_message,
+                agent=agent,
+                domain_service=domain_service,
+                llm_tree_manager=llm_tree_manager,
+                current_domain_tree=current_domain_tree,
+                db=db
+            )
+            processing_results.append(result)
+        
+        # Combine results from all intents
+        processing_result = _combine_processing_results(processing_results)
+        
+        # Step 3: Generate creative LLM-based follow-up message
+        # Extract knowledge topics from domain knowledge tree
+        def extract_topics(tree):
+            if not tree or not hasattr(tree, 'root'):
+                return []
+            topics = []
+            def traverse(node):
+                if not node:
+                    return
+                if getattr(node, 'topic', None):
+                    topics.append(node.topic)
+                for child in getattr(node, 'children', []) or []:
+                    traverse(child)
+            traverse(tree.root)
+            return topics
+        knowledge_topics = extract_topics(current_domain_tree)
+        follow_up_message = await intent_service.generate_followup_message(
             user_message=user_message,
             agent=agent,
-            domain_service=domain_service,
-            llm_tree_manager=llm_tree_manager,
-            current_domain_tree=current_domain_tree,
-            db=db
+            knowledge_topics=knowledge_topics
         )
-        
-        # Step 3: Return structured response
         response = {
             "success": True,
             "message": user_message,
             "conversation_id": conversation_id,
-            
             # Intent detection results
             "detected_intent": detected_intent,
             "intent_confidence": intent_response.confidence,
             "intent_explanation": intent_response.explanation,
             "entities_extracted": entities,
-            
             # Processing results
-            **processing_result
+            **processing_result,
+            "follow_up_message": follow_up_message
         }
+        
+        # --- Save agent response to AgentChatHistory ---
+        agent_response_text = response.get("follow_up_message")
+        if agent_response_text:
+            agent_history = AgentChatHistory(
+                agent_id=agent_id,
+                sender="agent",
+                text=agent_response_text,
+                type="smart_chat"
+            )
+            db.add(agent_history)
+            db.commit()
+            db.refresh(agent_history)
+        # --- End save agent response ---
         
         logger.info(f"Smart chat completed for agent {agent_id}: intent={detected_intent}")
         
@@ -272,17 +335,38 @@ async def _process_update_agent_intent(
     agent: Agent,
     db: Session
 ) -> dict[str, Any]:
-    """Process update_agent_properties intent - focused on agent metadata updates."""
-    
-    # This is a placeholder for future agent property updates
-    # Could handle: name changes, description updates, config changes, etc.
-    
-    return {
-        "processor": "update_agent",
-        "success": False,
-        "agent_response": "Agent property updates are not yet implemented. Currently I can only update my domain knowledge.",
-        "updates_applied": []
-    }
+    updated_fields = []
+    if 'name' in entities and entities['name']:
+        agent.name = entities['name'].strip()
+        updated_fields.append('name')
+    if 'role' in entities and entities['role']:
+        agent.description = entities['role'].strip()
+        updated_fields.append('role')
+    # Save specialties and skills to config
+    config = agent.config or {}
+    if 'specialties' in entities and entities['specialties']:
+        config['specialties'] = entities['specialties'].strip()
+        updated_fields.append('specialties')
+    if 'skills' in entities and entities['skills']:
+        config['skills'] = entities['skills'].strip()
+        updated_fields.append('skills')
+    agent.config = config
+    if updated_fields:
+        db.commit()
+        db.refresh(agent)
+        return {
+            "processor": "update_agent",
+            "success": True,
+            "agent_response": f"Agent information updated: {', '.join(updated_fields)}.",
+            "updates_applied": updated_fields
+        }
+    else:
+        return {
+            "processor": "update_agent",
+            "success": False,
+            "agent_response": "No valid agent property found to update.",
+            "updates_applied": []
+        }
 
 
 async def _process_test_agent_intent(
@@ -313,4 +397,50 @@ async def _process_general_query_intent(
         "success": True,
         "agent_response": f"I understand your message. How can I help you with {agent.name.lower()} related questions?",
         "updates_applied": []
+    }
+
+
+def _combine_processing_results(results: list[dict[str, Any]]) -> dict[str, Any]:
+    """Combine multiple intent processing results into a unified response."""
+    if not results:
+        return {
+            "processor": "multi_intent",
+            "success": False,
+            "agent_response": "No intents were processed.",
+            "updates_applied": []
+        }
+    
+    # If only one result, return it directly
+    if len(results) == 1:
+        return results[0]
+    
+    # Combine multiple results
+    combined_success = all(result.get("success", False) for result in results)
+    combined_processors = [result.get("processor", "unknown") for result in results]
+    combined_updates = []
+    combined_responses = []
+    updated_domain_tree = None
+    
+    for result in results:
+        if result.get("updates_applied"):
+            combined_updates.extend(result.get("updates_applied", []))
+        if result.get("agent_response"):
+            combined_responses.append(result.get("agent_response"))
+        # Use the latest updated domain tree
+        if result.get("updated_domain_tree"):
+            updated_domain_tree = result.get("updated_domain_tree")
+    
+    # Create a combined response message
+    if combined_responses:
+        combined_response = " ".join(combined_responses)
+    else:
+        combined_response = f"I've processed multiple requests: {', '.join(combined_processors)}."
+    
+    return {
+        "processor": "multi_intent",
+        "processors": combined_processors,
+        "success": combined_success,
+        "agent_response": combined_response,
+        "updates_applied": combined_updates,
+        "updated_domain_tree": updated_domain_tree
     }

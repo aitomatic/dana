@@ -13,6 +13,7 @@ import type {
   ConversationCreate,
   ConversationWithMessages,
 } from '@/types/conversation';
+import type { DomainKnowledgeResponse } from '@/types/domainKnowledge';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
@@ -678,6 +679,24 @@ class ApiService {
       },
     );
     return response.data;
+  }
+
+  async smartChat(agentId: string | number, message: string, conversationId?: string | number) {
+    const response = await this.client.post(`/agents/${agentId}/smart-chat`, {
+      message,
+      conversation_id: conversationId,
+    });
+    return response.data;
+  }
+
+  async getSmartChatHistory(agentId: string | number) {
+    const response = await this.client.get(`/agents/${agentId}/chat-history?type=smart_chat`);
+    return response.data; // Should be an array of { sender, text }
+  }
+
+  async getDomainKnowledge(agentId: string | number): Promise<DomainKnowledgeResponse> {
+    const response = await this.client.get(`/agents/${agentId}/domain-knowledge`);
+    return response.data; // Returns domain knowledge tree or { message: "No domain knowledge found" }
   }
 }
 

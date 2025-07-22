@@ -130,13 +130,24 @@ class LLMTreeManager(Loggable):
             
             # Parse LLM response
             content = response.content
+            print(f"🔍 Response content type: {type(content)}, content: {content}")
+            
             if isinstance(content, str):
-                result = json.loads(content)
+                # Direct string response
+                try:
+                    result = json.loads(content)
+                except json.JSONDecodeError:
+                    # Might be a nested JSON string
+                    result = json.loads(content)
             elif isinstance(content, dict):
-                result = content
+                # Check if it's OpenAI-style response
+                if "choices" in content:
+                    message_content = content["choices"][0]["message"]["content"]
+                    result = json.loads(message_content)
+                else:
+                    result = content
             else:
-                # Handle OpenAI-style response
-                result = json.loads(content.get("choices")[0].get("message").get("content"))
+                raise ValueError(f"Unexpected response content type: {type(content)}")
             
             # Build tree from LLM response
             tree_structure = result.get("tree_structure")
@@ -170,7 +181,7 @@ class LLMTreeManager(Loggable):
         """Use LLM to analyze where and how to add the new topic."""
         try:
             print(f"🔍 Building placement analysis prompt...")
-            print(f"  - New topic: {new_topic}")
+            print(f"  - New topic: '{new_topic}' (type: {type(new_topic)})")
             print(f"  - Suggested parent: {suggested_parent}")
             print(f"  - Context details: {context_details}")
             print(f"  - Agent context: {agent_context}")
@@ -202,7 +213,7 @@ class LLMTreeManager(Loggable):
             print(f"📨 LLM response: {response}")
             
             # Parse LLM response
-            content = response.content.get("choices")[0].get("message").get("content")
+            content = response.content
             print(f"📄 Response content type: {type(content)}")
             print(f"📄 Response content: {content}")
             
@@ -210,12 +221,17 @@ class LLMTreeManager(Loggable):
                 print("🔄 Parsing content as JSON string...")
                 result = json.loads(content)
             elif isinstance(content, dict):
-                print("🔄 Using content as dict directly...")
-                result = content
+                # Check if it's OpenAI-style response
+                if "choices" in content:
+                    print("🔄 Parsing OpenAI-style response...")
+                    message_content = content["choices"][0]["message"]["content"]
+                    print(f"📊 Message content: {message_content}")
+                    result = json.loads(message_content)
+                else:
+                    print("🔄 Using content as dict directly...")
+                    result = content
             else:
-                print("🔄 Parsing OpenAI-style response...")
-                print(f"📊 Content structure: {content}")
-                result = json.loads(content.get("choices")[0].get("message").get("content"))
+                raise ValueError(f"Unexpected response content type: {type(content)}")
             
             print(f"✅ Parsed result: {result}")
             return result
@@ -224,14 +240,107 @@ class LLMTreeManager(Loggable):
             print(f"❌ JSON parsing error: {e}")
             print(f"📄 Raw content that failed to parse: {content}")
             self.error(f"JSON parsing error in tree analysis: {e}")
-            return {"success": False, "error": f"JSON parsing error: {str(e)}"}
+            # Return fallback analysis that adds to root
+            fallback_analysis = {
+                "success": True,
+                "action": "add_to_parent",
+                "parent_topic": "root",
+                "new_node": {
+                    "topic": new_topic,
+                    "children": []
+                },
+                "changes_summary": f"Added {new_topic} to the root level (fallback due to LLM parsing error)"
+            }
+            print(f"🚨 Returning fallback analysis: {fallback_analysis}")
+            return fallback_analysis
         except Exception as e:
             print(f"❌ General error in tree analysis: {e}")
             print(f"🔍 Error type: {type(e)}")
             import traceback
             print(f"📚 Full traceback: {traceback.format_exc()}")
             self.error(f"Error in tree analysis: {e}")
-            return {"success": False, "error": str(e)}
+            # Return fallback analysis that adds to root
+            return {
+                "success": True,
+                "action": "add_to_parent", 
+                "parent_topic": "root",
+                "new_node": {
+                    "topic": new_topic,
+                    "children": []
+                },
+                "changes_summary": f"Added {new_topic} to the root level (fallback due to analysis error)"
+            }
+    
+    async def _apply_tree_changes(
+        self,
+        current_tree: DomainKnowledgeTree,
+        tree_analysis: dict[str, Any]
+    ) -> DomainKnowledgeTree:
+        """Apply the tree changes based on LLM analysis."""
+        print(f"🔧 Applying tree changes: {tree_analysis}")
+        print(f"🔧 Current tree root children: {[child.topic for child in current_tree.root.children] if current_tree.root.children else []}")
+        
+        action = tree_analysis.get("action", "add_to_parent")
+        
+        if action == "add_to_parent":
+            parent_topic = tree_analysis.get("parent_topic", "root")
+            new_node_data = tree_analysis.get("new_node", {})
+            
+            # Create new node
+            topic_name = new_node_data.get("topic", "Unknown")
+            print(f"🏗️ Creating new node with topic: '{topic_name}'")
+            new_node = DomainNode(
+                topic=topic_name,
+                children=new_node_data.get("children", [])
+            )
+            print(f"🏗️ Created node: {new_node}")
+            
+            # Find and update the parent node
+            def add_to_node(node: DomainNode) -> bool:
+                if node.topic.lower() == parent_topic.lower() or parent_topic == "root":
+                    # Add to this node's children
+                    if not hasattr(node, 'children') or node.children is None:
+                        node.children = []
+                    node.children.append(new_node)
+                    print(f"✅ Added '{new_node.topic}' to '{node.topic}'")
+                    return True
+                
+                # Recursively search children
+                if hasattr(node, 'children') and node.children:
+                    for child in node.children:
+                        if add_to_node(child):
+                            return True
+                return False
+            
+            # If parent_topic is "root", add to root's children
+            if parent_topic == "root":
+                print(f"🌳 Adding to root. Current root children count: {len(current_tree.root.children) if current_tree.root.children else 0}")
+                if not hasattr(current_tree.root, 'children') or current_tree.root.children is None:
+                    current_tree.root.children = []
+                    print(f"🌳 Initialized empty children list")
+                current_tree.root.children.append(new_node)
+                print(f"✅ Added '{new_node.topic}' to root. New children count: {len(current_tree.root.children)}")
+                print(f"🌳 All root children: {[child.topic for child in current_tree.root.children]}")
+            else:
+                # Search for parent and add
+                if not add_to_node(current_tree.root):
+                    # Fallback: add to root if parent not found
+                    if not hasattr(current_tree.root, 'children') or current_tree.root.children is None:
+                        current_tree.root.children = []
+                    current_tree.root.children.append(new_node)
+                    print(f"⚠️ Parent '{parent_topic}' not found, added '{new_node.topic}' to root")
+        
+        # Update tree metadata
+        current_tree.version = (current_tree.version or 0) + 1
+        from datetime import datetime, UTC
+        current_tree.last_updated = datetime.now(UTC)
+        
+        print(f"🔄 Final tree before return:")
+        print(f"   Root: {current_tree.root.topic}")
+        print(f"   Children: {[child.topic for child in current_tree.root.children] if current_tree.root.children else []}")
+        print(f"   Version: {current_tree.version}")
+        
+        return current_tree
     
     def _build_initial_tree_prompt(
         self,

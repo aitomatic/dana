@@ -61,12 +61,12 @@ class DomainKnowledgeService(Loggable):
             # Check if domain knowledge file path exists in config
             domain_knowledge_path = agent.config.get("domain_knowledge_path") if agent.config else None
             
+            # If no path in config, try default file path
             if not domain_knowledge_path:
-                # No domain knowledge configured yet
-                return None
-            
-            # Read domain knowledge from file
-            file_path = Path(domain_knowledge_path)
+                file_path = self.get_domain_knowledge_file_path(agent_id)
+                self.info(f"No domain knowledge path in config, trying default path: {file_path}")
+            else:
+                file_path = Path(domain_knowledge_path)
             if not file_path.exists():
                 self.warning(f"Domain knowledge file not found: {file_path}")
                 return None

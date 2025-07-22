@@ -7,7 +7,7 @@ import logging
 from typing import Any, List
 import os
 
-from fastapi import APIRouter, Depends, HTTPException, File, Form, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, File, Form, UploadFile, Query
 from sqlalchemy.orm import Session
 
 from dana.api.core.database import get_db
@@ -21,6 +21,7 @@ from dana.api.core.schemas import (
 from dana.api.services.agent_service import get_agent_service, AgentService
 from dana.api.services.agent_manager import get_agent_manager, AgentManager
 from dana.api.services.document_service import get_document_service, DocumentService
+from dana.api.core.models import AgentChatHistory
 
 logger = logging.getLogger(__name__)
 
@@ -799,3 +800,38 @@ def _extract_agent_info_from_code(dana_code: str) -> tuple[str | None, str | Non
                     agent_description = next_line.split("=")[1].strip().strip('"')
     
     return agent_name, agent_description
+
+@router.get("/{agent_id}/chat-history")
+async def get_agent_chat_history(
+    agent_id: int,
+    type: str = Query(None, description="Filter by message type: 'chat_with_dana_build', 'smart_chat', or 'all' for both types"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get chat history for an agent.
+    
+    Args:
+        agent_id: Agent ID
+        type: Message type filter ('chat_with_dana_build', 'smart_chat', 'all', or None for default 'smart_chat')
+        
+    Returns:
+        List of chat messages with sender and text
+    """
+    query = db.query(AgentChatHistory).filter(AgentChatHistory.agent_id == agent_id)
+    
+    # Filter by type: default to 'smart_chat' if None, or filter by specific type unless 'all'
+    filter_type = type or "smart_chat"
+    if filter_type != "all":
+        query = query.filter(AgentChatHistory.type == filter_type)
+    
+    history = query.order_by(AgentChatHistory.created_at).all()
+    
+    return [
+        {
+            "sender": h.sender, 
+            "text": h.text, 
+            "type": h.type,
+            "created_at": h.created_at.isoformat()
+        }
+        for h in history
+    ]

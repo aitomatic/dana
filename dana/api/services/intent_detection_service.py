@@ -2,6 +2,7 @@
 
 import json
 import logging
+from typing import Any
 
 from dana.api.core.schemas import (
     IntentDetectionRequest,
@@ -24,7 +25,7 @@ class IntentDetectionService(Loggable):
         self.llm = LLMResource()
     
     async def detect_intent(self, request: IntentDetectionRequest) -> IntentDetectionResponse:
-        """Detect user intent using LLM analysis."""
+        """Detect user intent using LLM analysis - now supports multiple intents."""
         try:
             # Build the LLM prompt
             prompt = self._build_intent_detection_prompt(
@@ -60,11 +61,26 @@ class IntentDetectionService(Loggable):
                 
                 intent_result: dict = json.loads(result.get("choices")[0].get("message").get("content"))
                 
+                # Handle multiple intents - return the first one for backward compatibility
+                # but store all intents in the response
+                intents = intent_result.get("intents", [])
+                if not intents:
+                    # Fallback to single intent format
+                    intents = [{
+                        "intent": intent_result.get("intent", "general_query"),
+                        "entities": intent_result.get("entities", {}),
+                        "confidence": intent_result.get("confidence"),
+                        "explanation": intent_result.get("explanation")
+                    }]
+                
+                primary_intent = intents[0]
                 return IntentDetectionResponse(
-                    intent=intent_result.get("intent", "general_query"),
-                    entities=intent_result.get("entities", {}),
-                    confidence=intent_result.get("confidence"),
-                    explanation=intent_result.get("explanation")
+                    intent=primary_intent.get("intent", "general_query"),
+                    entities=primary_intent.get("entities", {}),
+                    confidence=primary_intent.get("confidence"),
+                    explanation=primary_intent.get("explanation"),
+                    # Store all intents for multi-intent processing
+                    additional_data={"all_intents": intents}
                 )
             except json.JSONDecodeError:
                 print(response)
@@ -80,6 +96,58 @@ class IntentDetectionService(Loggable):
                 explanation=f"Error in intent detection: {str(e)}"
             )
     
+    async def generate_followup_message(self, user_message: str, agent: Any, knowledge_topics: list[str]) -> str:
+        """Generate a creative, LLM-based follow-up message for the smart chat flow."""
+        agent_name = getattr(agent, 'name', None) or (agent.get('name') if isinstance(agent, dict) else None) or "(no name)"
+        agent_description = getattr(agent, 'description', None) or (agent.get('description') if isinstance(agent, dict) else None) or "(no description)"
+        agent_config = getattr(agent, 'config', None) or (agent.get('config') if isinstance(agent, dict) else None) or {}
+        specialties = agent_config.get('specialties', None) or "(not set)"
+        skills = agent_config.get('skills', None) or "(not set)"
+        topics_str = ", ".join(knowledge_topics) if knowledge_topics else "(none yet)"
+        prompt = f'''
+You are a friendly, creative assistant helping a user define and improve an AI agent. The user just sent this message:
+"""
+{user_message}
+"""
+
+Here is the current state of the agent:
+- Name: {agent_name}
+- Description: {agent_description}
+- Specialties: {specialties}
+- Skills: {skills}
+- Knowledge topics: {topics_str}
+
+Your job is to suggest a friendly, creative follow-up question or suggestion to help the user further define, improve, or expand their agent. Always encourage the user to continue, and never let the conversation end abruptly. If the agent is missing important information (like specialties, description, or knowledge), ask about that. Otherwise, suggest ways the user can make the agent more useful, unique, or interesting. Be conversational and engaging.
+
+Respond with only the follow-up message, no preamble or explanation.
+'''
+        llm_request = BaseRequest(
+            arguments={
+                "messages": [
+                    {"role": "system", "content": "You are a creative assistant for agent configuration."},
+                    {"role": "user", "content": prompt}
+                ],
+                "temperature": 0.7,
+                "max_tokens": 120
+            }
+        )
+        try:
+            response = await self.llm.query(llm_request)
+            content = response.content
+            if isinstance(content, str):
+                return content.strip()
+            elif isinstance(content, dict):
+                # Some LLMs return {"choices": [{"message": {"content": ...}}]}
+                try:
+                    return content["choices"][0]["message"]["content"].strip()
+                except Exception:
+                    return str(content)
+            else:
+                return str(content)
+        except Exception as e:
+            self.error(f"Error generating follow-up message: {e}")
+            return "What else would you like to add or improve about your agent?"
+    
     def _build_intent_detection_prompt(
         self,
         user_message: str,
@@ -87,7 +155,6 @@ class IntentDetectionService(Loggable):
         domain_tree: DomainKnowledgeTree | None
     ) -> str:
         """Build the LLM prompt for intent detection."""
-        
         # Convert domain tree to JSON for context
         tree_json = "null"
         if domain_tree:
@@ -95,24 +162,24 @@ class IntentDetectionService(Loggable):
                 tree_json = json.dumps(domain_tree.model_dump(), indent=2)
             except Exception:
                 tree_json = "null"
-        
         # Build chat history context
         history_context = ""
         if chat_history:
             recent_messages = chat_history[-3:]  # Only include recent context
-            history_context = "\\n".join([
+            history_context = "\n".join([
                 f"{msg.role}: {msg.content}" 
                 for msg in recent_messages
             ])
-        
-        prompt = f"""You are an assistant managing an agent's domain knowledge. 
-Given the following user message and context, classify the user's intent as one of:
+        prompt = f"""You are an assistant managing an agent's profile and domain knowledge. 
+Given the following user message and context, identify ALL intents present in the message. A single message can have multiple intents.
 
+Available intents:
 1. "add_information" - User wants to add a new topic or knowledge area to the agent's expertise
 2. "refresh_domain_knowledge" - User wants to update, reorganize, or regenerate the knowledge structure  
-3. "general_query" - User is asking a question or making a request unrelated to knowledge management
+3. "update_agent_properties" - User wants to update the agent's name, role, specialties, or skills
+4. "general_query" - User is asking a question or making a request unrelated to knowledge management
 
-Extract any relevant entities (e.g., topic to add, parent category, etc.).
+Extract any relevant entities (e.g., topic, name, role, specialties, skills, etc.).
 
 Recent chat history:
 {history_context}
@@ -122,23 +189,34 @@ Current domain knowledge tree:
 
 User message: "{user_message}"
 
-Analyze the message and respond in this exact JSON format:
+Respond in this exact JSON format with an array of intents (even if just one):
 {{
-  "intent": "add_information|refresh_domain_knowledge|general_query",
-  "entities": {{
-    "topic": "topic name if adding information",
-    "parent": "parent topic if specified", 
-    "details": "additional details if provided"
-  }},
-  "confidence": 0.0-1.0,
-  "explanation": "brief explanation of why this intent was detected"
+  "intents": [
+    {{
+      "intent": "add_information|refresh_domain_knowledge|update_agent_properties|general_query",
+      "entities": {{
+        "topic": "...",
+        "name": "...",
+        "role": "...",
+        "specialties": "...",
+        "skills": "..."
+      }},
+      "confidence": 0.0-1.0,
+      "explanation": "brief explanation"
+    }}
+  ]
 }}
 
 Examples:
-- "Can you help me with financial modeling?" → general_query
-- "Add dividend analysis to your knowledge" → add_information with topic="dividend analysis"
-- "Update your knowledge about stock analysis" → refresh_domain_knowledge  
-- "I want you to know about cryptocurrency" → add_information with topic="cryptocurrency"
+- "I want to call my agent Jason" → [{{intent: "update_agent_properties", entities: {{name: "Jason"}}}}]
+- "I want Jason to be good at anti-money laundering" → [{{intent: "update_agent_properties", entities: {{name: "Jason", specialties: "anti-money laundering"}}}}, {{intent: "add_information", entities: {{topic: "anti-money laundering"}}}}]
+- "I want Jason is an expert in anti money laundering" → [{{intent: "update_agent_properties", entities: {{name: "Jason", specialties: "anti money laundering"}}}}, {{intent: "add_information", entities: {{topic: "anti money laundering"}}}}]
+- "Make Jason skilled in compliance and risk management" → [{{intent: "update_agent_properties", entities: {{name: "Jason", specialties: "compliance and risk management"}}}}, {{intent: "add_information", entities: {{topic: "compliance and risk management"}}}}]
+- "Add dividend analysis to your knowledge" → [{{intent: "add_information", entities: {{topic: "dividend analysis"}}}}]
+- "Update your knowledge about stock analysis" → [{{intent: "refresh_domain_knowledge", entities: {{}}}}]
+- "Can you help me with financial modeling?" → [{{intent: "general_query", entities: {{}}}}]
+
+IMPORTANT: When someone wants to give an agent expertise/skills/specialties in a domain (phrases like "good at", "expert in", "skilled in"), this should ALWAYS trigger BOTH update_agent_properties AND add_information intents - one to update the agent's profile and one to add the topic to domain knowledge.
 """
         return prompt
     

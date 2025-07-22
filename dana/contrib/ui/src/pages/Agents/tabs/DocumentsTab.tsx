@@ -64,10 +64,6 @@ const DocumentsTab: React.FC = () => {
     setSearchTerm(e.target.value);
   };
 
-  const handleRefresh = () => {
-    loadDocuments();
-  };
-
   const handleAddFileClick = () => {
     fileInputRef.current?.click();
   };
@@ -113,9 +109,6 @@ const DocumentsTab: React.FC = () => {
           <div className="text-lg font-semibold text-gray-700">Documents</div>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" onClick={handleRefresh} disabled={loading}>
-            {loading ? 'Loading...' : 'Refresh'}
-          </Button>
           <Button onClick={handleAddFileClick}>
             <IconPlus className="mr-2 w-4 h-4" />
             Add file

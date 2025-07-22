@@ -456,6 +456,7 @@ class IntentDetectionResponse(BaseModel):
     entities: dict[str, Any] = {}  # Extracted entities (topic, parent, etc.)
     confidence: float | None = None
     explanation: str | None = None
+    additional_data: dict[str, Any] = {}  # Store additional intents and other data
 
 
 class DomainKnowledgeUpdateRequest(BaseModel):
