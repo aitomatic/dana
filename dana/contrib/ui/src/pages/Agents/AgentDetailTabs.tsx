@@ -5,6 +5,8 @@ import DocumentsTab from './tabs/DocumentsTab';
 import WorkflowsTab from './tabs/WorkflowsTab';
 import ToolsTab from './tabs/ToolsTab';
 import CodeTab from './tabs/CodeTab';
+import { Brain, Code2, FilesIcon, List } from 'lucide-react';
+import { Network, Tools } from 'iconoir-react';
 
 const TABS = [
   'Overview',
@@ -15,6 +17,15 @@ const TABS = [
   'Code',
 ];
 
+const TAB_ICONS = {
+  Overview: <List className='w-4 h-4' />,
+  'Domain Knowledge': <Brain className='w-4 h-4' />,
+  Documents: <FilesIcon className='w-4 h-4' />,
+  Workflows: <Network className='w-4 h-4' />,
+  Tools: <Tools className='w-4 h-4' />,
+  Code: <Code2 className='w-4 h-4' />,
+};
+
 export const AgentDetailTabs: React.FC<{
   tpl: any;
   onShowComparison: () => void;
@@ -22,15 +33,16 @@ export const AgentDetailTabs: React.FC<{
 }> = ({ tpl, onShowComparison, children }) => {
   const [activeTab, setActiveTab] = useState('Overview');
   return (
-    <div className="flex-1 flex flex-col overflow-auto h-full gap-2 pt-2">
+    <div className="flex-1 flex flex-col overflow-auto h-full gap-2 p-2">
       {/* Tab bar */}
       <div className="flex gap-2">
         {TABS.map(tab => (
           <button
             key={tab}
-            className={`cursor-pointer px-4 py-2 font-medium transition-colors ${activeTab === tab ? 'bg-white rounded-sm shadow' : 'border-transparent text-gray-500'}`}
+            className={`cursor-pointer px-4 py-2 font-medium text-sm flex items-center gap-2 transition-colors ${activeTab === tab ? 'bg-white rounded-sm shadow' : 'border-transparent text-gray-500'}`}
             onClick={() => setActiveTab(tab)}
           >
+            {TAB_ICONS[tab as keyof typeof TAB_ICONS]}
             {tab}
           </button>
         ))}
