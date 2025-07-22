@@ -79,5 +79,10 @@ def use_function(context: SandboxContext, function_name: str, *args, _name: str 
         resource.query = create_function_with_better_doc_string(resource.query, doc_string)
         context.set_resource(_name, resource)
         return resource
+    elif function_name.lower() == "human":
+        from dana.common.resource.human_resource import HumanResource
+        resource = HumanResource(*args, name=_name, **kwargs)
+        context.set_resource(_name, resource)
+        return resource
     else:
         raise NotImplementedError(f"Function {function_name} not implemented")
