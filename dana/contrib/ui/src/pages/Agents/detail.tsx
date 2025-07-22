@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { IconArrowLeft } from '@tabler/icons-react';
 import { useAgentStore } from '@/stores/agent-store';
-import { ArrowLeft } from 'iconoir-react';
 import { AgentPerformanceComparisonModal } from './AgentPerformanceComparisonModal';
 import { AgentDetailHeader } from './AgentDetailHeader';
 import { AgentDetailSidebar } from './AgentDetailSidebar';
@@ -81,8 +78,7 @@ export default function AgentDetailPage() {
   const navigate = useNavigate();
   const { fetchAgent, isLoading, error } = useAgentStore();
   const [agent, setAgent] = useState<any>(null);
-  const [view, setView] = useState<'select' | 'train'>('select');
-  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [selectedTemplate] = useState<any>(null);
   const [showComparison, setShowComparison] = useState(false);
   const tpl = selectedTemplate || TEMPLATES[0];
 

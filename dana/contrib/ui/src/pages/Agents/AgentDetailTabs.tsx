@@ -22,13 +22,13 @@ export const AgentDetailTabs: React.FC<{
 }> = ({ tpl, onShowComparison, children }) => {
   const [activeTab, setActiveTab] = useState('Overview');
   return (
-    <div className="flex-1 flex flex-col overflow-auto h-full">
+    <div className="flex-1 flex flex-col overflow-auto h-full gap-2 pt-2">
       {/* Tab bar */}
       <div className="flex gap-2">
         {TABS.map(tab => (
           <button
             key={tab}
-            className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === tab ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-blue-600'}`}
+            className={`cursor-pointer px-4 py-2 font-medium transition-colors ${activeTab === tab ? 'bg-white rounded-sm shadow' : 'border-transparent text-gray-500'}`}
             onClick={() => setActiveTab(tab)}
           >
             {tab}
