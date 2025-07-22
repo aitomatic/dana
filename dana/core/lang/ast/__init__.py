@@ -452,6 +452,7 @@ class StructField:
 
     name: str
     type_hint: TypeHint
+    comment: str | None = None  # Field description from inline comment
     location: Location | None = None
 
 

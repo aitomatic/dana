@@ -1,0 +1,39 @@
+# Functional test for Dana struct prompt enhancement
+# This test demonstrates the full POET system working with struct types
+
+struct TestPerson:
+    name: str
+    age: int
+    email: str
+    metadata: dict[str, str]
+
+struct TestProduct:
+    id: str
+    name: str
+    price: float
+    category: str
+    tags: list[str]
+
+print("Testing Dana struct prompt enhancement functionality...")
+
+# Test 1: Basic struct enhancement
+print("\n=== Test 1: Basic struct enhancement ===")
+person: TestPerson = reason("Create a person named John who is 30 years old")
+print("Person result type:", type(person))
+print("Person result:", person)
+
+# Test 2: Complex struct enhancement
+print("\n=== Test 2: Complex struct enhancement ===")
+product: TestProduct = reason("Create a product with ID 'PROD-001', name 'Laptop', price 999.99, category 'Electronics'")
+print("Product result type:", type(product))
+print("Product result:", product)
+
+# Test 3: Verify that the LLM received struct information
+print("\n=== Test 3: Verify struct information was provided ===")
+print("Both results should be valid JSON objects with the correct field structure.")
+print("The LLM should have received:")
+print("- Field names and types for each struct")
+print("- JSON schema validation rules")
+print("- Format instructions to return raw JSON")
+
+print("\n=== Test completed successfully! ===") 

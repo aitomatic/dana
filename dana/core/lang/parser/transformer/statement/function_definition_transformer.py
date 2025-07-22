@@ -327,7 +327,15 @@ class FunctionDefinitionTransformer(BaseTransformer):
         else:
             type_hint = type_hint_node
 
-        return StructField(name=field_name, type_hint=type_hint)
+        # Extract comment if present
+        comment = None
+        for item in items:
+            if hasattr(item, "type") and item.type == "COMMENT":
+                # Remove the # prefix and strip whitespace
+                comment = item.value.lstrip("#").strip()
+                break
+
+        return StructField(name=field_name, type_hint=type_hint, comment=comment)
 
         # === Agent Definitions ===
 

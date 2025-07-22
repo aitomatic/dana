@@ -123,7 +123,8 @@ def _extract_task_signature(domain: str,
 
     Provide a structured response with the extracted information.
     """
-    return cast(TaskSignature, reason(prompt))
+    result: TaskSignature = reason(prompt)
+    return result
 
 def _simulate_dk_curation(domain: str,
                           task: str,
@@ -162,7 +163,8 @@ def _simulate_dk_curation(domain: str,
 
     Provide the simulated structured knowledge asset that would result from this processing.
     """
-    return cast(KnowledgeAsset, reason(prompt))
+    result: KnowledgeAsset = reason(prompt)
+    return result
 
 def _simulate_ck_curation(domain: str,
                           task: str,
@@ -201,7 +203,8 @@ def _simulate_ck_curation(domain: str,
 
     Provide the simulated contextual knowledge asset that would result from this generation.
     """
-    return cast(KnowledgeAsset, reason(prompt))
+    result: KnowledgeAsset = reason(prompt)
+    return result
 
 def _simulate_ak_domain_knowledge(domain: str, task: str, task_sig: TaskSignature, kb_assets: dict[str, KnowledgeAsset], improvements: str) -> KnowledgeAsset:
     """
@@ -216,7 +219,8 @@ def _simulate_ak_domain_knowledge(domain: str, task: str, task_sig: TaskSignatur
     Improvements: {improvements}
     Simulate a KnowledgeAsset of type 'Domain Ontology' and source 'Aitomatic' with relevant metadata.
     """
-    return cast(KnowledgeAsset, reason(prompt))
+    result: KnowledgeAsset = reason(prompt)
+    return result
 
 def _simulate_ak_task_knowledge(domain: str, task: str, task_sig: TaskSignature, kb_assets: dict[str, KnowledgeAsset], improvements: str) -> KnowledgeAsset:
     """
@@ -231,7 +235,8 @@ def _simulate_ak_task_knowledge(domain: str, task: str, task_sig: TaskSignature,
     Improvements: {improvements}
     Simulate a KnowledgeAsset of type 'Workflow' and source 'Aitomatic' with relevant metadata.
     """
-    return cast(KnowledgeAsset, reason(prompt))
+    result: KnowledgeAsset = reason(prompt)
+    return result
 
 def _simulate_agent(domain: str, task: str, kb_assets: dict[str, KnowledgeAsset]) -> AgentRunResult:
     """
@@ -245,7 +250,8 @@ def _simulate_agent(domain: str, task: str, kb_assets: dict[str, KnowledgeAsset]
     Describe how the agent would use each asset, how they are fused, and the expected performance.
     Provide the simulated agent run result with performance metrics and outcomes.
     """
-    return cast(AgentRunResult, reason(prompt))
+    result: AgentRunResult = reason(prompt)
+    return result
 
 def _evaluate_agent_run(domain: str,
                         task: str,
@@ -278,7 +284,8 @@ def _evaluate_agent_run(domain: str,
 
     Provide specific scores and detailed reasoning for each dimension.
     """
-    return cast(EvaluationSummary, reason(prompt))
+    result: EvaluationSummary = reason(prompt)
+    return result
 
 def _emit_recipe(eval_summary: EvaluationSummary, kb_assets: dict[str, KnowledgeAsset]) -> KnowledgeRecipe:
     """
@@ -309,4 +316,5 @@ def _emit_recipe(eval_summary: EvaluationSummary, kb_assets: dict[str, Knowledge
     - Sample structured queries (SQL, graph, KV, vector) based on agent behavior
     Return a `KnowledgeRecipe` with rich, multi-paragraph content per field.
     """
-    return cast(KnowledgeRecipe, reason(prompt))
+    result: KnowledgeRecipe = reason(prompt)
+    return result

@@ -61,8 +61,8 @@ class PromptEnhancer(Loggable):
         elif expected_type in ["list", "dict", "tuple"]:
             return self._enhance_for_structure(prompt, type_context)
         else:
-            self.debug(f"No specific enhancement for type: {expected_type}")
-            return prompt
+            # Check if this is a Dana struct type
+            return self._enhance_for_dana_struct(prompt, type_context)
 
     def _enhance_for_boolean(self, prompt: str, context: TypeContext) -> str:
         """Enhance prompt to return clear boolean response."""
@@ -134,6 +134,74 @@ class PromptEnhancer(Loggable):
             return enhanced
 
         return prompt
+
+    def _enhance_for_dana_struct(self, prompt: str, context: TypeContext) -> str:
+        """Enhance prompt to return structured data matching Dana struct schema.
+
+        Args:
+            prompt: Original prompt text
+            context: Type context with expected struct type
+
+        Returns:
+            Enhanced prompt with struct schema information
+        """
+        expected_type = context.expected_type
+
+        try:
+            # Import here to avoid circular imports
+            from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+
+            # Check if this is a registered Dana struct type
+            if not StructTypeRegistry.exists(expected_type):
+                self.debug(f"Unknown struct type: {expected_type}")
+                return prompt
+
+            # Get the struct schema
+            struct_schema = StructTypeRegistry.get_schema(expected_type)
+            struct_type = StructTypeRegistry.get(expected_type)
+
+            if not struct_schema or not struct_type:
+                self.debug(f"Could not get schema for struct type: {expected_type}")
+                return prompt
+
+            # Build field description
+            field_descriptions = []
+            for field_name in struct_type.field_order:
+                field_description = struct_type.get_field_description(field_name)
+                field_descriptions.append(f"- {field_description}")
+
+            fields_text = "\n".join(field_descriptions)
+
+            # Debug output to verify field descriptions
+            self.debug(f"Field descriptions for {expected_type}:")
+            for desc in field_descriptions:
+                self.debug(f"  {desc}")
+
+            # Create enhancement with struct information
+            enhancement = f"""
+IMPORTANT: You must respond with a valid JSON object that matches the {expected_type} struct schema.
+
+{expected_type} struct fields:
+{fields_text}
+
+JSON Schema:
+{struct_schema}
+
+Return format: A valid JSON object with all required fields properly typed.
+Do not include markdown formatting, code fences, or explanations.
+Return raw JSON only that can be parsed into a {expected_type} instance.
+"""
+
+            enhanced = f"""{prompt}
+
+{enhancement}"""
+
+            self.debug(f"Enhanced Dana struct prompt for {expected_type}: {len(enhanced)} chars")
+            return enhanced
+
+        except Exception as e:
+            self.debug(f"Error enhancing prompt for Dana struct {expected_type}: {e}")
+            return prompt
 
     def _build_enhancement_patterns(self) -> dict[str, dict[str, str]]:
         """Build library of enhancement patterns for different types."""

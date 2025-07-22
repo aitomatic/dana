@@ -30,6 +30,7 @@ class StructType:
     name: str
     fields: dict[str, str]  # Maps field name to type name string
     field_order: list[str]  # Maintain field declaration order
+    field_comments: dict[str, str]  # Maps field name to comment/description
 
     def __post_init__(self):
         """Validate struct type after initialization."""
@@ -42,6 +43,10 @@ class StructType:
         # Ensure field_order matches fields
         if set(self.field_order) != set(self.fields.keys()):
             raise ValueError(f"Field order mismatch in struct '{self.name}'")
+
+        # Initialize field_comments if not provided
+        if not hasattr(self, 'field_comments'):
+            self.field_comments = {}
 
     def validate_instantiation(self, args: dict[str, Any]) -> bool:
         """Validate that provided arguments match struct field requirements."""
@@ -112,6 +117,20 @@ class StructType:
     def get_field_type(self, field_name: str) -> str | None:
         """Get the type name for a specific field."""
         return self.fields.get(field_name)
+
+    def get_field_comment(self, field_name: str) -> str | None:
+        """Get the comment/description for a specific field."""
+        return self.field_comments.get(field_name)
+
+    def get_field_description(self, field_name: str) -> str:
+        """Get a formatted description of a field including type and comment."""
+        field_type = self.fields.get(field_name, "unknown")
+        comment = self.field_comments.get(field_name)
+        
+        if comment:
+            return f"{field_name}: {field_type}  # {comment}"
+        else:
+            return f"{field_name}: {field_type}"
 
     def __repr__(self) -> str:
         field_strs = [f"{name}: {type_name}" for name, type_name in self.fields.items()]
@@ -476,6 +495,7 @@ def create_struct_type_from_ast(struct_def) -> StructType:
     # Convert StructField list to dict and field order
     fields = {}
     field_order = []
+    field_comments = {}
 
     for field in struct_def.fields:
         if field.type_hint is None:
@@ -484,8 +504,12 @@ def create_struct_type_from_ast(struct_def) -> StructType:
             raise ValueError(f"Field {field.name} type hint {field.type_hint} has no name attribute")
         fields[field.name] = field.type_hint.name  # Store the type name string, not the TypeHint object
         field_order.append(field.name)
+        
+        # Store field comment if present
+        if field.comment:
+            field_comments[field.name] = field.comment
 
-    return StructType(name=struct_def.name, fields=fields, field_order=field_order)
+    return StructType(name=struct_def.name, fields=fields, field_order=field_order, field_comments=field_comments)
 
 
 # Convenience functions for common operations
