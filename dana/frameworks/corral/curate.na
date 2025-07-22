@@ -15,6 +15,7 @@ struct KnowledgeRecipe:
     performance_notes: str          # Latency, confidence, resource
     runtime_queries: list[str]      # NEW: executable examples (optional)
 
+
 struct KnowledgeAsset:
     id: str
     type: str                       # One of: ["Log Data", "Manual", "IoT Stream", "Workflow", "Domain Ontology", "PromptTemplate", ...]
@@ -318,3 +319,4 @@ def _emit_recipe(eval_summary: EvaluationSummary, kb_assets: dict[str, Knowledge
     """
     result: KnowledgeRecipe = reason(prompt)
     return result
+

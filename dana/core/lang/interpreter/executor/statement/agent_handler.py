@@ -215,6 +215,10 @@ class AgentHandler(Loggable):
             struct_type = register_struct_from_ast(node)
             self.debug(f"Registered struct type: {struct_type.name}")
 
+            # Make the struct type available in the local context for imports
+            # This allows structs to be imported like functions
+            context.set(f"local:{node.name}", struct_type)
+
             # Trace struct registration
             self._trace_resource_operation("struct", node.name, len(node.fields), 0)
 

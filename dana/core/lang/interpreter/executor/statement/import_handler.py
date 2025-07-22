@@ -308,6 +308,16 @@ class ImportHandler(Loggable):
             if not hasattr(module, name):
                 raise SandboxError(f"Cannot import name '{name}' from Dana module '{absolute_module_name}'")
 
+            # Enforce underscore privacy rule: reject names starting with '_'
+            if name.startswith("_"):
+                raise SandboxError(
+                    f"Cannot import name '{name}' from Dana module '{absolute_module_name}': names starting with '_' are private"
+                )
+
+            # Additional check: respect module's __exports__ if available
+            if hasattr(module, "__exports__") and name not in module.__exports__:
+                raise SandboxError(f"Cannot import name '{name}' from Dana module '{absolute_module_name}': not in module exports")
+
             # Get the object from the module
             obj = getattr(module, name)
 

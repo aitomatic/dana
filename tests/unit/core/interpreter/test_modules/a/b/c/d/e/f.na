@@ -1,0 +1,9 @@
+# f.na - Test Dana module for 6-component imports (a.b.c.d.e.f)
+
+def extremely_deep_function() -> str:
+    return "Hello from extremely deep module!"
+
+public:EXTREMELY_DEEP_CONSTANT = "Extremely deep level constant"
+
+def calculate_deep_depth() -> int:
+    return 6  # Represents nesting depth 

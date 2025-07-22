@@ -380,7 +380,9 @@ NOT_OP.2: "not"
 AT: "@"
 
 simple_import: "import" module_path [AS NAME]
-from_import: "from" module_path "import" NAME [AS NAME]
+from_import: "from" module_path "import" import_name_list
+import_name_list: import_name ("," import_name)*
+import_name: NAME [AS NAME]
 
 // ===== DECORATORS =====
 decorators: decorator+
