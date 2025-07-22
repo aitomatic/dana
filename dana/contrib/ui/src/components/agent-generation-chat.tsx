@@ -632,7 +632,7 @@ const AgentGenerationChat = ({
 
   return (
     <div
-      className={cn('flex flex-col h-full bg-white rounded-lg border border-gray-200', className)}
+      className={cn('flex flex-col h-full bg-white ', className)}
     >
       {/* Messages */}
       <div className="overflow-y-auto flex-1 p-4 space-y-4">
@@ -677,26 +677,26 @@ const AgentGenerationChat = ({
 
                       return shouldShowButton;
                     })() && (
-                      <div className="pt-3 mt-3 border-t border-gray-200">
-                        <Button
-                          onClick={handleProceedToBuild}
-                          disabled={isGenerating}
-                          className="px-4 py-2 w-full text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {isGenerating ? (
-                            <>
-                              <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                              Training Georgia...
-                            </>
-                          ) : (
-                            <>
-                              <Send className="mr-2 w-4 h-4" />
-                              Train Georgia
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    )}
+                        <div className="pt-3 mt-3 border-t border-gray-200">
+                          <Button
+                            onClick={handleProceedToBuild}
+                            disabled={isGenerating}
+                            className="px-4 py-2 w-full text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isGenerating ? (
+                              <>
+                                <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                                Training Georgia...
+                              </>
+                            ) : (
+                              <>
+                                <Send className="mr-2 w-4 h-4" />
+                                Train Georgia
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      )}
 
                     {/* Show Deep Training button after training is complete */}
                     {(() => {
@@ -707,26 +707,26 @@ const AgentGenerationChat = ({
 
                       return shouldShowDeepTrainingButton;
                     })() && (
-                      <div className="pt-3 mt-3 border-t border-gray-200">
-                        <Button
-                          onClick={handleDeepTraining}
-                          disabled={isGenerating}
-                          className="px-4 py-2 w-full text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {isGenerating ? (
-                            <>
-                              <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                              Starting Deep Training...
-                            </>
-                          ) : (
-                            <>
-                              <Send className="mr-2 w-4 h-4" />
-                              Deep Training
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    )}
+                        <div className="pt-3 mt-3 border-t border-gray-200">
+                          <Button
+                            onClick={handleDeepTraining}
+                            disabled={isGenerating}
+                            className="px-4 py-2 w-full text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isGenerating ? (
+                              <>
+                                <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                                Starting Deep Training...
+                              </>
+                            ) : (
+                              <>
+                                <Send className="mr-2 w-4 h-4" />
+                                Deep Training
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      )}
                   </div>
                 )}
                 <div
