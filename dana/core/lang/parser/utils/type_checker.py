@@ -45,6 +45,7 @@ from dana.core.lang.ast import (
     RaiseStatement,
     ReturnStatement,
     SetLiteral,
+    StructDefinition,
     SubscriptExpression,
     TryBlock,
     TupleLiteral,
@@ -149,6 +150,8 @@ class TypeChecker:
             self.check_try_block(statement)
         elif isinstance(statement, FunctionDefinition):
             self.check_function_definition(statement)
+        elif isinstance(statement, StructDefinition):
+            self.check_struct_definition(statement)
         elif isinstance(statement, ImportStatement):
             self.check_import_statement(statement)
         elif isinstance(statement, ImportFromStatement):
@@ -332,6 +335,21 @@ class TypeChecker:
 
         # Restore the parent environment
         self.environment = self.environment.parent or TypeEnvironment()
+
+    def check_struct_definition(self, node: StructDefinition) -> None:
+        """Check a struct definition for type errors."""
+        # Validate that all fields have proper type hints
+        for field in node.fields:
+            if field.type_hint is None:
+                self.add_error(f"Field '{field.name}' in struct '{node.name}' must have a type annotation")
+            else:
+                # Validate that the type hint refers to a valid type
+                try:
+                    # For now, just ensure the type hint has a name
+                    if not hasattr(field.type_hint, "name") or not field.type_hint.name:
+                        self.add_error(f"Invalid type hint for field '{field.name}' in struct '{node.name}'")
+                except Exception:
+                    self.add_error(f"Invalid type hint for field '{field.name}' in struct '{node.name}'")
 
     def check_import_statement(self, node: ImportStatement) -> None:
         """Check an import statement for type errors."""

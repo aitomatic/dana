@@ -1,0 +1,8 @@
+"""
+Test module a.b.c.d for testing 4-component imports.
+"""
+
+def very_deep_function() -> str:
+    return "Hello from very deep module!"
+
+VERY_DEEP_CONSTANT: str = "a.b.c.d constant" 

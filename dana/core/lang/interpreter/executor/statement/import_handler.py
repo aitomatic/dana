@@ -355,16 +355,14 @@ class ImportHandler(Loggable):
             )
 
             # Register in the appropriate scope
-            if self.function_registry.register(
+            self.function_registry.register(
                 name=context_name,
                 func=wrapped_func,
-                function_type=FunctionType.PYTHON,
-                scope="local",
+                func_type=FunctionType.PYTHON,
+                namespace="local",
                 overwrite=True,  # Allow overwriting for imports
-            ):
-                self.debug(f"Registered imported function '{context_name}' from module '{module_name}'")
-            else:
-                self.warning(f"Failed to register imported function '{context_name}'")
+            )
+            self.debug(f"Registered imported function '{context_name}' from module '{module_name}'")
 
         except Exception as reg_err:
             # Registration failed, but import to context succeeded

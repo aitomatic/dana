@@ -1,0 +1,14 @@
+"""
+Test module a.b.c.d.e.f.g for testing 7-component imports.
+"""
+
+def ultra_deep_function() -> str:
+    return "Hello from ultra deep module!"
+
+def calculate_ultra_depth() -> int:
+    return 7
+
+def describe_location() -> str:
+    return "Seven levels deep in the import hierarchy"
+
+ULTRA_DEEP_CONSTANT: str = "Ultra deep level constant"

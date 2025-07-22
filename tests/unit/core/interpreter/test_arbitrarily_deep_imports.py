@@ -10,6 +10,11 @@ class TestArbitrarilyDeepImports:
 
     def setup_method(self):
         """Set up test fixtures with proper DANAPATH."""
+        # Clear module registry to ensure test isolation
+        from dana.core.runtime.modules.core import reset_module_system
+
+        reset_module_system()
+
         # Get the path to test_modules directory
         current_dir = os.path.dirname(os.path.abspath(__file__))
         test_modules_path = os.path.join(current_dir, "test_modules")

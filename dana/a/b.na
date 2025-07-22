@@ -1,0 +1,12 @@
+"""
+Test module a.b for testing 2-component imports.
+"""
+
+def deep_function() -> str:
+    return "Hello from deep module!"
+
+def nested_dana_function() -> str:
+    return "Hello from nested Dana module!"
+
+DEEP_CONSTANT: str = "Deep level constant"
+NESTED_CONSTANT: str = "Nested Dana constant" 

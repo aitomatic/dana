@@ -1,0 +1,6 @@
+"""
+Test module a.b.c.d.e for testing 5-component imports.
+"""
+
+def module_function() -> str:
+    return "from a.b.c.d.e" 

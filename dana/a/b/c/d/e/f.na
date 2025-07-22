@@ -1,0 +1,11 @@
+"""
+Test module a.b.c.d.e.f for testing 6-component imports.
+"""
+
+def extremely_deep_function() -> str:
+    return "Hello from extremely deep module!"
+
+def calculate_deep_depth() -> int:
+    return 6
+
+EXTREMELY_DEEP_CONSTANT: str = "Extremely deep level constant" 

@@ -51,10 +51,27 @@ def curate_knowledge_recipe(domain: str = "General",
     # 1. Extract task signature
     task_sig = _extract_task_signature(domain, task, "None suggested")
 
+    print(f"type of domain: {type(domain)}")
+    print(f"domain: {domain}")
+    print(f"type of task: {type(task)}")
+    print(f"task: {task}")
+    print(f"type of documentary_knowledge: {type(documentary_knowledge)}")
+    print(f"documentary_knowledge: {documentary_knowledge}")
+    print(f"type of include_iot_data: {type(include_iot_data)}")
+    print(f"include_iot_data: {include_iot_data}")
+    print(f"type of use_aitomatic_domain_knowledge: {type(use_aitomatic_domain_knowledge)}")
+    print(f"use_aitomatic_domain_knowledge: {use_aitomatic_domain_knowledge}")
+    print(f"type of use_aitomatic_task_knowledge: {type(use_aitomatic_task_knowledge)}")
+    print(f"use_aitomatic_task_knowledge: {use_aitomatic_task_knowledge}")
+    exit
+
     # 2. Curate enterprise (documentary) knowledge
     kb_assets = {}
     for asset in documentary_knowledge:
+        print("asset: ", asset)
         kb_assets[f"dk_{asset.type.lower().replace(' ', '_')}"] = asset
+    
+    print("kb_assets: ", kb_assets)
 
     # 3. Optionally ingest IoT data
     if include_iot_data:
