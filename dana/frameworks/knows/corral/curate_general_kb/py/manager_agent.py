@@ -8,6 +8,7 @@ Flow:
 4. Use senior agent to answer the generated questions
 """
 
+import asyncio
 import json
 import logging
 from pathlib import Path
@@ -34,13 +35,37 @@ class ManagerAgent:
         return domain_structure
     
     def generate_knowledge_for_area(self, area_name: str, key_topics: list):
+        
         questions = self.fresher_agent.generate_domain_questions(area_name, key_topics)
         answers = {}
-        for topic, questions in questions.get("questions_by_topics", {}).items():
-            answers[topic] = []
-            for question in questions:
-                answer = self.senior_agent.answer_domain_question(question)
-                answers[topic].append(answer)
+        semaphore = asyncio.Semaphore(4)
+
+        async def answer_question(topic, question):
+            async with semaphore:
+                print(f"Generating answer for question: {question}")
+                loop = asyncio.get_event_loop()
+                answer = await loop.run_in_executor(None, self.senior_agent.answer_domain_question, question)
+                print(f"Answer: {answer}")
+                return topic, answer
+
+        async def answer_all():
+            tasks = []
+            for topic, questions_ in questions.get("questions_by_topics", {}).items():
+                for question in questions_:
+                    tasks.append(answer_question(topic, question))
+            results = await asyncio.gather(*tasks)
+            grouped = {}
+            for topic, answer in results:
+                if topic not in grouped:
+                    grouped[topic] = []
+                grouped[topic].append(answer)
+            return grouped
+
+        # Run the async answer_all in the current (possibly sync) context
+        try:
+            answers = asyncio.run(answer_all())
+        except RuntimeError:
+            answers = asyncio.get_event_loop().run_until_complete(answer_all())
         questions["answers_by_topics"] = answers
         return questions
     

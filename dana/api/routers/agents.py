@@ -6,8 +6,12 @@ Thin routing layer that delegates business logic to services.
 import logging
 from typing import Any, List
 import os
-
-from fastapi import APIRouter, Depends, HTTPException, File, Form, UploadFile, Query
+import asyncio
+import concurrent.futures
+import json
+import math
+from pathlib import Path
+from fastapi import APIRouter, Depends, HTTPException, File, Form, UploadFile, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from dana.api.core.database import get_db
@@ -22,6 +26,13 @@ from dana.api.services.agent_service import get_agent_service, AgentService
 from dana.api.services.agent_manager import get_agent_manager, AgentManager
 from dana.api.services.document_service import get_document_service, DocumentService
 from dana.api.core.models import AgentChatHistory
+from dana.api.services.domain_knowledge_service import get_domain_knowledge_service, DomainKnowledgeService
+from dana.api.core.models import Agent
+from dana.frameworks.knows.corral.curate_general_kb.py.domain_knowledge_fresher_agent import DomainKnowledgeFresherAgent
+from dana.api.core.models import Agent
+from dana.frameworks.knows.corral.curate_general_kb.py.manager_agent import ManagerAgent
+import asyncio
+import threading
 
 logger = logging.getLogger(__name__)
 
@@ -970,7 +981,6 @@ async def upload_knowledge_file(
         logger.info(f"Uploading knowledge file: {file.filename}")
 
         # Parse conversation context and agent info
-        import json
         conv_context = json.loads(conversation_context) if conversation_context else []
         agent_data = json.loads(agent_info) if agent_info else {}
         
@@ -1302,3 +1312,96 @@ async def get_agent_chat_history(
         }
         for h in history
     ]
+
+def run_generation(agent_id: int):
+    # This function runs in a background thread
+    # Re-imports and DB session must be re-acquired in thread context
+    from sqlalchemy.orm import sessionmaker
+    from dana.api.core.database import engine
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    db_thread = SessionLocal()
+    try:
+        agent = db_thread.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            print(f"[generate-knowledge] Agent {agent_id} not found")
+            return
+        folder_path = agent.config.get("folder_path") if agent.config else None
+        if not folder_path:
+            folder_path = os.path.join("agents", f"agent_{agent_id}")
+            os.makedirs(folder_path, exist_ok=True)
+            print(f"[generate-knowledge] Created default folder_path: {folder_path}")
+        knows_folder = os.path.join(folder_path, "knows")
+        os.makedirs(knows_folder, exist_ok=True)
+        print(f"[generate-knowledge] Using knows folder: {knows_folder}")
+
+        role = agent.config.get("role") if agent.config and agent.config.get("role") else (agent.description or "Domain Expert")
+        topic = agent.config.get("topic") if agent.config and agent.config.get("topic") else (agent.name or "General Topic")
+        print(f"[generate-knowledge] Using topic: {topic}, role: {role}")
+
+        # Re-import domain_service and get tree in thread
+        from dana.api.services.domain_knowledge_service import DomainKnowledgeService
+        domain_service_thread = DomainKnowledgeService()
+        tree = asyncio.run(domain_service_thread.get_agent_domain_knowledge(agent_id, db_thread))
+        if not tree:
+            print(f"[generate-knowledge] Domain knowledge tree not found for agent {agent_id}")
+            return
+        print(f"[generate-knowledge] Loaded domain knowledge tree for agent {agent_id}")
+
+        def collect_leaf_paths(node, path_so_far):
+            path = path_so_far + [node.topic]
+            if not getattr(node, 'children', []):
+                return [(path, node)]
+            leaves = []
+            for child in getattr(node, 'children', []):
+                leaves.extend(collect_leaf_paths(child, path))
+            return leaves
+        leaf_paths = collect_leaf_paths(tree.root, [])
+        print(f"[generate-knowledge] Collected {len(leaf_paths)} leaf topics from tree")
+
+        manager = ManagerAgent(topic, role)
+        semaphore = asyncio.Semaphore(4)
+
+        async def generate_and_save_leaf(path, leaf_node):
+            area_name = " - ".join(path)
+            print(f"[generate-knowledge] Generating for leaf: {area_name}")
+            async with semaphore:
+                loop = asyncio.get_event_loop()
+                knowledge = await loop.run_in_executor(None, manager.generate_knowledge_for_area, area_name, [])
+                safe_area = area_name.replace("/", "_").replace(" ", "_").replace("-", "_")
+                file_name = f"{safe_area}.json"
+                output_path = os.path.join(knows_folder, file_name)
+                with open(output_path, "w", encoding="utf-8") as f:
+                    import json
+                    json.dump(knowledge, f, indent=2, ensure_ascii=False)
+                print(f"[generate-knowledge] Saved knowledge for {area_name} to {output_path}")
+
+        async def run_all():
+            tasks = [generate_and_save_leaf(path, leaf_node) for path, leaf_node in leaf_paths]
+            await asyncio.gather(*tasks)
+            print(f"[generate-knowledge] All leaf topics processed and saved.")
+
+        asyncio.run(run_all())
+    finally:
+        db_thread.close()
+        
+@router.post("/{agent_id}/generate-knowledge")
+async def generate_agent_knowledge(
+    agent_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    domain_service: DomainKnowledgeService = Depends(get_domain_knowledge_service),
+):
+    """
+    Start asynchronous background generation of domain knowledge for all leaf topics in the agent's domain knowledge tree using ManagerAgent.
+    Each leaf's knowledge is saved as a separate JSON file in the agent's knows folder.
+    The area name for LLM context is the full path (parent, grandparent, ...).
+    Runs up to 4 leaf generations in parallel.
+    """
+
+    # Start the background job
+    background_tasks.add_task(run_generation, agent_id)
+    return {
+        "success": True,
+        "message": "Knowledge generation started in background. Check logs for progress.",
+        "agent_id": agent_id
+    }

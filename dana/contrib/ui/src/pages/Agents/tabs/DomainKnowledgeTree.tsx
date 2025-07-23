@@ -99,12 +99,24 @@ interface DomainKnowledgeTreeProps {
   agentId?: string | number;
 }
 
+// Add this function to call the API
+async function triggerGenerateKnowledge(agentId: string | number) {
+  const response = await fetch(`/agents/${agentId}/generate-knowledge`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) throw new Error('Failed to trigger knowledge generation');
+  return response.json();
+}
+
 const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) => {
   const [nodes, setNodes] = useState<FlowNode[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [generateMsg, setGenerateMsg] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const nodeTypes = {
@@ -231,6 +243,21 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     setSelectedNodeId(null);
   };
 
+  // Handler for the button
+  const handleGenerateKnowledge = async () => {
+    if (!agentId) return;
+    setGenerating(true);
+    setGenerateMsg(null);
+    try {
+      const result = await triggerGenerateKnowledge(agentId);
+      setGenerateMsg(result.message || 'Generation started!');
+    } catch (err) {
+      setGenerateMsg('Failed to start generation');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   // Show loading state
   if (loading) {
     return (
@@ -252,6 +279,18 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           Start a conversation with the agent to build domain knowledge automatically,
           or use the smart chat feature to add specific expertise areas.
         </div>
+        {agentId && (
+          <button
+            onClick={handleGenerateKnowledge}
+            disabled={generating}
+            className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 disabled:opacity-50"
+          >
+            {generating ? 'Generating...' : 'Generate Domain Knowledge'}
+          </button>
+        )}
+        {generateMsg && (
+          <div className="mt-2 text-xs text-gray-600">{generateMsg}</div>
+        )}
       </div>
     );
   }
@@ -268,12 +307,38 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           Start a conversation with the agent to build domain knowledge automatically,
           or use the smart chat feature to add specific expertise areas.
         </div>
+        {agentId && (
+          <button
+            onClick={handleGenerateKnowledge}
+            disabled={generating}
+            className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 disabled:opacity-50"
+          >
+            {generating ? 'Generating...' : 'Generate Domain Knowledge'}
+          </button>
+        )}
+        {generateMsg && (
+          <div className="mt-2 text-xs text-gray-600">{generateMsg}</div>
+        )}
       </div>
     );
   }
 
   return (
-    <div className='h-full w-full bg-white' style={{ position: 'relative' }} ref={containerRef}>
+    <div className='h-full w-full bg-white flex flex-col gap-4' style={{ position: 'relative' }} ref={containerRef}>
+      {agentId && (
+        <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 10 }}>
+          <button
+            onClick={handleGenerateKnowledge}
+            disabled={generating}
+            className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 disabled:opacity-50"
+          >
+            {generating ? 'Generating...' : 'Generate Domain Knowledge'}
+          </button>
+          {generateMsg && (
+            <div className="mt-2 text-xs text-gray-600">{generateMsg}</div>
+          )}
+        </div>
+      )}
       <ReactFlow
         nodes={nodes}
         edges={edges}
