@@ -1002,14 +1002,17 @@ async def upload_agent_document(
         else:
             folder_path = agent.folder_path
 
-        # Use the agent's folder as the upload directory
+        # Use the agent's docs folder as the upload directory
+        docs_folder = os.path.join(folder_path, "docs")
+        os.makedirs(docs_folder, exist_ok=True)
+        
         document = await document_service.upload_document(
             file=file.file,
             filename=file.filename,
             topic_id=topic_id,
             agent_id=agent_id,
             db_session=db,
-            upload_directory=folder_path
+            upload_directory=docs_folder
         )
         return document
     except HTTPException:
