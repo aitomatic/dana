@@ -1544,7 +1544,9 @@ async def generate_agent_files_from_prompt(
     prompt: str,
     messages: list[dict[str, Any]], 
     agent_summary: dict[str, Any],
-    multi_file: bool = False
+    multi_file: bool = False,
+    has_docs_folder: bool = False,
+    has_knows_folder: bool = False
 ) -> tuple[str, str | None, dict[str, Any] | None]:
     """
     Generate Dana agent files from a specific prompt, conversation messages, and agent summary.
@@ -1583,7 +1585,7 @@ async def generate_agent_files_from_prompt(
             return CodeHandler.get_fallback_template(), None, None
 
         # Create enhanced prompt with context
-        enhanced_prompt = _create_phase_2_prompt(prompt, messages, agent_summary, multi_file)
+        enhanced_prompt = _create_phase_2_prompt(prompt, messages, agent_summary, multi_file, has_docs_folder, has_knows_folder)
         print(f"Enhanced Phase 2 prompt: {enhanced_prompt}")
         logger.debug(f"Enhanced Phase 2 prompt: {enhanced_prompt[:200]}...")
 
@@ -1662,7 +1664,9 @@ def _create_phase_2_prompt(
     prompt: str, 
     messages: list[dict[str, Any]], 
     agent_summary: dict[str, Any], 
-    multi_file: bool
+    multi_file: bool,
+    has_docs_folder: bool = False,
+    has_knows_folder: bool = False
 ) -> str:
     """
     Create an enhanced prompt for Phase 2 agent generation.
@@ -1727,8 +1731,12 @@ def solve(self : {agent_class}, query: str) -> str:
 
 this_agent = {agent_class}()
 '''
+    
+    retrieval_function = "package.retrieval_result = str(knowledge.query(query))"
+    if has_knows_folder:
+        retrieval_function = "package.retrieval_result = str(knowledge.query(query)) + str(contextual_knowledge.query(query))"
 
-    methods_na = '''
+    methods_na = f'''
 from knowledge import knowledge
 from common import QUERY_GENERATION_PROMPT
 from common import QUERY_DECISION_PROMPT
@@ -1739,7 +1747,7 @@ def search_document(package: RetrievalPackage) -> RetrievalPackage:
     query = package.query
     if package.refined_query != "":
         query = package.refined_query
-    package.retrieval_result = str(knowledge.query(query))
+    {retrieval_function}
     return package
 
 def refine_query(package: RetrievalPackage) -> RetrievalPackage:
@@ -1775,8 +1783,15 @@ workflow = should_use_rag | refine_query | search_document | get_answer
             knowledges_na_lines.append(f'- {f}')
     else:
         knowledges_na_lines.append('- (No files currently listed. Add files to ./docs to make them available.)')
+    if not has_docs_folder:
+        knowledges_na_lines.append('- (No files currently listed. Add files to ./docs to make them available.)')
+    if not has_knows_folder:
+        knowledges_na_lines.append('- (No files currently listed. Add files to ./knows to make them available.)')
     knowledges_na_lines.append('"""\n')
-    knowledges_na_lines.append('knowledge = use("rag", sources=["./docs"])')
+    if has_docs_folder:
+        knowledges_na_lines.append('knowledge = use("rag", sources=["./docs"])')
+    if has_knows_folder:
+        knowledges_na_lines.append('contextual_knowledge = use("rag", sources=["./knows"])')
     knowledges_na = "\n".join(knowledges_na_lines)
 
     tools_na = ''  # No rag_resource here; left intentionally empty or for other tools

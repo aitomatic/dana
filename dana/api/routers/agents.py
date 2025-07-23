@@ -433,55 +433,6 @@ async def refine_agent_description(
         )
 
 
-@router.post("/generate-code", response_model=AgentGenerationResponse)
-async def generate_agent_code(
-    request: AgentCodeGenerationRequest,
-    agent_service = Depends(get_agent_service)
-):
-    """
-    Phase 2: Generate agent code from refined description.
-    
-    Args:
-        request: Agent code generation request
-        agent_service: Agent service dependency
-        
-    Returns:
-        AgentGenerationResponse with generated code
-    """
-    try:
-        logger.info(f"Received Phase 2 agent code generation request for agent {request.agent_id}")
-        
-        # This would typically load agent data from database
-        # For now, use placeholder data
-        agent_summary = {
-            "name": "Generated Agent",
-            "description": "A generated agent",
-            "capabilities": {}
-        }
-        
-        # Generate code using service
-        dana_code, error, multi_file_project = await agent_service.generate_agent_files_from_prompt(
-            prompt="Generate agent code based on description",
-            messages=[],  # Would load from agent's conversation history
-            agent_summary=agent_summary,
-            multi_file=request.multi_file
-        )
-        
-        if error:
-            logger.error(f"Error in Phase 2 generation: {error}")
-            return AgentGenerationResponse(success=False, error=error)
-        
-        return AgentGenerationResponse(
-            success=True,
-            dana_code=dana_code,
-            multi_file_project=multi_file_project,
-            agent_id=request.agent_id
-        )
-        
-    except Exception as e:
-        logger.error(f"Error in agent code generation endpoint: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.post("/deploy", response_model=AgentDeployResponse)
 async def deploy_agent(
