@@ -44,6 +44,5 @@ def execute(data):
 
 workflow = plan | execute
 
-output = workflow("Plan me a trip to Tokyo today", all_available_agents)
-
-print(output)
+def __main__(trip_request="plan for me a trip to Tokyo today"):
+    print(workflow(trip_request, all_available_agents))

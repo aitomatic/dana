@@ -8,4 +8,5 @@ def estimate_cost(trip):
 
 workflow = plan_trip | estimate_cost
 
-workflow("Tokyo", "sunny")
+def __main__(city="Tokyo", weather="sunny"):
+    print(workflow(city, weather))

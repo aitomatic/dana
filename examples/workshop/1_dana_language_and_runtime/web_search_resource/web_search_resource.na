@@ -1,4 +1,5 @@
 """Web Search through Aitomatic MCP."""
 
-with use("mcp", url="https://demo.mcp.aitomatic.com/websearch_v2") as search_service:
-    reason("Name key founding member organizations of AI Alliance")
+def __main__(query="name key founding member organizations of AI Alliance"):
+    with use("mcp", url="https://demo.mcp.aitomatic.com/websearch_v2") as search_service:
+        print(reason(query))
