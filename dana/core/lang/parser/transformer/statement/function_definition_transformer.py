@@ -236,11 +236,16 @@ class FunctionDefinitionTransformer(BaseTransformer):
     def parameters(self, items):
         """Transform parameters rule into a list of Parameter objects.
 
-        Grammar: parameters: typed_parameter ("," typed_parameter)*
+        Grammar: parameters: typed_parameter ("," [COMMENT] typed_parameter)*
         """
         result = []
         for item in items:
-            if isinstance(item, Parameter):
+            # Skip None values (from optional COMMENT tokens) and comment tokens
+            if item is None:
+                continue
+            elif hasattr(item, "type") and item.type == "COMMENT":
+                continue
+            elif isinstance(item, Parameter):
                 # Already a Parameter object from typed_parameter
                 result.append(item)
             elif isinstance(item, Identifier):

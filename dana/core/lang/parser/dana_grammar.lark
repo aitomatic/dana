@@ -85,8 +85,8 @@ with_arg: kw_arg
 kw_arg: NAME "=" expr
 
 // Function parameters
-parameters: typed_parameter ("," typed_parameter)*
-typed_parameter: NAME [":" basic_type] ["=" expr]
+parameters: typed_parameter ("," [COMMENT] typed_parameter)*
+typed_parameter: NAME [":" basic_type] ["=" expr] [COMMENT]
 
 // ===== TYPE ANNOTATIONS =====
 // Basic type annotation support for KISS implementation with union types
@@ -279,10 +279,9 @@ slice_start_stop_step: expr ":" expr ":" expr // [start:stop:step]
 slice_all: ":"                               // [:]
 slice_step_only: "::" expr                   // [::step]
 
-arguments: argument ("," argument)* [","]
+arguments: argument ("," [COMMENT] argument)* [","]
 
-argument: kw_arg
-        | expr
+argument: (kw_arg | expr) [COMMENT]
 
 // ===== PLACEHOLDER =====
 placeholder: DOLLAR_DOLLAR -> placeholder_expression

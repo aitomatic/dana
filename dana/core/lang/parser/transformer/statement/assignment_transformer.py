@@ -114,16 +114,21 @@ class AssignmentTransformer(BaseTransformer):
         """Transform a typed parameter rule into a Parameter object."""
         from dana.core.lang.ast import Parameter
 
-        # Grammar: typed_parameter: NAME [":" basic_type] ["=" expr]
+        # Grammar: typed_parameter: NAME [":" basic_type] ["=" expr] [COMMENT]
         name_item = items[0]
         param_name = name_item.value if hasattr(name_item, "value") else str(name_item)
 
         type_hint = None
         default_value = None
 
-        # Check for type hint and default value
+        # Check for type hint and default value, filtering out comment tokens and None values
         for item in items[1:]:
-            if hasattr(item, "name"):  # TypeHint object
+            # Skip comment tokens and None values (from optional COMMENT rules)
+            if item is None:
+                continue
+            elif hasattr(item, "type") and item.type == "COMMENT":
+                continue
+            elif hasattr(item, "name"):  # TypeHint object
                 type_hint = item
             else:
                 # Assume it's a default value expression

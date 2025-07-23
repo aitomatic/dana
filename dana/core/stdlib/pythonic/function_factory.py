@@ -72,14 +72,13 @@ class PythonicFunctionFactory:
     @staticmethod
     def _smart_sum(*args):
         """Smart sum wrapper that supports both sum(iterable) and sum(iterable, start) syntax."""
-        if len(args) == 0:
-            raise TypeError("sum expected at least 1 argument, got 0")
-        elif len(args) == 1:
+        if len(args) == 1:
             return sum(args[0])  # sum([1,2,3])
         elif len(args) == 2:
             return sum(args[0], args[1])  # sum([1,2,3], 10)
         else:
-            raise TypeError(f"sum expected at most 2 arguments, got {len(args)}")
+            # This should not happen due to signature validation, but just in case
+            raise TypeError(f"sum expected 1 or 2 arguments, got {len(args)}")
 
     # Configuration-driven approach with type validation
     FUNCTION_CONFIGS = {
@@ -95,7 +94,14 @@ class PythonicFunctionFactory:
             "func": _smart_sum.__func__,
             "types": [],  # Skip type validation - smart wrapper handles it
             "doc": "Return the sum of a sequence of numbers, optionally with a start value",
-            "signatures": [],  # Skip signature validation - smart wrapper handles it
+            "signatures": [
+                (list,),
+                (tuple,),
+                (list, int),
+                (list, float),
+                (tuple, int),
+                (tuple, float),
+            ],  # Allow list/tuple with optional start
         },
         "max": {
             "func": _smart_max.__func__,
@@ -581,9 +587,32 @@ If this is a custom function, make sure it's:
                     break
 
         if not valid_signature:
-            arg_types = [type(arg).__name__ for arg in args]
-            expected_sigs = [f"({', '.join(t.__name__ for t in sig)})" for sig in expected_signatures]
-            raise TypeError(f"Invalid arguments for '{name}': got ({', '.join(arg_types)}), expected one of: {', '.join(expected_sigs)}")
+            expected_arg_counts = sorted(set(len(sig) for sig in expected_signatures))
+            actual_arg_count = len(args)
+
+            # For "basic_" functions (strict validation versions), always show detailed signature errors
+            if name.startswith("basic_"):
+                arg_types = [type(arg).__name__ for arg in args]
+                expected_sigs = [f"({', '.join(t.__name__ for t in sig)})" for sig in expected_signatures]
+                raise TypeError(
+                    f"Invalid arguments for '{name}': got ({', '.join(arg_types)}), expected one of: {', '.join(expected_sigs)}"
+                )
+            # Generate user-friendly error messages for smart wrapper functions
+            elif actual_arg_count == 0 and min(expected_arg_counts) > 0:
+                raise TypeError(
+                    f"{name} expected at least {min(expected_arg_counts)} argument{'s' if min(expected_arg_counts) > 1 else ''}, got 0"
+                )
+            elif actual_arg_count > max(expected_arg_counts):
+                raise TypeError(
+                    f"{name} expected at most {max(expected_arg_counts)} argument{'s' if max(expected_arg_counts) > 1 else ''}, got {actual_arg_count}"
+                )
+            else:
+                # Fall back to detailed signature error for type mismatches
+                arg_types = [type(arg).__name__ for arg in args]
+                expected_sigs = [f"({', '.join(t.__name__ for t in sig)})" for sig in expected_signatures]
+                raise TypeError(
+                    f"Invalid arguments for '{name}': got ({', '.join(arg_types)}), expected one of: {', '.join(expected_sigs)}"
+                )
 
     @classmethod
     def _execute_with_guards(cls, func: callable, args: tuple):
