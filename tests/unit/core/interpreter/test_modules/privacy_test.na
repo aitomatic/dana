@@ -1,0 +1,33 @@
+# privacy_test.na - Test module for underscore privacy rules
+
+# ✅ These should be exportable (no underscore prefix)
+def public_function() -> str:
+    return "This is a public function"
+
+PUBLIC_CONSTANT = "This is a public constant"
+
+struct PublicStruct:
+    name: str
+    value: int
+
+# ❌ These should NOT be exportable (underscore prefix = private)
+def _private_function() -> str:
+    return "This is a private function"
+
+_PRIVATE_CONSTANT = "This is a private constant"
+
+struct _PrivateStruct:
+    secret: str
+    code: int
+
+def _helper_function() -> str:
+    return "Internal helper function"
+
+# ✅ These should be exportable (used by public functions)
+def get_public_data() -> str:
+    # Public functions can use private functions internally
+    helper_result = _helper_function()
+    return f"Public data with {helper_result}"
+
+def describe_module() -> str:
+    return "Privacy test module with public and private members" 

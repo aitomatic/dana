@@ -219,6 +219,21 @@ class ModuleLoader(MetaPathFinder, Loader):
                         if module_file.is_file():
                             # Create and register Dana spec
                             dana_spec = ModuleSpec(name=fullname, loader=self, origin=str(module_file))
+                            # Check if this module can also serve as a package
+                            self._setup_package_attributes(dana_spec)
+                            self.registry.register_spec(dana_spec)
+                            # Convert to Python spec
+                            py_spec = PyModuleSpec(name=dana_spec.name, loader=self, origin=dana_spec.origin)
+                            py_spec.has_location = dana_spec.has_location
+                            py_spec.submodule_search_locations = dana_spec.submodule_search_locations
+                            return py_spec
+
+                        # Also check for package/__init__.na in parent's search paths
+                        init_file = Path(search_path) / module_name / "__init__.na"
+                        if init_file.is_file():
+                            # Create and register Dana spec
+                            dana_spec = ModuleSpec(name=fullname, loader=self, origin=str(init_file))
+                            self._setup_package_attributes(dana_spec)
                             self.registry.register_spec(dana_spec)
                             # Convert to Python spec
                             py_spec = PyModuleSpec(name=dana_spec.name, loader=self, origin=dana_spec.origin)
@@ -233,6 +248,8 @@ class ModuleLoader(MetaPathFinder, Loader):
         if module_file is not None:
             # Create and register Dana spec
             dana_spec = ModuleSpec(name=fullname, loader=self, origin=str(module_file))
+            # Check if this module can also serve as a package
+            self._setup_package_attributes(dana_spec)
             self.registry.register_spec(dana_spec)
             # Convert to Python spec
             py_spec = PyModuleSpec(name=dana_spec.name, loader=self, origin=dana_spec.origin)
@@ -242,6 +259,39 @@ class ModuleLoader(MetaPathFinder, Loader):
 
         # Module not found after checking all paths - return None to let Python handle it
         return None
+
+    def _setup_package_attributes(self, spec: ModuleSpec) -> None:
+        """Set up package attributes for a module spec.
+
+        This allows both __init__.na files and regular .na files to serve as packages
+        if they have subdirectories with modules.
+
+        Args:
+            spec: Module specification to set up
+        """
+        if not spec.origin:
+            return
+
+        origin_path = Path(spec.origin)
+
+        # Case 1: __init__.na files are always packages
+        if origin_path.name == "__init__.na":
+            spec.submodule_search_locations = [str(origin_path.parent)]
+            if "." in spec.name:
+                spec.parent = spec.name.rsplit(".", 1)[0]
+        else:
+            # Case 2: Regular .na files can also be packages if they have a directory with the same name
+            # This enables a.b.na to serve as a package for a.b.c modules
+            module_dir = origin_path.parent / origin_path.stem
+            if module_dir.is_dir():
+                # Check if the directory contains any .na files or subdirectories with __init__.na
+                has_submodules = any(f.suffix == ".na" for f in module_dir.iterdir() if f.is_file()) or any(
+                    (subdir / "__init__.na").exists() for subdir in module_dir.iterdir() if subdir.is_dir()
+                )
+                if has_submodules:
+                    spec.submodule_search_locations = [str(module_dir)]
+                    if "." in spec.name:
+                        spec.parent = spec.name.rsplit(".", 1)[0]
 
     def create_module(self, spec: PyModuleSpec) -> Module | None:
         """Create a new module object.
@@ -347,14 +397,18 @@ class ModuleLoader(MetaPathFinder, Loader):
 
             # Handle exports
             if hasattr(context, "_exports"):
+                # Explicit exports override underscore privacy - respect user's explicit choices
                 module.__exports__ = context._exports
             else:
                 # If no explicit exports, export all local and public variables
                 local_vars = set(context.get_scope("local").keys())
                 public_vars_set = set(public_vars.keys())
-                module.__exports__ = local_vars | public_vars_set
+                all_vars = local_vars | public_vars_set
 
-            # Remove internal variables from exports
+                # Apply underscore privacy rule: auto-export everything except names starting with '_'
+                module.__exports__ = {name for name in all_vars if not name.startswith("_")}
+
+            # Always remove internal Python variables (double underscore) from exports
             module.__exports__ = {name for name in module.__exports__ if not name.startswith("__")}
 
             # Post-process: Ensure DanaFunction objects can access each other for recursive calls

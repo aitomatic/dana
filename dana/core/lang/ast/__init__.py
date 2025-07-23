@@ -464,6 +464,7 @@ class StructField:
 
     name: str
     type_hint: TypeHint
+    comment: str | None = None  # Field description from inline comment
     default_value: Expression | None = None
     location: Location | None = None
 

@@ -1,418 +1,344 @@
-# CORRAL Curate API - Knowledge Curation for Dana Programmers
+# CORRAL Curate - Knowledge Recipe Generation for Performance Optimization
 
-The Curate phase extracts, organizes, and synthesizes knowledge from three types: Contextual Knowledge (CK), Documentary Knowledge (DK), and Experiential Knowledge (XK).
+The Curate phase generates optimal knowledge transformation recipes by simulating agent performance across different knowledge configurations. It identifies the most effective knowledge curation workflows to maximize agent performance on domain-specific tasks.
 
-## How the Three Knowledge Types Interact
+## How Knowledge Recipe Generation Works
 
-CORRAL uses a **Bayesian approach** to knowledge synthesis, treating the three knowledge types as components of a probabilistic reasoning system:
+CORRAL Curate uses a **simulation-driven approach** to knowledge optimization, treating knowledge curation as a performance engineering problem:
 
-### **Contextual Knowledge (CK) - The Prior**
-CK represents our **prior beliefs and assumptions** about the domain, task, and context:
-- **Domain priors**: What we know about semiconductor manufacturing, banking, etc.
-- **Task priors**: What we expect to accomplish (defect analysis, fraud detection)
-- **Contextual priors**: Location, time, constraints, and environmental factors
+### **Knowledge Asset Categories**
 
-**CK conditions the likelihood** of what evidence we expect to find and how to interpret it.
+#### **Documentary Knowledge (DK) - Raw Enterprise Data**
+DK represents raw knowledge extracted from enterprise sources:
+- **Enterprise documents**: Reports, specifications, procedures, logs
+- **IoT streams**: Sensor data, telemetry, real-time feeds
+- **Manual content**: SOPs, troubleshooting guides, best practices
+- **Workflow data**: Process flows, decision trees, operational procedures
 
-### **Documentary Knowledge (DK) - The Evidence**
-DK provides **observed evidence and data** from sources:
-- **Documents**: Reports, specifications, procedures, logs
-- **Databases**: Structured data, records, measurements  
-- **Interviews**: Expert knowledge, stakeholder input
-- **External sources**: Research papers, industry standards
+**DK provides the foundational data layer** that agents consume for task execution.
 
-**DK updates our beliefs** by providing concrete evidence that supports or challenges our priors.
+#### **Contextual Knowledge (CK) - Generated Patterns and Templates**
+CK represents synthesized knowledge derived from documentary sources:
+- **Pattern recognition**: Extracted workflows and decision patterns
+- **Template generation**: Prompt templates and response frameworks
+- **Scenario mapping**: Context-specific solution mappings
+- **Rule extraction**: Business logic and heuristic patterns
 
-### **Experiential Knowledge (XK) - The Likelihood Model (Optional)**
-XK represents **learned likelihood functions** that model relationships and patterns:
-- **Pattern recognition**: Correlations between variables
-- **Predictive models**: P(outcome | evidence) based on historical data
-- **Failure models**: P(failure | conditions) from past experiences
-- **Optimization heuristics**: Learned best practices and approaches
+**CK enhances agent reasoning** by providing structured interpretation frameworks.
 
-**XK enhances likelihood computation** but is not required for basic knowledge synthesis.
+#### **Auxiliary Knowledge (AK) - External Domain Expertise**
+AK represents external knowledge from Aitomatic's knowledge repositories:
+- **Domain ontologies**: Industry-specific conceptual frameworks
+- **Task workflows**: Proven methodologies and best practices
+- **Pattern libraries**: Common solution patterns and anti-patterns
+- **Expert knowledge**: Curated domain expertise and insights
 
-### **The Bayesian Synthesis Process**
+**AK accelerates knowledge development** by leveraging pre-existing domain expertise.
 
-#### **Core Process (CK + DK)**
-1. **Prior (CK)**: Establish domain, task, and contextual beliefs
-2. **Evidence (DK)**: Observe data from sources
-3. **Likelihood**: Use domain knowledge and reasoning to interpret evidence
-4. **Posterior**: Update beliefs using Bayes' rule: P(hypothesis | evidence) ∝ P(evidence | hypothesis) × P(hypothesis)
+### **The Recipe Generation Process**
 
-#### **Enhanced Process (CK + DK + XK)**
-1. **Prior (CK)**: Establish domain, task, and contextual beliefs
-2. **Evidence (DK)**: Observe data from sources
-3. **Likelihood (XK)**: Compute P(evidence | hypothesis) using learned models
-4. **Posterior**: Update beliefs using Bayes' rule with enhanced likelihood estimates
+#### **Core Simulation Workflow**
+1. **Task Signature Extraction**: Analyze domain-task pair for entities, knowledge needs, and success criteria
+2. **Knowledge Asset Assembly**: Curate DK, generate CK, and optionally include AK
+3. **Knowledge State Analysis**: Symbolically analyze knowledge coverage and quality
+4. **Agent Performance Simulation**: Simulate agent execution with current knowledge configuration
+5. **Performance Evaluation**: Assess bottlenecks, gaps, and improvement potential
+6. **Recipe Generation**: Output concrete transformation workflows optimized for performance
 
-### **Examples**
+#### **Knowledge Recipe Output**
+The system generates a `KnowledgeRecipe` containing:
+- **Transformation steps**: Ordered workflow for knowledge processing
+- **Data structures**: Optimal storage schemas (graph, table, tree, vector store)
+- **Storage formats**: Technology choices with performance rationale
+- **Query patterns**: Runtime access patterns and fallback strategies
+- **Performance metrics**: Latency, throughput, and confidence expectations
+- **Gap analysis**: Specific missing knowledge preventing optimal performance
+- **Priority recommendations**: Score-ordered next steps for knowledge acquisition
 
-#### **Basic Knowledge Synthesis (CK + DK)**
-- **Prior (CK)**: "Temperature control is critical in semiconductor manufacturing"
-- **Evidence (DK)**: Process logs showing temperature variations and defect measurements
-- **Likelihood**: Domain reasoning suggests temperature variations likely cause defects
-- **Posterior**: "Temperature control issue on fab floor 3 is likely causing pattern defects"
+### **Example Simulation Flow**
 
-#### **Enhanced Knowledge Synthesis (CK + DK + XK)**
-- **Prior (CK)**: "Temperature control is critical in semiconductor manufacturing"
-- **Evidence (DK)**: Process logs showing temperature variations and defect measurements
-- **Likelihood (XK)**: P(defects | temperature_variation) = 0.87 based on historical patterns
-- **Posterior**: "Temperature control issue on fab floor 3 is causing pattern defects with 87% confidence"
+#### **Semiconductor Manufacturing Defect Analysis**
+```dana
+recipe = curate_knowledge_recipe(
+    domain="semiconductor manufacturing",
+    task="defect pattern analysis",
+    documentary_knowledge=[process_logs, equipment_data, defect_maps],
+    include_iot_data=true,
+    use_aitomatic_domain_knowledge=true
+)
 
-This **Bayesian synthesis** ensures robust, evidence-based knowledge that continuously updates as new information becomes available, with or without experiential learning.
+# Recipe output includes:
+# - transformation_steps: ["extract_process_parameters", "correlate_defect_patterns", ...]
+# - data_structures: ["time_series_db", "graph_network", "vector_embeddings"]
+# - performance_notes: "Expected 95% confidence with <200ms query latency"
+# - knowledge_gaps: ["real_time_equipment_status", "historical_yield_correlation"]
+# - estimated_improvement: 0.73  # 73% performance gain potential
+```
 
 ## How It Works
 
 ```mermaid
 flowchart TD
-    A[User Input<br/>Domain + Task + Sources] --> B[Context Analysis]
+    A[Domain + Task + Knowledge Assets] --> B[Extract Task Signature<br/>Entities, Knowledge Needs, Success Criteria]
     
-    B --> C[Curate Contextual Knowledge<br/>CK: Domain, Task, Context]
+    B --> C[Assemble Knowledge Assets<br/>DK: Documentary Sources<br/>CK: Generated Patterns<br/>AK: Aitomatic Knowledge]
     
-    C --> D[Curate Documentary Knowledge<br/>DK: Extract from Sources<br/>Conditioned by CK]
+    C --> D[Analyze Knowledge State<br/>Coverage, Quality, Gaps]
     
-    D --> E{Has Learning Data?}
-    E -->|Yes| F[Curate Experiential Knowledge<br/>XK: Learning Data & Patterns<br/>Conditioned by CK]
-    E -->|No| G[Empty XK List]
+    D --> E[Simulate Agent Performance<br/>Execute with Current Knowledge]
     
-    F --> H[Cross-Knowledge Synthesis<br/>CK + DK + XK Interaction]
-    G --> H
+    E --> F[Evaluate Performance<br/>Score, Bottlenecks, Utilization]
     
-    H --> I[Knowledge Base<br/>CK + DK + XK + Insights]
+    F --> G[Generate Optimization Recipe<br/>Transformation Steps, Storage, Queries]
+    
+    G --> H[Knowledge Recipe<br/>Performance-Optimized Workflow]
     
     style A fill:#e1f5fe
-    style I fill:#c8e6c9
-    style C fill:#fff3e0
+    style H fill:#c8e6c9
+    style E fill:#fff3e0
 ```
 
 ## Getting Started
 
 ```dana
-# 1. Hiring a specialist - no sources needed
-kb = curate_knowledge(
-    domain="semiconductor manufacturing",
-    task="defect analysis"
+# Basic recipe generation
+recipe = curate_knowledge_recipe(
+    domain="customer support",
+    task="ticket classification and routing"
 )
 
-# 2. Basic usage with sources
-kb = curate_knowledge(
-    sources=["./docs/", "./data/"],
-    domain="software development",
-    task="knowledge extraction"
+# With documentary knowledge
+recipe = curate_knowledge_recipe(
+    domain="manufacturing quality control",
+    task="defect prediction",
+    documentary_knowledge=[process_logs, quality_reports]
+)
+
+# Full configuration with all knowledge types
+recipe = curate_knowledge_recipe(
+    domain="financial risk management",
+    task="fraud detection",
+    documentary_knowledge=[transaction_logs, customer_profiles],
+    include_iot_data=true,
+    use_aitomatic_domain_knowledge=true,
+    use_aitomatic_task_knowledge=true
 )
 ```
 
-## Advanced Usage Patterns
+## Core API
 
-### Domain-Specific Specialists
+### curate_knowledge_recipe
 ```dana
-# Hire domain specialists using built-in knowledge
-semiconductor_specialist = curate_semiconductor_knowledge(
-    domain="semiconductor manufacturing and fabrication",
-    task="defect analysis and quality control"
-)
-
-banking_specialist = curate_banking_knowledge(
-    domain="retail banking and financial services", 
-    task="fraud detection and risk management"
-)
-
-ic_design_specialist = curate_ic_design_knowledge(
-    domain="integrated circuit design and verification",
-    task="physical design optimization and DRC compliance"
-)
+curate_knowledge_recipe(
+    domain: str = "General",
+    task: str = "Q&A", 
+    documentary_knowledge: list[KnowledgeAsset] = [],
+    include_iot_data: bool = false,
+    use_aitomatic_domain_knowledge: bool = false,
+    use_aitomatic_task_knowledge: bool = false
+) -> KnowledgeRecipe
 ```
-
-### Complex Natural Language Context
-```dana
-# Rich domain and task descriptions
-kb = curate_knowledge(
-    sources=["./logs/", "./data/", "./reports/"],
-    domain="SaaS customer support and product management",
-    task="support ticket analysis with focus on onboarding issues and feature request prioritization"
-)
-
-# Multi-faceted banking context
-kb = curate_knowledge(
-    sources=["./transaction_logs/", "./customer_profiles/"],
-    domain="retail banking and financial services",
-    task="fraud detection with BSA/AML compliance monitoring and small business focus"
-)
-```
-
-### Learning-Enhanced Knowledge
-```dana
-# Integrate experiential knowledge
-kb = curate_knowledge(
-    sources=["./transaction_logs/", "./customer_profiles/"],
-    domain="consumer banking and fraud prevention",
-    task="fraud detection with historical pattern analysis",
-    learning_data={
-        "fraud_patterns": [...],
-        "detection_performance": [...],
-        "expert_feedback": [...]
-    }
-)
-```
-
-### Domain-Specific with Sources
-```dana
-# Specialized functions with custom sources
-defect_analysis = curate_semiconductor_knowledge(
-    sources=["./process_logs/", "./equipment_data/", "./defect_maps/"],
-    domain="semiconductor manufacturing and plasma etching",
-    task="defect analysis on layer 3 with pattern recognition"
-)
-
-fraud_detection = curate_banking_knowledge(
-    sources=["./transaction_logs/", "./customer_profiles/", "./risk_scores/"],
-    domain="small business banking and risk management",
-    task="fraud detection with enhanced monitoring and alerting"
-)
-```
-
-### Error Handling Patterns
-```dana
-# Handle missing or invalid sources gracefully
-kb = curate_knowledge(
-    sources=["./valid.md", "./invalid.txt", "./missing.pdf"],
-    domain="general documentation",
-    task="knowledge extraction"
-)
-
-# Check for knowledge gaps
-if kb.gaps:
-    print(f"Knowledge gaps found: {len(kb.gaps)}")
-```
-
-### Integration Patterns
-```dana
-# Curate knowledge for full CORRAL pipeline
-kb = curate_knowledge(
-    sources=["./process_logs/", "./equipment_data/"],
-    domain="semiconductor manufacturing",
-    task="defect analysis"
-)
-
-# Pass to Organize phase
-organized = organize_knowledge(kb.existing_knowledge, domain=kb.domain)
-
-# Pass to Retrieve phase
-context = retrieve_knowledge_context(
-    "What causes pattern defects in layer 3?",
-    domain=kb.domain,
-    organized=organized
-)
-```
-
-## Core API Functions
-
-### 1. curate_knowledge
-```dana
-curate_knowledge(
-    sources: list = None,
-    domain: str = None,
-    task: str = None,
-    learning_data: dict = None,
-    llm_assisted: bool = True)
-    -> KnowledgeBase
-```
-Main entry point for curating the complete knowledge base with natural language domain/task specification.
 
 **Parameters:**
-- `sources`: Optional list of file paths to extract knowledge from
 - `domain`: Natural language domain description (e.g., "semiconductor manufacturing")
-- `task`: Natural language task description (e.g., "defect analysis")
-- `learning_data`: Optional dictionary with historical patterns and feedback
-- `llm_assisted`: Whether to use LLM for intelligent curation (default: True)
+- `task`: Natural language task description (e.g., "defect pattern analysis")
+- `documentary_knowledge`: List of enterprise knowledge assets to include
+- `include_iot_data`: Whether to simulate IoT data streams
+- `use_aitomatic_domain_knowledge`: Include Aitomatic domain expertise
+- `use_aitomatic_task_knowledge`: Include Aitomatic task methodologies
 
 **Returns:**
-- KnowledgeBase struct containing curated knowledge across all three types (CK, DK, XK)
+`KnowledgeRecipe` struct with optimized transformation workflow
 
-**Example:**
+## Knowledge Asset Structure
+
+### KnowledgeAsset
 ```dana
-# Basic usage with natural language parameters
-kb = curate_knowledge(
-    sources=["./process_logs/", "./equipment_data/", "./defect_maps/"],
-    domain="semiconductor manufacturing and fabrication",
-    task="defect analysis on layer 3 with pattern recognition",
-    learning_data={
-        "historical_defects": [...],
-        "process_improvements": [...],
-        "expert_feedback": [...]
-    }
+struct KnowledgeAsset:
+    id: str                         # Unique identifier
+    type: str                       # Log_Data, Manual, IoT_Stream, Workflow, Domain_Ontology, PromptTemplate
+    source: str                     # Enterprise, Aitomatic, Synthetic, IoT
+    content: str                    # Actual knowledge content or summary
+    trust_tier: str                 # High/Medium/Low trust classification
+    metadata: dict[str, str]        # Provenance, timestamps, schema, quality indicators
+    relevance_score: float          # 0.0-1.0 task-specific relevance
+    knowledge_category: str         # DK (documentary), CK (contextual), AK (auxiliary)
+```
+
+### KnowledgeRecipe
+```dana
+struct KnowledgeRecipe:
+    transformation_steps: list[str]      # Ordered workflow steps
+    data_structures: list[str]           # Target schemas (graph, table, tree, vector_store)
+    storage_formats: list[str]           # Storage technology choices with rationale
+    query_patterns: list[str]            # Runtime access patterns and fallback strategies
+    performance_notes: str               # Latency, throughput, confidence metrics
+    runtime_queries: list[str]           # Concrete query examples
+    knowledge_gaps: list[str]            # Missing knowledge preventing optimal performance
+    priority_recommendations: list[str]  # Score-ordered next steps
+    estimated_improvement: float         # Quantified performance gain potential (0.0-1.0)
+```
+
+## Usage Patterns
+
+### Domain-Specific Recipe Generation
+```dana
+# Semiconductor manufacturing
+semiconductor_recipe = curate_knowledge_recipe(
+    domain="semiconductor fabrication and process control",
+    task="yield optimization and defect pattern analysis",
+    documentary_knowledge=[fab_logs, equipment_data, defect_reports],
+    include_iot_data=true,
+    use_aitomatic_domain_knowledge=true
 )
 
-# Access different knowledge types
-ck = kb.contextual_knowledge      # Context about fab operations
-dk = kb.documentary_knowledge     # Process logs, equipment data
-xk = kb.experiential_knowledge    # Learned defect patterns
-insights = kb.synthesis_insights  # Cross-knowledge insights
-
-# Convenience properties
-print(f"Domain: {kb.domain}")
-print(f"Task: {kb.task}")
-print(f"Quality Score: {kb.quality_score}")
-print(f"Knowledge Gaps: {len(kb.gaps)}")
-```
-
-
-
-## Domain-Specific Functions
-
-### 2. curate_semiconductor_knowledge
-```dana
-curate_semiconductor_knowledge(
-    sources: list = None,
-    domain: str = None,
-    task: str = None,
-    learning_data: dict = None)
-    -> KnowledgeBase
-```
-Specialized curation for semiconductor manufacturing knowledge.
-
-**Example:**
-```dana
-defect_analysis = curate_semiconductor_knowledge(
-    sources=["./process_logs/", "./equipment_data/", "./defect_maps/"],
-    domain="semiconductor manufacturing and plasma etching",
-    task="defect analysis on layer 3 with pattern recognition",
-    learning_data={"historical_defects": [...], "process_improvements": [...]}
-)
-```
-
-### 3. curate_banking_knowledge
-```dana
-curate_banking_knowledge(
-    sources: list = None,
-    domain: str = None,
-    task: str = None,
-    learning_data: dict = None)
-    -> KnowledgeBase
-```
-Specialized curation for banking and financial services knowledge.
-
-**Example:**
-```dana
-fraud_detection = curate_banking_knowledge(
-    sources=["./transaction_logs/", "./customer_profiles/", "./risk_scores/"],
-    domain="small business banking and risk management",
-    task="fraud detection with enhanced monitoring and alerting",
-    learning_data={"fraud_patterns": [...], "false_positives": [...]}
+# Financial services
+banking_recipe = curate_knowledge_recipe(
+    domain="retail banking and fraud prevention", 
+    task="real-time transaction monitoring and risk scoring",
+    documentary_knowledge=[transaction_logs, customer_profiles, risk_models],
+    use_aitomatic_task_knowledge=true
 )
 ```
 
-### 4. curate_ic_design_knowledge
+### Progressive Knowledge Enhancement
 ```dana
-curate_ic_design_knowledge(
-    sources: list = None,
-    domain: str = None,
-    task: str = None,
-    learning_data: dict = None)
-    -> KnowledgeBase
-```
-Specialized curation for IC design and verification knowledge.
+# Start with basic documentary knowledge
+basic_recipe = curate_knowledge_recipe(
+    domain="customer support",
+    task="ticket resolution", 
+    documentary_knowledge=[support_tickets, knowledge_base]
+)
 
-**Example:**
-```dana
-design_support = curate_ic_design_knowledge(
-    sources=["./support_tickets/", "./design_docs/", "./tool_documentation/"],
-    domain="integrated circuit design and verification",
-    task="physical design optimization and DRC compliance",
-    learning_data={"common_issues": [...], "resolution_patterns": [...]}
+# Add IoT data for enhanced context
+enhanced_recipe = curate_knowledge_recipe(
+    domain="customer support",
+    task="ticket resolution",
+    documentary_knowledge=[support_tickets, knowledge_base],
+    include_iot_data=true
+)
+
+# Full enhancement with Aitomatic knowledge
+optimal_recipe = curate_knowledge_recipe(
+    domain="customer support", 
+    task="ticket resolution",
+    documentary_knowledge=[support_tickets, knowledge_base],
+    include_iot_data=true,
+    use_aitomatic_domain_knowledge=true,
+    use_aitomatic_task_knowledge=true
 )
 ```
 
-## Return Value Structure
-
-### Knowledge Base Return Value
+### Recipe Analysis and Implementation
 ```dana
-# KnowledgeBase struct with properties for easy access
-kb = curate_knowledge(
-    sources=["./process_logs/", "./equipment_data/"],
-    domain="semiconductor manufacturing",
-    task="defect analysis"
+recipe = curate_knowledge_recipe(
+    domain="supply chain management",
+    task="demand forecasting",
+    documentary_knowledge=[sales_data, inventory_logs],
+    use_aitomatic_domain_knowledge=true
 )
 
-# Access knowledge types
-ck = kb.contextual_knowledge      # ContextualKnowledge struct
-dk = kb.documentary_knowledge     # List of DocumentaryKnowledge structs
-xk = kb.experiential_knowledge    # List of ExperientialKnowledge structs
-insights = kb.synthesis_insights  # Dictionary with synthesis results
+# Analyze recipe recommendations
+print("Transformation workflow:")
+for step in recipe.transformation_steps:
+    print(f"  - {step}")
 
-# Convenience properties
-domain = kb.domain                # String: "semiconductor manufacturing"
-task = kb.task                    # String: "defect analysis"
-gaps = kb.gaps                    # List of knowledge gaps
-quality_score = kb.quality_score  # Float: overall quality score
+print(f"Expected performance improvement: {recipe.estimated_improvement:.1%}")
+print(f"Critical knowledge gaps: {len(recipe.knowledge_gaps)}")
 
-# Access individual knowledge items
-for doc in kb.documentary_knowledge:
-    print(f"Source: {doc.source_id}")
-    print(f"Type: {doc.source_type}")
-    print(f"Quality: {doc.quality_metrics}")
+# Implement priority recommendations
+for i, recommendation in enumerate(recipe.priority_recommendations[:3]):
+    print(f"{i+1}. {recommendation}")
 
-for exp in kb.experiential_knowledge:
-    print(f"Pattern: {exp.knowledge_id}")
-    print(f"Confidence: {exp.confidence}")
+# Use suggested storage formats
+primary_storage = recipe.storage_formats[0]
+print(f"Recommended primary storage: {primary_storage}")
 ```
 
+## Performance Optimization
 
-
-## Error Handling
-
-The API handles errors gracefully:
-
+### Understanding Recipe Metrics
 ```dana
-# Invalid source paths are logged but don't stop processing
-kb = curate_knowledge(
-    sources=["./valid.md", "./invalid.txt", "./missing.pdf"],
-    domain="general documentation",
-    task="knowledge extraction"
+recipe = curate_knowledge_recipe(
+    domain="network operations",
+    task="anomaly detection",
+    documentary_knowledge=[network_logs, topology_data]
 )
 
-# Check for failed extractions
-failed_sources = [
-    source for source in sources 
-    if source not in [dk.source_id for dk in kb.documentary_knowledge]
+# Performance analysis
+print(f"Current knowledge state score: {recipe.performance_notes}")
+print(f"Improvement potential: {recipe.estimated_improvement:.1%}")
+
+# Bottleneck identification
+for gap in recipe.knowledge_gaps:
+    print(f"Gap: {gap}")
+
+# Implementation priorities
+for priority in recipe.priority_recommendations:
+    print(f"Priority: {priority}")
+```
+
+### Iterative Recipe Refinement
+```dana
+# Generate initial recipe
+initial_recipe = curate_knowledge_recipe(
+    domain="predictive maintenance",
+    task="equipment failure prediction",
+    documentary_knowledge=[maintenance_logs]
+)
+
+# Add recommended knowledge sources based on gaps
+enhanced_knowledge = maintenance_logs + [
+    sensor_data,  # Addresses "real-time equipment status" gap
+    failure_history  # Addresses "historical failure patterns" gap
 ]
-if failed_sources:
-    print(f"Failed to extract: {failed_sources}")
 
-# Check for knowledge gaps
-if kb.gaps:
-    print(f"Knowledge gaps found: {len(kb.gaps)}")
+# Generate improved recipe
+improved_recipe = curate_knowledge_recipe(
+    domain="predictive maintenance", 
+    task="equipment failure prediction",
+    documentary_knowledge=enhanced_knowledge,
+    include_iot_data=true
+)
+
+# Compare improvement
+improvement_delta = improved_recipe.estimated_improvement - initial_recipe.estimated_improvement
+print(f"Performance gain from enhancement: {improvement_delta:.1%}")
 ```
 
-## Integration with Other CORRAL Phases
+## Integration with CORRAL Pipeline
 
 ```dana
-# Curate knowledge for the full CORRAL pipeline
-kb = curate_knowledge(
-    sources=sources,
+# Generate recipe for knowledge optimization
+recipe = curate_knowledge_recipe(
     domain="semiconductor manufacturing",
     task="defect analysis",
-    learning_data=learning_data
+    documentary_knowledge=enterprise_sources,
+    use_aitomatic_domain_knowledge=true
 )
 
-# Pass to Organize phase
-organized = organize_knowledge(kb.documentary_knowledge, domain=kb.domain)
+# Implement recipe in Organize phase
+organized_knowledge = organize_knowledge(
+    knowledge_assets=recipe.runtime_queries,
+    storage_format=recipe.storage_formats[0],
+    query_patterns=recipe.query_patterns
+)
 
-# Pass to Retrieve phase
+# Use optimized structure in Retrieve phase
 context = retrieve_knowledge_context(
-    "What causes pattern defects in layer 3?", 
-    domain=kb.domain, 
-    organized=organized
+    query="What causes pattern defects in layer 3?",
+    organized_knowledge=organized_knowledge,
+    retrieval_strategy=recipe.query_patterns[0]
 )
 ```
 
 ## Best Practices
 
-1. **Use Domain Context**: Always provide domain and task context for better curation
-2. **Include Learning Data**: Add experiential knowledge when available for better insights
-3. **Leverage Domain-Specific Functions**: Use specialized functions for known domains
-4. **Monitor Knowledge Gaps**: Check synthesis insights for identified gaps
-5. **Preserve Context**: Pass contextual knowledge to subsequent CORRAL phases
-6. **Enable LLM Assistance**: Use LLM-assisted mode for intelligent curation
-7. **Iterate with Feedback**: Use learning data to improve curation over time 
+1. **Start Simple**: Begin with basic documentary knowledge and progressively enhance
+2. **Analyze Gaps**: Use `knowledge_gaps` to identify critical missing information  
+3. **Follow Priorities**: Implement `priority_recommendations` in score order
+4. **Monitor Performance**: Track `estimated_improvement` across recipe iterations
+5. **Leverage Domain Knowledge**: Use Aitomatic knowledge for established domains
+6. **Implement Storage Recommendations**: Follow `storage_formats` and `data_structures` guidance
+7. **Optimize Query Patterns**: Use suggested `query_patterns` for runtime efficiency
+8. **Validate Recipes**: Test transformation steps in development environments before production 

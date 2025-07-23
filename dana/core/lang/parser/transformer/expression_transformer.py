@@ -529,8 +529,11 @@ class ExpressionTransformer(BaseTransformer):
         kwargs = {}  # Dict of keyword arguments
 
         for arg_child in arg_children:
+            # Skip None values (from optional COMMENT tokens)
+            if arg_child is None:
+                continue
             # Check if this is a kw_arg tree
-            if hasattr(arg_child, "data") and arg_child.data == "kw_arg":
+            elif hasattr(arg_child, "data") and arg_child.data == "kw_arg":
                 # Extract keyword argument name and value
                 name = arg_child.children[0].value
                 value = self.expression([arg_child.children[1]])

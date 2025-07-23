@@ -177,58 +177,85 @@ class AssignmentHandler(Loggable):
         if not hasattr(node.type_hint, "name"):
             return None
 
-        type_name = node.type_hint.name.lower()
-        target_type = self._type_mapping_cache.get(type_name)
-
+        type_name = node.type_hint.name
+        
+        # First check basic Python types
+        target_type = self._type_mapping_cache.get(type_name.lower())
+        
         if target_type:
             # Set the type information for IPV to access
             context.set("system:__current_assignment_type", target_type)
+            return target_type
+        
+        # Check if this is a Dana struct type
+        try:
+            from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+            
+            if StructTypeRegistry.exists(type_name):
+                # This is a Dana struct type - set it in context for POET system
+                context.set("system:__current_assignment_type", type_name)
+                # Return a special marker for Dana struct types
+                return type_name  # Return the string name for Dana struct types
+                
+        except ImportError:
+            # Struct system not available, continue without it
+            pass
+        
+        # If we get here, it's an unknown type
+        # Still set it in context in case the POET system can handle it
+        context.set("system:__current_assignment_type", type_name)
+        return type_name
 
-        return target_type
-
-    def _apply_type_coercion(self, value: Any, target_type: type, target_node: Any) -> Any:
+    def _apply_type_coercion(self, value: Any, target_type: type | str, target_node: Any) -> Any:
         """Apply type coercion with caching for performance.
 
         Args:
             value: The value to coerce
-            target_type: The target type
+            target_type: The target type (Python type or Dana struct type name)
             target_node: The assignment target node for error reporting
 
         Returns:
             The coerced value
         """
-        # Create cache key based on value type and target type
-        cache_key = (type(value).__name__, target_type.__name__, str(value)[:50])
+        # Handle both Python types and Dana struct type names
+        if isinstance(target_type, str):
+            # This is a Dana struct type name - skip coercion for now
+            # The POET system will handle the conversion
+            return value
+        else:
+            # This is a Python type - apply standard coercion
+            # Create cache key based on value type and target type
+            cache_key = (type(value).__name__, target_type.__name__, str(value)[:50])
 
-        # Check cache first
-        if cache_key in self._coercion_cache:
-            cached_result, cached_exception = self._coercion_cache[cache_key]
-            if cached_exception:
-                raise cached_exception
-            return cached_result
+            # Check cache first
+            if cache_key in self._coercion_cache:
+                cached_result, cached_exception = self._coercion_cache[cache_key]
+                if cached_exception:
+                    raise cached_exception
+                return cached_result
 
-        try:
-            from dana.core.lang.interpreter.unified_coercion import TypeCoercion
+            try:
+                from dana.core.lang.interpreter.unified_coercion import TypeCoercion
 
-            coerced_value = TypeCoercion.coerce_value(value, target_type)
+                coerced_value = TypeCoercion.coerce_value(value, target_type)
 
-            # Cache successful coercion
-            if len(self._coercion_cache) < self.TYPE_COERCION_CACHE_SIZE:
-                self._coercion_cache[cache_key] = (coerced_value, None)
+                # Cache successful coercion
+                if len(self._coercion_cache) < self.TYPE_COERCION_CACHE_SIZE:
+                    self._coercion_cache[cache_key] = (coerced_value, None)
 
-            return coerced_value
+                return coerced_value
 
-        except Exception as e:
-            target_name = self._get_assignment_target_name(target_node)
-            error = SandboxError(
-                f"Assignment to '{target_name}' failed: cannot coerce value '{value}' to type '{target_type.__name__}': {e}"
-            )
+            except Exception as e:
+                target_name = self._get_assignment_target_name(target_node)
+                error = SandboxError(
+                    f"Assignment to '{target_name}' failed: cannot coerce value '{value}' to type '{target_type.__name__}': {e}"
+                )
 
-            # Cache the error to avoid repeated coercion attempts
-            if len(self._coercion_cache) < self.TYPE_COERCION_CACHE_SIZE:
-                self._coercion_cache[cache_key] = (None, error)
+                # Cache the error to avoid repeated coercion attempts
+                if len(self._coercion_cache) < self.TYPE_COERCION_CACHE_SIZE:
+                    self._coercion_cache[cache_key] = (None, error)
 
-            raise error
+                raise error
 
     def _execute_assignment_by_target(self, target: Any, value: Any, context: SandboxContext) -> None:
         """Execute assignment based on target type with optimized dispatch.

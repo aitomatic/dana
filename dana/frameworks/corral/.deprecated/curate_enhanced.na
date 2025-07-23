@@ -98,13 +98,13 @@ def curate_knowledge_for_query(
     # Define pipelines based on level using sub-pipelines
     if level == 1:
         # Level 1: Query-aware RAG
-        pipeline = analyze_query | assess_reasoning_requirements | store_selection_vector(sources) | compile_and_index | build_context_bundle
+        pipeline = query_analysis_pipeline(query, domain) | reason_requirements() | store_selection_vector(sources) | compile_and_index() | build_context_bundle()
     elif level == 2:
         # Level 2: Local Synthesis
-        pipeline = analyze_query | knowledge_retrieval_pipeline | knowledge_synthesis_pipeline | knowledge_validation_pipeline | context_optimization_pipeline
+        pipeline = query_analysis_pipeline(query, domain) | knowledge_retrieval_pipeline(sources) | knowledge_synthesis_pipeline(learning_data) | knowledge_validation_pipeline | context_optimization_pipeline
     elif level == 3:
         # Level 3: Pack-augmented
-        pipeline = analyze_query | knowledge_retrieval_pipeline | gap_analysis | pack_acquisition | local_synthesis | knowledge_validation_pipeline | context_optimization_pipeline
+        pipeline = query_analysis_pipeline(query, domain) | knowledge_retrieval_pipeline(sources) | gap_analysis() | pack_acquisition(domain) | local_synthesis(learning_data) | knowledge_validation_pipeline | context_optimization_pipeline
     else:
         raise ValueError(f"Invalid level {level}. Must be 1, 2, or 3.")
     
@@ -112,137 +112,95 @@ def curate_knowledge_for_query(
 
 # Sub-pipelines for better organization and readability
 
-"""
-    name: analyze_query
-    description: Analyzes the query to understand:
-        - Intent (analysis, diagnosis, planning, prediction)
-        - Reasoning type (causal, temporal, spatial, comparative)
-        - Knowledge domains needed
-        - Evidence requirements
-        - Confidence thresholds
-        - Context scope
-    parameters:
-        query: str - The specific query that needs to be answered
-        domain: str - Natural language domain description
-    output:
-        QueryRequirements - Requirements extracted from the query
-"""
-analyze_query = task_intake | design_reasoning_blueprint
+# Query analysis sub-pipeline (takes query, domain from task_intake)
+query_analysis_pipeline = task_intake | reasoning_blueprint_design
 
-"""
-    name: knowledge_retrieval_pipeline
-    description: Retrieves knowledge from sources to support the reasoning blueprint
-    parameters:
-        sources: list
-    output:
-        list[KnowledgeDocument]
-"""
+# Knowledge retrieval sub-pipeline (takes sources from structure_scoring)
 knowledge_retrieval_pipeline = retrieval_pattern_design | structure_scoring
 
-
-"""
-    name: analyze_query | knowledge_retrieval_pipeline
-    description: Combines query analysis and knowledge retrieval pipelines
-    parameters:
-        query: str - The specific query that needs to be answered
-        domain: str - Natural language domain description
-    output:
-        ContextWindow - Optimized context window for the specific query and reasoning task
-"""
-abc = analyze_query | knowledge_retrieval_pipeline
-
-"""
-    name: knowledge_synthesis_pipeline
-    description: Synthesizes missing knowledge locally
-    parameters:
-        learning_data: dict
-    output:
-        list[KnowledgeDocument]
-"""
+# Knowledge synthesis sub-pipeline (takes learning_data from local_synthesis)
 knowledge_synthesis_pipeline = gap_analysis | local_synthesis
 
-"""
-    name: knowledge_validation_pipeline
-    description: Validates knowledge quality
-    parameters:
-        knowledge: list[KnowledgeDocument]
-    output:
-        list[KnowledgeDocument]
-"""
+# Knowledge validation sub-pipeline (no parameters needed)
 knowledge_validation_pipeline = validation_gate | trust_tagging | canonical_synthesis
 
-"""
-    name: context_optimization_pipeline
-    description: Optimizes the context window for runtime reasoning
-    parameters:
-        context_window: ContextWindow
-    output:
-        ContextWindow
-"""
+# Context optimization sub-pipeline (no parameters needed)
 context_optimization_pipeline = scoped_compilation | context_window_builder
 
 # Pipeline step implementations
 
-def task_intake(query: str, domain: str):
+def task_intake():
     """
-    description:
-        Analyze query and extract curation requirements
-    parameters:
-        query: str - The specific query that needs to be answered
-        domain: str - Natural language domain description
-    output:
-        QueryRequirements - Requirements extracted from the query
-    """
-
-    prompt = f"""
-    Analyze this query and extract requirements for knowledge curation:
-    Query: {query}
-    Domain: {domain}
+    Step 1: Analyze query and extract curation requirements
+    Pipeline input: (query: str, domain: str)
+    Pipeline output: QueryRequirements
     
-    Extract:
-    1. Intent (analysis, diagnosis, planning, prediction, etc.)
-    2. Reasoning type (causal, temporal, spatial, comparative, etc.)
-    3. Knowledge domains needed
-    4. Evidence requirements
-    5. Confidence threshold needed
-    6. Context scope
+    Analyzes the query to understand:
+    - Intent (analysis, diagnosis, planning, prediction)
+    - Reasoning type (causal, temporal, spatial, comparative)
+    - Knowledge domains needed
+    - Evidence requirements
+    - Confidence thresholds
+    - Context scope
     """
+    def _task_intake(input_data):
+        query, domain = input_data
+        
+        prompt = f"""
+        Analyze this query and extract requirements for knowledge curation:
+        Query: {query}
+        Domain: {domain}
+        
+        Extract:
+        1. Intent (analysis, diagnosis, planning, prediction, etc.)
+        2. Reasoning type (causal, temporal, spatial, comparative, etc.)
+        3. Knowledge domains needed
+        4. Evidence requirements
+        5. Confidence threshold needed
+        6. Context scope
+        """
+        
+        analysis = dana.core.lang.llm.llm(prompt)
+        # Parse LLM response into structured requirements
+        return parse_query_requirements(analysis)
     
-    analysis = dana.core.lang.llm.query(prompt)
-    return parse_query_requirements(analysis)
+    return _task_intake
 
-
-def design_reasoning_blueprint(query_reqs: QueryRequirements):
+def reasoning_blueprint_design():
     """
-    description:
-        Design reasoning blueprint for answering the query
-    parameters:
-        query_reqs: QueryRequirements - Query requirements extracted from the query
-    output:
-        (QueryRequirements, ReasoningBlueprint)
+    Step 2: Design reasoning blueprint for answering the query
+    Pipeline input: QueryRequirements
+    Pipeline output: (QueryRequirements, ReasoningBlueprint)
+    
+    Creates a detailed plan for how to reason about the query:
+    - Reasoning steps (causal_analysis, pattern_recognition, etc.)
+    - Knowledge patterns that support each step
+    - Inference chains connecting reasoning steps
+    - Validation checkpoints for quality assurance
+    - Confidence requirements for each step
     """
-
-    prompt = f"""
-    Design a reasoning blueprint for this query:
-    Query: {query}
-    Intent: {intent}
-    Reasoning Type: {reasoning_type}
+    def _reasoning_blueprint_design(query_reqs):
+        prompt = f"""
+        Design a reasoning blueprint for this query:
+        Query: {query_reqs.query}
+        Intent: {query_reqs.intent}
+        Reasoning Type: {query_reqs.reasoning_type}
         
-    Design:
-    1. Reasoning steps needed
-    2. Knowledge patterns that support each step
-    3. Inference chains
-    4. Validation checkpoints
-    5. Confidence requirements
-    """
+        Design:
+        1. Reasoning steps needed
+        2. Knowledge patterns that support each step
+        3. Inference chains
+        4. Validation checkpoints
+        5. Confidence requirements
+        """
         
-        blueprint = dana.core.lang.llm.query(prompt)
+        blueprint = dana.core.lang.llm.llm(prompt)
         reasoning_blueprint = parse_reasoning_blueprint(blueprint)
         
         # Return both query_reqs and reasoning_blueprint for downstream steps
         return (query_reqs, reasoning_blueprint)
     
-    return design_reasoning_blueprint
+    return _reasoning_blueprint_design
 
 def retrieval_pattern_design():
     """
@@ -274,7 +232,7 @@ def retrieval_pattern_design():
             5. Ranking factors
             """
             
-            pattern = dana.core.lang.llm.query(prompt)
+            pattern = dana.core.lang.llm.llm(prompt)
             patterns.append(parse_retrieval_pattern(pattern))
         
         return (query_reqs, reasoning_blueprint, patterns)
@@ -297,13 +255,13 @@ def structure_scoring(sources: list):
             Sources: {sources}
             
             Score:
-        1. Coverage completeness
-        2. Structure alignment
+            1. Coverage completeness
+            2. Structure alignment
             3. Retrieval efficiency
             4. Reasoning support
             """
             
-            score = dana.core.lang.llm.query(prompt)
+            score = dana.core.lang.llm.llm(prompt)
             scores[pattern.pattern_type] = parse_structure_score(score)
         
         return (query_reqs, reasoning_blueprint, retrieval_patterns, scores)
@@ -342,7 +300,7 @@ def gap_analysis():
                 4. Confidence impact
                 """
                 
-                gap_analysis = dana.core.lang.llm.query(prompt)
+                gap_analysis = dana.core.lang.llm.llm(prompt)
                 gaps.append(parse_knowledge_gap(gap_analysis, step))
         
         return (query_reqs, reasoning_blueprint, gaps)
@@ -368,7 +326,7 @@ def local_synthesis(learning_data: dict):
             Use available learning data and reasoning to create missing knowledge.
             """
             
-            synthesis = dana.core.lang.llm.query(prompt)
+            synthesis = dana.core.lang.llm.llm(prompt)
             synthesized.append(parse_synthesized_knowledge(synthesis, gap))
         
         return (query_reqs, reasoning_blueprint, synthesized)
@@ -423,7 +381,7 @@ def validation_gate():
             4. Meets confidence threshold: {query_reqs.confidence_threshold}
             """
             
-            validation = dana.core.lang.llm.query(prompt)
+            validation = dana.core.lang.llm.llm(prompt)
             if parse_validation_result(validation):
                 validated.append(item)
         
@@ -454,7 +412,7 @@ def trust_tagging():
             6. Trust tags
             """
             
-            assessment = dana.core.lang.llm.query(prompt)
+            assessment = dana.core.lang.llm.llm(prompt)
             assessments.append(parse_trust_assessment(assessment))
         
         return (query_reqs, reasoning_blueprint, knowledge, assessments)
@@ -484,171 +442,174 @@ def canonical_synthesis():
             Create consistent, integrated knowledge representation.
             """
             
-            synthesis = dana.core.lang.llm.query(prompt)
+            synthesis = dana.core.lang.llm.llm(prompt)
             canonical.append(parse_canonical_synthesis(synthesis))
         
         return (query_reqs, reasoning_blueprint, canonical)
     
     return _canonical_synthesis
 
-def scoped_compilation(query_reqs: QueryRequirements, knowledge: list):
+def scoped_compilation():
     """
-    description:
-        Compile knowledge scoped to the specific query
-    parameters:
-        query_reqs: QueryRequirements - Query requirements extracted from the query
-        knowledge: list - List of knowledge documents to scope
-    output:
-        list: Scoped knowledge documents
+    Step 10: Compile knowledge scoped to the specific query
+    Pipeline input: (QueryRequirements, ReasoningBlueprint, list)
+    Pipeline output: (QueryRequirements, ReasoningBlueprint, list)
     """
-    prompt = f"""
-    Compile knowledge scoped to query: {query_reqs.query}
-    Available knowledge: {knowledge}
+    def _scoped_compilation(input_tuple):
+        query_reqs, reasoning_blueprint, knowledge = input_tuple
+        
+        prompt = f"""
+        Compile knowledge scoped to query: {query_reqs.query}
+        Available knowledge: {knowledge}
+        
+        Select and organize only knowledge relevant to this specific query.
+        """
+        
+        compilation = dana.core.lang.llm.llm(prompt)
+        scoped_knowledge = parse_scoped_compilation(compilation)
+        
+        return (query_reqs, reasoning_blueprint, scoped_knowledge)
     
-    Select and organize only knowledge relevant to this specific query.
-    """
-    
-    compilation = dana.core.lang.llm.query(prompt)
-    scoped_knowledge = parse_scoped_compilation(compilation)
-    
-    return scoped_knowledge
+    return _scoped_compilation
 
-def context_window_builder(query_reqs: QueryRequirements, reasoning_blueprint: ReasoningBlueprint, knowledge: list):
+def context_window_builder():
     """
-    description:
-        Build optimized context window for runtime
-    parameters:
-        query_reqs: QueryRequirements - Query requirements extracted from the query
-        reasoning_blueprint: ReasoningBlueprint - Blueprint for how reasoning will be performed
-        knowledge: list - List of knowledge documents
-    output:
-        ContextWindow: Optimized context window for runtime reasoning
+    Step 11: Build optimized context window for runtime
+    Pipeline input: (QueryRequirements, ReasoningBlueprint, list)
+    Pipeline output: ContextWindow
     """
-    # Assign Bayesian roles to knowledge
-    knowledge_with_roles = assign_bayesian_roles(knowledge, query_reqs)
+    def _context_window_builder(input_tuple):
+        query_reqs, reasoning_blueprint, knowledge = input_tuple
+        
+        # Assign Bayesian roles to knowledge
+        knowledge_with_roles = assign_bayesian_roles(knowledge, query_reqs)
+        
+        # Estimate confidence
+        confidence_estimates = estimate_confidence(knowledge_with_roles, reasoning_blueprint)
+        
+        # Check if ready for reasoning
+        reasoning_ready = check_reasoning_readiness(knowledge_with_roles, reasoning_blueprint)
+        
+        return ContextWindow(
+            query=query_reqs.query,
+            reasoning_blueprint=reasoning_blueprint,
+            curated_knowledge=knowledge_with_roles,
+            confidence_estimates=confidence_estimates,
+            reasoning_ready=reasoning_ready,
+            optimization_metadata={
+                "curation_level": "enhanced",
+                "timestamp": dana.common.utils.time_utils.get_current_timestamp(),
+                "query_requirements": query_reqs
+            }
+        )
     
-    # Estimate confidence
-    confidence_estimates = estimate_confidence(knowledge_with_roles, reasoning_blueprint)
-    
-    # Check if ready for reasoning
-    reasoning_ready = check_reasoning_readiness(knowledge_with_roles, reasoning_blueprint)
-    
-    return ContextWindow(
-        query=query_reqs.query,
-        reasoning_blueprint=reasoning_blueprint,
-        curated_knowledge=knowledge_with_roles,
-        confidence_estimates=confidence_estimates,
-        reasoning_ready=reasoning_ready,
-        optimization_metadata={
-            "curation_level": "enhanced",
-            "timestamp": dana.common.utils.time_utils.get_current_timestamp(),
-            "query_requirements": query_reqs
-        }
-    )
+    return _context_window_builder
 
 # Additional pipeline functions for Level 1
 
-def assess_reasoning_requirements(query_reqs: QueryRequirements):
+def reason_requirements():
     """
-    description:
-        Analyze reasoning requirements for the query
-    parameters:
-        query_reqs: QueryRequirements - Query requirements extracted from the query
-    output:
-        dict: Reasoning requirements and capabilities needed
+    Level 1 Step 2: Reason requirements - what reasoning is needed
+    Pipeline input: QueryRequirements
+    Pipeline output: (QueryRequirements, dict)
     """
-    prompt = f"""
-    Analyze reasoning requirements for query: {query_reqs.query}
-    Intent: {query_reqs.intent}
-    Reasoning Type: {query_reqs.reasoning_type}
+    def _reason_requirements(query_reqs):
+        prompt = f"""
+        Analyze reasoning requirements for query: {query_reqs.query}
+        Intent: {query_reqs.intent}
+        Reasoning Type: {query_reqs.reasoning_type}
+        
+        Determine:
+        1. Required reasoning capabilities
+        2. Knowledge access patterns
+        3. Confidence requirements
+        4. Context dependencies
+        """
+        
+        analysis = dana.core.lang.llm.llm(prompt)
+        reasoning_reqs = parse_reasoning_requirements(analysis)
+        
+        return (query_reqs, reasoning_reqs)
     
-    Determine:
-    1. Required reasoning capabilities
-    2. Knowledge access patterns
-    3. Confidence requirements
-    4. Context dependencies
-    """
-    
-    analysis = dana.core.lang.llm.query(prompt)
-    reasoning_reqs = parse_reasoning_requirements(analysis)
-    
-    return reasoning_reqs
+    return _reason_requirements
 
-def store_selection_vector(query_reqs: QueryRequirements, reasoning_reqs: dict, sources: list):
+def store_selection_vector(sources: list):
     """
-    description:
-        Select relevant knowledge sources for the query
-    parameters:
-        query_reqs: Query requirements extracted from the query
-        reasoning_reqs: Reasoning requirements and capabilities
-        sources: Available knowledge sources
-    output:
-        list: Selected knowledge sources
+    Level 1 Step 3: Store selection (vector) - select relevant knowledge sources
+    Pipeline input: (QueryRequirements, dict)
+    Pipeline output: (QueryRequirements, dict, list)
     """
-    prompt = f"""
-    Select relevant knowledge sources for query: {query_reqs.query}
-    Available sources: {sources}
-    Reasoning requirements: {reasoning_reqs}
+    def _store_selection_vector(input_tuple):
+        query_reqs, reasoning_reqs = input_tuple
+        
+        prompt = f"""
+        Select relevant knowledge sources for query: {query_reqs.query}
+        Available sources: {sources}
+        Reasoning requirements: {reasoning_reqs}
+        
+        Select sources that best support the reasoning task.
+        """
+        
+        selection = dana.core.lang.llm.llm(prompt)
+        selected_sources = parse_source_selection(selection, sources)
+        
+        return (query_reqs, reasoning_reqs, selected_sources)
     
-    Select sources that best support the reasoning task.
-    """
-    
-    selection = dana.core.lang.llm.query(prompt)
-    selected_sources = parse_source_selection(selection, sources)
-    
-    return selected_sources
+    return _store_selection_vector
 
-def compile_and_index(query_reqs: QueryRequirements, selected_sources: list):
+def compile_and_index():
     """
-    description:
-        Compile and index knowledge from selected sources
-    parameters:
-        query_reqs: Query requirements extracted from the query
-        selected_sources: Selected knowledge sources
-    output:
-        list: Compiled and indexed knowledge
+    Level 1 Step 4: Compile and index - extract and organize knowledge
+    Pipeline input: (QueryRequirements, dict, list)
+    Pipeline output: (QueryRequirements, dict, list)
     """
-    prompt = f"""
-    Compile and index knowledge from sources for query: {query_reqs.query}
-    Sources: {selected_sources}
+    def _compile_and_index(input_tuple):
+        query_reqs, reasoning_reqs, selected_sources = input_tuple
+        
+        prompt = f"""
+        Compile and index knowledge from sources for query: {query_reqs.query}
+        Sources: {selected_sources}
+        
+        Extract and organize knowledge for efficient retrieval.
+        """
+        
+        compilation = dana.core.lang.llm.llm(prompt)
+        compiled_knowledge = parse_compiled_knowledge(compilation)
+        
+        return (query_reqs, reasoning_reqs, compiled_knowledge)
     
-    Extract and organize knowledge for efficient retrieval.
-    """
-    
-    compilation = dana.core.lang.llm.query(prompt)
-    compiled_knowledge = parse_compiled_knowledge(compilation)
-    
-    return compiled_knowledge
+    return _compile_and_index
 
-def build_context_bundle(query_reqs: QueryRequirements, compiled_knowledge: list):
+def build_context_bundle():
     """
-    description:
-        Build context bundle for Level 1 runtime
-    parameters:
-        query_reqs: Query requirements extracted from the query
-        compiled_knowledge: Compiled and indexed knowledge
-    output:
-        ContextWindow: Simple context bundle for Level 1
+    Level 1 Step 5: Build context bundle - package for runtime
+    Pipeline input: (QueryRequirements, dict, list)
+    Pipeline output: ContextWindow
     """
-    # Simple context bundle for Level 1
-    return ContextWindow(
-        query=query_reqs.query,
-        reasoning_blueprint=ReasoningBlueprint(
-            reasoning_steps=["basic_retrieval", "simple_synthesis"],
-            knowledge_patterns=["vector_search"],
-            inference_chains=["retrieve_generate"],
-            validation_checkpoints=["relevance_check"],
-            confidence_requirements={"overall": 0.6}
-        ),
-        curated_knowledge=compiled_knowledge,
-        confidence_estimates={"overall": 0.7},
-        reasoning_ready=True,
-        optimization_metadata={
-            "curation_level": "level1",
-            "timestamp": dana.common.utils.time_utils.get_current_timestamp(),
-            "query_requirements": query_reqs
-        }
-    )
+    def _build_context_bundle(input_tuple):
+        query_reqs, reasoning_reqs, compiled_knowledge = input_tuple
+        
+        # Simple context bundle for Level 1
+        return ContextWindow(
+            query=query_reqs.query,
+            reasoning_blueprint=ReasoningBlueprint(
+                reasoning_steps=["basic_retrieval", "simple_synthesis"],
+                knowledge_patterns=["vector_search"],
+                inference_chains=["retrieve_generate"],
+                validation_checkpoints=["relevance_check"],
+                confidence_requirements={"overall": 0.6}
+            ),
+            curated_knowledge=compiled_knowledge,
+            confidence_estimates={"overall": 0.7},
+            reasoning_ready=True,
+            optimization_metadata={
+                "curation_level": "level1",
+                "timestamp": dana.common.utils.time_utils.get_current_timestamp(),
+                "query_requirements": query_reqs
+            }
+        )
+    
+    return _build_context_bundle
 
 # Utility functions (implementations would follow)
 
