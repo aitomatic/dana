@@ -7,10 +7,8 @@ import logging
 from typing import Any, List
 import os
 import asyncio
-import concurrent.futures
+
 import json
-import math
-from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, File, Form, UploadFile, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 
@@ -32,7 +30,8 @@ from dana.frameworks.knows.corral.curate_general_kb.py.domain_knowledge_fresher_
 from dana.api.core.models import Agent
 from dana.frameworks.knows.corral.curate_general_kb.py.manager_agent import ManagerAgent
 import asyncio
-import threading
+from datetime import datetime, timezone
+from dana.common.utils.knowledge_status_manager import KnowledgeStatusManager, KnowledgeGenerationManager
 
 logger = logging.getLogger(__name__)
 
@@ -1315,7 +1314,6 @@ async def get_agent_chat_history(
 
 def run_generation(agent_id: int):
     # This function runs in a background thread
-    # Re-imports and DB session must be re-acquired in thread context
     from sqlalchemy.orm import sessionmaker
     from dana.api.core.database import engine
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -1338,7 +1336,6 @@ def run_generation(agent_id: int):
         topic = agent.config.get("topic") if agent.config and agent.config.get("topic") else (agent.name or "General Topic")
         print(f"[generate-knowledge] Using topic: {topic}, role: {role}")
 
-        # Re-import domain_service and get tree in thread
         from dana.api.services.domain_knowledge_service import DomainKnowledgeService
         domain_service_thread = DomainKnowledgeService()
         tree = asyncio.run(domain_service_thread.get_agent_domain_knowledge(agent_id, db_thread))
@@ -1358,29 +1355,48 @@ def run_generation(agent_id: int):
         leaf_paths = collect_leaf_paths(tree.root, [])
         print(f"[generate-knowledge] Collected {len(leaf_paths)} leaf topics from tree")
 
-        manager = ManagerAgent(topic, role)
-        semaphore = asyncio.Semaphore(4)
-
-        async def generate_and_save_leaf(path, leaf_node):
+        # 1. Build or update knowledge_status.json
+        status_path = os.path.join(knows_folder, "knowledge_status.json")
+        status_manager = KnowledgeStatusManager(status_path)
+        now_str = datetime.now(timezone.utc).isoformat() + "Z"
+        # Add/update all leaves
+        for path, leaf_node in leaf_paths:
             area_name = " - ".join(path)
-            print(f"[generate-knowledge] Generating for leaf: {area_name}")
-            async with semaphore:
-                loop = asyncio.get_event_loop()
-                knowledge = await loop.run_in_executor(None, manager.generate_knowledge_for_area, area_name, [])
-                safe_area = area_name.replace("/", "_").replace(" ", "_").replace("-", "_")
-                file_name = f"{safe_area}.json"
-                output_path = os.path.join(knows_folder, file_name)
-                with open(output_path, "w", encoding="utf-8") as f:
-                    import json
-                    json.dump(knowledge, f, indent=2, ensure_ascii=False)
-                print(f"[generate-knowledge] Saved knowledge for {area_name} to {output_path}")
+            safe_area = area_name.replace("/", "_").replace(" ", "_").replace("-", "_")
+            file_name = f"{safe_area}.json"
+            status_manager.add_or_update_topic(
+                path=area_name,
+                file=file_name,
+                last_topic_update=now_str,
+                status=None  # Don't force status change if already present
+            )
+        # Remove topics that are no longer in the tree
+        all_paths = set([" - ".join(path) for path, _ in leaf_paths])
+        for entry in status_manager.load()["topics"]:
+            if entry["path"] not in all_paths:
+                status_manager.remove_topic(entry["path"])
 
-        async def run_all():
-            tasks = [generate_and_save_leaf(path, leaf_node) for path, leaf_node in leaf_paths]
-            await asyncio.gather(*tasks)
-            print(f"[generate-knowledge] All leaf topics processed and saved.")
+        # 2. Only queue topics with status 'pending' or 'failed'
+        pending = status_manager.get_pending_or_failed()
+        print(f"[generate-knowledge] {len(pending)} topics to generate (pending or failed)")
 
-        asyncio.run(run_all())
+        # 3. Use KnowledgeGenerationManager to run the queue
+        manager = KnowledgeGenerationManager(
+            status_manager, 
+            max_concurrent=4, 
+            ws_manager=None,  # ws_manager placeholder
+            topic=topic,
+            role=role,
+            knows_folder=knows_folder
+        )
+
+        async def main():
+            for entry in pending:
+                await manager.add_topic(entry)
+            await manager.run()
+            print(f"[generate-knowledge] All queued topics processed and saved.")
+
+        asyncio.run(main())
     finally:
         db_thread.close()
         
@@ -1405,3 +1421,43 @@ async def generate_agent_knowledge(
         "message": "Knowledge generation started in background. Check logs for progress.",
         "agent_id": agent_id
     }
+
+
+@router.get("/{agent_id}/knowledge-status")
+async def get_agent_knowledge_status(
+    agent_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Get the knowledge generation status for all topics in the agent's domain knowledge tree.
+    Returns the knowledge_status.json content with status information for each topic.
+    """
+    try:
+        # Get the agent to find its folder_path
+        from dana.api.core.models import Agent
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+        
+        folder_path = agent.config.get("folder_path") if agent.config else None
+        if not folder_path:
+            # Return empty status if no folder exists yet
+            return {"topics": []}
+        
+        # Check if knowledge status file exists
+        knows_folder = os.path.join(folder_path, "knows")
+        status_path = os.path.join(knows_folder, "knowledge_status.json")
+        
+        if not os.path.exists(status_path):
+            # Return empty status if no knowledge status file exists yet
+            return {"topics": []}
+        
+        # Load and return the knowledge status
+        status_manager = KnowledgeStatusManager(status_path)
+        return status_manager.load()
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting knowledge status for agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

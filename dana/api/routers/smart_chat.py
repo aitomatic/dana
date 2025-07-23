@@ -18,6 +18,11 @@ from dana.api.core.schemas import (
 from dana.api.services.domain_knowledge_service import get_domain_knowledge_service, DomainKnowledgeService
 from dana.api.services.intent_detection_service import get_intent_detection_service, IntentDetectionService
 from dana.api.services.llm_tree_manager import get_llm_tree_manager, LLMTreeManager
+from dana.common.utils.knowledge_status_manager import KnowledgeStatusManager, KnowledgeGenerationManager
+import os
+import asyncio
+from datetime import datetime, timezone
+import sys
 
 logger = logging.getLogger(__name__)
 
@@ -308,6 +313,61 @@ async def _process_add_information_intent(
             print(f"💾 Save result: {save_success}")
             
             if save_success:
+                # --- Trigger knowledge generation for new/pending topics ---
+                try:
+                    folder_path = agent.config.get("folder_path") if agent.config else None
+                    if not folder_path:
+                        folder_path = os.path.join("agents", f"agent_{agent.id}")
+                    knows_folder = os.path.join(folder_path, "knows")
+                    os.makedirs(knows_folder, exist_ok=True)
+                    status_path = os.path.join(knows_folder, "knowledge_status.json")
+                    status_manager = KnowledgeStatusManager(status_path)
+                    now_str = datetime.now(timezone.utc).isoformat() + "Z"
+                    # Get the latest tree
+                    leaf_paths = []
+                    def collect_leaf_paths(node, path_so_far):
+                        path = path_so_far + [node.topic]
+                        if not getattr(node, 'children', []):
+                            leaf_paths.append((path, node))
+                        for child in getattr(node, 'children', []):
+                            collect_leaf_paths(child, path)
+                    collect_leaf_paths(update_response.updated_tree.root, [])
+                    # Add/update all leaves
+                    for path, leaf_node in leaf_paths:
+                        area_name = " - ".join(path)
+                        safe_area = area_name.replace("/", "_").replace(" ", "_").replace("-", "_")
+                        file_name = f"{safe_area}.json"
+                        status_manager.add_or_update_topic(
+                            path=area_name,
+                            file=file_name,
+                            last_topic_update=now_str,
+                            status=None
+                        )
+                    # Remove topics that are no longer in the tree
+                    all_paths = set([" - ".join(path) for path, _ in leaf_paths])
+                    for entry in status_manager.load()["topics"]:
+                        if entry["path"] not in all_paths:
+                            status_manager.remove_topic(entry["path"])
+                    # Only queue topics with status 'pending' or 'failed'
+                    pending = status_manager.get_pending_or_failed()
+                    print(f"[smart-chat] {len(pending)} topics to generate (pending or failed)")
+                    manager = KnowledgeGenerationManager(status_manager, max_concurrent=4, ws_manager=None)
+                    async def run_queue():
+                        for entry in pending:
+                            await manager.add_topic(entry)
+                        await manager.run()
+                        print(f"[smart-chat] All queued topics processed and saved.")
+                    # Run in background, works in both async and sync contexts
+                    try:
+                        loop = asyncio.get_running_loop()
+                        print("[smart-chat] Using asyncio.create_task to trigger knowledge generation queue.")
+                        asyncio.create_task(run_queue())
+                    except RuntimeError:
+                        print("[smart-chat] No running event loop, using asyncio.run to trigger knowledge generation queue.")
+                        asyncio.run(run_queue())
+                except Exception as e:
+                    print(f"[smart-chat] Error triggering knowledge generation: {e}")
+                # --- End trigger ---
                 return {
                     "processor": "add_information",
                     "success": True,
@@ -317,25 +377,24 @@ async def _process_add_information_intent(
                 }
             else:
                 return {
-                    "processor": "add_information", 
+                    "processor": "add_information",
                     "success": False,
-                    "agent_response": "I organized the knowledge structure but had trouble saving it. Please try again.",
+                    "agent_response": "I tried to update my knowledge, but something went wrong saving it.",
                     "updates_applied": []
                 }
         else:
             return {
                 "processor": "add_information",
                 "success": False,
-                "agent_response": f"I had trouble organizing my knowledge structure: {update_response.error or 'Unknown error'}. Could you try rephrasing your request?",
+                "agent_response": update_response.error or "I couldn't update my knowledge tree.",
                 "updates_applied": []
             }
-    
     except Exception as e:
         print(f"❌ Exception in LLM-powered add_information: {e}")
         return {
             "processor": "add_information",
             "success": False,
-            "agent_response": f"I encountered an error while processing your request: {str(e)}. Please try again.",
+            "agent_response": f"Sorry, I ran into an error while updating my knowledge: {e}",
             "updates_applied": []
         }
 

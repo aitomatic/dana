@@ -262,6 +262,21 @@ export interface AgentTestResponse {
   error?: string;
 }
 
+// Knowledge Status Types
+export interface KnowledgeTopicStatus {
+  id: string;
+  path: string;
+  file: string;
+  status: 'pending' | 'in_progress' | 'success' | 'failed';
+  last_generated: string | null;
+  last_topic_update: string;
+  error: string | null;
+}
+
+export interface KnowledgeStatusResponse {
+  topics: KnowledgeTopicStatus[];
+}
+
 export interface ProcessAgentDocumentsRequest {
   document_folder: string;
   conversation: string | string[];
@@ -738,6 +753,16 @@ class ApiService {
       content,
       encoding
     });
+    return response.data;
+  }
+
+  async generateKnowledge(agentId: string | number) {
+    const response = await this.client.post(`/agents/${agentId}/generate-knowledge`);
+    return response.data;
+  }
+
+  async getKnowledgeStatus(agentId: string | number): Promise<KnowledgeStatusResponse> {
+    const response = await this.client.get(`/agents/${agentId}/knowledge-status`);
     return response.data;
   }
 }

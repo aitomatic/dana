@@ -6,6 +6,8 @@ import 'reactflow/dist/style.css';
 import CustomNode from './CustomNode';
 import { apiService } from '@/lib/api';
 import type { DomainKnowledgeResponse, DomainNode } from '@/types/domainKnowledge';
+import type { KnowledgeStatusResponse, KnowledgeTopicStatus } from '@/lib/api';
+import { toast } from 'sonner';
 
 const initialNodes: FlowNode[] = [
   {
@@ -101,12 +103,9 @@ interface DomainKnowledgeTreeProps {
 
 // Add this function to call the API
 async function triggerGenerateKnowledge(agentId: string | number) {
-  const response = await fetch(`/agents/${agentId}/generate-knowledge`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  });
-  if (!response.ok) throw new Error('Failed to trigger knowledge generation');
-  return response.json();
+  const response = await apiService.generateKnowledge(agentId);
+  toast.success(response.message);
+  return response;
 }
 
 const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) => {
@@ -117,6 +116,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   const [error, setError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [generateMsg, setGenerateMsg] = useState<string | null>(null);
+  const [knowledgeStatus, setKnowledgeStatus] = useState<KnowledgeStatusResponse | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const nodeTypes = {
@@ -130,18 +130,37 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   };
 
   // Convert domain knowledge tree to flow nodes and edges
-  const convertDomainToFlow = (domainTree: DomainKnowledgeResponse): { nodes: FlowNode[], edges: Edge[] } => {
+  const convertDomainToFlow = (domainTree: DomainKnowledgeResponse, statusData?: KnowledgeStatusResponse): { nodes: FlowNode[], edges: Edge[] } => {
     const nodes: FlowNode[] = [];
     const edges: Edge[] = [];
 
-    const traverse = (domainNode: DomainNode, parentId?: string, path: string = '') => {
-      const nodeId = path ? `${path}/${domainNode.topic}` : domainNode.topic; // Unique path-based ID
+    // Helper function to get knowledge status for a node path
+    const getKnowledgeStatusForPath = (nodePath: string): KnowledgeTopicStatus | null => {
+      if (!statusData || !statusData.topics) return null;
 
-      // Create flow node
+      // Find the status entry that matches this node's path
+      return statusData.topics.find(topic => topic.path === nodePath) || null;
+    };
+
+    const traverse = (domainNode: DomainNode, parentId?: string, pathParts: string[] = []) => {
+      const currentPath = [...pathParts, domainNode.topic];
+      const nodeId = currentPath.join('/'); // Unique path-based ID
+      const nodePath = currentPath.join(' - '); // Path format used in knowledge status
+
+      // Get knowledge status for this node (only leaf nodes will have status)
+      const isLeafNode = !domainNode.children || domainNode.children.length === 0;
+      const knowledgeStatusInfo = isLeafNode ? getKnowledgeStatusForPath(nodePath) : null;
+
+      // Create flow node with knowledge status information
       nodes.push({
         id: nodeId,
         type: 'custom',
-        data: { label: domainNode.topic },
+        data: {
+          label: domainNode.topic,
+          knowledgeStatus: knowledgeStatusInfo,
+          isLeafNode,
+          nodePath
+        },
         position: { x: 0, y: 0 }, // Will be set by dagre layout
       });
 
@@ -157,7 +176,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       }
 
       // Recursively process children
-      domainNode.children?.forEach(child => traverse(child, nodeId, nodeId));
+      domainNode.children?.forEach(child => traverse(child, nodeId, currentPath));
 
       return nodeId;
     };
@@ -169,38 +188,47 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     return { nodes, edges };
   };
 
-  // Fetch domain knowledge data
+  // Fetch domain knowledge data and knowledge status
   useEffect(() => {
     if (!agentId) {
       // Show default nodes if no agent ID
       const layouted = getLayoutedElements(initialNodes, initialEdges, 'LR');
       setNodes(layouted);
       setEdges(initialEdges);
+      setKnowledgeStatus(null);
       return;
     }
 
-    const fetchDomainKnowledge = async () => {
+    const fetchData = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        const response = await apiService.getDomainKnowledge(agentId);
+        // Fetch both domain knowledge and knowledge status in parallel
+        const [domainResponse, statusResponse] = await Promise.all([
+          apiService.getDomainKnowledge(agentId),
+          apiService.getKnowledgeStatus(agentId).catch(() => ({ topics: [] })) // Fallback to empty if status fails
+        ]);
 
-        if (response.message) {
+        // Set knowledge status first so convertDomainToFlow can use it
+        setKnowledgeStatus(statusResponse);
+
+        if (domainResponse.message) {
           // No domain knowledge found, show empty state
           setNodes([]);
           setEdges([]);
-          setError(response.message);
-        } else if (response.root) {
-          // Convert domain knowledge to flow format
-          const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(response);
+          setError(domainResponse.message);
+        } else if (domainResponse.root) {
+          // Convert domain knowledge to flow format (now with status information)
+          const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(domainResponse, statusResponse);
           const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
           setNodes(layoutedNodes);
           setEdges(flowEdges);
         }
       } catch (err) {
-        console.error('Error fetching domain knowledge:', err);
+        console.error('Error fetching data:', err);
         setError('Failed to load domain knowledge');
+        setKnowledgeStatus({ topics: [] });
         // Fall back to default nodes
         const layouted = getLayoutedElements(initialNodes, initialEdges, 'LR');
         setNodes(layouted);
@@ -210,7 +238,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       }
     };
 
-    fetchDomainKnowledge();
+    fetchData();
   }, [agentId]);
 
   // Hide popup when clicking outside
@@ -324,9 +352,9 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   }
 
   return (
-    <div className='h-full w-full bg-white flex flex-col gap-4' style={{ position: 'relative' }} ref={containerRef}>
+    <>
       {agentId && (
-        <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 10 }}>
+        <div style={{}}>
           <button
             onClick={handleGenerateKnowledge}
             disabled={generating}
@@ -339,21 +367,23 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           )}
         </div>
       )}
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        fitView
-        nodesDraggable={false}
-        nodesConnectable={false}
-        elementsSelectable={false}
-        proOptions={{ hideAttribution: true }}
-        onNodeClick={onNodeClick}
-        onPaneClick={onPaneClick}
-      >
-        <Controls />
-      </ReactFlow>
-    </div>
+      <div className='h-full w-full bg-white flex flex-col gap-4' style={{ position: 'relative' }} ref={containerRef}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          fitView
+          nodesDraggable={false}
+          nodesConnectable={false}
+          elementsSelectable={false}
+          proOptions={{ hideAttribution: true }}
+          onNodeClick={onNodeClick}
+          onPaneClick={onPaneClick}
+        >
+          <Controls />
+        </ReactFlow>
+      </div>
+    </>
   );
 };
 
