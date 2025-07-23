@@ -431,6 +431,7 @@ class TypeChecker:
             BinaryOperator.LESS_EQUALS,
             BinaryOperator.GREATER_EQUALS,
             BinaryOperator.IN,
+            BinaryOperator.NOT_IN,
         ]:
             return DanaType("bool")
 
