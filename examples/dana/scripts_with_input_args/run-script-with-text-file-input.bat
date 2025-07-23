@@ -1,0 +1,1 @@
+dana2 script_with_file_input.na this_arg=@.input/text-input.txt

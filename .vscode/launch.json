@@ -1,0 +1,24 @@
+{
+  "version": "0.2.0",
+
+  "inputs": [
+    {
+      "id": "danaArgs",
+      "description": "Enter Dana arguments (e.g., 'input1=... input2=...'):",
+      "default": "",
+      "type": "promptString"
+    }
+  ],
+
+  "configurations": [
+    {
+      "name": "Run Dana File",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "dana.contrib.cli",
+      "args": ["${file}", "${input:danaArgs}"],
+      "cwd": "${fileDirname}",
+      "console": "integratedTerminal"
+    }
+  ]
+}
