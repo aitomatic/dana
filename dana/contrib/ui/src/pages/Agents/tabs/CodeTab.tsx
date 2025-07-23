@@ -1,51 +1,164 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AgentEditor } from '@/components/agent-editor';
-import { IconFileText } from '@tabler/icons-react';
+import { IconFileText, IconRefresh } from '@tabler/icons-react';
+import { apiService } from '@/lib/api';
+import { useAgentStore } from '@/stores/agent-store';
 
-// Mock file data
-const mockFiles = [
-  {
-    id: '1',
-    name: 'main.na',
-    content: '# main agent file\nquery = "What is the weather today?"\nresponse = "I\'ll check the weather for you."',
-  },
-  {
-    id: '2',
-    name: 'utils.na',
-    content: '# utility functions\n',
-  },
-  {
-    id: '3',
-    name: 'config.na',
-    content: '# agent config\n',
-  },
-];
+interface AgentFile {
+  id: string;
+  name: string;
+  path: string;
+  content: string;
+  type: 'dana' | 'document' | 'other';
+  size: number;
+  modified: number;
+}
 
 const CodeTab: React.FC = () => {
-  const [selectedFileId, setSelectedFileId] = useState(mockFiles[0].id);
-  const [files, setFiles] = useState(mockFiles);
+  const { selectedAgent } = useAgentStore();
+  const [selectedFileId, setSelectedFileId] = useState<string>('');
+  const [files, setFiles] = useState<AgentFile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const selectedFile = files.find((f) => f.id === selectedFileId) || files[0];
+
+  // Load agent files on component mount
+  useEffect(() => {
+    loadAgentFiles();
+  }, [selectedAgent]);
+
+  const loadAgentFiles = async () => {
+    if (!selectedAgent?.id) return;
+
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await apiService.getAgentFiles(selectedAgent.id);
+      
+      // Filter for .na files only and load their content
+      const naFiles = response.files.filter(file => file.type === 'dana');
+      
+      const filesWithContent = await Promise.all(
+        naFiles.map(async (file, index) => {
+          try {
+            const contentResponse = await apiService.getAgentFileContent(selectedAgent.id, file.path);
+            return {
+              id: `${index}`, // Simple ID based on index
+              name: file.name,
+              path: file.path,
+              content: contentResponse.content,
+              type: file.type,
+              size: file.size,
+              modified: file.modified
+            } as AgentFile;
+          } catch (err) {
+            console.error(`Failed to load content for ${file.name}:`, err);
+            return {
+              id: `${index}`,
+              name: file.name,
+              path: file.path,
+              content: `// Error loading file: ${err}`,
+              type: file.type,
+              size: file.size,
+              modified: file.modified
+            } as AgentFile;
+          }
+        })
+      );
+
+      setFiles(filesWithContent);
+      
+      // Auto-select the first file
+      if (filesWithContent.length > 0) {
+        setSelectedFileId(filesWithContent[0].id);
+      }
+    } catch (err) {
+      console.error('Failed to load agent files:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load files');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleFileSelect = (id: string) => {
     setSelectedFileId(id);
   };
 
-  const handleEditorChange = (value: string) => {
+  const handleEditorChange = async (value: string) => {
+    const file = files.find(f => f.id === selectedFileId);
+    if (!file || !selectedAgent?.id) return;
+
+    // Update local state immediately for responsive UI
     setFiles((prev) =>
-      prev.map((file) =>
-        file.id === selectedFileId ? { ...file, content: value } : file
+      prev.map((f) =>
+        f.id === selectedFileId ? { ...f, content: value } : f
       )
     );
+
+    // Save to backend
+    try {
+      await apiService.updateAgentFileContent(selectedAgent.id, file.path, value);
+    } catch (err) {
+      console.error('Failed to save file:', err);
+      // Optionally show an error toast
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full bg-white rounded-lg shadow">
+        <div className="text-center">
+          <IconRefresh className="w-8 h-8 mx-auto mb-4 animate-spin text-blue-500" />
+          <p className="text-gray-600">Loading agent files...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full bg-white rounded-lg shadow">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error: {error}</p>
+          <button
+            onClick={loadAgentFiles}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2 mx-auto"
+          >
+            <IconRefresh className="w-4 h-4" />
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (files.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full bg-white rounded-lg shadow">
+        <div className="text-center">
+          <IconFileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+          <p className="text-gray-600 mb-2">No Dana files found</p>
+          <p className="text-sm text-gray-500">Dana files (.na) will appear here once the agent is created</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full bg-white rounded-lg shadow overflow-hidden bg-white">
       {/* Sidebar */}
       <div className="w-56 border-r bg-white flex flex-col">
         <div className="flex items-center justify-between px-4 py-3 border-b">
-          <span className="font-semibold text-gray-800 text-sm">Files</span>
-
+          <span className="font-semibold text-gray-800 text-sm">Dana Files</span>
+          <button
+            onClick={loadAgentFiles}
+            className="p-1 text-gray-500 hover:text-gray-700 rounded"
+            title="Refresh files"
+          >
+            <IconRefresh className="w-4 h-4" />
+          </button>
         </div>
         <div className="flex-1 overflow-y-auto">
           {files.map((file) => (
@@ -66,17 +179,23 @@ const CodeTab: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1 min-w-0 flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b bg-white">
-          <span className="font-semibold text-gray-900 text-lg">{selectedFile.name}</span>
+          <span className="font-semibold text-gray-900 text-lg">{selectedFile?.name || 'No file selected'}</span>
         </div>
         <div className="flex-1 min-h-0">
-          <AgentEditor
-            value={selectedFile.content}
-            onChange={handleEditorChange}
-            placeholder={`Edit ${selectedFile.name}...`}
-            enableValidation={selectedFile.name === 'main.na'}
-            enableAutoValidation={selectedFile.name === 'main.na'}
-            className="h-full"
-          />
+          {selectedFile ? (
+            <AgentEditor
+              value={selectedFile.content}
+              onChange={handleEditorChange}
+              placeholder={`Edit ${selectedFile.name}...`}
+              enableValidation={selectedFile.name === 'main.na'}
+              enableAutoValidation={selectedFile.name === 'main.na'}
+              className="h-full"
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full text-gray-500">
+              Select a file to start editing
+            </div>
+          )}
         </div>
       </div>
     </div>

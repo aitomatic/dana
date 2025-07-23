@@ -1022,6 +1022,172 @@ async def upload_agent_document(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/{agent_id}/files")
+async def list_agent_files(
+    agent_id: int,
+    db: Session = Depends(get_db)
+):
+    """List all files in the agent's folder structure."""
+    try:
+        # Get the agent to find its folder_path
+        from dana.api.core.models import Agent
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+        
+        folder_path = agent.config.get("folder_path") if agent.config else None
+        if not folder_path:
+            return {"files": [], "message": "Agent folder not found"}
+        
+        # List all files in the agent folder
+        from pathlib import Path
+        agent_folder = Path(folder_path)
+        if not agent_folder.exists():
+            return {"files": [], "message": "Agent folder does not exist"}
+        
+        files = []
+        for file_path in agent_folder.rglob("*"):
+            if file_path.is_file():
+                relative_path = str(file_path.relative_to(agent_folder))
+                file_info = {
+                    "name": file_path.name,
+                    "path": relative_path,
+                    "full_path": str(file_path),
+                    "size": file_path.stat().st_size,
+                    "modified": file_path.stat().st_mtime,
+                    "type": "dana" if file_path.suffix == ".na" else "document" if relative_path.startswith("docs/") else "other"
+                }
+                files.append(file_info)
+        
+        return {"files": files}
+        
+    except Exception as e:
+        logger.error(f"Error listing agent files for agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{agent_id}/files/{file_path:path}")
+async def get_agent_file_content(
+    agent_id: int,
+    file_path: str,
+    db: Session = Depends(get_db)
+):
+    """Get the content of a specific file in the agent's folder."""
+    try:
+        # Get the agent to find its folder_path
+        from dana.api.core.models import Agent
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+        
+        folder_path = agent.config.get("folder_path") if agent.config else None
+        if not folder_path:
+            raise HTTPException(status_code=404, detail="Agent folder not found")
+        
+        # Construct full file path and validate it's within agent folder
+        from pathlib import Path
+        agent_folder = Path(folder_path)
+        full_file_path = agent_folder / file_path
+        
+        # Security check: ensure file is within agent folder
+        try:
+            full_file_path.resolve().relative_to(agent_folder.resolve())
+        except ValueError:
+            raise HTTPException(status_code=403, detail="Access denied: file outside agent folder")
+        
+        if not full_file_path.exists():
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        if not full_file_path.is_file():
+            raise HTTPException(status_code=400, detail="Path is not a file")
+        
+        # Read file content
+        try:
+            content = full_file_path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            # For binary files, return base64 encoded content
+            import base64
+            content = base64.b64encode(full_file_path.read_bytes()).decode("utf-8")
+            return {
+                "content": content,
+                "encoding": "base64",
+                "file_path": file_path,
+                "file_name": full_file_path.name,
+                "file_size": full_file_path.stat().st_size
+            }
+        
+        return {
+            "content": content,
+            "encoding": "utf-8",
+            "file_path": file_path,
+            "file_name": full_file_path.name,
+            "file_size": full_file_path.stat().st_size
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reading agent file {file_path} for agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/{agent_id}/files/{file_path:path}")
+async def update_agent_file_content(
+    agent_id: int,
+    file_path: str,
+    request: dict,
+    db: Session = Depends(get_db)
+):
+    """Update the content of a specific file in the agent's folder."""
+    try:
+        # Get the agent to find its folder_path
+        from dana.api.core.models import Agent
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+        
+        folder_path = agent.config.get("folder_path") if agent.config else None
+        if not folder_path:
+            raise HTTPException(status_code=404, detail="Agent folder not found")
+        
+        # Construct full file path and validate it's within agent folder
+        from pathlib import Path
+        agent_folder = Path(folder_path)
+        full_file_path = agent_folder / file_path
+        
+        # Security check: ensure file is within agent folder
+        try:
+            full_file_path.resolve().relative_to(agent_folder.resolve())
+        except ValueError:
+            raise HTTPException(status_code=403, detail="Access denied: file outside agent folder")
+        
+        content = request.get("content", "")
+        encoding = request.get("encoding", "utf-8")
+        
+        # Create parent directories if they don't exist
+        full_file_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Write file content
+        if encoding == "base64":
+            import base64
+            full_file_path.write_bytes(base64.b64decode(content))
+        else:
+            full_file_path.write_text(content, encoding="utf-8")
+        
+        return {
+            "success": True,
+            "message": f"File {file_path} updated successfully",
+            "file_path": file_path,
+            "file_size": full_file_path.stat().st_size
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating agent file {file_path} for agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/open-file/{file_path:path}")
 async def open_file(file_path: str):
     """Open file endpoint."""

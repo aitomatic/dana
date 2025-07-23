@@ -698,6 +698,48 @@ class ApiService {
     const response = await this.client.get(`/agents/${agentId}/domain-knowledge`);
     return response.data; // Returns domain knowledge tree or { message: "No domain knowledge found" }
   }
+
+  // Agent File Management API Methods
+  async getAgentFiles(agentId: number): Promise<{
+    files: Array<{
+      name: string;
+      path: string;
+      full_path: string;
+      size: number;
+      modified: number;
+      type: 'dana' | 'document' | 'other';
+    }>;
+    message?: string;
+  }> {
+    const response = await this.client.get(`/agents/${agentId}/files`);
+    return response.data;
+  }
+
+  async getAgentFileContent(agentId: number, filePath: string): Promise<{
+    content: string;
+    encoding: string;
+    file_path: string;
+    file_name: string;
+    file_size: number;
+  }> {
+    const encodedPath = encodeURIComponent(filePath);
+    const response = await this.client.get(`/agents/${agentId}/files/${encodedPath}`);
+    return response.data;
+  }
+
+  async updateAgentFileContent(agentId: number, filePath: string, content: string, encoding: string = 'utf-8'): Promise<{
+    success: boolean;
+    message: string;
+    file_path: string;
+    file_size: number;
+  }> {
+    const encodedPath = encodeURIComponent(filePath);
+    const response = await this.client.put(`/agents/${agentId}/files/${encodedPath}`, {
+      content,
+      encoding
+    });
+    return response.data;
+  }
 }
 
 // Export singleton instance
