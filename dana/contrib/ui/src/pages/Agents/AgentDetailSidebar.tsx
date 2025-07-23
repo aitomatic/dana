@@ -2,14 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import DanaAvatar from '/agent-avatar/javis-avatar.svg';
 import { apiService } from '@/lib/api';
 import { useParams } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { useSmartChatStore } from '@/stores/smart-chat-store';
 import { useAgentStore } from '@/stores/agent-store';
+import { Paperclip } from 'lucide-react';
 
 const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
   const { agent_id } = useParams<{ agent_id: string }>();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isComposing, setIsComposing] = useState(false);
   const messages = useSmartChatStore((s) => s.messages);
   const addMessage = useSmartChatStore((s) => s.addMessage);
   const removeMessage = useSmartChatStore((s) => s.removeMessage);
@@ -108,8 +109,38 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') sendMessage();
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const handleCompositionStart = () => {
+    setIsComposing(true);
+  };
+
+  const handleCompositionEnd = () => {
+    setIsComposing(false);
+  };
+
+  const handleFileUpload = () => {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '*/*';
+    fileInput.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        // TODO: Implement file upload functionality
+        console.log('File selected:', file.name);
+        // For now, just add a message indicating file upload intent
+        addMessage({
+          sender: 'user',
+          text: `📎 Uploaded: ${file.name}`,
+        });
+      }
+    };
+    fileInput.click();
   };
 
   return (
@@ -145,19 +176,37 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
         })}
         <div ref={bottomRef} />
       </div>
-      <div className="flex gap-2 p-2 border-t">
-        <input
-          className="flex-1 px-2 py-1 text-sm rounded border"
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Ask the agent assistant..."
-          disabled={loading}
-        />
-        <Button onClick={sendMessage} disabled={loading || !input.trim()} size="sm">
-          Send
-        </Button>
+      <div className="p-3 border-t">
+        <div className="relative">
+          <textarea
+            className="w-full min-h-[44px] max-h-[120px] pl-3 pr-12 py-3 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none overflow-y-auto"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onCompositionStart={handleCompositionStart}
+            onCompositionEnd={handleCompositionEnd}
+            placeholder="Ask the agent assistant... (Press Enter to send, Shift+Enter for new line)"
+            disabled={loading}
+            rows={1}
+            style={{ 
+              height: 'auto',
+              minHeight: '44px'
+            }}
+            onInput={(e) => {
+              const target = e.target as HTMLTextAreaElement;
+              target.style.height = 'auto';
+              target.style.height = Math.min(target.scrollHeight, 120) + 'px';
+            }}
+          />
+          <button
+            onClick={handleFileUpload}
+            className="absolute right-3 top-3 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+            title="Upload attachment"
+            disabled={loading}
+          >
+            <Paperclip className="w-5 h-5" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -166,7 +215,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
 export const AgentDetailSidebar: React.FC = () => {
   const selectedAgent = useAgentStore((s) => s.selectedAgent);
   return (
-    <div className="w-[320px] min-w-[280px] max-h-[calc(100vh-64px)] overflow-y-auto flex flex-col p-2 bg-gray-50">
+    <div className="w-[420px] min-w-[380px] max-h-[calc(100vh-64px)] overflow-y-auto flex flex-col p-2 bg-gray-50">
       <div className="flex flex-col h-full bg-white rounded-lg shadow-md">
         <div className="flex gap-3 items-center p-4 mb-4 border-b border-gray-200">
           <img className="w-10 h-10 rounded-full" src={DanaAvatar} alt="Dana avatar" />

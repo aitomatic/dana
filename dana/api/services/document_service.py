@@ -50,12 +50,25 @@ class DocumentService:
             DocumentRead object with the stored document information
         """
         try:
-            # Generate unique filename
-            file_extension = os.path.splitext(filename)[1]
-            unique_filename = f"{uuid.uuid4()}{file_extension}"
+            # Use original filename, handle conflicts by appending timestamp/counter
             target_dir = upload_directory if upload_directory else self.upload_directory
             os.makedirs(target_dir, exist_ok=True)
-            file_path = os.path.join(target_dir, unique_filename)
+            
+            # Try original filename first
+            file_path = os.path.join(target_dir, filename)
+            
+            # If file exists, append timestamp to avoid conflicts
+            if os.path.exists(file_path):
+                name_without_ext, file_extension = os.path.splitext(filename)
+                timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+                filename_with_timestamp = f"{name_without_ext}_{timestamp}{file_extension}"
+                file_path = os.path.join(target_dir, filename_with_timestamp)
+                
+                # If still exists (very rare), add UUID as fallback
+                if os.path.exists(file_path):
+                    unique_id = str(uuid.uuid4())[:8]
+                    filename_with_uuid = f"{name_without_ext}_{timestamp}_{unique_id}{file_extension}"
+                    file_path = os.path.join(target_dir, filename_with_uuid)
 
             # Save file to disk
             with open(file_path, "wb") as f:
@@ -66,6 +79,9 @@ class DocumentService:
             # Determine MIME type
             mime_type = self._get_mime_type(filename)
 
+            # Get the actual filename that was used (could be modified due to conflicts)
+            actual_filename = os.path.basename(file_path)
+            
             # Create document record
             document_data = DocumentCreate(
                 original_filename=filename,
@@ -74,7 +90,7 @@ class DocumentService:
             )
 
             document = Document(
-                filename=unique_filename,
+                filename=actual_filename,
                 original_filename=document_data.original_filename,
                 file_path=file_path,
                 file_size=file_size,

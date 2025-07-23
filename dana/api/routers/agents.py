@@ -87,148 +87,174 @@ async def _create_basic_dana_files(
     
     # TODO: Correct the content
     # Create main.na - the entry point
-    main_content = f'''/*
- * {agent_name} - Main Entry Point
- * {agent_description if agent_description else "A helpful AI agent"}
- * 
- * Specialties: {specialties}
- * Skills: {skills}
- */
+    main_content = f'''
 
-import common
-import tools
-import knowledge
-import workflows
+from workflows import workflow
+from common import RetrievalPackage
 
-def main(input: str) -> str {{
-    log(f"{{agent_name}} received input: {{input}}")
-    
-    # Process the input using available knowledge and tools
-    result = process_request(input)
-    
-    log(f"{{agent_name}} responding with: {{result}}")
-    return result
-}}
+agent RetrievalExpertAgent:
+    name: str = "RetrievalExpertAgent"
+    description: str = "A retrieval expert agent that can answer questions about documents"
 
-def process_request(input: str) -> str {{
-    /*
-     * Main processing logic for the agent
-     * Customize this function based on your agent's specific needs
-     */
-    
-    # Check if this is a greeting
-    if input.lower() in ["hello", "hi", "hey"] {{
-        return f"Hello! I'm {{agent_name}}, and I specialize in {specialties}. How can I help you today?"
-    }}
-    
-    # Default response with agent capabilities
-    return f"I'm {{agent_name}}, ready to help with {specialties}. You asked: {{input}}. How can I assist you further?"
-}}
+def solve(self : RetrievalExpertAgent, query: str) -> str:
+    package = RetrievalPackage(query=query)
+    return workflow(package)
 
-# Agent metadata for reference
-agent_name = "{agent_name}"
-agent_description = "{agent_description if agent_description else 'A helpful AI agent'}"
-agent_specialties = "{specialties}"
-agent_skills = "{skills}"
+this_agent = RetrievalExpertAgent()
+
+# Example usage
+# print(this_agent.solve("What is Dana language?"))
 '''
     
     # Create common.na - shared utilities
-    common_content = '''/*
- * Common utilities and shared functions
- */
+    common_content = '''
+struct RetrievalPackage:
+    query: str
+    refined_query: str = ""
+    should_use_rag: bool = False
+    retrieval_result: str = "<empty>"
+QUERY_GENERATION_PROMPT = """
+You are **QuerySmith**, an expert search-query engineer for a Retrieval-Augmented Generation (RAG) pipeline.
 
-def format_response(message: str, agent_name: str) -> str {
-    return f"[{agent_name}]: {message}"
-}
+**Task**  
+Given the USER_REQUEST below, craft **one** concise query string (≤ 12 tokens) that will maximize recall of the most semantically relevant documents.
 
-def log_interaction(input: str, output: str) {
-    log(f"Input: {input}")
-    log(f"Output: {output}")
-}
+**Process**  
+1. **Extract Core Concepts** – identify the main entities, actions, and qualifiers.  
+2. **Select High-Signal Terms** – keep nouns/verbs with the strongest discriminative power; drop stop-words and vague modifiers.  
+3. **Synonym Check** – if a well-known synonym outperforms the original term in typical search engines, substitute it.  
+4. **Context Packing** – arrange terms from most to least important; group multi-word entities in quotes (“like this”).  
+5. **Final Polish** – ensure the string is lowercase, free of punctuation except quotes, and contains **no** explanatory text.
 
-def validate_input(input: str) -> bool {
-    return input != null and input != ""
-}
+**Output Format**  
+Return **only** the final query string on a single line. No markdown, labels, or additional commentary.
+
+---
+
+USER_REQUEST: 
+{user_input}
+"""
+
+QUERY_DECISION_PROMPT = """
+You are **RetrievalGate**, a binary decision agent guarding a Retrieval-Augmented Generation (RAG) pipeline.
+
+Task  
+Analyze the USER_REQUEST below and decide whether external document retrieval is required to answer it accurately.
+
+Decision Rules  
+1. External-Knowledge Need – Does the request demand up-to-date facts, statistics, citations, or niche info unlikely to be in the model’s parameters?  
+2. Internal Sufficiency – Could the model satisfy the request with its own reasoning, creativity, or general knowledge?  
+3. Explicit User Cue – If the user explicitly asks to “look up,” “cite,” “fetch,” “search,” or mentions a source/corpus, retrieval is required.  
+4. Ambiguity Buffer – When uncertain, default to retrieval (erring on completeness).
+
+Output Format  
+Return **only** one lowercase Boolean literal on a single line:  
+- `true`  → retrieval is needed  
+- `false` → retrieval is not needed
+
+---
+
+USER_REQUEST: 
+{user_input}
+"""
+
+ANSWER_PROMPT = """
+You are **RAGResponder**, an expert answer-composer for a Retrieval-Augmented Generation pipeline.
+
+────────────────────────────────────────
+INPUTS
+• USER_REQUEST: The user’s natural-language question.  
+• RETRIEVED_DOCS: *Optional* — multiple objects, each with:
+    - metadata
+    - content
+  If no external retrieval was performed, RETRIEVED_DOCS will be empty.
+
+────────────────────────────────────────
+TASK  
+Produce a single, well-structured answer that satisfies USER_REQUEST.
+
+────────────────────────────────────────
+GUIDELINES  
+1. **Grounding Strategy**  
+   • If RETRIEVED_DOCS is **non-empty**, read the top-scoring snippets first.  
+   • Extract only the facts truly relevant to the question.  
+   • Integrate those facts into your reasoning and cite them inline as **[doc_id]**.
+
+2. **Fallback Strategy**  
+   • If RETRIEVED_DOCS is **empty**, rely on your internal knowledge.  
+   • Answer confidently but avoid invented specifics (no hallucinations).
+
+3. **Citation Rules**  
+   • Cite **every** external fact or quotation with its matching [doc_id].  
+   • Do **not** cite when drawing solely from internal knowledge.  
+   • Never reference retrieval *scores* or expose raw snippets.
+
+4. **Answer Quality**  
+   • Prioritize clarity, accuracy, and completeness.  
+   • Use short paragraphs, bullets, or headings if it helps readability.  
+   • Maintain a neutral, informative tone unless the user requests otherwise.
+
+────────────────────────────────────────
+OUTPUT FORMAT  
+Return **only** the answer text—no markdown fences, JSON, or additional labels.
+Citations must appear inline in square brackets, e.g.:
+    Solar power capacity grew by 24 % in 2024 [energy_outlook_2025].
+
+────────────────────────────────────────
+RETRIEVED_DOCS: 
+{retrieved_docs}
+
+────────────────────────────────────────
+USER_REQUEST: 
+{user_input}
+"""
 '''
     
     # Create tools.na - agent tools and capabilities
-    tools_content = '''/*
- * Agent tools and capabilities
- * Add your custom tools and integrations here
- */
-
-def get_current_time() -> str {
-    # Placeholder for time functionality
-    return "Current time functionality not implemented"
-}
-
-def search_knowledge(query: str) -> str {
-    # Placeholder for knowledge search
-    return f"Knowledge search for '{query}' - implement knowledge base integration"
-}
-
-def calculate(expression: str) -> str {
-    # Placeholder for calculation functionality
-    return f"Calculation '{expression}' - implement math operations"
-}
+    tools_content = '''
 '''
     
     # Create knowledge.na - knowledge base
-    knowledge_content = '''/*
- * Agent knowledge base
- * Define your agent's knowledge and expertise here
- */
+    knowledge_content = '''
+doc_knowledge = use("rag", sources=["./docs"])
+'''
 
-def get_expertise_areas() -> list[str] {
-    return [
-        "General assistance",
-        "Problem solving",
-        "Information processing"
-    ]
-}
+    methods_content = '''
+from knowledge import doc_knowledge
+from common import QUERY_GENERATION_PROMPT
+from common import QUERY_DECISION_PROMPT
+from common import ANSWER_PROMPT
+from common import RetrievalPackage
 
-def get_agent_background() -> str {
-    return """
-    I am an AI agent designed to be helpful, harmless, and honest.
-    I can assist with various tasks and provide information on many topics.
-    """
-}
+def search_document(package: RetrievalPackage) -> RetrievalPackage:
+    query = package.query
+    if package.refined_query != "":
+        query = package.refined_query
+    package.retrieval_result = str(doc_knowledge.query(query))
+    return package
 
-def answer_question(question: str) -> str {
-    # Placeholder for knowledge-based question answering
-    return f"I received your question: '{question}'. Please implement specific knowledge handling for better responses."
-}
+def refine_query(package: RetrievalPackage) -> RetrievalPackage:
+    if package.should_use_rag:
+        package.refined_query = reason(QUERY_GENERATION_PROMPT.format(user_input=package.query))
+    return package
+
+def should_use_rag(package: RetrievalPackage) -> RetrievalPackage:
+    package.should_use_rag = reason(QUERY_DECISION_PROMPT.format(user_input=package.query))
+    return package
+
+def get_answer(package: RetrievalPackage) -> str:
+    prompt = ANSWER_PROMPT.format(user_input=package.query, retrieved_docs=package.retrieval_result)
+    return reason(prompt)
 '''
     
     # Create workflows.na - agent workflows
-    workflows_content = '''/*
- * Agent workflows and processes
- * Define complex multi-step processes here
- */
+    workflows_content = '''
+from methods import should_use_rag
+from methods import refine_query
+from methods import search_document
+from methods import get_answer
 
-def standard_workflow(input: str) -> str {
-    # Standard processing workflow
-    log("Starting standard workflow")
-    
-    # Step 1: Validate input
-    if not validate_input(input) {
-        return "Invalid input provided"
-    }
-    
-    # Step 2: Process request
-    result = process_with_context(input)
-    
-    # Step 3: Format response
-    formatted_result = format_response(result, agent_name)
-    
-    log("Completed standard workflow")
-    return formatted_result
-}
-
-def process_with_context(input: str) -> str {
-    # Add context-aware processing here
-    return f"Processed: {input}"
-}
+workflow = should_use_rag | refine_query | search_document | get_answer
 '''
     
     # Write all files
@@ -237,6 +263,9 @@ def process_with_context(input: str) -> str {
     
     with open(agent_folder / "common.na", "w") as f:
         f.write(common_content)
+
+    with open(agent_folder / "methods.na", "w") as f:
+        f.write(methods_content)
         
     with open(agent_folder / "tools.na", "w") as f:
         f.write(tools_content)
@@ -993,14 +1022,25 @@ async def upload_agent_document(
         agent = db.query(Agent).filter(Agent.id == agent_id).first()
         if not agent:
             raise HTTPException(status_code=404, detail="Agent not found")
-        if not agent.folder_path:
+        
+        # Get folder_path from agent config
+        folder_path = agent.config.get("folder_path") if agent.config else None
+        if not folder_path:
+            # Generate folder path and save it to config
             folder_path = os.path.join("agents", f"agent_{agent_id}")
             os.makedirs(folder_path, exist_ok=True)
-            agent.folder_path = folder_path
+            
+            # Update config with folder_path
+            updated_config = agent.config.copy() if agent.config else {}
+            updated_config["folder_path"] = folder_path
+            agent.config = updated_config
+            
+            # Force update by marking as dirty
+            from sqlalchemy.orm.attributes import flag_modified
+            flag_modified(agent, "config")
+            
             db.commit()
             db.refresh(agent)
-        else:
-            folder_path = agent.folder_path
 
         # Use the agent's docs folder as the upload directory
         docs_folder = os.path.join(folder_path, "docs")

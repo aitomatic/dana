@@ -1,8 +1,7 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { useAgentStore } from '@/stores/agent-store';
 
-const OverviewTab: React.FC<{ onShowComparison: () => void }> = ({ onShowComparison }) => {
+const OverviewTab: React.FC<{ onShowComparison: () => void }> = () => {
   const agent = useAgentStore((s) => s.selectedAgent);
   return (
     <div className="flex flex-col gap-8 md:flex-row">
