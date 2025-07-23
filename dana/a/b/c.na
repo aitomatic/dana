@@ -1,8 +1,0 @@
-"""
-Test module a.b.c for testing 3-component imports.
-"""
-
-def deep_function() -> str:
-    return "Hello from deep module!"
-
-DEEP_CONSTANT: str = "Deep level constant" 

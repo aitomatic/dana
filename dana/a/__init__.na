@@ -1,6 +1,0 @@
-"""
-Test package 'a' for testing deeply nested imports.
-"""
-
-def basic_function() -> str:
-    return "from a" 

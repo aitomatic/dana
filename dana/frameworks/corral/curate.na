@@ -101,7 +101,7 @@ def curate_knowledge_recipe(domain: str = "General",
     print("knowledge_state: ", knowledge_state)
 
     # 7. Validate knowledge coverage
-    coverage_analysis = _validate_knowledge_coverage(task_sig, kb_assets)
+    coverage_analysis = _validate_knowledge_coverage(task_sig, kb_assets, knowledge_state)
     print("coverage_analysis: ", coverage_analysis)
 
     # 8. Simulate agent run with symbolic context
@@ -113,7 +113,7 @@ def curate_knowledge_recipe(domain: str = "General",
     print("eval_summary: ", eval_summary)
 
     # 10. Generate recipe with symbolic insights
-    recipe = _emit_recipe(eval_summary, kb_assets, knowledge_state)
+    recipe = _emit_recipe(eval_summary, kb_assets, knowledge_state, coverage_analysis)
     print("recipe: ", recipe)
 
     return recipe
@@ -140,9 +140,13 @@ def _analyze_knowledge_state(task_sig: TaskSignature, kb_assets: dict[str, Knowl
             ak_count = ak_count + 1
     
     # Coverage analysis
-    # required_count = len(task_sig.knowledge_needs)
     available_count = len(kb_assets)
-    coverage_ratio = available_count / max(required_count, 1)
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    print(f"task_sig: {task_sig}")
+    print(f"task_sig.knowledge_needs: {task_sig.knowledge_needs}")
+    print(f"len(task_sig.knowledge_needs): {len(task_sig.knowledge_needs)}")
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    coverage_ratio = available_count / max(len(task_sig.knowledge_needs), 1)
     
     # Asset quality analysis
     high_relevance_count = 0
@@ -168,7 +172,7 @@ def _analyze_knowledge_state(task_sig: TaskSignature, kb_assets: dict[str, Knowl
     analysis["ck_count"] = ck_count
     analysis["ak_count"] = ak_count
     analysis["high_relevance_count"] = high_relevance_count
-    analysis["critical_gap_estimate"] = max(0, required_count - available_count)
+    analysis["critical_gap_estimate"] = max(0, len(task_sig.knowledge_needs) - available_count)
     
     return analysis
 
@@ -190,11 +194,19 @@ def _extract_task_signature(domain: str,
         and success criteria
     """
     
+    # Get domain-specific patterns to improve task signature extraction
+    domain_patterns = _get_domain_patterns(domain)
+    
     prompt = f"""
-    Analyze this domain-task pair using systematic reasoning.
+    Analyze this domain-task pair using systematic reasoning with domain-specific patterns.
     
     DOMAIN: {domain}
     TASK: {task}
+    IMPROVEMENTS FROM PREVIOUS ITERATION: {improvements}
+    
+    DOMAIN-SPECIFIC CONTEXT:
+    Common patterns for "{domain}":
+    {domain_patterns}
     
     REASONING STEPS:
     1. Identify the core domain concepts and their relationships
@@ -205,6 +217,7 @@ def _extract_task_signature(domain: str,
     
     DELIBERATE REASONING:
     - Start with domain fundamentals: What are the key systems/processes in {domain}?
+    - Leverage domain patterns: How do common patterns apply to this specific task?
     - Map to task specifics: How does {task} interact with these systems?
     - Identify knowledge dependencies: What specific information is required for success?
     - Classify complexity: Based on dependencies, is this simple/moderate/complex?
@@ -213,9 +226,30 @@ def _extract_task_signature(domain: str,
     Examples to guide reasoning:
     - Manufacturing Equipment + Predictive Maintenance → entities: ["CNC_Machine", "Vibration_Sensor"], knowledge_needs: ["equipment_specifications", "maintenance_history"], complexity_level: "moderate", estimated_minimum_assets: 3
     - Financial Services + Risk Assessment → entities: ["Credit_History", "Market_Data"], knowledge_needs: ["risk_metrics", "compliance_rules"], complexity_level: "complex", estimated_minimum_assets: 5
+    
+    Apply domain patterns and examples to extract the most accurate task signature for this specific domain-task combination.
     """
     result: TaskSignature = reason(prompt)
     return result
+
+def _get_domain_patterns(domain: str) -> str:
+    """
+    Get domain-specific knowledge patterns to enhance task signature extraction
+    """
+    prompt = f"""
+    Provide common knowledge patterns, entities, and requirements for the domain: {domain}
+    
+    Include:
+    - Typical entities and systems
+    - Common knowledge requirements
+    - Typical complexity levels for tasks
+    - Standard success criteria patterns
+    - Minimum asset requirements by task type
+    
+    Format as structured patterns that can guide task signature extraction.
+    """
+    patterns: str = reason(prompt)
+    return patterns
 
 def _simulate_dk_curation(domain: str,
                           task: str,
@@ -420,24 +454,32 @@ def _evaluate_agent_run(domain: str,
     result: EvaluationSummary = reason(prompt)
     return result
 
-def _validate_knowledge_coverage(task_sig: TaskSignature, kb_assets: dict[str, KnowledgeAsset]) -> dict:
+def _validate_knowledge_coverage(task_sig: TaskSignature, kb_assets: dict[str, KnowledgeAsset], knowledge_state: dict[str, any]) -> dict:
     """
     Validate knowledge coverage against task requirements
     
     Args:
         task_sig: The task signature with required knowledge needs
         kb_assets: Available knowledge assets
+        knowledge_state: Pre-computed knowledge state analysis
     
     Returns:
         Dictionary with coverage score and gap analysis
     """
-    # required_needs = task_sig.knowledge_needs
+    required_needs = task_sig.knowledge_needs
     available_types = []
     for key in kb_assets:
         available_types.append(kb_assets[key].type)
     
     prompt = f"""
-    Perform systematic gap analysis using step-by-step reasoning.
+    Perform systematic gap analysis using step-by-step reasoning with pre-computed state context.
+    
+    PRE-COMPUTED CONTEXT:
+    - Knowledge State: {knowledge_state["state"]}
+    - Coverage Ratio: {knowledge_state["coverage_ratio"]}
+    - Knowledge Distribution: DK={knowledge_state["dk_count"]}, CK={knowledge_state["ck_count"]}, AK={knowledge_state["ak_count"]}
+    - High Relevance Assets: {knowledge_state["high_relevance_count"]}
+    - Critical Gap Estimate: {knowledge_state["critical_gap_estimate"]}
     
     REASONING FRAMEWORK:
     STEP 1: Map Requirements
@@ -445,27 +487,30 @@ def _validate_knowledge_coverage(task_sig: TaskSignature, kb_assets: dict[str, K
     - Available Asset Types: {available_types}
     - Total Assets: {len(kb_assets)}
     
-    STEP 2: Analyze Coverage Patterns
-    - For each required knowledge type, identify matching available assets
-    - Determine coverage completeness for each requirement
-    - Identify knowledge category gaps (DK/CK/AK)
+    STEP 2: Analyze Coverage Patterns (Enhanced with State Context)
+    - Given state "{knowledge_state["state"]}", what are the specific coverage implications?
+    - How does the DK/CK/AK distribution affect requirement fulfillment?
+    - Which high-relevance assets ({knowledge_state["high_relevance_count"]}) address critical needs?
+    - Identify knowledge category gaps (DK/CK/AK) in context of current distribution
     
-    STEP 3: Calculate Coverage Score
-    - Quantify exact coverage percentage for each requirement
-    - Aggregate into overall coverage score (0.0-1.0)
+    STEP 3: Calculate Coverage Score (State-Informed)
+    - Refine coverage percentage using pre-computed ratio {knowledge_state["coverage_ratio"]}
+    - Weight coverage by asset relevance and trust tier
+    - Account for knowledge state classification in scoring
     - Identify specific missing knowledge categories
     
-    STEP 4: Prioritize Gaps
-    - Rank missing knowledge types by impact on task completion
-    - Determine minimum viable knowledge threshold
-    - Provide acquisition priority based on gap severity
+    STEP 4: Prioritize Gaps (State-Driven)
+    - Given {knowledge_state["critical_gap_estimate"]} critical gaps, rank by severity
+    - Consider knowledge state transition requirements (e.g., "critical_deficit" → "partial_coverage")
+    - Determine minimum viable knowledge threshold for state improvement
+    - Provide acquisition priority based on gap severity and state optimization
     
-    Provide detailed reasoning for each step, connecting specific gaps to task requirements.
+    Provide detailed reasoning that leverages pre-computed state analysis for more accurate gap assessment.
     """
     result: dict = reason(prompt)
     return result
 
-def _emit_recipe(eval_summary: EvaluationSummary, kb_assets: dict[str, KnowledgeAsset], knowledge_state: dict[str, any]) -> KnowledgeRecipe:
+def _emit_recipe(eval_summary: EvaluationSummary, kb_assets: dict[str, KnowledgeAsset], knowledge_state: dict[str, any], coverage_analysis: dict) -> KnowledgeRecipe:
     """
     Generate a KnowledgeRecipe tailored to actual knowledge availability and performance needs.
     """
@@ -475,33 +520,47 @@ def _emit_recipe(eval_summary: EvaluationSummary, kb_assets: dict[str, Knowledge
     
     score = eval_summary.score
     
-prompt = f"""
-    Generate targeted knowledge curation recommendations using systematic reasoning.
+    prompt = f"""
+    Generate targeted knowledge curation recommendations using systematic reasoning with comprehensive context.
+
+    COMPREHENSIVE CONTEXT:
+    Knowledge State Analysis:
+    - State: {knowledge_state["state"]}
+    - Coverage Ratio: {knowledge_state["coverage_ratio"]}
+    - Knowledge Distribution: DK={knowledge_state["dk_count"]}, CK={knowledge_state["ck_count"]}, AK={knowledge_state["ak_count"]}
+    - Critical Gap Estimate: {knowledge_state["critical_gap_estimate"]}
+    
+    Performance Analysis:
+    - Current Score: {eval_summary.score}
+    - Knowledge Coverage Score: {eval_summary.knowledge_coverage_score}
+    - Critical Gaps: {eval_summary.critical_gaps}
+    - Improvement Potential: {eval_summary.improvement_potential}
+    
+    Coverage Analysis Results: {coverage_analysis}
 
     REASONING FRAMEWORK:
-    STEP 1: Analyze Current State
-    - Knowledge State: {knowledge_state["state"]}
-    - Coverage Ratio: {knowledge_state["coverage_ratio"]}
-    - Performance Score: {eval_summary.score}
-    - Knowledge Distribution: DK={knowledge_state["dk_count"]}, CK={knowledge_state["ck_count"]}, AK={knowledge_state["ak_count"]}
+    STEP 1: Analyze Current State (Multi-Dimensional)
+    - How do knowledge_state and coverage_analysis complement each other?
+    - What specific coverage gaps from analysis align with performance bottlenecks?
+    - Which knowledge categories (DK/CK/AK) show both coverage and performance issues?
 
-    STEP 2: Connect State to Performance
-    - How does state {knowledge_state["state"]} explain score {eval_summary.score}?
-    - What specific knowledge gaps prevent reaching {eval_summary.improvement_potential}?
-    - Which knowledge category (DK/CK/AK) needs the most attention?
+    STEP 2: Connect State to Performance (Gap-Informed)
+    - How does state "{knowledge_state["state"]}" with specific coverage gaps explain score {eval_summary.score}?
+    - Which coverage analysis priorities directly address critical performance gaps?
+    - What knowledge acquisition sequence optimizes both coverage and performance?
 
-    STEP 3: Reason Through Priorities
-    - Given {knowledge_state["critical_gap_estimate"]} critical gaps, what's the optimal acquisition sequence?
-    - How does coverage ratio {knowledge_state["coverage_ratio"]} guide improvement strategy?
-    - What are the minimum knowledge requirements for state transition?
+    STEP 3: Reason Through Priorities (Coverage-Driven)
+    - Use coverage analysis gap priorities to sequence knowledge acquisition
+    - How does addressing top coverage gaps enable knowledge state transitions?
+    - What are the minimum knowledge requirements for meaningful performance improvement?
 
-    STEP 4: Generate Actionable Recommendations
-    - Provide specific transformation steps for {knowledge_state["state"]} state
-    - Recommend data structures optimized for current knowledge distribution
-    - Suggest query patterns that address identified bottlenecks
-    - Quantify realistic improvement targets based on achievable knowledge acquisition
+    STEP 4: Generate Actionable Recommendations (Context-Optimized)
+    - Design transformation steps that address both coverage gaps and performance bottlenecks
+    - Recommend data structures optimized for identified gap patterns
+    - Suggest query patterns that leverage available knowledge while compensating for gaps
+    - Quantify improvement targets based on coverage analysis and performance modeling
 
-    Provide detailed step-by-step reasoning connecting symbolic analysis to concrete recommendations.
+    Provide detailed step-by-step reasoning that synthesizes symbolic analysis, coverage analysis, and performance evaluation for optimal recipe generation.
     """
     result: KnowledgeRecipe = reason(prompt)
     return result
