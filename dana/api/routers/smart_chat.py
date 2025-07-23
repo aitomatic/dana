@@ -75,10 +75,13 @@ async def smart_chat(
         # Get current domain knowledge for context
         current_domain_tree = await domain_service.get_agent_domain_knowledge(agent_id, db)
         
+        # Get recent chat history for context (last 10 messages)
+        recent_chat_history = await _get_recent_chat_history(agent_id, db, limit=10)
+        
         # Step 1: Intent Detection ONLY (no processing)
         intent_request = IntentDetectionRequest(
             user_message=user_message,
-            chat_history=[],  # Could be enhanced with actual chat history
+            chat_history=recent_chat_history,
             current_domain_tree=current_domain_tree,
             agent_id=agent_id
         )
@@ -112,6 +115,7 @@ async def smart_chat(
                 domain_service=domain_service,
                 llm_tree_manager=llm_tree_manager,
                 current_domain_tree=current_domain_tree,
+                chat_history=recent_chat_history,
                 db=db
             )
             processing_results.append(result)
@@ -179,6 +183,32 @@ async def smart_chat(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+async def _get_recent_chat_history(agent_id: int, db: Session, limit: int = 10) -> list[MessageData]:
+    """Get recent chat history for an agent."""
+    try:
+        from dana.api.core.models import AgentChatHistory
+        
+        # Get recent history excluding the current message being processed
+        history = db.query(AgentChatHistory).filter(
+            AgentChatHistory.agent_id == agent_id,
+            AgentChatHistory.type == "smart_chat"
+        ).order_by(AgentChatHistory.created_at.desc()).limit(limit).all()
+        
+        # Convert to MessageData format (reverse to get chronological order)
+        message_history = []
+        for h in reversed(history):
+            message_history.append(MessageData(
+                role=h.sender,
+                content=h.text
+            ))
+        
+        return message_history
+        
+    except Exception as e:
+        logger.warning(f"Failed to get chat history: {e}")
+        return []
+
+
 async def _process_based_on_intent(
     intent: str,
     entities: dict[str, Any],
@@ -187,6 +217,7 @@ async def _process_based_on_intent(
     domain_service: DomainKnowledgeService,
     llm_tree_manager: LLMTreeManager,
     current_domain_tree: DomainKnowledgeTree | None,
+    chat_history: list[MessageData],
     db: Session
 ) -> dict[str, Any]:
     """
@@ -196,7 +227,7 @@ async def _process_based_on_intent(
     
     if intent == "add_information":
         return await _process_add_information_intent(
-            entities, agent, domain_service, llm_tree_manager, current_domain_tree, db
+            entities, agent, domain_service, llm_tree_manager, current_domain_tree, chat_history, db
         )
     
     elif intent == "refresh_domain_knowledge":
@@ -226,6 +257,7 @@ async def _process_add_information_intent(
     domain_service: DomainKnowledgeService,
     llm_tree_manager: LLMTreeManager,
     current_domain_tree: DomainKnowledgeTree | None,
+    chat_history: list[MessageData],
     db: Session
 ) -> dict[str, Any]:
     """Process add_information intent using LLM-powered tree management."""
@@ -256,7 +288,8 @@ async def _process_add_information_intent(
             suggested_parent=parent,
             context_details=details,
             agent_name=agent.name,
-            agent_description=agent.description or ""
+            agent_description=agent.description or "",
+            chat_history=chat_history
         )
         
         print(f"🎯 LLM tree manager response: success={update_response.success}")

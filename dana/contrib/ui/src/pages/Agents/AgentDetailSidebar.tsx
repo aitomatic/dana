@@ -12,8 +12,24 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
   const [loading, setLoading] = useState(false);
   const messages = useSmartChatStore((s) => s.messages);
   const addMessage = useSmartChatStore((s) => s.addMessage);
+  const removeMessage = useSmartChatStore((s) => s.removeMessage);
   const clearMessages = useSmartChatStore((s) => s.clearMessages);
+  const { fetchAgent } = useAgentStore();
   const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  // Humanized thinking messages
+  const thinkingMessages = [
+    "Let me think about this...",
+    "Processing your request...",
+    "Analyzing what you need...", 
+    "Working on that for you...",
+    "Gathering my thoughts...",
+    "One moment while I consider this...",
+    "Let me work through this...",
+    "Thinking through your request...",
+    "Processing this information...",
+    "Just a second, organizing my response..."
+  ];
 
   useEffect(() => {
     if (bottomRef.current) {
@@ -48,17 +64,44 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
 
   const sendMessage = async () => {
     if (!input.trim() || !agent_id) return;
+    
+    // Add user message
     const userMsg = { sender: 'user' as const, text: input };
     addMessage(userMsg);
+    
+    // Show humanized thinking message
+    const randomThinking = thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
+    const thinkingMsg = { sender: 'agent' as const, text: randomThinking };
+    addMessage(thinkingMsg);
+    
+    const userInput = input;
     setInput('');
     setLoading(true);
+    
     try {
-      const response = await apiService.smartChat(agent_id, input);
+      const response = await apiService.smartChat(agent_id, userInput);
+      
+      // Remove the thinking message
+      removeMessage(messages.length - 1); // Remove the last message (thinking message)
+      
+      // Add the actual response
       addMessage({
         sender: 'agent' as const,
         text: response.follow_up_message || response.agent_response || response.message || '...',
       });
+      
+      // Reload the agent data if the smart chat updated agent properties
+      if (response.success && (response.updates_applied?.length > 0 || response.updated_domain_tree)) {
+        try {
+          await fetchAgent(parseInt(agent_id));
+        } catch (fetchError) {
+          console.warn('Failed to refresh agent data:', fetchError);
+        }
+      }
+      
     } catch (e) {
+      // Remove the thinking message
+      removeMessage(messages.length - 1);
       addMessage({ sender: 'agent' as const, text: 'Sorry, something went wrong.' });
     } finally {
       setLoading(false);
@@ -72,18 +115,34 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
   return (
     <div className="flex overflow-y-auto flex-col h-full">
       <div className="flex overflow-y-auto flex-col flex-1 gap-2 p-2">
-        {messages.map((msg, idx) => (
-          <div
-            key={idx}
-            className={`rounded-lg px-3 py-2 max-w-[85%] text-sm ${
-              msg.sender === 'user'
-                ? 'bg-blue-100 self-end text-right'
-                : 'bg-gray-100 self-start text-left'
-            }`}
-          >
-            {msg.text}
-          </div>
-        ))}
+        {messages.map((msg, idx) => {
+          const isThinking = loading && idx === messages.length - 1 && msg.sender === 'agent';
+          return (
+            <div
+              key={idx}
+              className={`rounded-lg px-3 py-2 max-w-[85%] text-sm ${
+                msg.sender === 'user'
+                  ? 'bg-blue-100 self-end text-right'
+                  : isThinking
+                  ? 'bg-amber-50 self-start text-left border border-amber-200'
+                  : 'bg-gray-100 self-start text-left'
+              }`}
+            >
+              {isThinking ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
+                  <span className="text-amber-700">{msg.text}</span>
+                </div>
+              ) : (
+                msg.text
+              )}
+            </div>
+          );
+        })}
         <div ref={bottomRef} />
       </div>
       <div className="flex gap-2 p-2 border-t">

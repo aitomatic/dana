@@ -30,7 +30,8 @@ class LLMTreeManager(Loggable):
         suggested_parent: str | None,
         context_details: str | None,
         agent_name: str,
-        agent_description: str
+        agent_description: str,
+        chat_history: list = None
     ) -> DomainKnowledgeUpdateResponse:
         """
         Intelligently add knowledge to the tree using LLM reasoning.
@@ -42,6 +43,7 @@ class LLMTreeManager(Loggable):
             context_details: Additional context about the topic
             agent_name: Agent's name for context
             agent_description: Agent's description for context
+            chat_history: Recent chat messages for additional context
             
         Returns:
             DomainKnowledgeUpdateResponse with updated tree
@@ -68,7 +70,8 @@ class LLMTreeManager(Loggable):
                 new_topic=new_topic,
                 suggested_parent=suggested_parent,
                 context_details=context_details,
-                agent_context=f"{agent_name}: {agent_description}"
+                agent_context=f"{agent_name}: {agent_description}",
+                chat_history=chat_history or []
             )
             
             print(f"📊 Tree analysis result: {tree_analysis}")
@@ -84,7 +87,7 @@ class LLMTreeManager(Loggable):
             print("🔧 Applying tree changes...")
             # Apply the LLM's recommended changes
             updated_tree = await self._apply_tree_changes(
-                current_tree, tree_analysis
+                current_tree, tree_analysis, new_topic
             )
             
             print(f"✅ Tree changes applied successfully")
@@ -176,7 +179,8 @@ class LLMTreeManager(Loggable):
         new_topic: str,
         suggested_parent: str | None,
         context_details: str | None,
-        agent_context: str
+        agent_context: str,
+        chat_history: list = None
     ) -> dict[str, Any]:
         """Use LLM to analyze where and how to add the new topic."""
         try:
@@ -191,7 +195,8 @@ class LLMTreeManager(Loggable):
                 new_topic=new_topic,
                 suggested_parent=suggested_parent,
                 context_details=context_details,
-                agent_context=agent_context
+                agent_context=agent_context,
+                chat_history=chat_history or []
             )
             
             print(f"📝 Generated prompt (first 500 chars): {prompt[:500]}...")
@@ -397,18 +402,31 @@ Example: If topic is "Financial Statement Analysis", create a tree like:
         new_topic: str,
         suggested_parent: str | None,
         context_details: str | None,
-        agent_context: str
+        agent_context: str,
+        chat_history: list = None
     ) -> str:
         """Build prompt for analyzing optimal topic placement."""
         
         tree_json = json.dumps(current_tree.model_dump(), indent=2, default=str)
         
+        # Build chat history context
+        chat_context = ""
+        if chat_history and len(chat_history) > 0:
+            chat_context = "\n\nRecent Chat History (for context):\n"
+            for msg in chat_history[-5:]:  # Last 5 messages
+                role = getattr(msg, 'role', 'unknown')
+                content = getattr(msg, 'content', str(msg))
+                chat_context += f"{role}: {content}\n"
+        
         return f"""Analyze this domain knowledge tree and add or reorganize the topic "{new_topic}".
+
+Agent Context: {agent_context}
 
 Current Tree:
 {tree_json}
 
 Task: Add "{new_topic}" under parent "{suggested_parent or 'auto-detect'}"
+Additional Context: {context_details or "None"}{chat_context}
 
 SCENARIOS:
 1. If "{new_topic}" already exists in tree and needs to be moved under "{suggested_parent}":
@@ -430,7 +448,8 @@ RESPOND WITH ONLY VALID JSON:
     async def _apply_tree_changes(
         self,
         current_tree: DomainKnowledgeTree,
-        analysis: dict[str, Any]
+        analysis: dict[str, Any],
+        new_topic: str
     ) -> DomainKnowledgeTree:
         """Apply the LLM's recommended changes to the tree."""
         
@@ -448,12 +467,11 @@ RESPOND WITH ONLY VALID JSON:
         
         if not changes:
             print("❌ No changes found in analysis! Creating manual change...")
-            # If LLM didn't provide proper format, create a fallback
-            # This is a temporary fix - we should check what the LLM actually returned
+            # If LLM didn't provide proper format, create a fallback using the actual topic
             changes = [{
                 "action": "add_node",
                 "parent_path": ["Untitled"],  # Add to root for now
-                "new_topic": "Software engineering"
+                "new_topic": new_topic  # Use the actual new_topic instead of hardcoded value
             }]
             print(f"📝 Fallback changes created: {changes}")
         
