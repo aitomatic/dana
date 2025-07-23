@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from dana.api.server.models import Agent, Conversation, Message
+from dana.api.core.models import Agent, Conversation, Message
 
 
 def test_conversation_model(db_session: Session):

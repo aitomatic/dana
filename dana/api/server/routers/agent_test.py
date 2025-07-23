@@ -12,8 +12,6 @@ from dana.core.lang.sandbox_context import SandboxContext
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 
-from .. import db
-
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/agent-test", tags=["agent-test"])
@@ -36,14 +34,6 @@ class AgentTestResponse(BaseModel):
     success: bool
     agent_response: str
     error: str | None = None
-
-
-def get_db():
-    db_session = db.SessionLocal()
-    try:
-        yield db_session
-    finally:
-        db_session.close()
 
 
 async def _llm_fallback(agent_name: str, agent_description: str, message: str) -> str:

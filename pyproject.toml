@@ -113,6 +113,7 @@ docs = [
 [project.scripts]
 dana = "dana.core.cli.dana:main"
 dana-ls = "dana.core.lang.lsp.server:main"
+dana2 = "dana.contrib.cli:main"
 
 # =============================================================================
 # Package Configuration

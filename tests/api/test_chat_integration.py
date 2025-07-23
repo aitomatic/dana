@@ -2,7 +2,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from dana.api.server import models
+from dana.api.core import models
+from dana.api.services.chat_service import ChatService
 
 
 class TestChatIntegration:
@@ -26,7 +27,7 @@ class TestChatIntegration:
 
     def test_chat_end_to_end_new_conversation(self, client, db_session, sample_agent):
         """Test complete chat flow with new conversation"""
-        with patch('dana.api.server.services.ChatService._execute_agent', new_callable=AsyncMock) as mock_execute:
+        with patch.object(ChatService, '_generate_agent_response', new_callable=AsyncMock) as mock_execute:
             # Mock agent execution
             mock_execute.return_value = "Hello! I'm your test agent. How can I help you today?"
             
@@ -76,7 +77,7 @@ class TestChatIntegration:
 
     def test_chat_end_to_end_existing_conversation(self, client, db_session, sample_agent):
         """Test complete chat flow with existing conversation"""
-        with patch('dana.api.server.services.ChatService._execute_agent', new_callable=AsyncMock) as mock_execute:
+        with patch.object(ChatService, '_generate_agent_response', new_callable=AsyncMock) as mock_execute:
             # Mock agent execution
             mock_execute.return_value = "I remember our conversation! How can I help you further?"
             
@@ -146,7 +147,7 @@ class TestChatIntegration:
 
     def test_chat_conversation_not_found(self, client, db_session, sample_agent):
         """Test chat with non-existent conversation"""
-        with patch('dana.api.server.services.ChatService._execute_agent', new_callable=AsyncMock) as mock_execute:
+        with patch.object(ChatService, '_generate_agent_response', new_callable=AsyncMock) as mock_execute:
             mock_execute.return_value = "Hello! How can I help you?"
             
             response = client.post(
@@ -166,7 +167,7 @@ class TestChatIntegration:
 
     def test_chat_agent_execution_error(self, client, db_session, sample_agent):
         """Test chat when agent execution fails"""
-        with patch('dana.api.server.services.ChatService._execute_agent', new_callable=AsyncMock) as mock_execute:
+        with patch.object(ChatService, '_generate_agent_response', new_callable=AsyncMock) as mock_execute:
             # Mock agent execution error
             mock_execute.side_effect = Exception("Agent execution failed")
             
@@ -186,7 +187,7 @@ class TestChatIntegration:
 
     def test_chat_multiple_messages_same_conversation(self, client, db_session, sample_agent):
         """Test multiple messages in the same conversation"""
-        with patch('dana.api.server.services.ChatService._execute_agent', new_callable=AsyncMock) as mock_execute:
+        with patch.object(ChatService, '_generate_agent_response', new_callable=AsyncMock) as mock_execute:
             # Mock different responses for each call
             mock_execute.side_effect = [
                 "Hello! How can I help you?",
@@ -260,7 +261,7 @@ class TestChatIntegration:
 
     def test_chat_with_context(self, client, db_session, sample_agent):
         """Test chat with context data"""
-        with patch('dana.api.server.services.ChatService._execute_agent', new_callable=AsyncMock) as mock_execute:
+        with patch.object(ChatService, '_generate_agent_response', new_callable=AsyncMock) as mock_execute:
             mock_execute.return_value = "I see you're working on project XYZ. How can I help?"
             
             context = {

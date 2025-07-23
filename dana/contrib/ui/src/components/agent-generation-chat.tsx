@@ -1,11 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/lib/api';
-import type {
-  MessageData,
-  AgentGenerationResponse,
-  MultiFileProject,
-} from '@/lib/api';
+import type { MessageData, AgentGenerationResponse, MultiFileProject } from '@/lib/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Send, Loader2, Upload } from 'lucide-react';
@@ -57,7 +53,12 @@ const AgentGenerationChat = ({
   onReadyForCodeGeneration,
 }: AgentGenerationChatProps) => {
   // Zustand stores
-  const { setCapabilities, setLoading, setError } = useAgentCapabilitiesStore();
+  const {
+    capabilities: currentCapabilities,
+    setCapabilities,
+    setLoading,
+    setError,
+  } = useAgentCapabilitiesStore();
   const {
     currentAgent,
     isGenerating,
@@ -201,13 +202,13 @@ const AgentGenerationChat = ({
             },
             generation_metadata: {
               conversation_context: apiMessages,
-              created_at: new Date().toISOString()
-            }
+              created_at: new Date().toISOString(),
+            },
           };
           updateAgentData({
             name: descriptionResponse.agent_name,
             description: descriptionResponse.agent_description,
-            agent_data: updatedAgentData
+            agent_data: updatedAgentData,
           });
         }
 
@@ -268,12 +269,15 @@ const AgentGenerationChat = ({
 
         if (agent?.phase === 'description' || !agent) {
           // Phase 1: Display the message directly from backend
-          formattedMessage = response.follow_up_message || 'I understand your request. Let me help you train Georgia.';
+          formattedMessage =
+            response.follow_up_message ||
+            'I understand your request. Let me help you train Georgia.';
 
           // Add "Train Georgia" button message if ready for code generation
           if (response.ready_for_code_generation) {
             formattedMessage += '\n\n---\n\n';
-            formattedMessage += '**Ready to train Georgia!** You can now: Click the "Train Georgia" button to generate the training code';
+            formattedMessage +=
+              '**Ready to train Georgia!** You can now: Click the "Train Georgia" button to generate the training code';
           }
         } else {
           // Phase 2: Code generation completed
@@ -283,7 +287,8 @@ const AgentGenerationChat = ({
           formattedMessage += `The training code has been loaded into the editor on the right. You can review and modify it as needed.`;
 
           formattedMessage += '\n\n---\n\n';
-          formattedMessage += 'Georgia\'s training code has been generated successfully! You can now test it in the right panel or proceed to deep training for enhanced capabilities.';
+          formattedMessage +=
+            "Georgia's training code has been generated successfully! You can now test it in the right panel or proceed to deep training for enhanced capabilities.";
         }
 
         console.log('📝 Formatted Message:', formattedMessage);
@@ -318,9 +323,13 @@ const AgentGenerationChat = ({
         // Show appropriate success message
         if (agent?.phase === 'description' || !agent) {
           if (response.needs_more_info) {
-            toast.success('Agent description updated! Feel free to provide more details to enhance it further.');
+            toast.success(
+              'Agent description updated! Feel free to provide more details to enhance it further.',
+            );
           } else if (response.ready_for_code_generation) {
-            toast.success('Agent description complete! Agent folder created. You can now upload files and generate the code.');
+            toast.success(
+              'Agent description complete! Agent folder created. You can now upload files and generate the code.',
+            );
           } else {
             toast.success('Agent description updated successfully!');
           }
@@ -334,8 +343,12 @@ const AgentGenerationChat = ({
       console.error('Failed to train Georgia:', error);
 
       // Update store error state
-      setError(error instanceof Error ? error.message : 'Failed to generate training code for Georgia');
-      setBuildingError(error instanceof Error ? error.message : 'Failed to generate training code for Georgia');
+      setError(
+        error instanceof Error ? error.message : 'Failed to generate training code for Georgia',
+      );
+      setBuildingError(
+        error instanceof Error ? error.message : 'Failed to generate training code for Georgia',
+      );
 
       // Add error message
       const errorMessage: ChatMessage = {
@@ -351,7 +364,16 @@ const AgentGenerationChat = ({
       setGenerating(false);
       setLoading(false);
     }
-  }, [inputMessage, isGenerating, messages, currentCode, onCodeGenerated, currentAgent, initializeAgent, updateAgentData]);
+  }, [
+    inputMessage,
+    isGenerating,
+    messages,
+    currentCode,
+    onCodeGenerated,
+    currentAgent,
+    initializeAgent,
+    updateAgentData,
+  ]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -391,7 +413,7 @@ const AgentGenerationChat = ({
       }
 
       // Compose payload
-      const ragPromptAddition = `\n\nWhen generating the agent code, please ensure the following:\n\n1. In the file [1mknowledges.na[0m, declare a RAG resource for knowledge retrieval, for example:\n   rag_resource = use("rag", sources=["./docs"])\n\n   Also, list or describe the knowledge domains or files available to the agent.\n\n2. In the file [1mmethods.na[0m, demonstrate how the agent can use the knowledges (or rag_resource) resource to retrieve information. For example, show a method that queries the knowledge base using the RAG resource and returns relevant information to the user.\n\n3. Make sure the agent's methods leverage the knowledge resource for answering questions or solving tasks that require external knowledge.\n\nExample for methods.na:\n\ndef answer_question(question: str) -> str:\n    # Use the RAG resource to retrieve relevant information\n    context = rag_resource.retrieve(question)\n    return f"Based on the documents, here's what I found: {context}"\n`;
+      const ragPromptAddition = `\n\nWhen generating the agent code, please ensure the following:\n\n1. In the file knowledge.na, declare a RAG resource for knowledge retrieval, for example:\n   rag_resource = use("rag", sources=["./docs"])\n\n   Also, list or describe the knowledge domains or files available to the agent.\n\n2. In the file [1mmethods.na[0m, demonstrate how the agent can use the knowledges (or rag_resource) resource to retrieve information. For example, show a method that queries the knowledge base using the RAG resource and returns relevant information to the user.\n\n3. Make sure the agent's methods leverage the knowledge resource for answering questions or solving tasks that require external knowledge.\n\nExample for methods.na:\n\ndef answer_question(question: str) -> str:\n    # Use the RAG resource to retrieve relevant information\n    context = rag_resource.retrieve(question)\n    return f"Based on the documents, here's what I found: {context}"\n`;
       const payload = {
         prompt: `Generate the training code for Georgia immediately. Skip any conversation or understanding messages and proceed directly to code generation. ${ragPromptAddition}`,
         messages: apiMessages,
@@ -444,11 +466,10 @@ const AgentGenerationChat = ({
 
           if (lastUserMessageIndex >= 0) {
             const messagesAfterLastUser = prev.slice(lastUserMessageIndex + 1);
-            const hasUnwantedMessages = messagesAfterLastUser.some((msg: ChatMessage) =>
-              msg.role === 'assistant' && (
-                msg.content.includes('Understanding') ||
-                msg.content.includes('understand')
-              )
+            const hasUnwantedMessages = messagesAfterLastUser.some(
+              (msg: ChatMessage) =>
+                msg.role === 'assistant' &&
+                (msg.content.includes('Understanding') || msg.content.includes('understand')),
             );
 
             if (hasUnwantedMessages) {
@@ -515,7 +536,8 @@ const AgentGenerationChat = ({
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'Deep training has been initiated for Georgia. This advanced training will enhance her capabilities through reinforcement learning and advanced pattern recognition. The process may take several minutes to complete.',
+        content:
+          'Deep training has been initiated for Georgia. This advanced training will enhance her capabilities through reinforcement learning and advanced pattern recognition. The process may take several minutes to complete.',
         timestamp: new Date(),
       };
 
@@ -523,7 +545,7 @@ const AgentGenerationChat = ({
       addConversationMessage('assistant', assistantMessage.content);
 
       // Call the backend API for deep training using process-agent-documents
-      const conversationHistory = messages.map(msg => `${msg.role}: ${msg.content}`).join('\n\n');
+      const conversationHistory = messages.map((msg) => `${msg.role}: ${msg.content}`).join('\n\n');
       const agentSummary = `Agent Name: ${agent?.name || 'Georgia'}\nAgent Description: ${agent?.description || 'A specialized agent'}\nCapabilities: ${JSON.stringify(agent?.capabilities || {})}`;
 
       // Ensure document_folder includes /docs subdirectory where documents are stored
@@ -538,7 +560,7 @@ const AgentGenerationChat = ({
         folder_path: agent?.folder_path,
         phase: agent?.phase,
         ready_for_code_generation: agent?.ready_for_code_generation,
-        agent_data: agent?.agent_data
+        agent_data: agent?.agent_data,
       };
 
       const response = await apiService.processAgentDocuments({
@@ -547,7 +569,7 @@ const AgentGenerationChat = ({
         summary: agentSummary,
         agent_data: currentAgentData,
         current_code: agent?.dana_code || currentCode,
-        multi_file_project: agent?.multi_file_project
+        multi_file_project: agent?.multi_file_project,
       });
 
       if (response.success) {
@@ -567,7 +589,7 @@ const AgentGenerationChat = ({
             response.agent_description || agent?.description,
             response.multi_file_project || agent?.multi_file_project,
             agent?.id ? String(agent.id) : undefined,
-            agent?.folder_path
+            agent?.folder_path,
           );
         }
 
@@ -590,7 +612,6 @@ const AgentGenerationChat = ({
       } else {
         throw new Error(response.error || 'Deep training failed');
       }
-
     } catch (error) {
       console.error('Failed to start deep training:', error);
 
@@ -648,64 +669,64 @@ const AgentGenerationChat = ({
                     {(() => {
                       const agent = useAgentBuildingStore.getState().currentAgent;
                       const isLastMessage = messages[messages.length - 1]?.id === message.id;
-                      const shouldShowButton = agent?.phase === 'description' &&
+                      const shouldShowButton =
+                        agent?.phase === 'description' &&
                         agent?.ready_for_code_generation &&
                         agent?.id &&
                         isLastMessage;
 
                       return shouldShowButton;
                     })() && (
-                        <div className="mt-3 pt-3 border-t border-gray-200">
-                          <Button
-                            onClick={handleProceedToBuild}
-                            disabled={isGenerating}
-                            className="w-full px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {isGenerating ? (
-                              <>
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                Training Georgia...
-                              </>
-                            ) : (
-                              <>
-                                <Send className="w-4 h-4 mr-2" />
-                                Train Georgia
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      )}
+                      <div className="pt-3 mt-3 border-t border-gray-200">
+                        <Button
+                          onClick={handleProceedToBuild}
+                          disabled={isGenerating}
+                          className="px-4 py-2 w-full text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isGenerating ? (
+                            <>
+                              <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                              Training Georgia...
+                            </>
+                          ) : (
+                            <>
+                              <Send className="mr-2 w-4 h-4" />
+                              Train Georgia
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
 
                     {/* Show Deep Training button after training is complete */}
                     {(() => {
                       const agent = useAgentBuildingStore.getState().currentAgent;
                       const isLastMessage = messages[messages.length - 1]?.id === message.id;
-                      const shouldShowDeepTrainingButton = agent?.phase === 'code_generation' &&
-                        agent?.id &&
-                        isLastMessage;
+                      const shouldShowDeepTrainingButton =
+                        agent?.phase === 'code_generation' && agent?.id && isLastMessage;
 
                       return shouldShowDeepTrainingButton;
                     })() && (
-                        <div className="mt-3 pt-3 border-t border-gray-200">
-                          <Button
-                            onClick={handleDeepTraining}
-                            disabled={isGenerating}
-                            className="w-full px-4 py-2 text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {isGenerating ? (
-                              <>
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                Starting Deep Training...
-                              </>
-                            ) : (
-                              <>
-                                <Send className="w-4 h-4 mr-2" />
-                                Deep Training
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      )}
+                      <div className="pt-3 mt-3 border-t border-gray-200">
+                        <Button
+                          onClick={handleDeepTraining}
+                          disabled={isGenerating}
+                          className="px-4 py-2 w-full text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isGenerating ? (
+                            <>
+                              <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                              Starting Deep Training...
+                            </>
+                          ) : (
+                            <>
+                              <Send className="mr-2 w-4 h-4" />
+                              Deep Training
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
                 <div
@@ -740,32 +761,32 @@ const AgentGenerationChat = ({
         <div ref={messagesEndRef} />
       </div>
 
-
-
       {/* Input */}
       <div className="p-4 border-t border-gray-200">
         {showFileUpload && (
-          <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center justify-between mb-3">
+          <div className="p-4 mb-4 bg-gray-50 rounded-lg">
+            <div className="flex justify-between items-center mb-3">
               <h4 className="text-sm font-medium text-gray-900">Upload Knowledge Files</h4>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowFileUpload(false)}
-              >
+              <Button variant="ghost" size="sm" onClick={() => setShowFileUpload(false)}>
                 ×
               </Button>
             </div>
             <FileUpload
               agentId={window.latestGeneratedAgentId?.toString()}
-              conversationContext={currentAgent?.conversation_context}
-              agentInfo={currentAgent}
+              conversationContext={messages.map((msg) => ({
+                role: msg.role,
+                content: msg.content,
+              }))}
+              agentInfo={{
+                ...currentAgent,
+                capabilities: currentCapabilities || currentAgent?.capabilities,
+              }}
               onFilesUploaded={(files) => {
                 console.log('Files uploaded in chat:', files);
                 setShowFileUpload(false);
 
                 // Use the generated response from the backend for each file
-                files.forEach(file => {
+                files.forEach((file) => {
                   if (file.generatedResponse) {
                     // Add the user upload message
                     const userMessage: ChatMessage = {
@@ -774,7 +795,7 @@ const AgentGenerationChat = ({
                       content: `Uploaded knowledge file: ${file.name}`,
                       timestamp: new Date(),
                     };
-                    setMessages(prev => [...prev, userMessage]);
+                    setMessages((prev) => [...prev, userMessage]);
 
                     // Add the assistant response from backend
                     const assistantMessage: ChatMessage = {
@@ -783,7 +804,7 @@ const AgentGenerationChat = ({
                       content: file.generatedResponse,
                       timestamp: new Date(),
                     };
-                    setMessages(prev => [...prev, assistantMessage]);
+                    setMessages((prev) => [...prev, assistantMessage]);
 
                     // Add to conversation context in Zustand store
                     addConversationMessage('user', userMessage.content);

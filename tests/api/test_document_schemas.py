@@ -5,7 +5,7 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from dana.api.server.schemas import DocumentBase, DocumentCreate, DocumentRead, DocumentUpdate, TopicBase, TopicCreate, TopicRead
+from dana.api.core.schemas import DocumentBase, DocumentCreate, DocumentRead, DocumentUpdate, TopicBase, TopicCreate, TopicRead
 
 
 class TestTopicBase:
