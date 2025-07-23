@@ -166,10 +166,13 @@ export_stmt: "export" NAME -> export_list
 
 export_names: NAME ("," NAME)*
 
-assignment: typed_assignment | simple_assignment | function_call_assignment
+assignment: typed_assignment | simple_assignment | function_call_assignment | compound_assignment
 typed_assignment: target ":" basic_type "=" expr
 simple_assignment: target "=" expr
 function_call_assignment: target "=" return_object_stmt
+compound_assignment: target compound_op expr
+
+compound_op: PLUS_EQUALS | MINUS_EQUALS | MULT_EQUALS | DIV_EQUALS
 
 expr_stmt: expr
 return_stmt: "return" [expr]
@@ -238,7 +241,14 @@ IS_OP: /\bis\b/
 IS_NOT_OP: /\bis\s+not\b/
 
 // Define token patterns with explicit priorities (lexer specific)
-// IMPORTANT: Define ** first, then * to avoid conflicts
+// IMPORTANT: Define longer tokens first to avoid conflicts
+// Compound assignment operators must come before basic operators
+PLUS_EQUALS: "+="
+MINUS_EQUALS: "-="
+MULT_EQUALS: "*="
+DIV_EQUALS: "/="
+
+// Basic operators after compound operators
 POW: "**"  // Define POW as a distinct token separate from MUL
 ADD: "+" 
 SUB: "-"

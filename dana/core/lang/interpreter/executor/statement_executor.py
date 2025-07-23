@@ -26,6 +26,7 @@ from dana.core.lang.ast import (
     AgentStatement,
     AssertStatement,
     Assignment,
+    CompoundAssignment,
     ExportStatement,
     FunctionDefinition,
     ImportFromStatement,
@@ -82,6 +83,7 @@ class StatementExecutor(BaseExecutor):
             AgentStatement: self.execute_agent_statement,
             AgentPoolStatement: self.execute_agent_pool_statement,
             Assignment: self.execute_assignment,
+            CompoundAssignment: self.execute_compound_assignment,
             AssertStatement: self.execute_assert_statement,
             FunctionDefinition: self.execute_function_definition,
             ImportFromStatement: self.execute_import_from_statement,
@@ -104,6 +106,18 @@ class StatementExecutor(BaseExecutor):
             The assigned value
         """
         return self.assignment_handler.execute_assignment(node, context)
+
+    def execute_compound_assignment(self, node: CompoundAssignment, context: SandboxContext) -> Any:
+        """Execute a compound assignment statement (e.g., x += 1).
+
+        Args:
+            node: The compound assignment to execute
+            context: The execution context
+
+        Returns:
+            The assigned value
+        """
+        return self.assignment_handler.execute_compound_assignment(node, context)
 
     def execute_assert_statement(self, node: AssertStatement, context: SandboxContext) -> None:
         """Execute an assert statement using optimized handler.

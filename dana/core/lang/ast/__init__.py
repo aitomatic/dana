@@ -60,6 +60,7 @@ Expression = Union[
 # A Statement is any node that primarily performs an action, but still produces a value.
 Statement = Union[
     "Assignment",
+    "CompoundAssignment",  # Compound assignments like x += 1
     "Conditional",
     "WhileLoop",
     "ForLoop",
@@ -359,6 +360,16 @@ class Assignment:
         "AgentPoolStatement",  # Added to support agent pool statement assignments
     ]
     type_hint: TypeHint | None = None  # For typed assignments like x: int = 42
+    location: Location | None = None
+
+
+@dataclass
+class CompoundAssignment:
+    """Compound assignment statement (e.g., x += 1, obj.attr *= 2). Returns the assigned value."""
+
+    target: Identifier | SubscriptExpression | AttributeAccess  # Same targets as Assignment
+    operator: str  # "+=" | "-=" | "*=" | "/="
+    value: Expression  # Right-hand side expression
     location: Location | None = None
 
 
