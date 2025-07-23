@@ -12,7 +12,7 @@ from typing import Any
 
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.ast import Assignment, AttributeAccess, Identifier, SubscriptExpression
+from dana.core.lang.ast import Assignment, AttributeAccess, CompoundAssignment, Identifier, SubscriptExpression
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -82,6 +82,84 @@ class AssignmentHandler(Loggable):
         finally:
             # Clean up type information
             context.set("system:__current_assignment_type", None)
+
+    def execute_compound_assignment(self, node: CompoundAssignment, context: SandboxContext) -> Any:
+        """Execute a compound assignment statement (e.g., x += 1).
+
+        Args:
+            node: The compound assignment to execute
+            context: The execution context
+
+        Returns:
+            The assigned value after the operation
+        """
+        self._assignment_count += 1
+
+        try:
+            # First, get the current value of the target
+            if isinstance(node.target, Identifier):
+                # Simple variable: x += 1
+                try:
+                    current_value = context.get(node.target.name)
+                except KeyError:
+                    raise SandboxError(f"Undefined variable '{node.target.name}' in compound assignment")
+            
+            elif isinstance(node.target, SubscriptExpression):
+                # Subscript: obj[key] += 1
+                if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
+                    raise SandboxError("Parent executor not properly initialized")
+                target_obj = self.parent_executor.parent.execute(node.target.object, context)
+                index = self.parent_executor.parent.execute(node.target.index, context)
+                try:
+                    current_value = target_obj[index]
+                except (KeyError, IndexError, TypeError) as e:
+                    raise SandboxError(f"Cannot access index/key in compound assignment: {e}")
+            
+            elif isinstance(node.target, AttributeAccess):
+                # Attribute: obj.attr += 1
+                if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
+                    raise SandboxError("Parent executor not properly initialized")
+                target_obj = self.parent_executor.parent.execute(node.target.object, context)
+                try:
+                    current_value = getattr(target_obj, node.target.attribute)
+                except AttributeError:
+                    raise SandboxError(f"Attribute '{node.target.attribute}' not found in compound assignment")
+            
+            else:
+                raise SandboxError(f"Unsupported compound assignment target type: {type(node.target).__name__}")
+
+            # Evaluate the right-hand side
+            if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
+                raise SandboxError("Parent executor not properly initialized")
+            rhs_value = self.parent_executor.parent.execute(node.value, context)
+
+            # Apply the operation based on the operator
+            if node.operator == "+=":
+                new_value = current_value + rhs_value
+            elif node.operator == "-=":
+                new_value = current_value - rhs_value
+            elif node.operator == "*=":
+                new_value = current_value * rhs_value
+            elif node.operator == "/=":
+                new_value = current_value / rhs_value
+            else:
+                raise SandboxError(f"Unknown compound assignment operator: {node.operator}")
+
+            # Assign the new value back
+            self._execute_assignment_by_target(node.target, new_value, context)
+
+            # Store the last value for implicit return
+            context.set("system:__last_value", new_value)
+
+            # Trace assignment if enabled
+            self._trace_assignment(node.target, new_value)
+
+            return new_value
+
+        except SandboxError:
+            raise
+        except Exception as e:
+            raise SandboxError(f"Error in compound assignment: {e}")
 
     def _process_type_hint(self, node: Assignment, context: SandboxContext) -> type | None:
         """Process type hint for assignment with caching.

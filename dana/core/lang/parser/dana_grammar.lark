@@ -166,10 +166,13 @@ export_stmt: "export" NAME -> export_list
 
 export_names: NAME ("," NAME)*
 
-assignment: typed_assignment | simple_assignment | function_call_assignment
+assignment: typed_assignment | simple_assignment | function_call_assignment | compound_assignment
 typed_assignment: target ":" basic_type "=" expr
 simple_assignment: target "=" expr
 function_call_assignment: target "=" return_object_stmt
+compound_assignment: target compound_op expr
+
+compound_op: PLUS_EQUALS | MINUS_EQUALS | MULT_EQUALS | DIV_EQUALS
 
 expr_stmt: expr
 return_stmt: "return" [expr]
@@ -248,6 +251,12 @@ FDIV: "//"
 MOD: "%"
 PIPE: "|"
 DOLLAR_DOLLAR: "$"
+
+// Compound assignment operators
+PLUS_EQUALS: "+="
+MINUS_EQUALS: "-="
+MULT_EQUALS: "*="
+DIV_EQUALS: "/="
 
 // Expression precedence structure (lowest to highest)
 sum_expr: product ((ADD | SUB) product)*

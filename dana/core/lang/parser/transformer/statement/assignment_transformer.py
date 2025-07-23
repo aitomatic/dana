@@ -17,6 +17,7 @@ from dana.core.lang.ast import (
     AgentPoolStatement,
     AgentStatement,
     Assignment,
+    CompoundAssignment,
     Identifier,
     UseStatement,
 )
@@ -67,6 +68,66 @@ class AssignmentTransformer(BaseTransformer):
         value_tree = items[1]
 
         return AssignmentHelper.create_assignment(target_tree, value_tree, self.expression_transformer, VariableTransformer())
+
+    def compound_assignment(self, items):
+        """Transform a compound assignment rule into a CompoundAssignment node."""
+        # Grammar: compound_assignment: target compound_op expr
+        target_tree = items[0]
+        operator_token = items[1]  # This will be the token from compound_op
+        value_tree = items[2]
+
+        # Transform the target using the same logic as simple assignment
+        from lark import Tree
+        
+        # Handle different types of assignment targets
+        if isinstance(target_tree, Tree) and hasattr(target_tree, "data"):
+            # Check if this is a complex target (atom with trailers)
+            if target_tree.data == "target":
+                # target -> atom
+                atom_tree = target_tree.children[0]
+                if isinstance(atom_tree, Tree) and atom_tree.data == "atom":
+                    # Check if atom has trailers (indicating subscript or attribute access)
+                    if len(atom_tree.children) > 1:
+                        # Complex target: use expression transformer to handle subscript/attribute access
+                        target = self.expression_transformer.expression([target_tree])
+                    else:
+                        # Simple target: use variable transformer
+                        target = VariableTransformer().variable([target_tree])
+                else:
+                    # Fallback to variable transformer
+                    target = VariableTransformer().variable([target_tree])
+            else:
+                # Not a target rule, try expression transformer first
+                try:
+                    target = self.expression_transformer.expression([target_tree])
+                except Exception:
+                    # Fallback to variable transformer
+                    target = VariableTransformer().variable([target_tree])
+        else:
+            # Simple case: use variable transformer
+            target = VariableTransformer().variable([target_tree])
+
+        # Validate target type
+        from dana.core.lang.ast import AttributeAccess, Identifier, SubscriptExpression
+        if not isinstance(target, Identifier | SubscriptExpression | AttributeAccess):
+            raise TypeError(f"Compound assignment target must be Identifier, SubscriptExpression, or AttributeAccess, got {type(target)}")
+
+        # Transform the value expression
+        value = self.expression_transformer.expression([value_tree])
+
+        # Get the operator string
+        operator_str = str(operator_token)
+
+        return CompoundAssignment(
+            target=target,
+            operator=operator_str,
+            value=value
+        )
+
+    def compound_op(self, items):
+        """Return the compound operator token."""
+        # Grammar: compound_op: PLUS_EQUALS | MINUS_EQUALS | MULT_EQUALS | DIV_EQUALS
+        return items[0].value  # Return the string value of the token
 
     def function_call_assignment(self, items):
         """Transform a function_call_assignment rule into an Assignment node with object-returning statement."""
