@@ -44,10 +44,24 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
     <div
       ref={nodeRef}
       className='relative'
-      style={{ padding: 16, background: '#F6FAFF', borderRadius: 8, minWidth: 120, textAlign: 'center' }}
+      style={{
+        padding: 16,
+        background: '#F6FAFF',
+        borderRadius: 8,
+        minWidth: 120,
+        maxWidth: 220,
+        width: 220,
+        textAlign: 'center',
+        wordBreak: 'break-word',
+        whiteSpace: 'pre-line',
+        overflowWrap: 'break-word',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
       onClick={onNodeClick}
     >
-      <div>{data.label}</div>
+      <div style={{ width: '100%' }}>{data.label}</div>
       {/* Handles can be hidden or removed if not needed */}
       <Handle type="target" position={Position.Left} style={{ background: '#F6FAFF', border: '1px solid #E0E0E0' }} />
       <Handle type="source" position={Position.Right} style={{ background: '#F6FAFF', border: '1px solid #E0E0E0' }} />

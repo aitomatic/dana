@@ -15,6 +15,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
   const addMessage = useSmartChatStore((s) => s.addMessage);
   const removeMessage = useSmartChatStore((s) => s.removeMessage);
   const clearMessages = useSmartChatStore((s) => s.clearMessages);
+  const setMessages = useSmartChatStore((s) => s.setMessages);
   const { fetchAgent } = useAgentStore();
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -22,7 +23,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
   const thinkingMessages = [
     "Let me think about this...",
     "Processing your request...",
-    "Analyzing what you need...", 
+    "Analyzing what you need...",
     "Working on that for you...",
     "Gathering my thoughts...",
     "One moment while I consider this...",
@@ -45,7 +46,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
       try {
         const history = await apiService.getSmartChatHistory(agent_id);
         if (Array.isArray(history) && history.length > 0) {
-          history.forEach((msg: { sender: 'user' | 'agent'; text: string }) => addMessage(msg));
+          setMessages(history);
         } else {
           const displayName = agentName && agentName !== 'Untitled Agent' ? agentName : '';
           addMessage({
@@ -65,32 +66,32 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
 
   const sendMessage = async () => {
     if (!input.trim() || !agent_id) return;
-    
+
     // Add user message
     const userMsg = { sender: 'user' as const, text: input };
     addMessage(userMsg);
-    
+
     // Show humanized thinking message
     const randomThinking = thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
     const thinkingMsg = { sender: 'agent' as const, text: randomThinking };
     addMessage(thinkingMsg);
-    
+
     const userInput = input;
     setInput('');
     setLoading(true);
-    
+
     try {
       const response = await apiService.smartChat(agent_id, userInput);
-      
+
       // Remove the thinking message
       removeMessage(messages.length - 1); // Remove the last message (thinking message)
-      
+
       // Add the actual response
       addMessage({
         sender: 'agent' as const,
         text: response.follow_up_message || response.agent_response || response.message || '...',
       });
-      
+
       // Reload the agent data if the smart chat updated agent properties
       if (response.success && (response.updates_applied?.length > 0 || response.updated_domain_tree)) {
         try {
@@ -99,7 +100,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
           console.warn('Failed to refresh agent data:', fetchError);
         }
       }
-      
+
     } catch (e) {
       // Remove the thinking message
       removeMessage(messages.length - 1);
@@ -151,13 +152,12 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
           return (
             <div
               key={idx}
-              className={`rounded-lg px-3 py-2 max-w-[85%] text-sm ${
-                msg.sender === 'user'
+              className={`rounded-lg px-3 py-2 max-w-[85%] text-sm ${msg.sender === 'user'
                   ? 'bg-blue-100 self-end text-right'
                   : isThinking
-                  ? 'bg-amber-50 self-start text-left border border-amber-200'
-                  : 'bg-gray-100 self-start text-left'
-              }`}
+                    ? 'bg-amber-50 self-start text-left border border-amber-200'
+                    : 'bg-gray-100 self-start text-left'
+                }`}
             >
               {isThinking ? (
                 <div className="flex items-center gap-2">
@@ -188,7 +188,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
             placeholder="Ask the agent assistant... (Press Enter to send, Shift+Enter for new line)"
             disabled={loading}
             rows={1}
-            style={{ 
+            style={{
               height: 'auto',
               minHeight: '44px'
             }}

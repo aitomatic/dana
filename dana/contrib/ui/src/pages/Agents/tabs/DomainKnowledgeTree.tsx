@@ -61,13 +61,17 @@ const initialEdges: Edge[] = [
   { id: 'e1-7', source: '1', target: '7', markerEnd: { type: MarkerType.ArrowClosed }, type: 'smoothstep' },
 ];
 
-const nodeWidth = 180;
-const nodeHeight = 60;
+const nodeWidth = 220;   // Keep width for horizontal layout
+const nodeHeight = 80;  // Keep height for horizontal layout
 
 function getLayoutedElements(nodes: FlowNode[], edges: Edge[], direction: 'LR' | 'TB' = 'LR') {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
-  dagreGraph.setGraph({ rankdir: direction });
+  dagreGraph.setGraph({
+    rankdir: direction,
+    nodesep: 60,   // more separation for horizontal
+    ranksep: 120,  // more separation for horizontal
+  });
 
   nodes.forEach((node) => {
     dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
@@ -117,11 +121,10 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   const convertDomainToFlow = (domainTree: DomainKnowledgeResponse): { nodes: FlowNode[], edges: Edge[] } => {
     const nodes: FlowNode[] = [];
     const edges: Edge[] = [];
-    let nodeIdCounter = 0;
 
-    const traverse = (domainNode: DomainNode, parentId?: string) => {
-      const nodeId = (++nodeIdCounter).toString();
-      
+    const traverse = (domainNode: DomainNode, parentId?: string, path: string = '') => {
+      const nodeId = path ? `${path}/${domainNode.topic}` : domainNode.topic; // Unique path-based ID
+
       // Create flow node
       nodes.push({
         id: nodeId,
@@ -142,8 +145,8 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       }
 
       // Recursively process children
-      domainNode.children?.forEach(child => traverse(child, nodeId));
-      
+      domainNode.children?.forEach(child => traverse(child, nodeId, nodeId));
+
       return nodeId;
     };
 
@@ -167,10 +170,10 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     const fetchDomainKnowledge = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         const response = await apiService.getDomainKnowledge(agentId);
-        
+
         if (response.message) {
           // No domain knowledge found, show empty state
           setNodes([]);
@@ -246,7 +249,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           <div className="text-sm">{error}</div>
         </div>
         <div className="text-xs text-gray-400 max-w-md text-center">
-          Start a conversation with the agent to build domain knowledge automatically, 
+          Start a conversation with the agent to build domain knowledge automatically,
           or use the smart chat feature to add specific expertise areas.
         </div>
       </div>
@@ -262,7 +265,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           <div className="text-sm">This agent doesn't have any domain knowledge yet</div>
         </div>
         <div className="text-xs text-gray-400 max-w-md text-center">
-          Start a conversation with the agent to build domain knowledge automatically, 
+          Start a conversation with the agent to build domain knowledge automatically,
           or use the smart chat feature to add specific expertise areas.
         </div>
       </div>

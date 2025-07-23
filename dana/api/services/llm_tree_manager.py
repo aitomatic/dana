@@ -137,25 +137,64 @@ class LLMTreeManager(Loggable):
             
             if isinstance(content, str):
                 # Direct string response
-                try:
-                    result = json.loads(content)
-                except json.JSONDecodeError:
-                    # Might be a nested JSON string
-                    result = json.loads(content)
+                # Handle markdown code blocks if present
+                content_to_parse = content.strip()
+                if content_to_parse.startswith("```json") and content_to_parse.endswith("```"):
+                    content_to_parse = content_to_parse[7:-3].strip()
+                elif content_to_parse.startswith("```") and content_to_parse.endswith("```"):
+                    content_to_parse = content_to_parse[3:-3].strip()
+                result = json.loads(content_to_parse)
             elif isinstance(content, dict):
                 # Check if it's OpenAI-style response
                 if "choices" in content:
                     message_content = content["choices"][0]["message"]["content"]
-                    result = json.loads(message_content)
+                    # Handle markdown code blocks if present
+                    content_to_parse = message_content.strip()
+                    if content_to_parse.startswith("```json") and content_to_parse.endswith("```"):
+                        content_to_parse = content_to_parse[7:-3].strip()
+                    elif content_to_parse.startswith("```") and content_to_parse.endswith("```"):
+                        content_to_parse = content_to_parse[3:-3].strip()
+                    result = json.loads(content_to_parse)
                 else:
                     result = content
             else:
                 raise ValueError(f"Unexpected response content type: {type(content)}")
             
-            # Build tree from LLM response
+            # Build tree from LLM response - handle different formats
             tree_structure = result.get("tree_structure")
+            
+            # If no tree_structure, check if response is in changes_to_apply format
             if not tree_structure:
-                raise ValueError("LLM didn't provide tree structure")
+                changes = result.get("changes_to_apply", [])
+                if changes and len(changes) > 0:
+                    change = changes[0]
+                    if change.get("action") == "add_node_with_children":
+                        # Convert to tree_structure format
+                        new_topic = change.get("new_topic", topic)
+                        child_topics = change.get("child_topics", [])
+                        
+                        # Create children nodes
+                        children = []
+                        for child_topic in child_topics:
+                            children.append({"topic": child_topic, "children": []})
+                        
+                        # Create root with main topic as child
+                        tree_structure = {
+                            "topic": "Domain Knowledge",
+                            "children": [{
+                                "topic": new_topic,
+                                "children": children
+                            }]
+                        }
+                    else:
+                        # Simple add_node format
+                        new_topic = change.get("new_topic", topic)
+                        tree_structure = {
+                            "topic": "Domain Knowledge", 
+                            "children": [{"topic": new_topic, "children": []}]
+                        }
+                else:
+                    raise ValueError("LLM didn't provide tree structure or valid changes")
             
             root_node = self._build_node_from_dict(tree_structure)
             tree = DomainKnowledgeTree(root=root_node, version=1)
@@ -224,14 +263,26 @@ class LLMTreeManager(Loggable):
             
             if isinstance(content, str):
                 print("🔄 Parsing content as JSON string...")
-                result = json.loads(content)
+                # Handle markdown code blocks if present
+                content_to_parse = content.strip()
+                if content_to_parse.startswith("```json") and content_to_parse.endswith("```"):
+                    content_to_parse = content_to_parse[7:-3].strip()
+                elif content_to_parse.startswith("```") and content_to_parse.endswith("```"):
+                    content_to_parse = content_to_parse[3:-3].strip()
+                result = json.loads(content_to_parse)
             elif isinstance(content, dict):
                 # Check if it's OpenAI-style response
                 if "choices" in content:
                     print("🔄 Parsing OpenAI-style response...")
                     message_content = content["choices"][0]["message"]["content"]
                     print(f"📊 Message content: {message_content}")
-                    result = json.loads(message_content)
+                    # Handle markdown code blocks if present
+                    content_to_parse = message_content.strip()
+                    if content_to_parse.startswith("```json") and content_to_parse.endswith("```"):
+                        content_to_parse = content_to_parse[7:-3].strip()
+                    elif content_to_parse.startswith("```") and content_to_parse.endswith("```"):
+                        content_to_parse = content_to_parse[3:-3].strip()
+                    result = json.loads(content_to_parse)
                 else:
                     print("🔄 Using content as dict directly...")
                     result = content
@@ -276,76 +327,6 @@ class LLMTreeManager(Loggable):
                 "changes_summary": f"Added {new_topic} to the root level (fallback due to analysis error)"
             }
     
-    async def _apply_tree_changes(
-        self,
-        current_tree: DomainKnowledgeTree,
-        tree_analysis: dict[str, Any]
-    ) -> DomainKnowledgeTree:
-        """Apply the tree changes based on LLM analysis."""
-        print(f"🔧 Applying tree changes: {tree_analysis}")
-        print(f"🔧 Current tree root children: {[child.topic for child in current_tree.root.children] if current_tree.root.children else []}")
-        
-        action = tree_analysis.get("action", "add_to_parent")
-        
-        if action == "add_to_parent":
-            parent_topic = tree_analysis.get("parent_topic", "root")
-            new_node_data = tree_analysis.get("new_node", {})
-            
-            # Create new node
-            topic_name = new_node_data.get("topic", "Unknown")
-            print(f"🏗️ Creating new node with topic: '{topic_name}'")
-            new_node = DomainNode(
-                topic=topic_name,
-                children=new_node_data.get("children", [])
-            )
-            print(f"🏗️ Created node: {new_node}")
-            
-            # Find and update the parent node
-            def add_to_node(node: DomainNode) -> bool:
-                if node.topic.lower() == parent_topic.lower() or parent_topic == "root":
-                    # Add to this node's children
-                    if not hasattr(node, 'children') or node.children is None:
-                        node.children = []
-                    node.children.append(new_node)
-                    print(f"✅ Added '{new_node.topic}' to '{node.topic}'")
-                    return True
-                
-                # Recursively search children
-                if hasattr(node, 'children') and node.children:
-                    for child in node.children:
-                        if add_to_node(child):
-                            return True
-                return False
-            
-            # If parent_topic is "root", add to root's children
-            if parent_topic == "root":
-                print(f"🌳 Adding to root. Current root children count: {len(current_tree.root.children) if current_tree.root.children else 0}")
-                if not hasattr(current_tree.root, 'children') or current_tree.root.children is None:
-                    current_tree.root.children = []
-                    print(f"🌳 Initialized empty children list")
-                current_tree.root.children.append(new_node)
-                print(f"✅ Added '{new_node.topic}' to root. New children count: {len(current_tree.root.children)}")
-                print(f"🌳 All root children: {[child.topic for child in current_tree.root.children]}")
-            else:
-                # Search for parent and add
-                if not add_to_node(current_tree.root):
-                    # Fallback: add to root if parent not found
-                    if not hasattr(current_tree.root, 'children') or current_tree.root.children is None:
-                        current_tree.root.children = []
-                    current_tree.root.children.append(new_node)
-                    print(f"⚠️ Parent '{parent_topic}' not found, added '{new_node.topic}' to root")
-        
-        # Update tree metadata
-        current_tree.version = (current_tree.version or 0) + 1
-        from datetime import datetime, UTC
-        current_tree.last_updated = datetime.now(UTC)
-        
-        print(f"🔄 Final tree before return:")
-        print(f"   Root: {current_tree.root.topic}")
-        print(f"   Children: {[child.topic for child in current_tree.root.children] if current_tree.root.children else []}")
-        print(f"   Version: {current_tree.version}")
-        
-        return current_tree
     
     def _build_initial_tree_prompt(
         self,
@@ -365,7 +346,10 @@ The user wants to add this topic: "{topic}"
 Create a logical hierarchical structure that:
 1. Has a meaningful root category (not "Untitled" or generic names)
 2. Places the topic in the right context
-3. Allows for future expansion
+3. Includes 5-7 relevant child topics under the main topic to demonstrate expertise
+4. Allows for future expansion
+
+IMPORTANT: Generate comprehensive child topics that show deep understanding of the domain.
 
 Respond with this exact JSON format:
 {{
@@ -375,22 +359,36 @@ Respond with this exact JSON format:
     "children": [
       {{
         "topic": "{topic}",
-        "children": []
+        "children": [
+          {{"topic": "Child Topic 1", "children": []}},
+          {{"topic": "Child Topic 2", "children": []}},
+          {{"topic": "Child Topic 3", "children": []}},
+          {{"topic": "Child Topic 4", "children": []}},
+          {{"topic": "Child Topic 5", "children": []}},
+          {{"topic": "Child Topic 6", "children": []}}
+        ]
       }}
     ]
   }},
-  "changes_summary": "Created initial tree with..."
+  "changes_summary": "Created initial tree with {topic} and relevant child topics"
 }}
 
-Example: If topic is "Financial Statement Analysis", create a tree like:
+Example: If topic is "Personal Finance Advisory", create:
 {{
   "success": true,
   "tree_structure": {{
     "topic": "Finance",
     "children": [
       {{
-        "topic": "Financial Statement Analysis",
-        "children": []
+        "topic": "Personal Finance Advisory",
+        "children": [
+          {{"topic": "Retirement Planning", "children": []}},
+          {{"topic": "Investment Strategies", "children": []}},
+          {{"topic": "Budget Management", "children": []}},
+          {{"topic": "Tax Planning", "children": []}},
+          {{"topic": "Insurance Planning", "children": []}},
+          {{"topic": "Estate Planning", "children": []}}
+        ]
       }}
     ]
   }}
@@ -428,6 +426,13 @@ Current Tree:
 Task: Add "{new_topic}" under parent "{suggested_parent or 'auto-detect'}"
 Additional Context: {context_details or "None"}{chat_context}
 
+IMPORTANT: When adding "{new_topic}", also generate 5-7 relevant child topics that demonstrate deep understanding of this domain. This will show users that the system truly comprehends the topic area.
+
+Example child topics for different domains:
+- If adding "Retirement Planning": child topics could be "401k Management", "IRA Strategies", "Social Security Optimization", "Healthcare Planning", "Estate Planning", "Tax-Efficient Withdrawals", "Investment Allocation"
+- If adding "Machine Learning": child topics could be "Supervised Learning", "Neural Networks", "Feature Engineering", "Model Evaluation", "Deep Learning", "Natural Language Processing", "Computer Vision"
+- If adding "Digital Marketing": child topics could be "SEO Optimization", "Social Media Strategy", "Content Marketing", "Email Campaigns", "PPC Advertising", "Analytics Tracking", "Conversion Optimization"
+
 SCENARIOS:
 1. If "{new_topic}" already exists in tree and needs to be moved under "{suggested_parent}":
    - Move the existing node and all its children
@@ -436,7 +441,28 @@ SCENARIOS:
 3. If reorganization improves structure:
    - Create logical groupings
 
-RESPOND WITH ONLY VALID JSON:
+RESPOND WITH ONLY VALID JSON including child topics:
+{{
+  "success": true,
+  "changes_to_apply": [
+    {{
+      "action": "add_node_with_children",
+      "parent_path": ["Untitled", "{suggested_parent or 'Untitled'}"],
+      "new_topic": "{new_topic}",
+      "child_topics": [
+        "Child Topic 1",
+        "Child Topic 2", 
+        "Child Topic 3",
+        "Child Topic 4",
+        "Child Topic 5",
+        "Child Topic 6"
+      ]
+    }}
+  ],
+  "changes_summary": "Added {new_topic} with 6 relevant child topics under {suggested_parent or 'root'}"
+}}
+
+If moving existing topics, use:
 {{
   "success": true,
   "changes_to_apply": [
@@ -518,6 +544,51 @@ RESPOND WITH ONLY VALID JSON:
                         root_node.children.append(new_node)
                         changes_applied_count += 1
                         print(f"  🔄 Added '{new_topic}' to root as fallback")
+            
+            elif change.get("action") == "add_node_with_children":
+                parent_path = change.get("parent_path", ["Untitled"])
+                new_topic = change.get("new_topic", "Unknown Topic")
+                child_topics = change.get("child_topics", [])
+                
+                print(f"  - Adding '{new_topic}' with {len(child_topics)} children to parent path: {parent_path}")
+                print(f"  - Child topics: {child_topics}")
+                
+                # Find the parent node
+                parent_node = self._find_node_by_path(root_node, parent_path)
+                print(f"  - Parent node found: {parent_node.topic if parent_node else 'None'}")
+                
+                if parent_node:
+                    # Check if topic already exists
+                    existing_topics = [child.topic for child in parent_node.children]
+                    print(f"  - Existing children: {existing_topics}")
+                    
+                    if not any(child.topic == new_topic for child in parent_node.children):
+                        # Create child nodes
+                        child_nodes = []
+                        for child_topic in child_topics:
+                            child_nodes.append(DomainNode(topic=child_topic, children=[]))
+                        
+                        # Create the main node with children
+                        new_node = DomainNode(topic=new_topic, children=child_nodes)
+                        parent_node.children.append(new_node)
+                        changes_applied_count += 1
+                        print(f"  ✅ Added '{new_topic}' with {len(child_topics)} children to parent '{parent_node.topic}'")
+                    else:
+                        print(f"  ⚠️ Topic '{new_topic}' already exists under '{parent_node.topic}'")
+                else:
+                    print(f"  ❌ Parent node not found for path: {parent_path}")
+                    # Try adding to root as fallback
+                    if not any(child.topic == new_topic for child in root_node.children):
+                        # Create child nodes
+                        child_nodes = []
+                        for child_topic in child_topics:
+                            child_nodes.append(DomainNode(topic=child_topic, children=[]))
+                        
+                        # Create the main node with children
+                        new_node = DomainNode(topic=new_topic, children=child_nodes)
+                        root_node.children.append(new_node)
+                        changes_applied_count += 1
+                        print(f"  🔄 Added '{new_topic}' with {len(child_topics)} children to root as fallback")
             
             elif change.get("action") == "move_node":
                 topic_to_move = change.get("topic_to_move")

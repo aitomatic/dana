@@ -84,18 +84,20 @@ class DomainKnowledgeService(Loggable):
         self, 
         agent_id: int, 
         tree: DomainKnowledgeTree,
-        db: Session | None = None
+        db: Session | None = None,
+        agent: Agent | None = None
     ) -> bool:
         """Save domain knowledge tree for an agent with version history."""
         try:
             if db is None:
                 db = next(get_db())
             
-            # Get agent from database
-            agent = db.query(Agent).filter(Agent.id == agent_id).first()
-            if not agent:
-                self.error(f"Agent {agent_id} not found")
-                return False
+            # Get agent from database or use provided agent
+            if agent is None:
+                agent = db.query(Agent).filter(Agent.id == agent_id).first()
+                if not agent:
+                    self.error(f"Agent {agent_id} not found")
+                    return False
             
             # Get current version if exists
             current_tree = await self.get_agent_domain_knowledge(agent_id, db)
@@ -115,8 +117,9 @@ class DomainKnowledgeService(Loggable):
             with open(file_path, 'w', encoding='utf-8') as f:
                 json.dump(tree.model_dump(), f, indent=2, default=str)
             
-            # Update agent config with file path
-            config = agent.config or {}
+            # Update agent config with file path, preserving existing values
+            # Create a new dict to ensure SQLAlchemy detects the change
+            config = dict(agent.config) if agent.config else {}
             config["domain_knowledge_path"] = str(file_path)
             agent.config = config
             

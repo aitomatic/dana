@@ -210,13 +210,21 @@ Respond in this exact JSON format with an array of intents (even if just one):
 Examples:
 - "I want to call my agent Jason" → [{{intent: "update_agent_properties", entities: {{name: "Jason"}}}}]
 - "I want Jason to be good at anti-money laundering" → [{{intent: "update_agent_properties", entities: {{name: "Jason", specialties: "anti-money laundering"}}}}, {{intent: "add_information", entities: {{topic: "anti-money laundering"}}}}]
-- "I want Jason is an expert in anti money laundering" → [{{intent: "update_agent_properties", entities: {{name: "Jason", specialties: "anti money laundering"}}}}, {{intent: "add_information", entities: {{topic: "anti money laundering"}}}}]
-- "Make Jason skilled in compliance and risk management" → [{{intent: "update_agent_properties", entities: {{name: "Jason", specialties: "compliance and risk management"}}}}, {{intent: "add_information", entities: {{topic: "compliance and risk management"}}}}]
+- "I want Jason to be an anti-money laundering expert" → [{{intent: "update_agent_properties", entities: {{name: "Jason", role: "anti-money laundering expert", specialties: "anti-money laundering"}}}}, {{intent: "add_information", entities: {{topic: "anti-money laundering"}}}}]
+- "Make Jason a financial advisor skilled in portfolio analysis" → [{{intent: "update_agent_properties", entities: {{name: "Jason", role: "financial advisor", skills: "portfolio analysis"}}}}, {{intent: "add_information", entities: {{topic: "portfolio analysis"}}}}]
+- "Jason should be a compliance officer with skills in regulatory reporting" → [{{intent: "update_agent_properties", entities: {{name: "Jason", role: "compliance officer", skills: "regulatory reporting"}}}}, {{intent: "add_information", entities: {{topic: "regulatory reporting"}}}}]
 - "Add dividend analysis to your knowledge" → [{{intent: "add_information", entities: {{topic: "dividend analysis"}}}}]
+- "it's very good add AML compliance" → [{{intent: "add_information", entities: {{topic: "AML compliance"}}}}, {{intent: "update_agent_properties", entities: {{specialties: "AML compliance"}}}}]
+- "add risk management to the agent" → [{{intent: "add_information", entities: {{topic: "risk management"}}}}, {{intent: "update_agent_properties", entities: {{specialties: "risk management"}}}}]
 - "Update your knowledge about stock analysis" → [{{intent: "refresh_domain_knowledge", entities: {{}}}}]
 - "Can you help me with financial modeling?" → [{{intent: "general_query", entities: {{}}}}]
 
-IMPORTANT: When someone wants to give an agent expertise/skills/specialties in a domain (phrases like "good at", "expert in", "skilled in"), this should ALWAYS trigger BOTH update_agent_properties AND add_information intents - one to update the agent's profile and one to add the topic to domain knowledge.
+IMPORTANT EXTRACTION RULES:
+1. Role extraction: Look for patterns like "be a [role]", "be an [role]", "work as [role]", "[name] is [role]", "[profession] expert", "[domain] specialist"
+2. Skills extraction: Look for "skilled in", "good at", "with skills in", "abilities in"  
+3. Specialties extraction: Look for domain expertise like "specialist in", "expert in [domain]", "expertise in"
+4. When someone wants to give an agent expertise/skills/specialties in a domain, this should ALWAYS trigger BOTH update_agent_properties AND add_information intents - one to update the agent's profile and one to add the topic to domain knowledge.
+5. When someone says "add [topic]" or "add [topic] to agent/knowledge", this should trigger BOTH add_information AND update_agent_properties (with specialties) - they want both the knowledge added and the agent to become specialized in it.
 """
         return prompt
     

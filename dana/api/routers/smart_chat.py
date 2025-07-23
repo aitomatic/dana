@@ -301,7 +301,8 @@ async def _process_add_information_intent(
             save_success = await domain_service.save_agent_domain_knowledge(
                 agent_id=agent.id,
                 tree=update_response.updated_tree,
-                db=db
+                db=db,
+                agent=agent
             )
             
             print(f"💾 Save result: {save_success}")
@@ -376,12 +377,55 @@ async def _process_update_agent_intent(
         agent.description = entities['role'].strip()
         updated_fields.append('role')
     # Save specialties and skills to config
-    config = agent.config or {}
+    # Create a new dict to ensure SQLAlchemy detects the change
+    config = dict(agent.config) if agent.config else {}
+    
+    # Handle specialties - accumulate instead of overwrite
     if 'specialties' in entities and entities['specialties']:
-        config['specialties'] = entities['specialties'].strip()
+        new_specialties = entities['specialties']
+        if isinstance(new_specialties, str):
+            # Split comma-separated string into list
+            new_specialties = [s.strip() for s in new_specialties.split(',') if s.strip()]
+        elif not isinstance(new_specialties, list):
+            new_specialties = [str(new_specialties)]
+        
+        # Get existing specialties and merge with new ones
+        existing_specialties = config.get('specialties', [])
+        if not isinstance(existing_specialties, list):
+            existing_specialties = []
+        
+        # Combine and deduplicate (case-insensitive)
+        combined_specialties = existing_specialties.copy()
+        for new_spec in new_specialties:
+            # Check if this specialty already exists (case-insensitive)
+            if not any(new_spec.lower() == existing.lower() for existing in combined_specialties):
+                combined_specialties.append(new_spec)
+        
+        config['specialties'] = combined_specialties
         updated_fields.append('specialties')
+    
+    # Handle skills - accumulate instead of overwrite
     if 'skills' in entities and entities['skills']:
-        config['skills'] = entities['skills'].strip()
+        new_skills = entities['skills']
+        if isinstance(new_skills, str):
+            # Split comma-separated string into list
+            new_skills = [s.strip() for s in new_skills.split(',') if s.strip()]
+        elif not isinstance(new_skills, list):
+            new_skills = [str(new_skills)]
+        
+        # Get existing skills and merge with new ones
+        existing_skills = config.get('skills', [])
+        if not isinstance(existing_skills, list):
+            existing_skills = []
+        
+        # Combine and deduplicate (case-insensitive)
+        combined_skills = existing_skills.copy()
+        for new_skill in new_skills:
+            # Check if this skill already exists (case-insensitive)
+            if not any(new_skill.lower() == existing.lower() for existing in combined_skills):
+                combined_skills.append(new_skill)
+        
+        config['skills'] = combined_skills
         updated_fields.append('skills')
     agent.config = config
     if updated_fields:
