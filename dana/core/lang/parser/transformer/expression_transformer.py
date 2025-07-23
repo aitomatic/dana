@@ -202,6 +202,7 @@ class ExpressionTransformer(BaseTransformer):
             "and": BinaryOperator.AND,
             "or": BinaryOperator.OR,
             "in": BinaryOperator.IN,
+            "not in": BinaryOperator.NOT_IN,
             "is": BinaryOperator.IS,
             "is not": BinaryOperator.IS_NOT,
             "^": BinaryOperator.POWER,
