@@ -4,6 +4,7 @@ import type { NodeProps } from 'reactflow';
 import PortalPopup from './PortalPopup';
 import FileIcon from '@/components/file-icon';
 import type { KnowledgeTopicStatus } from '@/lib/api';
+import { CheckIcon, Loader2Icon, WatchIcon, XIcon } from 'lucide-react';
 
 interface CustomNodeProps extends NodeProps {
   isSelected: boolean;
@@ -30,10 +31,10 @@ const getStatusColor = (status?: string) => {
 
 const getStatusIcon = (status?: string) => {
   switch (status) {
-    case 'pending': return '⏳';
-    case 'in_progress': return '🔄';
-    case 'success': return '✅';
-    case 'failed': return '❌';
+    case 'pending': return <WatchIcon />;
+    case 'in_progress': return <Loader2Icon className='animate-spin' />;
+    case 'success': return <CheckIcon />;
+    case 'failed': return <XIcon />;
     default: return '';
   }
 };
@@ -48,15 +49,15 @@ const getStatusText = (status?: string) => {
   }
 };
 
-const FilePopup = ({ 
-  x, 
-  y, 
-  knowledgeStatus, 
-  isLeafNode, 
-  nodePath 
-}: { 
-  x: number; 
-  y: number; 
+const FilePopup = ({
+  x,
+  y,
+  knowledgeStatus,
+  isLeafNode,
+  nodePath
+}: {
+  x: number;
+  y: number;
   knowledgeStatus?: KnowledgeTopicStatus | null;
   isLeafNode?: boolean;
   nodePath?: string;
@@ -112,7 +113,7 @@ const FilePopup = ({
 const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }) => {
   const nodeRef = useRef<HTMLDivElement>(null);
   const [popupPos, setPopupPos] = useState<{ x: number; y: number } | null>(null);
-  
+
   const nodeData = data as NodeData;
   const knowledgeStatus = nodeData.knowledgeStatus;
   const isLeafNode = nodeData.isLeafNode;
@@ -205,9 +206,9 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
       <Handle type="target" position={Position.Left} style={{ background: '#F6FAFF', border: '1px solid #E0E0E0' }} />
       <Handle type="source" position={Position.Right} style={{ background: '#F6FAFF', border: '1px solid #E0E0E0' }} />
       {isSelected && popupPos && (
-        <FilePopup 
-          x={popupPos.x} 
-          y={popupPos.y} 
+        <FilePopup
+          x={popupPos.x}
+          y={popupPos.y}
           knowledgeStatus={knowledgeStatus}
           isLeafNode={isLeafNode}
           nodePath={nodeData.nodePath}

@@ -18,7 +18,7 @@ from dana.api.core.schemas import (
 from dana.api.services.domain_knowledge_service import get_domain_knowledge_service, DomainKnowledgeService
 from dana.api.services.intent_detection_service import get_intent_detection_service, IntentDetectionService
 from dana.api.services.llm_tree_manager import get_llm_tree_manager, LLMTreeManager
-from dana.common.utils.knowledge_status_manager import KnowledgeStatusManager, KnowledgeGenerationManager
+from dana.api.services.knowledge_status_manager import KnowledgeStatusManager, KnowledgeGenerationManager
 import os
 import asyncio
 from datetime import datetime, timezone

@@ -4,7 +4,6 @@ import asyncio
 import uuid
 from datetime import datetime
 from typing import List, Dict, Optional
-import time
 
 class KnowledgeStatusManager:
     """
@@ -102,6 +101,62 @@ class KnowledgeStatusManager:
         entry = self.get_topic_entry(path)
         return entry and entry["status"] == "success"
 
+    def get_pending_failed_or_null(self) -> List[Dict]:
+        """
+        Returns all topics with status 'pending', 'failed', or None (not set).
+        """
+        data = self.load()
+        return [
+            entry for entry in data["topics"]
+            if entry.get("status") in ("pending", "in_progress", "failed", None)
+        ]
+
+    def recover_stuck_in_progress(self, max_age_seconds=3600):
+        """
+        Resets topics stuck in 'in_progress' for more than max_age_seconds (default 1 hour) to 'pending'.
+        Also resets topics with status None (null) to 'pending'.
+        Prints when a topic is reset.
+        """
+        import time
+        from datetime import datetime
+        data = self.load()
+        updated = False
+        for entry in data["topics"]:
+            if entry.get("status") is None:
+                print(f"[status_manager] Resetting null-status topic: {entry['path']} to pending")
+                entry["status"] = "pending"
+                entry["error"] = None
+                updated = True
+            elif entry["status"] == "in_progress":
+                last_time = entry.get("last_generated") or entry.get("last_topic_update")
+                if last_time:
+                    try:
+                        t = datetime.fromisoformat(last_time.replace("Z", ""))
+                        age = (datetime.utcnow() - t).total_seconds()
+                        if age > max_age_seconds:
+                            print(f"[status_manager] Recovering stuck topic: {entry['path']} (was in_progress for {age/60:.1f} min)")
+                            entry["status"] = "pending"
+                            entry["error"] = None
+                            updated = True
+                    except Exception:
+                        continue
+        if updated:
+            self.save(data)
+
+    def retry_failed_topics(self):
+        """
+        Sets all topics with status 'failed' back to 'pending' for retry.
+        """
+        data = self.load()
+        updated = False
+        for entry in data["topics"]:
+            if entry["status"] == "failed":
+                entry["status"] = "pending"
+                entry["error"] = None
+                updated = True
+        if updated:
+            self.save(data)
+
 class KnowledgeGenerationManager:
     """
     Manages the asyncio queue and worker pool for knowledge generation.
@@ -122,6 +177,19 @@ class KnowledgeGenerationManager:
         self.role = role
         self.knows_folder = knows_folder
 
+    async def _broadcast_status(self, topic_entry, status):
+        """
+        Broadcasts a status update for a topic via WebSocket manager (if available).
+        """
+        if self.ws_manager:
+            msg = {
+                "type": "knowledge_status_update",
+                "topic_id": topic_entry.get("id"),
+                "path": topic_entry.get("path"),
+                "status": status
+            }
+            await self.ws_manager.broadcast(msg)
+
     async def worker(self):
         while True:
             topic_entry = await self.queue.get()
@@ -133,60 +201,53 @@ class KnowledgeGenerationManager:
                 continue
             self.in_progress.add(path)
             self.status_manager.set_status(path, "in_progress")
-            self._broadcast_status(topic_entry, "in_progress")
+            await self._broadcast_status(topic_entry, "in_progress")
+            print(f"[KNOWLEDGE GEN] Set status to in_progress for {path}")
             try:
                 await self.generate_knowledge_for_topic(topic_entry)
                 self.status_manager.set_status(path, "success")
-                self._broadcast_status(topic_entry, "success")
+                await self._broadcast_status(topic_entry, "success")
+                print(f"[KNOWLEDGE GEN] Set status to success for {path}")
             except Exception as e:
                 self.status_manager.set_status(path, "failed", error=str(e))
-                self._broadcast_status(topic_entry, "failed")
+                await self._broadcast_status(topic_entry, "failed")
+                print(f"[KNOWLEDGE GEN] Set status to failed for {path}: {e}")
             finally:
                 self.in_progress.remove(path)
                 self.queue.task_done()
 
     async def generate_knowledge_for_topic(self, topic_entry):
-        """Generate knowledge for a specific topic using ManagerAgent."""
-        try:
-            from dana.frameworks.knows.corral.curate_general_kb.py.manager_agent import ManagerAgent
-            
-            # Extract the area name and create key topics from the path
-            area_name = topic_entry["path"]
-            # Parse the path to extract key topics (e.g., "Manufacturing Processes - etching process - Types of Etching")
-            path_parts = area_name.split(" - ")
-            key_topics = [part.strip() for part in path_parts]
-            
-            print(f"[KnowledgeGeneration] Generating knowledge for area: {area_name}")
-            print(f"[KnowledgeGeneration] Key topics: {key_topics}")
-            
-            # Create ManagerAgent instance
-            manager_agent = ManagerAgent(self.topic, self.role)
-            
-            # Generate knowledge for this area
-            loop = asyncio.get_event_loop()
-            knowledge = await loop.run_in_executor(
-                None, 
-                manager_agent.generate_knowledge_for_area, 
-                area_name, 
-                key_topics
-            )
-            
-            # Save knowledge to JSON file in the knows folder
-            import os
-            file_path = os.path.join(self.knows_folder, topic_entry["file"])
-            
-            # Ensure knows folder exists
-            os.makedirs(self.knows_folder, exist_ok=True)
-            
-            # Save the knowledge as JSON
-            with open(file_path, 'w', encoding='utf-8') as f:
-                json.dump(knowledge, f, indent=2, ensure_ascii=False)
-                
-            print(f"[KnowledgeGeneration] Successfully saved knowledge to: {file_path}")
-            
-        except Exception as e:
-            print(f"[KnowledgeGeneration] Error generating knowledge for {topic_entry['path']}: {e}")
-            raise e
+        """
+        Generate knowledge for a specific topic using ManagerAgent and save as JSON.
+        """
+        import os
+        import json
+        from datetime import datetime
+        from dana.frameworks.knows.corral.curate_general_kb.py.manager_agent import ManagerAgent
+        print(f"[KNOWLEDGE GEN] Generating for {topic_entry['path']}")
+        # Parse area_name and key_topics
+        area_name = topic_entry["path"]
+        # Use path parts as key topics (or customize as needed)
+        key_topics = [part.strip() for part in area_name.split(" - ")]
+        # Use agent topic/role if available, else fallback
+        topic = getattr(self, 'topic', 'General Topic')
+        role = getattr(self, 'role', 'Domain Expert')
+        # Create ManagerAgent instance
+        manager_agent = ManagerAgent(topic, role)
+        # Run in executor to avoid blocking event loop
+        loop = asyncio.get_event_loop()
+        knowledge = await loop.run_in_executor(
+            None,
+            manager_agent.generate_knowledge_for_area,
+            area_name,
+            key_topics
+        )
+        # Save knowledge to JSON file in knows folder
+        knows_folder = os.path.dirname(self.status_manager.status_path)
+        file_path = os.path.join(knows_folder, topic_entry["file"])
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(knowledge, f, indent=2, ensure_ascii=False)
+        print(f"[KNOWLEDGE GEN] Saved knowledge to: {file_path}")
 
     async def add_topic(self, topic_entry):
         path = topic_entry["path"]
@@ -196,7 +257,7 @@ class KnowledgeGenerationManager:
             and topic_entry not in self.queue._queue):
             await self.queue.put(topic_entry)
             self.status_manager.set_status(path, "in_progress")
-            self._broadcast_status(topic_entry, "in_progress")
+            await self._broadcast_status(topic_entry, "in_progress")
 
     async def run(self):
         if self.running:
@@ -209,35 +270,30 @@ class KnowledgeGenerationManager:
         await asyncio.gather(*self.workers)
         self.running = False
 
-    def _broadcast_status(self, topic_entry, status):
-        """
-        Broadcasts a status update for a topic via WebSocket manager (if available).
-        """
-        if self.ws_manager:
-            msg = {
-                "type": "knowledge_status_update",
-                "topic_id": topic_entry.get("id"),
-                "path": topic_entry.get("path"),
-                "status": status
-            }
-            self.ws_manager.broadcast(msg)
-
     def recover_stuck_in_progress(self, max_age_seconds=3600):
         """
         Resets topics stuck in 'in_progress' for more than max_age_seconds (default 1 hour) to 'pending'.
+        Also resets topics with status None (null) to 'pending'.
+        Prints when a topic is reset.
         """
-        now = time.time()
+        import time
+        from datetime import datetime
         data = self.status_manager.load()
         updated = False
         for entry in data["topics"]:
-            if entry["status"] == "in_progress":
-                # Use last_generated or last_topic_update as a proxy for when it started
+            if entry.get("status") is None:
+                print(f"[status_manager] Resetting null-status topic: {entry['path']} to pending")
+                entry["status"] = "pending"
+                entry["error"] = None
+                updated = True
+            elif entry["status"] == "in_progress":
                 last_time = entry.get("last_generated") or entry.get("last_topic_update")
                 if last_time:
                     try:
                         t = datetime.fromisoformat(last_time.replace("Z", ""))
                         age = (datetime.utcnow() - t).total_seconds()
                         if age > max_age_seconds:
+                            print(f"[status_manager] Recovering stuck topic: {entry['path']} (was in_progress for {age/60:.1f} min)")
                             entry["status"] = "pending"
                             entry["error"] = None
                             updated = True

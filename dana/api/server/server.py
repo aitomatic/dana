@@ -10,12 +10,53 @@ from typing import Any, cast
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi import WebSocket, WebSocketDisconnect
 
 from dana.api.client import APIClient
 from dana.common.config import ConfigLoader
 from dana.common.mixins.loggable import Loggable
+from dana.api.services.knowledge_status_manager import KnowledgeStatusManager, KnowledgeGenerationManager
+import glob
+import asyncio
 
 from ..core.database import Base, engine
+
+
+# --- WebSocket manager for knowledge status updates ---
+class KnowledgeStatusWebSocketManager:
+    def __init__(self):
+        self.clients = set()
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.clients.add(websocket)
+    def disconnect(self, websocket: WebSocket):
+        self.clients.discard(websocket)
+    async def broadcast(self, msg):
+        to_remove = set()
+        for ws in self.clients:
+            try:
+                await ws.send_json(msg)
+            except Exception:
+                to_remove.add(ws)
+        for ws in to_remove:
+            self.clients.discard(ws)
+
+ws_manager = KnowledgeStatusWebSocketManager()
+
+# WebSocket endpoint
+from fastapi import APIRouter
+ws_router = APIRouter()
+
+@ws_router.websocket("/ws/knowledge-status")
+async def knowledge_status_ws(websocket: WebSocket):
+    await ws_manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()  # Keep alive
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket)
+    except Exception:
+        ws_manager.disconnect(websocket)
 
 
 def create_app():
@@ -58,6 +99,7 @@ def create_app():
     app.include_router(poet_router, prefix="/api")
     app.include_router(domain_knowledge_router, prefix="/api")
     app.include_router(smart_chat_router, prefix="/api")
+    app.include_router(ws_router)
     
     # Keep legacy api router for endpoints not yet migrated:
     # - /run-na-file - Run Dana files
@@ -85,6 +127,46 @@ def create_app():
         
         # Run any pending migrations
         run_migrations()
+
+        # --- Knowledge generation: pick up all pending tasks on startup ---
+        print("[startup] Scanning for pending knowledge generation tasks...")
+        knows_glob = os.path.join("agents", "agent_*", "knows", "knowledge_status.json")
+        status_files = glob.glob(knows_glob)
+        print(f"[startup] Found {len(status_files)} knowledge_status.json files.")
+        async def run_all_queues():
+            tasks = []
+            for status_path in status_files:
+                try:
+                    status_manager = KnowledgeStatusManager(status_path)
+                    status_manager.recover_stuck_in_progress(max_age_seconds=3600)
+                    pending = status_manager.get_pending_failed_or_null()
+                    if not pending:
+                        print(f"[startup] No pending/failed/null topics in {status_path}")
+                        continue
+                    print(f"[startup] {len(pending)} pending/failed/null topics in {status_path}")
+                    manager = KnowledgeGenerationManager(status_manager, max_concurrent=4, ws_manager=ws_manager)
+                    async def run_queue():
+                        for entry in pending:
+                            print(f"[startup] Queuing topic: {entry['path']}")
+                            await manager.add_topic(entry)
+                        await manager.run()
+                        print(f"[startup] All queued topics processed for {status_path}")
+                    tasks.append(run_queue())
+                except Exception as e:
+                    print(f"[startup] Error processing {status_path}: {e}")
+            if tasks:
+                print(f"[startup] Awaiting {len(tasks)} knowledge generation queues...")
+                await asyncio.gather(*tasks)
+                print(f"[startup] All startup knowledge generation queues complete.")
+            else:
+                print(f"[startup] No knowledge generation queues to run.")
+        try:
+            loop = asyncio.get_running_loop()
+            # If in async context, schedule and await
+            loop.create_task(run_all_queues())
+        except RuntimeError:
+            asyncio.run(run_all_queues())
+        print("[startup] Knowledge generation queues started.")
 
     # Catch-all route for SPA (serves index.html for all non-API, non-static routes)
     @app.get("/{full_path:path}")

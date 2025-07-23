@@ -26,12 +26,11 @@ from dana.api.services.document_service import get_document_service, DocumentSer
 from dana.api.core.models import AgentChatHistory
 from dana.api.services.domain_knowledge_service import get_domain_knowledge_service, DomainKnowledgeService
 from dana.api.core.models import Agent
-from dana.frameworks.knows.corral.curate_general_kb.py.domain_knowledge_fresher_agent import DomainKnowledgeFresherAgent
 from dana.api.core.models import Agent
-from dana.frameworks.knows.corral.curate_general_kb.py.manager_agent import ManagerAgent
 import asyncio
 from datetime import datetime, timezone
-from dana.common.utils.knowledge_status_manager import KnowledgeStatusManager, KnowledgeGenerationManager
+from dana.api.services.knowledge_status_manager import KnowledgeStatusManager, KnowledgeGenerationManager
+from dana.api.server.server import ws_manager
 
 logger = logging.getLogger(__name__)
 
@@ -1381,14 +1380,7 @@ def run_generation(agent_id: int):
         print(f"[generate-knowledge] {len(pending)} topics to generate (pending or failed)")
 
         # 3. Use KnowledgeGenerationManager to run the queue
-        manager = KnowledgeGenerationManager(
-            status_manager, 
-            max_concurrent=4, 
-            ws_manager=None,  # ws_manager placeholder
-            topic=topic,
-            role=role,
-            knows_folder=knows_folder
-        )
+        manager = KnowledgeGenerationManager(status_manager, max_concurrent=4, ws_manager=ws_manager)
 
         async def main():
             for entry in pending:

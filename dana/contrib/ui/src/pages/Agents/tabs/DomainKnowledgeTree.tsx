@@ -108,6 +108,9 @@ async function triggerGenerateKnowledge(agentId: string | number) {
   return response;
 }
 
+// Use backend URL for WebSocket
+const wsUrl = `ws://localhost:8080/ws/knowledge-status`;
+
 const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) => {
   const [nodes, setNodes] = useState<FlowNode[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
@@ -117,7 +120,47 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   const [generating, setGenerating] = useState(false);
   const [generateMsg, setGenerateMsg] = useState<string | null>(null);
   const [knowledgeStatus, setKnowledgeStatus] = useState<KnowledgeStatusResponse | null>(null);
+  const [topicStatus, setTopicStatus] = useState<{ [id: string]: string }>({});
   const containerRef = useRef<HTMLDivElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+
+  // WebSocket for real-time status updates
+  useEffect(() => {
+    if (!agentId) return;
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'knowledge_status_update') {
+          // Debug: log the message
+          console.log('[WebSocket] Received knowledge_status_update:', msg);
+          // Update by path
+          if (msg.path) {
+            setTopicStatus((prev) => {
+              console.log('[WebSocket] Updating status for path:', msg.path, msg.status);
+              return { ...prev, [msg.path]: msg.status };
+            });
+          }
+          // Update by topic_id (UUID) if present
+          if (msg.topic_id) {
+            setTopicStatus((prev) => {
+              console.log('[WebSocket] Updating status for topic_id:', msg.topic_id, msg.status);
+              return { ...prev, [msg.topic_id]: msg.status };
+            });
+          }
+        }
+      } catch (e) {
+        // Ignore malformed messages
+      }
+    };
+    ws.onclose = () => {
+      // Optionally, try to reconnect
+    };
+    return () => {
+      ws.close();
+    };
+  }, [agentId]);
 
   const nodeTypes = {
     custom: (nodeProps: any) => (
@@ -125,7 +168,9 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         {...nodeProps}
         isSelected={selectedNodeId === nodeProps.id}
         onNodeClick={() => setSelectedNodeId(nodeProps.id)}
-      />
+      >
+        {renderStatusIcon(getNodeStatus(nodeProps))}
+      </CustomNode>
     ),
   };
 
@@ -286,6 +331,26 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     }
   };
 
+  // Helper to get status for a node
+  const getNodeStatus = (node: FlowNode) => {
+    // Try both path and topic_id (UUID)
+    return topicStatus[node.id] || topicStatus[node.data?.path] || topicStatus[node.data?.topic_id];
+  };
+
+  // Render a status icon for a node
+  const renderStatusIcon = (status: string | undefined) => {
+    if (status === 'in_progress') {
+      return <span title="Generating..." className="ml-2 animate-spin">⏳</span>;
+    }
+    if (status === 'success') {
+      return <span title="Done" className="ml-2 text-green-600">✔️</span>;
+    }
+    if (status === 'failed') {
+      return <span title="Failed" className="ml-2 text-red-600">❌</span>;
+    }
+    return null;
+  };
+
   // Show loading state
   if (loading) {
     return (
@@ -362,9 +427,6 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           >
             {generating ? 'Generating...' : 'Generate Domain Knowledge'}
           </button>
-          {generateMsg && (
-            <div className="mt-2 text-xs text-gray-600">{generateMsg}</div>
-          )}
         </div>
       )}
       <div className='h-full w-full bg-white flex flex-col gap-4' style={{ position: 'relative' }} ref={containerRef}>
