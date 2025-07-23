@@ -21,16 +21,16 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
 
   // Humanized thinking messages
   const thinkingMessages = [
-    "Let me think about this...",
-    "Processing your request...",
-    "Analyzing what you need...",
-    "Working on that for you...",
-    "Gathering my thoughts...",
-    "One moment while I consider this...",
-    "Let me work through this...",
-    "Thinking through your request...",
-    "Processing this information...",
-    "Just a second, organizing my response..."
+    'Let me think about this...',
+    'Processing your request...',
+    'Analyzing what you need...',
+    'Working on that for you...',
+    'Gathering my thoughts...',
+    'One moment while I consider this...',
+    'Let me work through this...',
+    'Thinking through your request...',
+    'Processing this information...',
+    'Just a second, organizing my response...',
   ];
 
   useEffect(() => {
@@ -93,7 +93,10 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
       });
 
       // Reload the agent data if the smart chat updated agent properties
-      if (response.success && (response.updates_applied?.length > 0 || response.updated_domain_tree)) {
+      if (
+        response.success &&
+        (response.updates_applied?.length > 0 || response.updated_domain_tree)
+      ) {
         try {
           await fetchAgent(parseInt(agent_id));
         } catch (fetchError) {
@@ -101,6 +104,16 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
         }
       }
 
+      // If the response indicates a knowledge status update, refresh domain knowledge and status
+      if (response.status === 'knowledge_status_update') {
+        try {
+          await apiService.getDomainKnowledge(agent_id);
+          await apiService.getKnowledgeStatus(agent_id);
+          // Optionally, trigger a UI update or notification here
+        } catch (err) {
+          console.warn('Failed to refresh domain knowledge/status:', err);
+        }
+      }
     } catch (e) {
       // Remove the thinking message
       removeMessage(messages.length - 1);
@@ -152,19 +165,29 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
           return (
             <div
               key={idx}
-              className={`rounded-lg px-3 py-2 max-w-[85%] text-sm ${msg.sender === 'user'
+              className={`rounded-lg px-3 py-2 max-w-[85%] text-sm ${
+                msg.sender === 'user'
                   ? 'bg-blue-100 self-end text-right'
                   : isThinking
                     ? 'bg-amber-50 self-start text-left border border-amber-200'
                     : 'bg-gray-100 self-start text-left'
-                }`}
+              }`}
             >
               {isThinking ? (
                 <div className="flex items-center gap-2">
                   <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    <div
+                      className="w-2 h-2 bg-amber-400 rounded-full animate-bounce"
+                      style={{ animationDelay: '0ms' }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-amber-400 rounded-full animate-bounce"
+                      style={{ animationDelay: '150ms' }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-amber-400 rounded-full animate-bounce"
+                      style={{ animationDelay: '300ms' }}
+                    ></div>
                   </div>
                   <span className="text-amber-700">{msg.text}</span>
                 </div>
@@ -190,7 +213,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
             rows={1}
             style={{
               height: 'auto',
-              minHeight: '44px'
+              minHeight: '44px',
             }}
             onInput={(e) => {
               const target = e.target as HTMLTextAreaElement;

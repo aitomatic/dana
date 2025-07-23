@@ -55,24 +55,60 @@ const initialNodes: FlowNode[] = [
 ];
 
 const initialEdges: Edge[] = [
-  { id: 'e1-2', source: '1', target: '2', markerEnd: { type: MarkerType.ArrowClosed }, type: 'smoothstep' },
-  { id: 'e2-3', source: '2', target: '3', markerEnd: { type: MarkerType.ArrowClosed }, type: 'smoothstep' },
-  { id: 'e3-4', source: '3', target: '4', markerEnd: { type: MarkerType.ArrowClosed }, type: 'smoothstep' },
-  { id: 'e1-5', source: '1', target: '5', markerEnd: { type: MarkerType.ArrowClosed }, type: 'smoothstep' },
-  { id: 'e1-6', source: '1', target: '6', markerEnd: { type: MarkerType.ArrowClosed }, type: 'smoothstep' },
-  { id: 'e1-7', source: '1', target: '7', markerEnd: { type: MarkerType.ArrowClosed }, type: 'smoothstep' },
+  {
+    id: 'e1-2',
+    source: '1',
+    target: '2',
+    markerEnd: { type: MarkerType.ArrowClosed },
+    type: 'smoothstep',
+  },
+  {
+    id: 'e2-3',
+    source: '2',
+    target: '3',
+    markerEnd: { type: MarkerType.ArrowClosed },
+    type: 'smoothstep',
+  },
+  {
+    id: 'e3-4',
+    source: '3',
+    target: '4',
+    markerEnd: { type: MarkerType.ArrowClosed },
+    type: 'smoothstep',
+  },
+  {
+    id: 'e1-5',
+    source: '1',
+    target: '5',
+    markerEnd: { type: MarkerType.ArrowClosed },
+    type: 'smoothstep',
+  },
+  {
+    id: 'e1-6',
+    source: '1',
+    target: '6',
+    markerEnd: { type: MarkerType.ArrowClosed },
+    type: 'smoothstep',
+  },
+  {
+    id: 'e1-7',
+    source: '1',
+    target: '7',
+    markerEnd: { type: MarkerType.ArrowClosed },
+    type: 'smoothstep',
+  },
 ];
 
-const nodeWidth = 220;   // Keep width for horizontal layout
-const nodeHeight = 80;  // Keep height for horizontal layout
+const nodeWidth = 220; // Keep width for horizontal layout
+const nodeHeight = 80; // Keep height for horizontal layout
 
 function getLayoutedElements(nodes: FlowNode[], edges: Edge[], direction: 'LR' | 'TB' = 'LR') {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
   dagreGraph.setGraph({
     rankdir: direction,
-    nodesep: 60,   // more separation for horizontal
-    ranksep: 120,  // more separation for horizontal
+    nodesep: 60, // more separation for horizontal
+    ranksep: 120, // more separation for horizontal
   });
 
   nodes.forEach((node) => {
@@ -119,8 +155,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   const [error, setError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [generateMsg, setGenerateMsg] = useState<string | null>(null);
-  const [knowledgeStatus, setKnowledgeStatus] = useState<KnowledgeStatusResponse | null>(null);
-  const [topicStatus, setTopicStatus] = useState<{ [id: string]: string }>({});
+  const [topicStatus] = useState<{ [id: string]: string }>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -136,18 +171,35 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           // Debug: log the message
           console.log('[WebSocket] Received knowledge_status_update:', msg);
           // Update by path
-          if (msg.path) {
-            setTopicStatus((prev) => {
-              console.log('[WebSocket] Updating status for path:', msg.path, msg.status);
-              return { ...prev, [msg.path]: msg.status };
-            });
-          }
-          // Update by topic_id (UUID) if present
-          if (msg.topic_id) {
-            setTopicStatus((prev) => {
-              console.log('[WebSocket] Updating status for topic_id:', msg.topic_id, msg.status);
-              return { ...prev, [msg.topic_id]: msg.status };
-            });
+          // --- NEW: Refetch domain knowledge and status on update ---
+          if (agentId) {
+            (async () => {
+              try {
+                setLoading(true);
+                const [domainResponse, statusResponse] = await Promise.all([
+                  apiService.getDomainKnowledge(agentId),
+                  apiService.getKnowledgeStatus(agentId).catch(() => ({ topics: [] })),
+                ]);
+                if (domainResponse.message) {
+                  setNodes([]);
+                  setEdges([]);
+                  setError(domainResponse.message);
+                } else if (domainResponse.root) {
+                  const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
+                    domainResponse,
+                    statusResponse,
+                  );
+                  const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
+                  setNodes(layoutedNodes);
+                  setEdges(flowEdges);
+                  setError(null);
+                }
+              } catch (err) {
+                setError('Failed to refresh domain knowledge');
+              } finally {
+                setLoading(false);
+              }
+            })();
           }
         }
       } catch (e) {
@@ -175,7 +227,10 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   };
 
   // Convert domain knowledge tree to flow nodes and edges
-  const convertDomainToFlow = (domainTree: DomainKnowledgeResponse, statusData?: KnowledgeStatusResponse): { nodes: FlowNode[], edges: Edge[] } => {
+  const convertDomainToFlow = (
+    domainTree: DomainKnowledgeResponse,
+    statusData?: KnowledgeStatusResponse,
+  ): { nodes: FlowNode[]; edges: Edge[] } => {
     const nodes: FlowNode[] = [];
     const edges: Edge[] = [];
 
@@ -184,7 +239,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       if (!statusData || !statusData.topics) return null;
 
       // Find the status entry that matches this node's path
-      return statusData.topics.find(topic => topic.path === nodePath) || null;
+      return statusData.topics.find((topic) => topic.path === nodePath) || null;
     };
 
     const traverse = (domainNode: DomainNode, parentId?: string, pathParts: string[] = []) => {
@@ -204,7 +259,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           label: domainNode.topic,
           knowledgeStatus: knowledgeStatusInfo,
           isLeafNode,
-          nodePath
+          nodePath,
         },
         position: { x: 0, y: 0 }, // Will be set by dagre layout
       });
@@ -221,7 +276,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       }
 
       // Recursively process children
-      domainNode.children?.forEach(child => traverse(child, nodeId, currentPath));
+      domainNode.children?.forEach((child) => traverse(child, nodeId, currentPath));
 
       return nodeId;
     };
@@ -240,7 +295,6 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       const layouted = getLayoutedElements(initialNodes, initialEdges, 'LR');
       setNodes(layouted);
       setEdges(initialEdges);
-      setKnowledgeStatus(null);
       return;
     }
 
@@ -252,11 +306,8 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         // Fetch both domain knowledge and knowledge status in parallel
         const [domainResponse, statusResponse] = await Promise.all([
           apiService.getDomainKnowledge(agentId),
-          apiService.getKnowledgeStatus(agentId).catch(() => ({ topics: [] })) // Fallback to empty if status fails
+          apiService.getKnowledgeStatus(agentId).catch(() => ({ topics: [] })), // Fallback to empty if status fails
         ]);
-
-        // Set knowledge status first so convertDomainToFlow can use it
-        setKnowledgeStatus(statusResponse);
 
         if (domainResponse.message) {
           // No domain knowledge found, show empty state
@@ -265,7 +316,10 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           setError(domainResponse.message);
         } else if (domainResponse.root) {
           // Convert domain knowledge to flow format (now with status information)
-          const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(domainResponse, statusResponse);
+          const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
+            domainResponse,
+            statusResponse,
+          );
           const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
           setNodes(layoutedNodes);
           setEdges(flowEdges);
@@ -273,7 +327,6 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('Failed to load domain knowledge');
-        setKnowledgeStatus({ topics: [] });
         // Fall back to default nodes
         const layouted = getLayoutedElements(initialNodes, initialEdges, 'LR');
         setNodes(layouted);
@@ -289,10 +342,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   // Hide popup when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setSelectedNodeId(null);
       }
     }
@@ -340,13 +390,25 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   // Render a status icon for a node
   const renderStatusIcon = (status: string | undefined) => {
     if (status === 'in_progress') {
-      return <span title="Generating..." className="ml-2 animate-spin">⏳</span>;
+      return (
+        <span title="Generating..." className="ml-2 animate-spin">
+          ⏳
+        </span>
+      );
     }
     if (status === 'success') {
-      return <span title="Done" className="ml-2 text-green-600">✔️</span>;
+      return (
+        <span title="Done" className="ml-2 text-green-600">
+          ✔️
+        </span>
+      );
     }
     if (status === 'failed') {
-      return <span title="Failed" className="ml-2 text-red-600">❌</span>;
+      return (
+        <span title="Failed" className="ml-2 text-red-600">
+          ❌
+        </span>
+      );
     }
     return null;
   };
@@ -354,7 +416,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   // Show loading state
   if (loading) {
     return (
-      <div className="h-full w-full bg-white flex items-center justify-center">
+      <div className="flex justify-center items-center w-full h-full bg-white">
         <div className="text-gray-500">Loading domain knowledge...</div>
       </div>
     );
@@ -363,27 +425,25 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   // Show error state
   if (error) {
     return (
-      <div className="h-full w-full bg-white flex flex-col items-center justify-center gap-4">
-        <div className="text-gray-500 text-center">
+      <div className="flex flex-col gap-4 justify-center items-center w-full h-full bg-white">
+        <div className="text-center text-gray-500">
           <div className="text-lg font-medium">No Domain Knowledge</div>
           <div className="text-sm">{error}</div>
         </div>
-        <div className="text-xs text-gray-400 max-w-md text-center">
-          Start a conversation with the agent to build domain knowledge automatically,
-          or use the smart chat feature to add specific expertise areas.
+        <div className="max-w-md text-xs text-center text-gray-400">
+          Start a conversation with the agent to build domain knowledge automatically, or use the
+          smart chat feature to add specific expertise areas.
         </div>
         {agentId && (
           <button
             onClick={handleGenerateKnowledge}
             disabled={generating}
-            className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 disabled:opacity-50"
+            className="px-4 py-2 text-white bg-blue-600 rounded shadow hover:bg-blue-700 disabled:opacity-50"
           >
             {generating ? 'Generating...' : 'Generate Domain Knowledge'}
           </button>
         )}
-        {generateMsg && (
-          <div className="mt-2 text-xs text-gray-600">{generateMsg}</div>
-        )}
+        {generateMsg && <div className="mt-2 text-xs text-gray-600">{generateMsg}</div>}
       </div>
     );
   }
@@ -391,45 +451,47 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   // Show empty state if no nodes
   if (nodes.length === 0) {
     return (
-      <div className="h-full w-full bg-white flex flex-col items-center justify-center gap-4">
-        <div className="text-gray-500 text-center">
+      <div className="flex flex-col gap-4 justify-center items-center w-full h-full bg-white">
+        <div className="text-center text-gray-500">
           <div className="text-lg font-medium">No Domain Knowledge</div>
           <div className="text-sm">This agent doesn't have any domain knowledge yet</div>
         </div>
-        <div className="text-xs text-gray-400 max-w-md text-center">
-          Start a conversation with the agent to build domain knowledge automatically,
-          or use the smart chat feature to add specific expertise areas.
+        <div className="max-w-md text-xs text-center text-gray-400">
+          Start a conversation with the agent to build domain knowledge automatically, or use the
+          smart chat feature to add specific expertise areas.
         </div>
         {agentId && (
           <button
             onClick={handleGenerateKnowledge}
             disabled={generating}
-            className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 disabled:opacity-50"
+            className="px-4 py-2 text-white bg-blue-600 rounded shadow hover:bg-blue-700 disabled:opacity-50"
           >
             {generating ? 'Generating...' : 'Generate Domain Knowledge'}
           </button>
         )}
-        {generateMsg && (
-          <div className="mt-2 text-xs text-gray-600">{generateMsg}</div>
-        )}
+        {generateMsg && <div className="mt-2 text-xs text-gray-600">{generateMsg}</div>}
       </div>
     );
   }
 
   return (
     <>
-      {agentId && (
-        <div style={{}}>
-          <button
-            onClick={handleGenerateKnowledge}
-            disabled={generating}
-            className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 disabled:opacity-50"
-          >
-            {generating ? 'Generating...' : 'Generate Domain Knowledge'}
-          </button>
-        </div>
-      )}
-      <div className='h-full w-full bg-white flex flex-col gap-4' style={{ position: 'relative' }} ref={containerRef}>
+      <div
+        className="flex flex-col gap-4 w-full h-full bg-white"
+        style={{ position: 'relative' }}
+        ref={containerRef}
+      >
+        {agentId && (
+          <div style={{}}>
+            <button
+              onClick={handleGenerateKnowledge}
+              disabled={generating}
+              className="absolute top-4 left-4 z-20 px-4 py-2 text-gray-500 bg-white rounded-md border border-gray-200 shadow-md hover:bg-gray-100"
+            >
+              {generating ? 'Generating...' : 'Generate Domain Knowledge'}
+            </button>
+          </div>
+        )}
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -449,4 +511,4 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   );
 };
 
-export default DomainKnowledgeTree; 
+export default DomainKnowledgeTree;

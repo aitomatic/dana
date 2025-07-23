@@ -33,17 +33,20 @@ const CodeTab: React.FC = () => {
 
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await apiService.getAgentFiles(selectedAgent.id);
-      
+
       // Filter for .na files only and load their content
-      const naFiles = response.files.filter(file => file.type === 'dana');
-      
+      const naFiles = response.files.filter((file) => file.type === 'dana');
+
       const filesWithContent = await Promise.all(
         naFiles.map(async (file, index) => {
           try {
-            const contentResponse = await apiService.getAgentFileContent(selectedAgent.id, file.path);
+            const contentResponse = await apiService.getAgentFileContent(
+              selectedAgent.id,
+              file.path,
+            );
             return {
               id: `${index}`, // Simple ID based on index
               name: file.name,
@@ -51,7 +54,7 @@ const CodeTab: React.FC = () => {
               content: contentResponse.content,
               type: file.type,
               size: file.size,
-              modified: file.modified
+              modified: file.modified,
             } as AgentFile;
           } catch (err) {
             console.error(`Failed to load content for ${file.name}:`, err);
@@ -62,14 +65,14 @@ const CodeTab: React.FC = () => {
               content: `// Error loading file: ${err}`,
               type: file.type,
               size: file.size,
-              modified: file.modified
+              modified: file.modified,
             } as AgentFile;
           }
-        })
+        }),
       );
 
       setFiles(filesWithContent);
-      
+
       // Auto-select the first file
       if (filesWithContent.length > 0) {
         setSelectedFileId(filesWithContent[0].id);
@@ -87,15 +90,11 @@ const CodeTab: React.FC = () => {
   };
 
   const handleEditorChange = async (value: string) => {
-    const file = files.find(f => f.id === selectedFileId);
+    const file = files.find((f) => f.id === selectedFileId);
     if (!file || !selectedAgent?.id) return;
 
     // Update local state immediately for responsive UI
-    setFiles((prev) =>
-      prev.map((f) =>
-        f.id === selectedFileId ? { ...f, content: value } : f
-      )
-    );
+    setFiles((prev) => prev.map((f) => (f.id === selectedFileId ? { ...f, content: value } : f)));
 
     // Save to backend
     try {
@@ -108,9 +107,9 @@ const CodeTab: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full bg-white rounded-lg shadow">
+      <div className="flex justify-center items-center h-full bg-white rounded-lg shadow">
         <div className="text-center">
-          <IconRefresh className="w-8 h-8 mx-auto mb-4 animate-spin text-blue-500" />
+          <IconRefresh className="mx-auto mb-4 w-8 h-8 text-blue-500 animate-spin" />
           <p className="text-gray-600">Loading agent files...</p>
         </div>
       </div>
@@ -119,12 +118,12 @@ const CodeTab: React.FC = () => {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-full bg-white rounded-lg shadow">
+      <div className="flex justify-center items-center h-full bg-white rounded-lg shadow">
         <div className="text-center">
-          <p className="text-red-600 mb-4">Error: {error}</p>
+          <p className="mb-4 text-red-600">Error: {error}</p>
           <button
             onClick={loadAgentFiles}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2 mx-auto"
+            className="flex gap-2 items-center px-4 py-2 mx-auto text-white bg-blue-500 rounded hover:bg-blue-600"
           >
             <IconRefresh className="w-4 h-4" />
             Retry
@@ -136,50 +135,55 @@ const CodeTab: React.FC = () => {
 
   if (files.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full bg-white rounded-lg shadow">
+      <div className="flex justify-center items-center h-full bg-white rounded-lg shadow">
         <div className="text-center">
-          <IconFileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-          <p className="text-gray-600 mb-2">No Dana files found</p>
-          <p className="text-sm text-gray-500">Dana files (.na) will appear here once the agent is created</p>
+          <IconFileText className="mx-auto mb-4 w-12 h-12 text-gray-400" />
+          <p className="mb-2 text-gray-600">No Dana files found</p>
+          <p className="text-sm text-gray-500">
+            Dana files (.na) will appear here once the agent is created
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-full bg-white rounded-lg shadow overflow-hidden bg-white">
+    <div className="flex overflow-hidden h-full bg-white rounded-lg shadow">
       {/* Sidebar */}
-      <div className="w-56 border-r bg-white flex flex-col">
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <span className="font-semibold text-gray-800 text-sm">Dana Files</span>
+      <div className="flex flex-col w-56 bg-white border-r">
+        <div className="flex justify-between items-center px-4 py-3 border-b">
+          <span className="text-sm font-semibold text-gray-800">Dana Files</span>
           <button
             onClick={loadAgentFiles}
-            className="p-1 text-gray-500 hover:text-gray-700 rounded"
+            className="p-1 text-gray-500 rounded hover:text-gray-700"
             title="Refresh files"
           >
             <IconRefresh className="w-4 h-4" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="overflow-y-auto flex-1">
           {files.map((file) => (
             <button
               key={file.id}
-              className={`w-full flex items-center px-4 py-2 text-left text-sm border-l-4 transition-colors ${file.id === selectedFileId
-                ? 'bg-white border-blue-500 text-blue-700 font-semibold'
-                : 'border-transparent text-gray-700 hover:bg-gray-100'
-                }`}
+              className={`w-full flex items-center px-4 py-2 text-left text-sm border-l-4 transition-colors ${
+                file.id === selectedFileId
+                  ? 'bg-white border-blue-500 text-blue-700 font-semibold'
+                  : 'border-transparent text-gray-700 hover:bg-gray-100'
+              }`}
               onClick={() => handleFileSelect(file.id)}
             >
-              <IconFileText className="w-4 h-4 mr-2" />
+              <IconFileText className="mr-2 w-4 h-4" />
               {file.name}
             </button>
           ))}
         </div>
       </div>
       {/* Main Content */}
-      <div className="flex-1 min-w-0 flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b bg-white">
-          <span className="font-semibold text-gray-900 text-lg">{selectedFile?.name || 'No file selected'}</span>
+      <div className="flex flex-col flex-1 min-w-0">
+        <div className="flex justify-between items-center px-6 py-4 bg-white border-b">
+          <span className="text-lg font-semibold text-gray-900">
+            {selectedFile?.name || 'No file selected'}
+          </span>
         </div>
         <div className="flex-1 min-h-0">
           {selectedFile ? (
@@ -192,7 +196,7 @@ const CodeTab: React.FC = () => {
               className="h-full"
             />
           ) : (
-            <div className="flex items-center justify-center h-full text-gray-500">
+            <div className="flex justify-center items-center h-full text-gray-500">
               Select a file to start editing
             </div>
           )}
@@ -202,4 +206,4 @@ const CodeTab: React.FC = () => {
   );
 };
 
-export default CodeTab; 
+export default CodeTab;

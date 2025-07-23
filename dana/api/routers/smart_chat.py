@@ -351,20 +351,6 @@ async def _process_add_information_intent(
                     # Only queue topics with status 'pending' or 'failed'
                     pending = status_manager.get_pending_or_failed()
                     print(f"[smart-chat] {len(pending)} topics to generate (pending or failed)")
-                    manager = KnowledgeGenerationManager(status_manager, max_concurrent=4, ws_manager=None)
-                    async def run_queue():
-                        for entry in pending:
-                            await manager.add_topic(entry)
-                        await manager.run()
-                        print(f"[smart-chat] All queued topics processed and saved.")
-                    # Run in background, works in both async and sync contexts
-                    try:
-                        loop = asyncio.get_running_loop()
-                        print("[smart-chat] Using asyncio.create_task to trigger knowledge generation queue.")
-                        asyncio.create_task(run_queue())
-                    except RuntimeError:
-                        print("[smart-chat] No running event loop, using asyncio.run to trigger knowledge generation queue.")
-                        asyncio.run(run_queue())
                 except Exception as e:
                     print(f"[smart-chat] Error triggering knowledge generation: {e}")
                 # --- End trigger ---
