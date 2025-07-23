@@ -1,0 +1,61 @@
+"""
+Manager Agent - Orchestrates the complete knowledge curation workflow
+
+Flow:
+1. Use domain coverage agent to generate domain structure
+2. Extract key_topics from each knowledge area
+3. Use fresher agent to generate questions for each area
+4. Use senior agent to answer the generated questions
+"""
+
+import json
+import logging
+from pathlib import Path
+from dataclasses import dataclass, field
+from typing import Dict, List, Any
+
+from dana.frameworks.knows.corral.curate_general_kb.py.automated_domain_coverage_agent import AutomatedDomainCoverageAgent
+from dana.frameworks.knows.corral.curate_general_kb.py.domain_knowledge_fresher_agent import DomainKnowledgeFresherAgent  
+from dana.frameworks.knows.corral.curate_general_kb.py.senior_agent import SeniorAgent
+
+logger = logging.getLogger(__name__)
+
+
+class ManagerAgent:
+    def __init__(self, topic: str, role: str):
+        self.topic = topic
+        self.role = role
+        self.domain_agent = AutomatedDomainCoverageAgent(topic, role)
+        self.fresher_agent = DomainKnowledgeFresherAgent(topic, role)
+        self.senior_agent = SeniorAgent(topic, role)
+
+    def create_domain_structure(self):
+        domain_structure = self.domain_agent.build_domain_coverage()
+        return domain_structure
+    
+    def generate_knowledge_for_area(self, area_name: str, key_topics: list):
+        questions = self.fresher_agent.generate_domain_questions(area_name, key_topics)
+        answers = {}
+        for topic, questions in questions.get("questions_by_topics", {}).items():
+            answers[topic] = []
+            for question in questions:
+                answer = self.senior_agent.answer_domain_question(question)
+                answers[topic].append(answer)
+        questions["answers_by_topics"] = answers
+        return questions
+    
+    def generate_all_domain_knowledges(self, domain_structure: dict):
+        for branch_name, branch_info in domain_structure.get("domain_branches", {}).items():
+            knowledge_areas = branch_info.get("knowledge_areas", {})
+            for area_name, area_info in knowledge_areas.items():
+                key_topics = area_info.get("key_topics", [])
+                questions = self.generate_knowledge_for_area(f"{branch_name} - {area_name}", key_topics)
+                area_info["knowledge"] = questions
+        return domain_structure
+            
+        
+if __name__ == "__main__":
+    import json
+    domain_structure = json.loads(open("general_kb_topics.json", "r").read())
+    manager = ManagerAgent("Investing in stock market", "Financial Analyst")
+    manager.generate_all_domain_knowledges(domain_structure)
