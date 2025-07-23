@@ -26,7 +26,7 @@ authors = [
 dependencies = [
     # AI/LLM Integration - DEPENDENCY CONFLICT ZONE
     "google-cloud-aiplatform",
-    "aisuite[openai,anthropic,azure,groq,huggingface,ollama]>=0.1.11",  # Requires httpx<0.28.0 (conflicts with fastmcp)
+    "aisuite[cohere,openai,anthropic,azure,groq,huggingface,ollama]>=0.1.11",  # Requires httpx<0.28.0 (conflicts with fastmcp)
     "fastmcp>=2.10.2",  # Requires httpx>=0.28.1 (conflicts with aisuite) - resolved by override
     "httpx>=0.27.0",     # Conflict resolved by override-dependencies forcing >=0.28.1
     "mcp",

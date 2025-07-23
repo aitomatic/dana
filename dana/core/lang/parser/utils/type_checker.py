@@ -431,16 +431,7 @@ class TypeChecker:
         left_type = self.check_expression(node.left)
         right_type = self.check_expression(node.right)
 
-        # Special handling for 'any' type - allows operations with any other type
-        # This is useful for dynamic values like loop variables
-        if left_type == DanaType("any") or right_type == DanaType("any"):
-            # For operations with 'any', use the more specific type if available
-            if left_type == DanaType("any"):
-                return right_type
-            else:
-                return left_type
-
-        # Boolean result for comparison operators
+        # Boolean result for comparison operators (handle this first, even with 'any' types)
         if node.operator in [
             BinaryOperator.EQUALS,
             BinaryOperator.NOT_EQUALS,
@@ -451,6 +442,15 @@ class TypeChecker:
             BinaryOperator.IN,
         ]:
             return DanaType("bool")
+
+        # Special handling for 'any' type - allows operations with any other type
+        # This is useful for dynamic values like loop variables
+        if left_type == DanaType("any") or right_type == DanaType("any"):
+            # For operations with 'any', use the more specific type if available
+            if left_type == DanaType("any"):
+                return right_type
+            else:
+                return left_type
 
         # Type-specific operations
         if node.operator in [BinaryOperator.AND, BinaryOperator.OR]:

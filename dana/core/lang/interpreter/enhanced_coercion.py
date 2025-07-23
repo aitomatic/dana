@@ -205,6 +205,13 @@ class SemanticCoercer(Loggable):
         """
         self.debug(f"Coercing {repr(value)} to {target_type} (context: {context})")
 
+        # Extract final answer from FINAL_ANSWER: format if present
+        if isinstance(value, str):
+            extracted_value = self._extract_final_answer(value)
+            if extracted_value != value:
+                self.debug(f"Extracted final answer: {repr(value)} → {repr(extracted_value)}")
+                value = extracted_value
+
         if target_type == "bool":
             return self.coerce_to_bool(value, context)
         elif target_type == "int":
@@ -303,6 +310,32 @@ class SemanticCoercer(Loggable):
             return list(value)
 
         raise ValueError(f"Cannot coerce {type(value).__name__} to list")
+
+    def _extract_final_answer(self, value: str) -> str:
+        """Extract the final answer from FINAL_ANSWER: format.
+
+        This allows Chain-of-Thought reasoning in the response while extracting
+        the structured final answer for type coercion.
+
+        Args:
+            value: The raw LLM response that may contain FINAL_ANSWER: marker
+
+        Returns:
+            The extracted final answer, or the original value if no marker found
+        """
+        import re
+
+        # Look for FINAL_ANSWER: pattern (case insensitive)
+        pattern = r"FINAL_ANSWER\s*:\s*(.+?)(?:\n|$)"
+        match = re.search(pattern, value, re.IGNORECASE | re.DOTALL)
+        
+        if match:
+            final_answer = match.group(1).strip()
+            self.debug(f"Found FINAL_ANSWER pattern: {repr(final_answer)}")
+            return final_answer
+        
+        # If no FINAL_ANSWER: pattern found, return original value
+        return value
 
     def _clean_json_string(self, value: str) -> str:
         """Clean JSON string by removing markdown code fences and extra whitespace.
