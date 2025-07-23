@@ -1,4 +1,5 @@
 """Webpages Querying."""
 
-with use("rag", sources=["https://asia.nikkei.com"], force_reload=True) as news_agency:
-    reason("What's happening today?")
+def __main__(webpage="https://asia.nikkei.com", query="What's happening today?"):
+    with use("rag", sources=[webpage], force_reload=True) as web_info:
+        print(reason(query))

@@ -1,4 +1,4 @@
 """Mixed Documents & Webpages Querying."""
 
 with use("rag", sources=["https://www.aitomatic.com", "../../../../README.md"]) as aitomatic_and_dana_info:
-    reason("Which Aitomatic agentic frameworks and agent product offerings are enabled by Dana's powerful capabilities?")
+    print(reason("Which Aitomatic agentic frameworks and agent product offerings are enabled by Dana's powerful capabilities?"))

@@ -5,4 +5,4 @@
 aitomatic_webpage = use("rag", sources=["https://www.aitomatic.com"])
 dana_info = use("rag", sources=["../../../../README.md"])
 
-reason("Which Aitomatic agentic frameworks and agent product offerings are enabled by Dana's powerful capabilities?")
+print(reason("Which Aitomatic agentic frameworks and agent product offerings are enabled by Dana's powerful capabilities?"))
