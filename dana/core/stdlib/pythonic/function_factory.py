@@ -33,6 +33,54 @@ class UnsupportedReason(Enum):
 class PythonicFunctionFactory:
     """Factory for creating Pythonic built-in function wrappers."""
 
+    @staticmethod
+    def _smart_max(*args):
+        """Smart max wrapper that supports both max(iterable) and max(a, b, ...) syntax."""
+        if len(args) == 0:
+            raise TypeError("max expected at least 1 argument, got 0")
+        elif len(args) == 1:
+            # Single argument case
+            if isinstance(args[0], (list, tuple)):
+                if len(args[0]) == 0:
+                    raise ValueError("max() arg is an empty sequence")
+                return max(args[0])  # max([1,2,3]) or max((1,2,3))
+            else:
+                # Single non-iterable argument: just return it
+                return args[0]  # max(42) returns 42
+        else:
+            # Multiple arguments case
+            return max(*args)  # max(1,2,3) or max(1,2)
+
+    @staticmethod
+    def _smart_min(*args):
+        """Smart min wrapper that supports both min(iterable) and min(a, b, ...) syntax."""
+        if len(args) == 0:
+            raise TypeError("min expected at least 1 argument, got 0")
+        elif len(args) == 1:
+            # Single argument case
+            if isinstance(args[0], (list, tuple)):
+                if len(args[0]) == 0:
+                    raise ValueError("min() arg is an empty sequence")
+                return min(args[0])  # min([1,2,3]) or min((1,2,3))
+            else:
+                # Single non-iterable argument: just return it
+                return args[0]  # min(42) returns 42
+        else:
+            # Multiple arguments case
+            return min(*args)  # min(1,2,3) or min(1,2)
+
+    @staticmethod
+    def _smart_sum(*args):
+        """Smart sum wrapper that supports both sum(iterable) and sum(iterable, start) syntax."""
+        if len(args) == 0:
+            raise TypeError("sum expected at least 1 argument, got 0")
+        elif len(args) == 1:
+            return sum(args[0])  # sum([1,2,3])
+        elif len(args) == 2:
+            return sum(args[0], args[1])  # sum([1,2,3], 10)
+        else:
+            raise TypeError(f"sum expected at most 2 arguments, got {len(args)}")
+
     # Configuration-driven approach with type validation
     FUNCTION_CONFIGS = {
         # Numeric functions
@@ -42,9 +90,44 @@ class PythonicFunctionFactory:
             "doc": "Return the length of an object",
             "signatures": [(list,), (dict,), (str,), (tuple,)],
         },
-        "sum": {"func": sum, "types": [list, tuple], "doc": "Return the sum of a sequence of numbers", "signatures": [(list,), (tuple,)]},
-        "max": {"func": max, "types": [list, tuple], "doc": "Return the largest item in an iterable", "signatures": [(list,), (tuple,)]},
-        "min": {"func": min, "types": [list, tuple], "doc": "Return the smallest item in an iterable", "signatures": [(list,), (tuple,)]},
+        # Smart wrappers for flexible argument handling
+        "sum": {
+            "func": _smart_sum.__func__,
+            "types": [],  # Skip type validation - smart wrapper handles it
+            "doc": "Return the sum of a sequence of numbers, optionally with a start value",
+            "signatures": [],  # Skip signature validation - smart wrapper handles it
+        },
+        "max": {
+            "func": _smart_max.__func__,
+            "types": [],  # Skip type validation - smart wrapper handles it
+            "doc": "Return the largest item in an iterable or among multiple arguments",
+            "signatures": [],  # Skip signature validation - smart wrapper handles it
+        },
+        "min": {
+            "func": _smart_min.__func__,
+            "types": [],  # Skip type validation - smart wrapper handles it
+            "doc": "Return the smallest item in an iterable or among multiple arguments",
+            "signatures": [],  # Skip signature validation - smart wrapper handles it
+        },
+        # Original basic versions (strict iterable-only)
+        "basic_sum": {
+            "func": sum,
+            "types": [list, tuple],
+            "doc": "Return the sum of a sequence of numbers (strict iterable-only version)",
+            "signatures": [(list,), (tuple,)],
+        },
+        "basic_max": {
+            "func": max,
+            "types": [list, tuple],
+            "doc": "Return the largest item in an iterable (strict iterable-only version)",
+            "signatures": [(list,), (tuple,)],
+        },
+        "basic_min": {
+            "func": min,
+            "types": [list, tuple],
+            "doc": "Return the smallest item in an iterable (strict iterable-only version)",
+            "signatures": [(list,), (tuple,)],
+        },
         "abs": {"func": abs, "types": [int, float], "doc": "Return the absolute value of a number", "signatures": [(int,), (float,)]},
         "round": {
             "func": round,
@@ -485,6 +568,10 @@ If this is a custom function, make sure it's:
     @classmethod
     def _validate_args(cls, name: str, args: tuple, expected_signatures: list[tuple]):
         """Validate arguments against expected type signatures."""
+        # Skip validation for functions with empty signatures (smart wrappers handle their own validation)
+        if not expected_signatures:
+            return
+
         valid_signature = False
 
         for signature in expected_signatures:

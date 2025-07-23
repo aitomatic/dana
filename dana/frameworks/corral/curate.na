@@ -141,11 +141,6 @@ def _analyze_knowledge_state(task_sig: TaskSignature, kb_assets: dict[str, Knowl
     
     # Coverage analysis
     available_count = len(kb_assets)
-    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-    print(f"task_sig: {task_sig}")
-    print(f"task_sig.knowledge_needs: {task_sig.knowledge_needs}")
-    print(f"len(task_sig.knowledge_needs): {len(task_sig.knowledge_needs)}")
-    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
     coverage_ratio = available_count / max(len(task_sig.knowledge_needs), 1)
     
     # Asset quality analysis
