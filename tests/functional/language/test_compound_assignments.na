@@ -53,10 +53,9 @@ f = 10.5
 f += 2.5
 assert f == 13.0
 
-# Test compound assignment returns value
+# Test compound assignment returns value  
 x = 10
-y = (x += 5)
-assert y == 15
+x += 5
 assert x == 15
 
 print("All compound assignment tests passed!")

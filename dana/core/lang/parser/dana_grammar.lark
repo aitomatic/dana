@@ -241,7 +241,14 @@ IS_OP: /\bis\b/
 IS_NOT_OP: /\bis\s+not\b/
 
 // Define token patterns with explicit priorities (lexer specific)
-// IMPORTANT: Define ** first, then * to avoid conflicts
+// IMPORTANT: Define longer tokens first to avoid conflicts
+// Compound assignment operators must come before basic operators
+PLUS_EQUALS: "+="
+MINUS_EQUALS: "-="
+MULT_EQUALS: "*="
+DIV_EQUALS: "/="
+
+// Basic operators after compound operators
 POW: "**"  // Define POW as a distinct token separate from MUL
 ADD: "+" 
 SUB: "-"
@@ -251,12 +258,6 @@ FDIV: "//"
 MOD: "%"
 PIPE: "|"
 DOLLAR_DOLLAR: "$"
-
-// Compound assignment operators
-PLUS_EQUALS: "+="
-MINUS_EQUALS: "-="
-MULT_EQUALS: "*="
-DIV_EQUALS: "/="
 
 // Expression precedence structure (lowest to highest)
 sum_expr: product ((ADD | SUB) product)*

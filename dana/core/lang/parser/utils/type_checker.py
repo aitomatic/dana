@@ -27,6 +27,7 @@ from dana.core.lang.ast import (
     BinaryExpression,
     BinaryOperator,
     BreakStatement,
+    CompoundAssignment,
     Conditional,
     ContinueStatement,
     DictLiteral,
@@ -137,6 +138,8 @@ class TypeChecker:
         """Check a statement for type errors."""
         if isinstance(statement, Assignment):
             self.check_assignment(statement)
+        elif isinstance(statement, CompoundAssignment):
+            self.check_compound_assignment(statement)
         elif isinstance(statement, FunctionCall):
             self.check_function_call(statement)
         elif isinstance(statement, Conditional):
@@ -212,6 +215,37 @@ class TypeChecker:
                 raise TypeError("Type hints are not supported for attribute assignments", node)
         else:
             raise TypeError(f"Unsupported assignment target type: {type(node.target)}", node)
+
+    def check_compound_assignment(self, node: CompoundAssignment) -> None:
+        """Check a compound assignment for type errors."""
+        from dana.core.lang.ast import AttributeAccess, Identifier
+
+        # Check that target exists and get its current type
+        if isinstance(node.target, Identifier):
+            target_name = node.target.name
+            target_type = self.environment.get(target_name)
+            if target_type is None:
+                raise TypeError(f"Variable '{target_name}' is not defined", node)
+        elif isinstance(node.target, AttributeAccess):
+            # For attribute access, we'll be permissive for now
+            target_type = DanaType("any")
+        elif isinstance(node.target, SubscriptExpression):
+            # For subscript expressions, we'll be permissive for now  
+            target_type = DanaType("any")
+        else:
+            raise TypeError(f"Unsupported compound assignment target type: {type(node.target)}", node)
+
+        # Check the value expression
+        value_type = self.check_expression(node.value)
+
+        # Check that the operation is valid for the types
+        # For now, we'll be permissive and allow any compound assignment operations
+        # In the future, we could add more specific type checking for operators
+        # (e.g., += works with numbers and strings, but not with booleans)
+        
+        # The result type is the same as the target type for compound assignments
+        if isinstance(node.target, Identifier):
+            self.environment.set(node.target.name, target_type)
 
     def check_conditional(self, node: Conditional) -> None:
         """Check a conditional for type errors."""
