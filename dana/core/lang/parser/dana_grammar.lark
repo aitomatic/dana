@@ -233,7 +233,7 @@ GE_OP: ">="
 LE_OP: "<="
 NE_OP: "!="
 IN_OP: "in"
-NOT_IN_OP: "not" "in"
+NOT_IN_OP.3: /\bnot\s+in\b/
 IS_OP: /\bis\b/
 IS_NOT_OP: /\bis\s+not\b/
 
