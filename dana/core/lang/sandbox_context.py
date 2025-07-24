@@ -53,6 +53,11 @@ class SandboxContext:
         self._parent = parent
         self._manager = manager
         self._interpreter: DanaInterpreter | None = None
+        
+        # Import and initialize error context
+        from dana.core.lang.interpreter.error_context import ErrorContext
+        self._error_context = ErrorContext()
+        
         self._state: dict[str, dict[str, Any]] = {
             "local": {},  # Always fresh local scope
             "private": {},  # Shared global scope
@@ -109,6 +114,11 @@ class SandboxContext:
             interpreter: The interpreter instance
         """
         self._interpreter = interpreter
+    
+    @property
+    def error_context(self):
+        """Get the error context for location tracking."""
+        return self._error_context
 
     def get_interpreter(self) -> Optional["DanaInterpreter"]:
         """Get the interpreter instance or None if not set.

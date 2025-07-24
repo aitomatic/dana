@@ -141,6 +141,12 @@ class DanaInterpreter(Loggable):
         Returns:
             Raw execution result
         """
+        # Set the filename in error context if provided
+        if filename:
+            context.error_context.set_file(filename)
+            # Cache the source code
+            context.error_context.source_cache[filename] = source_code.splitlines()
+        
         # Parse the source code
         parser = ParserCache.get_parser("dana")
         ast = parser.parse(source_code)

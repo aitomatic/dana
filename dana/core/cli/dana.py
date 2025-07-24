@@ -107,10 +107,22 @@ def execute_file(file_path, debug=False):
 
         print(f"\n{colors.bold('✓ Program execution completed successfully')}")
     else:
-        print(f"\n{colors.error(f'Error: {result.error}')}")
-        import traceback
-
-        traceback.print_exc()
+        # Enhanced error display - show just the error message, not the full traceback
+        error_msg = str(result.error)
+        print(f"\n{colors.error('Error:')}")
+        
+        # Format the error message for display
+        error_lines = error_msg.split('\n')
+        for line in error_lines:
+            if line.strip():
+                print(f"  {line}")
+        
+        # In debug mode, also show the full traceback
+        if debug:
+            import traceback
+            print(f"\n{colors.bold('Full traceback:')}")
+            traceback.print_exc()
+        
         sys.exit(1)
 
 

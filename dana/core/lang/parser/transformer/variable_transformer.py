@@ -66,7 +66,8 @@ class VariableTransformer(BaseTransformer):
 
         var_name = raw_name(var)
         name = f"{scope}:{var_name}"
-        return Identifier(name=name)
+        location = self.create_location(items[0]) if items else None
+        return Identifier(name=name, location=location)
 
     def simple_name(self, items):
         """
@@ -77,7 +78,8 @@ class VariableTransformer(BaseTransformer):
         via registry first, and variable access to be handled by the context resolver.
         """
         name = self._extract_name(items[0])
-        return Identifier(name=name)
+        location = self.create_location(items[0]) if items else None
+        return Identifier(name=name, location=location)
 
     def dotted_access(self, items):
         """
@@ -105,12 +107,15 @@ class VariableTransformer(BaseTransformer):
             )
 
         # Create the base object identifier without automatic scoping
-        base_obj = Identifier(name=base_name)
+        base_location = self.create_location(items[0]) if items else None
+        base_obj = Identifier(name=base_name, location=base_location)
 
         # Chain the attribute accesses
         current_obj = base_obj
-        for attr_name in attribute_names:
-            current_obj = AttributeAccess(object=current_obj, attribute=attr_name)
+        for i, attr_name in enumerate(attribute_names):
+            # Try to get location from corresponding item
+            attr_location = self.create_location(items[i + 1]) if len(items) > i + 1 else base_location
+            current_obj = AttributeAccess(object=current_obj, attribute=attr_name, location=attr_location)
 
         return current_obj
 
@@ -125,7 +130,8 @@ class VariableTransformer(BaseTransformer):
         """
         parts = [self._extract_name(item) for item in items]
         name = self._join_dotted(parts)
-        return Identifier(name=name)
+        location = self.create_location(items[0]) if items else None
+        return Identifier(name=name, location=location)
 
     # === Helper Methods ===
     def _extract_name(self, item):

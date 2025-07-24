@@ -249,3 +249,19 @@ class TranscoderError(DanaError):
     def __init__(self, message: str):
         self.message = message
         super().__init__(self.message)
+
+
+class EnhancedDanaError(DanaError):
+    """Dana error with enhanced location and context information."""
+    
+    def __init__(self, message: str, filename: str | None = None, line: int | None = None, 
+                 column: int | None = None, traceback_str: str | None = None):
+        super().__init__(message)
+        self.filename = filename
+        self.line = line
+        self.column = column
+        self.traceback_str = traceback_str
+        
+    def __str__(self) -> str:
+        """Return the pre-formatted error message."""
+        return self.args[0] if self.args else "Unknown error"

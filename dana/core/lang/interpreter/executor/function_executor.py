@@ -237,48 +237,69 @@ class FunctionExecutor(BaseExecutor):
             The result of the function call
         """
         self.debug(f"Executing function call: {node.name}")
-
-        # Phase 1: Setup and validation
-        self.__setup_and_validate(node)
-
-        # Phase 2: Process arguments
-        evaluated_args, evaluated_kwargs = self.__process_arguments(node, context)
-        self.debug(f"Processed arguments: args={evaluated_args}, kwargs={evaluated_kwargs}")
-
-        # Phase 2.5: Check for struct instantiation
-        self.debug("Checking for struct instantiation...")
-        # Phase 2.5: Handle method calls (AttributeAccess) before other processing
-        from dana.core.lang.ast import AttributeAccess
-
-        if isinstance(node.name, AttributeAccess):
-            return self.__execute_method_call(node, context, evaluated_args, evaluated_kwargs)
-
-        struct_result = self.__check_struct_instantiation(node, context, evaluated_kwargs)
-        if struct_result is not None:
-            self.debug(f"Found struct instantiation, returning: {struct_result}")
-            return struct_result
-
-        self.debug("Not a struct instantiation, proceeding with function resolution...")
-
-        # Phase 3: Parse function name and resolve function using unified dispatcher
-        name_info = FunctionNameInfo.from_node(node)
-
+        
+        # Track location in error context if available
+        if hasattr(node, 'location') and node.location:
+            from dana.core.lang.interpreter.error_context import ExecutionLocation
+            
+            func_name = str(node.name) if not isinstance(node.name, str) else node.name
+            location = ExecutionLocation(
+                filename=context.error_context.current_file,
+                line=node.location.line,
+                column=node.location.column,
+                function_name=func_name,
+                source_line=context.error_context.get_source_line(
+                    context.error_context.current_file, node.location.line
+                ) if context.error_context.current_file and node.location.line else None
+            )
+            context.error_context.push_location(location)
+        
         try:
-            # Use the new unified dispatcher (replaces fragmented resolution)
-            resolved_func = self.unified_dispatcher.resolve_function(name_info, context)
+            # Phase 1: Setup and validation
+            self.__setup_and_validate(node)
 
-            # Phase 4: Execute resolved function using unified dispatcher
-            return self.unified_dispatcher.execute_function(resolved_func, context, evaluated_args, evaluated_kwargs, name_info.func_name)
-        except Exception as dispatcher_error:
-            # If unified dispatcher fails, provide comprehensive error information
-            self.debug(f"Unified dispatcher failed for function '{name_info.func_name}': {dispatcher_error}")
+            # Phase 2: Process arguments
+            evaluated_args, evaluated_kwargs = self.__process_arguments(node, context)
+            self.debug(f"Processed arguments: args={evaluated_args}, kwargs={evaluated_kwargs}")
 
-            # Use error handler for consistent error reporting
+            # Phase 2.5: Check for struct instantiation
+            self.debug("Checking for struct instantiation...")
+            # Phase 2.5: Handle method calls (AttributeAccess) before other processing
+            from dana.core.lang.ast import AttributeAccess
+
+            if isinstance(node.name, AttributeAccess):
+                return self.__execute_method_call(node, context, evaluated_args, evaluated_kwargs)
+
+            struct_result = self.__check_struct_instantiation(node, context, evaluated_kwargs)
+            if struct_result is not None:
+                self.debug(f"Found struct instantiation, returning: {struct_result}")
+                return struct_result
+
+            self.debug("Not a struct instantiation, proceeding with function resolution...")
+
+            # Phase 3: Parse function name and resolve function using unified dispatcher
+            name_info = FunctionNameInfo.from_node(node)
+
             try:
-                raise self.error_handler.handle_standard_exceptions(dispatcher_error, node)
-            except Exception:
-                # If error handler doesn't handle it, raise original with context
-                raise SandboxError(f"Function '{name_info.func_name}' execution failed: {dispatcher_error}") from dispatcher_error
+                # Use the new unified dispatcher (replaces fragmented resolution)
+                resolved_func = self.unified_dispatcher.resolve_function(name_info, context)
+
+                # Phase 4: Execute resolved function using unified dispatcher
+                return self.unified_dispatcher.execute_function(resolved_func, context, evaluated_args, evaluated_kwargs, name_info.func_name)
+            except Exception as dispatcher_error:
+                # If unified dispatcher fails, provide comprehensive error information
+                self.debug(f"Unified dispatcher failed for function '{name_info.func_name}': {dispatcher_error}")
+
+                # Use error handler for consistent error reporting
+                try:
+                    raise self.error_handler.handle_standard_exceptions(dispatcher_error, node)
+                except Exception:
+                    # If error handler doesn't handle it, raise original with context
+                    raise SandboxError(f"Function '{name_info.func_name}' execution failed: {dispatcher_error}") from dispatcher_error
+        finally:
+            # Pop location from error context stack
+            if hasattr(node, 'location') and node.location:
+                context.error_context.pop_location()
 
     def __setup_and_validate(self, node: FunctionCall) -> Any:
         """INTERNAL: Phase 1 helper for execute_function_call only.
