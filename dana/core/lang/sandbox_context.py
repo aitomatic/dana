@@ -79,6 +79,52 @@ class SandboxContext:
             for scope in RuntimeScopes.GLOBAL:
                 self._state[scope] = parent._state[scope]  # Share reference instead of copy
 
+        # Performance tracking
+        self._perf_metrics = {}
+        self._start_time: float | None = None
+
+        # Hook registry for extensions
+        self._hook_registry: HookRegistry | None = None
+
+        # Execution status
+        self._execution_status = ExecutionStatus.IDLE
+
+        # Import state management
+        self._imported_modules: dict[str, Any] = {}  # Track imported modules
+        self._import_stack: list[str] = []  # Track circular imports
+
+        # Function call stack tracking for better error messages
+        self._call_stack: list[dict[str, Any]] = []
+        self._current_function: str | None = None
+        self._source_lines: list[str] = []  # Source code lines for error display
+
+    def push_function_call(self, func_name: str, location: dict | None = None) -> None:
+        """Push a function call onto the call stack.
+        
+        Args:
+            func_name: Name of the function being called
+            location: Optional location info (file, line, column)
+        """
+        self._call_stack.append({
+            'function': func_name,
+            'location': location or {}
+        })
+        self._current_function = func_name
+    
+    def pop_function_call(self) -> None:
+        """Pop a function call from the call stack."""
+        if self._call_stack:
+            self._call_stack.pop()
+            self._current_function = self._call_stack[-1]['function'] if self._call_stack else None
+    
+    def set_source_lines(self, source_text: str) -> None:
+        """Set source code lines for error display.
+        
+        Args:
+            source_text: The source code text
+        """
+        self._source_lines = source_text.splitlines()
+
     @property
     def parent_context(self) -> Optional["SandboxContext"]:
         """Get the parent context."""
