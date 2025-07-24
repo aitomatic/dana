@@ -180,6 +180,10 @@ class DanaSandbox(Loggable):
         self._llm_resource = LLMResource()
         self._llm_resource.startup()
 
+        # Initialize module system
+        from dana.core.runtime.modules.core import initialize_module_system
+        initialize_module_system()
+
         self._using_shared = False
 
         # Make these resources available for sharing if none exist
