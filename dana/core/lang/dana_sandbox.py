@@ -382,7 +382,7 @@ class DanaSandbox(Loggable):
             from dana.core.lang.interpreter.error_formatter import EnhancedErrorFormatter
             from dana.common.exceptions import EnhancedDanaError
             
-            formatted_error = EnhancedErrorFormatter.format_error(
+            formatted_error = EnhancedErrorFormatter.format_developer_error(
                 e, 
                 self._context.error_context,
                 show_traceback=True
@@ -462,7 +462,7 @@ class DanaSandbox(Loggable):
             from dana.core.lang.interpreter.error_formatter import EnhancedErrorFormatter
             from dana.common.exceptions import EnhancedDanaError
             
-            formatted_error = EnhancedErrorFormatter.format_error(
+            formatted_error = EnhancedErrorFormatter.format_developer_error(
                 e, 
                 self._context.error_context,
                 show_traceback=not is_repl_mode  # Show full traceback in non-REPL mode
