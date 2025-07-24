@@ -8,12 +8,12 @@
 #
 #     calc_capex_over_rev, calc_capex_over_rev_3y_avg,
 #
-#     assess_capital_intensity,
+#     assess_cap_intens,
 # )
 from cap_intens import calc_fixed_asset_over_total_asset
 from cap_intens import calc_total_asset_over_rev
 from cap_intens import calc_capex_over_rev, calc_capex_over_rev_3y_avg
-from cap_intens import assess_capital_intensity
+from cap_intens import assess_cap_intens
 
 from test import TEST_DOC_PATH
 
@@ -27,7 +27,7 @@ FUNCS_FOR_TEST: dict[str, callable] = {
     'calc_capex_over_rev': calc_capex_over_rev,
     'calc_capex_over_rev_3y_avg': calc_capex_over_rev_3y_avg,
 
-    'assess_capital_intensity': assess_capital_intensity,
+    'assess_cap_intens': assess_cap_intens,
 }
 
 def __main__(func_name: str = 'all'):

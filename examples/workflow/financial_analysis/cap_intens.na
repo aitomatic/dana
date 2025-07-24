@@ -27,7 +27,7 @@ __all__ = [
 
     'calc_capex_over_rev', 'calc_capex_over_rev_3y_avg',
 
-    'assess_capital_intensity',
+    'assess_cap_intens',
 ]
 
 
@@ -104,7 +104,7 @@ calc_capex_over_rev_3y_avg = (
 Assess whether {COMPANY} is capital-intensive according to {PERIOD} fiscal period data
 """
 # TODO: lambdas in Dana
-def _assess_capital_intensity_fn(fixed_asset_over_total_asset, total_asset_over_rev, capex_over_rev, roa):
+def _assess_cap_intens_fn(fixed_asset_over_total_asset, total_asset_over_rev, capex_over_rev, roa):
     return reason(f"""
 Capital-intensive businesses tend to have one or several of the following characteristics:
 
@@ -131,7 +131,7 @@ as follows:
 - CapEx over Revenue: {capex_over_rev}
 - RoA: {roa}
 """)
-# assess_capital_intensity = (
+# assess_cap_intens = (
 #     [calc_fixed_asset_over_total_asset, calc_total_asset_over_rev, calc_capex_over_rev, calc_roa_ratio] |
 #     (lambda fixed_asset_over_total_asset, total_asset_over_rev, capex_over_rev, roa: (
 #         reason(f"""
@@ -139,6 +139,6 @@ as follows:
 # ...
 # """))
 # )
-assess_capital_intensity = (
-    [calc_fixed_asset_over_total_asset, calc_total_asset_over_rev, calc_capex_over_rev, calc_roa_ratio] | _assess_capital_intensity_fn
+assess_cap_intens = (
+    [calc_fixed_asset_over_total_asset, calc_total_asset_over_rev, calc_capex_over_rev, calc_roa_ratio] | _assess_cap_intens_fn
 )
