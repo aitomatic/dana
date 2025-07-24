@@ -229,6 +229,11 @@ class DanaParser(Lark, Loggable):
 
         # Set the source text on the program
         ast.source_text = self.program_text
+        
+        # Set the filename in the AST location for error reporting
+        if self.current_filename:
+            from dana.core.lang.ast import Location
+            ast.location = Location(source=self.current_filename, line=1, column=1)
 
         self.debug(f"Successfully parsed program with {len(ast.statements)} statements")
 

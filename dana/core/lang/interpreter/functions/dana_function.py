@@ -158,7 +158,7 @@ class DanaFunction(SandboxFunction, Loggable):
                     # Return statement was encountered - return its value
                     return e.value
                 except Exception as e:
-                    self.error(f"Error executing statement: {e}")
+                    self.error(f"Error executing statement: {e}", exc_info=True)
                     raise
 
             # Restore the original context if needed
@@ -169,5 +169,5 @@ class DanaFunction(SandboxFunction, Loggable):
             return result
 
         except Exception as e:
-            self.error(f"Error executing Dana function: {e}")
+            self.error(f"Error executing Dana function: {e}", exc_info=True)
             raise

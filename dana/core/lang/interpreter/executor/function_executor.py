@@ -264,58 +264,33 @@ class FunctionExecutor(BaseExecutor):
 
         self.debug("Not a struct instantiation, proceeding with function resolution...")
 
+        # Phase 3: Handle special cases before unified dispatcher
+        if isinstance(node.name, str) and "SubscriptExpression" in node.name:
+            self.debug(f"Found string representation of SubscriptExpression: {node.name}")
+            # This means the function name is a string representation of a SubscriptExpression
+            # We need to evaluate it as a subscript expression first
+            return self.__execute_subscript_call_from_string(node, context, evaluated_args, evaluated_kwargs)
+
         # Phase 3: Parse function name and resolve function using unified dispatcher
+        self.debug(f"Function call name type: {type(node.name)}, value: {node.name}")
         name_info = FunctionNameInfo.from_node(node)
+
         try:
-            # Phase 1: Setup and validation
-            self.__setup_and_validate(node)
+            # Use the new unified dispatcher (replaces fragmented resolution)
+            resolved_func = self.unified_dispatcher.resolve_function(name_info, context)
 
-            # Phase 2: Process arguments
-            evaluated_args, evaluated_kwargs = self.__process_arguments(node, context)
-            self.debug(f"Processed arguments: args={evaluated_args}, kwargs={evaluated_kwargs}")
+            # Phase 4: Execute resolved function using unified dispatcher
+            return self.unified_dispatcher.execute_function(resolved_func, context, evaluated_args, evaluated_kwargs, name_info.func_name)
+        except Exception as dispatcher_error:
+            # If unified dispatcher fails, provide comprehensive error information
+            self.debug(f"Unified dispatcher failed for function '{name_info.func_name}': {dispatcher_error}")
 
-            # Phase 2.5: Check for struct instantiation
-            self.debug("Checking for struct instantiation...")
-            # Phase 2.5: Handle method calls (AttributeAccess) before other processing
-            from dana.core.lang.ast import AttributeAccess
-
-            if isinstance(node.name, AttributeAccess):
-                return self.__execute_method_call(node, context, evaluated_args, evaluated_kwargs)
-
-            struct_result = self.__check_struct_instantiation(node, context, evaluated_kwargs)
-            if struct_result is not None:
-                self.debug(f"Found struct instantiation, returning: {struct_result}")
-                return struct_result
-
-            self.debug("Not a struct instantiation, proceeding with function resolution...")
-
-            # Phase 3: Handle special cases before unified dispatcher
-            if isinstance(node.name, str) and "SubscriptExpression" in node.name:
-                self.debug(f"Found string representation of SubscriptExpression: {node.name}")
-                # This means the function name is a string representation of a SubscriptExpression
-                # We need to evaluate it as a subscript expression first
-                return self.__execute_subscript_call_from_string(node, context, evaluated_args, evaluated_kwargs)
-
-            # Phase 3: Parse function name and resolve function using unified dispatcher
-            self.debug(f"Function call name type: {type(node.name)}, value: {node.name}")
-            name_info = FunctionNameInfo.from_node(node)
-
+            # Use error handler for consistent error reporting
             try:
-                # Use the new unified dispatcher (replaces fragmented resolution)
-                resolved_func = self.unified_dispatcher.resolve_function(name_info, context)
-
-                # Phase 4: Execute resolved function using unified dispatcher
-                return self.unified_dispatcher.execute_function(resolved_func, context, evaluated_args, evaluated_kwargs, name_info.func_name)
-            except Exception as dispatcher_error:
-                # If unified dispatcher fails, provide comprehensive error information
-                self.debug(f"Unified dispatcher failed for function '{name_info.func_name}': {dispatcher_error}")
-
-                # Use error handler for consistent error reporting
-                try:
-                    raise self.error_handler.handle_standard_exceptions(dispatcher_error, node)
-                except Exception:
-                    # If error handler doesn't handle it, raise original with context
-                    raise SandboxError(f"Function '{name_info.func_name}' execution failed: {dispatcher_error}") from dispatcher_error
+                raise self.error_handler.handle_standard_exceptions(dispatcher_error, node)
+            except Exception:
+                # If error handler doesn't handle it, raise original with context
+                raise SandboxError(f"Function '{name_info.func_name}' execution failed: {dispatcher_error}") from dispatcher_error
         finally:
             # Pop location from error context stack
             if hasattr(node, 'location') and node.location:
@@ -375,20 +350,20 @@ class FunctionExecutor(BaseExecutor):
         # Process the __positional array
         positional_values = node.args["__positional"]
         if isinstance(positional_values, list):
+            # Evaluate each argument ONCE and store the result
             for value in positional_values:
-                evaluated_value = self.__evaluate_and_ensure_fully_evaluated(value, context)
-                evaluated_args.append(evaluated_value)
+                result = self.__evaluate_and_ensure_fully_evaluated(value, context)
+                evaluated_args.append(result)
         else:
             # Single value, not in a list
-            evaluated_value = self.__evaluate_and_ensure_fully_evaluated(positional_values, context)
-            evaluated_args.append(evaluated_value)
+            result = self.__evaluate_and_ensure_fully_evaluated(positional_values, context)
+            evaluated_args.append(result)
 
         # Also process any keyword arguments (keys that are not "__positional")
         for key, value in node.args.items():
             if key != "__positional":
-                # This is a keyword argument
-                evaluated_value = self.__evaluate_and_ensure_fully_evaluated(value, context)
-                evaluated_kwargs[key] = evaluated_value
+                result = self.__evaluate_and_ensure_fully_evaluated(value, context)
+                evaluated_kwargs[key] = result
 
         return evaluated_args, evaluated_kwargs
 
@@ -441,9 +416,8 @@ class FunctionExecutor(BaseExecutor):
         Returns:
             The fully evaluated value
         """
-        # Evaluate the argument
+        # Evaluate the argument ONCE and return the result
         evaluated_value = self.parent.execute(value, context)
-        # Ensure f-strings are fully evaluated to strings
         evaluated_value = self._ensure_fully_evaluated(evaluated_value, context)
         return evaluated_value
 
@@ -786,15 +760,39 @@ class FunctionExecutor(BaseExecutor):
             # Format: "SubscriptExpression(object=Identifier(name='FUNCS_FOR_TEST'), index=Identifier(name='func_name'))"
             name_str = str(node.name)
             
-            # Extract object name
-            object_start = name_str.find("Identifier(name='") + len("Identifier(name='")
+            # More robust parsing with error handling
+            object_name = None
+            index_name = None
+            
+            # Extract object name with better error handling
+            object_prefix = "Identifier(name='"
+            object_start = name_str.find(object_prefix)
+            if object_start == -1:
+                raise SandboxError(f"Could not find object identifier in subscript expression string: {name_str}")
+            
+            object_start += len(object_prefix)
             object_end = name_str.find("'", object_start)
+            if object_end == -1:
+                raise SandboxError(f"Could not find end of object name in subscript expression string: {name_str}")
+            
             object_name = name_str[object_start:object_end]
             
-            # Extract index name
-            index_start = name_str.find("Identifier(name='", object_end) + len("Identifier(name='")
+            # Extract index name with better error handling
+            index_prefix = "Identifier(name='"
+            index_start = name_str.find(index_prefix, object_end)
+            if index_start == -1:
+                raise SandboxError(f"Could not find index identifier in subscript expression string: {name_str}")
+            
+            index_start += len(index_prefix)
             index_end = name_str.find("'", index_start)
+            if index_end == -1:
+                raise SandboxError(f"Could not find end of index name in subscript expression string: {name_str}")
+            
             index_name = name_str[index_start:index_end]
+            
+            # Validate that we extracted meaningful names
+            if not object_name or not index_name:
+                raise SandboxError(f"Could not extract valid object and index names from subscript expression string: {name_str}")
             
             self.debug(f"Parsed object_name: {object_name}, index_name: {index_name}")
             

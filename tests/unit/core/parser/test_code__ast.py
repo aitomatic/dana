@@ -279,7 +279,10 @@ def test_collection_tuple(parser, typecheck_flag):
     program = parser.parse("t = (1, 2)", do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
     assert hasattr(stmt.value, "items")
-    assert stmt.value.items == [LiteralExpression(value=1), LiteralExpression(value=2)]
+    # Check values without comparing location since it's now set by the parser
+    assert len(stmt.value.items) == 2
+    assert stmt.value.items[0].value == 1
+    assert stmt.value.items[1].value == 2
 
 
 def test_collection_empty(parser, typecheck_flag):
