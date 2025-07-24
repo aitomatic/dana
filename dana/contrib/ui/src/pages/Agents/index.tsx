@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useAgentStore } from '@/stores/agent-store';
+import { apiService } from '@/lib/api';
 import { MyAgentTab } from './MyAgentTab';
 import { ExploreTab } from './ExploreTab';
 
@@ -78,15 +79,31 @@ function isMockAgent(agent: any): agent is typeof MOCK_AGENTS[number] {
 
 export default function AgentsPage() {
   const navigate = useNavigate();
-  const { agents, fetchAgents, isLoading, createAgent } = useAgentStore();
+  const { agents, fetchAgents, createAgent } = useAgentStore();
   const [myAgentSearch, setMyAgentSearch] = useState('');
   const [exploreSearch, setExploreSearch] = useState('');
   const [selectedDomain, setSelectedDomain] = useState('All domains');
   const [creating, setCreating] = useState(false);
+  const [prebuiltAgents, setPrebuiltAgents] = useState<any[]>([]);
+  const [loadingPrebuilt, setLoadingPrebuilt] = useState(false);
 
-  // Use mock data only if not loading and agents is empty
-  const useMock = !isLoading && (!agents || agents.length === 0);
-  const displayAgents = useMock ? MOCK_AGENTS : agents;
+  // Use prebuilt agents for explore tab
+  const exploreAgents = prebuiltAgents;
+
+  // Function to fetch prebuilt agents using axios API service
+  const fetchPrebuiltAgents = async () => {
+    setLoadingPrebuilt(true);
+    try {
+      const data = await apiService.getPrebuiltAgents();
+      setPrebuiltAgents(data);
+    } catch (error) {
+      console.error('Error fetching prebuilt agents:', error);
+      // Fallback to mock data if API fails
+      setPrebuiltAgents(MOCK_AGENTS);
+    } finally {
+      setLoadingPrebuilt(false);
+    }
+  };
 
   // Tabs: My Agent, Explore
   const [activeTab, setActiveTab] = useState(() => (agents && agents.length === 0 ? 'Explore' : 'My Agent'));
@@ -96,14 +113,15 @@ export default function AgentsPage() {
 
   useEffect(() => {
     fetchAgents();
+    fetchPrebuiltAgents();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Filter by domain and search
-  const filteredAgents = displayAgents.filter((agent) => {
-    const domain = isMockAgent(agent) ? agent.domain : agent.config?.domain || 'Other';
+  const filteredAgents = exploreAgents.filter((agent: any) => {
+    const domain = agent.config?.domain || 'Other';
     const matchesDomain = selectedDomain === 'All domains' || domain === selectedDomain;
-    const details = isMockAgent(agent) ? agent.details : '';
+    const details = agent.description || '';
     const searchValue = activeTab === 'Explore' ? exploreSearch : myAgentSearch;
     const matchesSearch =
       agent.name.toLowerCase().includes(searchValue.toLowerCase()) ||
@@ -184,6 +202,7 @@ export default function AgentsPage() {
           navigate={navigate}
           isMockAgent={isMockAgent}
           DOMAINS={DOMAINS}
+          loadingPrebuilt={loadingPrebuilt}
         />
       )}
     </div>

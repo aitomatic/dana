@@ -13,6 +13,7 @@ export const ExploreTab: React.FC<{
   navigate: (url: string) => void;
   isMockAgent: (agent: any) => boolean;
   DOMAINS: string[];
+  loadingPrebuilt?: boolean;
 }> = ({ filteredAgents, search, setSearch, selectedDomain, setSelectedDomain, navigate, isMockAgent, DOMAINS }) => (
   <>
     {/* Domain tabs and search */}

@@ -781,6 +781,12 @@ class ApiService {
     });
     return response.data;
   }
+
+  // Get prebuilt agents for the Explore tab
+  async getPrebuiltAgents(): Promise<any[]> {
+    const response = await this.client.get('/agents/prebuilt');
+    return response.data;
+  }
 }
 
 // Export singleton instance
