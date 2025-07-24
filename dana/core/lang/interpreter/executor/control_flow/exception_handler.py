@@ -100,7 +100,7 @@ class ExceptionHandler(Loggable):
                         self.debug(f"Processing except block with variable_name: {except_block.variable_name}")
                         if except_block.variable_name:
                             # Create DanaException object and assign to variable
-                            dana_exception = create_dana_exception(exception_occurred)
+                            dana_exception = create_dana_exception(exception_occurred, context.error_context)
                             self.debug(f"Created DanaException: {dana_exception}")
                             # Create new context with current as parent
                             except_context = SandboxContext(parent=context, manager=context.manager)

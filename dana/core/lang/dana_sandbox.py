@@ -378,11 +378,47 @@ class DanaSandbox(Loggable):
             )
 
         except Exception as e:
-            # File execution always logs as error since these are unexpected
-            self.error(f"Error executing Dana file: {e}")
+            # Format error with location information
+            from dana.core.lang.interpreter.error_formatter import EnhancedErrorFormatter
+            from dana.common.exceptions import EnhancedDanaError
+            
+            formatted_error = EnhancedErrorFormatter.format_error(
+                e, 
+                self._context.error_context,
+                show_traceback=True
+            )
+            
+            # Log the formatted error
+            self.debug(f"Error context current location: {self._context.error_context.current_location}")
+            self.debug(f"Error context stack size: {len(self._context.error_context.execution_stack)}")
+            self.error(f"Error executing Dana file:\n{formatted_error}")
+            
+            # Create an enhanced error with location information
+            error_context = self._context.error_context
+            
+            # If the error is already an EnhancedDanaError, preserve its location info
+            if isinstance(e, EnhancedDanaError):
+                # Use existing location info from the error
+                enhanced_error = EnhancedDanaError(
+                    formatted_error,
+                    filename=e.filename or (error_context.current_file if error_context else None),
+                    line=e.line or (error_context.current_location.line if error_context and error_context.current_location else None),
+                    column=e.column or (error_context.current_location.column if error_context and error_context.current_location else None),
+                    traceback_str=e.traceback_str or (error_context.format_stack_trace() if error_context else None)
+                )
+            else:
+                enhanced_error = EnhancedDanaError(
+                    formatted_error,
+                    filename=error_context.current_file if error_context else None,
+                    line=error_context.current_location.line if error_context and error_context.current_location else None,
+                    column=error_context.current_location.column if error_context and error_context.current_location else None,
+                    traceback_str=error_context.format_stack_trace() if error_context else None
+                )
+            enhanced_error.__cause__ = e
+            
             return ExecutionResult(
                 success=False,
-                error=e,
+                error=enhanced_error,
                 final_context=self._context.copy(),
             )
 
@@ -422,16 +458,49 @@ class DanaSandbox(Loggable):
                 or any("__repl" in str(key) for key in self._context._state.get("system", {}).keys())
             )
 
+            # Format error with location information
+            from dana.core.lang.interpreter.error_formatter import EnhancedErrorFormatter
+            from dana.common.exceptions import EnhancedDanaError
+            
+            formatted_error = EnhancedErrorFormatter.format_error(
+                e, 
+                self._context.error_context,
+                show_traceback=not is_repl_mode  # Show full traceback in non-REPL mode
+            )
+
             if is_repl_mode:
                 # In REPL mode, syntax errors are expected user input - log as debug
                 self.debug(f"Error evaluating Dana code: {e}")
             else:
                 # In non-REPL mode (file execution), log as error for debugging
-                self.error(f"Error evaluating Dana code: {e}")
+                self.error(f"Error evaluating Dana code:\n{formatted_error}")
+            
+            # Create an enhanced error with location information
+            error_context = self._context.error_context
+            
+            # If the error is already an EnhancedDanaError, preserve its location info
+            if isinstance(e, EnhancedDanaError):
+                # Use existing location info from the error
+                enhanced_error = EnhancedDanaError(
+                    formatted_error,
+                    filename=e.filename or (error_context.current_file if error_context else None),
+                    line=e.line or (error_context.current_location.line if error_context and error_context.current_location else None),
+                    column=e.column or (error_context.current_location.column if error_context and error_context.current_location else None),
+                    traceback_str=e.traceback_str or (error_context.format_stack_trace() if error_context else None)
+                )
+            else:
+                enhanced_error = EnhancedDanaError(
+                    formatted_error,
+                    filename=error_context.current_file if error_context else None,
+                    line=error_context.current_location.line if error_context and error_context.current_location else None,
+                    column=error_context.current_location.column if error_context and error_context.current_location else None,
+                    traceback_str=error_context.format_stack_trace() if error_context else None
+                )
+            enhanced_error.__cause__ = e
 
             return ExecutionResult(
                 success=False,
-                error=e,
+                error=enhanced_error,
                 final_context=self._context.copy(),
             )
 

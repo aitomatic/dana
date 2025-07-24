@@ -23,6 +23,11 @@ def main():
     arg_parser.add_argument("inputs", nargs=argparse.REMAINDER, help="Input arguments as key=value pairs")
     args = arg_parser.parse_args()
 
+    # TODO: fix bug with --debug handling
+    if "--debug" in args.inputs:
+        args.debug = True
+        args.inputs.remove("--debug")
+
     # load the .env file if it exists in the same directory as the script
     load_dana_env(dot_env_file_path=Path(args.file_path).parent / '.env')
 

@@ -235,18 +235,70 @@ class ExpressionExecutor(BaseExecutor):
         Returns:
             The value of the attribute
         """
-        # Get the target object
-        target = self.parent.execute(node.object, context)
+        self.debug(f"Executing attribute access: {node.attribute} on {node.object}")
+        self.debug(f"Node location: {getattr(node, 'location', 'No location')}")
+        
+        # Track location in error context if available
+        if hasattr(node, 'location') and node.location:
+            from dana.core.lang.interpreter.error_context import ExecutionLocation
+            
+            location = ExecutionLocation(
+                filename=context.error_context.current_file,
+                line=node.location.line,
+                column=node.location.column,
+                function_name=f"attribute access: {node.attribute}",
+                source_line=context.error_context.get_source_line(
+                    context.error_context.current_file, node.location.line
+                ) if context.error_context.current_file and node.location.line else None
+            )
+            context.error_context.push_location(location)
+            self.debug(f"Pushed location to error context: {location}") 
+            self.debug(f"Error context stack size after push: {len(context.error_context.execution_stack)}")
+        
+        try:
+            # Get the target object
+            target = self.parent.execute(node.object, context)
 
-        # Access the attribute
-        if hasattr(target, node.attribute):
-            return getattr(target, node.attribute)
+            # Access the attribute
+            if hasattr(target, node.attribute):
+                return getattr(target, node.attribute)
 
-        # Support dictionary access with dot notation
-        if isinstance(target, dict) and node.attribute in target:
-            return target[node.attribute]
+            # Support dictionary access with dot notation
+            if isinstance(target, dict) and node.attribute in target:
+                return target[node.attribute]
 
-        raise AttributeError(f"'{type(target).__name__}' object has no attribute '{node.attribute}'")
+            # Provide more informative error message with location
+            target_type = type(target).__name__
+            if target is None:
+                target_type = "NoneType"
+            
+            # Create an error with location information preserved
+            from dana.core.lang.interpreter.error_formatter import EnhancedErrorFormatter
+            from dana.common.exceptions import EnhancedDanaError
+            
+            # Format error with current location
+            error_msg = f"'{target_type}' object has no attribute '{node.attribute}'"
+            formatted_error = EnhancedErrorFormatter.format_error(
+                AttributeError(error_msg),
+                context.error_context,
+                show_traceback=True
+            )
+            
+            # Create enhanced error that preserves location
+            enhanced_error = EnhancedDanaError(
+                formatted_error,
+                filename=context.error_context.current_file,
+                line=node.location.line if node.location else None,
+                column=node.location.column if node.location else None
+            )
+            enhanced_error.__cause__ = AttributeError(error_msg)
+            raise enhanced_error
+        finally:
+            # Pop location from error context stack
+            if hasattr(node, 'location') and node.location:
+                self.debug(f"Popping location from error context")
+                context.error_context.pop_location()
+                self.debug(f"Error context stack size after pop: {len(context.error_context.execution_stack)}")
     
     def run_function(self, func: Callable, *args, **kwargs) -> Any:
         if asyncio.iscoroutinefunction(func):
