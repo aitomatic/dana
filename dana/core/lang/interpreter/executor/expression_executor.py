@@ -229,19 +229,43 @@ class ExpressionExecutor(BaseExecutor):
 
         Returns:
             The value of the attribute
+        
+        Raises:
+            AttributeError: If the attribute doesn't exist, with location information
         """
         # Get the target object
         target = self.parent.execute(node.object, context)
 
         # Access the attribute
-        if hasattr(target, node.attribute):
-            return getattr(target, node.attribute)
+        try:
+            if hasattr(target, node.attribute):
+                return getattr(target, node.attribute)
 
-        # Support dictionary access with dot notation
-        if isinstance(target, dict) and node.attribute in target:
-            return target[node.attribute]
+            # Support dictionary access with dot notation
+            if isinstance(target, dict) and node.attribute in target:
+                return target[node.attribute]
 
-        raise AttributeError(f"'{type(target).__name__}' object has no attribute '{node.attribute}'")
+            raise AttributeError(f"'{type(target).__name__}' object has no attribute '{node.attribute}'")
+        except AttributeError as e:
+            # Re-raise with location information if available
+            if hasattr(node, 'location') and node.location:
+                location = node.location
+                # Format location info
+                loc_info = []
+                if location.source:
+                    loc_info.append(f"File \"{location.source}\"")
+                loc_info.append(f"line {location.line}")
+                loc_info.append(f"column {location.column}")
+                
+                # Create enhanced error message
+                enhanced_msg = f"Traceback (most recent call last):\n  {', '.join(loc_info)}, in attribute access: {node.attribute}\n\n{str(e)}"
+                
+                # Create new exception with enhanced message but keep original for debugging
+                new_error = AttributeError(enhanced_msg)
+                new_error.__cause__ = e
+                raise new_error
+            else:
+                raise
     
     def run_function(self, func: Callable, *args, **kwargs) -> Any:
         if asyncio.iscoroutinefunction(func):

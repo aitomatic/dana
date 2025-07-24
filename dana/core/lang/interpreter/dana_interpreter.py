@@ -141,9 +141,9 @@ class DanaInterpreter(Loggable):
         Returns:
             Raw execution result
         """
-        # Parse the source code
+        # Parse the source code with filename for error reporting
         parser = ParserCache.get_parser("dana")
-        ast = parser.parse(source_code)
+        ast = parser.parse(source_code, filename=filename)
 
         # Execute through _execute (convergent path)
         return self._execute(ast, context)
