@@ -1404,3 +1404,77 @@ async def get_agent_knowledge_status(
     except Exception as e:
         logger.error(f"Error getting knowledge status for agent {agent_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{agent_id}/test")
+async def test_agent_by_id(
+    agent_id: int,
+    request: dict,
+    db: Session = Depends(get_db)
+):
+    """
+    Test an agent by ID with a message.
+    
+    This endpoint gets the agent details from the database by ID,
+    then runs the Dana file execution logic similar to /test-agent route.
+    
+    Args:
+        agent_id: The ID of the agent to test
+        request: Dict containing 'message' and optional context
+        db: Database session
+        
+    Returns:
+        Agent response or error
+    """
+    try:
+        # Get message from request
+        message = request.get("message", "").strip()
+        if not message:
+            raise HTTPException(status_code=400, detail="Message is required")
+        
+        # Get the agent from database
+        from dana.api.core.models import Agent
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+        
+        # Extract agent details
+        agent_name = agent.name
+        agent_description = agent.description or "A Dana agent"
+        folder_path = agent.config.get("folder_path") if agent.config else None
+        
+        logger.info(f"Testing agent {agent_id} ({agent_name}) with message: '{message}'")
+        
+        # Import the test logic from agent_test module
+        from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
+        from dana.api.routers.agent_test import AgentTestRequest, test_agent
+        initialize_module_system()
+        reset_module_system()
+        
+        
+        # Create test request using agent details
+        test_request = AgentTestRequest(
+            agent_code="",  # Will use folder_path instead
+            message=message,
+            agent_name=agent_name,
+            agent_description=agent_description,
+            context=request.get("context", {"user_id": "test_user"}),
+            folder_path=folder_path
+        )
+        
+        # Call the existing test_agent function
+        result = await test_agent(test_request)
+        
+        return {
+            "success": result.success,
+            "agent_response": result.agent_response,
+            "error": result.error,
+            "agent_id": agent_id,
+            "agent_name": agent_name
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error testing agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

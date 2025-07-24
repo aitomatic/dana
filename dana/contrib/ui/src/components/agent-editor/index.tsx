@@ -1,7 +1,7 @@
 import { Editor, useMonaco } from '@monaco-editor/react';
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import type { editor } from 'monaco-editor';
-import { IconAlertTriangle, IconX } from '@tabler/icons-react';
+// import { IconAlertTriangle, IconX } from '@tabler/icons-react';
 // import { CodeValidationPopup } from '@/components/code-validation-popup';
 // import { Button } from '@/components/ui/button';
 // import { RefreshCw, AlertCircle } from 'lucide-react';

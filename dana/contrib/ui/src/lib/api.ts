@@ -765,6 +765,22 @@ class ApiService {
     const response = await this.client.get(`/agents/${agentId}/knowledge-status`);
     return response.data;
   }
+
+  async testAgentById(agentId: string | number, message: string, context?: Record<string, any>): Promise<{
+    success: boolean;
+    agent_response: string;
+    error?: string;
+    agent_id: number;
+    agent_name: string;
+  }> {
+    const response = await this.client.post(`/agents/${agentId}/test`, {
+      message,
+      context: context || { user_id: 'test_user', session_id: 'chat_session' }
+    }, {
+      timeout: 300000, // 5 minutes timeout for agent testing
+    });
+    return response.data;
+  }
 }
 
 // Export singleton instance
