@@ -3,7 +3,7 @@
 import json
 import logging
 from typing import Any
-
+import yaml
 from dana.api.core.schemas import (
     IntentDetectionRequest,
     IntentDetectionResponse,
@@ -159,7 +159,7 @@ Respond with only the follow-up message, no preamble or explanation.
         tree_json = "null"
         if domain_tree:
             try:
-                tree_json = json.dumps(domain_tree.model_dump(), indent=2)
+                tree_json = yaml.safe_dump(domain_tree.model_dump(), sort_keys=False).replace('children: []', '')
             except Exception:
                 tree_json = "null"
         # Build chat history context
@@ -170,61 +170,133 @@ Respond with only the follow-up message, no preamble or explanation.
                 f"{msg.role}: {msg.content}" 
                 for msg in recent_messages
             ])
-        prompt = f"""You are an assistant managing an agent's profile and domain knowledge. 
-Given the following user message and context, identify ALL intents present in the message. A single message can have multiple intents.
+        prompt = f"""
+You are an assistant in charge of managing an agent’s profile **and** its hierarchical domain-knowledge tree.
 
-Available intents:
-1. "add_information" - User wants to add a new topic or knowledge area to the agent's expertise
-2. "refresh_domain_knowledge" - User wants to update, reorganize, or regenerate the knowledge structure  
-3. "update_agent_properties" - User wants to update the agent's name, role, specialties, or skills
-4. "general_query" - User is asking a question or making a request unrelated to knowledge management
+────────────────────────────────────────────────────────
+TASK
+────────────────────────────────────────────────────────
+1. **Intent Extraction** – Detect **every** intent in the user’s latest message.  
+2. **Entity Extraction** – Pull any relevant entities (topics, name, role, specialties, skills).  
+3. **Path Construction** – For each new topic, return the **exact path** that already exists in
+   `tree_json`; append only the truly new node(s).
 
-Extract any relevant entities (e.g., topic, name, role, specialties, skills, etc.).
+────────────────────────────────────────────────────────
+AVAILABLE INTENTS
+────────────────────────────────────────────────────────
+• `add_information`            – user adds a new topic / knowledge area  
+• `refresh_domain_knowledge`   – user wants to rebuild / reorganize the tree  
+• `update_agent_properties`    – user changes agent name, role, specialties, skills  
+• `general_query`              – any other question or request  
 
-Recent chat history:
-{history_context}
+A single message may contain multiple intents.
+
+────────────────────────────────────────────────────────
+INPUT VARIABLES
+────────────────────────────────────────────────────────
+• `history_context`          – recent chat (plain text)  
+• `tree_json`                – **current** knowledge tree (YAML-like dict; see example)  
+• `user_message`             – latest user utterance (plain text)
+
+────────────────────────────────────────────────────────
+RULES
+────────────────────────────────────────────────────────
+1. **Traverse the tree**  
+   • Treat each `topic` in `tree_json` as one node.  
+   • Find the deepest existing node(s) that match the user’s requested topic
+     (case-insensitive, ignore punctuation).  
+   • Only create **new** node(s) for the missing remainder of the path.  
+   • The returned `topics` list MUST start with `"root"` and follow the
+     *exact* topic names found in `tree_json`, preserving capitalization and spacing.
+
+2. **No duplicate branches**  
+   • If the topic already exists anywhere in the tree, point to that path;
+     do **not** create a parallel branch.
+
+3. **Coupled updates**  
+   • If the user wants the agent to *gain expertise* (specialty or skills)
+     **and** add that topic to knowledge, output **two** intents:
+       `update_agent_properties` **and** `add_information`.
+
+4. **Entity heuristics**  
+   • **Role** → patterns like “be a[n] <role>”, “work as <role>”, “<name> is <role>”, “<domain> expert”.  
+   • **Skills** → “skilled in”, “good at”, “with skills in”, “abilities in”.  
+   • **Specialties** → “specialist in”, “expert in <domain>”, “expertise in”.
+
+5. **Confidence**  
+   • Float 0-1 (≥ 0.80 only when extraction is obvious).
+
+6. **Response shape** – Return **only** the JSON structure below.  
+   Do *not* wrap it in markdown and do *not* echo any other text.
+
+────────────────────────────────────────────────────────
+OUTPUT JSON SCHEMA
+────────────────────────────────────────────────────────
+{{
+  "intents": [
+    {{
+      "intent": "add_information|refresh_domain_knowledge|update_agent_properties|general_query",
+      "entities": {{
+        "topics": ["root", ...],   // list or empty []
+        "name": "",                // or ""
+        "role": "",
+        "specialties": "",
+        "skills": ""
+      }},
+      "confidence": 0.00,
+      "explanation": "… ≤ 25 words"
+    }}
+    // …additional intents
+  ]
+}}
+
+────────────────────────────────────────────────────────
+ILLUSTRATIVE EXAMPLES  (*not hard rules – always follow tree_json*)
+────────────────────────────────────────────────────────
+1. **Add existing leaf**  
+   *tree_json contains* → … → Risk Management  
+   **User**: “Add risk management to the agent.”  
+   → `add_information` with `"topics": ["root","Finance and Analytics","quantitative analyst","Risk Management"]`  
+   → `update_agent_properties` with `"specialties": "Risk Management"`
+
+2. **Add completely new branch**  
+   **User**: “Add dividend analysis.”  
+   → `add_information` with `"topics": ["root","Finance and Analytics","dividend analysis"]`
+
+3. **Rename agent (properties-only)**  
+   **User**: “Please rename my agent to Athena.”  
+   → `update_agent_properties` with `"name": "Athena"`
+
+4. **Change role & skills, no new topic needed**  
+   *tree_json already has “Statistical Analysis”*  
+   **User**: “Make Athena a senior quantitative analyst skilled in statistical analysis.”  
+   → `update_agent_properties` with `"role": "senior quantitative analyst", "skills": "statistical analysis"`
+
+5. **Combined: role change + brand-new topic**  
+   **User**: “Make Jason a climate-risk analyst and add climate risk modeling.”  
+   → `update_agent_properties` with `"role": "climate-risk analyst", "specialties": "climate risk modeling"`  
+   → `add_information` with `"topics": ["root","Environment analysis","climate risk modeling"]`
+
+6. **Refresh the whole tree**  
+   **User**: “Regenerate your finance knowledge structure.”  
+   → `refresh_domain_knowledge` (entities can be empty)
+
+7. **General query**  
+   **User**: “What’s the difference between VaR and CVaR?”  
+   → `general_query` (entities empty)
+
+────────────────────────────────────────────────────────
+BEGIN
+────────────────────────────────────────────────────────
+Given:
+Recent chat history: {history_context}
 
 Current domain knowledge tree:
 {tree_json}
 
 User message: "{user_message}"
 
-Respond in this exact JSON format with an array of intents (even if just one):
-{{
-  "intents": [
-    {{
-      "intent": "add_information|refresh_domain_knowledge|update_agent_properties|general_query",
-      "entities": {{
-        "topic": "...",
-        "name": "...",
-        "role": "...",
-        "specialties": "...",
-        "skills": "..."
-      }},
-      "confidence": 0.0-1.0,
-      "explanation": "brief explanation"
-    }}
-  ]
-}}
-
-Examples:
-- "I want to call my agent Jason" → [{{intent: "update_agent_properties", entities: {{name: "Jason"}}}}]
-- "I want Jason to be good at anti-money laundering" → [{{intent: "update_agent_properties", entities: {{name: "Jason", specialties: "anti-money laundering"}}}}, {{intent: "add_information", entities: {{topic: "anti-money laundering"}}}}]
-- "I want Jason to be an anti-money laundering expert" → [{{intent: "update_agent_properties", entities: {{name: "Jason", role: "anti-money laundering expert", specialties: "anti-money laundering"}}}}, {{intent: "add_information", entities: {{topic: "anti-money laundering"}}}}]
-- "Make Jason a financial advisor skilled in portfolio analysis" → [{{intent: "update_agent_properties", entities: {{name: "Jason", role: "financial advisor", skills: "portfolio analysis"}}}}, {{intent: "add_information", entities: {{topic: "portfolio analysis"}}}}]
-- "Jason should be a compliance officer with skills in regulatory reporting" → [{{intent: "update_agent_properties", entities: {{name: "Jason", role: "compliance officer", skills: "regulatory reporting"}}}}, {{intent: "add_information", entities: {{topic: "regulatory reporting"}}}}]
-- "Add dividend analysis to your knowledge" → [{{intent: "add_information", entities: {{topic: "dividend analysis"}}}}]
-- "it's very good add AML compliance" → [{{intent: "add_information", entities: {{topic: "AML compliance"}}}}, {{intent: "update_agent_properties", entities: {{specialties: "AML compliance"}}}}]
-- "add risk management to the agent" → [{{intent: "add_information", entities: {{topic: "risk management"}}}}, {{intent: "update_agent_properties", entities: {{specialties: "risk management"}}}}]
-- "Update your knowledge about stock analysis" → [{{intent: "refresh_domain_knowledge", entities: {{}}}}]
-- "Can you help me with financial modeling?" → [{{intent: "general_query", entities: {{}}}}]
-
-IMPORTANT EXTRACTION RULES:
-1. Role extraction: Look for patterns like "be a [role]", "be an [role]", "work as [role]", "[name] is [role]", "[profession] expert", "[domain] specialist"
-2. Skills extraction: Look for "skilled in", "good at", "with skills in", "abilities in"  
-3. Specialties extraction: Look for domain expertise like "specialist in", "expert in [domain]", "expertise in"
-4. When someone wants to give an agent expertise/skills/specialties in a domain, this should ALWAYS trigger BOTH update_agent_properties AND add_information intents - one to update the agent's profile and one to add the topic to domain knowledge.
-5. When someone says "add [topic]" or "add [topic] to agent/knowledge", this should trigger BOTH add_information AND update_agent_properties (with specialties) - they want both the knowledge added and the agent to become specialized in it.
+Produce the JSON response described above – nothing else.
 """
         return prompt
     

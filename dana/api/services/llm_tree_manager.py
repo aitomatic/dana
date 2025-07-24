@@ -22,6 +22,64 @@ class LLMTreeManager(Loggable):
     def __init__(self):
         super().__init__()
         self.llm = LLMResource()
+
+
+    async def add_topic_to_knowledge(self, 
+                                    current_tree: DomainKnowledgeTree | None,
+                                    paths: list[str],
+                                    suggested_parent: str | None,
+                                    context_details: str | None,
+                                    agent_name: str,
+                                    agent_description: str,
+                                    chat_history: list = None) -> DomainKnowledgeUpdateResponse:
+        try:
+            print(f"🧠 Smart add knowledge starting...")
+            print(f"  - Paths: {paths}")
+            print(f"  - Current tree exists: {current_tree is not None}")
+
+            # changed will be used to determine if the tree has changed
+            current_node = current_tree
+            changed = False
+            for node_name in paths:
+                if hasattr(current_node, node_name):
+                    current_node = getattr(current_node, node_name)
+                elif hasattr(current_node, "topic") and current_node.topic == node_name:
+                    continue
+                elif hasattr(current_node, "children"):
+                    # check if the node exists in the children or this is a new path to add
+                    is_new_path = True
+                    for child in current_node.children:
+                        if child.topic == node_name:
+                            current_node = child
+                            is_new_path = False
+                            break
+                    if is_new_path:
+                        current_node.children.append(DomainNode(topic=node_name, children=[]))
+                        current_node = current_node.children[-1]
+                        changed = True
+                else:
+                    current_node.children.append(DomainNode(topic=node_name, children=[]))
+                    current_node = current_node.children[-1]
+                    changed = True
+            if changed:
+                current_tree.version += 1
+            return DomainKnowledgeUpdateResponse(
+                success=True,
+                updated_tree=current_tree,
+                changes_summary=f"Added {paths} to the tree"
+            )
+        except Exception as e:
+            print(f"❌ Exception in add_topic_to_knowledge: {e}")
+            self.error(f"Error in add_topic_to_knowledge: {e}. Falling back to smart_add_knowledge.")
+            return await self.smart_add_knowledge(
+                current_tree=current_tree,
+                new_topic=paths[-1],
+                suggested_parent=suggested_parent,
+                context_details=context_details,
+                agent_name=agent_name,
+                agent_description=agent_description,
+                chat_history=chat_history
+            )
     
     async def smart_add_knowledge(
         self,

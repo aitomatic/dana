@@ -450,17 +450,17 @@ async def _process_add_information_intent(
 ) -> dict[str, Any]:
     """Process add_information intent using LLM-powered tree management."""
 
-    topic = entities.get("topic")
+    topics = entities.get("topics")
     parent = entities.get("parent")
     details = entities.get("details")
 
     print("🧠 Processing add_information with LLM tree manager:")
-    print(f"  - Topic: {topic}")
+    print(f"  - Topics: {topics}")
     print(f"  - Parent: {parent}")
     print(f"  - Details: {details}")
     print(f"  - Agent: {agent.name}")
 
-    if not topic:
+    if not topics:
         return {
             "processor": "add_information",
             "success": False,
@@ -470,9 +470,9 @@ async def _process_add_information_intent(
 
     try:
         # Use LLM tree manager for intelligent placement
-        update_response = await llm_tree_manager.smart_add_knowledge(
+        update_response = await llm_tree_manager.add_topic_to_knowledge(
             current_tree=current_domain_tree,
-            new_topic=topic,
+            paths=topics,
             suggested_parent=parent,
             context_details=details,
             agent_name=agent.name,
