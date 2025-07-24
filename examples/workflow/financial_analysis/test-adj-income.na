@@ -23,13 +23,3 @@ def __main__(func_name: str = 'all'):
                 print(f'TESTING {func_name}...')
                 print(FUNCS_FOR_TEST[func_name]())
 
-# Run __main__()
-#__main__()
-print(f"TEST_DOC_PATH: {TEST_DOC_PATH}")
-print(f"FUNCS_FOR_TEST: {FUNCS_FOR_TEST}")
-for func_name in FUNCS_FOR_TEST:
-    print(f"TESTING {func_name}...")
-    func = FUNCS_FOR_TEST[func_name]
-    print(f"func: {func}")
-    print(f"FUNCS_FOR_TEST[func_name](): {FUNCS_FOR_TEST[func_name](None)}")
-    # func(None)
