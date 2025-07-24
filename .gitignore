@@ -26,6 +26,7 @@ dana-config.json
 pytest.ini
 
 # Logs and data
+local.db
 .dana/
 .poet/
 logs/
