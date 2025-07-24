@@ -130,10 +130,10 @@ export default function AgentDetailPage() {
       <AgentDetailHeader
         onBack={() => navigate('/agents')}
         title="Train Your Agent"
-        onDeploy={() => {}}
+        onDeploy={() => { }}
         onCancel={() => navigate('/agents')}
       />
-      <div className="flex overflow-y-auto flex-1 w-full h-full">
+      <div className="grid grid-cols-[max-content_1fr] flex-1 w-full h-full">
         <AgentDetailSidebar />
         {/* No need to pass tpl, AgentDetailTabs gets agent from store */}
         <AgentDetailTabs onShowComparison={() => setShowComparison(true)} />

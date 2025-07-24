@@ -1,0 +1,140 @@
+{
+  "agent_id": "23",
+  "topics": [
+    {
+      "id": "topic_1",
+      "path": "Sales - Sales Strategy - Lead Generation",
+      "file": "Sales___Sales_Strategy___Lead_Generation.json",
+      "status": "success",
+      "last_generated": "2025-07-24T07:16:37.747380Z",
+      "last_topic_update": "2024-07-24T00:00:00Z",
+      "error": null
+    },
+    {
+      "id": "topic_2",
+      "path": "Sales - Sales Strategy - Territory Planning",
+      "file": "Sales___Sales_Strategy___Territory_Planning.json",
+      "status": "success",
+      "last_generated": "2025-07-24T07:20:30.667082Z",
+      "last_topic_update": "2024-07-24T00:00:00Z",
+      "error": null
+    },
+    {
+      "id": "topic_3",
+      "path": "Sales - Sales Strategy - Sales Forecasting",
+      "file": "Sales___Sales_Strategy___Sales_Forecasting.json",
+      "status": "success",
+      "last_generated": "2025-07-24T07:19:07.889224Z",
+      "last_topic_update": "2024-07-24T00:00:00Z",
+      "error": null
+    },
+    {
+      "id": "topic_4",
+      "path": "Sales - Sales Strategy - Competitive Analysis",
+      "file": "Sales___Sales_Strategy___Competitive_Analysis.json",
+      "status": "success",
+      "last_generated": "2025-07-24T07:21:13.169814Z",
+      "last_topic_update": "2024-07-24T00:00:00Z",
+      "error": null
+    },
+    {
+      "id": "topic_5",
+      "path": "Sales - Sales Strategy - Pipeline Management",
+      "file": "Sales___Sales_Strategy___Pipeline_Management.json",
+      "status": "success",
+      "last_generated": "2025-07-24T07:20:55.962463Z",
+      "last_topic_update": "2024-07-24T00:00:00Z",
+      "error": null
+    },
+    {
+      "id": "topic_6",
+      "path": "Sales - Customer Relations - CRM Management",
+      "file": "Sales___Customer_Relations___CRM_Management.json",
+      "status": "success",
+      "last_generated": "2025-07-24T07:23:38.120781Z",
+      "last_topic_update": "2024-07-24T00:00:00Z",
+      "error": null
+    },
+    {
+      "id": "topic_7",
+      "path": "Sales - Customer Relations - Customer Retention",
+      "file": "Sales___Customer_Relations___Customer_Retention.json",
+      "status": "success",
+      "last_generated": "2025-07-24T07:23:20.065090Z",
+      "last_topic_update": "2024-07-24T00:00:00Z",
+      "error": null
+    },
+    {
+      "id": "topic_8",
+      "path": "Sales - Customer Relations - Account Management",
+      "file": "Sales___Customer_Relations___Account_Management.json",
+      "status": "success",
+      "last_generated": "2025-07-24T07:24:59.077206Z",
+      "last_topic_update": "2024-07-24T00:00:00Z",
+      "error": null
+    },
+    {
+      "id": "topic_9",
+      "path": "Sales - Customer Relations - Customer Service",
+      "file": "Sales___Customer_Relations___Customer_Service.json",
+      "status": "success",
+      "last_generated": "2025-07-24T07:26:54.422202Z",
+      "last_topic_update": "2024-07-24T00:00:00Z",
+      "error": null
+    },
+    {
+      "id": "topic_10",
+      "path": "Sales - Customer Relations - Relationship Building",
+      "file": "Sales___Customer_Relations___Relationship_Building.json",
+      "status": "success",
+      "last_generated": "2025-07-24T07:27:02.191047Z",
+      "last_topic_update": "2024-07-24T00:00:00Z",
+      "error": null
+    },
+    {
+      "id": "topic_11",
+      "path": "Sales - Digital Marketing - Social Media Marketing",
+      "file": "Sales___Digital_Marketing___Social_Media_Marketing.json",
+      "status": "success",
+      "last_generated": "2025-07-24T07:27:17.209330Z",
+      "last_topic_update": "2024-07-24T00:00:00Z",
+      "error": null
+    },
+    {
+      "id": "topic_12",
+      "path": "Sales - Digital Marketing - Content Marketing",
+      "file": "Sales___Digital_Marketing___Content_Marketing.json",
+      "status": "success",
+      "last_generated": "2025-07-24T07:30:45.608413Z",
+      "last_topic_update": "2024-07-24T00:00:00Z",
+      "error": null
+    },
+    {
+      "id": "topic_13",
+      "path": "Sales - Digital Marketing - Email Campaigns",
+      "file": "Sales___Digital_Marketing___Email_Campaigns.json",
+      "status": "success",
+      "last_generated": "2025-07-24T07:29:40.272905Z",
+      "last_topic_update": "2024-07-24T00:00:00Z",
+      "error": null
+    },
+    {
+      "id": "topic_14",
+      "path": "Sales - Digital Marketing - SEO & SEM",
+      "file": "Sales___Digital_Marketing___SEO_&_SEM.json",
+      "status": "success",
+      "last_generated": "2025-07-24T07:31:58.243364Z",
+      "last_topic_update": "2024-07-24T00:00:00Z",
+      "error": null
+    },
+    {
+      "id": "topic_15",
+      "path": "Sales - Digital Marketing - Brand Strategy",
+      "file": "Sales___Digital_Marketing___Brand_Strategy.json",
+      "status": "success",
+      "last_generated": "2025-07-24T07:31:08.080780Z",
+      "last_topic_update": "2024-07-24T00:00:00Z",
+      "error": null
+    }
+  ]
+}

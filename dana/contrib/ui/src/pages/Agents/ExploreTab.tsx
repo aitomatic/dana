@@ -13,7 +13,8 @@ export const ExploreTab: React.FC<{
   navigate: (url: string) => void;
   isMockAgent: (agent: any) => boolean;
   DOMAINS: string[];
-}> = ({ filteredAgents, search, setSearch, selectedDomain, setSelectedDomain, handleCreateAgent, creating, navigate, isMockAgent, DOMAINS }) => (
+  loadingPrebuilt?: boolean;
+}> = ({ filteredAgents, search, setSearch, selectedDomain, setSelectedDomain, navigate, isMockAgent, DOMAINS }) => (
   <>
     {/* Domain tabs and search */}
     <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">

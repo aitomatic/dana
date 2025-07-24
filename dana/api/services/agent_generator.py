@@ -1737,11 +1737,12 @@ this_agent = {agent_class}()
         retrieval_function = "package.retrieval_result = str(knowledge.query(query)) + str(contextual_knowledge.query(query))"
 
     methods_na = f'''
-from knowledge import knowledge
+{'from knowledge import knowledge' if has_docs_folder else ''}
 from common import QUERY_GENERATION_PROMPT
 from common import QUERY_DECISION_PROMPT
 from common import ANSWER_PROMPT
 from common import RetrievalPackage
+{'from knowledge import contextual_knowledge' if has_knows_folder else ''}
 
 def search_document(package: RetrievalPackage) -> RetrievalPackage:
     query = package.query

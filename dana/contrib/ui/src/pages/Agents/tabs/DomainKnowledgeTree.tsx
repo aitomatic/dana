@@ -154,7 +154,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
-  const [generateMsg, setGenerateMsg] = useState<string | null>(null);
+  const [, setGenerateMsg] = useState<string | null>(null);
   const [topicStatus] = useState<{ [id: string]: string }>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -434,16 +434,6 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           Start a conversation with the agent to build domain knowledge automatically, or use the
           smart chat feature to add specific expertise areas.
         </div>
-        {agentId && (
-          <button
-            onClick={handleGenerateKnowledge}
-            disabled={generating}
-            className="px-4 py-2 text-white bg-blue-600 rounded shadow hover:bg-blue-700 disabled:opacity-50"
-          >
-            {generating ? 'Generating...' : 'Generate Domain Knowledge'}
-          </button>
-        )}
-        {generateMsg && <div className="mt-2 text-xs text-gray-600">{generateMsg}</div>}
       </div>
     );
   }
@@ -460,16 +450,6 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           Start a conversation with the agent to build domain knowledge automatically, or use the
           smart chat feature to add specific expertise areas.
         </div>
-        {agentId && (
-          <button
-            onClick={handleGenerateKnowledge}
-            disabled={generating}
-            className="px-4 py-2 text-white bg-blue-600 rounded shadow hover:bg-blue-700 disabled:opacity-50"
-          >
-            {generating ? 'Generating...' : 'Generate Domain Knowledge'}
-          </button>
-        )}
-        {generateMsg && <div className="mt-2 text-xs text-gray-600">{generateMsg}</div>}
       </div>
     );
   }
@@ -488,7 +468,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
               disabled={generating}
               className="absolute top-4 left-4 z-20 px-4 py-2 text-gray-500 bg-white rounded-md border border-gray-200 shadow-md hover:bg-gray-100"
             >
-              {generating ? 'Generating...' : 'Generate Domain Knowledge'}
+              {generating ? 'Generating...' : 'Generate Contextual Knowledge'}
             </button>
           </div>
         )}
