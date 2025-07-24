@@ -441,11 +441,11 @@ class ExpressionTransformer(BaseTransformer):
             if item.data == "literal" and item.children:
                 return self.atom(item.children)
             if item.data == "true_lit":
-                return LiteralExpression(value=True)
+                return LiteralExpression(value=True, location=self.create_location(item))
             if item.data == "false_lit":
-                return LiteralExpression(value=False)
+                return LiteralExpression(value=False, location=self.create_location(item))
             if item.data == "none_lit":
-                return LiteralExpression(value=None)
+                return LiteralExpression(value=None, location=self.create_location(item))
             if item.data == "collection" and len(item.children) == 1:
                 child = item.children[0]
                 from dana.core.lang.ast import DictLiteral, SetLiteral, TupleLiteral
@@ -466,6 +466,8 @@ class ExpressionTransformer(BaseTransformer):
 
     def _atom_from_token(self, token):
         value = token.value
+        location = self.create_location(token)  # Create location from token
+        
         # String literal: strip quotes
         if (
             value
@@ -484,7 +486,7 @@ class ExpressionTransformer(BaseTransformer):
                 value = value[3:-3]
             else:
                 value = value[1:-1]
-            return LiteralExpression(value=value)
+            return LiteralExpression(value=value, location=location)
         # Try to convert to int, float, bool, or None
         if value.isdigit():
             value = int(value)
@@ -498,7 +500,7 @@ class ExpressionTransformer(BaseTransformer):
                     value = False
                 elif value == "None":
                     value = None
-        return LiteralExpression(value=value)
+        return LiteralExpression(value=value, location=location)
 
     def literal(self, items):
         # Unwrap and convert all literal tokens/trees to primitives
@@ -507,7 +509,7 @@ class ExpressionTransformer(BaseTransformer):
     def identifier(self, items):
         # Should be handled by VariableTransformer, but fallback here
         if len(items) == 1 and isinstance(items[0], Token):
-            return Identifier(name=items[0].value)
+            return Identifier(name=items[0].value, location=self.create_location(items[0]))
         raise TypeError(f"Cannot transform identifier: {items}")
 
     def argument(self, items):
