@@ -241,6 +241,23 @@ class FunctionExecutor(BaseExecutor):
             The result of the function call
         """
         self.debug(f"Executing function call: {node.name}")
+        
+        # Track location in error context if available
+        if hasattr(node, 'location') and node.location:
+            from dana.core.lang.interpreter.error_context import ExecutionLocation
+            
+            location = ExecutionLocation(
+                filename=context.error_context.current_file,
+                line=node.location.line,
+                column=node.location.column,
+                function_name=f"function call: {node.name}",
+                source_line=context.error_context.get_source_line(
+                    context.error_context.current_file, node.location.line
+                ) if context.error_context.current_file and node.location.line else None
+            )
+            context.error_context.push_location(location)
+            self.debug(f"Pushed location to error context: {location}") 
+            self.debug(f"Error context stack size after push: {len(context.error_context.execution_stack)}")
 
         # Phase 1: Setup and validation
         self.__setup_and_validate(node)
