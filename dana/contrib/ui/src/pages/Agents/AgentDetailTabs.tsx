@@ -30,7 +30,7 @@ export const AgentDetailTabs: React.FC<{
   const [isChatOpen, setIsChatOpen] = useState(false);
   const { selectedAgent } = useAgentStore();
   return (
-    <div className="grid grid-cols-[1fr_max-content] h-full relative">
+    <div className="grid grid-cols-[1fr_max-content] h-full relative max-h-[calc(100vh-100px)]">
       {/* Main content area */}
       <div className="flex overflow-auto flex-col flex-1 gap-2 p-2 h-full">
         {/* Tab bar */}
