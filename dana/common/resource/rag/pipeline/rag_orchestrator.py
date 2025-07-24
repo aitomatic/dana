@@ -126,7 +126,14 @@ class RAGOrchestrator(Loggable):
                 await self.cache_manager.set_indicies_by_source(new_indices_by_source)
 
         if not indices_by_source:
-            raise RuntimeError("No valid indices available for any source")
+            # Instead of raising an exception, create a fallback empty index
+            self.warning("No valid indices available for any source - creating empty index")
+            from llama_index.core import VectorStoreIndex, Document
+            # Create a dummy document to avoid completely empty index issues
+            dummy_doc = Document(text="No documents found in the specified sources.", metadata={"source": "system", "type": "fallback"})
+            fallback_index = VectorStoreIndex.from_documents([dummy_doc])
+            indices_by_source = {"fallback": fallback_index}
+            docs_by_source = {"fallback": [dummy_doc]}
 
         # Combine indices
         self.debug(f"Combining {len(indices_by_source)} indices")
