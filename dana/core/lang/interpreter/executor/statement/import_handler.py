@@ -179,13 +179,28 @@ class ImportHandler(Loggable):
             return
 
         # Get the module loader
-        from dana.core.runtime.modules.core import get_module_loader
+        from dana.core.runtime.modules.core import get_module_loader, get_module_registry
 
         loader = get_module_loader()
 
+        # Get the current module's file path if available
+        current_module_file = None
+        current_module_name = getattr(context, "_current_module", None)
+        if current_module_name:
+            try:
+                registry = get_module_registry()
+                if registry:
+                    current_module = registry.get_module(current_module_name)
+                    current_module_file = current_module.__file__
+            except Exception:
+                # Module not found in registry, that's okay
+                pass
+
         try:
             # Find and load the module
-            spec = loader.find_spec(absolute_module_name)
+            # Pass the current module's file path as a hint via the path parameter
+            path = [f"__dana_importing_from__:{current_module_file}"] if current_module_file else None
+            spec = loader.find_spec(absolute_module_name, path=path)
             if spec is None:
                 raise ModuleNotFoundError(f"Dana module '{absolute_module_name}' not found")
 
@@ -277,13 +292,28 @@ class ImportHandler(Loggable):
             module = self._module_cache[cache_key]
         else:
             # Get the module loader
-            from dana.core.runtime.modules.core import get_module_loader
+            from dana.core.runtime.modules.core import get_module_loader, get_module_registry
 
             loader = get_module_loader()
 
+            # Get the current module's file path if available
+            current_module_file = None
+            current_module_name = getattr(context, "_current_module", None)
+            if current_module_name:
+                try:
+                    registry = get_module_registry()
+                    if registry:
+                        current_module = registry.get_module(current_module_name)
+                        current_module_file = current_module.__file__
+                except Exception:
+                    # Module not found in registry, that's okay
+                    pass
+
             try:
                 # Find and load the module
-                spec = loader.find_spec(absolute_module_name)
+                # Pass the current module's file path as a hint via the path parameter
+                path = [f"__dana_importing_from__:{current_module_file}"] if current_module_file else None
+                spec = loader.find_spec(absolute_module_name, path=path)
                 if spec is None:
                     raise ModuleNotFoundError(f"Dana module '{absolute_module_name}' not found")
 

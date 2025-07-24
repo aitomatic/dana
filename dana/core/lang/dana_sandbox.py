@@ -359,6 +359,18 @@ class DanaSandbox(Loggable):
         self._ensure_initialized()  # Auto-initialize on first use
 
         try:
+            # Convert to Path for easier manipulation
+            file_path = Path(file_path).resolve()
+            
+            # Add the file's directory to the module search path temporarily
+            from dana.core.runtime.modules.core import get_module_loader
+            loader = get_module_loader()
+            file_dir = file_path.parent
+            
+            # Add the file's directory to search paths if not already there
+            if file_dir not in loader.search_paths:
+                loader.search_paths.insert(0, file_dir)
+            
             # Read file
             with open(file_path) as f:
                 source_code = f.read()
