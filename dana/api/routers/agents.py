@@ -253,11 +253,15 @@ USER_REQUEST:
 
     # Create knowledge.na - knowledge base
     knowledge_content = """
+# Primary knowledge from documents
 doc_knowledge = use("rag", sources=["./docs"])
+
+# Contextual knowledge from generated knowledge files
+contextual_knowledge = use("rag", sources=["./knows"])
 """
 
     methods_content = """
-from knowledge import doc_knowledge
+from knowledge import doc_knowledge, contextual_knowledge
 from common import QUERY_GENERATION_PROMPT
 from common import QUERY_DECISION_PROMPT
 from common import ANSWER_PROMPT
@@ -267,7 +271,12 @@ def search_document(package: RetrievalPackage) -> RetrievalPackage:
     query = package.query
     if package.refined_query != "":
         query = package.refined_query
-    package.retrieval_result = str(doc_knowledge.query(query))
+    
+    # Query both knowledge sources
+    doc_result = str(doc_knowledge.query(query))
+    contextual_result = str(contextual_knowledge.query(query))
+    
+    package.retrieval_result = doc_result + contextual_result
     return package
 
 def refine_query(package: RetrievalPackage) -> RetrievalPackage:
