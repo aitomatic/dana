@@ -1,0 +1,164 @@
+# Data Structures for Objective-Driven State Machine
+# Domain: Semiconductor Manufacturing Process Control
+
+import datetime
+import enum
+
+# Enumeration for process states
+enum ProcessState:
+    IDLE = "idle"
+    ANALYZING = "analyzing"
+    DIAGNOSING = "diagnosing"
+    OPTIMIZING = "optimizing"
+    VALIDATING = "validating"
+    REPORTING = "reporting"
+    ERROR = "error"
+
+# Enumeration for alert severity levels
+enum AlertSeverity:
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
+    CRITICAL = "critical"
+
+# Process parameter measurement
+struct ProcessParameter:
+    name: str
+    value: float
+    unit: str
+    timestamp: datetime
+    quality: float  # 0.0 to 1.0 quality score
+    
+    def is_within_limits(self, min_val: float, max_val: float) -> bool:
+        return min_val <= self.value <= max_val
+    
+    def to_dict(self) -> dict:
+        return {
+            "name": self.name,
+            "value": self.value,
+            "unit": self.unit,
+            "timestamp": self.timestamp.isoformat(),
+            "quality": self.quality
+        }
+
+# Statistical information for a parameter
+struct ParameterStats:
+    parameter_name: str
+    mean: float
+    std_dev: float
+    min_value: float
+    max_value: float
+    sample_count: int
+    trend: str  # "increasing", "decreasing", "stable"
+    
+    def coefficient_of_variation(self) -> float:
+        if self.mean == 0:
+            return 0.0
+        return self.std_dev / abs(self.mean)
+
+# Process anomaly detection result
+struct ProcessAnomaly:
+    parameter_name: str
+    detected_at: datetime
+    severity: AlertSeverity
+    description: str
+    confidence: float  # 0.0 to 1.0
+    suggested_action: str
+    
+    def to_alert(self) -> dict:
+        return {
+            "type": "process_anomaly",
+            "parameter": self.parameter_name,
+            "severity": self.severity.value,
+            "description": self.description,
+            "confidence": self.confidence,
+            "action": self.suggested_action,
+            "timestamp": self.detected_at.isoformat()
+        }
+
+# Optimization recommendation
+struct OptimizationRecommendation:
+    parameter_name: str
+    current_value: float
+    recommended_value: float
+    expected_improvement: float  # percentage
+    confidence: float
+    rationale: str
+    
+    def apply_factor(self, factor: float) -> float:
+        """Apply a safety factor to the recommendation"""
+        delta = self.recommended_value - self.current_value
+        return self.current_value + (delta * factor)
+
+# Process health report
+struct ProcessHealthReport:
+    timestamp: datetime
+    overall_health: float  # 0.0 to 1.0
+    parameters_analyzed: int
+    anomalies_detected: list[ProcessAnomaly]
+    optimizations: list[OptimizationRecommendation]
+    statistics: list[ParameterStats]
+    
+    def get_critical_issues(self) -> list[ProcessAnomaly]:
+        return [a for a in self.anomalies_detected if a.severity == AlertSeverity.CRITICAL]
+    
+    def has_critical_issues(self) -> bool:
+        return len(self.get_critical_issues()) > 0
+
+# State machine context
+struct StateMachineContext:
+    current_state: ProcessState
+    previous_state: ProcessState
+    state_history: list[tuple[ProcessState, datetime]]
+    active_objective: str
+    optimization_target: str
+    execution_id: str
+    start_time: datetime
+    
+    def add_state_transition(self, new_state: ProcessState):
+        self.previous_state = self.current_state
+        self.current_state = new_state
+        self.state_history.append((new_state, datetime.now()))
+    
+    def get_execution_duration(self) -> float:
+        """Get execution duration in seconds"""
+        return (datetime.now() - self.start_time).total_seconds()
+
+# Batch of process data for analysis
+struct ProcessDataBatch:
+    batch_id: str
+    equipment_id: str
+    recipe_name: str
+    lot_number: str
+    parameters: list[ProcessParameter]
+    collection_start: datetime
+    collection_end: datetime
+    
+    def get_parameter_by_name(self, name: str) -> list[ProcessParameter]:
+        return [p for p in self.parameters if p.name == name]
+    
+    def get_time_range(self) -> tuple[datetime, datetime]:
+        return (self.collection_start, self.collection_end)
+
+# Helper functions for data validation
+def validate_parameter_range(param: ProcessParameter, spec: dict) -> bool:
+    """Validate parameter against specification limits"""
+    if param.name not in spec:
+        return True  # No spec, assume valid
+    
+    limits = spec[param.name]
+    return param.is_within_limits(limits["min"], limits["max"])
+
+def calculate_process_health(params: list[ProcessParameter], specs: dict) -> float:
+    """Calculate overall process health score"""
+    if not params:
+        return 0.0
+    
+    valid_count = sum(1 for p in params if validate_parameter_range(p, specs))
+    return valid_count / len(params)
+
+# Export all structures and helpers
+export ProcessState, AlertSeverity, ProcessParameter, ParameterStats
+export ProcessAnomaly, OptimizationRecommendation, ProcessHealthReport
+export StateMachineContext, ProcessDataBatch
+export validate_parameter_range, calculate_process_health

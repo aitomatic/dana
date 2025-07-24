@@ -132,8 +132,6 @@ setup-dev: ## Install with development dependencies and setup tools
 	$(UV_CMD) sync --extra dev
 	@echo "🔧 Setting up development tools..."
 	$(UV_CMD) run pre-commit install
-	@echo "📝 Installing LSP dependencies..."
-	$(UV_CMD) run pip install lsprotocol pygls
 	@echo "✅ Development environment ready!"
 
 sync: ## Sync dependencies with uv.lock

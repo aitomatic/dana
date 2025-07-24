@@ -85,8 +85,8 @@ with_arg: kw_arg
 kw_arg: NAME "=" expr
 
 // Function parameters
-parameters: typed_parameter ("," typed_parameter)*
-typed_parameter: NAME [":" basic_type] ["=" expr]
+parameters: typed_parameter ("," [COMMENT] typed_parameter)*
+typed_parameter: NAME [":" basic_type] ["=" expr] [COMMENT]
 
 // ===== TYPE ANNOTATIONS =====
 // Basic type annotation support for KISS implementation with union types
@@ -166,10 +166,13 @@ export_stmt: "export" NAME -> export_list
 
 export_names: NAME ("," NAME)*
 
-assignment: typed_assignment | simple_assignment | function_call_assignment
+assignment: typed_assignment | simple_assignment | function_call_assignment | compound_assignment
 typed_assignment: target ":" basic_type "=" expr
 simple_assignment: target "=" expr
 function_call_assignment: target "=" return_object_stmt
+compound_assignment: target compound_op expr
+
+compound_op: PLUS_EQUALS | MINUS_EQUALS | MULT_EQUALS | DIV_EQUALS
 
 expr_stmt: expr
 return_stmt: "return" [expr]
@@ -233,12 +236,19 @@ GE_OP: ">="
 LE_OP: "<="
 NE_OP: "!="
 IN_OP: "in"
-NOT_IN_OP: "not" "in"
+NOT_IN_OP.3: /\bnot\s+in\b/
 IS_OP: /\bis\b/
 IS_NOT_OP: /\bis\s+not\b/
 
 // Define token patterns with explicit priorities (lexer specific)
-// IMPORTANT: Define ** first, then * to avoid conflicts
+// IMPORTANT: Define longer tokens first to avoid conflicts
+// Compound assignment operators must come before basic operators
+PLUS_EQUALS: "+="
+MINUS_EQUALS: "-="
+MULT_EQUALS: "*="
+DIV_EQUALS: "/="
+
+// Basic operators after compound operators
 POW: "**"  // Define POW as a distinct token separate from MUL
 ADD: "+" 
 SUB: "-"
@@ -247,6 +257,7 @@ DIV: "/"
 FDIV: "//"
 MOD: "%"
 PIPE: "|"
+DOLLAR_DOLLAR: "$"
 
 // Expression precedence structure (lowest to highest)
 sum_expr: product ((ADD | SUB) product)*
@@ -278,10 +289,12 @@ slice_start_stop_step: expr ":" expr ":" expr // [start:stop:step]
 slice_all: ":"                               // [:]
 slice_step_only: "::" expr                   // [::step]
 
-arguments: argument ("," argument)* [","]
+arguments: argument ("," [COMMENT] argument)* [","]
 
-argument: kw_arg
-        | expr
+argument: (kw_arg | expr) [COMMENT]
+
+// ===== PLACEHOLDER =====
+placeholder: DOLLAR_DOLLAR -> placeholder_expression
 
 // ===== STRING LITERALS =====
 // Regular string literals, referenced from common
@@ -336,6 +349,7 @@ atom: variable trailer*
     | FALSE
     | NONE
     | collection
+    | placeholder
     | "(" expr ")"
 
 // ===== COLLECTIONS =====
@@ -375,7 +389,9 @@ NOT_OP.2: "not"
 AT: "@"
 
 simple_import: "import" module_path [AS NAME]
-from_import: "from" module_path "import" NAME [AS NAME]
+from_import: "from" module_path "import" import_name_list
+import_name_list: import_name ("," import_name)*
+import_name: NAME [AS NAME]
 
 // ===== DECORATORS =====
 decorators: decorator+

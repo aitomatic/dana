@@ -118,7 +118,7 @@ class FunctionExecutor(BaseExecutor):
         # Check if this function should be associated with an agent type
         # Import here to avoid circular imports
         from dana.agent.agent_system import register_agent_method_from_function_def
-        
+
         # Try to register as agent method if first parameter is an agent type
         register_agent_method_from_function_def(node, dana_func)
 
@@ -163,28 +163,14 @@ class FunctionExecutor(BaseExecutor):
 
     def _evaluate_expression(self, expr, context):
         """Evaluate an expression to a Python value."""
-        try:
-            # Use the parent executor's expression evaluator
-            if hasattr(self.parent, "_expression_executor"):
-                result = self.parent._expression_executor.execute_expression(expr, context)
-                return result
-            else:
-                # Fallback for simple expressions
-                from dana.core.lang.ast import LiteralExpression
-
-                if isinstance(expr, LiteralExpression):
-                    return expr.value
-                else:
-                    # Try to get the value attribute if it exists
-                    if hasattr(expr, "value"):
-                        return expr.value
-                    # Convert to string representation as last resort
-                    return str(expr)
-        except Exception:
-            # If evaluation fails, try to extract value or use string representation
-            if hasattr(expr, "value"):
-                return expr.value
-            return str(expr)
+        # Use the parent executor to properly evaluate AST nodes
+        if hasattr(self.parent, "_expression_executor"):
+            return self.parent._expression_executor.execute(expr, context)
+        elif hasattr(self.parent, "execute"):
+            return self.parent.execute(expr, context)
+        else:
+            # This shouldn't happen in normal execution
+            raise ValueError("Cannot evaluate expression: no executor available")
 
     def _resolve_decorator(self, decorator, context):
         """Resolve a decorator to a callable function."""

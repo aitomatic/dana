@@ -1,0 +1,5 @@
+#!/Users/ctn/src/aitomatic/dana/bin/dana
+
+import dana.frameworks.corral.curate as curate
+#log_level("DEBUG")
+curate.curate_knowledge_recipe("Finance & Banking", "Consumer Credit Review & Approval")

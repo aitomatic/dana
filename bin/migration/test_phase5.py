@@ -69,10 +69,10 @@ def test_poet_phases():
     success = True
     for phase in phases:
         try:
-            __import__(f'dana.frameworks.poet.phases.{phase}')
-            print(f"✅ dana.frameworks.poet.phases.{phase}")
+            __import__(f'dana.frameworks.poet.{phase}')
+            print(f"✅ dana.frameworks.poet.{phase}")
         except ImportError as e:
-            print(f"❌ dana.frameworks.poet.phases.{phase}: {e}")
+            print(f"❌ dana.frameworks.poet.{phase}: {e}")
             success = False
     
     return success

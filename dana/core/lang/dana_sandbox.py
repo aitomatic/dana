@@ -21,7 +21,8 @@ from dana.common.resource.llm.llm_resource import LLMResource
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.frameworks.poet.client import POETClient, set_default_client
+
+# from dana.frameworks.poet.core.client import POETClient, set_default_client  # Removed for KISS
 
 
 @dataclass
@@ -136,9 +137,9 @@ class DanaSandbox(Loggable):
             self._context.set("system:llm_resource", self._llm_resource)
 
             # Register started APIClient as default POET client
-            poet_client = POETClient.__new__(POETClient)  # Create without calling __init__
-            poet_client.api = self._api_client  # Use our started APIClient
-            set_default_client(poet_client)
+            # poet_client = POETClient.__new__(POETClient)  # Create without calling __init__
+            # poet_client.api = self._api_client  # Use our started APIClient
+            # set_default_client(poet_client)
 
             self._initialized = True
             self.debug("DanaSandbox resources ready")
@@ -345,7 +346,7 @@ class DanaSandbox(Loggable):
             and self._llm_resource is not None
         )
 
-    def run(self, file_path: str | Path) -> ExecutionResult:
+    def run_file(self, file_path: str | Path) -> ExecutionResult:
         """
         Run a Dana file.
 
@@ -448,7 +449,7 @@ class DanaSandbox(Loggable):
             ExecutionResult with success status and results
         """
         with cls(debug_mode=debug_mode, context=context) as sandbox:
-            return sandbox.run(file_path)
+            return sandbox.run_file(file_path)
 
     @classmethod
     def quick_eval(

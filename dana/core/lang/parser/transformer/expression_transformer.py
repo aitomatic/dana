@@ -43,6 +43,8 @@ from dana.core.lang.ast import (
     ListLiteral,
     LiteralExpression,
     ObjectFunctionCall,
+    PlaceholderExpression,
+    PipelineExpression,
     SetLiteral,
     SliceExpression,
     SubscriptExpression,
@@ -140,7 +142,9 @@ class ExpressionTransformer(BaseTransformer):
             | SubscriptExpression
             | AttributeAccess
             | FStringExpression
-            | UnaryExpression,
+            | UnaryExpression
+            | PlaceholderExpression
+            | PipelineExpression,
         ):
             return item
         # If it's a primitive or FStringExpression, wrap as LiteralExpression
@@ -198,6 +202,7 @@ class ExpressionTransformer(BaseTransformer):
             "and": BinaryOperator.AND,
             "or": BinaryOperator.OR,
             "in": BinaryOperator.IN,
+            "not in": BinaryOperator.NOT_IN,
             "is": BinaryOperator.IS,
             "is not": BinaryOperator.IS_NOT,
             "^": BinaryOperator.POWER,
@@ -227,12 +232,48 @@ class ExpressionTransformer(BaseTransformer):
             items = new_items
         return self._left_associative_binop(items, lambda op: BinaryOperator.AND)
 
+    def placeholder_expression(self, items):
+        """Transform placeholder expression into PlaceholderExpression AST node."""
+        return PlaceholderExpression()
+
     def pipe_expr(self, items):
-        """Transform pipe expressions into left-associative binary expressions.
+        """Transform pipe expressions into PipelineExpression AST node.
 
         pipe_expr: or_expr (PIPE or_expr)*
+        
+        This method collects all expressions separated by PIPE tokens and creates
+        a PipelineExpression with the stages list. Only creates PipelineExpression
+        if there are actual PIPE tokens (at least one | operator).
         """
-        return self._left_associative_binop(items, self._get_binary_operator)
+        stages = []
+        has_pipe = False
+        
+        # Check if we have any PIPE tokens
+        for item in items:
+            if isinstance(item, Token) and item.type == "PIPE":
+                has_pipe = True
+                break
+            elif str(item) == "|":
+                has_pipe = True
+                break
+        
+        # Filter out PIPE tokens and collect only the expressions
+        for item in items:
+            if isinstance(item, Token) and item.type == "PIPE":
+                continue
+            elif str(item) == "|":
+                continue
+            else:
+                # This is an expression, process it
+                expr = self.expression([item])
+                stages.append(expr)
+        
+        # If no PIPE tokens, return the single expression directly
+        if not has_pipe and len(stages) == 1:
+            return stages[0]
+        
+        # Otherwise, create PipelineExpression
+        return PipelineExpression(stages=stages)
 
     def not_expr(self, items):
         """
@@ -488,8 +529,11 @@ class ExpressionTransformer(BaseTransformer):
         kwargs = {}  # Dict of keyword arguments
 
         for arg_child in arg_children:
+            # Skip None values (from optional COMMENT tokens)
+            if arg_child is None:
+                continue
             # Check if this is a kw_arg tree
-            if hasattr(arg_child, "data") and arg_child.data == "kw_arg":
+            elif hasattr(arg_child, "data") and arg_child.data == "kw_arg":
                 # Extract keyword argument name and value
                 name = arg_child.children[0].value
                 value = self.expression([arg_child.children[1]])

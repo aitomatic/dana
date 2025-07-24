@@ -343,7 +343,7 @@ def test_reason_function_integration():
         assert result is not None
 
         # Handle POETResult wrapper if present
-        from dana.frameworks.poet.types import POETResult
+        from dana.frameworks.poet.core.types import POETResult
 
         if isinstance(result, POETResult):
             unwrapped_result = result.unwrap()

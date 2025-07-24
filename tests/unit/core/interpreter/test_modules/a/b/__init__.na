@@ -1,0 +1,6 @@
+# __init__.na - Package initialization for a.b
+
+def nested_dana_function() -> str:
+    return "Hello from nested Dana module!"
+
+public:NESTED_CONSTANT = "Nested Dana constant" 

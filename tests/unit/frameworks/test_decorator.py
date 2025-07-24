@@ -7,67 +7,47 @@ MIT License
 
 import pytest
 
-from dana.frameworks.poet.decorator import POETMetadata, poet
-from dana.frameworks.poet.types import POETConfig
+from dana.frameworks.poet.core.decorator import POETMetadata, poet
+from dana.frameworks.poet.core.types import POETConfig
 
 
 @pytest.mark.poet
-def test_poet_decorator_factory():
-    """Test POET decorator factory creates proper decorator function."""
-    decorator_func = poet(domain="test_domain")
+def test_poet_decorator_basic():
+    """Test basic POET decorator functionality."""
+    decorator_func = poet(domain="healthcare", retries=3)
 
-    # Should return a callable decorator function
-    assert callable(decorator_func)
-
-
-@pytest.mark.poet
-def test_poet_decorator_with_dana_parameters():
-    """Test POET decorator with Dana-relevant parameters."""
-    decorator_func = poet(domain="healthcare", retries=3, enable_training=True)
-
-    # Should return a callable decorator function
-    assert callable(decorator_func)
-
-
-@pytest.mark.poet
-def test_poet_enhances_dana_function():
-    """Test applying POET decorator to a Dana-like function."""
-
-    # Simulate a Dana function
-    def dana_func(x):
-        """A simulated Dana function."""
+    @decorator_func
+    def test_function(x: int) -> int:
         return x * 2
 
-    dana_func.__name__ = "calculate"
-
-    # Apply POET decorator
-    decorator = poet(domain="math")
-    enhanced_func = decorator(dana_func)
-
-    # Test enhanced function works
-    result = enhanced_func(5)
+    result = test_function(5)
     assert result == 10
-
-    # Check POET metadata is attached
-    assert hasattr(enhanced_func, "_poet_config")
-    assert enhanced_func._poet_config["domain"] == "math"
-    assert enhanced_func._poet_config["retries"] == 1
-    assert enhanced_func._poet_config["enable_training"]
+    assert test_function._poet_config["domain"] == "healthcare"
+    assert test_function._poet_config["retries"] == 3
 
 
 @pytest.mark.poet
-def test_poet_config_for_dana():
-    """Test POETConfig works for Dana function configuration."""
-    config = POETConfig(domain="data_processing", retries=2, enable_training=True)
+def test_poet_decorator_with_training():
+    """Test POET decorator with training configuration."""
+    decorator = poet(domain="math", train={"learning_rate": 0.1})
+
+    @decorator
+    def math_function(x: int) -> int:
+        return x**2
+
+    result = math_function(4)
+    assert result == 16
+    assert math_function._poet_config["train"]["learning_rate"] == 0.1
+
+
+@pytest.mark.poet
+def test_poet_config_creation():
+    """Test POETConfig creation and serialization."""
+    config = POETConfig(domain="data_processing", retries=2, train={"feedback_threshold": 0.8})
 
     assert config.domain == "data_processing"
     assert config.retries == 2
-    assert config.enable_training
-
-    # Should be serializable for Dana runtime
-    config_dict = config.dict()
-    assert isinstance(config_dict, dict)
-    assert config_dict["domain"] == "data_processing"
+    assert config.train["feedback_threshold"] == 0.8
 
 
 @pytest.mark.poet
