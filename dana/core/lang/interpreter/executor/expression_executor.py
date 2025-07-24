@@ -272,92 +272,26 @@ class ExpressionExecutor(BaseExecutor):
 
             raise AttributeError(f"'{type(target).__name__}' object has no attribute '{node.attribute}'")
         except AttributeError as e:
-            # Build comprehensive error message with context
-            error_parts = ["Traceback (most recent call last):"]
-            
-            # Get call stack if available
-            call_stack = self._get_call_stack(context)
-            if call_stack:
-                for i, (func_name, file_info) in enumerate(call_stack):
-                    if file_info:
-                        error_parts.append(f"  File \"{file_info['file']}\", line {file_info['line']}, in {func_name}")
-                    else:
-                        error_parts.append(f"  in {func_name}")
-            
-            # Add current location info
+            # Re-raise with location information if available
             if hasattr(node, 'location') and node.location:
                 location = node.location
-                loc_parts = []
+                # Format location info
+                loc_info = []
                 if location.source:
-                    loc_parts.append(f"File \"{location.source}\"")
-                loc_parts.append(f"line {location.line}")
-                loc_parts.append(f"column {location.column}")
-                error_parts.append(f"  {', '.join(loc_parts)}, in attribute access: {node.attribute}")
+                    loc_info.append(f"File \"{location.source}\"")
+                loc_info.append(f"line {location.line}")
+                loc_info.append(f"column {location.column}")
+                
+                # Create enhanced error message
+                enhanced_msg = f"Traceback (most recent call last):\n  {', '.join(loc_info)}, in attribute access: {node.attribute}\n\n{str(e)}"
+                
+                # Create new exception with enhanced message but keep original for debugging
+                new_error = AttributeError(enhanced_msg)
+                new_error.__cause__ = e
+                raise new_error
             else:
-                # No location info, but include function context
-                current_func = self._get_current_function_name(context)
-                if current_func:
-                    error_parts.append(f"  in function {current_func}, attribute access: {node.attribute}")
-                else:
-                    error_parts.append(f"  in attribute access: {node.attribute}")
-            
-            # Add the actual error message
-            error_parts.append("")
-            error_parts.append(str(e))
-            
-            # Add source code context if available
-            source_line = self._get_source_line(node, context)
-            if source_line:
-                error_parts.append(f"    {source_line}")
-                if hasattr(node, 'location') and node.location:
-                    # Add caret pointing to error location
-                    caret_pos = node.location.column - 1
-                    error_parts.append(f"    {' ' * caret_pos}^")
-            
-            enhanced_msg = "\n".join(error_parts)
-            new_error = AttributeError(enhanced_msg)
-            new_error.__cause__ = e
-            raise new_error
+                raise
     
-    def _get_call_stack(self, context: SandboxContext) -> list[tuple[str, dict]]:
-        """Get the Dana function call stack.
-        
-        Returns:
-            List of (function_name, file_info) tuples
-        """
-        call_stack = []
-        
-        # Check if context has call stack tracking
-        if hasattr(context, '_call_stack'):
-            for entry in context._call_stack:
-                call_stack.append((entry['function'], entry.get('location', {})))
-        
-        return call_stack
-    
-    def _get_current_function_name(self, context: SandboxContext) -> str | None:
-        """Get the name of the currently executing function."""
-        # Check context for current function
-        if hasattr(context, '_current_function'):
-            return context._current_function
-        
-        # Try to get from call stack
-        call_stack = self._get_call_stack(context)
-        if call_stack:
-            return call_stack[-1][0]
-        
-        return None
-    
-    def _get_source_line(self, node: Any, context: SandboxContext) -> str | None:
-        """Get the source line for the given node."""
-        if hasattr(node, 'location') and node.location:
-            # Try to get from AST source text
-            if hasattr(context, '_source_lines'):
-                lines = context._source_lines
-                if node.location.line <= len(lines):
-                    return lines[node.location.line - 1].strip()
-        
-        return None
-
     def run_function(self, func: Callable, *args, **kwargs) -> Any:
         if asyncio.iscoroutinefunction(func):
             return Misc.safe_asyncio_run(func, *args, **kwargs)

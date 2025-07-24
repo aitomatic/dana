@@ -7,6 +7,7 @@ MIT License
 
 from typing import Any
 
+from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
 from dana.core.lang.interpreter.executor.control_flow.exceptions import ReturnException
 from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
@@ -41,6 +42,7 @@ class DanaFunction(SandboxFunction, Loggable):
         self.return_type = return_type
         self.defaults = defaults or {}
         self.__name__ = name or "unknown"  # Add __name__ attribute for compatibility
+        self._interpreter = None  # Initialize _interpreter attribute
         self.debug(
             f"Created DanaFunction with name={self.__name__}, parameters={parameters}, return_type={return_type}, defaults={self.defaults}"
         )
@@ -59,6 +61,11 @@ class DanaFunction(SandboxFunction, Loggable):
     def interpreter(self, value):
         """Set the interpreter instance."""
         self._interpreter = value
+
+    @property
+    def name(self):
+        """Get the function name."""
+        return self.__name__
 
     def prepare_context(self, context: SandboxContext | Any, args: list[Any], kwargs: dict[str, Any]) -> SandboxContext:
         """
@@ -159,7 +166,7 @@ class DanaFunction(SandboxFunction, Loggable):
         try:
             # Execute function body
             last_value = None
-            for statement in self.body.statements:
+            for statement in self.body:
                 try:
                     result = self.interpreter._executor.execute_statement(statement, func_context)
                     if result is not None:
