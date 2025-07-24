@@ -59,7 +59,7 @@ class FunctionNameInfo:
             Parsed function name information. For method calls (AttributeAccess), returns special
             method call info. For regular function calls, handles namespace parsing.
         """
-        from dana.core.lang.ast import AttributeAccess
+        from dana.core.lang.ast import AttributeAccess, SubscriptExpression
 
         # Handle AttributeAccess method calls (obj.method())
         if isinstance(node.name, AttributeAccess):
@@ -70,6 +70,8 @@ class FunctionNameInfo:
             full_key = "method:METHOD_CALL"
 
             return cls(original_name, func_name, namespace, full_key)
+
+
 
         # Handle regular string function names
         original_name = node.name

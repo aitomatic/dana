@@ -28,9 +28,13 @@ from dana.core.lang.ast import (
     FunctionDefinition,
 )
 from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
-from dana.core.lang.interpreter.executor.function_error_handling import FunctionExecutionErrorHandler
+from dana.core.lang.interpreter.executor.function_error_handling import (
+    FunctionExecutionErrorHandler,
+)
 from dana.core.lang.interpreter.executor.function_name_utils import FunctionNameInfo
-from dana.core.lang.interpreter.executor.resolver.unified_function_dispatcher import UnifiedFunctionDispatcher
+from dana.core.lang.interpreter.executor.resolver.unified_function_dispatcher import (
+    UnifiedFunctionDispatcher,
+)
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
 
@@ -277,7 +281,15 @@ class FunctionExecutor(BaseExecutor):
 
             self.debug("Not a struct instantiation, proceeding with function resolution...")
 
+            # Phase 3: Handle special cases before unified dispatcher
+            if isinstance(node.name, str) and "SubscriptExpression" in node.name:
+                self.debug(f"Found string representation of SubscriptExpression: {node.name}")
+                # This means the function name is a string representation of a SubscriptExpression
+                # We need to evaluate it as a subscript expression first
+                return self.__execute_subscript_call_from_string(node, context, evaluated_args, evaluated_kwargs)
+
             # Phase 3: Parse function name and resolve function using unified dispatcher
+            self.debug(f"Function call name type: {type(node.name)}, value: {node.name}")
             name_info = FunctionNameInfo.from_node(node)
 
             try:
@@ -545,7 +557,9 @@ class FunctionExecutor(BaseExecutor):
 
         try:
             # Import ReturnException here to avoid circular imports
-            from dana.core.lang.interpreter.executor.control_flow.exceptions import ReturnException
+            from dana.core.lang.interpreter.executor.control_flow.exceptions import (
+                ReturnException,
+            )
 
             for statement in body:
                 result = self.parent.execute(statement, function_context)
@@ -567,7 +581,10 @@ class FunctionExecutor(BaseExecutor):
             StructInstance if this is a struct instantiation, None otherwise
         """
         # Import here to avoid circular imports
-        from dana.core.lang.interpreter.struct_system import StructTypeRegistry, create_struct_instance
+        from dana.core.lang.interpreter.struct_system import (
+            StructTypeRegistry,
+            create_struct_instance,
+        )
 
         # Extract the base struct name (remove scope prefix if present)
         # Only check for struct instantiation with string function names
@@ -665,7 +682,9 @@ class FunctionExecutor(BaseExecutor):
                     self.debug(f"Found user-defined function in context: {method_name} (type: {type(func_obj)})")
 
                     # Check if it's a DanaFunction object
-                    from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+                    from dana.core.lang.interpreter.functions.dana_function import (
+                        DanaFunction,
+                    )
 
                     if isinstance(func_obj, DanaFunction):
                         result = func_obj.execute(context, *transformed_args, **evaluated_kwargs)
@@ -686,7 +705,9 @@ class FunctionExecutor(BaseExecutor):
                         self.debug(f"Found user-defined function in {scope} scope: {method_name} (type: {type(func_obj)})")
 
                         # Check if it's a DanaFunction object
-                        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+                        from dana.core.lang.interpreter.functions.dana_function import (
+                            DanaFunction,
+                        )
 
                         if isinstance(func_obj, DanaFunction):
                             result = func_obj.execute(context, *transformed_args, **evaluated_kwargs)
@@ -727,3 +748,74 @@ class FunctionExecutor(BaseExecutor):
         except Exception as e:
             # Convert other exceptions to SandboxError with context
             raise SandboxError(f"Method call '{attr_access}' failed: {e}")
+
+    def __execute_subscript_call_from_string(
+        self,
+        node: FunctionCall,
+        context: SandboxContext,
+        evaluated_args: list[Any],
+        evaluated_kwargs: dict[str, Any],
+    ) -> Any:
+        """Execute a function call where the function name is a string representation of a SubscriptExpression.
+
+        This handles cases where the function name is a string like:
+        "SubscriptExpression(object=Identifier(name='FUNCS_FOR_TEST'), index=Identifier(name='func_name'))"
+
+        Args:
+            node: The function call node with string representation of SubscriptExpression as name
+            context: The execution context
+            evaluated_args: Evaluated positional arguments
+            evaluated_kwargs: Evaluated keyword arguments
+
+        Returns:
+            The result of the function call
+
+        Raises:
+            SandboxError: If subscript call fails
+        """
+        try:
+            # Parse the string representation to extract the object and index
+            # Format: "SubscriptExpression(object=Identifier(name='FUNCS_FOR_TEST'), index=Identifier(name='func_name'))"
+            name_str = str(node.name)
+            
+            # Extract object name
+            object_start = name_str.find("Identifier(name='") + len("Identifier(name='")
+            object_end = name_str.find("'", object_start)
+            object_name = name_str[object_start:object_end]
+            
+            # Extract index name
+            index_start = name_str.find("Identifier(name='", object_end) + len("Identifier(name='")
+            index_end = name_str.find("'", index_start)
+            index_name = name_str[index_start:index_end]
+            
+            self.debug(f"Parsed object_name: {object_name}, index_name: {index_name}")
+            
+            # Get the object and index values from context
+            from dana.core.lang.ast import Identifier
+            object_value = self.parent.execute(Identifier(name=object_name), context)
+            index_value = self.parent.execute(Identifier(name=index_name), context)
+            
+            self.debug(f"Object value: {object_value}, index value: {index_value}")
+            
+            # Access the subscript
+            actual_function = object_value[index_value]
+            self.debug(f"Resolved function: {actual_function} (type: {type(actual_function)})")
+            
+            # Check if the resolved value is callable
+            if not callable(actual_function):
+                raise SandboxError(f"Subscript expression '{name_str}' resolved to non-callable object: {actual_function}")
+            
+            # Call the resolved function with the provided arguments
+            self.debug(f"Calling resolved function with args={evaluated_args}, kwargs={evaluated_kwargs}")
+            result = actual_function(*evaluated_args, **evaluated_kwargs)
+            self.debug(f"Subscript call result: {result}")
+            return result
+            
+        except SandboxError:
+            # Re-raise SandboxErrors as-is
+            raise
+        except Exception as e:
+            # Convert other exceptions to SandboxError with context
+            raise SandboxError(f"Subscript call from string '{node.name}' failed: {e}")
+
+
