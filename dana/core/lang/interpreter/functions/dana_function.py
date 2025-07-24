@@ -7,7 +7,6 @@ MIT License
 
 from typing import Any
 
-from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
 from dana.core.lang.interpreter.executor.control_flow.exceptions import ReturnException
 from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
@@ -42,30 +41,9 @@ class DanaFunction(SandboxFunction, Loggable):
         self.return_type = return_type
         self.defaults = defaults or {}
         self.__name__ = name or "unknown"  # Add __name__ attribute for compatibility
-        self._interpreter = None  # Initialize _interpreter attribute
         self.debug(
             f"Created DanaFunction with name={self.__name__}, parameters={parameters}, return_type={return_type}, defaults={self.defaults}"
         )
-
-    @property
-    def interpreter(self):
-        """Get the interpreter instance."""
-        if self._interpreter is None:
-            # Try to get from context
-            if hasattr(self, 'context') and self.context and hasattr(self.context, '_interpreter'):
-                return self.context._interpreter
-            raise RuntimeError("Interpreter not set on function")
-        return self._interpreter
-    
-    @interpreter.setter 
-    def interpreter(self, value):
-        """Set the interpreter instance."""
-        self._interpreter = value
-
-    @property
-    def name(self):
-        """Get the function name."""
-        return self.__name__
 
     def prepare_context(self, context: SandboxContext | Any, args: list[Any], kwargs: dict[str, Any]) -> SandboxContext:
         """
@@ -139,8 +117,8 @@ class DanaFunction(SandboxFunction, Loggable):
             context.set_scope("local", context._original_locals)
             delattr(context, "_original_locals")
 
-    def execute(self, context: SandboxContext, *args, **kwargs) -> Any:
-        """Execute the function.
+    def execute(self, context: Any, *args: Any, **kwargs: Any) -> Any:
+        """Execute the function with the given arguments.
 
         Args:
             context: The execution context
@@ -148,123 +126,48 @@ class DanaFunction(SandboxFunction, Loggable):
             **kwargs: Keyword arguments
 
         Returns:
-            The result of executing the function
+            The result of the function execution
         """
-        # Create new execution context for the function
-        func_context = self._create_function_context(context, args, kwargs)
-        
-        # Push function call onto stack
-        location_info = {}
-        if hasattr(self.body, 'location') and self.body.location:
-            location_info = {
-                'file': self.body.location.source,
-                'line': self.body.location.line,
-                'column': self.body.location.column
-            }
-        func_context.push_function_call(self.name, location_info)
-        
+        self.debug("DanaFunction.execute called with:")
+        self.debug(f"  context: {type(context)}")
+        self.debug(f"  args: {args}")
+        self.debug(f"  kwargs: {kwargs}")
+        self.debug(f"  parameters: {self.parameters}")
+        self.debug(f"  body: {self.body}")
+        self.debug(f"  return_type: {self.return_type}")
+
         try:
-            # Execute function body
-            last_value = None
+            # Prepare the execution context using the existing method
+            prepared_context = self.prepare_context(context, list(args), kwargs)
+
+            # Execute each statement in the function body
+            result = None
             for statement in self.body:
                 try:
-                    result = self.interpreter._executor.execute_statement(statement, func_context)
-                    if result is not None:
-                        last_value = result
-                        func_context.set("system:__last_value", result)
+                    # Use _interpreter attribute (with underscore)
+                    if hasattr(prepared_context, "_interpreter") and prepared_context._interpreter is not None:
+                        # Execute the statement and capture its result
+                        stmt_result = prepared_context._interpreter.execute_statement(statement, prepared_context)
+                        # Update result with the statement's value if it's not None
+                        if stmt_result is not None:
+                            result = stmt_result
+                        self.debug(f"statement: {statement}, result: {stmt_result}")
+                    else:
+                        raise RuntimeError("No interpreter available in context")
                 except ReturnException as e:
-                    # Normal return from function
+                    # Return statement was encountered - return its value
                     return e.value
                 except Exception as e:
-                    # Enhanced error handling with context
-                    error_msg = f"Error executing statement: {e}"
-                    if hasattr(statement, 'location') and statement.location:
-                        error_msg = f"Error at line {statement.location.line}, column {statement.location.column}: {e}"
-                    
-                    self.logger.error(error_msg)
-                    
-                    # Re-raise with function context
-                    if self.name:
-                        raise SandboxError(f"In function '{self.name}': {error_msg}") from e
-                    else:
-                        raise
-    
-            # Return last value if no explicit return
-            return last_value
-            
-        except ReturnException as e:
-            # Handle return statement
-            return e.value
-            
-        except Exception as e:
-            # Enhanced error handling with full context
-            error_msg = str(e)
-            if not error_msg.startswith("In function"):
-                error_msg = f"Function '{self.name}' execution failed: {error_msg}"
-                
-            self.logger.error(f"Error executing Dana function: {error_msg}")
-            raise SandboxError(error_msg) from e
-            
-        finally:
-            # Always pop the function call from stack
-            func_context.pop_function_call()
-    
-    def _create_function_context(self, parent_context: SandboxContext, args: tuple, kwargs: dict) -> SandboxContext:
-        """Create a new context for function execution.
-        
-        Args:
-            parent_context: The parent execution context
-            args: Positional arguments
-            kwargs: Keyword arguments
-            
-        Returns:
-            New context with function parameters bound
-        """
-        # Create new context for function execution
-        func_context = SandboxContext(parent=parent_context)
-        
-        # Keep reference to interpreter
-        if hasattr(parent_context, '_interpreter'):
-            func_context._interpreter = parent_context._interpreter
-        
-        # Bind parameters to arguments
-        param_names = []
-        for p in self.parameters:
-            if isinstance(p, str):
-                param_names.append(p)
-            elif hasattr(p, 'name'):
-                param_names.append(p.name)
-            else:
-                param_names.append(str(p))
-        
-        # Bind positional arguments
-        for i, arg in enumerate(args):
-            if i < len(param_names):
-                func_context.set(f"local:{param_names[i]}", arg)
-        
-        # Bind keyword arguments
-        for name, value in kwargs.items():
-            func_context.set(f"local:{name}", value)
-        
-        # Handle default values for missing parameters
-        for i, param in enumerate(self.parameters):
-            if isinstance(param, str):
-                param_name = param
-                param_default = None
-            elif hasattr(param, 'name'):
-                param_name = param.name
-                param_default = getattr(param, 'default', None)
-            else:
-                param_name = str(param)
-                param_default = None
-                
-            param_key = f"local:{param_name}"
-            if not func_context.has(param_key) and param_default is not None:
-                # Evaluate default value in parent context
-                default_val = parent_context._interpreter._executor.execute(param_default, parent_context)
-                func_context.set(param_key, default_val)
-        
-        return func_context
+                    self.error(f"Error executing statement: {e}")
+                    raise
 
-    def __str__(self) -> str:
-        return f"DanaFunction({self.name})"
+            # Restore the original context if needed
+            if isinstance(context, SandboxContext):
+                self.restore_context(prepared_context, context)
+
+            # Return the last non-None result
+            return result
+
+        except Exception as e:
+            self.error(f"Error executing Dana function: {e}")
+            raise
