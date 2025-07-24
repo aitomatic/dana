@@ -1,0 +1,35 @@
+"""Test Income Utilization Ratios."""
+
+# TODO: relative importing & parenthesized importing in Dana
+# from income_util_ratios import (
+#     calc_int_cov_ratio,
+#     calc_eff_tax_rate,
+#
+#     calc_div_payout_ratio,
+#     calc_retention_ratio,
+# )
+from income_util_ratios import calc_int_cov_ratio, calc_eff_tax_rate
+from income_util_ratios import calc_div_payout_ratio, calc_retention_ratio
+
+from test import TEST_DOC_PATH
+
+from tqdm.py import tqdm
+
+FUNCS_FOR_TEST: dict[str, callable] = {
+    'calc_int_cov_ratio': calc_int_cov_ratio,
+    'calc_eff_tax_rate': calc_eff_tax_rate,
+
+    'calc_div_payout_ratio': calc_div_payout_ratio,
+    'calc_retention_ratio': calc_retention_ratio,
+}
+
+def __main__(func_name: str = 'all'):
+    with use('rag', sources=[TEST_DOC_PATH]) as test_docs:
+        if func_name in FUNCS_FOR_TEST:
+            print(f'TESTING {func_name}...')
+            print(FUNCS_FOR_TEST[func_name]())
+
+        else:
+            for func_name in FUNCS_FOR_TEST:  # TODO: key-value pair unpacking in Dana
+                print(f'TESTING {func_name}...')
+                print(FUNCS_FOR_TEST[func_name]())

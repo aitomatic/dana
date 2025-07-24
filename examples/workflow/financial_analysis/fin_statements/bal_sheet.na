@@ -1,0 +1,395 @@
+"""Balance Sheet Items."""
+
+
+# TODO: relative importing in Dana
+from fin_statements.util import query_fin_data, CompanyAndPeriodAndCurrency, CurrAndPrevNums
+
+
+__all__ = [
+    'get_total_asset', 'get_total_asset_2y', 'get_total_asset_3y',
+
+    'get_fixed_asset', 'get_fixed_asset_2y', 'get_fixed_asset_3y',
+
+    'get_curr_asset', 'get_curr_asset_2y', 'get_curr_asset_3y',
+
+    'get_cash_and_equiv', 'get_cash_and_equiv_2y', 'get_cash_and_equiv_3y',
+    'get_st_inv', 'get_st_inv_2y', 'get_st_inv_3y',
+    'get_recvable', 'get_recvable_2y', 'get_recvable_3y',
+
+    'get_inventory', 'get_inventory_2y', 'get_inventory_3y',
+
+    'get_curr_liab', 'get_curr_liab_2y', 'get_curr_liab_3y',
+
+    'get_payable', 'get_payable_2y', 'get_payable_3y',
+
+    'get_lt_debt', 'get_lt_debt_2y', 'get_lt_debt_3y',
+    'get_st_debt', 'get_st_debt_2y', 'get_st_debt_3y',
+    'get_equity', 'get_equity_2y', 'get_equity_3y',
+]
+
+
+# TODO: multi-line string concatenation
+BAL_SHEET: str = '(Consolidated) Balance Sheet, a.k.a. Statement of (Consolidated) Financial Position (NOTE: NOT those of acquired and/or divested companies)'
+
+
+TA_LINE_ITEM: str = 'Total Assets'
+
+FA_LINE_ITEM: str = '(Net) Fixed Assets, a.k.a. (Net) Property, Plant & Equipment (PP&E)'
+
+CURR_ASSET_LINE_ITEM: str = '(Total) Current Assets'
+
+CASH_AND_EQUIV_LINE_ITEM: str = 'Cash & Cash Equivalents'
+ST_INV_LINE_ITEM: str = 'Short-Term Investments or (Current) Marketable Securities'
+RECVABLE_LINE_ITEM: str = '(Net) Accounts Receivable, a.k.a. (Net) (Trade) Receivables'
+
+INVENTORY_LINE_ITEM: str = '(Total) (Net) Inventory(ies)'
+
+CURR_LIAB_LINE_ITEM: str = '(Total) Current Liabilities'
+
+PAYABLE_LINE_ITEM: str = 'Accounts Payable'
+
+LT_DEBT_LINE_ITEM: str = 'Long-Term Debt (EXCLUDING any current/short-term portion)'
+ST_DEBT_LINE_ITEM: str = 'Short-Term Debt, or Current Portion of (Long-Term) Debt'
+
+EQUITY_LINE_ITEM: str = 'Total Equity, a.k.a. Shareholders\' Equity, Net Assets'
+
+
+def get_total_asset(args: CompanyAndPeriodAndCurrency) -> float:
+    """Get Total Assets from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=TA_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True)
+
+
+def get_total_asset_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+    """Get 2 years of Total Assets from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=TA_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=2)
+
+
+def get_total_asset_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+    """Get 3 years of Total Assets from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=TA_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=3)
+
+
+def get_fixed_asset(args: CompanyAndPeriodAndCurrency) -> float:
+    """Get Fixed Assets from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=FA_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True)
+
+
+def get_fixed_asset_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+    """Get 2 years of Fixed Assets from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=FA_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=2)
+
+
+def get_fixed_asset_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+    """Get 3 years of Fixed Assets from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=FA_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=3)
+
+
+def get_curr_asset(args: CompanyAndPeriodAndCurrency) -> float:
+    """Get Current Assets from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=CURR_ASSET_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True)
+
+
+def get_curr_asset_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+    """Get 2 years of Current Assets from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=CURR_ASSET_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=2)
+
+
+def get_curr_asset_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+    """Get 3 years of Current Assets from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=CURR_ASSET_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=3)
+
+
+def get_cash_and_equiv(args: CompanyAndPeriodAndCurrency) -> float:
+    """Get Cash & Cash Equivalents from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=CASH_AND_EQUIV_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True)
+
+
+def get_cash_and_equiv_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+    """Get 2 years of Cash & Cash Equivalents from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=CASH_AND_EQUIV_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=2)
+
+
+def get_cash_and_equiv_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+    """Get 3 years of Cash & Cash Equivalents from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=CASH_AND_EQUIV_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=3)
+
+
+def get_st_inv(args: CompanyAndPeriodAndCurrency) -> float:
+    """Get Short-Term Investments from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=ST_INV_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True)
+
+
+def get_st_inv_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+    """Get 2 years of Short-Term Investments from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=ST_INV_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=2)
+
+
+def get_st_inv_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+    """Get 3 years of Short-Term Investments from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=ST_INV_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=3)
+
+
+def get_recvable(args: CompanyAndPeriodAndCurrency) -> float:
+    """Get Accounts Receivable from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=RECVABLE_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True)
+
+
+def get_recvable_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+    """Get 2 years of Accounts Receivable from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=RECVABLE_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=2)
+
+
+def get_recvable_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+    """Get 3 years of Accounts Receivable from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=RECVABLE_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=3)
+
+
+def get_inventory(args: CompanyAndPeriodAndCurrency) -> float:
+    """Get Inventories from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=INVENTORY_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True)
+
+
+def get_inventory_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+    """Get 2 years of Inventories from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=INVENTORY_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=2)
+
+
+def get_inventory_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+    """Get 3 years of Inventories from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=INVENTORY_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=3)
+
+
+def get_curr_liab(args: CompanyAndPeriodAndCurrency) -> float:
+    """Get Current Liabilities from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=CURR_LIAB_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True)
+
+
+def get_curr_liab_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+    """Get 2 years of Current Liabilities from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=CURR_LIAB_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=2)
+
+
+def get_curr_liab_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+    """Get 3 years of Current Liabilities from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=CURR_LIAB_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=3)
+
+
+def get_payable(args: CompanyAndPeriodAndCurrency) -> float:
+    """Get Accounts Payable from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=PAYABLE_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True)
+
+def get_payable_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+    """Get 2 years of Accounts Payable from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=PAYABLE_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=2)
+
+def get_payable_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+    """Get 3 years of Accounts Payable from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=PAYABLE_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=3)
+
+
+def get_lt_debt(args: CompanyAndPeriodAndCurrency) -> float:
+    """Get Long-Term Debt from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=LT_DEBT_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True)
+
+
+def get_lt_debt_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+    """Get 2 years of Long-Term Debt from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=LT_DEBT_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=2)
+
+
+def get_lt_debt_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+    """Get 3 years of Long-Term Debt from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=LT_DEBT_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=3)
+
+
+def get_st_debt(args: CompanyAndPeriodAndCurrency) -> float:
+    """Get Short-Term Debt from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=ST_DEBT_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True)
+
+
+def get_st_debt_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+    """Get 2 years of Short-Term Debt from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=ST_DEBT_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=2)
+
+
+def get_st_debt_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+    """Get 3 years of Short-Term Debt from Balance Sheet."""
+
+    return query_fin_data(args,
+                          line_item=ST_DEBT_LINE_ITEM,
+                          statement=BAL_SHEET,
+                          as_at_period_end=True,
+                          n_years=3)
+
+
+def get_equity(args: CompanyAndPeriodAndCurrency) -> float:
+    """Get Total Equity from Balance Sheet."""
+    return query_fin_data(args,
+                         line_item=EQUITY_LINE_ITEM,
+                         statement=BAL_SHEET,
+                         as_at_period_end=True)
+
+def get_equity_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+    """Get 2 years of Total Equity from Balance Sheet."""
+    return query_fin_data(args,
+                         line_item=EQUITY_LINE_ITEM,
+                         statement=BAL_SHEET,
+                         as_at_period_end=True,
+                         n_years=2)
+
+def get_equity_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+    """Get 3 years of Total Equity from Balance Sheet."""
+    return query_fin_data(args,
+                         line_item=EQUITY_LINE_ITEM,
+                         statement=BAL_SHEET,
+                         as_at_period_end=True,
+                         n_years=3)

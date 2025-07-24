@@ -1,0 +1,21 @@
+"""Financial Calculations."""
+
+
+# TODO: relative importing in Dana
+from fin_statements.util.types import CurrAndPrevNums
+
+
+__all__ = [
+    'over_avg_denom',
+    'sum_over_sum',
+]
+
+
+def over_avg_denom(numerator: float, denominators: CurrAndPrevNums) -> float:
+    """Divide sum of numerator by average of denominator."""
+    return numerator / ((denominators.curr + denominators.prev) / 2)
+
+
+def sum_over_sum(numerators: tuple[float], denominators: tuple[float]) -> float:
+    """Sum numerator and denominator and divide."""
+    return sum(numerators) / sum(denominators)

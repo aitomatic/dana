@@ -1,0 +1,42 @@
+"""Test Capital Intensity/Intensiveness Metrics."""
+
+# TODO: relative importing & parenthesized importing in Dana
+# from cap_intens import (
+#     calc_fixed_asset_over_total_asset,
+#
+#     calc_total_asset_over_rev,
+#
+#     calc_capex_over_rev, calc_capex_over_rev_3y_avg,
+#
+#     assess_capital_intensity,
+# )
+from cap_intens import calc_fixed_asset_over_total_asset
+from cap_intens import calc_total_asset_over_rev
+from cap_intens import calc_capex_over_rev, calc_capex_over_rev_3y_avg
+from cap_intens import assess_capital_intensity
+
+from test import TEST_DOC_PATH
+
+from tqdm.py import tqdm
+
+FUNCS_FOR_TEST: dict[str, callable] = {
+    'calc_fixed_asset_over_total_asset': calc_fixed_asset_over_total_asset,
+
+    'calc_total_asset_over_rev': calc_total_asset_over_rev,
+
+    'calc_capex_over_rev': calc_capex_over_rev,
+    'calc_capex_over_rev_3y_avg': calc_capex_over_rev_3y_avg,
+
+    'assess_capital_intensity': assess_capital_intensity,
+}
+
+def __main__(func_name: str = 'all'):
+    with use('rag', sources=[TEST_DOC_PATH]) as test_docs:
+        if func_name in FUNCS_FOR_TEST:
+            print(f'TESTING {func_name}...')
+            print(FUNCS_FOR_TEST[func_name]())
+
+        else:
+            for func_name in FUNCS_FOR_TEST:  # TODO: key-value pair unpacking in Dana
+                print(f'TESTING {func_name}...')
+                print(FUNCS_FOR_TEST[func_name]())

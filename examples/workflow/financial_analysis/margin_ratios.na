@@ -1,0 +1,236 @@
+"""Margin Ratios."""
+
+
+# TODO: relative importing & parenthesized importing in Dana
+# from .fin_statements import (
+#     get_rev, get_rev_3y,
+#
+#     get_cogs, get_cogs_3y,
+#
+#     get_gross_income, get_gross_income_3y,
+#
+#     get_deprec_and_amort,
+#
+#     get_op_income, get_op_income_3y,
+#
+#     get_ebit, get_ebit_3y,
+#
+#     get_net_income, get_net_income_3y,
+# )
+from fin_statements import get_rev, get_rev_3y
+from fin_statements import get_cogs, get_cogs_3y
+from fin_statements import get_gross_income, get_gross_income_3y
+from fin_statements import get_deprec_and_amort
+from fin_statements import get_op_income, get_op_income_3y
+from fin_statements import get_ebit, get_ebit_3y
+from fin_statements import get_net_income, get_net_income_3y
+
+# from adj_income import (
+#     calc_ebitda, calc_ebitda_3y,
+# )
+from adj_income import calc_ebitda, calc_ebitda_3y
+
+# TODO: relative importing in Dana
+from fin_statements.util import CompanyAndPeriodAndCurrency
+
+
+__all__ = [
+    'calc_cogs_margin', 'calc_cogs_margin_3y_avg',
+
+    'calc_gross_margin', 'calc_gross_margin_3y_avg',
+
+    'calc_ebitda_margin', 'calc_ebitda_margin_3y_avg',
+
+    'calc_da_margin',
+
+    'calc_op_margin', 'calc_op_margin_3y_avg',
+
+    'calc_ebit_margin', 'calc_ebit_margin_3y_avg',
+
+    'calc_net_margin', 'calc_net_margin_3y_avg',
+]
+
+
+def calc_margin_ratio(
+        revenue: float,
+        other_income_or_cf_statement_item_value: float) -> float:
+    """Calculate a Margin Ratio by dividing an Income or Cash Flow Statement item by Revenue."""
+
+    return other_income_or_cf_statement_item_value / revenue
+
+
+def calc_avg_margin_ratio(
+        revenue_nums: tuple[float],
+        other_income_or_cf_statement_item_nums: tuple[float]) -> float:
+    """Calculate an average Margin Ratio by dividing a sum of an Income or Cash Flow Statement item by a sum of Revenue."""
+
+    return sum(other_income_or_cf_statement_item_nums) / sum(revenue_nums)
+
+
+"""
+Calculate `Cost of Goods Sold (COGS) Margin` of {COMPANY} for {PERIOD} fiscal period
+as percentage value according to formula:
+
+`Cost of Goods Sold (COGS) Margin` = (
+    `(Total) Cost of Goods Sold, a.k.a. (Total) COGS, or (Total) Cost of Sales, or (Total) Cost of Revenue` /
+    `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
+)
+"""
+calc_cogs_margin = (
+    [get_rev, get_cogs] | calc_margin_ratio
+)
+
+
+"""
+Calculate 3-year average `Cost of Goods Sold (COGS) Margin`
+by dividing sum of `(Total) Cost of Goods Sold, a.k.a. (Total) COGS, or (Total) Cost of Sales, or (Total) Cost of Revenue`
+by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
+and return division result as percentage value
+"""
+calc_cogs_margin_3y_avg = (
+    [get_rev_3y, get_cogs_3y] | calc_avg_margin_ratio
+)
+
+
+"""
+Calculate `Gross (Income or Profit or Earnings) Margin` of {COMPANY}
+as percentage values according to formula:
+
+`Gross (Income or Profit or Earnings) Margin` = (
+    `Gross Income, a.k.a. Gross Profit, or Gross Earnings (or Loss(es))` /
+    `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
+)
+"""
+calc_gross_margin = (
+    [get_rev, get_gross_income] | calc_margin_ratio
+)
+
+
+"""
+Calculate 3-year average `Gross (Income or Profit or Earnings) Margin`
+by dividing sum of `Gross Income, a.k.a. Gross Profit, or Gross Earnings (or Loss(es))`
+by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
+and return division result as percentage value
+"""
+calc_gross_margin_3y_avg = (
+    [get_rev_3y, get_gross_income_3y] | calc_avg_margin_ratio
+)
+
+
+"""
+Calculate `(Unadjusted) EBITDA Margin` of {COMPANY} for {PERIOD} fiscal period
+as percentage value according to formula:
+
+`(Unadjusted) EBITDA Margin` = (
+    `(Unadjusted) Earnings before Interest, Tax, Depreciation & Amortization, a.k.a. EBITDA`
+    / `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
+)
+"""
+calc_ebitda_margin = (
+    [get_rev, calc_ebitda] | calc_margin_ratio
+)
+
+
+"""
+Calculate 3-year average `(Unadjusted) EBITDA Margin`
+by dividing sum of `(Unadjusted) Earnings before Interest, Tax, Depreciation & Amortization, a.k.a. EBITDA`
+by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
+and return division result as percentage value
+"""
+calc_ebitda_margin_3y_avg = (
+    [get_rev_3y, calc_ebitda_3y] | calc_avg_margin_ratio
+)
+
+
+"""
+Calculate `Depreciation & Amortization (D&A) Margin` of {COMPANY} for {PERIOD} fiscal period
+as percentage value according to formula:
+
+`Depreciation & Amortization (D&A) Margin` = (
+    `Depreciation & Amortization, a.k.a. D&A (of Fixed Assets or Property, Plant & Equipment (PP&E))` /
+    `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
+)
+"""
+calc_da_margin = (
+    [get_rev, get_deprec_and_amort] | calc_margin_ratio
+)
+
+
+"""
+Calculate `Operating Income Margin` of {COMPANY} for {PERIOD} fiscal period
+as percentage value according to formula:
+
+`Operating Income Margin` = (
+    `(Unadjusted) Operating Income, a.k.a. Operating Profit, or Operating Earnings (or Loss(es))` /
+    `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
+)
+"""
+calc_op_margin = (
+    [get_rev, get_op_income] | calc_margin_ratio
+)
+
+
+"""
+Calculate 3-year average `Operating Income Margin`
+
+Calculate 3-year average `(Unadjusted) Operating (Income or Profit or Earnings) Margin`
+by dividing sum of `(Unadjusted) Operating Income,
+a.k.a. Operating Profit, or Operating Earnings (or Loss(es))`
+by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
+and return division result as percentage value
+"""
+calc_op_margin_3y_avg = (
+    [get_rev_3y, get_op_income_3y] | calc_avg_margin_ratio
+)
+
+
+"""
+Calculate `EBIT Margin` of {COMPANY} for {PERIOD} fiscal period
+as percentage value according to formula:
+
+`EBIT Margin` = (
+    `Earnings before Interest & Tax, a.k.a. EBIT` /
+    `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
+)
+"""
+calc_ebit_margin = (
+    [get_rev, get_ebit] | calc_margin_ratio
+)
+
+
+"""
+Calculate 3-year average `EBIT Margin`
+by dividing sum of `Earnings before Interest & Tax, a.k.a. EBIT`
+by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
+and return division result as percentage value
+"""
+calc_ebit_margin_3y_avg = (
+    [get_rev_3y, get_ebit_3y] | calc_avg_margin_ratio
+)
+
+
+"""
+Calculate `Net Income Margin` of {COMPANY} for {PERIOD} fiscal period
+as percentage value according to formula:
+
+`Net Income Margin` = (
+    `Net Income, a.k.a. Net Profit, or Net Earnings (or Loss(es)) (Attributable to Shareholders)` /
+    `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
+)
+"""
+calc_net_margin = (
+    [get_rev, get_net_income] | calc_margin_ratio
+)
+
+
+"""
+Calculate 3-year average `Net Margin`
+
+Calculate 3-year average `Net (Income or Profit or Earnings) Margin`
+by dividing sum of `Net Income, a.k.a. Net Profit, or Net Earnings (or Loss(es)) (Attributable to Shareholders)`
+by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
+and return division result as percentage value
+"""
+calc_net_margin_3y_avg = (
+    [get_rev_3y, get_net_income_3y] | calc_avg_margin_ratio
+)

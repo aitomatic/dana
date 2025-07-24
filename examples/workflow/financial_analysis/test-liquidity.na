@@ -1,0 +1,57 @@
+"""Test Liquidity Metrics."""
+
+# TODO: relative importing & parenthesized importing in Dana
+# from liquidity import (
+#     calc_quick_ratio, assess_quick_ratio,
+#
+#     calc_net_work_cap,
+#     calc_work_cap_ratio,
+#
+#     calc_op_cf_ratio,
+#
+#     calc_fcf,
+#     calc_fcf_conv_ratio,
+#
+#     calc_dio,
+#     calc_dso,
+#     calc_dpo,
+#     calc_ccc,
+# )
+from liquidity import calc_quick_ratio, assess_quick_ratio
+from liquidity import calc_net_work_cap, calc_work_cap_ratio
+from liquidity import calc_op_cf_ratio
+from liquidity import calc_fcf, calc_fcf_conv_ratio
+from liquidity import calc_dio, calc_dso, calc_dpo, calc_ccc
+
+from test import TEST_DOC_PATH
+
+from tqdm.py import tqdm
+
+FUNCS_FOR_TEST: dict[str, callable] = {
+    'calc_quick_ratio': calc_quick_ratio,
+    'assess_quick_ratio': assess_quick_ratio,
+
+    'calc_net_work_cap': calc_net_work_cap,
+    'calc_work_cap_ratio': calc_work_cap_ratio,
+
+    'calc_op_cf_ratio': calc_op_cf_ratio,
+
+    'calc_fcf': calc_fcf,
+    'calc_fcf_conv_ratio': calc_fcf_conv_ratio,
+
+    'calc_dio': calc_dio,
+    'calc_dso': calc_dso,
+    'calc_dpo': calc_dpo,
+    'calc_ccc': calc_ccc,
+}
+
+def __main__(func_name: str = 'all'):
+    with use('rag', sources=[TEST_DOC_PATH]) as test_docs:
+        if func_name in FUNCS_FOR_TEST:
+            print(f'TESTING {func_name}...')
+            print(FUNCS_FOR_TEST[func_name]())
+
+        else:
+            for func_name in FUNCS_FOR_TEST:  # TODO: key-value pair unpacking in Dana
+                print(f'TESTING {func_name}...')
+                print(FUNCS_FOR_TEST[func_name]())

@@ -1,0 +1,90 @@
+"""Turnover Ratios."""
+
+
+# TODO: relative importing & parenthesized importing in Dana
+# from fin_statements import (
+#     get_total_asset_2y,
+#     get_fixed_asset_2y,
+#     get_inventory_2y,
+#
+#     get_rev,
+#     get_cogs,
+# )
+from fin_statements import get_total_asset_2y, get_fixed_asset_2y, get_inventory_2y
+from fin_statements import get_rev, get_cogs
+
+# TODO: relative importing in Dana
+from fin_statements.util import over_avg_denom, CompanyAndPeriodAndCurrency
+
+
+__all__ = [
+    'calc_total_asset_turnover_ratio',
+    'calc_fixed_asset_turnover_ratio',
+    'calc_inventory_turnover_ratio',
+]
+
+
+"""
+Calculate `(Total) Asset Turnover Ratio` of {COMPANY} for {PERIOD} annual fiscal period
+as decimal value according to formula:
+
+`(Total) Asset Turnover Ratio` = (
+    `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales` /
+    `average Total Assets, typically between two consecutive fiscal year-ends`
+)
+"""
+# TODO: lambdas in Dana
+def _calc_total_asset_turnover_ratio_fn(rev, total_asset_nums):
+    return over_avg_denom(rev, total_asset_nums)
+# calc_total_asset_turnover_ratio = (
+#     [get_rev, get_total_asset_2y] |
+#     (lambda rev, total_asset_nums: over_avg_denom(rev, total_asset_nums))
+# )
+calc_total_asset_turnover_ratio = (
+    [get_rev, get_total_asset_2y] | _calc_total_asset_turnover_ratio_fn
+)
+
+
+"""
+Calculate `Fixed Asset Turnover Ratio` of {COMPANY} for {PERIOD} annual fiscal period
+as decimal value according to formula:
+
+`Fixed Asset Turnover Ratio` = (
+    `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales` /
+    `average (Net) Fixed Assets, a.k.a. (Net) Property, Plant & Equipment (PP&E),
+     typically between two consecutive fiscal year-ends`
+)
+"""
+# TODO: lambdas in Dana
+def _calc_fixed_asset_turnover_ratio_fn(rev, fixed_asset_nums):
+    return over_avg_denom(rev, fixed_asset_nums)
+# calc_fixed_asset_turnover_ratio = (
+#     [get_rev, get_fixed_asset_2y] |
+#     (lambda rev, fixed_asset_nums: over_avg_denom(rev, fixed_asset_nums))
+# )
+calc_fixed_asset_turnover_ratio = (
+    [get_rev, get_fixed_asset_2y] | _calc_fixed_asset_turnover_ratio_fn
+)
+
+
+"""
+Calculate `Inventory Turnover Ratio` of {COMPANY} for {PERIOD} annual fiscal period
+as decimal value according to formula:
+
+`Inventory Turnover Ratio, a.k.a. Inventory Conversion Ratio` = (
+    `(Total) Cost of Goods Sold, a.k.a. (Total) COGS, or (Total) Cost of Sales,
+     or (Total) Cost of Revenue` /
+    `average (Total) (Net) Inventory(ies),
+     typically between two consecutive fiscal year-ends`
+)
+"""
+# TODO: lambdas in Dana
+def _calc_inventory_turnover_ratio_fn(cogs, inventory_nums):
+    return over_avg_denom(cogs, inventory_nums)
+# calc_inventory_turnover_ratio = (
+#     [get_cogs, get_inventory_2y] |
+#     (lambda cogs, inventory_nums: over_avg_denom(cogs, inventory_nums))
+# )
+calc_inventory_turnover_ratio = (
+    [get_cogs, get_inventory_2y] | _calc_inventory_turnover_ratio_fn
+)
