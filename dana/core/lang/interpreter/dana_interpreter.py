@@ -86,8 +86,12 @@ class DanaInterpreter(Loggable):
 
     def _init_function_registry(self):
         """Initialize the function registry."""
-        from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
-        from dana.core.stdlib.core.register_core_functions import register_core_functions
+        from dana.core.lang.interpreter.functions.function_registry import (
+            FunctionRegistry,
+        )
+        from dana.core.stdlib.core.register_core_functions import (
+            register_core_functions,
+        )
 
         self._function_registry = FunctionRegistry()
 
@@ -141,15 +145,12 @@ class DanaInterpreter(Loggable):
         Returns:
             Raw execution result
         """
-        # Set the filename in error context if provided
-        if filename:
-            context.error_context.set_file(filename)
-            # Cache the source code
-            context.error_context.source_cache[filename] = source_code.splitlines()
+        # Set source lines in context for error display
+        context.set_source_lines(source_code)
         
-        # Parse the source code
+        # Parse the source code with filename for error reporting
         parser = ParserCache.get_parser("dana")
-        ast = parser.parse(source_code)
+        ast = parser.parse(source_code, filename=filename)
 
         # Execute through _execute (convergent path)
         return self._execute(ast, context)

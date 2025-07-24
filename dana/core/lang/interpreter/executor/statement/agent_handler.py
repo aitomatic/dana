@@ -326,9 +326,17 @@ class AgentHandler(Loggable):
             else:
                 return_type = str(node.return_type)
 
+        # Extract function name properly
+        if isinstance(node.name, str):
+            func_name = node.name
+        elif hasattr(node.name, 'name'):
+            func_name = node.name.name
+        else:
+            func_name = str(node.name)
+
         # Create the base DanaFunction with defaults
         dana_func = DanaFunction(
-            body=node.body, parameters=param_names, context=context, return_type=return_type, defaults=param_defaults, name=node.name.name
+            body=node.body, parameters=param_names, context=context, return_type=return_type, defaults=param_defaults, name=func_name
         )
 
         # Check if this function should be associated with an agent type
@@ -340,13 +348,13 @@ class AgentHandler(Loggable):
 
         # Apply decorators if present
         if node.decorators:
-            wrapped_func = self._apply_decorators(dana_func, node.decorators, context)
+            wrapped_func = self.parent_executor._apply_decorators(dana_func, node.decorators, context)
             # Store the decorated function in context
-            context.set(f"local:{node.name.name}", wrapped_func)
+            context.set(f"local:{func_name}", wrapped_func)
             return wrapped_func
         else:
             # No decorators, store the DanaFunction as usual
-            context.set(f"local:{node.name.name}", dana_func)
+            context.set(f"local:{func_name}", dana_func)
             return dana_func
 
     def _apply_decorators(self, func, decorators, context):

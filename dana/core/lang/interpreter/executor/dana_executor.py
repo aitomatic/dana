@@ -18,13 +18,14 @@ GitHub: https://github.com/aitomatic/dana
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any
+from typing import Any, Callable
 
 from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
 from dana.core.lang.interpreter.executor.collection_executor import CollectionExecutor
 from dana.core.lang.interpreter.executor.control_flow_executor import (
     ControlFlowExecutor,
 )
+from dana.core.lang.interpreter.executor.expression.identifier_resolver import IdentifierResolver
 from dana.core.lang.interpreter.executor.expression_executor import ExpressionExecutor
 from dana.core.lang.interpreter.executor.function_executor import FunctionExecutor
 from dana.core.lang.interpreter.executor.program_executor import ProgramExecutor
@@ -233,3 +234,45 @@ class DanaExecutor(BaseExecutor):
         if self._optimization_engine:
             return self._optimization_engine.is_healthy()
         return True  # Healthy if disabled
+
+    def execute_with_location_context(self, method: Callable, node: Any, context: SandboxContext) -> Any:
+        """Execute a method with location context for better error messages.
+        
+        Args:
+            method: The method to execute
+            node: The AST node being executed
+            context: The execution context
+            
+        Returns:
+            The result of the method execution
+            
+        Raises:
+            Exception with location information added
+        """
+        try:
+            return method(node, context)
+        except Exception as e:
+            # Add location information to the exception if available
+            if hasattr(node, 'location') and node.location:
+                location = node.location
+                # Format location info
+                loc_info = []
+                if location.source:
+                    loc_info.append(f"File \"{location.source}\"")
+                loc_info.append(f"line {location.line}")
+                loc_info.append(f"column {location.column}")
+                
+                # Create enhanced error message
+                error_type = type(e).__name__
+                original_msg = str(e)
+                
+                # Format the error with location
+                enhanced_msg = f"Traceback (most recent call last):\n  {', '.join(loc_info)}, in {node.__class__.__name__.lower()}: {getattr(node, 'attribute', getattr(node, 'name', 'unknown'))}\n\n{error_type}: {original_msg}"
+                
+                # Create new exception with enhanced message
+                new_error = type(e)(enhanced_msg)
+                new_error.__cause__ = e
+                raise new_error
+            else:
+                # No location info available, re-raise original
+                raise
