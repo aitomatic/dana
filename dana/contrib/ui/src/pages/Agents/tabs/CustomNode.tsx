@@ -21,7 +21,7 @@ interface NodeData {
 // Helper functions for status styling
 const getStatusColor = (status?: string) => {
   switch (status) {
-    case 'pending': return '#F97316'; // Orange
+    // case 'pending': return '#F97316'; // Orange
     case 'in_progress': return '#3B82F6'; // Blue
     case 'success': return '#10B981'; // Green
     case 'failed': return '#EF4444'; // Red
@@ -31,7 +31,6 @@ const getStatusColor = (status?: string) => {
 
 const getStatusIcon = (status?: string) => {
   switch (status) {
-    case 'pending': return <WatchIcon />;
     case 'in_progress': return <Loader2Icon className='animate-spin' />;
     case 'success': return <CheckIcon />;
     case 'failed': return <XIcon />;
@@ -41,7 +40,7 @@ const getStatusIcon = (status?: string) => {
 
 const getStatusText = (status?: string) => {
   switch (status) {
-    case 'pending': return 'Knowledge generation pending';
+    // case 'pending': return 'Knowledge generation pending';
     case 'in_progress': return 'Generating knowledge...';
     case 'success': return 'Knowledge generated successfully';
     case 'failed': return 'Knowledge generation failed';
@@ -154,12 +153,12 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
 
     // Leaf nodes - status-based styling
     switch (knowledgeStatus?.status) {
-      case 'pending':
-        return {
-          ...baseStyle,
-          background: '#FEF3C7', // Light yellow
-          border: '2px solid #F97316', // Orange border
-        };
+      // case 'pending':
+      //   return {
+      //     ...baseStyle,
+      //     background: '#FEF3C7', // Light yellow
+      //     border: '2px solid #F97316', // Orange border
+      //   };
       case 'in_progress':
         return {
           ...baseStyle,
