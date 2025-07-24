@@ -114,9 +114,17 @@ class FunctionExecutor(BaseExecutor):
             else:
                 return_type = str(node.return_type)
 
+        # Extract function name properly
+        if isinstance(node.name, str):
+            func_name = node.name
+        elif hasattr(node.name, 'name'):
+            func_name = node.name.name
+        else:
+            func_name = str(node.name)
+
         # Create the base DanaFunction with defaults
         dana_func = DanaFunction(
-            body=node.body, parameters=param_names, context=context, return_type=return_type, defaults=param_defaults, name=node.name.name
+            body=node.body, parameters=param_names, context=context, return_type=return_type, defaults=param_defaults, name=func_name
         )
 
         # Check if this function should be associated with an agent type
@@ -130,11 +138,11 @@ class FunctionExecutor(BaseExecutor):
         if node.decorators:
             wrapped_func = self._apply_decorators(dana_func, node.decorators, context)
             # Store the decorated function in context
-            context.set(f"local:{node.name.name}", wrapped_func)
+            context.set(f"local:{func_name}", wrapped_func)
             return wrapped_func
         else:
             # No decorators, store the DanaFunction as usual
-            context.set(f"local:{node.name.name}", dana_func)
+            context.set(f"local:{func_name}", dana_func)
             return dana_func
 
     def _apply_decorators(self, func, decorators, context):
@@ -241,23 +249,72 @@ class FunctionExecutor(BaseExecutor):
             The result of the function call
         """
         self.debug(f"Executing function call: {node.name}")
+
+        # Extract function name for call stack
+        if isinstance(node.name, str):
+            func_name = node.name
+        elif hasattr(node.name, 'name'):
+            func_name = node.name.name
+        else:
+            func_name = str(node.name)
         
-        # Track location in error context if available
+        # Push function call onto stack with location info
+        location_info = {}
         if hasattr(node, 'location') and node.location:
-            from dana.core.lang.interpreter.error_context import ExecutionLocation
-            
-            func_name = str(node.name) if not isinstance(node.name, str) else node.name
-            location = ExecutionLocation(
-                filename=context.error_context.current_file,
-                line=node.location.line,
-                column=node.location.column,
-                function_name=func_name,
-                source_line=context.error_context.get_source_line(
-                    context.error_context.current_file, node.location.line
-                ) if context.error_context.current_file and node.location.line else None
-            )
-            context.error_context.push_location(location)
+            location_info = {
+                'file': node.location.source,
+                'line': node.location.line,
+                'column': node.location.column
+            }
         
+        context.push_function_call(func_name, location_info)
+        
+        try:
+            # Phase 1: Setup and validation
+            self.__setup_and_validate(node)
+
+            # Phase 2: Process arguments
+            evaluated_args, evaluated_kwargs = self.__process_arguments(node, context)
+
+            # Phase 3: Dispatch
+            return self._dispatch_function_call(node, context, evaluated_args, evaluated_kwargs)
+        
+        finally:
+            # Always pop the function call from stack
+            context.pop_function_call()
+    
+    def _dispatch_function_call(self, node: FunctionCall, context: SandboxContext, 
+                              evaluated_args: list[Any], evaluated_kwargs: dict[str, Any]) -> Any:
+        """Dispatch the function call after setup and argument processing.
+        
+        Args:
+            node: The function call node
+            context: The execution context
+            evaluated_args: Evaluated positional arguments
+            evaluated_kwargs: Evaluated keyword arguments
+            
+        Returns:
+            The result of the function call
+        """
+        self.debug(f"Processed arguments: args={evaluated_args}, kwargs={evaluated_kwargs}")
+
+        # Phase 2.5: Check for struct instantiation
+        self.debug("Checking for struct instantiation...")
+        # Phase 2.5: Handle method calls (AttributeAccess) before other processing
+        from dana.core.lang.ast import AttributeAccess
+
+        if isinstance(node.name, AttributeAccess):
+            return self.__execute_method_call(node, context, evaluated_args, evaluated_kwargs)
+
+        struct_result = self.__check_struct_instantiation(node, context, evaluated_kwargs)
+        if struct_result is not None:
+            self.debug(f"Found struct instantiation, returning: {struct_result}")
+            return struct_result
+
+        self.debug("Not a struct instantiation, proceeding with function resolution...")
+
+        # Phase 3: Parse function name and resolve function using unified dispatcher
+        name_info = FunctionNameInfo.from_node(node)
         try:
             # Phase 1: Setup and validation
             self.__setup_and_validate(node)
