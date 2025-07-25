@@ -44,7 +44,8 @@ Calculate `Total Debt` of {COMPANY} in {CURRENCY} as at following two annual fis
 # TODO: lambdas in Dana
 def _calc_total_debt_2y_sum(lt_debt_nums, st_debt_nums):
     return CurrAndPrevNums(curr=lt_debt_nums.curr + st_debt_nums.curr,
-                           prev=lt_debt_nums.prev + st_debt_nums.prev)
+                           prev=lt_debt_nums.prev + st_debt_nums.prev,
+                           unit_of_measurement=lt_debt_nums.unit_of_measurement)
 # calc_total_debt_2y = (
 #     [get_lt_debt_2y, get_st_debt_2y] |
 #     (lambda lt_debt_nums, st_debt_nums:

@@ -147,7 +147,7 @@ class DanaFunction(SandboxFunction, Loggable):
                     # Use _interpreter attribute (with underscore)
                     if hasattr(prepared_context, "_interpreter") and prepared_context._interpreter is not None:
                         # Execute the statement and capture its result
-                        stmt_result = prepared_context._interpreter.execute_statement(statement, prepared_context)
+                        stmt_result = prepared_context._interpreter._executor.execute(statement, prepared_context)
                         # Update result with the statement's value if it's not None
                         if stmt_result is not None:
                             result = stmt_result

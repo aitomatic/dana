@@ -76,7 +76,8 @@ in {CURRENCY} according to formula:
 # TODO: lambdas in Dana
 def _calc_quick_asset_2y_sum(cash_and_equiv_nums, st_inv_nums, recvable_nums):
     return CurrAndPrevNums(curr=cash_and_equiv_nums.curr + st_inv_nums.curr + recvable_nums.curr,
-                           prev=cash_and_equiv_nums.prev + st_inv_nums.prev + recvable_nums.prev)
+                           prev=cash_and_equiv_nums.prev + st_inv_nums.prev + recvable_nums.prev,
+                           unit_of_measurement=cash_and_equiv_nums.unit_of_measurement)
 # calc_quick_asset_2y = (
 #     [get_cash_and_equiv_2y, get_st_inv_2y, get_recvable_2y] |
 #     (lambda cash_and_equiv_nums, st_inv_nums, recvable_nums:
