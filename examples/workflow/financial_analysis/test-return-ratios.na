@@ -1,10 +1,11 @@
-"""Test Return Ratios."""
+"""Test Return on Capital Ratios."""
 
-# TODO: relative importing & parenthesized importing in Dana
+# TODO: parenthesized importing in Dana
 # from return_ratios import (
 #     calc_roa_ratio,
+#     calc_roe_ratio,
 # )
-from return_ratios import calc_roa_ratio
+from return_ratios import calc_roa_ratio, calc_roe_ratio
 
 from test import TEST_DOC_PATH
 
@@ -12,6 +13,7 @@ from tqdm.py import tqdm
 
 FUNCS_TO_TEST: dict[str, callable] = {
     'calc_roa_ratio': calc_roa_ratio,
+    'calc_roe_ratio': calc_roe_ratio,
 }
 
 def __main__(func_name: str = 'all'):

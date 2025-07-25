@@ -17,5 +17,5 @@ def over_avg_denom(numerator: float, denominators: CurrAndPrevNums) -> float:
 
 
 def sum_over_sum(numerators: tuple[float], denominators: tuple[float]) -> float:
-    """Sum numerator and denominator and divide."""
+    """Sum numerators and denominators and divide."""
     return sum(numerators) / sum(denominators)

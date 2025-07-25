@@ -1,12 +1,10 @@
-DANA=dana
-
 test-all:
-	@ $(DANA) test.na
-	@ $(DANA) test-adj-income.na
-	@ $(DANA) test-cap-intens.na
-	@ $(DANA) test-income-util-ratios.na
-	@ $(DANA) test-leverage.na
-	@ $(DANA) test-liquidity.na
-	@ $(DANA) test-margin-ratios.na
-	@ $(DANA) test-return-ratios.na
-	@ $(DANA) test-turnover-ratios.na
+	@ dana test.na
+	@ dana test-adj-income.na
+	@ dana test-cap-intens.na
+	@ dana test-income-util-ratios.na
+	@ dana test-leverage.na
+	@ dana test-liquidity.na
+	@ dana test-margin-ratios.na
+	@ dana test-return-ratios.na
+	@ dana test-turnover-ratios.na

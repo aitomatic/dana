@@ -1,6 +1,6 @@
 """Test Turnover Ratios."""
 
-# TODO: relative importing & parenthesized importing in Dana
+# TODO: parenthesized importing in Dana
 # from turnover_ratios import (
 #     calc_total_asset_turnover_ratio,
 #     calc_fixed_asset_turnover_ratio,

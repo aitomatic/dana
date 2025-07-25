@@ -1,6 +1,6 @@
 """Test Margin Ratios."""
 
-# TODO: relative importing & parenthesized importing in Dana
+# TODO: parenthesized importing in Dana
 # from margin_ratios import (
 #     calc_cogs_margin, calc_cogs_margin_3y_avg,
 #
@@ -12,6 +12,8 @@
 #
 #     calc_op_margin, calc_op_margin_3y_avg,
 #
+#     calc_ebit_margin, calc_ebit_margin_3y_avg,
+#
 #     calc_net_margin, calc_net_margin_3y_avg,
 # )
 from margin_ratios import calc_cogs_margin, calc_cogs_margin_3y_avg
@@ -19,6 +21,7 @@ from margin_ratios import calc_gross_margin, calc_gross_margin_3y_avg
 from margin_ratios import calc_ebitda_margin, calc_ebitda_margin_3y_avg
 from margin_ratios import calc_da_margin
 from margin_ratios import calc_op_margin, calc_op_margin_3y_avg
+from margin_ratios import calc_ebit_margin, calc_ebit_margin_3y_avg
 from margin_ratios import calc_net_margin, calc_net_margin_3y_avg
 
 from test import TEST_DOC_PATH
@@ -39,6 +42,9 @@ FUNCS_TO_TEST: dict[str, callable] = {
 
     'calc_op_margin': calc_op_margin,
     'calc_op_margin_3y_avg': calc_op_margin_3y_avg,
+
+    'calc_ebit_margin': calc_ebit_margin,
+    'calc_ebit_margin_3y_avg': calc_ebit_margin_3y_avg,
 
     'calc_net_margin': calc_net_margin,
     'calc_net_margin_3y_avg': calc_net_margin_3y_avg,
