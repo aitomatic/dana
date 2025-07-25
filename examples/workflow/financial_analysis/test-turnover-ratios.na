@@ -12,7 +12,7 @@ from test import TEST_DOC_PATH
 
 from tqdm.py import tqdm
 
-FUNCS_FOR_TEST: dict[str, callable] = {
+FUNCS_TO_TEST: dict[str, callable] = {
     'calc_total_asset_turnover_ratio': calc_total_asset_turnover_ratio,
     'calc_fixed_asset_turnover_ratio': calc_fixed_asset_turnover_ratio,
     'calc_inventory_turnover_ratio': calc_inventory_turnover_ratio,
@@ -20,11 +20,11 @@ FUNCS_FOR_TEST: dict[str, callable] = {
 
 def __main__(func_name: str = 'all'):
     with use('rag', sources=[TEST_DOC_PATH]) as test_docs:
-        if func_name in FUNCS_FOR_TEST:
+        if func_name in FUNCS_TO_TEST:
             print(f'TESTING {func_name}...')
-            print(FUNCS_FOR_TEST[func_name]())
+            print(FUNCS_TO_TEST[func_name]())
 
         else:
-            for func_name in FUNCS_FOR_TEST:  # TODO: key-value pair unpacking in Dana
+            for func_name in FUNCS_TO_TEST:  # TODO: key-value pair unpacking in Dana
                 print(f'TESTING {func_name}...')
-                print(FUNCS_FOR_TEST[func_name]())
+                print(FUNCS_TO_TEST[func_name]())

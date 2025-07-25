@@ -6,8 +6,8 @@ SET TARGET=%1
 
 IF "%TARGET%"=="test-all" GOTO test-all
 
-:: INSTALLATION
-:: ============
+:: TESTS
+:: =====
 :test-all
   dana2 test.na
   dana2 test-adj-income.na

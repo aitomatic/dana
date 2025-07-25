@@ -51,7 +51,7 @@ from fin_statements import get_lt_debt, get_lt_debt_2y, get_lt_debt_3y
 
 from tqdm.py import tqdm
 
-FUNCS_FOR_TEST: dict[str, callable] = {
+FUNCS_TO_TEST: dict[str, callable] = {
     'get_total_asset': get_total_asset,
     'get_total_asset_2y': get_total_asset_2y,
     'get_total_asset_3y': get_total_asset_3y,
@@ -145,11 +145,11 @@ TEST_DOC_PATH: str = 'test-assets/AMD_2022_10K.pdf'
 
 def __main__(func_name: str = 'all'):
     with use('rag', sources=[TEST_DOC_PATH]) as test_docs:
-        if func_name in FUNCS_FOR_TEST:
+        if func_name in FUNCS_TO_TEST:
             print(f'TESTING {func_name}...')
-            print(FUNCS_FOR_TEST[func_name]())
+            print(FUNCS_TO_TEST[func_name]())
 
         else:
-            for func_name in FUNCS_FOR_TEST:  # TODO: key-value pair unpacking in Dana
+            for func_name in FUNCS_TO_TEST:  # TODO: key-value pair unpacking in Dana
                 print(f'TESTING {func_name}...')
-                print(FUNCS_FOR_TEST[func_name]())
+                print(FUNCS_TO_TEST[func_name]())
