@@ -179,13 +179,28 @@ class ImportHandler(Loggable):
             return
 
         # Get the module loader
-        from dana.core.runtime.modules.core import get_module_loader
+        from dana.core.runtime.modules.core import get_module_loader, get_module_registry
 
         loader = get_module_loader()
 
+        # Get the current module's file path if available
+        current_module_file = None
+        current_module_name = getattr(context, "_current_module", None)
+        if current_module_name:
+            try:
+                registry = get_module_registry()
+                if registry:
+                    current_module = registry.get_module(current_module_name)
+                    current_module_file = current_module.__file__
+            except Exception:
+                # Module not found in registry, that's okay
+                pass
+
         try:
             # Find and load the module
-            spec = loader.find_spec(absolute_module_name)
+            # Pass the current module's file path as a hint via the path parameter
+            path = [f"__dana_importing_from__:{current_module_file}"] if current_module_file else None
+            spec = loader.find_spec(absolute_module_name, path=path)
             if spec is None:
                 raise ModuleNotFoundError(f"Dana module '{absolute_module_name}' not found")
 
@@ -277,13 +292,28 @@ class ImportHandler(Loggable):
             module = self._module_cache[cache_key]
         else:
             # Get the module loader
-            from dana.core.runtime.modules.core import get_module_loader
+            from dana.core.runtime.modules.core import get_module_loader, get_module_registry
 
             loader = get_module_loader()
 
+            # Get the current module's file path if available
+            current_module_file = None
+            current_module_name = getattr(context, "_current_module", None)
+            if current_module_name:
+                try:
+                    registry = get_module_registry()
+                    if registry:
+                        current_module = registry.get_module(current_module_name)
+                        current_module_file = current_module.__file__
+                except Exception:
+                    # Module not found in registry, that's okay
+                    pass
+
             try:
                 # Find and load the module
-                spec = loader.find_spec(absolute_module_name)
+                # Pass the current module's file path as a hint via the path parameter
+                path = [f"__dana_importing_from__:{current_module_file}"] if current_module_file else None
+                spec = loader.find_spec(absolute_module_name, path=path)
                 if spec is None:
                     raise ModuleNotFoundError(f"Dana module '{absolute_module_name}' not found")
 
@@ -307,6 +337,16 @@ class ImportHandler(Loggable):
             # Check if the name exists in the module
             if not hasattr(module, name):
                 raise SandboxError(f"Cannot import name '{name}' from Dana module '{absolute_module_name}'")
+
+            # Enforce underscore privacy rule: reject names starting with '_'
+            if name.startswith("_"):
+                raise SandboxError(
+                    f"Cannot import name '{name}' from Dana module '{absolute_module_name}': names starting with '_' are private"
+                )
+
+            # Additional check: respect module's __exports__ if available
+            if hasattr(module, "__exports__") and name not in module.__exports__:
+                raise SandboxError(f"Cannot import name '{name}' from Dana module '{absolute_module_name}': not in module exports")
 
             # Get the object from the module
             obj = getattr(module, name)
@@ -458,6 +498,7 @@ class ImportHandler(Loggable):
 
         # Get the current package name from context
         current_package = getattr(context, "_current_package", None)
+        # print(f"DEBUG: Resolving relative import '{module_name}' with current_package='{current_package}'")
         if not current_package:
             raise SandboxError(f"Relative import '{module_name}' attempted without package context")
 
@@ -471,23 +512,39 @@ class ImportHandler(Loggable):
 
         # Get remaining path after dots
         remaining_path = module_name[leading_dots:]
+        # print(f"DEBUG: leading_dots={leading_dots}, remaining_path='{remaining_path}'")
 
         # Split current package into parts
         package_parts = current_package.split(".")
 
         # Calculate target package
-        if leading_dots > len(package_parts):
-            raise SandboxError(f"Relative import '{module_name}' goes beyond top-level package")
-
-        # Go up the hierarchy
-        target_package_parts = package_parts[:-leading_dots] if leading_dots > 0 else package_parts
+        # For relative imports:
+        #   .module = same package (0 levels up)
+        #   ..module = parent package (1 level up)  
+        #   ...module = grandparent package (2 levels up)
+        # So we need to go up (leading_dots - 1) levels
+        if leading_dots > 1:
+            # Go up (leading_dots - 1) levels
+            levels_up = leading_dots - 1
+            if levels_up >= len(package_parts):
+                raise SandboxError(f"Relative import '{module_name}' goes beyond top-level package")
+            target_package_parts = package_parts[:-levels_up]
+        elif leading_dots == 1:
+            # Same package (0 levels up)
+            target_package_parts = package_parts
+        else:
+            # This shouldn't happen since we already checked for leading dots
+            target_package_parts = package_parts
+            
         target_package = ".".join(target_package_parts) if target_package_parts else ""
+        # print(f"DEBUG: target_package='{target_package}'")
 
         # Build final absolute module name
         if remaining_path:
             result = f"{target_package}.{remaining_path}" if target_package else remaining_path
         else:
             result = target_package
+        # print(f"DEBUG: Resolved '{module_name}' to '{result}'")
 
         # Cache the result
         if not hasattr(self, "_relative_cache"):

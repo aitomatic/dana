@@ -42,22 +42,37 @@ class ParallelFunction(SandboxFunction):
         """Execute all functions with the same input and return list of results."""
         results = []
 
-        # Execute each function with the same input (sequential execution)
-        for func in self.functions:
-            result = self._call_function(func, context, *args, **kwargs)
-            results.append(result)
+        # In a pipeline context, the first argument is the intermediate result from the left function
+        # We should pass this single value to each function in the parallel list
+        if len(args) == 1 and len(kwargs) == 0:
+            # Single argument case - this is likely the intermediate result from a pipeline
+            input_value = args[0]
+            for func in self.functions:
+                result = self._call_function(func, context, input_value)
+                results.append(result)
+        else:
+            # Multiple arguments case - pass all arguments to each function
+            for func in self.functions:
+                result = self._call_function(func, context, *args, **kwargs)
+                results.append(result)
 
         return results
 
-    def restore_context(self, context: SandboxContext) -> SandboxContext:
+    def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> None:
         """Restore context after function execution (required by SandboxFunction)."""
         # For parallel functions, we don't need special context restoration
-        return context
+        pass
 
     def _call_function(self, func: Any, context: SandboxContext, *args, **kwargs) -> Any:
         """Call a function with proper context handling."""
         # Handle SandboxFunction objects (including composed functions)
         if isinstance(func, SandboxFunction):
+            # Ensure the context has an interpreter for DanaFunction execution
+            if not hasattr(context, "_interpreter") or context._interpreter is None:
+                # Try to get interpreter from the function's context if available
+                if hasattr(func, "context") and func.context is not None:
+                    if hasattr(func.context, "_interpreter") and func.context._interpreter is not None:
+                        context._interpreter = func.context._interpreter
             return func.execute(context, *args, **kwargs)
 
         # Handle direct callables

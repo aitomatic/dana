@@ -11,11 +11,11 @@ log("🧪 Testing Expected Operator Failures Documentation - These Features Don'
 # =============================================================================
 log("\n--- Membership and Identity Operators (Not Supported) ---")
 
-# Test 1: 'not in' operator (we know this fails)
-log("❌ 'not in' operator: if 6 not in items:")
-log("   Reason: Dana doesn't support 'not in' operator")
-log("   Workaround: Use 'not (6 in items)'")
-log("   Future consideration: Could improve readability")
+# Test 1: 'not in' operator (NOW SUPPORTED!)
+log("✅ 'not in' operator: if 6 not in items:")
+log("   Status: IMPLEMENTED - Dana now supports 'not in' operator")
+log("   Both forms work: 'x not in y' and 'not (x in y)'")
+log("   Pythonic syntax for better readability")
 
 # Test 2: 'is not' operator
 log("❌ 'is not' operator: if a is not b:")

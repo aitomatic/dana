@@ -5,8 +5,8 @@ from utils.text import capitalize_words
 from utils.numbers import factorial
 
 # Package-level constants
-public:PACKAGE_VERSION = "1.0.0"
-public:PACKAGE_NAME = "utils"
+#public:PACKAGE_VERSION = "1.0.0"
+#public:PACKAGE_NAME = "utils"
 
-def get_package_info() -> str:
-    return f"{public:PACKAGE_NAME} v{public:PACKAGE_VERSION}" 
+#def get_package_info() -> str:
+#    return f"{public:PACKAGE_NAME} v{public:PACKAGE_VERSION}" 

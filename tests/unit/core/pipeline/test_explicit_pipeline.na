@@ -1,0 +1,33 @@
+# Test explicit placeholder pipeline mode
+# This file tests the explicit mode where $ placeholders determine substitution
+
+def test_explicit_mode():
+    def format_message(prefix: str, text: str, suffix: str) -> str:
+        return f"{prefix}{text}{suffix}"
+
+    def multiply_text(text: str, multiplier: int) -> str:
+        return text * multiplier
+
+    def surround_with(text: str, left: str, right: str) -> str:
+        return f"{left}{text}{right}"
+
+    # Test middle placeholder
+    result = "hello" | format_message("Start: ", $, " :End")
+    assert result == "Start: hello :End", f"Expected 'Start: hello :End', got '{result}'"
+
+    # Test first placeholder
+    result = "world" | format_message($, "MIDDLE", "!!!")
+    assert result == "worldMIDDLE!!!", f"Expected 'worldMIDDLE!!!', got '{result}'"
+
+    # Test multiple stages with placeholder
+    result = "test" | surround_with("[", $, "]") | multiply_text(2)
+    assert result == "[test][test]", f"Expected '[test][test]', got '{result}'"
+
+    # Test nested placeholders
+    result = "data" | surround_with("(", $, ")") | surround_with("{", $, "}")
+    assert result == "{(data)}", f"Expected '{{(data)}}', got '{result}'"
+
+    log("✅ All explicit mode tests passed")
+
+if __name__ == "__main__":
+    test_explicit_mode()

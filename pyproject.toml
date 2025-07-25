@@ -66,6 +66,8 @@ dependencies = [
     "pygls",
     # Agent Integration
     "python-a2a>=0.5.9",
+    # Misc / Other
+    "tqdm",
 ]
 
 # Optional dependency groups
@@ -113,7 +115,6 @@ docs = [
 [project.scripts]
 dana = "dana.core.cli.dana:main"
 dana-ls = "dana.core.lang.lsp.server:main"
-dana2 = "dana.contrib.cli:main"
 
 # =============================================================================
 # Package Configuration

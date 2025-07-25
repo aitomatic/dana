@@ -1,0 +1,225 @@
+import "common.na"
+
+# Objective-Driven Agent with State Machine Behavior
+agent ObjectiveDrivenAgent:
+    
+    # Current state of the agent
+    current_state: str = "idle"
+    
+    # Agent's current objective
+    current_objective: str = "wait_for_task"
+    
+    # Domains this agent KNOWS ABOUT
+    domains: list[str] = [
+        "Semiconductor Manufacturing",
+        "Process Optimization",
+        "Quality Control",
+        "Troubleshooting"
+    ]
+    
+    # Work that this agent CAN DO
+    tasks: list[str] = [
+        "Analyze Process Data",
+        "Identify Root Causes", 
+        "Optimize Parameters",
+        "Validate Solutions",
+        "Generate Reports"
+    ]
+
+    # State transition mapping
+    state_transitions: dict[str, str] = {
+        "idle": "analyzing",
+        "analyzing": "diagnosing", 
+        "diagnosing": "optimizing",
+        "optimizing": "validating",
+        "validating": "reporting",
+        "reporting": "idle"
+    }
+
+# Objective-driven function with explicit objective parameter
+@poet(domain="semiconductor", objective="analyze_process_data", optimize_for="accuracy")
+def analyze_process_data(agent: ObjectiveDrivenAgent, data: ProcessData) -> AnalysisResult:
+    """
+    Analyze semiconductor process data to identify patterns and anomalies.
+    
+    Objective: Extract meaningful insights from raw process data
+    Optimize for: Accuracy of pattern detection and anomaly identification
+    """
+    agent.current_state = "analyzing"
+    agent.current_objective = "identify_data_patterns"
+    
+    # Core analysis logic
+    patterns = detect_patterns(data)
+    anomalies = identify_anomalies(data)
+    trends = calculate_trends(data)
+    
+    return AnalysisResult(
+        patterns=patterns,
+        anomalies=anomalies, 
+        trends=trends,
+        confidence=calculate_confidence(patterns, anomalies, trends)
+    )
+
+@poet(domain="semiconductor", objective="diagnose_root_causes", optimize_for="speed")
+def diagnose_root_causes(agent: ObjectiveDrivenAgent, analysis: AnalysisResult) -> DiagnosisResult:
+    """
+    Diagnose root causes of identified anomalies and issues.
+    
+    Objective: Determine underlying causes of process problems
+    Optimize for: Speed of diagnosis to minimize downtime
+    """
+    agent.current_state = "diagnosing"
+    agent.current_objective = "find_root_causes"
+    
+    # Diagnostic logic
+    causes = []
+    for anomaly in analysis.anomalies:
+        cause = trace_cause(anomaly, analysis.patterns)
+        causes.append(cause)
+    
+    return DiagnosisResult(
+        root_causes=causes,
+        severity=assess_severity(causes),
+        recommendations=generate_recommendations(causes)
+    )
+
+@poet(domain="semiconductor", objective="optimize_process_parameters", optimize_for="efficiency")
+def optimize_process_parameters(agent: ObjectiveDrivenAgent, diagnosis: DiagnosisResult) -> OptimizationResult:
+    """
+    Optimize process parameters based on diagnosis results.
+    
+    Objective: Improve process efficiency while maintaining quality
+    Optimize for: Efficiency gains without compromising quality
+    """
+    agent.current_state = "optimizing"
+    agent.current_objective = "improve_efficiency"
+    
+    # Optimization logic
+    current_params = get_current_parameters()
+    optimized_params = optimize_parameters(current_params, diagnosis)
+    
+    return OptimizationResult(
+        current_parameters=current_params,
+        optimized_parameters=optimized_params,
+        expected_improvement=calculate_improvement(current_params, optimized_params)
+    )
+
+@poet(domain="semiconductor", objective="validate_optimization", optimize_for="reliability")
+def validate_optimization(agent: ObjectiveDrivenAgent, optimization: OptimizationResult) -> ValidationResult:
+    """
+    Validate that optimization changes are safe and effective.
+    
+    Objective: Ensure proposed changes are safe and will improve performance
+    Optimize for: Reliability of validation to prevent production issues
+    """
+    agent.current_state = "validating"
+    agent.current_objective = "ensure_safety"
+    
+    # Validation logic
+    safety_check = validate_safety(optimization.optimized_parameters)
+    performance_check = validate_performance(optimization.optimized_parameters)
+    
+    return ValidationResult(
+        is_safe=safety_check.passed,
+        is_effective=performance_check.passed,
+        risks=safety_check.risks,
+        benefits=performance_check.benefits
+    )
+
+@poet(domain="semiconductor", objective="generate_execution_report", optimize_for="clarity")
+def generate_execution_report(agent: ObjectiveDrivenAgent, results: dict) -> Report:
+    """
+    Generate comprehensive report of the entire execution cycle.
+    
+    Objective: Create clear, actionable report for stakeholders
+    Optimize for: Clarity of communication and actionable insights
+    """
+    agent.current_state = "reporting"
+    agent.current_objective = "communicate_results"
+    
+    # Report generation logic
+    summary = create_executive_summary(results)
+    details = create_detailed_analysis(results)
+    recommendations = create_actionable_recommendations(results)
+    
+    return Report(
+        summary=summary,
+        details=details,
+        recommendations=recommendations,
+        next_steps=determine_next_steps(results)
+    )
+
+# State machine orchestrator
+@poet(domain="semiconductor", objective="orchestrate_state_machine", optimize_for="coordination")
+def execute_state_machine(agent: ObjectiveDrivenAgent, initial_data: ProcessData) -> ExecutionResult:
+    """
+    Orchestrate the complete state machine execution.
+    
+    Objective: Coordinate all phases of the analysis and optimization process
+    Optimize for: Coordination efficiency and state transition smoothness
+    """
+    agent.current_state = "idle"
+    agent.current_objective = "orchestrate_process"
+    
+    results = {}
+    
+    # State 1: Analyze
+    analysis = analyze_process_data(agent, initial_data)
+    results["analysis"] = analysis
+    
+    # State 2: Diagnose  
+    diagnosis = diagnose_root_causes(agent, analysis)
+    results["diagnosis"] = diagnosis
+    
+    # State 3: Optimize
+    optimization = optimize_process_parameters(agent, diagnosis)
+    results["optimization"] = optimization
+    
+    # State 4: Validate
+    validation = validate_optimization(agent, optimization)
+    results["validation"] = validation
+    
+    # State 5: Report
+    report = generate_execution_report(agent, results)
+    results["report"] = report
+    
+    # Return to idle state
+    agent.current_state = "idle"
+    agent.current_objective = "wait_for_task"
+    
+    return ExecutionResult(
+        success=validation.is_safe and validation.is_effective,
+        results=results,
+        final_state=agent.current_state,
+        execution_time=calculate_execution_time()
+    )
+
+# Main solve function that uses the state machine
+@poet(domain="semiconductor", objective="solve_manufacturing_problem", optimize_for="problem_resolution")
+def solve(agent: ObjectiveDrivenAgent, problem: ManufacturingProblem) -> Solution:
+    """
+    Main entry point for solving manufacturing problems using objective-driven state machine.
+    
+    Objective: Resolve manufacturing problems through systematic analysis and optimization
+    Optimize for: Complete problem resolution with measurable improvements
+    """
+    
+    # Convert problem to process data
+    process_data = convert_problem_to_data(problem)
+    
+    # Execute the state machine
+    execution_result = execute_state_machine(agent, process_data)
+    
+    # Return solution based on execution results
+    if execution_result.success:
+        return Solution(
+            status="resolved",
+            recommendations=execution_result.results["report"].recommendations,
+            expected_improvements=execution_result.results["optimization"].expected_improvement
+        )
+    else:
+        return Solution(
+            status="requires_manual_intervention",
+            recommendations=execution_result.results["report"].recommendations,
+            risks=execution_result.results["validation"].risks
+        ) 

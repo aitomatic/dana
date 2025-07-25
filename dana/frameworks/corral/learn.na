@@ -1,0 +1,915 @@
+# CORRAL Phase 6: Learn
+# Learn from execution and feedback to improve future performance
+
+# Knowledge learning struct
+struct KnowledgeLearning:
+    """
+    Represents the knowledge learning phase of CORRAL lifecycle.
+    Handles learning from execution results and feedback to improve performance.
+    """
+    learning_config: dict
+    feedback_threshold: float
+    improvement_metrics: dict
+    learning_history: list
+
+# Pattern learning and recognition struct
+struct PatternLearner:
+    """
+    Learns patterns from execution results and feedback.
+    """
+    pattern_registry: dict
+    learning_algorithms: dict
+    pattern_confidence: dict
+
+# Feedback analysis and learning struct
+struct FeedbackLearner:
+    """
+    Analyzes feedback and learns from it to improve future performance.
+    """
+    feedback_types: dict
+    analysis_methods: dict
+    improvement_strategies: dict
+
+# Knowledge enhancement struct
+struct KnowledgeEnhancer:
+    """
+    Enhances knowledge base based on learning outcomes.
+    """
+    enhancement_rules: dict
+    quality_metrics: dict
+    update_strategies: dict
+
+# Core learning functions
+def learn_from_execution(learner: KnowledgeLearning, execution_results: dict, context: dict) -> dict:
+    """
+    Learn from execution results to improve future performance.
+    """
+    learning_result = {
+        "execution_id": execution_results.get("execution_id", "unknown"),
+        "learning_insights": [],
+        "performance_improvements": [],
+        "pattern_updates": [],
+        "knowledge_enhancements": [],
+        "learning_timestamp": current_timestamp()
+    }
+    
+    # Step 1: Analyze execution performance
+    performance_analysis = analyze_execution_performance(execution_results)
+    
+    # Step 2: Identify learning opportunities
+    learning_opportunities = identify_learning_opportunities(performance_analysis, context)
+    
+    # Step 3: Extract patterns from execution
+    pattern_learner = PatternLearner(
+        pattern_registry={},
+        learning_algorithms={},
+        pattern_confidence={}
+    )
+    patterns = extract_execution_patterns(pattern_learner, execution_results)
+    
+    # Step 4: Generate learning insights
+    insights = generate_learning_insights(performance_analysis, patterns, context)
+    
+    # Step 5: Propose improvements
+    improvements = propose_performance_improvements(insights, execution_results)
+    
+    # Step 6: Update knowledge base
+    enhancer = KnowledgeEnhancer(
+        enhancement_rules={},
+        quality_metrics={},
+        update_strategies={}
+    )
+    knowledge_updates = enhance_knowledge_base(enhancer, insights, context)
+    
+    learning_result["learning_insights"] = insights
+    learning_result["performance_improvements"] = improvements
+    learning_result["pattern_updates"] = patterns
+    learning_result["knowledge_enhancements"] = knowledge_updates
+    
+    return learning_result
+
+def learn_from_feedback(learner: FeedbackLearner, feedback: dict, execution_results: dict) -> dict:
+    """
+    Learn from feedback to improve future decision-making and execution.
+    """
+    feedback_learning_result = {
+        "feedback_id": feedback.get("id", "unknown"),
+        "feedback_analysis": {},
+        "improvement_recommendations": [],
+        "behavior_adjustments": [],
+        "confidence_updates": {}
+    }
+    
+    # Step 1: Analyze feedback quality and relevance
+    feedback_analysis = analyze_feedback_quality(feedback, execution_results)
+    
+    # Step 2: Extract actionable insights
+    actionable_insights = extract_actionable_insights(feedback, execution_results)
+    
+    # Step 3: Generate improvement recommendations
+    recommendations = generate_improvement_recommendations(actionable_insights, feedback)
+    
+    # Step 4: Propose behavior adjustments
+    adjustments = propose_behavior_adjustments(recommendations, execution_results)
+    
+    # Step 5: Update confidence scores
+    confidence_updates = update_confidence_scores(feedback, execution_results)
+    
+    feedback_learning_result["feedback_analysis"] = feedback_analysis
+    feedback_learning_result["improvement_recommendations"] = recommendations
+    feedback_learning_result["behavior_adjustments"] = adjustments
+    feedback_learning_result["confidence_updates"] = confidence_updates
+    
+    return feedback_learning_result
+
+def learn_from_patterns(learner: PatternLearner, execution_history: list, context: dict) -> dict:
+    """
+    Learn patterns from execution history to improve future performance.
+    """
+    pattern_learning_result = {
+        "patterns_discovered": [],
+        "pattern_confidence": {},
+        "pattern_applications": [],
+        "pattern_improvements": []
+    }
+    
+    # Step 1: Discover recurring patterns
+    discovered_patterns = discover_recurring_patterns(execution_history)
+    
+    # Step 2: Calculate pattern confidence
+    pattern_confidence = calculate_pattern_confidence(discovered_patterns, execution_history)
+    
+    # Step 3: Identify pattern applications
+    pattern_applications = identify_pattern_applications(discovered_patterns, context)
+    
+    # Step 4: Propose pattern improvements
+    pattern_improvements = propose_pattern_improvements(discovered_patterns, execution_history)
+    
+    pattern_learning_result["patterns_discovered"] = discovered_patterns
+    pattern_learning_result["pattern_confidence"] = pattern_confidence
+    pattern_learning_result["pattern_applications"] = pattern_applications
+    pattern_learning_result["pattern_improvements"] = pattern_improvements
+    
+    return pattern_learning_result
+
+def continuous_learning_loop(learner: KnowledgeLearning, execution_data: dict, feedback_data: dict, context: dict) -> dict:
+    """
+    Implement continuous learning loop to improve overall system performance.
+    """
+    continuous_learning_result = {
+        "learning_cycle_id": generate_learning_cycle_id(),
+        "execution_learning": {},
+        "feedback_learning": {},
+        "pattern_learning": {},
+        "knowledge_updates": {},
+        "performance_metrics": {},
+        "improvement_summary": {}
+    }
+    
+    # Step 1: Learn from execution
+    execution_learner = KnowledgeLearning(
+        learning_config={"enable_continuous_learning": True},
+        feedback_threshold=0.7,
+        improvement_metrics={},
+        learning_history=[]
+    )
+    execution_learning = learn_from_execution(execution_learner, execution_data, context)
+    
+    # Step 2: Learn from feedback
+    feedback_learner = FeedbackLearner(
+        feedback_types={},
+        analysis_methods={},
+        improvement_strategies={}
+    )
+    feedback_learning = learn_from_feedback(feedback_learner, feedback_data, execution_data)
+    
+    # Step 3: Learn from patterns
+    pattern_learner = PatternLearner(
+        pattern_registry={},
+        learning_algorithms={},
+        pattern_confidence={}
+    )
+    pattern_learning = learn_from_patterns(pattern_learner, [execution_data], context)
+    
+    # Step 4: Update knowledge base
+    enhancer = KnowledgeEnhancer(
+        enhancement_rules={},
+        quality_metrics={},
+        update_strategies={}
+    )
+    knowledge_updates = apply_learning_updates(enhancer, execution_learning, feedback_learning, pattern_learning)
+    
+    # Step 5: Calculate performance improvements
+    performance_metrics = calculate_learning_performance_metrics(
+        execution_learning, feedback_learning, pattern_learning
+    )
+    
+    # Step 6: Generate improvement summary
+    improvement_summary = generate_improvement_summary(
+        execution_learning, feedback_learning, pattern_learning, performance_metrics
+    )
+    
+    continuous_learning_result["execution_learning"] = execution_learning
+    continuous_learning_result["feedback_learning"] = feedback_learning
+    continuous_learning_result["pattern_learning"] = pattern_learning
+    continuous_learning_result["knowledge_updates"] = knowledge_updates
+    continuous_learning_result["performance_metrics"] = performance_metrics
+    continuous_learning_result["improvement_summary"] = improvement_summary
+    
+    return continuous_learning_result
+
+# Pattern learning functions
+def discover_recurring_patterns(execution_history: list) -> list:
+    """
+    Discover recurring patterns in execution history.
+    """
+    patterns = []
+    
+    # Analyze execution sequences
+    execution_sequences = extract_execution_sequences(execution_history)
+    
+    # Find common patterns
+    for sequence in execution_sequences:
+        pattern = identify_sequence_pattern(sequence)
+        if pattern:
+            patterns.append(pattern)
+    
+    # Group similar patterns
+    grouped_patterns = group_similar_patterns(patterns)
+    
+    return grouped_patterns
+
+def calculate_pattern_confidence(patterns: list, execution_history: list) -> dict:
+    """
+    Calculate confidence scores for discovered patterns.
+    """
+    confidence_scores = {}
+    
+    for pattern in patterns:
+        # Count pattern occurrences
+        occurrence_count = count_pattern_occurrences(pattern, execution_history)
+        
+        # Calculate success rate
+        success_rate = calculate_pattern_success_rate(pattern, execution_history)
+        
+        # Calculate confidence based on occurrence and success
+        confidence = (occurrence_count * success_rate) / max(len(execution_history), 1)
+        
+        confidence_scores[pattern["id"]] = {
+            "confidence": min(1.0, confidence),
+            "occurrence_count": occurrence_count,
+            "success_rate": success_rate
+        }
+    
+    return confidence_scores
+
+def identify_pattern_applications(patterns: list, context: dict) -> list:
+    """
+    Identify potential applications for discovered patterns.
+    """
+    applications = []
+    
+    for pattern in patterns:
+        # Find similar contexts where pattern could be applied
+        similar_contexts = find_similar_contexts(pattern, context)
+        
+        # Generate application recommendations
+        for similar_context in similar_contexts:
+            application = {
+                "pattern_id": pattern["id"],
+                "context": similar_context,
+                "expected_benefit": estimate_pattern_benefit(pattern, similar_context),
+                "application_confidence": calculate_application_confidence(pattern, similar_context)
+            }
+            applications.append(application)
+    
+    return applications
+
+def propose_pattern_improvements(patterns: list, execution_history: list) -> list:
+    """
+    Propose improvements to discovered patterns.
+    """
+    improvements = []
+    
+    for pattern in patterns:
+        # Analyze pattern performance
+        performance_analysis = analyze_pattern_performance(pattern, execution_history)
+        
+        # Identify improvement opportunities
+        improvement_opportunities = identify_improvement_opportunities(performance_analysis)
+        
+        # Generate improvement proposals
+        for opportunity in improvement_opportunities:
+            improvement = {
+                "pattern_id": pattern["id"],
+                "improvement_type": opportunity["type"],
+                "description": opportunity["description"],
+                "expected_impact": opportunity["expected_impact"],
+                "implementation_complexity": opportunity["complexity"]
+            }
+            improvements.append(improvement)
+    
+    return improvements
+
+# Feedback learning functions
+def analyze_feedback_quality(feedback: dict, execution_results: dict) -> dict:
+    """
+    Analyze the quality and relevance of feedback.
+    """
+    quality_analysis = {
+        "relevance_score": 0.0,
+        "specificity_score": 0.0,
+        "actionability_score": 0.0,
+        "overall_quality": 0.0,
+        "quality_factors": []
+    }
+    
+    # Calculate relevance score
+    relevance_score = calculate_feedback_relevance(feedback, execution_results)
+    quality_analysis["relevance_score"] = relevance_score
+    
+    # Calculate specificity score
+    specificity_score = calculate_feedback_specificity(feedback)
+    quality_analysis["specificity_score"] = specificity_score
+    
+    # Calculate actionability score
+    actionability_score = calculate_feedback_actionability(feedback)
+    quality_analysis["actionability_score"] = actionability_score
+    
+    # Calculate overall quality
+    overall_quality = (relevance_score + specificity_score + actionability_score) / 3.0
+    quality_analysis["overall_quality"] = overall_quality
+    
+    # Identify quality factors
+    quality_analysis["quality_factors"] = identify_quality_factors(feedback, execution_results)
+    
+    return quality_analysis
+
+def extract_actionable_insights(feedback: dict, execution_results: dict) -> list:
+    """
+    Extract actionable insights from feedback.
+    """
+    insights = []
+    
+    # Extract specific recommendations
+    recommendations = extract_recommendations(feedback)
+    
+    # Extract performance observations
+    observations = extract_performance_observations(feedback, execution_results)
+    
+    # Extract improvement suggestions
+    suggestions = extract_improvement_suggestions(feedback)
+    
+    # Combine into actionable insights
+    for recommendation in recommendations:
+        insight = {
+            "type": "recommendation",
+            "content": recommendation,
+            "actionability": calculate_actionability(recommendation),
+            "priority": determine_priority(recommendation)
+        }
+        insights.append(insight)
+    
+    for observation in observations:
+        insight = {
+            "type": "observation",
+            "content": observation,
+            "actionability": calculate_actionability(observation),
+            "priority": determine_priority(observation)
+        }
+        insights.append(insight)
+    
+    for suggestion in suggestions:
+        insight = {
+            "type": "suggestion",
+            "content": suggestion,
+            "actionability": calculate_actionability(suggestion),
+            "priority": determine_priority(suggestion)
+        }
+        insights.append(insight)
+    
+    return insights
+
+def generate_improvement_recommendations(insights: list, feedback: dict) -> list:
+    """
+    Generate improvement recommendations based on insights.
+    """
+    recommendations = []
+    
+    for insight in insights:
+        if insight["actionability"] > 0.5:  # Only consider actionable insights
+            recommendation = {
+                "insight_id": insight.get("id", "unknown"),
+                "recommendation": generate_recommendation_from_insight(insight),
+                "priority": insight["priority"],
+                "expected_impact": estimate_impact(insight),
+                "implementation_effort": estimate_effort(insight)
+            }
+            recommendations.append(recommendation)
+    
+    # Sort by priority and impact
+    recommendations.sort(key=lambda x: (x["priority"], x["expected_impact"]), reverse=True)
+    
+    return recommendations
+
+def propose_behavior_adjustments(recommendations: list, execution_results: dict) -> list:
+    """
+    Propose behavior adjustments based on recommendations.
+    """
+    adjustments = []
+    
+    for recommendation in recommendations:
+        # Generate specific behavior adjustments
+        behavior_changes = generate_behavior_changes(recommendation, execution_results)
+        
+        for change in behavior_changes:
+            adjustment = {
+                "recommendation_id": recommendation["insight_id"],
+                "behavior_change": change,
+                "implementation_steps": generate_implementation_steps(change),
+                "expected_outcome": predict_outcome(change),
+                "risk_assessment": assess_risk(change)
+            }
+            adjustments.append(adjustment)
+    
+    return adjustments
+
+# Knowledge enhancement functions
+def enhance_knowledge_base(enhancer: KnowledgeEnhancer, insights: list, context: dict) -> dict:
+    """
+    Enhance knowledge base based on learning insights.
+    """
+    enhancement_result = {
+        "knowledge_updates": [],
+        "quality_improvements": [],
+        "new_patterns": [],
+        "updated_confidence": {}
+    }
+    
+    # Apply insights to knowledge base
+    for insight in insights:
+        # Update existing knowledge
+        knowledge_update = apply_insight_to_knowledge(insight, context)
+        if knowledge_update:
+            enhancement_result["knowledge_updates"].append(knowledge_update)
+        
+        # Improve knowledge quality
+        quality_improvement = improve_knowledge_quality(insight, context)
+        if quality_improvement:
+            enhancement_result["quality_improvements"].append(quality_improvement)
+        
+        # Add new patterns
+        new_pattern = extract_new_pattern(insight, context)
+        if new_pattern:
+            enhancement_result["new_patterns"].append(new_pattern)
+    
+    # Update confidence scores
+    enhancement_result["updated_confidence"] = update_knowledge_confidence(
+        enhancement_result["knowledge_updates"], context
+    )
+    
+    return enhancement_result
+
+def apply_learning_updates(enhancer: KnowledgeEnhancer, execution_learning: dict, feedback_learning: dict, pattern_learning: dict) -> dict:
+    """
+    Apply learning updates to the knowledge base.
+    """
+    updates = {
+        "execution_updates": [],
+        "feedback_updates": [],
+        "pattern_updates": [],
+        "integration_results": {}
+    }
+    
+    # Apply execution learning updates
+    for insight in execution_learning.get("learning_insights", []):
+        update = apply_execution_insight(insight, enhancer)
+        if update:
+            updates["execution_updates"].append(update)
+    
+    # Apply feedback learning updates
+    for recommendation in feedback_learning.get("improvement_recommendations", []):
+        update = apply_feedback_recommendation(recommendation, enhancer)
+        if update:
+            updates["feedback_updates"].append(update)
+    
+    # Apply pattern learning updates
+    for pattern in pattern_learning.get("patterns_discovered", []):
+        update = apply_pattern_update(pattern, enhancer)
+        if update:
+            updates["pattern_updates"].append(update)
+    
+    # Integrate all updates
+    updates["integration_results"] = integrate_learning_updates(updates)
+    
+    return updates
+
+# Performance analysis functions
+def analyze_execution_performance(execution_results: dict) -> dict:
+    """Analyze execution performance for learning opportunities."""
+    analysis = {
+        "success_rate": 0.0,
+        "performance_metrics": {},
+        "bottlenecks": [],
+        "optimization_opportunities": []
+    }
+    
+    # Calculate success rate
+    if execution_results.get("steps_executed"):
+        successful_steps = len([s for s in execution_results["steps_executed"] if s["status"] == "completed"])
+        total_steps = len(execution_results["steps_executed"])
+        analysis["success_rate"] = successful_steps / total_steps if total_steps > 0 else 0.0
+    
+    # Extract performance metrics
+    analysis["performance_metrics"] = execution_results.get("performance_metrics", {})
+    
+    # Identify bottlenecks
+    analysis["bottlenecks"] = identify_performance_bottlenecks(execution_results)
+    
+    # Find optimization opportunities
+    analysis["optimization_opportunities"] = find_optimization_opportunities(execution_results)
+    
+    return analysis
+
+def identify_learning_opportunities(performance_analysis: dict, context: dict) -> list:
+    """Identify learning opportunities from performance analysis."""
+    opportunities = []
+    
+    # Opportunities from low success rate
+    if performance_analysis["success_rate"] < 0.8:
+        opportunities.append({
+            "type": "success_rate_improvement",
+            "description": "Improve success rate through better error handling",
+            "priority": "high"
+        })
+    
+    # Opportunities from bottlenecks
+    for bottleneck in performance_analysis["bottlenecks"]:
+        opportunities.append({
+            "type": "bottleneck_optimization",
+            "description": f"Optimize bottleneck: {bottleneck}",
+            "priority": "medium"
+        })
+    
+    # Opportunities from optimization
+    for opportunity in performance_analysis["optimization_opportunities"]:
+        opportunities.append({
+            "type": "performance_optimization",
+            "description": f"Optimize: {opportunity}",
+            "priority": "low"
+        })
+    
+    return opportunities
+
+def generate_learning_insights(performance_analysis: dict, patterns: list, context: dict) -> list:
+    """Generate learning insights from performance analysis and patterns."""
+    insights = []
+    
+    # Performance-based insights
+    if performance_analysis["success_rate"] < 0.8:
+        insights.append({
+            "type": "performance_insight",
+            "description": "Low success rate indicates need for better error handling",
+            "confidence": 0.8
+        })
+    
+    # Pattern-based insights
+    for pattern in patterns:
+        insights.append({
+            "type": "pattern_insight",
+            "description": f"Discovered pattern: {pattern.get('description', 'Unknown pattern')}",
+            "confidence": pattern.get("confidence", 0.5)
+        })
+    
+    return insights
+
+def propose_performance_improvements(insights: list, execution_results: dict) -> list:
+    """Propose performance improvements based on insights."""
+    improvements = []
+    
+    for insight in insights:
+        if insight["type"] == "performance_insight":
+            improvement = {
+                "type": "error_handling_improvement",
+                "description": "Implement better error handling and recovery mechanisms",
+                "expected_impact": "high",
+                "implementation_effort": "medium"
+            }
+            improvements.append(improvement)
+        
+        elif insight["type"] == "pattern_insight":
+            improvement = {
+                "type": "pattern_optimization",
+                "description": f"Optimize based on pattern: {insight['description']}",
+                "expected_impact": "medium",
+                "implementation_effort": "low"
+            }
+            improvements.append(improvement)
+    
+    return improvements
+
+# Utility functions
+def generate_learning_cycle_id() -> str:
+    """Generate unique learning cycle ID."""
+    return f"learning_cycle_{get_current_time()}"
+
+def current_timestamp() -> str:
+    """Get current timestamp."""
+    return get_current_time()
+
+def extract_execution_sequences(execution_history: list) -> list:
+    """Extract execution sequences from history."""
+    sequences = []
+    for execution in execution_history:
+        if "steps_executed" in execution:
+            sequence = [step["step_id"] for step in execution["steps_executed"]]
+            sequences.append(sequence)
+    return sequences
+
+def identify_sequence_pattern(sequence: list) -> dict:
+    """Identify pattern in execution sequence."""
+    if len(sequence) >= 2:
+        return {
+            "id": f"pattern_{len(sequence)}",
+            "sequence": sequence,
+            "description": f"Pattern with {len(sequence)} steps",
+            "confidence": 0.5
+        }
+    return None
+
+def group_similar_patterns(patterns: list) -> list:
+    """Group similar patterns together."""
+    grouped = []
+    for pattern in patterns:
+        if pattern:
+            grouped.append(pattern)
+    return grouped
+
+def count_pattern_occurrences(pattern: dict, execution_history: list) -> int:
+    """Count how many times a pattern occurs in execution history."""
+    count = 0
+    for execution in execution_history:
+        if "steps_executed" in execution:
+            sequence = [step["step_id"] for step in execution["steps_executed"]]
+            if pattern["sequence"] == sequence:
+                count += 1
+    return count
+
+def calculate_pattern_success_rate(pattern: dict, execution_history: list) -> float:
+    """Calculate success rate for a pattern."""
+    successful = 0
+    total = 0
+    
+    for execution in execution_history:
+        if "steps_executed" in execution:
+            sequence = [step["step_id"] for step in execution["steps_executed"]]
+            if pattern["sequence"] == sequence:
+                total += 1
+                if execution.get("status") == "completed":
+                    successful += 1
+    
+    return successful / total if total > 0 else 0.0
+
+def find_similar_contexts(pattern: dict, context: dict) -> list:
+    """Find similar contexts where pattern could be applied."""
+    return [context]  # Simplified - would use more sophisticated similarity matching
+
+def estimate_pattern_benefit(pattern: dict, context: dict) -> str:
+    """Estimate benefit of applying pattern in context."""
+    return "medium"  # Simplified estimation
+
+def calculate_application_confidence(pattern: dict, context: dict) -> float:
+    """Calculate confidence in pattern application."""
+    return 0.7  # Simplified confidence calculation
+
+def analyze_pattern_performance(pattern: dict, execution_history: list) -> dict:
+    """Analyze performance of a pattern."""
+    return {
+        "success_rate": calculate_pattern_success_rate(pattern, execution_history),
+        "occurrence_count": count_pattern_occurrences(pattern, execution_history)
+    }
+
+def identify_improvement_opportunities(performance_analysis: dict) -> list:
+    """Identify improvement opportunities for a pattern."""
+    opportunities = []
+    if performance_analysis["success_rate"] < 0.8:
+        opportunities.append({
+            "type": "success_rate_improvement",
+            "description": "Improve pattern success rate",
+            "expected_impact": "high",
+            "complexity": "medium"
+        })
+    return opportunities
+
+def calculate_feedback_relevance(feedback: dict, execution_results: dict) -> float:
+    """Calculate relevance of feedback to execution results."""
+    return 0.8  # Simplified relevance calculation
+
+def calculate_feedback_specificity(feedback: dict) -> float:
+    """Calculate specificity of feedback."""
+    return 0.7  # Simplified specificity calculation
+
+def calculate_feedback_actionability(feedback: dict) -> float:
+    """Calculate actionability of feedback."""
+    return 0.6  # Simplified actionability calculation
+
+def identify_quality_factors(feedback: dict, execution_results: dict) -> list:
+    """Identify quality factors in feedback."""
+    return ["relevance", "specificity", "actionability"]
+
+def extract_recommendations(feedback: dict) -> list:
+    """Extract recommendations from feedback."""
+    return [feedback.get("recommendation", "No specific recommendation")]
+
+def extract_performance_observations(feedback: dict, execution_results: dict) -> list:
+    """Extract performance observations from feedback."""
+    return [feedback.get("observation", "No specific observation")]
+
+def extract_improvement_suggestions(feedback: dict) -> list:
+    """Extract improvement suggestions from feedback."""
+    return [feedback.get("suggestion", "No specific suggestion")]
+
+def calculate_actionability(content: str) -> float:
+    """Calculate actionability of content."""
+    return 0.5  # Simplified actionability calculation
+
+def determine_priority(content: str) -> str:
+    """Determine priority of content."""
+    return "medium"  # Simplified priority determination
+
+def generate_recommendation_from_insight(insight: dict) -> str:
+    """Generate recommendation from insight."""
+    return f"Apply insight: {insight['content']}"
+
+def estimate_impact(insight: dict) -> str:
+    """Estimate impact of insight."""
+    return "medium"  # Simplified impact estimation
+
+def estimate_effort(insight: dict) -> str:
+    """Estimate effort to implement insight."""
+    return "low"  # Simplified effort estimation
+
+def generate_behavior_changes(recommendation: dict, execution_results: dict) -> list:
+    """Generate behavior changes from recommendation."""
+    return [f"Implement: {recommendation['recommendation']}"]
+
+def generate_implementation_steps(change: str) -> list:
+    """Generate implementation steps for behavior change."""
+    return [f"Step 1: {change}"]
+
+def predict_outcome(change: str) -> str:
+    """Predict outcome of behavior change."""
+    return "Improved performance"
+
+def assess_risk(change: str) -> str:
+    """Assess risk of behavior change."""
+    return "low"
+
+def apply_insight_to_knowledge(insight: dict, context: dict) -> dict:
+    """Apply insight to knowledge base."""
+    return {
+        "type": "knowledge_update",
+        "insight": insight,
+        "update_description": f"Applied insight: {insight['content']}"
+    }
+
+def improve_knowledge_quality(insight: dict, context: dict) -> dict:
+    """Improve knowledge quality based on insight."""
+    return {
+        "type": "quality_improvement",
+        "insight": insight,
+        "improvement_description": f"Quality improvement based on: {insight['content']}"
+    }
+
+def extract_new_pattern(insight: dict, context: dict) -> dict:
+    """Extract new pattern from insight."""
+    return {
+        "type": "new_pattern",
+        "insight": insight,
+        "pattern_description": f"New pattern from: {insight['content']}"
+    }
+
+def update_knowledge_confidence(updates: list, context: dict) -> dict:
+    """Update knowledge confidence scores."""
+    return {"overall_confidence": 0.8}
+
+def apply_execution_insight(insight: dict, enhancer: KnowledgeEnhancer) -> dict:
+    """Apply execution insight to knowledge base."""
+    return {
+        "type": "execution_update",
+        "insight": insight,
+        "applied": True
+    }
+
+def apply_feedback_recommendation(recommendation: dict, enhancer: KnowledgeEnhancer) -> dict:
+    """Apply feedback recommendation to knowledge base."""
+    return {
+        "type": "feedback_update",
+        "recommendation": recommendation,
+        "applied": True
+    }
+
+def apply_pattern_update(pattern: dict, enhancer: KnowledgeEnhancer) -> dict:
+    """Apply pattern update to knowledge base."""
+    return {
+        "type": "pattern_update",
+        "pattern": pattern,
+        "applied": True
+    }
+
+def integrate_learning_updates(updates: dict) -> dict:
+    """Integrate all learning updates."""
+    return {
+        "integration_status": "completed",
+        "total_updates": len(updates["execution_updates"]) + len(updates["feedback_updates"]) + len(updates["pattern_updates"])
+    }
+
+def identify_performance_bottlenecks(execution_results: dict) -> list:
+    """Identify performance bottlenecks in execution results."""
+    bottlenecks = []
+    if "performance_metrics" in execution_results:
+        metrics = execution_results["performance_metrics"]
+        if metrics.get("average_step_time", 0) > 10:
+            bottlenecks.append("slow_step_execution")
+    return bottlenecks
+
+def find_optimization_opportunities(execution_results: dict) -> list:
+    """Find optimization opportunities in execution results."""
+    opportunities = []
+    if "performance_metrics" in execution_results:
+        metrics = execution_results["performance_metrics"]
+        if metrics.get("success_rate", 1.0) < 0.9:
+            opportunities.append("improve_success_rate")
+    return opportunities
+
+def calculate_learning_performance_metrics(execution_learning: dict, feedback_learning: dict, pattern_learning: dict) -> dict:
+    """Calculate performance metrics for learning process."""
+    return {
+        "insights_generated": len(execution_learning.get("learning_insights", [])),
+        "recommendations_generated": len(feedback_learning.get("improvement_recommendations", [])),
+        "patterns_discovered": len(pattern_learning.get("patterns_discovered", [])),
+        "overall_learning_effectiveness": 0.8
+    }
+
+def generate_improvement_summary(execution_learning: dict, feedback_learning: dict, pattern_learning: dict, performance_metrics: dict) -> dict:
+    """Generate summary of improvements from learning."""
+    return {
+        "total_improvements": len(execution_learning.get("performance_improvements", [])) + 
+                            len(feedback_learning.get("improvement_recommendations", [])),
+        "learning_effectiveness": performance_metrics.get("overall_learning_effectiveness", 0.0),
+        "key_insights": [insight["description"] for insight in execution_learning.get("learning_insights", [])[:3]],
+        "priority_recommendations": [rec["recommendation"] for rec in feedback_learning.get("improvement_recommendations", [])[:3]]
+    }
+
+# Main learning workflow
+def learn_and_improve(execution_data: dict, feedback_data: dict, context: dict) -> dict:
+    """
+    Main workflow for learning and improvement.
+    Implements the complete learning phase of CORRAL.
+    """
+    learner = KnowledgeLearning(
+        learning_config={"enable_continuous_learning": True},
+        feedback_threshold=0.7,
+        improvement_metrics={},
+        learning_history=[]
+    )
+    
+    # Step 1: Learn from execution
+    execution_learning = learn_from_execution(learner, execution_data, context)
+    
+    # Step 2: Learn from feedback
+    feedback_learner = FeedbackLearner(
+        feedback_types={},
+        analysis_methods={},
+        improvement_strategies={}
+    )
+    feedback_learning = learn_from_feedback(feedback_learner, feedback_data, execution_data)
+    
+    # Step 3: Learn from patterns
+    pattern_learner = PatternLearner(
+        pattern_registry={},
+        learning_algorithms={},
+        pattern_confidence={}
+    )
+    pattern_learning = learn_from_patterns(pattern_learner, [execution_data], context)
+    
+    # Step 4: Continuous learning loop
+    continuous_learning = continuous_learning_loop(learner, execution_data, feedback_data, context)
+    
+    return {
+        "execution_learning": execution_learning,
+        "feedback_learning": feedback_learning,
+        "pattern_learning": pattern_learning,
+        "continuous_learning": continuous_learning,
+        "learning_summary": {
+            "total_insights": len(execution_learning.get("learning_insights", [])),
+            "total_recommendations": len(feedback_learning.get("improvement_recommendations", [])),
+            "total_patterns": len(pattern_learning.get("patterns_discovered", [])),
+            "learning_timestamp": current_timestamp()
+        }
+    }
+
+# Example usage
+# execution_data = {"execution_id": "exec_123", "status": "completed", "steps_executed": []}
+# feedback_data = {"id": "feedback_456", "rating": 4, "comments": "Good performance"}
+# learning_result = learn_and_improve(execution_data, feedback_data, context)

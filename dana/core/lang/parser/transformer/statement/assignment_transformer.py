@@ -17,6 +17,7 @@ from dana.core.lang.ast import (
     AgentPoolStatement,
     AgentStatement,
     Assignment,
+    CompoundAssignment,
     Identifier,
     UseStatement,
 )
@@ -68,6 +69,66 @@ class AssignmentTransformer(BaseTransformer):
 
         return AssignmentHelper.create_assignment(target_tree, value_tree, self.expression_transformer, VariableTransformer())
 
+    def compound_assignment(self, items):
+        """Transform a compound assignment rule into a CompoundAssignment node."""
+        # Grammar: compound_assignment: target compound_op expr
+        target_tree = items[0]
+        operator_token = items[1]  # This will be the token from compound_op
+        value_tree = items[2]
+
+        # Transform the target using the same logic as simple assignment
+        from lark import Tree
+        
+        # Handle different types of assignment targets
+        if isinstance(target_tree, Tree) and hasattr(target_tree, "data"):
+            # Check if this is a complex target (atom with trailers)
+            if target_tree.data == "target":
+                # target -> atom
+                atom_tree = target_tree.children[0]
+                if isinstance(atom_tree, Tree) and atom_tree.data == "atom":
+                    # Check if atom has trailers (indicating subscript or attribute access)
+                    if len(atom_tree.children) > 1:
+                        # Complex target: use expression transformer to handle subscript/attribute access
+                        target = self.expression_transformer.expression([target_tree])
+                    else:
+                        # Simple target: use variable transformer
+                        target = VariableTransformer().variable([target_tree])
+                else:
+                    # Fallback to variable transformer
+                    target = VariableTransformer().variable([target_tree])
+            else:
+                # Not a target rule, try expression transformer first
+                try:
+                    target = self.expression_transformer.expression([target_tree])
+                except Exception:
+                    # Fallback to variable transformer
+                    target = VariableTransformer().variable([target_tree])
+        else:
+            # Simple case: use variable transformer
+            target = VariableTransformer().variable([target_tree])
+
+        # Validate target type
+        from dana.core.lang.ast import AttributeAccess, Identifier, SubscriptExpression
+        if not isinstance(target, Identifier | SubscriptExpression | AttributeAccess):
+            raise TypeError(f"Compound assignment target must be Identifier, SubscriptExpression, or AttributeAccess, got {type(target)}")
+
+        # Transform the value expression
+        value = self.expression_transformer.expression([value_tree])
+
+        # Get the operator string
+        operator_str = str(operator_token)
+
+        return CompoundAssignment(
+            target=target,
+            operator=operator_str,
+            value=value
+        )
+
+    def compound_op(self, items):
+        """Return the compound operator token."""
+        # Grammar: compound_op: PLUS_EQUALS | MINUS_EQUALS | MULT_EQUALS | DIV_EQUALS
+        return items[0].value  # Return the string value of the token
+
     def function_call_assignment(self, items):
         """Transform a function_call_assignment rule into an Assignment node with object-returning statement."""
         # Grammar: function_call_assignment: target "=" return_object_stmt
@@ -114,16 +175,21 @@ class AssignmentTransformer(BaseTransformer):
         """Transform a typed parameter rule into a Parameter object."""
         from dana.core.lang.ast import Parameter
 
-        # Grammar: typed_parameter: NAME [":" basic_type] ["=" expr]
+        # Grammar: typed_parameter: NAME [":" basic_type] ["=" expr] [COMMENT]
         name_item = items[0]
         param_name = name_item.value if hasattr(name_item, "value") else str(name_item)
 
         type_hint = None
         default_value = None
 
-        # Check for type hint and default value
+        # Check for type hint and default value, filtering out comment tokens and None values
         for item in items[1:]:
-            if hasattr(item, "name"):  # TypeHint object
+            # Skip comment tokens and None values (from optional COMMENT rules)
+            if item is None:
+                continue
+            elif hasattr(item, "type") and item.type == "COMMENT":
+                continue
+            elif hasattr(item, "name"):  # TypeHint object
                 type_hint = item
             else:
                 # Assume it's a default value expression

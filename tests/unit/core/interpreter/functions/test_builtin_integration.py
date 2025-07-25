@@ -74,6 +74,93 @@ class TestBuiltinIntegrationBasic:
         result = interpreter._eval("min([-5, -2, -8, -1])", context=context)
         assert result == -8
 
+    def test_smart_wrapper_functions_integration(self):
+        """Test smart wrapper functions that support both Python-style and iterable syntax."""
+        interpreter = DanaInterpreter()
+        context = SandboxContext()
+
+        # Test max() with multiple arguments (new Python-style syntax)
+        result = interpreter._eval("max(1, 5, 3, 9, 2)", context=context)
+        assert result == 9
+
+        result = interpreter._eval("max(10, 3)", context=context)
+        assert result == 10
+
+        result = interpreter._eval("max(-5, -2, -8, -1)", context=context)
+        assert result == -1
+
+        # Test max() with iterables (backward compatibility)
+        result = interpreter._eval("max([1, 5, 3, 9, 2])", context=context)
+        assert result == 9
+
+        result = interpreter._eval("max((10, 3, 7))", context=context)
+        assert result == 10
+
+        # Test min() with multiple arguments (new Python-style syntax)
+        result = interpreter._eval("min(1, 5, 3, 9, 2)", context=context)
+        assert result == 1
+
+        result = interpreter._eval("min(10, 3)", context=context)
+        assert result == 3
+
+        result = interpreter._eval("min(-5, -2, -8, -1)", context=context)
+        assert result == -8
+
+        # Test min() with iterables (backward compatibility)
+        result = interpreter._eval("min([1, 5, 3, 9, 2])", context=context)
+        assert result == 1
+
+        result = interpreter._eval("min((10, 3, 7))", context=context)
+        assert result == 3
+
+        # Test sum() with start parameter (new functionality)
+        result = interpreter._eval("sum([1, 2, 3], 10)", context=context)
+        assert result == 16
+
+        result = interpreter._eval("sum((1, 2, 3), 5)", context=context)
+        assert result == 11
+
+        # Test sum() without start parameter (backward compatibility)
+        result = interpreter._eval("sum([1, 2, 3])", context=context)
+        assert result == 6
+
+        result = interpreter._eval("sum((1, 2, 3))", context=context)
+        assert result == 6
+
+        # Test the original problematic pattern from curate.na
+        result = interpreter._eval('max(len(["item1", "item2", "item3"]), 1)', context=context)
+        assert result == 3
+
+        result = interpreter._eval("max(len([]), 1)", context=context)
+        assert result == 1
+
+        result = interpreter._eval('min(len(["single"]), 5)', context=context)
+        assert result == 1
+
+        # Test basic_* versions still work (strict iterable-only)
+        result = interpreter._eval("basic_max([1, 5, 3, 9, 2])", context=context)
+        assert result == 9
+
+        result = interpreter._eval("basic_min([1, 5, 3, 9, 2])", context=context)
+        assert result == 1
+
+        result = interpreter._eval("basic_sum([1, 2, 3])", context=context)
+        assert result == 6
+
+        # Test mixed numeric types work
+        result = interpreter._eval("max(1, 2.5, 3)", context=context)
+        assert result == 3
+
+        result = interpreter._eval("min(1.5, 2, 0.5)", context=context)
+        assert result == 0.5
+
+        # Test single argument cases
+        result = interpreter._eval("max(42)", context=context)
+        assert result == 42
+
+        result = interpreter._eval("min(42)", context=context)
+        assert result == 42
+
     def test_type_conversion_integration(self):
         """Test type conversion functions through Dana interpreter."""
         interpreter = DanaInterpreter()
@@ -292,6 +379,55 @@ class TestBuiltinErrorHandling:
             interpreter._eval('int("hello")', context=context)
         assert "int" in str(exc_info.value)
         assert "failed" in str(exc_info.value) or "not found" in str(exc_info.value)
+
+    def test_smart_wrapper_error_handling(self):
+        """Test error handling for smart wrapper functions."""
+        interpreter = DanaInterpreter()
+        context = SandboxContext()
+
+        # Test max/min with empty sequences 
+        with pytest.raises((ValueError, SandboxError)) as exc_info:
+            interpreter._eval("max([])", context=context)
+        assert "empty" in str(exc_info.value) or "arg is an empty sequence" in str(exc_info.value)
+
+        with pytest.raises((ValueError, SandboxError)) as exc_info:
+            interpreter._eval("min(())", context=context)
+        assert "empty" in str(exc_info.value) or "arg is an empty sequence" in str(exc_info.value)
+
+        # Test max/min with no arguments
+        with pytest.raises((TypeError, SandboxError)) as exc_info:
+            interpreter._eval("max()", context=context)
+        assert "expected at least 1 argument" in str(exc_info.value) or "missing" in str(exc_info.value)
+
+        with pytest.raises((TypeError, SandboxError)) as exc_info:
+            interpreter._eval("min()", context=context)
+        assert "expected at least 1 argument" in str(exc_info.value) or "missing" in str(exc_info.value)
+
+        # Test sum with too many arguments
+        with pytest.raises((TypeError, SandboxError)) as exc_info:
+            interpreter._eval("sum([1, 2, 3], 10, 20)", context=context)
+        assert "expected at most 2 arguments" in str(exc_info.value) or "too many" in str(exc_info.value)
+
+        # Test sum with no arguments
+        with pytest.raises((TypeError, SandboxError)) as exc_info:
+            interpreter._eval("sum()", context=context)
+        assert "expected at least 1 argument" in str(exc_info.value) or "missing" in str(exc_info.value)
+
+        # Test max/min with non-comparable types (should still work in Python but may have issues)
+        with pytest.raises(SandboxError):
+            interpreter._eval('max("hello", 42)', context=context)
+
+        with pytest.raises(SandboxError):
+            interpreter._eval('min(["list"], {"dict": 1})', context=context)
+
+        # Test that basic_* versions still enforce strict validation
+        with pytest.raises((TypeError, SandboxError)) as exc_info:
+            interpreter._eval("basic_max(1, 2, 3)", context=context)
+        assert "Invalid arguments" in str(exc_info.value) or "not found" in str(exc_info.value)
+
+        with pytest.raises((TypeError, SandboxError)) as exc_info:
+            interpreter._eval("basic_sum([1, 2], 10)", context=context)
+        assert "Invalid arguments" in str(exc_info.value) or "not found" in str(exc_info.value)
 
 
 class TestBuiltinFunctionPrecedence:

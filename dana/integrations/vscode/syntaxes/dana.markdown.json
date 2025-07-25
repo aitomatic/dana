@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "scopeName": "markdown.dana.codeblock",
-  "injectionSelector": "L:markup.fenced_code.block.markdown",
+  "injectionSelector": "L:text.html.markdown",
   "patterns": [
     {
       "include": "#dana-code-block"
@@ -9,18 +9,20 @@
   ],
   "repository": {
     "dana-code-block": {
-      "begin": "(?<=[`~])dana(?=\\s*$)",
-      "end": "(?=^|\\G)(?=\\s*[`~]{3,}\\s*$)",
+      "begin": "(`{3,})\\s*(dana)\\s*$",
+      "beginCaptures": { 
+        "1": { "name": "punctuation.definition.fenced_code.block.markdown" },
+        "2": { "name": "entity.name.function.dana" }
+      },
+      "end": "^\\1`*$",
+      "endCaptures": { 
+        "1": { "name": "punctuation.definition.fenced_code.block.markdown" }
+      },
+      "name": "meta.embedded.block.dana",
+      "contentName": "source.dana",
       "patterns": [
         {
-          "begin": "(?<=dana)(?=\\s*$)",
-          "while": "(^|\\G)(?!\\s*[`~]{3,}\\s*$)",
-          "contentName": "meta.embedded.block.dana",
-          "patterns": [
-            {
-              "include": "source.dana"
-            }
-          ]
+          "include": "source.dana"
         }
       ]
     }

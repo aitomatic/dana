@@ -26,6 +26,11 @@ class BaseTransformer(Loggable, Transformer):
         super().__init__()
         # Create a TreeTraverser instance for tree traversal operations
         self.tree_traverser = TreeTraverser(transformer=self)
+        self.current_filename = None  # Track current filename for error reporting
+
+    def set_filename(self, filename: str | None) -> None:
+        """Set the current filename for location tracking."""
+        self.current_filename = filename
 
     def _parse_literal(self, text):
         """Parse a simple literal value from text or Token."""
@@ -86,5 +91,7 @@ class BaseTransformer(Loggable, Transformer):
         loc = self.get_location(item)
         if loc:
             line, column = loc
-            return Location(line=line, column=column, source="")
+            # Use the current filename if available, otherwise empty string
+            source = self.current_filename if self.current_filename else ""
+            return Location(line=line, column=column, source=source)
         return None

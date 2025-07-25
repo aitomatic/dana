@@ -1,15 +1,16 @@
 """
-Document processing components for Dana KNOWS system.
+This module provides document processing capabilities for the KNOWS framework.
 
-This module handles document loading, parsing, and text extraction for knowledge ingestion.
+It includes tools for:
+- Loading documents from various sources (`DocumentLoader`).
+- Parsing document structures and metadata (`DocumentParser`).
+- Extracting text content from documents (`TextExtractor`).
+
+These components work together to facilitate efficient document analysis and processing.
 """
 
 from .extractor import TextExtractor
 from .loader import DocumentLoader
 from .parser import DocumentParser
 
-__all__ = [
-    "DocumentLoader",
-    "DocumentParser", 
-    "TextExtractor"
-] 
+__all__ = ["TextExtractor", "DocumentLoader", "DocumentParser"] 

@@ -48,7 +48,9 @@ from dana.core.lang.ast import (
     WhileLoop,
 )
 from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
-from dana.core.lang.parser.transformer.expression_transformer import ExpressionTransformer
+from dana.core.lang.parser.transformer.expression_transformer import (
+    ExpressionTransformer,
+)
 from dana.core.lang.parser.utils.tree_utils import TreeTraverser
 
 # Allowed types for Assignment.value
@@ -84,17 +86,44 @@ class StatementTransformer(BaseTransformer):
         self.tree_traverser = TreeTraverser()
 
         # Initialize specialized transformers
-        from dana.core.lang.parser.transformer.statement.agent_context_transformer import AgentContextTransformer
-        from dana.core.lang.parser.transformer.statement.assignment_transformer import AssignmentTransformer
-        from dana.core.lang.parser.transformer.statement.control_flow_transformer import ControlFlowTransformer
-        from dana.core.lang.parser.transformer.statement.function_definition_transformer import FunctionDefinitionTransformer
-        from dana.core.lang.parser.transformer.statement.import_simple_statement_transformer import ImportSimpleStatementTransformer
+        from dana.core.lang.parser.transformer.statement.agent_context_transformer import (
+            AgentContextTransformer,
+        )
+        from dana.core.lang.parser.transformer.statement.assignment_transformer import (
+            AssignmentTransformer,
+        )
+        from dana.core.lang.parser.transformer.statement.control_flow_transformer import (
+            ControlFlowTransformer,
+        )
+        from dana.core.lang.parser.transformer.statement.function_definition_transformer import (
+            FunctionDefinitionTransformer,
+        )
+        from dana.core.lang.parser.transformer.statement.import_simple_statement_transformer import (
+            ImportSimpleStatementTransformer,
+        )
 
         self.assignment_transformer = AssignmentTransformer(self)
         self.control_flow_transformer = ControlFlowTransformer(self)
         self.function_definition_transformer = FunctionDefinitionTransformer(self)
         self.agent_context_transformer = AgentContextTransformer(self)
         self.import_simple_statement_transformer = ImportSimpleStatementTransformer(self)
+
+    def set_filename(self, filename: str | None) -> None:
+        """Set the current filename for location tracking and propagate to sub-transformers."""
+        super().set_filename(filename)
+        # Propagate to sub-transformers
+        if hasattr(self.expression_transformer, 'set_filename'):
+            self.expression_transformer.set_filename(filename)
+        if hasattr(self.assignment_transformer, 'set_filename'):
+            self.assignment_transformer.set_filename(filename)
+        if hasattr(self.control_flow_transformer, 'set_filename'):
+            self.control_flow_transformer.set_filename(filename)
+        if hasattr(self.function_definition_transformer, 'set_filename'):
+            self.function_definition_transformer.set_filename(filename)
+        if hasattr(self.agent_context_transformer, 'set_filename'):
+            self.agent_context_transformer.set_filename(filename)
+        if hasattr(self.import_simple_statement_transformer, 'set_filename'):
+            self.import_simple_statement_transformer.set_filename(filename)
 
     # === Program and Statement Entry ===
     def program(self, items):
@@ -592,6 +621,14 @@ class StatementTransformer(BaseTransformer):
     def function_call_assignment(self, items):
         """Transform a function_call_assignment rule into an Assignment node with object-returning statement."""
         return self.assignment_transformer.function_call_assignment(items)
+
+    def compound_assignment(self, items):
+        """Transform a compound assignment rule into a CompoundAssignment node."""
+        return self.assignment_transformer.compound_assignment(items)
+
+    def compound_op(self, items):
+        """Transform a compound operator rule into the operator string."""
+        return self.assignment_transformer.compound_op(items)
 
     def return_object_stmt(self, items):
         """Transform a return_object_stmt rule into the appropriate object-returning statement."""

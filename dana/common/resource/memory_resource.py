@@ -74,7 +74,7 @@ Memory Decay Mechanism:
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Generic, TypeVar
 
 from dana.common.db.models import LTMemoryDBModel, MemoryDBModel, PermanentMemoryDBModel, STMemoryDBModel
@@ -215,7 +215,7 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
         if not self._last_decay_time:
             return True
 
-        time_since_last_decay = (datetime.utcnow() - self._last_decay_time).total_seconds()
+        time_since_last_decay = (datetime.now(timezone.utc) - self._last_decay_time).total_seconds()
         return time_since_last_decay >= self._decay_interval
 
     async def _maybe_decay(self) -> None:

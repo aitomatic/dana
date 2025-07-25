@@ -18,12 +18,15 @@ venv/
 .env
 .env.*
 !.env.example
+dana-config.json
+!dana-config.json.example
 
 # Testing and coverage
 .coverage
 pytest.ini
 
 # Logs and data
+local.db
 .dana/
 .poet/
 logs/

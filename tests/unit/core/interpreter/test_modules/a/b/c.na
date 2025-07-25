@@ -1,0 +1,6 @@
+# c.na - Test Dana module for true 3-component imports
+
+def deep_function() -> str:
+    return "Hello from deep module!"
+
+public:DEEP_CONSTANT = "Deep level constant" 
