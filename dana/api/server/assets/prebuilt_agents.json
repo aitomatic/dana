@@ -23,30 +23,5 @@
       "is_prebuilt": true
     },
     "generation_phase": "code_generated"
-  },
-  {
-    "id": "marcus_investment_guru",
-    "key": "marcus_investment_guru",
-    "name": "Marcus Investment Guru",
-    "description": "Advanced Investment Analysis & Market Research Specialist",
-    "config": {
-      "domain": "Finance",
-      "specialties": [
-        "stock analysis",
-        "market trends",
-        "technical analysis",
-        "fundamental analysis"
-      ],
-      "skills": [
-        "algorithmic trading",
-        "risk management",
-        "derivative strategies",
-        "ESG investing"
-      ],
-      "expertise_level": "expert",
-      "personality": "data-driven and strategic",
-      "is_prebuilt": true
-    },
-    "generation_phase": "code_generated"
   }
 ]
