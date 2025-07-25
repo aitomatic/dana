@@ -1,6 +1,7 @@
 """Test Runner Script for Financial Analysis Workflows.
 
-(This script is placed inside the `financial_analysis` package.)
+This script is placed inside the `financial_analysis` package
+and attempts to use absolute imports from within that package.
 """
 
 from fin_statements import get_total_asset, get_total_asset_2y, get_total_asset_3y

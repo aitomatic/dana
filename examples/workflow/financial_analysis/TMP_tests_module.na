@@ -1,4 +1,8 @@
-"""Unified Testing Module for Financial Analysis Workflows."""
+"""Unified Testing Module for Financial Analysis Workflows.
+
+This module is placed inside the `financial_analysis` package
+and uses relative imports from within that package.
+"""
 
 from .fin_statements import get_total_asset, get_total_asset_2y, get_total_asset_3y
 from .fin_statements import get_fixed_asset, get_fixed_asset_2y, get_fixed_asset_3y
