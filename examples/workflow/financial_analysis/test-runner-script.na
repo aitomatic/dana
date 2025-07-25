@@ -1,4 +1,4 @@
-"""Unified Test Runner for Financial Analysis Workflows."""
+"""Unified Test Runner Script for Financial Analysis Workflows."""
 
 from fin_statements import get_total_asset, get_total_asset_2y, get_total_asset_3y
 from fin_statements import get_fixed_asset, get_fixed_asset_2y, get_fixed_asset_3y
@@ -158,27 +158,8 @@ WORKFLOWS_BY_ANALYSIS_AREA: dict[str, list[callable]] = {
     ],
 }
 
-
-# Function to test all workflows
-# ==============================
-def test_all():
-    """Run all tests for all analysis areas."""
-    with use('rag', sources=[TEST_DOC_PATH]) as test_docs:
-        for area in WORKFLOWS_BY_ANALYSIS_AREA:
-            workflows = WORKFLOWS_BY_ANALYSIS_AREA[area]
-            print(f'=== Testing {area} ===')
-            for workflow in workflows:
-                func_name = str(workflow)
-                print(f'-- {func_name} --')
-                try:
-                    result = workflow(TEST_ARGS)
-                    print(f'PASS: {func_name} => {result}')
-                except Exception as e:
-                    print(f'FAIL: {func_name} => {e}')
-
 # Run a few tests
 # ===============
-
 # simple statements reading
 print(f'TOTAL ASSET: {get_total_asset(TEST_ARGS)}')
 print(f'TOTAL REVENUE: {get_rev(TEST_ARGS)}')
