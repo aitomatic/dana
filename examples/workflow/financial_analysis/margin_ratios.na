@@ -1,7 +1,7 @@
 """Margin Ratios."""
 
 
-# TODO: relative importing & parenthesized importing in Dana
+# TODO: parenthesized importing in Dana
 # from .fin_statements import (
 #     get_rev, get_rev_3y,
 #
@@ -17,22 +17,21 @@
 #
 #     get_net_income, get_net_income_3y,
 # )
-from fin_statements import get_rev, get_rev_3y
-from fin_statements import get_cogs, get_cogs_3y
-from fin_statements import get_gross_income, get_gross_income_3y
-from fin_statements import get_deprec_and_amort
-from fin_statements import get_op_income, get_op_income_3y
-from fin_statements import get_ebit, get_ebit_3y
-from fin_statements import get_net_income, get_net_income_3y
+from .fin_statements import get_rev, get_rev_3y
+from .fin_statements import get_cogs, get_cogs_3y
+from .fin_statements import get_gross_income, get_gross_income_3y
+from .fin_statements import get_deprec_and_amort
+from .fin_statements import get_op_income, get_op_income_3y
+from .fin_statements import get_ebit, get_ebit_3y
+from .fin_statements import get_net_income, get_net_income_3y
 
-# TODO: relative importing with dot notation & parenthesized importing in Dana
+# TODO: parenthesized importing in Dana
 # from .adj_income import (
 #     calc_ebitda, calc_ebitda_3y,
 # )
-from adj_income import calc_ebitda, calc_ebitda_3y
+from .adj_income import calc_ebitda, calc_ebitda_3y
 
-# TODO: relative importing with dot notation in Dana
-from fin_statements.util import CompanyAndPeriodAndCurrency
+from .utils import CompanyAndPeriodAndCurrency
 
 
 __all__ = [

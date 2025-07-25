@@ -1,2 +1,2 @@
 test:
-	@ dana test_runner.na
+	@ uv run dana test_runner.na

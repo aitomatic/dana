@@ -1,8 +1,7 @@
 """Financial Calculations."""
 
 
-# TODO: relative importing in Dana
-from fin_statements.util.types import CurrAndPrevNums
+from .types import CurrAndPrevNums
 
 
 __all__ = [
