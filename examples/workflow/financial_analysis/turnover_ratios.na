@@ -1,8 +1,8 @@
 """Turnover Ratios."""
 
 
-# TODO: relative importing & parenthesized importing in Dana
-# from fin_statements import (
+# TODO: relative importing with dot notation & parenthesized importing in Dana
+# from .fin_statements import (
 #     get_total_asset_2y,
 #     get_fixed_asset_2y,
 #     get_inventory_2y,
@@ -13,7 +13,7 @@
 from fin_statements import get_total_asset_2y, get_fixed_asset_2y, get_inventory_2y
 from fin_statements import get_rev, get_cogs
 
-# TODO: relative importing in Dana
+# TODO: relative importing with dot notation in Dana
 from fin_statements.util import over_avg_denom, CompanyAndPeriodAndCurrency
 
 

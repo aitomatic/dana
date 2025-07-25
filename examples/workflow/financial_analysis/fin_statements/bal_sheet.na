@@ -24,6 +24,7 @@ __all__ = [
 
     'get_lt_debt', 'get_lt_debt_2y', 'get_lt_debt_3y',
     'get_st_debt', 'get_st_debt_2y', 'get_st_debt_3y',
+
     'get_equity', 'get_equity_2y', 'get_equity_3y',
 ]
 
