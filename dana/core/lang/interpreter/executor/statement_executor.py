@@ -134,64 +134,6 @@ class StatementExecutor(BaseExecutor):
         """
         return self.statement_utils.execute_assert_statement(node, context)
 
-    def _resolve_relative_import(self, module_name: str, context: SandboxContext) -> str:
-        """Resolve relative import to absolute module name.
-
-        Args:
-            module_name: Module name (may start with dots for relative imports)
-            context: The execution context
-
-        Returns:
-            Absolute module name
-
-        Raises:
-            ImportError: If relative import cannot be resolved
-        """
-        if not module_name.startswith("."):
-            # Not a relative import
-            return module_name
-
-        # Get the current module's package name
-        current_module_name = getattr(context, "_current_module", None)
-        if not current_module_name:
-            raise ImportError("Attempted relative import with no current module")
-
-        # Count leading dots to determine the level
-        level = 0
-        for char in module_name:
-            if char == ".":
-                level += 1
-            else:
-                break
-
-        # Get the remaining module path after dots
-        remaining_path = module_name[level:]
-
-        # Split current module into package components
-        if "." in current_module_name:
-            current_package = current_module_name.rsplit(".", 1)[0]
-            package_parts = current_package.split(".")
-        else:
-            # Current module is a top-level module, can't do relative imports
-            raise ImportError(f"Attempted relative import from top-level module: {current_module_name}")
-
-        # Go up the package hierarchy based on the level
-        if level > len(package_parts):
-            raise ImportError(f"Attempted relative import beyond top-level package: {module_name}")
-
-        # Calculate target package
-        if level == 1:
-            # from .module - same package
-            target_package = ".".join(package_parts)
-        else:
-            # from ..module or ...module - go up levels
-            target_package = ".".join(package_parts[: -level + 1])
-
-        # Build final absolute module name
-        if remaining_path:
-            return f"{target_package}.{remaining_path}" if target_package else remaining_path
-        else:
-            return target_package
 
     def _execute_python_import(self, module_name: str, context_name: str, context: SandboxContext) -> None:
         """Execute import of a Python module (.py extension required).

@@ -498,6 +498,7 @@ class ImportHandler(Loggable):
 
         # Get the current package name from context
         current_package = getattr(context, "_current_package", None)
+        # print(f"DEBUG: Resolving relative import '{module_name}' with current_package='{current_package}'")
         if not current_package:
             raise SandboxError(f"Relative import '{module_name}' attempted without package context")
 
@@ -511,23 +512,39 @@ class ImportHandler(Loggable):
 
         # Get remaining path after dots
         remaining_path = module_name[leading_dots:]
+        # print(f"DEBUG: leading_dots={leading_dots}, remaining_path='{remaining_path}'")
 
         # Split current package into parts
         package_parts = current_package.split(".")
 
         # Calculate target package
-        if leading_dots > len(package_parts):
-            raise SandboxError(f"Relative import '{module_name}' goes beyond top-level package")
-
-        # Go up the hierarchy
-        target_package_parts = package_parts[:-leading_dots] if leading_dots > 0 else package_parts
+        # For relative imports:
+        #   .module = same package (0 levels up)
+        #   ..module = parent package (1 level up)  
+        #   ...module = grandparent package (2 levels up)
+        # So we need to go up (leading_dots - 1) levels
+        if leading_dots > 1:
+            # Go up (leading_dots - 1) levels
+            levels_up = leading_dots - 1
+            if levels_up >= len(package_parts):
+                raise SandboxError(f"Relative import '{module_name}' goes beyond top-level package")
+            target_package_parts = package_parts[:-levels_up]
+        elif leading_dots == 1:
+            # Same package (0 levels up)
+            target_package_parts = package_parts
+        else:
+            # This shouldn't happen since we already checked for leading dots
+            target_package_parts = package_parts
+            
         target_package = ".".join(target_package_parts) if target_package_parts else ""
+        # print(f"DEBUG: target_package='{target_package}'")
 
         # Build final absolute module name
         if remaining_path:
             result = f"{target_package}.{remaining_path}" if target_package else remaining_path
         else:
             result = target_package
+        # print(f"DEBUG: Resolved '{module_name}' to '{result}'")
 
         # Cache the result
         if not hasattr(self, "_relative_cache"):
