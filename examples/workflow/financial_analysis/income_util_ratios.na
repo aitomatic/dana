@@ -51,7 +51,7 @@ def _calc_int_cov_ratio_fn(ebit, int_exp):
 #     (lambda ebit, int_exp: (ebit / int_exp) if ebit > 0 else 0)
 # )
 calc_int_cov_ratio = (
-    [get_ebit, get_int_exp] | _calc_int_cov_ratio_fn
+    get_ebit | get_int_exp | _calc_int_cov_ratio_fn
 )
 
 
@@ -71,7 +71,7 @@ def _calc_eff_tax_rate_fn(tax_exp, ebt):
 #     [get_tax_exp, get_ebt] | (lambda tax_exp, ebt: tax_exp / ebt)
 # )
 calc_eff_tax_rate = (
-    [get_tax_exp, get_ebt] | _calc_eff_tax_rate_fn
+    get_tax_exp | get_ebt | _calc_eff_tax_rate_fn
 )
 
 
@@ -91,7 +91,7 @@ def _calc_div_payout_ratio_fn(dividend, net_income):
 #     [get_div, get_net_income] | (lambda dividend, net_income: dividend / net_income)
 # )
 calc_div_payout_ratio = (
-    [get_div, get_net_income] | _calc_div_payout_ratio_fn
+    get_div | get_net_income | _calc_div_payout_ratio_fn
 )
 
 
@@ -111,5 +111,5 @@ def _calc_retention_ratio_fn(div_payout_ratio):
 #     calc_div_payout_ratio | (lambda div_payout_ratio: 1 - div_payout_ratio)
 # )
 calc_retention_ratio = (
-    calc_div_payout_ratio | _calc_retention_ratio_fn
+    get_net_income | get_div | _calc_retention_ratio_fn
 )

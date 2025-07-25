@@ -41,7 +41,7 @@ def _calc_total_asset_turnover_ratio_fn(rev, total_asset_nums):
 #     (lambda rev, total_asset_nums: over_avg_denom(rev, total_asset_nums))
 # )
 calc_total_asset_turnover_ratio = (
-    [get_rev, get_total_asset_2y] | _calc_total_asset_turnover_ratio_fn
+    get_rev | get_total_asset_2y | _calc_total_asset_turnover_ratio_fn
 )
 
 
@@ -63,7 +63,7 @@ def _calc_fixed_asset_turnover_ratio_fn(rev, fixed_asset_nums):
 #     (lambda rev, fixed_asset_nums: over_avg_denom(rev, fixed_asset_nums))
 # )
 calc_fixed_asset_turnover_ratio = (
-    [get_rev, get_fixed_asset_2y] | _calc_fixed_asset_turnover_ratio_fn
+    get_rev | get_fixed_asset_2y | _calc_fixed_asset_turnover_ratio_fn
 )
 
 
@@ -86,5 +86,5 @@ def _calc_inventory_turnover_ratio_fn(cogs, inventory_nums):
 #     (lambda cogs, inventory_nums: over_avg_denom(cogs, inventory_nums))
 # )
 calc_inventory_turnover_ratio = (
-    [get_cogs, get_inventory_2y] | _calc_inventory_turnover_ratio_fn
+    get_cogs | get_inventory_2y | _calc_inventory_turnover_ratio_fn
 )

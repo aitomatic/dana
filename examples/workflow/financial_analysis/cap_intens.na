@@ -46,7 +46,7 @@ def _calc_fixed_asset_over_total_asset_fn(fixed_asset, total_asset):
 #     (lambda fixed_asset, total_asset: fixed_asset / total_asset)
 # )
 calc_fixed_asset_over_total_asset = (
-    [get_fixed_asset, get_total_asset] | _calc_fixed_asset_over_total_asset_fn
+    get_fixed_asset | get_total_asset | _calc_fixed_asset_over_total_asset_fn
 )
 
 
@@ -62,7 +62,7 @@ def _calc_total_asset_over_rev_fn(total_asset, rev):
 #     (lambda total_asset, rev: total_asset / rev)
 # )
 calc_total_asset_over_rev = (
-    [get_total_asset, get_rev] | _calc_total_asset_over_rev_fn
+    get_total_asset | get_rev | _calc_total_asset_over_rev_fn
 )
 
 
@@ -80,7 +80,7 @@ def _calc_capex_over_rev_fn(capex, rev):
 #     (lambda capex, rev: capex / rev)
 # )
 calc_capex_over_rev = (
-    [get_capex, get_rev] | _calc_capex_over_rev_fn
+    get_capex | get_rev | _calc_capex_over_rev_fn
 )
 
 
@@ -99,7 +99,7 @@ def _calc_capex_over_rev_3y_avg_fn(capex_nums, rev_nums):
 #     (lambda capex_nums, rev_nums: sum_over_sum(capex_nums, rev_nums))
 # )
 calc_capex_over_rev_3y_avg = (
-    [get_capex_3y, get_rev_3y] | _calc_capex_over_rev_3y_avg_fn
+    get_capex_3y | get_rev_3y | _calc_capex_over_rev_3y_avg_fn
 )
 
 

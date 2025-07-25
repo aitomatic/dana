@@ -36,7 +36,7 @@ def _calc_roa_ratio_fn(net_income, total_asset_nums):
 #     (lambda net_income, total_asset_nums: over_avg_denom(net_income, total_asset_nums))
 # )
 calc_roa_ratio = (
-    [get_net_income, get_total_asset_2y] | _calc_roa_ratio_fn
+    get_net_income | get_total_asset_2y | _calc_roa_ratio_fn
 )
 
 
@@ -58,5 +58,5 @@ def _calc_roe_ratio_fn(net_income, equity_nums):
 #     (lambda net_income, equity_nums: over_avg_denom(net_income, equity_nums))
 # )
 calc_roe_ratio = (
-    [get_net_income, get_equity_2y] | _calc_roe_ratio_fn
+    get_net_income | get_equity_2y | _calc_roe_ratio_fn
 )

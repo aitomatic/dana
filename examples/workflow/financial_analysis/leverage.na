@@ -32,7 +32,7 @@ Calculate `Total Debt` of {COMPANY} in {CURRENCY} according to formula:
 )
 """
 calc_total_debt = (
-    [get_lt_debt, get_st_debt] | sum
+    get_lt_debt | get_st_debt | sum
 )
 
 
@@ -53,7 +53,7 @@ def _calc_total_debt_2y_sum(lt_debt_nums, st_debt_nums):
 #                      prev=lt_debt_nums.prev + st_debt_nums.prev))
 # )
 calc_total_debt_2y = (
-    [get_lt_debt_2y, get_st_debt_2y] | _calc_total_debt_2y_sum
+    get_lt_debt_2y | get_st_debt_2y | _calc_total_debt_2y_sum
 )
 
 

@@ -29,7 +29,7 @@ of {COMPANY} for {PERIOD} fiscal period in {CURRENCY} according to formula:
 )
 """
 calc_ebitda = (
-    [get_op_income, get_deprec_and_amort] | sum
+    get_op_income | get_deprec_and_amort | sum
 )
 
 """
@@ -56,7 +56,7 @@ def _calc_ebitda_2y_sum(op_income_nums, deprec_and_amort_nums):
 #     )
 # )
 calc_ebitda_2y = (
-    [get_op_income_2y, get_deprec_and_amort_2y] | _calc_ebitda_2y_sum
+    get_op_income_2y | get_deprec_and_amort_2y | _calc_ebitda_2y_sum
 )
 
 
@@ -86,5 +86,5 @@ def _calc_ebitda_3y_sum(op_income_nums, deprec_and_amort_nums):
 #     )
 # )
 calc_ebitda_3y = (
-    [get_op_income_3y, get_deprec_and_amort_3y] | _calc_ebitda_3y_sum
+    get_op_income_3y | get_deprec_and_amort_3y | _calc_ebitda_3y_sum
 )
