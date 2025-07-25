@@ -13,9 +13,15 @@ __all__ = [
 
 def over_avg_denom(numerator: float, denominators: CurrAndPrevNums) -> float:
     """Divide sum of numerator by average of denominator."""
-    return numerator / ((denominators.curr + denominators.prev) / 2)
+    denominator_sum = denominators.curr + denominators.prev
+    if denominator_sum == 0:
+        raise ValueError("Cannot divide by zero: denominator sum is zero")
+    return numerator / (denominator_sum / 2)
 
 
 def sum_over_sum(numerators: tuple[float], denominators: tuple[float]) -> float:
     """Sum numerator and denominator and divide."""
-    return sum(numerators) / sum(denominators)
+    denominator_sum = sum(denominators)
+    if denominator_sum == 0:
+        raise ValueError("Cannot divide by zero: denominator sum is zero")
+    return sum(numerators) / denominator_sum
