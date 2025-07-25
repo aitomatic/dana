@@ -30,6 +30,8 @@ from dana.api.server.server import ws_manager
 import os
 import asyncio
 from datetime import datetime, timezone
+import json
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -423,6 +425,17 @@ async def _process_based_on_intent(
             chat_history,
             db,
         )
+    
+    elif intent == "instruct":
+        return await _process_instruct_intent(
+            entities, 
+            user_message, 
+            agent,
+            domain_service,
+            llm_tree_manager,
+            current_domain_tree,
+            chat_history,
+            db)
 
     elif intent == "refresh_domain_knowledge":
         return await _process_refresh_knowledge_intent(
@@ -549,9 +562,9 @@ async def _process_add_information_intent(
                 return {
                     "processor": "add_information",
                     "success": True,
-                    "agent_response": f"Perfect! I've intelligently organized my knowledge to include {topic}. {update_response.changes_summary}. What would you like to know about this topic?",
+                    "agent_response": f"Perfect! I've intelligently organized my knowledge to include {topics}. {update_response.changes_summary}. What would you like to know about this topic?",
                     "updates_applied": [
-                        update_response.changes_summary or f"Added {topic}"
+                        update_response.changes_summary or f"Added {topics}"
                     ],
                     "updated_domain_tree": update_response.updated_tree.model_dump(),
                 }
@@ -707,6 +720,181 @@ async def _process_test_agent_intent(
         "agent_response": "Agent testing functionality is not yet implemented. I can help you with adding knowledge or answering questions instead.",
         "updates_applied": [],
     }
+
+
+async def _process_instruct_intent(
+    entities: dict[str, Any], 
+    user_message: str, 
+    agent: Agent,
+    domain_service: DomainKnowledgeService,
+    llm_tree_manager: LLMTreeManager,
+    current_domain_tree: DomainKnowledgeTree | None,
+    chat_history: list[MessageData],
+    db: Session,
+) -> dict[str, Any]:
+    """Process instruct intent - focused on instructing the agent to do something."""
+    
+    # Extract instruction text and topics from entities
+    instruction_text = entities.get("instruction_text", "")
+    topics = entities.get("topics", [])
+    
+    print("🎯 Processing instruct intent:")
+    print(f"  - Instruction text: {instruction_text}")
+    print(f"  - Topics: {topics}")
+    print(f"  - Agent: {agent.name}")
+    
+    if not instruction_text:
+        return {
+            "processor": "instruct",
+            "success": False,
+            "agent_response": "I couldn't identify what instruction you want me to follow. Could you be more specific?",
+            "updates_applied": [],
+        }
+    
+    try:
+        # Step 1: Call _process_add_information_intent to create or update existing paths
+        # This ensures the topic structure exists in the domain tree
+        add_info_result = await _process_add_information_intent(
+            entities=entities,
+            agent=agent,
+            domain_service=domain_service,
+            llm_tree_manager=llm_tree_manager,
+            current_domain_tree=current_domain_tree,
+            chat_history=chat_history,
+            db=db,
+        )
+        
+        print(f"📝 Add information result: success={add_info_result.get('success')}")
+        
+        if not add_info_result.get("success"):
+            return {
+                "processor": "instruct",
+                "success": False,
+                "agent_response": f"I couldn't set up the knowledge structure for your instruction: {add_info_result.get('agent_response', 'Unknown error')}",
+                "updates_applied": [],
+            }
+        
+        # Step 2: Update the instruction text as answers_by_topics in JSON knowledge files
+        instruction_update_success = await _update_instruction_as_knowledge(
+            agent=agent,
+            topics=topics,
+            instruction_text=instruction_text,
+            domain_service=domain_service,
+            db=db
+        )
+        
+        if instruction_update_success:
+            return {
+                "processor": "instruct",
+                "success": True,
+                "agent_response": f"Perfect! I've processed your instruction and updated my knowledge accordingly. {instruction_text[:100]}...",
+                "updates_applied": [
+                    "Updated domain knowledge tree",
+                    "Added instruction to knowledge base"
+                ],
+                "updated_domain_tree": add_info_result.get("updated_domain_tree"),
+            }
+        else:
+            return {
+                "processor": "instruct",
+                "success": False,
+                "agent_response": "I set up the knowledge structure but couldn't save your instruction to my knowledge base. Please try again.",
+                "updates_applied": ["Updated domain knowledge tree"],
+                "updated_domain_tree": add_info_result.get("updated_domain_tree"),
+            }
+            
+    except Exception as e:
+        print(f"❌ Exception in instruct processing: {e}")
+        return {
+            "processor": "instruct",
+            "success": False,
+            "agent_response": f"Sorry, I ran into an error while processing your instruction: {e}",
+            "updates_applied": [],
+        }
+
+
+async def _update_instruction_as_knowledge(
+    agent: Agent,
+    topics: list[str],
+    instruction_text: str,
+    domain_service: DomainKnowledgeService,
+    db: Session
+) -> bool:
+    """Update the instruction text as answers_by_topics in JSON knowledge files."""
+    
+    try:
+        print(f"📚 Updating instruction as knowledge for topics: {topics}")
+        
+        # Get agent's folder path
+        folder_path = agent.config.get("folder_path") if agent.config else None
+        if not folder_path:
+            folder_path = os.path.join("agents", f"agent_{agent.id}")
+        
+        knows_folder = os.path.join(folder_path, "knows")
+        if not os.path.exists(knows_folder):
+            print(f"❌ Knows folder does not exist: {knows_folder}")
+            return False
+        
+        # Get the latest domain tree to find the correct file paths
+        # Use the existing domain_service parameter instead of reinitializing
+        current_tree = await domain_service.get_agent_domain_knowledge(agent.id, db)
+        
+        if not current_tree:
+            print("❌ No domain tree found")
+            return False
+
+        # This path must exist in the tree        
+        matching_leaves = [([topic for topic in topics if topic != "root"], None)]
+        for path, leaf_node in matching_leaves:
+            area_name = " - ".join(path)
+            safe_area = (
+                area_name.replace("/", "_")
+                .replace(" ", "_")
+                .replace("-", "_")
+            )
+            file_name = f"{safe_area}.json"
+            file_path = os.path.join(knows_folder, file_name)
+            
+            print(f"📝 Updating file: {file_path}")
+            
+            # Read existing knowledge file
+            if os.path.exists(file_path):
+                try:
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        knowledge_data = json.load(f)
+                except Exception as e:
+                    print(f"❌ Error reading file {file_path}: {e}")
+                    continue
+            else:
+                # Create new knowledge file structure
+                knowledge_data = {
+                    "knowledge_area_description": area_name,
+                    "questions": [],
+                    "questions_by_topics": {},
+                    "final_confidence": 90,
+                    "confidence_by_topics": {},
+                    "iterations_used": 0,
+                    "total_questions": 0,
+                    "answers_by_topics": {}
+                }
+            
+            # Add the instruction text as an answer
+            knowledge_data.setdefault("user_instructions", [])
+            knowledge_data["user_instructions"].append(instruction_text)
+            # Save the updated knowledge file
+            try:
+                with open(file_path, "w", encoding="utf-8") as f:
+                    json.dump(knowledge_data, f, indent=2, ensure_ascii=False)
+                print(f"✅ Successfully updated: {file_path}")
+            except Exception as e:
+                print(f"❌ Error writing file {file_path}: {e}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Exception in _update_instruction_as_knowledge: {e}")
+        import traceback
+        print(f"📚 Full traceback: {traceback.format_exc()}")
+        return False
 
 
 async def _process_general_query_intent(
