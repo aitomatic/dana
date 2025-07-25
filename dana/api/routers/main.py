@@ -62,7 +62,7 @@ def get_root_info():
 
 @router.get("/")
 def serve_react_index():
-    static_dir = os.path.join(os.path.dirname(__file__), "../static")
+    static_dir = os.path.join(os.path.dirname(__file__), "../server/static")
     index_path = os.path.abspath(os.path.join(static_dir, "index.html"))
     if os.path.exists(index_path):
         return FileResponse(index_path)
