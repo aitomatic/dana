@@ -185,7 +185,9 @@ def test_all():
 
 # run a few representative workflows
 # ==================================
-# simple statements reading
-print('TOTAL ASSET:', get_total_asset(TEST_ARGS))
-print('TOTAL REVENUE:', get_rev(TEST_ARGS))
-print('OPERATING CASH FLOW:', get_op_cf(TEST_ARGS))
+with use('rag', sources=[TEST_DOC_PATH], force_reload=False) as test_docs:
+
+    # simple statements reading
+    print('TOTAL ASSET:', get_total_asset(TEST_ARGS))
+    print('TOTAL REVENUE:', get_rev(TEST_ARGS))
+    print('OPERATING CASH FLOW:', get_op_cf(TEST_ARGS))

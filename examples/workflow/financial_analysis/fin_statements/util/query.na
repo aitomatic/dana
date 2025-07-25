@@ -82,4 +82,8 @@ of {args.company.upper()}
 {time_period_str}?
 """
 
+    print()
+    print(query)
+    print()
+
     return reason(query)
