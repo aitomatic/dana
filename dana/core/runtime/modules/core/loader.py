@@ -407,8 +407,23 @@ class ModuleLoader(MetaPathFinder, Loader):
             context = SandboxContext()
             context._interpreter = interpreter  # Set the interpreter in the context
 
-            # Set current module for relative import resolution
+            # Set current module and package for relative import resolution
             context._current_module = module.__name__
+            # Set current package for relative import resolution
+            # Special case: for __init__.na files, the current package is the module itself
+            # For regular modules, the current package is the parent package
+            origin_path = Path(module.__file__) if module.__file__ else None
+            if origin_path and origin_path.name == "__init__.na":
+                # __init__.na file - current package is the module itself
+                context._current_package = module.__name__
+            elif "." in module.__name__:
+                # Regular module - current package is parent package
+                context._current_package = module.__name__.rsplit(".", 1)[0]
+            else:
+                # Top-level module has no package
+                context._current_package = ""
+            # Debug logging
+            # print(f"DEBUG: Setting context for module {module.__name__}, package = {context._current_package}")
 
             # Initialize module dict with context
             for key, value in module.__dict__.items():
