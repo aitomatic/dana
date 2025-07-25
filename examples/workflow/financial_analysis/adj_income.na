@@ -44,12 +44,14 @@ for past 2 annual fiscal periods in {CURRENCY} according to formula:
 # TODO: lambdas in Dana
 def _calc_ebitda_2y_sum(op_income_nums, deprec_and_amort_nums):
     return CurrAndPrevNums(curr=op_income_nums.curr + deprec_and_amort_nums.curr,
-                           prev=op_income_nums.prev + deprec_and_amort_nums.prev)
+                           prev=op_income_nums.prev + deprec_and_amort_nums.prev,
+                           unit_of_measurement=op_income_nums.unit_of_measurement)
 # calc_ebitda_2y = (
 #     [get_op_income_2y, get_deprec_and_amort_2y] | (
 #         lambda op_income_nums, deprec_and_amort_nums: CurrAndPrevNums(
 #             curr=op_income_nums.curr + deprec_and_amort_nums.curr,
-#             prev=op_income_nums.prev + deprec_and_amort_nums.prev
+#             prev=op_income_nums.prev + deprec_and_amort_nums.prev,
+#             unit_of_measurement=op_income_nums.unit_of_measurement
 #         )
 #     )
 # )
