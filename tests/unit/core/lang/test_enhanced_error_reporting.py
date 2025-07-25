@@ -47,7 +47,8 @@ y = x.missing_attr  # Error on line 3
                 # Check error has location attributes
                 assert error.line == 3
                 assert error.column is not None
-                assert error.filename == f.name
+                # Normalize paths to handle macOS /var symlink issue
+                assert Path(error.filename).resolve() == Path(f.name).resolve()
                 
             finally:
                 Path(f.name).unlink()
