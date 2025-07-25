@@ -1,0 +1,19 @@
+from knowledge import knowledge
+from knowledge import doc
+from common import QUERY_GENERATION_PROMPT
+from common import QUERY_DECISION_PROMPT
+from common import ANSWER_PROMPT
+from common import RetrievalPackage
+
+def search_document(package: RetrievalPackage) -> RetrievalPackage:
+    query = package.refined_query
+    package.retrieval_result = str(doc.query(query))
+    return package
+
+def refine_query(package: RetrievalPackage) -> RetrievalPackage:
+    package.refined_query = reason(QUERY_GENERATION_PROMPT.format(user_input=package.query, context=package.context, filenames=doc.filenames), temperature=0.1)
+    return package
+
+def get_answer(package: RetrievalPackage) -> str:
+    prompt = ANSWER_PROMPT.format(user_input=package.query, retrieved_docs=package.retrieval_result, context=package.context, original_problem=package.original_problem)
+    return reason(prompt, resources=[knowledge], temperature=0.1)

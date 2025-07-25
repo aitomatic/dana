@@ -5,7 +5,6 @@ import { StrictMode } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from '../components/layout';
 import AgentsPage from '../pages/Agents';
-import { CreateAgentPage } from '../pages/Agents/create';
 import AgentDetailPage from '../pages/Agents/detail';
 import LibraryPage from '../pages/Library';
 import AgentChat from '../pages/Agents/chat';
@@ -54,14 +53,6 @@ const TestApp = () => (
           element={
             <Layout>
               <AgentsPage />
-            </Layout>
-          }
-        />
-        <Route
-          path="/agents/create"
-          element={
-            <Layout hideLayout={true}>
-              <CreateAgentPage />
             </Layout>
           }
         />
@@ -136,11 +127,6 @@ describe('Routes', () => {
     expect(screen.getAllByText('Domain-Expert Agents').length).toBeGreaterThan(0);
   });
 
-  it('should render create agent page at /agents/create', () => {
-    window.history.pushState({}, '', '/agents/create');
-    render(<TestApp />);
-    expect(screen.getByText('Create Agent')).toBeInTheDocument();
-  });
 
   it('should render agent detail page at /agents/:agent_id', () => {
     agentStoreSpy = vi.spyOn(agentStore, 'useAgentStore').mockReturnValue({

@@ -138,7 +138,7 @@ class KnowledgeStatusManager:
         return [
             entry
             for entry in data["topics"]
-            if entry.get("status") in ("pending", "in_progress", "failed", None)
+            if entry.get("status") in ("pending", "failed", None)
         ]
 
     def recover_stuck_in_progress(self, max_age_seconds=3600):

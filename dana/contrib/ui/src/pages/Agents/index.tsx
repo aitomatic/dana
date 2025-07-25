@@ -6,76 +6,9 @@ import { apiService } from '@/lib/api';
 import { MyAgentTab } from './MyAgentTab';
 import { ExploreTab } from './ExploreTab';
 
-// Mock agent data for demo UI
-const MOCK_AGENTS = [
-  {
-    id: 1,
-    name: 'Edison',
-    description: 'Chip Design Consultant',
-    domain: 'Finance',
-    details: 'Advanced semiconductor design validation, process optimization, and failure analysis expertise',
-    accuracy: 98,
-    rating: 4.9,
-    avatarColor: 'from-purple-400 to-blue-400',
-  },
-  {
-    id: 2,
-    name: 'Sophia',
-    description: 'Personal Finance Advisor',
-    domain: 'Finance',
-    details: 'Comprehensive budgeting, savings optimization, and investment guidance for individual clients',
-    accuracy: 97.2,
-    rating: 4.8,
-    avatarColor: 'from-purple-400 to-green-400',
-  },
-  {
-    id: 3,
-    name: 'Marcus',
-    description: 'Investment Analysis Specialist',
-    domain: 'Semiconductor',
-    details: 'Expert in financial modeling, risk assessment, and market analysis with real-time data integration',
-    accuracy: 99.2,
-    rating: 5.0,
-    avatarColor: 'from-green-400 to-blue-400',
-  },
-  {
-    id: 4,
-    name: 'Nova',
-    description: 'Supply Chain Optimizer',
-    domain: 'Semiconductor',
-    details: 'Electronics component sourcing, inventory management, and production scheduling specialist',
-    accuracy: 98,
-    rating: 4.8,
-    avatarColor: 'from-yellow-400 to-purple-400',
-  },
-  {
-    id: 5,
-    name: 'Darwin',
-    description: 'Research Assistant',
-    domain: 'Research',
-    details: 'Paper analysis, citation management, and research methodology guidance',
-    accuracy: 98,
-    rating: 4.9,
-    avatarColor: 'from-purple-400 to-pink-400',
-  },
-  {
-    id: 6,
-    name: 'Sophia',
-    description: 'Personal Finance Advisor',
-    domain: 'Finance',
-    details: 'Comprehensive budgeting, savings optimization, and investment guidance for individual clients',
-    accuracy: 98,
-    rating: 4.9,
-    avatarColor: 'from-blue-400 to-green-400',
-  },
-];
 
 const DOMAINS = ['All domains', 'Finance', 'Semiconductor', 'Sales', 'Engineering', 'Research'];
 
-// Helper type guard for mock agents
-function isMockAgent(agent: any): agent is typeof MOCK_AGENTS[number] {
-  return 'avatarColor' in agent && 'domain' in agent && 'details' in agent;
-}
 
 export default function AgentsPage() {
   const navigate = useNavigate();
@@ -85,23 +18,16 @@ export default function AgentsPage() {
   const [selectedDomain, setSelectedDomain] = useState('All domains');
   const [creating, setCreating] = useState(false);
   const [prebuiltAgents, setPrebuiltAgents] = useState<any[]>([]);
-  const [loadingPrebuilt, setLoadingPrebuilt] = useState(false);
-
-  // Use prebuilt agents for explore tab
-  const exploreAgents = prebuiltAgents;
 
   // Function to fetch prebuilt agents using axios API service
   const fetchPrebuiltAgents = async () => {
-    setLoadingPrebuilt(true);
     try {
       const data = await apiService.getPrebuiltAgents();
       setPrebuiltAgents(data);
     } catch (error) {
       console.error('Error fetching prebuilt agents:', error);
-      // Fallback to mock data if API fails
-      setPrebuiltAgents(MOCK_AGENTS);
-    } finally {
-      setLoadingPrebuilt(false);
+      // Set empty array if API fails
+      setPrebuiltAgents([]);
     }
   };
 
@@ -117,16 +43,16 @@ export default function AgentsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Filter by domain and search
-  const filteredAgents = exploreAgents.filter((agent: any) => {
+  console.log('prebuiltAgents', prebuiltAgents);
+
+  // Filter prebuilt agents by domain and search
+  const filteredAgents = prebuiltAgents.filter((agent: any) => {
     const domain = agent.config?.domain || 'Other';
     const matchesDomain = selectedDomain === 'All domains' || domain === selectedDomain;
-    const details = agent.description || '';
-    const searchValue = activeTab === 'Explore' ? exploreSearch : myAgentSearch;
     const matchesSearch =
-      agent.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-      (agent.description || '').toLowerCase().includes(searchValue.toLowerCase()) ||
-      (details && details.toLowerCase().includes(searchValue.toLowerCase()));
+      agent.name.toLowerCase().includes(exploreSearch.toLowerCase()) ||
+      (agent.description || '').toLowerCase().includes(exploreSearch.toLowerCase()) ||
+      (agent.details || '').toLowerCase().includes(exploreSearch.toLowerCase());
     return matchesDomain && matchesSearch;
   });
 
@@ -197,12 +123,8 @@ export default function AgentsPage() {
           setSearch={setExploreSearch}
           selectedDomain={selectedDomain}
           setSelectedDomain={setSelectedDomain}
-          handleCreateAgent={handleCreateAgent}
-          creating={creating}
           navigate={navigate}
-          isMockAgent={isMockAgent}
           DOMAINS={DOMAINS}
-          loadingPrebuilt={loadingPrebuilt}
         />
       )}
     </div>

@@ -204,26 +204,7 @@ export interface CodeFixResponse {
   error?: string;
 }
 
-// Phase 1 specific schemas
-export interface AgentDescriptionRequest {
-  messages: MessageData[];
-  agent_id?: number;
-  agent_data?: any; // Current agent object for modification
-}
 
-export interface AgentDescriptionResponse {
-  success: boolean;
-  agent_id: number;
-  agent_name?: string;
-  agent_description?: string;
-  capabilities?: AgentCapabilities;
-  follow_up_message?: string;
-  suggested_questions?: string[];
-  ready_for_code_generation: boolean;
-  error?: string;
-  folder_path?: string;
-  agent_folder?: string;
-}
 
 // Phase 2 specific schemas
 export interface AgentCodeGenerationRequest {
@@ -231,20 +212,7 @@ export interface AgentCodeGenerationRequest {
   multi_file?: boolean;
 }
 
-// Agent Deployment Types
-export interface AgentDeployRequest {
-  name: string;
-  description: string;
-  config: Record<string, any>;
-  dana_code?: string;
-  multi_file_project?: MultiFileProject;
-}
 
-export interface AgentDeployResponse {
-  success: boolean;
-  agent?: AgentRead;
-  error?: string;
-}
 
 // Agent Test API Types
 export interface AgentTestRequest {
@@ -462,11 +430,6 @@ class ApiService {
     return response.data;
   }
 
-  // Agent Deployment API Methods
-  async deployAgent(request: AgentDeployRequest): Promise<AgentDeployResponse> {
-    const response = await this.client.post<AgentDeployResponse>('/agents/deploy', request);
-    return response.data;
-  }
 
   // File Operations API Methods
   async openFileLocation(filePath: string): Promise<{ success: boolean; message: string }> {
@@ -518,13 +481,6 @@ class ApiService {
     return response.data;
   }
 
-  // Phase 1: Agent description refinement
-  async describeAgent(request: AgentDescriptionRequest): Promise<AgentDescriptionResponse> {
-    const response = await this.client.post<AgentDescriptionResponse>('/agents/describe', request, {
-      timeout: 300000,
-    });
-    return response.data;
-  }
 
   // Phase 2: Code generation from existing description
   async generateAgentCode(
@@ -580,20 +536,6 @@ class ApiService {
     return response.data;
   }
 
-  // Update agent description during Phase 1
-  async updateAgentDescription(
-    agentId: number,
-    request: AgentDescriptionRequest,
-  ): Promise<AgentDescriptionResponse> {
-    const response = await this.client.post<AgentDescriptionResponse>(
-      `/agents/${agentId}/update-description`,
-      request,
-      {
-        timeout: 300000,
-      },
-    );
-    return response.data;
-  }
 
   // Chat API Methods
   async chatWithAgent(request: ChatRequest): Promise<ChatResponse> {
@@ -785,6 +727,12 @@ class ApiService {
   // Get prebuilt agents for the Explore tab
   async getPrebuiltAgents(): Promise<any[]> {
     const response = await this.client.get('/agents/prebuilt');
+    return response.data;
+  }
+
+  // Clone agent from prebuilt agent
+  async cloneAgentFromPrebuilt(prebuiltKey: string): Promise<AgentRead> {
+    const response = await this.client.post<AgentRead>('/agents/from-prebuilt', { prebuilt_key: prebuiltKey });
     return response.data;
   }
 }

@@ -49,6 +49,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
           setMessages(history);
         } else {
           const displayName = agentName && agentName !== 'Untitled Agent' ? agentName : '';
+          clearMessages();
           addMessage({
             sender: 'agent',
             text: displayName
@@ -165,13 +166,12 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
           return (
             <div
               key={idx}
-              className={`rounded-lg px-3 py-2 max-w-[85%] text-sm ${
-                msg.sender === 'user'
+              className={`rounded-lg px-3 py-2 max-w-[85%] text-sm ${msg.sender === 'user'
                   ? 'bg-blue-100 self-end text-right'
                   : isThinking
                     ? 'bg-amber-50 self-start text-left border border-amber-200'
                     : 'bg-gray-100 self-start text-left'
-              }`}
+                }`}
             >
               {isThinking ? (
                 <div className="flex items-center gap-2">

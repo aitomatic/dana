@@ -4,7 +4,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { Layout } from './components/layout';
 import AgentsPage from './pages/Agents';
-import { CreateAgentPage } from './pages/Agents/create';
 import AgentDetailPage from './pages/Agents/detail';
 import LibraryPage from './pages/Library';
 import './index.css';
@@ -29,14 +28,6 @@ createRoot(document.getElementById('root')!).render(
           element={
             <Layout>
               <AgentsPage />
-            </Layout>
-          }
-        />
-        <Route
-          path="/agents/create"
-          element={
-            <Layout hideLayout={true}>
-              <CreateAgentPage />
             </Layout>
           }
         />

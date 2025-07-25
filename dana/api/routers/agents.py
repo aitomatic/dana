@@ -7,8 +7,11 @@ import logging
 from typing import List
 import os
 import asyncio
-
 import json
+import base64
+import traceback
+from pathlib import Path
+
 from fastapi import (
     APIRouter,
     Depends,
@@ -18,44 +21,35 @@ from fastapi import (
     UploadFile,
     Query,
     BackgroundTasks,
+    Body,
 )
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm.attributes import flag_modified
 
-from dana.api.core.database import get_db
+from dana.api.core.database import get_db, engine
 from dana.api.core.schemas import (
     AgentCreate,
     AgentRead,
-    AgentGenerationRequest,
-    AgentGenerationResponse,
-    AgentDescriptionRequest,
-    AgentDescriptionResponse,
-    AgentDeployRequest,
-    AgentDeployResponse,
-    DanaSyntaxCheckRequest,
-    DanaSyntaxCheckResponse,
     CodeValidationRequest,
     CodeValidationResponse,
     CodeFixRequest,
     CodeFixResponse,
-    ProcessAgentDocumentsRequest,
-    ProcessAgentDocumentsResponse,
     DocumentRead,
 )
-from dana.api.services.agent_service import get_agent_service, AgentService
 from dana.api.services.agent_manager import get_agent_manager, AgentManager
 from dana.api.services.document_service import get_document_service, DocumentService
-from dana.api.core.models import AgentChatHistory
 from dana.api.services.domain_knowledge_service import (
     get_domain_knowledge_service,
     DomainKnowledgeService,
 )
-from dana.api.core.models import Agent
+from dana.api.core.models import Agent, AgentChatHistory
 from datetime import datetime, timezone
 from dana.api.services.knowledge_status_manager import (
     KnowledgeStatusManager,
     KnowledgeGenerationManager,
 )
 from dana.api.server.server import ws_manager
+import shutil
 
 logger = logging.getLogger(__name__)
 
@@ -71,8 +65,6 @@ async def _auto_generate_basic_agent_code(
 ) -> str | None:
     """Auto-generate basic Dana code for a newly created agent."""
     try:
-        from pathlib import Path
-
         logger.info(
             f"Auto-generating basic Dana code for agent {agent_id}: {agent_name}"
         )
@@ -93,12 +85,22 @@ async def _auto_generate_basic_agent_code(
         docs_folder.mkdir(exist_ok=True)
 
         # Generate basic Dana files
-        await _create_basic_dana_files(
-            agent_folder=agent_folder,
-            agent_name=agent_name,
-            agent_description=agent_description,
-            agent_config=agent_config,
-        )
+        await _create_basic_dana_files(agent_folder)
+
+        # Generate domain_knowledge.json based on agent config
+        try:
+            domain_knowledge_path = agent_folder / "domain_knowledge.json"
+            domain = agent_config.get("domain", "General")
+
+            # Create a basic domain knowledge structure for new agents
+            basic_domain_knowledge = {"root": {"topic": domain, "children": []}}
+
+            with open(domain_knowledge_path, "w", encoding="utf-8") as f:
+                json.dump(basic_domain_knowledge, f, indent=2, ensure_ascii=False)
+
+            logger.info(f"Created basic domain_knowledge.json for {domain}")
+        except Exception as e:
+            logger.error(f"Error creating domain_knowledge.json: {e}")
 
         logger.info(
             f"Successfully created agent folder and basic Dana code at: {agent_folder}"
@@ -112,15 +114,8 @@ async def _auto_generate_basic_agent_code(
 
 async def _create_basic_dana_files(
     agent_folder,  # Path object
-    agent_name: str,
-    agent_description: str,
-    agent_config: dict,
 ):
     """Create basic Dana files for the agent."""
-
-    # Get specialties and skills from config
-    specialties = agent_config.get("specialties", "general assistance")
-    skills = agent_config.get("skills", "problem solving")
 
     # TODO: Correct the content
     # Create main.na - the entry point
@@ -323,242 +318,6 @@ workflow = should_use_rag | refine_query | search_document | get_answer
         f.write(workflows_content)
 
 
-@router.post("/generate", response_model=AgentGenerationResponse)
-async def generate_agent(
-    request: AgentGenerationRequest, agent_service=Depends(get_agent_service)
-):
-    """
-    Generate Dana agent code from conversation messages.
-
-    Args:
-        request: Agent generation request with messages and options
-        agent_service: Agent service dependency
-
-    Returns:
-        AgentGenerationResponse with generated code and analysis
-    """
-    try:
-        logger.info(
-            f"Received agent generation request with {len(request.messages)} messages"
-        )
-
-        # Convert messages to dict format
-        messages = [
-            {"role": msg.role, "content": msg.content} for msg in request.messages
-        ]
-
-        # Generate agent code using service
-        (
-            dana_code,
-            error,
-            conversation_analysis,
-            multi_file_project,
-        ) = await agent_service.generate_agent_code(
-            messages=messages,
-            current_code=request.current_code or "",
-            multi_file=request.multi_file,
-        )
-
-        if error:
-            logger.error(f"Error in agent generation: {error}")
-            return AgentGenerationResponse(success=False, error=error)
-
-        # Analyze agent capabilities
-        capabilities = await agent_service.analyze_agent_capabilities(
-            dana_code=dana_code,
-            messages=messages,
-            multi_file_project=multi_file_project,
-        )
-
-        # Extract agent name and description from generated code
-        agent_name, agent_description = _extract_agent_info_from_code(dana_code)
-
-        return AgentGenerationResponse(
-            success=True,
-            dana_code=dana_code,
-            agent_name=agent_name,
-            agent_description=agent_description,
-            capabilities=capabilities,
-            multi_file_project=multi_file_project,
-            needs_more_info=conversation_analysis.get("needs_more_info", False),
-            follow_up_message=conversation_analysis.get("follow_up_message"),
-            suggested_questions=conversation_analysis.get("suggested_questions", []),
-        )
-
-    except Exception as e:
-        logger.error(f"Error in agent generation endpoint: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/describe", response_model=AgentDescriptionResponse)
-async def refine_agent_description(
-    request: AgentDescriptionRequest, db: Session = Depends(get_db)
-):
-    """
-    Phase 1: Refine agent description based on conversation.
-
-    This endpoint focuses on understanding user requirements and refining
-    the agent description without generating code.
-
-    Args:
-        request: Agent description refinement request
-        db: Database session
-
-    Returns:
-        AgentDescriptionResponse with refined description
-    """
-    try:
-        logger.info(
-            f"Received agent description request with {len(request.messages)} messages"
-        )
-
-        # Use AgentManager for consistent handling (same as old endpoint)
-        agent_manager = get_agent_manager()
-
-        # Convert messages to the format expected by AgentManager
-        messages_dict = [
-            {"role": msg.role, "content": msg.content} for msg in request.messages
-        ]
-
-        # Create agent description using AgentManager
-        result = await agent_manager.create_agent_description(
-            messages=messages_dict,
-            agent_id=request.agent_id,
-            existing_agent_data=request.agent_data,
-        )
-
-        # Convert capabilities to dict if it's an AgentCapabilities object
-        capabilities = result["capabilities"]
-        if capabilities is not None:
-            if hasattr(capabilities, "dict"):
-                # Convert AgentCapabilities object to dict for Pydantic serialization
-                capabilities_dict = capabilities.dict()
-            elif hasattr(capabilities, "__dict__"):
-                # Fallback to convert object attributes to dict
-                capabilities_dict = {
-                    "summary": getattr(capabilities, "summary", None),
-                    "knowledge": getattr(capabilities, "knowledge", None),
-                    "workflow": getattr(capabilities, "workflow", None),
-                    "tools": getattr(capabilities, "tools", None),
-                }
-            elif isinstance(capabilities, dict):
-                # Already a dict
-                capabilities_dict = capabilities
-            else:
-                # Convert any other object to dict
-                try:
-                    capabilities_dict = {
-                        "summary": str(capabilities) if capabilities else None,
-                        "knowledge": [],
-                        "workflow": [],
-                        "tools": [],
-                    }
-                except:
-                    capabilities_dict = None
-        else:
-            capabilities_dict = capabilities
-
-        # Convert to AgentDescriptionResponse (same format as old endpoint)
-        return AgentDescriptionResponse(
-            success=result["success"],
-            agent_id=result["agent_id"] or 0,
-            agent_name=result["agent_name"],
-            agent_description=result["agent_description"],
-            capabilities=capabilities_dict,
-            follow_up_message=result["follow_up_message"],
-            suggested_questions=result["suggested_questions"],
-            ready_for_code_generation=result["ready_for_code_generation"],
-            agent_folder=result["agent_folder"],  # <-- Ensure this is included
-            error=result.get("error"),
-        )
-
-    except Exception as e:
-        logger.error(f"Error in describe_agent endpoint: {e}", exc_info=True)
-        return AgentDescriptionResponse(
-            success=False,
-            agent_id=0,
-            error=f"Failed to process agent description: {str(e)}",
-        )
-
-
-@router.post("/deploy", response_model=AgentDeployResponse)
-async def deploy_agent(request: AgentDeployRequest, db: Session = Depends(get_db)):
-    """
-    Deploy an agent with generated code.
-
-    Args:
-        request: Agent deployment request
-        db: Database session
-
-    Returns:
-        AgentDeployResponse with deployment status
-    """
-    try:
-        logger.info(f"Received agent deployment request for: {request.name}")
-
-        # Create agent record in database
-        from dana.api.core.models import Agent
-
-        agent = Agent(
-            name=request.name,
-            description=request.description,
-            config=request.config,
-            generation_phase="code_generated",
-        )
-
-        if request.dana_code:
-            # Single file deployment
-            # Save code to file system and update agent record
-            pass
-        elif request.multi_file_project:
-            # Multi-file deployment
-            # Save all files and update agent record
-            pass
-
-        db.add(agent)
-        db.commit()
-        db.refresh(agent)
-
-        agent_read = AgentRead(
-            id=agent.id,
-            name=agent.name,
-            description=agent.description,
-            config=agent.config,
-            generation_phase=agent.generation_phase,
-            created_at=agent.created_at,
-            updated_at=agent.updated_at,
-        )
-
-        return AgentDeployResponse(success=True, agent=agent_read)
-
-    except Exception as e:
-        logger.error(f"Error in agent deployment endpoint: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/syntax-check", response_model=DanaSyntaxCheckResponse)
-async def check_dana_syntax(request: DanaSyntaxCheckRequest):
-    """
-    Check Dana code syntax for errors.
-
-    Args:
-        request: Syntax check request
-
-    Returns:
-        DanaSyntaxCheckResponse with syntax validation results
-    """
-    try:
-        logger.info("Received Dana syntax check request")
-
-        # This would use DanaSandbox to validate syntax
-        # Placeholder implementation
-        return DanaSyntaxCheckResponse(success=True, output="Syntax is valid")
-
-    except Exception as e:
-        logger.error(f"Error in syntax check endpoint: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 @router.post("/validate-code", response_model=CodeValidationResponse)
 async def validate_code(request: CodeValidationRequest):
     """
@@ -612,54 +371,11 @@ async def fix_code(request: CodeFixRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/process-documents", response_model=ProcessAgentDocumentsResponse)
-async def process_agent_documents(
-    request: ProcessAgentDocumentsRequest, agent_service=Depends(get_agent_service)
-):
-    """
-    Process documents for agent knowledge base.
-
-    Args:
-        request: Document processing request
-
-    Returns:
-        ProcessAgentDocumentsResponse with processing results
-    """
-    try:
-        logger.info(
-            f"Received document processing request for folder: {request.document_folder}"
-        )
-
-        # Process documents using agent service
-        result = await agent_service.process_agent_documents(request)
-
-        return ProcessAgentDocumentsResponse(
-            success=result["success"],
-            message=result.get("message", "Documents processed successfully"),
-            agent_name=result.get("agent_name"),
-            agent_description=result.get("agent_description"),
-            processing_details=result.get("processing_details", {}),
-            dana_code=result.get("dana_code"),
-            multi_file_project=result.get("multi_file_project"),
-            error=result.get("error"),
-        )
-
-    except Exception as e:
-        logger.error(f"Error in document processing endpoint: {e}")
-        return ProcessAgentDocumentsResponse(
-            success=False,
-            message="Document processing failed",
-            error=f"Failed to process documents: {str(e)}",
-        )
-
-
 # CRUD Operations for Agents
 @router.get("/", response_model=List[AgentRead])
 async def list_agents(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """List all agents with pagination."""
     try:
-        from dana.api.core.models import Agent
-
         agents = db.query(Agent).offset(skip).limit(limit).all()
         return [
             AgentRead(
@@ -685,52 +401,57 @@ async def get_prebuilt_agents():
     These agents are displayed in the Explore tab for users to browse.
     """
     try:
-        import json
-        from pathlib import Path
-        
         # Load prebuilt agents from the assets file
-        assets_path = Path(__file__).parent.parent / "server" / "assets" / "prebuilt_agents.json"
-        
+        assets_path = (
+            Path(__file__).parent.parent / "server" / "assets" / "prebuilt_agents.json"
+        )
+
         if not assets_path.exists():
             logger.warning(f"Prebuilt agents file not found at {assets_path}")
             return []
-        
-        with open(assets_path, 'r', encoding='utf-8') as f:
+
+        with open(assets_path, "r", encoding="utf-8") as f:
             prebuilt_agents = json.load(f)
-        
+
         # Add mock IDs and additional UI properties for compatibility
-        for i, agent in enumerate(prebuilt_agents, start=1000):  # Start from 1000 to avoid conflicts
-            agent["id"] = i
+        for i, agent in enumerate(
+            prebuilt_agents, start=1000
+        ):  # Start from 1000 to avoid conflicts
+            # agent["id"] =
             agent["is_prebuilt"] = True
-            
+
             # Add UI-specific properties based on domain
             domain = agent.get("config", {}).get("domain", "Other")
             agent["avatarColor"] = {
                 "Finance": "from-purple-400 to-green-400",
-                "Semiconductor": "from-green-400 to-blue-400", 
+                "Semiconductor": "from-green-400 to-blue-400",
                 "Research": "from-purple-400 to-pink-400",
                 "Sales": "from-yellow-400 to-purple-400",
-                "Engineering": "from-blue-400 to-green-400"
+                "Engineering": "from-blue-400 to-green-400",
             }.get(domain, "from-gray-400 to-gray-600")
-            
+
             # Add rating and accuracy for UI display
-            agent["rating"] = 4.8 + (i % 3) * 0.1  # Vary between 4.8-5.0
+            agent["rating"] = 5  # Vary between 4.8-5.0
             agent["accuracy"] = 97 + (i % 4)  # Vary between 97-100
-            
+
             # Add details from specialties and skills
             specialties = agent.get("config", {}).get("specialties", [])
             skills = agent.get("config", {}).get("skills", [])
-            
+
             if specialties and skills:
-                agent["details"] = f"Expert in {', '.join(specialties[:2])} with advanced skills in {', '.join(skills[:2])}"
+                agent["details"] = (
+                    f"Expert in {', '.join(specialties[:2])} with advanced skills in {', '.join(skills[:2])}"
+                )
             elif specialties:
                 agent["details"] = f"Specialized in {', '.join(specialties[:3])}"
             else:
-                agent["details"] = "Domain expert with comprehensive knowledge and experience"
-        
+                agent["details"] = (
+                    "Domain expert with comprehensive knowledge and experience"
+                )
+
         logger.info(f"Loaded {len(prebuilt_agents)} prebuilt agents")
         return prebuilt_agents
-        
+
     except Exception as e:
         logger.error(f"Error loading prebuilt agents: {e}")
         raise HTTPException(status_code=500, detail="Failed to load prebuilt agents")
@@ -740,8 +461,6 @@ async def get_prebuilt_agents():
 async def get_agent(agent_id: int, db: Session = Depends(get_db)):
     """Get an agent by ID."""
     try:
-        from dana.api.core.models import Agent
-
         agent = db.query(Agent).filter(Agent.id == agent_id).first()
         if not agent:
             raise HTTPException(status_code=404, detail="Agent not found")
@@ -770,8 +489,6 @@ async def create_agent(
 ):
     """Create a new agent with auto-generated basic Dana code."""
     try:
-        from dana.api.core.models import Agent
-
         # Create the agent in database first
         db_agent = Agent(
             name=agent.name, description=agent.description, config=agent.config
@@ -802,8 +519,6 @@ async def create_agent(
                 db_agent.generation_phase = "code_generated"
 
                 # Force update by marking as dirty
-                from sqlalchemy.orm.attributes import flag_modified
-
                 flag_modified(db_agent, "config")
 
                 db.commit()
@@ -817,8 +532,6 @@ async def create_agent(
             logger.error(
                 f"Failed to auto-generate code for agent {db_agent.id}: {code_gen_error}"
             )
-            import traceback
-
             logger.error(f"Full traceback: {traceback.format_exc()}")
             # Don't fail the agent creation if code generation fails
 
@@ -843,8 +556,6 @@ async def update_agent(
 ):
     """Update an agent."""
     try:
-        from dana.api.core.models import Agent
-
         db_agent = db.query(Agent).filter(Agent.id == agent_id).first()
         if not db_agent:
             raise HTTPException(status_code=404, detail="Agent not found")
@@ -876,8 +587,6 @@ async def update_agent(
 async def delete_agent(agent_id: int, db: Session = Depends(get_db)):
     """Delete an agent."""
     try:
-        from dana.api.core.models import Agent
-
         db_agent = db.query(Agent).filter(Agent.id == agent_id).first()
         if not db_agent:
             raise HTTPException(status_code=404, detail="Agent not found")
@@ -894,78 +603,6 @@ async def delete_agent(agent_id: int, db: Session = Depends(get_db)):
 
 
 # Additional endpoints expected by UI
-@router.post("/generate-from-prompt", response_model=AgentGenerationResponse)
-async def generate_agent_from_prompt(
-    request: dict,
-    agent_service: AgentService = Depends(get_agent_service),
-    agent_manager: AgentManager = Depends(get_agent_manager),
-):
-    """Generate agent from specific prompt."""
-    try:
-        logger.info("Received generate from prompt request")
-
-        prompt = request.get("prompt", "")
-        messages = request.get("messages", [])
-        agent_summary = request.get("agent_summary", {})
-
-        # Generate agent code using service
-        result = await agent_manager.generate_agent_code(
-            agent_metadata=agent_summary, messages=messages, prompt=prompt
-        )
-
-        return AgentGenerationResponse(
-            success=result["success"],
-            dana_code=result["dana_code"],
-            agent_name=result["agent_name"],
-            agent_description=result["agent_description"],
-            capabilities=result["capabilities"],
-            auto_stored_files=result["auto_stored_files"],
-            multi_file_project=result["multi_file_project"],
-            agent_id=result["agent_id"],
-            agent_folder=result["agent_folder"],
-            phase=result["phase"],
-            ready_for_code_generation=result["ready_for_code_generation"],
-            error=result.get("error"),
-        )
-
-    except Exception as e:
-        logger.error(f"Error in generate from prompt endpoint: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/{agent_id}/update-description", response_model=AgentDescriptionResponse)
-async def update_agent_description(
-    agent_id: int,
-    request: AgentDescriptionRequest,
-    agent_service=Depends(get_agent_service),
-):
-    """Update agent description."""
-    try:
-        logger.info(f"Received update description request for agent {agent_id}")
-
-        # Convert messages to dict format
-        messages = [
-            {"role": msg.role, "content": msg.content} for msg in request.messages
-        ]
-
-        # Analyze conversation completeness
-        conversation_analysis = await agent_service.analyze_conversation_completeness(
-            messages
-        )
-
-        return AgentDescriptionResponse(
-            success=True,
-            agent_id=agent_id,
-            follow_up_message=conversation_analysis.get("follow_up_message"),
-            suggested_questions=conversation_analysis.get("suggested_questions", []),
-            ready_for_code_generation=not conversation_analysis.get(
-                "needs_more_info", False
-            ),
-        )
-
-    except Exception as e:
-        logger.error(f"Error in update description endpoint: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/validate", response_model=CodeValidationResponse)
@@ -1000,62 +637,149 @@ async def fix_agent_code(request: CodeFixRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/upload-knowledge")
-async def upload_knowledge_file(
-    file: UploadFile = File(...),
-    agent_id: str = Form(None),
-    conversation_context: str = Form(None),  # JSON string of conversation context
-    agent_info: str = Form(
-        None
-    ),  # JSON string of agent info (must include folder_path)
+@router.post("/from-prebuilt", response_model=AgentRead)
+async def create_agent_from_prebuilt(
+    prebuilt_key: str = Body(..., embed=True),
+    db: Session = Depends(get_db),
+    agent_manager: AgentManager = Depends(get_agent_manager),
 ):
-    """
-    Upload a knowledge file for an agent.
-    Creates a docs folder in the agent directory and stores the file there.
-    Also updates the tools.na file with RAG declarations.
-    Requires agent_info to include folder_path.
-    """
+    """Create a new agent by cloning a prebuilt agent's files and domain_knowledge.json."""
     try:
-        logger.info(f"Uploading knowledge file: {file.filename}")
-
-        # Parse conversation context and agent info
-        conv_context = json.loads(conversation_context) if conversation_context else []
-        agent_data = json.loads(agent_info) if agent_info else {}
-
-        if not agent_data.get("folder_path"):
-            logger.error("Missing folder_path in agent_info for knowledge upload")
-            return {
-                "success": False,
-                "error": "Missing folder_path in agent_info. Please complete agent creation before uploading knowledge files.",
-            }
-
-        # Read file content
-        file_content = await file.read()
-
-        # Upload file using AgentManager
-        agent_manager = get_agent_manager()
-        result = await agent_manager.upload_knowledge_file(
-            file_content=file_content,
-            filename=file.filename,
-            agent_metadata=agent_data,
-            conversation_context=conv_context,
+        # Load prebuilt agents list
+        assets_path = (
+            Path(__file__).parent.parent / "server" / "assets" / "prebuilt_agents.json"
         )
+        with open(assets_path, "r", encoding="utf-8") as f:
+            prebuilt_agents = json.load(f)
+        prebuilt_agent = next(
+            (a for a in prebuilt_agents if a["key"] == prebuilt_key), None
+        )
+        if not prebuilt_agent:
+            raise HTTPException(status_code=404, detail="Prebuilt agent not found")
+        # Create new agent in DB
+        db_agent = Agent(
+            name=prebuilt_agent["name"],
+            description=prebuilt_agent.get("description", ""),
+            config=prebuilt_agent.get("config", {}),
+        )
+        db.add(db_agent)
+        db.commit()
+        db.refresh(db_agent)
+        # Copy files from prebuilt assets folder
+        prebuilt_folder = (
+            Path(__file__).parent.parent / "server" / "assets" / prebuilt_agent["key"]
+        )
+        agents_dir = Path("agents")
+        agents_dir.mkdir(exist_ok=True)
+        safe_name = db_agent.name.lower().replace(" ", "_").replace("-", "_")
+        safe_name = "".join(c for c in safe_name if c.isalnum() or c == "_")
+        folder_name = f"agent_{db_agent.id}_{safe_name}"
+        agent_folder = agents_dir / folder_name
 
-        logger.info(f"Successfully uploaded knowledge file: {file.filename}")
+        if prebuilt_folder.exists():
+            shutil.copytree(prebuilt_folder, agent_folder)
+            logger.info(
+                f"Copied prebuilt agent files from {prebuilt_folder} to {agent_folder}"
+            )
+        else:
+            # Create basic agent structure if prebuilt folder doesn't exist
+            agent_folder.mkdir(exist_ok=True)
+            docs_folder = agent_folder / "docs"
+            docs_folder.mkdir(exist_ok=True)
+            knows_folder = agent_folder / "knows"
+            knows_folder.mkdir(exist_ok=True)
+            logger.info(f"Created basic agent structure at {agent_folder}")
 
-        return {
-            "success": result["success"],
-            "file_path": result["file_path"],
-            "message": result["message"],
-            "updated_capabilities": result["updated_capabilities"],
-            "generated_response": result["generated_response"],
-            "ready_for_code_generation": result["ready_for_code_generation"],
-            "agent_metadata": result["agent_metadata"],
-        }
+        # Ensure domain_knowledge.json is in the correct location
+        domain_knowledge_path = agent_folder / "domain_knowledge.json"
+        if not domain_knowledge_path.exists():
+            # Try to generate domain_knowledge.json from knowledge files
+            try:
+                from dana.common.utils.domain_knowledge_generator import (
+                    DomainKnowledgeGenerator,
+                )
 
+                generator = DomainKnowledgeGenerator()
+                knows_folder = agent_folder / "knows"
+                domain = prebuilt_agent.get("config", {}).get("domain", "General")
+
+                if generator.save_domain_knowledge(
+                    str(knows_folder), domain, str(domain_knowledge_path)
+                ):
+                    logger.info(
+                        f"Generated domain_knowledge.json for agent {db_agent.id}"
+                    )
+                else:
+                    logger.warning(
+                        f"Failed to generate domain_knowledge.json for agent {db_agent.id}"
+                    )
+            except Exception as e:
+                logger.error(f"Error generating domain_knowledge.json: {e}")
+
+        # Update knowledge status for prebuilt agents - mark all topics as success
+        try:
+            knows_folder = agent_folder / "knows"
+            status_path = knows_folder / "knowledge_status.json"
+
+            if status_path.exists():
+                from dana.api.services.knowledge_status_manager import (
+                    KnowledgeStatusManager,
+                )
+                from datetime import datetime, timezone
+
+                status_manager = KnowledgeStatusManager(
+                    str(status_path), agent_id=str(db_agent.id)
+                )
+                data = status_manager.load()
+
+                # Mark all topics as successfully generated since they're prebuilt
+                updated = False
+                now_str = datetime.now(timezone.utc).isoformat() + "Z"
+
+                for entry in data.get("topics", []):
+                    if entry.get("status") in (
+                        "pending",
+                        "failed",
+                        None,
+                        "in_progress",
+                    ):
+                        # Only mark as success if the knowledge file actually exists
+                        knowledge_file = knows_folder / entry.get("file", "")
+                        if knowledge_file.exists():
+                            entry["status"] = "success"
+                            entry["last_generated"] = now_str
+                            entry["error"] = None
+                            updated = True
+
+                if updated:
+                    status_manager.save(data)
+                    logger.info(
+                        f"Updated knowledge status for prebuilt agent {db_agent.id} - marked all topics as success"
+                    )
+
+        except Exception as e:
+            logger.error(f"Error updating knowledge status for prebuilt agent: {e}")
+
+        # Update config with folder_path
+        updated_config = db_agent.config.copy() if db_agent.config else {}
+        updated_config["folder_path"] = str(agent_folder)
+        db_agent.config = updated_config
+        db_agent.generation_phase = "code_generated"
+        flag_modified(db_agent, "config")
+        db.commit()
+        db.refresh(db_agent)
+        return AgentRead(
+            id=db_agent.id,
+            name=db_agent.name,
+            description=db_agent.description,
+            config=db_agent.config,
+            generation_phase=db_agent.generation_phase,
+            created_at=db_agent.created_at,
+            updated_at=db_agent.updated_at,
+        )
     except Exception as e:
-        logger.error(f"Error uploading knowledge file: {e}", exc_info=True)
-        return {"success": False, "error": str(e)}
+        logger.error(f"Error creating agent from prebuilt: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/{agent_id}/documents", response_model=DocumentRead)
@@ -1069,8 +793,6 @@ async def upload_agent_document(
     """Upload a document to a specific agent's folder."""
     try:
         # Get the agent to find its folder_path
-        from dana.api.core.models import Agent
-
         agent = db.query(Agent).filter(Agent.id == agent_id).first()
         if not agent:
             raise HTTPException(status_code=404, detail="Agent not found")
@@ -1088,8 +810,6 @@ async def upload_agent_document(
             agent.config = updated_config
 
             # Force update by marking as dirty
-            from sqlalchemy.orm.attributes import flag_modified
-
             flag_modified(agent, "config")
 
             db.commit()
@@ -1120,8 +840,6 @@ async def list_agent_files(agent_id: int, db: Session = Depends(get_db)):
     """List all files in the agent's folder structure."""
     try:
         # Get the agent to find its folder_path
-        from dana.api.core.models import Agent
-
         agent = db.query(Agent).filter(Agent.id == agent_id).first()
         if not agent:
             raise HTTPException(status_code=404, detail="Agent not found")
@@ -1131,8 +849,6 @@ async def list_agent_files(agent_id: int, db: Session = Depends(get_db)):
             return {"files": [], "message": "Agent folder not found"}
 
         # List all files in the agent folder
-        from pathlib import Path
-
         agent_folder = Path(folder_path)
         if not agent_folder.exists():
             return {"files": [], "message": "Agent folder does not exist"}
@@ -1169,8 +885,6 @@ async def get_agent_file_content(
     """Get the content of a specific file in the agent's folder."""
     try:
         # Get the agent to find its folder_path
-        from dana.api.core.models import Agent
-
         agent = db.query(Agent).filter(Agent.id == agent_id).first()
         if not agent:
             raise HTTPException(status_code=404, detail="Agent not found")
@@ -1180,8 +894,6 @@ async def get_agent_file_content(
             raise HTTPException(status_code=404, detail="Agent folder not found")
 
         # Construct full file path and validate it's within agent folder
-        from pathlib import Path
-
         agent_folder = Path(folder_path)
         full_file_path = agent_folder / file_path
 
@@ -1204,8 +916,6 @@ async def get_agent_file_content(
             content = full_file_path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             # For binary files, return base64 encoded content
-            import base64
-
             content = base64.b64encode(full_file_path.read_bytes()).decode("utf-8")
             return {
                 "content": content,
@@ -1237,8 +947,6 @@ async def update_agent_file_content(
     """Update the content of a specific file in the agent's folder."""
     try:
         # Get the agent to find its folder_path
-        from dana.api.core.models import Agent
-
         agent = db.query(Agent).filter(Agent.id == agent_id).first()
         if not agent:
             raise HTTPException(status_code=404, detail="Agent not found")
@@ -1248,8 +956,6 @@ async def update_agent_file_content(
             raise HTTPException(status_code=404, detail="Agent folder not found")
 
         # Construct full file path and validate it's within agent folder
-        from pathlib import Path
-
         agent_folder = Path(folder_path)
         full_file_path = agent_folder / file_path
 
@@ -1269,8 +975,6 @@ async def update_agent_file_content(
 
         # Write file content
         if encoding == "base64":
-            import base64
-
             full_file_path.write_bytes(base64.b64decode(content))
         else:
             full_file_path.write_text(content, encoding="utf-8")
@@ -1301,33 +1005,6 @@ async def open_file(file_path: str):
     except Exception as e:
         logger.error(f"Error in open file endpoint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
-def _extract_agent_info_from_code(dana_code: str) -> tuple[str | None, str | None]:
-    """
-    Extract agent name and description from generated Dana code.
-
-    Args:
-        dana_code: The generated Dana code
-
-    Returns:
-        Tuple of (agent_name, agent_description)
-    """
-    lines = dana_code.split("\\n")
-    agent_name = None
-    agent_description = None
-
-    for i, line in enumerate(lines):
-        if line.strip().startswith("agent ") and line.strip().endswith(":"):
-            # Next few lines should contain name and description
-            for j in range(i + 1, min(i + 5, len(lines))):
-                next_line = lines[j].strip()
-                if "name : str =" in next_line:
-                    agent_name = next_line.split("=")[1].strip().strip('"')
-                elif "description : str =" in next_line:
-                    agent_description = next_line.split("=")[1].strip().strip('"')
-
-    return agent_name, agent_description
 
 
 @router.get("/{agent_id}/chat-history")
@@ -1371,9 +1048,6 @@ async def get_agent_chat_history(
 
 def run_generation(agent_id: int):
     # This function runs in a background thread
-    from sqlalchemy.orm import sessionmaker
-    from dana.api.core.database import engine
-
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     db_thread = SessionLocal()
     try:
@@ -1432,7 +1106,7 @@ def run_generation(agent_id: int):
         status_manager = KnowledgeStatusManager(status_path, agent_id=str(agent_id))
         now_str = datetime.now(timezone.utc).isoformat() + "Z"
         # Add/update all leaves
-        for path, leaf_node in leaf_paths:
+        for path, _ in leaf_paths:
             area_name = " - ".join(path)
             safe_area = area_name.replace("/", "_").replace(" ", "_").replace("-", "_")
             file_name = f"{safe_area}.json"
@@ -1501,8 +1175,6 @@ async def get_agent_knowledge_status(agent_id: int, db: Session = Depends(get_db
     """
     try:
         # Get the agent to find its folder_path
-        from dana.api.core.models import Agent
-
         agent = db.query(Agent).filter(Agent.id == agent_id).first()
         if not agent:
             raise HTTPException(status_code=404, detail="Agent not found")
@@ -1532,22 +1204,18 @@ async def get_agent_knowledge_status(agent_id: int, db: Session = Depends(get_db
 
 
 @router.post("/{agent_id}/test")
-async def test_agent_by_id(
-    agent_id: int,
-    request: dict,
-    db: Session = Depends(get_db)
-):
+async def test_agent_by_id(agent_id: int, request: dict, db: Session = Depends(get_db)):
     """
     Test an agent by ID with a message.
-    
+
     This endpoint gets the agent details from the database by ID,
     then runs the Dana file execution logic similar to /test-agent route.
-    
+
     Args:
         agent_id: The ID of the agent to test
         request: Dict containing 'message' and optional context
         db: Database session
-        
+
     Returns:
         Agent response or error
     """
@@ -1556,27 +1224,31 @@ async def test_agent_by_id(
         message = request.get("message", "").strip()
         if not message:
             raise HTTPException(status_code=400, detail="Message is required")
-        
+
         # Get the agent from database
-        from dana.api.core.models import Agent
         agent = db.query(Agent).filter(Agent.id == agent_id).first()
         if not agent:
             raise HTTPException(status_code=404, detail="Agent not found")
-        
+
         # Extract agent details
         agent_name = agent.name
         agent_description = agent.description or "A Dana agent"
         folder_path = agent.config.get("folder_path") if agent.config else None
-        
-        logger.info(f"Testing agent {agent_id} ({agent_name}) with message: '{message}'")
-        
+
+        logger.info(
+            f"Testing agent {agent_id} ({agent_name}) with message: '{message}'"
+        )
+
         # Import the test logic from agent_test module
-        from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
+        from dana.core.runtime.modules.core import (
+            initialize_module_system,
+            reset_module_system,
+        )
         from dana.api.routers.agent_test import AgentTestRequest, test_agent
+
         initialize_module_system()
         reset_module_system()
-        
-        
+
         # Create test request using agent details
         test_request = AgentTestRequest(
             agent_code="",  # Will use folder_path instead
@@ -1584,24 +1256,22 @@ async def test_agent_by_id(
             agent_name=agent_name,
             agent_description=agent_description,
             context=request.get("context", {"user_id": "test_user"}),
-            folder_path=folder_path
+            folder_path=folder_path,
         )
-        
+
         # Call the existing test_agent function
         result = await test_agent(test_request)
-        
+
         return {
             "success": result.success,
             "agent_response": result.agent_response,
             "error": result.error,
             "agent_id": agent_id,
-            "agent_name": agent_name
+            "agent_name": agent_name,
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error testing agent {agent_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-

@@ -239,7 +239,29 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       if (!statusData || !statusData.topics) return null;
 
       // Find the status entry that matches this node's path
-      return statusData.topics.find((topic) => topic.path === nodePath) || null;
+      // First try exact match
+      let match = statusData.topics.find((topic) => topic.path === nodePath);
+      if (match) return match;
+
+      // If no exact match, try to find a partial match for leaf nodes
+      // This handles cases where the domain tree structure differs from knowledge status paths
+      const pathParts = nodePath.split(' - ');
+      for (const topic of statusData.topics) {
+        const topicParts = topic.path.split(' - ');
+        
+        // Check if this could be a match by comparing the last part (leaf node name)
+        if (pathParts.length > 0 && topicParts.length > 0) {
+          const lastPathPart = pathParts[pathParts.length - 1];
+          const lastTopicPart = topicParts[topicParts.length - 1];
+          
+          // If the leaf node names match and the topic path is a subset of the node path
+          if (lastPathPart === lastTopicPart && topicParts.every(part => pathParts.includes(part))) {
+            return topic;
+          }
+        }
+      }
+
+      return null;
     };
 
     const traverse = (domainNode: DomainNode, parentId?: string, pathParts: string[] = []) => {
@@ -250,6 +272,12 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       // Get knowledge status for this node (only leaf nodes will have status)
       const isLeafNode = !domainNode.children || domainNode.children.length === 0;
       const knowledgeStatusInfo = isLeafNode ? getKnowledgeStatusForPath(nodePath) : null;
+      
+      // Debug logging for path matching
+      if (isLeafNode) {
+        console.log(`[Debug] Leaf node "${domainNode.topic}" with path "${nodePath}"`, 
+          knowledgeStatusInfo ? `found status: ${knowledgeStatusInfo.status}` : 'no status found');
+      }
 
       // Create flow node with knowledge status information
       nodes.push({
