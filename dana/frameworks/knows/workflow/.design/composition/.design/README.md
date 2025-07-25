@@ -48,9 +48,9 @@ After extensive exploration of complex grammar-based solutions, we successfully 
    result = pipeline(data)
    ```
 
-2. **Standalone Parallel Composition**:
+2. **Parallel Composition with Identity**:
    ```dana
-   pipeline = [f1, f2, f3]  
+   pipeline = noop | [f1, f2, f3]  
    result = pipeline(data)
    ```
 

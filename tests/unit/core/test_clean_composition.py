@@ -60,7 +60,7 @@ result = pipeline(5)
     def test_parallel_composition(self):
         """Test parallel function composition."""
         code = """
-pipeline = [double, add_one]
+pipeline = noop | [double, add_one]
 result = pipeline(5)
 """
         result = self.sandbox.eval(code)

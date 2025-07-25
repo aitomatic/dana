@@ -21,7 +21,7 @@ import asyncio
 from collections.abc import Callable
 from typing import Any
 
-from dana.common.exceptions import SandboxError
+from dana.common.exceptions import SandboxError, StateError
 from dana.common.utils.misc import Misc
 from dana.core.lang.ast import (
     AttributeAccess,
@@ -34,18 +34,26 @@ from dana.core.lang.ast import (
     ListLiteral,
     LiteralExpression,
     ObjectFunctionCall,
-    PlaceholderExpression,
     PipelineExpression,
+    PlaceholderExpression,
     SetLiteral,
     SubscriptExpression,
     TupleLiteral,
     UnaryExpression,
 )
 from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
-from dana.core.lang.interpreter.executor.expression.binary_operation_handler import BinaryOperationHandler
-from dana.core.lang.interpreter.executor.expression.collection_processor import CollectionProcessor
-from dana.core.lang.interpreter.executor.expression.identifier_resolver import IdentifierResolver
-from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import PipeOperationHandler
+from dana.core.lang.interpreter.executor.expression.binary_operation_handler import (
+    BinaryOperationHandler,
+)
+from dana.core.lang.interpreter.executor.expression.collection_processor import (
+    CollectionProcessor,
+)
+from dana.core.lang.interpreter.executor.expression.identifier_resolver import (
+    IdentifierResolver,
+)
+from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import (
+    PipeOperationHandler,
+)
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
 
@@ -727,6 +735,37 @@ class ExpressionExecutor(BaseExecutor):
         """
         raise SandboxError("Placeholder expressions ($) can only be used within pipeline operations")
 
+    def _resolve_pipeline_function(self, identifier: Identifier, context: SandboxContext) -> Any:
+        """Resolve an identifier to a function for pipeline execution.
+        
+        This method tries to resolve functions from both the context and function registry,
+        giving priority to context variables but falling back to core functions.
+        
+        Args:
+            identifier: The identifier to resolve
+            context: The execution context
+            
+        Returns:
+            The resolved function object or None if not found
+        """
+        # Try context first (user-defined functions, variables)
+        try:
+            resolved_value = context.get(identifier.name)
+            if resolved_value is not None:
+                return resolved_value
+        except (KeyError, AttributeError, StateError):
+            pass
+
+        # Try function registry for core functions
+        if hasattr(context, "_interpreter") and hasattr(context._interpreter, "function_registry"):
+            registry = context._interpreter.function_registry
+            if registry.has(identifier.name):
+                resolved_func, func_type, metadata = registry.resolve(identifier.name)
+                return resolved_func
+
+        # Return None if not found (will be handled by caller)
+        return None
+
     def execute_pipeline_expression(self, node: PipelineExpression, context: SandboxContext) -> Any:
         """Execute a pipeline expression as a function composition.
 
@@ -747,10 +786,14 @@ class ExpressionExecutor(BaseExecutor):
         def composed_function(initial_value):
             current_value = initial_value
             
-            for stage in node.stages:
-                current_value = self._execute_pipeline_stage(current_value, stage, context)
-            
-            return current_value
+            try:
+                for stage in node.stages:
+                    current_value = self._execute_pipeline_stage(current_value, stage, context)
+                
+                return current_value
+            except SandboxError:
+                # If pipeline execution fails, return None to allow graceful error handling
+                return None
         
         return composed_function
 
@@ -765,7 +808,6 @@ class ExpressionExecutor(BaseExecutor):
         Returns:
             The result of executing this stage
         """
-        
         # Handle different stage types
         if isinstance(stage, FunctionCall):
             return self._execute_function_call_stage(current_value, stage, context)
@@ -773,28 +815,70 @@ class ExpressionExecutor(BaseExecutor):
             # This shouldn't happen in a proper pipeline, but handle defensively
             return current_value
         else:
-            # For other expression types (like direct function identifiers), execute them as function calls
+            # For other expression types (like direct function identifiers), resolve properly
             # This handles the case where we have function identifiers like 'f1' in the pipeline
-            func = self.parent.execute(stage, context)
-            if callable(func):
-                # Special handling for ParallelFunction - pass the current_value to each function
-                from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import ParallelFunction
-                if isinstance(func, ParallelFunction):
-                    return func.execute(context, current_value)
-                else:
+            
+            # For identifier stages, use proper function resolution
+            if isinstance(stage, Identifier):
+                func = self._resolve_pipeline_function(stage, context)
+                
+                if callable(func):
+                    # Special handling for ParallelFunction - pass the current_value to each function
+                    from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import (
+                        ParallelFunction,
+                    )
+                    if isinstance(func, ParallelFunction):
+                        return func.execute(context, current_value)
+                    
+                    # For core functions registered in function registry
+                    if hasattr(context, "_interpreter") and hasattr(context._interpreter, "function_registry"):
+                        registry = context._interpreter.function_registry
+                        if registry.has(stage.name):
+                            # Call through registry to ensure proper argument handling for core functions
+                            return registry.call(stage.name, context, None, current_value)
+                    
+                    # For SandboxFunction objects (like user-defined DanaFunction), use execute method
+                    from dana.core.lang.interpreter.functions.sandbox_function import (
+                        SandboxFunction,
+                    )
+                    if isinstance(func, SandboxFunction):
+                        return func.execute(context, current_value)
+                    
+                    # Default: direct call for non-registry functions
                     return func(current_value)
+                else:
+                    # Create an error function that will fail when called, preserving original behavior
+                    def error_function(value):
+                        if func is None:
+                            raise SandboxError(f"Function '{stage.name}' not found")
+                        else:
+                            raise SandboxError(f"'{stage.name}' is not callable (type: {type(func).__name__})")
+                    return error_function(current_value)
+            
+            # Handle ListLiteral that gets converted to ParallelFunction
+            elif isinstance(stage, ListLiteral):
+                # Convert list to ParallelFunction and execute it
+                from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import (
+                    ParallelFunction,
+                )
+                functions = []
+                for item in stage.items:
+                    func = self.parent.execute(item, context)
+                    functions.append(func)
+                parallel_func = ParallelFunction(functions, context)
+                return parallel_func.execute(context, current_value)
+            
+            # For other types, use the original resolution
             else:
-                # Handle ListLiteral that gets converted to ParallelFunction
-                from dana.core.lang.ast import ListLiteral
-                if isinstance(stage, ListLiteral):
-                    # Convert list to ParallelFunction and execute it
-                    from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import ParallelFunction
-                    functions = []
-                    for item in stage.items:
-                        func = self.parent.execute(item, context)
-                        functions.append(func)
-                    parallel_func = ParallelFunction(functions, context)
-                    return parallel_func.execute(context, current_value)
+                func = self.parent.execute(stage, context)
+                if callable(func):
+                    from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import (
+                        ParallelFunction,
+                    )
+                    if isinstance(func, ParallelFunction):
+                        return func.execute(context, current_value)
+                    else:
+                        return func(current_value)
                 else:
                     return self.parent.execute(stage, context)
 
