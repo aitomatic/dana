@@ -66,19 +66,22 @@ class DanaSandbox(Loggable):
     _resource_users = 0  # Count of instances using shared resources
     _pool_lock = None  # Will be initialized as threading.Lock() when needed
 
-    def __init__(self, debug_mode: bool = False, context: SandboxContext | None = None):
+    def __init__(self, debug_mode: bool = False, context: SandboxContext | None = None, 
+                 module_search_paths: list[str] | None = None):
         """
         Initialize a Dana sandbox.
 
         Args:
             debug_mode: Enable debug logging
             context: Optional custom context (creates default if None)
+            module_search_paths: Optional list of paths to search for modules
         """
         super().__init__()  # Initialize Loggable
         self.debug_mode = debug_mode
         self._context = context or self._create_default_context()
         self._interpreter = DanaInterpreter()
         self._parser = ParserCache.get_parser("dana")
+        self._module_search_paths = module_search_paths
 
         # Set interpreter in context
         self._context.interpreter = self._interpreter
@@ -182,7 +185,10 @@ class DanaSandbox(Loggable):
 
         # Initialize module system
         from dana.core.runtime.modules.core import initialize_module_system
-        initialize_module_system()
+        if self._module_search_paths is not None:
+            initialize_module_system(self._module_search_paths)
+        else:
+            initialize_module_system()
 
         self._using_shared = False
 
@@ -538,7 +544,8 @@ class DanaSandbox(Loggable):
 
     @classmethod
     def quick_eval(
-        cls, source_code: str, filename: str | None = None, debug_mode: bool = False, context: SandboxContext | None = None
+        cls, source_code: str, filename: str | None = None, debug_mode: bool = False, 
+        context: SandboxContext | None = None, module_search_paths: list[str] | None = None
     ) -> ExecutionResult:
         """
         Quick evaluate Dana code without managing lifecycle.
@@ -548,11 +555,12 @@ class DanaSandbox(Loggable):
             filename: Optional filename for error reporting
             debug_mode: Enable debug logging
             context: Optional custom context
+            module_search_paths: Optional list of paths to search for modules
 
         Returns:
             ExecutionResult with success status and results
         """
-        with cls(debug_mode=debug_mode, context=context) as sandbox:
+        with cls(debug_mode=debug_mode, context=context, module_search_paths=module_search_paths) as sandbox:
             return sandbox.eval(source_code, filename)
 
     def __enter__(self) -> "DanaSandbox":
