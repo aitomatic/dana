@@ -7,6 +7,7 @@ MIT License
 
 from typing import Any
 
+from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
 from dana.core.lang.interpreter.executor.control_flow.exceptions import ReturnException
 from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
@@ -136,14 +137,31 @@ class DanaFunction(SandboxFunction, Loggable):
         self.debug(f"  body: {self.body}")
         self.debug(f"  return_type: {self.return_type}")
 
+        # Store original context for restoration
+        original_context = context if isinstance(context, SandboxContext) else None
+        prepared_context = None
+
         try:
             # Prepare the execution context using the existing method
             prepared_context = self.prepare_context(context, list(args), kwargs)
 
+            # Add function call to execution stack for debugging
+            if hasattr(prepared_context, "error_context") and prepared_context.error_context:
+                from dana.core.lang.interpreter.error_context import ExecutionLocation
+                function_location = ExecutionLocation(
+                    function_name=self.__name__,
+                    filename=prepared_context.error_context.current_file
+                )
+                prepared_context.error_context.push_location(function_location)
+
             # Execute each statement in the function body
             result = None
-            for statement in self.body:
+            for i, statement in enumerate(self.body):
                 try:
+                    # Update current location for error reporting
+                    if hasattr(prepared_context, "error_context") and prepared_context.error_context:
+                        prepared_context.error_context.current_location = getattr(statement, 'location', None)
+
                     # Use _interpreter attribute (with underscore)
                     if hasattr(prepared_context, "_interpreter") and prepared_context._interpreter is not None:
                         # Execute the statement and capture its result
@@ -151,23 +169,46 @@ class DanaFunction(SandboxFunction, Loggable):
                         # Update result with the statement's value if it's not None
                         if stmt_result is not None:
                             result = stmt_result
-                        self.debug(f"statement: {statement}, result: {stmt_result}")
+                        self.debug(f"statement {i}: {statement}, result: {stmt_result}")
                     else:
                         raise RuntimeError("No interpreter available in context")
                 except ReturnException as e:
                     # Return statement was encountered - return its value
                     return e.value
                 except Exception as e:
-                    self.error(f"Error executing statement: {e}", exc_info=True)
-                    raise
-
-            # Restore the original context if needed
-            if isinstance(context, SandboxContext):
-                self.restore_context(prepared_context, context)
+                    # Wrap in SandboxError with location information
+                    error_msg = f"Error executing statement {i} in function '{self.__name__}': {e}"
+                    if hasattr(prepared_context, "error_context") and prepared_context.error_context:
+                        error_msg += f"\nLocation: {prepared_context.error_context.current_location}"
+                    raise SandboxError(error_msg) from e
 
             # Return the last non-None result
             return result
 
         except Exception as e:
-            self.error(f"Error executing Dana function: {e}", exc_info=True)
+            # Log the error with detailed context
+            self.error(f"Error executing Dana function '{self.__name__}': {e}", exc_info=True)
+            
+            # Add function context to error if possible
+            if prepared_context and hasattr(prepared_context, "error_context") and prepared_context.error_context:
+                error_context = prepared_context.error_context
+                if hasattr(e, 'add_context'):
+                    e.add_context(f"Function: {self.__name__}", error_context.current_location)
+            
+            # Re-raise the exception
             raise
+
+        finally:
+            # Always restore the original context, even if an exception occurred
+            if original_context and prepared_context:
+                try:
+                    self.restore_context(prepared_context, original_context)
+                except Exception as restore_error:
+                    self.error(f"Error restoring context after function execution: {restore_error}")
+            
+            # Pop function call from execution stack
+            if prepared_context and hasattr(prepared_context, "error_context") and prepared_context.error_context:
+                try:
+                    prepared_context.error_context.pop_location()
+                except Exception as stack_error:
+                    self.error(f"Error popping function call from stack: {stack_error}")
