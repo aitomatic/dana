@@ -167,15 +167,25 @@ WORKFLOWS_BY_ANALYSIS_AREA: dict[str, list[callable]] = {
     ],
 }
 
-with use('rag', sources=[TEST_DOC_PATH]) as test_docs:
-    for area in WORKFLOWS_BY_ANALYSIS_AREA:
-        workflows = WORKFLOWS_BY_ANALYSIS_AREA[area]
-        print(f'=== Testing {area} ===')
-        for workflow in workflows:
-            func_name = str(workflow)
-            print(f'-- {func_name} --')
-            try:
-                result = workflow(TEST_ARGS)
-                print(f'PASS: {func_name} => {result}')
-            except Exception as e:
-                print(f'FAIL: {func_name} => {e}')
+# for mass-testing all workflows from time to time
+# ================================================
+def test_all():
+    with use('rag', sources=[TEST_DOC_PATH]) as test_docs:
+        for area in WORKFLOWS_BY_ANALYSIS_AREA:
+            workflows = WORKFLOWS_BY_ANALYSIS_AREA[area]
+            print(f'=== Testing {area} ===')
+            for workflow in workflows:
+                func_name = str(workflow)
+                print(f'-- {func_name} --')
+                try:
+                    result = workflow(TEST_ARGS)
+                    print(f'PASS: {func_name} => {result}')
+                except Exception as e:
+                    print(f'FAIL: {func_name} => {e}')
+
+# run a few representative workflows
+# ==================================
+# simple statements reading
+print('TOTAL ASSET:', get_total_asset(TEST_ARGS))
+print('TOTAL REVENUE:', get_rev(TEST_ARGS))
+print('OPERATING CASH FLOW:', get_op_cf(TEST_ARGS))
