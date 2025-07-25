@@ -1,4 +1,4 @@
 @echo off
 
 :test
-  uv run dana tests.na
+  cd ..; uv run dana test-fin-analysis-workflows.na
