@@ -43,8 +43,8 @@ from dana.core.lang.ast import (
     ListLiteral,
     LiteralExpression,
     ObjectFunctionCall,
-    PlaceholderExpression,
     PipelineExpression,
+    PlaceholderExpression,
     SetLiteral,
     SliceExpression,
     SubscriptExpression,
@@ -52,7 +52,9 @@ from dana.core.lang.ast import (
     UnaryExpression,
 )
 from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
-from dana.core.lang.parser.transformer.expression.expression_helpers import OperatorHelper
+from dana.core.lang.parser.transformer.expression.expression_helpers import (
+    OperatorHelper,
+)
 
 ValidExprType = LiteralExpression | Identifier | BinaryExpression | FunctionCall
 
@@ -611,6 +613,8 @@ class ExpressionTransformer(BaseTransformer):
     def NONE(self, items=None):
         return LiteralExpression(value=None)
 
+
+
     def trailer(self, items):
         """
         Handles function calls, attribute access, and indexing after an atom.
@@ -682,7 +686,9 @@ class ExpressionTransformer(BaseTransformer):
                 return LiteralExpression(value)
             elif item.type == "F_STRING_TOKEN":
                 # Pass to the fstring_transformer
-                from dana.core.lang.parser.transformer.fstring_transformer import FStringTransformer
+                from dana.core.lang.parser.transformer.fstring_transformer import (
+                    FStringTransformer,
+                )
 
                 fstring_transformer = FStringTransformer()
                 return fstring_transformer.fstring([item])
@@ -797,7 +803,9 @@ class ExpressionTransformer(BaseTransformer):
             # F-string handling
             if item.type == "F_STRING_TOKEN":
                 # Pass to the FStringTransformer
-                from dana.core.lang.parser.transformer.fstring_transformer import FStringTransformer
+                from dana.core.lang.parser.transformer.fstring_transformer import (
+                    FStringTransformer,
+                )
 
                 fstring_transformer = FStringTransformer()
                 return fstring_transformer.fstring([item])

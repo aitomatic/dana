@@ -3,6 +3,7 @@
 import os
 
 from dana.core.lang import DanaSandbox
+from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
 
 
 class TestUnderscorePrivacy:
@@ -22,6 +23,10 @@ class TestUnderscorePrivacy:
         # Set up DANAPATH to include test_modules
         self.original_danapath = os.environ.get("DANAPATH", "")
         os.environ["DANAPATH"] = f"{test_modules_path}:{self.original_danapath}"
+
+        # Reset and reinitialize the module system to pick up the updated search paths
+        reset_module_system()
+        initialize_module_system()
 
         self.sandbox = DanaSandbox()
 

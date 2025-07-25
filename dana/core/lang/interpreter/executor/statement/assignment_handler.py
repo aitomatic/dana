@@ -12,7 +12,13 @@ from typing import Any
 
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.ast import Assignment, AttributeAccess, CompoundAssignment, Identifier, SubscriptExpression
+from dana.core.lang.ast import (
+    Assignment,
+    AttributeAccess,
+    CompoundAssignment,
+    Identifier,
+    SubscriptExpression,
+)
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -60,9 +66,6 @@ class AssignmentHandler(Loggable):
             if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
                 raise SandboxError("Parent executor not properly initialized")
             value = self.parent_executor.parent.execute(node.value, context)
-
-            # Convert function lists to ParallelFunction for clean composition
-            value = self._convert_function_list_to_parallel(value, context)
 
             # Apply type coercion if needed
             if target_type is not None:
@@ -440,33 +443,4 @@ class AssignmentHandler(Loggable):
             "cache_utilization_percent": round(len(self._coercion_cache) / max(self.TYPE_COERCION_CACHE_SIZE, 1) * 100, 2),
         }
 
-    def _convert_function_list_to_parallel(self, value: Any, context: SandboxContext) -> Any:
-        """Convert a list of functions to a ParallelFunction for clean composition.
 
-        This enables standalone parallel composition like: pipeline = [f1, f2]
-
-        Args:
-            value: The value to potentially convert
-            context: The execution context
-
-        Returns:
-            ParallelFunction if value is a list of functions, otherwise the original value
-        """
-        # Only convert if value is a list
-        if not isinstance(value, list):
-            return value
-
-        # Check if all items in the list are callable (functions)
-        if not value:  # Empty list
-            return value
-
-        for item in value:
-            if not callable(item):
-                # Contains non-callable items, don't convert
-                return value
-
-        # All items are callable, convert to ParallelFunction
-        # Import here to avoid circular imports
-        from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import ParallelFunction
-
-        return ParallelFunction(value, context)
