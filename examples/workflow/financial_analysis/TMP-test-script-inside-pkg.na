@@ -1,4 +1,7 @@
-"""Unified Test Runner Script for Financial Analysis Workflows."""
+"""Test Runner Script for Financial Analysis Workflows.
+
+(This script is placed inside the `financial_analysis` package.)
+"""
 
 from fin_statements import get_total_asset, get_total_asset_2y, get_total_asset_3y
 from fin_statements import get_fixed_asset, get_fixed_asset_2y, get_fixed_asset_3y

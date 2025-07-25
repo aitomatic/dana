@@ -68,6 +68,7 @@ from .fin_statements import get_deprec_and_amort, get_deprec_and_amort_2y, get_d
 from .fin_statements import get_op_income, get_op_income_2y, get_op_income_3y
 from .fin_statements import get_ebit, get_ebit_2y, get_ebit_3y
 from .fin_statements import get_int_exp, get_int_exp_2y, get_int_exp_3y
+from .fin_statements import get_ebt, get_ebt_2y, get_ebt_3y
 from .fin_statements import get_tax_exp, get_tax_exp_2y, get_tax_exp_3y
 from .fin_statements import get_net_income, get_net_income_2y, get_net_income_3y
 from .fin_statements import get_div, get_div_2y, get_div_3y
