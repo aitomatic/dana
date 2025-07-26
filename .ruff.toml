@@ -11,6 +11,7 @@ select = [
 
 ignore = [
     "E203",  # Whitespace before ':' (conflicts with Black)
+    "E402",  # Module level import not at top of file (intentional in CLI)
     "E501",  # Line too long (handled by line-length)
     "B008",  # Function call in default argument
     "B010",  # setattr in class body
