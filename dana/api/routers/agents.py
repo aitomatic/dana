@@ -56,6 +56,25 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/agents", tags=["agents"])
 
 
+def clear_agent_cache(agent_folder_path: str) -> None:
+    """
+    Remove the .cache folder from an agent's directory to force RAG rebuild.
+    
+    Args:
+        agent_folder_path: Path to the agent's folder
+    """
+    try:
+        cache_folder = os.path.join(agent_folder_path, ".cache")
+        if os.path.exists(cache_folder):
+            shutil.rmtree(cache_folder)
+            logger.info(f"Cleared cache folder: {cache_folder}")
+        else:
+            logger.debug(f"Cache folder does not exist: {cache_folder}")
+    except Exception as e:
+        logger.warning(f"Failed to clear cache folder {cache_folder}: {e}")
+        # Don't raise exception - cache clearing shouldn't block the main operation
+
+
 async def _auto_generate_basic_agent_code(
     agent_id: int,
     agent_name: str,
@@ -827,6 +846,10 @@ async def upload_agent_document(
             db_session=db,
             upload_directory=docs_folder,
         )
+        
+        # Clear cache to force RAG rebuild with new document
+        clear_agent_cache(folder_path)
+        
         return document
     except HTTPException:
         raise

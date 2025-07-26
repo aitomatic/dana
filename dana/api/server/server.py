@@ -15,12 +15,6 @@ from fastapi import WebSocket, WebSocketDisconnect
 from dana.api.client import APIClient
 from dana.common.config import ConfigLoader
 from dana.common.mixins.loggable import Loggable
-from dana.api.services.knowledge_status_manager import (
-    KnowledgeStatusManager,
-    KnowledgeGenerationManager,
-)
-import glob
-import asyncio
 
 from ..core.database import Base, engine
 
@@ -137,131 +131,8 @@ def create_app():
         # Run any pending migrations
         run_migrations()
 
-        # --- Knowledge generation: pick up all pending tasks on startup ---
-        print("[startup] Scanning for pending knowledge generation tasks...")
-        knows_glob = os.path.join("agents", "agent_*", "knows", "knowledge_status.json")
-        status_files = glob.glob(knows_glob)
-        print(f"[startup] Found {len(status_files)} knowledge_status.json files.")
-
-        if not status_files:
-            print(
-                "[startup] No knowledge status files found. Skipping background knowledge generation."
-            )
-            return
-
-        async def run_all_queues():
-            tasks = []
-            for status_path in status_files:
-                try:
-                    # Extract agent_id from the path: agents/agent_123/knows/knowledge_status.json
-                    import re
-
-                    match = re.search(r"agents/agent_(\d+)/", status_path)
-                    agent_id = match.group(1) if match else None
-                    status_manager = KnowledgeStatusManager(
-                        status_path, agent_id=agent_id
-                    )
-                    status_manager.recover_stuck_in_progress(max_age_seconds=3600)
-                    pending = status_manager.get_pending_failed_or_null()
-                    if not pending:
-                        continue
-                    print(
-                        f"[startup] {len(pending)} pending/failed/null topics in {status_path}"
-                    )
-                    # Use lower concurrency during startup to avoid overwhelming the system
-                    manager = KnowledgeGenerationManager(
-                        status_manager, max_concurrent=2, ws_manager=ws_manager
-                    )
-
-                    async def run_queue():
-                        for entry in pending:
-                            print(f"[startup] Queuing topic: {entry['path']}")
-                            await manager.add_topic(entry)
-                        await manager.run()
-                        print(
-                            f"[startup] All queued topics processed for {status_path}"
-                        )
-
-                    tasks.append(run_queue())
-                except Exception as e:
-                    print(f"[startup] Error processing {status_path}: {e}")
-            if tasks:
-                print(f"[startup] Awaiting {len(tasks)} knowledge generation queues...")
-                await asyncio.gather(*tasks)
-                print("[startup] All startup knowledge generation queues complete.")
-            else:
-                print("[startup] No knowledge generation queues to run.")
-
-        def start_background_knowledge_generation():
-            """Start knowledge generation in the background without blocking startup."""
-            import threading
-
-            def run_background():
-                try:
-                    # Add a small delay to ensure server is fully ready
-                    import time
-
-                    time.sleep(2)
-                    print("[startup] Starting background knowledge generation...")
-
-                    # Set a reasonable timeout to prevent hanging
-                    try:
-                        # Use asyncio.wait_for with timeout
-                        async def run_with_timeout():
-                            await asyncio.wait_for(
-                                run_all_queues(), timeout=1800
-                            )  # 30 minutes max
-
-                        asyncio.run(run_with_timeout())
-                        print(
-                            "[startup] Background knowledge generation completed successfully."
-                        )
-                    except asyncio.TimeoutError:
-                        print(
-                            "[startup] Background knowledge generation timed out after 30 minutes."
-                        )
-                    except Exception as e:
-                        print(f"[startup] Error during knowledge generation: {e}")
-                        import traceback
-
-                        traceback.print_exc()
-
-                except Exception as e:
-                    print(
-                        f"[startup] Critical error in background knowledge generation: {e}"
-                    )
-                    import traceback
-
-                    traceback.print_exc()
-
-            # Start in a separate thread to avoid blocking startup
-            thread = threading.Thread(target=run_background, daemon=True)
-            thread.start()
-
-        # Only start background knowledge generation if there are pending tasks
-        total_pending = 0
-        for status_path in status_files:
-            try:
-                import re
-
-                match = re.search(r"agents/agent_(\d+)/", status_path)
-                agent_id = match.group(1) if match else None
-                status_manager = KnowledgeStatusManager(status_path, agent_id=agent_id)
-                pending = status_manager.get_pending_failed_or_null()
-                total_pending += len(pending)
-            except Exception as e:
-                print(f"[startup] Error checking {status_path}: {e}")
-
-        if total_pending > 0:
-            print(
-                f"[startup] Found {total_pending} total pending knowledge generation tasks."
-            )
-            start_background_knowledge_generation()
-            print("[startup] Knowledge generation scheduled in background.")
-        else:
-            print(
-                "[startup] No pending knowledge generation tasks found. Skipping background generation."
-            )
+        # Automatic knowledge generation on startup has been disabled
+        print("[startup] Server startup complete. Knowledge generation can be triggered manually via API.")
 
     # Catch-all route for SPA (serves index.html for all non-API, non-static routes)
     @app.get("/{full_path:path}")
