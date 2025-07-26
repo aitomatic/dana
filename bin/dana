@@ -1,1 +1,21 @@
-../dana/core/cli/dana.py
+#!/usr/bin/env python3
+"""
+DANA Command Line Interface - Binary Entry Point
+
+This script serves as the binary entry point for the DANA CLI.
+It delegates to the module entry point using 'python -m dana'.
+"""
+
+import os
+import sys
+
+# Add the project root to the Python path
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
+
+# Execute the module entry point
+if __name__ == "__main__":
+    # Import and run the main function from the module entry point
+    from dana.__main__ import main
+
+    main()

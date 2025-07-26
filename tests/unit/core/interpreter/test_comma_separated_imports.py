@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import pytest
 
 from dana.core.lang import DanaSandbox
 

@@ -133,7 +133,7 @@ class LLMToolCallManager(Loggable):
         Returns:
             List[dict[str, Any]]: List of tool responses in OpenAI format
         """
-        
+
         responses: list[dict[str, Any]] = []
         for tool_call in tool_calls:
             try:

@@ -157,21 +157,22 @@ class ComposedFunction(SandboxFunction):
 
     def _wrap_callable(self, func: callable, func_name: str, context: SandboxContext) -> SandboxFunction:
         """Wrap a raw callable in a SandboxFunction-compatible wrapper.
-        
+
         Args:
             func: The raw callable function
             func_name: The name of the function for error reporting
             context: The execution context
-            
+
         Returns:
             A SandboxFunction-compatible wrapper
         """
+
         class CallableWrapper(SandboxFunction):
             def __init__(self, wrapped_func, name, outer_context):
                 super().__init__(outer_context)
                 self.wrapped_func = wrapped_func
                 self.name = name
-                
+
             def execute(self, context: SandboxContext, *args, **kwargs):
                 # Use the function registry to call the function properly
                 # This ensures correct argument passing for core functions
@@ -181,11 +182,11 @@ class ComposedFunction(SandboxFunction):
                 else:
                     # Fallback: call directly with context as first parameter
                     return self.wrapped_func(context, *args, **kwargs)
-                    
+
             def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> None:
                 # No special context restoration needed for wrapped callables
                 pass
-        
+
         return CallableWrapper(func, func_name, context)
 
     def __repr__(self) -> str:

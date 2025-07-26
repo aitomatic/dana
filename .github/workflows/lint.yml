@@ -1,21 +1,20 @@
-# GitHub Action to run Ruff code analysis and formatting
-# - Runs on Python 3.12 
-# - Uses Ruff for fast linting and formatting checks (non-blocking during development)
-# - Follows OpenDXA coding standards from pyproject.toml
-# - Reports issues but doesn't fail CI to maintain development velocity
-# This provides fast feedback while allowing iterative code improvement
+# GitHub Action to run Ruff code analysis
+# - Runs on Python 3.12+
+# - Uses Ruff for fast, comprehensive code quality analysis
+# - Uses pyproject.toml configuration for Dana standards
+# - Focuses on critical code quality issues
 
-name: Ruff
+name: Ruff Lint
 
 on: 
   push:
-    branches: [main, master, feat/llm-poet]
+    branches: [main, master]
   pull_request:
     branches: [main, master]
   workflow_dispatch:  # Allow manual triggering
 
 jobs:
-  ruff-check:
+  build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -28,16 +27,22 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install uv
       uses: astral-sh/setup-uv@v6
+    - name: Cache uv dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-
     - name: Install dependencies
       run: uv sync --extra dev
     - name: Critical lint checks (BLOCKING)
       env:
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        # Block CI for critical issues in core modules only
         echo "🚫 Running critical lint checks (BLOCKING)..."
         echo "Checking core modules for: bare except (E722), undefined names (F821)"
-        echo "Excluding contrib/ directory for now"
+        echo "Using pyproject.toml configuration"
         uv run ruff check dana/ tests/ --select E722,F821 --exclude dana/contrib --output-format=github || {
           echo "❌ Critical lint violations found in core modules"
           echo "These must be fixed as they can cause runtime errors or security issues"
@@ -50,7 +55,6 @@ jobs:
       env:
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        # Show important issues but don't block CI
         echo "⚠️ Running important lint checks (non-blocking)..."
         echo "Checking for: unused variables (F841), assert exceptions (B017)"
         uv run ruff check dana/ tests/ --select F841,B017 --output-format=github || {
@@ -61,7 +65,6 @@ jobs:
       env:
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        # Show style issues but don't block CI
         echo "✨ Running style and formatting checks (non-blocking)..."
         uv run ruff format --check dana/ tests/ || {
           echo "ℹ️ Formatting issues found - run 'uv run ruff format dana/ tests/' to fix"

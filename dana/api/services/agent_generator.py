@@ -1541,28 +1541,25 @@ def solve(basic_agent : BasicAgent, problem : str):
 
 
 async def generate_agent_files_from_prompt(
-    prompt: str,
-    messages: list[dict[str, Any]], 
-    agent_summary: dict[str, Any],
-    multi_file: bool = False
+    prompt: str, messages: list[dict[str, Any]], agent_summary: dict[str, Any], multi_file: bool = False
 ) -> tuple[str, str | None, dict[str, Any] | None]:
     """
     Generate Dana agent files from a specific prompt, conversation messages, and agent summary.
-    
+
     This function is designed for Phase 2 of the agent generation flow, where we have
     a refined agent description and want to generate the actual .na files.
-    
+
     Args:
         prompt: Specific prompt for generating the agent files
         messages: List of conversation messages with 'role' and 'content' fields
         agent_summary: Dictionary containing agent description, capabilities, etc.
         multi_file: Whether to generate multi-file structure
-        
+
     Returns:
         Tuple of (Generated Dana code as string, error message or None, multi-file project or None)
     """
     logger.info("Generating agent files from prompt for Phase 2")
-    
+
     try:
         # Check if mock mode is enabled
         if os.environ.get("DANA_MOCK_AGENT_GENERATION", "").lower() == "true":
@@ -1571,7 +1568,7 @@ async def generate_agent_files_from_prompt(
 
         # Get agent generator instance
         generator = await get_agent_generator()
-        
+
         # Check if LLM resource is available
         if generator.llm_resource is None:
             logger.warning("LLMResource is not available, using fallback template")
@@ -1621,14 +1618,14 @@ async def generate_agent_files_from_prompt(
             logger.info("Parsing multi-file response...")
             multi_file_project = CodeHandler.parse_multi_file_response(generated_code)
             logger.info(f"Parsed multi-file project: {multi_file_project}")
-            
+
             # Extract main file content for backward compatibility
             main_file_content = ""
             for file_info in multi_file_project["files"]:
                 if file_info["filename"] == multi_file_project["main_file"]:
                     main_file_content = file_info["content"]
                     break
-            
+
             print("--------------------------------")
             print("Multi-file project: ", multi_file_project)
             print("--------------------------------")
@@ -1658,27 +1655,22 @@ async def generate_agent_files_from_prompt(
         return CodeHandler.get_fallback_template(), str(e), None
 
 
-def _create_phase_2_prompt(
-    prompt: str, 
-    messages: list[dict[str, Any]], 
-    agent_summary: dict[str, Any], 
-    multi_file: bool
-) -> str:
+def _create_phase_2_prompt(prompt: str, messages: list[dict[str, Any]], agent_summary: dict[str, Any], multi_file: bool) -> str:
     """
     Create an enhanced prompt for Phase 2 agent generation.
-    
+
     Args:
         prompt: The specific prompt for generating agent files
         messages: Conversation messages for context
         agent_summary: Agent description and capabilities
         multi_file: Whether to generate multi-file structure
-        
+
     Returns:
         Enhanced prompt string
     """
     # Extract conversation context
     conversation_text = "\n".join([f"{msg.get('role', '')}: {msg.get('content', '')}" for msg in messages])
-    
+
     # Extract agent information
     agent_name = agent_summary.get("name", "Custom Agent")
     agent_description = agent_summary.get("description", "A specialized agent for your needs")
@@ -1693,15 +1685,15 @@ def _create_phase_2_prompt(
     docs_files = agent_summary.get("docs_files") or agent_summary.get("knowledge_files") or []
     if not isinstance(docs_files, list):
         docs_files = []
-    
+
     # Create context section
     context_section = f"""
 AGENT SUMMARY:
 - Name: {agent_name}
 - Description: {agent_description}
-- Knowledge Domains: {', '.join(knowledge_domains) if knowledge_domains else 'None specified'}
-- Workflow Steps: {', '.join(workflow_steps) if workflow_steps else 'None specified'}
-- Tools: {', '.join(tools) if tools else 'None specified'}
+- Knowledge Domains: {", ".join(knowledge_domains) if knowledge_domains else "None specified"}
+- Workflow Steps: {", ".join(workflow_steps) if workflow_steps else "None specified"}
+- Tools: {", ".join(tools) if tools else "None specified"}
 - Summary: {agent_summary_description}
 
 CONVERSATION CONTEXT:
@@ -1710,9 +1702,8 @@ CONVERSATION CONTEXT:
 SPECIFIC REQUIREMENTS:
 {prompt}
 """
-    
-    
-    main_na = f'''
+
+    main_na = f"""
 from workflows import workflow
 from common import RetrievalPackage
 
@@ -1726,9 +1717,9 @@ def solve(self : {agent_class}, query: str) -> str:
     return workflow(package)
 
 this_agent = {agent_class}()
-'''
+"""
 
-    methods_na = '''
+    methods_na = """
 from knowledge import knowledge
 from common import QUERY_GENERATION_PROMPT
 from common import QUERY_DECISION_PROMPT
@@ -1754,32 +1745,32 @@ def should_use_rag(package: RetrievalPackage) -> RetrievalPackage:
 def get_answer(package: RetrievalPackage) -> str:
     prompt = ANSWER_PROMPT.format(user_input=package.query, retrieved_docs=package.retrieval_result)
     return reason(prompt)
-'''
+"""
 
-    workflows_na = '''
+    workflows_na = """
 from methods import should_use_rag
 from methods import refine_query
 from methods import search_document
 from methods import get_answer
 
 workflow = should_use_rag | refine_query | search_document | get_answer
-'''
+"""
 
     # Build knowledge.na with rag_resource and comments about docs files
     knowledges_na_lines = [
         '"""',
-        'Knowledge sources for this agent. The following files are available in the ./docs folder:',
+        "Knowledge sources for this agent. The following files are available in the ./docs folder:",
     ]
     if docs_files:
         for f in docs_files:
-            knowledges_na_lines.append(f'- {f}')
+            knowledges_na_lines.append(f"- {f}")
     else:
-        knowledges_na_lines.append('- (No files currently listed. Add files to ./docs to make them available.)')
+        knowledges_na_lines.append("- (No files currently listed. Add files to ./docs to make them available.)")
     knowledges_na_lines.append('"""\n')
     knowledges_na_lines.append('knowledge = use("rag", sources=["./docs"])')
     knowledges_na = "\n".join(knowledges_na_lines)
 
-    tools_na = ''  # No rag_resource here; left intentionally empty or for other tools
+    tools_na = ""  # No rag_resource here; left intentionally empty or for other tools
 
     common_na = '''
 
@@ -1945,14 +1936,14 @@ Generate only the JSON object, no explanations or markdown formatting.
 
 # Missing functions that were previously imported from deleted files
 
+
 def get_multi_file_agent_generation_prompt(intentions: str, current_code: str = "", has_docs_folder: bool = False) -> str:
     """
     Returns the multi-file agent generation prompt for the LLM.
     """
-    rag_tools_block = 'rag_resource = use("rag", sources=["./docs"])'
-    rag_import_block = 'from tools import rag_resource\n'
-    rag_search_block = '    package.retrieval_result = str(rag_resource.query(query))'
-    
+    rag_import_block = "from tools import rag_resource\n"
+    rag_search_block = "    package.retrieval_result = str(rag_resource.query(query))"
+
     return f'''
 You are Dana, an expert Dana language developer. Based on the user's intentions, generate a training project for Georgia that follows the modular, workflow-based pattern.
 

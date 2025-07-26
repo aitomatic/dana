@@ -242,14 +242,14 @@ class ExpressionTransformer(BaseTransformer):
         """Transform pipe expressions into PipelineExpression AST node.
 
         pipe_expr: or_expr (PIPE or_expr)*
-        
+
         This method collects all expressions separated by PIPE tokens and creates
         a PipelineExpression with the stages list. Only creates PipelineExpression
         if there are actual PIPE tokens (at least one | operator).
         """
         stages = []
         has_pipe = False
-        
+
         # Check if we have any PIPE tokens
         for item in items:
             if isinstance(item, Token) and item.type == "PIPE":
@@ -258,7 +258,7 @@ class ExpressionTransformer(BaseTransformer):
             elif str(item) == "|":
                 has_pipe = True
                 break
-        
+
         # Filter out PIPE tokens and collect only the expressions
         for item in items:
             if isinstance(item, Token) and item.type == "PIPE":
@@ -269,11 +269,11 @@ class ExpressionTransformer(BaseTransformer):
                 # This is an expression, process it
                 expr = self.expression([item])
                 stages.append(expr)
-        
+
         # If no PIPE tokens, return the single expression directly
         if not has_pipe and len(stages) == 1:
             return stages[0]
-        
+
         # Otherwise, create PipelineExpression
         return PipelineExpression(stages=stages)
 
@@ -469,7 +469,7 @@ class ExpressionTransformer(BaseTransformer):
     def _atom_from_token(self, token):
         value = token.value
         location = self.create_location(token)  # Create location from token
-        
+
         # String literal: strip quotes
         if (
             value
@@ -612,8 +612,6 @@ class ExpressionTransformer(BaseTransformer):
 
     def NONE(self, items=None):
         return LiteralExpression(value=None)
-
-
 
     def trailer(self, items):
         """

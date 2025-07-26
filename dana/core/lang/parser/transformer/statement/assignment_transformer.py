@@ -78,7 +78,7 @@ class AssignmentTransformer(BaseTransformer):
 
         # Transform the target using the same logic as simple assignment
         from lark import Tree
-        
+
         # Handle different types of assignment targets
         if isinstance(target_tree, Tree) and hasattr(target_tree, "data"):
             # Check if this is a complex target (atom with trailers)
@@ -109,6 +109,7 @@ class AssignmentTransformer(BaseTransformer):
 
         # Validate target type
         from dana.core.lang.ast import AttributeAccess, Identifier, SubscriptExpression
+
         if not isinstance(target, Identifier | SubscriptExpression | AttributeAccess):
             raise TypeError(f"Compound assignment target must be Identifier, SubscriptExpression, or AttributeAccess, got {type(target)}")
 
@@ -118,11 +119,7 @@ class AssignmentTransformer(BaseTransformer):
         # Get the operator string
         operator_str = str(operator_token)
 
-        return CompoundAssignment(
-            target=target,
-            operator=operator_str,
-            value=value
-        )
+        return CompoundAssignment(target=target, operator=operator_str, value=value)
 
     def compound_op(self, items):
         """Return the compound operator token."""

@@ -134,7 +134,6 @@ class StatementExecutor(BaseExecutor):
         """
         return self.statement_utils.execute_assert_statement(node, context)
 
-
     def _execute_python_import(self, module_name: str, context_name: str, context: SandboxContext) -> None:
         """Execute import of a Python module (.py extension required).
 

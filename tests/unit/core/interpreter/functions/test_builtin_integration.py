@@ -385,7 +385,7 @@ class TestBuiltinErrorHandling:
         interpreter = DanaInterpreter()
         context = SandboxContext()
 
-        # Test max/min with empty sequences 
+        # Test max/min with empty sequences
         with pytest.raises((ValueError, SandboxError)) as exc_info:
             interpreter._eval("max([])", context=context)
         assert "empty" in str(exc_info.value) or "arg is an empty sequence" in str(exc_info.value)

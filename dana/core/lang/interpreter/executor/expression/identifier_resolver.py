@@ -363,27 +363,27 @@ class IdentifierResolver(Loggable):
 
     def _try_struct_type_resolution(self, name: str) -> Any | None:
         """Try to resolve identifier as a struct type name.
-        
+
         Args:
             name: The identifier name to check
-            
+
         Returns:
             The struct type name string if found, None otherwise
         """
         try:
             from dana.core.lang.interpreter.struct_system import StructTypeRegistry
-            
+
             # Check if this is a registered struct type name
             if StructTypeRegistry.exists(name):
                 self.debug(f"Found '{name}' as struct type name")
                 return name  # Return the string name for struct types
-                
+
         except ImportError:
             # Struct system not available, continue without it
             pass
         except Exception as e:
             self.debug(f"Struct type resolution failed for '{name}': {e}")
-            
+
         return None
 
     def _cache_result(self, cache_key: tuple, result: Any) -> None:

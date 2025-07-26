@@ -112,17 +112,17 @@ class StatementTransformer(BaseTransformer):
         """Set the current filename for location tracking and propagate to sub-transformers."""
         super().set_filename(filename)
         # Propagate to sub-transformers
-        if hasattr(self.expression_transformer, 'set_filename'):
+        if hasattr(self.expression_transformer, "set_filename"):
             self.expression_transformer.set_filename(filename)
-        if hasattr(self.assignment_transformer, 'set_filename'):
+        if hasattr(self.assignment_transformer, "set_filename"):
             self.assignment_transformer.set_filename(filename)
-        if hasattr(self.control_flow_transformer, 'set_filename'):
+        if hasattr(self.control_flow_transformer, "set_filename"):
             self.control_flow_transformer.set_filename(filename)
-        if hasattr(self.function_definition_transformer, 'set_filename'):
+        if hasattr(self.function_definition_transformer, "set_filename"):
             self.function_definition_transformer.set_filename(filename)
-        if hasattr(self.agent_context_transformer, 'set_filename'):
+        if hasattr(self.agent_context_transformer, "set_filename"):
             self.agent_context_transformer.set_filename(filename)
-        if hasattr(self.import_simple_statement_transformer, 'set_filename'):
+        if hasattr(self.import_simple_statement_transformer, "set_filename"):
             self.import_simple_statement_transformer.set_filename(filename)
 
     # === Program and Statement Entry ===

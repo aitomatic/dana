@@ -1,6 +1,5 @@
 import threading
 import json
-import os
 from abc import ABC, abstractmethod
 from pathlib import Path
 from datetime import datetime
@@ -34,7 +33,7 @@ class WorkingMemory(BaseMemoryRepository):
         self.storage_path = storage_path
         self._memories: list[MemoryItem] = []
         self._lock = threading.Lock()
-        
+
         # Create storage directory and load existing memories
         self._storage_file = self._get_storage_file_path()
         self._load_memories()
@@ -49,9 +48,9 @@ class WorkingMemory(BaseMemoryRepository):
         """Load memories from persistent storage"""
         try:
             if self._storage_file.exists():
-                with open(self._storage_file, 'r') as f:
+                with open(self._storage_file) as f:
                     data = json.load(f)
-                    for item_data in data.get('memories', []):
+                    for item_data in data.get("memories", []):
                         memory_item = self._deserialize_memory(item_data)
                         if memory_item:
                             self._memories.append(memory_item)
@@ -62,15 +61,15 @@ class WorkingMemory(BaseMemoryRepository):
         """Save memories to persistent storage"""
         try:
             data = {
-                'user_id': self.user_id,
-                'session_id': self.session_id,
-                'agent_id': self.agent_id,
-                'instance_id': self.instance_id,
-                'max_items': self.max_items,
-                'timestamp': datetime.now().isoformat(),
-                'memories': [self._serialize_memory(memory) for memory in self._memories]
+                "user_id": self.user_id,
+                "session_id": self.session_id,
+                "agent_id": self.agent_id,
+                "instance_id": self.instance_id,
+                "max_items": self.max_items,
+                "timestamp": datetime.now().isoformat(),
+                "memories": [self._serialize_memory(memory) for memory in self._memories],
             }
-            with open(self._storage_file, 'w') as f:
+            with open(self._storage_file, "w") as f:
                 json.dump(data, f, indent=2)
         except Exception as e:
             print(f"Warning: Could not save WorkingMemory to {self._storage_file}: {e}")
@@ -78,44 +77,44 @@ class WorkingMemory(BaseMemoryRepository):
     def _serialize_memory(self, memory: MemoryItem) -> dict:
         """Convert MemoryItem to JSON-serializable dict"""
         return {
-            'id': memory.id,
-            'memory': memory.memory,
-            'user_id': memory.user_id,
-            'session_id': memory.session_id,
-            'timestamp': memory.timestamp.isoformat(),
-            'metadata': {
-                'memory_type': memory.metadata.memory_type.value,
-                'key': memory.metadata.key,
-                'tags': memory.metadata.tags,
-                'embedding': memory.metadata.embedding,
-                'confidence': memory.metadata.confidence,
-                'entities': memory.metadata.entities,
-                'type': memory.metadata.type.value,
-                'status': memory.metadata.status.value
-            }
+            "id": memory.id,
+            "memory": memory.memory,
+            "user_id": memory.user_id,
+            "session_id": memory.session_id,
+            "timestamp": memory.timestamp.isoformat(),
+            "metadata": {
+                "memory_type": memory.metadata.memory_type.value,
+                "key": memory.metadata.key,
+                "tags": memory.metadata.tags,
+                "embedding": memory.metadata.embedding,
+                "confidence": memory.metadata.confidence,
+                "entities": memory.metadata.entities,
+                "type": memory.metadata.type.value,
+                "status": memory.metadata.status.value,
+            },
         }
 
     def _deserialize_memory(self, data: dict) -> MemoryItem | None:
         """Convert JSON dict back to MemoryItem"""
         try:
             metadata = MemoryMetadata(
-                memory_type=StorageType(data['metadata']['memory_type']),
-                key=data['metadata']['key'],
-                tags=data['metadata']['tags'],
-                embedding=data['metadata']['embedding'],
-                confidence=data['metadata']['confidence'],
-                entities=data['metadata']['entities'],
-                type=MemoryType(data['metadata']['type']),
-                status=MemoryStatus(data['metadata']['status'])
+                memory_type=StorageType(data["metadata"]["memory_type"]),
+                key=data["metadata"]["key"],
+                tags=data["metadata"]["tags"],
+                embedding=data["metadata"]["embedding"],
+                confidence=data["metadata"]["confidence"],
+                entities=data["metadata"]["entities"],
+                type=MemoryType(data["metadata"]["type"]),
+                status=MemoryStatus(data["metadata"]["status"]),
             )
-            
+
             return MemoryItem(
-                id=data['id'],
-                memory=data['memory'],
-                user_id=data['user_id'],
-                session_id=data['session_id'],
-                timestamp=datetime.fromisoformat(data['timestamp']),
-                metadata=metadata
+                id=data["id"],
+                memory=data["memory"],
+                user_id=data["user_id"],
+                session_id=data["session_id"],
+                timestamp=datetime.fromisoformat(data["timestamp"]),
+                metadata=metadata,
             )
         except Exception as e:
             print(f"Warning: Could not deserialize memory item: {e}")
@@ -140,14 +139,14 @@ class WorkingMemory(BaseMemoryRepository):
                 if m.id == memory_id:
                     return m
         return None
-    
+
     def clear_and_keep_recent(self, keep_count: int = 10):
         """Clear working memory but keep most recent items (used during batch processing)"""
         with self._lock:
             if len(self._memories) > keep_count:
                 self._memories = self._memories[-keep_count:]
                 self._save_memories()
-    
+
     def replace_with_items(self, items_to_keep: list):
         """Replace working memory content with specific items (used for token-based retention)"""
         with self._lock:

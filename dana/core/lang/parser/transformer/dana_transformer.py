@@ -30,13 +30,13 @@ class DanaTransformer(Transformer):
         """Set the current filename for all transformers."""
         self.current_filename = filename
         # Propagate to all sub-transformers
-        if hasattr(self.statement_transformer, 'set_filename'):
+        if hasattr(self.statement_transformer, "set_filename"):
             self.statement_transformer.set_filename(filename)
-        if hasattr(self.expression_transformer, 'set_filename'):
+        if hasattr(self.expression_transformer, "set_filename"):
             self.expression_transformer.set_filename(filename)
-        if hasattr(self.fstring_transformer, 'set_filename'):
+        if hasattr(self.fstring_transformer, "set_filename"):
             self.fstring_transformer.set_filename(filename)
-        if hasattr(self.variable_transformer, 'set_filename'):
+        if hasattr(self.variable_transformer, "set_filename"):
             self.variable_transformer.set_filename(filename)
 
     def transform(self, tree):

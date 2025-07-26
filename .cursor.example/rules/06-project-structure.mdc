@@ -1,0 +1,22 @@
+# Project Structure - File Organization
+
+## Temporary Files & Project Structure
+
+- **ALL temporary development files go in `tmp/` directory**
+- Never create test files in project root
+- Use meaningful prefixes: `tmp_test_`, `tmp_debug_`
+
+## Directory Structure
+
+- Core framework code: `dana/`
+- Tests: `tests/` (matching source structure)
+- Examples: `examples/`
+- Documentation: `docs/`
+- Temporary files: `tmp/`
+
+## File Organization Principles
+
+- **Prefer editing existing files over creating new ones**
+- **Always check existing examples before creating new ones**
+- Use appropriate design patterns
+- Keep utilities generic and reusable
