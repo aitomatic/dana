@@ -12,12 +12,8 @@ def solve(self : Sofia, query: str) -> str:
     steps : list = reason(PLAN_PROMPT.format(problem=query), resources=[knowledge], temperature=0.1)
     context = ""
     for step in steps:
-        print("-"*50)
-        print(step)
         package = RetrievalPackage(query=str(step), context=context, original_problem=query)
         answer = workflow(package)
-        print(answer)
-        print("-"*50)
         context = context + f"Step {step['step']}: {step['action']}\nAnswer: {answer}\n\n"
     final_prompt = f"""
     Using only the information in **Context**, write one concise paragraph (≤120 words) that fully answers the **Question**, including every critical number, date, and fact.
