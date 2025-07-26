@@ -73,18 +73,21 @@ class KnowledgeStatusManager:
         if entry:
             entry["file"] = file
             entry["last_topic_update"] = last_topic_update
-            # Set status if provided, or if current status is null/None, set to pending
-            if status is not None:
+            # Only set status if it's not None and not a special preserve indicator
+            if status is not None and status != "preserve_existing":
                 entry["status"] = status
             elif entry.get("status") is None:
+                # If current status is null and no explicit status provided, set to pending
                 entry["status"] = "pending"
         else:
+            # For new topics, use the provided status (defaulting to "pending")
+            final_status = "pending" if status == "preserve_existing" else status
             data["topics"].append(
                 {
                     "id": str(uuid.uuid4()),
                     "path": path,
                     "file": file,
-                    "status": status,
+                    "status": final_status,
                     "last_generated": None,
                     "last_topic_update": last_topic_update,
                     "error": None,

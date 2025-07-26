@@ -894,6 +894,31 @@ async def list_agent_files(agent_id: int, db: Session = Depends(get_db)):
                 }
                 files.append(file_info)
 
+        # Sort files with custom ordering for .na files
+        def get_file_sort_priority(file_info):
+            filename = file_info["name"].lower()
+            
+            # Define the priority order for .na files
+            if filename == "main.na":
+                return (0, filename)
+            elif filename == "workflows.na":
+                return (1, filename)
+            elif filename == "knowledge.na":
+                return (2, filename)
+            elif filename == "methods.na":
+                return (3, filename)
+            elif filename == "common.na":
+                return (4, filename)
+            elif filename == "tools.na":
+                return (5, filename)
+            elif filename.endswith(".na"):
+                # Other .na files come after the main ones, sorted alphabetically
+                return (6, filename)
+            else:
+                # Non-.na files come last, sorted alphabetically
+                return (7, filename)
+        
+        files.sort(key=get_file_sort_priority)
         return {"files": files}
 
     except Exception as e:
@@ -1112,16 +1137,21 @@ def run_generation(agent_id: int):
             return
         print(f"[generate-knowledge] Loaded domain knowledge tree for agent {agent_id}")
 
-        def collect_leaf_paths(node, path_so_far):
-            path = path_so_far + [node.topic]
+        def collect_leaf_paths(node, path_so_far, is_root=False):
+            # Skip adding root topic to path to match original knowledge status format
+            if is_root:
+                path = path_so_far
+            else:
+                path = path_so_far + [node.topic]
+            
             if not getattr(node, "children", []):
                 return [(path, node)]
             leaves = []
             for child in getattr(node, "children", []):
-                leaves.extend(collect_leaf_paths(child, path))
+                leaves.extend(collect_leaf_paths(child, path, is_root=False))
             return leaves
 
-        leaf_paths = collect_leaf_paths(tree.root, [])
+        leaf_paths = collect_leaf_paths(tree.root, [], is_root=True)
         print(f"[generate-knowledge] Collected {len(leaf_paths)} leaf topics from tree")
 
         # 1. Build or update knowledge_status.json
@@ -1137,7 +1167,7 @@ def run_generation(agent_id: int):
                 path=area_name,
                 file=file_name,
                 last_topic_update=now_str,
-                status=None,  # Don't force status change if already present
+                status="preserve_existing",  # Preserve existing status, set to pending if null
             )
         # Remove topics that are no longer in the tree
         all_paths = set([" - ".join(path) for path, _ in leaf_paths])
@@ -1145,10 +1175,10 @@ def run_generation(agent_id: int):
             if entry["path"] not in all_paths:
                 status_manager.remove_topic(entry["path"])
 
-        # 2. Only queue topics with status 'pending' or 'failed'
-        pending = status_manager.get_pending_or_failed()
+        # 2. Only queue topics with status 'pending', 'failed', or null
+        pending = status_manager.get_pending_failed_or_null()
         print(
-            f"[generate-knowledge] {len(pending)} topics to generate (pending or failed)"
+            f"[generate-knowledge] {len(pending)} topics to generate (pending, failed, or null)"
         )
 
         # 3. Use KnowledgeGenerationManager to run the queue

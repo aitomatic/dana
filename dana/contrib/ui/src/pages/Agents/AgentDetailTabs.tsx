@@ -25,8 +25,9 @@ const TAB_ICONS = {
 export const AgentDetailTabs: React.FC<{
   onShowComparison: () => void;
   children?: React.ReactNode;
-}> = ({ onShowComparison, children }) => {
-  const [activeTab, setActiveTab] = useState('Overview');
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+}> = ({ onShowComparison, children, activeTab, setActiveTab }) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const { selectedAgent } = useAgentStore();
   return (

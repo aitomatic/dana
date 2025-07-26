@@ -97,38 +97,52 @@ class IntentDetectionService(Loggable):
             )
     
     async def generate_followup_message(self, user_message: str, agent: Any, knowledge_topics: list[str]) -> str:
-        """Generate a creative, LLM-based follow-up message for the smart chat flow."""
+        """Generate a domain-aware, constructive follow-up message for the smart chat flow."""
         agent_name = getattr(agent, 'name', None) or (agent.get('name') if isinstance(agent, dict) else None) or "(no name)"
         agent_description = getattr(agent, 'description', None) or (agent.get('description') if isinstance(agent, dict) else None) or "(no description)"
         agent_config = getattr(agent, 'config', None) or (agent.get('config') if isinstance(agent, dict) else None) or {}
         specialties = agent_config.get('specialties', None) or "(not set)"
         skills = agent_config.get('skills', None) or "(not set)"
+        
+        # Analyze domain knowledge structure for better suggestions
+        domain_analysis = self._analyze_domain_knowledge(knowledge_topics)
         topics_str = ", ".join(knowledge_topics) if knowledge_topics else "(none yet)"
-        prompt = f'''
-You are a friendly, creative assistant helping a user define and improve an AI agent. The user just sent this message:
+        
+        # Build domain-aware, LLM-generated follow-up prompt
+        context_prompt = f"""
+You are a creative and insightful agent designer with deep domain expertise. Analyze the user's recent action and the agent's current domain knowledge, then ask ONE engaging question that will help them build a better agent.
+
+AGENT STATE:
+Name: {agent_name}
+Description: {agent_description}
+Specialties: {specialties}
+Skills: {skills}
+
+CURRENT DOMAIN KNOWLEDGE:
+{domain_analysis}
+
+USER JUST SAID: "{user_message}"
+
+Based on the agent's current domain knowledge and the user's recent action, ask ONE question that will:
+- Suggest a related topic or subdomain that would enhance the agent's expertise
+- Propose a practical application or use case within the current domain
+- Identify a gap in the knowledge structure that could be filled
+- Suggest a deeper or more advanced aspect of the current domain
+- Recommend a complementary skill or capability that fits the domain
+
+Be specific to the domain, creative, and genuinely helpful. Reference the current knowledge structure when making suggestions. Make the user excited to explore more of their chosen domain.
+
+Ask only ONE question. Make it engaging, domain-relevant, and actionable.
 """
-{user_message}
-"""
-
-Here is the current state of the agent:
-- Name: {agent_name}
-- Description: {agent_description}
-- Specialties: {specialties}
-- Skills: {skills}
-- Knowledge topics: {topics_str}
-
-Your job is to suggest a friendly, creative follow-up question or suggestion to help the user further define, improve, or expand their agent. Always encourage the user to continue, and never let the conversation end abruptly. If the agent is missing important information (like specialties, description, or knowledge), ask about that. Otherwise, suggest ways the user can make the agent more useful, unique, or interesting. Be conversational and engaging.
-
-Respond with only the follow-up message, no preamble or explanation.
-'''
+        
         llm_request = BaseRequest(
             arguments={
                 "messages": [
-                    {"role": "system", "content": "You are a creative assistant for agent configuration."},
-                    {"role": "user", "content": prompt}
+                    {"role": "system", "content": "You are a creative, insightful agent designer who asks engaging, thought-provoking questions. Be specific, helpful, and genuinely interested in helping users build amazing agents."},
+                    {"role": "user", "content": context_prompt}
                 ],
-                "temperature": 0.7,
-                "max_tokens": 120
+                "temperature": 0.9,
+                "max_tokens": 150
             }
         )
         try:
@@ -146,7 +160,69 @@ Respond with only the follow-up message, no preamble or explanation.
                 return str(content)
         except Exception as e:
             self.error(f"Error generating follow-up message: {e}")
-            return "What else would you like to add or improve about your agent?"
+            # Return a creative fallback that encourages engagement
+            if not knowledge_topics:
+                return "What fascinating domain should this agent master to become truly exceptional?"
+            elif specialties == "(not set)":
+                return "What unique superpower should this agent have that sets it apart?"
+            elif agent_description == "(no description)":
+                return "What amazing transformation should this agent help users achieve?"
+            else:
+                return "What unexpected capability would make users say 'wow' when using this agent?"
+    
+    def _analyze_domain_knowledge(self, knowledge_topics: list[str]) -> str:
+        """Analyze domain knowledge structure to provide insights for follow-up suggestions."""
+        if not knowledge_topics:
+            return "No domain knowledge yet - agent is a blank slate ready for specialization."
+        
+        # Analyze the knowledge structure
+        topic_count = len(knowledge_topics)
+        main_domains = []
+        subdomains = []
+        
+        # Categorize topics by depth/complexity
+        for topic in knowledge_topics:
+            if topic.lower() in ['root', 'domain knowledge', 'untitled']:
+                continue
+            if len(topic.split()) <= 2:  # Simple topics
+                main_domains.append(topic)
+            else:  # Complex/multi-word topics
+                subdomains.append(topic)
+        
+        # Build domain analysis
+        analysis = f"Agent has {topic_count} knowledge areas:\n"
+        
+        if main_domains:
+            analysis += f"• Main domains: {', '.join(main_domains[:3])}"
+            if len(main_domains) > 3:
+                analysis += f" and {len(main_domains) - 3} more"
+            analysis += "\n"
+        
+        if subdomains:
+            analysis += f"• Specialized areas: {', '.join(subdomains[:3])}"
+            if len(subdomains) > 3:
+                analysis += f" and {len(subdomains) - 3} more"
+            analysis += "\n"
+        
+        # Add domain-specific insights
+        if any('finance' in topic.lower() or 'financial' in topic.lower() for topic in knowledge_topics):
+            analysis += "• Finance-focused agent with quantitative capabilities\n"
+        elif any('tech' in topic.lower() or 'software' in topic.lower() or 'programming' in topic.lower() for topic in knowledge_topics):
+            analysis += "• Technology-focused agent with technical expertise\n"
+        elif any('health' in topic.lower() or 'medical' in topic.lower() for topic in knowledge_topics):
+            analysis += "• Healthcare-focused agent with medical knowledge\n"
+        elif any('market' in topic.lower() or 'business' in topic.lower() for topic in knowledge_topics):
+            analysis += "• Business-focused agent with market insights\n"
+        
+        # Suggest potential gaps or next steps
+        if topic_count < 3:
+            analysis += "• Knowledge structure is still developing - many opportunities for expansion\n"
+        elif topic_count < 8:
+            analysis += "• Good foundation established - ready for deeper specialization\n"
+        else:
+            analysis += "• Comprehensive knowledge base - consider advanced applications and edge cases\n"
+        
+        return analysis
     
     def _build_intent_detection_prompt(
         self,
@@ -211,8 +287,10 @@ RULES
      *exact* topic names found in `tree_json`, preserving capitalization and spacing.
 
 2. **No duplicate branches**  
-   • If the topic already exists anywhere in the tree, point to that path;
+   • If the topic already exists anywhere in the tree, point to that exact path;
      do **not** create a parallel branch.
+   • Search the entire tree structure (not just immediate children) for existing topics.
+   • Use case-insensitive matching to find existing topics.
 
 3. **Coupled updates**  
    • If the user wants the agent to *gain expertise* (specialty or skills)

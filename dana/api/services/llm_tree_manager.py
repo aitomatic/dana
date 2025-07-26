@@ -37,6 +37,18 @@ class LLMTreeManager(Loggable):
             print(f"  - Paths: {paths}")
             print(f"  - Current tree exists: {current_tree is not None}")
 
+            # Check if the final topic already exists anywhere in the tree
+            if current_tree and paths:
+                final_topic = paths[-1]
+                existing_node = self._find_topic_in_tree_simple(current_tree.root, final_topic)
+                if existing_node:
+                    print(f"⚠️ Topic '{final_topic}' already exists in the tree. Skipping duplicate creation.")
+                    return DomainKnowledgeUpdateResponse(
+                        success=True,
+                        updated_tree=current_tree,
+                        changes_summary=f"Topic '{final_topic}' already exists in tree - no changes needed"
+                    )
+
             # changed will be used to determine if the tree has changed
             current_node = current_tree
             changed = False
@@ -492,12 +504,15 @@ Example child topics for different domains:
 - If adding "Digital Marketing": child topics could be "SEO Optimization", "Social Media Strategy", "Content Marketing", "Email Campaigns", "PPC Advertising", "Analytics Tracking", "Conversion Optimization"
 
 SCENARIOS:
-1. If "{new_topic}" already exists in tree and needs to be moved under "{suggested_parent}":
-   - Move the existing node and all its children
+1. If "{new_topic}" already exists anywhere in the tree:
+   - DO NOT create a duplicate - the system will handle this automatically
+   - If it needs to be moved, use the move_node action
 2. If "{new_topic}" is new:
    - Add it under the specified parent
 3. If reorganization improves structure:
    - Create logical groupings
+
+CRITICAL: Before suggesting any new topic, carefully check if "{new_topic}" already exists anywhere in the current tree structure. If it exists, do not create duplicates.
 
 RESPOND WITH ONLY VALID JSON including child topics:
 {{
@@ -583,21 +598,29 @@ If moving existing topics, use:
                 print(f"  - Parent node found: {parent_node.topic if parent_node else 'None'}")
                 
                 if parent_node:
-                    # Check if topic already exists
-                    existing_topics = [child.topic for child in parent_node.children]
-                    print(f"  - Existing children: {existing_topics}")
-                    
-                    if not any(child.topic == new_topic for child in parent_node.children):
-                        new_node = DomainNode(topic=new_topic, children=[])
-                        parent_node.children.append(new_node)
-                        changes_applied_count += 1
-                        print(f"  ✅ Added '{new_topic}' to parent '{parent_node.topic}'")
+                    # Check if topic already exists anywhere in the tree (comprehensive check)
+                    existing_node = self._find_topic_in_tree_simple(root_node, new_topic)
+                    if existing_node:
+                        print(f"  ⚠️ Topic '{new_topic}' already exists in the tree. Skipping duplicate creation.")
                     else:
-                        print(f"  ⚠️ Topic '{new_topic}' already exists under '{parent_node.topic}'")
+                        # Check if topic exists under this specific parent
+                        existing_topics = [child.topic for child in parent_node.children]
+                        print(f"  - Existing children: {existing_topics}")
+                        
+                        if not any(child.topic == new_topic for child in parent_node.children):
+                            new_node = DomainNode(topic=new_topic, children=[])
+                            parent_node.children.append(new_node)
+                            changes_applied_count += 1
+                            print(f"  ✅ Added '{new_topic}' to parent '{parent_node.topic}'")
+                        else:
+                            print(f"  ⚠️ Topic '{new_topic}' already exists under '{parent_node.topic}'")
                 else:
                     print(f"  ❌ Parent node not found for path: {parent_path}")
                     # Try adding to root as fallback
-                    if not any(child.topic == new_topic for child in root_node.children):
+                    existing_node = self._find_topic_in_tree_simple(root_node, new_topic)
+                    if existing_node:
+                        print(f"  ⚠️ Topic '{new_topic}' already exists in the tree. Skipping duplicate creation.")
+                    elif not any(child.topic == new_topic for child in root_node.children):
                         new_node = DomainNode(topic=new_topic, children=[])
                         root_node.children.append(new_node)
                         changes_applied_count += 1
@@ -616,27 +639,35 @@ If moving existing topics, use:
                 print(f"  - Parent node found: {parent_node.topic if parent_node else 'None'}")
                 
                 if parent_node:
-                    # Check if topic already exists
-                    existing_topics = [child.topic for child in parent_node.children]
-                    print(f"  - Existing children: {existing_topics}")
-                    
-                    if not any(child.topic == new_topic for child in parent_node.children):
-                        # Create child nodes
-                        child_nodes = []
-                        for child_topic in child_topics:
-                            child_nodes.append(DomainNode(topic=child_topic, children=[]))
-                        
-                        # Create the main node with children
-                        new_node = DomainNode(topic=new_topic, children=child_nodes)
-                        parent_node.children.append(new_node)
-                        changes_applied_count += 1
-                        print(f"  ✅ Added '{new_topic}' with {len(child_topics)} children to parent '{parent_node.topic}'")
+                    # Check if topic already exists anywhere in the tree (comprehensive check)
+                    existing_node = self._find_topic_in_tree_simple(root_node, new_topic)
+                    if existing_node:
+                        print(f"  ⚠️ Topic '{new_topic}' already exists in the tree. Skipping duplicate creation.")
                     else:
-                        print(f"  ⚠️ Topic '{new_topic}' already exists under '{parent_node.topic}'")
+                        # Check if topic exists under this specific parent
+                        existing_topics = [child.topic for child in parent_node.children]
+                        print(f"  - Existing children: {existing_topics}")
+                        
+                        if not any(child.topic == new_topic for child in parent_node.children):
+                            # Create child nodes
+                            child_nodes = []
+                            for child_topic in child_topics:
+                                child_nodes.append(DomainNode(topic=child_topic, children=[]))
+                            
+                            # Create the main node with children
+                            new_node = DomainNode(topic=new_topic, children=child_nodes)
+                            parent_node.children.append(new_node)
+                            changes_applied_count += 1
+                            print(f"  ✅ Added '{new_topic}' with {len(child_topics)} children to parent '{parent_node.topic}'")
+                        else:
+                            print(f"  ⚠️ Topic '{new_topic}' already exists under '{parent_node.topic}'")
                 else:
                     print(f"  ❌ Parent node not found for path: {parent_path}")
                     # Try adding to root as fallback
-                    if not any(child.topic == new_topic for child in root_node.children):
+                    existing_node = self._find_topic_in_tree_simple(root_node, new_topic)
+                    if existing_node:
+                        print(f"  ⚠️ Topic '{new_topic}' already exists in the tree. Skipping duplicate creation.")
+                    elif not any(child.topic == new_topic for child in root_node.children):
                         # Create child nodes
                         child_nodes = []
                         for child_topic in child_topics:
@@ -756,6 +787,49 @@ If moving existing topics, use:
                 return removed
         
         return None
+
+    def _find_topic_in_tree(self, root: DomainNode, topic_name: str) -> tuple[DomainNode | None, list[str]]:
+        """
+        Find a topic anywhere in the tree and return the node and its path.
+        
+        Args:
+            root: Root node of the tree
+            topic_name: Topic name to search for (case-insensitive)
+            
+        Returns:
+            Tuple of (node, path) where node is the found node or None, and path is the list of topic names from root
+        """
+        def search_recursive(node: DomainNode, current_path: list[str]) -> tuple[DomainNode | None, list[str]]:
+            if not node:
+                return None, []
+            
+            # Check if current node matches (case-insensitive)
+            if node.topic.lower() == topic_name.lower():
+                return node, current_path + [node.topic]
+            
+            # Search in children
+            for child in getattr(node, "children", []) or []:
+                found_node, found_path = search_recursive(child, current_path + [node.topic])
+                if found_node:
+                    return found_node, found_path
+            
+            return None, []
+        
+        return search_recursive(root, [])
+
+    def _find_topic_in_tree_simple(self, root: DomainNode, topic_name: str) -> DomainNode | None:
+        """
+        Find a topic anywhere in the tree and return the node.
+        
+        Args:
+            root: Root node of the tree
+            topic_name: Topic name to search for (case-insensitive)
+            
+        Returns:
+            The found node or None
+        """
+        node, _ = self._find_topic_in_tree(root, topic_name)
+        return node
 
 
 def get_llm_tree_manager() -> LLMTreeManager:

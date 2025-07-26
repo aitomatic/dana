@@ -83,6 +83,8 @@ export default function AgentDetailPage() {
   const { fetchAgent, isLoading, error } = useAgentStore();
   const [agent, setAgent] = useState<any>(null);
   const [showComparison, setShowComparison] = useState(false);
+  // LIFTED TAB STATE
+  const [activeTab, setActiveTab] = useState('Overview');
 
   useEffect(() => {
     if (agent_id) {
@@ -130,13 +132,17 @@ export default function AgentDetailPage() {
       <AgentDetailHeader
         onBack={() => navigate('/agents')}
         title="Train Your Agent"
-        onDeploy={() => { }}
+        onDeploy={() => {}}
         onCancel={() => navigate('/agents')}
       />
       <div className="grid grid-cols-[max-content_1fr] flex-1 w-full h-full">
         <AgentDetailSidebar />
-        {/* No need to pass tpl, AgentDetailTabs gets agent from store */}
-        <AgentDetailTabs onShowComparison={() => setShowComparison(true)} />
+        {/* Pass activeTab and setActiveTab to AgentDetailTabs */}
+        <AgentDetailTabs
+          onShowComparison={() => setShowComparison(true)}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />
       </div>
       <AgentPerformanceComparisonModal
         open={showComparison}
