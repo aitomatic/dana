@@ -74,8 +74,8 @@ Memory Decay Mechanism:
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
-from typing import Any, Generic, TypeVar
+from datetime import datetime, UTC
+from typing import Any, TypeVar
 
 from dana.common.db.models import LTMemoryDBModel, MemoryDBModel, PermanentMemoryDBModel, STMemoryDBModel
 from dana.common.db.storage import MemoryDBStorage
@@ -87,7 +87,7 @@ ModelType = TypeVar("ModelType", bound=MemoryDBModel)
 StorageType = TypeVar("StorageType", bound=MemoryDBStorage)
 
 
-class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
+class MemoryResource[ModelType: MemoryDBModel, StorageType: MemoryDBStorage](BaseResource):
     """Base resource for managing memories.
 
     This resource provides common functionality for memory operations
@@ -215,7 +215,7 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
         if not self._last_decay_time:
             return True
 
-        time_since_last_decay = (datetime.utcnow() - self._last_decay_time).total_seconds()
+        time_since_last_decay = (datetime.now(UTC) - self._last_decay_time).total_seconds()
         return time_since_last_decay >= self._decay_interval
 
     async def _maybe_decay(self) -> None:

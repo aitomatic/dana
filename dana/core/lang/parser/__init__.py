@@ -21,4 +21,4 @@ Discord: https://discord.gg/6jGD4PYk
 from .dana_parser import DanaParser
 from .strict_dana_parser import StrictDanaParser
 
-__all__ = ['DanaParser', 'StrictDanaParser']
+__all__ = ["DanaParser", "StrictDanaParser"]

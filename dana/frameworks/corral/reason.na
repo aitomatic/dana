@@ -1,0 +1,633 @@
+# CORRAL Phase 4: Reason
+# Use curated context to make intelligent decisions
+
+# Knowledge reasoning struct
+struct KnowledgeReasoning:
+    """
+    Represents the knowledge reasoning phase of CORRAL lifecycle.
+    Handles intelligent decision-making using curated context and knowledge.
+    """
+    reasoning_config: dict
+    confidence_threshold: float
+    max_alternatives: int
+    reasoning_depth: int
+
+# Domain-specific reasoning engines struct
+struct DomainReasoningEngine:
+    """
+    Provides domain-specific reasoning capabilities.
+    """
+    domain_rules: dict
+    technical_patterns: dict
+    business_patterns: dict
+    procedural_patterns: dict
+
+# Core reasoning functions
+def reason_with_context(reasoner: KnowledgeReasoning, query: str, context: dict, domain: str) -> dict:
+    """
+    Apply reasoning to make intelligent decisions using curated context.
+    """
+    reasoning_result = {
+        "query": query,
+        "domain": domain,
+        "reasoning_chain": [],
+        "conclusions": [],
+        "confidence": 0.0,
+        "recommendations": [],
+        "alternatives": []
+    }
+    
+    # Step 1: Analyze context relevance
+    context_analysis = analyze_context_relevance(query, context)
+    
+    # Step 2: Apply domain-specific reasoning
+    engine = DomainReasoningEngine(
+        domain_rules={},
+        technical_patterns={},
+        business_patterns={},
+        procedural_patterns={}
+    )
+    domain_reasoning = apply_domain_reasoning(engine, query, context, domain)
+    
+    # Step 3: Generate reasoning chain
+    reasoning_chain = generate_reasoning_chain(query, context, domain_reasoning)
+    
+    # Step 4: Draw conclusions
+    conclusions = draw_conclusions(reasoning_chain, context_analysis)
+    
+    # Step 5: Generate recommendations
+    recommendations = generate_recommendations(conclusions, context)
+    
+    # Step 6: Consider alternatives
+    alternatives = consider_alternatives(reasoning_chain, context)
+    
+    # Step 7: Calculate confidence
+    confidence = calculate_reasoning_confidence(reasoning_chain, context_analysis)
+    
+    reasoning_result["reasoning_chain"] = reasoning_chain
+    reasoning_result["conclusions"] = conclusions
+    reasoning_result["recommendations"] = recommendations
+    reasoning_result["alternatives"] = alternatives
+    reasoning_result["confidence"] = confidence
+    
+    return reasoning_result
+
+def apply_pattern_recognition(reasoner: KnowledgeReasoning, context: dict, domain: str) -> list:
+    """
+    Recognize patterns in the context for better reasoning.
+    """
+    patterns = []
+    
+    # Extract common patterns from context snippets
+    for snippet in context["context_snippets"]:
+        pattern = extract_pattern_from_snippet(snippet, domain)
+        if pattern:
+            patterns.append(pattern)
+    
+    # Identify recurring patterns
+    recurring_patterns = identify_recurring_patterns(patterns)
+    
+    return recurring_patterns
+
+def apply_causal_reasoning(reasoner: KnowledgeReasoning, context: dict, query: str) -> dict:
+    """
+    Apply causal reasoning to understand cause-effect relationships.
+    """
+    causal_analysis = {
+        "causes": [],
+        "effects": [],
+        "relationships": [],
+        "confidence": 0.0
+    }
+    
+    # Extract causal relationships from context
+    for snippet in context["context_snippets"]:
+        causal_relationships = extract_causal_relationships(snippet)
+        causal_analysis["relationships"].extend(causal_relationships)
+    
+    # Identify causes and effects
+    causal_analysis["causes"] = identify_causes(causal_analysis["relationships"])
+    causal_analysis["effects"] = identify_effects(causal_analysis["relationships"])
+    
+    # Calculate confidence in causal reasoning
+    causal_analysis["confidence"] = calculate_causal_confidence(causal_analysis)
+    
+    return causal_analysis
+
+def apply_analogical_reasoning(reasoner: KnowledgeReasoning, context: dict, query: str) -> list:
+    """
+    Apply analogical reasoning to find similar cases and solutions.
+    """
+    analogies = []
+    
+    # Find similar cases in context
+    for snippet in context["context_snippets"]:
+        analogy = find_analogy(snippet, query)
+        if analogy:
+            analogies.append(analogy)
+    
+    # Rank analogies by relevance
+    ranked_analogies = rank_analogies_by_relevance(analogies, query)
+    
+    return ranked_analogies
+
+def apply_deductive_reasoning(reasoner: KnowledgeReasoning, premises: list, rules: list) -> list:
+    """
+    Apply deductive reasoning using logical rules and premises.
+    """
+    conclusions = []
+    
+    for rule in rules:
+        if all_premises_satisfied(premises, rule["conditions"]):
+            conclusion = apply_rule(rule, premises)
+            conclusions.append(conclusion)
+    
+    return conclusions
+
+def apply_inductive_reasoning(reasoner: KnowledgeReasoning, observations: list, patterns: list) -> dict:
+    """
+    Apply inductive reasoning to generalize from specific observations.
+    """
+    generalization = {
+        "hypothesis": "",
+        "confidence": 0.0,
+        "supporting_evidence": [],
+        "contradicting_evidence": []
+    }
+    
+    # Form hypothesis from patterns
+    hypothesis = form_hypothesis_from_patterns(patterns)
+    generalization["hypothesis"] = hypothesis
+    
+    # Find supporting and contradicting evidence
+    for observation in observations:
+        if supports_hypothesis(observation, hypothesis):
+            generalization["supporting_evidence"].append(observation)
+        else:
+            generalization["contradicting_evidence"].append(observation)
+    
+    # Calculate confidence
+    total_evidence = len(generalization["supporting_evidence"]) + len(generalization["contradicting_evidence"])
+    if total_evidence > 0:
+        generalization["confidence"] = len(generalization["supporting_evidence"]) / total_evidence
+    
+    return generalization
+
+# Domain-specific reasoning functions
+def technical_reasoning(engine: DomainReasoningEngine, query: str, context: dict) -> dict:
+    """
+    Apply technical reasoning for software and engineering domains.
+    """
+    technical_analysis = {
+        "architecture_patterns": [],
+        "best_practices": [],
+        "trade_offs": [],
+        "implementation_approach": ""
+    }
+    
+    # Identify architecture patterns
+    for snippet in context["context_snippets"]:
+        pattern = identify_architecture_pattern(snippet)
+        if pattern:
+            technical_analysis["architecture_patterns"].append(pattern)
+    
+    # Extract best practices
+    for snippet in context["context_snippets"]:
+        practice = extract_best_practice(snippet)
+        if practice:
+            technical_analysis["best_practices"].append(practice)
+    
+    # Analyze trade-offs
+    technical_analysis["trade_offs"] = analyze_technical_trade_offs(context)
+    
+    # Recommend implementation approach
+    technical_analysis["implementation_approach"] = recommend_implementation_approach(
+        technical_analysis["architecture_patterns"],
+        technical_analysis["best_practices"]
+    )
+    
+    return technical_analysis
+
+def business_reasoning(engine: DomainReasoningEngine, query: str, context: dict) -> dict:
+    """
+    Apply business reasoning for business and strategy domains.
+    """
+    business_analysis = {
+        "market_insights": [],
+        "strategic_options": [],
+        "risk_assessment": {},
+        "recommendations": []
+    }
+    
+    # Extract market insights
+    for snippet in context["context_snippets"]:
+        insight = extract_market_insight(snippet)
+        if insight:
+            business_analysis["market_insights"].append(insight)
+    
+    # Identify strategic options
+    business_analysis["strategic_options"] = identify_strategic_options(context)
+    
+    # Assess risks
+    business_analysis["risk_assessment"] = assess_business_risks(context)
+    
+    # Generate recommendations
+    business_analysis["recommendations"] = generate_business_recommendations(
+        business_analysis["market_insights"],
+        business_analysis["strategic_options"]
+    )
+    
+    return business_analysis
+
+def procedural_reasoning(engine: DomainReasoningEngine, query: str, context: dict) -> dict:
+    """
+    Apply procedural reasoning for workflow and process domains.
+    """
+    procedural_analysis = {
+        "workflow_steps": [],
+        "dependencies": [],
+        "optimization_opportunities": [],
+        "process_flow": ""
+    }
+    
+    # Extract workflow steps
+    for snippet in context["context_snippets"]:
+        steps = extract_workflow_steps(snippet)
+        procedural_analysis["workflow_steps"].extend(steps)
+    
+    # Identify dependencies
+    procedural_analysis["dependencies"] = identify_process_dependencies(
+        procedural_analysis["workflow_steps"]
+    )
+    
+    # Find optimization opportunities
+    procedural_analysis["optimization_opportunities"] = find_optimization_opportunities(
+        procedural_analysis["workflow_steps"],
+        procedural_analysis["dependencies"]
+    )
+    
+    # Generate process flow
+    procedural_analysis["process_flow"] = generate_process_flow(
+        procedural_analysis["workflow_steps"],
+        procedural_analysis["dependencies"]
+    )
+    
+    return procedural_analysis
+
+# Reasoning utilities
+def analyze_context_relevance(query: str, context: dict) -> dict:
+    """Analyze the relevance of context to the query."""
+    relevance_analysis = {
+        "overall_relevance": 0.0,
+        "snippet_relevance": [],
+        "missing_information": [],
+        "redundant_information": []
+    }
+    
+    # Calculate overall relevance
+    total_relevance = 0.0
+    for snippet in context["context_snippets"]:
+        snippet_relevance = calculate_snippet_relevance(query, snippet)
+        relevance_analysis["snippet_relevance"].append({
+            "snippet": snippet,
+            "relevance": snippet_relevance
+        })
+        total_relevance += snippet_relevance
+    
+    if context["context_snippets"]:
+        relevance_analysis["overall_relevance"] = total_relevance / len(context["context_snippets"])
+    
+    # Identify missing information
+    relevance_analysis["missing_information"] = identify_missing_information(query, context)
+    
+    # Identify redundant information
+    relevance_analysis["redundant_information"] = identify_redundant_information(context)
+    
+    return relevance_analysis
+
+def apply_domain_reasoning(engine: DomainReasoningEngine, query: str, context: dict, domain: str) -> dict:
+    """Apply domain-specific reasoning."""
+    if domain == "technical":
+        return technical_reasoning(engine, query, context)
+    elif domain == "business":
+        return business_reasoning(engine, query, context)
+    elif domain == "procedural":
+        return procedural_reasoning(engine, query, context)
+    else:
+        return {"general_analysis": "Domain-specific reasoning not available"}
+
+def generate_reasoning_chain(query: str, context: dict, domain_reasoning: dict) -> list:
+    """Generate a chain of reasoning steps."""
+    reasoning_chain = []
+    
+    # Step 1: Context analysis
+    reasoning_chain.append({
+        "step": 1,
+        "type": "context_analysis",
+        "description": "Analyzed context relevance and identified key information",
+        "evidence": context["context_snippets"][:3]  # Top 3 snippets
+    })
+    
+    # Step 2: Pattern recognition
+    patterns = apply_pattern_recognition(KnowledgeReasoning(), context, "general")
+    reasoning_chain.append({
+        "step": 2,
+        "type": "pattern_recognition",
+        "description": f"Identified {len(patterns)} relevant patterns",
+        "evidence": patterns
+    })
+    
+    # Step 3: Causal reasoning
+    causal_analysis = apply_causal_reasoning(KnowledgeReasoning(), context, query)
+    reasoning_chain.append({
+        "step": 3,
+        "type": "causal_reasoning",
+        "description": "Applied causal reasoning to understand relationships",
+        "evidence": causal_analysis["relationships"]
+    })
+    
+    # Step 4: Domain-specific reasoning
+    reasoning_chain.append({
+        "step": 4,
+        "type": "domain_reasoning",
+        "description": "Applied domain-specific reasoning",
+        "evidence": domain_reasoning
+    })
+    
+    return reasoning_chain
+
+def draw_conclusions(reasoning_chain: list, context_analysis: dict) -> list:
+    """Draw conclusions from the reasoning chain."""
+    conclusions = []
+    
+    # Extract key insights from reasoning chain
+    for step in reasoning_chain:
+        if step["type"] == "pattern_recognition" and step["evidence"]:
+            conclusions.append({
+                "type": "pattern_based",
+                "conclusion": f"Identified {len(step['evidence'])} relevant patterns",
+                "confidence": 0.8
+            })
+        
+        if step["type"] == "causal_reasoning" and step["evidence"]:
+            conclusions.append({
+                "type": "causal",
+                "conclusion": f"Found {len(step['evidence'])} causal relationships",
+                "confidence": 0.7
+            })
+    
+    # Add context-based conclusions
+    if context_analysis["overall_relevance"] > 0.7:
+        conclusions.append({
+            "type": "context_based",
+            "conclusion": "Context is highly relevant to the query",
+            "confidence": context_analysis["overall_relevance"]
+        })
+    
+    return conclusions
+
+def generate_recommendations(conclusions: list, context: dict) -> list:
+    """Generate recommendations based on conclusions."""
+    recommendations = []
+    
+    for conclusion in conclusions:
+        if conclusion["type"] == "pattern_based":
+            recommendations.append({
+                "type": "follow_pattern",
+                "description": "Follow the identified patterns for consistency",
+                "priority": "high"
+            })
+        
+        if conclusion["type"] == "causal":
+            recommendations.append({
+                "type": "consider_causes",
+                "description": "Consider the identified causal factors in decision making",
+                "priority": "medium"
+            })
+    
+    # Add general recommendations based on context
+    if context["confidence_score"] > 0.8:
+        recommendations.append({
+            "type": "high_confidence",
+            "description": "High confidence in context - proceed with recommendations",
+            "priority": "high"
+        })
+    
+    return recommendations
+
+def consider_alternatives(reasoning_chain: list, context: dict) -> list:
+    """Consider alternative approaches or solutions."""
+    alternatives = []
+    
+    # Generate alternatives based on different reasoning approaches
+    alternatives.append({
+        "approach": "conservative",
+        "description": "Take a conservative approach based on proven patterns",
+        "reasoning": "Based on established patterns in context"
+    })
+    
+    alternatives.append({
+        "approach": "innovative",
+        "description": "Consider innovative approaches based on emerging patterns",
+        "reasoning": "Based on new patterns and relationships identified"
+    })
+    
+    alternatives.append({
+        "approach": "hybrid",
+        "description": "Combine multiple approaches for optimal results",
+        "reasoning": "Based on diverse patterns and causal relationships"
+    })
+    
+    return alternatives
+
+def calculate_reasoning_confidence(reasoning_chain: list, context_analysis: dict) -> float:
+    """Calculate confidence in the reasoning process."""
+    # Base confidence on context relevance
+    base_confidence = context_analysis["overall_relevance"]
+    
+    # Adjust based on reasoning chain quality
+    chain_quality = len(reasoning_chain) / 4.0  # Normalize to 0-1
+    
+    # Adjust based on evidence quality
+    evidence_quality = calculate_evidence_quality(reasoning_chain)
+    
+    # Combine factors
+    confidence = (base_confidence + chain_quality + evidence_quality) / 3.0
+    
+    return min(1.0, max(0.0, confidence))
+
+# Pattern recognition utilities
+def extract_pattern_from_snippet(snippet: str, domain: str) -> dict:
+    """Extract patterns from a context snippet."""
+    # Simplified pattern extraction
+    patterns = {
+        "technical": ["if-then", "try-catch", "input-output"],
+        "business": ["cause-effect", "problem-solution", "opportunity-threat"],
+        "procedural": ["step-by-step", "check-verify", "plan-execute"]
+    }
+    
+    domain_patterns = patterns.get(domain, [])
+    found_patterns = []
+    
+    for pattern in domain_patterns:
+        if pattern.replace("-", " ") in snippet.lower():
+            found_patterns.append(pattern)
+    
+    if found_patterns:
+        return {
+            "type": "domain_pattern",
+            "patterns": found_patterns,
+            "snippet": snippet
+        }
+    
+    return None
+
+def identify_recurring_patterns(patterns: list) -> list:
+    """Identify patterns that recur across multiple snippets."""
+    pattern_counts = {}
+    
+    for pattern_data in patterns:
+        if pattern_data:
+            pattern_type = pattern_data["type"]
+            if pattern_type not in pattern_counts:
+                pattern_counts[pattern_type] = 0
+            pattern_counts[pattern_type] += 1
+    
+    # Return patterns that appear multiple times
+    recurring = []
+    for pattern_type, count in pattern_counts.items():
+        if count > 1:
+            recurring.append({
+                "type": pattern_type,
+                "frequency": count
+            })
+    
+    return recurring
+
+# Causal reasoning utilities
+def extract_causal_relationships(snippet: str) -> list:
+    """Extract causal relationships from a snippet."""
+    causal_indicators = ["because", "since", "as a result", "therefore", "leads to", "causes"]
+    relationships = []
+    
+    for indicator in causal_indicators:
+        if indicator in snippet.lower():
+            relationships.append({
+                "indicator": indicator,
+                "snippet": snippet
+            })
+    
+    return relationships
+
+def identify_causes(relationships: list) -> list:
+    """Identify causes from causal relationships."""
+    causes = []
+    for rel in relationships:
+        # Simplified cause extraction
+        causes.append(f"Cause identified in: {rel['snippet'][:50]}...")
+    return causes
+
+def identify_effects(relationships: list) -> list:
+    """Identify effects from causal relationships."""
+    effects = []
+    for rel in relationships:
+        # Simplified effect extraction
+        effects.append(f"Effect identified in: {rel['snippet'][:50]}...")
+    return effects
+
+def calculate_causal_confidence(causal_analysis: dict) -> float:
+    """Calculate confidence in causal reasoning."""
+    relationship_count = len(causal_analysis["relationships"])
+    return min(1.0, relationship_count / 10.0)  # Normalize
+
+# Analogical reasoning utilities
+def find_analogy(snippet: str, query: str) -> dict:
+    """Find analogies between snippet and query."""
+    # Simplified analogy detection
+    query_words = set(query.lower().split())
+    snippet_words = set(snippet.lower().split())
+    
+    common_words = query_words.intersection(snippet_words)
+    similarity = len(common_words) / max(len(query_words), 1)
+    
+    if similarity > 0.3:
+        return {
+            "snippet": snippet,
+            "similarity": similarity,
+            "common_elements": list(common_words)
+        }
+    
+    return None
+
+def rank_analogies_by_relevance(analogies: list, query: str) -> list:
+    """Rank analogies by relevance to query."""
+    return sorted(analogies, key=lambda x: x["similarity"], reverse=True)
+
+# Utility functions
+def calculate_snippet_relevance(query: str, snippet: str) -> float:
+    """Calculate relevance of a snippet to the query."""
+    query_words = set(query.lower().split())
+    snippet_words = set(snippet.lower().split())
+    
+    common_words = query_words.intersection(snippet_words)
+    return len(common_words) / max(len(query_words), 1)
+
+def identify_missing_information(query: str, context: dict) -> list:
+    """Identify information missing from context."""
+    # Simplified missing information detection
+    return ["Additional context may be needed for complete analysis"]
+
+def identify_redundant_information(context: dict) -> list:
+    """Identify redundant information in context."""
+    # Simplified redundancy detection
+    return []
+
+def calculate_evidence_quality(reasoning_chain: list) -> float:
+    """Calculate quality of evidence in reasoning chain."""
+    total_evidence = 0
+    for step in reasoning_chain:
+        if "evidence" in step:
+            total_evidence += len(step["evidence"])
+    
+    return min(1.0, total_evidence / 20.0)  # Normalize
+
+# Main reasoning workflow
+def reason_with_knowledge(query: str, context: dict, domain: str) -> dict:
+    """
+    Main workflow for reasoning with knowledge.
+    Implements the complete reasoning phase of CORRAL.
+    """
+    reasoner = KnowledgeReasoning(
+        reasoning_config={"enable_pattern_recognition": True},
+        confidence_threshold=0.7,
+        max_alternatives=3,
+        reasoning_depth=4
+    )
+    
+    # Step 1: Apply reasoning with context
+    reasoning_result = reason_with_context(reasoner, query, context, domain)
+    
+    # Step 2: Apply pattern recognition
+    patterns = apply_pattern_recognition(reasoner, context, domain)
+    
+    # Step 3: Apply causal reasoning
+    causal_analysis = apply_causal_reasoning(reasoner, context, query)
+    
+    # Step 4: Apply analogical reasoning
+    analogies = apply_analogical_reasoning(reasoner, context, query)
+    
+    return {
+        "reasoning_result": reasoning_result,
+        "patterns": patterns,
+        "causal_analysis": causal_analysis,
+        "analogies": analogies,
+        "reasoning_timestamp": current_timestamp()
+    }
+
+def current_timestamp() -> str:
+    """Get current timestamp."""
+    return get_current_time()
+
+# Example usage
+# context = retrieve_knowledge_context(query, domain, organized_knowledge)
+# reasoning = reason_with_knowledge("How to implement authentication?", context["assembled_context"], "technical")

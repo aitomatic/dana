@@ -1,0 +1,52 @@
+# Quick Reference - Critical Rules
+
+## 🚨 MUST FOLLOW IMMEDIATELY
+
+- Use standard Python logging: `import logging; logger = logging.getLogger(__name__)`
+- Apply appropriate logging patterns for Dana development
+- Always use f-strings: `f"Value: {var}"` not `"Value: " + str(var)`
+- Dana modules: `import math_utils` (no .na), Python modules: `import math.py`
+- **ALL temporary development files go in `tmp/` directory**
+- Run `uv run ruff check . && uv run ruff format .` before commits
+- Use type hints: `def func(x: int) -> str:` (required)
+- **Apply KISS/YAGNI**: Start simple, add complexity only when needed
+
+## Essential Commands
+
+```bash
+# Core development workflow
+uv run ruff check . && uv run ruff format .    # Lint and format
+uv run pytest tests/ -v                        # Run tests with verbose output (includes .na files)
+
+# Dana execution - PREFER .na files for Dana functionality testing
+dana examples/dana/01_language_basics/hello_world.na                      # Direct dana command (recommended)
+dana --debug examples/dana/01_language_basics/hello_world.na              # With debug output
+uv run python -m dana.core.repl.dana examples/dana/01_language_basics/hello_world.na  # Alternative
+
+# Interactive development
+dana                                            # Start Dana REPL (recommended)
+uv run python -m dana.core.repl.repl          # Alternative REPL entry point
+```
+
+## Quick Dana Reminders
+
+- **Dana modules**: `import math_utils` (no .na), **Python modules**: `import math.py`
+- **Use `log()` for examples/testing output** (preferred for color coding and debugging)
+- **Always use f-strings**: `f"Value: {var}"` not `"Value: " + str(var)`
+- **Type hints required**: `def func(x: int) -> str:` (mandatory)
+- **Named arguments for structs**: `Point(x=5, y=10)` not `Point(5, 10)`
+- **Prefer `.na` (Dana) test files over `.py`** for Dana-specific functionality
+
+## Quick 3D Methodology Reminders
+
+- **Always create design document first** using the template in 3D.md
+- **Run `uv run pytest tests/ -v` at end of every phase** - 100% pass required
+- **Update implementation progress checkboxes** as you complete each phase
+- **Follow Example Creation Guidelines** for comprehensive examples
+- **Apply Unit Testing Guidelines** for thorough test coverage
+
+## Most Common Tasks
+
+- **Adding new Dana function**: See `dana/core/stdlib/`
+- **Creating agent capability**: Inherit from `dana/frameworks/agent/capability/`
+- **Adding LLM integration**: Use `dana/integrations/llm/`

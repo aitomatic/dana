@@ -1,0 +1,37 @@
+import "common.na"
+
+# Agent declarative properties
+agent RIEAgent:
+    
+    # Domains this agent KNOWS ABOUT
+    domains: list[str] = [
+        "Semiconductor Manufacturing",
+        "Reactive Ion Etching",
+        "CVD",
+        "Photolithography"
+    ]
+    
+    # Work that this agent CAN DO
+    tasks: list[str] = [
+        "Inspect Wafers",
+        "Classify Defects",
+        "Troubleshoot Processes",
+        "Optimize Yield",
+        "Optimize Quality"
+    ]
+
+    # Example questions this agent can answer
+    examples: list[str] = [
+        "What is the yield of the Reactive Ion Etching process?",
+        "What is the defect rate of the CVD process?",
+        "What is the quality of the Photolithography process?"
+    ]
+    
+@poet
+def solve(agent: RIEAgent, q: Question) -> Answer:
+    q_class, _ = classify(q.text)
+    if q_class in ["spec", "config"]:
+        return quick_answer(agent, q)
+    if q_class == "trouble":
+        return full_diagnose(agent, q)
+    return DanaAgent.solve(agent, q) 

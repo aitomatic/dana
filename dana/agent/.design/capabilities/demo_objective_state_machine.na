@@ -1,0 +1,231 @@
+# Demo: Objective-Driven State Machine
+# Shows how to use the objective-driven agent for semiconductor process control
+
+import log
+import time
+import random
+from objective_driven_agent import *
+from data_structures import *
+
+# Generate sample process data
+def generate_sample_data(equipment_id: str, num_samples: int = 100) -> ProcessDataBatch:
+    """Generate realistic semiconductor process data with some anomalies"""
+    
+    parameters = []
+    start_time = time.now()
+    
+    # Temperature readings (target: 350°C, range: 340-360°C)
+    for i in range(num_samples):
+        # Add drift after 50 samples
+        base_temp = 350.0
+        if i > 50:
+            base_temp += (i - 50) * 0.2  # Drift upward
+        
+        # Add noise and occasional spikes
+        noise = random.uniform(-2, 2)
+        if random.random() < 0.05:  # 5% chance of spike
+            noise = random.uniform(-15, 15)
+        
+        temp = ProcessParameter(
+            name="temperature",
+            value=base_temp + noise,
+            unit="°C",
+            timestamp=start_time + timedelta(seconds=i * 10),
+            quality=0.95 if abs(noise) < 5 else 0.7
+        )
+        parameters.append(temp)
+    
+    # Pressure readings (target: 100 mTorr, range: 95-105 mTorr)
+    for i in range(num_samples):
+        # High variability
+        pressure = ProcessParameter(
+            name="pressure",
+            value=100 + random.uniform(-8, 8),
+            unit="mTorr",
+            timestamp=start_time + timedelta(seconds=i * 10),
+            quality=0.9
+        )
+        parameters.append(pressure)
+    
+    # Flow rate readings (target: 50 sccm, range: 48-52 sccm)
+    for i in range(num_samples):
+        # Stable with occasional drops
+        base_flow = 50.0
+        if random.random() < 0.03:  # 3% chance of drop
+            base_flow -= random.uniform(5, 10)
+        
+        flow = ProcessParameter(
+            name="flow_rate",
+            value=base_flow + random.uniform(-1, 1),
+            unit="sccm",
+            timestamp=start_time + timedelta(seconds=i * 10),
+            quality=0.98
+        )
+        parameters.append(flow)
+    
+    # Power readings (target: 1000W, range: 950-1050W)
+    for i in range(num_samples):
+        # Correlated with temperature
+        temp_correlation = (parameters[i].value - 350) * 2  # Power increases with temp
+        power = ProcessParameter(
+            name="power",
+            value=1000 + temp_correlation + random.uniform(-20, 20),
+            unit="W",
+            timestamp=start_time + timedelta(seconds=i * 10),
+            quality=0.92
+        )
+        parameters.append(power)
+    
+    batch = ProcessDataBatch(
+        batch_id=f"BATCH-{int(time.time())}",
+        equipment_id=equipment_id,
+        recipe_name="OXIDE_DEPOSITION_01",
+        lot_number=f"LOT-{random.randint(1000, 9999)}",
+        parameters=parameters,
+        collection_start=start_time,
+        collection_end=start_time + timedelta(seconds=num_samples * 10)
+    )
+    
+    return batch
+
+# Main demo function
+def main():
+    log("🎯 Objective-Driven State Machine Demo", "info")
+    log("=" * 50, "info")
+    
+    # Create agent
+    agent = ObjectiveDrivenAgent(
+        name="SemiconductorProcessAgent",
+        description="Agent for monitoring and optimizing semiconductor manufacturing"
+    )
+    
+    # Set process specifications
+    process_specs = {
+        "temperature": {"min": 340.0, "max": 360.0, "target": 350.0},
+        "pressure": {"min": 95.0, "max": 105.0, "target": 100.0},
+        "flow_rate": {"min": 48.0, "max": 52.0, "target": 50.0},
+        "power": {"min": 950.0, "max": 1050.0, "target": 1000.0}
+    }
+    agent.set_process_specs(process_specs)
+    
+    log(f"📋 Process specifications loaded for {len(process_specs)} parameters", "info")
+    
+    # Generate sample data
+    log("🔄 Generating sample process data...", "info")
+    process_data = generate_sample_data("CVD-CHAMBER-01", num_samples=100)
+    log(f"✅ Generated {len(process_data.parameters)} parameter readings", "info")
+    
+    # Execute state machine
+    log("\n🚀 Starting state machine execution...", "info")
+    log("=" * 50, "info")
+    
+    try:
+        # Run the complete cycle
+        report = execute_state_machine(agent, process_data)
+        
+        # Display results
+        log("\n📊 EXECUTION RESULTS", "info")
+        log("=" * 50, "info")
+        
+        log(f"Overall Process Health: {report.overall_health:.1%}", "info")
+        log(f"Parameters Analyzed: {report.parameters_analyzed}", "info")
+        log(f"Anomalies Detected: {len(report.anomalies_detected)}", "info")
+        
+        # Show critical issues
+        critical_issues = report.get_critical_issues()
+        if critical_issues:
+            log(f"\n🚨 CRITICAL ISSUES ({len(critical_issues)}):", "error")
+            for issue in critical_issues[:3]:  # Show first 3
+                log(f"  - {issue.parameter_name}: {issue.description}", "error")
+        
+        # Show optimizations
+        if report.optimizations:
+            log(f"\n⚡ OPTIMIZATION RECOMMENDATIONS ({len(report.optimizations)}):", "info")
+            for opt in report.optimizations[:5]:  # Show top 5
+                log(f"  - {opt.parameter_name}:", "info")
+                log(f"    Current: {opt.current_value:.2f}", "info")
+                log(f"    Recommended: {opt.recommended_value:.2f}", "info")
+                log(f"    Expected Improvement: {opt.expected_improvement:.1f}%", "info")
+                log(f"    Confidence: {opt.confidence:.1%}", "info")
+        
+        # Show state transitions
+        log(f"\n🔄 STATE TRANSITIONS:", "debug")
+        for state, timestamp in agent.context.state_history[-6:]:  # Show last 6
+            log(f"  {timestamp.strftime('%H:%M:%S')} -> {state.value}", "debug")
+        
+        # Show execution metrics
+        log(f"\n⏱️ EXECUTION METRICS:", "info")
+        log(f"  Total Duration: {agent.context.get_execution_duration():.2f}s", "info")
+        log(f"  Execution ID: {agent.context.execution_id}", "debug")
+        
+        # Learning metrics
+        if agent.learning_enabled and agent.metrics:
+            log(f"\n🧠 LEARNING METRICS:", "info")
+            log(f"  Metrics Collected: {len(agent.metrics)}", "info")
+            successful = len([m for m in agent.metrics if m.get("success", False)])
+            log(f"  Success Rate: {successful/len(agent.metrics):.1%}", "info")
+        
+    except Exception as e:
+        log(f"❌ State machine execution failed: {e}", "error")
+        log(f"Final state: {agent.current_state.value}", "error")
+        raise e
+    
+    log("\n✅ Demo completed successfully!", "info")
+
+# Run specific state functions individually
+def demo_individual_states():
+    log("\n🔧 Testing Individual State Functions", "info")
+    log("=" * 50, "info")
+    
+    # Create agent and data
+    agent = ObjectiveDrivenAgent("TestAgent")
+    agent.set_process_specs({
+        "temperature": {"min": 340.0, "max": 360.0, "target": 350.0}
+    })
+    
+    # Generate minimal test data
+    test_params = [
+        ProcessParameter("temperature", 365.0, "°C", time.now(), 0.95),  # Out of range
+        ProcessParameter("temperature", 355.0, "°C", time.now(), 0.95),  # In range
+        ProcessParameter("temperature", 370.0, "°C", time.now(), 0.95),  # Critical
+    ]
+    
+    test_batch = ProcessDataBatch(
+        batch_id="TEST-001",
+        equipment_id="TEST-CHAMBER",
+        recipe_name="TEST_RECIPE",
+        lot_number="TEST-LOT",
+        parameters=test_params,
+        collection_start=time.now(),
+        collection_end=time.now()
+    )
+    
+    # Test analyze function
+    log("\n1️⃣ Testing ANALYZE function", "info")
+    analysis = analyze_process_data(agent, test_batch)
+    log(f"   Found {analysis['anomaly_count']} anomalies", "info")
+    
+    # Test diagnose function
+    log("\n2️⃣ Testing DIAGNOSE function", "info")
+    diagnosis = diagnose_anomalies(agent, analysis)
+    log(f"   Generated {diagnosis['total_issues']} diagnoses", "info")
+    
+    # Test optimize function
+    log("\n3️⃣ Testing OPTIMIZE function", "info")
+    optimization = optimize_parameters(agent, diagnosis)
+    log(f"   Generated {optimization['total_recommendations']} optimizations", "info")
+    
+    # Test validate function
+    log("\n4️⃣ Testing VALIDATE function", "info")
+    validation = validate_optimizations(agent, optimization)
+    log(f"   Validation approval rate: {validation['approval_rate']:.1%}", "info")
+    
+    log("\n✅ Individual state testing completed!", "info")
+
+# Entry point
+if __name__ == "__main__":
+    # Run full demo
+    main()
+    
+    # Optionally run individual state tests
+    # demo_individual_states()

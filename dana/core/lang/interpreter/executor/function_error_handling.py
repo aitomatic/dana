@@ -119,7 +119,7 @@ class FunctionExecutionErrorHandler:
         # Convert internal dot notation to user-friendly colon notation
         user_friendly_name = self._convert_to_user_friendly_name(function_name)
 
-        base_msg = f"Error executing function '{user_friendly_name}': {str(error)}"
+        base_msg = f"Function '{user_friendly_name}' execution failed: {str(error)}"
         if context:
             base_msg += f" (Context: {context})"
         return base_msg

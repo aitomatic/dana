@@ -84,6 +84,24 @@ greeting = f"Hello, {name}!"
 status_msg = f"Processing {count} items at {percentage}% complete"
 ```
 
+#### Compound Assignment Operators
+```python
+# Arithmetic compound assignments
+x += 5    # Add and assign (x = x + 5)
+y -= 3    # Subtract and assign (y = y - 3)
+z *= 2    # Multiply and assign (z = z * 2)
+w /= 4    # Divide and assign (w = w / 4)
+
+# Works with all assignment targets
+arr[0] += 10              # List element
+obj.value *= 2            # Object attribute
+scores["alice"] += 20     # Dictionary value
+private:counter += 1      # Scoped variable
+
+# Compound assignments return the new value
+result = (x += 10)  # result gets the new value of x
+```
+
 ### 2. Function Calls
 
 #### `reason()` - LLM Reasoning

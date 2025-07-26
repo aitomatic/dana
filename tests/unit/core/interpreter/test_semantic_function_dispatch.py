@@ -56,6 +56,7 @@ false_string: bool = bool("false")"""
         self.assertTrue(result.success)
         context = result.final_context
         self.assertIsNotNone(context)
+        assert context is not None  # Type guard for linter
 
         # Current (broken) behavior - all return True
         assert context is not None  # Type guard for linter
@@ -75,7 +76,7 @@ false_eq_false: bool = ("false" == False)"""
         result = self.sandbox.eval(test_code)
         self.assertTrue(result.success)
         context = result.final_context
-
+        self.assertIsNotNone(context)
         assert context is not None  # Type guard for linter
         self.assertTrue(context.get("zero_eq_false"))  # ISSUE: Should be True
         self.assertTrue(context.get("one_eq_true"))  # ISSUE: Should be True
@@ -93,6 +94,7 @@ nope: bool = bool("nope")"""
         result = self.sandbox.eval(test_code)
         self.assertTrue(result.success)
         context = result.final_context
+        self.assertIsNotNone(context)
         assert context is not None  # Type guard for linter
 
         # Current behavior - all return True (non-empty string)
@@ -136,6 +138,7 @@ true_string: bool = bool("anything")"""
         result = self.sandbox.eval(test_code)
         self.assertTrue(result.success)
         context = result.final_context
+        self.assertIsNotNone(context)
         assert context is not None  # Type guard for linter
 
         # These work correctly
@@ -174,6 +177,8 @@ class TestSemanticFunctionDispatchDesired(unittest.TestCase):
         result = self.sandbox.eval(test_code)
         self.assertTrue(result.success)
         context = result.final_context
+        self.assertIsNotNone(context)
+        assert context is not None  # Type guard for linter
 
         # Expected behavior (not currently implemented)
         assert context is not None  # Type guard for linter
@@ -203,6 +208,8 @@ class TestSemanticFunctionDispatchDesired(unittest.TestCase):
         result = self.sandbox.eval(test_code)
         self.assertTrue(result.success)
         context = result.final_context
+        self.assertIsNotNone(context)
+        assert context is not None  # Type guard for linter
 
         # Expected behavior (not currently implemented)
         assert context is not None  # Type guard for linter
@@ -234,6 +241,8 @@ class TestSemanticFunctionDispatchDesired(unittest.TestCase):
         result = self.sandbox.eval(test_code)
         self.assertTrue(result.success)
         context = result.final_context
+        self.assertIsNotNone(context)
+        assert context is not None  # Type guard for linter
 
         # Expected behavior (not currently implemented)
         assert context is not None  # Type guard for linter
@@ -256,6 +265,8 @@ class TestSemanticFunctionDispatchDesired(unittest.TestCase):
         result = self.sandbox.eval(test_code)
         self.assertTrue(result.success)
         context = result.final_context
+        self.assertIsNotNone(context)
+        assert context is not None  # Type guard for linter
 
         # Expected behavior (not currently implemented)
         assert context is not None  # Type guard for linter
@@ -281,6 +292,8 @@ class TestSemanticFunctionDispatchDesired(unittest.TestCase):
         result = self.sandbox.eval(test_code)
         self.assertTrue(result.success)
         context = result.final_context
+        self.assertIsNotNone(context)
+        assert context is not None  # Type guard for linter
 
         # Expected behavior (not currently implemented)
         assert context is not None  # Type guard for linter

@@ -6,5 +6,5 @@ from .mcp_resource import MCPResource
 
 __all__ = [
     # Core MCP
-    'MCPResource',
+    "MCPResource",
 ]

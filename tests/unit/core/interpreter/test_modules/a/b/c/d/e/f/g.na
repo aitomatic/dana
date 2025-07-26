@@ -1,0 +1,12 @@
+# g.na - Test Dana module for 7-component imports (a.b.c.d.e.f.g)
+
+def ultra_deep_function() -> str:
+    return "Hello from ultra deep module!"
+
+public:ULTRA_DEEP_CONSTANT = "Ultra deep level constant"
+
+def calculate_ultra_depth() -> int:
+    return 7  # Represents nesting depth
+
+def describe_location() -> str:
+    return "Seven levels deep in the import hierarchy" 

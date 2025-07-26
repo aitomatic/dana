@@ -1,0 +1,65 @@
+# Compound Assignment Operators in Dana
+# Demonstrates the use of +=, -=, *=, and /= operators
+
+print("=== Compound Assignment Examples ===")
+
+# Basic arithmetic compound assignments
+count = 10
+print(f"Initial count: {count}")
+
+count += 5
+print(f"After count += 5: {count}")
+
+count -= 3
+print(f"After count -= 3: {count}")
+
+count *= 2
+print(f"After count *= 2: {count}")
+
+count /= 4
+print(f"After count /= 4: {count}")
+
+print("\n=== Working with Lists ===")
+numbers = [10, 20, 30, 40]
+print(f"Initial list: {numbers}")
+
+numbers[0] += 5
+print(f"After numbers[0] += 5: {numbers}")
+
+numbers[2] *= 2
+print(f"After numbers[2] *= 2: {numbers}")
+
+print("\n=== Working with Dictionaries ===")
+scores = {"alice": 100, "bob": 80, "charlie": 90}
+print(f"Initial scores: {scores}")
+
+scores["alice"] += 20
+scores["bob"] -= 10
+print(f"After updates: {scores}")
+
+print("\n=== In Loops ===")
+# Calculate sum using compound assignment
+total = 0
+for n in [1, 2, 3, 4, 5]:
+    total += n
+print(f"Sum of [1,2,3,4,5]: {total}")
+
+# Calculate factorial
+factorial = 1
+for i in [1, 2, 3, 4, 5]:
+    factorial *= i
+print(f"5! = {factorial}")
+
+print("\n=== String Concatenation ===")
+message = "Hello"
+message += " "
+message += "World"
+message += "!"
+print(f"Built message: {message}")
+
+print("\n=== Compound Assignment Returns Value ===")
+x = 10
+y = (x += 5)  # y gets the new value of x
+print(f"x = {x}, y = {y}")
+
+print("\nAll examples completed successfully!")

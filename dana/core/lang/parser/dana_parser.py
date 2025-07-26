@@ -187,14 +187,16 @@ class DanaParser(Lark, Loggable):
 
         self.transformer = DanaTransformer()
         self.program_text = ""
+        self.current_filename = None  # Track current filename for error reporting
 
-    def parse(self, program_text: str, do_transform: bool = True, do_type_check: bool = False) -> Any:
+    def parse(self, program_text: str, do_transform: bool = True, do_type_check: bool = False, filename: str | None = None) -> Any:
         """Parse a Dana program string into an AST.
 
         Args:
             program_text: The program text to parse
             do_transform: Whether to perform transformation to AST. Default is True.
             do_type_check: Whether to perform type checking. Default is False.
+            filename: Optional filename for error reporting
 
         Returns:
             A parse tree
@@ -205,6 +207,7 @@ class DanaParser(Lark, Loggable):
             program_text += "\n"
 
         self.program_text = program_text
+        self.current_filename = filename  # Store filename for transformer
         parse_tree = super().parse(program_text)  # a parse tree
 
         if do_transform:
@@ -217,10 +220,21 @@ class DanaParser(Lark, Loggable):
         """Transform a parse tree into an AST."""
         # Transform the parse tree into AST nodes
         self.debug("Transforming parse tree to AST")
+
+        # Set filename on transformer if available
+        if hasattr(self.transformer, "set_filename"):
+            self.transformer.set_filename(self.current_filename)
+
         ast = cast(Program, self.transformer.transform(parse_tree))
 
         # Set the source text on the program
         ast.source_text = self.program_text
+
+        # Set the filename in the AST location for error reporting
+        if self.current_filename:
+            from dana.core.lang.ast import Location
+
+            ast.location = Location(source=self.current_filename, line=1, column=1)
 
         self.debug(f"Successfully parsed program with {len(ast.statements)} statements")
 

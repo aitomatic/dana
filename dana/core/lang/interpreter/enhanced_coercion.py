@@ -194,7 +194,7 @@ class SemanticCoercer(Loggable):
 
         Args:
             value: Value to coerce
-            target_type: Target type name ("bool", "int", "float", "str", "dict", "list")
+            target_type: Target type name ("bool", "int", "float", "str", "dict", "list", or Dana struct name)
             context: Optional context hint
 
         Returns:
@@ -204,6 +204,13 @@ class SemanticCoercer(Loggable):
             ValueError: If coercion is not possible
         """
         self.debug(f"Coercing {repr(value)} to {target_type} (context: {context})")
+
+        # Extract final answer from FINAL_ANSWER: format if present
+        if isinstance(value, str):
+            extracted_value = self._extract_final_answer(value)
+            if extracted_value != value:
+                self.debug(f"Extracted final answer: {repr(value)} → {repr(extracted_value)}")
+                value = extracted_value
 
         if target_type == "bool":
             return self.coerce_to_bool(value, context)
@@ -218,6 +225,11 @@ class SemanticCoercer(Loggable):
         elif target_type == "list":
             return self._coerce_to_list(value, context)
         else:
+            # Check if this is a custom Dana struct type
+            coerced_struct = self._try_coerce_to_struct(value, target_type, context)
+            if coerced_struct is not None:
+                return coerced_struct
+
             # For unknown types, return as-is
             self.debug(f"Unknown target type '{target_type}', returning value as-is")
             return value
@@ -303,6 +315,153 @@ class SemanticCoercer(Loggable):
             return list(value)
 
         raise ValueError(f"Cannot coerce {type(value).__name__} to list")
+
+    def _extract_final_answer(self, text: str) -> str:
+        """Extract final answer from FINAL_ANSWER: format if present."""
+        if "FINAL_ANSWER:" not in text:
+            return text
+
+        # Look for the final answer marker
+        final_answer_index = text.find("FINAL_ANSWER:")
+        if final_answer_index == -1:
+            return text
+
+        # Extract everything after FINAL_ANSWER:
+        answer_part = text[final_answer_index + len("FINAL_ANSWER:") :].strip()
+
+        # If the answer is empty, return original text
+        if not answer_part:
+            return text
+
+        return answer_part
+
+    def _try_coerce_to_struct(self, value: Any, target_type: str, context: str | None = None) -> Any | None:
+        """Try to coerce a value to a Dana struct type.
+
+        Args:
+            value: Value to coerce (usually a string from LLM)
+            target_type: Target struct type name
+            context: Optional context hint
+
+        Returns:
+            StructInstance if coercion successful, None if not applicable
+
+        Raises:
+            ValueError: If coercion fails for a valid struct type
+        """
+        try:
+            # Import here to avoid circular imports
+            from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+
+            # Check if this is a registered Dana struct type
+            if not StructTypeRegistry.exists(target_type):
+                self.debug(f"'{target_type}' is not a registered struct type")
+                return None
+
+            self.debug(f"Found registered struct type: {target_type}")
+
+            # If value is already a struct instance of the correct type, return it
+            from dana.core.lang.interpreter.struct_system import StructInstance
+
+            if isinstance(value, StructInstance) and value.struct_type.name == target_type:
+                self.debug(f"Value is already a {target_type} struct instance")
+                return value
+
+            # Try to coerce from string (common case for LLM responses)
+            if isinstance(value, str):
+                return self._coerce_string_to_struct(value, target_type, context)
+
+            # Try to coerce from dict (already parsed JSON)
+            elif isinstance(value, dict):
+                return self._coerce_dict_to_struct(value, target_type, context)
+
+            # Try to coerce from list (unlikely but possible)
+            elif isinstance(value, list):
+                self.debug(f"Cannot coerce list to struct {target_type} - structs require object/dict data")
+                raise ValueError(f"Cannot coerce list to struct {target_type}")
+
+            else:
+                self.debug(f"Cannot coerce {type(value).__name__} to struct {target_type}")
+                raise ValueError(f"Cannot coerce {type(value).__name__} to struct {target_type}")
+
+        except Exception as e:
+            if "not a registered struct type" in str(e):
+                # Not a struct type, return None to fall through
+                return None
+            else:
+                # Actual coercion error for a valid struct type
+                self.debug(f"Struct coercion failed for {target_type}: {e}")
+                raise ValueError(f"Failed to coerce value to struct {target_type}: {e}")
+
+    def _coerce_string_to_struct(self, text: str, target_type: str, context: str | None = None) -> Any:
+        """Coerce string (usually JSON) to Dana struct instance.
+
+        Args:
+            text: String to parse (usually JSON from LLM)
+            target_type: Target struct type name
+            context: Optional context hint
+
+        Returns:
+            StructInstance
+
+        Raises:
+            ValueError: If parsing or validation fails
+        """
+        import json
+
+        # Clean up the text - remove common LLM artifacts
+        cleaned_text = text.strip()
+
+        # Remove markdown code fences if present
+        if cleaned_text.startswith("```"):
+            lines = cleaned_text.split("\n")
+            # Remove first line (```json or similar)
+            if len(lines) > 1:
+                lines = lines[1:]
+            # Remove last line if it's just ```
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+            cleaned_text = "\n".join(lines).strip()
+
+        self.debug(f"Cleaned text for struct parsing: {cleaned_text[:100]}...")
+
+        try:
+            # Parse as JSON
+            json_data = json.loads(cleaned_text)
+            self.debug(f"Successfully parsed JSON: {json_data}")
+
+            # Create struct instance from JSON
+            return self._coerce_dict_to_struct(json_data, target_type, context)
+
+        except json.JSONDecodeError as e:
+            self.debug(f"JSON parsing failed: {e}")
+            raise ValueError(f"Invalid JSON for struct {target_type}: {e}")
+
+    def _coerce_dict_to_struct(self, data: dict, target_type: str, context: str | None = None) -> Any:
+        """Coerce dictionary to Dana struct instance.
+
+        Args:
+            data: Dictionary data to convert
+            target_type: Target struct type name
+            context: Optional context hint
+
+        Returns:
+            StructInstance
+
+        Raises:
+            ValueError: If validation fails
+        """
+        from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+
+        try:
+            # Use the registry method to create instance from JSON
+            struct_instance = StructTypeRegistry.create_instance_from_json(data, target_type)
+            self.debug(f"Successfully created {target_type} instance: {struct_instance}")
+            return struct_instance
+
+        except ValueError as e:
+            self.debug(f"Struct validation failed for {target_type}: {e}")
+            raise ValueError(f"Struct validation failed for {target_type}: {e}")
 
     def _clean_json_string(self, value: str) -> str:
         """Clean JSON string by removing markdown code fences and extra whitespace.

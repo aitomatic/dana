@@ -89,10 +89,6 @@ def register_core_functions(registry: FunctionRegistry) -> None:
     registry.register("validate_args", validate_args, namespace="core", func_type=FunctionType.PYTHON, trusted_for_context=True)
 
     # Register POET decorator
-    try:
-        from dana.frameworks.poet.decorator import poet
+    from dana.frameworks.poet.core.decorator import poet
 
-        registry.register("poet", poet, namespace="core", func_type=FunctionType.PYTHON, trusted_for_context=True)
-    except ImportError:
-        # POET module not available, continue without it
-        pass
+    registry.register("poet", poet, namespace="core", func_type=FunctionType.PYTHON, trusted_for_context=True)

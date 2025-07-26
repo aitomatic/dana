@@ -1,0 +1,74 @@
+# Simple Processing Workflow - Dana Function Composition
+# Demonstrates basic data transformation with pipelines
+
+print("📊 Starting Simple Dana Processing Workflow")
+
+# Define simple processing functions
+def double_list(data: list[int]) -> list[int]:
+    result = []
+    for x in data:
+        result.append(x * 2)
+    return result
+
+def sum_list(numbers: list[int]) -> int:
+    total = 0
+    for n in numbers:
+        total = total + n
+    return total
+
+def create_report(sum_result: int) -> str:
+    return "Sum of processed data: " + str(sum_result)
+
+def count_items(data: list[int]) -> int:
+    return len(data)
+
+def safe_sum_list(numbers: list[int]) -> int:
+    if len(numbers) == 0:
+        return 0
+    total = 0
+    for n in numbers:
+        total = total + n
+    return total
+
+# Create different processing pipelines
+print("🔍 Creating processing pipelines...")
+
+# Pipeline 1: Full processing
+full_pipeline = double_list | sum_list | create_report
+
+# Pipeline 2: Just counting
+count_pipeline = count_items | str | create_report
+
+# Pipeline 3: Safe processing (handles empty lists)
+safe_pipeline = double_list | safe_sum_list | create_report
+
+# Test with sample data
+print("\n📈 Testing full pipeline:")
+sample_data = [1, 2, 3, 4, 5]
+result1 = full_pipeline(sample_data)
+print(f"Input: {sample_data}")
+print(f"Result: {result1}")
+
+print("\n📊 Testing count pipeline:")
+result2 = count_pipeline(sample_data)
+print(f"Count result: {result2}")
+
+print("\n🔄 Testing safe pipeline with empty list:")
+empty_result = safe_pipeline([])
+print(f"Empty list result: {empty_result}")
+
+# Demonstrate reusability
+print("\n🎯 Testing all pipelines with different data:")
+test_cases = [
+    [1, 2, 3],
+    [10, 20],
+    [100],
+    []
+]
+
+for data in test_cases:
+    full_result = full_pipeline(data)
+    safe_result = safe_pipeline(data)
+    print(f"Data {data} → Full: {full_result}, Safe: {safe_result}")
+
+print("📊 Simple processing workflow complete!")

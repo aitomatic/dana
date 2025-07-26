@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from dana.api.server.schemas import (
+from dana.api.core.schemas import (
     ConversationBase,
     ConversationCreate,
     ConversationRead,
@@ -17,11 +17,13 @@ def test_conversation_base_schema():
     assert convo.title == "Chat 1"
     assert convo.agent_id == 1
 
+
 def test_conversation_create_schema():
     data = {"title": "Chat 2", "agent_id": 2}
     convo = ConversationCreate(**data)
     assert convo.title == "Chat 2"
     assert convo.agent_id == 2
+
 
 def test_conversation_read_schema():
     now = datetime.now(UTC)
@@ -33,17 +35,20 @@ def test_conversation_read_schema():
     assert convo.created_at == now
     assert convo.updated_at == now
 
+
 def test_message_base_schema():
     data = {"sender": "user", "content": "Hello!"}
     msg = MessageBase(**data)
     assert msg.sender == "user"
     assert msg.content == "Hello!"
 
+
 def test_message_create_schema():
     data = {"sender": "bot", "content": "Hi!"}
     msg = MessageCreate(**data)
     assert msg.sender == "bot"
     assert msg.content == "Hi!"
+
 
 def test_message_read_schema():
     now = datetime.now(UTC)
@@ -56,11 +61,17 @@ def test_message_read_schema():
     assert msg.created_at == now
     assert msg.updated_at == now
 
+
 def test_conversation_with_messages_schema():
     now = datetime.now(UTC)
-    convo_data = {"id": 1, "title": "Chat", "agent_id": 4, "created_at": now, "updated_at": now, "messages": [
-        {"id": 1, "conversation_id": 1, "sender": "user", "content": "Hi", "created_at": now, "updated_at": now}
-    ]}
+    convo_data = {
+        "id": 1,
+        "title": "Chat",
+        "agent_id": 4,
+        "created_at": now,
+        "updated_at": now,
+        "messages": [{"id": 1, "conversation_id": 1, "sender": "user", "content": "Hi", "created_at": now, "updated_at": now}],
+    }
     convo = ConversationWithMessages(**convo_data)
     assert convo.id == 1
     assert convo.title == "Chat"
@@ -68,4 +79,4 @@ def test_conversation_with_messages_schema():
     assert convo.created_at == now
     assert convo.updated_at == now
     assert len(convo.messages) == 1
-    assert convo.messages[0].sender == "user" 
+    assert convo.messages[0].sender == "user"

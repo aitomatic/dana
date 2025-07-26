@@ -9,15 +9,14 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-try:
-    from lsprotocol import types as lsp
-    from pygls.server import LanguageServer
-    LSP_AVAILABLE = True
-except ImportError:
-    LSP_AVAILABLE = False
+import importlib.util
+
+# Check if LSP dependencies are available
+LSP_AVAILABLE = importlib.util.find_spec("lsprotocol") is not None and importlib.util.find_spec("pygls") is not None
 
 if LSP_AVAILABLE:
     from .server import main as start_server
-    __all__ = ['start_server']
+
+    __all__ = ["start_server"]
 else:
-    __all__ = [] 
+    __all__ = []

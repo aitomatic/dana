@@ -33,120 +33,142 @@ export function FileUpload({
   className = '',
   compact = false,
   conversationContext,
-  agentInfo
+  agentInfo,
 }: FileUploadProps) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const uploadFile = useCallback(async (file: File): Promise<UploadedFile> => {
-    if (agentInfo && !agentInfo.folder_path) {
-      toast.error('Agent folder path is missing. Please complete agent creation before uploading knowledge files.');
-      return {
+  const uploadFile = useCallback(
+    async (file: File): Promise<UploadedFile> => {
+      if (agentInfo && !agentInfo.folder_path) {
+        toast.error(
+          'Agent folder path is missing. Please complete agent creation before uploading knowledge files.',
+        );
+        return {
+          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          status: 'error',
+          error: 'Missing agent folder path',
+        };
+      }
+      const uploadedFile: UploadedFile = {
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
         name: file.name,
         size: file.size,
         type: file.type,
-        status: 'error',
-        error: 'Missing agent folder path',
+        status: 'uploading',
       };
-    }
-    const uploadedFile: UploadedFile = {
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      status: 'uploading',
-    };
 
-    try {
-      // Create FormData for file upload
-      const formData = new FormData();
-      formData.append('file', file);
-      if (agentId) formData.append('agent_id', agentId);
-      // Add conversation context and agent info for regeneration
-      if (conversationContext) {
-        formData.append('conversation_context', JSON.stringify(conversationContext));
-      }
-      if (agentInfo) {
-        formData.append('agent_info', JSON.stringify(agentInfo));
-      }
+      try {
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append('file', file);
+        if (agentId) formData.append('agent_id', agentId);
+        // Add conversation context and agent info for regeneration
+        if (conversationContext) {
+          formData.append('conversation_context', JSON.stringify(conversationContext));
+          // Debug logging
+          console.log('📁 File Upload - Conversation Context:', {
+            conversationLength: conversationContext.length,
+            conversation: conversationContext,
+          });
+        }
+        if (agentInfo) {
+          formData.append('agent_info', JSON.stringify(agentInfo));
+          // Debug logging
+          console.log('📁 File Upload - Agent Info:', {
+            agentId: agentInfo.id,
+            agentName: agentInfo.name,
+            hasCapabilities: !!agentInfo.capabilities,
+            capabilities: agentInfo.capabilities,
+          });
+        }
 
-      // Upload file to backend
-      const response = await apiService.uploadKnowledgeFile(formData);
+        // Upload file to backend
+        const response = await apiService.uploadKnowledgeFile(formData);
 
-      if (response.success) {
-        uploadedFile.status = 'success';
-        uploadedFile.path = response.file_path;
-        uploadedFile.generatedResponse = response.generated_response;
-        uploadedFile.updatedCapabilities = response.updated_capabilities;
-        uploadedFile.readyForCodeGeneration = response.ready_for_code_generation;
+        if (response.success) {
+          uploadedFile.status = 'success';
+          uploadedFile.path = response.file_path;
+          uploadedFile.generatedResponse = response.generated_response;
+          uploadedFile.updatedCapabilities = response.updated_capabilities;
+          uploadedFile.readyForCodeGeneration = response.ready_for_code_generation;
 
-        // Debug logging
-        console.log('📁 File Upload Response:', {
-          filename: file.name,
-          success: response.success,
-          ready_for_code_generation: response.ready_for_code_generation,
-          updated_capabilities: response.updated_capabilities,
-          generated_response: response.generated_response
-        });
+          // Debug logging
+          console.log('📁 File Upload Response:', {
+            filename: file.name,
+            success: response.success,
+            ready_for_code_generation: response.ready_for_code_generation,
+            updated_capabilities: response.updated_capabilities,
+            generated_response: response.generated_response,
+          });
 
-        toast.success(`Uploaded ${file.name} successfully`);
-      } else {
+          toast.success(`Uploaded ${file.name} successfully`);
+        } else {
+          uploadedFile.status = 'error';
+          uploadedFile.error = response.error || 'Upload failed';
+          toast.error(`Failed to upload ${file.name}`);
+        }
+      } catch (error) {
         uploadedFile.status = 'error';
-        uploadedFile.error = response.error || 'Upload failed';
+        uploadedFile.error = error instanceof Error ? error.message : 'Upload failed';
         toast.error(`Failed to upload ${file.name}`);
       }
-    } catch (error) {
-      uploadedFile.status = 'error';
-      uploadedFile.error = error instanceof Error ? error.message : 'Upload failed';
-      toast.error(`Failed to upload ${file.name}`);
-    }
 
-    return uploadedFile;
-  }, [agentId, conversationContext, agentInfo]);
+      return uploadedFile;
+    },
+    [agentId, conversationContext, agentInfo],
+  );
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    if (acceptedFiles.length === 0) return;
+  const onDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      if (acceptedFiles.length === 0) return;
 
-    setIsUploading(true);
+      setIsUploading(true);
 
-    // Create initial file entries
-    const initialFiles: UploadedFile[] = acceptedFiles.map(file => ({
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      status: 'uploading',
-    }));
+      // Create initial file entries
+      const initialFiles: UploadedFile[] = acceptedFiles.map((file) => ({
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        status: 'uploading',
+      }));
 
-    setUploadedFiles(prev => [...prev, ...initialFiles]);
+      setUploadedFiles((prev) => [...prev, ...initialFiles]);
 
-    // Upload files one by one
-    try {
-      const results = await Promise.all(acceptedFiles.map(uploadFile));
+      // Upload files one by one
+      try {
+        const results = await Promise.all(acceptedFiles.map(uploadFile));
 
-      // Update the uploaded files with results
-      setUploadedFiles(prev => {
-        const updated = [...prev];
-        results.forEach((result) => {
-          const initialFileIndex = updated.findIndex(f => f.name === result.name && f.status === 'uploading');
-          if (initialFileIndex !== -1) {
-            updated[initialFileIndex] = result;
-          }
+        // Update the uploaded files with results
+        setUploadedFiles((prev) => {
+          const updated = [...prev];
+          results.forEach((result) => {
+            const initialFileIndex = updated.findIndex(
+              (f) => f.name === result.name && f.status === 'uploading',
+            );
+            if (initialFileIndex !== -1) {
+              updated[initialFileIndex] = result;
+            }
+          });
+          return updated;
         });
-        return updated;
-      });
 
-      if (onFilesUploaded) {
-        onFilesUploaded(results.filter(f => f.status === 'success'));
+        if (onFilesUploaded) {
+          onFilesUploaded(results.filter((f) => f.status === 'success'));
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+      } finally {
+        setIsUploading(false);
       }
-    } catch (error) {
-      console.error('Upload error:', error);
-    } finally {
-      setIsUploading(false);
-    }
-  }, [uploadFile, onFilesUploaded]);
+    },
+    [uploadFile, onFilesUploaded],
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -164,7 +186,7 @@ export function FileUpload({
   });
 
   const removeFile = (fileId: string) => {
-    setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
+    setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId));
   };
 
   const formatFileSize = (bytes: number) => {
@@ -178,7 +200,9 @@ export function FileUpload({
   const getStatusIcon = (status: UploadedFile['status']) => {
     switch (status) {
       case 'uploading':
-        return <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />;
+        return (
+          <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        );
       case 'success':
         return <CheckCircle className="w-4 h-4 text-green-500" />;
       case 'error':
@@ -191,19 +215,16 @@ export function FileUpload({
       <div className={`${className}`}>
         <div
           {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${isDragActive
-            ? 'border-blue-400 bg-blue-50'
-            : 'border-gray-300 hover:border-gray-400'
-            }`}
+          className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
+            isDragActive ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+          }`}
         >
           <input {...getInputProps()} />
           <Upload className="w-6 h-6 mx-auto mb-2 text-gray-400" />
           <p className="text-sm text-gray-600">
             {isDragActive ? 'Drop files here' : 'Drag files or click to upload'}
           </p>
-          <p className="text-xs text-gray-400 mt-1">
-            PDF, DOC, TXT, MD, CSV, JSON (max 10MB)
-          </p>
+          <p className="text-xs text-gray-400 mt-1">PDF, DOC, TXT, MD, CSV, JSON (max 10MB)</p>
         </div>
 
         {uploadedFiles.length > 0 && (
@@ -237,19 +258,16 @@ export function FileUpload({
     <div className={`${className}`}>
       <div
         {...getRootProps()}
-        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${isDragActive
-          ? 'border-blue-400 bg-blue-50'
-          : 'border-gray-300 hover:border-gray-400'
-          }`}
+        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+          isDragActive ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+        }`}
       >
         <input {...getInputProps()} />
         <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
         <h3 className="text-lg font-medium text-gray-900 mb-2">
           {isDragActive ? 'Drop files here' : 'Upload Knowledge Files'}
         </h3>
-        <p className="text-gray-600 mb-4">
-          Drag and drop files here, or click to browse
-        </p>
+        <p className="text-gray-600 mb-4">Drag and drop files here, or click to browse</p>
         <p className="text-sm text-gray-500">
           Supported formats: PDF, DOC, DOCX, TXT, MD, CSV, JSON (max 10MB each)
         </p>
@@ -271,25 +289,14 @@ export function FileUpload({
           </h4>
           <div className="space-y-3">
             {uploadedFiles.map((file) => (
-              <div
-                key={file.id}
-                className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg"
-              >
+              <div key={file.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
                 <FileText className="w-5 h-5 text-gray-400" />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{file.name}</div>
                   <div className="text-sm text-gray-500">
                     {formatFileSize(file.size)}
-                    {file.path && (
-                      <span className="ml-2 text-green-600">
-                        → {file.path}
-                      </span>
-                    )}
-                    {file.error && (
-                      <span className="ml-2 text-red-600">
-                        Error: {file.error}
-                      </span>
-                    )}
+                    {file.path && <span className="ml-2 text-green-600">→ {file.path}</span>}
+                    {file.error && <span className="ml-2 text-red-600">Error: {file.error}</span>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

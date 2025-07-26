@@ -19,11 +19,7 @@ function extractDescription(content: string): string {
   return match ? match[1].trim() : '';
 }
 
-function AgentMiddlePane({
-  multiFileProject,
-}: {
-  multiFileProject?: MultiFileProject | null;
-}) {
+function AgentMiddlePane({ multiFileProject }: { multiFileProject?: MultiFileProject | null }) {
   // Add main tab logic
   const [mainTab] = useState<'Agent Be' | 'Agent Know' | 'Agent Do'>('Agent Be');
   // Set default subTab based on mainTab
@@ -52,8 +48,6 @@ function AgentMiddlePane({
     return map;
   }, [multiFileProject]);
 
-
-
   // Helper to get file content/description
   const getFile = (filename: string) => filesByType[filename];
   const getDescription = (filename: string) => {
@@ -66,67 +60,93 @@ function AgentMiddlePane({
 
   return (
     <div className="flex flex-col w-[55%] border-r border-gray-200 bg-white h-full ">
-      <div className='flex items-center gap-2 p-2 items-stretch'>
-        <div className='flex flex-col justify-center rounded-t-md bg-[#F2F4F7] px-2 py-1'
+      <div className="flex gap-2 items-stretch p-2">
+        <div
+          className="flex flex-col justify-center rounded-t-md bg-[#F2F4F7] px-2 py-1 cursor-pointer"
           onClick={() => setSubTab('Summary')}
         >
-          <div className='font-semibold text-sm uppercase'>
-            Summary
-          </div>
+          <div className="text-sm font-semibold uppercase">Summary</div>
         </div>
-        <div className='flex flex-col justify-center px-2 py-1 rounded-t-md bg-[#E1EBFE] gap-1'>
-          <div className='font-semibold text-sm uppercase'>
-            Be
+        {getCode('agent.na') ||
+          (getCode('common.na') && (
+            <div className="flex flex-col justify-center px-2 py-1 rounded-t-md bg-[#E1EBFE] gap-1">
+              <div className="text-sm font-semibold uppercase">Be</div>
+              <div className="flex gap-2 items-center">
+                {getCode('main.na') && (
+                  <div
+                    className={cn('px-3 border-2 border-b-0  rounded-t-md cursor-pointer', {
+                      'border-gray-900 bg-white': subTab === 'Agent',
+                      'border-gray-300': subTab !== 'Agent',
+                    })}
+                    onClick={() => setSubTab('Agent')}
+                  >
+                    agent.na
+                  </div>
+                )}
+                {getCode('common.na') && (
+                  <div
+                    className={cn('px-3 border-2 border-b-0  rounded-t-md cursor-pointer', {
+                      'border-gray-900 bg-white': subTab === 'Common',
+                      'border-gray-300': subTab !== 'Common',
+                    })}
+                    onClick={() => setSubTab('Common')}
+                  >
+                    common.na
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        {getCode('knowledge.na') && (
+          <div className="flex flex-col justify-center px-2 py-1 gap-1 rounded-t-md bg-[#FDF4FF]">
+            <div className="text-sm font-semibold uppercase">Know</div>
+            <div className="flex gap-2 items-center">
+              <div
+                className={cn('px-3 border-2 border-b-0  rounded-t-md cursor-pointer', {
+                  'border-gray-900 bg-white': subTab === 'Knowledges',
+                  'border-gray-300': subTab !== 'Knowledges',
+                })}
+                onClick={() => setSubTab('Knowledges')}
+              >
+                knowledge.na
+              </div>
+            </div>
           </div>
-          <div className='flex items-center gap-2'>
-            <div className={cn('px-3 border-2 border-b-0  rounded-t-md', {
-              'border-gray-900': subTab === 'Agent',
-              'border-gray-300': subTab !== 'Agent',
-            })}
-              onClick={() => setSubTab('Agent')}>agent.na</div>
-            <div className={cn('px-3 border-2 border-b-0  rounded-t-md', {
-              'border-gray-900': subTab === 'Common',
-              'border-gray-300': subTab !== 'Common',
-            })}
-              onClick={() => setSubTab('Common')}>common.na</div>
-
+        )}
+        {getCode('workflows.na') && (
+          <div className="flex flex-col justify-center px-2 py-1 gap-1 rounded-t-md bg-[#F0FDF9]">
+            <div className="text-sm font-semibold uppercase">Do</div>
+            <div className="flex gap-2 items-center">
+              <div
+                className={cn('px-3 border-2 border-b-0  rounded-t-md cursor-pointer', {
+                  'border-gray-900 bg-white': subTab === 'Workflows',
+                  'border-gray-300': subTab !== 'Workflows',
+                })}
+                onClick={() => setSubTab('Workflows')}
+              >
+                workflows.na
+              </div>
+              <div
+                className={cn('px-3 border-2 border-b-0  rounded-t-md cursor-pointer', {
+                  'border-gray-900 bg-white': subTab === 'Methods',
+                  'border-gray-300': subTab !== 'Methods',
+                })}
+                onClick={() => setSubTab('Methods')}
+              >
+                methods.na
+              </div>
+              <div
+                className={cn('px-3 border-2 border-b-0  rounded-t-md cursor-pointer', {
+                  'border-gray-900 bg-white': subTab === 'Tools',
+                  'border-gray-300': subTab !== 'Tools',
+                })}
+                onClick={() => setSubTab('Tools')}
+              >
+                tools.na
+              </div>
+            </div>
           </div>
-        </div>
-        <div className='flex flex-col justify-center px-2 py-1 gap-1 rounded-t-md bg-[#FDF4FF]'>
-          <div className='font-semibold text-sm uppercase'>
-            Know
-          </div>
-          <div className='flex items-center gap-2'>
-            <div className={cn('px-3 border-2 border-b-0  rounded-t-md', {
-              'border-gray-900': subTab === 'Knowledges',
-              'border-gray-300': subTab !== 'Knowledges',
-            })}
-              onClick={() => setSubTab('Knowledges')}>knowledge.na</div>
-          </div>
-        </div>
-        <div className='flex flex-col justify-center px-2 py-1 gap-1 rounded-t-md bg-[#F0FDF9]'>
-          <div className='font-semibold text-sm uppercase'>
-            Do
-          </div>
-          <div className='flex items-center gap-2'>
-            <div className={cn('px-3 border-2 border-b-0  rounded-t-md', {
-              'border-gray-900': subTab === 'Workflows',
-              'border-gray-300': subTab !== 'Workflows',
-            })}
-              onClick={() => setSubTab('Workflows')}>workflows.na</div>
-            <div className={cn('px-3 border-2 border-b-0  rounded-t-md', {
-              'border-gray-900': subTab === 'Methods',
-              'border-gray-300': subTab !== 'Methods',
-            })}
-              onClick={() => setSubTab('Methods')}>methods.na</div>
-            <div className={cn('px-3 border-2 border-b-0  rounded-t-md', {
-              'border-gray-900': subTab === 'Tools',
-              'border-gray-300': subTab !== 'Tools',
-            })}
-              onClick={() => setSubTab('Tools')}>tools.na</div>
-
-          </div>
-        </div>
+        )}
       </div>
       {/* Main Tabs */}
 
@@ -155,14 +175,12 @@ function AgentMiddlePane({
           // <div className="flex flex-col justify-between">
           <div className="flex flex-col flex-1 h-full">
             <DescriptionCodeViewer
-              description={getDescription('knowledges.na')}
-              code={getCode('knowledges.na')}
-              filename="knowledges.na"
+              description={getDescription('knowledge.na')}
+              code={getCode('knowledge.na')}
+              filename="knowledge.na"
               projectName={multiFileProject?.name}
             />
           </div>
-
-
         )}
         {subTab === 'Workflows' && (
           <DescriptionCodeViewer
@@ -210,10 +228,8 @@ export function GeneralAgentPage({
   setMultiFileProject: (project: MultiFileProject | null) => void;
 }) {
   // Zustand stores
-  const {
-    currentAgent,
-    setMultiFileProject: setBuildingMultiFileProject,
-  } = useAgentBuildingStore();
+  const { currentAgent, setMultiFileProject: setBuildingMultiFileProject } =
+    useAgentBuildingStore();
   const [_, setIsGeneratingCode] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   // const [isRightPanelMaximized, setIsRightPanelMaximized] = useState(false);
@@ -299,9 +315,7 @@ export function GeneralAgentPage({
               <img className="w-8 h-8" src={DanaAvatar} alt="Agent avatar" />
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Chat with Dana</h2>
-                <div className="flex items-center gap-2 mt-1">
-
-                </div>
+                <div className="flex gap-2 items-center mt-1"></div>
               </div>
             </div>
           </div>
@@ -320,9 +334,7 @@ export function GeneralAgentPage({
         </div>
 
         {/* Middle Pane - Tabs */}
-        <AgentMiddlePane
-          multiFileProject={multiFileProject}
-        />
+        <AgentMiddlePane multiFileProject={multiFileProject} />
 
         {/* Right Panel - Product Assistant */}
         <div

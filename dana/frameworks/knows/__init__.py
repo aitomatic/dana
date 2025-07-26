@@ -5,8 +5,7 @@ This module provides intelligent knowledge ingestion capabilities with document 
 knowledge extraction, validation, and organization.
 """
 
-from .core.base import Document, Knowledge, KnowledgePoint, ParsedDocument
-from .core.registry import KORegistry, ko_registry
+from .core.base import Document, KnowledgePoint
 from .document.extractor import TextExtractor
 from .document.loader import DocumentLoader
 from .document.parser import DocumentParser
@@ -25,20 +24,17 @@ __all__ = [
     # Core components
     "ProcessorBase",
     "KnowledgePoint",
-    
     # Document processing components
-    "DocumentLoader", 
-    "DocumentParser", 
-    "TextExtractor", 
+    "DocumentLoader",
+    "DocumentParser",
+    "TextExtractor",
     "Document",
-    
     # Meta extraction components
-    "MetaKnowledgeExtractor", 
-    "KnowledgeCategorizer", 
-    "KnowledgeCategory", 
+    "MetaKnowledgeExtractor",
+    "KnowledgeCategorizer",
+    "KnowledgeCategory",
     "CategoryRelationship",
-    
     # Context expansion components
     "SimilaritySearcher",
-    "ContextExpander"
+    "ContextExpander",
 ]

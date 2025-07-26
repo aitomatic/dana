@@ -65,10 +65,11 @@ async def get_weather():
         try:
             await session.initialize()
             return await session.call_tool(
-                name="get_current_weather", arguments={
+                name="get_current_weather",
+                arguments={
                     "city": CITY,
                     # "start_date": START_DATE, "end_date": END_DATE
-                }
+                },
             )
         finally:
             await client_session.__aexit__(None, None, None)

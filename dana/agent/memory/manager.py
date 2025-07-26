@@ -36,20 +36,20 @@ class MemoryManager(BaseResource):
         # Extract agent_id and instance_id for new storage structure
         self.agent_id = agent_id or name  # Default to manager name
         self.instance_id = instance_id or self.session_id  # Default to session_id
-        
+
         # Initialize persistent WorkingMemory with new path structure
         self.working_memory = WorkingMemory(
-            user_id=self.user_id, 
-            session_id=self.session_id, 
+            user_id=self.user_id,
+            session_id=self.session_id,
             agent_id=self.agent_id,
             instance_id=self.instance_id,
             max_items=50,
-            storage_path=storage_path
+            storage_path=storage_path,
         )
 
         # Updated storage paths for LongTerm and User memory: user_id/agent_id/
         agent_storage_path = f"{storage_path}/agent_context_memory/{self.user_id}/{self.agent_id}"
-        
+
         if use_llamaindex:
             from .llamaindex_repositories import LlamaIndexLongTermMemory, LlamaIndexUserMemory
 
@@ -68,7 +68,7 @@ class MemoryManager(BaseResource):
             self.long_term_memory = LongTermMemory(self.user_id)
             self.user_memory = UserMemory(self.user_id)
             self.info("Initialized with default in-memory repositories (3-level)")
-        
+
         # Batch processing configuration
         self.token_threshold = 8000  # Trigger batch processing when working memory token count reaches this size
         self.keep_recent_tokens = 2000  # Keep recent items totaling approximately this many tokens after batch processing
@@ -83,21 +83,21 @@ class MemoryManager(BaseResource):
         # More sophisticated token counting could use tiktoken for OpenAI models
         # For now, use a simple approximation: 1 token ≈ 4 characters
         return len(text) // 4
-    
+
     def _get_working_memory_token_count(self, memories: list[MemoryItem]) -> int:
         """Calculate total token count for a list of memory items"""
         total_text = "\n".join([memory.memory for memory in memories])
         return self._count_tokens(total_text)
-    
+
     def _get_recent_items_by_token_limit(self, memories: list[MemoryItem], token_limit: int) -> list[MemoryItem]:
         """Get most recent items that fit within the token limit"""
         if not memories:
             return []
-        
+
         # Start from the most recent items and work backwards
         recent_items = []
         current_tokens = 0
-        
+
         # Process items in reverse order (most recent first)
         for memory in reversed(memories):
             item_tokens = self._count_tokens(memory.memory)
@@ -107,7 +107,7 @@ class MemoryManager(BaseResource):
             else:
                 # If adding this item would exceed the limit, stop
                 break
-        
+
         return recent_items
 
     async def add_conversation_memory(self, memory_content: str) -> list[MemoryItem]:
@@ -130,45 +130,47 @@ class MemoryManager(BaseResource):
 
         # Store in WorkingMemory only
         await self.working_memory.store(memory)
-        
+
         # Check if we need to trigger batch processing based on token count
         current_items = await self.working_memory.search([], limit=100)  # Get all items to check token count
         current_token_count = self._get_working_memory_token_count(current_items)
         if current_token_count >= self.token_threshold:
             await self.process_working_memory_batch()
-        
+
         return [memory]
-    
+
     async def process_working_memory_batch(self):
         """Process WorkingMemory items in batch using LLM extraction"""
         try:
             # Get all items from working memory
             all_items = await self.working_memory.search([], limit=100)
-            
+
             # Determine which recent items to keep based on token limit
             items_to_keep = self._get_recent_items_by_token_limit(all_items, self.keep_recent_tokens)
-            
+
             if len(all_items) <= len(items_to_keep):
                 # Not enough items to process (all items fit within keep_recent_tokens)
                 return
-            
+
             # Items to process (all except the recent ones we want to keep)
             items_to_process = [item for item in all_items if item not in items_to_keep]
-            
+
             if not items_to_process:
                 return
-            
+
             # Log token count for batch processing
             token_count = self._get_working_memory_token_count(items_to_process)
             keep_tokens = self._get_working_memory_token_count(items_to_keep)
-            self.info(f"Processing batch of {len(items_to_process)} items ({token_count} tokens), keeping {len(items_to_keep)} recent items ({keep_tokens} tokens)")
-            
+            self.info(
+                f"Processing batch of {len(items_to_process)} items ({token_count} tokens), keeping {len(items_to_keep)} recent items ({keep_tokens} tokens)"
+            )
+
             # Combine conversation content for batch LLM extraction
             combined_content = "\n".join([item.memory for item in items_to_process])
-            
+
             # Use LLM to extract and classify memories
             extracted_memories = await self.llm_extractor.extract_memories(combined_content, self.user_id)
-            
+
             # Process extracted memories and store in appropriate repositories
             for mem_dict in extracted_memories:
                 # Convert semantic_type string to MemoryType enum
@@ -185,7 +187,7 @@ class MemoryManager(BaseResource):
                     storage_type = StorageType.USER_MEMORY
                 else:
                     storage_type = StorageType.WORKING_MEMORY
-                
+
                 memory = MemoryItem(
                     memory=mem_dict["value"],
                     user_id=self.user_id,
@@ -206,15 +208,17 @@ class MemoryManager(BaseResource):
                     await self.long_term_memory.store(memory)
                 elif mem_dict["memory_type"] == "UserMemory":
                     await self.user_memory.store(memory)
-            
+
             # Clear working memory and keep only recent items using token-based retention
             self.working_memory.replace_with_items(items_to_keep)
-            
-            self.info(f"Batch processed {len(items_to_process)} working memory items ({token_count} tokens), extracted {len(extracted_memories)} memories")
-            
+
+            self.info(
+                f"Batch processed {len(items_to_process)} working memory items ({token_count} tokens), extracted {len(extracted_memories)} memories"
+            )
+
         except Exception as e:
             self.error(f"Batch processing failed: {e}")
-    
+
     async def manual_batch_process(self):
         """Manually trigger batch processing regardless of threshold"""
         await self.process_working_memory_batch()
@@ -373,11 +377,11 @@ class MemoryManager(BaseResource):
             working_memories = await self.working_memory.search([], 100)
             current_tokens = self._get_working_memory_token_count(working_memories)
             stats["working_memory"] = {
-                "count": len(working_memories), 
+                "count": len(working_memories),
                 "max_capacity": getattr(self.working_memory, "max_items", 20),
                 "current_tokens": current_tokens,
                 "token_threshold": self.token_threshold,
-                "keep_recent_tokens": self.keep_recent_tokens
+                "keep_recent_tokens": self.keep_recent_tokens,
             }
 
             # Long-term memory stats

@@ -18,12 +18,15 @@ venv/
 .env
 .env.*
 !.env.example
+dana-config.json
+!dana-config.json.example
 
 # Testing and coverage
 .coverage
 pytest.ini
 
 # Logs and data
+local.db
 .dana/
 .poet/
 logs/
@@ -60,6 +63,7 @@ node_modules/
 .cache/
 .ipynb_checkpoints/
 .cursor/
+CLAUDE.md
 
 .deprecated_opendxa
 docs/.ai-only/ai_output/
@@ -72,12 +76,13 @@ dana/api/server/static/
 dana/contrib/ui/public/static/
 generated/
 agents/
+docs/.ai-only/ai_output/
 
 # Contributors-oriented configs
 # =============================
 
 # Visual Studio Code configs
 # --------------------------
-.vscode/extensions.json
+# .vscode/extensions.json
 # .vscode/launch.json
 # .vscode/settings.json
