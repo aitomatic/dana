@@ -15,10 +15,7 @@ from llama_index.llms.openai.base import OpenAI
 
 import dana
 
-load_dotenv(dotenv_path=Path(dana.__path__[0]).parent / ".env",
-            verbose=True,
-            override=True,
-            encoding="utf-8")
+load_dotenv(dotenv_path=Path(dana.__path__[0]).parent / ".env", verbose=True, override=True, encoding="utf-8")
 
 DOCS_DIR_PATH = Path(__file__).parent.parent.parent.parent.parent / "docs" / "for-engineers"
 INDEX_PERSIST_DIR_PATH = ".cache/llama_index_vector_store_index"
@@ -41,22 +38,29 @@ reader = SimpleDirectoryReader(
     num_files_limit=None,
     file_metadata=None,
     raise_on_error=True,
-    fs=None)
+    fs=None,
+)
 
 documents = reader.load_data(show_progress=True, num_workers=1)
 
-embed_model = OpenAIEmbedding(model=OpenAIEmbeddingModelType.TEXT_EMBED_3_SMALL,
-                              mode=OpenAIEmbeddingMode.SIMILARITY_MODE,
-                              embed_batch_size=100,
-                              dimensions=1536,
-                              additional_kwargs=None,
-                              api_key=None, api_base=None, api_version=None,
-                              max_retries=10, timeout=60,
-                              reuse_client=True,
-                              callback_manager=None,
-                              default_headers=None,
-                              http_client=None, async_http_client=None,
-                              num_workers=cpu_count())
+embed_model = OpenAIEmbedding(
+    model=OpenAIEmbeddingModelType.TEXT_EMBED_3_SMALL,
+    mode=OpenAIEmbeddingMode.SIMILARITY_MODE,
+    embed_batch_size=100,
+    dimensions=1536,
+    additional_kwargs=None,
+    api_key=None,
+    api_base=None,
+    api_version=None,
+    max_retries=10,
+    timeout=60,
+    reuse_client=True,
+    callback_manager=None,
+    default_headers=None,
+    http_client=None,
+    async_http_client=None,
+    num_workers=cpu_count(),
+)
 
 vector_store_index: VectorStoreIndex = VectorStoreIndex.from_documents(
     # BaseIndex.from_documents(...) args:
@@ -66,7 +70,6 @@ vector_store_index: VectorStoreIndex = VectorStoreIndex.from_documents(
     show_progress=True,
     callback_manager=None,
     transformations=None,
-
     # other VectorStoreIndex.__init__(...) args:
     # docs.llamaindex.ai/en/latest/api_reference/indices/vector_store.html#llama_index.core.indices.vector_store.base.VectorStoreIndex
     use_async=False,
@@ -74,7 +77,8 @@ vector_store_index: VectorStoreIndex = VectorStoreIndex.from_documents(
     embed_model=embed_model,
     insert_batch_size=2048,
     objects=None,
-    index_struct=None)
+    index_struct=None,
+)
 
 vector_store_index.storage_context.persist(persist_dir=INDEX_PERSIST_DIR_PATH, fs=None)
 
@@ -89,34 +93,45 @@ loaded_vector_store_index = load_index_from_storage(
         graph_store=None,
         property_graph_store=None,
         persist_dir=INDEX_PERSIST_DIR_PATH,
-        fs=None),
+        fs=None,
+    ),
     index_id=None,
-
     # other BaseIndex.__init__(...) args:
     # docs.llamaindex.ai/en/stable/api_reference/indices/#llama_index.core.indices.base.BaseIndex
     nodes=None,
     objects=None,
     callback_manager=None,
     transformations=None,
-    show_progress=True)
+    show_progress=True,
+)
 
-llm = OpenAI(model="gpt-4o-mini",
-             temperature=0,
-             max_tokens=None,
-             additional_kwargs={"seed": 0},
-             max_retries=3, timeout=60, reuse_client=True,
-             api_key=None, api_base=None, api_version=None,
-             callback_manager=None, default_headers=None,
-             http_client=None, async_http_client=None,
-             openai_client=None, async_openai_client=None,
-             system_prompt=None, messages_to_prompt=None, completion_to_prompt=None,
-             output_parser=None,
-             strict=False)
+llm = OpenAI(
+    model="gpt-4o-mini",
+    temperature=0,
+    max_tokens=None,
+    additional_kwargs={"seed": 0},
+    max_retries=3,
+    timeout=60,
+    reuse_client=True,
+    api_key=None,
+    api_base=None,
+    api_version=None,
+    callback_manager=None,
+    default_headers=None,
+    http_client=None,
+    async_http_client=None,
+    openai_client=None,
+    async_openai_client=None,
+    system_prompt=None,
+    messages_to_prompt=None,
+    completion_to_prompt=None,
+    output_parser=None,
+    strict=False,
+)
 
 query_engine = vector_store_index.as_query_engine(
     embed_model=embed_model,
     llm=llm,
-
     # other VectorIndexRetriever.__init__(...) args:
     # docs.llamaindex.ai/en/latest/api_reference/query/retrievers/vector_store.html#llama_index.core.indices.vector_store.retrievers.retriever.VectorIndexRetriever
     similarity_top_k=12,
@@ -126,9 +141,7 @@ query_engine = vector_store_index.as_query_engine(
     doc_ids=None,
     sparse_top_k=None,
     vector_store_kwargs={"mmr_threshold": 0.5},
-
     verbose=False,
-
     # other RetrieverQueryEngine.from_args(...) args:
     # docs.llamaindex.ai/en/latest/api_reference/query/query_engines/retriever_query_engine.html#llama_index.core.query_engine.retriever_query_engine.RetrieverQueryEngine.from_args
     response_synthesizer=None,
@@ -140,6 +153,7 @@ query_engine = vector_store_index.as_query_engine(
     simple_template=None,
     output_cls=None,
     use_async=False,
-    streaming=False)
+    streaming=False,
+)
 
 print(query_engine.query("Teach me Dana syntax for multi-agent collaboration").response)

@@ -119,7 +119,7 @@ class TestAgentServices:
 
         # Create a test document in the database
         from dana.api.core.models import Document
-        
+
         # Create test file
         test_file_path = tmp_path / "test_document.txt"
         test_file_path.write_text("This is a test document content")
@@ -182,7 +182,7 @@ class TestAgentServices:
     def test_agent_generation_endpoint(self, client):
         """Test the agent generation endpoint."""
         from dana.api.core.schemas import AgentGenerationRequest, MessageData
-        
+
         # Test data
         messages = [
             MessageData(role="user", content="I need an agent that can help me with weather information"),
@@ -212,7 +212,7 @@ class TestAgentServices:
         assert "success" in data
         assert "dana_code" in data
         assert "phase" in data
-        
+
         # Check phase-specific behavior
         if data["phase"] == "description":
             # Phase 1: No dana_code, but should have agent info
@@ -224,7 +224,7 @@ class TestAgentServices:
             if data["success"]:
                 assert data["dana_code"] is not None
                 assert len(data["dana_code"]) > 0
-                
+
                 # Check if it contains basic Dana structure (new agent syntax)
                 dana_code = data["dana_code"]
                 assert "agent " in dana_code
@@ -235,7 +235,7 @@ class TestAgentServices:
     def test_agent_generation_endpoint_mock_mode(self, client, monkeypatch):
         """Test the agent generation endpoint with mock mode enabled."""
         from dana.api.core.schemas import AgentGenerationRequest, MessageData
-        
+
         # Enable mock mode
         monkeypatch.setenv("DANA_MOCK_AGENT_GENERATION", "true")
 
@@ -268,7 +268,7 @@ class TestAgentServices:
         assert "success" in data
         assert "dana_code" in data
         assert "phase" in data
-        
+
         # Check phase-specific behavior
         if data["phase"] == "description":
             # Phase 1: No dana_code, but should have agent info
@@ -280,7 +280,7 @@ class TestAgentServices:
             assert data["success"] is True
             assert data["dana_code"] is not None
             assert len(data["dana_code"]) > 0
-        
+
             # Check if it contains weather agent structure
             dana_code = data["dana_code"]
             assert "Weather Information Agent" in dana_code
@@ -288,7 +288,7 @@ class TestAgentServices:
             assert "name : str =" in dana_code
             assert "description : str =" in dana_code
             assert "def solve" in dana_code
-            
+
             # Verify extracted name and description
             assert data["agent_name"] == "Weather Information Agent"
             assert "weather information" in data["agent_description"].lower()
@@ -297,7 +297,7 @@ class TestAgentServices:
     def test_agent_generation_with_current_code(self, client, monkeypatch):
         """Test the agent generation endpoint with current code for iterative improvements."""
         from dana.api.core.schemas import AgentGenerationRequest, MessageData
-        
+
         # Enable mock mode
         monkeypatch.setenv("DANA_MOCK_AGENT_GENERATION", "true")
 
@@ -329,7 +329,7 @@ def solve(basic_agent : BasicAgent, problem : str):
         assert "success" in data
         assert "dana_code" in data
         assert "phase" in data
-        
+
         # Check phase-specific behavior
         if data["phase"] == "description":
             # Phase 1: No dana_code, but should have agent info
@@ -341,10 +341,10 @@ def solve(basic_agent : BasicAgent, problem : str):
             assert data["success"] is True
             assert data["dana_code"] is not None
             assert len(data["dana_code"]) > 0
-            
+
             # Check if it contains email agent structure (should improve based on new requirement)
             dana_code = data["dana_code"]
             assert "Email Assistant Agent" in dana_code
             assert "agent EmailAgent:" in dana_code
             assert "email_knowledge" in dana_code
-            assert "use(\"rag\"" in dana_code
+            assert 'use("rag"' in dana_code

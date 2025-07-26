@@ -79,7 +79,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
 
         # Verify the model was set successfully
         self.assertEqual(llm.model, "someprovider:unavailable-model")
-        
+
         # Verify both internal model and config manager are in sync
         self.assertEqual(llm._model, "someprovider:unavailable-model")
         self.assertEqual(llm._config_manager.selected_model, "someprovider:unavailable-model")

@@ -8,4 +8,4 @@ It delegates to the main CLI handler in dana.core.cli.dana
 from dana.core.cli.dana import main
 
 if __name__ == "__main__":
-    main() 
+    main()

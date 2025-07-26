@@ -239,11 +239,11 @@ class ControlFlowTransformer(BaseTransformer):
     def except_clause(self, items):
         """Transform an except clause into an ExceptBlock node."""
         relevant_items = self.main_transformer._filter_relevant_items(items)
-        
+
         exception_type = None
         variable_name = None
         body = []
-        
+
         # Process items to extract exception spec and body
         for item in relevant_items:
             if hasattr(item, "data") and item.data == "block":
@@ -252,22 +252,17 @@ class ControlFlowTransformer(BaseTransformer):
             elif hasattr(item, "data") and item.data == "except_spec":
                 # Process exception specification
                 exception_type, variable_name = self.except_spec(item.children)
-        
-        return ExceptBlock(
-            body=body,
-            exception_type=exception_type,
-            variable_name=variable_name,
-            location=None
-        )
-    
+
+        return ExceptBlock(body=body, exception_type=exception_type, variable_name=variable_name, location=None)
+
     def except_spec(self, items):
         """Transform exception specification into (exception_type, variable_name)."""
         relevant_items = self.main_transformer._filter_relevant_items(items)
-        
+
         exception_type = None
         variable_name = None
-        
-        for i, item in enumerate(relevant_items):
+
+        for _i, item in enumerate(relevant_items):
             if isinstance(item, Token) and item.type == "NAME":
                 # This is the variable name from 'as NAME'
                 variable_name = item.value
@@ -277,13 +272,13 @@ class ControlFlowTransformer(BaseTransformer):
             else:
                 # Direct expression for exception type
                 exception_type = self.expression_transformer.expression([item])
-        
+
         return exception_type, variable_name
-    
+
     def exception_type(self, items):
         """Transform exception type (single expr or tuple of exprs)."""
         relevant_items = self.main_transformer._filter_relevant_items(items)
-        
+
         if len(relevant_items) == 1:
             # Single exception type
             return self.expression_transformer.expression([relevant_items[0]])
@@ -293,20 +288,20 @@ class ControlFlowTransformer(BaseTransformer):
             for item in relevant_items:
                 if hasattr(item, "data") and item.data == "exception_list":
                     return self.exception_list(item.children)
-            
+
             # Fallback: transform as expression
             return self.expression_transformer.expression(relevant_items)
-    
+
     def exception_list(self, items):
         """Transform a list of exception types into a TupleLiteral."""
         from dana.core.lang.ast import TupleLiteral
-        
+
         relevant_items = self.main_transformer._filter_relevant_items(items)
         exception_types = []
-        
+
         for item in relevant_items:
             if isinstance(item, Token) and item.type == "COMMA":
                 continue
             exception_types.append(self.expression_transformer.expression([item]))
-        
+
         return TupleLiteral(items=exception_types)

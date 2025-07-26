@@ -8,64 +8,58 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Optional
-
-from dana.common.exceptions import DanaError
 from dana.core.lang.interpreter.error_context import ErrorContext
 
 
 class EnhancedErrorFormatter:
     """Format errors with comprehensive location and context information."""
-    
+
     @staticmethod
-    def format_error(
-        error: Exception,
-        error_context: Optional[ErrorContext] = None,
-        show_traceback: bool = True
-    ) -> str:
+    def format_error(error: Exception, error_context: ErrorContext | None = None, show_traceback: bool = True) -> str:
         """Format an error with location and context information.
-        
+
         Args:
             error: The exception to format
             error_context: Optional error context with location information
             show_traceback: Whether to include the full traceback
-            
+
         Returns:
             Formatted error message with location and context
         """
         lines = []
-        
+
         # Add traceback if available and requested
         if show_traceback and error_context and error_context.execution_stack:
             lines.append(error_context.format_stack_trace())
             lines.append("")  # Empty line separator
-        
+
         # Format the main error
         error_type = type(error).__name__
         error_msg = str(error)
-        
+
         # Add location information if available
         if error_context and error_context.current_location:
             loc = error_context.current_location
-            
+
             # Main error line with location
             location_parts = []
             if loc.filename:
                 # Extract just the filename without the full path for cleaner display
                 import os
+
                 filename = os.path.basename(loc.filename) if loc.filename else "unknown"
                 location_parts.append(f'File "{filename}"')
             if loc.line is not None:
                 location_parts.append(f"line {loc.line}")
             if loc.column is not None:
                 location_parts.append(f"column {loc.column}")
-            
+
             if location_parts:
                 lines.append(f"{error_type}: {error_msg}")
                 lines.append(f"  {', '.join(location_parts)}")
             else:
                 lines.append(f"{error_type}: {error_msg}")
-            
+
             # Add source code context
             if loc.filename and loc.line:
                 source_line = error_context.get_source_line(loc.filename, loc.line)
@@ -85,46 +79,44 @@ class EnhancedErrorFormatter:
         else:
             # No location information available
             lines.append(f"{error_type}: {error_msg}")
-        
+
         return "\n".join(lines)
-    
+
     @staticmethod
-    def format_developer_error(
-        error: Exception,
-        error_context: Optional[ErrorContext] = None,
-        show_traceback: bool = True
-    ) -> str:
+    def format_developer_error(error: Exception, error_context: ErrorContext | None = None, show_traceback: bool = True) -> str:
         """Format an error in a clean, developer-friendly format (Option 3).
-        
+
         Args:
             error: The exception to format
             error_context: Optional error context with location information
             show_traceback: Whether to include the full traceback
-            
+
         Returns:
             Formatted error message in clean developer format
         """
         lines = []
-        
+
         # Header
         lines.append("=== Dana Runtime Error ===")
-        
+
         # File information
         filename = "unknown file"
         if error_context and error_context.current_location and error_context.current_location.filename:
             import os
+
             filename = os.path.basename(error_context.current_location.filename)
         elif error_context and error_context.current_file:
             import os
+
             filename = os.path.basename(error_context.current_file)
-        
+
         lines.append(f"File: {filename}")
-        
+
         # Error type and message
         error_type = type(error).__name__
         error_msg = str(error)
         lines.append(f"Error: {error_type} - {error_msg}")
-        
+
         # Execution trace if available
         if error_context and error_context.execution_stack:
             lines.append("")
@@ -137,10 +129,10 @@ class EnhancedErrorFormatter:
                     location_desc.append(f"column {loc.column}")
                 if loc.function_name:
                     location_desc.append(loc.function_name)
-                
+
                 location_str = ", ".join(location_desc) if location_desc else "unknown location"
                 lines.append(f"{i}. {location_str}")
-                
+
                 # Show the actual source code if available
                 if loc.filename and loc.line:
                     source_line = error_context.get_source_line(loc.filename, loc.line)
@@ -150,7 +142,7 @@ class EnhancedErrorFormatter:
                         if len(display_line) > 40:
                             display_line = display_line[:37] + "..."
                         lines.append(f"   Code: {display_line}")
-        
+
         # Root cause analysis for common errors
         lines.append("")
         if "NoneType" in error_msg and "attribute" in error_msg:
@@ -165,23 +157,23 @@ class EnhancedErrorFormatter:
         else:
             lines.append("Problem: See error message above")
             lines.append("Debug tip: Check the execution trace above for the source of the error")
-        
+
         return "\n".join(lines)
-    
+
     @staticmethod
-    def format_simple_error(error: Exception, filename: Optional[str] = None) -> str:
+    def format_simple_error(error: Exception, filename: str | None = None) -> str:
         """Format a simple error message without full context.
-        
+
         Args:
             error: The exception to format
             filename: Optional filename where the error occurred
-            
+
         Returns:
             Simple formatted error message
         """
         error_type = type(error).__name__
         error_msg = str(error)
-        
+
         if filename:
             return f"{error_type}: {error_msg} (in {filename})"
         else:

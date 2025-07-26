@@ -22,4 +22,4 @@ Dana Runtime Interpreter.
 # Export main classes
 from .dana_interpreter import DanaInterpreter
 
-__all__ = ['DanaInterpreter']
+__all__ = ["DanaInterpreter"]

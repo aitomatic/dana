@@ -49,14 +49,14 @@ def create_app():
     from ..routers.documents import router as new_documents_router
     from ..routers.topics import router as new_topics_router
     from ..routers.poet import router as poet_router
-    
+
     # Legacy routers (for endpoints not yet migrated)
     from .routers.api import router as api_router
     from .routers.main import router as main_router
     from .routers.agent_test import router as agent_test_router
 
     app.include_router(main_router)
-    
+
     # Use new consolidated routers
     app.include_router(agents_router, prefix="/api")
     app.include_router(new_chat_router, prefix="/api")
@@ -64,7 +64,7 @@ def create_app():
     app.include_router(new_documents_router, prefix="/api")
     app.include_router(new_topics_router, prefix="/api")
     app.include_router(poet_router, prefix="/api")
-    
+
     # Keep legacy api router for endpoints not yet migrated:
     # - /run-na-file - Run Dana files
     # - /write-files - Write multi-file projects to disk

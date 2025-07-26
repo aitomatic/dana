@@ -171,9 +171,9 @@ class DanaInterpreter(Loggable):
 
         try:
             # Set up error context with filename if available
-            if hasattr(ast, 'location') and ast.location and ast.location.source:
+            if hasattr(ast, "location") and ast.location and ast.location.source:
                 context.error_context.set_file(ast.location.source)
-            
+
             context.set_execution_status(ExecutionStatus.RUNNING)
             result = self._executor.execute(ast, context)
             context.set_execution_status(ExecutionStatus.COMPLETED)

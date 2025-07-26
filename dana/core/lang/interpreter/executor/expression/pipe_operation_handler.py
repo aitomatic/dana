@@ -170,7 +170,7 @@ class PipeOperationHandler(Loggable):
             return self.execute_pipe(expr.left, expr.right, context)
 
         # Handle already composed functions and SandboxFunctions
-        if isinstance(expr, (SandboxFunction, ParallelFunction)):
+        if isinstance(expr, SandboxFunction | ParallelFunction):
             return expr
 
         # Handle direct callables

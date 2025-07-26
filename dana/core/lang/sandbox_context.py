@@ -53,11 +53,12 @@ class SandboxContext:
         self._parent = parent
         self._manager = manager
         self._interpreter: DanaInterpreter | None = None
-        
+
         # Import and initialize error context
         from dana.core.lang.interpreter.error_context import ErrorContext
+
         self._error_context = ErrorContext()
-        
+
         self._state: dict[str, dict[str, Any]] = {
             "local": {},  # Always fresh local scope
             "private": {},  # Shared global scope
@@ -114,7 +115,7 @@ class SandboxContext:
             interpreter: The interpreter instance
         """
         self._interpreter = interpreter
-    
+
     @property
     def error_context(self):
         """Get the error context for location tracking."""
@@ -652,7 +653,7 @@ class SandboxContext:
             # Return all resources from context
             resource_names = self.list_resources()
             return {name: self.get_resource(name) for name in resource_names}
-        
+
         # Handle mixed list of BaseResource objects and string names
         resources = {}
         for item in included:
@@ -666,7 +667,7 @@ class SandboxContext:
                 except Exception:
                     # Resource not found in context - skip it
                     pass
-        
+
         return resources
 
     def soft_delete_resource(self, name: str) -> None:

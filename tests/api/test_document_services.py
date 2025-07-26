@@ -9,9 +9,8 @@ import pytest
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
-from dana.api.core.models import Document, Topic
-from dana.api.core.schemas import DocumentCreate, DocumentUpdate, TopicCreate
-from dana.api.services.document_service import DocumentService
+from dana.api.core.models import Topic
+from dana.api.core.schemas import TopicCreate
 from dana.api.services.topic_service import TopicService
 
 
@@ -78,6 +77,7 @@ class TestFileStorageService:
         """Test file saving."""
         # Create a proper mock file object that works with copyfileobj
         from io import BytesIO
+
         mock_file_content = b"test content"
         mock_file_obj = BytesIO(mock_file_content)
         mock_upload_file.file = mock_file_obj
@@ -99,10 +99,11 @@ class TestFileStorageService:
         """Test file deletion."""
         # Create a proper mock file object that works with copyfileobj
         from io import BytesIO
+
         mock_file_content = b"test content"
         mock_file_obj = BytesIO(mock_file_content)
         mock_upload_file.file = mock_file_obj
-        
+
         # First save a file
         filename, file_path, file_size = file_storage.save_file(mock_upload_file)
 
@@ -212,4 +213,5 @@ class TestTopicService:
 @pytest.mark.skip(reason="DocumentService interface changed during refactoring - these tests are obsolete")
 class TestDocumentService:
     """Test the DocumentService - DEPRECATED: Service interface completely changed."""
+
     pass

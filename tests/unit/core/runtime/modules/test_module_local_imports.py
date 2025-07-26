@@ -1,17 +1,12 @@
 """
 Test module-local imports feature.
 
-This test ensures that Dana modules can import siblings directly without 
+This test ensures that Dana modules can import siblings directly without
 relative import syntax, making imports more intuitive and portable.
 
 Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
-
-import tempfile
-from pathlib import Path
-
-import pytest
 
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
@@ -23,7 +18,7 @@ class TestModuleLocalImports:
     def setup_method(self):
         """Reset module system before each test."""
         reset_module_system()
-        
+
     def teardown_method(self):
         """Reset module system after each test."""
         reset_module_system()
@@ -39,7 +34,7 @@ def add(a: int, b: int) -> int:
 def multiply(a: int, b: int) -> int:
     return a * b
 """)
-        
+
         main_module = tmp_path / "main.na"
         main_module.write_text("""
 # Import sibling module directly without relative syntax
@@ -48,13 +43,13 @@ import math_utils
 result1 = math_utils.add(5, 3)
 result2 = math_utils.multiply(4, 7)
 """)
-        
+
         # Initialize module system
         initialize_module_system()
-        
+
         # Run main module
         result = DanaSandbox.quick_run(main_module)
-        
+
         assert result.success
         assert result.final_context.get("local:result1") == 8
         assert result.final_context.get("local:result2") == 28
@@ -74,7 +69,7 @@ def capitalize_words(text: str) -> str:
 def reverse_string(text: str) -> str:
     return text[::-1]
 """)
-        
+
         main_module = tmp_path / "processor.na"
         main_module.write_text("""
 # From-import sibling module
@@ -84,13 +79,13 @@ text = "hello world"
 capitalized = capitalize_words(text)
 reversed_text = reverse_string(text)
 """)
-        
+
         # Initialize module system
         initialize_module_system()
-        
+
         # Run main module
         result = DanaSandbox.quick_run(main_module)
-        
+
         assert result.success
         assert result.final_context.get("local:capitalized") == "Hello World"
         assert result.final_context.get("local:reversed_text") == "dlrow olleh"
@@ -100,18 +95,18 @@ reversed_text = reverse_string(text)
         # Create nested structure
         lib_dir = tmp_path / "lib"
         lib_dir.mkdir()
-        
+
         # Create __init__.na to make lib a package
         lib_init = lib_dir / "__init__.na"
         lib_init.write_text("# lib package")
-        
+
         # Create library module
         lib_module = lib_dir / "helper.na"
         lib_module.write_text("""
 def greet(name: str) -> str:
     return f"Hello, {name}!"
 """)
-        
+
         # Create utils in main directory
         utils_module = tmp_path / "utils.na"
         utils_module.write_text("""
@@ -121,7 +116,7 @@ import lib.helper
 def welcome(name: str) -> str:
     return lib.helper.greet(name) + " Welcome aboard!"
 """)
-        
+
         # Create main module
         main_module = tmp_path / "app.na"
         main_module.write_text("""
@@ -130,13 +125,13 @@ import utils
 
 message = utils.welcome("Alice")
 """)
-        
+
         # Initialize module system with tmp_path so lib package is found
         initialize_module_system([str(tmp_path)])
-        
+
         # Run main module
         result = DanaSandbox.quick_run(main_module)
-        
+
         assert result.success
         assert result.final_context.get("local:message") == "Hello, Alice! Welcome aboard!"
 
@@ -148,7 +143,7 @@ message = utils.welcome("Alice")
 PI = 3.14159
 E = 2.71828
 """)
-        
+
         # Create module B that imports C
         module_b = tmp_path / "calculations.na"
         module_b.write_text("""
@@ -157,7 +152,7 @@ import constants
 def circle_area(radius: float) -> float:
     return constants.PI * radius * radius
 """)
-        
+
         # Create module A that imports B
         module_a = tmp_path / "geometry.na"
         module_a.write_text("""
@@ -165,13 +160,13 @@ import calculations
 
 area = calculations.circle_area(5.0)
 """)
-        
+
         # Initialize module system
         initialize_module_system()
-        
+
         # Run module A
         result = DanaSandbox.quick_run(module_a)
-        
+
         assert result.success
         expected_area = 3.14159 * 5.0 * 5.0
         assert abs(result.final_context.get("local:area") - expected_area) < 0.0001
@@ -181,34 +176,34 @@ area = calculations.circle_area(5.0)
         # Create a module in the standard search path
         standard_dir = tmp_path / "standard"
         standard_dir.mkdir()
-        
+
         standard_module = standard_dir / "config.na"
         standard_module.write_text("""
 setting = "standard"
 """)
-        
+
         # Create a local module with the same name
         local_dir = tmp_path / "local"
         local_dir.mkdir()
-        
+
         local_module = local_dir / "config.na"
         local_module.write_text("""
 setting = "local"
 """)
-        
+
         # Create main module in local directory
         main_module = local_dir / "main.na"
         main_module.write_text("""
 import config
 value = config.setting
 """)
-        
+
         # Initialize with standard dir in search path
         initialize_module_system([str(standard_dir)])
-        
+
         # Run main module - should find local config first
         result = DanaSandbox.quick_run(main_module)
-        
+
         assert result.success
         assert result.final_context.get("local:value") == "local"
 
@@ -217,25 +212,25 @@ value = config.setting
         # Create package structure
         pkg_dir = tmp_path / "mypackage"
         pkg_dir.mkdir()
-        
+
         # Create package __init__.na
         init_file = pkg_dir / "__init__.na"
         init_file.write_text("""
 package_name = "mypackage"
 """)
-        
+
         # Create package module
         pkg_module = pkg_dir / "data.na"
         pkg_module.write_text("""
 data_value = 42
 """)
-        
+
         # Create local helper
         helper_module = tmp_path / "helper.na"
         helper_module.write_text("""
 helper_value = 100
 """)
-        
+
         # Create main module
         main_module = tmp_path / "main.na"
         main_module.write_text("""
@@ -245,13 +240,13 @@ import mypackage.data  # Package import
 
 total = helper.helper_value + mypackage.data.data_value
 """)
-        
+
         # Initialize with tmp_path in search path for package imports
         initialize_module_system([str(tmp_path)])
-        
+
         # Run main module
         result = DanaSandbox.quick_run(main_module)
-        
+
         assert result.success
         assert result.final_context.get("local:total") == 142
 
@@ -260,46 +255,46 @@ total = helper.helper_value + mypackage.data.data_value
         # Create two separate directories
         dir1 = tmp_path / "project1"
         dir1.mkdir()
-        
+
         dir2 = tmp_path / "project2"
         dir2.mkdir()
-        
+
         # Create config in each directory with different values
         config1 = dir1 / "config.na"
         config1.write_text("""
 name = "Project 1"
 value = 10
 """)
-        
+
         config2 = dir2 / "config.na"
         config2.write_text("""
 name = "Project 2"
 value = 20
 """)
-        
+
         # Create main modules that import their local config
         main1 = dir1 / "main.na"
         main1.write_text("""
 import config
 project_info = config.name + " - " + str(config.value)
 """)
-        
+
         main2 = dir2 / "main.na"
         main2.write_text("""
 import config
 project_info = config.name + " - " + str(config.value)
 """)
-        
+
         # Run first module
         reset_module_system()
         initialize_module_system()
         result1 = DanaSandbox.quick_run(main1)
-        
+
         # Reset and run second module
         reset_module_system()
         initialize_module_system()
         result2 = DanaSandbox.quick_run(main2)
-        
+
         assert result1.success
         assert result2.success
         assert result1.final_context.get("local:project_info") == "Project 1 - 10"
@@ -312,18 +307,18 @@ project_info = config.name + " - " + str(config.value)
         module_file.write_text("""
 standard_value = "available"
 """)
-        
+
         # Initialize with tmp_path in search path
         initialize_module_system([str(tmp_path)])
-        
+
         # Evaluate code without file context
         code = """
 import standard_module
 result = standard_module.standard_value
 """
-        
+
         result = DanaSandbox.quick_eval(code)
-        
+
         assert result.success
         assert result.final_context.get("local:result") == "available"
 
@@ -335,7 +330,7 @@ result = standard_module.standard_value
 def process(x: int) -> int:
     return x * 2
 """)
-        
+
         # Create main module with aliased import
         main_module = tmp_path / "main.na"
         main_module.write_text("""
@@ -343,13 +338,13 @@ import very_long_module_name as vlm
 
 result = vlm.process(21)
 """)
-        
+
         # Initialize module system
         initialize_module_system()
-        
+
         # Run main module
         result = DanaSandbox.quick_run(main_module)
-        
+
         assert result.success
         assert result.final_context.get("local:result") == 42
 
@@ -360,13 +355,13 @@ result = vlm.process(21)
         main_module.write_text("""
 import nonexistent_module
 """)
-        
+
         # Initialize module system
         initialize_module_system()
-        
+
         # Run main module
         result = DanaSandbox.quick_run(main_module)
-        
+
         assert not result.success
         assert "nonexistent_module" in str(result.error)
         assert "not found" in str(result.error)

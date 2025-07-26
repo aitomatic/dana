@@ -13,10 +13,10 @@ from dana.frameworks.knows.core.knowledge_orgs.config import RedisSettings
 
 class SemiStructuredStore(KnowledgeOrganization):
     """Semi-structured store implementation using Redis."""
-    
+
     def __init__(self, settings: RedisSettings, conn: Any):
         """Initialize the semi-structured store.
-        
+
         Args:
             settings: Redis connection settings
             conn: Database connection
@@ -24,7 +24,7 @@ class SemiStructuredStore(KnowledgeOrganization):
         self.settings = settings
         self.client = self._create_client()
         self.conn = conn
-    
+
     def _create_client(self) -> redis.Redis:
         """Create Redis client."""
         try:
@@ -48,7 +48,7 @@ class SemiStructuredStore(KnowledgeOrganization):
             )
         except RedisError as e:
             raise StorageError(f"Failed to create Redis client: {e}")
-    
+
     def _validate_key(self, key: str) -> None:
         """Validate key format.
 
@@ -68,7 +68,7 @@ class SemiStructuredStore(KnowledgeOrganization):
             raise ValueError("Key cannot contain additional colons")
         if any(c in key for c in " \t\n\r\f\v"):
             raise ValueError("Key cannot contain whitespace")
-        if any(c in key for c in "/\\*?\"<>|"):
+        if any(c in key for c in '/\\*?"<>|'):
             raise ValueError("Key cannot contain special characters")
 
     def store(self, key: str, value: Any) -> None:
@@ -93,13 +93,13 @@ class SemiStructuredStore(KnowledgeOrganization):
                     VALUES (%s, %s)
                     ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data
                     """,
-                    (key, Json(value))
+                    (key, Json(value)),
                 )
             self.conn.commit()
         except Exception as e:
             self.conn.rollback()
             raise StorageError(f"Failed to store value: {e}")
-    
+
     def retrieve(self, key: str) -> Any | None:
         """Retrieve a value from the semi-structured store.
 
@@ -121,13 +121,13 @@ class SemiStructuredStore(KnowledgeOrganization):
                     SELECT data FROM semi_structured_store
                     WHERE id = %s
                     """,
-                    (key,)
+                    (key,),
                 )
                 result = cur.fetchone()
                 return result[0] if result else None
         except Exception as e:
             raise StorageError(f"Failed to retrieve value: {e}")
-    
+
     def delete(self, key: str) -> None:
         """Delete a value from the semi-structured store.
 
@@ -146,13 +146,13 @@ class SemiStructuredStore(KnowledgeOrganization):
                     DELETE FROM semi_structured_store
                     WHERE id = %s
                     """,
-                    (key,)
+                    (key,),
                 )
             self.conn.commit()
         except Exception as e:
             self.conn.rollback()
             raise StorageError(f"Failed to delete value: {e}")
-    
+
     def query(self, pattern: str) -> list[Any]:
         """Query values in Redis by pattern.
 
@@ -175,7 +175,7 @@ class SemiStructuredStore(KnowledgeOrganization):
                 if value is not None:
                     # Handle both string and bytes responses
                     if isinstance(value, bytes):
-                        value_str = value.decode('utf-8')
+                        value_str = value.decode("utf-8")
                     elif isinstance(value, str):
                         value_str = value
                     else:
@@ -184,10 +184,10 @@ class SemiStructuredStore(KnowledgeOrganization):
             return results
         except Exception as e:
             raise QueryError(f"Failed to query values: {e}")
-    
+
     def close(self) -> None:
         """Close the Redis connection."""
         try:
             self.client.close()
         except RedisError:
-            pass 
+            pass

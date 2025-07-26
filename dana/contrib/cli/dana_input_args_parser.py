@@ -19,10 +19,11 @@ DANA_KEY_VALUE_INPUT_PATTERN = re.compile(
     r"|"  # or
     r'"([^\"]*)"'  # group 6: double-quoted value (not a file)
     r"|"  # or
-    r'([^\'\"\s][^=]*?(?=\s+[a-zA-Z_][a-zA-Z0-9_]*\s*=|$))'  # group 7: unquoted value with spaces (not a file)
+    r"([^\'\"\s][^=]*?(?=\s+[a-zA-Z_][a-zA-Z0-9_]*\s*=|$))"  # group 7: unquoted value with spaces (not a file)
     r")"  # end of non-capturing group for value
     r"(?=\s+[a-zA-Z_][a-zA-Z0-9_]*\s*=|$)"  # lookahead for next key= or end
 )
+
 
 def parse_dana_input_args(input_strs: list[str] | tuple[str, ...]) -> dict[str, str]:
     """Parse input arguments tuple into a dictionary.
@@ -67,19 +68,20 @@ def parse_dana_input_args(input_strs: list[str] | tuple[str, ...]) -> dict[str, 
             - Double-quoted: key = @ "another path/file.txt"
         Quotes are stripped from the file path before reading. If the file cannot be read, a ValueError is raised.
     """
+
     def resolve_at_file(value: str, is_file: bool) -> str:
         if is_file:
             file_path = Path(value).expanduser()
             try:
                 if value.endswith(".json"):
-                    with open(file_path, encoding='utf-8') as f:
+                    with open(file_path, encoding="utf-8") as f:
                         return json.load(f)
 
                 if value.endswith(".yaml") or value.endswith(".yml"):
-                    with open(file_path, encoding='utf-8') as f:
+                    with open(file_path, encoding="utf-8") as f:
                         return yaml.safe_load(f)
 
-                return file_path.read_text(encoding='utf-8')
+                return file_path.read_text(encoding="utf-8")
 
             except Exception as e:
                 raise ValueError(f"Could not read file for value '@{value}': {e}")
@@ -121,7 +123,7 @@ def parse_dana_input_args(input_strs: list[str] | tuple[str, ...]) -> dict[str, 
 
             else:
                 # unquoted value (not a file)
-                _value: str = v if ((v := match.group(7)) is not None) else ''
+                _value: str = v if ((v := match.group(7)) is not None) else ""
                 is_file: bool = False
 
             input_dict[_key] = resolve_at_file(value=_value, is_file=is_file)
@@ -138,16 +140,16 @@ def parse_dana_input_args(input_strs: list[str] | tuple[str, ...]) -> dict[str, 
         # Check if any token in acc contains '='
         eq_index: int = -1
         for i, t in enumerate(acc):
-            if '=' in t:
+            if "=" in t:
                 eq_index: int = i
                 break
 
         if eq_index != -1:
             # Build key and value
-            key_value_str: str = ''.join(acc[: eq_index + 1])
-            key, value = key_value_str.split('=', 1)
-            value_right: str = value + ''.join(acc[eq_index + 1:])
-            if (value_stripped_str := value_right.strip()) == '':
+            key_value_str: str = "".join(acc[: eq_index + 1])
+            key, value = key_value_str.split("=", 1)
+            value_right: str = value + "".join(acc[eq_index + 1 :])
+            if (value_stripped_str := value_right.strip()) == "":
                 continue  # keep accumulating
 
             # Detect @file convention in multi-token case, allowing optional spaces after @

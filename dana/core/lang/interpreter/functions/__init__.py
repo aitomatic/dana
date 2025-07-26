@@ -17,4 +17,4 @@ from .composed_function import ComposedFunction
 from .dana_function import DanaFunction
 from .function_registry import FunctionRegistry
 
-__all__ = ['FunctionRegistry', 'DanaFunction', 'ArgumentProcessor', 'ComposedFunction']
+__all__ = ["FunctionRegistry", "DanaFunction", "ArgumentProcessor", "ComposedFunction"]

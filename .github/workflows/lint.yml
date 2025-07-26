@@ -1,14 +1,14 @@
 # GitHub Action to run Pylint code analysis
 # - Runs on Python 3.12+
 # - Uses Pylint for comprehensive code quality analysis
-# - Uses .pylintrc configuration file for OpenDXA standards
+# - Uses .pylintrc configuration file for Dana standards
 # - Focuses on critical code quality issues
 
 name: Pylint
 
 on: 
   push:
-    branches: [main, master, feat/llm-poet]
+    branches: [main, master]
   pull_request:
     branches: [main, master]
   workflow_dispatch:  # Allow manual triggering
@@ -38,8 +38,8 @@ jobs:
       run: uv sync --extra dev
     - name: Analysing the code with pylint
       env:
-        OPENDXA_MOCK_LLM: "true"
-        OPENDXA_USE_REAL_LLM: "false"
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
         echo "🔍 Running Pylint code analysis..."

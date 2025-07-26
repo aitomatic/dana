@@ -241,22 +241,22 @@ class FunctionExecutor(BaseExecutor):
             The result of the function call
         """
         self.debug(f"Executing function call: {node.name}")
-        
+
         # Track location in error context if available
-        if hasattr(node, 'location') and node.location:
+        if hasattr(node, "location") and node.location:
             from dana.core.lang.interpreter.error_context import ExecutionLocation
-            
+
             location = ExecutionLocation(
                 filename=context.error_context.current_file,
                 line=node.location.line,
                 column=node.location.column,
                 function_name=f"function call: {node.name}",
-                source_line=context.error_context.get_source_line(
-                    context.error_context.current_file, node.location.line
-                ) if context.error_context.current_file and node.location.line else None
+                source_line=context.error_context.get_source_line(context.error_context.current_file, node.location.line)
+                if context.error_context.current_file and node.location.line
+                else None,
             )
             context.error_context.push_location(location)
-            self.debug(f"Pushed location to error context: {location}") 
+            self.debug(f"Pushed location to error context: {location}")
             self.debug(f"Error context stack size after push: {len(context.error_context.execution_stack)}")
 
         # Phase 1: Setup and validation
@@ -310,7 +310,7 @@ class FunctionExecutor(BaseExecutor):
                 raise SandboxError(f"Function '{name_info.func_name}' execution failed: {dispatcher_error}") from dispatcher_error
         finally:
             # Pop location from error context stack
-            if hasattr(node, 'location') and node.location:
+            if hasattr(node, "location") and node.location:
                 context.error_context.pop_location()
 
     def __setup_and_validate(self, node: FunctionCall) -> Any:
@@ -776,69 +776,68 @@ class FunctionExecutor(BaseExecutor):
             # Parse the string representation to extract the object and index
             # Format: "SubscriptExpression(object=Identifier(name='FUNCS_FOR_TEST'), index=Identifier(name='func_name'))"
             name_str = str(node.name)
-            
+
             # More robust parsing with error handling
             object_name = None
             index_name = None
-            
+
             # Extract object name with better error handling
             object_prefix = "Identifier(name='"
             object_start = name_str.find(object_prefix)
             if object_start == -1:
                 raise SandboxError(f"Could not find object identifier in subscript expression string: {name_str}")
-            
+
             object_start += len(object_prefix)
             object_end = name_str.find("'", object_start)
             if object_end == -1:
                 raise SandboxError(f"Could not find end of object name in subscript expression string: {name_str}")
-            
+
             object_name = name_str[object_start:object_end]
-            
+
             # Extract index name with better error handling
             index_prefix = "Identifier(name='"
             index_start = name_str.find(index_prefix, object_end)
             if index_start == -1:
                 raise SandboxError(f"Could not find index identifier in subscript expression string: {name_str}")
-            
+
             index_start += len(index_prefix)
             index_end = name_str.find("'", index_start)
             if index_end == -1:
                 raise SandboxError(f"Could not find end of index name in subscript expression string: {name_str}")
-            
+
             index_name = name_str[index_start:index_end]
-            
+
             # Validate that we extracted meaningful names
             if not object_name or not index_name:
                 raise SandboxError(f"Could not extract valid object and index names from subscript expression string: {name_str}")
-            
+
             self.debug(f"Parsed object_name: {object_name}, index_name: {index_name}")
-            
+
             # Get the object and index values from context
             from dana.core.lang.ast import Identifier
+
             object_value = self.parent.execute(Identifier(name=object_name), context)
             index_value = self.parent.execute(Identifier(name=index_name), context)
-            
+
             self.debug(f"Object value: {object_value}, index value: {index_value}")
-            
+
             # Access the subscript
             actual_function = object_value[index_value]
             self.debug(f"Resolved function: {actual_function} (type: {type(actual_function)})")
-            
+
             # Check if the resolved value is callable
             if not callable(actual_function):
                 raise SandboxError(f"Subscript expression '{name_str}' resolved to non-callable object: {actual_function}")
-            
+
             # Call the resolved function with the provided arguments
             self.debug(f"Calling resolved function with args={evaluated_args}, kwargs={evaluated_kwargs}")
             result = actual_function(*evaluated_args, **evaluated_kwargs)
             self.debug(f"Subscript call result: {result}")
             return result
-            
+
         except SandboxError:
             # Re-raise SandboxErrors as-is
             raise
         except Exception as e:
             # Convert other exceptions to SandboxError with context
             raise SandboxError(f"Subscript call from string '{node.name}' failed: {e}")
-
-

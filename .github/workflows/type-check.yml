@@ -1,7 +1,7 @@
 # GitHub Action to run MyPy type checking
 # - Runs on Python 3.12
 # - Uses MyPy for static type analysis
-# - Follows OpenDXA type hint requirements
+# - Follows Dana type hint requirements
 # - Validates the comprehensive type annotations in the codebase
 # This ensures type safety and catches type-related bugs early
 
@@ -9,7 +9,7 @@ name: Type Check
 
 on: 
   push:
-    branches: [main, master, feat/llm-poet]
+    branches: [main, master]
   pull_request:
     branches: [main, master]
   workflow_dispatch:  # Allow manual triggering

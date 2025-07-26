@@ -1,11 +1,10 @@
 # GitHub Action to run pytest sequentially (for comprehensive weekly testing)
 # - Runs weekly and on manual trigger only
-# - Primary testing is handled by pytest-parallel.yml (faster)
+# - Primary testing is handled by test-parallel.yml (faster)
 # - Provides thorough sequential testing for edge case detection
-# - Tests struct implementation comprehensively with mock LLM
-# - For regular CI/CD, use pytest-parallel.yml instead
+# - Tests Dana implementation comprehensively with mock LLM
+# - For regular CI/CD, use test-parallel.yml instead
 # - For full test coverage, run locally with: uv run pytest -m "not live" tests/
-# This provides comprehensive testing without slowing down regular development
 
 name: PyTest Sequential (Weekly)
 
@@ -23,7 +22,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5  # Updated version
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install uv
@@ -37,65 +36,31 @@ jobs:
           uv-${{ runner.os }}-
     - name: Install dependencies
       run: uv sync --extra dev
-    - name: Test struct implementation (comprehensive)
+    - name: Test Dana core (comprehensive)
       env:
         DANA_MOCK_LLM: "true"
         DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
-      run: uv run pytest tests/unit/core/interpreter/test_struct_* -v --tb=short
-    - name: Test POET framework (comprehensive)
+      run: uv run pytest tests/unit/core/ -v --tb=short
+    - name: Test Dana frameworks (comprehensive)
       env:
         DANA_MOCK_LLM: "true"
         DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
-      run: |
-        # Run POET tests from their actual locations (Python tests only)
-        uv run pytest tests/unit/frameworks/ -m "poet" -v --tb=short
-    - name: Test Dana integrated tests (comprehensive)
+      run: uv run pytest tests/unit/frameworks/ -v --tb=short
+    - name: Test Dana functional tests (comprehensive)
       env:
         DANA_MOCK_LLM: "true"
         DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
-      run: |
-        # Run integration and scenario tests
-        uv run pytest tests/unit/core/ -k "integration or scenario" -v --tb=short
-    - name: Test functional language tests (comprehensive)
+      run: uv run pytest tests/functional/ -v --tb=short
+    - name: Test Dana integration tests (comprehensive)
       env:
         DANA_MOCK_LLM: "true"
         DANA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
-      run: uv run pytest tests/functional/language/ -v --tb=short
-    - name: Test functional integration tests (comprehensive)
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: uv run pytest tests/functional/integration/ -v --tb=short
-    - name: Test functional standard library tests (comprehensive)
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: |
-        # Run functional standard library tests (.na files) using uv run
-        # Enable nullglob to handle case when no .na files exist
-        shopt -s nullglob
-        na_files=(tests/functional/stdlib/*.na)
-        if [ ${#na_files[@]} -eq 0 ]; then
-          echo "No .na files found in tests/functional/stdlib/ - skipping functional stdlib tests"
-        else
-          for na_file in "${na_files[@]}"; do
-            echo "Running $na_file..."
-            uv run python -m dana.core.cli.dana "$na_file" || exit 1
-          done
-        fi
-    - name: Test integration end-to-end tests (comprehensive)
-      env:
-        DANA_MOCK_LLM: "true"
-        DANA_USE_REAL_LLM: "false"
-        PYTHONPATH: ${{ github.workspace }}
-      run: uv run pytest tests/integration/end_to_end/ -v --tb=short
-    - name: Test regression tests (comprehensive)
+      run: uv run pytest tests/integration/ -v --tb=short
+    - name: Test Dana regression tests (comprehensive)
       env:
         DANA_MOCK_LLM: "true"
         DANA_USE_REAL_LLM: "false"

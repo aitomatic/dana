@@ -40,7 +40,7 @@ class PythonicFunctionFactory:
             raise TypeError("max expected at least 1 argument, got 0")
         elif len(args) == 1:
             # Single argument case
-            if isinstance(args[0], (list, tuple)):
+            if isinstance(args[0], list | tuple):
                 if len(args[0]) == 0:
                     raise ValueError("max() arg is an empty sequence")
                 return max(args[0])  # max([1,2,3]) or max((1,2,3))
@@ -58,7 +58,7 @@ class PythonicFunctionFactory:
             raise TypeError("min expected at least 1 argument, got 0")
         elif len(args) == 1:
             # Single argument case
-            if isinstance(args[0], (list, tuple)):
+            if isinstance(args[0], list | tuple):
                 if len(args[0]) == 0:
                     raise ValueError("min() arg is an empty sequence")
                 return min(args[0])  # min([1,2,3]) or min((1,2,3))

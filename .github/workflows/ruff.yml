@@ -1,7 +1,7 @@
 # GitHub Action to run Ruff code analysis and formatting
 # - Runs on Python 3.12 
 # - Uses Ruff for fast linting and formatting checks (non-blocking during development)
-# - Follows OpenDXA coding standards from pyproject.toml
+# - Follows Dana coding standards from pyproject.toml
 # - Reports issues but doesn't fail CI to maintain development velocity
 # This provides fast feedback while allowing iterative code improvement
 
@@ -9,7 +9,7 @@ name: Ruff
 
 on: 
   push:
-    branches: [main, master, feat/llm-poet]
+    branches: [main, master]
   pull_request:
     branches: [main, master]
   workflow_dispatch:  # Allow manual triggering
@@ -37,7 +37,7 @@ jobs:
         # Block CI for critical issues in core modules only
         echo "🚫 Running critical lint checks (BLOCKING)..."
         echo "Checking core modules for: bare except (E722), undefined names (F821)"
-        echo "Excluding contrib/ directory for now"
+        echo "Using pyproject.toml configuration"
         uv run ruff check dana/ tests/ --select E722,F821 --exclude dana/contrib --output-format=github || {
           echo "❌ Critical lint violations found in core modules"
           echo "These must be fixed as they can cause runtime errors or security issues"

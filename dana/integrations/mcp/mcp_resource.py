@@ -111,9 +111,9 @@ class MCPResource(BaseResource):
 
         results = response.content
 
-        assert len(results) == 1, (
-            f"Tool {tool_name} with arguments {arguments} returned {len(results)} results, expected 1. \nresults: {results}"
-        )
+        assert (
+            len(results) == 1
+        ), f"Tool {tool_name} with arguments {arguments} returned {len(results)} results, expected 1. \nresults: {results}"
 
         if Misc.get_field(results[0], "type") == "text":
             return Misc.get_field(results[0], "text")

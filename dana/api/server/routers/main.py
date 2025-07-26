@@ -23,10 +23,10 @@ def get_root_info():
             "agents": "/api/agents",
             "chat": "/api/chat",
             "conversations": "/api/conversations",
-            "documents": "/api/documents", 
+            "documents": "/api/documents",
             "topics": "/api/topics",
-            "agent-test": "/api/agent-test"
-        }
+            "agent-test": "/api/agent-test",
+        },
     }
 
 

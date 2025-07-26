@@ -27,7 +27,7 @@ class TestCompoundAssignmentParsing:
     def test_parse_simple_compound_assignments(self):
         """Test parsing simple compound assignments."""
         parser = DanaParser()
-        
+
         # Test += operator
         ast = parser.parse("x += 5")
         assert len(ast.statements) == 1
@@ -36,19 +36,19 @@ class TestCompoundAssignmentParsing:
         assert isinstance(stmt.target, Identifier)
         assert stmt.target.name == "x"
         assert stmt.operator == "+="
-        
+
         # Test -= operator
         ast = parser.parse("y -= 3")
         stmt = ast.statements[0]
         assert isinstance(stmt, CompoundAssignment)
         assert stmt.operator == "-="
-        
+
         # Test *= operator
         ast = parser.parse("z *= 2")
         stmt = ast.statements[0]
         assert isinstance(stmt, CompoundAssignment)
         assert stmt.operator == "*="
-        
+
         # Test /= operator
         ast = parser.parse("w /= 4")
         stmt = ast.statements[0]
@@ -58,7 +58,7 @@ class TestCompoundAssignmentParsing:
     def test_parse_compound_assignments_with_scopes(self):
         """Test parsing compound assignments with scope prefixes."""
         parser = DanaParser()
-        
+
         # Test with private scope
         ast = parser.parse("private:counter += 1")
         stmt = ast.statements[0]
@@ -69,13 +69,13 @@ class TestCompoundAssignmentParsing:
     def test_parse_compound_assignments_complex_targets(self):
         """Test parsing compound assignments with complex targets."""
         parser = DanaParser()
-        
+
         # Test with subscript
         ast = parser.parse("arr[0] += 10")
         stmt = ast.statements[0]
         assert isinstance(stmt, CompoundAssignment)
         assert isinstance(stmt.target, SubscriptExpression)
-        
+
         # Test with attribute access
         ast = parser.parse("obj.value -= 5")
         stmt = ast.statements[0]
@@ -90,7 +90,7 @@ class TestCompoundAssignmentExecution:
         """Test executing simple compound assignments."""
         interpreter = DanaInterpreter()
         parser = DanaParser()
-        
+
         # Test += operator
         context = SandboxContext()
         program = parser.parse("""
@@ -100,7 +100,7 @@ x
 """)
         result = interpreter.execute_program(program, context)
         assert result == 15
-        
+
         # Test -= operator
         context = SandboxContext()
         program = parser.parse("""
@@ -110,7 +110,7 @@ y
 """)
         result = interpreter.execute_program(program, context)
         assert result == 12
-        
+
         # Test *= operator
         context = SandboxContext()
         program = parser.parse("""
@@ -120,7 +120,7 @@ z
 """)
         result = interpreter.execute_program(program, context)
         assert result == 18
-        
+
         # Test /= operator
         context = SandboxContext()
         program = parser.parse("""
@@ -135,7 +135,7 @@ w
         """Test compound assignments with complex expressions."""
         interpreter = DanaInterpreter()
         parser = DanaParser()
-        
+
         # Test with expression on RHS
         context = SandboxContext()
         program = parser.parse("""
@@ -149,4 +149,4 @@ x
 
 
 if __name__ == "__main__":
-    pytest.main([__file__, "-v"]) 
+    pytest.main([__file__, "-v"])

@@ -188,14 +188,14 @@ class Identifier:
 @dataclass
 class PlaceholderExpression:
     """A placeholder expression representing the $ symbol in pipeline operations."""
-    
+
     location: Location | None = None
 
 
 @dataclass
 class PipelineExpression:
     """A pipeline expression representing function composition via the | operator."""
-    
+
     stages: list[Expression]
     location: Location | None = None
 
