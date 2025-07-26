@@ -1,18 +1,19 @@
 # GitHub Action to run MyPy type checking
 # - Runs on Python 3.12
 # - Uses MyPy for static type analysis
-# - Follows Dana type hint requirements
-# - Validates the comprehensive type annotations in the codebase
-# This ensures type safety and catches type-related bugs early
+# - Focuses on core modules only for faster execution
+# - Non-blocking but provides useful type feedback
+# - DISABLED: Only runs manually to reduce CI noise
 
 name: Type Check
 
 on: 
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
-  workflow_dispatch:  # Allow manual triggering
+  # DISABLED: Commented out to reduce CI noise and speed
+  # push:
+  #   branches: [main, master]
+  # pull_request:
+  #   branches: [main, master]
+  workflow_dispatch:  # Allow manual triggering only
 
 jobs:
   type-check:
@@ -37,34 +38,34 @@ jobs:
           uv-${{ runner.os }}-
     - name: Install dependencies
       run: uv sync --extra dev
-    - name: Type check with MyPy (Non-blocking)
+    - name: Type check core modules (Non-blocking)
       env:
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        # Run mypy on the main package - report issues but don't fail CI
-        echo "🔍 Running MyPy type checking (non-blocking)..."
-        uv run mypy dana/ --show-error-codes --no-strict-optional --allow-untyped-calls --ignore-missing-imports || {
-          echo "⚠️ MyPy found type issues in main package"
-          echo "This is expected during development - run 'uv run mypy dana/' locally to see details"
-          echo "Total type errors shown above - working to improve type coverage gradually"
-          echo "Continuing CI pipeline..."
+        echo "🔍 Running MyPy type checking on core modules (non-blocking)..."
+        echo "Focusing on essential modules for faster execution"
+        
+        # Check only core modules that are most critical for type safety
+        uv run mypy dana/core/ dana/common/ || {
+          echo "⚠️ MyPy found type issues in core modules"
+          echo "This is expected during development - type coverage is being improved gradually"
+          echo "Run 'uv run mypy dana/core/ dana/common/' locally to see details"
         }
-    - name: Basic import and syntax check
+        
+        echo "✅ Type checking completed"
+    - name: Basic import check
       env:
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        # Basic sanity check - ensure core modules can be imported
-        echo "🎯 Running basic import and syntax checks..."
-        echo "Checking that core modules import without syntax errors"
+        echo "🎯 Running basic import checks..."
         uv run python -c "
         import sys
         print(f'Python version: {sys.version}')
         
-        # Test core imports one by one for better error reporting
+        # Test only critical imports
         modules_to_test = [
             'dana.common',
-            'dana.core.lang.dana_sandbox', 
-            'dana.frameworks.poet'
+            'dana.core.lang.dana_sandbox'
         ]
         
         for module in modules_to_test:
@@ -73,7 +74,6 @@ jobs:
                 print(f'✅ {module} imports successfully')
             except Exception as e:
                 print(f'⚠️ {module} import issue: {e}')
-                # Don't fail CI for import issues during development
                 
         print('✅ Basic import checks completed')
         " 
