@@ -27,8 +27,10 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.3.0
     hooks:
+      # Note: The ruff hook from astral-sh/ruff-pre-commit has issues with --select/--exclude args
+      # Using local hook below instead for critical checks
       - id: ruff
-        args: [--fix, --config=pyproject.toml]
+      # Formatting check
       - id: ruff-format
         args: [--config=pyproject.toml]
 
@@ -41,6 +43,11 @@ repos:
         pass_filenames: false
         always_run: true
         stages: [post-checkout, post-merge, post-rewrite]
+      - id: ruff-critical
+        name: Critical lint checks (E722, F821)
+        entry: uv run ruff check --select=E722,F821 --exclude=dana/contrib
+        language: system
+        types: [python]
 
   - repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.
