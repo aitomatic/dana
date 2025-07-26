@@ -2,8 +2,8 @@
     "files.exclude": {
         "**/.env": true,
         "**/.env.example": true,
-	"**/.hintrc": true,
-	"**/.pylintrc": true,
+        "**/.hintrc": true,
+        "**/.pylintrc": true,
 
         "**/.git": true,
         "**/.github": true,
@@ -36,25 +36,27 @@
         "**/mkdocs.yml": true,
         "**/pytest.ini": true,
         "**/.cursor": true,
+        "**/.cursor.example": true,
         "**/.cursorrules": true,
         "**/.cursorrules.bak": true,
         "**/.-markdownlint.yaml": true,
         "**/.pre-commit-config.yaml": true,
         "**/.python-version": true,
         "**/.claude": true,
+        "**/CLAUDE.md": true,
+        "**/CLAUDE.md.example": true,
         "**/CVS": true,
 
         "**/.DS_Store": true,
         "**/Thumbs.db": true
     },
 
-    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.typeCheckingMode": "strict",
     "python.analysis.autoImportCompletions": true,
-    "python.analysis.extraPaths": ["./opendxa"],
     "python.analysis.diagnosticSeverityOverrides": {
-        "reportUndefinedVariable": "none",
-        "reportMissingImports": "none",
-        "reportGeneralTypeIssues": "none"
+        "reportUndefinedVariable": "warning",
+        "reportMissingImports": "warning",
+        "reportGeneralTypeIssues": "warning"
     },
     "python.analysis.diagnosticMode": "workspace",
     "python.analysis.ignore": [
@@ -70,11 +72,31 @@
         "source.organizeImports.ruff": "explicit"
     },
 
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "explicit",
+            "source.organizeImports.ruff": "explicit"
+        }
+    },
+
     "pylint.enabled": false,
     "flake8.enabled": false,
     "ruff.enable": true,
+    "ruff.organizeImports": true,
+    "ruff.fixAll": true,
+    "ruff.lint.enable": true,
+    "ruff.format.enable": true,
+    
+    // Ensure ruff errors show in Problems panel and file explorer
+    "problems.decorations.enabled": true,
+    "problems.showCurrentInStatus": true,
+    "explorer.decorations.badges": true,
+    "explorer.decorations.colors": true,
 
     "[dana]": {
         "editor.formatOnSave": false
-    }
+    },
+    "makefile.configureOnOpen": false
 }

@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "charliermarsh.ruff",
+    "davidanson.vscode-markdownlint",
+    "tamasfe.even-better-toml"
+  ]
+} 
