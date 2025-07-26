@@ -39,6 +39,7 @@ help: ## Show essential Dana commands
 	@echo "  \033[36mlint-critical\033[0m   🚫 Critical checks (matches CI)"
 	@echo "  \033[36mformat\033[0m          ✨ Format code automatically"
 	@echo "  \033[36mfix\033[0m             🔧 Auto-fix all fixable code issues"
+	@echo "  \033[36mtype-check\033[0m      🔍 Run MyPy type checking (local only)"
 	@echo "  \033[36mci-check\033[0m        🎯 Run same checks as GitHub CI"
 	@echo ""
 	@echo "\033[1mLLM Integration:\033[0m"
