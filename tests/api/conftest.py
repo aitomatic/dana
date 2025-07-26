@@ -38,7 +38,7 @@ def db_session(test_db):
     """Yield a session using the test DB. Clear all tables before each test."""
     _, SessionLocal, _ = test_db
     session = SessionLocal()
-    from dana.api.core.models import Agent, Topic, Document, Conversation, Message
+    from dana.api.core.models import Agent, Conversation, Document, Message, Topic
 
     # Clear all tables in reverse dependency order
     session.query(Message).delete()
