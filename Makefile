@@ -284,6 +284,15 @@ update-deps: ## MORE: Update dependencies to latest versions
 	$(UV_CMD) lock --upgrade
 
 ci-check: lint-critical test ## Run the same checks as GitHub CI
+
+# Type checking (local development only - not in CI)
+type-check:
+	@echo "🔍 Running MyPy type checking (local development only)..."
+	@echo "Note: This is not run in CI due to extensive type issues"
+	uv run mypy dana/core/ dana/common/ --ignore-missing-imports --no-strict-optional || {
+		echo "⚠️ Type issues found - fix when convenient"
+		echo "Run 'make type-check' locally to see details"
+	}
 	@echo ""
 	@echo "🎯 \033[1m\033[32mCI checks completed!\033[0m"
 	@echo "=================================="
