@@ -33,7 +33,7 @@ class TestMainRouter:
             assert "error" in data
         else:
             # Unexpected status code
-            assert False, f"Unexpected status code: {response.status_code}"
+            raise AssertionError(f"Unexpected status code: {response.status_code}")
 
     def test_root_endpoint_with_mocked_static_files(self, client):
         """Test root endpoint when static files exist (using a real temp file)"""
