@@ -14,8 +14,8 @@ build-backend = "setuptools.build_meta"
 # =============================================================================
 
 [project]
-name = "dana-agent"
-version = "0.25.7.22"
+name = "dana"
+version = "0.25.7.28"
 description = "Dana programming language for Domain-Aware Neurosymbolic Agents"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -177,11 +177,16 @@ select = [
 
 ignore = [
     "E203",  # Whitespace before ':' (conflicts with Black)
+    "E402",  # Module level import not at top of file (intentional in CLI)
     "E501",  # Line too long (handled by line-length)
     "B008",  # Function call in default argument
     "B010",  # setattr in class body
     "B904",  # raise ... from ...
     "N802",  # Function name should be lowercase
+    "I001",  # import block is un-sorted or un-formatted
+    "UP007",  # use `X | Y` for type annotations
+    "F403",  # import * used; unable to detect undefined names (acceptable in __init__.py)
+    "B024",  # Abstract base class without abstract methods (design pattern choice)
 ]
 
 exclude = [
@@ -189,6 +194,10 @@ exclude = [
     ".git",           # Version control
     ".venv",          # Virtual environment
     "dana.egg-info",  # Build artifacts
+    "__pycache__",    # Python cache
+    ".pytest_cache",  # Pytest cache
+    ".ruff_cache",    # Ruff cache
+    "**/.archived/**", # Archived/legacy code
 ]
 
 [tool.pyright]

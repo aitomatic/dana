@@ -42,14 +42,10 @@ def set_version(new_version):
     # Find the [project] section and update only the version within it
     def replace_project_version(match):
         project_section = match.group(1)
-        updated_section = re.sub(
-            r'version\s*=\s*"[^"]+"', f'version = "{new_version}"', project_section
-        )
+        updated_section = re.sub(r'version\s*=\s*"[^"]+"', f'version = "{new_version}"', project_section)
         return f"[project]{updated_section}"
 
-    updated_content = re.sub(
-        r"\[project\](.*?)(?=\[|\Z)", replace_project_version, content, flags=re.DOTALL
-    )
+    updated_content = re.sub(r"\[project\](.*?)(?=\[|\Z)", replace_project_version, content, flags=re.DOTALL)
     pyproject_path.write_text(updated_content)
     print(f"✅ Updated version to {new_version}")
 
@@ -83,9 +79,7 @@ def bump_version(current_version, bump_type):
 def commit_changes(version):
     """Commit the version change"""
     try:
-        subprocess.run(
-            ["git", "add", "pyproject.toml"], check=True, capture_output=True
-        )
+        subprocess.run(["git", "add", "pyproject.toml"], check=True, capture_output=True)
         subprocess.run(
             ["git", "commit", "-m", f"Bump version to {version}"],
             check=True,
@@ -110,9 +104,7 @@ def main():
         action="store_true",
         help="Show what would be done without making changes",
     )
-    parser.add_argument(
-        "--commit", action="store_true", help="Commit the version change"
-    )
+    parser.add_argument("--commit", action="store_true", help="Commit the version change")
 
     args = parser.parse_args()
 

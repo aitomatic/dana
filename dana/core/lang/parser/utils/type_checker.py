@@ -233,19 +233,19 @@ class TypeChecker:
             # For attribute access, we'll be permissive for now
             target_type = DanaType("any")
         elif isinstance(node.target, SubscriptExpression):
-            # For subscript expressions, we'll be permissive for now  
+            # For subscript expressions, we'll be permissive for now
             target_type = DanaType("any")
         else:
             raise TypeError(f"Unsupported compound assignment target type: {type(node.target)}", node)
 
         # Check the value expression
-        value_type = self.check_expression(node.value)
+        self.check_expression(node.value)
 
         # Check that the operation is valid for the types
         # For now, we'll be permissive and allow any compound assignment operations
         # In the future, we could add more specific type checking for operators
         # (e.g., += works with numbers and strings, but not with booleans)
-        
+
         # The result type is the same as the target type for compound assignments
         if isinstance(node.target, Identifier):
             self.environment.set(node.target.name, target_type)

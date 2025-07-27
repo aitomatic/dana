@@ -46,7 +46,7 @@ class StructType:
             raise ValueError(f"Field order mismatch in struct '{self.name}'")
 
         # Initialize field_comments if not provided
-        if not hasattr(self, 'field_comments'):
+        if not hasattr(self, "field_comments"):
             self.field_comments = {}
 
     def validate_instantiation(self, args: dict[str, Any]) -> bool:
@@ -56,7 +56,7 @@ class StructType:
         for field_name in self.fields.keys():
             if self.field_defaults is None or field_name not in self.field_defaults:
                 required_fields.add(field_name)
-        
+
         missing_fields = required_fields - set(args.keys())
         if missing_fields:
             raise ValueError(
@@ -132,7 +132,7 @@ class StructType:
         """Get a formatted description of a field including type and comment."""
         field_type = self.fields.get(field_name, "unknown")
         comment = self.field_comments.get(field_name)
-        
+
         if comment:
             return f"{field_name}: {field_type}  # {comment}"
         else:
@@ -159,10 +159,10 @@ class StructInstance:
             # Start with defaults
             for field_name, default_value in struct_type.field_defaults.items():
                 complete_values[field_name] = default_value
-        
+
         # Override with provided values
         complete_values.update(values)
-        
+
         # Validate values match struct type
         struct_type.validate_instantiation(complete_values)
 
@@ -362,12 +362,13 @@ class StructTypeRegistry:
         if struct_type.name in cls._types:
             # Check if this is the same struct definition
             existing_struct = cls._types[struct_type.name]
-            if (existing_struct.fields == struct_type.fields and 
-                existing_struct.field_order == struct_type.field_order):
+            if existing_struct.fields == struct_type.fields and existing_struct.field_order == struct_type.field_order:
                 # Same struct definition - allow idempotent registration
                 return
             else:
-                raise ValueError(f"Struct type '{struct_type.name}' is already registered with different definition. Struct names must be unique.")
+                raise ValueError(
+                    f"Struct type '{struct_type.name}' is already registered with different definition. Struct names must be unique."
+                )
 
         cls._types[struct_type.name] = struct_type
 
@@ -510,11 +511,11 @@ class StructTypeRegistry:
 
 def create_struct_type_from_ast(struct_def, context=None) -> StructType:
     """Create a StructType from a StructDefinition AST node.
-    
+
     Args:
         struct_def: The StructDefinition AST node
         context: Optional sandbox context for evaluating default values
-    
+
     Returns:
         StructType with fields and default values
     """
@@ -536,7 +537,7 @@ def create_struct_type_from_ast(struct_def, context=None) -> StructType:
             raise ValueError(f"Field {field.name} type hint {field.type_hint} has no name attribute")
         fields[field.name] = field.type_hint.name  # Store the type name string, not the TypeHint object
         field_order.append(field.name)
-                
+
         # Handle default value if present
         if field.default_value is not None:
             # For now, store the AST node - it will be evaluated when needed
@@ -546,7 +547,9 @@ def create_struct_type_from_ast(struct_def, context=None) -> StructType:
         if field.comment:
             field_comments[field.name] = field.comment
 
-    return StructType(name=struct_def.name, fields=fields, field_order=field_order, field_defaults=field_defaults or None, field_comments=field_comments)
+    return StructType(
+        name=struct_def.name, fields=fields, field_order=field_order, field_defaults=field_defaults or None, field_comments=field_comments
+    )
 
 
 # Convenience functions for common operations

@@ -161,7 +161,7 @@ def run_dana_test_file(dana_test_file):
     from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
 
     StructTypeRegistry.clear()
-    
+
     # Initialize module system for tests that may use imports
     reset_module_system()
     initialize_module_system()

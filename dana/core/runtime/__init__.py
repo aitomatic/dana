@@ -3,4 +3,4 @@
 # Export module system
 from .modules import errors, loader, registry, types
 
-__all__ = ['registry', 'loader', 'types', 'errors']
+__all__ = ["registry", "loader", "types", "errors"]

@@ -13,7 +13,7 @@ async def test_conversation_crud(db_session: Session):
     db_session.add(agent)
     db_session.commit()
     db_session.refresh(agent)
-    
+
     service = ConversationService()
     # Create
     convo = await service.create_conversation(ConversationCreate(title="Chat", agent_id=agent.id), db_session)
@@ -45,23 +45,23 @@ async def test_conversation_filtering_by_agent(db_session: Session):
     db_session.commit()
     db_session.refresh(agent1)
     db_session.refresh(agent2)
-    
+
     service = ConversationService()
-    
+
     # Create conversations for different agents
     convo1 = await service.create_conversation(ConversationCreate(title="Chat 1", agent_id=agent1.id), db_session)
     convo2 = await service.create_conversation(ConversationCreate(title="Chat 2", agent_id=agent1.id), db_session)
     convo3 = await service.create_conversation(ConversationCreate(title="Chat 3", agent_id=agent2.id), db_session)
-    
+
     # Test filtering by agent_id
     agent1_conversations = await service.list_conversations(agent_id=agent1.id, limit=100, offset=0, db_session=db_session)
     agent2_conversations = await service.list_conversations(agent_id=agent2.id, limit=100, offset=0, db_session=db_session)
     all_conversations = await service.list_conversations(agent_id=None, limit=100, offset=0, db_session=db_session)
-    
+
     assert len(agent1_conversations) == 2
     assert len(agent2_conversations) == 1
     assert len(all_conversations) == 3
-    
+
     # Verify agent associations
     for conv in agent1_conversations:
         assert conv.agent_id == agent1.id
@@ -76,7 +76,7 @@ async def test_message_crud(db_session: Session):
     db_session.add(agent)
     db_session.commit()
     db_session.refresh(agent)
-    
+
     convo = Conversation(title="Chat", agent_id=agent.id)
     db_session.add(convo)
     db_session.commit()
@@ -93,4 +93,4 @@ async def test_message_crud(db_session: Session):
     assert len(messages) == 1
     assert messages[0].id == msg.id
     assert messages[0].sender == "user"
-    assert messages[0].content == "Hi" 
+    assert messages[0].content == "Hi"

@@ -7,10 +7,10 @@ from .meta.extractor import MetaKnowledgeExtractor
 from .context import ContextExpander, SimilaritySearcher
 
 __all__ = [
-    "CategoryRelationship", 
-    "KnowledgeCategorizer", 
+    "CategoryRelationship",
+    "KnowledgeCategorizer",
     "KnowledgeCategory",
     "MetaKnowledgeExtractor",
-    "ContextExpander", 
-    "SimilaritySearcher"
-] 
+    "ContextExpander",
+    "SimilaritySearcher",
+]

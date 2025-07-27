@@ -5,7 +5,6 @@ This module provides business logic for chat functionality and conversation mana
 """
 
 import logging
-from typing import Any
 
 from dana.api.core.models import Agent, Conversation, Message
 from dana.api.core.schemas import ChatRequest, ChatResponse, ConversationCreate, MessageCreate
@@ -22,9 +21,7 @@ class ChatService:
         """Initialize the chat service."""
         pass
 
-    async def process_chat_message(
-        self, chat_request: ChatRequest, db_session
-    ) -> ChatResponse:
+    async def process_chat_message(self, chat_request: ChatRequest, db_session) -> ChatResponse:
         """
         Process a chat message and generate a response.
 
@@ -42,24 +39,16 @@ class ChatService:
                 raise ValueError(f"Agent {chat_request.agent_id} not found")
 
             # Get or create conversation
-            conversation = await self._get_or_create_conversation(
-                chat_request, db_session
-            )
+            conversation = await self._get_or_create_conversation(chat_request, db_session)
 
             # Save user message
-            user_message = await self._save_message(
-                conversation.id, "user", chat_request.message, db_session
-            )
+            user_message = await self._save_message(conversation.id, "user", chat_request.message, db_session)
 
             # Generate agent response (placeholder implementation)
-            agent_response = await self._generate_agent_response(
-                chat_request, conversation, db_session
-            )
+            agent_response = await self._generate_agent_response(chat_request, conversation, db_session)
 
             # Save agent message
-            agent_message = await self._save_message(
-                conversation.id, "agent", agent_response, db_session
-            )
+            await self._save_message(conversation.id, "agent", agent_response, db_session)
 
             return ChatResponse(
                 success=True,
@@ -68,7 +57,7 @@ class ChatService:
                 message_id=user_message.id,
                 agent_response=agent_response,
                 context=chat_request.context,
-                error=None
+                error=None,
             )
 
         except ValueError as e:
@@ -81,7 +70,7 @@ class ChatService:
                 message_id=0,
                 agent_response="",
                 context=chat_request.context,
-                error=str(e)
+                error=str(e),
             )
         except Exception as e:
             logger.error(f"Error processing chat message: {e}")
@@ -89,15 +78,11 @@ class ChatService:
             # This allows the router's exception handler to catch it
             raise e
 
-    async def _get_or_create_conversation(
-        self, chat_request: ChatRequest, db_session
-    ) -> Conversation:
+    async def _get_or_create_conversation(self, chat_request: ChatRequest, db_session) -> Conversation:
         """Get existing conversation or create a new one."""
         if chat_request.conversation_id:
             # Get existing conversation
-            conversation = db_session.query(Conversation).filter(
-                Conversation.id == chat_request.conversation_id
-            ).first()
+            conversation = db_session.query(Conversation).filter(Conversation.id == chat_request.conversation_id).first()
             if conversation:
                 return conversation
             else:
@@ -105,41 +90,27 @@ class ChatService:
                 raise ValueError(f"Conversation {chat_request.conversation_id} not found")
 
         # Create new conversation
-        conversation_data = ConversationCreate(
-            title=f"Chat with Agent {chat_request.agent_id}",
-            agent_id=chat_request.agent_id
-        )
-        
-        conversation = Conversation(
-            title=conversation_data.title,
-            agent_id=conversation_data.agent_id
-        )
+        conversation_data = ConversationCreate(title=f"Chat with Agent {chat_request.agent_id}", agent_id=chat_request.agent_id)
+
+        conversation = Conversation(title=conversation_data.title, agent_id=conversation_data.agent_id)
         db_session.add(conversation)
         db_session.commit()
         db_session.refresh(conversation)
-        
+
         return conversation
 
-    async def _save_message(
-        self, conversation_id: int, sender: str, content: str, db_session
-    ) -> Message:
+    async def _save_message(self, conversation_id: int, sender: str, content: str, db_session) -> Message:
         """Save a message to the database."""
         message_data = MessageCreate(sender=sender, content=content)
-        
-        message = Message(
-            conversation_id=conversation_id,
-            sender=message_data.sender,
-            content=message_data.content
-        )
+
+        message = Message(conversation_id=conversation_id, sender=message_data.sender, content=message_data.content)
         db_session.add(message)
         db_session.commit()
         db_session.refresh(message)
-        
+
         return message
 
-    async def _generate_agent_response(
-        self, chat_request: ChatRequest, conversation: Conversation, db_session
-    ) -> str:
+    async def _generate_agent_response(self, chat_request: ChatRequest, conversation: Conversation, db_session) -> str:
         """Generate agent response (placeholder implementation)."""
         # This is a placeholder implementation
         # In a real system, this would integrate with the agent execution system

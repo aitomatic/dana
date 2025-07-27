@@ -68,7 +68,25 @@ def _create_a2a_agent(context: SandboxContext, name: str, *args, **kwargs) -> Ab
     """
     from dana.integrations.agent_to_agent import A2AAgent
 
-    resource = A2AAgent(name=name, *args, **kwargs)
+    # A2AAgent constructor: __init__(name, description=None, config=None, url=None, headers=None, timeout=30*60, google_a2a_compatible=False)
+    # Handle positional arguments properly
+    if args:
+        # If args provided, they should be [description, config, url, headers, timeout, google_a2a_compatible]
+        # But we'll use kwargs for clarity and safety
+        if len(args) > 0 and "description" not in kwargs:
+            kwargs["description"] = args[0]
+        if len(args) > 1 and "config" not in kwargs:
+            kwargs["config"] = args[1]
+        if len(args) > 2 and "url" not in kwargs:
+            kwargs["url"] = args[2]
+        if len(args) > 3 and "headers" not in kwargs:
+            kwargs["headers"] = args[3]
+        if len(args) > 4 and "timeout" not in kwargs:
+            kwargs["timeout"] = args[4]
+        if len(args) > 5 and "google_a2a_compatible" not in kwargs:
+            kwargs["google_a2a_compatible"] = args[5]
+
+    resource = A2AAgent(name=name, **kwargs)
     context.set_agent(name, resource)
     return resource
 
@@ -85,6 +103,16 @@ def agent_pool_function(context: SandboxContext, *args, _name: str | None = None
     name: str = _name if _name is not None else Misc.generate_uuid(length=6)
     from dana.integrations.agent_to_agent.pool.agent_pool import AgentPool
 
-    resource = AgentPool(name=name, *args, **kwargs, context=context)
+    # AgentPool constructor: __init__(name, description=None, agents=None, exclude_self=False, context=None)
+    # Handle positional arguments properly
+    if args:
+        if len(args) > 0 and "description" not in kwargs:
+            kwargs["description"] = args[0]
+        if len(args) > 1 and "agents" not in kwargs:
+            kwargs["agents"] = args[1]
+        if len(args) > 2 and "exclude_self" not in kwargs:
+            kwargs["exclude_self"] = args[2]
+
+    resource = AgentPool(name=name, context=context, **kwargs)
     context.set(name, resource)
     return resource

@@ -14,11 +14,10 @@ from .meta import CategoryRelationship, KnowledgeCategorizer, KnowledgeCategory,
 __all__ = [
     # Meta extraction components
     "MetaKnowledgeExtractor",
-    "KnowledgeCategorizer", 
+    "KnowledgeCategorizer",
     "KnowledgeCategory",
     "CategoryRelationship",
-    
     # Context expansion components
     "SimilaritySearcher",
-    "ContextExpander"
-] 
+    "ContextExpander",
+]

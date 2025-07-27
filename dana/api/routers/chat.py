@@ -16,17 +16,13 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 
 @router.post("/", response_model=ChatResponse)
-async def send_chat_message(
-    request: ChatRequest,
-    db: Session = Depends(get_db),
-    chat_service = Depends(get_chat_service)
-):
+async def send_chat_message(request: ChatRequest, db: Session = Depends(get_db), chat_service=Depends(get_chat_service)):
     """Send a chat message and get agent response."""
     try:
         logger.info(f"Received chat message for agent {request.agent_id}")
-        
+
         response = await chat_service.process_chat_message(request, db)
-        
+
         # Check if the response indicates an error
         if not response.success:
             if "conversation" in response.error.lower() and "not found" in response.error.lower():
@@ -40,9 +36,9 @@ async def send_chat_message(
             else:
                 # For other errors (including service errors and execution errors), return 200 with success=False
                 return response
-        
+
         return response
-        
+
     except HTTPException:
         raise
     except Exception as e:

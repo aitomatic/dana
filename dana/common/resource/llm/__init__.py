@@ -14,7 +14,7 @@ from dana.common.resource.llm.llm_tool_call_manager import LLMToolCallManager
 
 __all__ = [
     "LLMConfigurationManager",
-    "LLMQueryExecutor", 
+    "LLMQueryExecutor",
     "LLMResource",
     "LLMToolCallManager",
-] 
+]

@@ -20,7 +20,7 @@ def noop_function(
 
     This function is primarily used in function composition scenarios where
     an identity operation is needed, particularly for parallel composition:
-    
+
     pipeline = noop | [func1, func2, func3]
 
     Args:
@@ -34,9 +34,9 @@ def noop_function(
         noop(42) -> 42
         noop("hello") -> "hello"
         noop([1, 2, 3]) -> [1, 2, 3]
-        
+
         # In parallel composition:
         pipeline = noop | [double, square]
         result = pipeline(5)  # Returns [10, 25]
     """
-    return value 
+    return value
