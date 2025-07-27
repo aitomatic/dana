@@ -14,7 +14,7 @@ build-backend = "setuptools.build_meta"
 # =============================================================================
 
 [project]
-name = "dana-agent"
+name = "dana"
 version = "0.25.7.23"
 description = "Dana programming language for Domain-Aware Neurosymbolic Agents"
 readme = "README.md"
