@@ -14,10 +14,8 @@ from pydantic import BaseModel, Field
 
 import dana
 
-load_dotenv(dotenv_path=Path(dana.__path__[0]).parent / ".env",
-            verbose=True,
-            override=True,
-            encoding="utf-8")
+load_dotenv(dotenv_path=Path(dana.__path__[0]).parent / ".env", verbose=True, override=True, encoding="utf-8")
+
 
 @dataclass
 class ItineraryItemNoCost:
@@ -26,6 +24,7 @@ class ItineraryItemNoCost:
     location: str
     description: str
 
+
 @dataclass
 class ItineraryItem:
     time: str
@@ -33,6 +32,7 @@ class ItineraryItem:
     location: str
     description: str
     estimated_cost: float
+
 
 @dataclass
 class DaytripItinerary:
@@ -43,6 +43,7 @@ class DaytripItinerary:
     recommendations: list[str]
     weather_considerations: list[str]
 
+
 class ItineraryNoCostResponse(BaseModel):
     location: str = Field(description="The destination location")
     weather_condition: str = Field(description="The weather condition")
@@ -50,13 +51,17 @@ class ItineraryNoCostResponse(BaseModel):
     recommendations: list[str] = Field(description="General recommendations")
     weather_considerations: list[str] = Field(description="Weather-specific considerations")
 
+
 class ItineraryWithCostResponse(BaseModel):
     location: str = Field(description="The destination location")
     weather_condition: str = Field(description="The weather condition")
     total_estimated_cost: float = Field(description="Total estimated cost in USD")
-    itinerary_items: list[dict[str, Any]] = Field(description="List of itinerary items with time, activity, location, description, and estimated_cost fields")
+    itinerary_items: list[dict[str, Any]] = Field(
+        description="List of itinerary items with time, activity, location, description, and estimated_cost fields"
+    )
     recommendations: list[str] = Field(description="General recommendations")
     weather_considerations: list[str] = Field(description="Weather-specific considerations")
+
 
 def generate_daytrip_itinerary(location: str, weather_condition: str) -> DaytripItinerary:
     """
@@ -88,13 +93,10 @@ def generate_daytrip_itinerary(location: str, weather_condition: str) -> Daytrip
             "location": "Specific location",
             "description": "Brief description"
         }}
-        """
+        """,
     )
     chain1 = prompt1 | llm | parser1
-    response1 = chain1.invoke({
-        "location": location,
-        "weather_condition": weather_condition
-    })
+    response1 = chain1.invoke({"location": location, "weather_condition": weather_condition})
 
     # Step 2: Estimate costs for each activity
     parser2 = PydanticOutputParser(pydantic_object=ItineraryWithCostResponse)
@@ -116,26 +118,30 @@ def generate_daytrip_itinerary(location: str, weather_condition: str) -> Daytrip
         {format_instructions}
 
         Each itinerary item must have: time, activity, location, description, estimated_cost
-        """
+        """,
     )
     chain2 = prompt2 | llm | parser2
-    response2 = chain2.invoke({
-        "location": response1.location,
-        "weather_condition": response1.weather_condition,
-        "itinerary_items": response1.itinerary_items,
-        "recommendations": response1.recommendations,
-        "weather_considerations": response1.weather_considerations
-    })
+    response2 = chain2.invoke(
+        {
+            "location": response1.location,
+            "weather_condition": response1.weather_condition,
+            "itinerary_items": response1.itinerary_items,
+            "recommendations": response1.recommendations,
+            "weather_considerations": response1.weather_considerations,
+        }
+    )
 
     itinerary_items = []
     for item in response2.itinerary_items:
-        itinerary_items.append(ItineraryItem(
-            time=item["time"],
-            activity=item["activity"],
-            location=item["location"],
-            description=item["description"],
-            estimated_cost=float(item["estimated_cost"])
-        ))
+        itinerary_items.append(
+            ItineraryItem(
+                time=item["time"],
+                activity=item["activity"],
+                location=item["location"],
+                description=item["description"],
+                estimated_cost=float(item["estimated_cost"]),
+            )
+        )
 
     return DaytripItinerary(
         location=response2.location,
@@ -143,8 +149,9 @@ def generate_daytrip_itinerary(location: str, weather_condition: str) -> Daytrip
         total_estimated_cost=response2.total_estimated_cost,
         itinerary_items=itinerary_items,
         recommendations=response2.recommendations,
-        weather_considerations=response2.weather_considerations
+        weather_considerations=response2.weather_considerations,
     )
+
 
 def format_itinerary_output(itinerary: DaytripItinerary) -> str:
     """Format the itinerary for display."""
@@ -174,6 +181,7 @@ def format_itinerary_output(itinerary: DaytripItinerary) -> str:
             output.append(f"   • {consideration}")
 
     return "\n".join(output)
+
 
 if __name__ == "__main__":
     itinerary = generate_daytrip_itinerary(location="Tokyo", weather_condition="sunny")

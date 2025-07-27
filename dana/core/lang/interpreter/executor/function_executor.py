@@ -28,9 +28,13 @@ from dana.core.lang.ast import (
     FunctionDefinition,
 )
 from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
-from dana.core.lang.interpreter.executor.function_error_handling import FunctionExecutionErrorHandler
+from dana.core.lang.interpreter.executor.function_error_handling import (
+    FunctionExecutionErrorHandler,
+)
 from dana.core.lang.interpreter.executor.function_name_utils import FunctionNameInfo
-from dana.core.lang.interpreter.executor.resolver.unified_function_dispatcher import UnifiedFunctionDispatcher
+from dana.core.lang.interpreter.executor.resolver.unified_function_dispatcher import (
+    UnifiedFunctionDispatcher,
+)
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
 
@@ -118,7 +122,7 @@ class FunctionExecutor(BaseExecutor):
         # Check if this function should be associated with an agent type
         # Import here to avoid circular imports
         from dana.agent.agent_system import register_agent_method_from_function_def
-        
+
         # Try to register as agent method if first parameter is an agent type
         register_agent_method_from_function_def(node, dana_func)
 
@@ -163,28 +167,14 @@ class FunctionExecutor(BaseExecutor):
 
     def _evaluate_expression(self, expr, context):
         """Evaluate an expression to a Python value."""
-        try:
-            # Use the parent executor's expression evaluator
-            if hasattr(self.parent, "_expression_executor"):
-                result = self.parent._expression_executor.execute_expression(expr, context)
-                return result
-            else:
-                # Fallback for simple expressions
-                from dana.core.lang.ast import LiteralExpression
-
-                if isinstance(expr, LiteralExpression):
-                    return expr.value
-                else:
-                    # Try to get the value attribute if it exists
-                    if hasattr(expr, "value"):
-                        return expr.value
-                    # Convert to string representation as last resort
-                    return str(expr)
-        except Exception:
-            # If evaluation fails, try to extract value or use string representation
-            if hasattr(expr, "value"):
-                return expr.value
-            return str(expr)
+        # Use the parent executor to properly evaluate AST nodes
+        if hasattr(self.parent, "_expression_executor"):
+            return self.parent._expression_executor.execute(expr, context)
+        elif hasattr(self.parent, "execute"):
+            return self.parent.execute(expr, context)
+        else:
+            # This shouldn't happen in normal execution
+            raise ValueError("Cannot evaluate expression: no executor available")
 
     def _resolve_decorator(self, decorator, context):
         """Resolve a decorator to a callable function."""
@@ -252,6 +242,23 @@ class FunctionExecutor(BaseExecutor):
         """
         self.debug(f"Executing function call: {node.name}")
 
+        # Track location in error context if available
+        if hasattr(node, "location") and node.location:
+            from dana.core.lang.interpreter.error_context import ExecutionLocation
+
+            location = ExecutionLocation(
+                filename=context.error_context.current_file,
+                line=node.location.line,
+                column=node.location.column,
+                function_name=f"function call: {node.name}",
+                source_line=context.error_context.get_source_line(context.error_context.current_file, node.location.line)
+                if context.error_context.current_file and node.location.line
+                else None,
+            )
+            context.error_context.push_location(location)
+            self.debug(f"Pushed location to error context: {location}")
+            self.debug(f"Error context stack size after push: {len(context.error_context.execution_stack)}")
+
         # Phase 1: Setup and validation
         self.__setup_and_validate(node)
 
@@ -274,7 +281,15 @@ class FunctionExecutor(BaseExecutor):
 
         self.debug("Not a struct instantiation, proceeding with function resolution...")
 
+        # Phase 3: Handle special cases before unified dispatcher
+        if isinstance(node.name, str) and "SubscriptExpression" in node.name:
+            self.debug(f"Found string representation of SubscriptExpression: {node.name}")
+            # This means the function name is a string representation of a SubscriptExpression
+            # We need to evaluate it as a subscript expression first
+            return self.__execute_subscript_call_from_string(node, context, evaluated_args, evaluated_kwargs)
+
         # Phase 3: Parse function name and resolve function using unified dispatcher
+        self.debug(f"Function call name type: {type(node.name)}, value: {node.name}")
         name_info = FunctionNameInfo.from_node(node)
 
         try:
@@ -293,6 +308,10 @@ class FunctionExecutor(BaseExecutor):
             except Exception:
                 # If error handler doesn't handle it, raise original with context
                 raise SandboxError(f"Function '{name_info.func_name}' execution failed: {dispatcher_error}") from dispatcher_error
+        finally:
+            # Pop location from error context stack
+            if hasattr(node, "location") and node.location:
+                context.error_context.pop_location()
 
     def __setup_and_validate(self, node: FunctionCall) -> Any:
         """INTERNAL: Phase 1 helper for execute_function_call only.
@@ -348,20 +367,20 @@ class FunctionExecutor(BaseExecutor):
         # Process the __positional array
         positional_values = node.args["__positional"]
         if isinstance(positional_values, list):
+            # Evaluate each argument ONCE and store the result
             for value in positional_values:
-                evaluated_value = self.__evaluate_and_ensure_fully_evaluated(value, context)
-                evaluated_args.append(evaluated_value)
+                result = self.__evaluate_and_ensure_fully_evaluated(value, context)
+                evaluated_args.append(result)
         else:
             # Single value, not in a list
-            evaluated_value = self.__evaluate_and_ensure_fully_evaluated(positional_values, context)
-            evaluated_args.append(evaluated_value)
+            result = self.__evaluate_and_ensure_fully_evaluated(positional_values, context)
+            evaluated_args.append(result)
 
         # Also process any keyword arguments (keys that are not "__positional")
         for key, value in node.args.items():
             if key != "__positional":
-                # This is a keyword argument
-                evaluated_value = self.__evaluate_and_ensure_fully_evaluated(value, context)
-                evaluated_kwargs[key] = evaluated_value
+                result = self.__evaluate_and_ensure_fully_evaluated(value, context)
+                evaluated_kwargs[key] = result
 
         return evaluated_args, evaluated_kwargs
 
@@ -414,9 +433,8 @@ class FunctionExecutor(BaseExecutor):
         Returns:
             The fully evaluated value
         """
-        # Evaluate the argument
+        # Evaluate the argument ONCE and return the result
         evaluated_value = self.parent.execute(value, context)
-        # Ensure f-strings are fully evaluated to strings
         evaluated_value = self._ensure_fully_evaluated(evaluated_value, context)
         return evaluated_value
 
@@ -538,7 +556,9 @@ class FunctionExecutor(BaseExecutor):
 
         try:
             # Import ReturnException here to avoid circular imports
-            from dana.core.lang.interpreter.executor.control_flow.exceptions import ReturnException
+            from dana.core.lang.interpreter.executor.control_flow.exceptions import (
+                ReturnException,
+            )
 
             for statement in body:
                 result = self.parent.execute(statement, function_context)
@@ -560,7 +580,10 @@ class FunctionExecutor(BaseExecutor):
             StructInstance if this is a struct instantiation, None otherwise
         """
         # Import here to avoid circular imports
-        from dana.core.lang.interpreter.struct_system import StructTypeRegistry, create_struct_instance
+        from dana.core.lang.interpreter.struct_system import (
+            StructTypeRegistry,
+            create_struct_instance,
+        )
 
         # Extract the base struct name (remove scope prefix if present)
         # Only check for struct instantiation with string function names
@@ -658,7 +681,9 @@ class FunctionExecutor(BaseExecutor):
                     self.debug(f"Found user-defined function in context: {method_name} (type: {type(func_obj)})")
 
                     # Check if it's a DanaFunction object
-                    from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+                    from dana.core.lang.interpreter.functions.dana_function import (
+                        DanaFunction,
+                    )
 
                     if isinstance(func_obj, DanaFunction):
                         result = func_obj.execute(context, *transformed_args, **evaluated_kwargs)
@@ -679,7 +704,9 @@ class FunctionExecutor(BaseExecutor):
                         self.debug(f"Found user-defined function in {scope} scope: {method_name} (type: {type(func_obj)})")
 
                         # Check if it's a DanaFunction object
-                        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+                        from dana.core.lang.interpreter.functions.dana_function import (
+                            DanaFunction,
+                        )
 
                         if isinstance(func_obj, DanaFunction):
                             result = func_obj.execute(context, *transformed_args, **evaluated_kwargs)
@@ -720,3 +747,97 @@ class FunctionExecutor(BaseExecutor):
         except Exception as e:
             # Convert other exceptions to SandboxError with context
             raise SandboxError(f"Method call '{attr_access}' failed: {e}")
+
+    def __execute_subscript_call_from_string(
+        self,
+        node: FunctionCall,
+        context: SandboxContext,
+        evaluated_args: list[Any],
+        evaluated_kwargs: dict[str, Any],
+    ) -> Any:
+        """Execute a function call where the function name is a string representation of a SubscriptExpression.
+
+        This handles cases where the function name is a string like:
+        "SubscriptExpression(object=Identifier(name='FUNCS_FOR_TEST'), index=Identifier(name='func_name'))"
+
+        Args:
+            node: The function call node with string representation of SubscriptExpression as name
+            context: The execution context
+            evaluated_args: Evaluated positional arguments
+            evaluated_kwargs: Evaluated keyword arguments
+
+        Returns:
+            The result of the function call
+
+        Raises:
+            SandboxError: If subscript call fails
+        """
+        try:
+            # Parse the string representation to extract the object and index
+            # Format: "SubscriptExpression(object=Identifier(name='FUNCS_FOR_TEST'), index=Identifier(name='func_name'))"
+            name_str = str(node.name)
+
+            # More robust parsing with error handling
+            object_name = None
+            index_name = None
+
+            # Extract object name with better error handling
+            object_prefix = "Identifier(name='"
+            object_start = name_str.find(object_prefix)
+            if object_start == -1:
+                raise SandboxError(f"Could not find object identifier in subscript expression string: {name_str}")
+
+            object_start += len(object_prefix)
+            object_end = name_str.find("'", object_start)
+            if object_end == -1:
+                raise SandboxError(f"Could not find end of object name in subscript expression string: {name_str}")
+
+            object_name = name_str[object_start:object_end]
+
+            # Extract index name with better error handling
+            index_prefix = "Identifier(name='"
+            index_start = name_str.find(index_prefix, object_end)
+            if index_start == -1:
+                raise SandboxError(f"Could not find index identifier in subscript expression string: {name_str}")
+
+            index_start += len(index_prefix)
+            index_end = name_str.find("'", index_start)
+            if index_end == -1:
+                raise SandboxError(f"Could not find end of index name in subscript expression string: {name_str}")
+
+            index_name = name_str[index_start:index_end]
+
+            # Validate that we extracted meaningful names
+            if not object_name or not index_name:
+                raise SandboxError(f"Could not extract valid object and index names from subscript expression string: {name_str}")
+
+            self.debug(f"Parsed object_name: {object_name}, index_name: {index_name}")
+
+            # Get the object and index values from context
+            from dana.core.lang.ast import Identifier
+
+            object_value = self.parent.execute(Identifier(name=object_name), context)
+            index_value = self.parent.execute(Identifier(name=index_name), context)
+
+            self.debug(f"Object value: {object_value}, index value: {index_value}")
+
+            # Access the subscript
+            actual_function = object_value[index_value]
+            self.debug(f"Resolved function: {actual_function} (type: {type(actual_function)})")
+
+            # Check if the resolved value is callable
+            if not callable(actual_function):
+                raise SandboxError(f"Subscript expression '{name_str}' resolved to non-callable object: {actual_function}")
+
+            # Call the resolved function with the provided arguments
+            self.debug(f"Calling resolved function with args={evaluated_args}, kwargs={evaluated_kwargs}")
+            result = actual_function(*evaluated_args, **evaluated_kwargs)
+            self.debug(f"Subscript call result: {result}")
+            return result
+
+        except SandboxError:
+            # Re-raise SandboxErrors as-is
+            raise
+        except Exception as e:
+            # Convert other exceptions to SandboxError with context
+            raise SandboxError(f"Subscript call from string '{node.name}' failed: {e}")

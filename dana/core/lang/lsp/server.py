@@ -8,11 +8,8 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-import asyncio
 import logging
 import sys
-from typing import List, Optional
-from urllib.parse import urlparse
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -21,6 +18,7 @@ logger = logging.getLogger(__name__)
 try:
     from lsprotocol import types as lsp
     from pygls.server import LanguageServer
+
     LSP_AVAILABLE = True
 except ImportError:
     LSP_AVAILABLE = False
@@ -35,9 +33,9 @@ def main():
         logger.error("Cannot start Dana Language Server: LSP dependencies not installed")
         logger.error("Install with: pip install lsprotocol pygls")
         sys.exit(1)
-    
+
     logger.info("Starting Dana Language Server...")
-    
+
     # Import LSP-specific code only when dependencies are available
     from dana.core.lang.lsp.analyzer import DanaAnalyzer
 
@@ -55,25 +53,22 @@ def main():
             try:
                 # Parse the document with the existing Dana parser
                 diagnostics = await self.analyzer.analyze(text)
-                
+
                 # Publish diagnostics
                 self.publish_diagnostics(uri, diagnostics)
-                
+
             except Exception as e:
                 logger.error(f"Error validating document {uri}: {e}")
                 # Publish a diagnostic about the validation error
                 error_diagnostic = lsp.Diagnostic(
-                    range=lsp.Range(
-                        start=lsp.Position(line=0, character=0),
-                        end=lsp.Position(line=0, character=0)
-                    ),
+                    range=lsp.Range(start=lsp.Position(line=0, character=0), end=lsp.Position(line=0, character=0)),
                     message=f"Language server error: {str(e)}",
                     severity=lsp.DiagnosticSeverity.Error,
-                    source="dana-ls"
+                    source="dana-ls",
                 )
                 self.publish_diagnostics(uri, [error_diagnostic])
 
-        def _get_document_text(self, uri: str) -> Optional[str]:
+        def _get_document_text(self, uri: str) -> str | None:
             """Safely get document text from workspace."""
             try:
                 document = self.workspace.get_document(uri)
@@ -105,46 +100,37 @@ def main():
         # Re-validate on save
         try:
             text = None
-            
+
             # Check if text is provided in params (when includeText is true)
-            if hasattr(params, 'text') and params.text is not None:
+            if hasattr(params, "text") and params.text is not None:
                 text = params.text
             else:
                 # Fall back to reading from workspace if text not provided
                 text = ls._get_document_text(params.text_document.uri)
-            
+
             if text is not None:
                 await ls._validate_document(params.text_document.uri, text)
             else:
                 logger.warning(f"Could not get document text for validation on save: {params.text_document.uri}")
-                
+
         except Exception as e:
             logger.warning(f"Error re-validating document on save: {e}")
 
     @server.feature(lsp.TEXT_DOCUMENT_HOVER)
-    async def hover(ls: DanaLanguageServer, params: lsp.HoverParams) -> Optional[lsp.Hover]:
+    async def hover(ls: DanaLanguageServer, params: lsp.HoverParams) -> lsp.Hover | None:
         """Provide hover information for symbols."""
         try:
             # Get document text
             document = ls.workspace.get_document(params.text_document.uri)
-            
+
             # Get hover information from analyzer
-            hover_info = await ls.analyzer.get_hover(
-                document.source,
-                params.position.line,
-                params.position.character
-            )
-            
+            hover_info = await ls.analyzer.get_hover(document.source, params.position.line, params.position.character)
+
             if hover_info:
-                return lsp.Hover(
-                    contents=lsp.MarkupContent(
-                        kind=lsp.MarkupKind.Markdown,
-                        value=hover_info
-                    )
-                )
+                return lsp.Hover(contents=lsp.MarkupContent(kind=lsp.MarkupKind.Markdown, value=hover_info))
         except Exception as e:
             logger.warning(f"Error providing hover: {e}")
-        
+
         return None
 
     @server.feature(lsp.TEXT_DOCUMENT_COMPLETION)
@@ -152,27 +138,23 @@ def main():
         """Provide completion suggestions."""
         try:
             document = ls.workspace.get_document(params.text_document.uri)
-            
+
             # Get completions from analyzer
-            completions = await ls.analyzer.get_completions(
-                document.source,
-                params.position.line,
-                params.position.character
-            )
-            
+            completions = await ls.analyzer.get_completions(document.source, params.position.line, params.position.character)
+
             completion_items = []
             for completion in completions:
                 item = lsp.CompletionItem(
-                    label=completion['label'],
-                    kind=completion.get('kind', lsp.CompletionItemKind.Text),
-                    detail=completion.get('detail'),
-                    documentation=completion.get('documentation'),
-                    insert_text=completion.get('insert_text', completion['label'])
+                    label=completion["label"],
+                    kind=completion.get("kind", lsp.CompletionItemKind.Text),
+                    detail=completion.get("detail"),
+                    documentation=completion.get("documentation"),
+                    insert_text=completion.get("insert_text", completion["label"]),
                 )
                 completion_items.append(item)
-            
+
             return lsp.CompletionList(is_incomplete=False, items=completion_items)
-        
+
         except Exception as e:
             logger.warning(f"Error providing completions: {e}")
             return lsp.CompletionList(is_incomplete=False, items=[])
@@ -182,4 +164,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main()

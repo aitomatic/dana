@@ -1,0 +1,28 @@
+{
+  "name": "semiconductor_inspection",
+  "version": "1.0.0",
+  "description": "Agent Capability Pack for Semiconductor Inspection and Troubleshooting",
+  "author": "Aitomatic",
+  "dependencies": {
+    "common.na": "1.0.0",
+    "agent.na": "1.0.0",
+    "resources.na": "1.0.0",
+    "methods.na": "1.0.0",
+    "workflows.na": "1.0.0"
+  },
+  "load_order": [
+    "common.na",
+    "agent.na", 
+    "resources.na",
+    "methods.na",
+    "workflows.na"
+  ],
+  "capabilities": [
+    "semiconductor_inspection",
+    "troubleshooting",
+    "specification_lookup",
+    "diagnostic_planning"
+  ],
+  "domain": "semiconductor_manufacturing",
+  "agent_type": "ProSEAAgent"
+} 

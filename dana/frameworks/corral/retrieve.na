@@ -1,0 +1,411 @@
+# CORRAL Phase 3: Retrieve
+# Assemble perfect context for specific queries and domains
+
+# Knowledge retrieval struct
+struct KnowledgeRetrieval:
+    """
+    Represents the knowledge retrieval phase of CORRAL lifecycle.
+    Handles intelligent context assembly and retrieval for specific queries.
+    """
+    retrieval_config: dict
+    semantic_threshold: float
+    max_results: int
+    context_window_size: int
+
+# Query analysis and understanding struct
+struct QueryAnalyzer:
+    """
+    Analyzes queries to understand intent and extract key information.
+    """
+    stop_words: list
+    entity_patterns: list
+    intent_keywords: dict
+    complexity_metrics: dict
+
+# Core retrieval functions
+def assemble_context(retriever: KnowledgeRetrieval, query: str, domain: str, organized_knowledge: dict) -> dict:
+    """
+    Assemble perfect context for a specific query and domain.
+    """
+    context = {
+        "query": query,
+        "domain": domain,
+        "relevant_sources": [],
+        "context_snippets": [],
+        "related_concepts": [],
+        "confidence_score": 0.0
+    }
+    
+    # Step 1: Analyze query intent
+    analyzer = QueryAnalyzer(
+        stop_words=["the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for", "of", "with", "by"],
+        entity_patterns=[],
+        intent_keywords={},
+        complexity_metrics={}
+    )
+    query_analysis = analyze_query_intent(analyzer, query, domain)
+    
+    # Step 2: Find relevant sources
+    relevant_sources = find_relevant_sources(query_analysis, organized_knowledge)
+    
+    # Step 3: Extract context snippets
+    context_snippets = extract_context_snippets(query, relevant_sources)
+    
+    # Step 4: Identify related concepts
+    related_concepts = find_related_concepts(query_analysis, organized_knowledge)
+    
+    # Step 5: Calculate confidence
+    confidence = calculate_context_confidence(query_analysis, context_snippets)
+    
+    context["relevant_sources"] = relevant_sources
+    context["context_snippets"] = context_snippets
+    context["related_concepts"] = related_concepts
+    context["confidence_score"] = confidence
+    
+    return context
+
+def semantic_search(retriever: KnowledgeRetrieval, query: str, knowledge_index: dict) -> list:
+    """
+    Perform semantic search across the knowledge base.
+    """
+    # Convert query to semantic representation
+    query_embedding = create_query_embedding(query)
+    
+    # Search across all sources
+    search_results = []
+    for source, content_data in knowledge_index["by_source"].items():
+        content_embedding = get_content_embedding(content_data["content"])
+        similarity = calculate_semantic_similarity(query_embedding, content_embedding)
+        
+        if similarity > retriever.semantic_threshold:  # Threshold for relevance
+            search_results.append({
+                "source": source,
+                "similarity": similarity,
+                "content": content_data["content"],
+                "metadata": content_data["metadata"]
+            })
+    
+    # Sort by similarity
+    search_results.sort(key=lambda x: x["similarity"], reverse=True)
+    return search_results[:retriever.max_results]
+
+def retrieve_by_keyword(retriever: KnowledgeRetrieval, keywords: list, knowledge_index: dict) -> list:
+    """
+    Retrieve knowledge by specific keywords.
+    """
+    results = []
+    for keyword in keywords:
+        if keyword in knowledge_index["by_keyword"]:
+            sources = knowledge_index["by_keyword"][keyword]
+            for source in sources:
+                content_data = knowledge_index["by_source"][source]
+                results.append({
+                    "source": source,
+                    "keyword": keyword,
+                    "content": content_data["content"],
+                    "metadata": content_data["metadata"]
+                })
+    return results
+
+def retrieve_by_entity(retriever: KnowledgeRetrieval, entities: list, knowledge_index: dict) -> list:
+    """
+    Retrieve knowledge by specific entities.
+    """
+    results = []
+    for entity in entities:
+        if entity in knowledge_index["by_entity"]:
+            sources = knowledge_index["by_entity"][entity]
+            for source in sources:
+                content_data = knowledge_index["by_source"][source]
+                results.append({
+                    "source": source,
+                    "entity": entity,
+                    "content": content_data["content"],
+                    "metadata": content_data["metadata"]
+                })
+    return results
+
+def retrieve_by_category(retriever: KnowledgeRetrieval, category: str, knowledge_index: dict) -> list:
+    """
+    Retrieve knowledge by category.
+    """
+    results = []
+    if category in knowledge_index["by_category"]:
+        sources = knowledge_index["by_category"][category]
+        for source in sources:
+            content_data = knowledge_index["by_source"][source]
+            results.append({
+                "source": source,
+                "category": category,
+                "content": content_data["content"],
+                "metadata": content_data["metadata"]
+            })
+    return results
+
+# Query analysis and understanding functions
+def analyze_query_intent(analyzer: QueryAnalyzer, query: str, domain: str) -> dict:
+    """
+    Analyze the intent and key components of a query.
+    """
+    analysis = {
+        "original_query": query,
+        "domain": domain,
+        "intent": "unknown",
+        "keywords": [],
+        "entities": [],
+        "action_type": "unknown",
+        "complexity": "unknown"
+    }
+    
+    # Extract keywords
+    analysis["keywords"] = extract_query_keywords(analyzer, query)
+    
+    # Extract entities
+    analysis["entities"] = extract_query_entities(analyzer, query)
+    
+    # Determine intent
+    analysis["intent"] = determine_query_intent(analyzer, query, domain)
+    
+    # Determine action type
+    analysis["action_type"] = determine_action_type(analyzer, query)
+    
+    # Assess complexity
+    analysis["complexity"] = assess_query_complexity(analyzer, query)
+    
+    return analysis
+
+def extract_query_keywords(analyzer: QueryAnalyzer, query: str) -> list:
+    """
+    Extract important keywords from the query.
+    """
+    words = query.lower().split()
+    keywords = [word for word in words if word not in analyzer.stop_words and len(word) > 2]
+    return keywords
+
+def extract_query_entities(analyzer: QueryAnalyzer, query: str) -> list:
+    """
+    Extract named entities from the query.
+    """
+    # Simple entity extraction - can be enhanced with NER
+    entities = []
+    # Look for capitalized words and technical terms
+    words = query.split()
+    for word in words:
+        if word[0].isupper() or word.lower() in ["api", "sdk", "framework", "library"]:
+            entities.append(word)
+    return entities
+
+def determine_query_intent(analyzer: QueryAnalyzer, query: str, domain: str) -> str:
+    """
+    Determine the intent of the query.
+    """
+    query_lower = query.lower()
+    
+    if any(word in query_lower for word in ["how", "what", "explain", "describe"]):
+        return "information_seeking"
+    elif any(word in query_lower for word in ["implement", "create", "build", "develop"]):
+        return "implementation"
+    elif any(word in query_lower for word in ["debug", "fix", "error", "problem"]):
+        return "troubleshooting"
+    elif any(word in query_lower for word in ["compare", "difference", "vs"]):
+        return "comparison"
+    else:
+        return "general"
+
+def determine_action_type(analyzer: QueryAnalyzer, query: str) -> str:
+    """
+    Determine the type of action the query is requesting.
+    """
+    query_lower = query.lower()
+    
+    if any(word in query_lower for word in ["read", "get", "fetch", "retrieve"]):
+        return "read"
+    elif any(word in query_lower for word in ["write", "create", "add", "insert"]):
+        return "write"
+    elif any(word in query_lower for word in ["update", "modify", "change"]):
+        return "update"
+    elif any(word in query_lower for word in ["delete", "remove", "drop"]):
+        return "delete"
+    else:
+        return "unknown"
+
+def assess_query_complexity(analyzer: QueryAnalyzer, query: str) -> str:
+    """
+    Assess the complexity of the query.
+    """
+    word_count = len(query.split())
+    if word_count > 20:
+        return "complex"
+    elif word_count > 10:
+        return "moderate"
+    else:
+        return "simple"
+
+# Context assembly utilities
+def find_relevant_sources(query_analysis: dict, organized_knowledge: dict) -> list:
+    """Find sources relevant to the query analysis."""
+    relevant_sources = []
+    knowledge_index = organized_knowledge["knowledge_index"]
+    
+    # Search by keywords
+    for keyword in query_analysis["keywords"]:
+        if keyword in knowledge_index["by_keyword"]:
+            relevant_sources.extend(knowledge_index["by_keyword"][keyword])
+    
+    # Search by entities
+    for entity in query_analysis["entities"]:
+        if entity in knowledge_index["by_entity"]:
+            relevant_sources.extend(knowledge_index["by_entity"][entity])
+    
+    # Remove duplicates and sort by relevance
+    unique_sources = list(set(relevant_sources))
+    return rank_sources_by_relevance(unique_sources, query_analysis)
+
+def extract_context_snippets(query: str, relevant_sources: list) -> list:
+    """Extract relevant snippets from sources."""
+    snippets = []
+    
+    for source in relevant_sources:
+        content = get_source_content(source)
+        relevant_snippets = find_relevant_snippets(query, content)
+        snippets.extend(relevant_snippets)
+    
+    return snippets
+
+def find_related_concepts(query_analysis: dict, organized_knowledge: dict) -> list:
+    """Find concepts related to the query."""
+    related_concepts = []
+    knowledge_graph = organized_knowledge["knowledge_graph"]
+    
+    # Find concepts connected to query entities
+    for entity in query_analysis["entities"]:
+        if entity in knowledge_graph["nodes"]:
+            connections = find_connected_concepts(entity, knowledge_graph)
+            related_concepts.extend(connections)
+    
+    return list(set(related_concepts))
+
+def calculate_context_confidence(query_analysis: dict, context_snippets: list) -> float:
+    """Calculate confidence in the assembled context."""
+    if not context_snippets:
+        return 0.0
+    
+    # Base confidence on number and quality of snippets
+    snippet_count = len(context_snippets)
+    avg_snippet_quality = calculate_average_snippet_quality(context_snippets)
+    
+    # Normalize to 0-1 range
+    confidence = min(1.0, (snippet_count * avg_snippet_quality) / 10.0)
+    return confidence
+
+# Semantic search utilities
+def create_query_embedding(query: str) -> list:
+    """Create semantic embedding for query."""
+    # Placeholder - would use actual embedding model
+    return [0.1, 0.2, 0.3]  # Simplified embedding
+
+def get_content_embedding(content: str) -> list:
+    """Get semantic embedding for content."""
+    # Placeholder - would use actual embedding model
+    return [0.2, 0.3, 0.4]  # Simplified embedding
+
+def calculate_semantic_similarity(embedding1: list, embedding2: list) -> float:
+    """Calculate semantic similarity between embeddings."""
+    # Simplified cosine similarity
+    dot_product = sum(a * b for a, b in zip(embedding1, embedding2))
+    norm1 = sum(a * a for a in embedding1) ** 0.5
+    norm2 = sum(b * b for b in embedding2) ** 0.5
+    return dot_product / (norm1 * norm2) if norm1 * norm2 > 0 else 0.0
+
+# Helper functions
+def rank_sources_by_relevance(sources: list, query_analysis: dict) -> list:
+    """Rank sources by relevance to query."""
+    # Simplified ranking - would use more sophisticated algorithm
+    return sources[:10]  # Return top 10
+
+def get_source_content(source: str) -> str:
+    """Get content from a source."""
+    # Placeholder - would read actual source content
+    return "Sample content from source"
+
+def find_relevant_snippets(query: str, content: str) -> list:
+    """Find snippets relevant to query in content."""
+    # Simplified snippet extraction
+    sentences = content.split('.')
+    relevant_snippets = []
+    
+    for sentence in sentences:
+        if any(keyword in sentence.lower() for keyword in query.lower().split()):
+            relevant_snippets.append(sentence.strip())
+    
+    return relevant_snippets[:3]  # Return top 3 snippets
+
+def find_connected_concepts(entity: str, knowledge_graph: dict) -> list:
+    """Find concepts connected to an entity in the knowledge graph."""
+    connected = []
+    
+    for edge in knowledge_graph["edges"]:
+        if edge["from"] == entity:
+            connected.append(edge["to"])
+        elif edge["to"] == entity:
+            connected.append(edge["from"])
+    
+    return connected
+
+def calculate_average_snippet_quality(snippets: list) -> float:
+    """Calculate average quality of snippets."""
+    if not snippets:
+        return 0.0
+    
+    # Simplified quality calculation
+    total_quality = sum(len(snippet.split()) for snippet in snippets)
+    return total_quality / len(snippets) / 20.0  # Normalize
+
+# Main retrieval workflow
+def retrieve_knowledge_context(query: str, domain: str, organized_knowledge: dict) -> dict:
+    """
+    Main workflow for retrieving knowledge context.
+    Implements the complete retrieval phase of CORRAL.
+    """
+    retriever = KnowledgeRetrieval(
+        retrieval_config={"enable_semantic_search": True},
+        semantic_threshold=0.3,
+        max_results=10,
+        context_window_size=3
+    )
+    
+    # Step 1: Assemble context
+    context = assemble_context(retriever, query, domain, organized_knowledge)
+    
+    # Step 2: Perform semantic search
+    semantic_results = semantic_search(retriever, query, organized_knowledge["knowledge_index"])
+    
+    # Step 3: Retrieve by keywords
+    analyzer = QueryAnalyzer(
+        stop_words=["the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for", "of", "with", "by"],
+        entity_patterns=[],
+        intent_keywords={},
+        complexity_metrics={}
+    )
+    query_analysis = analyze_query_intent(analyzer, query, domain)
+    keyword_results = retrieve_by_keyword(retriever, query_analysis["keywords"], organized_knowledge["knowledge_index"])
+    
+    # Step 4: Retrieve by entities
+    entity_results = retrieve_by_entity(retriever, query_analysis["entities"], organized_knowledge["knowledge_index"])
+    
+    return {
+        "assembled_context": context,
+        "semantic_results": semantic_results,
+        "keyword_results": keyword_results,
+        "entity_results": entity_results,
+        "retrieval_timestamp": current_timestamp()
+    }
+
+# Utility functions
+def current_timestamp() -> str:
+    """Get current timestamp."""
+    return get_current_time()
+
+# Example usage
+# organized = organize_knowledge(curated_knowledge)
+# context = retrieve_knowledge_context("How to implement API authentication?", "technical", organized)

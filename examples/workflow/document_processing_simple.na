@@ -1,0 +1,56 @@
+# Document Processing Pipeline - Simple Working Example
+# 
+# This demonstrates the core workflow capabilities in a simple, working format
+
+import dana.frameworks.workflow as wf
+
+# Initialize components
+log("🔧 Initializing Document Processing Pipeline...")
+
+context = wf.ContextEngine(max_knowledge_points=100)
+safety = wf.SafetyValidator(strict_mode=False)
+engine = wf.WorkflowEngine(context_engine=context, safety_validator=safety)
+
+# Define processing steps
+def ingest_document(file_path):
+    """Simple document ingestion"""
+    log(f"📄 Processing: {file_path}")
+    return {"file": file_path, "type": "pdf", "size": 1024}
+
+def analyze_content(doc):
+    """Simple content analysis"""
+    log("🧠 Analyzing content...")
+    return {"text": "Sample content", "confidence": 0.95}
+
+def extract_insights(content):
+    """Simple insight extraction"""
+    log("📊 Extracting insights...")
+    return {"insights": ["key point 1", "key point 2"]}
+
+def generate_report(data):
+    """Simple report generation"""
+    log("📋 Generating report...")
+    return {"summary": "Complete", "insights": data["insights"]}
+
+# Create workflow steps
+steps = [
+    engine.create_workflow_step("ingest", ingest_document),
+    engine.create_workflow_step("analyze", analyze_content),
+    engine.create_workflow_step("extract", extract_insights),
+    engine.create_workflow_step("report", generate_report)
+]
+
+# Execute workflow
+log("🚀 Executing workflow...")
+result = engine.execute(steps, "sample_report.pdf", workflow_id="doc_001")
+
+log("✅ Workflow complete!")
+log(f"📊 Result: {result}")
+
+# Show context knowledge
+stats = context.get_stats()
+log(f"📈 Knowledge points: {stats['total_knowledge_points']}")
+
+# Demonstrate search
+knowledge = context.search_knowledge("sample", limit=5)
+log(f"🔍 Found {len(knowledge)} knowledge entries")

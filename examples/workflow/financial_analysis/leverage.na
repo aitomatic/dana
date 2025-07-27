@@ -1,0 +1,97 @@
+"""Leverage Metrics."""
+
+
+# TODO: relative importing & parenthesized importing in Dana
+# from fin_statements import (
+#     get_lt_debt, get_lt_debt_2y, get_lt_debt_3y,
+#     get_st_debt, get_st_debt_2y, get_st_debt_3y,
+#
+#     get_equity,
+# )
+from fin_statements import get_lt_debt, get_lt_debt_2y, get_lt_debt_3y
+from fin_statements import get_st_debt, get_st_debt_2y, get_st_debt_3y
+from fin_statements import get_equity
+
+# TODO: relative importing in Dana
+from fin_statements.util import CompanyAndPeriodAndCurrency, CurrAndPrevNums
+
+
+__all__ = [
+    'calc_total_debt', 'calc_total_debt_2y', 'calc_total_debt_3y',
+
+    'calc_de_ratio',
+]
+
+
+"""
+Calculate `Total Debt` of {COMPANY} in {CURRENCY} according to formula:
+
+`Total Debt` = (
+  `Long-Term Debt (EXCLUDING any current/short-term portion)` +
+  `Short-Term Debt, or Current Portion of (Long-Term) Debt`
+)
+"""
+calc_total_debt = (
+    [get_lt_debt, get_st_debt] | sum
+)
+
+
+"""
+Calculate `Total Debt` of {COMPANY} in {CURRENCY} as at following two annual fiscal period ends:
+- previous annual fiscal period end immediately preceding {PERIOD}; and
+- current {PERIOD} annual fiscal period end
+"""
+# TODO: lambdas in Dana
+def _calc_total_debt_2y_sum(lt_debt_nums, st_debt_nums):
+    return CurrAndPrevNums(curr=lt_debt_nums.curr + st_debt_nums.curr,
+                           prev=lt_debt_nums.prev + st_debt_nums.prev,
+                           unit_of_measurement=lt_debt_nums.unit_of_measurement)
+# calc_total_debt_2y = (
+#     [get_lt_debt_2y, get_st_debt_2y] |
+#     (lambda lt_debt_nums, st_debt_nums:
+#      CurrAndPrevNums(curr=lt_debt_nums.curr + st_debt_nums.curr,
+#                      prev=lt_debt_nums.prev + st_debt_nums.prev))
+# )
+calc_total_debt_2y = (
+    [get_lt_debt_2y, get_st_debt_2y] | _calc_total_debt_2y_sum
+)
+
+
+"""
+Calculate `Total Debt` of {COMPANY} in {CURRENCY} as at 3 annual fiscal period ends
+with the most recent one being {PERIOD} annual fiscal period end
+"""
+# TODO: lambdas in Dana
+def _calc_total_debt_3y_sum(lt_debt_nums, st_debt_nums):
+    return (
+        lt_debt_nums[0] + st_debt_nums[0],
+        lt_debt_nums[1] + st_debt_nums[1],
+        lt_debt_nums[2] + st_debt_nums[2]
+    )
+# calc_total_debt_3y = (
+#     [get_lt_debt_3y, get_st_debt_3y] |
+#     (lambda lt_debt_nums, st_debt_nums:
+#      (lt_debt_nums[0] + st_debt_nums[0],
+#       lt_debt_nums[1] + st_debt_nums[1],
+#       lt_debt_nums[2] + st_debt_nums[2]))
+# )
+calc_total_debt_3y = (
+    [get_lt_debt_3y, get_st_debt_3y] | _calc_total_debt_3y_sum
+)
+
+
+"""
+Calculate `Debt/Equity Ratio` of {COMPANY} for {PERIOD} fiscal period
+as decimal value according to formula:
+
+`Debt/Equity Ratio` = `Total Debt` / `Total Equity`
+"""
+# TODO: lambdas in Dana
+def _calc_de_ratio_fn(total_debt, equity):
+    return total_debt / equity
+# calc_de_ratio = (
+#     [calc_total_debt, get_equity] | (lambda total_debt, equity: total_debt / equity)
+# )
+calc_de_ratio = (
+    [calc_total_debt, get_equity] | _calc_de_ratio_fn
+)

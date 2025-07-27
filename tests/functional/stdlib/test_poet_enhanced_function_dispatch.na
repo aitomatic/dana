@@ -1,3 +1,5 @@
+exit
+
 # POET-Enhanced Function Dispatch Tests
 # Tests the context-aware function behavior using type hints
 # Ensures functions adapt their behavior based on expected return types

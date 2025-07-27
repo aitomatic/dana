@@ -107,6 +107,12 @@ class IdentifierResolver(Loggable):
                 # self._cache_result(cache_key, result)  # DISABLED
                 return result
 
+            # Strategy 7: Try struct type name resolution
+            result = self._try_struct_type_resolution(name)
+            if result is not None:
+                # Don't cache struct type names as they may change
+                return result
+
             # All strategies failed - gracefully return None for undefined variables
             self.debug(f"Identifier '{name}' not found - returning None gracefully")
             return None
@@ -354,6 +360,31 @@ class IdentifierResolver(Loggable):
                     return None
 
         return result
+
+    def _try_struct_type_resolution(self, name: str) -> Any | None:
+        """Try to resolve identifier as a struct type name.
+
+        Args:
+            name: The identifier name to check
+
+        Returns:
+            The struct type name string if found, None otherwise
+        """
+        try:
+            from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+
+            # Check if this is a registered struct type name
+            if StructTypeRegistry.exists(name):
+                self.debug(f"Found '{name}' as struct type name")
+                return name  # Return the string name for struct types
+
+        except ImportError:
+            # Struct system not available, continue without it
+            pass
+        except Exception as e:
+            self.debug(f"Struct type resolution failed for '{name}': {e}")
+
+        return None
 
     def _cache_result(self, cache_key: tuple, result: Any) -> None:
         """Cache a resolution result (simple LRU with size limit)."""

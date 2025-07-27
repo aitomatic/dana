@@ -53,11 +53,14 @@ Expression = Union[
     "TupleLiteral",
     "StructLiteral",
     "UseStatement",
+    "PlaceholderExpression",
+    "PipelineExpression",
 ]
 
 # A Statement is any node that primarily performs an action, but still produces a value.
 Statement = Union[
     "Assignment",
+    "CompoundAssignment",  # Compound assignments like x += 1
     "Conditional",
     "WhileLoop",
     "ForLoop",
@@ -95,6 +98,7 @@ class BinaryOperator(Enum):
     AND = "and"
     OR = "or"
     IN = "in"
+    NOT_IN = "not in"
     IS = "is"
     IS_NOT = "is not"
     ADD = "+"
@@ -181,6 +185,21 @@ class Identifier:
 
 
 # === Expressions ===
+@dataclass
+class PlaceholderExpression:
+    """A placeholder expression representing the $ symbol in pipeline operations."""
+
+    location: Location | None = None
+
+
+@dataclass
+class PipelineExpression:
+    """A pipeline expression representing function composition via the | operator."""
+
+    stages: list[Expression]
+    location: Location | None = None
+
+
 @dataclass
 class UnaryExpression:
     """A unary operation (e.g., -x, not y)."""
@@ -346,6 +365,16 @@ class Assignment:
 
 
 @dataclass
+class CompoundAssignment:
+    """Compound assignment statement (e.g., x += 1, obj.attr *= 2). Returns the assigned value."""
+
+    target: Identifier | SubscriptExpression | AttributeAccess  # Same targets as Assignment
+    operator: str  # "+=" | "-=" | "*=" | "/="
+    value: Expression  # Right-hand side expression
+    location: Location | None = None
+
+
+@dataclass
 class Conditional:
     """If/elif/else conditional statement. Returns the value of the last executed statement."""
 
@@ -435,6 +464,7 @@ class StructField:
 
     name: str
     type_hint: TypeHint
+    comment: str | None = None  # Field description from inline comment
     default_value: Expression | None = None
     location: Location | None = None
 

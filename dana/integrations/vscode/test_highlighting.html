@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dana Syntax Highlighting Test</title>
+    <link rel="stylesheet" href="preview/dana-preview.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #404040;
+            border-radius: 8px;
+        }
+        .test-title {
+            color: #569cd6;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        pre {
+            background-color: #252526;
+            border: 1px solid #404040;
+            border-radius: 4px;
+            padding: 16px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <h1>Dana Syntax Highlighting Test</h1>
+    
+    <div class="test-section">
+        <div class="test-title">Basic Dana Code</div>
+        <pre><code class="language-dana"># Basic knowledge curation
+context = {"domain": "general", "task": "knowledge_extraction"}
+sources = ["./docs/api.md", "./docs/architecture.md"]
+ecosystem = curate_knowledge_ecosystem(context, sources)
+
+# Full knowledge ecosystem curation
+context = {"domain": "semiconductor_fabrication", "task": "defect_analysis"}
+sources = ["./process_logs/", "./equipment_data/"]
+learning_data = {"historical_patterns": [...], "expert_feedback": [...]}
+
+ecosystem = curate_knowledge_ecosystem(context, sources, learning_data)</code></pre>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">Dana Functions and Types</div>
+        <pre><code class="language-dana">def analyze_defects(process_data: dict, equipment_logs: list) -> dict:
+    """Analyze semiconductor defects from process data."""
+    
+    # Initialize analysis results
+    results = {
+        "defect_count": 0,
+        "critical_defects": [],
+        "recommendations": []
+    }
+    
+    # Process each equipment log
+    for log in equipment_logs:
+        if log.get("defect_detected", False):
+            results["defect_count"] += 1
+            
+            if log["severity"] == "critical":
+                results["critical_defects"].append(log)
+    
+    return results
+
+# Usage example
+process_data = {"fab_floor": 3, "time_period": "last_30_days"}
+equipment_logs = [
+    {"defect_detected": True, "severity": "critical", "location": "layer_3"},
+    {"defect_detected": False, "severity": "none", "location": "layer_4"}
+]
+
+analysis = analyze_defects(process_data, equipment_logs)
+print(f"Found {analysis['defect_count']} defects")</code></pre>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">Dana Structs and Scopes</div>
+        <pre><code class="language-dana">struct DefectAnalysis:
+    """Structure for defect analysis results."""
+    
+    public: defect_count: int
+    public: critical_defects: list
+    public: recommendations: list
+    
+    def __init__(self):
+        self.defect_count = 0
+        self.critical_defects = []
+        self.recommendations = []
+    
+    def add_defect(self, defect: dict):
+        """Add a defect to the analysis."""
+        self.defect_count += 1
+        if defect.get("severity") == "critical":
+            self.critical_defects.append(defect)
+
+# Create and use the struct
+analysis = DefectAnalysis()
+analysis.add_defect({"severity": "critical", "location": "layer_3"})
+print(f"Total defects: {analysis.defect_count}")</code></pre>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">Dana Control Flow</div>
+        <pre><code class="language-dana">def process_equipment_data(equipment_id: str, data: list) -> dict:
+    """Process equipment data with error handling."""
+    
+    try:
+        results = {"processed": 0, "errors": 0}
+        
+        for item in data:
+            if item.get("status") == "active":
+                # Process active equipment
+                if item.get("temperature") > 100:
+                    raise ValueError("Temperature too high")
+                
+                results["processed"] += 1
+            else:
+                results["errors"] += 1
+                
+    except ValueError as e:
+        print(f"Processing error: {e}")
+        results["errors"] += 1
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        results["errors"] += 1
+    finally:
+        print(f"Processing complete for {equipment_id}")
+    
+    return results
+
+# Test the function
+equipment_data = [
+    {"status": "active", "temperature": 85},
+    {"status": "active", "temperature": 110},  # This will cause an error
+    {"status": "inactive", "temperature": 75}
+]
+
+result = process_equipment_data("EQ001", equipment_data)</code></pre>
+    </div>
+
+    <script src="preview/dana-highlight.js"></script>
+    <script>
+        // Test the highlighting after page load
+        setTimeout(() => {
+            console.log('Testing Dana highlighting...');
+            if (typeof window.danaHighlightTest === 'function') {
+                const result = window.danaHighlightTest();
+                console.log(result);
+            } else {
+                console.log('Dana highlighting script not loaded');
+            }
+        }, 2000);
+    </script>
+</body>
+</html> 

@@ -51,6 +51,20 @@ private:x = 10
 public:message = "Hello"
 ```
 
+### Compound Assignment
+Dana supports compound assignment operators for concise updates:
+```dana
+x += 5    # Equivalent to x = x + 5
+y -= 3    # Equivalent to y = y - 3
+z *= 2    # Equivalent to z = z * 2
+w /= 4    # Equivalent to w = w / 4
+
+# Works with complex targets
+arr[0] += 10
+obj.value *= 2
+scores["alice"] += 20
+```
+
 ### Conditional Statements
 ```dana
 if private:x > 5:

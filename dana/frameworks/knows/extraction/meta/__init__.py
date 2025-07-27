@@ -1,15 +1,8 @@
 """
-Meta-level knowledge extraction components.
-
-This module handles extracting high-level knowledge points and categorizing them.
+Meta-knowledge extraction utilities.
 """
 
 from .categorizer import CategoryRelationship, KnowledgeCategorizer, KnowledgeCategory
 from .extractor import MetaKnowledgeExtractor
 
-__all__ = [
-    "MetaKnowledgeExtractor", 
-    "KnowledgeCategorizer",
-    "KnowledgeCategory",
-    "CategoryRelationship"
-] 
+__all__ = ["CategoryRelationship", "KnowledgeCategorizer", "KnowledgeCategory", "MetaKnowledgeExtractor"]

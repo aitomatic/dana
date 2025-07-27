@@ -1,24 +1,16 @@
 """
-Dana KNOWS extraction components.
-
-This module provides knowledge extraction capabilities including:
-- Meta knowledge extraction from documents
-- Knowledge categorization and relationship mapping
-- Similarity search and semantic matching
-- Context expansion and validation
+Knowledge extraction module for KNOWS framework.
 """
 
+from .meta.categorizer import CategoryRelationship, KnowledgeCategorizer, KnowledgeCategory
+from .meta.extractor import MetaKnowledgeExtractor
 from .context import ContextExpander, SimilaritySearcher
-from .meta import CategoryRelationship, KnowledgeCategorizer, KnowledgeCategory, MetaKnowledgeExtractor
 
 __all__ = [
-    # Meta extraction components
-    "MetaKnowledgeExtractor",
-    "KnowledgeCategorizer", 
-    "KnowledgeCategory",
     "CategoryRelationship",
-    
-    # Context expansion components
+    "KnowledgeCategorizer",
+    "KnowledgeCategory",
+    "MetaKnowledgeExtractor",
+    "ContextExpander",
     "SimilaritySearcher",
-    "ContextExpander"
-] 
+]

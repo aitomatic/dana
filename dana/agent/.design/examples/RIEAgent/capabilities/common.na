@@ -1,0 +1,20 @@
+def classify(text: str) -> (str, str)
+
+struct Step:
+    description: str
+    success_criteria: str
+    kind: str?
+
+struct CaseContext:
+    prx_variant: str
+    symptoms: list[str]
+    logs: list[str]
+
+struct Question:
+    text: str
+    part: str?
+    class: str
+
+struct Answer:
+    reply: str
+    citations: list[str] 

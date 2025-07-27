@@ -124,7 +124,6 @@ class TestLLMResource(unittest.TestCase):
         llm_resource = LLMResource(name="test_llm", model="openai:gpt-4")
         llm_resource._is_available = True
 
-
         # NOTE : TEMPORARY REMOVE UNTIL WE HAVE A COMPATIBLE VERSION OF: enforce_context_window
         # async def test_context_window():
         #     # Mock the actual client call instead of the higher level method

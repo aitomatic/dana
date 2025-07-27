@@ -1,14 +1,31 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
 
-let client: LanguageClient;
+// Make language server optional
+let LanguageClient: any;
+let LanguageClientOptions: any;
+let ServerOptions: any;
+
+try {
+    const lsp = require('vscode-languageclient/node');
+    LanguageClient = lsp.LanguageClient;
+    LanguageClientOptions = lsp.LanguageClientOptions;
+    ServerOptions = lsp.ServerOptions;
+} catch (error: any) {
+    // Language server dependencies not available, LSP features disabled
+}
+
+let client: any;
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('Dana language extension is now active');
 
-    // Start the Dana Language Server
-    startLanguageServer(context);
+    // Start the Dana Language Server only if available
+    if (LanguageClient) {
+        startLanguageServer(context);
+    }
+
+    // Register markdown preview enhancement
+    registerMarkdownPreviewEnhancement(context);
 
     // Register the "Run Dana File" command
     const runFileCommand = vscode.commands.registerCommand('dana.runFile', () => {
@@ -56,7 +73,101 @@ export function activate(context: vscode.ExtensionContext) {
         terminal.sendText(`"${danaCommand}" "${document.fileName}"`);
     });
 
-    context.subscriptions.push(runFileCommand);
+    // Register a command to test Markdown Preview Enhanced integration
+    const testMPECommand = vscode.commands.registerCommand('dana.testMPE', () => {
+        const activeEditor = vscode.window.activeTextEditor;
+        
+        if (!activeEditor || activeEditor.document.languageId !== 'markdown') {
+            vscode.window.showErrorMessage('Please open a markdown file to test MPE integration');
+            return;
+        }
+
+        // Create a test markdown file with Dana code blocks
+        const testContent = `# Dana Syntax Highlighting Test for Markdown Preview Enhanced
+
+This is a test of Dana syntax highlighting in Markdown Preview Enhanced.
+
+## Basic Dana Code
+
+\`\`\`dana
+# Basic knowledge curation
+context = {"domain": "general", "task": "knowledge_extraction"}
+sources = ["./docs/api.md", "./docs/architecture.md"]
+ecosystem = curate_knowledge_ecosystem(context, sources)
+\`\`\`
+
+## Dana Functions
+
+\`\`\`dana
+def analyze_defects(process_data: dict, equipment_logs: list) -> dict:
+    """Analyze semiconductor defects from process data."""
+    
+    results = {
+        "defect_count": 0,
+        "critical_defects": [],
+        "recommendations": []
+    }
+    
+    for log in equipment_logs:
+        if log.get("defect_detected", False):
+            results["defect_count"] += 1
+            
+            if log["severity"] == "critical":
+                results["critical_defects"].append(log)
+    
+    return results
+\`\`\`
+
+## Dana with Scopes
+
+\`\`\`dana
+private: user_data = {"name": "John", "age": 30}
+public: config = {"api_key": "abc123", "endpoint": "https://api.example.com"}
+system: logger = log("system", "info")
+
+def process_user(user: dict) -> bool:
+    if user.get("age", 0) >= 18:
+        return True
+    return False
+
+result = process_user(user_data)
+\`\`\`
+
+## Dana with Pipes
+
+\`\`\`dana
+def double(x: int) -> int:
+    return x * 2
+
+def stringify(x: int) -> str:
+    return str(x)
+
+# Sequential pipeline
+result1 = 5 | double | stringify
+
+# Parallel pipeline
+pipeline = double | [stringify, lambda x: x + 10]
+result2 = pipeline(5)
+\`\`\`
+
+The highlighting should work automatically in Markdown Preview Enhanced. Look for the green "Dana Highlight (MPE) ✓" indicator in the top-right corner.`;
+        
+        // Create and show the test document
+        const testUri = vscode.Uri.parse('untitled:test-dana-mpe.md');
+        vscode.workspace.openTextDocument(testUri).then(doc => {
+            vscode.window.showTextDocument(doc).then(editor => {
+                editor.edit(editBuilder => {
+                    editBuilder.insert(new vscode.Position(0, 0), testContent);
+                });
+                
+                vscode.window.showInformationMessage(
+                    'Dana MPE test created! Open Markdown Preview Enhanced to see syntax highlighting.'
+                );
+            });
+        });
+    });
+
+    context.subscriptions.push(runFileCommand, testMPECommand);
 }
 
 function startLanguageServer(context: vscode.ExtensionContext) {
@@ -78,7 +189,7 @@ function startLanguageServer(context: vscode.ExtensionContext) {
     }
 
     // Configure the server options
-    const serverOptions: ServerOptions = {
+    const serverOptions: any = {
         command: serverCommand,
         args: [],
         options: {
@@ -87,7 +198,7 @@ function startLanguageServer(context: vscode.ExtensionContext) {
     };
 
     // Configure the client options
-    const clientOptions: LanguageClientOptions = {
+    const clientOptions: any = {
         // Register the server for Dana files
         documentSelector: [
             { scheme: 'file', language: 'dana' },
@@ -110,8 +221,8 @@ function startLanguageServer(context: vscode.ExtensionContext) {
 
     // Start the client and server
     client.start().then(() => {
-        console.log('Dana Language Server started successfully');
-    }).catch(error => {
+        // Language server started successfully
+    }).catch((error: any) => {
         console.error('Failed to start Dana Language Server:', error);
         vscode.window.showWarningMessage(
             'Dana Language Server failed to start. Advanced features may not be available. ' +
@@ -128,9 +239,19 @@ function startLanguageServer(context: vscode.ExtensionContext) {
     });
 }
 
+function registerMarkdownPreviewEnhancement(context: vscode.ExtensionContext) {
+    // Register a markdown preview provider that enhances Dana code blocks
+    const markdownPreviewProvider = vscode.workspace.registerTextDocumentContentProvider('dana-preview', {
+        provideTextDocumentContent(uri: vscode.Uri): string {
+            // This is a placeholder - the actual enhancement is done via markdown.previewScripts
+            return '';
+        }
+    });
+
+    context.subscriptions.push(markdownPreviewProvider);
+}
+
 export function deactivate(): Thenable<void> | undefined {
-    console.log('Dana language extension is now deactivated');
-    
     if (!client) {
         return undefined;
     }

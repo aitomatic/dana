@@ -131,6 +131,9 @@ class ComposedFunction(SandboxFunction):
                     resolved_func, func_type, metadata = self._function_registry.resolve(func, None)
                     if isinstance(resolved_func, SandboxFunction):
                         return resolved_func
+                    elif callable(resolved_func):
+                        # Wrap raw callables in a SandboxFunction-compatible wrapper
+                        return self._wrap_callable(resolved_func, func, context)
                 except Exception:
                     pass
 
@@ -141,6 +144,9 @@ class ComposedFunction(SandboxFunction):
                     resolved_func, func_type, metadata = interpreter.function_registry.resolve(func, None)
                     if isinstance(resolved_func, SandboxFunction):
                         return resolved_func
+                    elif callable(resolved_func):
+                        # Wrap raw callables in a SandboxFunction-compatible wrapper
+                        return self._wrap_callable(resolved_func, func, context)
                 except Exception:
                     pass
 
@@ -148,6 +154,40 @@ class ComposedFunction(SandboxFunction):
             raise SandboxError(f"Function '{func}' not found in context or function registry")
         else:
             raise SandboxError(f"Invalid function type: {type(func)}")
+
+    def _wrap_callable(self, func: callable, func_name: str, context: SandboxContext) -> SandboxFunction:
+        """Wrap a raw callable in a SandboxFunction-compatible wrapper.
+
+        Args:
+            func: The raw callable function
+            func_name: The name of the function for error reporting
+            context: The execution context
+
+        Returns:
+            A SandboxFunction-compatible wrapper
+        """
+
+        class CallableWrapper(SandboxFunction):
+            def __init__(self, wrapped_func, name, outer_context):
+                super().__init__(outer_context)
+                self.wrapped_func = wrapped_func
+                self.name = name
+
+            def execute(self, context: SandboxContext, *args, **kwargs):
+                # Use the function registry to call the function properly
+                # This ensures correct argument passing for core functions
+                interpreter = getattr(context, "_interpreter", None)
+                if interpreter and hasattr(interpreter, "function_registry"):
+                    return interpreter.function_registry.call(self.name, context, None, *args, **kwargs)
+                else:
+                    # Fallback: call directly with context as first parameter
+                    return self.wrapped_func(context, *args, **kwargs)
+
+            def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> None:
+                # No special context restoration needed for wrapped callables
+                pass
+
+        return CallableWrapper(func, func_name, context)
 
     def __repr__(self) -> str:
         """String representation of the composed function."""

@@ -34,9 +34,9 @@ class TestDanaLoggerScopeIsolation(unittest.TestCase):
         dana_logger.configure(level=logging.WARNING)
 
         # Third-party logger should retain its original level
-        assert third_party_logger.level == initial_level, (
-            f"Third-party logger level changed from {initial_level} to {third_party_logger.level}"
-        )
+        assert (
+            third_party_logger.level == initial_level
+        ), f"Third-party logger level changed from {initial_level} to {third_party_logger.level}"
 
     def test_dana_logger_affected(self):
         """Test that Dana logger properly affects Dana loggers."""
@@ -88,9 +88,9 @@ class TestDanaLoggerScopeIsolation(unittest.TestCase):
 
         # Lark loggers should retain their DEBUG levels
         for i, logger in enumerate(lark_loggers):
-            assert logger.level == original_levels[i], (
-                f"Lark logger {logger.name} level changed from {original_levels[i]} to {logger.level}"
-            )
+            assert (
+                logger.level == original_levels[i]
+            ), f"Lark logger {logger.name} level changed from {original_levels[i]} to {logger.level}"
 
 
 if __name__ == "__main__":

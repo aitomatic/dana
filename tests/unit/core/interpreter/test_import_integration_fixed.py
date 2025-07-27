@@ -202,17 +202,21 @@ class TestImportIntegrationWorking:
     def test_package_imports_working(self):
         """Test package imports in integration scenarios with working functions."""
         # Package imports using ACTUAL available functions
-        result1 = self.sandbox.eval("from utils import factorial")  # This is available
+        result1 = self.sandbox.eval("from utils.numbers import factorial")  # Updated to correct location
         assert result1.success is True
 
         result2 = self.sandbox.eval("import utils")
         assert result2.success is True
 
-        # Use package functions that actually exist
+        # Use package functions that actually exist (corrected syntax)
+        # First import what we need
+        self.sandbox.eval("from utils import get_package_info, PACKAGE_VERSION")
+        self.sandbox.eval("from utils.numbers import factorial")
+
         operations = [
             ("factorial_result = factorial(5)", 120),
-            ("package_info = utils.get_package_info()", "utils v1.0.0"),
-            ("package_version = utils.PACKAGE_VERSION", "1.0.0"),
+            ("package_info = get_package_info()", "utils v1.0.0"),
+            ("package_version = PACKAGE_VERSION", "v1.0.0"),
         ]
 
         for op, expected in operations:

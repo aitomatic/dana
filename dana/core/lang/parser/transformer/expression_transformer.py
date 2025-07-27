@@ -43,6 +43,8 @@ from dana.core.lang.ast import (
     ListLiteral,
     LiteralExpression,
     ObjectFunctionCall,
+    PipelineExpression,
+    PlaceholderExpression,
     SetLiteral,
     SliceExpression,
     SubscriptExpression,
@@ -50,7 +52,9 @@ from dana.core.lang.ast import (
     UnaryExpression,
 )
 from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
-from dana.core.lang.parser.transformer.expression.expression_helpers import OperatorHelper
+from dana.core.lang.parser.transformer.expression.expression_helpers import (
+    OperatorHelper,
+)
 
 ValidExprType = LiteralExpression | Identifier | BinaryExpression | FunctionCall
 
@@ -140,7 +144,9 @@ class ExpressionTransformer(BaseTransformer):
             | SubscriptExpression
             | AttributeAccess
             | FStringExpression
-            | UnaryExpression,
+            | UnaryExpression
+            | PlaceholderExpression
+            | PipelineExpression,
         ):
             return item
         # If it's a primitive or FStringExpression, wrap as LiteralExpression
@@ -198,6 +204,7 @@ class ExpressionTransformer(BaseTransformer):
             "and": BinaryOperator.AND,
             "or": BinaryOperator.OR,
             "in": BinaryOperator.IN,
+            "not in": BinaryOperator.NOT_IN,
             "is": BinaryOperator.IS,
             "is not": BinaryOperator.IS_NOT,
             "^": BinaryOperator.POWER,
@@ -227,12 +234,48 @@ class ExpressionTransformer(BaseTransformer):
             items = new_items
         return self._left_associative_binop(items, lambda op: BinaryOperator.AND)
 
+    def placeholder_expression(self, items):
+        """Transform placeholder expression into PlaceholderExpression AST node."""
+        return PlaceholderExpression()
+
     def pipe_expr(self, items):
-        """Transform pipe expressions into left-associative binary expressions.
+        """Transform pipe expressions into PipelineExpression AST node.
 
         pipe_expr: or_expr (PIPE or_expr)*
+
+        This method collects all expressions separated by PIPE tokens and creates
+        a PipelineExpression with the stages list. Only creates PipelineExpression
+        if there are actual PIPE tokens (at least one | operator).
         """
-        return self._left_associative_binop(items, self._get_binary_operator)
+        stages = []
+        has_pipe = False
+
+        # Check if we have any PIPE tokens
+        for item in items:
+            if isinstance(item, Token) and item.type == "PIPE":
+                has_pipe = True
+                break
+            elif str(item) == "|":
+                has_pipe = True
+                break
+
+        # Filter out PIPE tokens and collect only the expressions
+        for item in items:
+            if isinstance(item, Token) and item.type == "PIPE":
+                continue
+            elif str(item) == "|":
+                continue
+            else:
+                # This is an expression, process it
+                expr = self.expression([item])
+                stages.append(expr)
+
+        # If no PIPE tokens, return the single expression directly
+        if not has_pipe and len(stages) == 1:
+            return stages[0]
+
+        # Otherwise, create PipelineExpression
+        return PipelineExpression(stages=stages)
 
     def not_expr(self, items):
         """
@@ -400,11 +443,11 @@ class ExpressionTransformer(BaseTransformer):
             if item.data == "literal" and item.children:
                 return self.atom(item.children)
             if item.data == "true_lit":
-                return LiteralExpression(value=True)
+                return LiteralExpression(value=True, location=self.create_location(item))
             if item.data == "false_lit":
-                return LiteralExpression(value=False)
+                return LiteralExpression(value=False, location=self.create_location(item))
             if item.data == "none_lit":
-                return LiteralExpression(value=None)
+                return LiteralExpression(value=None, location=self.create_location(item))
             if item.data == "collection" and len(item.children) == 1:
                 child = item.children[0]
                 from dana.core.lang.ast import DictLiteral, SetLiteral, TupleLiteral
@@ -425,6 +468,8 @@ class ExpressionTransformer(BaseTransformer):
 
     def _atom_from_token(self, token):
         value = token.value
+        location = self.create_location(token)  # Create location from token
+
         # String literal: strip quotes
         if (
             value
@@ -443,7 +488,7 @@ class ExpressionTransformer(BaseTransformer):
                 value = value[3:-3]
             else:
                 value = value[1:-1]
-            return LiteralExpression(value=value)
+            return LiteralExpression(value=value, location=location)
         # Try to convert to int, float, bool, or None
         if value.isdigit():
             value = int(value)
@@ -457,7 +502,7 @@ class ExpressionTransformer(BaseTransformer):
                     value = False
                 elif value == "None":
                     value = None
-        return LiteralExpression(value=value)
+        return LiteralExpression(value=value, location=location)
 
     def literal(self, items):
         # Unwrap and convert all literal tokens/trees to primitives
@@ -466,7 +511,7 @@ class ExpressionTransformer(BaseTransformer):
     def identifier(self, items):
         # Should be handled by VariableTransformer, but fallback here
         if len(items) == 1 and isinstance(items[0], Token):
-            return Identifier(name=items[0].value)
+            return Identifier(name=items[0].value, location=self.create_location(items[0]))
         raise TypeError(f"Cannot transform identifier: {items}")
 
     def argument(self, items):
@@ -488,8 +533,11 @@ class ExpressionTransformer(BaseTransformer):
         kwargs = {}  # Dict of keyword arguments
 
         for arg_child in arg_children:
+            # Skip None values (from optional COMMENT tokens)
+            if arg_child is None:
+                continue
             # Check if this is a kw_arg tree
-            if hasattr(arg_child, "data") and arg_child.data == "kw_arg":
+            elif hasattr(arg_child, "data") and arg_child.data == "kw_arg":
                 # Extract keyword argument name and value
                 name = arg_child.children[0].value
                 value = self.expression([arg_child.children[1]])
@@ -636,7 +684,9 @@ class ExpressionTransformer(BaseTransformer):
                 return LiteralExpression(value)
             elif item.type == "F_STRING_TOKEN":
                 # Pass to the fstring_transformer
-                from dana.core.lang.parser.transformer.fstring_transformer import FStringTransformer
+                from dana.core.lang.parser.transformer.fstring_transformer import (
+                    FStringTransformer,
+                )
 
                 fstring_transformer = FStringTransformer()
                 return fstring_transformer.fstring([item])
@@ -751,7 +801,9 @@ class ExpressionTransformer(BaseTransformer):
             # F-string handling
             if item.type == "F_STRING_TOKEN":
                 # Pass to the FStringTransformer
-                from dana.core.lang.parser.transformer.fstring_transformer import FStringTransformer
+                from dana.core.lang.parser.transformer.fstring_transformer import (
+                    FStringTransformer,
+                )
 
                 fstring_transformer = FStringTransformer()
                 return fstring_transformer.fstring([item])

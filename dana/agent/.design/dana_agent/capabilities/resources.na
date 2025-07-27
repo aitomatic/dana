@@ -1,0 +1,8 @@
+# Knowledge stores for agent creation
+domain_patterns = VectorDBResource(index = "domain_knowledge_patterns")
+agent_templates = SqlResource(dsn = "postgres://agent_design_templates")
+knowledge_strategies = DocStoreResource(bucket = "knowledge_organization_strategies")
+capability_rules = SqlResource(dsn = "postgres://capability_mapping_rules")
+workflow_templates = DocStoreResource(bucket = "workflow_templates")
+validation_frameworks = SqlResource(dsn = "postgres://validation_frameworks")
+llm = LLMResource(model = "gpt-4") 

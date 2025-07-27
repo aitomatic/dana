@@ -1,0 +1,6 @@
+# d.na - Test Dana module for 4-component imports
+
+def very_deep_function() -> str:
+    return "Hello from very deep module!"
+
+public:VERY_DEEP_CONSTANT = "Very deep level constant" 

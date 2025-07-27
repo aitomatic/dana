@@ -5,6 +5,7 @@ import socket
 import subprocess
 import sys
 import time
+from contextlib import asynccontextmanager
 from typing import Any, cast
 
 from fastapi import FastAPI
@@ -18,9 +19,18 @@ from dana.common.mixins.loggable import Loggable
 from ..core.database import Base, engine
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Handle application startup and shutdown events"""
+    # Startup
+    Base.metadata.create_all(bind=engine)
+    yield
+    # Shutdown (if needed)
+
+
 def create_app():
     """Create FastAPI app with routers and static file serving"""
-    app = FastAPI(title="Dana API Server", version="1.0.0")
+    app = FastAPI(title="Dana API Server", version="1.0.0", lifespan=lifespan)
 
     # Add CORS middleware
     app.add_middleware(
@@ -39,14 +49,14 @@ def create_app():
     from ..routers.documents import router as new_documents_router
     from ..routers.topics import router as new_topics_router
     from ..routers.poet import router as poet_router
-    
+
     # Legacy routers (for endpoints not yet migrated)
     from .routers.api import router as api_router
     from .routers.main import router as main_router
     from .routers.agent_test import router as agent_test_router
 
     app.include_router(main_router)
-    
+
     # Use new consolidated routers
     app.include_router(agents_router, prefix="/api")
     app.include_router(new_chat_router, prefix="/api")
@@ -54,7 +64,7 @@ def create_app():
     app.include_router(new_documents_router, prefix="/api")
     app.include_router(new_topics_router, prefix="/api")
     app.include_router(poet_router, prefix="/api")
-    
+
     # Keep legacy api router for endpoints not yet migrated:
     # - /run-na-file - Run Dana files
     # - /write-files - Write multi-file projects to disk
@@ -70,11 +80,6 @@ def create_app():
     static_dir = os.path.join(os.path.dirname(__file__), "static")
     if os.path.exists(static_dir):
         app.mount("/static", StaticFiles(directory=static_dir), name="static")
-
-    # Create tables on startup
-    @app.on_event("startup")
-    def on_startup():
-        Base.metadata.create_all(bind=engine)
 
     # Catch-all route for SPA (serves index.html for all non-API, non-static routes)
     @app.get("/{full_path:path}")

@@ -1,0 +1,61 @@
+# Test compound assignment operators in Dana
+# Tests +=, -=, *=, /= operators
+
+# Basic integer compound assignments
+x = 10
+x += 5
+assert x == 15
+
+y = 20
+y -= 8
+assert y == 12
+
+z = 6
+z *= 3
+assert z == 18
+
+w = 20
+w /= 4
+assert w == 5.0
+
+# Test with expressions
+a = 10
+b = 3
+a += b * 2
+assert a == 16
+
+# Test with lists
+nums = [1, 2, 3, 4]
+nums[0] += 10
+nums[2] *= 3
+assert nums == [11, 2, 9, 4]
+
+# Test with dictionaries
+scores = {"alice": 100, "bob": 80}
+scores["alice"] += 20
+scores["bob"] -= 10
+assert scores["alice"] == 120
+assert scores["bob"] == 70
+
+# Test with strings
+msg = "Hello"
+msg += " World"
+assert msg == "Hello World"
+
+# Test in loops
+total = 0
+for i in [1, 2, 3, 4, 5]:
+    total += i
+assert total == 15
+
+# Test with floats
+f = 10.5
+f += 2.5
+assert f == 13.0
+
+# Test compound assignment returns value  
+x = 10
+x += 5
+assert x == 15
+
+print("All compound assignment tests passed!")
