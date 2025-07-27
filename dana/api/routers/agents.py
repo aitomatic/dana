@@ -42,6 +42,10 @@ from dana.api.services.domain_knowledge_service import (
     get_domain_knowledge_service,
     DomainKnowledgeService,
 )
+from dana.api.services.domain_knowledge_version_service import (
+    get_domain_knowledge_version_service,
+    DomainKnowledgeVersionService,
+)
 from dana.api.core.models import Agent, AgentChatHistory
 from datetime import datetime, timezone
 from dana.api.services.knowledge_status_manager import (
@@ -1327,4 +1331,77 @@ async def test_agent_by_id(agent_id: int, request: dict, db: Session = Depends(g
         raise
     except Exception as e:
         logger.error(f"Error testing agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{agent_id}/domain-knowledge/versions")
+async def get_domain_knowledge_versions(
+    agent_id: int,
+    db: Session = Depends(get_db),
+    version_service: DomainKnowledgeVersionService = Depends(get_domain_knowledge_version_service),
+):
+    """Get all domain knowledge versions for an agent."""
+    try:
+        # Verify agent exists
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+        
+        versions = version_service.get_versions(agent_id)
+        return {"versions": versions}
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting domain knowledge versions for agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{agent_id}/domain-knowledge/revert")
+async def revert_domain_knowledge(
+    agent_id: int,
+    request: dict,
+    db: Session = Depends(get_db),
+    version_service: DomainKnowledgeVersionService = Depends(get_domain_knowledge_version_service),
+    domain_service: DomainKnowledgeService = Depends(get_domain_knowledge_service),
+):
+    """Revert domain knowledge to a specific version."""
+    try:
+        # Verify agent exists
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+        
+        target_version = request.get("version")
+        if not target_version:
+            raise HTTPException(status_code=400, detail="Version number is required")
+        
+        # Revert to the specified version
+        reverted_tree = version_service.revert_to_version(agent_id, target_version)
+        if not reverted_tree:
+            raise HTTPException(status_code=404, detail="Version not found or revert failed")
+        
+        # Save the reverted tree as current
+        save_success = await domain_service.save_agent_domain_knowledge(
+            agent_id, reverted_tree, db, agent
+        )
+        
+        if not save_success:
+            raise HTTPException(status_code=500, detail="Failed to save reverted tree")
+        
+        # Clear cache to force RAG rebuild
+        folder_path = agent.config.get("folder_path") if agent.config else None
+        if folder_path:
+            clear_agent_cache(folder_path)
+        
+        return {
+            "success": True,
+            "message": f"Successfully reverted to version {target_version}",
+            "current_version": reverted_tree.version,
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reverting domain knowledge for agent {agent_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))

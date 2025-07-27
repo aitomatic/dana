@@ -475,6 +475,28 @@ class DomainKnowledgeUpdateResponse(BaseModel):
     error: str | None = None
 
 
+class DomainKnowledgeVersionRead(BaseModel):
+    """Read schema for domain knowledge version"""
+    id: int
+    agent_id: int
+    version: int
+    change_summary: str | None
+    change_type: str
+    created_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DomainKnowledgeVersionWithTree(DomainKnowledgeVersionRead):
+    """Domain knowledge version with tree data included"""
+    tree_data: dict[str, Any]
+
+
+class RevertDomainKnowledgeRequest(BaseModel):
+    """Request to revert domain knowledge to a specific version"""
+    version_id: int
+
+
 class ChatWithIntentRequest(BaseModel):
     """Extended chat request with intent detection"""
     message: str

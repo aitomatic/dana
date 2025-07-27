@@ -712,14 +712,27 @@ If moving existing topics, use:
             
             elif change.get("action") == "remove_node":
                 topic_to_remove = change.get("topic_to_remove")
-                print(f"  - Removing '{topic_to_remove}'")
+                preserve_children = change.get("preserve_children", True)  # Default to preserving children
+                print(f"  - Removing '{topic_to_remove}' (preserve_children: {preserve_children})")
                 
-                removed_node = self._find_and_remove_node(root_node, topic_to_remove)
-                if removed_node:
-                    changes_applied_count += 1
-                    print(f"  ✅ Removed '{topic_to_remove}'")
+                if preserve_children:
+                    removed_node, promoted_children = self._find_and_remove_node_preserve_children(root_node, topic_to_remove)
+                    if removed_node:
+                        changes_applied_count += 1
+                        if promoted_children:
+                            print(f"  ✅ Removed '{topic_to_remove}' and promoted {len(promoted_children)} children")
+                        else:
+                            print(f"  ✅ Removed '{topic_to_remove}' (no children to promote)")
+                    else:
+                        print(f"  ❌ Could not find node '{topic_to_remove}' to remove")
                 else:
-                    print(f"  ❌ Could not find node '{topic_to_remove}' to remove")
+                    # Use original method that removes children too
+                    removed_node = self._find_and_remove_node(root_node, topic_to_remove)
+                    if removed_node:
+                        changes_applied_count += 1
+                        print(f"  ✅ Removed '{topic_to_remove}' including all children")
+                    else:
+                        print(f"  ❌ Could not find node '{topic_to_remove}' to remove")
             
             else:
                 print(f"  ❌ Unknown action: {change.get('action', 'No action')}")
@@ -788,6 +801,30 @@ If moving existing topics, use:
         
         return None
 
+    def _find_and_remove_node_preserve_children(self, root: DomainNode, topic_to_find: str) -> tuple[DomainNode | None, list[DomainNode]]:
+        """
+        Find a node by topic name and remove it from its parent, but preserve its children.
+        Returns the removed node and its children that should be promoted to the parent level.
+        """
+        # Check if it's a direct child of root
+        for i, child in enumerate(root.children):
+            if child.topic == topic_to_find:
+                removed_node = root.children.pop(i)
+                children_to_promote = removed_node.children if removed_node.children else []
+                # Add the children back to the parent (root) at the same position
+                for j, promoted_child in enumerate(children_to_promote):
+                    root.children.insert(i + j, promoted_child)
+                print(f"🔄 Promoted {len(children_to_promote)} children of '{topic_to_find}' to parent level")
+                return removed_node, children_to_promote
+        
+        # Recursively search in children
+        for child in root.children:
+            removed, promoted = self._find_and_remove_node_preserve_children(child, topic_to_find)
+            if removed:
+                return removed, promoted
+        
+        return None, []
+
     def _find_topic_in_tree(self, root: DomainNode, topic_name: str) -> tuple[DomainNode | None, list[str]]:
         """
         Find a topic anywhere in the tree and return the node and its path.
@@ -830,6 +867,83 @@ If moving existing topics, use:
         """
         node, _ = self._find_topic_in_tree(root, topic_name)
         return node
+
+    async def remove_topic_from_knowledge(
+        self,
+        current_tree: DomainKnowledgeTree | None,
+        topics_to_remove: list[str],
+        agent_name: str,
+        agent_description: str,
+    ) -> DomainKnowledgeUpdateResponse:
+        """Remove topics from the knowledge tree."""
+        try:
+            print(f"🗑️ Smart remove knowledge starting...")
+            print(f"  - Topics to remove: {topics_to_remove}")
+            print(f"  - Current tree exists: {current_tree is not None}")
+            
+            if not current_tree:
+                return DomainKnowledgeUpdateResponse(
+                    success=False,
+                    error="No knowledge tree exists to remove topics from"
+                )
+            
+            if not topics_to_remove:
+                return DomainKnowledgeUpdateResponse(
+                    success=False,
+                    error="No topics specified for removal"
+                )
+            
+            # Create changes for each topic to remove
+            changes_to_apply = []
+            topics_found = []
+            topics_not_found = []
+            
+            for topic in topics_to_remove:
+                # Check if topic exists in the tree
+                existing_node = self._find_topic_in_tree_simple(current_tree.root, topic)
+                if existing_node:
+                    changes_to_apply.append({
+                        "action": "remove_node",
+                        "topic_to_remove": topic,
+                        "preserve_children": True  # Always preserve children by default
+                    })
+                    topics_found.append(topic)
+                else:
+                    topics_not_found.append(topic)
+            
+            if not topics_found:
+                return DomainKnowledgeUpdateResponse(
+                    success=False,
+                    error=f"None of the specified topics found in tree: {', '.join(topics_not_found)}"
+                )
+            
+            # Apply the removal changes using existing infrastructure
+            analysis = {
+                "success": True,
+                "changes_to_apply": changes_to_apply,
+                "changes_summary": f"Removed {', '.join(topics_found)} from knowledge tree"
+            }
+            
+            updated_tree = await self._apply_tree_changes(
+                current_tree, analysis, topics_found[0]  # Use first topic as reference
+            )
+            
+            changes_summary = f"Removed {', '.join(topics_found)}"
+            if topics_not_found:
+                changes_summary += f" (Could not find: {', '.join(topics_not_found)})"
+            
+            return DomainKnowledgeUpdateResponse(
+                success=True,
+                updated_tree=updated_tree,
+                changes_summary=changes_summary
+            )
+            
+        except Exception as e:
+            print(f"❌ Exception in remove_topic_from_knowledge: {e}")
+            return DomainKnowledgeUpdateResponse(
+                success=False,
+                error=f"Error removing topics: {str(e)}"
+            )
 
 
 def get_llm_tree_manager() -> LLMTreeManager:

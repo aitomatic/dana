@@ -118,7 +118,12 @@ class TestAgentRouter:
         data = response.json()
         assert data["name"] == "New Agent"
         assert data["description"] == "A new test agent"
-        assert data["config"] == {"model": "gpt-4", "temperature": 0.7}
+        # Check that the original config values are preserved
+        assert data["config"]["model"] == "gpt-4"
+        assert data["config"]["temperature"] == 0.7
+        # Check that folder_path was added
+        assert "folder_path" in data["config"]
+        assert data["config"]["folder_path"].startswith("agents/agent_")
         assert "id" in data
         assert isinstance(data["id"], int)
 
@@ -133,7 +138,9 @@ class TestAgentRouter:
         assert response.status_code == 200
         data = response.json()
         assert data["name"] == "Empty Config Agent"
-        assert data["config"] == {}
+        # Check that folder_path was added to empty config
+        assert "folder_path" in data["config"]
+        assert data["config"]["folder_path"].startswith("agents/agent_")
 
     def test_create_agent_complex_config(self, client, db_session):
         complex_config = {
@@ -146,6 +153,13 @@ class TestAgentRouter:
         response = client.post("/api/agents/", json=agent_data)
         assert response.status_code == 200
         data = response.json()
-        assert data["config"] == complex_config
+        # Check that all original config values are preserved
+        assert data["config"]["model"] == complex_config["model"]
+        assert data["config"]["temperature"] == complex_config["temperature"]
+        assert data["config"]["max_tokens"] == complex_config["max_tokens"]
+        assert data["config"]["nested"] == complex_config["nested"]
         assert data["config"]["nested"]["array"] == [1, 2, 3]
         assert data["config"]["nested"]["boolean"] is True
+        # Check that folder_path was added
+        assert "folder_path" in data["config"]
+        assert data["config"]["folder_path"].startswith("agents/agent_")
