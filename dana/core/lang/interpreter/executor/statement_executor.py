@@ -592,7 +592,8 @@ class StatementExecutor(BaseExecutor):
         if node.docstring:
             wrapper.__doc__ = node.docstring
 
-        # Extract and set annotations
+        # Extract type annotations from the function node's parameters and return type
+        # and set them on the wrapper function for IDE support and runtime inspection.
         annotations = self._extract_annotations(node.parameters, node.return_type)
         wrapper.__annotations__ = annotations
 
