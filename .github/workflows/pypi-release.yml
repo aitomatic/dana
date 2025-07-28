@@ -20,7 +20,10 @@ jobs:
   # First job: Test and build the package
   test-and-build:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.ref == 'release/pypi'
+    # Run on: merged PRs from release/pypi OR manual triggers (fixing missing conditions)
+    if: >
+      (github.event.pull_request.head.ref == 'release/pypi' && github.event.pull_request.merged == true) ||
+      (github.event_name == 'workflow_dispatch')
     steps:
       # Get the code from repository
       - name: Checkout code
@@ -114,7 +117,10 @@ jobs:
   # Second job: Security scanning
   security-scan:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.ref == 'release/pypi' && github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    # Run on: merged PRs from release/pypi OR manual triggers (fixing operator precedence)
+    if: >
+      (github.event.pull_request.head.ref == 'release/pypi' && github.event.pull_request.merged == true) ||
+      (github.event_name == 'workflow_dispatch')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -179,7 +185,10 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     needs: [test-and-build, security-scan]  # Only run after previous jobs succeed
-    if: github.event.pull_request.head.ref == 'release/pypi' && github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    # Run on: merged PRs from release/pypi OR manual triggers (fixing operator precedence)
+    if: >
+      (github.event.pull_request.head.ref == 'release/pypi' && github.event.pull_request.merged == true) ||
+      (github.event_name == 'workflow_dispatch')
     steps:
       # Get the built packages from artifacts
       - name: Download build artifacts
