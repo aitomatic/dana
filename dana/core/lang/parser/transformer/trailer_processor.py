@@ -19,7 +19,7 @@ from dana.core.lang.ast import (
     SubscriptExpression,
     Location,
 )
-from dana.core.lang.exceptions import SandboxError
+from dana.common.exceptions import SandboxError
 
 
 class TrailerValidationError(SandboxError):

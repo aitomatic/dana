@@ -326,7 +326,7 @@ class TestDanaStructPromptEnhancementIntegration:
         enhancer = PromptEnhancer()
 
         # Test each struct type
-        for name, fields, order in structs:
+        for name, fields, _ in structs:
             type_context = TypeContext(
                 expected_type=name, context_type=ContextType.ASSIGNMENT, confidence=1.0, source_node=None, metadata={}
             )

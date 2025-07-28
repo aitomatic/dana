@@ -12,15 +12,15 @@ repos:
     rev: v4.5.0
     hooks:
       # - id: trailing-whitespace
-      #   exclude: ^opendxa/dana/runtime/executor/(expression_evaluator|context_manager|statement_executor)\.py$
+      #   exclude: ^dana/dana/runtime/executor/(expression_evaluator|context_manager|statement_executor)\.py$
       # - id: end-of-file-fixer
-      #   exclude: ^opendxa/dana/runtime/executor/(expression_evaluator|context_manager|statement_executor)\.py$
+      #   exclude: ^dana/dana/runtime/executor/(expression_evaluator|context_manager|statement_executor)\.py$
       - id: check-yaml
         exclude: ^mkdocs\.yml$
       - id: check-added-large-files
       # - id: check-ast
       - id: check-json
-        exclude: ^opendxa/dana/runtime/executor/expression_evaluator\.py$|\.ipynb$|\.vscode/settings\.json$
+        exclude: ^dana/dana/runtime/executor/expression_evaluator\.py$|\.ipynb$|\.vscode/settings\.json$
       - id: check-merge-conflict
       - id: detect-private-key
 

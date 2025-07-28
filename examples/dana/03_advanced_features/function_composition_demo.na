@@ -1,7 +1,7 @@
 # Function Composition Demo in Dana
 #
-# This demonstrates the new function composition feature using the pipe operator (|).
-# Function composition allows creating reusable function pipelines.
+# This demonstrates the new function composition feature using declarative function definitions.
+# Function composition allows creating reusable function pipelines with clear signatures.
 #
 # Copyright © 2025 Aitomatic, Inc.
 # MIT License
@@ -42,8 +42,8 @@ def add_coding_skills(person):
 print("\n1. Basic Function Composition")
 print("-" * 30)
 
-# Create a simple composition: f = add_ten | double | stringify
-math_pipeline = add_ten | double | stringify
+# Create a simple composition using declarative syntax
+def math_pipeline(x: int) -> str = add_ten | double | stringify
 
 # Test the composed function
 result = math_pipeline(5)
@@ -55,19 +55,20 @@ print("  → stringify(30) = 'Result: 30'")
 print("\n2. Data Pipeline vs Function Composition")
 print("-" * 40)
 
-# Data pipeline: immediate execution
-immediate_result = 7 | math_pipeline
-print("7 | math_pipeline = " + str(immediate_result))
+# Data pipeline: immediate execution (using the declarative function)
+immediate_result = math_pipeline(7)
+print("math_pipeline(7) = " + str(immediate_result))
 
-# Or even more direct:
-direct_result = 3 | add_ten | double | stringify
-print("3 | add_ten | double | stringify = " + str(direct_result))
+# Or create another declarative function for direct composition
+def direct_pipeline(x: int) -> str = add_ten | double | stringify
+direct_result = direct_pipeline(3)
+print("direct_pipeline(3) = " + str(direct_result))
 
 print("\n3. Complex Data Processing Pipeline")
 print("-" * 38)
 
-# Create a person processing pipeline
-person_builder = create_person | set_age_25 | add_coding_skills
+# Create a person processing pipeline using declarative syntax
+def person_builder(name: str) -> dict = create_person | set_age_25 | add_coding_skills
 
 # Test the person builder
 alice = person_builder("Alice")
@@ -79,10 +80,10 @@ print("person_builder('Bob') = " + str(bob))
 print("\n4. Chained Function Composition")
 print("-" * 35)
 
-# Create multiple levels of composition
-step1 = add_ten | double
-step2 = step1 | stringify
-final_pipeline = step2
+# Create multiple levels of composition using declarative syntax
+def step1(x: int) -> int = add_ten | double
+def step2(x: int) -> str = step1 | stringify
+def final_pipeline(x: int) -> str = step2
 
 # Test the chained composition
 chained_result = final_pipeline(1)
@@ -107,8 +108,8 @@ def append_message(lst):
     return lst + ["processed"]
 
 
-# Create a mixed-type pipeline
-mixed_pipeline = square | to_list | append_message
+# Create a mixed-type pipeline using declarative syntax
+def mixed_pipeline(x: int) -> list = square | to_list | append_message
 
 mixed_result = mixed_pipeline(4)
 print("mixed_pipeline(4) = " + str(mixed_result))
@@ -118,9 +119,10 @@ print("  → append_message([16]) = [16, 'processed']")
 
 print("\n✅ Function Composition Demo Complete!")
 print("\nKey Features Demonstrated:")
+print("• Declarative function composition with clear signatures")
 print("• Function composition with | operator")
 print("• Left-associative evaluation")
-print("• Mixed data pipeline and function composition")
 print("• Complex data structure processing")
-print("• Immediate execution vs reusable composition")
+print("• Reusable composition with type annotations")
 print("• Multiple data types flowing through pipelines")
+print("• Better IDE support and debugging")

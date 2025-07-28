@@ -38,26 +38,18 @@ def test_agent_generation_endpoint(client):
     # Verify response structure
     assert "success" in data
     assert "dana_code" in data
-    assert "phase" in data
 
-    # Check phase-specific behavior
-    if data["phase"] == "description":
-        # Phase 1: No dana_code, but should have agent info
-        assert data["dana_code"] is None
-        assert data["agent_name"] is not None
-        assert data["agent_description"] is not None
-    else:
-        # Phase 2: Should have generated code
-        if data["success"]:
-            assert data["dana_code"] is not None
-            assert len(data["dana_code"]) > 0
+    # Since we requested phase="code_generation", we should get generated code
+    if data["success"]:
+        assert data["dana_code"] is not None
+        assert len(data["dana_code"]) > 0
 
-            # Check if it contains basic Dana structure (new agent syntax)
-            dana_code = data["dana_code"]
-            assert "agent " in dana_code
-            assert "name : str =" in dana_code
-            assert "description : str =" in dana_code
-            assert "def solve" in dana_code
+        # Check if it contains basic Dana structure (new agent syntax)
+        dana_code = data["dana_code"]
+        assert "agent " in dana_code
+        assert "name : str =" in dana_code
+        assert "description : str =" in dana_code
+        assert "def solve" in dana_code
 
 
 def test_agent_generation_endpoint_mock_mode(client, monkeypatch):
@@ -95,31 +87,23 @@ def test_agent_generation_endpoint_mock_mode(client, monkeypatch):
     # Verify response structure
     assert "success" in data
     assert "dana_code" in data
-    assert "phase" in data
 
-    # Check phase-specific behavior
-    if data["phase"] == "description":
-        # Phase 1: No dana_code, but should have agent info
-        assert data["dana_code"] is None
-        assert data["agent_name"] is not None
-        assert data["agent_description"] is not None
-    else:
-        # Phase 2: Should have generated code
-        assert data["success"] is True
-        assert data["dana_code"] is not None
-        assert len(data["dana_code"]) > 0
+    # Since we requested phase="code_generation", we should get generated code
+    assert data["success"] is True
+    assert data["dana_code"] is not None
+    assert len(data["dana_code"]) > 0
 
-        # Check if it contains weather agent structure
-        dana_code = data["dana_code"]
-        assert "Weather Information Agent" in dana_code
-        assert "agent WeatherAgent:" in dana_code
-        assert "name : str =" in dana_code
-        assert "description : str =" in dana_code
-        assert "def solve" in dana_code
+    # Check if it contains weather agent structure
+    dana_code = data["dana_code"]
+    assert "Weather Information Agent" in dana_code
+    assert "agent WeatherAgent:" in dana_code
+    assert "name : str =" in dana_code
+    assert "description : str =" in dana_code
+    assert "def solve" in dana_code
 
-        # Verify extracted name and description
-        assert data["agent_name"] == "Weather Information Agent"
-        assert "weather information" in data["agent_description"].lower()
+    # Verify extracted name and description
+    assert data["agent_name"] == "Weather Information Agent"
+    assert "weather information" in data["agent_description"].lower()
 
 
 @pytest.mark.skip(reason="Skipping test_agent_generation_with_current_code")
