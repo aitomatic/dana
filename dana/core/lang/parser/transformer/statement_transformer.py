@@ -39,6 +39,7 @@ from dana.core.lang.ast import (
     ListLiteral,
     LiteralExpression,
     Location,
+    MethodDefinition,
     Program,
     SetLiteral,
     SubscriptExpression,
@@ -311,6 +312,10 @@ class StatementTransformer(BaseTransformer):
     def function_def(self, items):
         """Transform a function definition rule into a FunctionDefinition node."""
         return self.function_definition_transformer.function_def(items)
+
+    def method_def(self, items):
+        """Transform a method definition rule into a MethodDefinition node."""
+        return self.function_definition_transformer.method_def(items)
 
     def decorators(self, items):
         """Transform decorators rule into a list of Decorator nodes."""

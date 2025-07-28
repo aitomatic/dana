@@ -5,31 +5,31 @@ Thin routing layer that delegates business logic to services.
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from dana.api.core.database import get_db
 from dana.api.core.schemas import (
-    AgentCreate,
-    AgentRead,
-    AgentGenerationRequest,
-    AgentGenerationResponse,
-    AgentDescriptionRequest,
-    AgentDescriptionResponse,
     AgentCodeGenerationRequest,
+    AgentCreate,
     AgentDeployRequest,
     AgentDeployResponse,
-    DanaSyntaxCheckRequest,
-    DanaSyntaxCheckResponse,
-    CodeValidationRequest,
-    CodeValidationResponse,
+    AgentDescriptionRequest,
+    AgentDescriptionResponse,
+    AgentGenerationRequest,
+    AgentGenerationResponse,
+    AgentRead,
     CodeFixRequest,
     CodeFixResponse,
+    CodeValidationRequest,
+    CodeValidationResponse,
+    DanaSyntaxCheckRequest,
+    DanaSyntaxCheckResponse,
     ProcessAgentDocumentsRequest,
     ProcessAgentDocumentsResponse,
 )
-from dana.api.services.agent_service import get_agent_service, AgentService
-from dana.api.services.agent_manager import get_agent_manager, AgentManager
+from dana.api.services.agent_manager import AgentManager, get_agent_manager
+from dana.api.services.agent_service import AgentService, get_agent_service
 
 logger = logging.getLogger(__name__)
 
@@ -54,35 +54,59 @@ async def generate_agent(request: AgentGenerationRequest, agent_service=Depends(
         # Convert messages to dict format
         messages = [{"role": msg.role, "content": msg.content} for msg in request.messages]
 
-        # Generate agent code using service
-        dana_code, error, conversation_analysis, multi_file_project = await agent_service.generate_agent_code(
-            messages=messages, current_code=request.current_code or "", multi_file=request.multi_file
-        )
+        # Check the phase and handle accordingly
+        if request.phase == "description":
+            # Phase 1: Focus on description refinement, don't generate code
+            conversation_analysis = await agent_service.analyze_conversation_completeness(messages)
 
-        if error:
-            logger.error(f"Error in agent generation: {error}")
-            return AgentGenerationResponse(success=False, error=error)
+            # Extract basic agent info from conversation
+            agent_name = "Generated Agent"  # Default name
+            agent_description = "A generated agent based on your requirements"  # Default description
 
-        # Analyze agent capabilities
-        capabilities = await agent_service.analyze_agent_capabilities(
-            dana_code=dana_code, messages=messages, multi_file_project=multi_file_project
-        )
+            return AgentGenerationResponse(
+                success=True,
+                dana_code=None,  # No code in description phase
+                agent_name=agent_name,
+                agent_description=agent_description,
+                capabilities=None,
+                multi_file_project=None,
+                needs_more_info=conversation_analysis.get("needs_more_info", False),
+                follow_up_message=conversation_analysis.get("follow_up_message"),
+                suggested_questions=conversation_analysis.get("suggested_questions", []),
+                phase="description",
+                ready_for_code_generation=False,
+            )
+        else:
+            # Phase 2: Generate actual code
+            dana_code, error, conversation_analysis, multi_file_project = await agent_service.generate_agent_code(
+                messages=messages, current_code=request.current_code or "", multi_file=request.multi_file
+            )
 
-        # Extract agent name and description from generated code
-        agent_name, agent_description = _extract_agent_info_from_code(dana_code)
+            if error:
+                logger.error(f"Error in agent generation: {error}")
+                return AgentGenerationResponse(success=False, error=error)
 
-        return AgentGenerationResponse(
-            success=True,
-            dana_code=dana_code,
-            agent_name=agent_name,
-            agent_description=agent_description,
-            capabilities=capabilities,
-            multi_file_project=multi_file_project,
-            needs_more_info=conversation_analysis.get("needs_more_info", False),
-            follow_up_message=conversation_analysis.get("follow_up_message"),
-            suggested_questions=conversation_analysis.get("suggested_questions", []),
-            phase="code_generation",  # This endpoint always generates code
-        )
+            # Analyze agent capabilities
+            capabilities = await agent_service.analyze_agent_capabilities(
+                dana_code=dana_code, messages=messages, multi_file_project=multi_file_project
+            )
+
+            # Extract agent name and description from generated code
+            agent_name, agent_description = _extract_agent_info_from_code(dana_code)
+
+            return AgentGenerationResponse(
+                success=True,
+                dana_code=dana_code,
+                agent_name=agent_name,
+                agent_description=agent_description,
+                capabilities=capabilities,
+                multi_file_project=multi_file_project,
+                needs_more_info=conversation_analysis.get("needs_more_info", False),
+                follow_up_message=conversation_analysis.get("follow_up_message"),
+                suggested_questions=conversation_analysis.get("suggested_questions", []),
+                phase="code_generation",
+                ready_for_code_generation=True,
+            )
 
     except Exception as e:
         logger.error(f"Error in agent generation endpoint: {e}")

@@ -26,6 +26,7 @@ from dana.core.lang.ast import (
     FStringExpression,
     FunctionCall,
     FunctionDefinition,
+    MethodDefinition,
 )
 from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
 from dana.core.lang.interpreter.executor.function_error_handling import (
@@ -68,6 +69,7 @@ class FunctionExecutor(BaseExecutor):
         """Register handlers for function-related node types."""
         self._handlers = {
             FunctionDefinition: self.execute_function_definition,
+            MethodDefinition: self.execute_method_definition,
             FunctionCall: self.execute_function_call,
         }
 
@@ -136,6 +138,85 @@ class FunctionExecutor(BaseExecutor):
             # No decorators, store the DanaFunction as usual
             context.set(f"local:{node.name.name}", dana_func)
             return dana_func
+
+    def execute_method_definition(self, node: MethodDefinition, context: SandboxContext) -> Any:
+        """Execute a method definition and register it in the method registry.
+
+        Args:
+            node: The method definition to execute
+            context: The execution context
+
+        Returns:
+            The defined method
+        """
+        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+        from dana.core.lang.interpreter.struct_system import MethodRegistry, StructTypeRegistry
+
+        # Extract receiver type(s) from the receiver parameter
+        receiver_param = node.receiver
+        receiver_type_str = receiver_param.type_hint.name if receiver_param.type_hint else None
+        
+        if not receiver_type_str:
+            raise SandboxError("Method definition requires typed receiver parameter")
+
+        # Parse union types (e.g., "Point | Circle | Rectangle")
+        # Handle spaces around pipe symbols
+        receiver_types = [t.strip() for t in receiver_type_str.split("|") if t.strip()]
+        
+        # Validate that all receiver types exist
+        for type_name in receiver_types:
+            if not StructTypeRegistry.exists(type_name):
+                raise SandboxError(f"Unknown struct type '{type_name}' in method receiver")
+
+        # Extract parameter names (excluding receiver)
+        param_names = []
+        param_defaults = {}
+        for param in node.parameters:
+            if hasattr(param, "name"):
+                param_name = param.name
+                param_names.append(param_name)
+                
+                # Extract default value if present
+                if hasattr(param, "default_value") and param.default_value is not None:
+                    try:
+                        default_value = self._evaluate_expression(param.default_value, context)
+                        param_defaults[param_name] = default_value
+                    except Exception as e:
+                        self.debug(f"Failed to evaluate default value for parameter {param_name}: {e}")
+
+        # Extract return type if present
+        return_type = None
+        if hasattr(node, "return_type") and node.return_type is not None:
+            if hasattr(node.return_type, "name"):
+                return_type = node.return_type.name
+            else:
+                return_type = str(node.return_type)
+
+        # Create the DanaFunction with receiver as the first parameter
+        all_params = [receiver_param.name] + param_names
+        dana_func = DanaFunction(
+            body=node.body,
+            parameters=all_params,
+            context=context,
+            return_type=return_type,
+            defaults=param_defaults,
+            name=node.name.name
+        )
+
+        # Apply decorators if present
+        if node.decorators:
+            wrapped_func = self._apply_decorators(dana_func, node.decorators, context)
+            final_func = wrapped_func
+        else:
+            final_func = dana_func
+
+        # Register the method with all receiver types
+        MethodRegistry.register_method(receiver_types, node.name.name, final_func)
+        
+        # Also store in context for direct access
+        context.set(f"local:{node.name.name}", final_func)
+        
+        return final_func
 
     def _apply_decorators(self, func, decorators, context):
         """Apply decorators to a function, handling both simple and parameterized decorators."""
