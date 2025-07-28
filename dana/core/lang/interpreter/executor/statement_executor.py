@@ -31,6 +31,7 @@ from dana.core.lang.ast import (
     FunctionDefinition,
     ImportFromStatement,
     ImportStatement,
+    MethodDefinition,
     PassStatement,
     RaiseStatement,
     StructDefinition,
@@ -86,6 +87,7 @@ class StatementExecutor(BaseExecutor):
             CompoundAssignment: self.execute_compound_assignment,
             AssertStatement: self.execute_assert_statement,
             FunctionDefinition: self.execute_function_definition,
+            MethodDefinition: self.execute_method_definition,
             ImportFromStatement: self.execute_import_from_statement,
             ImportStatement: self.execute_import_statement,
             PassStatement: self.execute_pass_statement,
@@ -515,3 +517,30 @@ class StatementExecutor(BaseExecutor):
         self.debug(f"Routing function definition '{node.name.name}' to agent handler")
         result = self.agent_handler.execute_function_definition(node, context)
         return result
+
+    def execute_method_definition(self, node: "MethodDefinition", context: SandboxContext) -> Any:
+        """Execute a method definition with explicit receiver.
+
+        Args:
+            node: The method definition to execute
+            context: The execution context
+
+        Returns:
+            The defined method
+        """
+        # Delegate to function executor which handles method registration
+        if hasattr(self.parent, "_function_executor"):
+            return self.parent._function_executor.execute_method_definition(node, context)
+        else:
+            # Fallback: treat as a regular function definition by creating a FunctionDefinition node
+            # This is for compatibility if the function executor is not available
+            from dana.core.lang.ast import FunctionDefinition, Identifier
+            func_def = FunctionDefinition(
+                name=node.name,
+                parameters=[node.receiver] + node.parameters,
+                body=node.body,
+                return_type=node.return_type,
+                decorators=node.decorators,
+                location=node.location
+            )
+            return self.execute_function_definition(func_def, context)

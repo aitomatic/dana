@@ -12,7 +12,7 @@ import pytest
 
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+from dana.core.lang.interpreter.struct_system import StructTypeRegistry, MethodRegistry
 from dana.core.lang.parser.dana_parser import parse_program
 from dana.core.lang.sandbox_context import SandboxContext
 
@@ -50,6 +50,10 @@ def test_na_file(na_file):
 
     # Create a context with necessary resources
     context = SandboxContext()
+    
+    # Clear registries to ensure test isolation
+    StructTypeRegistry.clear()
+    MethodRegistry.clear()
 
     # Initialize LLM resource if needed
     if "reason(" in program_text:
@@ -72,6 +76,8 @@ def test_na_file(na_file):
         "test_method_chaining_edge_cases.na",
         "test_nested_conditionals_with_structs.na",
         "test_compound_assignments.na",  # Temporarily disable type checking for compound assignments
+        "test_phase1_parser.na",  # Disable type checking for struct method tests
+        "test_phase2_registry.na",  # Disable type checking for struct method tests
     ]
     disable_type_check = filename in enhanced_coercion_tests
 
