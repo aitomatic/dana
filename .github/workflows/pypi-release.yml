@@ -114,7 +114,7 @@ jobs:
   # Second job: Security scanning
   security-scan:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.ref == 'release/pypi' && github.event.pull_request.merged == true
+    if: github.event.pull_request.head.ref == 'release/pypi' && github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
