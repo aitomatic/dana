@@ -11,7 +11,7 @@ from dana.integrations.python.to_dana import dana as dana_module
 from .common import DANA_LOGGER
 from .core import DanaInterpreter, DanaParser, DanaSandbox
 
-__version__ = version("dana-agent")
+__version__ = version("dana")
 
 __all__ = [
     "DanaParser",
