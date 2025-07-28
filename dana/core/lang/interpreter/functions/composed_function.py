@@ -183,8 +183,9 @@ class ComposedFunction(SandboxFunction):
                 self.name = name
 
             def execute(self, context: SandboxContext, *args, **kwargs):
-                # For wrapped callables, call directly without going through function registry
-                # The function registry is for named functions, not wrapped callables
+                # For wrapped callables, call directly without going through the function registry.
+                # The function registry is designed for named functions that require context management,
+                # but wrapped callables are simple functions that do not need such handling.
                 return self.wrapped_func(*args, **kwargs)
 
             def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> None:
