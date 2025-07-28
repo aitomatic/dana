@@ -207,6 +207,8 @@ class AssignmentTransformer(BaseTransformer):
 
         # Transform using the expression transformer
         # Note: Grammar now restricts to function composition expressions only
+        if not hasattr(self, "expression_transformer") or self.expression_transformer is None:
+            raise AttributeError("The 'expression_transformer' attribute is not initialized.")
         composition = self.expression_transformer.expression([composition_tree])
         return composition
 
