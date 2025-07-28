@@ -1,0 +1,228 @@
+# Demonstration of Objective-Driven State Machine with POET Architecture
+
+import "objective_driven_agent.na"
+import "data_structures.na"
+
+# Example usage of the objective-driven state machine
+
+# Create an instance of our objective-driven agent
+agent = ObjectiveDrivenAgent()
+
+# Example 1: Solve a manufacturing problem using the state machine
+def demo_manufacturing_problem():
+    """Demonstrate solving a manufacturing problem with objective-driven state machine"""
+    
+    # Define a manufacturing problem
+    problem = ManufacturingProblem(
+        problem_type="quality_degradation",
+        description="Yield has dropped from 95% to 87% over the last week",
+        affected_equipment=["RIE_Chamber_01", "CVD_Chamber_02"],
+        urgency="high",
+        constraints={
+            "max_downtime": 2,  # hours
+            "quality_threshold": 0.90,
+            "cost_budget": 50000
+        }
+    )
+    
+    print("=== Manufacturing Problem Analysis ===")
+    print(f"Problem: {problem.description}")
+    print(f"Affected Equipment: {problem.affected_equipment}")
+    print(f"Urgency: {problem.urgency}")
+    
+    # Solve using objective-driven state machine
+    solution = solve(agent, problem)
+    
+    print("\n=== Solution Results ===")
+    print(f"Status: {solution.status}")
+    print(f"Recommendations: {solution.recommendations}")
+    print(f"Expected Improvements: {solution.expected_improvements}")
+    
+    if solution.risks:
+        print(f"Risks: {solution.risks}")
+    
+    return solution
+
+# Example 2: Direct state machine execution with process data
+def demo_direct_state_machine():
+    """Demonstrate direct state machine execution with process data"""
+    
+    # Create sample process data
+    process_data = ProcessData(
+        timestamp="2024-01-22T10:00:00Z",
+        equipment_id="RIE_Chamber_01",
+        parameters={
+            "temperature": [450, 455, 460, 465, 470, 475, 480, 485, 490, 495],
+            "pressure": [45, 46, 47, 48, 49, 50, 51, 52, 53, 54],
+            "flow_rate": [100, 102, 104, 106, 108, 110, 112, 114, 116, 118]
+        },
+        measurements={
+            "etch_rate": [50, 51, 52, 53, 54, 55, 56, 57, 58, 59],
+            "uniformity": [0.95, 0.94, 0.93, 0.92, 0.91, 0.90, 0.89, 0.88, 0.87, 0.86]
+        },
+        quality_metrics={
+            "yield": [0.95, 0.94, 0.93, 0.92, 0.91, 0.90, 0.89, 0.88, 0.87, 0.86],
+            "defect_rate": [0.05, 0.06, 0.07, 0.08, 0.09, 0.10, 0.11, 0.12, 0.13, 0.14]
+        }
+    )
+    
+    print("=== Direct State Machine Execution ===")
+    print(f"Equipment: {process_data.equipment_id}")
+    print(f"Timestamp: {process_data.timestamp}")
+    
+    # Execute the state machine directly
+    execution_result = execute_state_machine(agent, process_data)
+    
+    print("\n=== Execution Results ===")
+    print(f"Success: {execution_result.success}")
+    print(f"Final State: {execution_result.final_state}")
+    print(f"Execution Time: {execution_result.execution_time}")
+    
+    # Show detailed results for each phase
+    for phase_name, phase_result in execution_result.results.items():
+        print(f"\n--- {phase_name.upper()} Phase ---")
+        if hasattr(phase_result, "confidence"):
+            print(f"Confidence: {phase_result.confidence}")
+        if hasattr(phase_result, "patterns"):
+            print(f"Patterns Found: {len(phase_result.patterns)}")
+        if hasattr(phase_result, "anomalies"):
+            print(f"Anomalies Found: {len(phase_result.anomalies)}")
+        if hasattr(phase_result, "root_causes"):
+            print(f"Root Causes: {len(phase_result.root_causes)}")
+        if hasattr(phase_result, "is_safe"):
+            print(f"Safe: {phase_result.is_safe}")
+            print(f"Effective: {phase_result.is_effective}")
+    
+    return execution_result
+
+# Example 3: Individual function execution with objectives
+def demo_individual_functions():
+    """Demonstrate individual objective-driven function execution"""
+    
+    # Create sample data
+    data = ProcessData(
+        timestamp="2024-01-22T10:00:00Z",
+        equipment_id="CVD_Chamber_02",
+        parameters={
+            "temperature": [600, 605, 610, 615, 620, 625, 630, 635, 640, 645],
+            "pressure": [30, 31, 32, 33, 34, 35, 36, 37, 38, 39]
+        },
+        measurements={
+            "deposition_rate": [100, 102, 104, 106, 108, 110, 112, 114, 116, 118]
+        },
+        quality_metrics={
+            "thickness_uniformity": [0.98, 0.97, 0.96, 0.95, 0.94, 0.93, 0.92, 0.91, 0.90, 0.89]
+        }
+    )
+    
+    print("=== Individual Function Execution ===")
+    
+    # Execute analysis phase with objective
+    print("\n1. Analysis Phase (Objective: analyze_process_data, Optimize for: accuracy)")
+    analysis = analyze_process_data(agent, data)
+    print(f"   Patterns Found: {len(analysis.patterns)}")
+    print(f"   Anomalies Found: {len(analysis.anomalies)}")
+    print(f"   Trends Found: {len(analysis.trends)}")
+    print(f"   Confidence: {analysis.confidence}")
+    
+    # Execute diagnosis phase with objective
+    print("\n2. Diagnosis Phase (Objective: diagnose_root_causes, Optimize for: speed)")
+    diagnosis = diagnose_root_causes(agent, analysis)
+    print(f"   Root Causes: {len(diagnosis.root_causes)}")
+    print(f"   Severity: {diagnosis.severity}")
+    print(f"   Recommendations: {len(diagnosis.recommendations)}")
+    
+    # Execute optimization phase with objective
+    print("\n3. Optimization Phase (Objective: optimize_process_parameters, Optimize for: efficiency)")
+    optimization = optimize_process_parameters(agent, diagnosis)
+    print(f"   Current Parameters: {len(optimization.current_parameters)}")
+    print(f"   Optimized Parameters: {len(optimization.optimized_parameters)}")
+    print(f"   Expected Improvements: {len(optimization.expected_improvement)}")
+    
+    # Execute validation phase with objective
+    print("\n4. Validation Phase (Objective: validate_optimization, Optimize for: reliability)")
+    validation = validate_optimization(agent, optimization)
+    print(f"   Safe: {validation.is_safe}")
+    print(f"   Effective: {validation.is_effective}")
+    print(f"   Risks: {len(validation.risks)}")
+    print(f"   Benefits: {len(validation.benefits)}")
+    
+    return {
+        "analysis": analysis,
+        "diagnosis": diagnosis,
+        "optimization": optimization,
+        "validation": validation
+    }
+
+# Example 4: State machine with feedback loop
+def demo_feedback_loop():
+    """Demonstrate state machine with feedback and learning"""
+    
+    # Initial problem
+    problem = ManufacturingProblem(
+        problem_type="process_instability",
+        description="Process parameters are fluctuating beyond acceptable ranges",
+        affected_equipment=["RIE_Chamber_01"],
+        urgency="medium",
+        constraints={"stability_threshold": 0.02}
+    )
+    
+    print("=== Feedback Loop Demonstration ===")
+    
+    # First iteration
+    print("\n--- Iteration 1 ---")
+    solution1 = solve(agent, problem)
+    print(f"Status: {solution1.status}")
+    
+    # Simulate feedback (in real system, this would come from production)
+    if solution1.status == "resolved":
+        print("✅ Solution implemented successfully")
+        # Update problem with new constraints based on learnings
+        problem.constraints["stability_threshold"] = 0.015  # Tighter constraint
+    else:
+        print("⚠️ Solution requires refinement")
+        # Adjust problem description based on learnings
+        problem.description = "Process parameters are fluctuating beyond acceptable ranges - refined analysis needed"
+    
+    # Second iteration with learnings
+    print("\n--- Iteration 2 (with learnings) ---")
+    solution2 = solve(agent, problem)
+    print(f"Status: {solution2.status}")
+    
+    return [solution1, solution2]
+
+# Main demonstration function
+def run_all_demos():
+    """Run all demonstration examples"""
+    
+    print("🚀 Objective-Driven State Machine with POET Architecture")
+    print("=" * 60)
+    
+    # Demo 1: Manufacturing problem solving
+    print("\n" + "="*60)
+    demo_manufacturing_problem()
+    
+    # Demo 2: Direct state machine execution
+    print("\n" + "="*60)
+    demo_direct_state_machine()
+    
+    # Demo 3: Individual function execution
+    print("\n" + "="*60)
+    demo_individual_functions()
+    
+    # Demo 4: Feedback loop
+    print("\n" + "="*60)
+    demo_feedback_loop()
+    
+    print("\n" + "="*60)
+    print("✅ All demonstrations completed successfully!")
+    print("\nKey Benefits of Objective-Driven State Machine:")
+    print("• Each function has explicit objectives and optimization targets")
+    print("• POET provides P→O→E→T pipeline for reliability")
+    print("• State transitions are clear and traceable")
+    print("• Feedback loops enable continuous improvement")
+    print("• Domain-specific intelligence through POET plugins")
+
+# Run the demonstrations
+if __name__ == "__main__":
+    run_all_demos() 

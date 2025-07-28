@@ -1,0 +1,31 @@
+# Context-Aware Development - Component Guidelines
+
+## When Working on Dana Code
+
+- **Prefer creating `.na` test files** over `.py` for Dana functionality
+- Always test with `.na` files in `examples/dana/`
+- Use Dana runtime for execution testing
+- Validate against grammar in `dana/core/lang/parser/dana_grammar.lark`
+- **Use `print()` for examples/testing output** (preferred for visibility)
+- Test Dana code in REPL: `uv run python -m dana.core.repl.repl`
+- Check AST output: Enable debug logging in transformer
+- Execute `.na` files: `dana filename.na` or `uv run python -m dana.core.repl.dana filename.na`
+
+## When Working on Agent Framework
+
+- Test with agent examples in `examples/02_core_concepts/`
+- Use capability mixins from `dana/frameworks/agent/capability/`
+- Follow resource patterns in `dana/common/resource/`
+
+## When Working on Common Utilities
+
+- Keep utilities generic and reusable
+- Document performance implications
+- Use appropriate design patterns
+- Implement proper error handling
+
+## Common Tasks Quick Guide
+
+- **Adding new Dana function**: See `dana/core/stdlib/`
+- **Creating agent capability**: Inherit from `dana/frameworks/agent/capability/`
+- **Adding LLM integration**: Use `dana/integrations/llm/`

@@ -188,43 +188,4 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
-          skip-existing: true  # Skip files that already exist on PyPI
-
-  # Fourth job: Create GitHub release
-  # release:
-  #   runs-on: ubuntu-latest
-  #   needs: publish  # Only run after successful PyPI publish
-  #   permissions:
-  #     contents: write  # Needed for creating releases
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-        
-  #     # Extract version from pyproject.toml
-  #     - name: Get version
-  #       id: version
-  #       run: |
-  #         VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
-  #         echo "version=$VERSION" >> $GITHUB_OUTPUT
-          
-  #     # Create GitHub release with installation instructions
-  #     - name: Create Release
-  #       uses: actions/create-release@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         tag_name: v${{ steps.version.outputs.version }}
-  #         release_name: v${{ steps.version.outputs.version }}
-  #         body: |
-  #           ## Dana Agent v${{ steps.version.outputs.version }}
-            
-  #           📦 **Installation:**
-  #           ```bash
-  #           pip install dana-agent==${{ steps.version.outputs.version }}
-  #           ```
-            
-  #           🔗 **Links:**
-  #           - [PyPI Package](https://pypi.org/project/dana-agent/${{ steps.version.outputs.version }}/)
-  #           - [GitHub Repository](https://github.com/${{ github.repository }})
-  #         draft: false
-  #         prerelease: false 
+          skip-existing: true  # Skip files that already exist on PyPI 

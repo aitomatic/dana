@@ -226,7 +226,7 @@ def enhanced_{func_info.name}{signature}:
     \"\"\"
     import time
     import uuid
-    from dana.frameworks.poet.types import POETResult
+    from ..core.types import POETResult
     
     # Generate execution ID for tracking
     execution_id = str(uuid.uuid4())

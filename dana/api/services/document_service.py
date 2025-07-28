@@ -6,7 +6,7 @@ This module provides business logic for document management and processing.
 
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 import uuid
 from typing import BinaryIO
 
@@ -32,8 +32,7 @@ class DocumentService:
         os.makedirs(upload_directory, exist_ok=True)
 
     async def upload_document(
-        self, file: BinaryIO, filename: str, topic_id: int | None = None, 
-        agent_id: int | None = None, db_session=None
+        self, file: BinaryIO, filename: str, topic_id: int | None = None, agent_id: int | None = None, db_session=None
     ) -> DocumentRead:
         """
         Upload and store a document.
@@ -64,11 +63,7 @@ class DocumentService:
             mime_type = self._get_mime_type(filename)
 
             # Create document record
-            document_data = DocumentCreate(
-                original_filename=filename,
-                topic_id=topic_id,
-                agent_id=agent_id
-            )
+            document_data = DocumentCreate(original_filename=filename, topic_id=topic_id, agent_id=agent_id)
 
             document = Document(
                 filename=unique_filename,
@@ -77,7 +72,7 @@ class DocumentService:
                 file_size=file_size,
                 mime_type=mime_type,
                 topic_id=document_data.topic_id,
-                agent_id=document_data.agent_id
+                agent_id=document_data.agent_id,
             )
 
             if db_session:
@@ -94,7 +89,7 @@ class DocumentService:
                 topic_id=document.topic_id,
                 agent_id=document.agent_id,
                 created_at=document.created_at,
-                updated_at=document.updated_at
+                updated_at=document.updated_at,
             )
 
         except Exception as e:
@@ -126,16 +121,14 @@ class DocumentService:
                 topic_id=document.topic_id,
                 agent_id=document.agent_id,
                 created_at=document.created_at,
-                updated_at=document.updated_at
+                updated_at=document.updated_at,
             )
 
         except Exception as e:
             logger.error(f"Error getting document {document_id}: {e}")
             raise
 
-    async def update_document(
-        self, document_id: int, document_data: DocumentUpdate, db_session
-    ) -> DocumentRead | None:
+    async def update_document(self, document_id: int, document_data: DocumentUpdate, db_session) -> DocumentRead | None:
         """
         Update a document.
 
@@ -161,7 +154,7 @@ class DocumentService:
                 document.agent_id = document_data.agent_id
 
             # Update timestamp
-            document.updated_at = datetime.now(timezone.utc)
+            document.updated_at = datetime.now(UTC)
 
             db_session.commit()
             db_session.refresh(document)
@@ -175,7 +168,7 @@ class DocumentService:
                 topic_id=document.topic_id,
                 agent_id=document.agent_id,
                 created_at=document.created_at,
-                updated_at=document.updated_at
+                updated_at=document.updated_at,
             )
 
         except Exception as e:
@@ -200,6 +193,7 @@ class DocumentService:
 
             # Delete file from disk
             import os
+
             if document.file_path and os.path.exists(document.file_path):
                 os.remove(document.file_path)
 
@@ -214,8 +208,7 @@ class DocumentService:
             raise
 
     async def list_documents(
-        self, topic_id: int | None = None, agent_id: int | None = None, 
-        limit: int = 100, offset: int = 0, db_session=None
+        self, topic_id: int | None = None, agent_id: int | None = None, limit: int = 100, offset: int = 0, db_session=None
     ) -> list[DocumentRead]:
         """
         List documents with optional filtering.
@@ -250,7 +243,7 @@ class DocumentService:
                     topic_id=doc.topic_id,
                     agent_id=doc.agent_id,
                     created_at=doc.created_at,
-                    updated_at=doc.updated_at
+                    updated_at=doc.updated_at,
                 )
                 for doc in documents
             ]
@@ -292,23 +285,23 @@ class DocumentService:
             MIME type string
         """
         extension = os.path.splitext(filename)[1].lower()
-        
+
         mime_map = {
-            '.pdf': 'application/pdf',
-            '.txt': 'text/plain',
-            '.md': 'text/markdown',
-            '.doc': 'application/msword',
-            '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg',
-            '.png': 'image/png',
-            '.gif': 'image/gif',
-            '.csv': 'text/csv',
-            '.json': 'application/json',
-            '.xml': 'application/xml',
+            ".pdf": "application/pdf",
+            ".txt": "text/plain",
+            ".md": "text/markdown",
+            ".doc": "application/msword",
+            ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".png": "image/png",
+            ".gif": "image/gif",
+            ".csv": "text/csv",
+            ".json": "application/json",
+            ".xml": "application/xml",
         }
-        
-        return mime_map.get(extension, 'application/octet-stream')
+
+        return mime_map.get(extension, "application/octet-stream")
 
 
 # Global service instance

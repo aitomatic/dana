@@ -1,7 +1,6 @@
 """Integration tests for the API server."""
 
 
-
 # Use the global client fixture from conftest.py
 
 

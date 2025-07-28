@@ -26,6 +26,7 @@ from dana.core.lang.ast import (
     AgentStatement,
     AssertStatement,
     Assignment,
+    CompoundAssignment,
     ExportStatement,
     FunctionDefinition,
     ImportFromStatement,
@@ -82,6 +83,7 @@ class StatementExecutor(BaseExecutor):
             AgentStatement: self.execute_agent_statement,
             AgentPoolStatement: self.execute_agent_pool_statement,
             Assignment: self.execute_assignment,
+            CompoundAssignment: self.execute_compound_assignment,
             AssertStatement: self.execute_assert_statement,
             FunctionDefinition: self.execute_function_definition,
             ImportFromStatement: self.execute_import_from_statement,
@@ -105,6 +107,18 @@ class StatementExecutor(BaseExecutor):
         """
         return self.assignment_handler.execute_assignment(node, context)
 
+    def execute_compound_assignment(self, node: CompoundAssignment, context: SandboxContext) -> Any:
+        """Execute a compound assignment statement (e.g., x += 1).
+
+        Args:
+            node: The compound assignment to execute
+            context: The execution context
+
+        Returns:
+            The assigned value
+        """
+        return self.assignment_handler.execute_compound_assignment(node, context)
+
     def execute_assert_statement(self, node: AssertStatement, context: SandboxContext) -> None:
         """Execute an assert statement using optimized handler.
 
@@ -119,65 +133,6 @@ class StatementExecutor(BaseExecutor):
             AssertionError: If assertion fails
         """
         return self.statement_utils.execute_assert_statement(node, context)
-
-    def _resolve_relative_import(self, module_name: str, context: SandboxContext) -> str:
-        """Resolve relative import to absolute module name.
-
-        Args:
-            module_name: Module name (may start with dots for relative imports)
-            context: The execution context
-
-        Returns:
-            Absolute module name
-
-        Raises:
-            ImportError: If relative import cannot be resolved
-        """
-        if not module_name.startswith("."):
-            # Not a relative import
-            return module_name
-
-        # Get the current module's package name
-        current_module_name = getattr(context, "_current_module", None)
-        if not current_module_name:
-            raise ImportError("Attempted relative import with no current module")
-
-        # Count leading dots to determine the level
-        level = 0
-        for char in module_name:
-            if char == ".":
-                level += 1
-            else:
-                break
-
-        # Get the remaining module path after dots
-        remaining_path = module_name[level:]
-
-        # Split current module into package components
-        if "." in current_module_name:
-            current_package = current_module_name.rsplit(".", 1)[0]
-            package_parts = current_package.split(".")
-        else:
-            # Current module is a top-level module, can't do relative imports
-            raise ImportError(f"Attempted relative import from top-level module: {current_module_name}")
-
-        # Go up the package hierarchy based on the level
-        if level > len(package_parts):
-            raise ImportError(f"Attempted relative import beyond top-level package: {module_name}")
-
-        # Calculate target package
-        if level == 1:
-            # from .module - same package
-            target_package = ".".join(package_parts)
-        else:
-            # from ..module or ...module - go up levels
-            target_package = ".".join(package_parts[: -level + 1])
-
-        # Build final absolute module name
-        if remaining_path:
-            return f"{target_package}.{remaining_path}" if target_package else remaining_path
-        else:
-            return target_package
 
     def _execute_python_import(self, module_name: str, context_name: str, context: SandboxContext) -> None:
         """Execute import of a Python module (.py extension required).

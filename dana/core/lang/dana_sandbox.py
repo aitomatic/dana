@@ -21,7 +21,8 @@ from dana.common.resource.llm.llm_resource import LLMResource
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.frameworks.poet.client import POETClient, set_default_client
+
+# from dana.frameworks.poet.core.client import POETClient, set_default_client  # Removed for KISS
 
 
 @dataclass
@@ -65,19 +66,21 @@ class DanaSandbox(Loggable):
     _resource_users = 0  # Count of instances using shared resources
     _pool_lock = None  # Will be initialized as threading.Lock() when needed
 
-    def __init__(self, debug_mode: bool = False, context: SandboxContext | None = None):
+    def __init__(self, debug_mode: bool = False, context: SandboxContext | None = None, module_search_paths: list[str] | None = None):
         """
         Initialize a Dana sandbox.
 
         Args:
             debug_mode: Enable debug logging
             context: Optional custom context (creates default if None)
+            module_search_paths: Optional list of paths to search for modules
         """
         super().__init__()  # Initialize Loggable
         self.debug_mode = debug_mode
         self._context = context or self._create_default_context()
         self._interpreter = DanaInterpreter()
         self._parser = ParserCache.get_parser("dana")
+        self._module_search_paths = module_search_paths
 
         # Set interpreter in context
         self._context.interpreter = self._interpreter
@@ -136,9 +139,9 @@ class DanaSandbox(Loggable):
             self._context.set("system:llm_resource", self._llm_resource)
 
             # Register started APIClient as default POET client
-            poet_client = POETClient.__new__(POETClient)  # Create without calling __init__
-            poet_client.api = self._api_client  # Use our started APIClient
-            set_default_client(poet_client)
+            # poet_client = POETClient.__new__(POETClient)  # Create without calling __init__
+            # poet_client.api = self._api_client  # Use our started APIClient
+            # set_default_client(poet_client)
 
             self._initialized = True
             self.debug("DanaSandbox resources ready")
@@ -178,6 +181,14 @@ class DanaSandbox(Loggable):
         # Initialize LLM resource
         self._llm_resource = LLMResource()
         self._llm_resource.startup()
+
+        # Initialize module system
+        from dana.core.runtime.modules.core import initialize_module_system
+
+        if self._module_search_paths is not None:
+            initialize_module_system(self._module_search_paths)
+        else:
+            initialize_module_system()
 
         self._using_shared = False
 
@@ -345,7 +356,7 @@ class DanaSandbox(Loggable):
             and self._llm_resource is not None
         )
 
-    def run(self, file_path: str | Path) -> ExecutionResult:
+    def run_file(self, file_path: str | Path) -> ExecutionResult:
         """
         Run a Dana file.
 
@@ -358,6 +369,19 @@ class DanaSandbox(Loggable):
         self._ensure_initialized()  # Auto-initialize on first use
 
         try:
+            # Convert to Path for easier manipulation
+            file_path = Path(file_path).resolve()
+
+            # Add the file's directory to the module search path temporarily
+            from dana.core.runtime.modules.core import get_module_loader
+
+            loader = get_module_loader()
+            file_dir = file_path.parent
+
+            # Add the file's directory to search paths if not already there
+            if file_dir not in loader.search_paths:
+                loader.search_paths.insert(0, file_dir)
+
             # Read file
             with open(file_path) as f:
                 source_code = f.read()
@@ -377,11 +401,44 @@ class DanaSandbox(Loggable):
             )
 
         except Exception as e:
-            # File execution always logs as error since these are unexpected
-            self.error(f"Error executing Dana file: {e}")
+            # Format error with location information
+            from dana.core.lang.interpreter.error_formatter import EnhancedErrorFormatter
+            from dana.common.exceptions import EnhancedDanaError
+
+            formatted_error = EnhancedErrorFormatter.format_developer_error(e, self._context.error_context, show_traceback=True)
+
+            # Log the formatted error
+            self.debug(f"Error context current location: {self._context.error_context.current_location}")
+            self.debug(f"Error context stack size: {len(self._context.error_context.execution_stack)}")
+            self.error(f"Error executing Dana file:\n{formatted_error}")
+
+            # Create an enhanced error with location information
+            error_context = self._context.error_context
+
+            # If the error is already an EnhancedDanaError, preserve its location info
+            if isinstance(e, EnhancedDanaError):
+                # Use existing location info from the error
+                enhanced_error = EnhancedDanaError(
+                    formatted_error,
+                    filename=e.filename or (error_context.current_file if error_context else None),
+                    line=e.line or (error_context.current_location.line if error_context and error_context.current_location else None),
+                    column=e.column
+                    or (error_context.current_location.column if error_context and error_context.current_location else None),
+                    traceback_str=e.traceback_str or (error_context.format_stack_trace() if error_context else None),
+                )
+            else:
+                enhanced_error = EnhancedDanaError(
+                    formatted_error,
+                    filename=error_context.current_file if error_context else None,
+                    line=error_context.current_location.line if error_context and error_context.current_location else None,
+                    column=error_context.current_location.column if error_context and error_context.current_location else None,
+                    traceback_str=error_context.format_stack_trace() if error_context else None,
+                )
+            enhanced_error.__cause__ = e
+
             return ExecutionResult(
                 success=False,
-                error=e,
+                error=enhanced_error,
                 final_context=self._context.copy(),
             )
 
@@ -421,16 +478,50 @@ class DanaSandbox(Loggable):
                 or any("__repl" in str(key) for key in self._context._state.get("system", {}).keys())
             )
 
+            # Format error with location information
+            from dana.core.lang.interpreter.error_formatter import EnhancedErrorFormatter
+            from dana.common.exceptions import EnhancedDanaError
+
+            formatted_error = EnhancedErrorFormatter.format_developer_error(
+                e,
+                self._context.error_context,
+                show_traceback=not is_repl_mode,  # Show full traceback in non-REPL mode
+            )
+
             if is_repl_mode:
                 # In REPL mode, syntax errors are expected user input - log as debug
                 self.debug(f"Error evaluating Dana code: {e}")
             else:
                 # In non-REPL mode (file execution), log as error for debugging
-                self.error(f"Error evaluating Dana code: {e}")
+                self.error(f"Error evaluating Dana code:\n{formatted_error}")
+
+            # Create an enhanced error with location information
+            error_context = self._context.error_context
+
+            # If the error is already an EnhancedDanaError, preserve its location info
+            if isinstance(e, EnhancedDanaError):
+                # Use existing location info from the error
+                enhanced_error = EnhancedDanaError(
+                    formatted_error,
+                    filename=e.filename or (error_context.current_file if error_context else None),
+                    line=e.line or (error_context.current_location.line if error_context and error_context.current_location else None),
+                    column=e.column
+                    or (error_context.current_location.column if error_context and error_context.current_location else None),
+                    traceback_str=e.traceback_str or (error_context.format_stack_trace() if error_context else None),
+                )
+            else:
+                enhanced_error = EnhancedDanaError(
+                    formatted_error,
+                    filename=error_context.current_file if error_context else None,
+                    line=error_context.current_location.line if error_context and error_context.current_location else None,
+                    column=error_context.current_location.column if error_context and error_context.current_location else None,
+                    traceback_str=error_context.format_stack_trace() if error_context else None,
+                )
+            enhanced_error.__cause__ = e
 
             return ExecutionResult(
                 success=False,
-                error=e,
+                error=enhanced_error,
                 final_context=self._context.copy(),
             )
 
@@ -448,11 +539,16 @@ class DanaSandbox(Loggable):
             ExecutionResult with success status and results
         """
         with cls(debug_mode=debug_mode, context=context) as sandbox:
-            return sandbox.run(file_path)
+            return sandbox.run_file(file_path)
 
     @classmethod
     def quick_eval(
-        cls, source_code: str, filename: str | None = None, debug_mode: bool = False, context: SandboxContext | None = None
+        cls,
+        source_code: str,
+        filename: str | None = None,
+        debug_mode: bool = False,
+        context: SandboxContext | None = None,
+        module_search_paths: list[str] | None = None,
     ) -> ExecutionResult:
         """
         Quick evaluate Dana code without managing lifecycle.
@@ -462,11 +558,12 @@ class DanaSandbox(Loggable):
             filename: Optional filename for error reporting
             debug_mode: Enable debug logging
             context: Optional custom context
+            module_search_paths: Optional list of paths to search for modules
 
         Returns:
             ExecutionResult with success status and results
         """
-        with cls(debug_mode=debug_mode, context=context) as sandbox:
+        with cls(debug_mode=debug_mode, context=context, module_search_paths=module_search_paths) as sandbox:
             return sandbox.eval(source_code, filename)
 
     def __enter__(self) -> "DanaSandbox":

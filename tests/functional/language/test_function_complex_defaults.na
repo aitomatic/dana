@@ -1,0 +1,71 @@
+# Test for complex default parameters (lists, dicts) in function definitions
+# This test reproduces the issue where list[] defaults were converted to strings
+
+log("Starting complex default parameters test")
+
+# Define a simple struct for testing
+struct TestAsset:
+    name: str
+    value: int
+
+# Function with empty list default - this was the problematic case
+def process_assets(domain: str = "General", 
+                   assets: list[TestAsset] = []) -> str:
+    
+    # Debug: print types to verify they're correct
+    print(f"domain type: {type(domain)}")
+    print(f"assets type: {type(assets)}")
+    print(f"assets value: {assets}")
+    
+    # This should work - iterate over the list
+    count = 0
+    for asset in assets:
+        count = count + 1
+        print(f"Processing asset: {asset}")
+    
+    return f"Processed {count} assets in domain {domain}"
+
+# Function with empty dict default
+def configure_settings(name: str = "default",
+                      settings: dict = {}) -> str:
+    
+    print(f"settings type: {type(settings)}")
+    print(f"settings value: {settings}")
+    
+    # Should be able to access dict methods
+    key_count = len(settings)
+    
+    return f"Configuration {name} has {key_count} settings"
+
+# Test 1: Call with defaults (empty list and dict)
+print("=== Test 1: Default parameters ===")
+result1 = process_assets()
+print(f"Result 1: {result1}")
+
+result2 = configure_settings()
+print(f"Result 2: {result2}")
+
+# Test 2: Call with provided values
+print("=== Test 2: Provided parameters ===")
+asset1 = TestAsset(name="Asset1", value=100)
+asset2 = TestAsset(name="Asset2", value=200)
+result3 = process_assets("Production", [asset1, asset2])
+print(f"Result 3: {result3}")
+
+settings_dict = {"key1": "value1", "key2": "value2"}
+result4 = configure_settings("custom", settings_dict)
+print(f"Result 4: {result4}")
+
+# Test 3: Mixed usage
+print("=== Test 3: Mixed usage ===")
+result5 = process_assets("Testing")  # domain provided, assets default
+print(f"Result 5: {result5}")
+
+# Assertions to verify correctness
+assert result1 == "Processed 0 assets in domain General"
+assert result2 == "Configuration default has 0 settings"
+assert result3 == "Processed 2 assets in domain Production"
+assert result4 == "Configuration custom has 2 settings"
+assert result5 == "Processed 0 assets in domain Testing"
+
+log("Complex default parameters test completed successfully") 

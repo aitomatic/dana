@@ -1,0 +1,562 @@
+"""
+Curate Knowledge Recipe
+
+Curate_knowledge_recipe: Simulate knowledge curation and agent execution to derive an optimal
+knowledge transformation recipe that maximizes agent performance on a given domain-task pair.
+"""
+
+# --- Data Structures ---
+
+struct KnowledgeRecipe:
+    transformation_steps: list[str] # Ordered workflow steps for knowledge processing
+    data_structures: list[str]      # Target schemas: graph, table, tree, vector_store
+    storage_formats: list[str]      # Storage technology choices with rationale
+    query_patterns: list[str]       # Runtime access patterns and fallback strategies
+    performance_notes: str          # Latency, throughput, confidence metrics
+    runtime_queries: list[str]      # Concrete query examples for agent implementation
+    knowledge_gaps: list[str]       # Specific missing knowledge types preventing optimal performance
+    priority_recommendations: list[str] # Score-ordered next steps for knowledge acquisition
+    estimated_improvement: float    # Quantified performance gain potential (0.0-1.0)
+
+
+struct KnowledgeAsset:
+    id: str
+    type: str                       # Knowledge type: Log_Data, Manual, IoT_Stream, Workflow, Domain_Ontology, PromptTemplate
+    source: str                     # Origin: Enterprise, Aitomatic, Synthetic, IoT
+    content: str                    # Actual knowledge content or summary
+    trust_tier: str                 # High/Medium/Low trust classification
+    metadata: dict[str, str]        # Provenance, timestamps, schema, quality indicators
+    relevance_score: float          # 0.0-1.0 task-specific relevance score
+    knowledge_category: str         # Classification: DK (documentary), CK (contextual), AK (auxiliary)
+
+struct TaskSignature:
+    entities: list[str]             # Domain-specific entities, systems, and processes involved
+    knowledge_needs: list[str]      # Required knowledge types for task completion
+    success_criteria: list[str]     # Measurable outcomes for successful task execution
+    complexity_level: str           # Task complexity: simple, moderate, complex
+    estimated_minimum_assets: int   # Minimum knowledge assets needed for baseline functionality
+
+struct AgentRunResult:
+    results: list[KnowledgeAsset]           # Generated or processed knowledge assets from agent execution
+    score: float                            # Overall task performance score (0.0-1.0)
+    knowledge_utilization: dict[str, float] # Asset-specific utilization: asset_id -> usage_score (0.0-1.0)
+    bottleneck_analysis: list[str]          # Specific limitations: knowledge gaps, integration issues, access problems
+
+struct EvaluationSummary:
+    comments: str                           # Detailed performance analysis and root cause findings
+    score: float                            # Overall performance score (0.0-1.0)
+    knowledge_coverage_score: float         # Knowledge adequacy assessment (0.0-1.0)
+    critical_gaps: list[str]                # Specific missing knowledge types preventing better performance
+    improvement_potential: float            # Maximum achievable score with optimal knowledge (0.0-1.0)
+
+# --- Main Pipeline ---
+
+def curate_knowledge_recipe(domain: str = "General",
+                            task: str = "Q&A",
+                            documentary_knowledge: list[KnowledgeAsset] = [],
+                            include_iot_data: bool = False,
+                            use_aitomatic_domain_knowledge: bool = False,
+                            use_aitomatic_task_knowledge: bool = False) -> KnowledgeRecipe:
+    """
+    Curate knowledge for a given domain and task, with fine-grained control over knowledge sources.
+    """
+    # 1. Extract task signature
+    task_sig = _extract_task_signature(domain, task, "None suggested")
+    print("task_sig: ", task_sig)
+
+    # 2. Curate enterprise (documentary) knowledge
+    kb_assets = {}
+    for asset in documentary_knowledge:
+        kb_assets[f"dk_{asset.type.lower().replace(' ', '_')}"] = asset
+    
+    # 3. Optionally ingest IoT data
+    if include_iot_data:
+        iot_asset = KnowledgeAsset(
+            id="iot_stream_1",
+            type="IoT Stream",
+            source="IoT",
+            content="Simulated IoT sensor stream",
+            trust_tier="Medium",
+            metadata={"schema": "sensor_reading_v1", "timestamp_range": "2023-01-01/2023-01-31", "provenance": "IoT Gateway"}
+        )
+        kb_assets["dk_iot_stream"] = iot_asset
+
+    # 4. Simulate contextual knowledge
+    if "dk_manual" in kb_assets:
+        ck_asset = _simulate_ck_curation(domain, task, task_sig, kb_assets["dk_manual"], "None suggested")
+        kb_assets["ck_templates"] = ck_asset
+
+    # 5. Optionally enrich with Aitomatic knowledge
+    if use_aitomatic_domain_knowledge:
+        ak_domain = _simulate_ak_domain_knowledge(domain, task, task_sig, kb_assets, "None suggested")
+        kb_assets["ak_domain"] = ak_domain
+    if use_aitomatic_task_knowledge:
+        ak_task = _simulate_ak_task_knowledge(domain, task, task_sig, kb_assets, "None suggested")
+        kb_assets["ak_task"] = ak_task
+
+    print("kb_assets: ", kb_assets)
+
+    # 6. Analyze knowledge state symbolically
+    knowledge_state = _analyze_knowledge_state(task_sig, kb_assets)
+    print("knowledge_state: ", knowledge_state)
+
+    # 7. Validate knowledge coverage
+    coverage_analysis = _validate_knowledge_coverage(task_sig, kb_assets, knowledge_state)
+    print("coverage_analysis: ", coverage_analysis)
+
+    # 8. Simulate agent run with symbolic context
+    agent_run = _simulate_agent(domain, task, kb_assets, knowledge_state)
+    print("agent_run: ", agent_run)
+
+    # 9. Evaluate agent run with state analysis
+    eval_summary = _evaluate_agent_run(domain, task, agent_run, knowledge_state)
+    print("eval_summary: ", eval_summary)
+
+    # 10. Generate recipe with symbolic insights
+    recipe = _emit_recipe(eval_summary, kb_assets, knowledge_state, coverage_analysis)
+    print("recipe: ", recipe)
+
+    return recipe
+
+# --- Knowledge State Analysis ---
+
+def _analyze_knowledge_state(task_sig: TaskSignature, kb_assets: dict[str, KnowledgeAsset]) -> dict[str, any]:
+    """
+    Symbolic analysis of knowledge state to provide structured context for prompts
+    """
+    analysis = {}
+    
+    # Knowledge type distribution
+    dk_count = 0
+    ck_count = 0
+    ak_count = 0
+    for key in kb_assets:
+        category = kb_assets[key].knowledge_category
+        if category == "DK":
+            dk_count = dk_count + 1
+        elif category == "CK":
+            ck_count = ck_count + 1
+        elif category == "AK":
+            ak_count = ak_count + 1
+    
+    # Coverage analysis
+    available_count = len(kb_assets)
+    coverage_ratio = available_count / max(len(task_sig.knowledge_needs), 1)
+    
+    # Asset quality analysis
+    high_relevance_count = 0
+    for key in kb_assets:
+        if kb_assets[key].relevance_score > 0.7:
+            high_relevance_count = high_relevance_count + 1
+    
+    # Knowledge state classification
+    if available_count == 0:
+        state = "empty"
+    elif coverage_ratio < 0.3:
+        state = "critical_deficit"
+    elif coverage_ratio < 0.7:
+        state = "partial_coverage"
+    elif high_relevance_count < available_count / 2:
+        state = "low_quality"
+    else:
+        state = "adequate"
+    
+    analysis["state"] = state
+    analysis["coverage_ratio"] = coverage_ratio
+    analysis["dk_count"] = dk_count
+    analysis["ck_count"] = ck_count
+    analysis["ak_count"] = ak_count
+    analysis["high_relevance_count"] = high_relevance_count
+    analysis["critical_gap_estimate"] = max(0, len(task_sig.knowledge_needs) - available_count)
+    
+    return analysis
+
+# --- Step Implementations ---
+
+def _extract_task_signature(domain: str,
+                            task: str,
+                            improvements: str) -> TaskSignature:
+    """
+    Parse the domain-task pair for entities, knowledge needs, and success criteria
+
+    Args:
+        domain: The domain of the task
+        task: The task to extract the signature for
+        improvements: The improvements to the previous task signature
+
+    Returns:
+        A task signature object containing the entities, knowledge needs,
+        and success criteria
+    """
+    
+    # Get domain-specific patterns to improve task signature extraction
+    domain_patterns = _get_domain_patterns(domain)
+    
+    prompt = f"""
+    Analyze this domain-task pair using systematic reasoning with domain-specific patterns.
+    
+    DOMAIN: {domain}
+    TASK: {task}
+    IMPROVEMENTS FROM PREVIOUS ITERATION: {improvements}
+    
+    DOMAIN-SPECIFIC CONTEXT:
+    Common patterns for "{domain}":
+    {domain_patterns}
+    
+    REASONING STEPS:
+    1. Identify the core domain concepts and their relationships
+    2. Map task requirements to specific knowledge dependencies
+    3. Classify entities by their role in the domain-task interaction
+    4. Estimate complexity based on knowledge requirements
+    5. Determine minimum viable knowledge assets
+    
+    DELIBERATE REASONING:
+    - Start with domain fundamentals: What are the key systems/processes in {domain}?
+    - Leverage domain patterns: How do common patterns apply to this specific task?
+    - Map to task specifics: How does {task} interact with these systems?
+    - Identify knowledge dependencies: What specific information is required for success?
+    - Classify complexity: Based on dependencies, is this simple/moderate/complex?
+    - Quantify requirements: How many distinct knowledge types are minimally needed?
+    
+    Examples to guide reasoning:
+    - Manufacturing Equipment + Predictive Maintenance → entities: ["CNC_Machine", "Vibration_Sensor"], knowledge_needs: ["equipment_specifications", "maintenance_history"], complexity_level: "moderate", estimated_minimum_assets: 3
+    - Financial Services + Risk Assessment → entities: ["Credit_History", "Market_Data"], knowledge_needs: ["risk_metrics", "compliance_rules"], complexity_level: "complex", estimated_minimum_assets: 5
+    
+    Apply domain patterns and examples to extract the most accurate task signature for this specific domain-task combination.
+    """
+    result: TaskSignature = reason(prompt)
+    return result
+
+def _get_domain_patterns(domain: str) -> str:
+    """
+    Get domain-specific knowledge patterns to enhance task signature extraction
+    """
+    prompt = f"""
+    Provide common knowledge patterns, entities, and requirements for the domain: {domain}
+    
+    Include:
+    - Typical entities and systems
+    - Common knowledge requirements
+    - Typical complexity levels for tasks
+    - Standard success criteria patterns
+    - Minimum asset requirements by task type
+    
+    Format as structured patterns that can guide task signature extraction.
+    """
+    patterns: str = reason(prompt)
+    return patterns
+
+def _simulate_dk_curation(domain: str,
+                          task: str,
+                          task_sig: TaskSignature,
+                          documentary_knowledge: list[KnowledgeAsset],
+                          improvements: str) -> KnowledgeAsset:
+    """
+    Simulate organizing enterprise DK into structured formats
+
+    Args:
+        domain: The domain of the task
+        task: The task to curate knowledge for
+        task_sig: The task signature
+        documentary_knowledge: The documentary knowledge to use
+        improvements: The improvements to the previous task signature
+
+    Returns:
+        A KnowledgeAsset object containing the structured enterprise DK
+    """
+
+    prompt = f"""
+    Simulate the result of processing and organizing documentary knowledge.
+
+    Domain: {domain}
+    Task: {task}
+    Task Signature: {task_sig}
+    Documentary Knowledge: {documentary_knowledge}
+    Improvements: {improvements}
+
+    Simulate what the processed documentary knowledge would look like after:
+    - Document processing and content extraction
+    - Pattern identification and relationship mapping
+    - Content categorization and hierarchy creation
+    - Structured data extraction
+    - Indexing and tagging
+
+    Provide the simulated structured knowledge asset that would result from this processing.
+    """
+    result: KnowledgeAsset = reason(prompt)
+    return result
+
+def _simulate_ck_curation(domain: str,
+                          task: str,
+                          task_sig: TaskSignature,
+                          dk_struct: KnowledgeAsset,
+                          improvements: str) -> KnowledgeAsset:
+    """
+    Simulate generating contextual knowledge (patterns, workflows, templates)
+
+    Args:
+        domain: The domain of the task
+        task: The task to generate contextual knowledge for
+        task_sig: The task signature
+        dk_struct: The documentary knowledge to use
+        improvements: The improvements to the previous task signature
+
+    Returns:
+        A KnowledgeAsset object containing the contextual knowledge
+    """
+
+    prompt = f"""
+    Simulate the result of generating contextual knowledge from documentary knowledge.
+
+    Domain: {domain}
+    Task: {task}
+    Task Signature: {task_sig}
+    Documentary Knowledge: {dk_struct}
+    Improvements: {improvements}
+
+    Simulate what the contextual knowledge would look like after:
+    - Workflow pattern and template creation
+    - Scenario identification and solution mapping
+    - Decision tree and rule-based logic generation
+    - Contextual prompt and example development
+    - Task-specific heuristic creation
+
+    Provide the simulated contextual knowledge asset that would result from this generation.
+    """
+    result: KnowledgeAsset = reason(prompt)
+    return result
+
+def _simulate_ak_domain_knowledge(domain: str, task: str, task_sig: TaskSignature, kb_assets: dict[str, KnowledgeAsset], improvements: str) -> KnowledgeAsset:
+    """
+    Simulate retrieval of Aitomatic domain knowledge (e.g., ontologies, patterns).
+    """
+    prompt = f"""
+    Simulate the result of retrieving domain-level knowledge for this domain.
+    Domain: {domain}
+    Task: {task}
+    Task Signature: {task_sig}
+    Existing KB Assets: {kb_assets}
+    Improvements: {improvements}
+    Simulate a KnowledgeAsset of type 'Domain Ontology' and source 'Aitomatic' with relevant metadata.
+    """
+    result: KnowledgeAsset = reason(prompt)
+    return result
+
+def _simulate_ak_task_knowledge(domain: str, task: str, task_sig: TaskSignature, kb_assets: dict[str, KnowledgeAsset], improvements: str) -> KnowledgeAsset:
+    """
+    Simulate retrieval of Aitomatic task knowledge (e.g., workflows, protocols).
+    """
+    prompt = f"""
+    Simulate the result of retrieving task-level knowledge for this task.
+    Domain: {domain}
+    Task: {task}
+    Task Signature: {task_sig}
+    Existing KB Assets: {kb_assets}
+    Improvements: {improvements}
+    Simulate a KnowledgeAsset of type 'Workflow' and source 'Aitomatic' with relevant metadata.
+    """
+    result: KnowledgeAsset = reason(prompt)
+    return result
+
+def _simulate_agent(domain: str, task: str, kb_assets: dict[str, KnowledgeAsset], knowledge_state: dict[str, any]) -> AgentRunResult:
+    """
+    Simulate agent run for this KB variant using a map of knowledge assets.
+    """
+    asset_count = len(kb_assets)
+    asset_types = []
+    for key in kb_assets:
+        asset_types.append(kb_assets[key].type)
+    
+    state = knowledge_state["state"]
+    coverage_ratio = knowledge_state["coverage_ratio"]
+    
+    prompt = f"""
+    Simulate agent performance using systematic reasoning with symbolic state context.
+    
+    REASONING FRAMEWORK:
+    STEP 1: Analyze Knowledge State
+    - State Classification: {state}
+    - Coverage Ratio: {coverage_ratio}
+    - Knowledge Distribution: DK={knowledge_state["dk_count"]}, CK={knowledge_state["ck_count"]}, AK={knowledge_state["ak_count"]}
+    
+    STEP 2: Map State to Performance Expectations
+    - For {state}: What is a realistic performance baseline?
+    - Given coverage ratio {coverage_ratio}: What specific limitations emerge?
+    - Given DK/CK/AK distribution: Where are the critical bottlenecks?
+    
+    STEP 3: Reason Through Execution
+    - How would an agent approach {task} with this knowledge state?
+    - What fusion patterns emerge between knowledge categories?
+    - Which assets provide highest utility vs which create gaps?
+    
+    STEP 4: Quantify Outcomes
+    - Calculate realistic performance score based on state classification
+    - Determine utilization patterns for each knowledge category
+    - Identify specific bottleneck types (knowledge, integration, access)
+    
+    DOMAIN: {domain}
+    TASK: {task}
+    
+    Provide step-by-step reasoning that connects symbolic state to concrete performance outcomes.
+    """
+    result: AgentRunResult = reason(prompt)
+    return result
+
+def _evaluate_agent_run(domain: str,
+                        task: str,
+                        agent_run: AgentRunResult,
+                        knowledge_state: dict[str, any]) -> EvaluationSummary:
+    """
+    Evaluate the agent run
+
+    Args:
+        domain: The domain of the task
+        task: The task to evaluate the agent run for
+        agent_run: The agent run to evaluate
+
+    Returns:
+        A EvaluationSummary object containing the evaluation summary
+    """
+
+    prompt = f"""
+    Evaluate agent performance using systematic reasoning and symbolic analysis.
+
+    REASONING STRUCTURE:
+    STEP 1: Analyze Performance Context
+    - Domain: {domain}
+    - Task: {task}
+    - Knowledge State: {knowledge_state["state"]}
+    
+    STEP 2: Decompose Performance Factors
+    - Current Score: {agent_run.score}
+    - Knowledge Utilization: {agent_run.knowledge_utilization}
+    - Identified Bottlenecks: {agent_run.bottleneck_analysis}
+    - Knowledge Coverage: {knowledge_state["coverage_ratio"]}
+    - Distribution: DK={knowledge_state["dk_count"]}, CK={knowledge_state["ck_count"]}, AK={knowledge_state["ak_count"]}
+    
+    STEP 3: Reason Through Root Causes
+    - How does knowledge state {knowledge_state["state"]} explain the score {agent_run.score}?
+    - Which specific knowledge gaps (DK/CK/AK) contribute to bottlenecks?
+    - What is the relationship between utilization patterns and performance?
+    
+    STEP 4: Calculate Improvement Potential
+    - Based on knowledge state {knowledge_state["state"]}, what is the realistic maximum score?
+    - Which specific knowledge acquisitions would yield the highest improvement?
+    - How does coverage ratio {knowledge_state["coverage_ratio"]} translate to improvement potential?
+    
+    Provide detailed reasoning that connects each performance dimension to specific knowledge gaps and state classification.
+    """
+    result: EvaluationSummary = reason(prompt)
+    return result
+
+def _validate_knowledge_coverage(task_sig: TaskSignature, kb_assets: dict[str, KnowledgeAsset], knowledge_state: dict[str, any]) -> dict:
+    """
+    Validate knowledge coverage against task requirements
+    
+    Args:
+        task_sig: The task signature with required knowledge needs
+        kb_assets: Available knowledge assets
+        knowledge_state: Pre-computed knowledge state analysis
+    
+    Returns:
+        Dictionary with coverage score and gap analysis
+    """
+    required_needs = task_sig.knowledge_needs
+    available_types = []
+    for key in kb_assets:
+        available_types.append(kb_assets[key].type)
+    
+    prompt = f"""
+    Perform systematic gap analysis using step-by-step reasoning with pre-computed state context.
+    
+    PRE-COMPUTED CONTEXT:
+    - Knowledge State: {knowledge_state["state"]}
+    - Coverage Ratio: {knowledge_state["coverage_ratio"]}
+    - Knowledge Distribution: DK={knowledge_state["dk_count"]}, CK={knowledge_state["ck_count"]}, AK={knowledge_state["ak_count"]}
+    - High Relevance Assets: {knowledge_state["high_relevance_count"]}
+    - Critical Gap Estimate: {knowledge_state["critical_gap_estimate"]}
+    
+    REASONING FRAMEWORK:
+    STEP 1: Map Requirements
+    - Required Knowledge Types: {required_needs}
+    - Available Asset Types: {available_types}
+    - Total Assets: {len(kb_assets)}
+    
+    STEP 2: Analyze Coverage Patterns (Enhanced with State Context)
+    - Given state "{knowledge_state["state"]}", what are the specific coverage implications?
+    - How does the DK/CK/AK distribution affect requirement fulfillment?
+    - Which high-relevance assets ({knowledge_state["high_relevance_count"]}) address critical needs?
+    - Identify knowledge category gaps (DK/CK/AK) in context of current distribution
+    
+    STEP 3: Calculate Coverage Score (State-Informed)
+    - Refine coverage percentage using pre-computed ratio {knowledge_state["coverage_ratio"]}
+    - Weight coverage by asset relevance and trust tier
+    - Account for knowledge state classification in scoring
+    - Identify specific missing knowledge categories
+    
+    STEP 4: Prioritize Gaps (State-Driven)
+    - Given {knowledge_state["critical_gap_estimate"]} critical gaps, rank by severity
+    - Consider knowledge state transition requirements (e.g., "critical_deficit" → "partial_coverage")
+    - Determine minimum viable knowledge threshold for state improvement
+    - Provide acquisition priority based on gap severity and state optimization
+    
+    Provide detailed reasoning that leverages pre-computed state analysis for more accurate gap assessment.
+    """
+    result: dict = reason(prompt)
+    return result
+
+def _emit_recipe(eval_summary: EvaluationSummary, kb_assets: dict[str, KnowledgeAsset], knowledge_state: dict[str, any], coverage_analysis: dict) -> KnowledgeRecipe:
+    """
+    Generate a KnowledgeRecipe tailored to actual knowledge availability and performance needs.
+    """
+    asset_types = []
+    for key in kb_assets:
+        asset_types.append(kb_assets[key].type)
+    
+    score = eval_summary.score
+    
+    prompt = f"""
+    Generate targeted knowledge curation recommendations using systematic reasoning with comprehensive context.
+
+    COMPREHENSIVE CONTEXT:
+    Knowledge State Analysis:
+    - State: {knowledge_state["state"]}
+    - Coverage Ratio: {knowledge_state["coverage_ratio"]}
+    - Knowledge Distribution: DK={knowledge_state["dk_count"]}, CK={knowledge_state["ck_count"]}, AK={knowledge_state["ak_count"]}
+    - Critical Gap Estimate: {knowledge_state["critical_gap_estimate"]}
+    
+    Performance Analysis:
+    - Current Score: {eval_summary.score}
+    - Knowledge Coverage Score: {eval_summary.knowledge_coverage_score}
+    - Critical Gaps: {eval_summary.critical_gaps}
+    - Improvement Potential: {eval_summary.improvement_potential}
+    
+    Coverage Analysis Results: {coverage_analysis}
+
+    REASONING FRAMEWORK:
+    STEP 1: Analyze Current State (Multi-Dimensional)
+    - How do knowledge_state and coverage_analysis complement each other?
+    - What specific coverage gaps from analysis align with performance bottlenecks?
+    - Which knowledge categories (DK/CK/AK) show both coverage and performance issues?
+
+    STEP 2: Connect State to Performance (Gap-Informed)
+    - How does state "{knowledge_state["state"]}" with specific coverage gaps explain score {eval_summary.score}?
+    - Which coverage analysis priorities directly address critical performance gaps?
+    - What knowledge acquisition sequence optimizes both coverage and performance?
+
+    STEP 3: Reason Through Priorities (Coverage-Driven)
+    - Use coverage analysis gap priorities to sequence knowledge acquisition
+    - How does addressing top coverage gaps enable knowledge state transitions?
+    - What are the minimum knowledge requirements for meaningful performance improvement?
+
+    STEP 4: Generate Actionable Recommendations (Context-Optimized)
+    - Design transformation steps that address both coverage gaps and performance bottlenecks
+    - Recommend data structures optimized for identified gap patterns
+    - Suggest query patterns that leverage available knowledge while compensating for gaps
+    - Quantify improvement targets based on coverage analysis and performance modeling
+
+    Provide detailed step-by-step reasoning that synthesizes symbolic analysis, coverage analysis, and performance evaluation for optimal recipe generation.
+    """
+    result: KnowledgeRecipe = reason(prompt)
+    return result
+

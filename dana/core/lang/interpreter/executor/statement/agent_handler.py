@@ -213,7 +213,7 @@ class AgentHandler(Loggable):
         # Create the struct type and evaluate default values
         try:
             struct_type = create_struct_type_from_ast(node)
-            
+
             # Evaluate default values in the current context
             if struct_type.field_defaults:
                 evaluated_defaults = {}
@@ -225,7 +225,7 @@ class AgentHandler(Loggable):
                     except Exception as e:
                         raise SandboxError(f"Failed to evaluate default value for field '{field_name}': {e}")
                 struct_type.field_defaults = evaluated_defaults
-            
+
             # Register the struct type
             StructTypeRegistry.register(struct_type)
             self.debug(f"Registered struct type: {struct_type.name}")
@@ -272,7 +272,7 @@ class AgentHandler(Loggable):
             # This allows `agent_instance = TestAgent(name="test")` syntax
             def agent_constructor(**kwargs):
                 # Extract instance_id if provided
-                instance_id = kwargs.pop('instance_id', None)
+                instance_id = kwargs.pop("instance_id", None)
                 return AgentTypeRegistry.create_instance(agent_type.name, kwargs, context=context, instance_id=instance_id)
 
             context.set(f"local:{node.name}", agent_constructor)
@@ -334,7 +334,7 @@ class AgentHandler(Loggable):
         # Check if this function should be associated with an agent type
         # Import here to avoid circular imports
         from dana.agent.agent_system import register_agent_method_from_function_def
-        
+
         # Try to register as agent method if first parameter is an agent type
         register_agent_method_from_function_def(node, dana_func)
 

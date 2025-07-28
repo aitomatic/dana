@@ -44,7 +44,7 @@ The Dana grammar is written in [Lark](https://github.com/lark-parser/lark) EBNF 
 - start: Entry point for parsing; matches a complete Dana program.
 - program: Sequence of statements.
 - statement: Assignment, conditional, while loop, function call, or newline.
-- assignment: Variable assignment (`x = expr`).
+- assignment: Variable assignment (`x = expr`) or compound assignment (`x += expr`).
 - conditional: If/else block with indented body.
 - while_loop: While loop with indented body.
 - function_call: Function or core function call.

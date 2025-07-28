@@ -5,13 +5,9 @@ This module provides business logic for conversation management and message hand
 """
 
 import logging
-from typing import List
 
 from dana.api.core.models import Conversation, Message
-from dana.api.core.schemas import (
-    ConversationCreate, ConversationRead, ConversationWithMessages,
-    MessageCreate, MessageRead
-)
+from dana.api.core.schemas import ConversationCreate, ConversationRead, ConversationWithMessages, MessageCreate, MessageRead
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +21,7 @@ class ConversationService:
         """Initialize the conversation service."""
         pass
 
-    async def create_conversation(
-        self, conversation_data: ConversationCreate, db_session
-    ) -> ConversationRead:
+    async def create_conversation(self, conversation_data: ConversationCreate, db_session) -> ConversationRead:
         """
         Create a new conversation.
 
@@ -39,11 +33,8 @@ class ConversationService:
             ConversationRead object with the created conversation
         """
         try:
-            conversation = Conversation(
-                title=conversation_data.title,
-                agent_id=conversation_data.agent_id
-            )
-            
+            conversation = Conversation(title=conversation_data.title, agent_id=conversation_data.agent_id)
+
             db_session.add(conversation)
             db_session.commit()
             db_session.refresh(conversation)
@@ -53,7 +44,7 @@ class ConversationService:
                 title=conversation.title,
                 agent_id=conversation.agent_id,
                 created_at=conversation.created_at,
-                updated_at=conversation.updated_at
+                updated_at=conversation.updated_at,
             )
 
         except Exception as e:
@@ -75,18 +66,14 @@ class ConversationService:
             Conversation object or None if not found
         """
         try:
-            conversation = db_session.query(Conversation).filter(
-                Conversation.id == conversation_id
-            ).first()
-            
+            conversation = db_session.query(Conversation).filter(Conversation.id == conversation_id).first()
+
             if not conversation:
                 return None
 
             if include_messages:
-                messages = db_session.query(Message).filter(
-                    Message.conversation_id == conversation_id
-                ).order_by(Message.created_at).all()
-                
+                messages = db_session.query(Message).filter(Message.conversation_id == conversation_id).order_by(Message.created_at).all()
+
                 message_reads = [
                     MessageRead(
                         id=msg.id,
@@ -94,7 +81,7 @@ class ConversationService:
                         sender=msg.sender,
                         content=msg.content,
                         created_at=msg.created_at,
-                        updated_at=msg.updated_at
+                        updated_at=msg.updated_at,
                     )
                     for msg in messages
                 ]
@@ -105,7 +92,7 @@ class ConversationService:
                     agent_id=conversation.agent_id,
                     created_at=conversation.created_at,
                     updated_at=conversation.updated_at,
-                    messages=message_reads
+                    messages=message_reads,
                 )
             else:
                 return ConversationRead(
@@ -113,7 +100,7 @@ class ConversationService:
                     title=conversation.title,
                     agent_id=conversation.agent_id,
                     created_at=conversation.created_at,
-                    updated_at=conversation.updated_at
+                    updated_at=conversation.updated_at,
                 )
 
         except Exception as e:
@@ -121,9 +108,8 @@ class ConversationService:
             raise
 
     async def list_conversations(
-        self, agent_id: int | None = None, limit: int = 100, 
-        offset: int = 0, db_session=None
-    ) -> List[ConversationRead]:
+        self, agent_id: int | None = None, limit: int = 100, offset: int = 0, db_session=None
+    ) -> list[ConversationRead]:
         """
         List conversations with optional filtering.
 
@@ -138,21 +124,15 @@ class ConversationService:
         """
         try:
             query = db_session.query(Conversation)
-            
+
             if agent_id is not None:
                 query = query.filter(Conversation.agent_id == agent_id)
-            
-            conversations = query.order_by(
-                Conversation.updated_at.desc()
-            ).offset(offset).limit(limit).all()
+
+            conversations = query.order_by(Conversation.updated_at.desc()).offset(offset).limit(limit).all()
 
             return [
                 ConversationRead(
-                    id=conv.id,
-                    title=conv.title,
-                    agent_id=conv.agent_id,
-                    created_at=conv.created_at,
-                    updated_at=conv.updated_at
+                    id=conv.id, title=conv.title, agent_id=conv.agent_id, created_at=conv.created_at, updated_at=conv.updated_at
                 )
                 for conv in conversations
             ]
@@ -161,9 +141,7 @@ class ConversationService:
             logger.error(f"Error listing conversations: {e}")
             raise
 
-    async def update_conversation_title(
-        self, conversation_id: int, new_title: str, db_session
-    ) -> ConversationRead | None:
+    async def update_conversation_title(self, conversation_id: int, new_title: str, db_session) -> ConversationRead | None:
         """
         Update a conversation's title.
 
@@ -176,10 +154,8 @@ class ConversationService:
             Updated ConversationRead object or None if not found
         """
         try:
-            conversation = db_session.query(Conversation).filter(
-                Conversation.id == conversation_id
-            ).first()
-            
+            conversation = db_session.query(Conversation).filter(Conversation.id == conversation_id).first()
+
             if not conversation:
                 return None
 
@@ -192,16 +168,14 @@ class ConversationService:
                 title=conversation.title,
                 agent_id=conversation.agent_id,
                 created_at=conversation.created_at,
-                updated_at=conversation.updated_at
+                updated_at=conversation.updated_at,
             )
 
         except Exception as e:
             logger.error(f"Error updating conversation {conversation_id}: {e}")
             raise
 
-    async def update_conversation(
-        self, conversation_id: int, conversation_data: ConversationCreate, db_session
-    ) -> ConversationRead | None:
+    async def update_conversation(self, conversation_id: int, conversation_data: ConversationCreate, db_session) -> ConversationRead | None:
         """
         Update a conversation.
 
@@ -214,10 +188,8 @@ class ConversationService:
             Updated ConversationRead object or None if not found
         """
         try:
-            conversation = db_session.query(Conversation).filter(
-                Conversation.id == conversation_id
-            ).first()
-            
+            conversation = db_session.query(Conversation).filter(Conversation.id == conversation_id).first()
+
             if not conversation:
                 return None
 
@@ -231,16 +203,14 @@ class ConversationService:
                 title=conversation.title,
                 agent_id=conversation.agent_id,
                 created_at=conversation.created_at,
-                updated_at=conversation.updated_at
+                updated_at=conversation.updated_at,
             )
 
         except Exception as e:
             logger.error(f"Error updating conversation {conversation_id}: {e}")
             raise
 
-    async def create_message(
-        self, conversation_id: int, message_data: MessageCreate, db_session
-    ) -> MessageRead:
+    async def create_message(self, conversation_id: int, message_data: MessageCreate, db_session) -> MessageRead:
         """
         Create a new message in a conversation.
 
@@ -253,12 +223,8 @@ class ConversationService:
             MessageRead object with the created message
         """
         try:
-            message = Message(
-                conversation_id=conversation_id,
-                sender=message_data.sender,
-                content=message_data.content
-            )
-            
+            message = Message(conversation_id=conversation_id, sender=message_data.sender, content=message_data.content)
+
             db_session.add(message)
             db_session.commit()
             db_session.refresh(message)
@@ -269,16 +235,14 @@ class ConversationService:
                 sender=message.sender,
                 content=message.content,
                 created_at=message.created_at,
-                updated_at=message.updated_at
+                updated_at=message.updated_at,
             )
 
         except Exception as e:
             logger.error(f"Error creating message: {e}")
             raise
 
-    async def list_messages(
-        self, conversation_id: int, limit: int = 100, offset: int = 0, db_session=None
-    ) -> List[MessageRead]:
+    async def list_messages(self, conversation_id: int, limit: int = 100, offset: int = 0, db_session=None) -> list[MessageRead]:
         """
         List messages in a conversation.
 
@@ -292,9 +256,14 @@ class ConversationService:
             List of MessageRead objects
         """
         try:
-            messages = db_session.query(Message).filter(
-                Message.conversation_id == conversation_id
-            ).order_by(Message.created_at).offset(offset).limit(limit).all()
+            messages = (
+                db_session.query(Message)
+                .filter(Message.conversation_id == conversation_id)
+                .order_by(Message.created_at)
+                .offset(offset)
+                .limit(limit)
+                .all()
+            )
 
             return [
                 MessageRead(
@@ -303,7 +272,7 @@ class ConversationService:
                     sender=msg.sender,
                     content=msg.content,
                     created_at=msg.created_at,
-                    updated_at=msg.updated_at
+                    updated_at=msg.updated_at,
                 )
                 for msg in messages
             ]
@@ -312,9 +281,7 @@ class ConversationService:
             logger.error(f"Error listing messages: {e}")
             raise
 
-    async def get_message(
-        self, conversation_id: int, message_id: int, db_session
-    ) -> MessageRead | None:
+    async def get_message(self, conversation_id: int, message_id: int, db_session) -> MessageRead | None:
         """
         Get a specific message in a conversation.
 
@@ -327,11 +294,8 @@ class ConversationService:
             MessageRead object or None if not found
         """
         try:
-            message = db_session.query(Message).filter(
-                Message.id == message_id,
-                Message.conversation_id == conversation_id
-            ).first()
-            
+            message = db_session.query(Message).filter(Message.id == message_id, Message.conversation_id == conversation_id).first()
+
             if not message:
                 return None
 
@@ -341,16 +305,14 @@ class ConversationService:
                 sender=message.sender,
                 content=message.content,
                 created_at=message.created_at,
-                updated_at=message.updated_at
+                updated_at=message.updated_at,
             )
 
         except Exception as e:
             logger.error(f"Error getting message {message_id}: {e}")
             raise
 
-    async def update_message(
-        self, conversation_id: int, message_id: int, message_data: MessageCreate, db_session
-    ) -> MessageRead | None:
+    async def update_message(self, conversation_id: int, message_id: int, message_data: MessageCreate, db_session) -> MessageRead | None:
         """
         Update a message in a conversation.
 
@@ -364,11 +326,8 @@ class ConversationService:
             Updated MessageRead object or None if not found
         """
         try:
-            message = db_session.query(Message).filter(
-                Message.id == message_id,
-                Message.conversation_id == conversation_id
-            ).first()
-            
+            message = db_session.query(Message).filter(Message.id == message_id, Message.conversation_id == conversation_id).first()
+
             if not message:
                 return None
 
@@ -383,16 +342,14 @@ class ConversationService:
                 sender=message.sender,
                 content=message.content,
                 created_at=message.created_at,
-                updated_at=message.updated_at
+                updated_at=message.updated_at,
             )
 
         except Exception as e:
             logger.error(f"Error updating message {message_id}: {e}")
             raise
 
-    async def delete_message(
-        self, conversation_id: int, message_id: int, db_session
-    ) -> bool:
+    async def delete_message(self, conversation_id: int, message_id: int, db_session) -> bool:
         """
         Delete a message from a conversation.
 
@@ -405,11 +362,8 @@ class ConversationService:
             True if message was deleted, False if not found
         """
         try:
-            message = db_session.query(Message).filter(
-                Message.id == message_id,
-                Message.conversation_id == conversation_id
-            ).first()
-            
+            message = db_session.query(Message).filter(Message.id == message_id, Message.conversation_id == conversation_id).first()
+
             if not message:
                 return False
 
@@ -433,18 +387,14 @@ class ConversationService:
             True if deleted successfully, False otherwise
         """
         try:
-            conversation = db_session.query(Conversation).filter(
-                Conversation.id == conversation_id
-            ).first()
-            
+            conversation = db_session.query(Conversation).filter(Conversation.id == conversation_id).first()
+
             if not conversation:
                 return False
 
             # Delete all messages first
-            db_session.query(Message).filter(
-                Message.conversation_id == conversation_id
-            ).delete()
-            
+            db_session.query(Message).filter(Message.conversation_id == conversation_id).delete()
+
             # Delete the conversation
             db_session.delete(conversation)
             db_session.commit()
@@ -455,9 +405,7 @@ class ConversationService:
             logger.error(f"Error deleting conversation {conversation_id}: {e}")
             raise
 
-    async def add_message(
-        self, conversation_id: int, message_data: MessageCreate, db_session
-    ) -> MessageRead:
+    async def add_message(self, conversation_id: int, message_data: MessageCreate, db_session) -> MessageRead:
         """
         Add a message to a conversation.
 
@@ -470,12 +418,8 @@ class ConversationService:
             MessageRead object with the created message
         """
         try:
-            message = Message(
-                conversation_id=conversation_id,
-                sender=message_data.sender,
-                content=message_data.content
-            )
-            
+            message = Message(conversation_id=conversation_id, sender=message_data.sender, content=message_data.content)
+
             db_session.add(message)
             db_session.commit()
             db_session.refresh(message)
@@ -486,7 +430,7 @@ class ConversationService:
                 sender=message.sender,
                 content=message.content,
                 created_at=message.created_at,
-                updated_at=message.updated_at
+                updated_at=message.updated_at,
             )
 
         except Exception as e:
@@ -495,7 +439,7 @@ class ConversationService:
 
     async def get_conversation_messages(
         self, conversation_id: int, limit: int = 100, offset: int = 0, db_session=None
-    ) -> List[MessageRead]:
+    ) -> list[MessageRead]:
         """
         Get messages for a conversation.
 
@@ -509,9 +453,14 @@ class ConversationService:
             List of MessageRead objects
         """
         try:
-            messages = db_session.query(Message).filter(
-                Message.conversation_id == conversation_id
-            ).order_by(Message.created_at).offset(offset).limit(limit).all()
+            messages = (
+                db_session.query(Message)
+                .filter(Message.conversation_id == conversation_id)
+                .order_by(Message.created_at)
+                .offset(offset)
+                .limit(limit)
+                .all()
+            )
 
             return [
                 MessageRead(
@@ -520,7 +469,7 @@ class ConversationService:
                     sender=msg.sender,
                     content=msg.content,
                     created_at=msg.created_at,
-                    updated_at=msg.updated_at
+                    updated_at=msg.updated_at,
                 )
                 for msg in messages
             ]

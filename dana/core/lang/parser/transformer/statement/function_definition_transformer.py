@@ -236,11 +236,16 @@ class FunctionDefinitionTransformer(BaseTransformer):
     def parameters(self, items):
         """Transform parameters rule into a list of Parameter objects.
 
-        Grammar: parameters: typed_parameter ("," typed_parameter)*
+        Grammar: parameters: typed_parameter ("," [COMMENT] typed_parameter)*
         """
         result = []
         for item in items:
-            if isinstance(item, Parameter):
+            # Skip None values (from optional COMMENT tokens) and comment tokens
+            if item is None:
+                continue
+            elif hasattr(item, "type") and item.type == "COMMENT":
+                continue
+            elif isinstance(item, Parameter):
                 # Already a Parameter object from typed_parameter
                 result.append(item)
             elif isinstance(item, Identifier):
@@ -333,7 +338,15 @@ class FunctionDefinitionTransformer(BaseTransformer):
             # We have a default value expression
             default_value = self.main_transformer.expression_transformer.transform(items[2])
 
-        return StructField(name=field_name, type_hint=type_hint, default_value=default_value)
+        # Extract comment if present
+        comment = None
+        for item in items:
+            if hasattr(item, "type") and item.type == "COMMENT":
+                # Remove the # prefix and strip whitespace
+                comment = item.value.lstrip("#").strip()
+                break
+
+        return StructField(name=field_name, type_hint=type_hint, default_value=default_value, comment=comment)
 
         # === Agent Definitions ===
 

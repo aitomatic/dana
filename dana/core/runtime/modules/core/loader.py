@@ -54,6 +54,26 @@ class ModuleLoader(MetaPathFinder, Loader):
         Returns:
             Module specification if found, None otherwise (does NOT raise)
         """
+        # For internal use: extract importing module path from path if provided
+        importing_module_path = None
+        if path and isinstance(path, list) and len(path) > 0 and isinstance(path[0], str):
+            # Check if the first element looks like a file path (internal convention)
+            first_path = path[0]
+            if first_path.startswith("__dana_importing_from__:"):
+                importing_module_path = first_path[23:]  # Remove prefix
+
+        return self._find_spec_with_context(fullname, importing_module_path)
+
+    def _find_spec_with_context(self, fullname: str, importing_module_path: str | None = None) -> PyModuleSpec | None:
+        """Find a module specification with optional context of importing module.
+
+        Args:
+            fullname: Fully qualified module name
+            importing_module_path: Path of the module doing the import (if any)
+
+        Returns:
+            Module specification if found, None otherwise
+        """
         # Only handle Dana module names (no internal Python modules)
         # Skip Python internal modules and standard library modules
         if (
@@ -219,6 +239,21 @@ class ModuleLoader(MetaPathFinder, Loader):
                         if module_file.is_file():
                             # Create and register Dana spec
                             dana_spec = ModuleSpec(name=fullname, loader=self, origin=str(module_file))
+                            # Check if this module can also serve as a package
+                            self._setup_package_attributes(dana_spec)
+                            self.registry.register_spec(dana_spec)
+                            # Convert to Python spec
+                            py_spec = PyModuleSpec(name=dana_spec.name, loader=self, origin=dana_spec.origin)
+                            py_spec.has_location = dana_spec.has_location
+                            py_spec.submodule_search_locations = dana_spec.submodule_search_locations
+                            return py_spec
+
+                        # Also check for package/__init__.na in parent's search paths
+                        init_file = Path(search_path) / module_name / "__init__.na"
+                        if init_file.is_file():
+                            # Create and register Dana spec
+                            dana_spec = ModuleSpec(name=fullname, loader=self, origin=str(init_file))
+                            self._setup_package_attributes(dana_spec)
                             self.registry.register_spec(dana_spec)
                             # Convert to Python spec
                             py_spec = PyModuleSpec(name=dana_spec.name, loader=self, origin=dana_spec.origin)
@@ -229,10 +264,29 @@ class ModuleLoader(MetaPathFinder, Loader):
                 pass  # Continue searching
 
         # Search for module file in search paths
+        # First, try to find in the importing module's directory if available
+        if importing_module_path:
+            importing_dir = Path(importing_module_path).parent
+            module_file = self._find_module_in_directory(module_name, importing_dir)
+            if module_file is not None:
+                # Create and register Dana spec
+                dana_spec = ModuleSpec(name=fullname, loader=self, origin=str(module_file))
+                # Check if this module can also serve as a package
+                self._setup_package_attributes(dana_spec)
+                self.registry.register_spec(dana_spec)
+                # Convert to Python spec
+                py_spec = PyModuleSpec(name=dana_spec.name, loader=self, origin=dana_spec.origin)
+                py_spec.has_location = dana_spec.has_location
+                py_spec.submodule_search_locations = dana_spec.submodule_search_locations
+                return py_spec
+
+        # Then search in regular search paths
         module_file = self._find_module_file(module_name)
         if module_file is not None:
             # Create and register Dana spec
             dana_spec = ModuleSpec(name=fullname, loader=self, origin=str(module_file))
+            # Check if this module can also serve as a package
+            self._setup_package_attributes(dana_spec)
             self.registry.register_spec(dana_spec)
             # Convert to Python spec
             py_spec = PyModuleSpec(name=dana_spec.name, loader=self, origin=dana_spec.origin)
@@ -242,6 +296,39 @@ class ModuleLoader(MetaPathFinder, Loader):
 
         # Module not found after checking all paths - return None to let Python handle it
         return None
+
+    def _setup_package_attributes(self, spec: ModuleSpec) -> None:
+        """Set up package attributes for a module spec.
+
+        This allows both __init__.na files and regular .na files to serve as packages
+        if they have subdirectories with modules.
+
+        Args:
+            spec: Module specification to set up
+        """
+        if not spec.origin:
+            return
+
+        origin_path = Path(spec.origin)
+
+        # Case 1: __init__.na files are always packages
+        if origin_path.name == "__init__.na":
+            spec.submodule_search_locations = [str(origin_path.parent)]
+            if "." in spec.name:
+                spec.parent = spec.name.rsplit(".", 1)[0]
+        else:
+            # Case 2: Regular .na files can also be packages if they have a directory with the same name
+            # This enables a.b.na to serve as a package for a.b.c modules
+            module_dir = origin_path.parent / origin_path.stem
+            if module_dir.is_dir():
+                # Check if the directory contains any .na files or subdirectories with __init__.na
+                has_submodules = any(f.suffix == ".na" for f in module_dir.iterdir() if f.is_file()) or any(
+                    (subdir / "__init__.na").exists() for subdir in module_dir.iterdir() if subdir.is_dir()
+                )
+                if has_submodules:
+                    spec.submodule_search_locations = [str(module_dir)]
+                    if "." in spec.name:
+                        spec.parent = spec.name.rsplit(".", 1)[0]
 
     def create_module(self, spec: PyModuleSpec) -> Module | None:
         """Create a new module object.
@@ -320,8 +407,23 @@ class ModuleLoader(MetaPathFinder, Loader):
             context = SandboxContext()
             context._interpreter = interpreter  # Set the interpreter in the context
 
-            # Set current module for relative import resolution
+            # Set current module and package for relative import resolution
             context._current_module = module.__name__
+            # Set current package for relative import resolution
+            # Special case: for __init__.na files, the current package is the module itself
+            # For regular modules, the current package is the parent package
+            origin_path = Path(module.__file__) if module.__file__ else None
+            if origin_path and origin_path.name == "__init__.na":
+                # __init__.na file - current package is the module itself
+                context._current_package = module.__name__
+            elif "." in module.__name__:
+                # Regular module - current package is parent package
+                context._current_package = module.__name__.rsplit(".", 1)[0]
+            else:
+                # Top-level module has no package
+                context._current_package = ""
+            # Debug logging
+            # print(f"DEBUG: Setting context for module {module.__name__}, package = {context._current_package}")
 
             # Initialize module dict with context
             for key, value in module.__dict__.items():
@@ -347,14 +449,18 @@ class ModuleLoader(MetaPathFinder, Loader):
 
             # Handle exports
             if hasattr(context, "_exports"):
+                # Explicit exports override underscore privacy - respect user's explicit choices
                 module.__exports__ = context._exports
             else:
                 # If no explicit exports, export all local and public variables
                 local_vars = set(context.get_scope("local").keys())
                 public_vars_set = set(public_vars.keys())
-                module.__exports__ = local_vars | public_vars_set
+                all_vars = local_vars | public_vars_set
 
-            # Remove internal variables from exports
+                # Apply underscore privacy rule: auto-export everything except names starting with '_'
+                module.__exports__ = {name for name in all_vars if not name.startswith("_")}
+
+            # Always remove internal Python variables (double underscore) from exports
             module.__exports__ = {name for name in module.__exports__ if not name.startswith("__")}
 
             # Post-process: Ensure DanaFunction objects can access each other for recursive calls
@@ -406,6 +512,28 @@ class ModuleLoader(MetaPathFinder, Loader):
                 except Exception as e:
                     # Non-fatal - log and continue
                     print(f"Warning: Could not register module function {func_name}: {e}")
+
+    def _find_module_in_directory(self, module_name: str, directory: Path) -> Path | None:
+        """Find a module file in a specific directory.
+
+        Args:
+            module_name: Module name to find
+            directory: Directory to search in
+
+        Returns:
+            Path to module file if found, None otherwise
+        """
+        # Try .na file
+        module_file = directory / f"{module_name}.na"
+        if module_file.exists():
+            return module_file
+
+        # Try package/__init__.na
+        init_file = directory / module_name / "__init__.na"
+        if init_file.exists():
+            return init_file
+
+        return None
 
     def _find_module_file(self, module_name: str) -> Path | None:
         """Find a module file in the search paths.

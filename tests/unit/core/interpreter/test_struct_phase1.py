@@ -199,7 +199,7 @@ class TestStructTypeSystem:
         # Try to register again - should be allowed (idempotent registration)
         # The current implementation allows registering the same struct multiple times
         register_struct_from_ast(struct_def1)
-        
+
         # Verify the struct is still registered
         assert StructTypeRegistry.exists("Test")
         retrieved_type = StructTypeRegistry.get("Test")

@@ -1,0 +1,11 @@
+# b.na - Test Dana module for 2-component and 3-component imports
+
+def nested_dana_function() -> str:
+    return "Hello from nested Dana module!"
+
+public:NESTED_CONSTANT = "Nested Dana constant"
+
+def deep_function() -> str:
+    return "Hello from deep module!"
+
+public:DEEP_CONSTANT = "Deep level constant" 
