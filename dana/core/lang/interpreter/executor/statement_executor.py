@@ -543,28 +543,11 @@ class StatementExecutor(BaseExecutor):
                 # Create a new context for function execution
                 func_context = context.copy()
 
-                # Bind parameters to arguments
-                for i, param in enumerate(node.parameters):
-                    if i < len(args):
-                        param_name = param.name if hasattr(param, "name") else str(param)
-                        func_context.set(f"local:{param_name}", args[i])
+                # Validate and bind parameters to arguments
+                self._bind_declarative_function_parameters(node.parameters, args, kwargs, func_context)
 
-                # Bind keyword arguments
-                for key, value in kwargs.items():
-                    func_context.set(f"local:{key}", value)
-
-                # Now execute the composition expression in the function context
-                composed_func = self.parent.execute(node.composition, func_context)
-
-                # If the composition is a callable, call it with the first argument
-                if callable(composed_func):
-                    if args:
-                        return composed_func(args[0])
-                    else:
-                        return composed_func()
-                else:
-                    # If it's not callable, return the evaluated expression
-                    return composed_func
+                # Execute the composition expression
+                return self._execute_composition(node.composition, func_context, args)
 
             return wrapper
 
@@ -597,6 +580,89 @@ class StatementExecutor(BaseExecutor):
         context.set(f"local:{node.name.name}", wrapper)
 
         return wrapper
+
+    def _bind_declarative_function_parameters(self, parameters: list, args: tuple, kwargs: dict, func_context: SandboxContext) -> None:
+        """Bind function parameters to arguments with proper validation and default handling.
+
+        Args:
+            parameters: List of Parameter objects from the function definition
+            args: Positional arguments passed to the function
+            kwargs: Keyword arguments passed to the function
+            func_context: The function execution context
+
+        Raises:
+            TypeError: If required parameters are missing or invalid arguments are provided
+        """
+        # Extract parameter information
+        param_names = []
+        param_defaults = {}
+        required_params = set()
+
+        for param in parameters:
+            param_name = param.name if hasattr(param, "name") else str(param)
+            param_names.append(param_name)
+
+            # Check if parameter has a default value
+            if hasattr(param, "default_value") and param.default_value is not None:
+                try:
+                    # Evaluate the default value expression
+                    default_value = self.parent.execute(param.default_value, func_context)
+                    param_defaults[param_name] = default_value
+                except Exception as e:
+                    self.debug(f"Failed to evaluate default value for parameter {param_name}: {e}")
+                    # If default evaluation fails, mark as required
+                    required_params.add(param_name)
+            else:
+                # No default value, parameter is required
+                required_params.add(param_name)
+
+        # Validate keyword arguments - only allow declared parameters
+        for key in kwargs:
+            if key not in param_names:
+                raise TypeError(f"Unexpected keyword argument '{key}' for function with parameters: {param_names}")
+
+        # Bind positional arguments
+        for i, param_name in enumerate(param_names):
+            if i < len(args):
+                # Positional argument provided
+                func_context.set(f"local:{param_name}", args[i])
+            elif param_name in kwargs:
+                # Keyword argument provided
+                func_context.set(f"local:{param_name}", kwargs[param_name])
+            elif param_name in param_defaults:
+                # Use default value
+                func_context.set(f"local:{param_name}", param_defaults[param_name])
+            elif param_name in required_params:
+                # Required parameter missing
+                raise TypeError(f"Missing required argument '{param_name}'")
+
+        # Validate no extra positional arguments
+        if len(args) > len(param_names):
+            raise TypeError(f"Too many positional arguments: expected {len(param_names)}, got {len(args)}")
+
+    def _execute_composition(self, composition, func_context: SandboxContext, args: tuple) -> Any:
+        """Execute the composition expression and handle the result appropriately.
+
+        Args:
+            composition: The composition expression to execute
+            func_context: The function execution context
+            args: The arguments passed to the function
+
+        Returns:
+            The result of executing the composition
+        """
+        # Execute the composition expression in the function context
+        composed_func = self.parent.execute(composition, func_context)
+
+        # If the composition is a callable, call it with all arguments
+        if callable(composed_func):
+            if args:
+                return composed_func(*args)  # Pass all arguments, not just the first
+            else:
+                return composed_func()
+        else:
+            # If it's not callable, return the evaluated expression
+            return composed_func
 
     def _extract_annotations(self, parameters: list, return_type) -> dict[str, type]:
         """Extract Python annotations from Dana parameters and return type.

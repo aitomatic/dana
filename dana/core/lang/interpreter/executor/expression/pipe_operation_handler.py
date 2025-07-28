@@ -14,7 +14,7 @@ from typing import Any
 
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.ast import BinaryExpression, BinaryOperator, FunctionCall, Identifier
+from dana.core.lang.ast import AttributeAccess, BinaryExpression, BinaryOperator, FunctionCall, Identifier, ListLiteral
 from dana.core.lang.interpreter.functions.composed_function import ComposedFunction
 from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
 from dana.core.lang.sandbox_context import SandboxContext
@@ -132,6 +132,7 @@ class PipeOperationHandler(Loggable):
         - Identifiers: resolve from context/registry
         - BinaryExpressions: evaluate recursively
         - FunctionCall: evaluate to get the function
+        - ListLiteral: create ParallelFunction for parallel composition
         - Functions: return as-is
         """
         # Handle identifiers
@@ -145,6 +146,10 @@ class PipeOperationHandler(Loggable):
         # Handle function calls (evaluate to get the function)
         if isinstance(expr, FunctionCall):
             return self._resolve_function_call(expr, context)
+
+        # Handle list literals (parallel function composition)
+        if isinstance(expr, ListLiteral):
+            return self._resolve_list_literal(expr, context)
 
         # Handle already composed functions and SandboxFunctions
         if isinstance(expr, SandboxFunction | ParallelFunction):
@@ -161,7 +166,21 @@ class PipeOperationHandler(Loggable):
 
     def _resolve_function_call(self, func_call: FunctionCall, context: SandboxContext) -> Any:
         """Resolve a function call to a function (partial application)."""
-        # Get the function from context
+        # Handle AttributeAccess for method calls
+        if isinstance(func_call.name, AttributeAccess):
+            # Resolve the object and get the method
+            obj = self.parent_executor.execute(func_call.name.object, context)
+            method_name = func_call.name.attribute
+            if hasattr(obj, method_name):
+                func = getattr(obj, method_name)
+                if callable(func):
+                    return func
+                else:
+                    raise SandboxError(f"'{method_name}' is not a callable method on {type(obj).__name__}")
+            else:
+                raise SandboxError(f"Object {type(obj).__name__} has no method '{method_name}'")
+
+        # Handle string function names
         func_name = func_call.name if isinstance(func_call.name, str) else func_call.name.name
         func = self._resolve_identifier(Identifier(func_name), context)
 
@@ -172,6 +191,18 @@ class PipeOperationHandler(Loggable):
             return func
 
         return func
+
+    def _resolve_list_literal(self, list_literal: ListLiteral, context: SandboxContext) -> Any:
+        """Resolve a list literal to a ParallelFunction for parallel composition."""
+        functions = []
+
+        for item in list_literal.items:
+            # Resolve each item to a function
+            func = self._resolve_to_function(item, context)
+            functions.append(func)
+
+        # Create a ParallelFunction that will execute all functions with the same input
+        return ParallelFunction(functions, context=context)
 
     def _resolve_identifier(self, identifier: Identifier, context: SandboxContext) -> Any:
         """Resolve an identifier to a function from context or registry."""

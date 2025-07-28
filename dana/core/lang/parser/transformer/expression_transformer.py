@@ -63,11 +63,15 @@ class ExpressionTransformer(BaseTransformer):
     """Transform expression parse trees into AST Expression nodes."""
 
     def __init__(self, main_transformer=None):
+        """Initialize the ExpressionTransformer.
+
+        Args:
+            main_transformer: Optional main transformer instance for coordination.
+                            Can be None for standalone usage.
+        """
+        super().__init__()
         self.main_transformer = main_transformer
         self._in_declarative_function = False
-        from dana.core.lang.parser.utils.tree_utils import TreeTraverser
-
-        self.tree_traverser = TreeTraverser()
 
     def set_declarative_function_context(self, in_declarative_function: bool):
         """Set whether we're currently in a declarative function context."""
@@ -283,9 +287,12 @@ class ExpressionTransformer(BaseTransformer):
         if not has_pipe and len(stages) == 1:
             return stages[0]
 
-        # Note: Pipe expressions are naturally restricted by grammar requirements
-        # Old syntax like 'pipeline = f1 | f2' will fail with syntax errors
-        # since the grammar requires 'def pipeline() = f1 | f2'
+        # Enforce declarative function context restriction
+        if not self._is_in_declarative_function_context():
+            raise SyntaxError(
+                "Pipe expressions (|) are only allowed in declarative function definitions. "
+                "Use 'def function_name() = expr1 | expr2' syntax instead of assignment."
+            )
 
         # Otherwise, create PipelineExpression
         return PipelineExpression(stages=stages)

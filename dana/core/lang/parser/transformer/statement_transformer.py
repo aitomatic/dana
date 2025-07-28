@@ -51,7 +51,6 @@ from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
 from dana.core.lang.parser.transformer.expression_transformer import (
     ExpressionTransformer,
 )
-from dana.core.lang.parser.utils.tree_utils import TreeTraverser
 
 # Allowed types for Assignment.value
 AllowedAssignmentValue = (
@@ -83,7 +82,6 @@ class StatementTransformer(BaseTransformer):
         """Initialize the statement transformer and its expression transformer."""
         super().__init__()
         self.expression_transformer = ExpressionTransformer(self)
-        self.tree_traverser = TreeTraverser()
 
         # Initialize specialized transformers
         from dana.core.lang.parser.transformer.statement.agent_context_transformer import (

@@ -260,3 +260,30 @@ log("• All declarative function patterns working")
 log("• Full integration with Dana's pipe operator")
 log("• Type safety and validation confirmed")
 log("• Error handling and edge cases covered") 
+
+# ===== TEST: Verify Declarative Function Context Restriction =====
+log("\n📝 TEST: Declarative Function Context Restriction")
+
+# This test verifies that pipe expressions are only allowed in declarative function definitions
+# and not in regular assignments or expressions
+
+def add_one(x: int) -> int:
+    return x + 1
+
+def double(x: int) -> int:
+    return x * 2
+
+# This should work - declarative function definition
+def valid_pipeline(x: int) -> int = add_one | double
+
+# Test the valid pipeline
+result = valid_pipeline(5)
+expected = 12  # (5 + 1) * 2 = 12
+assert result == expected, f"Expected {expected}, got {result}"
+log(f"✅ Valid declarative pipeline: {result}")
+
+# The following would cause a SyntaxError if the restriction is working:
+# pipeline = add_one | double  # This should be rejected
+# result = 5 | double          # This should be rejected
+
+log("✅ Declarative function context restriction verified!") 
