@@ -83,7 +83,7 @@ Same reasoning, different output types based on usage:
 ```dana
 # Intelligence adapts to what you need
 risk_score: float = reason("assess portfolio risk", context=portfolio)
-risk_details: dict = reason("assess portfolio risk", context=portfolio) 
+risk_details: dict = reason("assess portfolio risk", context=portfolio)
 risk_report: str = reason("assess portfolio risk", context=portfolio)
 ```
 
@@ -144,7 +144,7 @@ public:completion_status = "ready" # Shared state
 ### Path 1: Quick Demo (5 minutes)
 ```bash
 # Install Dana
-pip install dana-agent
+pip install dana
 
 # Run your first agent
 dana start
@@ -193,7 +193,7 @@ for-engineers/
 
 ---
 
-*Ready to build? Start with [Getting Started](#getting-started-paths) or jump to [Common Tasks](#common-tasks)* 
+*Ready to build? Start with [Getting Started](#getting-started-paths) or jump to [Common Tasks](#common-tasks)*
 
 ## Quick Examples
 
@@ -235,11 +235,11 @@ data_sources = ["api", "database", "files"]
 for source in data_sources:
     if source == "api":
         raw_data = fetch_api_data()
-    elif source == "database": 
+    elif source == "database":
         raw_data = query_database()
     else:
         raw_data = load_file_data()
-    
+
     processed = reason("Clean and validate data", context=raw_data)
     results[source] = processed
 ```
