@@ -160,7 +160,8 @@ class FunctionExecutor(BaseExecutor):
             raise SandboxError("Method definition requires typed receiver parameter")
 
         # Parse union types (e.g., "Point | Circle | Rectangle")
-        receiver_types = [t.strip() for t in receiver_type_str.split("|")]
+        # Handle spaces around pipe symbols
+        receiver_types = [t.strip() for t in receiver_type_str.split("|") if t.strip()]
         
         # Validate that all receiver types exist
         for type_name in receiver_types:
