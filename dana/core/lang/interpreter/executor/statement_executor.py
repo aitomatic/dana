@@ -27,6 +27,7 @@ from dana.core.lang.ast import (
     AssertStatement,
     Assignment,
     CompoundAssignment,
+    DeclarativeFunctionDefinition,
     ExportStatement,
     FunctionDefinition,
     ImportFromStatement,
@@ -93,6 +94,7 @@ class StatementExecutor(BaseExecutor):
             StructDefinition: self.execute_struct_definition,
             UseStatement: self.execute_use_statement,
             ExportStatement: self.execute_export_statement,
+            DeclarativeFunctionDefinition: self.execute_declarative_function_definition,
         }
 
     def execute_assignment(self, node: Assignment, context: SandboxContext) -> Any:
@@ -515,3 +517,161 @@ class StatementExecutor(BaseExecutor):
         self.debug(f"Routing function definition '{node.name.name}' to agent handler")
         result = self.agent_handler.execute_function_definition(node, context)
         return result
+
+    def execute_declarative_function_definition(self, node: "DeclarativeFunctionDefinition", context: SandboxContext) -> Any:
+        """Execute a declarative function definition.
+
+        Args:
+            node: The declarative function definition to execute
+            context: The execution context
+
+        Returns:
+            The defined function
+        """
+        self.debug(f"Executing declarative function definition '{node.name.name}'")
+
+        # Import here to avoid circular imports
+
+        # Note: The grammar requires parentheses even when no parameters are specified
+        # So parameters=[] means "no parameters", not "infer parameters"
+        # Signature inference is not needed since the grammar enforces explicit parameter lists
+
+        # Create a closure that captures the composition expression and context
+        def create_declarative_function():
+            def wrapper(*args, **kwargs):
+                """Wrapper function for declarative function with signature metadata."""
+                # Create a new context for function execution
+                func_context = context.copy()
+
+                # Bind parameters to arguments
+                for i, param in enumerate(node.parameters):
+                    if i < len(args):
+                        param_name = param.name if hasattr(param, "name") else str(param)
+                        func_context.set(f"local:{param_name}", args[i])
+
+                # Bind keyword arguments
+                for key, value in kwargs.items():
+                    func_context.set(f"local:{key}", value)
+
+                # Now execute the composition expression in the function context
+                composed_func = self.parent.execute(node.composition, func_context)
+
+                # If the composition is a callable, call it with the first argument
+                if callable(composed_func):
+                    if args:
+                        return composed_func(args[0])
+                    else:
+                        return composed_func()
+                else:
+                    # If it's not callable, return the evaluated expression
+                    return composed_func
+
+            return wrapper
+
+        # Create the function
+        wrapper = create_declarative_function()
+
+        # Set function metadata for IDE support and debugging
+        wrapper.__name__ = node.name.name
+        wrapper.__qualname__ = node.name.name
+
+        # Set docstring if available
+        if node.docstring:
+            wrapper.__doc__ = node.docstring
+
+        # Extract and set annotations
+        annotations = self._extract_annotations(node.parameters, node.return_type)
+        wrapper.__annotations__ = annotations
+
+        # Create and set inspect.Signature for IDE support
+        try:
+            import inspect  # noqa: F401
+
+            signature = self._create_signature(node.parameters, node.return_type)
+            wrapper.__signature__ = signature
+        except ImportError:
+            # inspect module not available, skip signature creation
+            pass
+
+        # Store the function in the context
+        context.set(f"local:{node.name.name}", wrapper)
+
+        return wrapper
+
+    def _extract_annotations(self, parameters: list, return_type) -> dict[str, type]:
+        """Extract Python annotations from Dana parameters and return type.
+
+        Args:
+            parameters: List of Parameter objects
+            return_type: TypeHint object or None
+
+        Returns:
+            Dictionary mapping parameter names to Python types
+        """
+        annotations = {}
+
+        for param in parameters:
+            param_name = param.name if hasattr(param, "name") else str(param)
+            param_type = param.type_hint.name if param.type_hint else "Any"
+            annotations[param_name] = self._map_dana_type_to_python(param_type)
+
+        if return_type:
+            annotations["return"] = self._map_dana_type_to_python(return_type.name)
+
+        return annotations
+
+    def _map_dana_type_to_python(self, dana_type: str) -> type:
+        """Map Dana type names to Python types.
+
+        Args:
+            dana_type: Dana type name (e.g., "int", "str", "list")
+
+        Returns:
+            Corresponding Python type
+        """
+        type_mapping = {
+            "int": int,
+            "float": float,
+            "str": str,
+            "bool": bool,
+            "list": list,
+            "dict": dict,
+            "tuple": tuple,
+            "set": set,
+            "None": type(None),
+            "any": object,
+            "Any": object,
+        }
+
+        return type_mapping.get(dana_type, object)
+
+    def _create_signature(self, parameters: list, return_type):
+        """Create inspect.Signature object for IDE support.
+
+        Args:
+            parameters: List of Parameter objects
+            return_type: TypeHint object or None
+
+        Returns:
+            inspect.Signature object
+        """
+        import inspect
+
+        sig_params = []
+
+        for param in parameters:
+            param_name = param.name if hasattr(param, "name") else str(param)
+            param_type = param.type_hint.name if param.type_hint else "Any"
+            default = param.default_value if hasattr(param, "default_value") else inspect.Parameter.empty
+
+            sig_param = inspect.Parameter(
+                name=param_name,
+                kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                default=default,
+                annotation=self._map_dana_type_to_python(param_type),
+            )
+            sig_params.append(sig_param)
+
+        return_annotation = self._map_dana_type_to_python(return_type.name) if return_type else object
+
+        return inspect.Signature(parameters=sig_params, return_annotation=return_annotation)

@@ -861,34 +861,31 @@ class ExpressionExecutor(BaseExecutor):
 
                     return error_function(current_value)
 
-            # Handle ListLiteral that gets converted to ParallelFunction
-            elif isinstance(stage, ListLiteral):
-                # Convert list to ParallelFunction and execute it
-                from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import (
-                    ParallelFunction,
-                )
-
-                functions = []
-                for item in stage.items:
-                    func = self.parent.execute(item, context)
-                    functions.append(func)
-                parallel_func = ParallelFunction(functions, context)
-                return parallel_func.execute(context, current_value)
-
             # For other types, use the original resolution
             else:
-                func = self.parent.execute(stage, context)
-                if callable(func):
+                result = self.parent.execute(stage, context)
+
+                # Check if this is a list of functions that should be converted to ParallelFunction
+                if isinstance(result, list) and all(callable(item) for item in result):
                     from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import (
                         ParallelFunction,
                     )
 
-                    if isinstance(func, ParallelFunction):
-                        return func.execute(context, current_value)
+                    parallel_func = ParallelFunction(result, context)
+                    return parallel_func.execute(context, current_value)
+
+                # Handle callable functions
+                elif callable(result):
+                    from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import (
+                        ParallelFunction,
+                    )
+
+                    if isinstance(result, ParallelFunction):
+                        return result.execute(context, current_value)
                     else:
-                        return func(current_value)
+                        return result(current_value)
                 else:
-                    return self.parent.execute(stage, context)
+                    return result
 
     def _execute_function_call_stage(self, current_value: Any, func_call: FunctionCall, context: SandboxContext) -> Any:
         """Execute a function call stage with pipeline argument substitution.

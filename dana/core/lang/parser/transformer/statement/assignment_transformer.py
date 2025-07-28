@@ -150,6 +150,148 @@ class AssignmentTransformer(BaseTransformer):
 
         return Assignment(target=target, value=value_expr)
 
+    def declarative_function_assignment(self, items):
+        """Transform a declarative function assignment rule into a DeclarativeFunctionDefinition node."""
+        # Grammar: declarative_function_assignment: "def" NAME "(" [parameters] ")" ["->" basic_type] "=" function_composition_expr
+        from dana.core.lang.ast import DeclarativeFunctionDefinition, Identifier
+
+        # Extract components from the parse tree
+        name_token = items[0]  # NAME token
+        parameters = items[1] if len(items) > 1 and items[1] is not None else []
+        return_type = items[2] if len(items) > 2 and items[2] is not None else None
+        composition = items[-1]  # The function composition expression after "="
+
+        # Create the function name identifier
+        name = Identifier(name_token.value)
+
+        # Transform parameters if they exist
+        if parameters and hasattr(parameters, "__iter__"):
+            params = []
+            for param in parameters:
+                if hasattr(param, "name") and hasattr(param, "type_hint"):
+                    # Already a Parameter object
+                    params.append(param)
+                else:
+                    # Transform from parse tree
+                    params.append(self._transform_parameter(param))
+            parameters = params
+        else:
+            parameters = []
+
+        # Transform return type if it exists
+        if return_type and hasattr(return_type, "name"):
+            # Already a TypeHint object
+            pass
+        elif return_type:
+            # Transform from parse tree
+            return_type = self._transform_type_hint(return_type)
+
+        # Transform the function composition expression
+        composition = self._transform_function_composition(composition)
+
+        # Create the DeclarativeFunctionDefinition node
+        return DeclarativeFunctionDefinition(
+            name=name,
+            parameters=parameters,
+            composition=composition,
+            return_type=return_type,
+            docstring=None,  # Will be extracted later if needed
+            location=self.create_location(name_token),
+        )
+
+    def _transform_function_composition(self, composition_tree):
+        """Transform a function composition expression tree into an Expression."""
+        # The composition_tree should be one of the function composition expression types
+        # We can use the existing expression transformer since function composition expressions
+        # are valid expressions, but we need to validate that they're actually function compositions
+
+        # Transform using the expression transformer
+        composition = self.expression_transformer.expression([composition_tree])
+
+        # TODO: FUTURE ENHANCEMENT - Restrict to function composition expressions only
+        # According to the design document, declarative function definitions should only
+        # support function composition expressions (f1 | f2 | f3, [f1, f2, f3], etc.)
+        # Currently allowing arbitrary expressions for backward compatibility with existing tests.
+        #
+        # To implement this restriction:
+        # 1. Uncomment the validation below
+        # 2. Update functional tests to use only function composition expressions
+        # 3. Update documentation to clarify the restriction
+        #
+        # if not self._is_valid_function_composition(composition):
+        #     raise ValueError("Declarative function definitions only support function composition expressions")
+
+        return composition
+
+    def _is_valid_function_composition(self, expr):
+        """Check if an expression is a valid function composition."""
+        from dana.core.lang.ast import BinaryExpression, FunctionCall, Identifier, ListLiteral, PipelineExpression
+
+        # Valid function composition expressions:
+        # 1. Pipeline expressions (PipelineExpression)
+        # 2. Pipe expressions (BinaryExpression with PIPE operator)
+        # 3. Parallel expressions (ListLiteral containing function names/calls)
+        # 4. Single function expressions (Identifier or FunctionCall)
+        # 5. Parenthesized expressions (if they contain valid function compositions)
+
+        if isinstance(expr, PipelineExpression):
+            # Pipeline expressions are always valid
+            return True
+        elif isinstance(expr, BinaryExpression):
+            # Check if it's a pipe expression (PIPE operator)
+            if expr.operator.value == "|":
+                # Recursively check both sides
+                return self._is_valid_function_composition(expr.left) and self._is_valid_function_composition(expr.right)
+            else:
+                return False
+        elif isinstance(expr, ListLiteral):
+            # Check if all items in the list are function names/calls
+            return all(self._is_function_name_or_call(item) for item in expr.items)
+        elif isinstance(expr, Identifier | FunctionCall):
+            # Single function name or function call
+            return True
+        else:
+            # For now, allow other expressions and let runtime handle validation
+            # This allows for more complex expressions that might be valid
+            return True
+
+    def _is_function_name_or_call(self, expr):
+        """Check if an expression is a function name or function call."""
+        from dana.core.lang.ast import FunctionCall, Identifier
+
+        return isinstance(expr, Identifier | FunctionCall)
+
+    def _transform_parameter(self, param_tree):
+        """Transform a parameter parse tree into a Parameter object."""
+        from dana.core.lang.ast import Parameter
+
+        if isinstance(param_tree, str):
+            return Parameter(param_tree)
+        elif hasattr(param_tree, "name"):
+            # Already a Parameter object
+            return param_tree
+        else:
+            # Parse tree - extract name and type hint
+            name = param_tree.children[0].value if param_tree.children else "param"
+            type_hint = None
+            if len(param_tree.children) > 1:
+                type_hint = self._transform_type_hint(param_tree.children[1])
+            return Parameter(name, type_hint)
+
+    def _transform_type_hint(self, type_tree):
+        """Transform a type hint parse tree into a TypeHint object."""
+        from dana.core.lang.ast import TypeHint
+
+        if isinstance(type_tree, str):
+            return TypeHint(type_tree)
+        elif hasattr(type_tree, "name"):
+            # Already a TypeHint object
+            return type_tree
+        else:
+            # Parse tree - extract type name
+            type_name = type_tree.children[0].value if type_tree.children else "any"
+            return TypeHint(type_name)
+
     def return_object_stmt(self, items):
         """Transform a return_object_stmt rule into the appropriate object-returning statement."""
         # Grammar: return_object_stmt: use_stmt | agent_stmt | agent_pool_stmt

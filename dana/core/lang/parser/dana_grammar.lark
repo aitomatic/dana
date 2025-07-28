@@ -116,6 +116,7 @@ ANY_TYPE: "any"
 
 // ===== SIMPLE STATEMENTS =====
 simple_stmt: assignment
+           | declarative_function_assignment
            | expr_stmt
            | return_stmt
            | break_stmt
@@ -170,6 +171,7 @@ assignment: typed_assignment | simple_assignment | function_call_assignment | co
 typed_assignment: target ":" basic_type "=" expr
 simple_assignment: target "=" expr
 function_call_assignment: target "=" return_object_stmt
+declarative_function_assignment: "def" NAME "(" [parameters] ")" ["->" basic_type] "=" expr
 compound_assignment: target compound_op expr
 
 compound_op: PLUS_EQUALS | MINUS_EQUALS | MULT_EQUALS | DIV_EQUALS
@@ -217,6 +219,8 @@ target: atom
 expr: pipe_expr
 
 pipe_expr: or_expr (PIPE or_expr)*
+
+
 
 or_expr: and_expr ("or" and_expr)*
 
