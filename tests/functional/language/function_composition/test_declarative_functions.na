@@ -88,11 +88,14 @@ log(f"✅ Constant pipeline: {result}")
 # ===== TEST 5: Complex Pipeline Composition =====
 log("\n📝 TEST 5: Complex Pipeline Composition")
 
-def validate_data(data: list) -> list = data
+def validate_data(data: list) -> list:
+    return data
 
-def double_values(data: list) -> list = data
+def double_values(data: list) -> list:
+    return data
 
-def sum_values(data: list) -> int = sum(data)
+def sum_values(data: list) -> int:
+    return sum(data)
 
 def create_report(total: int) -> str:
     return f"Total: {total}"
