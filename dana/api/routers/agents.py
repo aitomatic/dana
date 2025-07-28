@@ -81,6 +81,7 @@ async def generate_agent(request: AgentGenerationRequest, agent_service=Depends(
             needs_more_info=conversation_analysis.get("needs_more_info", False),
             follow_up_message=conversation_analysis.get("follow_up_message"),
             suggested_questions=conversation_analysis.get("suggested_questions", []),
+            phase="code_generation",  # This endpoint always generates code
         )
 
     except Exception as e:
@@ -663,7 +664,7 @@ def _extract_agent_info_from_code(dana_code: str) -> tuple[str | None, str | Non
     Returns:
         Tuple of (agent_name, agent_description)
     """
-    lines = dana_code.split("\\n")
+    lines = dana_code.split("\n")
     agent_name = None
     agent_description = None
 
