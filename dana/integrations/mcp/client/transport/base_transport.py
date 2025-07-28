@@ -6,10 +6,7 @@ from dana.common.utils.misc import Misc, ParsedArgKwargsResults
 class BaseTransport(ABC):
     """Abstract base class for MCP transport implementations."""
 
-    @abstractmethod
-    def __init__(self):
-        """Initialize the transport."""
-        pass
+# Removed abstract __init__ method as it creates an unclear API contract.
 
     @classmethod
     def parse_init_params(cls, *args, **kwargs) -> ParsedArgKwargsResults:
