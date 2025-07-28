@@ -501,3 +501,108 @@ async def get_specific_domain_knowledge_version(
     except Exception as e:
         logger.error(f"Error fetching version {version} for agent {agent_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{agent_id}/knowledge-content/{topic_path:path}")
+async def get_topic_knowledge_content(
+    agent_id: int,
+    topic_path: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Get the generated knowledge content for a specific topic.
+    
+    Args:
+        agent_id: Agent ID
+        topic_path: The topic path (e.g., "Finance - Market Analysis")
+        db: Database session
+        
+    Returns:
+        dict: The knowledge content or error message
+    """
+    try:
+        logger.info(f"Fetching knowledge content for agent {agent_id}, topic: {topic_path}")
+        
+        # Check if agent exists
+        from dana.api.core.models import Agent
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+        
+        # Get agent folder path
+        folder_path = agent.config.get("folder_path") if agent.config else None
+        if not folder_path:
+            folder_path = f"agents/agent_{agent_id}"
+            
+        import os
+        import json
+        
+        # Convert topic path to filename format
+        safe_topic = (
+            topic_path.replace("/", "_")
+            .replace(" ", "_")
+            .replace("-", "_")
+            .replace("(", "_")
+            .replace(")", "_")
+            .replace(",", "_")
+        )
+        
+        # Look for the knowledge file
+        knows_folder = os.path.join(folder_path, "knows")
+        if not os.path.exists(knows_folder):
+            raise HTTPException(status_code=404, detail="Knowledge folder not found")
+            
+        # Try different filename formats
+        possible_filenames = [
+            f"{safe_topic}.json",
+            f"{topic_path.replace(' - ', '___').replace(' ', '_')}.json"
+        ]
+        
+        knowledge_file_path = None
+        for filename in possible_filenames:
+            file_path = os.path.join(knows_folder, filename)
+            if os.path.exists(file_path):
+                knowledge_file_path = file_path
+                break
+        
+        # If no exact match, try to find by partial matching
+        if not knowledge_file_path:
+            for filename in os.listdir(knows_folder):
+                if filename.endswith('.json') and filename != 'knowledge_status.json':
+                    # Check if the topic components are in the filename
+                    topic_parts = topic_path.split(' - ')
+                    filename_without_ext = filename[:-5]  # Remove .json
+                    
+                    # Check if all topic parts are present in filename
+                    if all(part.replace(' ', '_') in filename_without_ext for part in topic_parts):
+                        knowledge_file_path = os.path.join(knows_folder, filename)
+                        break
+        
+        if not knowledge_file_path:
+            return {
+                "success": False,
+                "message": "Knowledge content not generated yet",
+                "topic_path": topic_path
+            }
+        
+        # Read the knowledge file
+        try:
+            with open(knowledge_file_path, 'r', encoding='utf-8') as f:
+                knowledge_data = json.load(f)
+                
+            return {
+                "success": True,
+                "topic_path": topic_path,
+                "content": knowledge_data,
+                "file_path": knowledge_file_path
+            }
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON in knowledge file {knowledge_file_path}: {e}")
+            raise HTTPException(status_code=500, detail="Knowledge file is corrupted")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching knowledge content for agent {agent_id}, topic {topic_path}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

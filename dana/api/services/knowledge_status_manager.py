@@ -59,6 +59,64 @@ class KnowledgeStatusManager:
                 return entry
         return None
 
+    def add_or_update_topic_by_uuid(
+        self, topic_id: str, topic_name: str, path: str, file: str, last_topic_update: str, status: str = "pending"
+    ):
+        """Add or update topic using UUID reference"""
+        data = self.load()
+        
+        # Find entry by topic_id
+        entry = None
+        for topic in data["topics"]:
+            if topic.get("topic_id") == topic_id:
+                entry = topic
+                break
+        
+        if entry:
+            # Update existing entry
+            entry["topic_name"] = topic_name
+            entry["path"] = path
+            entry["file"] = file
+            entry["last_topic_update"] = last_topic_update
+            if status is not None and status != "preserve_existing":
+                entry["status"] = status
+        else:
+            # Create new entry with UUID reference
+            final_status = "pending" if status == "preserve_existing" else status
+            data["topics"].append({
+                "id": str(uuid.uuid4()),
+                "topic_id": topic_id,
+                "topic_name": topic_name,
+                "path": path,
+                "file": file,
+                "status": final_status,
+                "last_generated": None,
+                "last_topic_update": last_topic_update,
+                "error": None,
+            })
+        self.save(data)
+
+    def get_entry_by_topic_uuid(self, topic_id: str) -> Optional[Dict]:
+        """Get status entry by topic UUID"""
+        data = self.load()
+        for entry in data["topics"]:
+            if entry.get("topic_id") == topic_id:
+                return entry
+        return None
+
+    def remove_topics_by_uuids(self, topic_ids: list[str]):
+        """Remove multiple topics by their UUIDs"""
+        data = self.load()
+        topic_ids_set = set(topic_ids)
+        
+        # Filter out entries with matching topic_ids
+        data["topics"] = [
+            entry for entry in data.get("topics", [])
+            if entry.get("topic_id") not in topic_ids_set
+        ]
+        
+        self.save(data)
+
     def add_or_update_topic(
         self, path: str, file: str, last_topic_update: str, status: str = "pending"
     ):

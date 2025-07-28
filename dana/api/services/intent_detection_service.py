@@ -261,9 +261,10 @@ TASK
 AVAILABLE INTENTS
 ────────────────────────────────────────────────────────
 • `add_information`            – user adds a new topic / knowledge area  
+• `remove_information`         – user wants to remove/delete a topic from the knowledge tree
 • `refresh_domain_knowledge`   – user wants to rebuild / reorganize the tree  
 • `update_agent_properties`    – user changes agent name, role, specialties, skills  
-• `instruct`                   – user issues a command **about a specific topic’s content**  
+• `instruct`                   – user issues a command **about a specific topic's content**  
 • `general_query`              – any other question or request  
 
 A single message may contain multiple intents.
@@ -320,7 +321,7 @@ OUTPUT JSON SCHEMA
 {{
   "intents": [
     {{
-      "intent": "add_information|refresh_domain_knowledge|update_agent_properties|instruct|general_query",
+      "intent": "add_information|remove_information|refresh_domain_knowledge|update_agent_properties|instruct|general_query",
       "entities": {{
         "topics": ["root", ...],   // list or empty []
         "name": "",                // or ""
@@ -367,15 +368,20 @@ ILLUSTRATIVE EXAMPLES  (*not hard rules – always follow tree_json*)
    **User**: “Regenerate your finance knowledge structure.”  
    → `refresh_domain_knowledge` (entities can be empty)
 
-7. **Instruction about existing topic**  
+7. **Remove existing topic**  
+   *tree_json contains* → … → Sentiment Analysis  
+   **User**: "I want to remove Sentiment Analysis topic"  
+   → `remove_information` with `"topics": ["Sentiment Analysis"]`
+
+8. **Instruction about existing topic**  
    *tree_json contains* → … → Credit Analysis  
-   **User**: “Update the credit analysis section with Basel III compliance details.”  
+   **User**: "Update the credit analysis section with Basel III compliance details."  
    → `instruct` with  
      `"topics": ["root","Finance and Analytics","Credit Analysis"],  
        "instruction_text": "Update the credit analysis section with Basel III compliance details."`
 
-8. **General query**  
-   **User**: “What’s the difference between VaR and CVaR?”  
+9. **General query**  
+   **User**: "What's the difference between VaR and CVaR?"  
    → `general_query` (entities empty)
 
 ────────────────────────────────────────────────────────
@@ -399,6 +405,7 @@ Produce the JSON response described above – nothing else.
         
         # Simple keyword-based detection
         add_keywords = ["add", "learn", "know about", "include", "teach", "understand"]
+        remove_keywords = ["remove", "delete", "get rid of", "take away", "eliminate"]
         refresh_keywords = ["update", "refresh", "regenerate", "restructure", "organize"]
         
         if any(keyword in message_lower for keyword in add_keywords):
@@ -409,6 +416,16 @@ Produce the JSON response described above – nothing else.
                 entities={"topic": topic} if topic else {},
                 confidence=0.7,
                 explanation="Detected add intent using keyword matching"
+            )
+        
+        if any(keyword in message_lower for keyword in remove_keywords):
+            # Try to extract topic to remove
+            topic = self._extract_topic_from_message(user_message)
+            return IntentDetectionResponse(
+                intent="remove_information",
+                entities={"topics": [topic]} if topic else {},
+                confidence=0.7,
+                explanation="Detected remove intent using keyword matching"
             )
         
         if any(keyword in message_lower for keyword in refresh_keywords):

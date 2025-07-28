@@ -417,9 +417,10 @@ Create a logical hierarchical structure that:
 1. Has a meaningful root category (not "Untitled" or generic names)
 2. Places the topic in the right context
 3. Includes 5-7 relevant child topics under the main topic to demonstrate expertise
-4. Allows for future expansion
+4. For each child topic, include 2-4 grandchild topics (going 2-3 levels deep)
+5. Allows for future expansion
 
-IMPORTANT: Generate comprehensive child topics that show deep understanding of the domain.
+IMPORTANT: Generate comprehensive child and grandchild topics that show deep understanding of the domain and provide immediate value to users.
 
 Respond with this exact JSON format:
 {{
@@ -430,17 +431,48 @@ Respond with this exact JSON format:
       {{
         "topic": "{topic}",
         "children": [
-          {{"topic": "Child Topic 1", "children": []}},
-          {{"topic": "Child Topic 2", "children": []}},
-          {{"topic": "Child Topic 3", "children": []}},
-          {{"topic": "Child Topic 4", "children": []}},
-          {{"topic": "Child Topic 5", "children": []}},
-          {{"topic": "Child Topic 6", "children": []}}
+          {{
+            "topic": "Child Topic 1",
+            "children": [
+              {{"topic": "Grandchild 1.1", "children": []}},
+              {{"topic": "Grandchild 1.2", "children": []}},
+              {{"topic": "Grandchild 1.3", "children": []}}
+            ]
+          }},
+          {{
+            "topic": "Child Topic 2",
+            "children": [
+              {{"topic": "Grandchild 2.1", "children": []}},
+              {{"topic": "Grandchild 2.2", "children": []}},
+              {{"topic": "Grandchild 2.3", "children": []}}
+            ]
+          }},
+          {{
+            "topic": "Child Topic 3",
+            "children": [
+              {{"topic": "Grandchild 3.1", "children": []}},
+              {{"topic": "Grandchild 3.2", "children": []}}
+            ]
+          }},
+          {{
+            "topic": "Child Topic 4",
+            "children": [
+              {{"topic": "Grandchild 4.1", "children": []}},
+              {{"topic": "Grandchild 4.2", "children": []}}
+            ]
+          }},
+          {{
+            "topic": "Child Topic 5",
+            "children": [
+              {{"topic": "Grandchild 5.1", "children": []}},
+              {{"topic": "Grandchild 5.2", "children": []}}
+            ]
+          }}
         ]
       }}
     ]
   }},
-  "changes_summary": "Created initial tree with {topic} and relevant child topics"
+  "changes_summary": "Created initial tree with {topic} and comprehensive 2-3 level hierarchy"
 }}
 
 Example: If topic is "Personal Finance Advisory", create:
@@ -496,7 +528,37 @@ Current Tree:
 Task: Add "{new_topic}" under parent "{suggested_parent or 'auto-detect'}"
 Additional Context: {context_details or "None"}{chat_context}
 
-IMPORTANT: When adding "{new_topic}", also generate 5-7 relevant child topics that demonstrate deep understanding of this domain. This will show users that the system truly comprehends the topic area.
+CRITICAL REQUIREMENT: When adding "{new_topic}", you MUST automatically generate:
+1. The main topic "{new_topic}"
+2. 5-7 relevant child topics (subtopics) under "{new_topic}" that demonstrate deep domain understanding
+3. For each child topic, generate 2-4 grandchild topics (going 2-3 levels deep minimum)
+
+This automatic hierarchy generation ensures users get comprehensive domain coverage when they mention any topic.
+
+Example: If new_topic is "Cryptocurrency", generate:
+- Cryptocurrency (main topic)
+  - Bitcoin and Altcoins
+    - Bitcoin Trading Strategies
+    - Altcoin Investment Analysis
+    - DeFi Protocols
+  - Blockchain Technology
+    - Smart Contracts
+    - Consensus Mechanisms
+    - Cryptocurrency Mining
+  - Market Analysis
+    - Technical Analysis
+    - Market Sentiment
+    - Price Prediction Models
+  - Risk Management
+    - Portfolio Diversification
+    - Security Best Practices
+    - Regulatory Compliance
+  - Trading Platforms
+    - Exchange Selection
+    - Trading Tools
+    - Order Types
+
+This comprehensive structure gives users immediate access to related knowledge areas.
 
 Example child topics for different domains:
 - If adding "Retirement Planning": child topics could be "401k Management", "IRA Strategies", "Social Security Optimization", "Healthcare Planning", "Estate Planning", "Tax-Efficient Withdrawals", "Investment Allocation"
@@ -514,25 +576,59 @@ SCENARIOS:
 
 CRITICAL: Before suggesting any new topic, carefully check if "{new_topic}" already exists anywhere in the current tree structure. If it exists, do not create duplicates.
 
-RESPOND WITH ONLY VALID JSON including child topics:
+RESPOND WITH ONLY VALID JSON including multi-level child topics:
 {{
   "success": true,
   "changes_to_apply": [
     {{
-      "action": "add_node_with_children",
+      "action": "add_node_with_hierarchical_children",
       "parent_path": ["Untitled", "{suggested_parent or 'Untitled'}"],
       "new_topic": "{new_topic}",
-      "child_topics": [
-        "Child Topic 1",
-        "Child Topic 2", 
-        "Child Topic 3",
-        "Child Topic 4",
-        "Child Topic 5",
-        "Child Topic 6"
-      ]
+      "hierarchical_structure": {{
+        "topic": "{new_topic}",
+        "children": [
+          {{
+            "topic": "Child Topic 1", 
+            "children": [
+              {{"topic": "Grandchild 1.1", "children": []}},
+              {{"topic": "Grandchild 1.2", "children": []}},
+              {{"topic": "Grandchild 1.3", "children": []}}
+            ]
+          }},
+          {{
+            "topic": "Child Topic 2",
+            "children": [
+              {{"topic": "Grandchild 2.1", "children": []}},
+              {{"topic": "Grandchild 2.2", "children": []}},
+              {{"topic": "Grandchild 2.3", "children": []}}
+            ]
+          }},
+          {{
+            "topic": "Child Topic 3",
+            "children": [
+              {{"topic": "Grandchild 3.1", "children": []}},
+              {{"topic": "Grandchild 3.2", "children": []}}
+            ]
+          }},
+          {{
+            "topic": "Child Topic 4",
+            "children": [
+              {{"topic": "Grandchild 4.1", "children": []}},
+              {{"topic": "Grandchild 4.2", "children": []}}
+            ]
+          }},
+          {{
+            "topic": "Child Topic 5",
+            "children": [
+              {{"topic": "Grandchild 5.1", "children": []}},
+              {{"topic": "Grandchild 5.2", "children": []}}
+            ]
+          }}
+        ]
+      }}
     }}
   ],
-  "changes_summary": "Added {new_topic} with 6 relevant child topics under {suggested_parent or 'root'}"
+  "changes_summary": "Added {new_topic} with comprehensive 2-3 level hierarchy including child and grandchild topics"
 }}
 
 If moving existing topics, use:
@@ -679,6 +775,49 @@ If moving existing topics, use:
                         changes_applied_count += 1
                         print(f"  🔄 Added '{new_topic}' with {len(child_topics)} children to root as fallback")
             
+            elif change.get("action") == "add_node_with_hierarchical_children":
+                parent_path = change.get("parent_path", ["Untitled"])
+                new_topic = change.get("new_topic", "Unknown Topic")
+                hierarchical_structure = change.get("hierarchical_structure", {})
+                
+                print(f"  - Adding '{new_topic}' with hierarchical structure to parent path: {parent_path}")
+                print(f"  - Hierarchical structure: {hierarchical_structure}")
+                
+                # Find the parent node
+                parent_node = self._find_node_by_path(root_node, parent_path)
+                print(f"  - Parent node found: {parent_node.topic if parent_node else 'None'}")
+                
+                if parent_node:
+                    # Check if topic already exists anywhere in the tree (comprehensive check)
+                    existing_node = self._find_topic_in_tree_simple(root_node, new_topic)
+                    if existing_node:
+                        print(f"  ⚠️ Topic '{new_topic}' already exists in the tree. Skipping duplicate creation.")
+                    else:
+                        # Check if topic exists under this specific parent
+                        existing_topics = [child.topic for child in parent_node.children]
+                        print(f"  - Existing children: {existing_topics}")
+                        
+                        if not any(child.topic == new_topic for child in parent_node.children):
+                            # Build hierarchical structure recursively
+                            new_node = self._build_node_from_dict(hierarchical_structure)
+                            parent_node.children.append(new_node)
+                            changes_applied_count += 1
+                            print(f"  ✅ Added '{new_topic}' with hierarchical structure to parent '{parent_node.topic}'")
+                        else:
+                            print(f"  ⚠️ Topic '{new_topic}' already exists under '{parent_node.topic}'")
+                else:
+                    print(f"  ❌ Parent node not found for path: {parent_path}")
+                    # Try adding to root as fallback
+                    existing_node = self._find_topic_in_tree_simple(root_node, new_topic)
+                    if existing_node:
+                        print(f"  ⚠️ Topic '{new_topic}' already exists in the tree. Skipping duplicate creation.")
+                    elif not any(child.topic == new_topic for child in root_node.children):
+                        # Build hierarchical structure recursively
+                        new_node = self._build_node_from_dict(hierarchical_structure)
+                        root_node.children.append(new_node)
+                        changes_applied_count += 1
+                        print(f"  🔄 Added '{new_topic}' with hierarchical structure to root as fallback")
+            
             elif change.get("action") == "move_node":
                 topic_to_move = change.get("topic_to_move")
                 from_path = change.get("from_path", [])
@@ -712,14 +851,27 @@ If moving existing topics, use:
             
             elif change.get("action") == "remove_node":
                 topic_to_remove = change.get("topic_to_remove")
-                print(f"  - Removing '{topic_to_remove}'")
+                preserve_children = change.get("preserve_children", False)  # Default to removing children with parent
+                print(f"  - Removing '{topic_to_remove}' (preserve_children: {preserve_children})")
                 
-                removed_node = self._find_and_remove_node(root_node, topic_to_remove)
-                if removed_node:
-                    changes_applied_count += 1
-                    print(f"  ✅ Removed '{topic_to_remove}'")
+                if preserve_children:
+                    removed_node, promoted_children = self._find_and_remove_node_preserve_children(root_node, topic_to_remove)
+                    if removed_node:
+                        changes_applied_count += 1
+                        if promoted_children:
+                            print(f"  ✅ Removed '{topic_to_remove}' and promoted {len(promoted_children)} children")
+                        else:
+                            print(f"  ✅ Removed '{topic_to_remove}' (no children to promote)")
+                    else:
+                        print(f"  ❌ Could not find node '{topic_to_remove}' to remove")
                 else:
-                    print(f"  ❌ Could not find node '{topic_to_remove}' to remove")
+                    # Use original method that removes children too
+                    removed_node = self._find_and_remove_node(root_node, topic_to_remove)
+                    if removed_node:
+                        changes_applied_count += 1
+                        print(f"  ✅ Removed '{topic_to_remove}' including all children")
+                    else:
+                        print(f"  ❌ Could not find node '{topic_to_remove}' to remove")
             
             else:
                 print(f"  ❌ Unknown action: {change.get('action', 'No action')}")
@@ -749,10 +901,18 @@ If moving existing topics, use:
         for child_dict in node_dict.get("children", []):
             children.append(self._build_node_from_dict(child_dict))
         
-        return DomainNode(
-            topic=node_dict["topic"],
-            children=children
-        )
+        # Preserve existing UUID if present, otherwise let default factory generate one
+        if "id" in node_dict:
+            return DomainNode(
+                id=node_dict["id"],
+                topic=node_dict["topic"],
+                children=children
+            )
+        else:
+            return DomainNode(
+                topic=node_dict["topic"],
+                children=children
+            )
     
     def _find_node_by_path(self, root: DomainNode, path: list[str]) -> DomainNode | None:
         """Find a node by following the given path."""
@@ -787,6 +947,30 @@ If moving existing topics, use:
                 return removed
         
         return None
+
+    def _find_and_remove_node_preserve_children(self, root: DomainNode, topic_to_find: str) -> tuple[DomainNode | None, list[DomainNode]]:
+        """
+        Find a node by topic name and remove it from its parent, but preserve its children.
+        Returns the removed node and its children that should be promoted to the parent level.
+        """
+        # Check if it's a direct child of root
+        for i, child in enumerate(root.children):
+            if child.topic == topic_to_find:
+                removed_node = root.children.pop(i)
+                children_to_promote = removed_node.children if removed_node.children else []
+                # Add the children back to the parent (root) at the same position
+                for j, promoted_child in enumerate(children_to_promote):
+                    root.children.insert(i + j, promoted_child)
+                print(f"🔄 Promoted {len(children_to_promote)} children of '{topic_to_find}' to parent level")
+                return removed_node, children_to_promote
+        
+        # Recursively search in children
+        for child in root.children:
+            removed, promoted = self._find_and_remove_node_preserve_children(child, topic_to_find)
+            if removed:
+                return removed, promoted
+        
+        return None, []
 
     def _find_topic_in_tree(self, root: DomainNode, topic_name: str) -> tuple[DomainNode | None, list[str]]:
         """
@@ -830,6 +1014,83 @@ If moving existing topics, use:
         """
         node, _ = self._find_topic_in_tree(root, topic_name)
         return node
+
+    async def remove_topic_from_knowledge(
+        self,
+        current_tree: DomainKnowledgeTree | None,
+        topics_to_remove: list[str],
+        agent_name: str,
+        agent_description: str,
+    ) -> DomainKnowledgeUpdateResponse:
+        """Remove topics from the knowledge tree."""
+        try:
+            print(f"🗑️ Smart remove knowledge starting...")
+            print(f"  - Topics to remove: {topics_to_remove}")
+            print(f"  - Current tree exists: {current_tree is not None}")
+            
+            if not current_tree:
+                return DomainKnowledgeUpdateResponse(
+                    success=False,
+                    error="No knowledge tree exists to remove topics from"
+                )
+            
+            if not topics_to_remove:
+                return DomainKnowledgeUpdateResponse(
+                    success=False,
+                    error="No topics specified for removal"
+                )
+            
+            # Create changes for each topic to remove
+            changes_to_apply = []
+            topics_found = []
+            topics_not_found = []
+            
+            for topic in topics_to_remove:
+                # Check if topic exists in the tree
+                existing_node = self._find_topic_in_tree_simple(current_tree.root, topic)
+                if existing_node:
+                    changes_to_apply.append({
+                        "action": "remove_node",
+                        "topic_to_remove": topic,
+                        "preserve_children": True  # Always preserve children by default
+                    })
+                    topics_found.append(topic)
+                else:
+                    topics_not_found.append(topic)
+            
+            if not topics_found:
+                return DomainKnowledgeUpdateResponse(
+                    success=False,
+                    error=f"None of the specified topics found in tree: {', '.join(topics_not_found)}"
+                )
+            
+            # Apply the removal changes using existing infrastructure
+            analysis = {
+                "success": True,
+                "changes_to_apply": changes_to_apply,
+                "changes_summary": f"Removed {', '.join(topics_found)} from knowledge tree"
+            }
+            
+            updated_tree = await self._apply_tree_changes(
+                current_tree, analysis, topics_found[0]  # Use first topic as reference
+            )
+            
+            changes_summary = f"Removed {', '.join(topics_found)}"
+            if topics_not_found:
+                changes_summary += f" (Could not find: {', '.join(topics_not_found)})"
+            
+            return DomainKnowledgeUpdateResponse(
+                success=True,
+                updated_tree=updated_tree,
+                changes_summary=changes_summary
+            )
+            
+        except Exception as e:
+            print(f"❌ Exception in remove_topic_from_knowledge: {e}")
+            return DomainKnowledgeUpdateResponse(
+                success=False,
+                error=f"Error removing topics: {str(e)}"
+            )
 
 
 def get_llm_tree_manager() -> LLMTreeManager:

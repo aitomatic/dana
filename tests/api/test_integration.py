@@ -162,10 +162,16 @@ class TestAgentAPIIntegration:
         assert read_response.status_code == 200
         read_agent = read_response.json()
 
-        # Verify complex config is preserved exactly
-        assert read_agent["config"] == complex_config
+        # Verify complex config is preserved exactly (with folder_path added)
+        assert read_agent["config"]["model"] == complex_config["model"]
+        assert read_agent["config"]["parameters"] == complex_config["parameters"]
+        assert read_agent["config"]["tools"] == complex_config["tools"]
+        assert read_agent["config"]["metadata"] == complex_config["metadata"]
         assert read_agent["config"]["parameters"]["temperature"] == 0.7
         assert read_agent["config"]["tools"][0]["function"]["name"] == "get_weather"
         assert read_agent["config"]["metadata"]["nested"]["deep"]["array"] == [1, 2, 3, 4, 5]
         assert read_agent["config"]["metadata"]["nested"]["deep"]["boolean"] is True
         assert read_agent["config"]["metadata"]["nested"]["deep"]["null_value"] is None
+        # Check that folder_path was added
+        assert "folder_path" in read_agent["config"]
+        assert read_agent["config"]["folder_path"].startswith("agents/agent_")

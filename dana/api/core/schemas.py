@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import uuid
 from datetime import datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AgentBase(BaseModel):
@@ -431,6 +432,7 @@ class KnowledgeUploadRequest(BaseModel):
 # Domain Knowledge Schemas
 class DomainNode(BaseModel):
     """A single node in the domain knowledge tree"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     topic: str
     children: list['DomainNode'] = []
 
@@ -473,6 +475,28 @@ class DomainKnowledgeUpdateResponse(BaseModel):
     updated_tree: DomainKnowledgeTree | None = None
     changes_summary: str | None = None
     error: str | None = None
+
+
+class DomainKnowledgeVersionRead(BaseModel):
+    """Read schema for domain knowledge version"""
+    id: int
+    agent_id: int
+    version: int
+    change_summary: str | None
+    change_type: str
+    created_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DomainKnowledgeVersionWithTree(DomainKnowledgeVersionRead):
+    """Domain knowledge version with tree data included"""
+    tree_data: dict[str, Any]
+
+
+class RevertDomainKnowledgeRequest(BaseModel):
+    """Request to revert domain knowledge to a specific version"""
+    version_id: int
 
 
 class ChatWithIntentRequest(BaseModel):

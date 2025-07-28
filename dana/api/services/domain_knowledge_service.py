@@ -15,6 +15,7 @@ from dana.api.core.schemas import (
     DomainNode,
     DomainKnowledgeUpdateResponse,
 )
+from dana.api.services.domain_knowledge_version_service import get_domain_knowledge_version_service
 from dana.common.mixins.loggable import Loggable
 
 logger = logging.getLogger(__name__)
@@ -346,20 +347,23 @@ class DomainKnowledgeService(Loggable):
             return DomainKnowledgeUpdateResponse(success=False, error=str(e))
 
     async def _save_version_to_history(
-        self, agent_id: int, tree: DomainKnowledgeTree
+        self, agent_id: int, tree: DomainKnowledgeTree, change_summary: str = "Manual save", change_type: str = "modify"
     ) -> None:
-        """Save a version to history and maintain only last 5 versions."""
+        """Save a version to file history and maintain only last 10 versions."""
         try:
-            version_dir = self.get_version_history_dir(agent_id)
-            version_file = version_dir / f"v{tree.version}.json"
-
-            # Save current version to history
-            with open(version_file, "w", encoding="utf-8") as f:
-                json.dump(tree.model_dump(), f, indent=2, default=str)
-
-            # Clean up old versions (keep only last 5)
-            await self._cleanup_old_versions(agent_id)
-
+            version_service = get_domain_knowledge_version_service()
+            
+            # Save to files
+            version_service.save_version(
+                agent_id=agent_id,
+                tree=tree,
+                change_summary=change_summary,
+                change_type=change_type
+            )
+            
+            # Clean up old versions (keep only last 10)
+            version_service.cleanup_old_versions(agent_id, keep_count=10)
+            
         except Exception as e:
             self.error(f"Error saving version {tree.version} to history: {e}")
 

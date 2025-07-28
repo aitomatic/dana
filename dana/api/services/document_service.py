@@ -6,12 +6,14 @@ This module provides business logic for document management and processing.
 
 import logging
 import os
+import asyncio
 from datetime import datetime, timezone
 import uuid
 from typing import BinaryIO
 
-from dana.api.core.models import Document
+from dana.api.core.models import Document, Agent
 from dana.api.core.schemas import DocumentCreate, DocumentRead, DocumentUpdate
+from dana.common.resource.rag.rag_resource import RAGResource
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +35,8 @@ class DocumentService:
 
     async def upload_document(
         self, file: BinaryIO, filename: str, topic_id: int | None = None, 
-        agent_id: int | None = None, db_session=None, upload_directory: str | None = None
+        agent_id: int | None = None, db_session=None, upload_directory: str | None = None,
+        build_index: bool = True
     ) -> DocumentRead:
         """
         Upload and store a document.
@@ -45,6 +48,7 @@ class DocumentService:
             agent_id: Optional agent ID to associate with
             db_session: Database session
             upload_directory: Optional directory to store the file (overrides default)
+            build_index: Whether to build RAG index immediately after upload
 
         Returns:
             DocumentRead object with the stored document information
@@ -103,6 +107,11 @@ class DocumentService:
                 db_session.add(document)
                 db_session.commit()
                 db_session.refresh(document)
+
+            # Build RAG index immediately after successful upload
+            if build_index and agent_id:
+                asyncio.create_task(self._build_index_for_agent(agent_id, file_path, db_session))
+                logger.info(f"Started background index building for agent {agent_id} with document {filename}")
 
             return DocumentRead(
                 id=document.id,
@@ -328,6 +337,75 @@ class DocumentService:
         }
         
         return mime_map.get(extension, 'application/octet-stream')
+
+    async def _build_index_for_agent(self, agent_id: int, file_path: str, db_session) -> None:
+        """
+        Build RAG index for an agent's documents in the background.
+        
+        Args:
+            agent_id: The agent ID
+            file_path: Path to the newly uploaded file
+            db_session: Database session (create new session for background task)
+        """
+        try:
+            logger.info(f"Building index for agent {agent_id} with new document {file_path}")
+            
+            # Get agent configuration to determine folder path
+            from sqlalchemy.orm import sessionmaker
+            from dana.api.core.database import engine
+            
+            # Create new session for background task
+            SessionLocal = sessionmaker(bind=engine)
+            with SessionLocal() as session:
+                agent = session.query(Agent).filter(Agent.id == agent_id).first()
+                if not agent:
+                    logger.error(f"Agent {agent_id} not found for index building")
+                    return
+                
+                # Get or create agent folder path and cache directory
+                folder_path = agent.config.get("folder_path") if agent.config else None
+                if not folder_path:
+                    folder_path = os.path.join("agents", f"agent_{agent.id}")
+                    
+                # Update agent config with folder path if not set
+                if not agent.config or not agent.config.get("folder_path"):
+                    config = dict(agent.config) if agent.config else {}
+                    config["folder_path"] = folder_path
+                    agent.config = config
+                    session.commit()
+                
+                # Ensure folder exists
+                os.makedirs(folder_path, exist_ok=True)
+                
+                # Get all document paths for this agent
+                agent_documents = session.query(Document).filter(Document.agent_id == agent_id).all()
+                source_paths = [doc.file_path for doc in agent_documents if doc.file_path and os.path.exists(doc.file_path)]
+                
+                if not source_paths:
+                    logger.warning(f"No valid documents found for agent {agent_id}")
+                    return
+                
+                logger.info(f"Building RAG index for agent {agent_id} with {len(source_paths)} documents")
+                
+                # Create agent-specific cache directory
+                cache_dir = os.path.join(folder_path, ".rag_cache")
+                
+                # Create RAG resource with force_reload to rebuild index
+                rag_resource = RAGResource(
+                    sources=source_paths,
+                    name=f"agent_{agent_id}_rag",
+                    cache_dir=cache_dir,
+                    force_reload=True,  # Force rebuild to include new document
+                    debug=True
+                )
+                
+                # Initialize the RAG resource (this builds the index)
+                await rag_resource.initialize()
+                
+                logger.info(f"Successfully built RAG index for agent {agent_id}")
+                
+        except Exception as e:
+            logger.error(f"Error building index for agent {agent_id}: {e}", exc_info=True)
 
 
 # Global service instance

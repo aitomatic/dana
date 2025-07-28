@@ -10,6 +10,7 @@ import asyncio
 import json
 import base64
 import traceback
+import uuid
 from pathlib import Path
 
 from fastapi import (
@@ -41,6 +42,10 @@ from dana.api.services.document_service import get_document_service, DocumentSer
 from dana.api.services.domain_knowledge_service import (
     get_domain_knowledge_service,
     DomainKnowledgeService,
+)
+from dana.api.services.domain_knowledge_version_service import (
+    get_domain_knowledge_version_service,
+    DomainKnowledgeVersionService,
 )
 from dana.api.core.models import Agent, AgentChatHistory
 from datetime import datetime, timezone
@@ -111,8 +116,9 @@ async def _auto_generate_basic_agent_code(
             domain_knowledge_path = agent_folder / "domain_knowledge.json"
             domain = agent_config.get("domain", "General")
 
-            # Create a basic domain knowledge structure for new agents
-            basic_domain_knowledge = {"root": {"topic": domain, "children": []}}
+            # Create a basic domain knowledge structure for new agents with UUID
+            root_uuid = str(uuid.uuid4())
+            basic_domain_knowledge = {"root": {"id": root_uuid, "topic": domain, "children": []}}
 
             with open(domain_knowledge_path, "w", encoding="utf-8") as f:
                 json.dump(basic_domain_knowledge, f, indent=2, ensure_ascii=False)
@@ -129,6 +135,74 @@ async def _auto_generate_basic_agent_code(
     except Exception as e:
         logger.error(f"Error auto-generating basic Dana code: {e}")
         raise e
+
+
+def _add_uuids_to_domain_knowledge(domain_data: dict) -> dict:
+    """Add UUIDs to existing domain knowledge structure"""
+    
+    def add_uuid_to_node(node: dict, path_so_far: list[str] = None) -> dict:
+        if path_so_far is None:
+            path_so_far = []
+        
+        topic_name = node.get("topic", "")
+        
+        # Build current path for stable UUID generation
+        if topic_name.lower() not in ["root", "untitled"]:
+            current_path = path_so_far + [topic_name]
+        else:
+            current_path = path_so_far
+        
+        # Generate stable UUID based on path
+        path_str = " - ".join(current_path) if current_path else "root"
+        namespace = uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')
+        node_uuid = str(uuid.uuid5(namespace, path_str))
+        
+        # Create enhanced node with UUID
+        enhanced_node = {
+            "id": node_uuid,
+            "topic": topic_name,
+            "children": []
+        }
+        
+        # Process children recursively
+        for child in node.get("children", []):
+            enhanced_child = add_uuid_to_node(child, current_path)
+            enhanced_node["children"].append(enhanced_child)
+        
+        return enhanced_node
+    
+    if "root" not in domain_data:
+        return domain_data
+    
+    # Preserve other fields and add UUID to root
+    result = domain_data.copy()
+    result["root"] = add_uuid_to_node(domain_data["root"])
+    
+    return result
+
+
+def _ensure_domain_knowledge_has_uuids(domain_knowledge_path: str):
+    """Ensure domain knowledge file has UUIDs, add them if missing"""
+    
+    try:
+        with open(domain_knowledge_path, "r", encoding="utf-8") as f:
+            domain_data = json.load(f)
+        
+        # Check if root already has UUID
+        if "root" in domain_data and domain_data["root"].get("id"):
+            return  # Already has UUIDs
+        
+        # Add UUIDs
+        enhanced_data = _add_uuids_to_domain_knowledge(domain_data)
+        
+        # Save back to file
+        with open(domain_knowledge_path, "w", encoding="utf-8") as f:
+            json.dump(enhanced_data, f, indent=2, ensure_ascii=False)
+        
+        logger.info(f"Added UUIDs to domain knowledge at {domain_knowledge_path}")
+        
+    except Exception as e:
+        logger.error(f"Error adding UUIDs to domain knowledge: {e}")
 
 
 async def _create_basic_dana_files(
@@ -709,7 +783,7 @@ async def create_agent_from_prebuilt(
             knows_folder.mkdir(exist_ok=True)
             logger.info(f"Created basic agent structure at {agent_folder}")
 
-        # Ensure domain_knowledge.json is in the correct location
+        # Ensure domain_knowledge.json is in the correct location and has UUIDs
         domain_knowledge_path = agent_folder / "domain_knowledge.json"
         if not domain_knowledge_path.exists():
             # Try to generate domain_knowledge.json from knowledge files
@@ -734,6 +808,10 @@ async def create_agent_from_prebuilt(
                     )
             except Exception as e:
                 logger.error(f"Error generating domain_knowledge.json: {e}")
+
+        # Ensure domain_knowledge.json has UUIDs (for both existing and newly generated files)
+        if domain_knowledge_path.exists():
+            _ensure_domain_knowledge_has_uuids(str(domain_knowledge_path))
 
         # Update knowledge status for prebuilt agents - mark all topics as success
         try:
@@ -1327,4 +1405,77 @@ async def test_agent_by_id(agent_id: int, request: dict, db: Session = Depends(g
         raise
     except Exception as e:
         logger.error(f"Error testing agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{agent_id}/domain-knowledge/versions")
+async def get_domain_knowledge_versions(
+    agent_id: int,
+    db: Session = Depends(get_db),
+    version_service: DomainKnowledgeVersionService = Depends(get_domain_knowledge_version_service),
+):
+    """Get all domain knowledge versions for an agent."""
+    try:
+        # Verify agent exists
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+        
+        versions = version_service.get_versions(agent_id)
+        return {"versions": versions}
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting domain knowledge versions for agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{agent_id}/domain-knowledge/revert")
+async def revert_domain_knowledge(
+    agent_id: int,
+    request: dict,
+    db: Session = Depends(get_db),
+    version_service: DomainKnowledgeVersionService = Depends(get_domain_knowledge_version_service),
+    domain_service: DomainKnowledgeService = Depends(get_domain_knowledge_service),
+):
+    """Revert domain knowledge to a specific version."""
+    try:
+        # Verify agent exists
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+        
+        target_version = request.get("version")
+        if not target_version:
+            raise HTTPException(status_code=400, detail="Version number is required")
+        
+        # Revert to the specified version
+        reverted_tree = version_service.revert_to_version(agent_id, target_version)
+        if not reverted_tree:
+            raise HTTPException(status_code=404, detail="Version not found or revert failed")
+        
+        # Save the reverted tree as current
+        save_success = await domain_service.save_agent_domain_knowledge(
+            agent_id, reverted_tree, db, agent
+        )
+        
+        if not save_success:
+            raise HTTPException(status_code=500, detail="Failed to save reverted tree")
+        
+        # Clear cache to force RAG rebuild
+        folder_path = agent.config.get("folder_path") if agent.config else None
+        if folder_path:
+            clear_agent_cache(folder_path)
+        
+        return {
+            "success": True,
+            "message": f"Successfully reverted to version {target_version}",
+            "current_version": reverted_tree.version,
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reverting domain knowledge for agent {agent_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
