@@ -252,6 +252,45 @@ print("  → process_list([1, 2, 3, 4], 'num:') = ['num: 1', 'num: 2', 'num: 3',
 print("  → add_to_list(['num: 1', 'num: 2', 'num: 3', 'num: 4'], 5) = ['num: 1', 'num: 2', 'num: 3', 'num: 4', 5]")
 print("  → filter_even(['num: 1', 'num: 2', 'num: 3', 'num: 4', 5]) = [5] (only numeric values are filtered)")
 
+print("\n8. Named Parameter Capture Mode")
+print("-" * 35)
+
+def add_values(a: int, b: int) -> int:
+    return a + b
+
+# Simple named capture
+def simple_named_pipeline(x: int) = add_ten as base | multiply_by(base, 2)
+result = simple_named_pipeline(5)
+print("simple_named_pipeline(5) = " + str(result))
+print("  → add_ten(5) = 15 (saved as 'base')")
+print("  → multiply_by(15, 2) = 30")
+
+# Multiple named captures
+def multi_named_pipeline(x: int) = add_ten as step1 | multiply_by(2) as step2 | add_values(step1, step2)
+result = multi_named_pipeline(5)
+print("multi_named_pipeline(5) = " + str(result))
+print("  → add_ten(5) = 15 (saved as 'step1')")
+print("  → multiply_by(15, 2) = 30 (saved as 'step2')")
+print("  → add_values(15, 30) = 45")
+
+# Named capture with placeholder
+def mixed_named_pipeline(x: int) = add_ten as base | multiply_by($$, 3) as tripled | add_values(base, tripled)
+result = mixed_named_pipeline(5)
+print("mixed_named_pipeline(5) = " + str(result))
+print("  → add_ten(5) = 15 (saved as 'base')")
+print("  → multiply_by(15, 3) = 45 (saved as 'tripled')")
+print("  → add_values(15, 45) = 60")
+
+# Complex named capture with multiple reuses
+def complex_named_pipeline(x: int) = add_ten as original | multiply_by(2) as doubled | multiply_by(3) as tripled | add_values(original, doubled) as sum1 | add_values(sum1, tripled) as final
+result = complex_named_pipeline(5)
+print("complex_named_pipeline(5) = " + str(result))
+print("  → add_ten(5) = 15 (saved as 'original')")
+print("  → multiply_by(15, 2) = 30 (saved as 'doubled')")
+print("  → multiply_by(30, 3) = 90 (saved as 'tripled')")
+print("  → add_values(15, 30) = 45 (saved as 'sum1')")
+print("  → add_values(45, 90) = 135 (saved as 'final')")
+
 print("\n✅ Function Composition Demo Complete!")
 print("\nKey Features Demonstrated:")
 print("• Declarative function composition with clear signatures")
@@ -263,5 +302,6 @@ print("• Multiple data types flowing through pipelines")
 print("• Better IDE support and debugging")
 print("• Parameter passing in implicit first-argument mode")
 print("• Parameter passing with explicit $$ placeholders")
-print("• Mixed mode parameter passing")
+print("• Named parameter capture with 'as name' syntax")
+print("• Mixed mode parameter passing (implicit + explicit + named)")
 print("• Numeric and list processing with parameters")

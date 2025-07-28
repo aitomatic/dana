@@ -1,5 +1,41 @@
 # Workflow Primer
 
+## TL;DR (1 minute read)
+
+```dana
+# Instead of this (Python):
+data = load_data(source)
+analysis = analyze_data(data)
+report = create_report(analysis)
+
+# Do this (Dana):
+
+def data_pipeline(source: str) -> str = load_data | analyze_data | create_report
+result = data_pipeline("data.csv")
+
+# With placeholders:
+def format_message(prefix: str, text: str, suffix: str) -> str:
+    return f"{prefix}{text}{suffix}"
+
+def pipeline(text: str) = format_message("Start: ", $$, " :End")
+result = pipeline("hello")  # "Start: hello :End"
+
+# With named parameter capture:
+def add_ten(x: int) -> int:
+    return x + 10
+
+def multiply_by(x: int, factor: int) -> int:
+    return x * factor
+
+def add_values(a: int, b: int) -> int:
+    return a + b
+
+def named_pipeline(x: int) = add_ten as base | multiply_by(2) as doubled | add_values(base, doubled)
+result = named_pipeline(5)  # 45 (base=15, doubled=30, 15+30=45)
+```
+
+---
+
 **What it is**: Python's function composition, but with declarative pipeline syntax. Think of it as Python's `functools.reduce` or method chaining, but using the familiar `|` operator in declarative function definitions to create data processing pipelines.
 
 ## Why Should You Care?
@@ -59,7 +95,7 @@ def create_report(analysis: dict) -> str:
 def data_pipeline(source: str) -> str = load_data | analyze_data | create_report
 
 # Call like any function - just like Python!
-local:result = data_pipeline("data_source.csv")
+result = data_pipeline("data_source.csv")
 ```
 
 **What happens behind the scenes**:
@@ -69,7 +105,7 @@ local:result = data_pipeline("data_source.csv")
 
 ## Parameter Passing in Pipelines
 
-Dana supports two modes of parameter passing in pipelines:
+Dana supports three modes of parameter passing in pipelines:
 
 ### 1. Implicit First-Argument Mode (Default)
 
@@ -112,9 +148,33 @@ result = simple_placeholder("hello")  # "Start: hello :End"
 - The `$$` gets replaced with the input value `"hello"`
 - `format_message("Start: ", "hello", " :End")` → `"Start: hello :End"`
 
-### 3. Mixed Mode
+### 3. Named Parameter Capture Mode
 
-You can combine both modes in the same pipeline:
+Use the `as name` syntax to capture intermediate results for reuse in later pipeline stages:
+
+```dana
+def add_ten(x: int) -> int:
+    return x + 10
+
+def multiply_by(x: int, factor: int) -> int:
+    return x * factor
+
+def add_values(a: int, b: int) -> int:
+    return a + b
+
+# Capture and reuse intermediate values
+def named_capture_pipeline(x: int) = add_ten as base | multiply_by(2) as doubled | add_values(base, doubled)
+result = named_capture_pipeline(5)  # 45 (base=15, doubled=30, 15+30=45)
+```
+
+**What happens:**
+1. `add_ten(5)` → `15` (saved as `base`)
+2. `multiply_by(15, 2)` → `30` (saved as `doubled`)
+3. `add_values(15, 30)` → `45` (using captured values)
+
+### 4. Mixed Mode
+
+You can combine all three modes in the same pipeline:
 
 ```dana
 def add_prefix(text: str, prefix: str) -> str:
@@ -123,14 +183,18 @@ def add_prefix(text: str, prefix: str) -> str:
 def wrap_with_brackets(text: str, left: str, right: str) -> str:
     return f"{left}{text}{right}"
 
-# Mix implicit and explicit modes
-def mixed_pipeline(text: str) = add_prefix("INFO: ") | wrap_with_brackets("[", $$, "]")
-result = mixed_pipeline("data")  # "[INFO: data]"
+def format_result(text: str, original: str) -> str:
+    return f"{text} (was: {original})"
+
+# Mix implicit, explicit, and named capture modes
+def mixed_pipeline(text: str) = add_prefix("INFO: ") as prefixed | wrap_with_brackets("[", $$, "]") | format_result($$, prefixed)
+result = mixed_pipeline("data")  # "[INFO: data] (was: INFO: data)"
 ```
 
 **What happens:**
-1. `add_prefix("data", "INFO: ")` → `"INFO: data"` (implicit)
+1. `add_prefix("data", "INFO: ")` → `"INFO: data"` (saved as `prefixed`)
 2. `wrap_with_brackets("[", "INFO: data", "]")` → `"[INFO: data]"` (explicit with $$)
+3. `format_result("[INFO: data]", "INFO: data")` → `"[INFO: data] (was: INFO: data)"` (using captured `prefixed`)
 
 ## More Complex Examples
 
@@ -174,6 +238,18 @@ def multi_placeholder_pipeline(text: str) = multi_placeholder_func("start", $$, 
 result = multi_placeholder_pipeline("value")  # "start-value-middle-value"
 ```
 
+### Advanced Named Parameter Capture Mode
+```dana
+# Complex business logic with multiple captures
+def calculate_invoice(price: float) = multiply_by(1) as original | apply_discount($$, 20) as discounted | calculate_tax(discounted, 0.08) as tax | add_values(discounted, tax) as total | format_invoice(original, discounted, tax, total)
+
+# Data transformation with validation
+def transform_data(value: any) = normalize as normalized | validate($$) as validation_result | enrich(normalized, validation_result) | format_output("Processed", $$)
+
+# Error handling with named captures
+def safe_process(value: any) = validate as is_valid | process($$) if is_valid else error("Invalid input") | log_result($$, is_valid)
+```
+
 ## Why You'll Love This (Python Perspective)
 
 - **Zero learning curve**: Same function syntax, same logic
@@ -200,7 +276,7 @@ def format_output(result: dict) -> str:
 def workflow(source: str) -> str = extract_data | process_data | format_output
 
 # Use like any function
-local:result = workflow("input.txt")  # "Result: input.txt"
+result = workflow("input.txt")  # "Result: input.txt"
 ```
 
 ### With Advanced Frameworks - Like Python's Context Managers
@@ -225,7 +301,7 @@ def data_workflow(source: str) -> str = (
 )
 
 # Use with error handling (like Python's try/except)
-local:result = data_workflow("source.csv")
+result = data_workflow("source.csv")
 ```
 
 ## Real-World Examples (Python-Style)
@@ -249,7 +325,7 @@ def save_results(stats: dict) -> str:
 def data_pipeline(file_path: str) -> str = load_csv | clean_data | calculate_stats | save_results
 
 # Execute (like pandas operations)
-local:result = data_pipeline("sales_data.csv")
+result = data_pipeline("sales_data.csv")
 # Result: "Saved: processed 1000 rows"
 ```
 
@@ -275,7 +351,7 @@ def format_response(result: dict) -> str:
 def user_pipeline(user_id: str) -> str = fetch_user_data | validate_user | format_response
 
 # Use (like Python API calls)
-local:result = user_pipeline("12345")  # "User: John Doe"
+result = user_pipeline("12345")  # "User: John Doe"
 ```
 
 ### Business Logic Pipeline (Like Python's business logic)
@@ -300,7 +376,7 @@ def generate_decision(decision: dict) -> str:
 def loan_pipeline(income: float, credit_score: int) -> str = calculate_loan_amount | apply_credit_rules | generate_decision
 
 # Process loan (like Python business applications)
-local:result = loan_pipeline(50000.0, 750)  # "Approved: $150000"
+result = loan_pipeline(50000.0, 750)  # "Approved: $150000"
 ```
 
 ## What Happens When Things Go Wrong (Python-Style Errors)
@@ -319,7 +395,7 @@ def safe_function(data: dict) -> str:
 def workflow(data: str) -> str = risky_function | safe_function
 
 # This will fail gracefully (like Python's try/except)
-local:result = workflow("bad")  # Error: Bad data encountered
+result = workflow("bad")  # Error: Bad data encountered
 ```
 
 ### Advanced Error Handling - Like Python's Context Managers
@@ -419,7 +495,7 @@ def create_output(processed: dict) -> str:
 
 # Single pipeline - handles errors automatically
 def data_pipeline(source: str) -> str = load_data | process_data | create_output
-local:result = data_pipeline("source.csv")
+result = data_pipeline("source.csv")
 ```
 
 ## Performance Wins (Over Python)
