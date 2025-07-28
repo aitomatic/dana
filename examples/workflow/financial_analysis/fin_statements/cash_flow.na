@@ -1,8 +1,7 @@
 """Cash Flow Statement Items."""
 
 
-# TODO: relative importing in Dana
-from fin_statements.util import query_fin_data, CompanyAndPeriodAndCurrency, CurrAndPrevNums
+from ..utils import query_fin_data, CompanyAndPeriodAndCurrency, CurrAndPrevNums
 
 
 __all__ = [

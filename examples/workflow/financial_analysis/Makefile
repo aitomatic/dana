@@ -1,2 +1,2 @@
 test:
-	@ dana test_runner.na
+	@ cd ..; uv run dana test-fin-analysis-workflows.na

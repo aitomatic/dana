@@ -1,16 +1,16 @@
 """Return on Capital Metrics."""
 
 
-# TODO: relative importing with dot notation in Dana
+# TODO: parenthesized importing in Dana
 # from .fin_statements import (
 #     get_total_asset_2y,
 #     get_equity_2y,
 #     get_net_income,
 # )
-from fin_statements import get_total_asset_2y, get_equity_2y, get_net_income
+from .fin_statements import get_total_asset_2y, get_equity_2y, get_net_income
 
-# TODO: relative importing with dot notation in Dana
-from fin_statements.util import over_avg_denom, CompanyAndPeriodAndCurrency
+from .utils import over_avg_denom, CompanyAndPeriodAndCurrency
+
 
 __all__ = [
     'calc_roa_ratio',

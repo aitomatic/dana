@@ -1,8 +1,8 @@
 """Liquidity Metrics."""
 
 
-# TODO: relative importing & parenthesized importing in Dana
-# from fin_statements import (
+# TODO: parenthesized importing in Dana
+# from .fin_statements import (
 #     get_curr_asset, get_curr_asset_2y, get_curr_asset_3y,
 #
 #     get_cash_and_equiv, get_cash_and_equiv_2y, get_cash_and_equiv_3y,
@@ -22,13 +22,12 @@
 #     get_cogs,
 #     get_net_income,
 # )
-from fin_statements import get_curr_asset, get_curr_asset_2y, get_curr_asset_3y
-from fin_statements import get_cash_and_equiv, get_cash_and_equiv_2y, get_cash_and_equiv_3y
-from fin_statements import get_st_inv, get_st_inv_2y, get_st_inv_3y
-from fin_statements import get_recvable, get_recvable_2y, get_recvable_3y
+from .fin_statements import get_curr_asset, get_curr_asset_2y, get_curr_asset_3y
+from .fin_statements import get_cash_and_equiv, get_cash_and_equiv_2y, get_cash_and_equiv_3y
+from .fin_statements import get_st_inv, get_st_inv_2y, get_st_inv_3y
+from .fin_statements import get_recvable, get_recvable_2y, get_recvable_3y
 
-# TODO: relative importing in Dana
-from fin_statements.util import CompanyAndPeriodAndCurrency, CurrAndPrevNums
+from .utils import CompanyAndPeriodAndCurrency, CurrAndPrevNums
 
 
 __all__ = [

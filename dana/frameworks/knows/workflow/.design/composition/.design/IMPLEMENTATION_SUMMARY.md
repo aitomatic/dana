@@ -14,9 +14,9 @@ pipeline = f1 | f2 | f3
 result = pipeline(data)
 ```
 
-### 2. **Standalone Parallel Composition** 
+### 2. **Parallel Composition with Identity** 
 ```dana
-pipeline = [f1, f2, f3]
+pipeline = noop | [f1, f2, f3]
 result = pipeline(data)
 ```
 
@@ -73,14 +73,15 @@ pipeline = f1 | { f2, f3 } | f4    # Grammar conflicts with SetLiteral
 ### **Core Components**
 1. **PipeOperationHandler**: Enhanced pipe execution with parallel support
 2. **ParallelFunction**: Executes function lists sequentially (ready for true parallelism)
-3. **AssignmentHandler**: Auto-converts `[func1, func2]` to callable `ParallelFunction`
+3. **noop Function**: Identity function enabling parallel composition: `noop | [func1, func2]`
 4. **Validation Layer**: Strict function-only enforcement, rejects non-functions
 
 ### **Integration Strategy**
-- **Zero Grammar Changes**: Uses existing `ListLiteral` syntax `[func1, func2]`
+- **Zero Grammar Changes**: Uses existing `ListLiteral` syntax `[func1, func2]` with pipe operator
 - **Minimal Code Impact**: Enhanced existing components vs. creating new infrastructure
 - **Existing Function System**: Leverages `ComposedFunction`, `SandboxFunction`, function registry
 - **Backward Compatible**: All existing sequential pipe operations continue working
+- **Explicit Composition**: Requires pipe operator for all function composition, eliminating ambiguity
 
 ---
 
