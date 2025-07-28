@@ -4,7 +4,7 @@
 
 ## 0. Quick Summary & Examples
 
-Dana supports concise, inspectable function composition with clear signatures and IDE support. You can now write:
+Dana supports sophisticated, inspectable function composition with intelligent parameter passing and IDE support. You can now write:
 
 ```dana
 # Explicit signature (required)
@@ -13,6 +13,32 @@ def pipeline() = x | y | z  # No parameters
 ```
 - Parameters must be explicitly specified (parentheses are required).
 - Docstrings are supported above the definition, as in Python.
+- **Advanced parameter passing:** Supports implicit first parameter, explicit placement with `$$`, and named parameter capture.
+
+### Pipeline Parameter Passing
+
+Dana's pipeline system supports three powerful parameter passing mechanisms:
+
+#### 1. Implicit First Parameter
+```dana
+def pipeline(x: int) = add_ten | multiply_by(2) | format_result("Result: ")
+```
+- The result from each function is automatically passed as the first parameter to the next function
+- `add_ten(x)` → `multiply_by(result, 2)` → `format_result(result, "Result: ")`
+
+#### 2. Explicit Parameter Placement with `$$`
+```dana
+def pipeline(x: int) = add_ten | multiply_by(2, $$, 3) | format_result("Value: ", $$)
+```
+- The `$$` placeholder indicates where the previous result should be inserted
+- `add_ten(x)` → `multiply_by(2, result, 3)` → `format_result("Value: ", result)`
+
+#### 3. Named Parameter Capture
+```dana
+def pipeline(x: int) = add_ten as intermediate | multiply_by(intermediate, 2) | format_result("Final: ", intermediate)
+```
+- The `as name` syntax captures results for use in subsequent pipeline stages
+- Useful for complex pipelines where intermediate values are needed multiple times
 
 ### Signature Table
 
@@ -51,6 +77,7 @@ pipeline = f1 | f2 | f3  # ❌ No clear parameter signature, poor IDE/debugging
 - **Documentation Support:** Must support docstrings for self-documentation.
 - **IDE Integration:** Must work with autocomplete, type checking, and debugging.
 - **Expressiveness:** Must maintain the power of pipe/parallel composition.
+- **Advanced Parameter Passing:** Support implicit first parameter, explicit placement with `$$`, and named parameter capture with `as`.
 - **Syntax Removal:** Remove ad-hoc pipeline assignment syntax to eliminate ambiguity.
 - **Function Composition Only:** Only support function composition expressions, not arbitrary expressions.
 
@@ -76,11 +103,17 @@ pipeline = f1 | f2 | f3  # ❌ No clear parameter signature, poor IDE/debugging
 ### 4.1. Syntax & Grammar
 ```lark
 declarative_function_assignment: "def" NAME "(" [parameters] ")" ["->" basic_type] "=" expr
+pipeline_expression: function_call ("|" function_call)*
+function_call: NAME ["(" [argument_list] ")"]
+argument_list: argument ("," argument)*
+argument: expr | "$$" | NAME
+named_capture: function_call "as" NAME
 ```
 - Parameter list is required (parentheses are mandatory).
 - **Currently, any expression is allowed on the right-hand side for backward compatibility.**
 - **Future:** Restrict to function composition expressions only (see "Future Work").
 - Arbitrary expressions (e.g., `x + 1`, `if ...`, comprehensions) are **not** recommended and will be disallowed in the future.
+- **Pipeline parameter passing:** Supports `$$` placeholder and `as name` capture syntax.
 
 #### Supported Patterns
 ```dana
@@ -93,8 +126,17 @@ def par_func(x: int) = [f1, f2, f3]
 # Mixed composition
 def mixed_func(x: int) = f1 | [f2, f3] | f4
 
-# Function calls with arguments
-def call_func(x: int) = f1(arg1) | f2(arg2, arg3)
+# Implicit first parameter passing
+def implicit_func(x: int) = add_ten | multiply_by(2) | format_result("Result: ")
+
+# Explicit parameter placement with $$
+def explicit_func(x: int) = add_ten | multiply_by(2, $$, 3) | format_result("Value: ", $$)
+
+# Named parameter capture
+def named_func(x: int) = add_ten as intermediate | multiply_by(intermediate, 2) | format_result("Final: ", intermediate)
+
+# Complex parameter passing
+def complex_func(x: int) = add_ten as temp | multiply_by(2, temp) | format_result("Result: ", temp, "!")
 
 # No parameters
 def no_params() = f1 | f2 | f3
@@ -129,11 +171,21 @@ class DeclarativeFunctionDefinition:
 ### 4.4. Execution
 - Parameters are used as specified in the AST node.
 - Function metadata (`__name__`, `__doc__`, `__signature__`, `__annotations__`) is set for IDE/debugging.
+- **Pipeline parameter resolution:**
+  - **Implicit first parameter:** Result from previous function automatically becomes first argument to next function
+  - **Explicit placement (`$$`):** Previous result replaces `$$` placeholder in argument list
+  - **Named capture (`as name`):** Result is stored in named variable for use in subsequent pipeline stages
+  - **Variable resolution:** Named variables are resolved from pipeline context before function execution
 
 ### 4.5. Error Handling & Validation
 - If the right-hand side is not a valid function composition, raise a parse-time error (future: strict enforcement).
 - If a referenced function in the composition does not exist, raise a runtime error.
 - If the composition contains non-function elements, raise a composition error.
+- **Parameter passing validation:**
+  - If `$$` placeholder is used but no previous result exists, raise runtime error
+  - If named variable (`as name`) conflicts with existing variable, raise runtime error
+  - If named variable is referenced but not defined in pipeline context, raise runtime error
+  - If function signature doesn't match resolved arguments, raise TypeError as usual
 
 ---
 
@@ -149,6 +201,16 @@ pipeline = validate | clean | analyze
 
 # New (recommended):
 def pipeline(data: dict) = validate | clean | analyze
+
+# Advanced parameter passing examples:
+def parameterized_pipeline(x: int, value: int, factor: int, prefix: str) -> str = 
+    add_value(value) | multiply_by(factor) | format_with_prefix(prefix)
+
+def explicit_pipeline(x: int) -> str = 
+    add_ten | multiply_by(2, $$, 3) | format_result("Value: ", $$)
+
+def named_pipeline(x: int) -> str = 
+    add_ten as intermediate | multiply_by(intermediate, 2) | format_result("Final: ", intermediate)
 ```
 
 ### 5.2. Docstrings
@@ -213,6 +275,25 @@ def format_positive(x: int) -> str = f"Positive number: {x}"
 def validation_pipeline(x: any) -> str = ensure_int | ensure_positive | format_positive
 ```
 
+#### Parameter Passing Examples
+```dana
+# Implicit first parameter
+def add_value(x: int, value: int) -> int = x + value
+def multiply_by(x: int, factor: int) -> int = x * factor
+def format_with_prefix(x: int, prefix: str) -> str = f"{prefix}{x}"
+
+def parameterized_pipeline(x: int, value: int, factor: int, prefix: str) -> str = 
+    add_value(value) | multiply_by(factor) | format_with_prefix(prefix)
+
+# Explicit parameter placement
+def explicit_pipeline(x: int) -> str = 
+    add_ten | multiply_by(2, $$, 3) | format_result("Value: ", $$)
+
+# Named parameter capture
+def named_pipeline(x: int) -> str = 
+    add_ten as intermediate | multiply_by(intermediate, 2) | format_result("Final: ", intermediate)
+```
+
 #### Built-in Function Wrapper Example
 ```dana
 def to_string(x: any) -> str = str(x)
@@ -258,6 +339,7 @@ def pipeline(x: int) -> str = add_ten | to_string
 ## 10. Change Log
 - **2024-06:** Initial design, implementation, and test coverage for declarative function composition.
 - **2024-07:** Added comprehensive error handling, migration notes, and extensibility section.
+- **2024-12:** Enhanced with sophisticated pipeline parameter passing system including implicit first parameter, explicit `$$` placement, and named parameter capture with `as`.
 
 ---
 
