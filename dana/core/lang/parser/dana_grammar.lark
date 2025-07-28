@@ -227,14 +227,17 @@ function_composition_expr: function_pipe_expr
 // Function pipe expressions: f1 | f2 | f3
 function_pipe_expr: function_expr (PIPE function_expr)*
 
-// Function expressions: function names and function calls
-function_expr: function_name | function_call
+// Function expressions: function names, function calls, and list literals
+function_expr: function_name | function_call | function_list_literal
 
 // Function name: just a name
 function_name: NAME
 
 // Function call: name with arguments
 function_call: NAME "(" [arguments] ")"
+
+// Function list literal: [f1, f2, f3] for parallel composition
+function_list_literal: "[" [function_expr ("," function_expr)*] "]"
 
 
 

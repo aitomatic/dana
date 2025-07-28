@@ -34,7 +34,10 @@ class TestDeclarativeFunctionExecution:
         if isinstance(node, LiteralExpression):
             return node.value
         elif isinstance(node, Identifier):
-            return context.get(f"local:{node.name}")
+            value = context.get(f"local:{node.name}")
+            if value is None:
+                raise NameError(f"name '{node.name}' is not defined")
+            return value
         elif isinstance(node, BinaryExpression):
             left_val = self._mock_execute(node.left, context)
             right_val = self._mock_execute(node.right, context)

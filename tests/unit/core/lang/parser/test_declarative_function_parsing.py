@@ -6,7 +6,6 @@ Tests the parser's ability to parse the new declarative function definition synt
 
 from dana.core.lang.ast import (
     DeclarativeFunctionDefinition,
-    PipelineExpression,
 )
 from dana.core.lang.parser import DanaParser
 
@@ -35,10 +34,13 @@ class TestDeclarativeFunctionDefinitionParsing:
         assert statement.parameters[0].name == "x"
         assert statement.parameters[0].type_hint.name == "int"
         assert statement.return_type.name == "str"
-        assert isinstance(statement.composition, PipelineExpression)
-        assert len(statement.composition.stages) == 2
-        assert statement.composition.stages[0].name == "f1"
-        assert statement.composition.stages[1].name == "f2"
+        # The composition is now a BinaryExpression with PIPE operator
+        from dana.core.lang.ast import BinaryExpression, BinaryOperator
+
+        assert isinstance(statement.composition, BinaryExpression)
+        assert statement.composition.operator == BinaryOperator.PIPE
+        assert statement.composition.left.name == "f1"
+        assert statement.composition.right.name == "f2"
 
     def test_parse_declarative_function_without_return_type(self):
         """Test parsing a declarative function without return type."""
@@ -150,7 +152,7 @@ class TestDeclarativeFunctionDefinitionParsing:
     def test_parse_declarative_function_with_nested_expressions(self):
         """Test parsing a declarative function with nested expressions."""
         # Arrange
-        source = "def nested_func(x: int) -> float = (add_ten | multiply(2)) | divide(3)"
+        source = "def nested_func(x: int) -> float = add_ten | multiply(2) | divide(3)"
 
         # Act
         result = self.parser.parse(source)

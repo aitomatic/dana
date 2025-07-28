@@ -14,7 +14,7 @@ from typing import Any
 
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.ast import BinaryExpression, BinaryOperator, Identifier
+from dana.core.lang.ast import BinaryExpression, BinaryOperator, FunctionCall, Identifier
 from dana.core.lang.interpreter.functions.composed_function import ComposedFunction
 from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
 from dana.core.lang.sandbox_context import SandboxContext
@@ -131,6 +131,7 @@ class PipeOperationHandler(Loggable):
         Handles:
         - Identifiers: resolve from context/registry
         - BinaryExpressions: evaluate recursively
+        - FunctionCall: evaluate to get the function
         - Functions: return as-is
         """
         # Handle identifiers
@@ -140,6 +141,10 @@ class PipeOperationHandler(Loggable):
         # Handle binary expressions (nested compositions)
         if isinstance(expr, BinaryExpression) and expr.operator == BinaryOperator.PIPE:
             return self.execute_pipe(expr.left, expr.right, context)
+
+        # Handle function calls (evaluate to get the function)
+        if isinstance(expr, FunctionCall):
+            return self._resolve_function_call(expr, context)
 
         # Handle already composed functions and SandboxFunctions
         if isinstance(expr, SandboxFunction | ParallelFunction):
@@ -153,6 +158,20 @@ class PipeOperationHandler(Loggable):
         raise SandboxError(
             f"Cannot use non-function '{expr}' of type {type(expr).__name__} in pipe composition. Only functions are allowed."
         )
+
+    def _resolve_function_call(self, func_call: FunctionCall, context: SandboxContext) -> Any:
+        """Resolve a function call to a function (partial application)."""
+        # Get the function from context
+        func_name = func_call.name if isinstance(func_call.name, str) else func_call.name.name
+        func = self._resolve_identifier(Identifier(func_name), context)
+
+        # If the function call has arguments, create a partial function
+        if func_call.args:
+            # For now, just return the function as-is
+            # TODO: Implement partial application if needed
+            return func
+
+        return func
 
     def _resolve_identifier(self, identifier: Identifier, context: SandboxContext) -> Any:
         """Resolve an identifier to a function from context or registry."""

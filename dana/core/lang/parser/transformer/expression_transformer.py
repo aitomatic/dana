@@ -920,5 +920,51 @@ class ExpressionTransformer(BaseTransformer):
 
             return SliceTuple(slices=items)
 
+    # ===== FUNCTION COMPOSITION EXPRESSIONS =====
+    def function_composition_expr(self, items):
+        """Transform function_composition_expr rule."""
+        # Grammar: function_composition_expr: function_pipe_expr
+        return items[0]
+
+    def function_pipe_expr(self, items):
+        """Transform function_pipe_expr rule."""
+        # Grammar: function_pipe_expr: function_expr (PIPE function_expr)*
+        if len(items) == 1:
+            return items[0]
+        else:
+            # Multiple expressions with PIPE operators
+            result = items[0]
+            for i in range(1, len(items), 2):
+                if i + 1 < len(items):
+                    operator = BinaryOperator.PIPE
+                    right = items[i + 1]
+                    result = BinaryExpression(left=result, operator=operator, right=right)
+            return result
+
+    def function_expr(self, items):
+        """Transform function_expr rule."""
+        # Grammar: function_expr: function_name | function_call | function_list_literal
+        return items[0]
+
+    def function_name(self, items):
+        """Transform function_name rule."""
+        # Grammar: function_name: NAME
+        return Identifier(items[0].value)
+
+    def function_call(self, items):
+        """Transform function_call rule."""
+        # Grammar: function_call: NAME "(" [arguments] ")"
+        name = items[0].value
+        arguments = items[1] if len(items) > 1 else []
+        return FunctionCall(name=name, args=arguments)
+
+    def function_list_literal(self, items):
+        """Transform function_list_literal rule."""
+        # Grammar: function_list_literal: "[" [function_expr ("," function_expr)*] "]"
+        if len(items) == 0:
+            return ListLiteral(items=[])
+        else:
+            return ListLiteral(items=items)
+
 
 # File updated to resolve GitHub CI syntax error - 2025-06-09
