@@ -39,7 +39,6 @@ from dana.core.lang.ast import (
     ListLiteral,
     LiteralExpression,
     Location,
-    MethodDefinition,
     Program,
     SetLiteral,
     SubscriptExpression,
@@ -52,7 +51,6 @@ from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
 from dana.core.lang.parser.transformer.expression_transformer import (
     ExpressionTransformer,
 )
-from dana.core.lang.parser.utils.tree_utils import TreeTraverser
 
 # Allowed types for Assignment.value
 AllowedAssignmentValue = (
@@ -83,8 +81,7 @@ class StatementTransformer(BaseTransformer):
     def __init__(self):
         """Initialize the statement transformer and its expression transformer."""
         super().__init__()
-        self.expression_transformer = ExpressionTransformer()
-        self.tree_traverser = TreeTraverser()
+        self.expression_transformer = ExpressionTransformer(self)
 
         # Initialize specialized transformers
         from dana.core.lang.parser.transformer.statement.agent_context_transformer import (
@@ -366,6 +363,13 @@ class StatementTransformer(BaseTransformer):
         This rule is just a choice, so return the result of whichever was chosen.
         """
         return self.assignment_transformer.assignment(items)
+
+    def declarative_function_assignment(self, items):
+        """
+        Transform a declarative function assignment rule into a DeclarativeFunctionDefinition node.
+        Grammar: declarative_function_assignment: "def" NAME "(" [parameters] ")" ["->" basic_type] "=" atom
+        """
+        return self.assignment_transformer.declarative_function_assignment(items)
 
     def expr_stmt(self, items):
         """Transform a bare expression statement (expr_stmt) into an Expression AST node."""

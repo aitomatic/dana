@@ -67,6 +67,7 @@ Statement = Union[
     "TryBlock",
     "FunctionDefinition",
     "MethodDefinition",
+    "DeclarativeFunctionDefinition",  # Declarative function definitions
     "StructDefinition",
     "AgentDefinition",
     "ImportStatement",
@@ -360,6 +361,7 @@ class Assignment:
         "UseStatement",  # Added to support function_call_assignment: target = use_stmt
         "AgentStatement",  # Added to support agent statement assignments
         "AgentPoolStatement",  # Added to support agent pool statement assignments
+        "DeclarativeFunctionDefinition",  # Added to support declarative function definitions
     ]
     type_hint: TypeHint | None = None  # For typed assignments like x: int = 42
     location: Location | None = None
@@ -460,6 +462,18 @@ class MethodDefinition:
     body: list[Statement]
     return_type: TypeHint | None = None
     decorators: list["Decorator"] = field(default_factory=list)
+    location: Location | None = None
+
+
+@dataclass
+class DeclarativeFunctionDefinition:
+    """Declarative function definition statement (e.g., def func(x: int) -> str = f1 | f2)."""
+
+    name: Identifier
+    parameters: list[Parameter]
+    composition: Expression  # The pipe composition expression
+    return_type: TypeHint | None = None
+    docstring: str | None = None  # Docstring extracted from preceding string literal
     location: Location | None = None
 
 

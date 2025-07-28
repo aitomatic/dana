@@ -433,6 +433,10 @@ class SandboxContext:
         new_context = SandboxContext()
         new_context.set_state(self.get_state())
 
+        # Copy the interpreter (important for function execution)
+        if hasattr(self, "_interpreter") and self._interpreter is not None:
+            new_context._interpreter = self._interpreter
+
         # Also copy resource and agent registrations
         # This ensures that Dana functions have access to resources from their original module context
         # Use shallow copy since resources contain objects that can't be deep copied

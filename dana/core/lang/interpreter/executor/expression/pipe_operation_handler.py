@@ -14,7 +14,7 @@ from typing import Any
 
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.ast import BinaryExpression, BinaryOperator, Identifier, ListLiteral
+from dana.core.lang.ast import AttributeAccess, BinaryExpression, BinaryOperator, FunctionCall, Identifier, ListLiteral
 from dana.core.lang.interpreter.functions.composed_function import ComposedFunction
 from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
 from dana.core.lang.sandbox_context import SandboxContext
@@ -109,35 +109,16 @@ class PipeOperationHandler(Loggable):
 
         Supports only function-to-function composition:
         - f1 | f2 -> ComposedFunction
-        - f1 | [f2, f3] -> Mixed composition
-        - [f1, f2] | f3 -> Mixed composition
 
         Does NOT support data pipelines like: data | function
         """
         try:
-            # Resolve left operand to a function
+            # Resolve both operands to functions
             left_func = self._resolve_to_function(left, context)
+            right_func = self._resolve_to_function(right, context)
 
-            # Handle different right operand types
-            if isinstance(right, ListLiteral):
-                # Right side is a list: f1 | [f2, f3]
-                right_functions = []
-                for item in right.items:
-                    func = self._resolve_to_function(item, context)
-                    right_functions.append(func)
-
-                # Create parallel function from the list
-                parallel_func = ParallelFunction(right_functions, context)
-
-                # Create composed function using Dana's existing infrastructure
-                return ComposedFunction(left_func, parallel_func, context=context)
-
-            else:
-                # Right side is a single function: f1 | f2
-                right_func = self._resolve_to_function(right, context)
-
-                # Create composed function using Dana's existing infrastructure
-                return ComposedFunction(left_func, right_func, context=context)
+            # Create composed function using Dana's existing infrastructure
+            return ComposedFunction(left_func, right_func, context=context)
 
         except Exception as e:
             if isinstance(e, SandboxError):
@@ -149,25 +130,26 @@ class PipeOperationHandler(Loggable):
 
         Handles:
         - Identifiers: resolve from context/registry
-        - ListLiterals: create ParallelFunction
         - BinaryExpressions: evaluate recursively
+        - FunctionCall: evaluate to get the function
+        - ListLiteral: create ParallelFunction for parallel composition
         - Functions: return as-is
         """
         # Handle identifiers
         if isinstance(expr, Identifier):
             return self._resolve_identifier(expr, context)
 
-        # Handle list literals (parallel functions)
-        if isinstance(expr, ListLiteral):
-            functions = []
-            for item in expr.items:
-                func = self._resolve_to_function(item, context)
-                functions.append(func)
-            return ParallelFunction(functions, context)
-
         # Handle binary expressions (nested compositions)
         if isinstance(expr, BinaryExpression) and expr.operator == BinaryOperator.PIPE:
             return self.execute_pipe(expr.left, expr.right, context)
+
+        # Handle function calls (evaluate to get the function)
+        if isinstance(expr, FunctionCall):
+            return self._resolve_function_call(expr, context)
+
+        # Handle list literals (parallel function composition)
+        if isinstance(expr, ListLiteral):
+            return self._resolve_list_literal(expr, context)
 
         # Handle already composed functions and SandboxFunctions
         if isinstance(expr, SandboxFunction | ParallelFunction):
@@ -181,6 +163,57 @@ class PipeOperationHandler(Loggable):
         raise SandboxError(
             f"Cannot use non-function '{expr}' of type {type(expr).__name__} in pipe composition. Only functions are allowed."
         )
+
+    def _resolve_function_call(self, func_call: FunctionCall, context: SandboxContext) -> Any:
+        """Resolve a function call to a function (partial application)."""
+        # Handle AttributeAccess for method calls
+        if isinstance(func_call.name, AttributeAccess):
+            # Resolve the object and get the method
+            if self.parent_executor is None:
+                # Handle case where parent_executor is not available
+                # Try to resolve the object directly from context
+                if isinstance(func_call.name.object, Identifier):
+                    obj = context.get(func_call.name.object.name)
+                    if obj is None:
+                        raise SandboxError(f"Object '{func_call.name.object.name}' not found in context")
+                else:
+                    raise SandboxError("Cannot resolve attribute access without parent executor")
+            else:
+                obj = self.parent_executor.execute(func_call.name.object, context)
+
+            method_name = func_call.name.attribute
+            if hasattr(obj, method_name):
+                func = getattr(obj, method_name)
+                if callable(func):
+                    return func
+                else:
+                    raise SandboxError(f"'{method_name}' is not a callable method on {type(obj).__name__}")
+            else:
+                raise SandboxError(f"Object {type(obj).__name__} has no method '{method_name}'")
+
+        # Handle string function names
+        func_name = func_call.name if isinstance(func_call.name, str) else func_call.name.name
+        func = self._resolve_identifier(Identifier(func_name), context)
+
+        # If the function call has arguments, create a partial function
+        if func_call.args:
+            # For now, just return the function as-is
+            # TODO: Implement partial application if needed
+            return func
+
+        return func
+
+    def _resolve_list_literal(self, list_literal: ListLiteral, context: SandboxContext) -> Any:
+        """Resolve a list literal to a ParallelFunction for parallel composition."""
+        functions = []
+
+        for item in list_literal.items:
+            # Resolve each item to a function
+            func = self._resolve_to_function(item, context)
+            functions.append(func)
+
+        # Create a ParallelFunction that will execute all functions with the same input
+        return ParallelFunction(functions, context=context)
 
     def _resolve_identifier(self, identifier: Identifier, context: SandboxContext) -> Any:
         """Resolve an identifier to a function from context or registry."""
