@@ -604,7 +604,7 @@ class StatementExecutor(BaseExecutor):
             wrapper.__signature__ = signature
         except ImportError:
             # inspect module not available, skip signature creation
-            pass
+            self.debug("inspect module not available, skipping signature creation for IDE support")
 
         # Store the function in the context
         context.set(f"local:{node.name.name}", wrapper)

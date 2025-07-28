@@ -165,7 +165,7 @@ class AssignmentTransformer(BaseTransformer):
         name = Identifier(name_token.value)
 
         # Transform parameters if they exist
-        if parameters and hasattr(parameters, "__iter__"):
+        if parameters and isinstance(parameters, list | tuple):
             params = []
             for param in parameters:
                 if hasattr(param, "name") and hasattr(param, "type_hint"):
