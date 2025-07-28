@@ -52,7 +52,115 @@ print("  → add_ten(5) = 15")
 print("  → double(15) = 30")
 print("  → stringify(30) = 'Result: 30'")
 
-print("\n2. Data Pipeline vs Function Composition")
+print("\n2. Parameter Passing in Pipelines")
+print("-" * 35)
+
+# Define functions that take additional parameters
+def add_prefix(text: str, prefix: str = "Prefix: ") -> str:
+    return f"{prefix}{text}"
+
+def to_uppercase(text: str) -> str:
+    return text.upper()
+
+def add_suffix(text: str, suffix: str = "!!!") -> str:
+    return f"{text}{suffix}"
+
+def format_message(prefix: str, text: str, suffix: str) -> str:
+    return f"{prefix}{text}{suffix}"
+
+def multiply_text(text: str, multiplier: int) -> str:
+    return text * multiplier
+
+def surround_with(text: str, left: str, right: str) -> str:
+    return f"{left}{text}{right}"
+
+print("\n2a. Implicit First-Argument Mode (Default)")
+print("-" * 40)
+
+# Pipeline automatically passes the value as first argument
+def basic_pipeline(text: str) = add_prefix("Data: ") | to_uppercase | add_suffix("?")
+result = basic_pipeline("hello")
+print("basic_pipeline('hello') = " + str(result))
+print("  → add_prefix('hello', 'Data: ') = 'Data: hello'")
+print("  → to_uppercase('Data: hello') = 'DATA: HELLO'")
+print("  → add_suffix('DATA: HELLO', '?') = 'DATA: HELLO?'")
+
+# With default arguments
+def default_pipeline(text: str) = add_prefix | to_uppercase
+result = default_pipeline("world")
+print("default_pipeline('world') = " + str(result))
+print("  → add_prefix('world') = 'Prefix: world'")
+print("  → to_uppercase('Prefix: world') = 'PREFIX: WORLD'")
+
+print("\n2b. Explicit Placeholder Mode")
+print("-" * 35)
+
+# Placeholder in middle position
+def middle_placeholder_pipeline(text: str) = format_message("Start: ", $$, " :End")
+result = middle_placeholder_pipeline("hello")
+print("middle_placeholder_pipeline('hello') = " + str(result))
+print("  → format_message('Start: ', 'hello', ' :End') = 'Start: hello :End'")
+
+# Placeholder in first position
+def first_placeholder_pipeline(text: str) = format_message($$, "MIDDLE", "!!!")
+result = first_placeholder_pipeline("world")
+print("first_placeholder_pipeline('world') = " + str(result))
+print("  → format_message('world', 'MIDDLE', '!!!') = 'worldMIDDLE!!!'")
+
+# Placeholder in last position
+def last_placeholder_pipeline(text: str) = format_message("START", "MIDDLE", $$)
+result = last_placeholder_pipeline("end")
+print("last_placeholder_pipeline('end') = " + str(result))
+print("  → format_message('START', 'MIDDLE', 'end') = 'STARTMIDDLEend'")
+
+# Multiple placeholders
+def multi_placeholder_func(a: str, b: str, c: str, d: str) -> str:
+    return f"{a}-{b}-{c}-{d}"
+
+def multi_placeholder_pipeline(text: str) = multi_placeholder_func("start", $$, "middle", $$)
+result = multi_placeholder_pipeline("value")
+print("multi_placeholder_pipeline('value') = " + str(result))
+print("  → multi_placeholder_func('start', 'value', 'middle', 'value') = 'start-value-middle-value'")
+
+print("\n2c. Mixed Mode")
+print("-" * 15)
+
+# Mix implicit and explicit modes
+def format_with_prefix(text: str, prefix: str) -> str:
+    return f"{prefix}{text}"
+
+def wrap_with_brackets(text: str, left: str, right: str) -> str:
+    return f"{left}{text}{right}"
+
+def complex_mixed_pipeline(text: str) = format_with_prefix("INFO: ") | wrap_with_brackets("[", $$, "]")
+result = complex_mixed_pipeline("data")
+print("complex_mixed_pipeline('data') = " + str(result))
+print("  → format_with_prefix('data', 'INFO: ') = 'INFO: data'")
+print("  → wrap_with_brackets('[', 'INFO: data', ']') = '[INFO: data]'")
+
+print("\n2d. Numeric Parameter Passing")
+print("-" * 30)
+
+def add_numbers(a: int, b: int) -> int:
+    return a + b
+
+def multiply_by(a: int, multiplier: int = 2) -> int:
+    return a * multiplier
+
+# Numeric pipeline with fixed parameters
+def numeric_pipeline(x: int) = add_numbers(10) | add_numbers(3)
+result = numeric_pipeline(5)
+print("numeric_pipeline(5) = " + str(result))
+print("  → add_numbers(5, 10) = 15")
+print("  → add_numbers(15, 3) = 18")
+
+# Numeric pipeline with default parameters
+def multiply_pipeline(x: int) = multiply_by(3)
+result = multiply_pipeline(7)
+print("multiply_pipeline(7) = " + str(result))
+print("  → multiply_by(7, 3) = 21")
+
+print("\n3. Data Pipeline vs Function Composition")
 print("-" * 40)
 
 # Data pipeline: immediate execution (using the declarative function)
@@ -64,7 +172,7 @@ def direct_pipeline(x: int) -> str = add_ten | double | stringify
 direct_result = direct_pipeline(3)
 print("direct_pipeline(3) = " + str(direct_result))
 
-print("\n3. Complex Data Processing Pipeline")
+print("\n4. Complex Data Processing Pipeline")
 print("-" * 38)
 
 # Create a person processing pipeline using declarative syntax
@@ -77,7 +185,7 @@ print("person_builder('Alice') = " + str(alice))
 bob = person_builder("Bob")
 print("person_builder('Bob') = " + str(bob))
 
-print("\n4. Chained Function Composition")
+print("\n5. Chained Function Composition")
 print("-" * 35)
 
 # Create multiple levels of composition using declarative syntax
@@ -92,7 +200,7 @@ print("  → step1(1) = add_ten(double(1)) = add_ten(2) = 12")
 print("  → Wait, that's wrong... let me trace this correctly:")
 print("  → add_ten(1) = 11, double(11) = 22, stringify(22) = 'Result: 22'")
 
-print("\n5. Function Composition with Different Data Types")
+print("\n6. Function Composition with Different Data Types")
 print("-" * 50)
 
 
@@ -117,6 +225,33 @@ print("  → square(4) = 16")
 print("  → to_list(16) = [16]")
 print("  → append_message([16]) = [16, 'processed']")
 
+print("\n7. List Processing with Parameters")
+print("-" * 35)
+
+def process_list(items: list, prefix: str = "item:") -> list:
+    result = []
+    for item in items:
+        result.append(prefix + " " + str(item))
+    return result
+
+def add_to_list(lst: list, item: any) -> list:
+    return lst + [item]
+
+def filter_even(lst: list) -> list:
+    result = []
+    for x in lst:
+        if x % 2 == 0:
+            result.append(x)
+    return result
+
+# List processing pipeline with parameters
+def list_processing_pipeline(data: list) = data | process_list("num:") | add_to_list(5) | filter_even
+result = list_processing_pipeline([1, 2, 3, 4])
+print("list_processing_pipeline([1, 2, 3, 4]) = " + str(result))
+print("  → process_list([1, 2, 3, 4], 'num:') = ['num: 1', 'num: 2', 'num: 3', 'num: 4']")
+print("  → add_to_list(['num: 1', 'num: 2', 'num: 3', 'num: 4'], 5) = ['num: 1', 'num: 2', 'num: 3', 'num: 4', 5]")
+print("  → filter_even(['num: 1', 'num: 2', 'num: 3', 'num: 4', 5]) = [5] (only numeric values are filtered)")
+
 print("\n✅ Function Composition Demo Complete!")
 print("\nKey Features Demonstrated:")
 print("• Declarative function composition with clear signatures")
@@ -126,3 +261,7 @@ print("• Complex data structure processing")
 print("• Reusable composition with type annotations")
 print("• Multiple data types flowing through pipelines")
 print("• Better IDE support and debugging")
+print("• Parameter passing in implicit first-argument mode")
+print("• Parameter passing with explicit $$ placeholders")
+print("• Mixed mode parameter passing")
+print("• Numeric and list processing with parameters")
