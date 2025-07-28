@@ -23,7 +23,7 @@ dana start
 
 *No repo clone required. This launches the Dana REPL instantly.*
 
-See the full documentation at: [https://aitomatic.github.io/opendxa/](https://aitomatic.github.io/opendxa/)
+See the full documentation at: [https://aitomatic.github.io/dana/](https://aitomatic.github.io/dana/)
 
 ---
 
