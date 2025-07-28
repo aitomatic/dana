@@ -21,7 +21,7 @@ class DanaTransformer(Transformer):
         super().__init__()
         # Initialize sub-transformers
         self.statement_transformer = StatementTransformer()
-        self.expression_transformer = ExpressionTransformer()
+        self.expression_transformer = ExpressionTransformer(self)
         self.fstring_transformer = FStringTransformer()
         self.variable_transformer = VariableTransformer()
         self.current_filename = None  # Track current filename for error reporting

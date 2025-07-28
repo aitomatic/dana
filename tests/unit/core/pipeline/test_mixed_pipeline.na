@@ -18,17 +18,20 @@ def test_mixed_modes():
         return result
 
     # Test numeric pipeline
-    result = 5 | add_numbers(10) | add_numbers(3)
+    def numeric_pipeline(x: int) = x | add_numbers(10) | add_numbers(3)
+    result = numeric_pipeline(5)
     expected = 18  # 5 + 10 + 3
     assert result == expected, f"Expected {expected}, got {result}"
 
     # Test list processing
-    result = [1, 2, 3] | process_list("num:")
+    def list_pipeline(data: list) = data | process_list("num:")
+    result = list_pipeline([1, 2, 3])
     expected = ["num: 1", "num: 2", "num: 3"]
     assert result == expected, f"Expected {expected}, got {result}"
 
     # Test string operations with mixed modes
-    result = "hello" | identity | combine_strings(["world", "test"])
+    def string_pipeline(text: str) = text | identity | combine_strings(["world", "test"])
+    result = string_pipeline("hello")
     expected = "hello-world-test"
     assert result == expected, f"Expected {expected}, got {result}"
 
@@ -36,8 +39,37 @@ def test_mixed_modes():
     def multiply_by(a: int, multiplier: int = 2) -> int:
         return a * multiplier
 
-    result = 7 | multiply_by(3)
+    def multiply_pipeline(x: int) = x | multiply_by(3)
+    result = multiply_pipeline(7)
     expected = 21  # 7 * 3
+    assert result == expected, f"Expected {expected}, got {result}"
+
+    # Test complex mixed pipeline with both implicit and explicit modes
+    def format_with_prefix(text: str, prefix: str) -> str:
+        return f"{prefix}{text}"
+
+    def wrap_with_brackets(text: str, left: str, right: str) -> str:
+        return f"{left}{text}{right}"
+
+    def complex_mixed_pipeline(text: str) = text | format_with_prefix("INFO: ") | wrap_with_brackets("[", $, "]")
+    result = complex_mixed_pipeline("data")
+    expected = "[INFO: data]"
+    assert result == expected, f"Expected '{expected}', got '{result}'"
+
+    # Test with list operations and mixed modes
+    def add_to_list(lst: list, item: Any) -> list:
+        return lst + [item]
+
+    def filter_even(lst: list) -> list:
+        result = []
+        for x in lst:
+            if x % 2 == 0:
+                result.append(x)
+        return result
+
+    def list_processing_pipeline(data: list) = data | add_to_list(5) | filter_even
+    result = list_processing_pipeline([1, 2, 3, 4])
+    expected = [2, 4]
     assert result == expected, f"Expected {expected}, got {result}"
 
     log("✅ All mixed mode tests passed")
