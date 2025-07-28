@@ -344,6 +344,58 @@ class StructInstance:
         return method(self, *args, **kwargs)
 
 
+class MethodRegistry:
+    """Global registry for struct methods with explicit receivers."""
+
+    _instance: Optional["MethodRegistry"] = None
+    _methods: dict[tuple[str, str], Any] = {}  # (type_name, method_name) -> DanaFunction
+
+    def __new__(cls) -> "MethodRegistry":
+        """Singleton pattern for global registry."""
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    @classmethod
+    def register_method(cls, receiver_types: list[str], method_name: str, function: Any) -> None:
+        """Register a method for one or more receiver types.
+        
+        Args:
+            receiver_types: List of struct type names (from union types)
+            method_name: Name of the method
+            function: The DanaFunction to register
+        """
+        for type_name in receiver_types:
+            key = (type_name, method_name)
+            if key in cls._methods:
+                raise ValueError(f"Method '{method_name}' already defined for type '{type_name}'")
+            cls._methods[key] = function
+
+    @classmethod
+    def get_method(cls, type_name: str, method_name: str) -> Any | None:
+        """Get a method for a specific type."""
+        return cls._methods.get((type_name, method_name))
+
+    @classmethod
+    def has_method(cls, type_name: str, method_name: str) -> bool:
+        """Check if a method exists for a type."""
+        return (type_name, method_name) in cls._methods
+
+    @classmethod
+    def get_methods_for_type(cls, type_name: str) -> dict[str, Any]:
+        """Get all methods for a specific type."""
+        return {
+            method_name: func
+            for (t_name, method_name), func in cls._methods.items()
+            if t_name == type_name
+        }
+
+    @classmethod
+    def clear(cls) -> None:
+        """Clear all registered methods (for testing)."""
+        cls._methods.clear()
+
+
 class StructTypeRegistry:
     """Global registry for struct types."""
 

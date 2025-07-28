@@ -66,6 +66,7 @@ Statement = Union[
     "ForLoop",
     "TryBlock",
     "FunctionDefinition",
+    "MethodDefinition",
     "StructDefinition",
     "AgentDefinition",
     "ImportStatement",
@@ -446,6 +447,19 @@ class FunctionDefinition:
     body: list[Statement]
     return_type: TypeHint | None = None
     decorators: list["Decorator"] = field(default_factory=list)  # Decorators applied to function
+    location: Location | None = None
+
+
+@dataclass
+class MethodDefinition:
+    """Method definition statement with explicit receiver (e.g., def (point: Point) translate(dx, dy):)."""
+
+    receiver: Parameter  # The receiver parameter (e.g., point: Point)
+    name: Identifier  # Method name
+    parameters: list[Parameter]  # Regular parameters (excluding receiver)
+    body: list[Statement]
+    return_type: TypeHint | None = None
+    decorators: list["Decorator"] = field(default_factory=list)
     location: Location | None = None
 
 

@@ -19,6 +19,7 @@ from dana.core.lang.ast import (
     Decorator,
     FunctionDefinition,
     Identifier,
+    MethodDefinition,
     Parameter,
     StructDefinition,
     StructField,
@@ -70,6 +71,75 @@ class FunctionDefinitionTransformer(BaseTransformer):
 
         return FunctionDefinition(
             name=Identifier(name=func_name, location=location),
+            parameters=parameters,
+            body=block_items,
+            return_type=return_type,
+            decorators=decorators,
+            location=location,
+        )
+
+    def method_def(self, items):
+        """Transform a method definition rule into a MethodDefinition node.
+        
+        Grammar: method_def: [decorators] "def" "(" typed_parameter ")" NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
+        """
+        relevant_items = self.main_transformer._filter_relevant_items(items)
+        
+        if len(relevant_items) < 3:
+            raise ValueError(f"Method definition must have at least receiver, name, and body, got {len(relevant_items)} items")
+        
+        current_index = 0
+        decorators = []
+        
+        # Check for decorators
+        if current_index < len(relevant_items) and isinstance(relevant_items[current_index], list):
+            first_item = relevant_items[current_index]
+            if first_item and hasattr(first_item[0], "name"):  # Check if it's a list of Decorator objects
+                decorators = first_item
+                current_index += 1
+        
+        # Extract receiver parameter
+        receiver_param = relevant_items[current_index]
+        if not isinstance(receiver_param, Parameter):
+            if hasattr(receiver_param, "data") and receiver_param.data == "typed_parameter":
+                receiver_param = self.main_transformer.assignment_transformer.typed_parameter(receiver_param.children)
+            else:
+                raise ValueError(f"Expected receiver Parameter, got {type(receiver_param)}")
+        current_index += 1
+        
+        # Extract method name
+        method_name_token = relevant_items[current_index]
+        if not (isinstance(method_name_token, Token) and method_name_token.type == "NAME"):
+            raise ValueError(f"Expected method name token, got {method_name_token}")
+        method_name = method_name_token.value
+        current_index += 1
+        
+        # Extract parameters (if any)
+        parameters = []
+        if current_index < len(relevant_items):
+            # Check if the next item is a list of parameters or something else
+            item = relevant_items[current_index]
+            if isinstance(item, list) or (hasattr(item, 'data') and item.data == 'parameters'):
+                parameters, current_index = self._resolve_function_parameters(relevant_items, current_index)
+            elif not (isinstance(item, Tree) and item.data == 'block') and not isinstance(item, TypeHint):
+                # If it's not a block or type hint, try to parse it as parameters
+                parameters, current_index = self._resolve_function_parameters(relevant_items, current_index)
+        
+        # Extract return type (if any)
+        return_type = None
+        if current_index < len(relevant_items):
+            item = relevant_items[current_index]
+            if isinstance(item, TypeHint) or (hasattr(item, 'data') and item.data == 'basic_type'):
+                return_type, current_index = self._extract_return_type(relevant_items, current_index)
+        
+        # Extract method body
+        block_items = self._extract_function_body(relevant_items, current_index)
+        
+        location = self.main_transformer.create_location(method_name_token)
+        
+        return MethodDefinition(
+            receiver=receiver_param,
+            name=Identifier(name=method_name, location=location),
             parameters=parameters,
             body=block_items,
             return_type=return_type,
