@@ -189,7 +189,7 @@ agent FinancialAnalyst:
 
 ### ⚡ 5-Minute Demo
 ```bash
-pip install dana-agent
+pip install dana
 dana start
 ```
 [Try the demo →](for-engineers/README.md#path-1-quick-demo-5-minutes)
