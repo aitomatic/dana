@@ -171,7 +171,7 @@ assignment: typed_assignment | simple_assignment | function_call_assignment | co
 typed_assignment: target ":" basic_type "=" expr
 simple_assignment: target "=" expr
 function_call_assignment: target "=" return_object_stmt
-declarative_function_assignment: "def" NAME "(" [parameters] ")" ["->" basic_type] "=" expr
+declarative_function_assignment: "def" NAME "(" [parameters] ")" ["->" basic_type] "=" function_composition_expr
 compound_assignment: target compound_op expr
 
 compound_op: PLUS_EQUALS | MINUS_EQUALS | MULT_EQUALS | DIV_EQUALS
@@ -219,6 +219,22 @@ target: atom
 expr: pipe_expr
 
 pipe_expr: or_expr (PIPE or_expr)*
+
+// ===== FUNCTION COMPOSITION EXPRESSIONS =====
+// Only allowed in declarative function definitions
+function_composition_expr: function_pipe_expr
+
+// Function pipe expressions: f1 | f2 | f3
+function_pipe_expr: function_expr (PIPE function_expr)*
+
+// Function expressions: function names and function calls
+function_expr: function_name | function_call
+
+// Function name: just a name
+function_name: NAME
+
+// Function call: name with arguments
+function_call: NAME "(" [arguments] ")"
 
 
 

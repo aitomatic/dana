@@ -206,60 +206,9 @@ class AssignmentTransformer(BaseTransformer):
         # are valid expressions, but we need to validate that they're actually function compositions
 
         # Transform using the expression transformer
+        # Note: Grammar now restricts to function composition expressions only
         composition = self.expression_transformer.expression([composition_tree])
-
-        # TODO: FUTURE ENHANCEMENT - Restrict to function composition expressions only
-        # According to the design document, declarative function definitions should only
-        # support function composition expressions (f1 | f2 | f3, [f1, f2, f3], etc.)
-        # Currently allowing arbitrary expressions for backward compatibility with existing tests.
-        #
-        # To implement this restriction:
-        # 1. Uncomment the validation below
-        # 2. Update functional tests to use only function composition expressions
-        # 3. Update documentation to clarify the restriction
-        #
-        # if not self._is_valid_function_composition(composition):
-        #     raise ValueError("Declarative function definitions only support function composition expressions")
-
         return composition
-
-    def _is_valid_function_composition(self, expr):
-        """Check if an expression is a valid function composition."""
-        from dana.core.lang.ast import BinaryExpression, FunctionCall, Identifier, ListLiteral, PipelineExpression
-
-        # Valid function composition expressions:
-        # 1. Pipeline expressions (PipelineExpression)
-        # 2. Pipe expressions (BinaryExpression with PIPE operator)
-        # 3. Parallel expressions (ListLiteral containing function names/calls)
-        # 4. Single function expressions (Identifier or FunctionCall)
-        # 5. Parenthesized expressions (if they contain valid function compositions)
-
-        if isinstance(expr, PipelineExpression):
-            # Pipeline expressions are always valid
-            return True
-        elif isinstance(expr, BinaryExpression):
-            # Check if it's a pipe expression (PIPE operator)
-            if expr.operator.value == "|":
-                # Recursively check both sides
-                return self._is_valid_function_composition(expr.left) and self._is_valid_function_composition(expr.right)
-            else:
-                return False
-        elif isinstance(expr, ListLiteral):
-            # Check if all items in the list are function names/calls
-            return all(self._is_function_name_or_call(item) for item in expr.items)
-        elif isinstance(expr, Identifier | FunctionCall):
-            # Single function name or function call
-            return True
-        else:
-            # For now, allow other expressions and let runtime handle validation
-            # This allows for more complex expressions that might be valid
-            return True
-
-    def _is_function_name_or_call(self, expr):
-        """Check if an expression is a function name or function call."""
-        from dana.core.lang.ast import FunctionCall, Identifier
-
-        return isinstance(expr, Identifier | FunctionCall)
 
     def _transform_parameter(self, param_tree):
         """Transform a parameter parse tree into a Parameter object."""

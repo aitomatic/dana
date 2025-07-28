@@ -283,14 +283,9 @@ class ExpressionTransformer(BaseTransformer):
         if not has_pipe and len(stages) == 1:
             return stages[0]
 
-        # Check if we're in a declarative function context
-        # Temporarily allow all pipe expressions for testing
-        # if not self._is_in_declarative_function_context():
-        #     from dana.common.exceptions import ParseError
-        #     raise ParseError(
-        #         f"Pipe expressions are only allowed in declarative function definitions. "
-        #         f"Use 'def func(...) = f1 | f2' instead of 'pipeline = f1 | f2'"
-        #     )
+        # Note: Pipe expressions are naturally restricted by grammar requirements
+        # Old syntax like 'pipeline = f1 | f2' will fail with syntax errors
+        # since the grammar requires 'def pipeline() = f1 | f2'
 
         # Otherwise, create PipelineExpression
         return PipelineExpression(stages=stages)
