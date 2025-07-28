@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import uuid
 from datetime import datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AgentBase(BaseModel):
@@ -431,6 +432,7 @@ class KnowledgeUploadRequest(BaseModel):
 # Domain Knowledge Schemas
 class DomainNode(BaseModel):
     """A single node in the domain knowledge tree"""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     topic: str
     children: list['DomainNode'] = []
 

@@ -731,7 +731,7 @@ async def _process_remove_information_intent(
                 # Clear agent cache to force RAG rebuild
                 clear_agent_cache(folder_path)
                 
-                # Remove topics from knowledge status manager
+                # Remove topics from knowledge status manager using UUIDs
                 try:
                     knows_folder = os.path.join(folder_path, "knows")
                     if os.path.exists(knows_folder):
@@ -740,14 +740,47 @@ async def _process_remove_information_intent(
                             status_path, agent_id=str(agent.id)
                         )
                         
-                        # Remove the topics from status tracking
-                        for topic in topics_to_remove:
-                            # Need to find the correct path format in status file
-                            existing_data = status_manager.load()
-                            for entry in existing_data.get("topics", []):
-                                if topic.lower() in entry.get("path", "").lower():
-                                    status_manager.remove_topic(entry["path"])
-                                    print(f"🗑️ Removed {entry['path']} from knowledge status")
+                        # Collect UUIDs of topics to remove from the updated tree
+                        topics_uuids_to_remove = []
+                        
+                        def collect_removed_topic_uuids(node, target_topics):
+                            """Collect UUIDs of topics that match removal criteria"""
+                            topic_name = getattr(node, 'topic', '')
+                            node_id = getattr(node, 'id', None)
+                            
+                            # Check if this topic matches any target for removal
+                            for target in target_topics:
+                                if target.lower() in topic_name.lower() and node_id:
+                                    topics_uuids_to_remove.append(node_id)
+                                    print(f"🗑️ Marked UUID {node_id} for removal (topic: {topic_name})")
+                            
+                            # Recursively check children
+                            for child in getattr(node, 'children', []):
+                                collect_removed_topic_uuids(child, target_topics)
+                        
+                        # Find UUIDs before removal by comparing original and updated trees
+                        if current_domain_tree and remove_response.updated_tree:
+                            # Find topics that exist in original but not in updated tree
+                            original_uuids = set()
+                            updated_uuids = set()
+                            
+                            def collect_all_uuids(node, uuid_set):
+                                node_id = getattr(node, 'id', None)
+                                if node_id:
+                                    uuid_set.add(node_id)
+                                for child in getattr(node, 'children', []):
+                                    collect_all_uuids(child, uuid_set)
+                            
+                            collect_all_uuids(current_domain_tree.root, original_uuids)
+                            collect_all_uuids(remove_response.updated_tree.root, updated_uuids)
+                            
+                            topics_uuids_to_remove = list(original_uuids - updated_uuids)
+                            print(f"🗑️ Found {len(topics_uuids_to_remove)} UUIDs to remove from status")
+                        
+                        # Remove status entries by UUIDs
+                        if topics_uuids_to_remove:
+                            status_manager.remove_topics_by_uuids(topics_uuids_to_remove)
+                            print(f"🗑️ Removed {len(topics_uuids_to_remove)} topics from knowledge status by UUID")
                         
                         # Remove ALL knowledge files that contain the removed topics in their path
                         for topic in topics_to_remove:
@@ -761,12 +794,26 @@ async def _process_remove_information_intent(
                                 .replace(",", "_")
                             )
                             
-                            # Find and remove all files containing this topic in their filename
+                            # Find and remove files that have the topic as a specific path component
                             if os.path.exists(knows_folder):
                                 for filename in os.listdir(knows_folder):
                                     if filename.endswith('.json') and filename != 'knowledge_status.json':
-                                        # Check if the topic appears in the filename
-                                        if safe_topic.lower() in filename.lower() or topic.replace(" ", "_").lower() in filename.lower():
+                                        # Remove .json extension for pattern matching
+                                        filename_without_ext = filename[:-5]  # Remove .json
+                                        
+                                        # Split filename into path components
+                                        path_components = filename_without_ext.split('___')
+                                        
+                                        # Check if the removed topic is an exact match in the path
+                                        topic_normalized = topic.replace(" ", "_")
+                                        should_remove = False
+                                        
+                                        for component in path_components:
+                                            if component.lower() == topic_normalized.lower():
+                                                should_remove = True
+                                                break
+                                        
+                                        if should_remove:
                                             file_path = os.path.join(knows_folder, filename)
                                             try:
                                                 os.remove(file_path)

@@ -712,7 +712,7 @@ If moving existing topics, use:
             
             elif change.get("action") == "remove_node":
                 topic_to_remove = change.get("topic_to_remove")
-                preserve_children = change.get("preserve_children", True)  # Default to preserving children
+                preserve_children = change.get("preserve_children", False)  # Default to removing children with parent
                 print(f"  - Removing '{topic_to_remove}' (preserve_children: {preserve_children})")
                 
                 if preserve_children:
@@ -762,10 +762,18 @@ If moving existing topics, use:
         for child_dict in node_dict.get("children", []):
             children.append(self._build_node_from_dict(child_dict))
         
-        return DomainNode(
-            topic=node_dict["topic"],
-            children=children
-        )
+        # Preserve existing UUID if present, otherwise let default factory generate one
+        if "id" in node_dict:
+            return DomainNode(
+                id=node_dict["id"],
+                topic=node_dict["topic"],
+                children=children
+            )
+        else:
+            return DomainNode(
+                topic=node_dict["topic"],
+                children=children
+            )
     
     def _find_node_by_path(self, root: DomainNode, path: list[str]) -> DomainNode | None:
         """Find a node by following the given path."""
