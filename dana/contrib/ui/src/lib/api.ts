@@ -708,6 +708,18 @@ class ApiService {
     return response.data;
   }
 
+  async getTopicKnowledgeContent(agentId: string | number, topicPath: string): Promise<{
+    success: boolean;
+    topic_path: string;
+    content?: any;
+    message?: string;
+    file_path?: string;
+  }> {
+    const encodedTopicPath = encodeURIComponent(topicPath);
+    const response = await this.client.get(`/agents/${agentId}/knowledge-content/${encodedTopicPath}`);
+    return response.data;
+  }
+
   async testAgentById(agentId: string | number, message: string, context?: Record<string, any>): Promise<{
     success: boolean;
     agent_response: string;

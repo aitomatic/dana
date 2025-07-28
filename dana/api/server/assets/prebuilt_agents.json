@@ -20,7 +20,10 @@
       ],
       "expertise_level": "expert",
       "personality": "professional and analytical",
-      "is_prebuilt": true
+      "is_prebuilt": true,
+      "topic": "Financial Statement Analysis",
+      "role": "Financial Analysis",
+      "task": "Analyze company performance using financial statements"
     },
     "generation_phase": "code_generated"
   }

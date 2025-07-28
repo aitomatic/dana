@@ -8,6 +8,7 @@ import { apiService } from '@/lib/api';
 import type { DomainKnowledgeResponse, DomainNode } from '@/types/domainKnowledge';
 import type { KnowledgeStatusResponse, KnowledgeTopicStatus } from '@/lib/api';
 import { toast } from 'sonner';
+import KnowledgeSidebar from './KnowledgeSidebar';
 
 const initialNodes: FlowNode[] = [
   {
@@ -151,11 +152,19 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   const [nodes, setNodes] = useState<FlowNode[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [, setGenerateMsg] = useState<string | null>(null);
   const [topicStatus] = useState<{ [id: string]: string }>({});
+  const [domainTree, setDomainTree] = useState<DomainKnowledgeResponse | null>(null);
+  const [statusData, setStatusData] = useState<KnowledgeStatusResponse | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarTopicPath, setSidebarTopicPath] = useState<string>('');
+  const [sidebarContent, setSidebarContent] = useState<any>(null);
+  const [sidebarLoading, setSidebarLoading] = useState(false);
+  const [sidebarError, setSidebarError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -185,9 +194,14 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                   setEdges([]);
                   setError(domainResponse.message);
                 } else if (domainResponse.root) {
+                  // Store the domain tree and status data
+                  setDomainTree(domainResponse);
+                  setStatusData(statusResponse);
+                  
                   const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
                     domainResponse,
                     statusResponse,
+                    expandedNodes,
                   );
                   const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
                   setNodes(layoutedNodes);
@@ -219,7 +233,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       <CustomNode
         {...nodeProps}
         isSelected={selectedNodeId === nodeProps.id}
-        onNodeClick={() => setSelectedNodeId(nodeProps.id)}
+        onNodeClick={(event: React.MouseEvent) => onNodeClick(event, nodeProps)}
       >
         {renderStatusIcon(getNodeStatus(nodeProps))}
       </CustomNode>
@@ -230,6 +244,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   const convertDomainToFlow = (
     domainTree: DomainKnowledgeResponse,
     statusData?: KnowledgeStatusResponse,
+    expandedNodeIds?: Set<string>,
   ): { nodes: FlowNode[]; edges: Edge[] } => {
     const nodes: FlowNode[] = [];
     const edges: Edge[] = [];
@@ -264,47 +279,58 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       return null;
     };
 
-    const traverse = (domainNode: DomainNode, parentId?: string, pathParts: string[] = []) => {
+    const traverse = (domainNode: DomainNode, parentId?: string, pathParts: string[] = [], depth: number = 0) => {
       const currentPath = [...pathParts, domainNode.topic];
       const nodeId = currentPath.join('/'); // Unique path-based ID
-      const nodePath = currentPath.join(' - '); // Path format used in knowledge status
+      // Create nodePath excluding the root level for knowledge status matching
+      // For root node, use just the topic name; for others, exclude the root from the path
+      const nodePathParts = depth === 0 ? [domainNode.topic] : currentPath.slice(1);
+      const nodePath = nodePathParts.join(' - '); // Path format used in knowledge status
 
       // Get knowledge status for this node (only leaf nodes will have status)
       const isLeafNode = !domainNode.children || domainNode.children.length === 0;
+      const hasChildren = domainNode.children && domainNode.children.length > 0;
       const knowledgeStatusInfo = isLeafNode ? getKnowledgeStatusForPath(nodePath) : null;
       
-      // Debug logging for path matching
-      if (isLeafNode) {
-        console.log(`[Debug] Leaf node "${domainNode.topic}" with path "${nodePath}"`, 
-          knowledgeStatusInfo ? `found status: ${knowledgeStatusInfo.status}` : 'no status found');
-      }
 
-      // Create flow node with knowledge status information
-      nodes.push({
-        id: nodeId,
-        type: 'custom',
-        data: {
-          label: domainNode.topic,
-          knowledgeStatus: knowledgeStatusInfo,
-          isLeafNode,
-          nodePath,
-        },
-        position: { x: 0, y: 0 }, // Will be set by dagre layout
-      });
-
-      // Create edge from parent if exists
-      if (parentId) {
-        edges.push({
-          id: `e${parentId}-${nodeId}`,
-          source: parentId,
-          target: nodeId,
-          markerEnd: { type: MarkerType.ArrowClosed },
-          type: 'smoothstep',
+      // Only show the node if:
+      // 1. It's the root node (depth 0)
+      // 2. Its parent is expanded
+      // 3. We don't have expansion state yet (show all - fallback behavior)
+      const shouldShowNode = depth === 0 || !parentId || !expandedNodeIds || expandedNodeIds.has(parentId);
+      
+      if (shouldShowNode) {
+        // Create flow node with knowledge status information
+        nodes.push({
+          id: nodeId,
+          type: 'custom',
+          data: {
+            label: domainNode.topic,
+            knowledgeStatus: knowledgeStatusInfo,
+            isLeafNode,
+            hasChildren,
+            nodePath,
+            isExpanded: expandedNodeIds?.has(nodeId) || false,
+          },
+          position: { x: 0, y: 0 }, // Will be set by dagre layout
         });
+
+        // Create edge from parent if exists
+        if (parentId) {
+          edges.push({
+            id: `e${parentId}-${nodeId}`,
+            source: parentId,
+            target: nodeId,
+            markerEnd: { type: MarkerType.ArrowClosed },
+            type: 'smoothstep',
+          });
+        }
       }
 
-      // Recursively process children
-      domainNode.children?.forEach((child) => traverse(child, nodeId, currentPath));
+      // Recursively process children if node should be shown
+      if (shouldShowNode && domainNode.children) {
+        domainNode.children.forEach((child) => traverse(child, nodeId, currentPath, depth + 1));
+      }
 
       return nodeId;
     };
@@ -343,10 +369,20 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           setEdges([]);
           setError(domainResponse.message);
         } else if (domainResponse.root) {
+          // Store the domain tree and status data
+          setDomainTree(domainResponse);
+          setStatusData(statusResponse);
+          
+          // Initialize expanded nodes with just the root
+          const rootPath = domainResponse.root.topic;
+          const initialExpanded = new Set([rootPath]);
+          setExpandedNodes(initialExpanded);
+          
           // Convert domain knowledge to flow format (now with status information)
           const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
             domainResponse,
             statusResponse,
+            initialExpanded,
           );
           const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
           setNodes(layoutedNodes);
@@ -384,14 +420,110 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     };
   }, [selectedNodeId]);
 
-  // Handle node click
-  const onNodeClick = (_: React.MouseEvent, node: FlowNode) => {
+  // Handle node click - toggle expansion for parent nodes, show sidebar for leaf nodes
+  const onNodeClick = async (_: React.MouseEvent, node: FlowNode) => {
+    const nodeData = node.data;
+    
+    // If it's a leaf node, show the knowledge sidebar
+    if (nodeData.isLeafNode) {
+      const topicPath = nodeData.nodePath;
+      
+      // Check if knowledge is generated
+      if (nodeData.knowledgeStatus && nodeData.knowledgeStatus.status === 'success') {
+        // Open sidebar and fetch content
+        setSidebarOpen(true);
+        setSidebarTopicPath(topicPath);
+        setSidebarLoading(true);
+        setSidebarError(null);
+        setSidebarContent(null);
+        
+        try {
+          const response = await apiService.getTopicKnowledgeContent(agentId!, topicPath);
+          
+          if (response.success) {
+            setSidebarContent(response.content);
+          } else {
+            setSidebarError(response.message || 'Failed to load knowledge content');
+          }
+        } catch (error: any) {
+          console.error('Error fetching knowledge content:', error);
+          setSidebarError(error.message || 'Failed to load knowledge content');
+        } finally {
+          setSidebarLoading(false);
+        }
+      } else {
+        // Show toast that knowledge is not generated yet
+        const status = nodeData.knowledgeStatus?.status || 'pending';
+        let message = '';
+        
+        switch (status) {
+          case 'pending':
+            message = `Knowledge for "${nodeData.label}" is not generated yet. Click "Generate Contextual Knowledge" to start generation.`;
+            break;
+          case 'in_progress':
+            message = `Knowledge for "${nodeData.label}" is currently being generated. Please wait...`;
+            break;
+          case 'failed':
+            message = `Knowledge generation failed for "${nodeData.label}". Please try regenerating.`;
+            break;
+          default:
+            message = `Knowledge for "${nodeData.label}" is not available yet.`;
+        }
+        
+        toast.info(message, {
+          duration: 5000,
+        });
+      }
+      
+      // Also set as selected for info popup
+      setSelectedNodeId(node.id);
+      return;
+    }
+    
+    // If the node has children, toggle its expansion
+    if (nodeData.hasChildren) {
+      const newExpandedNodes = new Set(expandedNodes);
+      
+      if (expandedNodes.has(node.id)) {
+        // Collapse: remove this node and all its descendants from expanded set
+        const removeDescendants = (nodeId: string) => {
+          newExpandedNodes.delete(nodeId);
+          // Find and remove all descendant nodes
+          nodes.forEach(n => {
+            if (n.id !== nodeId && n.id.startsWith(nodeId + '/')) {
+              removeDescendants(n.id);
+            }
+          });
+        };
+        removeDescendants(node.id);
+      } else {
+        // Expand: add this node to expanded set
+        newExpandedNodes.add(node.id);
+      }
+      
+      setExpandedNodes(newExpandedNodes);
+      
+      // Regenerate the flow with new expansion state
+      if (domainTree && statusData) {
+        const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
+          domainTree,
+          statusData,
+          newExpandedNodes,
+        );
+        const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
+        setNodes(layoutedNodes);
+        setEdges(flowEdges);
+      }
+    }
+    
+    // Always set as selected for info popup
     setSelectedNodeId(node.id);
   };
 
   // Optionally, handle pane click to clear selection
   const onPaneClick = () => {
     setSelectedNodeId(null);
+    // Don't close sidebar on pane click to allow sidebar interaction
   };
 
   // Handler for the button
@@ -515,6 +647,16 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           <Controls />
         </ReactFlow>
       </div>
+      
+      {/* Knowledge Sidebar */}
+      <KnowledgeSidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        topicPath={sidebarTopicPath}
+        content={sidebarContent}
+        loading={sidebarLoading}
+        error={sidebarError}
+      />
     </>
   );
 };

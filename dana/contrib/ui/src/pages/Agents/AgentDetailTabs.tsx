@@ -1,23 +1,19 @@
 import React, { useState } from 'react';
 import OverviewTab from './tabs/OverviewTab';
-import DomainKnowledgeTab from './tabs/DomainKnowledgeTab';
-import DocumentsTab from './tabs/DocumentsTab';
-import WorkflowsTab from './tabs/WorkflowsTab';
+import KnowledgeBaseTab from './tabs/KnowledgeBaseTab';
 import ToolsTab from './tabs/ToolsTab';
 import CodeTab from './tabs/CodeTab';
 import { ChatPane } from './ChatPane';
-import { Brain, Code2, FilesIcon, List } from 'lucide-react';
-import { Network, Tools } from 'iconoir-react';
+import { Code2, List, BookOpen } from 'lucide-react';
+import { Tools } from 'iconoir-react';
 import { IconMessage } from '@tabler/icons-react';
 import { useAgentStore } from '@/stores/agent-store';
 
-const TABS = ['Overview', 'Domain Knowledge', 'Documents', 'Workflows', 'Tools', 'Code'];
+const TABS = ['Overview', 'Knowledge Base', 'Tools', 'Code'];
 
 const TAB_ICONS = {
   Overview: <List className="w-4 h-4" />,
-  'Domain Knowledge': <Brain className="w-4 h-4" />,
-  Documents: <FilesIcon className="w-4 h-4" />,
-  Workflows: <Network className="w-4 h-4" />,
+  'Knowledge Base': <BookOpen className="w-4 h-4" />,
   Tools: <Tools className="w-4 h-4" />,
   Code: <Code2 className="w-4 h-4" />,
 };
@@ -57,9 +53,7 @@ export const AgentDetailTabs: React.FC<{
         </div>
         {/* Tab content */}
         {activeTab === 'Overview' && <OverviewTab onShowComparison={onShowComparison} />}
-        {activeTab === 'Domain Knowledge' && <DomainKnowledgeTab />}
-        {activeTab === 'Documents' && <DocumentsTab />}
-        {activeTab === 'Workflows' && <WorkflowsTab />}
+        {activeTab === 'Knowledge Base' && <KnowledgeBaseTab />}
         {activeTab === 'Tools' && <ToolsTab />}
         {activeTab === 'Code' && <CodeTab />}
         {children}

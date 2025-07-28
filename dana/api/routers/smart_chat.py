@@ -61,6 +61,8 @@ def _get_all_topics_from_tree(tree) -> list[str]:
 
 
 
+
+
 @router.post("/{agent_id}/smart-chat")
 async def smart_chat(
     agent_id: int,
@@ -453,8 +455,9 @@ async def _process_add_information_intent(
                 if not folder_path:
                     folder_path = os.path.join("agents", f"agent_{agent.id}")
                 
-                # Clear agent cache to force RAG rebuild with new knowledge
+                # Always clear cache when adding information to ensure consistency
                 clear_agent_cache(folder_path)
+                logger.info(f"Cleared RAG cache for agent {agent.id} after adding topics")
                 
                 # --- Trigger knowledge generation for new/pending topics ---
                 try:
@@ -728,8 +731,9 @@ async def _process_remove_information_intent(
                 if not folder_path:
                     folder_path = os.path.join("agents", f"agent_{agent.id}")
                 
-                # Clear agent cache to force RAG rebuild
+                # Always clear cache when removing information to ensure consistency
                 clear_agent_cache(folder_path)
+                logger.info(f"Cleared RAG cache for agent {agent.id} after removing topics")
                 
                 # Remove topics from knowledge status manager using UUIDs
                 try:

@@ -17,7 +17,7 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
       case '/':
         return 'Home';
       case '/agents':
-        return 'Domain-Expert Agents';
+        return 'Dana Expert Agents';
       case '/library':
         return 'Library';
       default:
@@ -41,13 +41,13 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+        <header className="flex gap-2 items-center px-4 h-16 border-b shrink-0">
           <SidebarTrigger className="-ml-1 text-gray-500 size-6" />
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-lg">{getPageTitle()}</span>
+          <div className="flex gap-2 items-center">
+            <span className="text-lg font-semibold">{getPageTitle()}</span>
           </div>
         </header>
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="overflow-auto flex-1">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );

@@ -1,22 +1,19 @@
 import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useAgentStore } from '@/stores/agent-store';
 import { apiService } from '@/lib/api';
 import { MyAgentTab } from './MyAgentTab';
 import { ExploreTab } from './ExploreTab';
 
-
 const DOMAINS = ['All domains', 'Finance', 'Semiconductor', 'Sales', 'Engineering', 'Research'];
-
 
 export default function AgentsPage() {
   const navigate = useNavigate();
-  const { agents, fetchAgents, createAgent } = useAgentStore();
+  const { agents, fetchAgents } = useAgentStore();
   const [myAgentSearch, setMyAgentSearch] = useState('');
   const [exploreSearch, setExploreSearch] = useState('');
   const [selectedDomain, setSelectedDomain] = useState('All domains');
-  const [creating, setCreating] = useState(false);
+
   const [prebuiltAgents, setPrebuiltAgents] = useState<any[]>([]);
 
   // Function to fetch prebuilt agents using axios API service
@@ -32,7 +29,9 @@ export default function AgentsPage() {
   };
 
   // Tabs: My Agent, Explore
-  const [activeTab, setActiveTab] = useState(() => (agents && agents.length === 0 ? 'Explore' : 'My Agent'));
+  const [activeTab, setActiveTab] = useState(() =>
+    agents && agents.length === 0 ? 'Explore' : 'My Agent',
+  );
   useEffect(() => {
     if (agents && agents.length === 0) setActiveTab('Explore');
   }, [agents]);
@@ -56,42 +55,8 @@ export default function AgentsPage() {
     return matchesDomain && matchesSearch;
   });
 
-  const handleCreateAgent = async () => {
-    setCreating(true);
-    try {
-      // Minimal default agent payload
-      const newAgent = await createAgent({
-        name: 'Untitled Agent',
-        description: '',
-        config: {},
-      });
-      if (newAgent && newAgent.id) {
-        navigate(`/agents/${newAgent.id}`);
-      }
-    } catch (e) {
-      // Optionally show error toast
-    } finally {
-      setCreating(false);
-    }
-  };
-
   return (
-    <div className="flex flex-col h-full w-full p-8">
-      <div className="bg-gradient-to-r from-[#b7c6f9] to-[#e0e7ff] rounded-2xl p-8 mb-8 flex flex-col md:flex-row items-center justify-between">
-        <div className="flex flex-col gap-2">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Train production-ready AI agents</h2>
-          <p className="text-gray-600 text-base max-w-xl">Create your first Domain-Expert Agent to explore the power of agent</p>
-        </div>
-        <Button
-          onClick={handleCreateAgent}
-          variant="default"
-          size="lg"
-          className="mt-4 md:mt-0"
-          disabled={creating}
-        >
-          {creating ? 'Creating...' : '+ New Agent'}
-        </Button>
-      </div>
+    <div className="flex flex-col p-8 w-full h-full">
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-gray-200">
         <button
@@ -104,7 +69,7 @@ export default function AgentsPage() {
           className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === 'Explore' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-blue-600'}`}
           onClick={() => setActiveTab('Explore')}
         >
-          Explore
+          Pre-trained Agent
         </button>
       </div>
       {/* Tab Content */}

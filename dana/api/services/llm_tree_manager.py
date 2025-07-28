@@ -417,9 +417,10 @@ Create a logical hierarchical structure that:
 1. Has a meaningful root category (not "Untitled" or generic names)
 2. Places the topic in the right context
 3. Includes 5-7 relevant child topics under the main topic to demonstrate expertise
-4. Allows for future expansion
+4. For each child topic, include 2-4 grandchild topics (going 2-3 levels deep)
+5. Allows for future expansion
 
-IMPORTANT: Generate comprehensive child topics that show deep understanding of the domain.
+IMPORTANT: Generate comprehensive child and grandchild topics that show deep understanding of the domain and provide immediate value to users.
 
 Respond with this exact JSON format:
 {{
@@ -430,17 +431,48 @@ Respond with this exact JSON format:
       {{
         "topic": "{topic}",
         "children": [
-          {{"topic": "Child Topic 1", "children": []}},
-          {{"topic": "Child Topic 2", "children": []}},
-          {{"topic": "Child Topic 3", "children": []}},
-          {{"topic": "Child Topic 4", "children": []}},
-          {{"topic": "Child Topic 5", "children": []}},
-          {{"topic": "Child Topic 6", "children": []}}
+          {{
+            "topic": "Child Topic 1",
+            "children": [
+              {{"topic": "Grandchild 1.1", "children": []}},
+              {{"topic": "Grandchild 1.2", "children": []}},
+              {{"topic": "Grandchild 1.3", "children": []}}
+            ]
+          }},
+          {{
+            "topic": "Child Topic 2",
+            "children": [
+              {{"topic": "Grandchild 2.1", "children": []}},
+              {{"topic": "Grandchild 2.2", "children": []}},
+              {{"topic": "Grandchild 2.3", "children": []}}
+            ]
+          }},
+          {{
+            "topic": "Child Topic 3",
+            "children": [
+              {{"topic": "Grandchild 3.1", "children": []}},
+              {{"topic": "Grandchild 3.2", "children": []}}
+            ]
+          }},
+          {{
+            "topic": "Child Topic 4",
+            "children": [
+              {{"topic": "Grandchild 4.1", "children": []}},
+              {{"topic": "Grandchild 4.2", "children": []}}
+            ]
+          }},
+          {{
+            "topic": "Child Topic 5",
+            "children": [
+              {{"topic": "Grandchild 5.1", "children": []}},
+              {{"topic": "Grandchild 5.2", "children": []}}
+            ]
+          }}
         ]
       }}
     ]
   }},
-  "changes_summary": "Created initial tree with {topic} and relevant child topics"
+  "changes_summary": "Created initial tree with {topic} and comprehensive 2-3 level hierarchy"
 }}
 
 Example: If topic is "Personal Finance Advisory", create:
@@ -496,7 +528,37 @@ Current Tree:
 Task: Add "{new_topic}" under parent "{suggested_parent or 'auto-detect'}"
 Additional Context: {context_details or "None"}{chat_context}
 
-IMPORTANT: When adding "{new_topic}", also generate 5-7 relevant child topics that demonstrate deep understanding of this domain. This will show users that the system truly comprehends the topic area.
+CRITICAL REQUIREMENT: When adding "{new_topic}", you MUST automatically generate:
+1. The main topic "{new_topic}"
+2. 5-7 relevant child topics (subtopics) under "{new_topic}" that demonstrate deep domain understanding
+3. For each child topic, generate 2-4 grandchild topics (going 2-3 levels deep minimum)
+
+This automatic hierarchy generation ensures users get comprehensive domain coverage when they mention any topic.
+
+Example: If new_topic is "Cryptocurrency", generate:
+- Cryptocurrency (main topic)
+  - Bitcoin and Altcoins
+    - Bitcoin Trading Strategies
+    - Altcoin Investment Analysis
+    - DeFi Protocols
+  - Blockchain Technology
+    - Smart Contracts
+    - Consensus Mechanisms
+    - Cryptocurrency Mining
+  - Market Analysis
+    - Technical Analysis
+    - Market Sentiment
+    - Price Prediction Models
+  - Risk Management
+    - Portfolio Diversification
+    - Security Best Practices
+    - Regulatory Compliance
+  - Trading Platforms
+    - Exchange Selection
+    - Trading Tools
+    - Order Types
+
+This comprehensive structure gives users immediate access to related knowledge areas.
 
 Example child topics for different domains:
 - If adding "Retirement Planning": child topics could be "401k Management", "IRA Strategies", "Social Security Optimization", "Healthcare Planning", "Estate Planning", "Tax-Efficient Withdrawals", "Investment Allocation"
@@ -514,25 +576,59 @@ SCENARIOS:
 
 CRITICAL: Before suggesting any new topic, carefully check if "{new_topic}" already exists anywhere in the current tree structure. If it exists, do not create duplicates.
 
-RESPOND WITH ONLY VALID JSON including child topics:
+RESPOND WITH ONLY VALID JSON including multi-level child topics:
 {{
   "success": true,
   "changes_to_apply": [
     {{
-      "action": "add_node_with_children",
+      "action": "add_node_with_hierarchical_children",
       "parent_path": ["Untitled", "{suggested_parent or 'Untitled'}"],
       "new_topic": "{new_topic}",
-      "child_topics": [
-        "Child Topic 1",
-        "Child Topic 2", 
-        "Child Topic 3",
-        "Child Topic 4",
-        "Child Topic 5",
-        "Child Topic 6"
-      ]
+      "hierarchical_structure": {{
+        "topic": "{new_topic}",
+        "children": [
+          {{
+            "topic": "Child Topic 1", 
+            "children": [
+              {{"topic": "Grandchild 1.1", "children": []}},
+              {{"topic": "Grandchild 1.2", "children": []}},
+              {{"topic": "Grandchild 1.3", "children": []}}
+            ]
+          }},
+          {{
+            "topic": "Child Topic 2",
+            "children": [
+              {{"topic": "Grandchild 2.1", "children": []}},
+              {{"topic": "Grandchild 2.2", "children": []}},
+              {{"topic": "Grandchild 2.3", "children": []}}
+            ]
+          }},
+          {{
+            "topic": "Child Topic 3",
+            "children": [
+              {{"topic": "Grandchild 3.1", "children": []}},
+              {{"topic": "Grandchild 3.2", "children": []}}
+            ]
+          }},
+          {{
+            "topic": "Child Topic 4",
+            "children": [
+              {{"topic": "Grandchild 4.1", "children": []}},
+              {{"topic": "Grandchild 4.2", "children": []}}
+            ]
+          }},
+          {{
+            "topic": "Child Topic 5",
+            "children": [
+              {{"topic": "Grandchild 5.1", "children": []}},
+              {{"topic": "Grandchild 5.2", "children": []}}
+            ]
+          }}
+        ]
+      }}
     }}
   ],
-  "changes_summary": "Added {new_topic} with 6 relevant child topics under {suggested_parent or 'root'}"
+  "changes_summary": "Added {new_topic} with comprehensive 2-3 level hierarchy including child and grandchild topics"
 }}
 
 If moving existing topics, use:
@@ -678,6 +774,49 @@ If moving existing topics, use:
                         root_node.children.append(new_node)
                         changes_applied_count += 1
                         print(f"  🔄 Added '{new_topic}' with {len(child_topics)} children to root as fallback")
+            
+            elif change.get("action") == "add_node_with_hierarchical_children":
+                parent_path = change.get("parent_path", ["Untitled"])
+                new_topic = change.get("new_topic", "Unknown Topic")
+                hierarchical_structure = change.get("hierarchical_structure", {})
+                
+                print(f"  - Adding '{new_topic}' with hierarchical structure to parent path: {parent_path}")
+                print(f"  - Hierarchical structure: {hierarchical_structure}")
+                
+                # Find the parent node
+                parent_node = self._find_node_by_path(root_node, parent_path)
+                print(f"  - Parent node found: {parent_node.topic if parent_node else 'None'}")
+                
+                if parent_node:
+                    # Check if topic already exists anywhere in the tree (comprehensive check)
+                    existing_node = self._find_topic_in_tree_simple(root_node, new_topic)
+                    if existing_node:
+                        print(f"  ⚠️ Topic '{new_topic}' already exists in the tree. Skipping duplicate creation.")
+                    else:
+                        # Check if topic exists under this specific parent
+                        existing_topics = [child.topic for child in parent_node.children]
+                        print(f"  - Existing children: {existing_topics}")
+                        
+                        if not any(child.topic == new_topic for child in parent_node.children):
+                            # Build hierarchical structure recursively
+                            new_node = self._build_node_from_dict(hierarchical_structure)
+                            parent_node.children.append(new_node)
+                            changes_applied_count += 1
+                            print(f"  ✅ Added '{new_topic}' with hierarchical structure to parent '{parent_node.topic}'")
+                        else:
+                            print(f"  ⚠️ Topic '{new_topic}' already exists under '{parent_node.topic}'")
+                else:
+                    print(f"  ❌ Parent node not found for path: {parent_path}")
+                    # Try adding to root as fallback
+                    existing_node = self._find_topic_in_tree_simple(root_node, new_topic)
+                    if existing_node:
+                        print(f"  ⚠️ Topic '{new_topic}' already exists in the tree. Skipping duplicate creation.")
+                    elif not any(child.topic == new_topic for child in root_node.children):
+                        # Build hierarchical structure recursively
+                        new_node = self._build_node_from_dict(hierarchical_structure)
+                        root_node.children.append(new_node)
+                        changes_applied_count += 1
+                        print(f"  🔄 Added '{new_topic}' with hierarchical structure to root as fallback")
             
             elif change.get("action") == "move_node":
                 topic_to_move = change.get("topic_to_move")

@@ -4,7 +4,7 @@ import type { NodeProps } from 'reactflow';
 import PortalPopup from './PortalPopup';
 import FileIcon from '@/components/file-icon';
 import type { KnowledgeTopicStatus } from '@/lib/api';
-import { CheckIcon, Loader2Icon, XIcon } from 'lucide-react';
+import { CheckIcon, Loader2Icon, XIcon, ChevronRight, ChevronDown } from 'lucide-react';
 
 interface CustomNodeProps extends NodeProps {
   isSelected: boolean;
@@ -15,6 +15,8 @@ interface NodeData {
   label: string;
   knowledgeStatus?: KnowledgeTopicStatus | null;
   isLeafNode?: boolean;
+  hasChildren?: boolean;
+  isExpanded?: boolean;
   nodePath?: string;
 }
 
@@ -134,6 +136,8 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
   const nodeData = data as NodeData;
   const knowledgeStatus = nodeData.knowledgeStatus;
   const isLeafNode = nodeData.isLeafNode;
+  const hasChildren = nodeData.hasChildren;
+  const isExpanded = nodeData.isExpanded;
 
   useEffect(() => {
     if (isSelected && nodeRef.current) {
@@ -142,7 +146,7 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
     }
   }, [isSelected]);
 
-  // Get node styling based on knowledge status
+  // Get node styling based on knowledge status and node type
   const getNodeStyling = () => {
     const baseStyle = {
       padding: 16,
@@ -158,14 +162,16 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative' as const,
+      cursor: hasChildren ? 'pointer' : 'default',
     };
 
     if (!isLeafNode) {
-      // Parent nodes - default styling
+      // Parent nodes - different styling based on expansion state
       return {
         ...baseStyle,
-        background: '#F6FAFF',
-        border: '2px solid #E0E0E0',
+        background: hasChildren ? (isExpanded ? '#EBF8FF' : '#F6FAFF') : '#F6FAFF',
+        border: hasChildren ? (isExpanded ? '2px solid #3B82F6' : '2px solid #93C5FD') : '2px solid #E0E0E0',
+        fontWeight: hasChildren ? 'bold' : 'normal',
       };
     }
 
@@ -215,9 +221,15 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
           gap: 8,
         }}
       >
+        {/* Show expand/collapse icon for nodes with children */}
+        {hasChildren && (
+          <span style={{ fontSize: '16px', marginRight: 8 }}>
+            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          </span>
+        )}
         <span>{nodeData.label}</span>
         {isLeafNode && knowledgeStatus && (
-          <span style={{ fontSize: '16px' }}>{getStatusIcon(knowledgeStatus.status)}</span>
+          <span style={{ fontSize: '16px', marginLeft: 8 }}>{getStatusIcon(knowledgeStatus.status)}</span>
         )}
       </div>
       {/* Handles can be hidden or removed if not needed */}
