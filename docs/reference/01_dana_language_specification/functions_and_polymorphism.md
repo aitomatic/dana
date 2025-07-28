@@ -261,16 +261,16 @@ Key Aspects for POET Decorators in Dana:
 
 The exact naming and parameters of the built-in POET-related decorators will be finalized as the POET runtime is implemented.
 
-## 7. Function Composition (Pipelining)
+## 7. Function Composition (Declarative Functions)
 
 Function composition is a powerful capability in Dana for building complex operations by chaining simpler, reusable functions. This approach enhances code clarity, promotes modularity, and simplifies the management of sequential data processing tasks.
 
-### 7.1. Enhanced Function Composition with Parallel Support
+### 7.1. Declarative Function Composition
 
-Dana supports both sequential and parallel function composition using a clean two-statement approach:
+Dana supports function composition through declarative function definitions using the `def` keyword with the `=` operator for composition:
 
 ```dana
-# Define pipeline functions
+# Define base functions
 def add_ten(x: int) -> int:
     return x + 10
 
@@ -289,54 +289,54 @@ def format(x: int) -> str:
 
 ### 7.2. Sequential Composition
 
-Chain functions in sequence using the `|` operator:
+Chain functions in sequence using the `|` operator in declarative function definitions:
 
 ```dana
-# Sequential composition
-pipeline = add_ten | double | stringify
-result = pipeline(5)  # "Result: 30"
+# Sequential composition with declarative syntax
+def sequential_pipeline(x: int) -> str = add_ten | double | stringify
+result = sequential_pipeline(5)  # "Result: 30"
 
 # Complex sequential pipeline
-processor = add_ten | double | analyze | format
-result = processor(5)  # "Formatted: 30"
+def complex_processor(x: int) -> str = add_ten | double | analyze | format
+result = complex_processor(5)  # "Formatted: 30"
 ```
 
 ### 7.3. Parallel Composition
 
-Execute multiple functions in parallel using list syntax:
+Execute multiple functions in parallel using list syntax in declarative function definitions:
 
 ```dana
-# Standalone parallel composition
-parallel_pipeline = [analyze, format]
+# Parallel composition with declarative syntax
+def parallel_pipeline(x: int) -> list = [analyze, format]
 result = parallel_pipeline(10)  # [{"value": 10, "is_even": true}, "Formatted: 10"]
 
 # Mixed sequential + parallel
-mixed_pipeline = add_ten | [analyze, format] | stringify
+def mixed_pipeline(x: int) -> list = add_ten | [analyze, format] | stringify
 result = mixed_pipeline(5)  # "Result: [{"value": 15, "is_even": false}, "Formatted: 15"]"
 ```
 
 ### 7.4. Complex Multi-Stage Pipelines
 
-Combine sequential and parallel operations in complex workflows:
+Combine sequential and parallel operations in complex workflows using declarative syntax:
 
 ```dana
-# Complex multi-stage pipeline
-workflow = (
+# Complex multi-stage pipeline with declarative syntax
+def complex_workflow(x: int) -> list = (
     add_ten | 
     [analyze, double] | 
     format | 
     [stringify, analyze]
 )
-result = workflow(5)  # [{"value": 30, "is_even": true}, {"value": 30, "is_even": true}]
+result = complex_workflow(5)  # [{"value": 30, "is_even": true}, {"value": 30, "is_even": true}]
 ```
 
-### 7.5. Reusable Pipeline Objects
+### 7.5. Reusable Pipeline Functions
 
-Create reusable pipeline objects that can be applied to different data:
+Create reusable pipeline functions that can be applied to different data:
 
 ```dana
-# Create reusable pipeline
-data_processor = add_ten | [analyze, format]
+# Create reusable pipeline function
+def data_processor(x: int) -> list = add_ten | [analyze, format]
 
 # Apply to different datasets
 result1 = data_processor(5)   # [{"value": 15, "is_even": false}, "Formatted: 15"]
@@ -344,40 +344,42 @@ result2 = data_processor(10)  # [{"value": 20, "is_even": true}, "Formatted: 20"
 result3 = data_processor(15)  # [{"value": 25, "is_even": false}, "Formatted: 25"]
 ```
 
-### 7.6. Why Use Function Composition?
+### 7.6. Why Use Declarative Function Composition?
 
-* **Readability**: Chains like `process_data | filter_results | format_output` clearly express the flow of data and operations.
-* **Reusability**: Individual functions in the chain remain simple and can be reused in other compositions or standalone.
-* **Modularity**: Complex tasks are broken down into smaller, manageable, and testable units.
-* **Maintainability**: Changes to one step in the pipeline are localized to the specific function, reducing the risk of unintended side effects.
-* **Expressiveness**: It provides a natural way to represent sequential workflows and data transformations directly in the language.
-* **Parallel Processing**: Support for parallel execution enables efficient processing of multiple operations simultaneously.
+* **Clear Signatures**: Function parameters and return types are explicitly defined
+* **Readability**: Chains like `def pipeline(x: int) -> str = process_data | filter_results | format_output` clearly express the flow of data and operations
+* **Reusability**: Individual functions in the chain remain simple and can be reused in other compositions or standalone
+* **Modularity**: Complex tasks are broken down into smaller, manageable, and testable units
+* **Maintainability**: Changes to one step in the pipeline are localized to the specific function, reducing the risk of unintended side effects
+* **Expressiveness**: It provides a natural way to represent sequential workflows and data transformations directly in the language
+* **Parallel Processing**: Support for parallel execution enables efficient processing of multiple operations simultaneously
+* **Type Safety**: Explicit type annotations improve code reliability
 
 ### 7.7. Syntax and Behavior: The `|` Operator
 
-Dana uses the `|` (pipe) operator for function composition:
+Dana uses the `|` (pipe) operator for function composition in declarative function definitions:
 
 ```dana
-# Sequential composition
-local:composed_function = function_one | function_two | function_three
+# Declarative function composition
+def composed_function(x: int) -> int = function_one | function_two | function_three
 
-# Parallel composition  
-local:parallel_function = [function_one, function_two, function_three]
+# Parallel composition in declarative functions
+def parallel_function(x: int) -> list = [function_one, function_two, function_three]
 
-# Mixed composition
-local:mixed_function = function_one | [function_two, function_three] | function_four
+# Mixed composition in declarative functions
+def mixed_function(x: int) -> list = function_one | [function_two, function_three] | function_four
 ```
 
 **Execution Behavior:**
-* **Sequential Execution**: Functions are executed from left to right, with each function's output becoming the input to the next.
-* **Parallel Execution**: Functions in lists execute conceptually in parallel, with results collected as a list for the next stage.
-* **Data Flow**: The return value of each function is passed as the first argument to the next function in the chain.
-* **Type Compatibility**: For a composition to be valid, the return type of each function (except the last) must be compatible with the input parameter type of the immediately following function.
+* **Sequential Execution**: Functions are executed from left to right, with each function's output becoming the input to the next
+* **Parallel Execution**: Functions in lists execute conceptually in parallel, with results collected as a list for the next stage
+* **Data Flow**: The return value of each function is passed as the first argument to the next function in the chain
+* **Type Compatibility**: For a composition to be valid, the return type of each function (except the last) must be compatible with the input parameter type of the immediately following function
 
 **Composed Function Signature:**
-* The composed function accepts the same arguments as the *first* function in the chain.
-* The return type of the composed function is the return type of the *last* function in the chain.
-* Parallel functions return lists of results that are passed to subsequent functions.
+* The composed function accepts the same arguments as the *first* function in the chain
+* The return type of the composed function is the return type of the *last* function in the chain
+* Parallel functions return lists of results that are passed to subsequent functions
 
 ### 7.8. Error Handling and Validation
 
@@ -385,13 +387,13 @@ Dana provides comprehensive error handling for function composition:
 
 ```dana
 # Missing function error
-pipeline = add_ten | non_existent_function  # ❌ Error: "Function 'non_existent_function' not found"
+def invalid_pipeline(x: int) -> int = add_ten | non_existent_function  # ❌ Error: "Function 'non_existent_function' not found"
 
 # Non-function composition error  
-pipeline = add_ten | 42  # ❌ Error: "Cannot use non-function 42 of type int in pipe composition"
+def invalid_pipeline(x: int) -> int = add_ten | 42  # ❌ Error: "Cannot use non-function 42 of type int in pipe composition"
 
 # Clear error messages help with debugging
-pipeline = func1 | not_a_function  # ❌ Error: "not_a_function is not callable"
+def invalid_pipeline(x: int) -> int = func1 | not_a_function  # ❌ Error: "not_a_function is not callable"
 ```
 
 **Validation Features:**
@@ -400,27 +402,36 @@ pipeline = func1 | not_a_function  # ❌ Error: "not_a_function is not callable"
 * **Type Validation**: Automatic validation of function signatures and return types
 * **Parallel Function Validation**: Ensures all items in parallel lists are callable functions
 
-### 7.9. Design Philosophy: Clean Two-Statement Approach
+### 7.9. Design Philosophy: Declarative Function Composition
 
-Dana's function composition follows a clean separation of concerns:
+Dana's function composition follows a declarative approach with clear function signatures:
 
 ```dana
-# ✅ SUPPORTED: Clean two-statement approach
-pipeline = f1 | f2 | [f3, f4]    # Statement 1: Pure function composition
-result = pipeline(data)          # Statement 2: Pure data application
+# ✅ SUPPORTED: Declarative function composition
+def pipeline(x: int) -> int = f1 | f2 | f3    # Clear signature with composition
+result = pipeline(data)                       # Clean application
 
-# ❌ NOT SUPPORTED: Mixed data/function patterns (removed for clarity)
-# 5 | double                     # REJECTED - mixed data/function
-# data | [func1, func2]          # REJECTED - mixed data/function  
-# (f1 | f2)(data)                # REJECTED - unnecessary complexity
+# ✅ SUPPORTED: Parallel functions in declarative definitions
+def parallel_pipeline(x: int) -> list = [f1, f2, f3]  # Parallel execution
+result = parallel_pipeline(data)
+
+# ✅ SUPPORTED: Mixed composition in declarative functions
+def mixed_pipeline(x: int) -> list = f1 | [f2, f3] | f4  # Mixed sequential and parallel
+result = mixed_pipeline(data)
+
+# ❌ NOT SUPPORTED: Assignment-based composition (removed for clarity)
+# pipeline = f1 | f2 | f3                     # REJECTED - no clear signature
+# 5 | double                                  # REJECTED - mixed data/function
+# data | [func1, func2]                       # REJECTED - mixed data/function  
 ```
 
 **Benefits of This Approach:**
-* **Clear Separation**: Function composition is separate from data application
+* **Clear Signatures**: Function parameters and return types are explicitly defined
 * **Reduced Ambiguity**: No confusion between data pipelines and function composition
 * **Better Debugging**: Clear error messages and predictable execution flow
 * **Functional Programming**: Follows functional programming best practices
 * **Maintainability**: Simpler, more focused implementation
+* **Type Safety**: Explicit type annotations improve code reliability
 
 ## 8. Modules and Imports
 

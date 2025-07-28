@@ -20,7 +20,7 @@ def test_individual_providers():
     for provider_name, config in providers_to_test.items():
         try:
             provider_configs = {provider_name: config}
-            client = ai.Client(provider_configs=provider_configs)
+            _client = ai.Client(provider_configs=provider_configs)
             print(f"✅ {provider_name} provider works")
         except Exception as e:
             print(f"❌ {provider_name} provider failed: {e}")

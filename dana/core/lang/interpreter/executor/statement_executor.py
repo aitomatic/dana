@@ -27,10 +27,12 @@ from dana.core.lang.ast import (
     AssertStatement,
     Assignment,
     CompoundAssignment,
+    DeclarativeFunctionDefinition,
     ExportStatement,
     FunctionDefinition,
     ImportFromStatement,
     ImportStatement,
+    MethodDefinition,
     PassStatement,
     RaiseStatement,
     StructDefinition,
@@ -86,6 +88,7 @@ class StatementExecutor(BaseExecutor):
             CompoundAssignment: self.execute_compound_assignment,
             AssertStatement: self.execute_assert_statement,
             FunctionDefinition: self.execute_function_definition,
+            MethodDefinition: self.execute_method_definition,
             ImportFromStatement: self.execute_import_from_statement,
             ImportStatement: self.execute_import_statement,
             PassStatement: self.execute_pass_statement,
@@ -93,6 +96,7 @@ class StatementExecutor(BaseExecutor):
             StructDefinition: self.execute_struct_definition,
             UseStatement: self.execute_use_statement,
             ExportStatement: self.execute_export_statement,
+            DeclarativeFunctionDefinition: self.execute_declarative_function_definition,
         }
 
     def execute_assignment(self, node: Assignment, context: SandboxContext) -> Any:
@@ -515,3 +519,256 @@ class StatementExecutor(BaseExecutor):
         self.debug(f"Routing function definition '{node.name.name}' to agent handler")
         result = self.agent_handler.execute_function_definition(node, context)
         return result
+
+    def execute_method_definition(self, node: "MethodDefinition", context: SandboxContext) -> Any:
+        """Execute a method definition with explicit receiver.
+
+        Args:
+            node: The method definition to execute
+            context: The execution context
+
+        Returns:
+            The defined method
+        """
+        # Delegate to function executor which handles method registration
+        if hasattr(self.parent, "_function_executor"):
+            return self.parent._function_executor.execute_method_definition(node, context)
+        else:
+            # Fallback: treat as a regular function definition by creating a FunctionDefinition node
+            # This is for compatibility if the function executor is not available
+            from dana.core.lang.ast import FunctionDefinition
+
+            func_def = FunctionDefinition(
+                name=node.name,
+                parameters=[node.receiver] + node.parameters,
+                body=node.body,
+                return_type=node.return_type,
+                decorators=node.decorators,
+                location=node.location,
+            )
+            return self.execute_function_definition(func_def, context)
+
+    def execute_declarative_function_definition(self, node: "DeclarativeFunctionDefinition", context: SandboxContext) -> Any:
+        """Execute a declarative function definition.
+
+        Args:
+            node: The declarative function definition to execute
+            context: The execution context
+
+        Returns:
+            The defined function
+        """
+        self.debug(f"Executing declarative function definition '{node.name.name}'")
+
+        # Import here to avoid circular imports
+
+        # Note: The grammar requires parentheses even when no parameters are specified
+        # So parameters=[] means "no parameters", not "infer parameters"
+        # Signature inference is not needed since the grammar enforces explicit parameter lists
+
+        # Create a closure that captures the composition expression and context
+        def create_declarative_function():
+            def wrapper(*args, **kwargs):
+                """Wrapper function for declarative function with signature metadata."""
+                # Create a new context for function execution
+                func_context = context.copy()
+
+                # Validate and bind parameters to arguments
+                self._bind_declarative_function_parameters(node.parameters, args, kwargs, func_context)
+
+                # Execute the composition expression
+                return self._execute_composition(node.composition, func_context, args)
+
+            return wrapper
+
+        # Create the function
+        wrapper = create_declarative_function()
+
+        # Set function metadata for IDE support and debugging
+        wrapper.__name__ = node.name.name
+        wrapper.__qualname__ = node.name.name
+
+        # Set docstring if available
+        if node.docstring:
+            wrapper.__doc__ = node.docstring
+
+        # Extract type annotations from the function node's parameters and return type
+        # and set them on the wrapper function for IDE support and runtime inspection.
+        annotations = self._extract_annotations(node.parameters, node.return_type)
+        wrapper.__annotations__ = annotations
+
+        # Create and set inspect.Signature for IDE support
+        try:
+            import inspect  # noqa: F401
+
+            signature = self._create_signature(node.parameters, node.return_type)
+            wrapper.__signature__ = signature
+        except ImportError:
+            # inspect module not available, skip signature creation
+            self.debug("inspect module not available, skipping signature creation for IDE support")
+
+        # Store the function in the context
+        context.set(f"local:{node.name.name}", wrapper)
+
+        return wrapper
+
+    def _bind_declarative_function_parameters(self, parameters: list, args: tuple, kwargs: dict, func_context: SandboxContext) -> None:
+        """Bind function parameters to arguments with proper validation and default handling.
+
+        Args:
+            parameters: List of Parameter objects from the function definition
+            args: Positional arguments passed to the function
+            kwargs: Keyword arguments passed to the function
+            func_context: The function execution context
+
+        Raises:
+            TypeError: If required parameters are missing or invalid arguments are provided
+        """
+        # Extract parameter information
+        param_names = []
+        param_defaults = {}
+        required_params = set()
+
+        for param in parameters:
+            param_name = param.name if hasattr(param, "name") else str(param)
+            param_names.append(param_name)
+
+            # Check if parameter has a default value
+            if hasattr(param, "default_value") and param.default_value is not None:
+                try:
+                    # Evaluate the default value expression
+                    default_value = self.parent.execute(param.default_value, func_context)
+                    param_defaults[param_name] = default_value
+                except Exception as e:
+                    self.debug(f"Failed to evaluate default value for parameter {param_name}: {e}")
+                    # If default evaluation fails, mark as required
+                    required_params.add(param_name)
+            else:
+                # No default value, parameter is required
+                required_params.add(param_name)
+
+        # Validate keyword arguments - only allow declared parameters
+        for key in kwargs:
+            if key not in param_names:
+                raise TypeError(f"Unexpected keyword argument '{key}' for function with parameters: {param_names}")
+
+        # Bind positional arguments
+        for i, param_name in enumerate(param_names):
+            if i < len(args):
+                # Positional argument provided
+                func_context.set(f"local:{param_name}", args[i])
+            elif param_name in kwargs:
+                # Keyword argument provided
+                func_context.set(f"local:{param_name}", kwargs[param_name])
+            elif param_name in param_defaults:
+                # Use default value
+                func_context.set(f"local:{param_name}", param_defaults[param_name])
+            elif param_name in required_params:
+                # Required parameter missing
+                raise TypeError(f"Missing required argument '{param_name}'")
+
+        # Validate no extra positional arguments
+        if len(args) > len(param_names):
+            raise TypeError(f"Too many positional arguments: expected {len(param_names)}, got {len(args)}")
+
+    def _execute_composition(self, composition, func_context: SandboxContext, args: tuple) -> Any:
+        """Execute the composition expression and handle the result appropriately.
+
+        Args:
+            composition: The composition expression to execute
+            func_context: The function execution context
+            args: The arguments passed to the function
+
+        Returns:
+            The result of executing the composition
+        """
+        # Execute the composition expression in the function context
+        composed_func = self.parent.execute(composition, func_context)
+
+        # If the composition is a callable, call it with all arguments
+        if callable(composed_func):
+            if args:
+                return composed_func(*args)  # Pass all arguments, not just the first
+            else:
+                return composed_func()
+        else:
+            # If it's not callable, return the evaluated expression
+            return composed_func
+
+    def _extract_annotations(self, parameters: list, return_type) -> dict[str, type]:
+        """Extract Python annotations from Dana parameters and return type.
+
+        Args:
+            parameters: List of Parameter objects
+            return_type: TypeHint object or None
+
+        Returns:
+            Dictionary mapping parameter names to Python types
+        """
+        annotations = {}
+
+        for param in parameters:
+            param_name = param.name if hasattr(param, "name") else str(param)
+            param_type = param.type_hint.name if param.type_hint else "Any"
+            annotations[param_name] = self._map_dana_type_to_python(param_type)
+
+        if return_type:
+            annotations["return"] = self._map_dana_type_to_python(return_type.name)
+
+        return annotations
+
+    def _map_dana_type_to_python(self, dana_type: str) -> type:
+        """Map Dana type names to Python types.
+
+        Args:
+            dana_type: Dana type name (e.g., "int", "str", "list")
+
+        Returns:
+            Corresponding Python type
+        """
+        type_mapping = {
+            "int": int,
+            "float": float,
+            "str": str,
+            "bool": bool,
+            "list": list,
+            "dict": dict,
+            "tuple": tuple,
+            "set": set,
+            "None": type(None),
+            "any": object,
+            "Any": object,
+        }
+
+        return type_mapping.get(dana_type, object)
+
+    def _create_signature(self, parameters: list, return_type):
+        """Create inspect.Signature object for IDE support.
+
+        Args:
+            parameters: List of Parameter objects
+            return_type: TypeHint object or None
+
+        Returns:
+            inspect.Signature object
+        """
+        import inspect
+
+        sig_params = []
+
+        for param in parameters:
+            param_name = param.name if hasattr(param, "name") else str(param)
+            param_type = param.type_hint.name if param.type_hint else "Any"
+            default = param.default_value if hasattr(param, "default_value") else inspect.Parameter.empty
+
+            sig_param = inspect.Parameter(
+                name=param_name,
+                kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                default=default,
+                annotation=self._map_dana_type_to_python(param_type),
+            )
+            sig_params.append(sig_param)
+
+        return_annotation = self._map_dana_type_to_python(return_type.name) if return_type else object
+
+        return inspect.Signature(parameters=sig_params, return_annotation=return_annotation)
