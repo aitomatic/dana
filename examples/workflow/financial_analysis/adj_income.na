@@ -1,7 +1,7 @@
 """Adjusted Income Metrics."""
 
 
-# TODO: parenthesized importing in Dana
+# TODO: parenthesized imports
 # from .fin_statements import (
 #     get_op_income, get_op_income_2y, get_op_income_3y,
 #

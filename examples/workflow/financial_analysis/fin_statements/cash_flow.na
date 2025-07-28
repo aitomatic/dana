@@ -18,6 +18,7 @@ __all__ = [
 # TODO: multi-line string concatenation
 CF_STATEMENT: str = '(Consolidated) Cash Flow(s) Statement(s), a.k.a. (Consolidated) Statement(s) of Cash Flows'
 
+
 OP_CF_LINE_ITEM: str = '(Net) Cash Flows from Operations, a.k.a. (Net) Operating Cash Flows'
 
 # TODO: multi-line string concatenation

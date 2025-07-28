@@ -51,7 +51,7 @@ PAYABLE_LINE_ITEM: str = 'Accounts Payable'
 LT_DEBT_LINE_ITEM: str = 'Long-Term Debt (EXCLUDING any current/short-term portion)'
 ST_DEBT_LINE_ITEM: str = 'Short-Term Debt, or Current Portion of (Long-Term) Debt'
 
-EQUITY_LINE_ITEM: str = 'Total Equity, a.k.a. Shareholders\' Equity, Net Assets'
+EQUITY_LINE_ITEM: str = "Total Equity, a.k.a. Shareholders' Equity, or Net Assets"
 
 
 def get_total_asset(args: CompanyAndPeriodAndCurrency) -> float:
