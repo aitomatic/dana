@@ -169,7 +169,18 @@ class PipeOperationHandler(Loggable):
         # Handle AttributeAccess for method calls
         if isinstance(func_call.name, AttributeAccess):
             # Resolve the object and get the method
-            obj = self.parent_executor.execute(func_call.name.object, context)
+            if self.parent_executor is None:
+                # Handle case where parent_executor is not available
+                # Try to resolve the object directly from context
+                if isinstance(func_call.name.object, Identifier):
+                    obj = context.get(func_call.name.object.name)
+                    if obj is None:
+                        raise SandboxError(f"Object '{func_call.name.object.name}' not found in context")
+                else:
+                    raise SandboxError("Cannot resolve attribute access without parent executor")
+            else:
+                obj = self.parent_executor.execute(func_call.name.object, context)
+
             method_name = func_call.name.attribute
             if hasattr(obj, method_name):
                 func = getattr(obj, method_name)
