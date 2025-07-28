@@ -81,6 +81,31 @@ class ManagerAgent:
         
 if __name__ == "__main__":
     import json
-    domain_structure = json.loads(open("general_kb_topics.json", "r").read())
-    manager = ManagerAgent("Investing in stock market", "Financial Analyst")
-    manager.generate_all_domain_knowledges(domain_structure)
+
+    topic = """
+1. Identify the core financial question:
+   - What needs to be measured/assessed?
+   - What decision will this analysis inform?
+
+2. Determine required financial dimensions:
+   - Profitability (Income Statement focus)
+   - Liquidity (Balance Sheet + Cash Flow)
+   - Efficiency (Cross-statement ratios)
+   - Leverage (Balance Sheet structure)
+   - Cash Generation (Cash Flow Statement)
+   - Valuation (All statements + market data)
+
+3. Establish time frame and comparison basis:
+   - Point-in-time vs. trend analysis
+   - Company vs. industry vs. historical
+"""
+
+    fn = "problem_decomposition.json"
+    domain_structure = json.loads(open(fn, "r").read())
+    manager = ManagerAgent(topic, "Financial Statement Analyst")
+    # domain_structure = manager.create_domain_structure()
+    # json.dump(domain_structure, open(fn, "w"), indent=4)
+    result = manager.generate_all_domain_knowledges(domain_structure)
+    output_fn = fn.replace(".json", "_output.json")
+    json.dump(result, open(output_fn, "w"), indent=4)
+    # print(json.dumps(domain_structure, indent=4))

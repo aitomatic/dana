@@ -85,5 +85,17 @@ def use_function(context: SandboxContext, function_name: str, *args, _name: str 
         resource = CodingResource(*args, name=_name, **kwargs)
         context.set_resource(_name, resource)
         return resource
+    elif function_name.lower() == "finance_coding":
+        from dana.common.resource.coding.financial_statement_analyzer import FinancialStatementAnalyzer
+        resource = FinancialStatementAnalyzer(*args, name=_name, **kwargs)
+        # from dana.common.resource.coding.finance_coding_resource import FinanceCodingResource
+        # resource = FinanceCodingResource(*args, name=_name, **kwargs)
+        context.set_resource(_name, resource)
+        return resource
+    elif function_name.lower() == "finance_rag":
+        from dana.common.resource.rag.financial_statement_rag_resource import FinancialStatementRAGResource
+        resource = FinancialStatementRAGResource(*args, name=_name, **kwargs)
+        context.set_resource(_name, resource)
+        return resource
     else:
         raise NotImplementedError(f"Function {function_name} not implemented")

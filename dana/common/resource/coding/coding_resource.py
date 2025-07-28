@@ -18,10 +18,12 @@ class CodingResource(BaseResource):
         name: str = "coding_resource",
         description: str | None = None,
         debug: bool = True,
+        timeout: int = 30,
         **kwargs
     ):
         super().__init__(name, description)
         self.debug = debug
+        self.timeout = timeout
         # Initialize LLM resource for code generation
         try:
             self._llm_resource = LLMResource(
@@ -103,11 +105,11 @@ class CodingResource(BaseResource):
                     # Retry attempts: use error feedback to improve
                     python_code = await self._generate_python_code_with_feedback(request, last_error, last_python_code, attempt)
                 
-                # Execute the generated code
-                result = self._execute_python_code(python_code)
+                # Execute the generated code with timeout
+                result = self._execute_python_code(python_code, timeout=self.timeout)
                 
                 # Check if execution was successful
-                if not result.startswith("Error:"):
+                if not result.startswith("Error:") and not result.startswith("TimeoutError:"):
                     if attempt > 0:
                         if self.debug:
                             print(f"Successfully executed code on attempt {attempt + 1}")
@@ -315,34 +317,36 @@ print(process_request())
         
         return code.strip()
 
-    def _execute_python_code(self, code: str) -> str:
-        """Execute Python code and return the result."""
-        
+    def _execute_python_code(self, code: str, timeout: int = 30) -> str:
+        """
+        Execute Python code and return the result. If execution exceeds timeout, returns TimeoutError.
+        Args:
+            code: Python code to execute
+            timeout: Maximum seconds to allow code execution
+        Returns:
+            Output string, or TimeoutError string if timed out
+        """
         try:
             # Create temporary file
             with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
                 f.write(code)
                 temp_file = f.name
-            
             # Execute the code
             result = subprocess.run(
                 [sys.executable, temp_file],
                 capture_output=True,
                 text=True,
-                timeout=30
+                timeout=timeout
             )
-            
             # Clean up
             os.unlink(temp_file)
-            
             # Return output
             if result.returncode == 0:
                 return result.stdout.strip()
             else:
                 return f"Error: {result.stderr.strip()}"
-                
         except subprocess.TimeoutExpired:
-            return "Error: Code execution timed out"
+            return "TimeoutError: Code execution timed out"
         except Exception as e:
             return f"Error: {str(e)}"
 

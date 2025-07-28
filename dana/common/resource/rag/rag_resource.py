@@ -1,10 +1,12 @@
 import os
 from dana.common.mixins.tool_callable import ToolCallable
 from dana.common.resource.base_resource import BaseResource
+from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.resource.rag.pipeline.rag_orchestrator import RAGOrchestrator
 from dana.common.resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager
+from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
-
+from llama_index.core import Settings
 
 
 class RAGResource(BaseResource):
@@ -17,21 +19,29 @@ class RAGResource(BaseResource):
         cache_dir: str = None,  # Changed default to None
         force_reload: bool = False,
         description: str | None = None,
+        chunk_size: int = 1024,
+        chunk_overlap: int = 256,
         debug: bool = True,
+        reranking: bool = False,
+        initial_multiplier: int = 2,
     ):
         super().__init__(name, description)
+        Settings.chunk_size = chunk_size
+        Settings.chunk_overlap = chunk_overlap
         self.sources = sources
         self.force_reload = force_reload
         self.debug = debug
+        self.reranking = reranking
+        self.initial_multiplier = initial_multiplier
         # Use DANAPATH if set, otherwise default to .cache/rag
         # if cache_dir is None:
         danapath = os.environ.get("DANAPATH")
-        
+
         if danapath:
             if cache_dir:
                 cache_dir = os.path.join(danapath, cache_dir)
             else:
-                cache_dir = os.path.join(danapath, ".cache", 'rag')
+                cache_dir = os.path.join(danapath, ".cache", "rag")
         else:
             cache_dir = ".cache/rag"
 
@@ -39,6 +49,15 @@ class RAGResource(BaseResource):
         self._orchestrator = RAGOrchestrator(cache_manager=self._cache_manager)
         self._is_ready = False
         self._filenames = None
+
+        # Initialize LLM resource for reranking if enabled
+        if self.reranking:
+            self._llm_reranker = LLMResource(
+                name=f"{name}_reranker",
+                temperature=0.0,  # Use deterministic settings for reranking
+            )
+        else:
+            self._llm_reranker = None
 
     @property
     def filenames(self) -> list[str]:
@@ -60,7 +79,176 @@ class RAGResource(BaseResource):
             await self.initialize()
 
         if self.debug:
-            print(f"Querying {num_results} results from {self.name} RAG with query: {query}")
+            print(
+                f"Querying {num_results} results from {self.name} RAG with query: {query}"
+            )
 
-        results = await self._orchestrator.retrieve(query, num_results)
+        # Get initial results (more than needed for reranking)
+        initial_num_results = num_results
+        if self.reranking:
+            # Retrieve more results for better reranking selection
+            initial_num_results = num_results * self.initial_multiplier
+
+        results = await self._orchestrator.retrieve(query, initial_num_results)
+
+        # Apply LLM reranking if enabled
+        if self.reranking and self._llm_reranker and len(results) > 1:
+            results = await self._rerank_with_llm(query, results, num_results)
+        elif len(results) > num_results:
+            # Truncate to requested number if no reranking
+            results = results[:num_results]
+
         return "\n\n".join([result.node.get_content() for result in results])
+
+    async def _rerank_with_llm(
+        self, query: str, results: list, target_count: int
+    ) -> list:
+        """Rerank and filter results using LLM to improve relevance and discard irrelevant content.
+
+        The LLM will:
+        1. Analyze each document for relevance to the query
+        2. Discard completely unrelated documents
+        3. Rank remaining documents by relevance
+        4. Return at most target_count documents (may return fewer)
+        """
+        if not results:
+            return results
+
+        if self.debug:
+            print(
+                f"LLM reranking: analyzing {len(results)} results (target {target_count} will be selected)"
+            )
+
+        # Prepare documents for reranking
+        documents = []
+        for i, result in enumerate(results):
+            content = result.node.get_content()
+            # Truncate very long documents to avoid token limits
+            if len(content) > 2000:
+                content = content[:2000] + "..."
+            documents.append(
+                {
+                    "id": i,
+                    "content": content,
+                    "score": result.score if hasattr(result, "score") else 0.0,
+                }
+            )
+
+        # Create reranking prompt
+        prompt = self._create_reranking_prompt(query, documents, target_count)
+
+        try:
+            # Query LLM for reranking
+            request = BaseRequest(
+                arguments={
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.0,
+                    "max_tokens": 1000,
+                }
+            )
+
+            response = await self._llm_reranker.query(request)
+
+            if response.success:
+                # Parse the response to get ranked document IDs
+                ranked_ids = self._parse_reranking_response(response.content)
+
+                # Reorder results based on LLM ranking (only include LLM-selected documents)
+                reranked_results = []
+                for doc_id in ranked_ids:
+                    if 0 <= doc_id < len(results):
+                        reranked_results.append(results[doc_id])
+
+                if self.debug:
+                    original_count = len(results)
+                    filtered_count = len(reranked_results)
+                    print(
+                        f"LLM reranking successful: filtered {original_count} -> {filtered_count} results"
+                    )
+
+                # Return only LLM-selected results (may be fewer than target_count)
+                return (
+                    reranked_results[:target_count]
+                    if len(reranked_results) > target_count
+                    else reranked_results
+                )
+            else:
+                if self.debug:
+                    print(f"LLM reranking failed: {response.error}")
+                return results[:target_count]
+
+        except Exception as e:
+            if self.debug:
+                print(f"Error during LLM reranking: {e}")
+            return results[:target_count]
+
+    def _create_reranking_prompt(
+        self, query: str, documents: list[dict], target_count: int
+    ) -> str:
+        """Create a prompt for LLM-based reranking and filtering."""
+        docs_text = ""
+        for doc in documents:
+            docs_text += f"Document {doc['id']}:\n{doc['content']}\n\n"
+
+        prompt = f"""You are an expert document relevance analyzer. Given a query and a list of documents, your task is to:
+
+1. IDENTIFY documents that are actually relevant to answering the query
+2. DISCARD documents that are unrelated or contain irrelevant information
+3. RANK the relevant documents by their usefulness in answering the query
+4. Return AT MOST {target_count} document IDs (you may return fewer if many documents are irrelevant)
+
+Query: {query}
+
+Documents:
+{docs_text}
+
+Instructions:
+- Only include documents that contain information directly relevant to the query
+- If a document is completely unrelated to the query, DO NOT include it in your response
+- If multiple documents are relevant, rank them from most useful to least useful
+- Return a JSON array of document IDs in order of relevance: [most_relevant_id, second_most_relevant_id, ...]
+- If NO documents are relevant to the query, return an empty array: []
+- Maximum {target_count} document IDs in your response
+
+Response (JSON array only):"""
+
+        return prompt
+
+    def _parse_reranking_response(self, response_content: str | dict) -> list[int]:
+        """Parse LLM response to extract ranked document IDs."""
+        try:
+            # Handle both string and dict responses
+            if isinstance(response_content, dict):
+                response_text = response_content.get("content", "")
+            else:
+                response_text = response_content
+
+            # Use Misc.text_to_dict to parse the response
+            parsed = Misc.text_to_dict(response_text)
+
+            # The response should be a JSON array of integers
+            if isinstance(parsed, list):
+                return [
+                    int(x)
+                    for x in parsed
+                    if isinstance(x, (int, str)) and str(x).isdigit()
+                ]
+            elif isinstance(parsed, dict) and "ranking" in parsed:
+                ranking = parsed["ranking"]
+                if isinstance(ranking, list):
+                    return [
+                        int(x)
+                        for x in ranking
+                        if isinstance(x, (int, str)) and str(x).isdigit()
+                    ]
+
+            # Fallback: try to extract numbers from the text
+            import re
+
+            numbers = re.findall(r"\b\d+\b", response_text)
+            return [int(x) for x in numbers]
+
+        except Exception as e:
+            if self.debug:
+                print(f"Failed to parse reranking response: {e}")
+            return []

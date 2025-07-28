@@ -150,10 +150,10 @@ class FinanceCodingResource(BaseResource):
     ) -> str:
         """Generate Python code for financial calculations and execute it.
 
-        @description: Generate Python code for financial calculations and execute it. Specialized for financial metrics like NPV, IRR, portfolio analysis, risk metrics, etc. The request should contain all necessary financial data and specify the desired calculations. CRITICAL: Always provide temporal granularity (daily, monthly, quarterly, annual) for ALL metrics, rates, and flows in the output.
+        @description: Generate Python code for financial calculations and execute it. Specialized for financial metrics like NPV, IRR, portfolio analysis, risk metrics, growth rates, etc. IMPORTANT: For growth rate calculations, provide ALL available time-series data points (e.g., quarterly data: {"Q1": 100, "Q2": 110, "Q3": 115, "Q4": 125}) not just start/end values. The tool will analyze multi-period patterns and calculate period-over-period growth rates. Always include temporal context (daily, monthly, quarterly, annual) for all data points.
 
         Args:
-            request: Natural language description of the financial calculation needed
+            request: Natural language description of the financial calculation needed. For time-series data (revenue, costs, growth rates), include ALL data points with their time periods, not just totals. Example: "Calculate quarterly growth rate for revenue: Q1 2024: $1.2M, Q2 2024: $1.5M, Q3 2024: $1.8M, Q4 2024: $2.1M"
             max_retries: Maximum number of retry attempts if code generation fails
 
         Returns:
@@ -248,66 +248,112 @@ class FinanceCodingResource(BaseResource):
 # FINANCIAL PACKAGES: {financial_packages_info}
 # RULES (strict):
 #  1. OUTPUT *ONLY* runnable Python code  no comments, markdown, or explanations.
-#  2. Use appropriate financial libraries when available (pandas for time series, numpy for calculations).
-#  3. Include print() statements with clear labels showing:
+#  2. PREFER pandas for financial data - use DataFrames for time series, multi-period data, and tabular calculations
+#  3. Use pandas for: cash flows, financial statements, ratio analysis, time series, and any tabular data
+#  4. Use numpy for: mathematical operations, statistical calculations, and array computations
+#  5. Include print() statements with clear labels showing:
 #     - Input parameters and their values WITH TIME PERIOD (e.g., "Q3 2024 Revenue", "Annual 2023 Expenses")
 #     - Intermediate calculations with proper financial terminology AND TIME CONTEXT
 #     - Final results with appropriate formatting (percentages, currency, etc.)
 #     - ALWAYS include temporal granularity (daily, monthly, quarterly, annual) for ALL financial metrics
 #     - For rates and flows: ALWAYS specify the time period (e.g., "Monthly Cash Burn Rate", "Annual Interest Rate")
-#  4. Format financial outputs appropriately:
+#  6. Format financial outputs appropriately:
 #     - Percentages: show as "12.5%" not "0.125"
 #     - Currency: use comma separators and 2 decimal places
 #     - Rates: specify if annual, monthly, daily
-#  5. Handle financial edge cases (division by zero, negative values where inappropriate).
-#  6. Use proper financial formulas and conventions.
-#  7. TIME PERIOD LABELING REQUIREMENTS:
+#     - Use pandas .to_string() with formatters for professional tables
+#     - Example: df.to_string(index=False, formatters={{'Amount': '${{:,.2f}}'.format}})
+#  7. Handle financial edge cases (division by zero, negative values where inappropriate).
+#  8. Use proper financial formulas and conventions.
+#  9. MULTI-PERIOD DATA DETECTION FOR GROWTH RATES:
+#     - ALWAYS analyze input data structure first - check if data contains multiple time periods
+#     - If data spans multiple quarters/years, calculate period-over-period growth rates
+#     - Use pandas to identify time series patterns: look for date columns, quarter labels, or sequential periods
+#     - For growth rates: NEVER treat multi-period data as single point - extract time series and calculate compound growth
+#     - Example: If data has Q1, Q2, Q3, Q4 values, calculate QoQ growth rates, not just end-to-start
+#     - Always print data structure analysis: "Detected X periods from Y to Z"
+# 10. TIME PERIOD LABELING REQUIREMENTS:
 #     - Cash flows: "Annual Operating Cash Flow", "Monthly Cash Burn", "Quarterly Free Cash Flow"
 #     - Rates: "Annual Growth Rate", "Monthly Interest Rate", "Daily Burn Rate"
 #     - Ratios with time context: "TTM P/E Ratio", "Q3 2024 Current Ratio"
 #     - Never output ambiguous labels like "Cash Flow: $X" or "Burn Rate: $X" without time period
-#  8. CRITICAL: NO VISUALIZATION LIBRARIES ALLOWED
+# 11. CRITICAL: NO VISUALIZATION LIBRARIES ALLOWED
 #     - NEVER import matplotlib, seaborn, plotly, or any chart/plot libraries
 #     - NO plt.show(), fig.show(), or any chart display commands
 #     - Use ONLY text output with ASCII art, Unicode symbols, and print statements
 #     - If visualization is requested, create ASCII representations instead
 
-# FINANCIAL CONCEPTS TO HANDLE:
-# - Time value of money (NPV, IRR, PV, FV)
-# - Portfolio metrics (returns, volatility, Sharpe ratio, beta)
-# - Risk metrics (VaR, CVaR, standard deviation)
-# - Bond calculations (yield, duration, convexity)
-# - Option pricing (Black-Scholes, Greeks)
-# - Financial ratios (P/E, ROE, debt ratios)
-# - Cash flow analysis
-# - Loan/mortgage calculations
+# FINANCIAL CONCEPTS TO HANDLE WITH PANDAS:
+# - Time value of money: Use pd.DataFrame for cash flows with date indices, .sum() for NPV
+# - Portfolio metrics: pd.DataFrame for price/return series, .rolling().std() for volatility
+# - Risk metrics: pd.DataFrame.quantile() for VaR, .rolling() for time-series risk
+# - Bond calculations: pd.date_range() for payment schedules, DataFrame for bond analytics
+# - Option pricing: pd.DataFrame for option chains, vectorized calculations
+# - Financial ratios: DataFrame operations for multi-period ratio analysis
+# - Cash flow analysis: Time-indexed DataFrames, .resample() for period aggregation
+# - Loan/mortgage calculations: pd.DataFrame for amortization schedules
+# - Growth rate analysis: ALWAYS use .pct_change() for period-over-period, .cumprod() for compound growth
 
-# EXAMPLE REQUEST
+# PANDAS PATTERNS FOR FINANCIAL DATA:
+# - Use pd.date_range() for time periods (pd.date_range('2024', periods=12, freq='M'))
+# - Create DataFrames with meaningful column names: ['Date', 'Cash_Flow', 'Present_Value']
+# - Use .to_string() with formatters for financial table output
+# - Apply .rolling() for moving averages and time-series metrics
+# - Use .pct_change() for return calculations
+# - Use .resample() for period aggregation (monthly to quarterly)
+
+# EXAMPLE REQUEST 1 (NPV Calculation):
 #   Calculate the NPV of a project with initial investment of $100,000
 #   and annual cash flows of $30,000 for 5 years at a 10% discount rate.
+#
+# EXAMPLE REQUEST 2 (Growth Rate with Multi-Period Data):
+#   Calculate growth rates for quarterly revenue data:
+#   Q1 2024: $1.2M, Q2 2024: $1.5M, Q3 2024: $1.8M, Q4 2024: $2.1M
+#   
+#   The tool will:
+#   1. Detect this as time-series data (4 quarters)
+#   2. Calculate QoQ growth rates: Q1→Q2: 25%, Q2→Q3: 20%, Q3→Q4: 16.7%
+#   3. Calculate compound quarterly growth rate (CQGR): 20.5%
+#   4. Calculate annualized growth rate: 75%
+#   5. Identify trend: Decelerating growth pattern
 
 # EXAMPLE OUTPUT (format only  do **NOT** include this example in your answer):
+# import pandas as pd
 # import numpy as np
 # 
-# initial_investment = -100000
-# annual_cash_flows = [30000] * 5
+# # Create pandas DataFrame for cash flow analysis
+# periods = pd.date_range(start='2024-01-01', periods=6, freq='YE')
+# cash_flows = pd.DataFrame({{
+#     'Year': range(2024, 2030),
+#     'Date': periods,
+#     'Cash_Flow': [-100000, 30000, 30000, 30000, 30000, 30000]
+# }})
+# cash_flows['Period'] = ['Initial'] + [f'Year {{i}}' for i in range(1, 6)]
 # discount_rate = 0.10
 # 
-# print(f"Initial Investment: ${{initial_investment:,.2f}}")
-# print(f"Annual Cash Flows: ${{annual_cash_flows[0]:,.2f}} per year for {{len(annual_cash_flows)}} years")
 # print(f"Annual Discount Rate: {{discount_rate*100:.1f}}%")
+# print(f"Analysis Period: {{cash_flows['Year'].min()}} to {{cash_flows['Year'].max()}}")
 # 
-# cash_flows = [initial_investment] + annual_cash_flows
-# years = range(len(cash_flows))
+# # Calculate present values using pandas
+# cash_flows['Discount_Factor'] = (1 + discount_rate) ** range(len(cash_flows))
+# cash_flows['Present_Value'] = cash_flows['Cash_Flow'] / cash_flows['Discount_Factor']
 # 
-# npv = sum(cf / (1 + discount_rate)**year for year, cf in enumerate(cash_flows))
+# # Display formatted DataFrame
+# print("\\nCash Flow Analysis:")
+# print(cash_flows[['Period', 'Cash_Flow', 'Present_Value']].to_string(
+#     index=False, 
+#     formatters={{'Cash_Flow': '${{:,.0f}}'.format, 'Present_Value': '${{:,.0f}}'.format}}
+# ))
+# 
+# npv = cash_flows['Present_Value'].sum()
 # 
 # print(f"\\nNet Present Value (NPV): ${{npv:,.2f}}")
-# print(f"Project is {{'profitable' if npv > 0 else 'unprofitable'}}")
+# print(f"Annual Return Rate: {{(npv/abs(cash_flows.iloc[0]['Cash_Flow']))*100:.1f}}%")
+# print(f"Project Status: {{'Profitable' if npv > 0 else 'Unprofitable'}}")
 
 # USER REQUEST
 {request}
-"""
+        """
 
         llm_request = BaseRequest(
             arguments={
@@ -422,28 +468,52 @@ If error mentions visualization/charts:
             raise Exception(f"LLM generation with feedback failed: {response.error}")
 
     def _generate_financial_fallback(self, request: str) -> str:
-        """Generate simple financial Python code when LLM is not available."""
+        """Generate pandas-based financial Python code when LLM is not available."""
 
-        return f'''def calculate_financial_metric():
+        return f'''import pandas as pd
+import numpy as np
+
+def calculate_financial_metric():
     """{request}"""
     print("Financial calculation request received")
-    print("Note: Using fallback mode - limited functionality")
+    print("Note: Using fallback mode - pandas-based calculation")
     
-    # Basic example: simple interest calculation
-    principal = 1000
-    rate = 0.05
-    time = 1
+    # Basic example: time series financial calculation using pandas
+    periods = pd.date_range(start='2024-01-01', periods=12, freq='M')
+    financial_data = pd.DataFrame({{
+        'Date': periods,
+        'Month': periods.strftime('%Y-%m'),
+        'Principal': 1000,
+        'Annual_Rate': 0.05,
+        'Monthly_Rate': 0.05/12
+    }})
     
-    simple_interest = principal * rate * time
-    print(f"Principal: ${{principal:,.2f}}")
-    print(f"Annual Rate: {{rate*100:.1f}}%")
-    print(f"Time: {{time}} year(s)")
-    print(f"Simple Interest: ${{simple_interest:,.2f}}")
+    # Calculate monthly compound interest
+    financial_data['Interest'] = financial_data['Principal'] * financial_data['Monthly_Rate']
+    financial_data['Balance'] = financial_data['Principal'] * (1 + financial_data['Annual_Rate']/12) ** range(1, 13)
     
-    return simple_interest
+    print(f"Analysis Period: {{financial_data['Month'].iloc[0]}} to {{financial_data['Month'].iloc[-1]}}")
+    print(f"Principal Amount: ${{financial_data['Principal'].iloc[0]:,.2f}}")
+    print(f"Annual Interest Rate: {{financial_data['Annual_Rate'].iloc[0]*100:.1f}}%")
+    
+    # Display summary table
+    summary = financial_data[['Month', 'Interest', 'Balance']].head(6)
+    print("\\nMonthly Interest Calculation (First 6 months):")
+    print(summary.to_string(index=False, formatters={{
+        'Interest': '${{:,.2f}}'.format,
+        'Balance': '${{:,.2f}}'.format
+    }}))
+    
+    final_balance = financial_data['Balance'].iloc[-1]
+    total_interest = final_balance - financial_data['Principal'].iloc[0]
+    
+    print(f"\\nFinal Balance (12 months): ${{final_balance:,.2f}}")
+    print(f"Total Interest Earned: ${{total_interest:,.2f}}")
+    
+    return final_balance
 
 result = calculate_financial_metric()
-print(f"Final Result: ${{result:,.2f}}")
+print(f"\\nFinal Result: ${{result:,.2f}}")
 '''
 
     def _clean_code(self, code: str) -> str:
@@ -690,11 +760,11 @@ print(f"Final Result: ${{result:,.2f}}")
     ) -> str:
         """Analyze income statement and calculate profitability metrics.
 
-        @description: Analyze income statement data to calculate gross profit, operating profit, net profit, and various profitability margins. Supports multi-period analysis for trend identification. Provides insights into revenue growth, expense management, and profitability trends.
+        @description: Analyze income statement data to calculate gross profit, operating profit, net profit, and various profitability margins. Supports multi-period analysis for trend identification. IMPORTANT: For growth analysis, provide complete time-series data (e.g., {"Q1_2024": 100000, "Q2_2024": 110000, "Q3_2024": 125000, "Q4_2024": 140000}) to calculate quarter-over-quarter and year-over-year growth rates. Provides insights into revenue growth, expense management, and profitability trends.
 
         Args:
-            revenue_json: JSON string of revenue items (e.g., '{"product_sales": 1000000, "service_revenue": 500000}')
-            expenses_json: JSON string of expense items (e.g., '{"cost_of_goods_sold": 600000, "operating_expenses": 300000, "interest": 50000, "taxes": 100000}')
+            revenue_json: JSON string of revenue items. For multi-period analysis, use nested structure (e.g., '{"Q1_2024": {"product_sales": 250000, "service_revenue": 125000}, "Q2_2024": {"product_sales": 275000, "service_revenue": 137500}}')
+            expenses_json: JSON string of expense items. For multi-period analysis, use nested structure (e.g., '{"Q1_2024": {"cost_of_goods_sold": 150000, "operating_expenses": 75000}, "Q2_2024": {"cost_of_goods_sold": 165000, "operating_expenses": 82500}}')
             period: Time period - 'annual', 'quarterly', or 'monthly'
             years: Number of years/periods to analyze (for trend analysis)
 
@@ -943,10 +1013,10 @@ print(f"Final Result: ${{result:,.2f}}")
     ) -> str:
         """Analyze financial trends over multiple periods.
 
-        @description: Perform trend analysis on financial metrics over multiple periods to identify patterns, growth rates, and potential concerns. Calculates compound annual growth rates (CAGR), identifies trends, and provides forecasting insights based on historical patterns.
+        @description: Perform trend analysis on financial metrics over multiple periods to identify patterns, growth rates, and potential concerns. CRITICAL: Provide ALL historical data points with time labels (e.g., {"2020": 100, "2021": 120, "2022": 150, "2023": 180, "2024": 220}) not just start/end values. The tool will calculate period-over-period growth, CAGR, and identify acceleration/deceleration patterns. Provides detailed growth analytics and forecasting insights.
 
         Args:
-            historical_data_json: JSON string with historical financial data by period (e.g., '{"2019": {"revenue": 800000, "net_income": 80000}, "2020": {"revenue": 900000, "net_income": 95000}, "2021": {"revenue": 1000000, "net_income": 100000}}')
+            historical_data_json: JSON string with ALL available historical financial data points by period. Include every period available, not just start/end (e.g., '{"2019": {"revenue": 800000, "net_income": 80000}, "2020": {"revenue": 900000, "net_income": 95000}, "2021": {"revenue": 1000000, "net_income": 100000}, "2022": {"revenue": 1200000, "net_income": 130000}, "2023": {"revenue": 1500000, "net_income": 170000}}')
             metrics_to_analyze: Comma-separated list of metrics to analyze (e.g., 'revenue,net_income,margins,ratios')
             periods: Number of historical periods to analyze
 
