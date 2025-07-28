@@ -1,26 +1,25 @@
 """Capital Intensity/Intensiveness Metrics."""
 
 
-# TODO: relative importing & parenthesized importing in Dana
-# from fin_statements import (
+# TODO: parenthesized importing in Dana
+# from .fin_statements import (
 #     get_total_asset, get_fixed_asset,
 #
 #     get_capex, get_capex_3y,
 #
 #     get_rev, get_rev_3y,
 # )
-from fin_statements import get_total_asset, get_fixed_asset
-from fin_statements import get_capex, get_capex_3y
-from fin_statements import get_rev, get_rev_3y
+from .fin_statements import get_total_asset, get_fixed_asset
+from .fin_statements import get_capex, get_capex_3y
+from .fin_statements import get_rev, get_rev_3y
 
-# TODO: relative importing with dot notation & parenthesized importing in Dana
+# TODO: parenthesized importing in Dana
 # from .return_ratios import (
 #     calc_roa_ratio,
 # )
-from return_ratios import calc_roa_ratio
+from .return_ratios import calc_roa_ratio
 
-# TODO: relative importing with dot notation in Dana
-from fin_statements.util import sum_over_sum, CompanyAndPeriodAndCurrency
+from .utils import sum_over_sum, CompanyAndPeriodAndCurrency
 
 
 __all__ = [

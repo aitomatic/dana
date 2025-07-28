@@ -1,6 +1,9 @@
-"""Unified Test Runner for Financial Analysis Workflows."""
+"""Test Runner Script for Financial Analysis Workflows.
 
-# statements_reading
+This script is placed inside the `financial_analysis` package
+and attempts to use absolute imports from within that package.
+"""
+
 from fin_statements import get_total_asset, get_total_asset_2y, get_total_asset_3y
 from fin_statements import get_fixed_asset, get_fixed_asset_2y, get_fixed_asset_3y
 from fin_statements import get_curr_asset, get_curr_asset_2y, get_curr_asset_3y
@@ -28,15 +31,12 @@ from fin_statements import get_tax_exp, get_tax_exp_2y, get_tax_exp_3y
 from fin_statements import get_net_income, get_net_income_2y, get_net_income_3y
 from fin_statements import get_div, get_div_2y, get_div_3y
 
-# adj_income
 from adj_income import calc_ebitda, calc_ebitda_2y, calc_ebitda_3y
 
-# turnover_ratios
 from turnover_ratios import calc_total_asset_turnover_ratio
 from turnover_ratios import calc_fixed_asset_turnover_ratio
 from turnover_ratios import calc_inventory_turnover_ratio
 
-# margin_ratios
 from margin_ratios import calc_cogs_margin, calc_cogs_margin_3y_avg
 from margin_ratios import calc_gross_margin, calc_gross_margin_3y_avg
 from margin_ratios import calc_ebitda_margin, calc_ebitda_margin_3y_avg
@@ -45,31 +45,26 @@ from margin_ratios import calc_op_margin, calc_op_margin_3y_avg
 from margin_ratios import calc_ebit_margin, calc_ebit_margin_3y_avg
 from margin_ratios import calc_net_margin, calc_net_margin_3y_avg
 
-# return_ratios
 from return_ratios import calc_roa_ratio, calc_roe_ratio
 
-# liquidity
 from liquidity import calc_quick_ratio, assess_quick_ratio
 from liquidity import calc_net_work_cap, calc_work_cap_ratio
 from liquidity import calc_op_cf_ratio
 from liquidity import calc_fcf, calc_fcf_conv_ratio
 from liquidity import calc_dio, calc_dso, calc_dpo, calc_ccc
 
-# cap_intens
 from cap_intens import calc_fixed_asset_over_total_asset
 from cap_intens import calc_total_asset_over_rev
 from cap_intens import calc_capex_over_rev, calc_capex_over_rev_3y_avg
 from cap_intens import assess_cap_intens
 
-# leverage
 from leverage import calc_total_debt, calc_total_debt_2y, calc_total_debt_3y
 from leverage import calc_de_ratio
 
-# income_util_ratios
 from income_util_ratios import calc_int_cov_ratio, calc_eff_tax_rate
 from income_util_ratios import calc_div_payout_ratio, calc_retention_ratio
 
-from fin_statements.util import CompanyAndPeriodAndCurrency
+from utils import CompanyAndPeriodAndCurrency
 
 TEST_DOC_PATH: str = 'test-assets/AMD_2022_10K.pdf'
 
@@ -167,15 +162,9 @@ WORKFLOWS_BY_ANALYSIS_AREA: dict[str, list[callable]] = {
     ],
 }
 
-with use('rag', sources=[TEST_DOC_PATH]) as test_docs:
-    for area in WORKFLOWS_BY_ANALYSIS_AREA:
-        workflows = WORKFLOWS_BY_ANALYSIS_AREA[area]
-        print(f'=== Testing {area} ===')
-        for workflow in workflows:
-            func_name = str(workflow)
-            print(f'-- {func_name} --')
-            try:
-                result = workflow(TEST_ARGS)
-                print(f'PASS: {func_name} => {result}')
-            except Exception as e:
-                print(f'FAIL: {func_name} => {e}')
+# Run a few tests
+# ===============
+# simple statements reading
+print(f'TOTAL ASSET: {get_total_asset(TEST_ARGS)}')
+print(f'TOTAL REVENUE: {get_rev(TEST_ARGS)}')
+print(f'OPERATING CASH FLOW: {get_op_cf(TEST_ARGS)}')

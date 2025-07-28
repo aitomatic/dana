@@ -1,8 +1,8 @@
 """Income Utilization Metrics."""
 
 
-# TODO: relative importing & parenthesized importing in Dana
-# from fin_statements import (
+# TODO: parenthesized importing in Dana
+# from .fin_statements import (
 #     get_ebit,
 #     get_int_exp,
 #
@@ -12,12 +12,11 @@
 #     get_net_income,
 #     get_div,
 # )
-from fin_statements import get_ebit, get_int_exp
-from fin_statements import get_ebt, get_tax_exp
-from fin_statements import get_net_income, get_div
+from .fin_statements import get_ebit, get_int_exp
+from .fin_statements import get_ebt, get_tax_exp
+from .fin_statements import get_net_income, get_div
 
-# TODO: relative importing with dot notation in Dana
-from fin_statements.util import CompanyAndPeriodAndCurrency
+from .utils import CompanyAndPeriodAndCurrency
 
 
 __all__ = [
