@@ -20,7 +20,7 @@ jobs:
   # First job: Test and build the package
   test-and-build:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.ref == 'release/pypi' && github.event.pull_request.merged == true
+    if: github.event.pull_request.head.ref == 'release/pypi'
     steps:
       # Get the code from repository
       - name: Checkout code
