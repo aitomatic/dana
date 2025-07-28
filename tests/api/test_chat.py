@@ -146,7 +146,7 @@ class TestChatService:
     @pytest.fixture
     def chat_service(self):
         """Create ChatService instance for testing"""
-        conversation_service = Mock(spec=ConversationService)
+        _conversation_service = Mock(spec=ConversationService)
         return ChatService()
 
     @pytest.fixture
