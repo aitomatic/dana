@@ -140,7 +140,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
 
   return (
     <div
-      className={`w-[420px] min-w-[380px] bg-white max-h-[calc(100vh-64px)] rounded-lg shadow-md overflow-y-auto flex flex-col m-2 bg-gray-50 transform transition-transform duration-300 ease-in-out z-50 ${
+      className={`w-[420px] min-w-[380px] bg-white max-h-[calc(100vh-64px)] rounded-lg shadow-md overflow-y-auto flex flex-col m-2  transform transition-transform duration-300 ease-in-out z-50 ${
         isVisible ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
@@ -170,29 +170,30 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
               }`}
             >
               <MarkdownViewerSmall>{message.text ?? 'Empty message'}</MarkdownViewerSmall>
-              <p className="mt-1 text-xs opacity-70">{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+              <p className="mt-1 text-xs opacity-70">
+                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
             </div>
           </div>
         ))}
         {isLoading && (
           <div className="flex justify-start">
-              <div className="flex items-center space-x-2">
+            <div className="grid grid-cols-[max-content_1fr] gap-2 items-center">
               <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
-                <div className="text-sm text-gray-700">
-                  <span className="font-medium">Thinking...</span>
-                  {currentStep && (
-                    <div className="mt-1 text-xs italic text-blue-600">{currentStep}</div>
-                  )}
-                </div>
+              <div className="text-sm text-gray-700">
+                <span className="font-medium">Thinking...</span>
+                {currentStep && (
+                  <div className="mt-1 text-xs italic text-blue-600">{currentStep}</div>
+                )}
               </div>
-        
+            </div>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}
-      <div className="p-4  ">
+      <div className="p-4">
         <div className="flex relative">
           <textarea
             value={inputText}
@@ -205,16 +206,15 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
             disabled={isLoading}
           />
           {inputText.trim() && (
-              <button
-                onClick={handleSendMessage}
-                className="absolute bottom-3 bg-gray-700 right-4 p-2 rounded-full text-white hover:text-blue-600 transition-colors"
-                title="Send message"
-                disabled={isLoading}
-              >
-                <ArrowUp className="w-4 h-4" strokeWidth={1.5} />
-              </button>
-            )}
-          
+            <button
+              onClick={handleSendMessage}
+              className="absolute bottom-3 right-4 p-2 text-white bg-gray-700 rounded-full transition-colors hover:text-blue-600"
+              title="Send message"
+              disabled={isLoading}
+            >
+              <ArrowUp className="w-4 h-4" strokeWidth={1.5} />
+            </button>
+          )}
         </div>
       </div>
     </div>

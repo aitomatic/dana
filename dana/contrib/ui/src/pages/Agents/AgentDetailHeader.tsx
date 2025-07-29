@@ -9,17 +9,27 @@ interface AgentDetailHeaderProps {
   onCancel?: () => void;
 }
 
-export const AgentDetailHeader: React.FC<AgentDetailHeaderProps> = ({ onBack, title, onDeploy, onCancel }) => (
-  <div className="flex items-center justify-between px-8 py-4 border-b bg-white" style={{ minHeight: 64 }}>
-    <div className='flex items-center gap-2 cursor-pointer ' onClick={onBack}>
-      <ArrowLeft className='w-4 h-4' />
-      <div className='font-semibold text-gray-700'>{title}</div>
+export const AgentDetailHeader: React.FC<AgentDetailHeaderProps> = ({
+  onBack,
+  title,
+  onDeploy,
+  onCancel,
+}) => (
+  <div
+    className="flex justify-between items-center px-8 py-4 bg-white border-b"
+    style={{ minHeight: 64 }}
+  >
+    <div className="flex gap-2 items-center cursor-pointer" onClick={onBack}>
+      <ArrowLeft className="w-4 h-4" />
+      <div className="font-semibold text-gray-700">{title}</div>
     </div>
-    <div className='flex items-center gap-4'>
-      <div className='text-gray-500 text-sm cursor-pointer' onClick={onCancel}>Cancel</div>
+    <div className="flex gap-4 items-center">
+      <div className="text-sm text-gray-500 cursor-pointer" onClick={onCancel}>
+        Cancel
+      </div>
       <Button size="sm" onClick={onDeploy}>
-        Deploy
+        Save
       </Button>
     </div>
   </div>
-); 
+);
