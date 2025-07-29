@@ -1,42 +1,27 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { IconSearch } from '@tabler/icons-react';
 import { apiService } from '@/lib/api';
 
 export const ExploreTab: React.FC<{
   filteredAgents: any[];
-  search: string;
-  setSearch: (s: string) => void;
   selectedDomain: string;
   setSelectedDomain: (d: string) => void;
   navigate: (url: string) => void;
   DOMAINS: string[];
-}> = ({ filteredAgents, search, setSearch, selectedDomain, setSelectedDomain, navigate, DOMAINS }) => (
+}> = ({ filteredAgents, selectedDomain, setSelectedDomain, navigate, DOMAINS }) => (
   <>
-    {/* Domain tabs and search */}
-    <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-      <div className="flex gap-2 flex-wrap">
-        {DOMAINS.map((domain) => (
-          <Button
-            key={domain}
-            variant={selectedDomain === domain ? 'secondary' : 'outline'}
-            className={`rounded-full px-5 py-1 text-base font-medium ${selectedDomain === domain ? 'hover:bg-brand-50 cursor-default' : 'bg-white'}`}
-            onClick={() => setSelectedDomain(domain)}
-          >
-            {domain}
-          </Button>
-        ))}
-      </div>
-      <div className="relative w-full md:w-72">
-        <IconSearch className="absolute left-3 top-1/2 w-5 h-5 text-gray-400 transform -translate-y-1/2" />
-        <input
-          type="text"
-          placeholder="Search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10 pr-4 py-2 w-full rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500 text-base"
-        />
-      </div>
+    {/* Domain tabs */}
+    <div className="flex gap-2 flex-wrap mb-6">
+      {DOMAINS.map((domain) => (
+        <Button
+          key={domain}
+          variant={selectedDomain === domain ? 'default' : 'outline'}
+          className={`rounded-full px-5 py-1 text-base font-medium ${selectedDomain === domain ? '' : 'bg-white'}`}
+          onClick={() => setSelectedDomain(domain)}
+        >
+          {domain}
+        </Button>
+      ))}
     </div>
     {/* Agent cards grid */}
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

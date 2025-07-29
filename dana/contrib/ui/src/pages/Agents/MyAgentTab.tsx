@@ -1,7 +1,30 @@
-import React, { useState } from 'react';
-import { IconSearch } from '@tabler/icons-react';
-import { Button } from '@/components/ui/button';
-import { useAgentStore } from '@/stores';
+import React from 'react';
+
+// Function to generate random avatar colors based on agent ID
+const getRandomAvatarColor = (agentId: string | number): string => {
+  const colors = [
+    'from-blue-400 to-blue-600',
+    'from-green-400 to-green-600', 
+    'from-purple-400 to-purple-600',
+    'from-pink-400 to-pink-600',
+    'from-indigo-400 to-indigo-600',
+    'from-red-400 to-red-600',
+    'from-yellow-400 to-yellow-600',
+    'from-teal-400 to-teal-600',
+    'from-orange-400 to-orange-600',
+    'from-cyan-400 to-cyan-600',
+    'from-emerald-400 to-emerald-600',
+    'from-violet-400 to-violet-600'
+  ];
+  
+  // Use agent ID to consistently generate the same color for the same agent
+  const hash = String(agentId).split('').reduce((a, b) => {
+    a = ((a << 5) - a) + b.charCodeAt(0);
+    return a & a;
+  }, 0);
+  
+  return colors[Math.abs(hash) % colors.length];
+};
 
 // Helper function to format dates in a user-friendly way
 const formatDate = (dateString: string | undefined): string => {
@@ -43,77 +66,19 @@ const formatDate = (dateString: string | undefined): string => {
 
 export const MyAgentTab: React.FC<{
   agents: any[];
-  search: string;
-  setSearch: (s: string) => void;
   navigate: (url: string) => void;
-}> = ({ agents, search, setSearch, navigate }) => {
-  const [creating, setCreating] = useState(false);
-  const { createAgent } = useAgentStore();
-
-  const handleCreateAgent = async () => {
-    setCreating(true);
-    try {
-      // Minimal default agent payload
-      const newAgent = await createAgent({
-        name: 'Untitled Agent',
-        description: '',
-        config: {},
-      });
-      if (newAgent && newAgent.id) {
-        navigate(`/agents/${newAgent.id}`);
-      }
-    } catch (e) {
-      // Optionally show error toast
-    } finally {
-      setCreating(false);
-    }
-  };
+}> = ({ agents, navigate }) => {
 
   return (
     <>
-      <div className="bg-gradient-to-r from-[#b7c6f9] to-[#e0e7ff] rounded-2xl p-8 mb-8 flex flex-col md:flex-row items-center justify-between">
-        <div className="flex flex-col gap-2">
-          <h2 className="mb-2 text-2xl font-bold text-gray-900">
-            Train production-ready AI agents
-          </h2>
-          <p className="max-w-xl text-base text-gray-600">
-            Create your first Domain-Expert Agent to explore the power of agent
-          </p>
-        </div>
-        <Button
-          onClick={handleCreateAgent}
-          variant="default"
-          size="lg"
-          className="mt-4 md:mt-0"
-          disabled={creating}
-        >
-          {creating ? 'Creating...' : '+ New Agent'}
-        </Button>
-      </div>
+
       <div className="flex justify-between items-center mb-8">
         <div className="text-lg font-semibold">My Trained Agents</div>
-        <div className="flex gap-4 items-center w-full max-w-xl">
-          <div className="relative flex-1">
-            <IconSearch className="absolute left-3 top-1/2 w-5 h-5 text-gray-400 transform -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="py-2 pr-4 pl-10 w-full text-base text-gray-900 bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
-          </div>
-        </div>
       </div>
       {/* User's agents list */}
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
         {agents && agents.length > 0 ? (
           agents
-            .filter(
-              (agent) =>
-                agent.name.toLowerCase().includes(search.toLowerCase()) ||
-                (agent.description || '').toLowerCase().includes(search.toLowerCase()),
-            )
             .sort((a, b) => {
               // Sort by creation date descending (newest first)
               const dateA = new Date(a.created_at || 0).getTime();
@@ -123,27 +88,34 @@ export const MyAgentTab: React.FC<{
             .map((agent) => (
               <div
                 key={agent.id}
-                className="flex flex-col gap-4 p-6 bg-white rounded-2xl border border-gray-200 transition-shadow cursor-pointer hover:shadow-md"
+                className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col gap-4 hover:shadow-lg transition-shadow cursor-pointer"
                 onClick={() => navigate(`/agents/${agent.id}`)}
               >
-                <div className="flex gap-4 items-center">
-                  <div className="flex justify-center items-center w-12 h-12 text-lg font-bold text-gray-500 bg-gray-200 rounded-full">
-                    {agent.name[0]}
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${agent.avatarColor || getRandomAvatarColor(agent.id)} flex items-center justify-center text-white text-lg font-bold`}>
+                    <span className={agent.avatarColor ? "text-white" : "text-white"}>{agent.name[0]}</span>
                   </div>
                   <div className="flex flex-col flex-1">
-                    <div className="flex gap-2 items-center">
-                      <span className="text-lg font-semibold text-gray-900">{agent.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-semibold text-gray-900 line-clamp-1" style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis' }}>{agent.name}</span>
                       <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium border border-gray-200 ml-2">
                         {agent.config?.domain || 'Other'}
                       </span>
                     </div>
-                    <span className="mt-1 text-sm text-gray-500">{agent.description}</span>
-                    {agent.created_at && (
-                      <span className="mt-2 text-xs text-gray-400">
-                        Created {formatDate(agent.created_at)}
-                      </span>
-                    )}
+                    <span className="text-gray-500 text-sm mt-1 line-clamp-2" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis' }}>{agent.description}</span>
                   </div>
+                </div>
+                <div className="text-gray-600 text-sm min-h-[40px]">{agent.details || (agent.created_at ? `Created ${formatDate(agent.created_at)}` : '')}</div>
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-gray-500 text-xs">{agent.accuracy ? `${agent.accuracy}% accuracy` : ''}</span>
+                  <span className="flex items-center gap-1 text-yellow-500 font-semibold text-sm">
+                    {agent.rating && (
+                      <>
+                        <svg width="18" height="18" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.175c.969 0 1.371 1.24.588 1.81l-3.38 2.455a1 1 0 00-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.38-2.454a1 1 0 00-1.175 0l-3.38 2.454c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 00-.364-1.118L2.04 9.394c-.783-.57-.38-1.81.588-1.81h4.175a1 1 0 00.95-.69l1.286-3.967z" /></svg>
+                        {new Intl.NumberFormat('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(agent.rating)}
+                      </>
+                    )}
+                  </span>
                 </div>
               </div>
             ))
