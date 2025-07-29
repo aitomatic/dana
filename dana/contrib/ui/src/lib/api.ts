@@ -73,6 +73,7 @@ export interface ChatRequest {
   conversation_id?: number;
   agent_id: number;
   context?: Record<string, any>;
+  websocket_id?: string;
 }
 
 export interface ChatResponse {

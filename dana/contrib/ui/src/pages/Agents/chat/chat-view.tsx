@@ -13,6 +13,9 @@ import ChatBox from './chat-box';
 // Stores
 import { useChatStore } from '@/stores/chat-store';
 
+// Hooks
+import { useVariableUpdates } from '@/hooks/useVariableUpdates';
+
 interface AgentChatViewProps {
   isSidebarCollapsed: boolean;
   agentId?: string;
@@ -27,6 +30,10 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const [files] = useState<any[]>([]);
+  const [currentStep, setCurrentStep] = useState<string>('');
+
+  // Generate unique WebSocket ID for this chat session
+  const [websocketId] = useState(() => `chatview-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
 
   const {
     messages,
@@ -39,6 +46,35 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
     setError,
     clearError,
   } = useChatStore();
+
+  // WebSocket for variable updates
+  const { updates } = useVariableUpdates(websocketId, {
+    maxUpdates: 50,
+    autoConnect: true,
+  });
+
+  // Handle variable updates - show step changes for thinking messages
+  useEffect(() => {
+    if (updates.length > 0) {
+      const latestUpdate = updates[updates.length - 1];
+      // Update current step for thinking message
+      if (latestUpdate.variable === 'step') {
+        const stepValue = latestUpdate.newValue || '';
+
+        if (stepValue) {
+          try {
+            // Parse the stringified object
+            const stepObject = JSON.parse(stepValue.replaceAll("'", '"'));
+            const action = stepObject.action || stepObject.description || stepObject.name || '';
+            setCurrentStep(action);
+          } catch (error) {
+            // If parsing fails, use the raw value
+            setCurrentStep(stepValue);
+          }
+        }
+      }
+    }
+  }, [updates]);
 
   // Set current agent ID when component mounts
   useEffect(() => {
@@ -93,6 +129,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
         data.message,
         parseInt(agentId),
         conversationId ? parseInt(conversationId) : undefined,
+        websocketId
       );
 
       // If this was a new conversation, navigate to the actual conversation URL
@@ -175,7 +212,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
                     ref={chatContainerRef}
                     className="overflow-y-auto items-center pt-2 pb-4 scrollbar-hide fade-in"
                   >
-                    <ChatSession messages={messages} isBotThinking={isSending} />
+                    <ChatSession messages={messages} isBotThinking={isSending} currentStep={currentStep} />
                   </div>
 
                   {/* Fixed chat box at bottom */}

@@ -11,6 +11,7 @@ interface ChatSessionProps {
   botAvatar?: string;
   isMessageFeedback?: boolean;
   className?: string;
+  currentStep?: string;
 }
 
 const ChatSession: React.FC<ChatSessionProps> = ({
@@ -18,7 +19,8 @@ const ChatSession: React.FC<ChatSessionProps> = ({
   isBotThinking,
   botAvatar,
   isMessageFeedback = false,
-  className
+  className,
+  currentStep
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -98,7 +100,7 @@ const ChatSession: React.FC<ChatSessionProps> = ({
                 return <UserMessage key={index} message={messageForComponent} />;
               }
             })}
-            {isBotThinking && <BotThinking avatar={botAvatar} />}
+            {isBotThinking && <BotThinking avatar={botAvatar} currentStep={currentStep} />}
             <div id="bottom-of-chat" />
           </div>
         </div>

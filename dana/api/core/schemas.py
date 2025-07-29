@@ -163,6 +163,7 @@ class ChatRequest(BaseModel):
     conversation_id: int | None = None
     agent_id: int
     context: dict[str, Any] | None = None
+    websocket_id: str | None = None
 
 
 class ChatResponse(BaseModel):
