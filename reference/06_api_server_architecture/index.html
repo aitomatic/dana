@@ -1,0 +1,2323 @@
+
+<!DOCTYPE html>
+
+<html class="no-js" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="Comprehensive documentation for Dana - Domain-Aware NeuroSymbolic Architecture" name="description"/>
+<link href="https://dana.readthedocs.io/reference/06_api_server_architecture/" rel="canonical"/>
+<link href="../../images/aitomatic-favicon.png" rel="icon"/>
+<meta content="mkdocs-1.6.1, mkdocs-material-9.6.15" name="generator"/>
+<title>Design Document: Dana API Server Architecture - Dana - Domain-Aware NeuroSymbolic Architecture</title>
+<link href="../../assets/stylesheets/main.342714a4.min.css" rel="stylesheet"/>
+<link href="../../assets/stylesheets/palette.06af60db.min.css" rel="stylesheet"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&amp;display=fallback" rel="stylesheet"/>
+<style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+<link href="../../assets/_mkdocstrings.css" rel="stylesheet"/>
+<link href="../../stylesheets/extra.css" rel="stylesheet"/>
+<script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+</head>
+<body data-md-color-accent="indigo" data-md-color-primary="indigo" data-md-color-scheme="default" dir="ltr">
+<input autocomplete="off" class="md-toggle" data-md-toggle="drawer" id="__drawer" type="checkbox"/>
+<input autocomplete="off" class="md-toggle" data-md-toggle="search" id="__search" type="checkbox"/>
+<label class="md-overlay" for="__drawer"></label>
+<div data-md-component="skip">
+<a class="md-skip" href="#design-document-dana-api-server-architecture">
+          Skip to content
+        </a>
+</div>
+<div data-md-component="announce">
+</div>
+<header class="md-header" data-md-component="header">
+<nav aria-label="Header" class="md-header__inner md-grid">
+<a aria-label="Dana - Domain-Aware NeuroSymbolic Architecture" class="md-header__button md-logo" data-md-component="logo" href="../.." title="Dana - Domain-Aware NeuroSymbolic Architecture">
+<img alt="logo" src="../../images/aitomatic-logo-white.png"/>
+</a>
+<label class="md-header__button md-icon" for="__drawer">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"></path></svg>
+</label>
+<div class="md-header__title" data-md-component="header-title">
+<div class="md-header__ellipsis">
+<div class="md-header__topic">
+<span class="md-ellipsis">
+            Dana - Domain-Aware NeuroSymbolic Architecture
+          </span>
+</div>
+<div class="md-header__topic" data-md-component="header-topic">
+<span class="md-ellipsis">
+            
+              Design Document: Dana API Server Architecture
+            
+          </span>
+</div>
+</div>
+</div>
+<form class="md-header__option" data-md-component="palette">
+<input aria-label="Switch to dark mode" class="md-option" data-md-color-accent="indigo" data-md-color-media="" data-md-color-primary="indigo" data-md-color-scheme="default" id="__palette_0" name="__palette" type="radio"/>
+<label class="md-header__button md-icon" for="__palette_1" hidden="" title="Switch to dark mode">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"></path></svg>
+</label>
+<input aria-label="Switch to light mode" class="md-option" data-md-color-accent="indigo" data-md-color-media="" data-md-color-primary="indigo" data-md-color-scheme="slate" id="__palette_1" name="__palette" type="radio"/>
+<label class="md-header__button md-icon" for="__palette_0" hidden="" title="Switch to light mode">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"></path></svg>
+</label>
+</form>
+<script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+<label class="md-header__button md-icon" for="__search">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+</label>
+<div class="md-search" data-md-component="search" role="dialog">
+<label class="md-search__overlay" for="__search"></label>
+<div class="md-search__inner" role="search">
+<form class="md-search__form" name="search">
+<input aria-label="Search" autocapitalize="off" autocomplete="off" autocorrect="off" class="md-search__input" data-md-component="search-query" name="query" placeholder="Search" required="" spellcheck="false" type="text"/>
+<label class="md-search__icon md-icon" for="__search">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
+</label>
+<nav aria-label="Search" class="md-search__options">
+<a aria-label="Share" class="md-search__icon md-icon" data-clipboard="" data-clipboard-text="" data-md-component="search-share" href="javascript:void(0)" tabindex="-1" title="Share">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"></path></svg>
+</a>
+<button aria-label="Clear" class="md-search__icon md-icon" tabindex="-1" title="Clear" type="reset">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
+</button>
+</nav>
+</form>
+<div class="md-search__output">
+<div class="md-search__scrollwrap" data-md-scrollfix="" tabindex="0">
+<div class="md-search-result" data-md-component="search-result">
+<div class="md-search-result__meta">
+            Initializing search
+          </div>
+<ol class="md-search-result__list" role="presentation"></ol>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="md-header__source">
+<a class="md-source" data-md-component="source" href="https://github.com/aitomatic/dana" title="Go to repository">
+<div class="md-source__icon md-icon">
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"></path></svg>
+</div>
+<div class="md-source__repository">
+    aitomatic/dana
+  </div>
+</a>
+</div>
+</nav>
+</header>
+<div class="md-container" data-md-component="container">
+<nav aria-label="Tabs" class="md-tabs" data-md-component="tabs">
+<div class="md-grid">
+<ul class="md-tabs__list">
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../..">
+          
+  
+  
+  Home
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../for-engineers/">
+          
+  
+  
+  For Engineers
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../for-evaluators/">
+          
+  
+  
+  For Evaluators
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../for-researchers/">
+          
+  
+  
+  For Researchers
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../for-contributors/">
+          
+  
+  
+  For Contributors
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../for-investors/">
+          
+  
+  
+  For Investors
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../">
+          
+  
+  
+  Design
+
+        </a>
+</li>
+</ul>
+</div>
+</nav>
+<main class="md-main" data-md-component="main">
+<div class="md-main__inner md-grid">
+<div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation">
+<div class="md-sidebar__scrollwrap">
+<div class="md-sidebar__inner">
+<nav aria-label="Navigation" class="md-nav md-nav--primary md-nav--lifted" data-md-level="0">
+<label class="md-nav__title" for="__drawer">
+<a aria-label="Dana - Domain-Aware NeuroSymbolic Architecture" class="md-nav__button md-logo" data-md-component="logo" href="../.." title="Dana - Domain-Aware NeuroSymbolic Architecture">
+<img alt="logo" src="../../images/aitomatic-logo-white.png"/>
+</a>
+    Dana - Domain-Aware NeuroSymbolic Architecture
+  </label>
+<div class="md-nav__source">
+<a class="md-source" data-md-component="source" href="https://github.com/aitomatic/dana" title="Go to repository">
+<div class="md-source__icon md-icon">
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"></path></svg>
+</div>
+<div class="md-source__repository">
+    aitomatic/dana
+  </div>
+</a>
+</div>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_1" type="checkbox"/>
+<label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+<span class="md-ellipsis">
+    Home
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_1_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_1">
+<span class="md-nav__icon md-icon"></span>
+            Home
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../..">
+<span class="md-ellipsis">
+    Overview
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_1_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_1_2" id="__nav_1_2_label" tabindex="0">
+<span class="md-ellipsis">
+    For You
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_1_2_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_1_2">
+<span class="md-nav__icon md-icon"></span>
+            For You
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/">
+<span class="md-ellipsis">
+    Engineers
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-evaluators/">
+<span class="md-ellipsis">
+    Evaluators
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-researchers/">
+<span class="md-ellipsis">
+    Researchers
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-contributors/">
+<span class="md-ellipsis">
+    Contributors
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-investors/">
+<span class="md-ellipsis">
+    Investors
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_1_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_1_3" id="__nav_1_3_label" tabindex="0">
+<span class="md-ellipsis">
+    More
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_1_3_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_1_3">
+<span class="md-nav__icon md-icon"></span>
+            More
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../">
+<span class="md-ellipsis">
+    Design
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../ROADMAP/">
+<span class="md-ellipsis">
+    Roadmap
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+<span class="md-ellipsis">
+    For Engineers
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_2_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_2">
+<span class="md-nav__icon md-icon"></span>
+            For Engineers
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/">
+<span class="md-ellipsis">
+    Engineers
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_2_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+<span class="md-ellipsis">
+    Setup
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_2_2_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_2_2">
+<span class="md-nav__icon md-icon"></span>
+            Setup
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/setup/">
+<span class="md-ellipsis">
+    Overview
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/setup/installation/">
+<span class="md-ellipsis">
+    Installation
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/setup/migration-guide/">
+<span class="md-ellipsis">
+    Migration Guide
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_2_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+<span class="md-ellipsis">
+    Reference
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_2_3_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_2_3">
+<span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/reference/">
+<span class="md-ellipsis">
+    Overview
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/reference/dana-syntax/">
+<span class="md-ellipsis">
+    Dana Syntax
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/reference/repl-guide/">
+<span class="md-ellipsis">
+    REPL Guide
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/reference/poet-usage-guide/">
+<span class="md-ellipsis">
+    POET Usage Guide
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_2_3_5" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2_3_5" id="__nav_2_3_5_label" tabindex="0">
+<span class="md-ellipsis">
+    API Reference
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_2_3_5_label" class="md-nav" data-md-level="3">
+<label class="md-nav__title" for="__nav_2_3_5">
+<span class="md-nav__icon md-icon"></span>
+            API Reference
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/reference/api/">
+<span class="md-ellipsis">
+    Overview
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/reference/api/core-functions/">
+<span class="md-ellipsis">
+    Core Functions
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/reference/api/built-in-functions/">
+<span class="md-ellipsis">
+    Built-in Functions
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/reference/api/function-calling/">
+<span class="md-ellipsis">
+    Function Calling
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/reference/api/type-system/">
+<span class="md-ellipsis">
+    Type System
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/reference/api/scoping/">
+<span class="md-ellipsis">
+    Scoping
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/reference/api/sandbox-security/">
+<span class="md-ellipsis">
+    Sandbox Security
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/reference/api/dana-sandbox/">
+<span class="md-ellipsis">
+    Dana Sandbox
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_2_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+<span class="md-ellipsis">
+    Recipes
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_2_4_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_2_4">
+<span class="md-nav__icon md-icon"></span>
+            Recipes
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/recipes/">
+<span class="md-ellipsis">
+    Overview
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/recipes/first-agent/">
+<span class="md-ellipsis">
+    First Agent
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/recipes/chatbot/">
+<span class="md-ellipsis">
+    Chatbot
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/recipes/document-processor/">
+<span class="md-ellipsis">
+    Document Processor
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/recipes/api-integration/">
+<span class="md-ellipsis">
+    API Integration
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/recipes/mcp-integration/">
+<span class="md-ellipsis">
+    MCP Integration
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/recipes/mcp-integration/">
+<span class="md-ellipsis">
+    MCP Integration
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/recipes/workflow-agent/">
+<span class="md-ellipsis">
+    Workflow Agent
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-engineers/troubleshooting/">
+<span class="md-ellipsis">
+    Troubleshooting
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+<span class="md-ellipsis">
+    For Evaluators
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_3_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_3">
+<span class="md-nav__icon md-icon"></span>
+            For Evaluators
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-evaluators/">
+<span class="md-ellipsis">
+    Evaluators
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_3_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+<span class="md-ellipsis">
+    Comparison
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_3_2_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_3_2">
+<span class="md-nav__icon md-icon"></span>
+            Comparison
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-evaluators/comparison/">
+<span class="md-ellipsis">
+    Overview
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-evaluators/comparison/framework-pain-points/">
+<span class="md-ellipsis">
+    Framework Pain Points
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-evaluators/comparison/technical-overview/">
+<span class="md-ellipsis">
+    Technical Overview
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_3_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
+<span class="md-ellipsis">
+    Adoption Guide
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_3_3_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_3_3">
+<span class="md-nav__icon md-icon"></span>
+            Adoption Guide
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-evaluators/adoption-guide/">
+<span class="md-ellipsis">
+    Overview
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-evaluators/adoption-guide/professional-services/">
+<span class="md-ellipsis">
+    Professional Services
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_3_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_4" id="__nav_3_4_label" tabindex="0">
+<span class="md-ellipsis">
+    Proof of Concept
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_3_4_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_3_4">
+<span class="md-nav__icon md-icon"></span>
+            Proof of Concept
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-evaluators/proof-of-concept/">
+<span class="md-ellipsis">
+    Overview
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-evaluators/proof-of-concept/quick-demo/">
+<span class="md-ellipsis">
+    Quick Demo
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-evaluators/proof-of-concept/evaluation-guide/">
+<span class="md-ellipsis">
+    Evaluation Guide
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_3_5" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="0">
+<span class="md-ellipsis">
+    ROI Analysis
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_3_5_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_3_5">
+<span class="md-nav__icon md-icon"></span>
+            ROI Analysis
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-evaluators/roi-analysis/">
+<span class="md-ellipsis">
+    Overview
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-evaluators/roi-analysis/calculator/">
+<span class="md-ellipsis">
+    Calculator
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+<span class="md-ellipsis">
+    For Researchers
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_4_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_4">
+<span class="md-nav__icon md-icon"></span>
+            For Researchers
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-researchers/">
+<span class="md-ellipsis">
+    Researchers
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_4_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+<span class="md-ellipsis">
+    Manifesto
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_4_2_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_4_2">
+<span class="md-nav__icon md-icon"></span>
+            Manifesto
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-researchers/manifesto/vision/">
+<span class="md-ellipsis">
+    Vision
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-researchers/research/">
+<span class="md-ellipsis">
+    Research
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-researchers/neurosymbolic/">
+<span class="md-ellipsis">
+    NeuroSymbolic
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-researchers/future-work/">
+<span class="md-ellipsis">
+    Future Work
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_5" type="checkbox"/>
+<label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+<span class="md-ellipsis">
+    For Contributors
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_5_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_5">
+<span class="md-nav__icon md-icon"></span>
+            For Contributors
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-contributors/">
+<span class="md-ellipsis">
+    Contributors
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_5_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+<span class="md-ellipsis">
+    Architecture
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_5_2_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_5_2">
+<span class="md-nav__icon md-icon"></span>
+            Architecture
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-contributors/architecture/">
+<span class="md-ellipsis">
+    Overview
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-contributors/architecture/system-design/">
+<span class="md-ellipsis">
+    System Design
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-contributors/codebase/">
+<span class="md-ellipsis">
+    Codebase
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_5_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+<span class="md-ellipsis">
+    Development
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_5_4_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_5_4">
+<span class="md-nav__icon md-icon"></span>
+            Development
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-contributors/development/">
+<span class="md-ellipsis">
+    Overview
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-contributors/development/contribution-guide/">
+<span class="md-ellipsis">
+    Contribution Guide
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_5_5" type="checkbox"/>
+<label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+<span class="md-ellipsis">
+    Extending
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_5_5_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_5_5">
+<span class="md-nav__icon md-icon"></span>
+            Extending
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-contributors/extending/">
+<span class="md-ellipsis">
+    Overview
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-contributors/extending/extension-development/">
+<span class="md-ellipsis">
+    Extension Development
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_6" type="checkbox"/>
+<label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+<span class="md-ellipsis">
+    For Investors
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_6_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_6">
+<span class="md-nav__icon md-icon"></span>
+            For Investors
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../for-investors/">
+<span class="md-ellipsis">
+    Investors
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_7" type="checkbox"/>
+<label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+<span class="md-ellipsis">
+    Design
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_7_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_7">
+<span class="md-nav__icon md-icon"></span>
+            Design
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../">
+<span class="md-ellipsis">
+    Design
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_7_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_7_2" id="__nav_7_2_label" tabindex="0">
+<span class="md-ellipsis">
+    Dana Philosophy
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_7_2_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_7_2">
+<span class="md-nav__icon md-icon"></span>
+            Dana Philosophy
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../00_dana_philosophy/design-principles/">
+<span class="md-ellipsis">
+    Design Principles
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../00_dana_philosophy/manifesto/">
+<span class="md-ellipsis">
+    Manifesto
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_7_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_7_3" id="__nav_7_3_label" tabindex="0">
+<span class="md-ellipsis">
+    Dana Language Specification
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_7_3_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_7_3">
+<span class="md-nav__icon md-icon"></span>
+            Dana Language Specification
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../01_dana_language_specification/overview/">
+<span class="md-ellipsis">
+    Overview
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../01_dana_language_specification/syntax/">
+<span class="md-ellipsis">
+    Syntax
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../01_dana_language_specification/grammar/">
+<span class="md-ellipsis">
+    Grammar
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../01_dana_language_specification/data_types_and_structs/">
+<span class="md-ellipsis">
+    Data Types and Structs
+    
+  </span>
+<span class="md-status md-status--Design Phase"></span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../01_dana_language_specification/functions_and_polymorphism/">
+<span class="md-ellipsis">
+    Functions and Polymorphism
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../01_dana_language_specification/state_and_scopes/">
+<span class="md-ellipsis">
+    State and Scopes
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../01_dana_language_specification/error_handling/">
+<span class="md-ellipsis">
+    Error Handling
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_7_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_7_4" id="__nav_7_4_label" tabindex="0">
+<span class="md-ellipsis">
+    Dana Runtime and Execution
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_7_4_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_7_4">
+<span class="md-nav__icon md-icon"></span>
+            Dana Runtime and Execution
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../02_dana_runtime_and_execution/execution_model/">
+<span class="md-ellipsis">
+    Execution Model
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../02_dana_runtime_and_execution/interpreter/">
+<span class="md-ellipsis">
+    Interpreter
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../02_dana_runtime_and_execution/sandbox/">
+<span class="md-ellipsis">
+    Sandbox
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../02_dana_runtime_and_execution/repl/">
+<span class="md-ellipsis">
+    REPL
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../02_dana_runtime_and_execution/code_context_analyzer/">
+<span class="md-ellipsis">
+    Code Context Analyzer
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../02_dana_runtime_and_execution/poet_functions/">
+<span class="md-ellipsis">
+    POET Functions
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../02_dana_runtime_and_execution/type_system_and_casting/">
+<span class="md-ellipsis">
+    Type System and Casting
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../02_dana_runtime_and_execution/concurrency_model/">
+<span class="md-ellipsis">
+    Concurrency Model
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../02_dana_runtime_and_execution/external_interfaces/">
+<span class="md-ellipsis">
+    External Interfaces
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../02_dana_runtime_and_execution/python_integration/">
+<span class="md-ellipsis">
+    Python Integration
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../02_dana_runtime_and_execution/security_considerations/">
+<span class="md-ellipsis">
+    Security Considerations
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../02_dana_runtime_and_execution/debugging_profiling/">
+<span class="md-ellipsis">
+    Debugging and Profiling
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_7_5" type="checkbox"/>
+<label class="md-nav__link" for="__nav_7_5" id="__nav_7_5_label" tabindex="0">
+<span class="md-ellipsis">
+    Core Capabilities and Resources
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_7_5_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_7_5">
+<span class="md-nav__icon md-icon"></span>
+            Core Capabilities and Resources
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../03_core_capabilities_resources/">
+<span class="md-ellipsis">
+    Overview
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../03_core_capabilities_resources/capabilities_overview/">
+<span class="md-ellipsis">
+    Capabilities Overview
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../03_core_capabilities_resources/resource_model/">
+<span class="md-ellipsis">
+    Resource Model
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../03_core_capabilities_resources/system_resources/">
+<span class="md-ellipsis">
+    System Resources
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../03_core_capabilities_resources/user_defined_resources/">
+<span class="md-ellipsis">
+    User-defined Resources
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../03_core_capabilities_resources/capability_invocation/">
+<span class="md-ellipsis">
+    Capability Invocation
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_7_6" type="checkbox"/>
+<label class="md-nav__link" for="__nav_7_6" id="__nav_7_6_label" tabindex="0">
+<span class="md-ellipsis">
+    Agent and Orchestration
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_7_6_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_7_6">
+<span class="md-nav__icon md-icon"></span>
+            Agent and Orchestration
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../04_agent_and_orchestration/">
+<span class="md-ellipsis">
+    Overview
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../04_agent_and_orchestration/agent_model/">
+<span class="md-ellipsis">
+    Agent Model
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../04_agent_and_orchestration/task_orchestration/">
+<span class="md-ellipsis">
+    Task Orchestration
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../04_agent_and_orchestration/workflow_patterns/">
+<span class="md-ellipsis">
+    Workflow Patterns
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../04_agent_and_orchestration/inter_agent_communication/">
+<span class="md-ellipsis">
+    Inter-Agent Communication
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../04_agent_and_orchestration/human_in_the_loop/">
+<span class="md-ellipsis">
+    Human-in-the-Loop
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_7_7" type="checkbox"/>
+<label class="md-nav__link" for="__nav_7_7" id="__nav_7_7_label" tabindex="0">
+<span class="md-ellipsis">
+    Tooling and Developer Experience
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_7_7_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_7_7">
+<span class="md-nav__icon md-icon"></span>
+            Tooling and Developer Experience
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../05_tooling_and_dev_experience/">
+<span class="md-ellipsis">
+    Overview
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../05_tooling_and_dev_experience/ide_integration_vscode/">
+<span class="md-ellipsis">
+    IDE Integration (VSCode)
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../05_tooling_and_dev_experience/repl_enhancements/">
+<span class="md-ellipsis">
+    REPL Enhancements
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../05_tooling_and_dev_experience/debugging_tools/">
+<span class="md-ellipsis">
+    Debugging Tools
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../05_tooling_and_dev_experience/testing_framework/">
+<span class="md-ellipsis">
+    Testing Framework
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../05_tooling_and_dev_experience/documentation_generation/">
+<span class="md-ellipsis">
+    Documentation Generation
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../05_tooling_and_dev_experience/packaging_distribution/">
+<span class="md-ellipsis">
+    Packaging and Distribution
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+<div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc">
+<div class="md-sidebar__scrollwrap">
+<div class="md-sidebar__inner">
+<nav aria-label="Table of contents" class="md-nav md-nav--secondary">
+<label class="md-nav__title" for="__toc">
+<span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#problem-statement">
+<span class="md-ellipsis">
+      Problem Statement
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#goals">
+<span class="md-ellipsis">
+      Goals
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#non-goals">
+<span class="md-ellipsis">
+      Non-Goals
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#proposed-solution">
+<span class="md-ellipsis">
+      Proposed Solution
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#proposed-design">
+<span class="md-ellipsis">
+      Proposed Design
+    </span>
+</a>
+<nav aria-label="Proposed Design" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#system-architecture-diagram">
+<span class="md-ellipsis">
+      System Architecture Diagram
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#component-details">
+<span class="md-ellipsis">
+      Component Details
+    </span>
+</a>
+<nav aria-label="Component Details" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#1-fastapi-application-serverpy">
+<span class="md-ellipsis">
+      1. FastAPI Application (server.py)
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#2-router-architecture-routers">
+<span class="md-ellipsis">
+      2. Router Architecture (routers/)
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#3-service-layer-servicespy">
+<span class="md-ellipsis">
+      3. Service Layer (services.py)
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#4-data-models-modelspy-schemaspy">
+<span class="md-ellipsis">
+      4. Data Models (models.py, schemas.py)
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#5-database-layer-dbpy">
+<span class="md-ellipsis">
+      5. Database Layer (db.py)
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#6-file-storage-system">
+<span class="md-ellipsis">
+      6. File Storage System
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#7-chat-system">
+<span class="md-ellipsis">
+      7. Chat System
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#data-flow-diagram">
+<span class="md-ellipsis">
+      Data Flow Diagram
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+<div class="md-content" data-md-component="content">
+<article class="md-content__inner md-typeset">
+<h1 id="design-document-dana-api-server-architecture">Design Document: Dana API Server Architecture<a class="headerlink" href="#design-document-dana-api-server-architecture" title="Permanent link">¶</a></h1>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a>Author: OpenDXA Team
+</span><span id="__span-0-2"><a href="#__codelineno-0-2" id="__codelineno-0-2" name="__codelineno-0-2"></a>Version: 2.0
+</span><span id="__span-0-3"><a href="#__codelineno-0-3" id="__codelineno-0-3" name="__codelineno-0-3"></a>Date: 2025-01-27
+</span><span id="__span-0-4"><a href="#__codelineno-0-4" id="__codelineno-0-4" name="__codelineno-0-4"></a>Status: Implementation Phase
+</span></code></pre></div>
+<h2 id="problem-statement">Problem Statement<a class="headerlink" href="#problem-statement" title="Permanent link">¶</a></h2>
+<p><strong>Brief Description</strong>: Need for a local API server to support Dana agent management, document management, conversation/message management, and provide a foundation for web-based interfaces.</p>
+<p>The Dana framework currently lacks a standardized way to manage agents, documents, and conversations/messages programmatically and provide web-based interfaces. Users need:
+- A local API server for agent CRUD operations
+- Document upload and management capabilities
+- Conversation and message management (for chat, logs, or agent interaction history)
+- Topic organization for document categorization
+- RESTful endpoints for agent, document, conversation, and message management
+- Support for serving web applications (React frontend)
+- Local SQLite database for persistence
+- Comprehensive testing infrastructure</p>
+<h2 id="goals">Goals<a class="headerlink" href="#goals" title="Permanent link">¶</a></h2>
+<p><strong>Brief Description</strong>: Create a modern, testable API server for Dana agent, document, and conversation/message management with web interface support.</p>
+<ul>
+<li><strong>Agent Management</strong>: Full CRUD operations for agents with flexible configuration storage</li>
+<li><strong>Document Management</strong>: Upload, organize, and manage documents with topic categorization</li>
+<li><strong>Conversation Management</strong>: Create, update, and manage conversations (chat sessions, logs, etc.)</li>
+<li><strong>Message Management</strong>: CRUD for messages within conversations</li>
+<li><strong>Topic Management</strong>: Create and manage topics for document organization</li>
+<li><strong>File Storage</strong>: Local file system storage with metadata management</li>
+<li><strong>Local Development</strong>: SQLite-based local database for development and testing</li>
+<li><strong>Web Interface Support</strong>: Serve static files and support React frontend development</li>
+<li><strong>Modern Architecture</strong>: FastAPI with Pydantic validation and SQLAlchemy ORM</li>
+<li><strong>Comprehensive Testing</strong>: Full test coverage with proper database isolation</li>
+<li><strong>Extensible Design</strong>: Modular architecture for future API endpoints</li>
+<li><strong>Production Ready</strong>: Proper error handling, validation, and security considerations</li>
+</ul>
+<h2 id="non-goals">Non-Goals<a class="headerlink" href="#non-goals" title="Permanent link">¶</a></h2>
+<p><strong>Brief Description</strong>: Explicitly define what's out of scope for this implementation.</p>
+<ul>
+<li><strong>Authentication/Authorization</strong>: Will be added in future iterations</li>
+<li><strong>Multi-tenant Support</strong>: Single-user local server only</li>
+<li><strong>Real-time Features</strong>: No WebSocket or real-time communication</li>
+<li><strong>External Integrations</strong>: No third-party service integrations beyond basic LLM configs</li>
+<li><strong>Advanced Querying</strong>: Basic CRUD operations only, no complex filtering/searching</li>
+<li><strong>Database Migrations</strong>: Simple table creation, no migration system</li>
+<li><strong>File Versioning</strong>: No version control for documents</li>
+<li><strong>Advanced Search</strong>: Basic metadata search only, no full-text search</li>
+<li><strong>File Compression</strong>: No automatic compression or optimization</li>
+<li><strong>Cloud Storage</strong>: Local file system only</li>
+<li><strong>File Sharing</strong>: No sharing or collaboration features</li>
+<li><strong>Document Editing</strong>: Upload/download only, no in-place editing</li>
+</ul>
+<h2 id="proposed-solution">Proposed Solution<a class="headerlink" href="#proposed-solution" title="Permanent link">¶</a></h2>
+<p><strong>Brief Description</strong>: FastAPI-based REST server with SQLAlchemy ORM, Pydantic validation, modular router architecture, two-tier file storage, and agent chat capabilities.</p>
+<p>The solution uses modern Python web development patterns:
+- <strong>FastAPI</strong> for high-performance async API framework
+- <strong>SQLAlchemy</strong> with SQLite for local data persistence
+- <strong>Pydantic v2</strong> for request/response validation and serialization
+- <strong>Modular Router Architecture</strong> for clean separation of concerns
+- <strong>Two-tier Storage</strong>: SQLite for metadata, local file system for files
+- <strong>Agent Chat System</strong>: Real-time agent interactions with conversation management
+- <strong>Comprehensive Testing</strong> with pytest and database fixtures</p>
+<p><strong>KISS/YAGNI Analysis</strong>: 
+- <strong>Simple</strong>: Single database, basic CRUD operations, local-only deployment, straightforward file storage, direct agent chat
+- <strong>Justified Complexity</strong>: Pydantic validation, proper error handling, test infrastructure, file validation, conversation management
+- <strong>Future-Ready</strong>: Modular design allows easy extension without refactoring, chat system extensible for real-time features</p>
+<h2 id="proposed-design">Proposed Design<a class="headerlink" href="#proposed-design" title="Permanent link">¶</a></h2>
+<p><strong>Brief Description</strong>: Layered architecture with clear separation between API, business logic, data access, persistence, and file storage.</p>
+<h3 id="system-architecture-diagram">System Architecture Diagram<a class="headerlink" href="#system-architecture-diagram" title="Permanent link">¶</a></h3>
+<pre class="mermaid"><code>graph TB
+    subgraph "Client Layer"
+        Web[Web Browser]
+        CLI[CLI Tools]
+        API[API Clients]
+    end
+
+    subgraph "API Layer"
+        FastAPI[FastAPI App]
+        MainRouter[Main Router&lt;br/&gt;/health, /]
+        AgentRouter[Agent Router&lt;br/&gt;/agents/*]
+        TopicRouter[Topic Router&lt;br/&gt;/topics/*]
+        DocRouter[Document Router&lt;br/&gt;/documents/*]
+        ChatRouter[Chat Router&lt;br/&gt;/chat/*]
+        StaticFiles[Static Files&lt;br/&gt;/static/*]
+    end
+
+    subgraph "Service Layer"
+        AgentService[Agent Service&lt;br/&gt;CRUD Operations]
+        TopicService[Topic Service&lt;br/&gt;Topic Management]
+        DocService[Document Service&lt;br/&gt;Document Management]
+        FileService[File Storage Service&lt;br/&gt;File Operations]
+        ChatService[Chat Service&lt;br/&gt;Agent Interactions]
+    end
+
+    subgraph "Data Layer"
+        Pydantic[Pydantic Schemas&lt;br/&gt;Validation]
+        SQLAlchemy[SQLAlchemy ORM&lt;br/&gt;Models]
+        SQLite[(SQLite Database&lt;br/&gt;local.db)]
+    end
+
+    subgraph "Storage Layer"
+        FileSystem[Local File System&lt;br/&gt;/uploads/]
+    end
+
+    Web --&gt; FastAPI
+    CLI --&gt; FastAPI
+    API --&gt; FastAPI
+
+    FastAPI --&gt; MainRouter
+    FastAPI --&gt; AgentRouter
+    FastAPI --&gt; TopicRouter
+    FastAPI --&gt; DocRouter
+    FastAPI --&gt; StaticFiles
+
+    MainRouter --&gt; AgentService
+    AgentRouter --&gt; AgentService
+    TopicRouter --&gt; TopicService
+    DocRouter --&gt; DocService
+    DocRouter --&gt; FileService
+    ChatRouter --&gt; ChatService
+
+    AgentService --&gt; Pydantic
+    AgentService --&gt; SQLAlchemy
+    TopicService --&gt; Pydantic
+    TopicService --&gt; SQLAlchemy
+    DocService --&gt; Pydantic
+    DocService --&gt; SQLAlchemy
+    ChatService --&gt; Pydantic
+    ChatService --&gt; SQLAlchemy
+    FileService --&gt; FileSystem
+
+    SQLAlchemy --&gt; SQLite</code></pre>
+<h3 id="component-details">Component Details<a class="headerlink" href="#component-details" title="Permanent link">¶</a></h3>
+<h4 id="1-fastapi-application-serverpy">1. FastAPI Application (<code>server.py</code>)<a class="headerlink" href="#1-fastapi-application-serverpy" title="Permanent link">¶</a></h4>
+<p><strong>Purpose</strong>: Main application factory and configuration
+- <strong>Why</strong>: Centralizes app creation, middleware setup, and router registration
+- <strong>System Fit</strong>: Entry point that orchestrates all components
+- <strong>Key Decisions</strong>: 
+  - Use factory pattern for testability
+  - CORS middleware for web interface support
+  - Startup event for database table creation
+- <strong>Alternatives</strong>: Direct app creation (less testable), Flask (slower, less modern)</p>
+<h4 id="2-router-architecture-routers">2. Router Architecture (<code>routers/</code>)<a class="headerlink" href="#2-router-architecture-routers" title="Permanent link">¶</a></h4>
+<p><strong>Purpose</strong>: Organized API endpoint definitions
+- <strong>Why</strong>: Separates concerns and enables modular API development
+- <strong>System Fit</strong>: Clean interface between HTTP layer and business logic
+- <strong>Key Decisions</strong>:
+  - <code>main.py</code>: Health checks and static file serving
+  - <code>api.py</code>: Agent-specific endpoints with proper prefixing
+  - <code>topics.py</code>: Topic management endpoints
+  - <code>documents.py</code>: Document upload/download and management endpoints
+  - <code>chat.py</code>: Chat interactions with agents
+  - Dependency injection for database sessions
+- <strong>Alternatives</strong>: Single router file (harder to maintain), Blueprint pattern (Flask-specific)</p>
+<h4 id="3-service-layer-servicespy">3. Service Layer (<code>services.py</code>)<a class="headerlink" href="#3-service-layer-servicespy" title="Permanent link">¶</a></h4>
+<p><strong>Purpose</strong>: Business logic and data operations
+- <strong>Why</strong>: Separates business logic from HTTP concerns
+- <strong>System Fit</strong>: Bridge between API layer and data layer
+- <strong>Key Decisions</strong>:
+  - Pure functions for testability
+  - SQLAlchemy session dependency injection
+  - Clear separation of concerns
+  - File storage service for document operations
+  - Chat service for agent interactions and conversation management
+- <strong>Alternatives</strong>: Direct database operations in routers (tight coupling)</p>
+<h4 id="4-data-models-modelspy-schemaspy">4. Data Models (<code>models.py</code>, <code>schemas.py</code>)<a class="headerlink" href="#4-data-models-modelspy-schemaspy" title="Permanent link">¶</a></h4>
+<p><strong>Purpose</strong>: Database models and API validation
+- <strong>Why</strong>: Type safety, validation, and clear data contracts
+- <strong>System Fit</strong>: Ensures data integrity across all layers
+- <strong>Key Decisions</strong>:
+  - SQLAlchemy models for database structure
+  - Pydantic schemas for API validation
+  - Auto-incrementing integer IDs for simplicity
+  - JSON field for flexible agent configuration
+  - Foreign key relationships for document associations
+- <strong>Alternatives</strong>: UUIDs (more complex), separate validation (duplication)</p>
+<h4 id="5-database-layer-dbpy">5. Database Layer (<code>db.py</code>)<a class="headerlink" href="#5-database-layer-dbpy" title="Permanent link">¶</a></h4>
+<p><strong>Purpose</strong>: Database connection and session management
+- <strong>Why</strong>: Centralized database configuration and session handling
+- <strong>System Fit</strong>: Provides consistent database access patterns
+- <strong>Key Decisions</strong>:
+  - SQLite for local development simplicity
+  - Session factory pattern for dependency injection
+  - Proper connection cleanup
+- <strong>Alternatives</strong>: PostgreSQL (overkill for local), direct connections (no session management)</p>
+<h4 id="6-file-storage-system">6. File Storage System<a class="headerlink" href="#6-file-storage-system" title="Permanent link">¶</a></h4>
+<p><strong>Purpose</strong>: Local file storage with metadata management
+- <strong>Why</strong>: Two-tier storage for efficient document management
+- <strong>System Fit</strong>: Separates metadata from file content
+- <strong>Key Decisions</strong>:
+  - UUID-based filenames for uniqueness
+  - Date-based directory structure for organization
+  - File validation and size limits
+  - Relative path storage in database
+- <strong>Alternatives</strong>: Cloud storage (complexity), direct file paths (security issues)</p>
+<h4 id="7-chat-system">7. Chat System<a class="headerlink" href="#7-chat-system" title="Permanent link">¶</a></h4>
+<p><strong>Purpose</strong>: Agent interaction and conversation management
+- <strong>Why</strong>: Enables real-time communication with agents and maintains conversation history
+- <strong>System Fit</strong>: Integrates agent execution with conversation and message management
+- <strong>Key Decisions</strong>:
+  - Single endpoint for chat interactions (<code>POST /api/chat/</code>)
+  - Automatic conversation creation for new chats
+  - Support for existing conversation continuation
+  - Context-aware agent execution with Dana framework integration
+  - Structured request/response with error handling
+- <strong>Alternatives</strong>: Multiple endpoints (complexity), WebSocket-only (overkill for current needs)</p>
+<h3 id="data-flow-diagram">Data Flow Diagram<a class="headerlink" href="#data-flow-diagram" title="Permanent link">¶</a></h3>
+<p><pre class="mermaid"><code>sequenceDiagram
+    participant Client
+    participant FastAPI
+    participant Router
+    participant Service
+    participant Schema
+    participant Model
+    participant Database
+    participant FileSystem
+
+    Note over Client,FileSystem: Document Upload Flow
+    Client-&gt;&gt;FastAPI: POST /documents/upload
+    FastAPI-&gt;&gt;Router: Route to upload_document
+    Router-&gt;&gt;Service: validate_file(file)
+    Service--&gt;&gt;Router: Validation result
+    Router-&gt;&gt;Service: save_file(file)
+    Service-&gt;&gt;FileSystem: Store file with UUID name
+    FileSystem--&gt;&gt;Service: File path
+    Service--&gt;&gt;Router: File metadata
+    Router-&gt;&gt;Service: create_document(metadata)
+    Service-&gt;&gt;Model: Create Document instance
+    Service-&gt;&gt;Database: db.add(document)
+    Service-&gt;&gt;Database: db.commit()
+    Service--&gt;&gt;Router: Document instance
+    Router-&gt;&gt;Schema: Convert to DocumentRead
+    Schema--&gt;&gt;Router: Serialized response
+    Router--&gt;&gt;FastAPI: JSON response
+    FastAPI--&gt;&gt;Client: 201 Created + Document data
+
+    Note over Client,FileSystem: Chat Flow
+    Client-&gt;&gt;FastAPI: POST /api/chat/
+    FastAPI-&gt;&gt;Router: Route to chat_with_agent
+    Router-&gt;&gt;Service: Validate agent exists
+    Service--&gt;&gt;Router: Agent validation result
+    Router-&gt;&gt;Service: chat_with_agent(request)
+    Service-&gt;&gt;Service: Create/get conversation
+    Service-&gt;&gt;Service: Execute agent with Dana framework
+    Service-&gt;&gt;Model: Create user message
+    Service-&gt;&gt;Model: Create agent response message
+    Service-&gt;&gt;Database: db.add(message)
+    Service-&gt;&gt;Database: db.commit()
+    Service--&gt;&gt;Router: Chat response data
+    Router-&gt;&gt;Schema: Convert to ChatResponse
+    Schema--&gt;&gt;Router: Serialized response
+    Router--&gt;&gt;FastAPI: JSON response
+    FastAPI--&gt;&gt;Client: 200 OK + Chat response
+
+## Proposed Implementation
+**Brief Description**: Modular implementation with comprehensive testing, modern Python patterns, and file handling capabilities.
+
+### Technical Specifications
+
+#### File Structure</code></pre>
+dana/api/server/
+├── <strong>init</strong>.py
+├── <strong>main</strong>.py          # CLI entry point
+├── server.py            # FastAPI app factory
+├── db.py                # Database configuration
+├── models.py            # SQLAlchemy models
+├── schemas.py           # Pydantic schemas
+├── services.py          # Business logic
+├── routers/
+│   ├── <strong>init</strong>.py
+│   ├── main.py          # Health, static files
+│   ├── api.py           # Agent endpoints
+│   ├── topics.py        # Topic endpoints
+│   └── documents.py     # Document endpoints
+├── static/              # Web app files
+└── uploads/             # File storage directory
+    └── 2025/
+        └── 01/
+            └── 27/
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a href="#__codelineno-1-1" id="__codelineno-1-1" name="__codelineno-1-1"></a>#### Key Technologies
+</span><span id="__span-1-2"><a href="#__codelineno-1-2" id="__codelineno-1-2" name="__codelineno-1-2"></a>- **FastAPI 0.104+**: Modern async web framework
+</span><span id="__span-1-3"><a href="#__codelineno-1-3" id="__codelineno-1-3" name="__codelineno-1-3"></a>- **SQLAlchemy 2.0+**: Modern ORM with async support
+</span><span id="__span-1-4"><a href="#__codelineno-1-4" id="__codelineno-1-4" name="__codelineno-1-4"></a>- **Pydantic 2.0+**: Data validation and serialization
+</span><span id="__span-1-5"><a href="#__codelineno-1-5" id="__codelineno-1-5" name="__codelineno-1-5"></a>- **SQLite**: Local database for development
+</span><span id="__span-1-6"><a href="#__codelineno-1-6" id="__codelineno-1-6" name="__codelineno-1-6"></a>- **pytest**: Comprehensive testing framework
+</span><span id="__span-1-7"><a href="#__codelineno-1-7" id="__codelineno-1-7" name="__codelineno-1-7"></a>
+</span><span id="__span-1-8"><a href="#__codelineno-1-8" id="__codelineno-1-8" name="__codelineno-1-8"></a>#### API Endpoints
+</span></code></pre></div>
+GET    /health           # Health check
+GET    /                 # Serve React app
+GET    /static/*         # Static files</p>
+<h1 id="agent-management">Agent Management<a class="headerlink" href="#agent-management" title="Permanent link">¶</a></h1>
+<p>GET    /agents/          # List agents (with pagination)
+GET    /agents/{id}      # Get specific agent
+POST   /agents/          # Create new agent
+PUT    /agents/{id}      # Update agent
+DELETE /agents/{id}      # Delete agent</p>
+<h1 id="topic-management">Topic Management<a class="headerlink" href="#topic-management" title="Permanent link">¶</a></h1>
+<p>GET    /topics/          # List topics
+GET    /topics/{id}      # Get specific topic
+POST   /topics/          # Create new topic
+PUT    /topics/{id}      # Update topic
+DELETE /topics/{id}      # Delete topic</p>
+<h1 id="document-management">Document Management<a class="headerlink" href="#document-management" title="Permanent link">¶</a></h1>
+<p>GET    /documents/       # List documents (with optional topic filter)
+GET    /documents/{id}   # Get document metadata
+POST   /documents/upload # Upload new document
+GET    /documents/{id}/download # Download document file
+PUT    /documents/{id}   # Update document metadata
+DELETE /documents/{id}   # Delete document and file</p>
+<h1 id="conversation-management">Conversation Management<a class="headerlink" href="#conversation-management" title="Permanent link">¶</a></h1>
+<p>GET    /conversations/           # List conversations
+GET    /conversations/{id}       # Get specific conversation
+POST   /conversations/           # Create new conversation
+PUT    /conversations/{id}       # Update conversation
+DELETE /conversations/{id}       # Delete conversation</p>
+<h1 id="message-management">Message Management<a class="headerlink" href="#message-management" title="Permanent link">¶</a></h1>
+<p>GET    /conversations/{conversation_id}/messages/         # List messages in a conversation
+GET    /conversations/{conversation_id}/messages/{id}     # Get specific message
+POST   /conversations/{conversation_id}/messages/         # Create new message
+PUT    /conversations/{conversation_id}/messages/{id}     # Update message
+DELETE /conversations/{conversation_id}/messages/{id}     # Delete message</p>
+<h1 id="chat-management">Chat Management<a class="headerlink" href="#chat-management" title="Permanent link">¶</a></h1>
+<p>POST   /chat/                                             # Chat with an agent
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a href="#__codelineno-2-1" id="__codelineno-2-1" name="__codelineno-2-1"></a>#### Data Models
+</span><span id="__span-2-2"><a href="#__codelineno-2-2" id="__codelineno-2-2" name="__codelineno-2-2"></a>```python
+</span><span id="__span-2-3"><a href="#__codelineno-2-3" id="__codelineno-2-3" name="__codelineno-2-3"></a># Agent Model
+</span><span id="__span-2-4"><a href="#__codelineno-2-4" id="__codelineno-2-4" name="__codelineno-2-4"></a>class Agent(Base):
+</span><span id="__span-2-5"><a href="#__codelineno-2-5" id="__codelineno-2-5" name="__codelineno-2-5"></a>    id: int (auto-increment)
+</span><span id="__span-2-6"><a href="#__codelineno-2-6" id="__codelineno-2-6" name="__codelineno-2-6"></a>    name: str (indexed)
+</span><span id="__span-2-7"><a href="#__codelineno-2-7" id="__codelineno-2-7" name="__codelineno-2-7"></a>    description: str
+</span><span id="__span-2-8"><a href="#__codelineno-2-8" id="__codelineno-2-8" name="__codelineno-2-8"></a>    config: JSON (flexible configuration)
+</span><span id="__span-2-9"><a href="#__codelineno-2-9" id="__codelineno-2-9" name="__codelineno-2-9"></a>    documents: relationship to Document
+</span><span id="__span-2-10"><a href="#__codelineno-2-10" id="__codelineno-2-10" name="__codelineno-2-10"></a>
+</span><span id="__span-2-11"><a href="#__codelineno-2-11" id="__codelineno-2-11" name="__codelineno-2-11"></a># Topic Model
+</span><span id="__span-2-12"><a href="#__codelineno-2-12" id="__codelineno-2-12" name="__codelineno-2-12"></a>class Topic(Base):
+</span><span id="__span-2-13"><a href="#__codelineno-2-13" id="__codelineno-2-13" name="__codelineno-2-13"></a>    id: int (auto-increment)
+</span><span id="__span-2-14"><a href="#__codelineno-2-14" id="__codelineno-2-14" name="__codelineno-2-14"></a>    name: str (unique, indexed)
+</span><span id="__span-2-15"><a href="#__codelineno-2-15" id="__codelineno-2-15" name="__codelineno-2-15"></a>    description: str
+</span><span id="__span-2-16"><a href="#__codelineno-2-16" id="__codelineno-2-16" name="__codelineno-2-16"></a>    created_at: datetime
+</span><span id="__span-2-17"><a href="#__codelineno-2-17" id="__codelineno-2-17" name="__codelineno-2-17"></a>    updated_at: datetime
+</span><span id="__span-2-18"><a href="#__codelineno-2-18" id="__codelineno-2-18" name="__codelineno-2-18"></a>    documents: relationship to Document
+</span><span id="__span-2-19"><a href="#__codelineno-2-19" id="__codelineno-2-19" name="__codelineno-2-19"></a>
+</span><span id="__span-2-20"><a href="#__codelineno-2-20" id="__codelineno-2-20" name="__codelineno-2-20"></a># Document Model
+</span><span id="__span-2-21"><a href="#__codelineno-2-21" id="__codelineno-2-21" name="__codelineno-2-21"></a>class Document(Base):
+</span><span id="__span-2-22"><a href="#__codelineno-2-22" id="__codelineno-2-22" name="__codelineno-2-22"></a>    id: int (auto-increment)
+</span><span id="__span-2-23"><a href="#__codelineno-2-23" id="__codelineno-2-23" name="__codelineno-2-23"></a>    filename: str (indexed, UUID)
+</span><span id="__span-2-24"><a href="#__codelineno-2-24" id="__codelineno-2-24" name="__codelineno-2-24"></a>    original_filename: str
+</span><span id="__span-2-25"><a href="#__codelineno-2-25" id="__codelineno-2-25" name="__codelineno-2-25"></a>    file_path: str (relative path)
+</span><span id="__span-2-26"><a href="#__codelineno-2-26" id="__codelineno-2-26" name="__codelineno-2-26"></a>    file_size: int
+</span><span id="__span-2-27"><a href="#__codelineno-2-27" id="__codelineno-2-27" name="__codelineno-2-27"></a>    mime_type: str
+</span><span id="__span-2-28"><a href="#__codelineno-2-28" id="__codelineno-2-28" name="__codelineno-2-28"></a>    topic_id: int (foreign key, optional)
+</span><span id="__span-2-29"><a href="#__codelineno-2-29" id="__codelineno-2-29" name="__codelineno-2-29"></a>    agent_id: int (foreign key, optional)
+</span><span id="__span-2-30"><a href="#__codelineno-2-30" id="__codelineno-2-30" name="__codelineno-2-30"></a>    created_at: datetime
+</span><span id="__span-2-31"><a href="#__codelineno-2-31" id="__codelineno-2-31" name="__codelineno-2-31"></a>    updated_at: datetime
+</span><span id="__span-2-32"><a href="#__codelineno-2-32" id="__codelineno-2-32" name="__codelineno-2-32"></a>    topic: relationship to Topic
+</span><span id="__span-2-33"><a href="#__codelineno-2-33" id="__codelineno-2-33" name="__codelineno-2-33"></a>    agent: relationship to Agent
+</span><span id="__span-2-34"><a href="#__codelineno-2-34" id="__codelineno-2-34" name="__codelineno-2-34"></a>
+</span><span id="__span-2-35"><a href="#__codelineno-2-35" id="__codelineno-2-35" name="__codelineno-2-35"></a># Conversation Model
+</span><span id="__span-2-36"><a href="#__codelineno-2-36" id="__codelineno-2-36" name="__codelineno-2-36"></a>class Conversation(Base):
+</span><span id="__span-2-37"><a href="#__codelineno-2-37" id="__codelineno-2-37" name="__codelineno-2-37"></a>    id: int (auto-increment)
+</span><span id="__span-2-38"><a href="#__codelineno-2-38" id="__codelineno-2-38" name="__codelineno-2-38"></a>    title: str
+</span><span id="__span-2-39"><a href="#__codelineno-2-39" id="__codelineno-2-39" name="__codelineno-2-39"></a>    created_at: datetime
+</span><span id="__span-2-40"><a href="#__codelineno-2-40" id="__codelineno-2-40" name="__codelineno-2-40"></a>    updated_at: datetime
+</span><span id="__span-2-41"><a href="#__codelineno-2-41" id="__codelineno-2-41" name="__codelineno-2-41"></a>    messages: relationship to Message
+</span><span id="__span-2-42"><a href="#__codelineno-2-42" id="__codelineno-2-42" name="__codelineno-2-42"></a>
+</span><span id="__span-2-43"><a href="#__codelineno-2-43" id="__codelineno-2-43" name="__codelineno-2-43"></a># Message Model
+</span><span id="__span-2-44"><a href="#__codelineno-2-44" id="__codelineno-2-44" name="__codelineno-2-44"></a>class Message(Base):
+</span><span id="__span-2-45"><a href="#__codelineno-2-45" id="__codelineno-2-45" name="__codelineno-2-45"></a>    id: int (auto-increment)
+</span><span id="__span-2-46"><a href="#__codelineno-2-46" id="__codelineno-2-46" name="__codelineno-2-46"></a>    conversation_id: int (foreign key)
+</span><span id="__span-2-47"><a href="#__codelineno-2-47" id="__codelineno-2-47" name="__codelineno-2-47"></a>    sender: str
+</span><span id="__span-2-48"><a href="#__codelineno-2-48" id="__codelineno-2-48" name="__codelineno-2-48"></a>    content: str
+</span><span id="__span-2-49"><a href="#__codelineno-2-49" id="__codelineno-2-49" name="__codelineno-2-49"></a>    created_at: datetime
+</span><span id="__span-2-50"><a href="#__codelineno-2-50" id="__codelineno-2-50" name="__codelineno-2-50"></a>    updated_at: datetime
+</span><span id="__span-2-51"><a href="#__codelineno-2-51" id="__codelineno-2-51" name="__codelineno-2-51"></a>    conversation: relationship to Conversation
+</span><span id="__span-2-52"><a href="#__codelineno-2-52" id="__codelineno-2-52" name="__codelineno-2-52"></a>
+</span><span id="__span-2-53"><a href="#__codelineno-2-53" id="__codelineno-2-53" name="__codelineno-2-53"></a># API Schemas
+</span><span id="__span-2-54"><a href="#__codelineno-2-54" id="__codelineno-2-54" name="__codelineno-2-54"></a>AgentBase: name, description, config
+</span><span id="__span-2-55"><a href="#__codelineno-2-55" id="__codelineno-2-55" name="__codelineno-2-55"></a>AgentCreate: extends AgentBase
+</span><span id="__span-2-56"><a href="#__codelineno-2-56" id="__codelineno-2-56" name="__codelineno-2-56"></a>AgentRead: extends AgentBase + id
+</span><span id="__span-2-57"><a href="#__codelineno-2-57" id="__codelineno-2-57" name="__codelineno-2-57"></a>
+</span><span id="__span-2-58"><a href="#__codelineno-2-58" id="__codelineno-2-58" name="__codelineno-2-58"></a>TopicBase: name, description
+</span><span id="__span-2-59"><a href="#__codelineno-2-59" id="__codelineno-2-59" name="__codelineno-2-59"></a>TopicCreate: extends TopicBase
+</span><span id="__span-2-60"><a href="#__codelineno-2-60" id="__codelineno-2-60" name="__codelineno-2-60"></a>TopicRead: extends TopicBase + id, created_at, updated_at
+</span><span id="__span-2-61"><a href="#__codelineno-2-61" id="__codelineno-2-61" name="__codelineno-2-61"></a>
+</span><span id="__span-2-62"><a href="#__codelineno-2-62" id="__codelineno-2-62" name="__codelineno-2-62"></a>DocumentBase: original_filename, topic_id, agent_id
+</span><span id="__span-2-63"><a href="#__codelineno-2-63" id="__codelineno-2-63" name="__codelineno-2-63"></a>DocumentCreate: extends DocumentBase
+</span><span id="__span-2-64"><a href="#__codelineno-2-64" id="__codelineno-2-64" name="__codelineno-2-64"></a>DocumentRead: extends DocumentBase + id, filename, file_size, mime_type, created_at, updated_at
+</span><span id="__span-2-65"><a href="#__codelineno-2-65" id="__codelineno-2-65" name="__codelineno-2-65"></a>DocumentUpdate: partial update fields
+</span><span id="__span-2-66"><a href="#__codelineno-2-66" id="__codelineno-2-66" name="__codelineno-2-66"></a>
+</span><span id="__span-2-67"><a href="#__codelineno-2-67" id="__codelineno-2-67" name="__codelineno-2-67"></a>ChatRequest: message, agent_id, conversation_id (optional), context (optional)
+</span><span id="__span-2-68"><a href="#__codelineno-2-68" id="__codelineno-2-68" name="__codelineno-2-68"></a>ChatResponse: success, message, conversation_id, message_id, agent_response, context, error
+</span></code></pre></div></p>
+<h4 id="file-storage-configuration">File Storage Configuration<a class="headerlink" href="#file-storage-configuration" title="Permanent link">¶</a></h4>
+<ul>
+<li><strong>Base Directory</strong>: <code>./uploads/</code></li>
+<li><strong>Max File Size</strong>: 50MB</li>
+<li><strong>Allowed Extensions</strong>: <code>.pdf</code>, <code>.txt</code>, <code>.md</code>, <code>.json</code>, <code>.csv</code>, <code>.docx</code></li>
+<li><strong>File Naming</strong>: UUID v4 for uniqueness</li>
+<li><strong>Directory Structure</strong>: Year/Month/Day for organization</li>
+<li><strong>Path Resolution</strong>: Database stores relative paths, service resolves to absolute paths</li>
+</ul>
+<h3 id="testing-strategy">Testing Strategy<a class="headerlink" href="#testing-strategy" title="Permanent link">¶</a></h3>
+<ul>
+<li><strong>Unit Tests</strong>: Individual component testing</li>
+<li><strong>Integration Tests</strong>: Full API flow testing</li>
+<li><strong>Database Fixtures</strong>: Isolated test databases</li>
+<li><strong>File System Tests</strong>: Mock file operations</li>
+<li><strong>API Tests</strong>: Endpoint testing with file uploads</li>
+<li><strong>Test Coverage</strong>: 100% coverage target</li>
+<li><strong>Test Organization</strong>: Mirror source structure</li>
+</ul>
+<h3 id="error-handling">Error Handling<a class="headerlink" href="#error-handling" title="Permanent link">¶</a></h3>
+<ul>
+<li><strong>Validation Errors</strong>: Pydantic automatic validation</li>
+<li><strong>Database Errors</strong>: SQLAlchemy exception handling</li>
+<li><strong>File Errors</strong>: File size exceeded, invalid types, storage errors</li>
+<li><strong>HTTP Status Codes</strong>: Proper REST status codes</li>
+<li><strong>Error Messages</strong>: Clear, actionable error messages</li>
+</ul>
+<h2 id="design-review-checklist">Design Review Checklist<a class="headerlink" href="#design-review-checklist" title="Permanent link">¶</a></h2>
+<p><strong>Status</strong>: [x] Complete</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input checked="" disabled="" type="checkbox"><span class="task-list-indicator"></span></input></label> <strong>Problem Alignment</strong>: Solution addresses agent and document management needs</li>
+<li class="task-list-item"><label class="task-list-control"><input checked="" disabled="" type="checkbox"><span class="task-list-indicator"></span></input></label> <strong>Goal Achievement</strong>: All success criteria met</li>
+<li class="task-list-item"><label class="task-list-control"><input checked="" disabled="" type="checkbox"><span class="task-list-indicator"></span></input></label> <strong>Non-Goal Compliance</strong>: Staying within defined scope</li>
+<li class="task-list-item"><label class="task-list-control"><input checked="" disabled="" type="checkbox"><span class="task-list-indicator"></span></input></label> <strong>KISS/YAGNI Compliance</strong>: Complexity justified by immediate needs</li>
+<li class="task-list-item"><label class="task-list-control"><input checked="" disabled="" type="checkbox"><span class="task-list-indicator"></span></input></label> <strong>Security review completed</strong>: Basic security considerations addressed</li>
+<li class="task-list-item"><label class="task-list-control"><input checked="" disabled="" type="checkbox"><span class="task-list-indicator"></span></input></label> <strong>Performance impact assessed</strong>: FastAPI provides excellent performance</li>
+<li class="task-list-item"><label class="task-list-control"><input checked="" disabled="" type="checkbox"><span class="task-list-indicator"></span></input></label> <strong>Error handling comprehensive</strong>: Pydantic + FastAPI error handling</li>
+<li class="task-list-item"><label class="task-list-control"><input checked="" disabled="" type="checkbox"><span class="task-list-indicator"></span></input></label> <strong>Testing strategy defined</strong>: Comprehensive test suite implemented</li>
+<li class="task-list-item"><label class="task-list-control"><input checked="" disabled="" type="checkbox"><span class="task-list-indicator"></span></input></label> <strong>Documentation planned</strong>: This design document</li>
+<li class="task-list-item"><label class="task-list-control"><input checked="" disabled="" type="checkbox"><span class="task-list-indicator"></span></input></label> <strong>Backwards compatibility checked</strong>: New feature, no compatibility concerns</li>
+</ul>
+<h2 id="implementation-phases">Implementation Phases<a class="headerlink" href="#implementation-phases" title="Permanent link">¶</a></h2>
+<p><strong>Overall Progress</strong>: [x] 100%</p>
+<h3 id="phase-1-foundation-architecture">Phase 1: Foundation &amp; Architecture ✅<a class="headerlink" href="#phase-1-foundation-architecture" title="Permanent link">¶</a></h3>
+<p><strong>Description</strong>: Establish core infrastructure and architectural patterns
+- [x] Define core components and interfaces
+- [x] Create basic infrastructure and scaffolding
+- [x] Establish architectural patterns and conventions
+- [x] <strong>Phase Gate</strong>: Run <code>uv run pytest tests/ -v</code> - ALL tests pass</p>
+<h3 id="phase-2-core-functionality">Phase 2: Core Functionality ✅<a class="headerlink" href="#phase-2-core-functionality" title="Permanent link">¶</a></h3>
+<p><strong>Description</strong>: Implement primary features and happy path scenarios
+- [x] Implement primary features and core logic
+- [x] Focus on happy path scenarios and basic operations
+- [x] Create working examples and demonstrations
+- [x] <strong>Phase Gate</strong>: Run <code>uv run pytest tests/ -v</code> - ALL tests pass</p>
+<h3 id="phase-3-error-handling-edge-cases">Phase 3: Error Handling &amp; Edge Cases ✅<a class="headerlink" href="#phase-3-error-handling-edge-cases" title="Permanent link">¶</a></h3>
+<p><strong>Description</strong>: Add comprehensive error detection and edge case handling
+- [x] Add comprehensive error detection and validation
+- [x] Test failure scenarios and error conditions
+- [x] Handle edge cases and boundary conditions
+- [x] <strong>Phase Gate</strong>: Run <code>uv run pytest tests/ -v</code> - ALL tests pass</p>
+<h3 id="phase-4-advanced-features-integration">Phase 4: Advanced Features &amp; Integration ✅<a class="headerlink" href="#phase-4-advanced-features-integration" title="Permanent link">¶</a></h3>
+<p><strong>Description</strong>: Add sophisticated functionality and ensure seamless integration
+- [x] Add sophisticated functionality and advanced features
+- [x] Test complex interactions and integration scenarios
+- [x] Ensure seamless integration with existing systems
+- [x] <strong>Phase Gate</strong>: Run <code>uv run pytest tests/ -v</code> - ALL tests pass</p>
+<h3 id="phase-5-integration-performance-testing">Phase 5: Integration &amp; Performance Testing ✅<a class="headerlink" href="#phase-5-integration-performance-testing" title="Permanent link">¶</a></h3>
+<p><strong>Description</strong>: Validate real-world performance and run comprehensive tests
+- [x] Test real-world scenarios and production-like conditions
+- [x] Validate performance benchmarks and requirements
+- [x] Run regression tests and integration suites
+- [x] <strong>Phase Gate</strong>: Run <code>uv run pytest tests/ -v</code> - ALL tests pass</p>
+<h3 id="phase-6-examples-documentation-polish">Phase 6: Examples, Documentation &amp; Polish ✅<a class="headerlink" href="#phase-6-examples-documentation-polish" title="Permanent link">¶</a></h3>
+<p><strong>Description</strong>: Create comprehensive examples, finalize documentation, and perform final validation
+- [x] <strong>Create Examples</strong>: Generate comprehensive examples following Example Creation Guidelines
+- [x] <strong>Documentation</strong>: Create user-facing documentation that cites examples
+- [x] <strong>API Documentation</strong>: Update API references and technical docs
+- [x] <strong>Migration Guides</strong>: Create upgrade instructions and compatibility notes
+- [x] <strong>Final Validation</strong>: Final testing and sign-off
+- [x] <strong>Phase Gate</strong>: Run <code>uv run pytest tests/ -v</code> - ALL tests pass
+- [x] <strong>Phase Gate</strong>: Update implementation progress checkboxes to 100%</p>
+<h2 id="usage-examples">Usage Examples<a class="headerlink" href="#usage-examples" title="Permanent link">¶</a></h2>
+<h3 id="starting-the-server">Starting the Server<a class="headerlink" href="#starting-the-server" title="Permanent link">¶</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a href="#__codelineno-3-1" id="__codelineno-3-1" name="__codelineno-3-1"></a><span class="c1"># Development mode</span>
+</span><span id="__span-3-2"><a href="#__codelineno-3-2" id="__codelineno-3-2" name="__codelineno-3-2"></a>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>dana.api.server<span class="w"> </span>--host<span class="w"> </span>localhost<span class="w"> </span>--port<span class="w"> </span><span class="m">8080</span>
+</span><span id="__span-3-3"><a href="#__codelineno-3-3" id="__codelineno-3-3" name="__codelineno-3-3"></a>
+</span><span id="__span-3-4"><a href="#__codelineno-3-4" id="__codelineno-3-4" name="__codelineno-3-4"></a><span class="c1"># Production mode</span>
+</span><span id="__span-3-5"><a href="#__codelineno-3-5" id="__codelineno-3-5" name="__codelineno-3-5"></a>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>dana.api.server<span class="w"> </span>--host<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span>--port<span class="w"> </span><span class="m">8080</span><span class="w"> </span>--log-level<span class="w"> </span>warning
+</span></code></pre></div>
+<h3 id="agent-management_1">Agent Management<a class="headerlink" href="#agent-management_1" title="Permanent link">¶</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a href="#__codelineno-4-1" id="__codelineno-4-1" name="__codelineno-4-1"></a><span class="c1"># Create an agent</span>
+</span><span id="__span-4-2"><a href="#__codelineno-4-2" id="__codelineno-4-2" name="__codelineno-4-2"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:8080/agents/<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-3"><a href="#__codelineno-4-3" id="__codelineno-4-3" name="__codelineno-4-3"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-4"><a href="#__codelineno-4-4" id="__codelineno-4-4" name="__codelineno-4-4"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{</span>
+</span><span id="__span-4-5"><a href="#__codelineno-4-5" id="__codelineno-4-5" name="__codelineno-4-5"></a><span class="s1">    "name": "My Agent",</span>
+</span><span id="__span-4-6"><a href="#__codelineno-4-6" id="__codelineno-4-6" name="__codelineno-4-6"></a><span class="s1">    "description": "A test agent",</span>
+</span><span id="__span-4-7"><a href="#__codelineno-4-7" id="__codelineno-4-7" name="__codelineno-4-7"></a><span class="s1">    "config": {"model": "gpt-4", "temperature": 0.7}</span>
+</span><span id="__span-4-8"><a href="#__codelineno-4-8" id="__codelineno-4-8" name="__codelineno-4-8"></a><span class="s1">  }'</span>
+</span><span id="__span-4-9"><a href="#__codelineno-4-9" id="__codelineno-4-9" name="__codelineno-4-9"></a>
+</span><span id="__span-4-10"><a href="#__codelineno-4-10" id="__codelineno-4-10" name="__codelineno-4-10"></a><span class="c1"># List agents</span>
+</span><span id="__span-4-11"><a href="#__codelineno-4-11" id="__codelineno-4-11" name="__codelineno-4-11"></a>curl<span class="w"> </span>http://localhost:8080/agents/
+</span><span id="__span-4-12"><a href="#__codelineno-4-12" id="__codelineno-4-12" name="__codelineno-4-12"></a>
+</span><span id="__span-4-13"><a href="#__codelineno-4-13" id="__codelineno-4-13" name="__codelineno-4-13"></a><span class="c1"># Get specific agent</span>
+</span><span id="__span-4-14"><a href="#__codelineno-4-14" id="__codelineno-4-14" name="__codelineno-4-14"></a>curl<span class="w"> </span>http://localhost:8080/agents/1
+</span></code></pre></div>
+<h3 id="topic-management_1">Topic Management<a class="headerlink" href="#topic-management_1" title="Permanent link">¶</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a href="#__codelineno-5-1" id="__codelineno-5-1" name="__codelineno-5-1"></a><span class="c1"># Create a topic</span>
+</span><span id="__span-5-2"><a href="#__codelineno-5-2" id="__codelineno-5-2" name="__codelineno-5-2"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:8080/topics/<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-3"><a href="#__codelineno-5-3" id="__codelineno-5-3" name="__codelineno-5-3"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-4"><a href="#__codelineno-5-4" id="__codelineno-5-4" name="__codelineno-5-4"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{</span>
+</span><span id="__span-5-5"><a href="#__codelineno-5-5" id="__codelineno-5-5" name="__codelineno-5-5"></a><span class="s1">    "name": "Research Papers",</span>
+</span><span id="__span-5-6"><a href="#__codelineno-5-6" id="__codelineno-5-6" name="__codelineno-5-6"></a><span class="s1">    "description": "Academic research papers and articles"</span>
+</span><span id="__span-5-7"><a href="#__codelineno-5-7" id="__codelineno-5-7" name="__codelineno-5-7"></a><span class="s1">  }'</span>
+</span><span id="__span-5-8"><a href="#__codelineno-5-8" id="__codelineno-5-8" name="__codelineno-5-8"></a>
+</span><span id="__span-5-9"><a href="#__codelineno-5-9" id="__codelineno-5-9" name="__codelineno-5-9"></a><span class="c1"># List topics</span>
+</span><span id="__span-5-10"><a href="#__codelineno-5-10" id="__codelineno-5-10" name="__codelineno-5-10"></a>curl<span class="w"> </span>http://localhost:8080/topics/
+</span><span id="__span-5-11"><a href="#__codelineno-5-11" id="__codelineno-5-11" name="__codelineno-5-11"></a>
+</span><span id="__span-5-12"><a href="#__codelineno-5-12" id="__codelineno-5-12" name="__codelineno-5-12"></a><span class="c1"># Get specific topic</span>
+</span><span id="__span-5-13"><a href="#__codelineno-5-13" id="__codelineno-5-13" name="__codelineno-5-13"></a>curl<span class="w"> </span>http://localhost:8080/topics/1
+</span></code></pre></div>
+<h3 id="document-management_1">Document Management<a class="headerlink" href="#document-management_1" title="Permanent link">¶</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a href="#__codelineno-6-1" id="__codelineno-6-1" name="__codelineno-6-1"></a><span class="c1"># Upload a document</span>
+</span><span id="__span-6-2"><a href="#__codelineno-6-2" id="__codelineno-6-2" name="__codelineno-6-2"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:8080/documents/upload<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-3"><a href="#__codelineno-6-3" id="__codelineno-6-3" name="__codelineno-6-3"></a><span class="w">  </span>-F<span class="w"> </span><span class="s2">"file=@research_paper.pdf"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-4"><a href="#__codelineno-6-4" id="__codelineno-6-4" name="__codelineno-6-4"></a><span class="w">  </span>-F<span class="w"> </span><span class="s2">"topic_id=1"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-5"><a href="#__codelineno-6-5" id="__codelineno-6-5" name="__codelineno-6-5"></a><span class="w">  </span>-F<span class="w"> </span><span class="s2">"agent_id=1"</span>
+</span><span id="__span-6-6"><a href="#__codelineno-6-6" id="__codelineno-6-6" name="__codelineno-6-6"></a>
+</span><span id="__span-6-7"><a href="#__codelineno-6-7" id="__codelineno-6-7" name="__codelineno-6-7"></a><span class="c1"># List documents</span>
+</span><span id="__span-6-8"><a href="#__codelineno-6-8" id="__codelineno-6-8" name="__codelineno-6-8"></a>curl<span class="w"> </span><span class="s2">"http://localhost:8080/documents/"</span>
+</span><span id="__span-6-9"><a href="#__codelineno-6-9" id="__codelineno-6-9" name="__codelineno-6-9"></a>
+</span><span id="__span-6-10"><a href="#__codelineno-6-10" id="__codelineno-6-10" name="__codelineno-6-10"></a><span class="c1"># List documents in topic</span>
+</span><span id="__span-6-11"><a href="#__codelineno-6-11" id="__codelineno-6-11" name="__codelineno-6-11"></a>curl<span class="w"> </span><span class="s2">"http://localhost:8080/documents/?topic_id=1"</span>
+</span><span id="__span-6-12"><a href="#__codelineno-6-12" id="__codelineno-6-12" name="__codelineno-6-12"></a>
+</span><span id="__span-6-13"><a href="#__codelineno-6-13" id="__codelineno-6-13" name="__codelineno-6-13"></a><span class="c1"># Download a document</span>
+</span><span id="__span-6-14"><a href="#__codelineno-6-14" id="__codelineno-6-14" name="__codelineno-6-14"></a>curl<span class="w"> </span>-O<span class="w"> </span><span class="s2">"http://localhost:8080/documents/1/download"</span>
+</span><span id="__span-6-15"><a href="#__codelineno-6-15" id="__codelineno-6-15" name="__codelineno-6-15"></a>
+</span><span id="__span-6-16"><a href="#__codelineno-6-16" id="__codelineno-6-16" name="__codelineno-6-16"></a><span class="c1"># Get document metadata</span>
+</span><span id="__span-6-17"><a href="#__codelineno-6-17" id="__codelineno-6-17" name="__codelineno-6-17"></a>curl<span class="w"> </span><span class="s2">"http://localhost:8080/documents/1"</span>
+</span></code></pre></div>
+<h3 id="chat-management_1">Chat Management<a class="headerlink" href="#chat-management_1" title="Permanent link">¶</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a href="#__codelineno-7-1" id="__codelineno-7-1" name="__codelineno-7-1"></a><span class="c1"># Chat with an agent (new conversation)</span>
+</span><span id="__span-7-2"><a href="#__codelineno-7-2" id="__codelineno-7-2" name="__codelineno-7-2"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">"http://localhost:8080/chat/"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-7-3"><a href="#__codelineno-7-3" id="__codelineno-7-3" name="__codelineno-7-3"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-7-4"><a href="#__codelineno-7-4" id="__codelineno-7-4" name="__codelineno-7-4"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{</span>
+</span><span id="__span-7-5"><a href="#__codelineno-7-5" id="__codelineno-7-5" name="__codelineno-7-5"></a><span class="s1">    "message": "Hello, how can you help me?",</span>
+</span><span id="__span-7-6"><a href="#__codelineno-7-6" id="__codelineno-7-6" name="__codelineno-7-6"></a><span class="s1">    "agent_id": 1,</span>
+</span><span id="__span-7-7"><a href="#__codelineno-7-7" id="__codelineno-7-7" name="__codelineno-7-7"></a><span class="s1">    "context": {"user_id": 123}</span>
+</span><span id="__span-7-8"><a href="#__codelineno-7-8" id="__codelineno-7-8" name="__codelineno-7-8"></a><span class="s1">  }'</span>
+</span><span id="__span-7-9"><a href="#__codelineno-7-9" id="__codelineno-7-9" name="__codelineno-7-9"></a>
+</span><span id="__span-7-10"><a href="#__codelineno-7-10" id="__codelineno-7-10" name="__codelineno-7-10"></a><span class="c1"># Chat with an agent (existing conversation)</span>
+</span><span id="__span-7-11"><a href="#__codelineno-7-11" id="__codelineno-7-11" name="__codelineno-7-11"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">"http://localhost:8080/chat/"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-7-12"><a href="#__codelineno-7-12" id="__codelineno-7-12" name="__codelineno-7-12"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-7-13"><a href="#__codelineno-7-13" id="__codelineno-7-13" name="__codelineno-7-13"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{</span>
+</span><span id="__span-7-14"><a href="#__codelineno-7-14" id="__codelineno-7-14" name="__codelineno-7-14"></a><span class="s1">    "message": "Tell me more about Python",</span>
+</span><span id="__span-7-15"><a href="#__codelineno-7-15" id="__codelineno-7-15" name="__codelineno-7-15"></a><span class="s1">    "agent_id": 1,</span>
+</span><span id="__span-7-16"><a href="#__codelineno-7-16" id="__codelineno-7-16" name="__codelineno-7-16"></a><span class="s1">    "conversation_id": 1,</span>
+</span><span id="__span-7-17"><a href="#__codelineno-7-17" id="__codelineno-7-17" name="__codelineno-7-17"></a><span class="s1">    "context": {"user_id": 123}</span>
+</span><span id="__span-7-18"><a href="#__codelineno-7-18" id="__codelineno-7-18" name="__codelineno-7-18"></a><span class="s1">  }'</span>
+</span></code></pre></div>
+<h3 id="health-check">Health Check<a class="headerlink" href="#health-check" title="Permanent link">¶</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a href="#__codelineno-8-1" id="__codelineno-8-1" name="__codelineno-8-1"></a>curl<span class="w"> </span>http://localhost:8080/health
+</span></code></pre></div>
+<h3 id="testing">Testing<a class="headerlink" href="#testing" title="Permanent link">¶</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a href="#__codelineno-9-1" id="__codelineno-9-1" name="__codelineno-9-1"></a><span class="c1"># Run all API tests</span>
+</span><span id="__span-9-2"><a href="#__codelineno-9-2" id="__codelineno-9-2" name="__codelineno-9-2"></a>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/api/<span class="w"> </span>-v
+</span><span id="__span-9-3"><a href="#__codelineno-9-3" id="__codelineno-9-3" name="__codelineno-9-3"></a>
+</span><span id="__span-9-4"><a href="#__codelineno-9-4" id="__codelineno-9-4" name="__codelineno-9-4"></a><span class="c1"># Run specific test file</span>
+</span><span id="__span-9-5"><a href="#__codelineno-9-5" id="__codelineno-9-5" name="__codelineno-9-5"></a>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/api/test_routers.py<span class="w"> </span>-v
+</span><span id="__span-9-6"><a href="#__codelineno-9-6" id="__codelineno-9-6" name="__codelineno-9-6"></a>
+</span><span id="__span-9-7"><a href="#__codelineno-9-7" id="__codelineno-9-7" name="__codelineno-9-7"></a><span class="c1"># Run chat tests</span>
+</span><span id="__span-9-8"><a href="#__codelineno-9-8" id="__codelineno-9-8" name="__codelineno-9-8"></a>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/api/test_chat.py<span class="w"> </span>-v
+</span><span id="__span-9-9"><a href="#__codelineno-9-9" id="__codelineno-9-9" name="__codelineno-9-9"></a>
+</span><span id="__span-9-10"><a href="#__codelineno-9-10" id="__codelineno-9-10" name="__codelineno-9-10"></a><span class="c1"># Run chat integration tests</span>
+</span><span id="__span-9-11"><a href="#__codelineno-9-11" id="__codelineno-9-11" name="__codelineno-9-11"></a>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/api/test_chat_integration.py<span class="w"> </span>-v
+</span><span id="__span-9-12"><a href="#__codelineno-9-12" id="__codelineno-9-12" name="__codelineno-9-12"></a>
+</span><span id="__span-9-13"><a href="#__codelineno-9-13" id="__codelineno-9-13" name="__codelineno-9-13"></a><span class="c1"># Run with coverage</span>
+</span><span id="__span-9-14"><a href="#__codelineno-9-14" id="__codelineno-9-14" name="__codelineno-9-14"></a>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/api/<span class="w"> </span>--cov<span class="o">=</span>dana.api.server<span class="w"> </span>--cov-report<span class="o">=</span>html
+</span></code></pre></div>
+<h2 id="cli-command-dana-serve">CLI Command: <code>dana serve</code><a class="headerlink" href="#cli-command-dana-serve" title="Permanent link">¶</a></h2>
+<p><strong>Purpose</strong>: Provide a simple, memorable command to start the Dana API server for local development or production use.</p>
+<ul>
+<li><strong>Why</strong>: Streamlines developer and user experience by making server startup a first-class CLI operation, consistent with modern Python tooling.</li>
+<li><strong>System Fit</strong>: Integrates with the existing <code>dana</code> CLI entry point, allowing users to run <code>dana serve</code> from any terminal to launch the API server.</li>
+<li><strong>Key Decisions</strong>:</li>
+<li>Aliases the existing FastAPI app startup logic</li>
+<li>Supports all standard options (host, port, log-level, reload)</li>
+<li>Prints helpful startup messages and endpoint URLs</li>
+<li><strong>Implemented as a subcommand in the CLI</strong> (see <code>dana/core/cli/dana.py</code>)</li>
+<li>Uses <code>uvicorn</code> to launch the FastAPI app factory (<code>dana.api.server.server:create_app</code>)</li>
+<li><strong>Alternatives</strong>: Manual <code>python -m dana.api.server</code> invocation (less discoverable)</li>
+</ul>
+<h3 id="example-usage">Example Usage<a class="headerlink" href="#example-usage" title="Permanent link">¶</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a href="#__codelineno-10-1" id="__codelineno-10-1" name="__codelineno-10-1"></a><span class="c1"># Start the API server on default host/port</span>
+</span><span id="__span-10-2"><a href="#__codelineno-10-2" id="__codelineno-10-2" name="__codelineno-10-2"></a>$<span class="w"> </span>dana<span class="w"> </span>serve
+</span><span id="__span-10-3"><a href="#__codelineno-10-3" id="__codelineno-10-3" name="__codelineno-10-3"></a>
+</span><span id="__span-10-4"><a href="#__codelineno-10-4" id="__codelineno-10-4" name="__codelineno-10-4"></a><span class="c1"># Start with custom host/port</span>
+</span><span id="__span-10-5"><a href="#__codelineno-10-5" id="__codelineno-10-5" name="__codelineno-10-5"></a>$<span class="w"> </span>dana<span class="w"> </span>serve<span class="w"> </span>--host<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span>--port<span class="w"> </span><span class="m">8080</span>
+</span><span id="__span-10-6"><a href="#__codelineno-10-6" id="__codelineno-10-6" name="__codelineno-10-6"></a>
+</span><span id="__span-10-7"><a href="#__codelineno-10-7" id="__codelineno-10-7" name="__codelineno-10-7"></a><span class="c1"># Start with auto-reload for development</span>
+</span><span id="__span-10-8"><a href="#__codelineno-10-8" id="__codelineno-10-8" name="__codelineno-10-8"></a>$<span class="w"> </span>dana<span class="w"> </span>serve<span class="w"> </span>--reload
+</span></code></pre></div>
+<h3 id="implementation-notes">Implementation Notes<a class="headerlink" href="#implementation-notes" title="Permanent link">¶</a></h3>
+<ul>
+<li>Implemented as a subcommand in the <code>dana</code> CLI (see <code>dana/core/cli/dana.py</code>)</li>
+<li>Calls the FastAPI app factory and launches the server using uvicorn</li>
+<li>All previous manual server startup methods remain supported for backward compatibility</li>
+<li><strong>Code reference:</strong></li>
+<li>The <code>serve</code> subcommand is parsed and handled in <code>main()</code> in <code>dana/core/cli/dana.py</code></li>
+<li>The handler function <code>handle_serve_command</code> calls <code>uvicorn.run</code> with the correct options</li>
+</ul>
+<h2 id="future-enhancements">Future Enhancements<a class="headerlink" href="#future-enhancements" title="Permanent link">¶</a></h2>
+<h3 id="phase-2-features-next">Phase 2 Features (Next)<a class="headerlink" href="#phase-2-features-next" title="Permanent link">¶</a></h3>
+<ul>
+<li><strong>Agent Running Management</strong>:</li>
+<li>Endpoints to start, stop, and monitor agent execution</li>
+<li>Track agent run status and logs</li>
+<li>API for triggering agent actions and retrieving results</li>
+<li>Basic run history and status reporting</li>
+<li><strong>Enhanced Chat Features</strong>:</li>
+<li>Real-time chat with WebSocket support</li>
+<li>Chat history and conversation management</li>
+<li>Agent memory and context persistence</li>
+<li>Multi-agent conversations</li>
+</ul>
+<h3 id="phase-3-features-future">Phase 3 Features (Future)<a class="headerlink" href="#phase-3-features-future" title="Permanent link">¶</a></h3>
+<ul>
+<li><strong>Authentication</strong>: JWT-based authentication</li>
+<li><strong>Advanced Queries</strong>: Filtering, searching, sorting</li>
+<li><strong>Real-time Updates</strong>: WebSocket support for live updates</li>
+<li><strong>External Integrations</strong>: LLM provider integrations</li>
+<li><strong>Database Migrations</strong>: Alembic migration system</li>
+<li><strong>Monitoring</strong>: Prometheus metrics and health checks</li>
+<li><strong>Multi-tenancy</strong>: User isolation and permissions</li>
+<li><strong>Advanced Agent Features</strong>: Agent execution, monitoring, logging</li>
+<li><strong>API Versioning</strong>: Versioned API endpoints</li>
+<li><strong>Rate Limiting</strong>: Request throttling and quotas</li>
+<li><strong>Caching</strong>: Redis-based caching layer</li>
+</ul>
+<h3 id="document-management-enhancements-future">Document Management Enhancements (Future)<a class="headerlink" href="#document-management-enhancements-future" title="Permanent link">¶</a></h3>
+<ul>
+<li><strong>File Versioning</strong>: Track document versions</li>
+<li><strong>Advanced Search</strong>: Full-text search capabilities</li>
+<li><strong>File Compression</strong>: Automatic compression for large files</li>
+<li><strong>Cloud Storage</strong>: Integration with cloud storage providers</li>
+<li><strong>Document Preview</strong>: Generate previews for supported formats</li>
+<li><strong>Collaboration</strong>: Document sharing and collaboration</li>
+<li><strong>Access Control</strong>: Fine-grained permissions</li>
+<li><strong>Audit Trail</strong>: Track document access and modifications</li>
+<li><strong>Bulk Operations</strong>: Upload/download multiple files</li>
+<li><strong>File Conversion</strong>: Convert between file formats</li>
+</ul>
+<h2 id="conclusion">Conclusion<a class="headerlink" href="#conclusion" title="Permanent link">¶</a></h2>
+<p>The Dana API Server provides a solid foundation for agent and document management with modern Python web development practices. The modular architecture ensures extensibility while maintaining simplicity for current needs. The comprehensive test suite provides confidence in the implementation and serves as documentation for expected behavior.</p>
+<p>The design follows KISS/YAGNI principles by starting simple but building on proven, modern technologies that scale well. The FastAPI + SQLAlchemy + Pydantic stack provides excellent developer experience, performance, and type safety while remaining approachable for contributors.</p>
+<p>The addition of document management capabilities enhances the system's utility for real-world applications, allowing users to organize and manage knowledge resources alongside their agent configurations. The two-tier storage approach (SQLite metadata + local file system) provides a good balance between simplicity and functionality. </p>
+<aside class="md-source-file">
+<span class="md-source-file__fact">
+<span class="md-icon" title="Last update">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
+</span>
+<span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="July 10, 2025 07:17:09 UTC">July 10, 2025 07:17:09</span>
+</span>
+<span class="md-source-file__fact">
+<span class="md-icon" title="Created">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"></path></svg>
+</span>
+<span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="July 8, 2025 06:36:35 UTC">July 8, 2025 06:36:35</span>
+</span>
+</aside>
+</article>
+</div>
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+</div>
+<button class="md-top md-icon" data-md-component="top" hidden="" type="button">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"></path></svg>
+  Back to top
+</button>
+</main>
+<footer class="md-footer">
+<div class="md-footer-meta md-typeset">
+<div class="md-footer-meta__inner md-grid">
+<div class="md-copyright">
+<div class="md-copyright__highlight">
+      Copyright © 2025 Aitomatic, Inc.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" rel="noopener" target="_blank">
+      Material for MkDocs
+    </a>
+</div>
+<div class="md-social">
+<a class="md-social__link" href="https://github.com/aitomatic/dana" rel="noopener" target="_blank" title="github.com">
+<svg viewbox="0 0 496 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"></path></svg>
+</a>
+<a class="md-social__link" href="https://pypi.org/project/dana/" rel="noopener" target="_blank" title="pypi.org">
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6M286.2 404c11.1 0 20.1 9.1 20.1 20.3 0 11.3-9 20.4-20.1 20.4-11 0-20.1-9.2-20.1-20.4.1-11.3 9.1-20.3 20.1-20.3M167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4m-6.7-142.6c-11.1 0-20.1-9.1-20.1-20.3.1-11.3 9-20.4 20.1-20.4 11 0 20.1 9.2 20.1 20.4s-9 20.3-20.1 20.3"></path></svg>
+</a>
+</div>
+</div>
+</div>
+</footer>
+</div>
+<div class="md-dialog" data-md-component="dialog">
+<div class="md-dialog__inner md-typeset"></div>
+</div>
+<script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.path", "navigation.top", "search.highlight", "search.share", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+<script src="../../assets/javascripts/bundle.56ea9cef.min.js"></script>
+<script src="../../javascripts/mathjax.js"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</body>
+</html>
