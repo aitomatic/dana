@@ -250,7 +250,7 @@ result = list_processing_pipeline([1, 2, 3, 4])
 print("list_processing_pipeline([1, 2, 3, 4]) = " + str(result))
 print("  → process_list([1, 2, 3, 4], 'num:') = ['num: 1', 'num: 2', 'num: 3', 'num: 4']")
 print("  → add_to_list(['num: 1', 'num: 2', 'num: 3', 'num: 4'], 5) = ['num: 1', 'num: 2', 'num: 3', 'num: 4', 5]")
-print("  → filter_even(['num: 1', 'num: 2', 'num: 3', 'num: 4', 5]) = [5] (only numeric values are filtered)")
+print("  → filter_even(['num: 1', 'num: 2', 'num: 3', 'num: 4', 5]) = [5] (non-integer values are ignored)")
 
 print("\n8. Named Parameter Capture Mode")
 print("-" * 35)
