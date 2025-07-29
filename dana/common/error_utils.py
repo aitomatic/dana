@@ -273,28 +273,7 @@ class ErrorUtils:
             pass
         else:
             # Check if a reserved keyword is in the previous tokens
-            reserved_keyword_in_previous = None
-            for token_str in previous_tokens:
-                # Handle both cases: already parsed Token objects and raw strings
-                if isinstance(token_str, str):
-                    if token_str.startswith("Token('"):
-                        # This is already a properly formatted token string
-                        token_match = re.search(r"Token\('([^']+)', '([^']+)'\)", token_str)
-                        if token_match:
-                            prev_token_type, prev_token_value = token_match.groups()
-                            if prev_token_value in ErrorUtils.RESERVED_KEYWORDS:
-                                reserved_keyword_in_previous = prev_token_value
-                                break
-                    else:
-                        # This might be a raw token string that needs parsing
-                        # Try to extract token patterns from the string
-                        token_patterns = re.findall(r"Token\('([^']+)', '([^']+)'\)", token_str)
-                        for _, prev_token_value in token_patterns:
-                            if prev_token_value in ErrorUtils.RESERVED_KEYWORDS:
-                                reserved_keyword_in_previous = prev_token_value
-                                break
-                        if reserved_keyword_in_previous:
-                            break
+            reserved_keyword_in_previous = self._find_reserved_keyword_in_tokens(previous_tokens)
             if not reserved_keyword_in_previous:
                 return None
             token_value = reserved_keyword_in_previous
