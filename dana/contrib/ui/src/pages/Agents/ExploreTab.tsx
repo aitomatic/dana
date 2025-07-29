@@ -19,8 +19,8 @@ export const ExploreTab: React.FC<{
         {DOMAINS.map((domain) => (
           <Button
             key={domain}
-            variant={selectedDomain === domain ? 'default' : 'outline'}
-            className={`rounded-full px-5 py-1 text-base font-medium ${selectedDomain === domain ? '' : 'bg-white'}`}
+            variant={selectedDomain === domain ? 'secondary' : 'outline'}
+            className={`rounded-full px-5 py-1 text-base font-medium ${selectedDomain === domain ? 'hover:bg-brand-50 cursor-default' : 'bg-white'}`}
             onClick={() => setSelectedDomain(domain)}
           >
             {domain}
@@ -43,7 +43,7 @@ export const ExploreTab: React.FC<{
       {filteredAgents.map((agent) => (
         <div
           key={agent.id}
-          className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col gap-4 hover:shadow-lg transition-shadow cursor-pointer"
+          className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col gap-4 hover:shadow-md transition-shadow cursor-pointer"
           onClick={async () => {
             console.log('agent', agent);
             if (agent.is_prebuilt) {

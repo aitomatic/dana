@@ -123,7 +123,7 @@ export const MyAgentTab: React.FC<{
             .map((agent) => (
               <div
                 key={agent.id}
-                className="flex flex-col gap-4 p-6 bg-white rounded-2xl border border-gray-200 transition-shadow cursor-pointer hover:shadow-lg"
+                className="flex flex-col gap-4 p-6 bg-white rounded-2xl border border-gray-200 transition-shadow cursor-pointer hover:shadow-md"
                 onClick={() => navigate(`/agents/${agent.id}`)}
               >
                 <div className="flex gap-4 items-center">

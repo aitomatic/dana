@@ -6,7 +6,7 @@ import CodeTab from './tabs/CodeTab';
 import { ChatPane } from './ChatPane';
 import { Code2, List, BookOpen } from 'lucide-react';
 import { Tools } from 'iconoir-react';
-import { IconMessage } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
 import { useAgentStore } from '@/stores/agent-store';
 
 const TABS = ['Overview', 'Knowledge Base', 'Tools', 'Code'];
@@ -45,10 +45,24 @@ export const AgentDetailTabs: React.FC<{
             ))}
           </div>
           <div className="flex gap-2 items-center pr-6">
-            <IconMessage
-              className={`w-6 h-6 cursor-pointer transition-colors ${isChatOpen ? 'text-blue-500' : 'text-gray-500 hover:text-gray-700'}`}
+            <Button
+              variant="outline"
+              size="sm"
+              className={`rounded-full bg-white text-gray-700 border-gray-200 hover:bg-gray-50 flex items-center gap-2 px-3 py-2 ${isChatOpen ? 'border-blue-200 bg-blue-50' : ''}`}
               onClick={() => setIsChatOpen(!isChatOpen)}
-            />
+            >
+              {/* Agent Avatar */}
+              <div className="w-6 h-6 rounded-full bg-brand-100 flex items-center justify-center">
+                <span className="text-xs font-medium text-brand-700">
+                  {selectedAgent?.name?.[0] || 'A'}
+                </span>
+              </div>
+              
+              {/* Chat Text */}
+              <span className="text-sm font-medium">
+                Chat with {selectedAgent?.name || 'Agent'}
+              </span>
+            </Button>
           </div>
         </div>
         {/* Tab content */}

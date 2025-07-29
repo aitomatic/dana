@@ -9,22 +9,22 @@ const buttonVariants = tv({
   variants: {
     variant: {
       default:
-        'bg-brand-600 text-white shadow-xs hover:bg-brand-700 focus-visible:ring-brand-200 dark:focus-visible:ring-brand-800',
+        'bg-brand-600 text-white  focus-visible:ring-brand-200 dark:focus-visible:ring-brand-800',
       destructive:
-        'bg-error-600 text-white shadow-xs hover:bg-error-700 focus-visible:ring-error-200 dark:focus-visible:ring-error-800 dark:bg-error-600',
+        'bg-error-600 text-white  hover:bg-error-700 focus-visible:ring-error-200 dark:focus-visible:ring-error-800 dark:bg-error-600',
       outline:
-        'border border-gray-200 bg-white text-gray-700 shadow-xs hover:bg-gray-50 hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-900/20 dark:hover:border-gray-600',
+        'border border-gray-200 bg-white text-gray-700  hover:bg-gray-50 hover:border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-900/20 dark:hover:border-gray-600',
       secondary:
-        'bg-brand-50 text-brand-700 shadow-xs hover:bg-brand-100 dark:bg-brand-900/20 dark:text-brand-300 dark:hover:bg-brand-900/40',
+        'bg-brand-50 text-brand-700  hover:bg-brand-100 dark:bg-brand-900/20 dark:text-brand-300 dark:hover:bg-brand-900/40',
       ghost:
         'text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100',
       link: 'text-brand-600 underline-offset-4 hover:text-brand-700 hover:underline dark:text-brand-400 dark:hover:text-brand-300',
       success:
-        'bg-success-600 text-white shadow-xs hover:bg-success-700 focus-visible:ring-success-200 dark:focus-visible:ring-success-800',
+        'bg-success-600 text-white hover:bg-success-700 focus-visible:ring-success-200 dark:focus-visible:ring-success-800',
       warning:
-        'bg-warning-600 text-white shadow-xs hover:bg-warning-700 focus-visible:ring-warning-200 dark:focus-visible:ring-warning-800',
+        'bg-warning-600 text-white  hover:bg-warning-700 focus-visible:ring-warning-200 dark:focus-visible:ring-warning-800',
       tertiary:
-        'bg-gray-100 text-gray-700 shadow-xs hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700',
+        'bg-gray-100 text-gray-700  hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700',
     },
     size: {
       default: 'h-9 px-4 py-2 has-[>svg]:px-3',
