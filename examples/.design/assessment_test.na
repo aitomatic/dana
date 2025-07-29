@@ -1,5 +1,7 @@
 # Reassessment: Testing Dana 0.4.0 for Agentic AI Capabilities
 
+log_level("info")
+
 # Test 1: Basic struct definition (should work)
 struct DefectData:
     batch_id: str
@@ -12,6 +14,20 @@ agent QualityInspector:
     process_type: str = "semiconductor_etching"
     expertise_level: str = "senior"
     tolerance_threshold: float = 0.02
+
+# Define memory methods for QualityInspector
+def (inspector: QualityInspector) remember(key: str, value: str):
+    # Store in agent's memory
+    if not hasattr(inspector, "_memory"):
+        inspector._memory = {}
+    inspector._memory[key] = value
+    return true
+
+def (inspector: QualityInspector) recall(key: str) -> str:
+    # Retrieve from agent's memory
+    if hasattr(inspector, "_memory"):
+        return inspector._memory.get(key, "")
+    return ""
 
 # Test 3: Try struct methods (previously missing)
 def (defect: DefectData) calculate_severity() -> str:
@@ -91,6 +107,30 @@ agent ProcessEngineer:
 agent ProductionManager:
     department: str = "manufacturing"
     budget_authority: float = 1000000.0
+
+# Define memory methods for ProcessEngineer
+def (engineer: ProcessEngineer) remember(key: str, value: str):
+    if not hasattr(engineer, "_memory"):
+        engineer._memory = {}
+    engineer._memory[key] = value
+    return true
+
+def (engineer: ProcessEngineer) recall(key: str) -> str:
+    if hasattr(engineer, "_memory"):
+        return engineer._memory.get(key, "")
+    return ""
+
+# Define memory methods for ProductionManager
+def (manager: ProductionManager) remember(key: str, value: str):
+    if not hasattr(manager, "_memory"):
+        manager._memory = {}
+    manager._memory[key] = value
+    return true
+
+def (manager: ProductionManager) recall(key: str) -> str:
+    if hasattr(manager, "_memory"):
+        return manager._memory.get(key, "")
+    return ""
 
 def test_multi_agent_coordination():
     inspector = QualityInspector()
