@@ -5,6 +5,7 @@ import { apiService } from '@/lib/api';
 import { MyAgentTab } from './MyAgentTab';
 import { ExploreTab } from './ExploreTab';
 import { Button } from '@/components/ui/button';
+import { Plus } from 'iconoir-react';
 
 const DOMAINS = ['All domains', 'Finance', 'Semiconductor', 'Sales', 'Engineering', 'Research'];
 
@@ -86,8 +87,9 @@ export default function AgentsPage() {
               }
             }}
             variant="default"
-          >
-            + Train an Agent
+            className="flex items-center gap-2">
+                         <Plus style={{ width: '28px', height: '28px' }} />
+            Train an Agent
           </Button>
         </div>
       </div>

@@ -15,7 +15,7 @@ export const AgentDetailHeader: React.FC<AgentDetailHeaderProps> = ({ onBack, ti
       <ArrowLeft className='w-4 h-4' />
       <div className='font-semibold text-gray-700'>{title}</div>
     </div>
-    <div className='flex items-center gap-2'>
+    <div className='flex items-center gap-4'>
       <div className='text-gray-500 text-sm cursor-pointer' onClick={onCancel}>Cancel</div>
       <Button size="sm" onClick={onDeploy}>
         Deploy

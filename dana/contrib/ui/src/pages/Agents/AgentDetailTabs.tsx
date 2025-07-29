@@ -31,7 +31,7 @@ export const AgentDetailTabs: React.FC<{
       {/* Main content area */}
       <div className="flex overflow-auto flex-col flex-1 gap-2 p-2 h-full">
         {/* Tab bar */}
-        <div className="flex overflow-scroll justify-between items-center max-w-screen">
+        <div className="flex justify-between items-center max-w-screen">
           <div className="flex gap-2">
             {TABS.map((tab) => (
               <button
@@ -44,25 +44,27 @@ export const AgentDetailTabs: React.FC<{
               </button>
             ))}
           </div>
-          <div className="flex gap-2 items-center pr-6">
-            <Button
-              variant="outline"
-              size="sm"
-              className={`rounded-full bg-white text-gray-700 border-gray-200 hover:bg-gray-50 flex items-center gap-2 px-3 py-2 ${isChatOpen ? 'border-blue-200 bg-blue-50' : ''}`}
-              onClick={() => setIsChatOpen(!isChatOpen)}
-            >
-              {/* Agent Avatar */}
-              <div className="w-6 h-6 rounded-full bg-brand-100 flex items-center justify-center">
-                <span className="text-xs font-medium text-brand-700">
-                  {selectedAgent?.name?.[0] || 'A'}
+          <div className="flex gap-2 items-center">
+            {!isChatOpen && (
+              <Button
+                variant="outline"
+                size="md"
+                className="rounded-full bg-white text-gray-700 border-gray-200 hover:bg-gray-50 flex items-center gap-2 px-3 py-2"
+                onClick={() => setIsChatOpen(!isChatOpen)}
+              >
+                {/* Agent Avatar */}
+                <div className="w-6 h-6 rounded-full bg-brand-100 flex items-center justify-center">
+                  <span className="text-xs font-medium text-brand-700">
+                    {selectedAgent?.name?.[0] || 'A'}
+                  </span>
+                </div>
+                
+                {/* Chat Text */}
+                <span className="text-sm font-medium">
+                  Chat with {selectedAgent?.name || 'Agent'}
                 </span>
-              </div>
-              
-              {/* Chat Text */}
-              <span className="text-sm font-medium">
-                Chat with {selectedAgent?.name || 'Agent'}
-              </span>
-            </Button>
+              </Button>
+            )}
           </div>
         </div>
         {/* Tab content */}

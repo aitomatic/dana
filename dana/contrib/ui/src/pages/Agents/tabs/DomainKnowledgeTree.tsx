@@ -626,7 +626,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
             <button
               onClick={handleGenerateKnowledge}
               disabled={generating}
-              className="absolute top-4 left-4 z-20 px-4 py-2 text-gray-500 bg-white rounded-md border border-gray-200 shadow-md hover:bg-gray-100"
+              className="absolute top-4 left-4 z-20 px-4 py-2 text-gray-500 bg-white rounded-md border border-gray-200 hover:bg-gray-100"
             >
               {generating ? 'Generating...' : 'Generate Contextual Knowledge'}
             </button>

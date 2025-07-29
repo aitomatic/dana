@@ -151,7 +151,7 @@ const CodeTab: React.FC = () => {
     <div className="flex overflow-hidden h-full bg-white rounded-lg shadow">
       {/* Sidebar */}
       <div className="flex flex-col w-56 bg-white border-r">
-        <div className="flex justify-between items-center px-4 py-3 border-b">
+        <div className="flex justify-between items-center px-4 py-2 h-12 border-b">
           <span className="text-sm font-semibold text-gray-800">Dana Files</span>
           <button
             onClick={loadAgentFiles}
@@ -165,10 +165,10 @@ const CodeTab: React.FC = () => {
           {files.map((file) => (
             <button
               key={file.id}
-              className={`w-full flex items-center px-4 py-2 text-left text-sm border-l-4 transition-colors ${
+              className={`w-full flex items-center px-4 py-2 text-left text-sm transition-colors ${
                 file.id === selectedFileId
-                  ? 'bg-white border-blue-500 text-blue-700 font-semibold'
-                  : 'border-transparent text-gray-700 hover:bg-gray-100'
+                  ? 'bg-gray-100 text-gray-700 font-semibold border-none'
+                  : 'border-transparent text-gray-600 hover:bg-gray-100'
               }`}
               onClick={() => handleFileSelect(file.id)}
             >
@@ -180,8 +180,8 @@ const CodeTab: React.FC = () => {
       </div>
       {/* Main Content */}
       <div className="flex flex-col flex-1 min-w-0">
-        <div className="flex justify-between items-center px-6 py-4 bg-white border-b">
-          <span className="text-lg font-semibold text-gray-900">
+        <div className="flex justify-between items-center px-6 py-2 h-12 bg-white border-b">
+          <span className="text-md font-medium text-gray-900">
             {selectedFile?.name || 'No file selected'}
           </span>
         </div>
@@ -193,7 +193,7 @@ const CodeTab: React.FC = () => {
               placeholder={`Edit ${selectedFile.name}...`}
               enableValidation={selectedFile.name === 'main.na'}
               enableAutoValidation={selectedFile.name === 'main.na'}
-              className="h-full"
+              className="h-full text-xs"
             />
           ) : (
             <div className="flex justify-center items-center h-full text-gray-500">

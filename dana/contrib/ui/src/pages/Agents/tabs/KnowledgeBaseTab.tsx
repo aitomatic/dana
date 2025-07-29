@@ -42,14 +42,14 @@ const KnowledgeBaseTab: React.FC = () => {
   return (
     <div className="flex flex-col h-full">
       {/* Sub-tab navigation */}
-      <div className="flex gap-1 p-2 bg-gray-50 border-b border-gray-200">
+      <div className="flex gap-1 p-2 bg-gray-50 ">
         {KNOWLEDGE_SUBTABS.map((subTab) => (
           <button
             key={subTab}
-            className={`cursor-pointer px-3 py-2 font-medium text-sm flex items-center gap-2 rounded-md transition-colors ${
+            className={`cursor-pointer px-3 py-2 font-medium text-sm flex items-center gap-2 rounded-full transition-colors ${
               activeSubTab === subTab
-                ? 'bg-white text-blue-600 shadow-sm border border-gray-200'
-                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+                ? 'bg-white text-primary shadow-sm border border-gray-200'
+                : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
             }`}
             onClick={() => setActiveSubTab(subTab)}
           >

@@ -4,7 +4,7 @@ import { apiService } from '@/lib/api';
 import { useParams } from 'react-router-dom';
 import { useSmartChatStore } from '@/stores/smart-chat-store';
 import { useAgentStore } from '@/stores/agent-store';
-import { Paperclip } from 'lucide-react';
+import { Paperclip, Plus } from 'lucide-react';
 import { MarkdownViewerSmall } from './chat/markdown-viewer';
 
 const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
@@ -161,7 +161,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
 
   return (
     <div className="flex overflow-y-auto flex-col h-full">
-      <div className="flex overflow-y-auto flex-col flex-1 gap-2 p-2">
+      <div className="flex overflow-y-auto flex-col flex-1 gap-2 p-4">
         {messages.map((msg, idx) => {
           const isThinking = loading && idx === messages.length - 1 && msg.sender === 'agent';
           return (
@@ -201,21 +201,22 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
         })}
         <div ref={bottomRef} />
       </div>
-      <div className="p-3 border-t">
+      <div className="p-3">
         <div className="relative">
           <textarea
-            className="w-full min-h-[44px] max-h-[120px] pl-3 pr-12 py-3 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none overflow-y-auto"
+            className="w-full min-h-[100px] max-h-[120px] pl-3 pr-12 py-3 text-sm rounded-lg bg-gray-100 border-gray-300 
+            focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-transparent resize-none overflow-y-auto"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             onCompositionStart={handleCompositionStart}
             onCompositionEnd={handleCompositionEnd}
-            placeholder="Ask the agent assistant... (Press Enter to send, Shift+Enter for new line)"
+            placeholder="Type your message"
             disabled={loading}
             rows={1}
             style={{
               height: 'auto',
-              minHeight: '44px',
+              minHeight: '100px',
             }}
             onInput={(e) => {
               const target = e.target as HTMLTextAreaElement;
@@ -225,11 +226,13 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
           />
           <button
             onClick={handleFileUpload}
-            className="absolute top-3 right-3 p-1 text-gray-400 transition-colors hover:text-gray-600"
-            title="Upload attachment"
+            className="absolute bottom-3 left-3 p-1 text-gray-400"
+            title="Add files"
             disabled={loading}
           >
-            <Paperclip className="w-5 h-5" />
+            <div className="w-7 h-7 cursor-pointer rounded-full border border-gray-300 flex items-center justify-center">
+              <Plus className="w-4 h-4" />
+            </div>
           </button>
         </div>
       </div>
@@ -242,14 +245,14 @@ export const AgentDetailSidebar: React.FC = () => {
   return (
     <div className="w-[420px] min-w-[380px] max-h-[calc(100vh-64px)] overflow-y-auto flex flex-col p-2 bg-gray-50">
       <div className="flex flex-col h-full bg-white rounded-lg shadow-md">
-        <div className="flex gap-3 items-center p-4 mb-4 border-b border-gray-200">
+        <div className="flex gap-3 items-center p-4 border-b border-gray-200">
           <img className="w-10 h-10 rounded-full" src={DanaAvatar} alt="Dana avatar" />
           <div>
             <div className="font-semibold text-gray-900">Dana</div>
             <div className="text-xs text-gray-500">Agent builder assistant</div>
           </div>
         </div>
-        <div className="flex overflow-y-auto flex-col flex-1 mb-4">
+        <div className="flex overflow-y-auto flex-col flex-1">
           <SmartAgentChat agentName={selectedAgent?.name} />
         </div>
       </div>
