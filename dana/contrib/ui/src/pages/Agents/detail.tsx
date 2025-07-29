@@ -197,14 +197,14 @@ export default function AgentDetailPage() {
             <div className="text-lg font-semibold text-gray-900">
               Save your trained agent before exiting?
             </div>
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-600 mb-4">
               You're about to leave the agent creation process. If you exit now, all your current
               configurations will be lost.
             </div>
           </DialogDescription>
           <DialogFooter className="grid grid-cols-2 gap-2 sm:gap-2">
             <Button variant="outline" onClick={() => setShowCancelConfirmation(false)}>
-              Discard
+              Discard & Exit
             </Button>
             <Button
               variant="default"
@@ -213,7 +213,7 @@ export default function AgentDetailPage() {
                 navigate('/agents');
               }}
             >
-              Save And Exit
+              Save & Exit
             </Button>
           </DialogFooter>
         </DialogContent>
