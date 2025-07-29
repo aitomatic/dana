@@ -1388,6 +1388,7 @@ async def test_agent_by_id(agent_id: int, request: dict, db: Session = Depends(g
             agent_description=agent_description,
             context=request.get("context", {"user_id": "test_user"}),
             folder_path=folder_path,
+            websocket_id=request.get("websocket_id"),
         )
 
         # Call the existing test_agent function

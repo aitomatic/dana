@@ -3,6 +3,7 @@ import { Send, X } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { apiService } from '@/lib/api';
 import { MarkdownViewerSmall } from './chat/markdown-viewer';
+import { useVariableUpdates } from '@/hooks/useVariableUpdates';
 
 interface Message {
   id: string;
@@ -31,6 +32,23 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Generate unique WebSocket ID for this chat session
+  const [websocketId] = useState(() => `chatpane-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+
+  // WebSocket for variable updates (console logging only)
+  const { updates } = useVariableUpdates(websocketId, {
+    maxUpdates: 50,
+    autoConnect: true,
+  });
+
+  // Log variable updates to console for debugging
+  useEffect(() => {
+    if (updates.length > 0) {
+      const latestUpdate = updates[updates.length - 1];
+      console.log(`🔄 [${latestUpdate.scope}:${latestUpdate.variable}] ${latestUpdate.oldValue} → ${latestUpdate.newValue}`);
+    }
+  }, [updates]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -54,8 +72,13 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
     setIsLoading(true);
 
     try {
-      // Call the new agent test API using apiService
-      const data = await apiService.testAgentById(agent_id, userMessage.text);
+      // Call the new agent test API using apiService with WebSocket ID
+      const data = await apiService.testAgentById(
+        agent_id, 
+        userMessage.text, 
+        { user_id: 'chat_pane_user', session_id: `chatpane_${Date.now()}` },
+        websocketId
+      );
 
       const agentMessage: Message = {
         id: (Date.now() + 1).toString(),
