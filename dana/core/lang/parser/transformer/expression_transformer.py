@@ -1001,6 +1001,16 @@ class ExpressionTransformer(BaseTransformer):
         else:
             # No arguments - create empty args dict
             arguments = {"__positional": []}
+
+        # Check if this function call contains a placeholder expression
+        # If so, treat it as a single-stage pipeline (placeholders are only valid in pipelines)
+        if self._contains_placeholder(arguments):
+            # PHASE B CHANGE: Don't create PipelineExpression for function calls with placeholders
+            # Let them be handled as regular FunctionCall nodes, which will trigger PartialFunction logic
+            # from dana.core.lang.ast import PipelineExpression
+            # return PipelineExpression(stages=[FunctionCall(name=name, args=arguments)])
+            pass
+
         return FunctionCall(name=name, args=arguments)
 
     def function_list_literal(self, items):
@@ -1010,6 +1020,30 @@ class ExpressionTransformer(BaseTransformer):
             return ListLiteral(items=[])
         else:
             return ListLiteral(items=items)
+
+    def _contains_placeholder(self, arguments):
+        """Check if function call arguments contain a placeholder expression."""
+        if not isinstance(arguments, dict):
+            return False
+
+        # Check positional arguments
+        if "__positional" in arguments:
+            for arg in arguments["__positional"]:
+                if self._is_placeholder_expression(arg):
+                    return True
+
+        # Check keyword arguments
+        for key, arg in arguments.items():
+            if key != "__positional" and self._is_placeholder_expression(arg):
+                return True
+
+        return False
+
+    def _is_placeholder_expression(self, expr):
+        """Check if an expression is a placeholder expression."""
+        from dana.core.lang.ast import PlaceholderExpression
+
+        return isinstance(expr, PlaceholderExpression)
 
 
 # File updated to resolve GitHub CI syntax error - 2025-06-09

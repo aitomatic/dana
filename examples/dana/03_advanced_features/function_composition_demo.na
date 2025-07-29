@@ -240,17 +240,21 @@ def add_to_list(lst: list, item: any) -> list:
 def filter_even(lst: list) -> list:
     result = []
     for x in lst:
-        if x % 2 == 0:
+        # Handle both strings and numbers - only filter numeric values
+        if isinstance(x, (int, float)) and x % 2 == 0:
+            result.append(x)
+        elif not isinstance(x, (int, float)):
+            # Keep non-numeric values (like strings) as-is
             result.append(x)
     return result
 
 # List processing pipeline with parameters
-def list_processing_pipeline(data: list) = data | process_list("num:") | add_to_list(5) | filter_even
+def list_processing_pipeline(data: list) = process_list("num:") | add_to_list(5) | filter_even
 result = list_processing_pipeline([1, 2, 3, 4])
 print("list_processing_pipeline([1, 2, 3, 4]) = " + str(result))
 print("  → process_list([1, 2, 3, 4], 'num:') = ['num: 1', 'num: 2', 'num: 3', 'num: 4']")
 print("  → add_to_list(['num: 1', 'num: 2', 'num: 3', 'num: 4'], 5) = ['num: 1', 'num: 2', 'num: 3', 'num: 4', 5]")
-print("  → filter_even(['num: 1', 'num: 2', 'num: 3', 'num: 4', 5]) = [5] (only numeric values are filtered)")
+print("  → filter_even(['num: 1', 'num: 2', 'num: 3', 'num: 4', 5]) = ['num: 1', 'num: 2', 'num: 3', 'num: 4', 5] (only numeric values are filtered, strings are preserved)")
 
 print("\n8. Named Parameter Capture Mode")
 print("-" * 35)
