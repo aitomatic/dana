@@ -48,7 +48,8 @@ export const AgentDetailTabs: React.FC<{
             {!isChatOpen && (
               <Button
                 variant="outline"
-                className="flex gap-2 items-center px-3 py-2 text-gray-700 bg-white rounded-full border-gray-200 hover:bg-gray-50"
+                // size="sm"
+                className="rounded-full bg-white text-gray-700 border-gray-200 hover:bg-gray-50 flex items-center gap-2 px-3 py-2"
                 onClick={() => setIsChatOpen(!isChatOpen)}
               >
                 {/* Agent Avatar */}

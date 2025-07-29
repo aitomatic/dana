@@ -15,6 +15,7 @@ export default function AgentsPage() {
   const [myAgentSearch, setMyAgentSearch] = useState('');
   const [exploreSearch, setExploreSearch] = useState('');
   const [selectedDomain, setSelectedDomain] = useState('All domains');
+  const [creating, setCreating] = useState(false);
 
   const [prebuiltAgents, setPrebuiltAgents] = useState<any[]>([]);
 
@@ -57,6 +58,25 @@ export default function AgentsPage() {
     return matchesDomain && matchesSearch;
   });
 
+  const handleCreateAgent = async () => {
+    setCreating(true);
+    try {
+      // Minimal default agent payload
+      const newAgent = await apiService.createAgent({
+        name: 'Untitled Agent',
+        description: '',
+        config: {},
+      });
+      if (newAgent && newAgent.id) {
+        navigate(`/agents/${newAgent.id}`);
+      }
+    } catch (e) {
+      // Optionally show error toast
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <div className="flex flex-col p-8 w-full h-full">
       {/* Top section with Search and Train Agent button */}
@@ -89,19 +109,10 @@ export default function AgentsPage() {
             />
           </div>
           <Button
-            onClick={() => {
-              if (activeTab === 'My Agent') {
-                // Handle creating new agent for My Agent tab
-                navigate('/agents/create');
-              } else {
-                // Switch to My Agent tab to create new agent
-                setActiveTab('My Agent');
-                navigate('/agents/create');
-              }
-            }}
+            onClick={handleCreateAgent}
             variant="default"
-            className="flex gap-2 items-center hover:bg-brand-700"
-          >
+            disabled={creating}
+            className="flex hover:bg-brand-700 items-center gap-2">
             <Plus style={{ width: '20', height: '20' }} />
             <label className="text-sm font-semibold">Train an Agent</label>
           </Button>
