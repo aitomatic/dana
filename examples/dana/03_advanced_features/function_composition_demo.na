@@ -245,7 +245,7 @@ def filter_even(lst: list) -> list:
     return result
 
 # List processing pipeline with parameters
-def list_processing_pipeline(data: list) = data | process_list("num:") | add_to_list(5) | filter_even
+def list_processing_pipeline(data: list) = process_list("num:") | add_to_list(5) | filter_even
 result = list_processing_pipeline([1, 2, 3, 4])
 print("list_processing_pipeline([1, 2, 3, 4]) = " + str(result))
 print("  → process_list([1, 2, 3, 4], 'num:') = ['num: 1', 'num: 2', 'num: 3', 'num: 4']")
