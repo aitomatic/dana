@@ -40,10 +40,10 @@ export function useVariableUpdates(
   const handleMessage = useCallback((message: string) => {
     try {
       const data = JSON.parse(message);
-      
-      if (data.type === 'variable_change') {
+
+      if (data.type === 'variable_change' && data.variable === 'step') {
         const updateMessage = data as VariableUpdateMessage;
-        
+
         const newUpdate: VariableUpdate = {
           id: `update-${++updateIdCounter.current}`,
           scope: updateMessage.scope,
