@@ -227,7 +227,7 @@ class GreenhouseDemoManager:
         for client in self.clients:
             try:
                 await client.send_text(json.dumps(message))
-            except:
+            except Exception:
                 disconnected.append(client)
 
         # Remove disconnected clients
