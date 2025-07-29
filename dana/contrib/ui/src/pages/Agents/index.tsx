@@ -98,14 +98,14 @@ export default function AgentsPage() {
             </svg>
             <input
               type="text"
-              placeholder="Search agents..."
+              placeholder="Search agents"
               value={activeTab === 'My Agent' ? myAgentSearch : exploreSearch}
               onChange={(e) =>
                 activeTab === 'My Agent'
                   ? setMyAgentSearch(e.target.value)
                   : setExploreSearch(e.target.value)
               }
-              className="py-2 pr-4 pl-10 w-full text-base text-gray-900 bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="py-2 pr-4 pl-10 w-full text-base text-gray-900 bg-white rounded-lg border border-gray-200 focus:outline-none focus:bg-gray-50"
             />
           </div>
           <Button
