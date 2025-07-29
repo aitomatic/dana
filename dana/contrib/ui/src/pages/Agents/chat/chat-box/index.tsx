@@ -42,7 +42,7 @@ const ChatBox = ({ handleSendMessage, placeholder, files, id }: any) => {
   // Memoized controls area - doesn't rerender when message changes except for the SendButton
   const ControlsArea = useMemo(
     () => (
-      <div className={cn('flex items-end w-full h-10 gap-2 justify-between')}>
+      <div className={cn('flex flex-row-reverse items-end w-full h-10 gap-2 justify-between')}>
         <div className={cn('flex items-center gap-4')}>{MemoizedSendButton}</div>
       </div>
     ),

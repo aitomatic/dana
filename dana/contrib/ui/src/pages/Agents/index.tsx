@@ -87,9 +87,9 @@ export default function AgentsPage() {
               }
             }}
             variant="default"
-            className="flex items-center gap-2">
-                         <Plus style={{ width: '28px', height: '28px' }} />
-            Train an Agent
+            className="flex hover:bg-brand-700 items-center gap-2">
+                         <Plus style={{ width: '20', height: '20' }} />
+            <label className="text-sm font-semibold">Train an Agent</label>
           </Button>
         </div>
       </div>

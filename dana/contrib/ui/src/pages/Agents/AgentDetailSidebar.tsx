@@ -70,8 +70,8 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
           addMessage({
             sender: 'agent',
             text: displayName
-              ? `Hi! I'm here to help you with ${displayName}. What would you like to do?`
-              : `Hi! I'm here to help you get started. What would you like to do?`,
+              ? `Hi! I'm here to help you to customize **${displayName}**. What would you like to do?`
+              : `Hi! I'm here to help you get started. What would you like you agent to do?`,
           });
         }
       } catch (e) {
