@@ -1,0 +1,334 @@
+"""
+Self-Improving Financial Advisory System Demo
+
+This demo showcases Dana's advanced agentic AI capabilities through an intelligent
+financial advisory system that learns and adapts over time. It demonstrates:
+
+1. Agent memory systems for learning client preferences and market patterns
+2. Type-aware `reason()` function that adapts output format based on context
+3. Self-improving agent behavior through interaction learning
+4. POET-enhanced workflows with context sharing for financial intelligence
+5. Struct methods for clean financial data modeling
+6. Cross-interaction knowledge accumulation and pattern recognition
+
+Key Innovation:
+- Same reasoning prompt produces different output types (float, dict, str) based on variable typing
+- Agent learns successful interaction patterns and adapts communication style
+- Built-in financial domain expertise without external financial libraries
+- Continuous improvement through client interaction feedback
+
+Business Value:
+- Personalized financial advice that improves with each interaction
+- Adaptive communication style based on client profile and preferences
+- Market-aware portfolio optimization with learning from market conditions
+- Reduced advisory overhead through intelligent automation
+
+Dana Features Demonstrated:
+- Native `agent` keyword with financial domain intelligence
+- Built-in `plan()`, `solve()`, and `reason()` with contextual adaptation
+- Agent memory persistence and recall across sessions
+- Type-aware AI reasoning with automatic format adaptation
+- POET context sharing for enhanced financial intelligence
+"""
+
+# AI agent with built-in financial domain expertise
+agent FinancialAdvisor:
+    """
+    AI agent specialized in comprehensive financial advisory services.
+    Built-in capabilities: portfolio analysis, risk assessment, tax optimization,
+    retirement planning, market analysis, and client communication.
+    """
+    expertise_areas: list[str] = ["portfolio_management", "risk_assessment", "tax_optimization", "retirement_planning"]
+    client_risk_tolerance: str = "moderate"
+    aum_threshold: float = 1000000
+    certification_level: str = "CFP"
+    market_specializations: list[str] = ["equities", "bonds", "alternatives", "real_estate"]
+    advisory_style: str = "comprehensive"
+    years_experience: int = 15
+
+# Client data structure with intelligent methods
+struct ClientProfile:
+    """Represents a financial advisory client with intelligent analysis methods."""
+    age: int
+    income: float
+    savings: float
+    debt: float
+    risk_tolerance: str
+    investment_goals: list[str]
+    time_horizon: int
+    tax_bracket: float
+    dependents: int
+    employment_status: str
+
+def (client: ClientProfile) calculate_investment_horizon() -> int:
+    """Calculate realistic investment horizon based on age and goals."""
+    base_horizon = 65 - client.age  # Retirement assumption
+    if "house" in client.investment_goals and client.age < 35:
+        return min(10, base_horizon)  # Shorter horizon for house purchase
+    elif "education" in client.investment_goals:
+        return max(client.dependents * 5, base_horizon)  # Education planning
+    else:
+        return base_horizon
+
+def (client: ClientProfile) assess_risk_capacity() -> str:
+    """Assess financial capacity to take investment risk."""
+    net_worth = client.savings - client.debt
+    risk_capacity_ratio = (client.income + net_worth) / 100000
+    
+    if risk_capacity_ratio > 10: return "high"
+    elif risk_capacity_ratio > 5: return "moderate_high"  
+    elif risk_capacity_ratio > 2: return "moderate"
+    elif risk_capacity_ratio > 1: return "conservative"
+    else: return "very_conservative"
+
+def (client: ClientProfile) calculate_savings_rate() -> float:
+    """Calculate current savings rate as percentage of income."""
+    annual_savings = client.savings / max(client.age - 22, 1)  # Assume started saving at 22
+    return (annual_savings / client.income) * 100
+
+def (client: ClientProfile) get_client_summary() -> dict:
+    """Generate comprehensive client profile summary."""
+    return {
+        "basic_info": {
+            "age": client.age,
+            "income": client.income,
+            "net_worth": client.savings - client.debt
+        },
+        "financial_metrics": {
+            "savings_rate": client.calculate_savings_rate(),
+            "risk_capacity": client.assess_risk_capacity(),
+            "investment_horizon": client.calculate_investment_horizon()
+        },
+        "goals_and_preferences": {
+            "risk_tolerance": client.risk_tolerance,
+            "investment_goals": client.investment_goals,
+            "dependents": client.dependents
+        }
+    }
+
+# Market data structure for context-aware analysis
+struct MarketConditions:
+    """Current market conditions for context-aware financial advice."""
+    volatility_index: float
+    interest_rates: dict
+    economic_indicators: dict
+    sector_performance: dict
+    market_sentiment: str
+
+def (market: MarketConditions) assess_market_risk() -> str:
+    """Assess overall market risk level."""
+    if market.volatility_index > 30: return "high"
+    elif market.volatility_index > 20: return "moderate"
+    else: return "low"
+
+def (market: MarketConditions) recommend_asset_allocation() -> dict:
+    """Recommend asset allocation based on market conditions."""
+    risk_level = market.assess_market_risk()
+    
+    if risk_level == "high":
+        return {"stocks": 40, "bonds": 50, "cash": 10}
+    elif risk_level == "moderate":
+        return {"stocks": 60, "bonds": 35, "cash": 5}
+    else:  # low risk
+        return {"stocks": 70, "bonds": 25, "cash": 5}
+
+# Agent learning and adaptation function
+def adapt_advisor_style(advisor: FinancialAdvisor, client: ClientProfile, 
+                       explanation: dict, market: MarketConditions) -> dict:
+    """
+    Adapt advisor communication style and improve through learning.
+    
+    This function demonstrates:
+    - Type-aware reasoning with same prompt, different output formats
+    - Agent memory for learning successful interaction patterns
+    - Market condition integration for context-aware advice
+    - Cross-session knowledge accumulation
+    
+    Args:
+        advisor: Financial advisor agent with domain expertise
+        client: Client profile with financial information
+        explanation: Previous advice explanation and feedback
+        market: Current market conditions for context
+        
+    Returns:
+        Comprehensive advisory response with learning integration
+    """
+    # Type-aware reasoning - same question, different output formats automatically
+    # Dana's reason() function adapts output type based on variable type hints
+    risk_score: float = advisor.reason("assess portfolio risk level", context=[client, market])
+    risk_breakdown: dict = advisor.reason("assess portfolio risk level", context=[client, market]) 
+    risk_explanation: str = advisor.reason("assess portfolio risk level", context=[client, market])
+    
+    # Agent learns from successful interaction patterns
+    interaction_pattern = {
+        "client_profile": f"{client.age}_{client.risk_tolerance}_{client.employment_status}",
+        "communication_style": explanation.get("communication_style", "professional"),
+        "explanation_effectiveness": explanation.get("clarity_score", 0.8),
+        "client_satisfaction": explanation.get("client_satisfaction", 0.7),
+        "market_context": market.market_sentiment
+    }
+    
+    advisor.remember("successful_interactions", interaction_pattern)
+    
+    # Learn market patterns for future advice optimization
+    market_pattern = {
+        "date": current_date(),
+        "volatility": risk_score,
+        "recommended_allocation": market.recommend_asset_allocation(),
+        "economic_context": market.economic_indicators,
+        "advice_effectiveness": explanation.get("performance_score", 0.75)
+    }
+    
+    advisor.remember("market_patterns", market_pattern)
+    
+    # Personalization learning based on client feedback
+    client_preferences = {
+        "communication_style": explanation.get("preferred_style", "detailed"),
+        "detail_level": explanation.get("detail_preference", "comprehensive"),
+        "focus_areas": client.investment_goals,
+        "decision_style": explanation.get("decision_style", "analytical")
+    }
+    
+    advisor.remember("client_preferences", {
+        "profile_key": f"{client.age}_{client.income}_{client.risk_tolerance}",
+        "preferences": client_preferences
+    })
+    
+    # Generate adaptive advice based on accumulated learning
+    personalized_advice = advisor.reason("create personalized investment advice", 
+                                        context=[client, market, advisor.recall("successful_interactions")])
+    
+    return {
+        "personalized_advice": personalized_advice,
+        "risk_metrics": {
+            "numerical_score": risk_score,
+            "detailed_breakdown": risk_breakdown, 
+            "client_explanation": risk_explanation
+        },
+        "learning_integration": {
+            "interaction_patterns_learned": len(advisor.recall("successful_interactions")),
+            "market_patterns_learned": len(advisor.recall("market_patterns")),
+            "client_preferences_learned": len(advisor.recall("client_preferences"))
+        },
+        "advisor_adaptation": "Continuously improving through client interactions",
+        "confidence_improvement": True,
+        "market_awareness": market.assess_market_risk()
+    }
+
+# POET-enhanced personalized advisory workflow with learning
+@poet(domain="financial_services", retries=3, context_sharing=true, timeout=120)
+def personalized_advisory_workflow = (
+    # Phase 1: AI agent analyzes client comprehensively with domain expertise
+    (lambda client: advisor.plan(f"Create comprehensive financial plan for {client.age}yo client with ${client.income} income")) as financial_plan |
+    
+    # Phase 2: Market-aware portfolio optimization with current conditions
+    (lambda plan: advisor.solve(f"Optimize portfolio strategy considering market conditions: {plan}")) as portfolio_strategy |
+    
+    # Phase 3: Adaptive advice delivery based on client communication preferences
+    (lambda strategy: advisor.reason("explain strategy in client-appropriate language", context=strategy)) as explanation |
+    
+    # Phase 4: Learning and adaptation for continuous improvement
+    (lambda explanation: adapt_advisor_style(advisor, client, explanation, current_market))
+)
+
+# Demo execution function
+def run_financial_advisor_demo():
+    """
+    Execute the self-improving financial advisory system demo.
+    
+    This demonstrates how Dana agents learn and adapt their advisory style
+    across multiple client interactions, improving their effectiveness over time.
+    """
+    # Create advisor agent with financial domain expertise
+    advisor = FinancialAdvisor()
+    
+    # Current market conditions for context-aware advice
+    current_market = MarketConditions(
+        volatility_index=25.5,
+        interest_rates={"fed_rate": 5.25, "10_year_treasury": 4.8},
+        economic_indicators={"gdp_growth": 2.1, "inflation": 3.2, "unemployment": 3.8},
+        sector_performance={"tech": 12.5, "healthcare": 8.2, "financials": -2.1},
+        market_sentiment="cautiously_optimistic"
+    )
+    
+    # Define different client types to demonstrate adaptive learning
+    young_professional = ClientProfile(
+        age=28, income=85000, savings=45000, debt=15000,
+        risk_tolerance="aggressive", investment_goals=["retirement", "house"],
+        time_horizon=37, tax_bracket=0.22, dependents=0, employment_status="employed"
+    )
+    
+    mid_career_executive = ClientProfile(
+        age=45, income=150000, savings=350000, debt=50000,
+        risk_tolerance="moderate", investment_goals=["retirement", "education", "legacy"],
+        time_horizon=20, tax_bracket=0.32, dependents=2, employment_status="employed"
+    )
+    
+    pre_retiree = ClientProfile(
+        age=58, income=120000, savings=800000, debt=20000,
+        risk_tolerance="conservative", investment_goals=["retirement", "healthcare", "legacy"],
+        time_horizon=7, tax_bracket=0.24, dependents=0, employment_status="employed"
+    )
+    
+    clients = [young_professional, mid_career_executive, pre_retiree]
+    client_names = ["Young Professional", "Mid-Career Executive", "Pre-Retiree"]
+    
+    log("🏦 Financial Advisory System Demo Starting...")
+    log(f"Market Conditions: {current_market.market_sentiment} (Volatility: {current_market.volatility_index})")
+    
+    # Process each client type to demonstrate learning and adaptation
+    advisory_results = []
+    
+    for i, (client, name) in enumerate(zip(clients, client_names)):
+        log(f"\n👤 Advising {name}:")
+        log(f"  Age: {client.age}, Income: ${client.income:,}, Net Worth: ${client.savings - client.debt:,}")
+        log(f"  Risk Tolerance: {client.risk_tolerance}, Goals: {client.investment_goals}")
+        
+        # Execute personalized advisory workflow
+        advice_result = personalized_advisory_workflow(client)
+        advisory_results.append(advice_result)
+        
+        # Display results with learning metrics
+        log(f"  💡 Advice Summary: {advice_result.personalized_advice.get('summary', 'Comprehensive plan created')}")
+        log(f"  📊 Risk Score: {advice_result.risk_metrics.numerical_score:.2f}")
+        log(f"  🎯 Market Risk: {advice_result.market_awareness}")
+        log(f"  🧠 Learning: {advice_result.learning_integration.interaction_patterns_learned} patterns learned")
+    
+    # Demonstrate cross-client learning and pattern recognition
+    log(f"\n🧠 Agent Learning Analysis:")
+    
+    interaction_patterns = advisor.recall("successful_interactions")
+    market_patterns = advisor.recall("market_patterns")
+    client_preferences = advisor.recall("client_preferences")
+    
+    log(f"  Total Interaction Patterns: {len(interaction_patterns)}")
+    log(f"  Market Patterns Learned: {len(market_patterns)}")
+    log(f"  Client Preference Profiles: {len(client_preferences)}")
+    
+    # Show agent adaptation over time
+    log(f"\n📈 Advisor Evolution Demonstrated:")
+    log(f"  Risk Assessment: Numerical, detailed breakdown, and client-friendly explanations")
+    log(f"  Communication: Adapts style based on client age, income, and preferences")
+    log(f"  Market Integration: Advice adjusts to current market conditions")
+    log(f"  Learning Persistence: Patterns accumulate across client sessions")
+    
+    # Demonstrate type-aware reasoning capability
+    log(f"\n🔄 Type-Aware Reasoning Showcase:")
+    log(f"  Same prompt → float (risk score), dict (breakdown), str (explanation)")
+    log(f"  Automatic output adaptation based on variable type hints")
+    log(f"  No manual format specification required")
+    
+    return {
+        "advisor_performance": advisory_results,
+        "learning_metrics": {
+            "interaction_patterns": len(interaction_patterns),
+            "market_patterns": len(market_patterns),
+            "client_preferences": len(client_preferences)
+        },
+        "agent_capabilities": "Self-improving financial intelligence",
+        "business_value": "Personalized advice that improves with each interaction"
+    }
+
+# Execute the demonstration
+if __name__ == "__main__":
+    demo_results = run_financial_advisor_demo() 
