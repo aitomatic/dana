@@ -382,6 +382,10 @@ class DanaSandbox(Loggable):
             if file_dir not in loader.search_paths:
                 loader.search_paths.insert(0, file_dir)
 
+            # Set up error context with file information
+            if self._context.error_context:
+                self._context.error_context.set_file(str(file_path))
+
             # Read file
             with open(file_path) as f:
                 source_code = f.read()
@@ -402,8 +406,8 @@ class DanaSandbox(Loggable):
 
         except Exception as e:
             # Format error with location information
-            from dana.core.lang.interpreter.error_formatter import EnhancedErrorFormatter
             from dana.common.exceptions import EnhancedDanaError
+            from dana.core.lang.interpreter.error_formatter import EnhancedErrorFormatter
 
             formatted_error = EnhancedErrorFormatter.format_developer_error(e, self._context.error_context, show_traceback=True)
 
@@ -479,8 +483,8 @@ class DanaSandbox(Loggable):
             )
 
             # Format error with location information
-            from dana.core.lang.interpreter.error_formatter import EnhancedErrorFormatter
             from dana.common.exceptions import EnhancedDanaError
+            from dana.core.lang.interpreter.error_formatter import EnhancedErrorFormatter
 
             formatted_error = EnhancedErrorFormatter.format_developer_error(
                 e,
