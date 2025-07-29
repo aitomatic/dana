@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, X } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { SidebarExpand } from 'iconoir-react';
 import { useParams } from 'react-router-dom';
 import { apiService } from '@/lib/api';
@@ -35,7 +35,9 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Generate unique WebSocket ID for this chat session
-  const [websocketId] = useState(() => `chatpane-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+  const [websocketId] = useState(
+    () => `chatpane-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+  );
 
   // WebSocket for variable updates (console logging only)
   const { updates } = useVariableUpdates(websocketId, {
@@ -101,7 +103,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
         agent_id,
         userMessage.text,
         { user_id: 'chat_pane_user', session_id: `chatpane_${Date.now()}` },
-        websocketId
+        websocketId,
       );
 
       const agentMessage: Message = {
@@ -138,17 +140,18 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
 
   return (
     <div
-      className={` bg-white w-[420px] min-w-[380px] max-h-[calc(100vh-64px)] rounded-lg shadow-md overflow-y-auto flex flex-col m-2 bg-gray-50 transform transition-transform duration-300 ease-in-out z-50 ${isVisible ? 'translate-x-0' : 'translate-x-full'
-        }`}
+      className={`w-[420px] min-w-[380px] max-h-[calc(100vh-64px)] rounded-lg shadow-md overflow-y-auto flex flex-col m-2 bg-gray-50 transform transition-transform duration-300 ease-in-out z-50 ${
+        isVisible ? 'translate-x-0' : 'translate-x-full'
+      }`}
     >
       {/* Header */}
       <div className="flex justify-between items-center p-4 border-b border-gray-200">
         <h3 className="font-semibold text-gray-900">Chat with {agentName}</h3>
         <button
           onClick={onClose}
-          className="p-1 text-gray-400 transition-colors hover:text-gray-600 cursor-pointer"
+          className="p-1 text-gray-400 transition-colors cursor-pointer hover:text-gray-600"
         >
-         <SidebarExpand width={20} height={20} />
+          <SidebarExpand width={20} height={20} />
         </button>
       </div>
 
@@ -160,10 +163,11 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
             className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message.sender === 'user'
-                ? 'bg-white text-gray-900 shadow-lg'
-                : 'bg-gray-100 text-gray-900'
-                }`}
+              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                message.sender === 'user'
+                  ? 'bg-white text-gray-900 shadow-lg'
+                  : 'bg-gray-100 text-gray-900'
+              }`}
             >
               <MarkdownViewerSmall>{message.text ?? 'Empty message'}</MarkdownViewerSmall>
               <p className="mt-1 text-xs opacity-70">{message.timestamp.toLocaleTimeString()}</p>
@@ -172,7 +176,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
         ))}
         {isLoading && (
           <div className="flex justify-start">
-            <div className="px-4 py-2 bg-blue-50 border-l-4 border-blue-400 rounded-lg">
+            <div className="px-4 py-2 bg-blue-50 rounded-lg border-l-4 border-blue-400">
               <div className="flex items-center space-x-2">
                 <div className="flex space-x-1">
                   <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
@@ -188,9 +192,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
                 <div className="text-sm text-blue-700">
                   <span className="font-medium">Thinking...</span>
                   {currentStep && (
-                    <div className="text-xs text-blue-600 mt-1 italic">
-                      {currentStep}
-                    </div>
+                    <div className="mt-1 text-xs italic text-blue-600">{currentStep}</div>
                   )}
                 </div>
               </div>

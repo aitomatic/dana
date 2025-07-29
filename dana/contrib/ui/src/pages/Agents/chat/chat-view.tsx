@@ -155,7 +155,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
         <div className={contentClassName}>
           <div className="flex flex-col items-center">
             <span className="text-[36px] font-medium text-gray-400">
-              Hi, how can I help you today?
+              How can I help you today?
             </span>
           </div>
           <div className={`flex flex-col gap-2 transition-all duration-300 w-[700px]`}>

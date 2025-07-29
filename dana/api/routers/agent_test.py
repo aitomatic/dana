@@ -4,6 +4,7 @@ from typing import Any
 import os
 import logging
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
@@ -55,9 +56,6 @@ def create_websocket_notifier(websocket_id: str | None = None):
     """Create a variable change notifier that sends updates via WebSocket"""
     async def variable_change_notifier(scope: str, var_name: str, old_value: Any, new_value: Any) -> None:
         if old_value != new_value:  # Only notify on actual changes
-            # Always print to console for debugging
-            print(f"🔄 Variable changed: {scope}:{var_name} = {old_value} → {new_value}")
-            
             # Send via WebSocket if connection exists
             if websocket_id:
                 await variable_update_manager.send_variable_update(websocket_id, scope, var_name, old_value, new_value)
@@ -224,36 +222,52 @@ async def test_agent(request: AgentTestRequest):
                         
                         # Create a WebSocket-enabled notifier
                         notifier = create_websocket_notifier(request.websocket_id)
-                        sandbox_context = SandboxContextWithNotifier(notifier=notifier)
-                        sandbox_context.set("system:user_id", str(request.context.get("user_id", "Lam")))
-                        sandbox_context.set("system:session_id", "test-agent-creation")
-                        sandbox_context.set("system:agent_instance_id", str(Path(request.folder_path).stem))
-                        print(f"sandbox_context: {sandbox_context.get_scope("local")}")
-                        # Run the blocking DanaSandbox.quick_run in a thread pool to avoid blocking the API
-                        loop = asyncio.get_event_loop()
-                        result = await loop.run_in_executor(
-                            None, 
-                            lambda: DanaSandbox.quick_run(file_path=temp_file_path, context=sandbox_context)
-                        )
 
-                        print("--------------------------------")
-                        print(f"Sandbox context: {sandbox_context.get_state()}")
-                        print("--------------------------------")
+                        response_text = None
+                        
+                        # Run all potentially blocking operations in a separate thread
+                        with ThreadPoolExecutor(max_workers=1) as executor:
+                            def run_agent_test():
+                                # Create sandbox context in the thread
+                                sandbox_context = SandboxContextWithNotifier(notifier=notifier)
+                                sandbox_context.set("system:user_id", str(request.context.get("user_id", "Lam")))
+                                sandbox_context.set("system:session_id", "test-agent-creation")
+                                sandbox_context.set("system:agent_instance_id", str(Path(request.folder_path).stem))
 
-                        state = sandbox_context.get_state()
-                        response_text = state.get("local", {}).get("response", "")
+                                result = DanaSandbox.quick_run(file_path=temp_file_path, context=sandbox_context)
 
-                        print("--------------------------------")
-                        print(f"Response text: {response_text}")
-                        print("--------------------------------")
+                                print(f"sandbox_context: {sandbox_context.get_scope("local")}")
 
-                        if response_text:
-                            return AgentTestResponse(success=True, agent_response=response_text, error=None)
+                                print("--------------------------------")
+                                print(f"Sandbox context: {sandbox_context.get_state()}")
+                                print("--------------------------------")
+
+                                state = sandbox_context.get_state()
+                                response_text = state.get("local", {}).get("response", "")
+
+                                print("--------------------------------")
+                                print(f"Response text: {response_text}")
+                                print("--------------------------------")
+                                
+                                if not response_text and result.success and result.output:
+                                    response_text = result.output.strip()
+
+                                # Run the DanaSandbox.quick_run
+                                return response_text
+                            
+                            result = await asyncio.get_event_loop().run_in_executor(
+                                executor,
+                                run_agent_test
+                            )
+
+                           
+                        if response_text or result:
+                            return AgentTestResponse(success=True, agent_response=response_text or result, error=None)
                         
                         # Get the response from the execution
-                        if result.success and result.output:
-                            response_text = result.output.strip()
+                        
                         else:
+
                             # Multi-file execution failed, use LLM fallback
                             logger.warning(f"Multi-file agent execution failed: {result.error}, using LLM fallback")
                             print(f"Multi-file agent execution failed: {result.error}, using LLM fallback")
@@ -265,6 +279,7 @@ async def test_agent(request: AgentTestRequest):
                             
                     except Exception as e:
                         # Exception during multi-file execution, use LLM fallback
+                        logger.exception(e)
                         logger.warning(f"Exception during multi-file execution: {e}, using LLM fallback")
                         print(f"Exception during multi-file execution: {e}, using LLM fallback")
                         
@@ -338,12 +353,11 @@ async def test_agent(request: AgentTestRequest):
         try:
             # Create a WebSocket-enabled notifier
             notifier = create_websocket_notifier(request.websocket_id)
-            sandbox_context = SandboxContextWithNotifier(notifier=notifier)
             # Run the blocking DanaSandbox.quick_run in a thread pool to avoid blocking the API
             loop = asyncio.get_event_loop()
             result = await loop.run_in_executor(
                 None, 
-                lambda: DanaSandbox.quick_run(file_path=full_path, context=sandbox_context)
+                lambda: DanaSandbox.quick_run(file_path=full_path, context=SandboxContextWithNotifier(notifier=notifier))
             )
             
             if not result.success:

@@ -15,6 +15,7 @@ export default function AgentsPage() {
   const [myAgentSearch, setMyAgentSearch] = useState('');
   const [exploreSearch, setExploreSearch] = useState('');
   const [selectedDomain, setSelectedDomain] = useState('All domains');
+  const [creating, setCreating] = useState(false);
 
   const [prebuiltAgents, setPrebuiltAgents] = useState<any[]>([]);
 
@@ -57,39 +58,63 @@ export default function AgentsPage() {
     return matchesDomain && matchesSearch;
   });
 
+  const handleCreateAgent = async () => {
+    setCreating(true);
+    try {
+      // Minimal default agent payload
+      const newAgent = await apiService.createAgent({
+        name: 'Untitled Agent',
+        description: '',
+        config: {},
+      });
+      if (newAgent && newAgent.id) {
+        navigate(`/agents/${newAgent.id}`);
+      }
+    } catch (e) {
+      // Optionally show error toast
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <div className="flex flex-col p-8 w-full h-full">
       {/* Top section with Search and Train Agent button */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between w-full">
+      <div className="flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 justify-between items-center w-full md:flex-row">
           <div className="relative w-full md:w-72">
-            <svg className="absolute left-3 top-1/2 w-5 h-5 text-gray-400 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              className="absolute left-3 top-1/2 w-5 h-5 text-gray-400 transform -translate-y-1/2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
             <input
               type="text"
               placeholder="Search agents..."
               value={activeTab === 'My Agent' ? myAgentSearch : exploreSearch}
-              onChange={(e) => activeTab === 'My Agent' ? setMyAgentSearch(e.target.value) : setExploreSearch(e.target.value)}
+              onChange={(e) =>
+                activeTab === 'My Agent'
+                  ? setMyAgentSearch(e.target.value)
+                  : setExploreSearch(e.target.value)
+              }
               className="py-2 pr-4 pl-10 w-full text-base text-gray-900 bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <Button
-            onClick={() => {
-              if (activeTab === 'My Agent') {
-                // Handle creating new agent for My Agent tab
-                navigate('/agents/create');
-              } else {
-                // Switch to My Agent tab to create new agent
-                setActiveTab('My Agent');
-                navigate('/agents/create');
-              }
-            }}
+            onClick={handleCreateAgent}
             variant="default"
-            className="flex items-center gap-2">
-                         <Plus style={{ width: '28px', height: '28px' }} />
-            Train an Agent
+            disabled={creating}
+            className="flex hover:bg-brand-700 items-center gap-2">
+            <Plus style={{ width: '20', height: '20' }} />
+            <label className="text-sm font-semibold">Train an Agent</label>
           </Button>
         </div>
       </div>
@@ -114,7 +139,7 @@ export default function AgentsPage() {
           agents={agents.filter(
             (agent) =>
               agent.name.toLowerCase().includes(myAgentSearch.toLowerCase()) ||
-              (agent.description || '').toLowerCase().includes(myAgentSearch.toLowerCase())
+              (agent.description || '').toLowerCase().includes(myAgentSearch.toLowerCase()),
           )}
           navigate={navigate}
         />

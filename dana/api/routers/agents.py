@@ -349,7 +349,8 @@ contextual_knowledge = use("rag", sources=["./knows"])
 """
 
     methods_content = """
-from knowledge import doc_knowledge, contextual_knowledge
+from knowledge import doc_knowledge
+from knowledge import contextual_knowledge
 from common import QUERY_GENERATION_PROMPT
 from common import QUERY_DECISION_PROMPT
 from common import ANSWER_PROMPT
