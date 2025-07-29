@@ -228,13 +228,27 @@ async def test_agent(request: AgentTestRequest):
                         sandbox_context.set("system:user_id", str(request.context.get("user_id", "Lam")))
                         sandbox_context.set("system:session_id", "test-agent-creation")
                         sandbox_context.set("system:agent_instance_id", str(Path(request.folder_path).stem))
-                        print(f"sandbox_context: {sandbox_context.get_scope("system")}")
+                        print(f"sandbox_context: {sandbox_context.get_scope("local")}")
                         # Run the blocking DanaSandbox.quick_run in a thread pool to avoid blocking the API
                         loop = asyncio.get_event_loop()
                         result = await loop.run_in_executor(
                             None, 
                             lambda: DanaSandbox.quick_run(file_path=temp_file_path, context=sandbox_context)
                         )
+
+                        print("--------------------------------")
+                        print(f"Sandbox context: {sandbox_context.get_state()}")
+                        print("--------------------------------")
+
+                        state = sandbox_context.get_state()
+                        response_text = state.get("local", {}).get("response", "")
+
+                        print("--------------------------------")
+                        print(f"Response text: {response_text}")
+                        print("--------------------------------")
+
+                        if response_text:
+                            return AgentTestResponse(success=True, agent_response=response_text, error=None)
                         
                         # Get the response from the execution
                         if result.success and result.output:
@@ -246,9 +260,6 @@ async def test_agent(request: AgentTestRequest):
                             
                             llm_response = await _llm_fallback(agent_name, request.agent_description, message)
                             
-                            print("--------------------------------")
-                            print(f"LLM fallback response: {llm_response}")
-                            print("--------------------------------")
                             
                             return AgentTestResponse(success=True, agent_response=llm_response, error=None)
                             
@@ -259,9 +270,6 @@ async def test_agent(request: AgentTestRequest):
                         
                         llm_response = await _llm_fallback(agent_name, request.agent_description, message)
                         
-                        print("--------------------------------")
-                        print(f"LLM fallback response: {llm_response}")
-                        print("--------------------------------")
                         
                         return AgentTestResponse(success=True, agent_response=llm_response, error=None)
                     finally:
