@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { apiService } from '@/lib/api';
 import { getAgentAvatarSync } from '@/utils/avatar';
+import { Plus } from 'iconoir-react';
 
 export const ExploreTab: React.FC<{
   filteredAgents: any[];
@@ -9,7 +10,9 @@ export const ExploreTab: React.FC<{
   setSelectedDomain: (d: string) => void;
   navigate: (url: string) => void;
   DOMAINS: string[];
-}> = ({ filteredAgents, selectedDomain, setSelectedDomain, navigate, DOMAINS }) => (
+  handleCreateAgent: () => Promise<void>;
+  creating: boolean;
+}> = ({ filteredAgents, selectedDomain, setSelectedDomain, navigate, DOMAINS, handleCreateAgent, creating }) => (
   <>
     {/* Domain tabs */}
     <div className="flex justify-between items-center mb-4 text-gray-600">     
@@ -139,6 +142,19 @@ export const ExploreTab: React.FC<{
           </div>
         </div>
       ))}
+    </div>
+    <div className="flex justify-center flex-col mt-8 bg-gray-50 p-8 rounded-lg gap-2">
+      <div className="text-lg font-semibold text-gray-900">Can't find a pre-trained agent for your domain?</div>
+      <div className="text-sm text-gray-700">Train your own agent with support from <b>Dana</b>, our training expert.</div>
+      <Button 
+        variant="default" 
+        className='w-[200px] px-4 py-1 mt-2 font-semibold'
+        onClick={handleCreateAgent}
+        disabled={creating}
+      >
+        <Plus style={{ width: '20', height: '20' }} />
+        Train Your Own Agent
+      </Button>
     </div>
   </>
 );

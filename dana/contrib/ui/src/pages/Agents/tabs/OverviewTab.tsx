@@ -9,8 +9,8 @@ const OverviewTab: React.FC<{ onShowComparison: () => void }> = () => {
   return (
     <div className="flex flex-col gap-8 md:flex-row">
       <div className="flex flex-col flex-1 gap-4 p-6 bg-white rounded-lg border border-gray-200">
-        <div className="flex gap-3 items-center mb-4">
-          <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center">
+        <div className="flex gap-3 flex-col">
+          <div className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center">
             <img
               src={getAgentAvatarSync(agent?.id || 0)}
               alt={`${agent?.name || 'Agent'} avatar`}
@@ -27,28 +27,27 @@ const OverviewTab: React.FC<{ onShowComparison: () => void }> = () => {
               }}
             />
           </div>
+          <div className='flex flex-col'>
+            <div className='text-2xl font-semibold text-gray-900'>{agent?.name}</div>
+          </div>
           {/* <div>
             <div className="text-lg font-semibold text-gray-900">Agent name</div>
             <div className="text-2xl font-bold text-gray-900">{agent?.name}</div>
           </div> */}
         </div>
-        <div className="flex flex-col gap-2 p-4 text-sm rounded-lg border border-gray-200">
-          <div className="text-sm font-semibold text-gray-500">Agent Profile</div>
-          <div className="flex">
-            <div className="w-40">Name:</div>
-            <div>{agent?.name}</div>
+        <div className="flex flex-col gap-2 text-sm rounded-lg">
+          {/* <div className="text-sm font-semibold text-gray-500">Agent Profile</div> */}
+          <div className="flex items-center text-sm text-gray-700">
+            <div className="w-20">Domain:</div>
+            <div className='text-gray-900 font-medium'>{agent?.config?.domain ?? '-'}</div>
           </div>
           <div className="flex items-center text-sm text-gray-700">
-            <div className="w-40">Domain:</div>
-            <div>{agent?.config?.domain ?? '-'}</div>
+            <div className="w-20">Topic:</div>
+            <div className='text-gray-900 font-medium'>{agent?.config?.topic || '-'}</div>
           </div>
           <div className="flex items-center text-sm text-gray-700">
-            <div className="w-40">Topic:</div>
-            <div>{agent?.config?.topic || '-'}</div>
-          </div>
-          <div className="flex items-center text-sm text-gray-700">
-            <div className="w-40">Tasks:</div>
-            <div>{agent?.config?.task || agent?.config?.tasks || '-'}</div>
+            <div className="w-20">Tasks:</div>
+            <div className='text-gray-900 font-medium'>{agent?.config?.task || agent?.config?.tasks || '-'}</div>
           </div>
         </div>
         {/* <div className="flex flex-col gap-2">

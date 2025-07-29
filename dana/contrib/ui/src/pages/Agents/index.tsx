@@ -108,14 +108,16 @@ export default function AgentsPage() {
               className="py-2 pr-4 pl-10 w-full text-base text-gray-900 bg-white rounded-lg border border-gray-200 focus:outline-none focus:bg-gray-50"
             />
           </div>
-          <Button
-            onClick={handleCreateAgent}
-            variant="default"
-            disabled={creating}
-            className="flex hover:bg-brand-700 items-center gap-2">
-            <Plus style={{ width: '20', height: '20' }} />
-            <label className="text-sm font-semibold">Train an Agent</label>
-          </Button>
+          {/* {activeTab === 'My Agent' && (
+            <Button
+              onClick={handleCreateAgent}
+              variant="default"
+              disabled={creating}
+              className="flex hover:bg-brand-700 items-center gap-2">
+              <Plus style={{ width: '20', height: '20' }} />
+              <label className="text-sm font-semibold">Train an Agent</label>
+            </Button>
+          )} */}
         </div>
       </div>
       {/* Tabs */}
@@ -151,6 +153,8 @@ export default function AgentsPage() {
           setSelectedDomain={setSelectedDomain}
           navigate={navigate}
           DOMAINS={DOMAINS}
+          handleCreateAgent={handleCreateAgent}
+          creating={creating}
         />
       )}
     </div>

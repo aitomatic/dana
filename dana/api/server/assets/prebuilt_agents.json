@@ -2,7 +2,7 @@
   {
     "id": "sofia_finance_expert",
     "key": "sofia_finance_expert",
-    "name": "Sofia Finance Expert",
+    "name": "Sofia",
     "description": "Personal Finance Advisor & Investment Specialist",
     "config": {
       "domain": "Finance",

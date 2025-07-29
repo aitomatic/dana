@@ -182,7 +182,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
       <style>{scrollbarStyles}</style>
       <div className="flex overflow-y-auto flex-col h-full group">
         <div
-          className="flex overflow-y-auto flex-col flex-1 gap-2 p-4 custom-scrollbar"
+          className="flex overflow-y-auto flex-col flex-1 gap-2 py-2 px-2 custom-scrollbar"
           style={{
             scrollbarWidth: 'thin',
             scrollbarColor: 'transparent transparent',
@@ -285,7 +285,7 @@ export const AgentDetailSidebar: React.FC = () => {
           <img className="w-10 h-10 rounded-full" src={DanaAvatar} alt="Dana avatar" />
           <div>
             <div className="font-semibold text-gray-900">Dana</div>
-            <div className="text-xs text-gray-500">Agent builder assistant</div>
+            <div className="text-sm text-gray-500">Agent builder assistant</div>
           </div>
         </div>
         <div className="flex overflow-y-auto flex-col flex-1">
