@@ -48,7 +48,7 @@ const OverviewTab: React.FC<{ onShowComparison: () => void }> = () => {
           </div>
           <div className="flex items-center text-sm text-gray-700">
             <div className="w-40">Tasks:</div>
-            <div>{agent?.config?.tasks || '-'}</div>
+            <div>{agent?.config?.task || agent?.config?.tasks || '-'}</div>
           </div>
         </div>
         {/* <div className="flex flex-col gap-2">
