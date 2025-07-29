@@ -179,6 +179,9 @@ class TypeChecker:
         elif isinstance(statement, LiteralExpression):
             # Literal expressions as statements (e.g., standalone None) have no type implications
             pass
+        elif isinstance(statement, DictLiteral):
+            # Dictionary literals as statements (e.g., standalone {...}) have no type implications
+            pass
         else:
             raise TypeError(f"Unsupported statement type: {type(statement).__name__}", statement)
 
