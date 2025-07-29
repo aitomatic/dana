@@ -31,6 +31,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
   ]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [currentStep, setCurrentStep] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Generate unique WebSocket ID for this chat session
@@ -42,11 +43,32 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
     autoConnect: true,
   });
 
-  // Log variable updates to console for debugging
+  // Handle variable updates - show step changes as thinking messages
   useEffect(() => {
     if (updates.length > 0) {
       const latestUpdate = updates[updates.length - 1];
-      console.log(`🔄 [${latestUpdate.scope}:${latestUpdate.variable}] ${latestUpdate.oldValue} → ${latestUpdate.newValue}`);
+      // Update current step for thinking message
+      if (latestUpdate.variable === 'step') {
+        // Try both property names to be safe
+        const stepValue = latestUpdate.newValue || '';
+
+        if (stepValue) {
+          try {
+            // Parse the stringified object
+            console.log('==============================================');
+            console.log('stepValue', stepValue);
+            const stepObject = JSON.parse(stepValue.replaceAll("'", '"'));
+            console.log('stepObject', stepObject);
+            const action = stepObject.action || stepObject.description || stepObject.name || '';
+            console.log('==============================================');
+            setCurrentStep(action);
+          } catch (error) {
+            // If parsing fails, use the raw value
+            console.log(`📝 Failed to parse step object, using raw value: "${stepValue}"`);
+            setCurrentStep(stepValue);
+          }
+        }
+      }
     }
   }, [updates]);
 
@@ -71,12 +93,13 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
     setMessages((prev) => [...prev, userMessage]);
     setInputText('');
     setIsLoading(true);
+    setCurrentStep(''); // Reset current step when starting new request
 
     try {
       // Call the new agent test API using apiService with WebSocket ID
       const data = await apiService.testAgentById(
-        agent_id, 
-        userMessage.text, 
+        agent_id,
+        userMessage.text,
         { user_id: 'chat_pane_user', session_id: `chatpane_${Date.now()}` },
         websocketId
       );
@@ -102,6 +125,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+      setCurrentStep(''); // Clear step when done
     }
   };
 
@@ -139,7 +163,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
             <div
               className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                 message.sender === 'user'
-                  ? 'bg-white text-gray-900 border border-gray-200'
+                  ? 'bg-white text-gray-900 shadow-lg'
                   : 'bg-gray-100 text-gray-900'
               }`}
             >
@@ -150,17 +174,27 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
         ))}
         {isLoading && (
           <div className="flex justify-start">
-            <div className="px-4 py-2 bg-gray-100 rounded-lg">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                <div
-                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                  style={{ animationDelay: '0.1s' }}
-                ></div>
-                <div
-                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                  style={{ animationDelay: '0.2s' }}
-                ></div>
+            <div className="px-4 py-2 bg-blue-50 border-l-4 border-blue-400 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
+                  <div
+                    className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
+                    style={{ animationDelay: '0.1s' }}
+                  ></div>
+                  <div
+                    className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
+                    style={{ animationDelay: '0.2s' }}
+                  ></div>
+                </div>
+                <div className="text-sm text-blue-700">
+                  <span className="font-medium">Thinking...</span>
+                  {currentStep && (
+                    <div className="text-xs text-blue-600 mt-1 italic">
+                      {currentStep}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

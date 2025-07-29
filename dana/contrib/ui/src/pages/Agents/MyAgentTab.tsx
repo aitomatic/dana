@@ -1,10 +1,11 @@
 import React from 'react';
+import { Button } from '@/components/ui/button';
 
 // Function to generate random avatar colors based on agent ID
 const getRandomAvatarColor = (agentId: string | number): string => {
   const colors = [
     'from-blue-400 to-blue-600',
-    'from-green-400 to-green-600', 
+    'from-green-400 to-green-600',
     'from-purple-400 to-purple-600',
     'from-pink-400 to-pink-600',
     'from-indigo-400 to-indigo-600',
@@ -14,15 +15,17 @@ const getRandomAvatarColor = (agentId: string | number): string => {
     'from-orange-400 to-orange-600',
     'from-cyan-400 to-cyan-600',
     'from-emerald-400 to-emerald-600',
-    'from-violet-400 to-violet-600'
+    'from-violet-400 to-violet-600',
   ];
-  
+
   // Use agent ID to consistently generate the same color for the same agent
-  const hash = String(agentId).split('').reduce((a, b) => {
-    a = ((a << 5) - a) + b.charCodeAt(0);
-    return a & a;
-  }, 0);
-  
+  const hash = String(agentId)
+    .split('')
+    .reduce((a, b) => {
+      a = (a << 5) - a + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+
   return colors[Math.abs(hash) % colors.length];
 };
 
@@ -68,10 +71,8 @@ export const MyAgentTab: React.FC<{
   agents: any[];
   navigate: (url: string) => void;
 }> = ({ agents, navigate }) => {
-
   return (
     <>
-
       <div className="flex justify-between items-center mb-8">
         <div className="text-lg font-semibold">My Trained Agents</div>
       </div>
@@ -88,34 +89,85 @@ export const MyAgentTab: React.FC<{
             .map((agent) => (
               <div
                 key={agent.id}
-                className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col gap-4 hover:shadow-lg transition-shadow cursor-pointer"
+                className="flex flex-col gap-4 p-6 bg-white rounded-2xl border border-gray-200 transition-shadow cursor-pointer hover:shadow-lg"
                 onClick={() => navigate(`/agents/${agent.id}`)}
               >
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${agent.avatarColor || getRandomAvatarColor(agent.id)} flex items-center justify-center text-white text-lg font-bold`}>
-                    <span className={agent.avatarColor ? "text-white" : "text-white"}>{agent.name[0]}</span>
+                <div className="flex gap-4 items-center">
+                  <div
+                    className={`w-12 h-12 rounded-full bg-gradient-to-br ${agent.avatarColor || getRandomAvatarColor(agent.id)} flex items-center justify-center text-white text-lg font-bold`}
+                  >
+                    <span className={agent.avatarColor ? 'text-white' : 'text-white'}>
+                      {agent.name[0]}
+                    </span>
                   </div>
                   <div className="flex flex-col flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold text-gray-900 line-clamp-1" style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis' }}>{agent.name}</span>
+                    <div className="flex gap-2 items-center">
+                      <span
+                        className="text-lg font-semibold text-gray-900 line-clamp-1"
+                        style={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 1,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {agent.name}
+                      </span>
                       <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium border border-gray-200 ml-2">
                         {agent.config?.domain || 'Other'}
                       </span>
                     </div>
-                    <span className="text-gray-500 text-sm mt-1 line-clamp-2" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis' }}>{agent.description}</span>
+                    <span
+                      className="mt-1 text-sm text-gray-500 line-clamp-2"
+                      style={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {agent.description}
+                    </span>
                   </div>
                 </div>
-                <div className="text-gray-600 text-sm min-h-[40px]">{agent.details || (agent.created_at ? `Created ${formatDate(agent.created_at)}` : '')}</div>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-gray-500 text-xs">{agent.accuracy ? `${agent.accuracy}% accuracy` : ''}</span>
-                  <span className="flex items-center gap-1 text-yellow-500 font-semibold text-sm">
+                <div className="text-gray-600 text-sm min-h-[40px]">
+                  {agent.details ||
+                    (agent.created_at ? `Created ${formatDate(agent.created_at)}` : '')}
+                </div>
+                <div className="w-full border-t border-gray-200" />
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-500">
+                    {agent.accuracy ? `${agent.accuracy}% accuracy` : ''}
+                  </span>
+                  <span className="flex gap-1 items-center text-sm font-semibold text-yellow-500">
                     {agent.rating && (
                       <>
-                        <svg width="18" height="18" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.175c.969 0 1.371 1.24.588 1.81l-3.38 2.455a1 1 0 00-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.38-2.454a1 1 0 00-1.175 0l-3.38 2.454c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 00-.364-1.118L2.04 9.394c-.783-.57-.38-1.81.588-1.81h4.175a1 1 0 00.95-.69l1.286-3.967z" /></svg>
-                        {new Intl.NumberFormat('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(agent.rating)}
+                        <svg width="18" height="18" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.175c.969 0 1.371 1.24.588 1.81l-3.38 2.455a1 1 0 00-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.38-2.454a1 1 0 00-1.175 0l-3.38 2.454c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 00-.364-1.118L2.04 9.394c-.783-.57-.38-1.81.588-1.81h4.175a1 1 0 00.95-.69l1.286-3.967z" />
+                        </svg>
+                        {new Intl.NumberFormat('en-US', {
+                          minimumFractionDigits: 1,
+                          maximumFractionDigits: 1,
+                        }).format(agent.rating)}
                       </>
                     )}
                   </span>
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/agents/${agent.id}/chat`);
+                    }}
+                    className="flex items-center w-full"
+                  >
+                    <Button
+                      variant="outline"
+                      className="w-full text-sm font-semibold text-gray-500"
+                    >
+                      Use
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))

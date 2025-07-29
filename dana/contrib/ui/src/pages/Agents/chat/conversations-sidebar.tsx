@@ -16,7 +16,13 @@ import { Button } from '@/components/ui/button';
 import { useChatStore } from '@/stores/chat-store';
 import type { ConversationRead } from '@/types/conversation';
 
-const ConversationItem = ({ conversation, isActive, onSelect, onRename, onDelete }: {
+const ConversationItem = ({
+  conversation,
+  isActive,
+  onSelect,
+  onRename,
+  onDelete,
+}: {
   conversation: ConversationRead;
   isActive: boolean;
   onSelect: () => void;
@@ -27,15 +33,15 @@ const ConversationItem = ({ conversation, isActive, onSelect, onRename, onDelete
     <div
       key={conversation.id}
       className={cn(
-        'flex rounded-lg px-4 py-2 w-full cursor-pointer group relative',
+        'flex relative px-4 py-2 w-full rounded-lg cursor-pointer group',
         isActive ? 'bg-gray-100' : 'hover:bg-gray-50',
       )}
       onClick={onSelect}
     >
-      <div className="flex flex-col flex-1 min-w-0 gap-2">
+      <div className="flex flex-col flex-1 gap-2 min-w-0">
         <div
           className={cn(
-            'min-w-0 truncate text-sm font-medium',
+            'min-w-0 text-sm font-medium truncate',
             'animate-slideIn',
             isActive ? 'text-gray-700' : 'text-gray-500',
           )}
@@ -48,7 +54,10 @@ const ConversationItem = ({ conversation, isActive, onSelect, onRename, onDelete
   );
 };
 
-const ConversationActions = ({ onRename, onDelete }: {
+const ConversationActions = ({
+  onRename,
+  onDelete,
+}: {
   conversation: ConversationRead;
   onRename: () => void;
   onDelete: () => void;
@@ -56,7 +65,7 @@ const ConversationActions = ({ onRename, onDelete }: {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <div className="flex items-center justify-center rounded-md cursor-pointer hover:bg-gray-100 size-8 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex justify-center items-center rounded-md opacity-0 transition-opacity cursor-pointer hover:bg-gray-100 size-8 group-hover:opacity-100">
           <IconDotsVertical size={16} className="text-gray-600" />
         </div>
       </DropdownMenuTrigger>
@@ -87,13 +96,8 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
   const [selectedConversation, setSelectedConversation] = useState<ConversationRead | null>(null);
   const [newName, setNewName] = useState('');
 
-  const {
-    conversations,
-    isLoading,
-    fetchConversations,
-    updateConversation,
-    deleteConversation,
-  } = useChatStore();
+  const { conversations, isLoading, fetchConversations, updateConversation, deleteConversation } =
+    useChatStore();
 
   // Fetch conversations when agentId changes
   useEffect(() => {
@@ -175,15 +179,15 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
   // };
 
   return (
-    <div className="flex flex-col h-full bg-background border-r border-gray-200 dark:border-gray-300">
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-300">
+    <div className="flex flex-col h-full border-r border-gray-200 bg-background dark:border-gray-300">
+      <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-300">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Conversations</h2>
         <div className="flex flex-row items-center">
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center justify-center rounded-md cursor-pointer hover:bg-gray-100 size-8">
+              <div className="flex justify-center items-center rounded-md cursor-pointer hover:bg-gray-100 size-8">
                 <Tools
-                  onClick={() => { }}
+                  onClick={() => {}}
                   width={18}
                   height={18}
                   className="text-gray-600 cursor-pointer"
@@ -195,8 +199,13 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center justify-center rounded-md cursor-pointer hover:bg-gray-100 size-8">
-                <ChatPlusIn onClick={handleNewChat} width={18} height={18} className="text-gray-600" />
+              <div className="flex justify-center items-center rounded-md cursor-pointer hover:bg-gray-100 size-8">
+                <ChatPlusIn
+                  onClick={handleNewChat}
+                  width={18}
+                  height={18}
+                  className="text-gray-600"
+                />
               </div>
             </TooltipTrigger>
             <TooltipContent side="bottom">New chat</TooltipContent>
@@ -207,7 +216,7 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
       <div className="flex flex-col gap-2 h-[calc(100vh-130px)] overflow-scroll scrollbar-hide">
         <div className="flex flex-col gap-3 px-2">
           {isLoading ? (
-            <div className="flex items-center justify-center p-4">
+            <div className="flex justify-center items-center p-4">
               <div className="text-sm text-gray-500">Loading conversations...</div>
             </div>
           ) : conversations.length > 0 ? (
@@ -222,7 +231,7 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
               />
             ))
           ) : (
-            <span className="pl-3 text-sm text-gray-400">History is empty</span>
+            <span className="pl-3 mt-4 text-sm text-gray-400">History is empty</span>
           )}
         </div>
       </div>
