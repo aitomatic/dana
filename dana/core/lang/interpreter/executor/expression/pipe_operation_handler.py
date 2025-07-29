@@ -301,10 +301,9 @@ class PipeOperationHandler(Loggable):
         func = self._resolve_identifier(Identifier(func_name), context)
 
         # If the function call has arguments, create a partial function
-        if func_call.args:
-            # For now, just return the function as-is
-            # TODO: Implement partial application if needed
-            return func
+        if func_call.args and (func_call.args.get("__positional") or any(k != "__positional" for k in func_call.args.keys())):
+            # Create a partial function that remembers the arguments
+            return self._create_partial_function(func, func_call, context)
 
         return func
 
@@ -319,6 +318,74 @@ class PipeOperationHandler(Loggable):
 
         # Create a ParallelFunction that will execute all functions with the same input
         return ParallelFunction(functions, context=context)
+
+    def _create_partial_function(self, func: Any, func_call: FunctionCall, context: SandboxContext) -> Any:
+        """Create a partial function that remembers the original arguments.
+
+        This handles both implicit and explicit pipeline modes:
+        - Implicit mode: If no placeholders, insert pipeline value as first argument
+        - Explicit mode: If placeholders ($$), substitute them with pipeline value
+        """
+        from dana.core.lang.ast import PlaceholderExpression
+        from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
+
+        class PartialFunction(SandboxFunction):
+            def __init__(self, base_func, original_args, parent_executor, exec_context):
+                super().__init__(exec_context)
+                self.base_func = base_func
+                self.original_args = original_args
+                self.parent_executor = parent_executor
+                self.exec_context = exec_context
+
+            def prepare_context(self, context: SandboxContext, args: list, kwargs: dict) -> SandboxContext:
+                """Prepare context for partial function execution."""
+                return context
+
+            def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> None:
+                """Restore context after partial function execution."""
+                pass
+
+            def execute(self, context: SandboxContext, pipeline_value: Any) -> Any:
+                """Execute the partial function with the pipeline value."""
+                # Process arguments with placeholder substitution (same logic as _execute_function_call_stage)
+                args = []
+                kwargs = {}
+
+                if isinstance(self.original_args, dict):
+                    # Handle positional arguments
+                    if "__positional" in self.original_args:
+                        for arg_expr in self.original_args["__positional"]:
+                            if isinstance(arg_expr, PlaceholderExpression):
+                                args.append(pipeline_value)
+                            else:
+                                evaluated = self.parent_executor.execute(arg_expr, context)
+                                args.append(evaluated)
+
+                    # Handle keyword arguments
+                    for key, arg_expr in self.original_args.items():
+                        if key != "__positional":
+                            if isinstance(arg_expr, PlaceholderExpression):
+                                kwargs[key] = pipeline_value
+                            else:
+                                kwargs[key] = self.parent_executor.execute(arg_expr, context)
+                else:
+                    # Fallback for other argument formats
+                    args = [pipeline_value]
+
+                # Check if we need implicit first-argument insertion
+                has_placeholder = any(isinstance(arg, PlaceholderExpression) for arg in self.original_args.get("__positional", []))
+
+                if not has_placeholder:
+                    # No placeholders found, insert pipeline_value as first argument (implicit mode)
+                    args.insert(0, pipeline_value)
+
+                # Execute the function with proper context handling
+                if isinstance(self.base_func, SandboxFunction):
+                    return self.base_func.execute(context, *args, **kwargs)
+                else:
+                    return self.base_func(*args, **kwargs)
+
+        return PartialFunction(func, func_call.args, self.parent_executor, context)
 
     def _resolve_identifier(self, identifier: Identifier, context: SandboxContext) -> Any:
         """Resolve an identifier to a function from context or registry."""

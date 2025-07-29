@@ -115,6 +115,7 @@ class ExpressionExecutor(BaseExecutor):
             NamedPipelineStage: self.execute_named_pipeline_stage,
             PlaceholderExpression: self.execute_placeholder_expression,
             PipelineExpression: self.execute_pipeline_expression,
+            FunctionCall: self.execute_function_call,
         }
 
     def execute_literal_expression(self, node: LiteralExpression, context: SandboxContext) -> Any:
@@ -816,6 +817,53 @@ class ExpressionExecutor(BaseExecutor):
                 return None
 
         return composed_function
+
+    def execute_function_call(self, node: FunctionCall, context: SandboxContext) -> Any:
+        """Execute a function call, routing function calls with placeholders to PartialFunction logic.
+
+        Args:
+            node: The function call to execute
+            context: The execution context
+
+        Returns:
+            The result of the function call, or a PartialFunction if placeholders are present
+        """
+        # Check if the function call contains placeholders
+        if self._has_placeholders(node):
+            # Route to pipe operation handler's PartialFunction logic
+            return self.pipe_operation_handler._resolve_function_call(node, context)
+        else:
+            # Delegate to normal function execution
+            if hasattr(self.parent, "_function_executor"):
+                return self.parent._function_executor.execute_function_call(node, context)
+            else:
+                # Fallback: use parent's general execute method
+                return self.parent.execute(node, context)
+
+    def _has_placeholders(self, node: FunctionCall) -> bool:
+        """Check if a function call contains PlaceholderExpression.
+
+        Args:
+            node: The function call to check
+
+        Returns:
+            True if the function call contains placeholders, False otherwise
+        """
+        # Handle case where args is None
+        if not node.args:
+            return False
+
+        if "__positional" in node.args:
+            for arg in node.args["__positional"]:
+                if isinstance(arg, PlaceholderExpression):
+                    return True
+
+        # Check keyword arguments too
+        for key, arg in node.args.items():
+            if key != "__positional" and isinstance(arg, PlaceholderExpression):
+                return True
+
+        return False
 
     def _execute_pipeline_stage(self, current_value: Any, stage: Any, context: SandboxContext) -> Any:
         """Execute a single pipeline stage with argument substitution.
