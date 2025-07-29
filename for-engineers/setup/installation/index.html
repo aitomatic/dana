@@ -24,7 +24,7 @@
     
     
       
-        <title>Installation - Dana - Domain-Aware NeuroSymbolic Architecture</title>
+        <title>Installation - Build better agents with Dana</title>
       
     
     
@@ -94,7 +94,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="Dana - Domain-Aware NeuroSymbolic Architecture" class="md-header__button md-logo" aria-label="Dana - Domain-Aware NeuroSymbolic Architecture" data-md-component="logo">
+    <a href="../../.." title="Build better agents with Dana" class="md-header__button md-logo" aria-label="Build better agents with Dana" data-md-component="logo">
       
   <img src="../../../images/aitomatic-logo-white.png" alt="logo">
 
@@ -107,7 +107,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            Dana - Domain-Aware NeuroSymbolic Architecture
+            Build better agents with Dana
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -387,12 +387,12 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="Dana - Domain-Aware NeuroSymbolic Architecture" class="md-nav__button md-logo" aria-label="Dana - Domain-Aware NeuroSymbolic Architecture" data-md-component="logo">
+    <a href="../../.." title="Build better agents with Dana" class="md-nav__button md-logo" aria-label="Build better agents with Dana" data-md-component="logo">
       
   <img src="../../../images/aitomatic-logo-white.png" alt="logo">
 
     </a>
-    Dana - Domain-Aware NeuroSymbolic Architecture
+    Build better agents with Dana
   </label>
   
     <div class="md-nav__source">
@@ -4441,35 +4441,38 @@
 <h1 id="installation-guide">Installation Guide<a class="headerlink" href="#installation-guide" title="Permanent link">&para;</a></h1>
 <h2 id="quick-start-2-minutes">🚀 Quick Start (2 Minutes)<a class="headerlink" href="#quick-start-2-minutes" title="Permanent link">&para;</a></h2>
 <h3 id="step-1-set-up-virtual-environment-30-seconds">Step 1: Set Up Virtual Environment (30 seconds)<a class="headerlink" href="#step-1-set-up-virtual-environment-30-seconds" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Create and activate virtual environment</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>dana-env
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nb">source</span><span class="w"> </span>dana-env/bin/activate<span class="w">  </span><span class="c1"># On Windows: dana-env\Scripts\activate</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># Verify Python version (Dana requires Python 3.12+)</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>python<span class="w"> </span>--version
-</span></code></pre></div>
+<p>Create virtual environment:
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>dana-env
+</span></code></pre></div></p>
+<p>Activate environment:
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">source</span><span class="w"> </span>dana-env/bin/activate<span class="w">  </span><span class="c1"># On Windows: dana-env\Scripts\activate</span>
+</span></code></pre></div></p>
+<p>Verify Python version:
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python<span class="w"> </span>--version
+</span></code></pre></div></p>
 <h3 id="step-2-install-dana-30-seconds">Step 2: Install Dana (30 seconds)<a class="headerlink" href="#step-2-install-dana-30-seconds" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Install Dana with all dependencies</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>pip<span class="w"> </span>install<span class="w"> </span>dana
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Verify installation</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>dana<span class="w"> </span>--version
-</span></code></pre></div>
+<p>Install Dana:
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>pip<span class="w"> </span>install<span class="w"> </span>dana
+</span></code></pre></div></p>
+<p>Verify installation:
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>dana<span class="w"> </span>--version
+</span></code></pre></div></p>
 <h3 id="step-3-test-installation-30-seconds">Step 3: Test Installation (30 seconds)<a class="headerlink" href="#step-3-test-installation-30-seconds" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Start Dana REPL</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>dana
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Or run a quick test</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;name = &quot;Hello Dana&quot;&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>dana
-</span></code></pre></div>
+<p>Start Dana REPL:
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>dana
+</span></code></pre></div></p>
+<p>Or run a quick test:
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;name = &quot;Hello Dana&quot;&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>dana
+</span></code></pre></div></p>
 <h3 id="step-4-configure-api-keys-30-seconds">Step 4: Configure API Keys (30 seconds)<a class="headerlink" href="#step-4-configure-api-keys-30-seconds" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Set up your API keys for AI providers</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>dana<span class="w"> </span>config
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Or set environment variables</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">OPENAI_API_KEY</span><span class="o">=</span><span class="s2">&quot;your-key-here&quot;</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ANTHROPIC_API_KEY</span><span class="o">=</span><span class="s2">&quot;your-key-here&quot;</span>
+<p>Set up API keys:
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>dana<span class="w"> </span>config
+</span></code></pre></div></p>
+<p>Or set environment variables:
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">OPENAI_API_KEY</span><span class="o">=</span><span class="s2">&quot;your-key-here&quot;</span>
 </span></code></pre></div>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">ANTHROPIC_API_KEY</span><span class="o">=</span><span class="s2">&quot;your-key-here&quot;</span>
+</span></code></pre></div></p>
 <h2 id="installation-complete">✅ Installation Complete!<a class="headerlink" href="#installation-complete" title="Permanent link">&para;</a></h2>
 <p>You're now ready to build agents with Dana. Try:
 - <code>dana</code> - Start interactive REPL
@@ -4479,7 +4482,7 @@
 <h2 id="troubleshooting">🔧 Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
 <h3 id="macoshomebrew-python-issues">macOS/Homebrew Python Issues<a class="headerlink" href="#macoshomebrew-python-issues" title="Permanent link">&para;</a></h3>
 <p>If you see an 'externally-managed-environment' error:
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>pip<span class="w"> </span>install<span class="w"> </span>dana<span class="w"> </span>--break-system-packages
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>pip<span class="w"> </span>install<span class="w"> </span>dana<span class="w"> </span>--break-system-packages
 </span></code></pre></div></p>
 <h3 id="virtual-environment-best-practices">Virtual Environment Best Practices<a class="headerlink" href="#virtual-environment-best-practices" title="Permanent link">&para;</a></h3>
 <ul>
