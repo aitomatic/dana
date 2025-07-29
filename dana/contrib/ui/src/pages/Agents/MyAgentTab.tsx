@@ -136,7 +136,7 @@ export const MyAgentTab: React.FC<{
                   {agent.details ||
                     (agent.created_at ? `Created ${formatDate(agent.created_at)}` : '')}
                 </div>
-            
+
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-gray-500">
                     {agent.accuracy ? `${agent.accuracy}% accuracy` : ''}

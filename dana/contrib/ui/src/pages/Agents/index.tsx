@@ -60,18 +60,31 @@ export default function AgentsPage() {
   return (
     <div className="flex flex-col p-8 w-full h-full">
       {/* Top section with Search and Train Agent button */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between w-full">
+      <div className="flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 justify-between items-center w-full md:flex-row">
           <div className="relative w-full md:w-72">
-            <svg className="absolute left-3 top-1/2 w-5 h-5 text-gray-400 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              className="absolute left-3 top-1/2 w-5 h-5 text-gray-400 transform -translate-y-1/2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
             <input
               type="text"
               placeholder="Search agents..."
               value={activeTab === 'My Agent' ? myAgentSearch : exploreSearch}
-              onChange={(e) => activeTab === 'My Agent' ? setMyAgentSearch(e.target.value) : setExploreSearch(e.target.value)}
+              onChange={(e) =>
+                activeTab === 'My Agent'
+                  ? setMyAgentSearch(e.target.value)
+                  : setExploreSearch(e.target.value)
+              }
               className="py-2 pr-4 pl-10 w-full text-base text-gray-900 bg-white rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -87,8 +100,9 @@ export default function AgentsPage() {
               }
             }}
             variant="default"
-            className="flex hover:bg-brand-700 items-center gap-2">
-                         <Plus style={{ width: '20', height: '20' }} />
+            className="flex gap-2 items-center hover:bg-brand-700"
+          >
+            <Plus style={{ width: '20', height: '20' }} />
             <label className="text-sm font-semibold">Train an Agent</label>
           </Button>
         </div>
@@ -114,7 +128,7 @@ export default function AgentsPage() {
           agents={agents.filter(
             (agent) =>
               agent.name.toLowerCase().includes(myAgentSearch.toLowerCase()) ||
-              (agent.description || '').toLowerCase().includes(myAgentSearch.toLowerCase())
+              (agent.description || '').toLowerCase().includes(myAgentSearch.toLowerCase()),
           )}
           navigate={navigate}
         />

@@ -48,17 +48,16 @@ export const AgentDetailTabs: React.FC<{
             {!isChatOpen && (
               <Button
                 variant="outline"
-                size="md"
-                className="rounded-full bg-white text-gray-700 border-gray-200 hover:bg-gray-50 flex items-center gap-2 px-3 py-2"
+                className="flex gap-2 items-center px-3 py-2 text-gray-700 bg-white rounded-full border-gray-200 hover:bg-gray-50"
                 onClick={() => setIsChatOpen(!isChatOpen)}
               >
                 {/* Agent Avatar */}
-                <div className="w-6 h-6 rounded-full bg-brand-100 flex items-center justify-center">
+                <div className="flex justify-center items-center w-6 h-6 rounded-full bg-brand-100">
                   <span className="text-xs font-medium text-brand-700">
                     {selectedAgent?.name?.[0] || 'A'}
                   </span>
                 </div>
-                
+
                 {/* Chat Text */}
                 <span className="text-sm font-medium">
                   Chat with {selectedAgent?.name || 'Agent'}

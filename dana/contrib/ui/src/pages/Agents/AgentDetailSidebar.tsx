@@ -4,7 +4,7 @@ import { apiService } from '@/lib/api';
 import { useParams } from 'react-router-dom';
 import { useSmartChatStore } from '@/stores/smart-chat-store';
 import { useAgentStore } from '@/stores/agent-store';
-import { Paperclip, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { MarkdownViewerSmall } from './chat/markdown-viewer';
 
 const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
@@ -179,7 +179,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
     <>
       <style>{scrollbarStyles}</style>
       <div className="flex overflow-y-auto flex-col h-full group">
-        <div 
+        <div
           className="flex overflow-y-auto flex-col flex-1 gap-2 p-4 custom-scrollbar"
           style={{
             scrollbarWidth: 'thin',
@@ -192,36 +192,36 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
             e.currentTarget.style.scrollbarColor = 'transparent transparent';
           }}
         >
-        {messages.map((msg, idx) => {
-          const isThinking = loading && idx === messages.length - 1 && msg.sender === 'agent';
-          return (
-            <div
-              key={idx}
-              className={`rounded-sm px-3 py-2 text-sm ${
-                msg.sender === 'user'
-                  ? 'bg-gray-100'
-                  : isThinking
-                    ? ' self-start text-left border border-gray-100'
-                    : ' self-start text-left'
-              }`}
-            >
-              {isThinking ? (
-                <div className="flex gap-2 items-center">
-                  <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-gray-700">{msg.text}</span>
-                </div>
-              ) : (
-                <MarkdownViewerSmall>{msg.text}</MarkdownViewerSmall>
-              )}
-            </div>
-          );
-        })}
-        <div ref={bottomRef} />
+          {messages.map((msg, idx) => {
+            const isThinking = loading && idx === messages.length - 1 && msg.sender === 'agent';
+            return (
+              <div
+                key={idx}
+                className={`rounded-sm px-3 py-2 text-sm ${
+                  msg.sender === 'user'
+                    ? 'bg-gray-100'
+                    : isThinking
+                      ? ' self-start text-left border border-gray-100'
+                      : ' self-start text-left'
+                }`}
+              >
+                {isThinking ? (
+                  <div className="flex gap-2 items-center">
+                    <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
+                    <span className="text-gray-700">{msg.text}</span>
+                  </div>
+                ) : (
+                  <MarkdownViewerSmall>{msg.text}</MarkdownViewerSmall>
+                )}
+              </div>
+            );
+          })}
+          <div ref={bottomRef} />
         </div>
         <div className="p-3">
           <div className="relative">
             <textarea
-              className="w-full min-h-[100px] max-h-[120px] pl-3 pr-12 py-3 text-sm rounded-lg bg-gray-100 border-gray-300 
+              className="w-full min-h-[100px] max-h-[120px] pl-3 pr-12 py-3 text-sm rounded-lg bg-gray-100 border-gray-300
               focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-transparent resize-none overflow-y-auto"
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -247,7 +247,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
               title="Add files"
               disabled={loading}
             >
-              <div className="w-7 h-7 cursor-pointer rounded-full border border-gray-300 flex items-center justify-center">
+              <div className="flex justify-center items-center w-7 h-7 rounded-full border border-gray-300 cursor-pointer">
                 <Plus className="w-4 h-4" />
               </div>
             </button>
