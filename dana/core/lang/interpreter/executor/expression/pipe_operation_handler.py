@@ -14,7 +14,7 @@ from typing import Any
 
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.ast import BinaryExpression, BinaryOperator, Identifier, ListLiteral
+from dana.core.lang.ast import AttributeAccess, BinaryExpression, BinaryOperator, FunctionCall, Identifier, ListLiteral, NamedPipelineStage
 from dana.core.lang.interpreter.functions.composed_function import ComposedFunction
 from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
 from dana.core.lang.sandbox_context import SandboxContext
@@ -97,6 +97,52 @@ class ParallelFunction(SandboxFunction):
         return f"ParallelFunction(functions={self.functions})"
 
 
+class NamedPipelineComposedFunction(SandboxFunction):
+    """A composed function that supports named parameter capture in pipelines."""
+
+    def __init__(self, pipeline_expr: BinaryExpression, context: SandboxContext | None = None):
+        """Initialize a named pipeline composed function.
+
+        Args:
+            pipeline_expr: The pipeline expression to execute
+            context: Optional sandbox context
+        """
+        super().__init__(context)
+        self.pipeline_expr = pipeline_expr
+        self._pipeline_executor = None
+
+    def execute(self, context: SandboxContext, *args, **kwargs) -> Any:
+        """Execute the pipeline with named parameter capture support.
+
+        Args:
+            context: The execution context
+            *args: Positional arguments
+            **kwargs: Keyword arguments
+
+        Returns:
+            The result of the pipeline execution
+        """
+        # Lazy initialize the pipeline executor with parent executor
+        if self._pipeline_executor is None:
+            from dana.core.lang.interpreter.executor.expression.pipeline_executor import PipelineExecutor
+
+            # Get the parent executor from the context's interpreter
+            parent_executor = None
+            if hasattr(context, "_interpreter") and hasattr(context._interpreter, "_expression_executor"):
+                parent_executor = context._interpreter._expression_executor
+            self._pipeline_executor = PipelineExecutor(parent_executor=parent_executor)
+
+        return self._pipeline_executor.execute_pipeline(self.pipeline_expr, context, *args, **kwargs)
+
+    def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> None:
+        """Restore context after function execution (required by SandboxFunction)."""
+        # No special context restoration needed
+        pass
+
+    def __repr__(self) -> str:
+        return f"NamedPipelineComposedFunction({self.pipeline_expr})"
+
+
 class PipeOperationHandler(Loggable):
     """Clean pipe operation handler for pure function composition."""
 
@@ -110,68 +156,109 @@ class PipeOperationHandler(Loggable):
 
         Supports only function-to-function composition:
         - f1 | f2 -> ComposedFunction
-        - f1 | [f2, f3] -> Mixed composition
-        - [f1, f2] | f3 -> Mixed composition
 
         Does NOT support data pipelines like: data | function
         """
         try:
-            # Resolve left operand to a function
-            left_func = self._resolve_to_function(left, context)
+            # Check if this is a declarative function composition with named stages
+            if self._has_named_stages(left) or self._has_named_stages(right):
+                # Use the new named pipeline composed function
+                pipeline_expr = self._create_pipeline_expression(left, right)
+                return NamedPipelineComposedFunction(pipeline_expr, context=context)
 
-            # Handle different right operand types
-            if isinstance(right, ListLiteral):
-                # Right side is a list: f1 | [f2, f3]
-                right_functions = []
-                for item in right.items:
-                    func = self._resolve_to_function(item, context)
-                    right_functions.append(func)
+            # Handle NamedPipelineStage objects without names (convert to regular expressions)
+            left_expr = self._unwrap_named_stage(left)
+            right_expr = self._unwrap_named_stage(right)
 
-                # Create parallel function from the list
-                parallel_func = ParallelFunction(right_functions, context)
+            # Resolve both operands to functions
+            left_func = self._resolve_to_function(left_expr, context)
+            right_func = self._resolve_to_function(right_expr, context)
 
-                # Create composed function using Dana's existing infrastructure
-                return ComposedFunction(left_func, parallel_func, context=context)
-
-            else:
-                # Right side is a single function: f1 | f2
-                right_func = self._resolve_to_function(right, context)
-
-                # Create composed function using Dana's existing infrastructure
-                return ComposedFunction(left_func, right_func, context=context)
+            # Create composed function using Dana's existing infrastructure
+            return ComposedFunction(left_func, right_func, context=context)
 
         except Exception as e:
             if isinstance(e, SandboxError):
                 raise
             raise SandboxError(f"Error in pipe composition: {e}")
 
+    def _unwrap_named_stage(self, expr: Any) -> Any:
+        """Unwrap a NamedPipelineStage to get the underlying expression.
+
+        Args:
+            expr: The expression to unwrap
+
+        Returns:
+            The unwrapped expression
+        """
+        if isinstance(expr, NamedPipelineStage):
+            return expr.expression
+        elif isinstance(expr, BinaryExpression) and expr.operator == BinaryOperator.PIPE:
+            return BinaryExpression(
+                left=self._unwrap_named_stage(expr.left), operator=expr.operator, right=self._unwrap_named_stage(expr.right)
+            )
+        return expr
+
+    def _has_named_stages(self, expr: Any) -> bool:
+        """Check if an expression contains named pipeline stages.
+
+        Args:
+            expr: The expression to check
+
+        Returns:
+            True if the expression contains named stages
+        """
+        if isinstance(expr, NamedPipelineStage):
+            return expr.name is not None
+        elif isinstance(expr, BinaryExpression) and expr.operator == BinaryOperator.PIPE:
+            return self._has_named_stages(expr.left) or self._has_named_stages(expr.right)
+        return False
+
+    def _create_pipeline_expression(self, left: Any, right: Any) -> BinaryExpression:
+        """Create a pipeline expression from left and right operands.
+
+        Args:
+            left: The left operand
+            right: The right operand
+
+        Returns:
+            A BinaryExpression representing the pipeline
+        """
+        # If left is already a pipeline, extend it
+        if isinstance(left, BinaryExpression) and left.operator == BinaryOperator.PIPE:
+            return BinaryExpression(left=left, operator=BinaryOperator.PIPE, right=right)
+        else:
+            # Create a new pipeline
+            return BinaryExpression(left=left, operator=BinaryOperator.PIPE, right=right)
+
     def _resolve_to_function(self, expr: Any, context: SandboxContext) -> Any:
         """Resolve an expression to a function.
 
         Handles:
         - Identifiers: resolve from context/registry
-        - ListLiterals: create ParallelFunction
         - BinaryExpressions: evaluate recursively
+        - FunctionCall: evaluate to get the function
+        - ListLiteral: create ParallelFunction for parallel composition
         - Functions: return as-is
         """
         # Handle identifiers
         if isinstance(expr, Identifier):
             return self._resolve_identifier(expr, context)
 
-        # Handle list literals (parallel functions)
-        if isinstance(expr, ListLiteral):
-            functions = []
-            for item in expr.items:
-                func = self._resolve_to_function(item, context)
-                functions.append(func)
-            return ParallelFunction(functions, context)
-
         # Handle binary expressions (nested compositions)
         if isinstance(expr, BinaryExpression) and expr.operator == BinaryOperator.PIPE:
             return self.execute_pipe(expr.left, expr.right, context)
 
+        # Handle function calls (evaluate to get the function)
+        if isinstance(expr, FunctionCall):
+            return self._resolve_function_call(expr, context)
+
+        # Handle list literals (parallel function composition)
+        if isinstance(expr, ListLiteral):
+            return self._resolve_list_literal(expr, context)
+
         # Handle already composed functions and SandboxFunctions
-        if isinstance(expr, (SandboxFunction, ParallelFunction)):
+        if isinstance(expr, SandboxFunction | ParallelFunction):
             return expr
 
         # Handle direct callables
@@ -182,6 +269,124 @@ class PipeOperationHandler(Loggable):
         raise SandboxError(
             f"Cannot use non-function '{expr}' of type {type(expr).__name__} in pipe composition. Only functions are allowed."
         )
+
+    def _resolve_function_call(self, func_call: FunctionCall, context: SandboxContext) -> Any:
+        """Resolve a function call to a function (partial application)."""
+        # Handle AttributeAccess for method calls
+        if isinstance(func_call.name, AttributeAccess):
+            # Resolve the object and get the method
+            if self.parent_executor is None:
+                # Handle case where parent_executor is not available
+                # Try to resolve the object directly from context
+                if isinstance(func_call.name.object, Identifier):
+                    obj = context.get(func_call.name.object.name)
+                    if obj is None:
+                        raise SandboxError(f"Object '{func_call.name.object.name}' not found in context")
+                else:
+                    raise SandboxError("Cannot resolve attribute access without parent executor")
+            else:
+                obj = self.parent_executor.execute(func_call.name.object, context)
+
+            method_name = func_call.name.attribute
+            if hasattr(obj, method_name):
+                func = getattr(obj, method_name)
+                if callable(func):
+                    return func
+                else:
+                    raise SandboxError(f"'{method_name}' is not a callable method on {type(obj).__name__}")
+            else:
+                raise SandboxError(f"Object {type(obj).__name__} has no method '{method_name}'")
+
+        # Handle string function names
+        func_name = func_call.name if isinstance(func_call.name, str) else func_call.name.name
+        func = self._resolve_identifier(Identifier(func_name), context)
+
+        # If the function call has arguments, create a partial function
+        if func_call.args and (func_call.args.get("__positional") or any(k != "__positional" for k in func_call.args.keys())):
+            # Create a partial function that remembers the arguments
+            return self._create_partial_function(func, func_call, context)
+
+        return func
+
+    def _resolve_list_literal(self, list_literal: ListLiteral, context: SandboxContext) -> Any:
+        """Resolve a list literal to a ParallelFunction for parallel composition."""
+        functions = []
+
+        for item in list_literal.items:
+            # Resolve each item to a function
+            func = self._resolve_to_function(item, context)
+            functions.append(func)
+
+        # Create a ParallelFunction that will execute all functions with the same input
+        return ParallelFunction(functions, context=context)
+
+    def _create_partial_function(self, func: Any, func_call: FunctionCall, context: SandboxContext) -> Any:
+        """Create a partial function that remembers the original arguments.
+
+        This handles both implicit and explicit pipeline modes:
+        - Implicit mode: If no placeholders, insert pipeline value as first argument
+        - Explicit mode: If placeholders ($$), substitute them with pipeline value
+        """
+        from dana.core.lang.ast import PlaceholderExpression
+        from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
+
+        class PartialFunction(SandboxFunction):
+            def __init__(self, base_func, original_args, parent_executor, exec_context):
+                super().__init__(exec_context)
+                self.base_func = base_func
+                self.original_args = original_args
+                self.parent_executor = parent_executor
+                self.exec_context = exec_context
+
+            def prepare_context(self, context: SandboxContext, args: list, kwargs: dict) -> SandboxContext:
+                """Prepare context for partial function execution."""
+                return context
+
+            def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> None:
+                """Restore context after partial function execution."""
+                pass
+
+            def execute(self, context: SandboxContext, pipeline_value: Any) -> Any:
+                """Execute the partial function with the pipeline value."""
+                # Process arguments with placeholder substitution (same logic as _execute_function_call_stage)
+                args = []
+                kwargs = {}
+
+                if isinstance(self.original_args, dict):
+                    # Handle positional arguments
+                    if "__positional" in self.original_args:
+                        for arg_expr in self.original_args["__positional"]:
+                            if isinstance(arg_expr, PlaceholderExpression):
+                                args.append(pipeline_value)
+                            else:
+                                evaluated = self.parent_executor.execute(arg_expr, context)
+                                args.append(evaluated)
+
+                    # Handle keyword arguments
+                    for key, arg_expr in self.original_args.items():
+                        if key != "__positional":
+                            if isinstance(arg_expr, PlaceholderExpression):
+                                kwargs[key] = pipeline_value
+                            else:
+                                kwargs[key] = self.parent_executor.execute(arg_expr, context)
+                else:
+                    # Fallback for other argument formats
+                    args = [pipeline_value]
+
+                # Check if we need implicit first-argument insertion
+                has_placeholder = any(isinstance(arg, PlaceholderExpression) for arg in self.original_args.get("__positional", []))
+
+                if not has_placeholder:
+                    # No placeholders found, insert pipeline_value as first argument (implicit mode)
+                    args.insert(0, pipeline_value)
+
+                # Execute the function with proper context handling
+                if isinstance(self.base_func, SandboxFunction):
+                    return self.base_func.execute(context, *args, **kwargs)
+                else:
+                    return self.base_func(*args, **kwargs)
+
+        return PartialFunction(func, func_call.args, self.parent_executor, context)
 
     def _resolve_identifier(self, identifier: Identifier, context: SandboxContext) -> Any:
         """Resolve an identifier to a function from context or registry."""

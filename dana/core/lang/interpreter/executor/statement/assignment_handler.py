@@ -106,7 +106,7 @@ class AssignmentHandler(Loggable):
                     current_value = context.get(node.target.name)
                 except KeyError:
                     raise SandboxError(f"Undefined variable '{node.target.name}' in compound assignment")
-            
+
             elif isinstance(node.target, SubscriptExpression):
                 # Subscript: obj[key] += 1
                 if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
@@ -117,7 +117,7 @@ class AssignmentHandler(Loggable):
                     current_value = target_obj[index]
                 except (KeyError, IndexError, TypeError) as e:
                     raise SandboxError(f"Cannot access index/key in compound assignment: {e}")
-            
+
             elif isinstance(node.target, AttributeAccess):
                 # Attribute: obj.attr += 1
                 if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
@@ -127,7 +127,7 @@ class AssignmentHandler(Loggable):
                     current_value = getattr(target_obj, node.target.attribute)
                 except AttributeError:
                     raise SandboxError(f"Attribute '{node.target.attribute}' not found in compound assignment")
-            
+
             else:
                 raise SandboxError(f"Unsupported compound assignment target type: {type(node.target).__name__}")
 
@@ -181,29 +181,29 @@ class AssignmentHandler(Loggable):
             return None
 
         type_name = node.type_hint.name
-        
+
         # First check basic Python types
         target_type = self._type_mapping_cache.get(type_name.lower())
-        
+
         if target_type:
             # Set the type information for IPV to access
             context.set("system:__current_assignment_type", target_type)
             return target_type
-        
+
         # Check if this is a Dana struct type
         try:
             from dana.core.lang.interpreter.struct_system import StructTypeRegistry
-            
+
             if StructTypeRegistry.exists(type_name):
                 # This is a Dana struct type - set it in context for POET system
                 context.set("system:__current_assignment_type", type_name)
                 # Return a special marker for Dana struct types
                 return type_name  # Return the string name for Dana struct types
-                
+
         except ImportError:
             # Struct system not available, continue without it
             pass
-        
+
         # If we get here, it's an unknown type
         # Still set it in context in case the POET system can handle it
         context.set("system:__current_assignment_type", type_name)
@@ -442,5 +442,3 @@ class AssignmentHandler(Loggable):
             "total_assignments": self._assignment_count,
             "cache_utilization_percent": round(len(self._coercion_cache) / max(self.TYPE_COERCION_CACHE_SIZE, 1) * 100, 2),
         }
-
-

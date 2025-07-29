@@ -46,6 +46,6 @@ class TestDanaLanguageLimitations:
             pytest.skip(f"Test file {subdirectory}/{filename} not found")
 
         # Execute the Dana file using a fresh sandbox (with shared API server)
-        result = fresh_dana_sandbox.run(str(test_path))
+        _result = fresh_dana_sandbox.run(str(test_path))
         # If we reach here, the execution succeeded
         # pytest.xfail will automatically handle this as xpass (unexpected pass)

@@ -520,7 +520,7 @@ class ImportHandler(Loggable):
         # Calculate target package
         # For relative imports:
         #   .module = same package (0 levels up)
-        #   ..module = parent package (1 level up)  
+        #   ..module = parent package (1 level up)
         #   ...module = grandparent package (2 levels up)
         # So we need to go up (leading_dots - 1) levels
         if leading_dots > 1:
@@ -535,7 +535,7 @@ class ImportHandler(Loggable):
         else:
             # This shouldn't happen since we already checked for leading dots
             target_package_parts = package_parts
-            
+
         target_package = ".".join(target_package_parts) if target_package_parts else ""
         # print(f"DEBUG: target_package='{target_package}'")
 

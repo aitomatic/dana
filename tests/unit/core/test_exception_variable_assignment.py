@@ -25,7 +25,7 @@ except as e:
         assert result is not None
 
     def test_specific_exception_with_variable(self):
-        """Test specific exception type with variable assignment.""" 
+        """Test specific exception type with variable assignment."""
         code = """
 try:
     x = 1 / 0
@@ -173,12 +173,12 @@ class TestDanaExceptionObject:
     def test_dana_exception_creation(self):
         """Test creating DanaException from Python exception."""
         from dana.core.runtime.exceptions import create_dana_exception
-        
+
         try:
             raise ValueError("test message")
         except Exception as e:
             dana_exc = create_dana_exception(e)
-            
+
             assert isinstance(dana_exc, DanaException)
             assert dana_exc.type == "ValueError"
             assert dana_exc.message == "test message"
@@ -188,24 +188,24 @@ class TestDanaExceptionObject:
     def test_dana_exception_string_representation(self):
         """Test string representation of DanaException."""
         from dana.core.runtime.exceptions import create_dana_exception
-        
+
         try:
             raise RuntimeError("test error")
         except Exception as e:
             dana_exc = create_dana_exception(e)
-            
+
             str_repr = str(dana_exc)
             assert "RuntimeError: test error" == str_repr
 
     def test_dana_exception_to_dict(self):
         """Test converting DanaException to dictionary."""
         from dana.core.runtime.exceptions import create_dana_exception
-        
+
         try:
             raise TypeError("type error")
         except Exception as e:
             dana_exc = create_dana_exception(e)
-            
+
             dict_repr = dana_exc.to_dict()
             assert dict_repr["type"] == "TypeError"
             assert dict_repr["message"] == "type error"

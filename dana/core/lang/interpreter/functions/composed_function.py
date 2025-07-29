@@ -8,6 +8,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
+from collections.abc import Callable
 from typing import Any
 
 from dana.common.exceptions import SandboxError
@@ -25,7 +26,12 @@ class ComposedFunction(SandboxFunction):
     enabling complex function pipelines like: a | b | c | d
     """
 
-    def __init__(self, left_func: SandboxFunction | str, right_func: SandboxFunction | str, context: SandboxContext | None = None):
+    def __init__(
+        self,
+        left_func: SandboxFunction | str | Callable,
+        right_func: SandboxFunction | str | Callable,
+        context: SandboxContext | None = None,
+    ):
         """Initialize a composed function.
 
         Args:
@@ -99,7 +105,7 @@ class ComposedFunction(SandboxFunction):
         # The intermediate result becomes the argument to the right function
         return right_resolved.execute(context, intermediate_result)
 
-    def _resolve_function(self, func: SandboxFunction | str, context: SandboxContext) -> SandboxFunction:
+    def _resolve_function(self, func: SandboxFunction | str | Callable, context: SandboxContext) -> SandboxFunction:
         """Resolve a function reference to a SandboxFunction object.
 
         Args:
@@ -152,40 +158,57 @@ class ComposedFunction(SandboxFunction):
 
             # Function not found - raise a clear error
             raise SandboxError(f"Function '{func}' not found in context or function registry")
+        elif callable(func):
+            # Wrap raw callables in a SandboxFunction-compatible wrapper
+            return self._wrap_callable(func, str(func), context)
         else:
             raise SandboxError(f"Invalid function type: {type(func)}")
 
     def _wrap_callable(self, func: callable, func_name: str, context: SandboxContext) -> SandboxFunction:
         """Wrap a raw callable in a SandboxFunction-compatible wrapper.
-        
+
         Args:
             func: The raw callable function
             func_name: The name of the function for error reporting
             context: The execution context
-            
+
         Returns:
             A SandboxFunction-compatible wrapper
         """
+
         class CallableWrapper(SandboxFunction):
             def __init__(self, wrapped_func, name, outer_context):
                 super().__init__(outer_context)
                 self.wrapped_func = wrapped_func
                 self.name = name
-                
+
             def execute(self, context: SandboxContext, *args, **kwargs):
-                # Use the function registry to call the function properly
-                # This ensures correct argument passing for core functions
-                interpreter = getattr(context, "_interpreter", None)
-                if interpreter and hasattr(interpreter, "function_registry"):
-                    return interpreter.function_registry.call(self.name, context, None, *args, **kwargs)
-                else:
-                    # Fallback: call directly with context as first parameter
-                    return self.wrapped_func(context, *args, **kwargs)
-                    
+                # Check if the wrapped function expects context as its first parameter
+                import inspect
+
+                try:
+                    sig = inspect.signature(self.wrapped_func)
+                    param_names = list(sig.parameters.keys())
+
+                    # Check if first parameter is a context parameter
+                    if param_names and param_names[0] in ("context", "ctx", "the_context", "sandbox_context"):
+                        # Function expects context as first parameter - pass it
+                        return self.wrapped_func(context, *args, **kwargs)
+                    else:
+                        # Function doesn't expect context - call normally
+                        return self.wrapped_func(*args, **kwargs)
+                except (AttributeError, OSError, ValueError):
+                    # Fallback: try calling with context first, then without if it fails
+                    try:
+                        return self.wrapped_func(context, *args, **kwargs)
+                    except TypeError:
+                        # If that fails, try without context
+                        return self.wrapped_func(*args, **kwargs)
+
             def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> None:
                 # No special context restoration needed for wrapped callables
                 pass
-        
+
         return CallableWrapper(func, func_name, context)
 
     def __repr__(self) -> str:

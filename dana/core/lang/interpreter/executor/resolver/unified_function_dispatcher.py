@@ -11,8 +11,8 @@ MIT License
 
 from typing import Any
 
+from dana.common.exceptions import SandboxError
 from dana.common.utils.logging import DANA_LOGGER
-from dana.core.lang.exceptions import SandboxError
 from dana.core.lang.interpreter.executor.function_name_utils import FunctionNameInfo
 from dana.core.lang.interpreter.executor.function_resolver import ResolvedFunction
 from dana.core.lang.sandbox_context import SandboxContext
@@ -191,6 +191,17 @@ class UnifiedFunctionDispatcher:
             raise SandboxError(f"No function registry available to execute function '{func_name}'")
 
         resolved_name = str(resolved_func.metadata.get("resolved_name") or func_name)
+
+        # Handle context parameter conflict by removing user context from kwargs
+        # and merging it into the system context before calling the registry
+        user_context = None
+        if "context" in evaluated_kwargs:
+            user_context = evaluated_kwargs.pop("context")
+            if isinstance(user_context, dict):
+                # Merge user context into local scope of system context
+                for key, value in user_context.items():
+                    context.set(f"local:{key}", value)
+
         raw_result = self.function_registry.call(resolved_name, context, "", *evaluated_args, **evaluated_kwargs)
         return self._assign_and_coerce_result(raw_result, func_name)
 

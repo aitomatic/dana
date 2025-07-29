@@ -2,4 +2,4 @@
 
 from .core import errors, loader, registry, types
 
-__all__ = ['registry', 'loader', 'types', 'errors']
+__all__ = ["registry", "loader", "types", "errors"]

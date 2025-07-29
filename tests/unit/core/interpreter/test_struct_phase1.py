@@ -194,12 +194,12 @@ class TestStructTypeSystem:
 
         # Try to register a different struct with the same name - should fail
         fields2 = [StructField(name="y", type_hint=TypeHint(name="str"))]
-        struct_def2 = StructDefinition(name="Test", fields=fields2)
+        _struct_def2 = StructDefinition(name="Test", fields=fields2)
 
         # Try to register again - should be allowed (idempotent registration)
         # The current implementation allows registering the same struct multiple times
         register_struct_from_ast(struct_def1)
-        
+
         # Verify the struct is still registered
         assert StructTypeRegistry.exists("Test")
         retrieved_type = StructTypeRegistry.get("Test")

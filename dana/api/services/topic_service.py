@@ -6,7 +6,7 @@ This module provides business logic for topic management and categorization.
 
 import logging
 from typing import Any
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 from dana.api.core.models import Topic
 from dana.api.core.schemas import TopicCreate, TopicRead
@@ -36,28 +36,19 @@ class TopicService:
         """
         try:
             # Check if topic with same name already exists
-            existing_topic = db_session.query(Topic).filter(
-                Topic.name == topic_data.name
-            ).first()
-            
+            existing_topic = db_session.query(Topic).filter(Topic.name == topic_data.name).first()
+
             if existing_topic:
                 raise ValueError(f"Topic with name '{topic_data.name}' already exists")
 
-            topic = Topic(
-                name=topic_data.name,
-                description=topic_data.description
-            )
-            
+            topic = Topic(name=topic_data.name, description=topic_data.description)
+
             db_session.add(topic)
             db_session.commit()
             db_session.refresh(topic)
 
             return TopicRead(
-                id=topic.id,
-                name=topic.name,
-                description=topic.description,
-                created_at=topic.created_at,
-                updated_at=topic.updated_at
+                id=topic.id, name=topic.name, description=topic.description, created_at=topic.created_at, updated_at=topic.updated_at
             )
 
         except Exception as e:
@@ -77,16 +68,12 @@ class TopicService:
         """
         try:
             topic = db_session.query(Topic).filter(Topic.id == topic_id).first()
-            
+
             if not topic:
                 return None
 
             return TopicRead(
-                id=topic.id,
-                name=topic.name,
-                description=topic.description,
-                created_at=topic.created_at,
-                updated_at=topic.updated_at
+                id=topic.id, name=topic.name, description=topic.description, created_at=topic.created_at, updated_at=topic.updated_at
             )
 
         except Exception as e:
@@ -106,26 +93,19 @@ class TopicService:
         """
         try:
             topic = db_session.query(Topic).filter(Topic.name == name).first()
-            
+
             if not topic:
                 return None
 
             return TopicRead(
-                id=topic.id,
-                name=topic.name,
-                description=topic.description,
-                created_at=topic.created_at,
-                updated_at=topic.updated_at
+                id=topic.id, name=topic.name, description=topic.description, created_at=topic.created_at, updated_at=topic.updated_at
             )
 
         except Exception as e:
             logger.error(f"Error getting topic by name '{name}': {e}")
             raise
 
-    async def list_topics(
-        self, limit: int = 100, offset: int = 0, search: str | None = None, 
-        db_session=None
-    ) -> list[TopicRead]:
+    async def list_topics(self, limit: int = 100, offset: int = 0, search: str | None = None, db_session=None) -> list[TopicRead]:
         """
         List topics with optional search filtering.
 
@@ -148,11 +128,7 @@ class TopicService:
 
             return [
                 TopicRead(
-                    id=topic.id,
-                    name=topic.name,
-                    description=topic.description,
-                    created_at=topic.created_at,
-                    updated_at=topic.updated_at
+                    id=topic.id, name=topic.name, description=topic.description, created_at=topic.created_at, updated_at=topic.updated_at
                 )
                 for topic in topics
             ]
@@ -161,9 +137,7 @@ class TopicService:
             logger.error(f"Error listing topics: {e}")
             raise
 
-    async def update_topic(
-        self, topic_id: int, topic_data: TopicCreate, db_session
-    ) -> TopicRead | None:
+    async def update_topic(self, topic_id: int, topic_data: TopicCreate, db_session) -> TopicRead | None:
         """
         Update a topic.
 
@@ -182,11 +156,8 @@ class TopicService:
 
             # Check if new name conflicts with existing topic
             if topic_data.name != topic.name:
-                existing_topic = db_session.query(Topic).filter(
-                    Topic.name == topic_data.name,
-                    Topic.id != topic_id
-                ).first()
-                
+                existing_topic = db_session.query(Topic).filter(Topic.name == topic_data.name, Topic.id != topic_id).first()
+
                 if existing_topic:
                     raise ValueError(f"Topic with name '{topic_data.name}' already exists")
 
@@ -195,17 +166,13 @@ class TopicService:
             topic.description = topic_data.description
 
             # Update timestamp
-            topic.updated_at = datetime.now(timezone.utc)
+            topic.updated_at = datetime.now(UTC)
 
             db_session.commit()
             db_session.refresh(topic)
 
             return TopicRead(
-                id=topic.id,
-                name=topic.name,
-                description=topic.description,
-                created_at=topic.created_at,
-                updated_at=topic.updated_at
+                id=topic.id, name=topic.name, description=topic.description, created_at=topic.created_at, updated_at=topic.updated_at
             )
 
         except Exception as e:
@@ -225,16 +192,15 @@ class TopicService:
         """
         try:
             topic = db_session.query(Topic).filter(Topic.id == topic_id).first()
-            
+
             if not topic:
                 return False
 
             # Check if topic has associated documents
             from dana.api.core.models import Document
-            document_count = db_session.query(Document).filter(
-                Document.topic_id == topic_id
-            ).count()
-            
+
+            document_count = db_session.query(Document).filter(Document.topic_id == topic_id).count()
+
             if document_count > 0:
                 raise ValueError(f"Cannot delete topic '{topic.name}' because it has {document_count} associated documents")
 
@@ -260,22 +226,21 @@ class TopicService:
         """
         try:
             topic = db_session.query(Topic).filter(Topic.id == topic_id).first()
-            
+
             if not topic:
                 return {}
 
             # Count associated documents
             from dana.api.core.models import Document
-            document_count = db_session.query(Document).filter(
-                Document.topic_id == topic_id
-            ).count()
+
+            document_count = db_session.query(Document).filter(Document.topic_id == topic_id).count()
 
             return {
                 "topic_id": topic_id,
                 "topic_name": topic.name,
                 "document_count": document_count,
                 "created_at": topic.created_at,
-                "updated_at": topic.updated_at
+                "updated_at": topic.updated_at,
             }
 
         except Exception as e:

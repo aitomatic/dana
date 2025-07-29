@@ -18,11 +18,12 @@ project_root = script_dir.parent
 sys.path.insert(0, str(project_root))
 
 # Set up environment
-os.environ.setdefault('PYTHONPATH', str(project_root))
+os.environ.setdefault("PYTHONPATH", str(project_root))
 
 # Import and run the language server
 try:
     from dana.core.lang.lsp.server import main
+
     main()
 except ImportError as e:
     print(f"Error: Could not import Dana Language Server: {e}", file=sys.stderr)
@@ -31,4 +32,4 @@ except ImportError as e:
     sys.exit(1)
 except Exception as e:
     print(f"Error starting Dana Language Server: {e}", file=sys.stderr)
-    sys.exit(1) 
+    sys.exit(1)

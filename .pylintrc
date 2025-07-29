@@ -3,7 +3,7 @@
 
 [MASTER]
 # Files or directories to be skipped
-ignore=.git,.venv,opendxa.egg-info,htmlcov,.mypy_cache,.pytest_cache,.ruff_cache,site,tmp
+ignore=.git,.venv,dana.egg-info,htmlcov,.mypy_cache,.pytest_cache,.ruff_cache,site,tmp
 ignore-patterns=.*\.na$,.*\.md$
 
 # Use multiple processes to speed up Pylint

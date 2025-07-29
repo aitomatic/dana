@@ -61,16 +61,16 @@ class ModuleLoader(MetaPathFinder, Loader):
             first_path = path[0]
             if first_path.startswith("__dana_importing_from__:"):
                 importing_module_path = first_path[23:]  # Remove prefix
-        
+
         return self._find_spec_with_context(fullname, importing_module_path)
-    
+
     def _find_spec_with_context(self, fullname: str, importing_module_path: str | None = None) -> PyModuleSpec | None:
         """Find a module specification with optional context of importing module.
-        
+
         Args:
             fullname: Fully qualified module name
             importing_module_path: Path of the module doing the import (if any)
-            
+
         Returns:
             Module specification if found, None otherwise
         """
@@ -279,7 +279,7 @@ class ModuleLoader(MetaPathFinder, Loader):
                 py_spec.has_location = dana_spec.has_location
                 py_spec.submodule_search_locations = dana_spec.submodule_search_locations
                 return py_spec
-        
+
         # Then search in regular search paths
         module_file = self._find_module_file(module_name)
         if module_file is not None:

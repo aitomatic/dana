@@ -66,6 +66,8 @@ Statement = Union[
     "ForLoop",
     "TryBlock",
     "FunctionDefinition",
+    "MethodDefinition",
+    "DeclarativeFunctionDefinition",  # Declarative function definitions
     "StructDefinition",
     "AgentDefinition",
     "ImportStatement",
@@ -187,15 +189,24 @@ class Identifier:
 # === Expressions ===
 @dataclass
 class PlaceholderExpression:
-    """A placeholder expression representing the $ symbol in pipeline operations."""
-    
+    """A placeholder expression representing the $$ symbol in pipeline operations."""
+
+    location: Location | None = None
+
+
+@dataclass
+class NamedPipelineStage:
+    """A pipeline stage with an optional name capture (expr as name)."""
+
+    expression: Expression
+    name: str | None = None  # If present, capture result with this name
     location: Location | None = None
 
 
 @dataclass
 class PipelineExpression:
     """A pipeline expression representing function composition via the | operator."""
-    
+
     stages: list[Expression]
     location: Location | None = None
 
@@ -359,6 +370,7 @@ class Assignment:
         "UseStatement",  # Added to support function_call_assignment: target = use_stmt
         "AgentStatement",  # Added to support agent statement assignments
         "AgentPoolStatement",  # Added to support agent pool statement assignments
+        "DeclarativeFunctionDefinition",  # Added to support declarative function definitions
     ]
     type_hint: TypeHint | None = None  # For typed assignments like x: int = 42
     location: Location | None = None
@@ -450,11 +462,37 @@ class FunctionDefinition:
 
 
 @dataclass
+class MethodDefinition:
+    """Method definition statement with explicit receiver (e.g., def (point: Point) translate(dx, dy):)."""
+
+    receiver: Parameter  # The receiver parameter (e.g., point: Point)
+    name: Identifier  # Method name
+    parameters: list[Parameter]  # Regular parameters (excluding receiver)
+    body: list[Statement]
+    return_type: TypeHint | None = None
+    decorators: list["Decorator"] = field(default_factory=list)
+    location: Location | None = None
+
+
+@dataclass
+class DeclarativeFunctionDefinition:
+    """Declarative function definition statement (e.g., def func(x: int) -> str = f1 | f2)."""
+
+    name: Identifier
+    parameters: list[Parameter]
+    composition: Expression  # The pipe composition expression
+    return_type: TypeHint | None = None
+    docstring: str | None = None  # Docstring extracted from preceding string literal
+    location: Location | None = None
+
+
+@dataclass
 class StructDefinition:
     """Struct definition statement (e.g., struct Point: x: int, y: int)."""
 
     name: str
     fields: list["StructField"]
+    docstring: str | None = None  # Docstring extracted from preceding string literal
     location: Location | None = None
 
 

@@ -23,122 +23,195 @@ class ErrorContext:
 
         Args:
             operation: Description of the operation being performed
-            node: Optional AST node where the error occurred
+            node: The AST node being processed
         """
         self.operation = operation
         self.node = node
-        self.location = self._get_location(node) if node else None
+        self.location = self._get_location(node)
 
     def _get_location(self, node: Any) -> str | None:
-        """Get formatted location information from a node.
+        """Get location information from a node.
 
         Args:
-            node: AST node with location information
+            node: The AST node
 
         Returns:
-            Formatted location string or None if not available
+            Location string or None
         """
-        if not hasattr(node, "location") or not node.location:
-            return None
-        line, column, source_text = node.location
-        padding = " " * (column - 1)
-        return f"{source_text}\n{padding}^"
+        if hasattr(node, "location") and node.location:
+            return str(node.location)
+        return None
 
 
 class ErrorHandler:
-    """Handler for processing and formatting errors."""
+    """Handler for different types of errors."""
 
     @staticmethod
     def handle_error(error: Exception, context: ErrorContext) -> DanaError:
-        """Process an error and return a properly formatted DanaError.
+        """Handle an error with context.
 
         Args:
-            error: The original exception
-            context: Context about where the error occurred
+            error: The exception that occurred
+            context: Error context information
 
         Returns:
-            A properly formatted DanaError
+            A DanaError with enhanced information
         """
         if isinstance(error, DanaError):
-            # If it's already a DanaError, just add the context if not present
-            if not hasattr(error, "context") or not error.context:
-                error.context = context
             return error
 
-        # Create a new DanaError with the original error and context
-        return DanaError(f"Error during {context.operation}: {error}")
+        error_msg = f"Error {context.operation}: {type(error).__name__}: {error}"
+        if context.location:
+            error_msg += f" at {context.location}"
+
+        return DanaError(error_msg)
 
 
 class ErrorUtils:
     """Utility class for handling Dana parsing and runtime execution errors."""
 
+    # Reserved keywords in Dana
+    RESERVED_KEYWORDS = {
+        "agent",
+        "agent_pool",
+        "struct",
+        "def",
+        "return",
+        "pass",
+        "break",
+        "continue",
+        "if",
+        "else",
+        "elif",
+        "while",
+        "for",
+        "try",
+        "except",
+        "finally",
+        "raise",
+        "assert",
+        "import",
+        "from",
+        "with",
+        "use",
+        "export",
+        "as",
+        "private",
+        "public",
+        "local",
+        "system",
+        "True",
+        "False",
+        "None",
+        "and",
+        "or",
+        "not",
+        "in",
+        "is",
+    }
+
+    # Context-specific error messages and suggestions
+    RESERVED_KEYWORD_CONTEXTS = {
+        "assignment": {
+            "message": "The word '{keyword}' is a reserved keyword in Dana and cannot be used as a variable name.",
+            "suggestion": "Use a different variable name like 'my_{keyword}' or 'the_{keyword}'.",
+        },
+        "function_def": {
+            "message": "The word '{keyword}' is a reserved keyword in Dana and cannot be used as a function name.",
+            "suggestion": "Use a different function name like 'create_{keyword}' or 'build_{keyword}'.",
+        },
+        "function_call": {
+            "message": "The word '{keyword}' is a reserved keyword in Dana and cannot be used as a function name.",
+            "suggestion": "Use a different function name like 'create_{keyword}' or 'build_{keyword}'.",
+        },
+        "struct_field": {
+            "message": "The word '{keyword}' is a reserved keyword in Dana and cannot be used as a struct field name.",
+            "suggestion": "Use a different field name like 'my_{keyword}' or '{keyword}_field'.",
+        },
+        "parameter": {
+            "message": "The word '{keyword}' is a reserved keyword in Dana and cannot be used as a parameter name.",
+            "suggestion": "Use a different parameter name like 'my_{keyword}' or '{keyword}_param'.",
+        },
+        "import_alias": {
+            "message": "The word '{keyword}' is a reserved keyword in Dana and cannot be used as an import alias.",
+            "suggestion": "Use a different alias name like 'my_{keyword}' or '{keyword}_module'.",
+        },
+        "method_def": {
+            "message": "The word '{keyword}' is a reserved keyword in Dana and cannot be used as a method name.",
+            "suggestion": "Use a different method name like 'get_{keyword}' or 'set_{keyword}'.",
+        },
+    }
+
     @staticmethod
     def format_error_location(node: Any) -> str:
-        """Format location information for error messages.
+        """Format error location information.
 
         Args:
-            node: An AST node that may have location information
+            node: The AST node
 
         Returns:
-            A formatted string with location information, or an empty string if not available
+            Formatted location string
         """
-        if not hasattr(node, "location") or not node.location:
-            return ""
-        line, column, source_text = node.location
-        # Add padding to align the column indicator
-        padding = " " * (column - 1)
-        return f"\nAt line {line}, column {column}:\n{source_text}\n{padding}^"
+        if hasattr(node, "location") and node.location:
+            return str(node.location)
+        return "unknown location"
 
     @staticmethod
     def create_parse_error(message: str, node: Any, original_error: Exception | None = None) -> ParseError:
-        """Create a ParseError with location information.
+        """Create a parse error with location information.
 
         Args:
-            message: The error message
-            node: The AST node where the error occurred
-            original_error: The original exception, if any
+            message: Error message
+            node: The AST node
+            original_error: Original exception that caused this error
 
         Returns:
-            A ParseError with enhanced location information
+            ParseError with enhanced information
         """
-        error_msg = message + ErrorUtils.format_error_location(node)
-        error = ParseError(error_msg)
+        error = ParseError(message)
+        if hasattr(node, "location") and node.location:
+            error.line = getattr(node.location, "line", None)
+            error.column = getattr(node.location, "column", None)
         if original_error:
             error.__cause__ = original_error
         return error
 
     @staticmethod
     def create_runtime_error(message: str, node: Any, original_error: Exception | None = None) -> SandboxError:
-        """Create a RuntimeError with location information.
+        """Create a runtime error with location information.
 
         Args:
-            message: The error message
-            node: The AST node where the error occurred
-            original_error: The original exception, if any
+            message: Error message
+            node: The AST node
+            original_error: Original exception that caused this error
 
         Returns:
-            A RuntimeError with enhanced location information
+            SandboxError with enhanced information
         """
-        error_msg = message + ErrorUtils.format_error_location(node)
-        error = SandboxError(error_msg)
+        error = SandboxError(message)
+        if hasattr(node, "location") and node.location:
+            error.line = getattr(node.location, "line", None)
+            error.column = getattr(node.location, "column", None)
         if original_error:
             error.__cause__ = original_error
         return error
 
     @staticmethod
     def create_state_error(message: str, node: Any, original_error: Exception | None = None) -> StateError:
-        """Create a StateError with location information.
+        """Create a state error with location information.
 
         Args:
-            message: The error message
-            node: The AST node where the error occurred
-            original_error: The original exception, if any
+            message: Error message
+            node: The AST node
+            original_error: Original exception that caused this error
 
         Returns:
-            A StateError with enhanced location information
+            StateError with enhanced information
         """
-        error_msg = message + ErrorUtils.format_error_location(node)
-        error = StateError(error_msg)
+        error = StateError(message)
+        if hasattr(node, "location") and node.location:
+            error.line = getattr(node.location, "line", None)
+            error.column = getattr(node.location, "column", None)
         if original_error:
             error.__cause__ = original_error
         return error
@@ -171,6 +244,79 @@ class ErrorUtils:
         if adjustment:
             caret_line += f" {adjustment}"
         return f"{error_text}\n{source_line}\n{caret_line}"
+
+    @staticmethod
+    def detect_reserved_keyword_context(error_msg: str, expected_tokens: list[str], previous_tokens: list[str]) -> str | None:
+        """Detect the context where a reserved keyword is being misused.
+
+        Args:
+            error_msg: The error message
+            expected_tokens: List of expected tokens
+            previous_tokens: List of previous tokens
+
+        Returns:
+            Context string for reserved keyword misuse
+        """
+        # Check if this is a reserved keyword error
+        if "Unexpected token" not in error_msg:
+            return None
+
+        # Extract the problematic token
+        match = re.search(r"Unexpected token Token\('([^']+)', '([^']+)'\)", error_msg)
+        if not match:
+            return None
+
+        token_type, token_value = match.groups()
+
+        # Check if the token is a reserved keyword
+        if token_value in ErrorUtils.RESERVED_KEYWORDS:
+            pass
+        else:
+            # Check if a reserved keyword is in the previous tokens
+            reserved_keyword_in_previous = self._find_reserved_keyword_in_tokens(previous_tokens)
+            if not reserved_keyword_in_previous:
+                return None
+            token_value = reserved_keyword_in_previous
+
+        # Context detection
+        if "EQUAL" in expected_tokens:
+            return "assignment"
+        elif "LPAR" in expected_tokens:
+            # If we have a reserved keyword and LPAR is expected, this is likely an assignment
+            # where the user used a reserved keyword instead of a variable name
+            return "assignment"
+        elif "NAME" in expected_tokens:
+            return "assignment"
+        # Fallback: treat as assignment context
+        return "assignment"
+
+    @staticmethod
+    def create_reserved_keyword_error_message(keyword: str, context: str, line: int, column: int, source_line: str) -> str:
+        """Create a user-friendly error message for reserved keyword misuse.
+
+        Args:
+            keyword: The reserved keyword that was misused
+            context: The context where it was misused
+            line: Line number
+            column: Column number
+            source_line: The source line
+
+        Returns:
+            Formatted error message
+        """
+        if context not in ErrorUtils.RESERVED_KEYWORD_CONTEXTS:
+            # Fallback for unknown context
+            context_info = ErrorUtils.RESERVED_KEYWORD_CONTEXTS["assignment"]
+        else:
+            context_info = ErrorUtils.RESERVED_KEYWORD_CONTEXTS[context]
+
+        message = context_info["message"].format(keyword=keyword)
+        suggestion = context_info["suggestion"].format(keyword=keyword)
+
+        # Create the full error message
+        error_text = f"Reserved keyword error (line {line}, column {column}):\n{message}\n\nInstead of:\n    {source_line.strip()}\n\n{suggestion}\n\nReserved keywords in Dana include: {', '.join(sorted(ErrorUtils.RESERVED_KEYWORDS))}"
+
+        return error_text
 
     @staticmethod
     def handle_parse_error(e: Exception, node: Any, operation: str, program_text: str | None = None) -> tuple[Exception, bool]:
@@ -248,6 +394,51 @@ class ErrorUtils:
             A user-friendly error message string
         """
         msg = str(e)
+
+        # Check for reserved keyword errors first
+        if "Unexpected token" in msg:
+            # Try to extract error details
+            line_match = re.search(r"line (\d+), col(?:umn)? (\d+)", msg)
+            token_match = re.search(r"Unexpected token Token\('([^']+)', '([^']+)'\)", msg)
+
+            if token_match:
+                token_type, token_value = token_match.groups()
+
+                # Check if this is a reserved keyword error
+                if token_value in ErrorUtils.RESERVED_KEYWORDS:
+                    # Extract expected tokens and previous tokens
+                    expected_tokens = []
+                    previous_tokens = []
+
+                    # Parse expected tokens
+                    expected_match = re.search(r"Expected one of:\s*(.*?)(?:\n|$)", msg, re.DOTALL)
+                    if expected_match:
+                        expected_text = expected_match.group(1)
+                        expected_tokens = [line.strip().replace("*", "").strip() for line in expected_text.split("\n") if line.strip()]
+
+                    # Parse previous tokens
+                    previous_match = re.search(r"Previous tokens: \[(.*?)\]", msg)
+                    if previous_match:
+                        previous_text = previous_match.group(1)
+                        previous_tokens = [t.strip() for t in previous_text.split(",")]
+
+                    # Detect context
+                    context = ErrorUtils.detect_reserved_keyword_context(msg, expected_tokens, previous_tokens)
+
+                    if context and line_match:
+                        line_num = int(line_match.group(1))
+                        column_num = int(line_match.group(2))
+
+                        # Get source line if available
+                        source_line = ""
+                        if user_input:
+                            lines = user_input.split("\n")
+                            if line_num <= len(lines):
+                                source_line = lines[line_num - 1]
+
+                        # Create enhanced error message
+                        return ErrorUtils.create_reserved_keyword_error_message(token_value, context, line_num, column_num, source_line)
+
         # Remove parser internals and caret lines
         msg = "\n".join(
             line

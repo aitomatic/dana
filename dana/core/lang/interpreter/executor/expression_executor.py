@@ -33,6 +33,7 @@ from dana.core.lang.ast import (
     Identifier,
     ListLiteral,
     LiteralExpression,
+    NamedPipelineStage,
     ObjectFunctionCall,
     PipelineExpression,
     PlaceholderExpression,
@@ -111,8 +112,10 @@ class ExpressionExecutor(BaseExecutor):
             AttributeAccess: self.execute_attribute_access,
             SubscriptExpression: self.execute_subscript_expression,
             ObjectFunctionCall: self.execute_object_function_call,
+            NamedPipelineStage: self.execute_named_pipeline_stage,
             PlaceholderExpression: self.execute_placeholder_expression,
             PipelineExpression: self.execute_pipeline_expression,
+            FunctionCall: self.execute_function_call,
         }
 
     def execute_literal_expression(self, node: LiteralExpression, context: SandboxContext) -> Any:
@@ -242,30 +245,30 @@ class ExpressionExecutor(BaseExecutor):
 
         Returns:
             The value of the attribute
-        
+
         Raises:
             AttributeError: If the attribute doesn't exist, with location information
         """
         self.debug(f"Executing attribute access: {node.attribute} on {node.object}")
         self.debug(f"Node location: {getattr(node, 'location', 'No location')}")
-        
+
         # Track location in error context if available
-        if hasattr(node, 'location') and node.location:
+        if hasattr(node, "location") and node.location:
             from dana.core.lang.interpreter.error_context import ExecutionLocation
-            
+
             location = ExecutionLocation(
                 filename=context.error_context.current_file,
                 line=node.location.line,
                 column=node.location.column,
                 function_name=f"attribute access: {node.attribute}",
-                source_line=context.error_context.get_source_line(
-                    context.error_context.current_file, node.location.line
-                ) if context.error_context.current_file and node.location.line else None
+                source_line=context.error_context.get_source_line(context.error_context.current_file, node.location.line)
+                if context.error_context.current_file and node.location.line
+                else None,
             )
             context.error_context.push_location(location)
-            self.debug(f"Pushed location to error context: {location}") 
+            self.debug(f"Pushed location to error context: {location}")
             self.debug(f"Error context stack size after push: {len(context.error_context.execution_stack)}")
-        
+
         try:
             # Get the target object
             target = self.parent.execute(node.object, context)
@@ -281,25 +284,27 @@ class ExpressionExecutor(BaseExecutor):
             raise AttributeError(f"'{type(target).__name__}' object has no attribute '{node.attribute}'")
         except AttributeError as e:
             # Re-raise with location information if available
-            if hasattr(node, 'location') and node.location:
+            if hasattr(node, "location") and node.location:
                 location = node.location
                 # Format location info
                 loc_info = []
                 if location.source:
-                    loc_info.append(f"File \"{location.source}\"")
+                    loc_info.append(f'File "{location.source}"')
                 loc_info.append(f"line {location.line}")
                 loc_info.append(f"column {location.column}")
-                
+
                 # Create enhanced error message
-                enhanced_msg = f"Traceback (most recent call last):\n  {', '.join(loc_info)}, in attribute access: {node.attribute}\n\n{str(e)}"
-                
+                enhanced_msg = (
+                    f"Traceback (most recent call last):\n  {', '.join(loc_info)}, in attribute access: {node.attribute}\n\n{str(e)}"
+                )
+
                 # Create new exception with enhanced message but keep original for debugging
                 new_error = AttributeError(enhanced_msg)
                 new_error.__cause__ = e
                 raise new_error
             else:
                 raise
-    
+
     def run_function(self, func: Callable, *args, **kwargs) -> Any:
         if asyncio.iscoroutinefunction(func):
             return Misc.safe_asyncio_run(func, *args, **kwargs)
@@ -720,6 +725,21 @@ class ExpressionExecutor(BaseExecutor):
         """
         return self.collection_processor.execute_list_literal(node, context)
 
+    def execute_named_pipeline_stage(self, node: NamedPipelineStage, context: SandboxContext) -> Any:
+        """Execute a named pipeline stage.
+
+        This method should not be called directly, as named pipeline stages are only
+        meaningful within pipeline contexts.
+
+        Args:
+            node: The named pipeline stage
+            context: The execution context
+
+        Returns:
+            Should raise an error as named pipeline stages are not standalone expressions
+        """
+        raise SandboxError("Named pipeline stages can only be used within pipeline operations")
+
     def execute_placeholder_expression(self, node: PlaceholderExpression, context: SandboxContext) -> Any:
         """Execute a placeholder expression.
 
@@ -737,14 +757,14 @@ class ExpressionExecutor(BaseExecutor):
 
     def _resolve_pipeline_function(self, identifier: Identifier, context: SandboxContext) -> Any:
         """Resolve an identifier to a function for pipeline execution.
-        
+
         This method tries to resolve functions from both the context and function registry,
         giving priority to context variables but falling back to core functions.
-        
+
         Args:
             identifier: The identifier to resolve
             context: The execution context
-            
+
         Returns:
             The resolved function object or None if not found
         """
@@ -780,22 +800,70 @@ class ExpressionExecutor(BaseExecutor):
             # Return identity function for empty pipeline
             def identity_function(initial_value):
                 return initial_value
+
             return identity_function
-        
+
         # Create a composed function
         def composed_function(initial_value):
             current_value = initial_value
-            
+
             try:
                 for stage in node.stages:
                     current_value = self._execute_pipeline_stage(current_value, stage, context)
-                
+
                 return current_value
             except SandboxError:
                 # If pipeline execution fails, return None to allow graceful error handling
                 return None
-        
+
         return composed_function
+
+    def execute_function_call(self, node: FunctionCall, context: SandboxContext) -> Any:
+        """Execute a function call, routing function calls with placeholders to PartialFunction logic.
+
+        Args:
+            node: The function call to execute
+            context: The execution context
+
+        Returns:
+            The result of the function call, or a PartialFunction if placeholders are present
+        """
+        # Check if the function call contains placeholders
+        if self._has_placeholders(node):
+            # Route to pipe operation handler's PartialFunction logic
+            return self.pipe_operation_handler._resolve_function_call(node, context)
+        else:
+            # Delegate to normal function execution
+            if hasattr(self.parent, "_function_executor"):
+                return self.parent._function_executor.execute_function_call(node, context)
+            else:
+                # Fallback: use parent's general execute method
+                return self.parent.execute(node, context)
+
+    def _has_placeholders(self, node: FunctionCall) -> bool:
+        """Check if a function call contains PlaceholderExpression.
+
+        Args:
+            node: The function call to check
+
+        Returns:
+            True if the function call contains placeholders, False otherwise
+        """
+        # Handle case where args is None
+        if not node.args:
+            return False
+
+        if "__positional" in node.args:
+            for arg in node.args["__positional"]:
+                if isinstance(arg, PlaceholderExpression):
+                    return True
+
+        # Check keyword arguments too
+        for key, arg in node.args.items():
+            if key != "__positional" and isinstance(arg, PlaceholderExpression):
+                return True
+
+        return False
 
     def _execute_pipeline_stage(self, current_value: Any, stage: Any, context: SandboxContext) -> Any:
         """Execute a single pipeline stage with argument substitution.
@@ -817,33 +885,35 @@ class ExpressionExecutor(BaseExecutor):
         else:
             # For other expression types (like direct function identifiers), resolve properly
             # This handles the case where we have function identifiers like 'f1' in the pipeline
-            
+
             # For identifier stages, use proper function resolution
             if isinstance(stage, Identifier):
                 func = self._resolve_pipeline_function(stage, context)
-                
+
                 if callable(func):
                     # Special handling for ParallelFunction - pass the current_value to each function
                     from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import (
                         ParallelFunction,
                     )
+
                     if isinstance(func, ParallelFunction):
                         return func.execute(context, current_value)
-                    
+
                     # For core functions registered in function registry
                     if hasattr(context, "_interpreter") and hasattr(context._interpreter, "function_registry"):
                         registry = context._interpreter.function_registry
                         if registry.has(stage.name):
                             # Call through registry to ensure proper argument handling for core functions
                             return registry.call(stage.name, context, None, current_value)
-                    
+
                     # For SandboxFunction objects (like user-defined DanaFunction), use execute method
                     from dana.core.lang.interpreter.functions.sandbox_function import (
                         SandboxFunction,
                     )
+
                     if isinstance(func, SandboxFunction):
                         return func.execute(context, current_value)
-                    
+
                     # Default: direct call for non-registry functions
                     return func(current_value)
                 else:
@@ -853,34 +923,51 @@ class ExpressionExecutor(BaseExecutor):
                             raise SandboxError(f"Function '{stage.name}' not found")
                         else:
                             raise SandboxError(f"'{stage.name}' is not callable (type: {type(func).__name__})")
+
                     return error_function(current_value)
-            
-            # Handle ListLiteral that gets converted to ParallelFunction
-            elif isinstance(stage, ListLiteral):
-                # Convert list to ParallelFunction and execute it
-                from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import (
-                    ParallelFunction,
-                )
-                functions = []
-                for item in stage.items:
-                    func = self.parent.execute(item, context)
-                    functions.append(func)
-                parallel_func = ParallelFunction(functions, context)
-                return parallel_func.execute(context, current_value)
-            
+
             # For other types, use the original resolution
             else:
-                func = self.parent.execute(stage, context)
-                if callable(func):
+                result = self.parent.execute(stage, context)
+
+                # Handle ListLiteral AST nodes that should be converted to ParallelFunction
+                if isinstance(result, ListLiteral):
+                    # Convert ListLiteral to list of functions, then to ParallelFunction
+                    functions = []
+                    for item in result.items:
+                        func = self.parent.execute(item, context)
+                        if not callable(func):
+                            raise SandboxError(f"Cannot use non-function '{func}' of type {type(func).__name__} in parallel composition")
+                        functions.append(func)
+
                     from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import (
                         ParallelFunction,
                     )
-                    if isinstance(func, ParallelFunction):
-                        return func.execute(context, current_value)
+
+                    parallel_func = ParallelFunction(functions, context)
+                    return parallel_func.execute(context, current_value)
+
+                # Check if this is a list of functions that should be converted to ParallelFunction
+                elif isinstance(result, list) and all(callable(item) for item in result):
+                    from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import (
+                        ParallelFunction,
+                    )
+
+                    parallel_func = ParallelFunction(result, context)
+                    return parallel_func.execute(context, current_value)
+
+                # Handle callable functions
+                elif callable(result):
+                    from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import (
+                        ParallelFunction,
+                    )
+
+                    if isinstance(result, ParallelFunction):
+                        return result.execute(context, current_value)
                     else:
-                        return func(current_value)
+                        return result(current_value)
                 else:
-                    return self.parent.execute(stage, context)
+                    return result
 
     def _execute_function_call_stage(self, current_value: Any, func_call: FunctionCall, context: SandboxContext) -> Any:
         """Execute a function call stage with pipeline argument substitution.
@@ -893,7 +980,7 @@ class ExpressionExecutor(BaseExecutor):
         Returns:
             The result of the function call
         """
-        
+
         # Resolve the function
         func_name = func_call.name
         if isinstance(func_name, str):
@@ -901,14 +988,14 @@ class ExpressionExecutor(BaseExecutor):
         else:
             # Handle attribute access or other callable expressions
             func = self.parent.execute(func_name, context)
-        
+
         if not callable(func):
             raise SandboxError(f"'{func_name}' is not callable")
-        
+
         # Process arguments with placeholder substitution
         args = []
         kwargs = {}
-        
+
         if isinstance(func_call.args, dict):
             # Handle positional arguments
             if "__positional" in func_call.args:
@@ -917,7 +1004,7 @@ class ExpressionExecutor(BaseExecutor):
                         args.append(current_value)
                     else:
                         args.append(self.parent.execute(arg_expr, context))
-            
+
             # Handle keyword arguments
             for key, arg_expr in func_call.args.items():
                 if key != "__positional":
@@ -928,17 +1015,14 @@ class ExpressionExecutor(BaseExecutor):
         else:
             # Fallback for other argument formats
             args = [current_value]
-        
+
         # Check if we need implicit first-argument insertion
-        has_placeholder = any(
-            self._contains_placeholder(arg) 
-            for arg in func_call.args.get("__positional", [])
-        )
-        
+        has_placeholder = any(self._contains_placeholder(arg) for arg in func_call.args.get("__positional", []))
+
         if not has_placeholder:
             # No placeholders found, insert current_value as first argument
             args.insert(0, current_value)
-        
+
         # Execute the function
         return self.run_function(func, *args, **kwargs)
 
@@ -953,14 +1037,14 @@ class ExpressionExecutor(BaseExecutor):
         """
         if isinstance(expr, PlaceholderExpression):
             return True
-        
+
         # Recursively check nested expressions
-        if hasattr(expr, 'args') and isinstance(expr.args, dict):
+        if hasattr(expr, "args") and isinstance(expr.args, dict):
             for arg in expr.args.get("__positional", []):
                 if isinstance(arg, PlaceholderExpression):
                     return True
             for arg in expr.args.values():
                 if isinstance(arg, PlaceholderExpression):
                     return True
-        
+
         return False

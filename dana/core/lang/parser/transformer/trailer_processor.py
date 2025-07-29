@@ -19,7 +19,7 @@ from dana.core.lang.ast import (
     SubscriptExpression,
     Location,
 )
-from dana.core.lang.exceptions import SandboxError
+from dana.common.exceptions import SandboxError
 
 
 class TrailerValidationError(SandboxError):
@@ -134,18 +134,10 @@ class AttributeAccessHandler:
 
         # Get location from the trailer token (where the attribute is)
         location = None
-        if hasattr(trailer, 'line') and hasattr(trailer, 'column'):
-            location = Location(
-                line=trailer.line, 
-                column=trailer.column, 
-                source=getattr(self.transformer, 'current_filename', '')
-            )
+        if hasattr(trailer, "line") and hasattr(trailer, "column"):
+            location = Location(line=trailer.line, column=trailer.column, source=getattr(self.transformer, "current_filename", ""))
 
-        return AttributeAccess(
-            object=current_base, 
-            attribute=trailer.value, 
-            location=location
-        )
+        return AttributeAccess(object=current_base, attribute=trailer.value, location=location)
 
 
 class IndexingHandler:

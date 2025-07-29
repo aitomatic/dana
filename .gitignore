@@ -63,6 +63,7 @@ node_modules/
 .cache/
 .ipynb_checkpoints/
 .cursor/
+CLAUDE.md
 
 .vscode/launch.json
 .vscode/settings.json
