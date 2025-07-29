@@ -131,9 +131,6 @@ def create_app():
         # Run any pending migrations
         run_migrations()
 
-        # Automatic knowledge generation on startup has been disabled
-        print("[startup] Server startup complete. Knowledge generation can be triggered manually via API.")
-
     # Catch-all route for SPA (serves index.html for all non-API, non-static routes)
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
