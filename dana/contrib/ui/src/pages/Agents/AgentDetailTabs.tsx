@@ -8,6 +8,7 @@ import { Code2, List, BookOpen } from 'lucide-react';
 import { Tools } from 'iconoir-react';
 import { Button } from '@/components/ui/button';
 import { useAgentStore } from '@/stores/agent-store';
+import { getAgentAvatarSync } from '@/utils/avatar';
 
 const TABS = ['Overview', 'Knowledge Base', 'Tools', 'Code'];
 
@@ -31,7 +32,7 @@ export const AgentDetailTabs: React.FC<{
       {/* Main content area */}
       <div className="flex overflow-auto flex-col flex-1 gap-2 p-2 h-full">
         {/* Tab bar */}
-        <div className="flex justify-between items-center max-w-screen">
+        <div className="flex justify-between items-center max-w-screen h-[40px]">
           <div className="flex gap-2">
             {TABS.map((tab) => (
               <button
@@ -53,14 +54,27 @@ export const AgentDetailTabs: React.FC<{
                 onClick={() => setIsChatOpen(!isChatOpen)}
               >
                 {/* Agent Avatar */}
-                <div className="flex justify-center items-center w-6 h-6 rounded-full bg-brand-100">
-                  <span className="text-xs font-medium text-brand-700">
-                    {selectedAgent?.name?.[0] || 'A'}
-                  </span>
+                <div className="flex justify-center items-center w-6 h-6 rounded-full overflow-hidden">
+                  <img
+                    src={getAgentAvatarSync(selectedAgent?.id || 0)}
+                    alt={`${selectedAgent?.name || 'Agent'} avatar`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback to colored circle if image fails to load
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const parent = target.parentElement;
+                      if (parent) {
+                        parent.className = `flex justify-center items-center w-6 h-6 rounded-full bg-brand-100`;
+                        parent.innerHTML = `<span className="text-xs font-medium text-brand-700">${selectedAgent?.name?.[0] || 'A'}</span>`;
+                      }
+                    }}
+                  />
                 </div>
 
                 {/* Chat Text */}
                 <span className="text-sm font-medium">
+                  
                   Chat with {selectedAgent?.name || 'Agent'}
                 </span>
               </Button>

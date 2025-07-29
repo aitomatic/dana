@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { getAgentAvatarSync } from '@/utils/avatar';
 
 // Function to generate random avatar colors based on agent ID
 const getRandomAvatarColor = (agentId: string | number): string => {
@@ -94,12 +95,22 @@ export const MyAgentTab: React.FC<{
               >
                 <div className="flex gap-4 flex-col">
                   <div className="flex gap-2 items-center justify-between">
-                    <div
-                      className={`w-12 h-12 rounded-full bg-gradient-to-br ${agent.avatarColor || getRandomAvatarColor(agent.id)} flex items-center justify-center text-white text-lg font-bold`}
-                    >
-                      <span className="text-white">
-                        {agent.name[0]}
-                      </span>
+                    <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center">
+                      <img
+                        src={getAgentAvatarSync(agent.id)}
+                        alt={`${agent.name} avatar`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          // Fallback to colored circle if image fails to load
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.className = `w-12 h-12 rounded-full bg-gradient-to-br ${getRandomAvatarColor(agent.id)} flex items-center justify-center text-white text-lg font-bold`;
+                            parent.innerHTML = `<span className="text-white">${agent.name[0]}</span>`;
+                          }
+                        }}
+                      />
                     </div>
                     <span className="text-sm px-3 py-1 rounded-full text-gray-600 font-medium border border-gray-200 ml-2">
                       {agent.config?.domain || 'Other'}

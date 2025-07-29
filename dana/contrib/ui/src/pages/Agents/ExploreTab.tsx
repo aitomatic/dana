@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { apiService } from '@/lib/api';
+import { getAgentAvatarSync } from '@/utils/avatar';
 
 export const ExploreTab: React.FC<{
   filteredAgents: any[];
@@ -11,7 +12,8 @@ export const ExploreTab: React.FC<{
 }> = ({ filteredAgents, selectedDomain, setSelectedDomain, navigate, DOMAINS }) => (
   <>
     {/* Domain tabs */}
-    <div className="flex justify-between items-center mb-4 text-gray-600">     <p>Pre-trained agents with built-in domain expertise by Aitomatic</p></div>
+    <div className="flex justify-between items-center mb-4 text-gray-600">     
+      <p>Pre-trained agents with built-in domain expertise by Aitomatic</p></div>
     <div className="flex flex-wrap gap-2 mb-6">
  
       {DOMAINS.map((domain) => (
@@ -50,10 +52,22 @@ export const ExploreTab: React.FC<{
         >
           <div className="flex gap-4 flex-col">
             <div className="flex gap-2 items-center justify-between">
-            <div
-              className={`w-12 h-12 rounded-full bg-gradient-to-br ${agent.avatarColor || 'bg-gray-200'} flex items-center justify-center text-white text-lg font-bold`}
-            >
-              {!agent.avatarColor && <span className="text-gray-500">{agent.name[0]}</span>}
+            <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center">
+              <img
+                src={getAgentAvatarSync(agent.id)}
+                alt={`${agent.name} avatar`}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Fallback to colored circle if image fails to load
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const parent = target.parentElement;
+                  if (parent) {
+                    parent.className = `w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 to-purple-400 flex items-center justify-center text-white text-lg font-bold`;
+                    parent.innerHTML = `<span className="text-white">${agent.name[0]}</span>`;
+                  }
+                }}
+              />
             </div>
             <span className="text-sm px-3 py-1 rounded-full text-gray-600 font-medium border border-gray-200 ml-2">
                   {agent.config?.domain || 'Other'}

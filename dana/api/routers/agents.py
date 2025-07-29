@@ -53,6 +53,7 @@ from dana.api.services.knowledge_status_manager import (
     KnowledgeStatusManager,
     KnowledgeGenerationManager,
 )
+from dana.api.services.avatar_service import AvatarService
 from dana.api.server.server import ws_manager
 import shutil
 
@@ -1480,4 +1481,40 @@ async def revert_domain_knowledge(
         raise
     except Exception as e:
         logger.error(f"Error reverting domain knowledge for agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{agent_id}/avatar")
+async def get_agent_avatar(agent_id: int):
+    """Get agent avatar by ID."""
+    try:
+        # Verify agent exists
+        from dana.api.core.database import get_db
+        from sqlalchemy.orm import Session
+        
+        # Get database session
+        db = next(get_db())
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+        
+        # Get avatar using avatar service
+        avatar_service = AvatarService()
+        avatar_file_path = avatar_service.get_avatar_file_path(agent_id)
+        
+        if not avatar_file_path or not avatar_file_path.exists():
+            raise HTTPException(status_code=404, detail="Avatar not found")
+        
+        # Return the avatar file
+        from fastapi.responses import FileResponse
+        return FileResponse(
+            path=str(avatar_file_path),
+            media_type="image/svg+xml",
+            filename=f"agent-avatar-{agent_id}.svg"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting avatar for agent {agent_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))

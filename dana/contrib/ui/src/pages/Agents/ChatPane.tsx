@@ -5,6 +5,7 @@ import { useParams } from 'react-router-dom';
 import { apiService } from '@/lib/api';
 import { MarkdownViewerSmall } from './chat/markdown-viewer';
 import { useVariableUpdates } from '@/hooks/useVariableUpdates';
+import { getAgentAvatarSync } from '@/utils/avatar';
 
 interface Message {
   id: string;
@@ -146,7 +147,25 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
     >
       {/* Header */}
       <div className="flex justify-between items-center p-4 border-b border-gray-200">
-        <h3 className="font-semibold text-gray-900">Chat with {agentName}</h3>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center">
+            <img
+              src={getAgentAvatarSync(parseInt(agent_id || '0'))}
+              alt={`${agentName} avatar`}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback to colored circle if image fails to load
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const parent = target.parentElement;
+                if (parent) {
+                  parent.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-pink-400 to-purple-400 flex items-center justify-center text-white text-sm font-bold">${agentName?.[0] || 'A'}</div>`;
+                }
+              }}
+            />
+          </div>
+          <h3 className="font-semibold text-gray-900">{agentName}</h3>
+        </div>
         <button
           onClick={onClose}
           className="p-1 text-gray-400 transition-colors cursor-pointer hover:text-gray-600"
