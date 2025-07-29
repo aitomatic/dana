@@ -1,14 +1,9 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useAgentStore } from '@/stores/agent-store';
 
 const OverviewTab: React.FC<{ onShowComparison: () => void }> = () => {
   const agent = useAgentStore((s) => s.selectedAgent);
-  const specialties = useMemo(() => {
-    return agent?.config?.specialties?.join(', ') || '-';
-  }, [agent]);
-  const skills = useMemo(() => {
-    return agent?.config?.skills?.join(', ') || '-';
-  }, [agent]);
+
   return (
     <div className="flex flex-col gap-8 md:flex-row">
       <div className="flex flex-col flex-1 gap-4 p-6 bg-white rounded-lg border border-gray-200">
@@ -23,21 +18,21 @@ const OverviewTab: React.FC<{ onShowComparison: () => void }> = () => {
         </div>
         <div className="flex flex-col gap-2 p-4 text-sm rounded-lg border border-gray-200">
           <div className="text-sm font-semibold text-gray-500">Agent Profile</div>
-          <div className="flex gap-2">
+          <div className="flex">
             <div className="w-40">Name:</div>
             <div>{agent?.name}</div>
           </div>
           <div className="flex items-center text-sm text-gray-700">
-            <div className="w-40">Role:</div>
-            <div>{agent?.config?.role ?? '-'}</div>
+            <div className="w-40">Domain:</div>
+            <div>{agent?.config?.domain ?? '-'}</div>
           </div>
           <div className="flex items-center text-sm text-gray-700">
-            <div className="w-40">Specialties:</div>
-            <div>{specialties || '-'}</div>
+            <div className="w-40">Topic:</div>
+            <div>{agent?.config?.topic || '-'}</div>
           </div>
           <div className="flex items-center text-sm text-gray-700">
-            <div className="w-40">Skills:</div>
-            <div>{skills || '-'}</div>
+            <div className="w-40">Tasks:</div>
+            <div>{agent?.config?.tasks || '-'}</div>
           </div>
         </div>
         {/* <div className="flex flex-col gap-2">

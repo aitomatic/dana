@@ -197,7 +197,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                   // Store the domain tree and status data
                   setDomainTree(domainResponse);
                   setStatusData(statusResponse);
-                  
+
                   const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
                     domainResponse,
                     statusResponse,
@@ -263,12 +263,12 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       const pathParts = nodePath.split(' - ');
       for (const topic of statusData.topics) {
         const topicParts = topic.path.split(' - ');
-        
+
         // Check if this could be a match by comparing the last part (leaf node name)
         if (pathParts.length > 0 && topicParts.length > 0) {
           const lastPathPart = pathParts[pathParts.length - 1];
           const lastTopicPart = topicParts[topicParts.length - 1];
-          
+
           // If the leaf node names match and the topic path is a subset of the node path
           if (lastPathPart === lastTopicPart && topicParts.every(part => pathParts.includes(part))) {
             return topic;
@@ -291,14 +291,14 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       const isLeafNode = !domainNode.children || domainNode.children.length === 0;
       const hasChildren = domainNode.children && domainNode.children.length > 0;
       const knowledgeStatusInfo = isLeafNode ? getKnowledgeStatusForPath(nodePath) : null;
-      
+
 
       // Only show the node if:
       // 1. It's the root node (depth 0)
       // 2. Its parent is expanded
       // 3. We don't have expansion state yet (show all - fallback behavior)
       const shouldShowNode = depth === 0 || !parentId || !expandedNodeIds || expandedNodeIds.has(parentId);
-      
+
       if (shouldShowNode) {
         // Create flow node with knowledge status information
         nodes.push({
@@ -372,12 +372,12 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           // Store the domain tree and status data
           setDomainTree(domainResponse);
           setStatusData(statusResponse);
-          
+
           // Initialize expanded nodes with just the root
           const rootPath = domainResponse.root.topic;
           const initialExpanded = new Set([rootPath]);
           setExpandedNodes(initialExpanded);
-          
+
           // Convert domain knowledge to flow format (now with status information)
           const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
             domainResponse,
@@ -423,11 +423,11 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   // Handle node click - toggle expansion for parent nodes, show sidebar for leaf nodes
   const onNodeClick = async (_: React.MouseEvent, node: FlowNode) => {
     const nodeData = node.data;
-    
+
     // If it's a leaf node, show the knowledge sidebar
     if (nodeData.isLeafNode) {
       const topicPath = nodeData.nodePath;
-      
+
       // Check if knowledge is generated
       if (nodeData.knowledgeStatus && nodeData.knowledgeStatus.status === 'success') {
         // Open sidebar and fetch content
@@ -436,10 +436,10 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         setSidebarLoading(true);
         setSidebarError(null);
         setSidebarContent(null);
-        
+
         try {
           const response = await apiService.getTopicKnowledgeContent(agentId!, topicPath);
-          
+
           if (response.success) {
             setSidebarContent(response.content);
           } else {
@@ -455,7 +455,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         // Show toast that knowledge is not generated yet
         const status = nodeData.knowledgeStatus?.status || 'pending';
         let message = '';
-        
+
         switch (status) {
           case 'pending':
             message = `Knowledge for "${nodeData.label}" is not generated yet. Click "Generate Contextual Knowledge" to start generation.`;
@@ -469,21 +469,21 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           default:
             message = `Knowledge for "${nodeData.label}" is not available yet.`;
         }
-        
+
         toast.info(message, {
           duration: 5000,
         });
       }
-      
+
       // Also set as selected for info popup
-      setSelectedNodeId(node.id);
+      // setSelectedNodeId(node.id);
       return;
     }
-    
+
     // If the node has children, toggle its expansion
     if (nodeData.hasChildren) {
       const newExpandedNodes = new Set(expandedNodes);
-      
+
       if (expandedNodes.has(node.id)) {
         // Collapse: remove this node and all its descendants from expanded set
         const removeDescendants = (nodeId: string) => {
@@ -500,9 +500,9 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         // Expand: add this node to expanded set
         newExpandedNodes.add(node.id);
       }
-      
+
       setExpandedNodes(newExpandedNodes);
-      
+
       // Regenerate the flow with new expansion state
       if (domainTree && statusData) {
         const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
@@ -515,9 +515,9 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         setEdges(flowEdges);
       }
     }
-    
+
     // Always set as selected for info popup
-    setSelectedNodeId(node.id);
+    // setSelectedNodeId(node.id);
   };
 
   // Optionally, handle pane click to clear selection
@@ -647,7 +647,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           <Controls />
         </ReactFlow>
       </div>
-      
+
       {/* Knowledge Sidebar */}
       <KnowledgeSidebar
         isOpen={sidebarOpen}
