@@ -71,6 +71,8 @@ dependencies = [
     "python-lsp-server[all]>=1.13.0",
     "pyright>=1.1.403",
     "jedi>=0.19.2",
+    "llama-index-embeddings-openai>=0.3.1",
+    "llama-index-llms-cohere>=0.5.0",
 ]
 
 # Optional dependency groups

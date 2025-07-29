@@ -83,5 +83,31 @@
         },
         "query_strategy": "iterative",
         "query_max_iterations": 5
+    },
+    "embedding": {
+        "preferred_models": [
+            "openai:text-embedding-3-small",
+            "openai:text-embedding-3-large",
+            "huggingface:BAAI/bge-small-en-v1.5",
+            "huggingface:sentence-transformers/all-MiniLM-L6-v2",
+            "cohere:embed-english-v3.0"
+        ],
+        "provider_configs": {
+            "openai": {
+                "api_key": "env:OPENAI_API_KEY",
+                "api_type": "openai",
+                "base_url": "https://api.openai.com/v1",
+                "dimension": 1024,
+                "batch_size": 512
+            },
+            "huggingface": {
+                "api_type": "huggingface"
+            },
+            "cohere": {
+                "api_key": "env:COHERE_API_KEY",
+                "base_url": "https://api.cohere.ai/v1",
+                "batch_size": 100
+            }
+        }
     }
 }
