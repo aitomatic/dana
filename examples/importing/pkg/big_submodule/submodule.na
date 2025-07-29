@@ -1,0 +1,10 @@
+"""A small sub-module in a big sub-module of a package."""
+
+__all__ = [
+    'NESTED_CONST',
+    'UTIL_CONST',
+]
+
+from ..util_submodule.submodule import UTIL_CONST
+
+NESTED_CONST = 'nested const'
