@@ -17,7 +17,7 @@ import type { DomainKnowledgeResponse } from '@/types/domainKnowledge';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
-const API_TIMEOUT = 30000; // 30 seconds
+const API_TIMEOUT = 300000; // 5 minutes
 
 // API Response Types
 export interface ApiResponse<T = any> {
@@ -532,7 +532,7 @@ class ApiService {
       '/agents/generate-from-prompt',
       request,
       {
-        timeout: 300000,
+        timeout: 3000000,
       },
     );
     return response.data;

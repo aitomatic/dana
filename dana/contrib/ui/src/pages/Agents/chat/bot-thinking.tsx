@@ -1,22 +1,17 @@
 import { IconLoader } from '@tabler/icons-react';
 
 const BotThinking = ({ message, avatar, currentStep }: { message?: string; avatar?: string; currentStep?: string }) => {
-  const currentAgent = {
-    avatar: '1',
-  };
   const thinkingMessage = 'Thinking...';
+
+  // Use the same avatar source as bot-message.tsx
+  const avatarSrc = avatar || '/agent-avatar/agent-avatar-1.svg';
 
   return (
     <div className="grid grid-cols-[max-content_1fr] items-start w-full gap-2 px-6 py-4">
       <img
         className="w-8 h-8"
-        src={
-          avatar ||
-          (currentAgent?.avatar !== '1'
-            ? `/assets${currentAgent?.avatar ?? '/agent-avatar.svg'}`
-            : '/assets/aito-circle-logo.svg')
-        }
-        alt="/assets/aito-circle-logo.svg"
+        src={avatarSrc}
+        alt="Agent avatar"
       />
       <div className="flex gap-2">
         <div className="flex items-start justify-center">

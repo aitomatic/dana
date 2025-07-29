@@ -55,9 +55,6 @@ def create_websocket_notifier(websocket_id: str | None = None):
     """Create a variable change notifier that sends updates via WebSocket"""
     async def variable_change_notifier(scope: str, var_name: str, old_value: Any, new_value: Any) -> None:
         if old_value != new_value:  # Only notify on actual changes
-            # Always print to console for debugging
-            print(f"🔄 Variable changed: {scope}:{var_name} = {old_value} → {new_value}")
-            
             # Send via WebSocket if connection exists
             if websocket_id:
                 await variable_update_manager.send_variable_update(websocket_id, scope, var_name, old_value, new_value)
