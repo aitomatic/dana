@@ -222,6 +222,7 @@ export interface AgentTestRequest {
   agent_description?: string;
   context?: Record<string, any>;
   folder_path?: string;
+  websocket_id?: string;
 }
 
 export interface AgentTestResponse {
@@ -720,7 +721,7 @@ class ApiService {
     return response.data;
   }
 
-  async testAgentById(agentId: string | number, message: string, context?: Record<string, any>): Promise<{
+  async testAgentById(agentId: string | number, message: string, context?: Record<string, any>, websocket_id?: string): Promise<{
     success: boolean;
     agent_response: string;
     error?: string;
@@ -729,7 +730,8 @@ class ApiService {
   }> {
     const response = await this.client.post(`/agents/${agentId}/test`, {
       message,
-      context: context || { user_id: 'test_user', session_id: 'chat_session' }
+      context: context || { user_id: 'test_user', session_id: 'chat_session' },
+      websocket_id
     }, {
       timeout: 300000, // 5 minutes timeout for agent testing
     });

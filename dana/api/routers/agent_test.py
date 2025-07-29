@@ -5,17 +5,64 @@ import os
 import logging
 import asyncio
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
+import json
 
 from dana.core.lang.dana_sandbox import DanaSandbox
-from dana.core.lang.sandbox_context import SandboxContext
+from dana.api.utils.sandbox_context_with_notifier import SandboxContextWithNotifier
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/agent-test", tags=["agent-test"])
+
+# WebSocket Connection Manager for real-time variable updates
+class VariableUpdateManager:
+    def __init__(self):
+        self.active_connections: dict[str, WebSocket] = {}
+    
+    async def connect(self, websocket_id: str, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections[websocket_id] = websocket
+    
+    def disconnect(self, websocket_id: str):
+        if websocket_id in self.active_connections:
+            del self.active_connections[websocket_id]
+    
+    async def send_variable_update(self, websocket_id: str, scope: str, var_name: str, old_value: Any, new_value: Any):
+        if websocket_id in self.active_connections:
+            websocket = self.active_connections[websocket_id]
+            try:
+                message = {
+                    "type": "variable_change",
+                    "scope": scope,
+                    "variable": var_name,
+                    "old_value": str(old_value) if old_value is not None else None,
+                    "new_value": str(new_value) if new_value is not None else None,
+                    "timestamp": asyncio.get_event_loop().time()
+                }
+                await websocket.send_text(json.dumps(message))
+            except Exception as e:
+                logger.error(f"Failed to send variable update via WebSocket: {e}")
+                # Remove disconnected WebSocket
+                self.disconnect(websocket_id)
+
+variable_update_manager = VariableUpdateManager()
+
+def create_websocket_notifier(websocket_id: str | None = None):
+    """Create a variable change notifier that sends updates via WebSocket"""
+    async def variable_change_notifier(scope: str, var_name: str, old_value: Any, new_value: Any) -> None:
+        if old_value != new_value:  # Only notify on actual changes
+            # Always print to console for debugging
+            print(f"🔄 Variable changed: {scope}:{var_name} = {old_value} → {new_value}")
+            
+            # Send via WebSocket if connection exists
+            if websocket_id:
+                await variable_update_manager.send_variable_update(websocket_id, scope, var_name, old_value, new_value)
+    
+    return variable_change_notifier
 
 
 class AgentTestRequest(BaseModel):
@@ -27,6 +74,7 @@ class AgentTestRequest(BaseModel):
     agent_description: str | None = "A test agent"
     context: dict[str, Any] | None = None
     folder_path: str | None = None
+    websocket_id: str | None = None  # Optional WebSocket ID for real-time updates
 
 
 class AgentTestResponse(BaseModel):
@@ -173,7 +221,10 @@ async def test_agent(request: AgentTestRequest):
                     print("os DANAPATH", os.environ.get("DANAPATH"))
                     try:
                         print("os DANAPATH", os.environ.get("DANAPATH"))
-                        sandbox_context = SandboxContext()
+                        
+                        # Create a WebSocket-enabled notifier
+                        notifier = create_websocket_notifier(request.websocket_id)
+                        sandbox_context = SandboxContextWithNotifier(notifier=notifier)
                         sandbox_context.set("system:user_id", str(request.context.get("user_id", "Lam")))
                         sandbox_context.set("system:session_id", "test-agent-creation")
                         sandbox_context.set("system:agent_instance_id", str(Path(request.folder_path).stem))
@@ -277,7 +328,9 @@ async def test_agent(request: AgentTestRequest):
         print(f"DANAPATH: {os.environ.get('DANAPATH')}")
         print("--------------------------------")
         try:
-            sandbox_context = SandboxContext()
+            # Create a WebSocket-enabled notifier
+            notifier = create_websocket_notifier(request.websocket_id)
+            sandbox_context = SandboxContextWithNotifier(notifier=notifier)
             # Run the blocking DanaSandbox.quick_run in a thread pool to avoid blocking the API
             loop = asyncio.get_event_loop()
             result = await loop.run_in_executor(
@@ -343,3 +396,30 @@ async def test_agent(request: AgentTestRequest):
             error_msg = f"Error testing agent: {str(e)}. LLM fallback also failed: {str(llm_error)}"
             print(error_msg)
             return AgentTestResponse(success=False, agent_response="", error=error_msg)
+
+
+@router.websocket("/ws/{websocket_id}")
+async def websocket_variable_updates(websocket: WebSocket, websocket_id: str):
+    """
+    WebSocket endpoint for receiving real-time variable updates during agent execution.
+    
+    Args:
+        websocket: The WebSocket connection
+        websocket_id: Unique identifier for this WebSocket connection
+    """
+    await variable_update_manager.connect(websocket_id, websocket)
+    try:
+        while True:
+            # Keep the connection alive and listen for client messages
+            data = await websocket.receive_text()
+            # Echo back for debugging (optional)
+            await websocket.send_text(json.dumps({
+                "type": "echo", 
+                "message": f"Connected to variable updates for ID: {websocket_id}",
+                "data": data
+            }))
+    except WebSocketDisconnect:
+        variable_update_manager.disconnect(websocket_id)
+    except Exception as e:
+        logger.error(f"WebSocket error for {websocket_id}: {e}")
+        variable_update_manager.disconnect(websocket_id)
