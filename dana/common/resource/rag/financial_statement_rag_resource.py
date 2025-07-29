@@ -106,6 +106,13 @@ class FinancialStatementRAGResource(BaseResource):
                     print(
                         f"[FinancialRAG] Extracted balance sheet content length: {len(result)} characters"
                     )
+                    # Show a preview of the extracted content for debugging
+                    preview_lines = result.split("\n")[:10]  # First 10 lines
+                    print("[FinancialRAG] Content preview (first 10 lines):")
+                    for line in preview_lines:
+                        print(f"  {line}")
+                    if len(result.split("\n")) > 10:
+                        print(f"  ... ({len(result.split('\n')) - 10} more lines)")
                 return result
             except ValueError as e:
                 logger.error(f"Balance sheet content extraction failed: {e}")
@@ -171,6 +178,8 @@ class FinancialStatementRAGResource(BaseResource):
                     print(
                         f"[FinancialRAG] Extracted cash flow content length: {len(result)} characters"
                     )
+                    # Show a preview of the extracted content for debugging
+                    print(result)
                 return result
             except ValueError as e:
                 logger.error(f"Cash flow content extraction failed: {e}")
@@ -236,6 +245,13 @@ class FinancialStatementRAGResource(BaseResource):
                     print(
                         f"[FinancialRAG] Extracted profit & loss content length: {len(result)} characters"
                     )
+                    # Show a preview of the extracted content for debugging
+                    preview_lines = result.split("\n")[:10]  # First 10 lines
+                    print("[FinancialRAG] Content preview (first 10 lines):")
+                    for line in preview_lines:
+                        print(f"  {line}")
+                    if len(result.split("\n")) > 10:
+                        print(f"  ... ({len(result.split('\n')) - 10} more lines)")
                 return result
             except ValueError as e:
                 logger.error(f"Profit & loss content extraction failed: {e}")
