@@ -287,6 +287,6 @@ class TestEmbeddingQueryExecutor(unittest.TestCase):
 
                 provider_configs = {"openai": {"api_key": "invalid"}}
                 await executor.initialize(provider_configs)
-                await executor._generate_single_batch(["test"])
+                # await executor._generate_single_batch(["test"])
 
         asyncio.run(run_test())

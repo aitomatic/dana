@@ -133,6 +133,7 @@ class TestLlamaIndexEmbeddingResource(unittest.TestCase):
         # Cohere packages are lightweight and already installed - simple mocking is sufficient
         try:
             # Try to import first to ensure the module is available
+            from llama_index.embeddings.cohere import CohereEmbedding  # noqa
 
             with patch("llama_index.embeddings.cohere.CohereEmbedding") as mock_cohere:
                 create_llamaindex_embedding("cohere:embed-english-v2.0")
@@ -155,6 +156,7 @@ class TestLlamaIndexEmbeddingResource(unittest.TestCase):
         with self.mock_heavy_dependencies():
             try:
                 # Try to import and patch the HuggingFace embedding class
+                from llama_index.embeddings.huggingface import HuggingFaceEmbedding  # noqa
 
                 with patch("llama_index.embeddings.huggingface.HuggingFaceEmbedding") as mock_hf:
                     create_llamaindex_embedding("huggingface:BAAI/bge-small-en-v1.5")
