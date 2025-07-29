@@ -1,0 +1,19 @@
+# Debug test for $$ placeholder issue
+
+def test_placeholder_debug():
+    def format_message(prefix: str, text: str, suffix: str) -> str:
+        return f"{prefix}{text}{suffix}"
+
+    # Simple function call with $$ placeholder
+    def simple_placeholder(text: str) = format_message("Start: ", $$, " :End")
+    
+    try:
+        result = simple_placeholder("hello")
+        print(f"Simple placeholder result: {result}")
+    except Exception as e:
+        print(f"Error in simple placeholder: {e}")
+        import traceback
+        traceback.print_exc()
+
+if __name__ == "__main__":
+    test_placeholder_debug() 

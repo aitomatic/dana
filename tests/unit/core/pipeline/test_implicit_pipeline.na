@@ -12,17 +12,17 @@ def test_implicit_mode():
         return f"{text}{suffix}"
 
     # Test basic pipeline using declarative function definition
-    def basic_pipeline(text: str) = text | add_prefix("Data: ") | to_uppercase | add_suffix("?")
+    def basic_pipeline(text: str) = add_prefix("Data: ") | to_uppercase | add_suffix("?")
     result = basic_pipeline("hello")
     assert result == "DATA: HELLO?", f"Expected 'DATA: HELLO?', got '{result}'"
 
     # Test with default arguments
-    def default_pipeline(text: str) = text | add_prefix | to_uppercase
+    def default_pipeline(text: str) = add_prefix | to_uppercase
     result = default_pipeline("world")
     assert result == "PREFIX: WORLD", f"Expected 'PREFIX: WORLD', got '{result}'"
 
     # Test single stage
-    def single_stage_pipeline(text: str) = text | to_uppercase
+    def single_stage_pipeline(text: str) = to_uppercase
     result = single_stage_pipeline("test")
     assert result == "TEST", f"Expected 'TEST', got '{result}'"
 

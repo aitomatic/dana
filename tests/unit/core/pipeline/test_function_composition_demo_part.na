@@ -1,0 +1,20 @@
+# Test with just the failing part of the function composition demo
+
+def test_function_composition_demo_part():
+    def format_message(prefix: str, text: str, suffix: str) -> str:
+        return f"{prefix}{text}{suffix}"
+
+    # This is the exact line that's failing in the function composition demo
+    def middle_placeholder_pipeline(text: str) = format_message("Start: ", $$, " :End")
+    
+    try:
+        result = middle_placeholder_pipeline("hello")
+        print(f"middle_placeholder_pipeline('hello') = {result}")
+        print("  → format_message('Start: ', 'hello', ' :End') = 'Start: hello :End'")
+    except Exception as e:
+        print(f"Error in middle_placeholder_pipeline: {e}")
+        import traceback
+        traceback.print_exc()
+
+if __name__ == "__main__":
+    test_function_composition_demo_part() 

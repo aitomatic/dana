@@ -33,6 +33,7 @@ from dana.core.lang.ast import (
     Identifier,
     ListLiteral,
     LiteralExpression,
+    NamedPipelineStage,
     ObjectFunctionCall,
     PipelineExpression,
     PlaceholderExpression,
@@ -111,6 +112,7 @@ class ExpressionExecutor(BaseExecutor):
             AttributeAccess: self.execute_attribute_access,
             SubscriptExpression: self.execute_subscript_expression,
             ObjectFunctionCall: self.execute_object_function_call,
+            NamedPipelineStage: self.execute_named_pipeline_stage,
             PlaceholderExpression: self.execute_placeholder_expression,
             PipelineExpression: self.execute_pipeline_expression,
         }
@@ -721,6 +723,21 @@ class ExpressionExecutor(BaseExecutor):
             The list value
         """
         return self.collection_processor.execute_list_literal(node, context)
+
+    def execute_named_pipeline_stage(self, node: NamedPipelineStage, context: SandboxContext) -> Any:
+        """Execute a named pipeline stage.
+
+        This method should not be called directly, as named pipeline stages are only
+        meaningful within pipeline contexts.
+
+        Args:
+            node: The named pipeline stage
+            context: The execution context
+
+        Returns:
+            Should raise an error as named pipeline stages are not standalone expressions
+        """
+        raise SandboxError("Named pipeline stages can only be used within pipeline operations")
 
     def execute_placeholder_expression(self, node: PlaceholderExpression, context: SandboxContext) -> Any:
         """Execute a placeholder expression.

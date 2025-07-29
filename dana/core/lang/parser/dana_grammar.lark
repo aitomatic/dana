@@ -227,7 +227,10 @@ pipe_expr: or_expr (PIPE or_expr)*
 function_composition_expr: function_pipe_expr
 
 // Function pipe expressions: f1 | f2 | f3
-function_pipe_expr: function_expr (PIPE function_expr)*
+function_pipe_expr: pipeline_stage (PIPE pipeline_stage)*
+
+// Pipeline stages: function expressions with optional named capture
+pipeline_stage: function_expr ["as" NAME]
 
 // Function expressions: function names, function calls, and list literals
 function_expr: function_name | function_call | function_list_literal
@@ -282,7 +285,7 @@ DIV: "/"
 FDIV: "//"
 MOD: "%"
 PIPE: "|"
-DOLLAR_DOLLAR: "$"
+DOLLAR_DOLLAR: "$$"
 
 // Expression precedence structure (lowest to highest)
 sum_expr: product ((ADD | SUB) product)*

@@ -14,7 +14,7 @@ from typing import Any
 
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.ast import AttributeAccess, BinaryExpression, BinaryOperator, FunctionCall, Identifier, ListLiteral
+from dana.core.lang.ast import AttributeAccess, BinaryExpression, BinaryOperator, FunctionCall, Identifier, ListLiteral, NamedPipelineStage
 from dana.core.lang.interpreter.functions.composed_function import ComposedFunction
 from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
 from dana.core.lang.sandbox_context import SandboxContext
@@ -96,6 +96,52 @@ class ParallelFunction(SandboxFunction):
         return f"ParallelFunction(functions={self.functions})"
 
 
+class NamedPipelineComposedFunction(SandboxFunction):
+    """A composed function that supports named parameter capture in pipelines."""
+
+    def __init__(self, pipeline_expr: BinaryExpression, context: SandboxContext | None = None):
+        """Initialize a named pipeline composed function.
+
+        Args:
+            pipeline_expr: The pipeline expression to execute
+            context: Optional sandbox context
+        """
+        super().__init__(context)
+        self.pipeline_expr = pipeline_expr
+        self._pipeline_executor = None
+
+    def execute(self, context: SandboxContext, *args, **kwargs) -> Any:
+        """Execute the pipeline with named parameter capture support.
+
+        Args:
+            context: The execution context
+            *args: Positional arguments
+            **kwargs: Keyword arguments
+
+        Returns:
+            The result of the pipeline execution
+        """
+        # Lazy initialize the pipeline executor with parent executor
+        if self._pipeline_executor is None:
+            from dana.core.lang.interpreter.executor.expression.pipeline_executor import PipelineExecutor
+
+            # Get the parent executor from the context's interpreter
+            parent_executor = None
+            if hasattr(context, "_interpreter") and hasattr(context._interpreter, "_expression_executor"):
+                parent_executor = context._interpreter._expression_executor
+            self._pipeline_executor = PipelineExecutor(parent_executor=parent_executor)
+
+        return self._pipeline_executor.execute_pipeline(self.pipeline_expr, context, *args, **kwargs)
+
+    def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> None:
+        """Restore context after function execution (required by SandboxFunction)."""
+        # No special context restoration needed
+        pass
+
+    def __repr__(self) -> str:
+        return f"NamedPipelineComposedFunction({self.pipeline_expr})"
+
+
 class PipeOperationHandler(Loggable):
     """Clean pipe operation handler for pure function composition."""
 
@@ -113,9 +159,19 @@ class PipeOperationHandler(Loggable):
         Does NOT support data pipelines like: data | function
         """
         try:
+            # Check if this is a declarative function composition with named stages
+            if self._has_named_stages(left) or self._has_named_stages(right):
+                # Use the new named pipeline composed function
+                pipeline_expr = self._create_pipeline_expression(left, right)
+                return NamedPipelineComposedFunction(pipeline_expr, context=context)
+
+            # Handle NamedPipelineStage objects without names (convert to regular expressions)
+            left_expr = self._unwrap_named_stage(left)
+            right_expr = self._unwrap_named_stage(right)
+
             # Resolve both operands to functions
-            left_func = self._resolve_to_function(left, context)
-            right_func = self._resolve_to_function(right, context)
+            left_func = self._resolve_to_function(left_expr, context)
+            right_func = self._resolve_to_function(right_expr, context)
 
             # Create composed function using Dana's existing infrastructure
             return ComposedFunction(left_func, right_func, context=context)
@@ -124,6 +180,55 @@ class PipeOperationHandler(Loggable):
             if isinstance(e, SandboxError):
                 raise
             raise SandboxError(f"Error in pipe composition: {e}")
+
+    def _unwrap_named_stage(self, expr: Any) -> Any:
+        """Unwrap a NamedPipelineStage to get the underlying expression.
+
+        Args:
+            expr: The expression to unwrap
+
+        Returns:
+            The unwrapped expression
+        """
+        if isinstance(expr, NamedPipelineStage):
+            return expr.expression
+        elif isinstance(expr, BinaryExpression) and expr.operator == BinaryOperator.PIPE:
+            return BinaryExpression(
+                left=self._unwrap_named_stage(expr.left), operator=expr.operator, right=self._unwrap_named_stage(expr.right)
+            )
+        return expr
+
+    def _has_named_stages(self, expr: Any) -> bool:
+        """Check if an expression contains named pipeline stages.
+
+        Args:
+            expr: The expression to check
+
+        Returns:
+            True if the expression contains named stages
+        """
+        if isinstance(expr, NamedPipelineStage):
+            return expr.name is not None
+        elif isinstance(expr, BinaryExpression) and expr.operator == BinaryOperator.PIPE:
+            return self._has_named_stages(expr.left) or self._has_named_stages(expr.right)
+        return False
+
+    def _create_pipeline_expression(self, left: Any, right: Any) -> BinaryExpression:
+        """Create a pipeline expression from left and right operands.
+
+        Args:
+            left: The left operand
+            right: The right operand
+
+        Returns:
+            A BinaryExpression representing the pipeline
+        """
+        # If left is already a pipeline, extend it
+        if isinstance(left, BinaryExpression) and left.operator == BinaryOperator.PIPE:
+            return BinaryExpression(left=left, operator=BinaryOperator.PIPE, right=right)
+        else:
+            # Create a new pipeline
+            return BinaryExpression(left=left, operator=BinaryOperator.PIPE, right=right)
 
     def _resolve_to_function(self, expr: Any, context: SandboxContext) -> Any:
         """Resolve an expression to a function.
