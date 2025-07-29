@@ -5,6 +5,7 @@ struct State:
     current_step : str = ""
     count : int = 0
     has_data : bool = False
+    has_new_context : bool = False
 
 STEP_BREAK = """
 ---
@@ -22,27 +23,39 @@ COMPRESSION_PROMPT = """
 **COMPRESSION REQUIREMENTS**:
 
 1. **Preserve All Key Metrics**: Every calculated value, ratio, and financial figure must be retained
-2. **Eliminate Redundancy**: Remove repeated explanations, duplicate data, and verbose descriptions
-3. **Maintain Traceability**: Keep step numbers and status indicators for audit trail
-4. **Standardize Format**: Use consistent, compact formatting throughout
-5. **Flag Data Quality**: Retain all data quality indicators (✅, ⚠️, 🔍, ❌)
+2. **CRITICAL - Preserve Complete Financial Statement Tables**: 
+   - ALL Balance Sheet data with COMPLETE rows and columns exactly as extracted
+   - ALL Cash Flow Statement data with COMPLETE sections exactly as extracted  
+   - ALL P&L/Income Statement data with COMPLETE line items exactly as extracted
+   - Preserve EXACT table structure, headers, and formatting from original documents
+3. **Preserve Raw Data Integrity**: Keep complete financial statement tables with ALL period labels and original data structure
+4. **NEVER Summarize Financial Tables**: Financial statement tables must be preserved in their complete, original form
+5. **Eliminate Only Redundant Text**: Remove repeated explanations and verbose descriptions, NOT financial data
+6. **Maintain Traceability**: Keep step numbers and status indicators for audit trail
+7. **Standardize Format**: Use consistent, compact formatting for text, but preserve original table structures
+8. **Flag Data Quality**: Retain all data quality indicators (✅, ⚠️, 🔍, ❌)
 
 **COMPRESSION RULES**:
 
 **Keep - Essential Elements**:
-- All numerical results and calculations
-- Data quality flags and proxy indicators
-- Step completion status
+- **CRITICAL**: Complete Balance Sheet tables in their EXACT original format with ALL rows, columns, and periods
+- **CRITICAL**: Complete Cash Flow Statement tables in their EXACT original format with ALL sections and periods  
+- **CRITICAL**: Complete P&L/Income Statement tables in their EXACT original format with ALL line items and periods
+- **PRESERVE TABLE STRUCTURE**: Original headers, subtotals, totals, and table formatting exactly as extracted
+- **RAW FINANCIAL DATA**: All numerical values from financial statements in their original context and format
+- All calculated results and ratios with period labels
+- Data quality flags and proxy indicators (✅, ⚠️, 🔍, ❌)
+- Step completion status and progression
 - Key formulas used (in abbreviated form)
 - Missing data notes and limitations
 - Decision criteria outcomes
 
 **Remove - Redundant Elements**:
 - Detailed calculation steps (keep only final results)
-- Repeated context information
-- Verbose explanations and instructions
-- Template formatting text
-- Intermediate validation notes
+- Repeated context information and duplicate explanations
+- Verbose instructional text and formatting templates
+- Intermediate validation notes and process commentary
+- **NEVER REMOVE**: Financial statement tables, raw data, or numerical values
 
 **COMPRESSED OUTPUT FORMAT**:
 
@@ -66,15 +79,38 @@ Notes: [Critical limitations or assumptions]
 
 [Continue for all completed steps...]
 
-**CURRENT AVAILABLE DATA**:
-Financial Metrics:
-- Revenue: $X | Growth: X%
-- Operating Cash Flow: $X | Quality: ✅/⚠️
-- [All other calculated financial metrics]
+**FINANCIAL STATEMENT DATA** (PRESERVE COMPLETE ORIGINAL TABLES):
 
-Ratios & Returns:
+**Balance Sheet** (EXACT format as extracted):
+[PRESERVE COMPLETE TABLE - All rows, columns, subtotals, and totals exactly as found in original documents]
+- Assets section: Current Assets, Non-Current Assets, ALL sub-items
+- Liabilities section: Current Liabilities, Long-term Liabilities, ALL sub-items  
+- Equity section: Share Capital, Retained Earnings, ALL sub-items
+- ALL periods with original labels: Q1 2024, Q2 2024, Q3 2024, Q4 2024, etc.
+
+**Income Statement/P&L** (EXACT format as extracted):
+[PRESERVE COMPLETE TABLE - All line items and calculations exactly as found in original documents]
+- Revenue section: ALL revenue streams and breakdowns
+- Expense section: ALL expense categories and sub-items
+- Profitability metrics: Gross Profit, Operating Income, Net Income, ALL sub-calculations
+- ALL periods with original labels
+
+**Cash Flow Statement** (EXACT format as extracted):
+[PRESERVE COMPLETE TABLE - All sections and line items exactly as found in original documents]
+- Operating Activities: ALL operating cash flow items and calculations
+- Investing Activities: ALL investing cash flow items  
+- Financing Activities: ALL financing cash flow items
+- Net Cash Flow calculations and beginning/ending cash balances
+- ALL periods with original labels
+
+**CALCULATED METRICS**:
+Financial Ratios:
 - [Key ratio 1]: X.X | [Key ratio 2]: X.X%
 - [All calculated ratios and percentages]
+
+Growth Rates:
+- Revenue Growth: Q1→Q2: X% | Q2→Q3: Y% | Q3→Q4: Z%
+- [Other calculated growth metrics]
 
 Analysis Outputs:
 - [Key decision outcomes]: [Result]
@@ -94,11 +130,15 @@ Analysis Outputs:
 
 **COMPRESSION VALIDATION**:
 Before finalizing, verify:
-- [ ] All numerical values preserved exactly
+- [ ] All financial statement tables preserved in COMPLETE original format
+- [ ] No rows, columns, or data points removed from Balance Sheet, P&L, or Cash Flow tables
+- [ ] All numerical values preserved exactly with original period labels
 - [ ] No calculation results lost
-- [ ] Data quality flags maintained
+- [ ] Data quality flags maintained (✅, ⚠️, 🔍, ❌)
 - [ ] Step progression clear
-- [ ] Context 60-80% shorter than original
+- [ ] Original table structures and headers maintained
+- [ ] Only redundant text removed, NEVER financial data
+- [ ] Context compressed through text reduction, not data removal
 - [ ] All essential information retained for next step execution
 
 **EXECUTE COMPRESSION NOW**:
@@ -107,59 +147,34 @@ Transform the provided context using the format above, ensuring zero loss of cri
 
 # Question complexity classifier
 COMPLEXITY_CLASSIFIER = """
-Analyze this financial question and classify its complexity level:
+Classify this financial question's complexity level by matching it to the examples below:
 
-**COMPLEXITY LEVELS**:
+**SIMPLE (1-2 steps)** - Direct lookups or single calculations:
+- "What is the revenue for Q4 2024?"
+- "What is the cash position at end of 2024?"
+- "What is the current ratio?"
 
-**SIMPLE (1-2 steps)**: 
-- Direct data lookup from financial statements
-- Single ratio calculation using existing data
-- Basic single-period metrics
-- Multiple data points from the SAME period
-- Point-in-time questions (end of quarter/year)
+**MODERATE (3-4 steps)** - Growth rates, trends, comparisons:
+- "What was revenues in Q4. What is growth rate (compute)."
+- "What is the quarterly revenue growth rate?"
+- "Is profitability improving?"
+- "How has cash position changed over the year?"
 
-**MODERATE (3-4 steps)**:
-- Trend analysis requiring multiple periods
-- Multiple CALCULATED metrics (not just lookups)
-- Comparative analysis ACROSS TIME PERIODS
-- Growth rate calculations from historical data
-- Period-over-period comparisons
+**COMPLEX (5+ steps)** - Forecasting, scenarios, funding calculations:
+- "How much cash is needed to reach profitability?"
+- "What happens to runway if growth slows by 20%?"
+- "Can the company self-fund its growth?"
 
-**COMPLEX (5+ steps)**:
-- Multi-step forecasting or projections
-- Scenario analysis with assumptions
-- Cash flow modeling with multiple variables
-- Comprehensive analysis requiring integrated calculations
-- "What-if" scenarios with dependencies
-- Funding requirement calculations
-
-**DETAILED EXAMPLES**:
-
-**SIMPLE Examples:**
-- "What is the revenue for Q4 2024?" → Direct lookup from Income Statement
-- "What is the cash position at end of 2024?" → Direct lookup from Balance Sheet
-- "What are total assets and liabilities?" → Two lookups from same statement
-- "What is the current ratio?" → One calculation: Current Assets ÷ Current Liabilities
-- "What is revenue and gross margin for latest quarter?" → One lookup + one simple calculation
-
-**MODERATE Examples:**
-- "What is the quarterly revenue growth rate?" → Extract 4 quarters + calculate growth rates
-- "Is profitability improving?" → Extract margins for multiple periods + analyze trend
-- "How has cash position changed over the year?" → Extract quarterly cash + analyze changes
-- "Compare revenue growth to expense growth" → Extract both metrics + calculate + compare
-- "What is the average burn rate?" → Extract multiple periods of cash flow + calculate average
-
-**COMPLEX Examples:**
-- "How much cash is needed to reach profitability?" → Historical analysis + projections + break-even calculation
-- "What happens to runway if growth slows by 20%?" → Scenario modeling with assumptions
-- "Project next year's revenue based on current trends" → Statistical analysis + forecasting
-- "Can the company self-fund its growth?" → Cash flow analysis + growth projections + funding gaps
-- "What is the optimal funding amount for 18-month runway?" → Burn rate + growth + buffer calculations
+**CLASSIFICATION RULE**: 
+- If question asks for growth rate or growth calculation → MODERATE
+- If question asks "what if" or future projections → COMPLEX
+- If question is simple lookup → SIMPLE
 
 Question: {question}
 
+Match this question to the most similar example above.
+
 Classification: [SIMPLE/MODERATE/COMPLEX]
-Reasoning: [Brief explanation of why this complexity level]
 """
 
 # Question classifier to determine analysis type
@@ -431,32 +446,17 @@ Synthesize findings using:
 
 # Main planning system prompt
 PLANNING_SYSTEM_PROMPT = """
-You are a senior financial analyst creating clear, executable plans for financial analysis questions.
+You are creating executable financial analysis plans.
 
-## CORE PRINCIPLES:
-1. **Complexity-Aware**: Match the plan complexity to the question complexity
-2. **Data Reality**: Plan based on commonly available financial statement data  
-3. **Direct Path**: Use the simplest approach that directly answers the question
-4. **Efficiency First**: Don't over-engineer simple questions
+**CORE RULE**: Use the provided template exactly as given.
 
-## COMPLEXITY-BASED PLANNING:
-
-**FOR SIMPLE QUESTIONS** (direct lookups, single calculations):
-Use 1-2 steps maximum. Get straight to the answer.
-
-**FOR MODERATE QUESTIONS** (trends, multiple calculations):
-Use 3-4 steps. Balance thoroughness with efficiency.
-
-**FOR COMPLEX QUESTIONS** (forecasting, scenario analysis):
-Use 5+ steps as needed. Build comprehensive analysis.
-
-## PLANNING GUIDELINES:
+**PLANNING REQUIREMENTS**:
 - Every step must be executable with basic financial knowledge
-- Use quantitative criteria, avoid subjective assessments
-- Focus only on what's needed to answer the specific question
+- Use quantitative criteria, avoid subjective assessments  
 - Separate each step with --- on its own line
+- Focus only on answering the specific question
 
-Remember: Match your planning depth to the question's actual complexity needs.
+Create your plan using the template provided.
 """
 
 # Dynamic complexity-aware planning prompt  
@@ -589,6 +589,75 @@ Current step to execute: {step}
 Focus on completing this specific step with comprehensive time-series data collection. Use sequential tool calls to build up your data systematically.
 """
 
+# Data fetching prompt optimized for document search and extraction
+DATA_FETCHING_PROMPT = """
+{execution_system_prompt}
+
+Your goal: {question}
+
+Available tools:
+{tools}
+
+Analysis context with historical data:
+{context}
+
+Current step to execute: {step}
+
+**DATA EXTRACTION AND ENRICHMENT MODE**:
+You are in DATA FETCHING mode. Your job is to:
+1. Extract comprehensive RAW financial data from documents
+2. PRESERVE all raw data exactly as found
+3. ADD relevant context and organization based on the current step requirements
+
+**RAW DATA PRESERVATION**:
+- **CRITICAL**: Always present the EXACT raw data as found in documents
+- Include all numbers, labels, and period information exactly as they appear
+- Do not summarize or condense raw data - keep it complete
+- Present raw data in clearly marked sections
+
+**STEP-BASED ENRICHMENT**:
+After preserving raw data, ADD the following based on what the step requires:
+- If step needs revenue data: Organize revenue by periods with labels
+- If step needs expense data: Categorize expenses and show trends
+- If step needs cash flow: Show operating, investing, and financing sections
+- If step needs growth rates: Keep raw numbers AND add calculated growth rates
+- If step needs profitability: Keep raw data AND add margin calculations
+
+**DATA EXTRACTION STRUCTURE**:
+```
+=== RAW DATA EXTRACTED ===
+[Exact data as found in documents, unmodified]
+
+=== ORGANIZED BY STEP REQUIREMENTS ===
+[Same data organized/enriched based on current step needs]
+- Time period labels added
+- Calculations performed if requested
+- Categories created if needed
+- Relationships identified
+```
+
+**TEMPORAL DATA REQUIREMENTS**:
+- Extract data for ALL available time periods
+- Search for "quarterly revenue Q1 Q2 Q3 Q4" patterns
+- Label every data point with its specific time period
+- Build complete time series whenever possible
+
+**SEQUENTIAL SEARCH STRATEGY**:
+1. Make ONE targeted search based on step requirements
+2. Extract and present ALL raw data from results
+3. Analyze what additional data might be needed
+4. Make ONE more refined search if necessary
+5. Combine all raw data, then organize per step needs
+
+**OUTPUT FORMAT**:
+1. **Raw Data Section**: Present unmodified extracted data
+2. **Step-Specific Organization**: Arrange data as the step requires
+3. **Data Quality Notes**: Flag any missing periods or data issues
+4. **Additional Context**: Add calculations/analysis the step needs
+
+Remember: PRESERVE raw data first, ENRICH second based on step requirements.
+"""
+
 # Add plan validation prompt
 PLAN_VALIDATION_PROMPT = """
 Review this financial analysis plan:
@@ -629,50 +698,19 @@ Create your plan now:
 
 # Simplified final answer prompt
 FINAL_ANSWER_PROMPT = """
-You are synthesizing a completed financial analysis to provide a clear, direct answer.
+Provide a clear, direct answer to the financial question using the completed analysis.
 
 **ORIGINAL QUESTION**: {question}
 
 **COMPLETED ANALYSIS**: {context}
 
-**YOUR TASK**: Provide a focused answer that directly addresses the original question.
+**ANSWER REQUIREMENTS**:
+- Start with direct answer using specific numbers
+- Include 2-3 key supporting data points  
+- Note any significant data limitations
+- If user specified a format preference in their question, use that instead
 
-## ANSWER STRUCTURE:
-
-### 🎯 DIRECT ANSWER
-[One clear sentence that directly answers the question with specific numbers]
-
-### 📊 KEY SUPPORTING DATA
-- [Most relevant metric]: [Value] [Quality flag if not ✅]
-- [Second most relevant metric]: [Value]
-- [Third metric if critical]: [Value]
-
-### ⚖️ CONCLUSION
-Based on the analysis:
-- [Primary finding with supporting number]
-- [Secondary finding if relevant]
-- Overall: [Clear conclusion that answers the question]
-
-### ⚠️ DATA LIMITATIONS (if any)
-[Only include if significant limitations affect the conclusion]
-
-**RULES**:
-- Use only data from the completed analysis
-- Be direct and specific with numbers
-- Keep the answer focused on what was asked
-- Don't add generic financial advice
-- **PRIORITY**: If the user requested a specific format or style in their question, follow their preference exactly
-- If no specific format requested, use the standard structure above
-
-**USER PREFERENCE CHECK**:
-Before formatting, check if the original question contains any format preferences:
-- Tables, charts, or specific layouts
-- Bullet points, numbered lists, or prose style
-- Brief vs detailed responses
-- Specific metrics to emphasize
-- Comparison formats
-
-If user preferences are found, adapt the answer format accordingly while maintaining factual accuracy.
+Keep it focused and factual.
 
 Generate the final answer now.
 """
