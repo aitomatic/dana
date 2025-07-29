@@ -54,6 +54,85 @@ def create_llamaindex_embedding(model_name: str, config_override: dict[str, Any]
         raise EmbeddingError(f"Unsupported provider: {provider}")
 
 
+def create_default_llamaindex_embedding(config_override: dict[str, Any] | None = None):
+    """Create a LlamaIndex embedding model using default config auto-selection.
+
+    Automatically selects the first available model from 'preferred_models' in dana_config.json.
+
+    Args:
+        config_override: Optional configuration overrides
+
+    Returns:
+        LlamaIndex BaseEmbedding instance
+
+    Raises:
+        EmbeddingError: If no models are available or configuration is invalid
+
+    Example:
+        # Uses first available model from preferred_models in dana_config.json
+        embed_model = create_default_llamaindex_embedding()
+    """
+    try:
+        config = ConfigLoader().get_default_config()
+        if config_override:
+            config = {**config, **config_override}
+
+        embedding_config = config.get("embedding", {})
+        preferred_models = embedding_config.get("preferred_models", [])
+
+        if not preferred_models:
+            raise EmbeddingError("No preferred_models found in embedding configuration")
+
+        # Try each preferred model until we find one that's available
+        for model_name in preferred_models:
+            if _is_model_available(model_name):
+                return create_llamaindex_embedding(model_name, config_override)
+
+        # If no models are available, provide helpful error message
+        available_providers = []
+        for model in preferred_models:
+            if ":" in model:
+                provider = model.split(":", 1)[0]
+                if provider not in available_providers:
+                    available_providers.append(provider)
+
+        raise EmbeddingError(
+            f"No available models found from preferred list: {preferred_models}. "
+            f"Please check API keys for providers: {available_providers}"
+        )
+
+    except Exception as e:
+        if isinstance(e, EmbeddingError):
+            raise
+        raise EmbeddingError(f"Failed to create default embedding model: {e}")
+
+
+def _is_model_available(model_name: str) -> bool:
+    """Check if a model is available by validating required API keys.
+
+    Args:
+        model_name: Model name in format "provider:model_name"
+
+    Returns:
+        True if model is available (API keys present), False otherwise
+    """
+    if ":" not in model_name:
+        return False
+
+    provider = model_name.split(":", 1)[0]
+
+    # Check provider-specific requirements
+    if provider == "openai":
+        return bool(os.getenv("OPENAI_API_KEY"))
+    elif provider == "huggingface":
+        # HuggingFace models can work without API key for local models
+        return True
+    elif provider == "cohere":
+        return bool(os.getenv("COHERE_API_KEY"))
+    else:
+        return False
+
+
 def setup_llamaindex(model_name: str, chunk_size: int = 2048):
     """Setup LlamaIndex with Dana configuration in one line.
 
@@ -101,6 +180,18 @@ class LlamaIndexEmbeddingResource(Loggable):
             self.error(f"Failed to create embedding model: {e}")
             raise
 
+    def get_default_embedding_model(self):
+        """Get a LlamaIndex embedding model using auto-selection from config.
+
+        Returns:
+            LlamaIndex BaseEmbedding instance using first available preferred model
+        """
+        try:
+            return create_default_llamaindex_embedding(self.config_override)
+        except Exception as e:
+            self.error(f"Failed to create default embedding model: {e}")
+            raise
+
     def setup_globals(self, model_name: str, chunk_size: int = 2048):
         """Configure LlamaIndex global settings.
 
@@ -115,9 +206,32 @@ class LlamaIndexEmbeddingResource(Loggable):
             self.error(f"Failed to configure LlamaIndex: {e}")
             raise
 
+    def setup_default_globals(self, chunk_size: int = 2048):
+        """Configure LlamaIndex global settings using auto-selected model.
+
+        Args:
+            chunk_size: Document chunk size
+        """
+        try:
+            # Get the default model first to log which one was selected
+            embed_model = create_default_llamaindex_embedding(self.config_override)
+
+            from llama_index.core import Settings
+
+            Settings.embed_model = embed_model
+            Settings.chunk_size = chunk_size
+
+            # Try to get model name for logging (if available)
+            model_name = getattr(embed_model, "model_name", "auto-selected")
+            self.info(f"Configured LlamaIndex with auto-selected model: {model_name}")
+        except Exception as e:
+            self.error(f"Failed to configure LlamaIndex with default model: {e}")
+            raise
+
 
 # Simple aliases for convenience
 get_embedding_model = create_llamaindex_embedding
+get_default_embedding_model = create_default_llamaindex_embedding
 RAGEmbeddingResource = LlamaIndexEmbeddingResource  # Backward compatibility
 
 
