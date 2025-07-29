@@ -301,7 +301,7 @@ class PipeOperationHandler(Loggable):
         func = self._resolve_identifier(Identifier(func_name), context)
 
         # If the function call has arguments, create a partial function
-        if func_call.args and func_call.args.get("__positional") or any(k != "__positional" for k in func_call.args.keys()):
+        if func_call.args and (func_call.args.get("__positional") or any(k != "__positional" for k in func_call.args.keys())):
             # Create a partial function that remembers the arguments
             return self._create_partial_function(func, func_call, context)
 
