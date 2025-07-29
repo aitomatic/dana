@@ -5,6 +5,7 @@ import { useParams } from 'react-router-dom';
 import { useSmartChatStore } from '@/stores/smart-chat-store';
 import { useAgentStore } from '@/stores/agent-store';
 import { Plus } from 'lucide-react';
+import { ArrowUp } from 'iconoir-react';
 import { MarkdownViewerSmall } from './chat/markdown-viewer';
 
 const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
@@ -247,10 +248,20 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
               title="Add files"
               disabled={loading}
             >
-              <div className="flex justify-center items-center w-7 h-7 rounded-full border border-gray-300 cursor-pointer">
+              <div className="flex justify-center items-center p-2 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-200 cursor-pointer">
                 <Plus className="w-4 h-4" />
               </div>
             </button>
+            {input.trim() && (
+              <button
+                onClick={sendMessage}
+                className="absolute bottom-4 bg-gray-700 right-3 p-2 rounded-full text-white hover:text-blue-600 transition-colors"
+                title="Send message"
+                disabled={loading}
+              >
+                <ArrowUp className="w-4 h-4" strokeWidth={1.5} />
+              </button>
+            )}
           </div>
         </div>
       </div>
