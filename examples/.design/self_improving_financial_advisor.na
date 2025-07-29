@@ -172,7 +172,7 @@ def adapt_advisor_style(advisor: FinancialAdvisor, client: ClientProfile,
     
     # Learn market patterns for future advice optimization
     market_pattern = {
-        "date": current_date(),
+        "date": datetime.date.today(),
         "volatility": risk_score,
         "recommended_allocation": market.recommend_asset_allocation(),
         "economic_context": market.economic_indicators,
