@@ -5,16 +5,8 @@ import { AgentPerformanceComparisonModal } from './AgentPerformanceComparisonMod
 import { AgentDetailHeader } from './AgentDetailHeader';
 import { AgentDetailSidebar } from './AgentDetailSidebar';
 import { AgentDetailTabs } from './AgentDetailTabs';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { IconQuestionMark } from '@tabler/icons-react';
 import { XIcon } from 'lucide-react';
 
 // Mock template data
