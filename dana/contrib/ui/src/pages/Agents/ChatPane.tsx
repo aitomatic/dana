@@ -138,9 +138,8 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
 
   return (
     <div
-      className={`bg-white w-[420px] min-w-[380px] max-h-[calc(100vh-64px)] rounded-lg shadow-md overflow-y-auto flex flex-col m-2 bg-gray-50 transform transition-transform duration-300 ease-in-out z-50 ${
-        isVisible ? 'translate-x-0' : 'translate-x-full'
-      }`}
+      className={` bg-white w-[420px] min-w-[380px] max-h-[calc(100vh-64px)] rounded-lg shadow-md overflow-y-auto flex flex-col m-2 bg-gray-50 transform transition-transform duration-300 ease-in-out z-50 ${isVisible ? 'translate-x-0' : 'translate-x-full'
+        }`}
     >
       {/* Header */}
       <div className="flex justify-between items-center p-4 border-b border-gray-200">
@@ -161,11 +160,10 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
             className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                message.sender === 'user'
-                  ? 'bg-white text-gray-900 shadow-lg'
-                  : 'bg-gray-100 text-gray-900'
-              }`}
+              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message.sender === 'user'
+                ? 'bg-white text-gray-900 shadow-lg'
+                : 'bg-gray-100 text-gray-900'
+                }`}
             >
               <MarkdownViewerSmall>{message.text ?? 'Empty message'}</MarkdownViewerSmall>
               <p className="mt-1 text-xs opacity-70">{message.timestamp.toLocaleTimeString()}</p>
