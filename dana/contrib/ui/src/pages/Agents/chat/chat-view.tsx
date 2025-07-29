@@ -19,7 +19,11 @@ interface AgentChatViewProps {
   conversationId?: string;
 }
 
-const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agentId, conversationId }) => {
+const AgentChatView: React.FC<AgentChatViewProps> = ({
+  isSidebarCollapsed,
+  agentId,
+  conversationId,
+}) => {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const [files] = useState<any[]>([]);
@@ -49,7 +53,8 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agent
     if (conversationId) {
       // Check if this is a temporary conversation ID (very large number)
       const conversationIdNum = parseInt(conversationId);
-      if (conversationIdNum > 1000000000) { // Temporary ID (timestamp-based)
+      if (conversationIdNum > 1000000000) {
+        // Temporary ID (timestamp-based)
         console.log('Temporary conversation ID detected, not fetching from API');
         // Don't fetch, just keep the current messages
         return;
@@ -84,7 +89,11 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agent
         navigate(`/agents/${agentId}/chat/${tempConversationId}`);
       }
 
-      const response = await sendMessage(data.message, parseInt(agentId), conversationId ? parseInt(conversationId) : undefined);
+      const response = await sendMessage(
+        data.message,
+        parseInt(agentId),
+        conversationId ? parseInt(conversationId) : undefined,
+      );
 
       // If this was a new conversation, navigate to the actual conversation URL
       if (!conversationId && response.conversation_id) {
@@ -105,15 +114,14 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agent
     `;
 
     return (
-      <div className="relative flex items-center w-full h-full fade-in">
+      <div className="flex relative items-center w-full h-full fade-in">
         <div className={contentClassName}>
           <div className="flex flex-col items-center">
             <span className="text-[36px] font-medium text-gray-400">
               Hi, how can I help you today?
             </span>
-            <span className="text-[36px] font-medium text-gray-700">How can I help you today?</span>
           </div>
-          <div className={`flex flex-col gap-2 w-[700px] transition-all duration-300`}>
+          <div className={`flex flex-col gap-2 transition-all duration-300 w-[700px]`}>
             <ChatBox
               files={files}
               isShowUpload={false}
@@ -129,13 +137,13 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agent
   // Show error message if there's an error
   if (error) {
     return (
-      <div className="flex items-center justify-center w-full h-full">
-        <div className="text-red-500 text-center">
+      <div className="flex justify-center items-center w-full h-full">
+        <div className="text-center text-red-500">
           <p className="text-lg font-medium">Error</p>
           <p className="text-sm">{error}</p>
           <button
             onClick={clearError}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="px-4 py-2 mt-4 text-white bg-blue-500 rounded hover:bg-blue-600"
           >
             Try Again
           </button>
@@ -148,16 +156,16 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agent
     <div className="flex w-full h-full">
       <div className="w-full overflow-y-auto scrollbar-hide h-[calc(100vh-64px)] fade-in">
         {conversationId || messages.length > 0 ? (
-          <div className="flex items-center justify-center w-full h-full">
-            <div className="relative flex items-center justify-center w-full h-full">
+          <div className="flex justify-center items-center w-full h-full">
+            <div className="flex relative justify-center items-center w-full h-full">
               <div
                 id="chat-container"
-                className={cn('flex flex-col items-center justify-center w-full h-full', 'w-full')}
+                className={cn('flex flex-col justify-center items-center w-full h-full', 'w-full')}
               >
                 <div
                   className={cn(
-                    'relative flex flex-col justify-between h-full w-full',
-                    isSidebarCollapsed ? 'pl-10 pr-6' : 'px-4',
+                    'flex relative flex-col justify-between w-full h-full',
+                    isSidebarCollapsed ? 'pr-6 pl-10' : 'px-4',
                     'max-w-[760px] 3xl:max-w-[1200px]',
                     'opacity-100',
                   )}
@@ -165,13 +173,13 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agent
                   {/* Message container with fixed height and scroll */}
                   <div
                     ref={chatContainerRef}
-                    className="items-center pt-2 pb-4 overflow-y-auto scrollbar-hide fade-in"
+                    className="overflow-y-auto items-center pt-2 pb-4 scrollbar-hide fade-in"
                   >
                     <ChatSession messages={messages} isBotThinking={isSending} />
                   </div>
 
                   {/* Fixed chat box at bottom */}
-                  <div className="sticky w-full bg-background bottom-6">
+                  <div className="sticky bottom-6 w-full bg-background">
                     <ChatBox
                       files={files}
                       isShowUpload={false}
@@ -184,7 +192,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agent
             </div>
           </div>
         ) : (
-          <div className={cn('relative flex items-center w-full h-full fade-in')}>
+          <div className={cn('flex relative items-center w-full h-full fade-in')}>
             {renderWelcomeContent()}
           </div>
         )}
