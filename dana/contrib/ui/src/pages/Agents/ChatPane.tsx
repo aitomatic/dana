@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, X } from 'lucide-react';
+import { SidebarExpand } from 'iconoir-react';
 import { useParams } from 'react-router-dom';
 import { apiService } from '@/lib/api';
 import { MarkdownViewerSmall } from './chat/markdown-viewer';
@@ -113,18 +114,18 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
 
   return (
     <div
-      className={` max-h-[calc(100vh-100px)] flex flex-col w-96 h-full bg-white border-l border-gray-200 shadow-lg transform transition-transform duration-300 ease-in-out z-50 ${
+      className={`bg-white w-[420px] min-w-[380px] max-h-[calc(100vh-64px)] rounded-lg shadow-md overflow-y-auto flex flex-col m-2 bg-gray-50 transform transition-transform duration-300 ease-in-out z-50 ${
         isVisible ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
       {/* Header */}
       <div className="flex justify-between items-center p-4 border-b border-gray-200">
-        <h3 className="font-semibold text-gray-900">Test Chat with {agentName}</h3>
+        <h3 className="font-semibold text-gray-900">Chat with {agentName}</h3>
         <button
           onClick={onClose}
-          className="p-1 text-gray-400 transition-colors hover:text-gray-600"
+          className="p-1 text-gray-400 transition-colors hover:text-gray-600 cursor-pointer"
         >
-          <X className="w-5 h-5" />
+         <SidebarExpand width={20} height={20} />
         </button>
       </div>
 
@@ -138,7 +139,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
             <div
               className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                 message.sender === 'user'
-                  ? 'bg-white text-gray-900 shadow-lg'
+                  ? 'bg-white text-gray-900 border border-gray-200'
                   : 'bg-gray-100 text-gray-900'
               }`}
             >

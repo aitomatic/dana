@@ -8,6 +8,22 @@ import { Paperclip, Plus } from 'lucide-react';
 import { MarkdownViewerSmall } from './chat/markdown-viewer';
 
 const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
+  // Custom scrollbar styles
+  const scrollbarStyles = `
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: transparent;
+      border-radius: 3px;
+    }
+    .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+    }
+  `;
   const { agent_id } = useParams<{ agent_id: string }>();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -160,38 +176,39 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
   };
 
   return (
-    <div className="flex overflow-y-auto flex-col h-full">
-      <div className="flex overflow-y-auto flex-col flex-1 gap-2 p-4">
+    <>
+      <style>{scrollbarStyles}</style>
+      <div className="flex overflow-y-auto flex-col h-full group">
+        <div 
+          className="flex overflow-y-auto flex-col flex-1 gap-2 p-4 custom-scrollbar"
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'transparent transparent',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.scrollbarColor = '#d1d5db transparent';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.scrollbarColor = 'transparent transparent';
+          }}
+        >
         {messages.map((msg, idx) => {
           const isThinking = loading && idx === messages.length - 1 && msg.sender === 'agent';
           return (
             <div
               key={idx}
-              className={`rounded-lg px-3 py-2 max-w-[85%] text-sm ${
+              className={`rounded-sm px-3 py-2 text-sm ${
                 msg.sender === 'user'
-                  ? 'bg-blue-100 self-end text-right'
+                  ? 'bg-gray-100'
                   : isThinking
-                    ? 'bg-amber-50 self-start text-left border border-amber-200'
-                    : 'bg-gray-100 self-start text-left'
+                    ? ' self-start text-left border border-gray-100'
+                    : ' self-start text-left'
               }`}
             >
               {isThinking ? (
                 <div className="flex gap-2 items-center">
-                  <div className="flex space-x-1">
-                    <div
-                      className="w-2 h-2 bg-amber-400 rounded-full animate-bounce"
-                      style={{ animationDelay: '0ms' }}
-                    ></div>
-                    <div
-                      className="w-2 h-2 bg-amber-400 rounded-full animate-bounce"
-                      style={{ animationDelay: '150ms' }}
-                    ></div>
-                    <div
-                      className="w-2 h-2 bg-amber-400 rounded-full animate-bounce"
-                      style={{ animationDelay: '300ms' }}
-                    ></div>
-                  </div>
-                  <span className="text-amber-700">{msg.text}</span>
+                  <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-gray-700">{msg.text}</span>
                 </div>
               ) : (
                 <MarkdownViewerSmall>{msg.text}</MarkdownViewerSmall>
@@ -200,43 +217,44 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
           );
         })}
         <div ref={bottomRef} />
-      </div>
-      <div className="p-3">
-        <div className="relative">
-          <textarea
-            className="w-full min-h-[100px] max-h-[120px] pl-3 pr-12 py-3 text-sm rounded-lg bg-gray-100 border-gray-300 
-            focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-transparent resize-none overflow-y-auto"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onCompositionStart={handleCompositionStart}
-            onCompositionEnd={handleCompositionEnd}
-            placeholder="Type your message"
-            disabled={loading}
-            rows={1}
-            style={{
-              height: 'auto',
-              minHeight: '100px',
-            }}
-            onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement;
-              target.style.height = 'auto';
-              target.style.height = Math.min(target.scrollHeight, 120) + 'px';
-            }}
-          />
-          <button
-            onClick={handleFileUpload}
-            className="absolute bottom-3 left-3 p-1 text-gray-400"
-            title="Add files"
-            disabled={loading}
-          >
-            <div className="w-7 h-7 cursor-pointer rounded-full border border-gray-300 flex items-center justify-center">
-              <Plus className="w-4 h-4" />
-            </div>
-          </button>
+        </div>
+        <div className="p-3">
+          <div className="relative">
+            <textarea
+              className="w-full min-h-[100px] max-h-[120px] pl-3 pr-12 py-3 text-sm rounded-lg bg-gray-100 border-gray-300 
+              focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-transparent resize-none overflow-y-auto"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onCompositionStart={handleCompositionStart}
+              onCompositionEnd={handleCompositionEnd}
+              placeholder="Type your message"
+              disabled={loading}
+              rows={1}
+              style={{
+                height: 'auto',
+                minHeight: '100px',
+              }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
+                target.style.height = Math.min(target.scrollHeight, 120) + 'px';
+              }}
+            />
+            <button
+              onClick={handleFileUpload}
+              className="absolute bottom-3 left-3 p-1 text-gray-400"
+              title="Add files"
+              disabled={loading}
+            >
+              <div className="w-7 h-7 cursor-pointer rounded-full border border-gray-300 flex items-center justify-center">
+                <Plus className="w-4 h-4" />
+              </div>
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
@@ -245,7 +263,7 @@ export const AgentDetailSidebar: React.FC = () => {
   return (
     <div className="w-[420px] min-w-[380px] max-h-[calc(100vh-64px)] overflow-y-auto flex flex-col p-2 bg-gray-50">
       <div className="flex flex-col h-full bg-white rounded-lg shadow-md">
-        <div className="flex gap-3 items-center p-4 border-b border-gray-200">
+        <div className="flex gap-3 items-center p-2 border-b border-gray-200">
           <img className="w-10 h-10 rounded-full" src={DanaAvatar} alt="Dana avatar" />
           <div>
             <div className="font-semibold text-gray-900">Dana</div>
