@@ -11,7 +11,9 @@ export const ExploreTab: React.FC<{
 }> = ({ filteredAgents, selectedDomain, setSelectedDomain, navigate, DOMAINS }) => (
   <>
     {/* Domain tabs */}
+    <div className="flex justify-between items-center mb-4 text-gray-600">     <p>Pre-trained agents with built-in domain expertise by Aitomatic</p></div>
     <div className="flex flex-wrap gap-2 mb-6">
+ 
       {DOMAINS.map((domain) => (
         <Button
           key={domain}
@@ -46,12 +48,17 @@ export const ExploreTab: React.FC<{
             }
           }}
         >
-          <div className="flex gap-4 items-center">
+          <div className="flex gap-4 flex-col">
+            <div className="flex gap-2 items-center justify-between">
             <div
               className={`w-12 h-12 rounded-full bg-gradient-to-br ${agent.avatarColor || 'bg-gray-200'} flex items-center justify-center text-white text-lg font-bold`}
             >
               {!agent.avatarColor && <span className="text-gray-500">{agent.name[0]}</span>}
             </div>
+            <span className="text-sm px-3 py-1 rounded-full text-gray-600 font-medium border border-gray-200 ml-2">
+                  {agent.config?.domain || 'Other'}
+                </span>
+                </div>
             <div className="flex flex-col flex-1">
               <div className="flex gap-2 items-center">
                 <span
@@ -66,12 +73,10 @@ export const ExploreTab: React.FC<{
                 >
                   {agent.name}
                 </span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium border border-gray-200 ml-2">
-                  {agent.config?.domain || 'Other'}
-                </span>
+              
               </div>
               <span
-                className="mt-1 text-sm text-gray-500 line-clamp-2"
+                className="mt-1 text-sm font-medium text-gray-600 line-clamp-2 max-h-[20px]"
                 style={{
                   display: '-webkit-box',
                   WebkitLineClamp: 2,
@@ -84,8 +89,8 @@ export const ExploreTab: React.FC<{
               </span>
             </div>
           </div>
-          <div className="text-gray-600 text-sm min-h-[40px]">{agent.details || ''}</div>
-          <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+          <div className="text-gray-500 text-sm min-h-[40px]">{agent.details || ''}</div>
+          {/* <div className="flex justify-between items-center pt-3 border-t border-gray-200">
             <span className="text-xs text-gray-500">
               {agent.accuracy ? `${agent.accuracy}% accuracy` : ''}
             </span>
@@ -102,7 +107,7 @@ export const ExploreTab: React.FC<{
                 </>
               )}
             </span>
-          </div>
+          </div> */}
           <div className="flex gap-2 justify-between items-center">
             <Button variant="outline" className="w-1/2 text-sm font-semibold text-gray-500">
               Train

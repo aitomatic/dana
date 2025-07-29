@@ -96,13 +96,13 @@ export default function AgentsPage() {
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-gray-200">
         <button
-          className={` py-2 cursor-pointer font-medium border-b-2 transition-colors ${activeTab === 'My Agent' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-blue-600'}`}
+          className={` py-2 cursor-pointer font-semibold border-b-2 transition-colors ${activeTab === 'My Agent' ? 'border-blue-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-brand-600'}`}
           onClick={() => setActiveTab('My Agent')}
         >
           My Agent
         </button>
         <button
-          className={`ml-2 py-2 cursor-pointer font-medium border-b-2 transition-colors ${activeTab === 'Explore' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-blue-600'}`}
+          className={`ml-2 py-2 cursor-pointer font-semibold border-b-2 transition-colors ${activeTab === 'Explore' ? 'border-blue-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-brand-600'}`}
           onClick={() => setActiveTab('Explore')}
         >
           Pre-trained Agent
