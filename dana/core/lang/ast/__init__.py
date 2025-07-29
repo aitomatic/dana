@@ -492,6 +492,7 @@ class StructDefinition:
 
     name: str
     fields: list["StructField"]
+    docstring: str | None = None  # Docstring extracted from preceding string literal
     location: Location | None = None
 
 

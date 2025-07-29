@@ -32,6 +32,7 @@ class StructType:
     field_order: list[str]  # Maintain field declaration order
     field_comments: dict[str, str]  # Maps field name to comment/description
     field_defaults: dict[str, Any] = None  # Maps field name to default value
+    docstring: str | None = None  # Struct docstring
 
     def __post_init__(self):
         """Validate struct type after initialization."""
@@ -127,6 +128,10 @@ class StructType:
     def get_field_comment(self, field_name: str) -> str | None:
         """Get the comment/description for a specific field."""
         return self.field_comments.get(field_name)
+
+    def get_docstring(self) -> str | None:
+        """Get the struct docstring."""
+        return self.docstring
 
     def get_field_description(self, field_name: str) -> str:
         """Get a formatted description of a field including type and comment."""
@@ -359,7 +364,7 @@ class MethodRegistry:
     @classmethod
     def register_method(cls, receiver_types: list[str], method_name: str, function: Any) -> None:
         """Register a method for one or more receiver types.
-        
+
         Args:
             receiver_types: List of struct type names (from union types)
             method_name: Name of the method
@@ -384,11 +389,7 @@ class MethodRegistry:
     @classmethod
     def get_methods_for_type(cls, type_name: str) -> dict[str, Any]:
         """Get all methods for a specific type."""
-        return {
-            method_name: func
-            for (t_name, method_name), func in cls._methods.items()
-            if t_name == type_name
-        }
+        return {method_name: func for (t_name, method_name), func in cls._methods.items() if t_name == type_name}
 
     @classmethod
     def clear(cls) -> None:
@@ -600,7 +601,12 @@ def create_struct_type_from_ast(struct_def, context=None) -> StructType:
             field_comments[field.name] = field.comment
 
     return StructType(
-        name=struct_def.name, fields=fields, field_order=field_order, field_defaults=field_defaults or None, field_comments=field_comments
+        name=struct_def.name,
+        fields=fields,
+        field_order=field_order,
+        field_defaults=field_defaults or None,
+        field_comments=field_comments,
+        docstring=struct_def.docstring,
     )
 
 
