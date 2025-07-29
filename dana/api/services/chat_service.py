@@ -23,7 +23,7 @@ class ChatService:
         pass
 
     async def process_chat_message(
-        self, chat_request: ChatRequest, db_session
+        self, chat_request: ChatRequest, db_session, websocket_id: str | None = None
     ) -> ChatResponse:
         """
         Process a chat message and generate a response.
@@ -51,9 +51,9 @@ class ChatService:
                 conversation.id, "user", chat_request.message, db_session
             )
 
-            # Generate agent response (placeholder implementation)
+            # Generate agent response with WebSocket support
             agent_response = await self._generate_agent_response(
-                chat_request, conversation, db_session
+                chat_request, conversation, db_session, websocket_id
             )
 
             # Save agent message
@@ -138,12 +138,50 @@ class ChatService:
         return message
 
     async def _generate_agent_response(
-        self, chat_request: ChatRequest, conversation: Conversation, db_session
+        self, chat_request: ChatRequest, conversation: Conversation, db_session, websocket_id: str | None = None
     ) -> str:
-        """Generate agent response (placeholder implementation)."""
-        # This is a placeholder implementation
-        # In a real system, this would integrate with the agent execution system
-        return f"This is a response from agent {chat_request.agent_id} to: {chat_request.message}"
+        """Generate agent response using actual Dana execution."""
+        try:
+            # Get agent details for execution
+            agent = db_session.query(Agent).filter(Agent.id == chat_request.agent_id).first()
+            if not agent:
+                return "Error: Agent not found"
+            
+            # Import agent test functionality
+            from dana.api.routers.agent_test import AgentTestRequest, test_agent
+            from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
+            
+            # Initialize module system
+            initialize_module_system()
+            reset_module_system()
+            
+            # Extract agent details
+            agent_name = agent.name
+            agent_description = agent.description or "A Dana agent"
+            folder_path = agent.config.get("folder_path") if agent.config else None
+            
+            # Create test request for agent execution
+            test_request = AgentTestRequest(
+                agent_code="",  # Will use folder_path for main.na
+                message=chat_request.message,
+                agent_name=agent_name,
+                agent_description=agent_description,
+                context=chat_request.context or {"user_id": "chat_user"},
+                folder_path=folder_path,
+                websocket_id=websocket_id  # Enable WebSocket for real-time updates
+            )
+            
+            # Execute agent using same logic as test endpoint
+            result = await test_agent(test_request)
+            
+            if result.success:
+                return result.agent_response
+            else:
+                return f"Error executing agent: {result.error or 'Unknown error'}"
+                
+        except Exception as e:
+            logger.error(f"Error generating agent response: {e}")
+            return f"Error generating response: {str(e)}"
 
 
 # Global service instance

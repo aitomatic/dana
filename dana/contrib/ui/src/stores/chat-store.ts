@@ -16,7 +16,7 @@ export interface ChatStore {
   error: string | null;
 
   // Actions
-  sendMessage: (message: string, agentId: number, conversationId?: number) => Promise<ChatResponse>;
+  sendMessage: (message: string, agentId: number, conversationId?: number, websocketId?: string) => Promise<ChatResponse>;
   fetchConversations: (agentId: number) => Promise<void>;
   fetchConversation: (conversationId: number) => Promise<void>;
   createConversation: (conversation: ConversationCreate) => Promise<ConversationRead>;
@@ -42,7 +42,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   error: null,
 
   // Actions
-  sendMessage: async (message: string, agentId: number, conversationId?: number) => {
+  sendMessage: async (message: string, agentId: number, conversationId?: number, websocketId?: string) => {
     set({ isSending: true, error: null });
 
     // Immediately add user message to show it in the UI
@@ -66,6 +66,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         agent_id: agentId,
         conversation_id: conversationId,
         context: { user_id: 1 }, // TODO: Get from auth context
+        websocket_id: websocketId,
       };
 
       const response = await apiService.chatWithAgent(request);

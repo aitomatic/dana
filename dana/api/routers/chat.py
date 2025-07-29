@@ -25,7 +25,7 @@ async def send_chat_message(
     try:
         logger.info(f"Received chat message for agent {request.agent_id}")
         
-        response = await chat_service.process_chat_message(request, db)
+        response = await chat_service.process_chat_message(request, db, request.websocket_id)
         
         # Check if the response indicates an error
         if not response.success:
