@@ -48,7 +48,6 @@ class AgentSelector(Loggable):
         if strategy != "llm":
             raise ValueError("Only 'llm' selection strategy is supported at this time.")
         return self._select_by_llm(task, included_resources=included_resources)
-    
 
     def _select_by_llm(self, task: any, included_resources: list[str | Any] | None = None) -> Any:
         """Select agent using LLM-based selection.

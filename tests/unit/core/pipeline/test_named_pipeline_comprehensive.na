@@ -1,0 +1,87 @@
+# Comprehensive test for named parameter capture pipeline mode
+# This file tests that the "as name" syntax actually captures and reuses intermediate results
+
+def test_comprehensive_named_capture():
+    def add_ten(x: int) -> int:
+        return x + 10
+
+    def multiply_by(x: int, factor: int) -> int:
+        return x * factor
+
+    def format_result(prefix: str, value: int) -> str:
+        return f"{prefix}{value}"
+
+    def add_values(a: int, b: int) -> int:
+        return a + b
+
+    def subtract_values(a: int, b: int) -> int:
+        return a - b
+
+    # Test 1: Simple named capture and reuse
+    def simple_capture(x: int) = add_ten as base | multiply_by(base, 2)
+    result = simple_capture(5)
+    expected = (5 + 10) * 2  # 15 * 2 = 30
+    assert result == expected, f"Expected {expected}, got {result}"
+
+    # Test 2: Multiple captures in sequence
+    def multi_capture(x: int) = add_ten as step1 | multiply_by(2) as step2 | add_values(step1, step2)
+    result = multi_capture(5)
+    step1_expected = 5 + 10  # 15
+    step2_expected = 15 * 2  # 30
+    final_expected = step1_expected + step2_expected  # 15 + 30 = 45
+    assert result == final_expected, f"Expected {final_expected}, got {result}"
+
+    # Test 3: Named capture with placeholder
+    def mixed_capture(x: int) = add_ten as base | multiply_by($$, 3) as tripled | subtract_values(tripled, base)
+    result = mixed_capture(5)
+    base_expected = 5 + 10  # 15
+    tripled_expected = 15 * 3  # 45
+    final_expected = tripled_expected - base_expected  # 45 - 15 = 30
+    assert result == final_expected, f"Expected {final_expected}, got {result}"
+
+    # Test 4: Complex pipeline with multiple captures and reuses
+    def complex_pipeline(x: int) = add_ten as original | multiply_by(2) as doubled | multiply_by(3) as tripled | add_values(original, doubled) as sum1 | add_values(sum1, tripled) as final_sum | format_result("Final result: ", final_sum)
+    result = complex_pipeline(5)
+    original_expected = 5 + 10  # 15
+    doubled_expected = 15 * 2  # 30
+    tripled_expected = 30 * 3  # 90
+    sum1_expected = original_expected + doubled_expected  # 15 + 30 = 45
+    final_sum_expected = sum1_expected + tripled_expected  # 45 + 90 = 135
+    final_expected = f"Final result: {final_sum_expected}"
+    assert result == final_expected, f"Expected '{final_expected}', got '{result}'"
+
+    # Test 5: Verify that named variables are scoped to the pipeline
+    def scoped_test(x: int) = add_ten as temp | multiply_by(2) as temp | format_result("Value: ", temp)
+    result = scoped_test(5)
+    # The second 'temp' should overwrite the first one
+    temp1_expected = 5 + 10  # 15
+    temp2_expected = 15 * 2  # 30
+    final_expected = f"Value: {temp2_expected}"
+    assert result == final_expected, f"Expected '{final_expected}', got '{result}'"
+
+    # Test 6: Error case - using undefined named variable
+    def error_test(x: int) = add_ten | multiply_by(undefined_var, 2)
+    try:
+        result = error_test(5)
+        assert false, "Expected error for undefined variable 'undefined_var'"
+    except Exception as e:
+        # Expected error - undefined variable should not be found
+        pass
+
+    # Test 7: Verify that regular variables outside pipeline are not affected
+    def external_var_test(x: int):
+        external_var = 100
+        def pipeline_with_external(x: int) = add_ten as internal | add_values(internal, external_var)
+        result = pipeline_with_external(x)
+        # external_var should still be 100, not affected by pipeline execution
+        assert external_var == 100, f"External variable should remain 100, got {external_var}"
+        return result
+    
+    result = external_var_test(5)
+    expected = (5 + 10) + 100  # 15 + 100 = 115
+    assert result == expected, f"Expected {expected}, got {result}"
+
+    log("✅ All comprehensive named parameter capture tests passed")
+
+if __name__ == "__main__":
+    test_comprehensive_named_capture() 

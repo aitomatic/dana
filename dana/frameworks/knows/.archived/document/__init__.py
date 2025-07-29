@@ -8,8 +8,4 @@ from .extractor import TextExtractor
 from .loader import DocumentLoader
 from .parser import DocumentParser
 
-__all__ = [
-    "DocumentLoader",
-    "DocumentParser", 
-    "TextExtractor"
-] 
+__all__ = ["DocumentLoader", "DocumentParser", "TextExtractor"]

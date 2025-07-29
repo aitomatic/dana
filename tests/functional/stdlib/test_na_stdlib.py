@@ -31,10 +31,10 @@ class TestStdlib:
         file_path = Path(file_path)
         if not file_path.exists():
             pytest.skip(f"Test file {file_path} not found")
-        
-        with open(file_path, 'r') as f:
+
+        with open(file_path) as f:
             code = f.read()
-        
+
         return self.interpreter._eval(code, self.context)
 
     @pytest.mark.parametrize("na_file", get_na_files())

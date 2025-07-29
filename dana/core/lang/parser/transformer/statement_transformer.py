@@ -51,7 +51,6 @@ from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
 from dana.core.lang.parser.transformer.expression_transformer import (
     ExpressionTransformer,
 )
-from dana.core.lang.parser.utils.tree_utils import TreeTraverser
 
 # Allowed types for Assignment.value
 AllowedAssignmentValue = (
@@ -79,11 +78,14 @@ class StatementTransformer(BaseTransformer):
     Methods are grouped by grammar hierarchy for clarity and maintainability.
     """
 
-    def __init__(self):
+    def __init__(self, main_transformer=None):
         """Initialize the statement transformer and its expression transformer."""
         super().__init__()
-        self.expression_transformer = ExpressionTransformer()
-        self.tree_traverser = TreeTraverser()
+        # Use the main transformer's expression transformer if available
+        if main_transformer and hasattr(main_transformer, "expression_transformer"):
+            self.expression_transformer = main_transformer.expression_transformer
+        else:
+            self.expression_transformer = ExpressionTransformer(self)
 
         # Initialize specialized transformers
         from dana.core.lang.parser.transformer.statement.agent_context_transformer import (
@@ -112,17 +114,17 @@ class StatementTransformer(BaseTransformer):
         """Set the current filename for location tracking and propagate to sub-transformers."""
         super().set_filename(filename)
         # Propagate to sub-transformers
-        if hasattr(self.expression_transformer, 'set_filename'):
+        if hasattr(self.expression_transformer, "set_filename"):
             self.expression_transformer.set_filename(filename)
-        if hasattr(self.assignment_transformer, 'set_filename'):
+        if hasattr(self.assignment_transformer, "set_filename"):
             self.assignment_transformer.set_filename(filename)
-        if hasattr(self.control_flow_transformer, 'set_filename'):
+        if hasattr(self.control_flow_transformer, "set_filename"):
             self.control_flow_transformer.set_filename(filename)
-        if hasattr(self.function_definition_transformer, 'set_filename'):
+        if hasattr(self.function_definition_transformer, "set_filename"):
             self.function_definition_transformer.set_filename(filename)
-        if hasattr(self.agent_context_transformer, 'set_filename'):
+        if hasattr(self.agent_context_transformer, "set_filename"):
             self.agent_context_transformer.set_filename(filename)
-        if hasattr(self.import_simple_statement_transformer, 'set_filename'):
+        if hasattr(self.import_simple_statement_transformer, "set_filename"):
             self.import_simple_statement_transformer.set_filename(filename)
 
     # === Program and Statement Entry ===
@@ -312,6 +314,10 @@ class StatementTransformer(BaseTransformer):
         """Transform a function definition rule into a FunctionDefinition node."""
         return self.function_definition_transformer.function_def(items)
 
+    def method_def(self, items):
+        """Transform a method definition rule into a MethodDefinition node."""
+        return self.function_definition_transformer.method_def(items)
+
     def decorators(self, items):
         """Transform decorators rule into a list of Decorator nodes."""
         return self.function_definition_transformer.decorators(items)
@@ -361,6 +367,13 @@ class StatementTransformer(BaseTransformer):
         This rule is just a choice, so return the result of whichever was chosen.
         """
         return self.assignment_transformer.assignment(items)
+
+    def declarative_function_assignment(self, items):
+        """
+        Transform a declarative function assignment rule into a DeclarativeFunctionDefinition node.
+        Grammar: declarative_function_assignment: "def" NAME "(" [parameters] ")" ["->" basic_type] "=" atom
+        """
+        return self.assignment_transformer.declarative_function_assignment(items)
 
     def expr_stmt(self, items):
         """Transform a bare expression statement (expr_stmt) into an Expression AST node."""

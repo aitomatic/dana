@@ -1,0 +1,96 @@
+# Phase 1: Grammar and Parser Tests for Struct Methods
+# Tests the new method definition syntax with explicit receivers
+
+log("Testing Phase 1: Method Definition Parsing")
+
+# Test 1: Basic method definition with single receiver type
+struct Point:
+    x: int
+    y: int
+
+# This should parse correctly with the new syntax
+def (point: Point) translate(dx: int, dy: int) -> Point:
+    log("translate method parsed")
+    return Point(x=point.x + dx, y=point.y + dy)
+
+log("✓ Test 1 passed: Basic method definition parsed")
+
+# Test 2: Method with no parameters
+def (point: Point) origin() -> bool:
+    log("origin method parsed")
+    return point.x == 0 and point.y == 0
+
+log("✓ Test 2 passed: Method with no parameters parsed")
+
+# Test 3: Method with no return type
+def (point: Point) display():
+    log(f"Point({point.x}, {point.y})")
+
+log("✓ Test 3 passed: Method with no return type parsed")
+
+# Test 4: Union type receivers
+struct Circle:
+    radius: float
+    center: Point
+
+struct Rectangle:
+    width: float
+    height: float
+
+# Method with union type receiver
+def (shape: Circle | Rectangle) area() -> float:
+    log("area method with union type parsed")
+    if isinstance(shape, Circle):
+        return 3.14159 * shape.radius * shape.radius
+    else:
+        return shape.width * shape.height
+
+log("✓ Test 4 passed: Union type receiver parsed")
+
+# Test 5: Multiple union types
+def (shape: Point | Circle | Rectangle) describe() -> str:
+    log("describe method with multiple union types parsed")
+    if isinstance(shape, Point):
+        return "Point"
+    elif isinstance(shape, Circle):
+        return "Circle"
+    else:
+        return "Rectangle"
+
+log("✓ Test 5 passed: Multiple union types parsed")
+
+# Test 6: Method with decorators (if supported)
+@poet(domain="geometry")
+def (point: Point) validate() -> bool:
+    log("decorated method parsed")
+    return point.x >= 0 and point.y >= 0
+
+log("✓ Test 6 passed: Decorated method parsed")
+
+# Test 7: Method with default parameter values
+def (point: Point) shift(dx: int = 0, dy: int = 0) -> Point:
+    log("method with defaults parsed")
+    return Point(x=point.x + dx, y=point.y + dy)
+
+log("✓ Test 7 passed: Method with defaults parsed")
+
+# Test 8: Method with mixed parameters  
+def (circle: Circle) resize(factor: float, absolute: bool = false) -> Circle:
+    log("mixed parameters method parsed")
+    if absolute:
+        return Circle(radius=factor, center=circle.center)
+    else:
+        return Circle(radius=circle.radius * factor, center=circle.center)
+
+log("✓ Test 8 passed: Mixed parameters parsed")
+
+# Test 9: Complex method with multiple features
+@poet(domain="advanced")
+def (shape: Point | Circle) scale_from_origin(factor: float = 2.0) -> Point | Circle:
+    log("complex method parsed")
+    return shape
+
+log("✓ Test 9 passed: Complex method with multiple features parsed")
+
+log("Phase 1 tests completed successfully!")
+log("All method definition syntax variations parsed correctly")

@@ -1,0 +1,83 @@
+# GitHub Action to run pytest sequentially (for comprehensive weekly testing)
+# - Runs weekly and on manual trigger only
+# - Primary testing is handled by test-parallel.yml (faster)
+# - Provides thorough sequential testing for edge case detection
+# - Tests Dana implementation comprehensively with mock LLM
+# - For regular CI/CD, use test-parallel.yml instead
+# - For full test coverage, run locally with: uv run pytest -m "not live" tests/
+
+name: PyTest Sequential (Weekly)
+
+on: 
+  workflow_dispatch:  # Manual triggering only (use parallel for regular CI)
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly Monday 6 AM UTC for comprehensive testing
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Cache uv dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/uv
+        key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+        restore-keys: |
+          uv-${{ runner.os }}-
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Dana core (comprehensive)
+      env:
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/unit/core/ -v --tb=short
+    - name: Test Dana frameworks (comprehensive)
+      env:
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/unit/frameworks/ -v --tb=short
+    - name: Test Dana functional tests (comprehensive)
+      env:
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/functional/ -v --tb=short
+    - name: Test Dana integration tests (comprehensive)
+      env:
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/integration/ -v --tb=short
+    - name: Test Dana regression tests (comprehensive)
+      env:
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/regression/ -v --tb=short
+    - name: Test with pytest (fast tests only)
+      env:
+        DANA_MOCK_LLM: "true"
+        DANA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest -m "not live and not deep" tests/ --tb=short -v
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: test-results-sequential
+        path: |
+          test-results/
+          .pytest_cache/
+        retention-days: 7

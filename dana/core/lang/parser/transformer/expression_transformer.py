@@ -60,12 +60,22 @@ ValidExprType = LiteralExpression | Identifier | BinaryExpression | FunctionCall
 
 
 class ExpressionTransformer(BaseTransformer):
-    """
-    Transforms Lark parse trees for Dana expressions into AST nodes.
+    """Transform expression parse trees into AST Expression nodes."""
 
-    Handles all expression grammar rules, including operator precedence, literals, collections,
-    function calls, attribute access, and constants. Methods are grouped by grammar hierarchy for clarity.
-    """
+    def __init__(self, main_transformer=None):
+        """Initialize the ExpressionTransformer.
+
+        Args:
+            main_transformer: Optional main transformer instance for coordination.
+                            Can be None for standalone usage.
+        """
+        super().__init__()
+        self.main_transformer = main_transformer
+        self._in_declarative_function = False
+
+    def set_declarative_function_context(self, in_declarative_function: bool):
+        """Set whether we're currently in a declarative function context."""
+        self._in_declarative_function = in_declarative_function
 
     def expression(self, items):
         if not items:
@@ -159,6 +169,11 @@ class ExpressionTransformer(BaseTransformer):
             # Use the tree traverser's unwrap_token for consistent token handling
             value = self.tree_traverser.unwrap_token(item)
             return LiteralExpression(value=value)
+
+        # Handle NamedPipelineStage objects (already transformed)
+        if hasattr(item, "__class__") and item.__class__.__name__ == "NamedPipelineStage":
+            return item
+
         raise TypeError(f"Cannot transform expression: {item} ({type(item)})")
 
     def _extract_operator_string(self, op_token):
@@ -242,14 +257,17 @@ class ExpressionTransformer(BaseTransformer):
         """Transform pipe expressions into PipelineExpression AST node.
 
         pipe_expr: or_expr (PIPE or_expr)*
-        
+
         This method collects all expressions separated by PIPE tokens and creates
         a PipelineExpression with the stages list. Only creates PipelineExpression
         if there are actual PIPE tokens (at least one | operator).
+
+        Rejects pipe expressions in non-declarative function contexts.
+        Only allows pipe expressions in declarative function definitions.
         """
         stages = []
         has_pipe = False
-        
+
         # Check if we have any PIPE tokens
         for item in items:
             if isinstance(item, Token) and item.type == "PIPE":
@@ -258,7 +276,7 @@ class ExpressionTransformer(BaseTransformer):
             elif str(item) == "|":
                 has_pipe = True
                 break
-        
+
         # Filter out PIPE tokens and collect only the expressions
         for item in items:
             if isinstance(item, Token) and item.type == "PIPE":
@@ -269,13 +287,44 @@ class ExpressionTransformer(BaseTransformer):
                 # This is an expression, process it
                 expr = self.expression([item])
                 stages.append(expr)
-        
+
         # If no PIPE tokens, return the single expression directly
         if not has_pipe and len(stages) == 1:
             return stages[0]
-        
+
+        # Enforce declarative function context restriction
+        if not self._is_in_declarative_function_context():
+            raise SyntaxError(
+                "Pipe expressions (|) are only allowed in declarative function definitions. "
+                "Use 'def function_name() = expr1 | expr2' syntax instead of assignment."
+            )
+
         # Otherwise, create PipelineExpression
         return PipelineExpression(stages=stages)
+
+    def _is_in_declarative_function_context(self):
+        """Check if we're currently parsing a declarative function definition."""
+        return self._in_declarative_function
+
+    def _is_literal_expression(self, expr):
+        """Check if an expression is a literal value that should be rejected in pipe contexts."""
+        from dana.core.lang.ast import LiteralExpression
+
+        # Direct literal expressions
+        if isinstance(expr, LiteralExpression):
+            return True
+
+        # Check for common literal patterns
+        if hasattr(expr, "value"):
+            # String literals, numbers, booleans, etc.
+            if isinstance(expr.value, str | int | float | bool | type(None)):
+                return True
+
+        # Check for string literals with specific attributes
+        if hasattr(expr, "type") and expr.type in ["REGULAR_STRING", "SINGLE_QUOTED_STRING", "F_STRING_TOKEN"]:
+            return True
+
+        return False
 
     def not_expr(self, items):
         """
@@ -469,7 +518,7 @@ class ExpressionTransformer(BaseTransformer):
     def _atom_from_token(self, token):
         value = token.value
         location = self.create_location(token)  # Create location from token
-        
+
         # String literal: strip quotes
         if (
             value
@@ -612,8 +661,6 @@ class ExpressionTransformer(BaseTransformer):
 
     def NONE(self, items=None):
         return LiteralExpression(value=None)
-
-
 
     def trailer(self, items):
         """
@@ -884,6 +931,119 @@ class ExpressionTransformer(BaseTransformer):
             from dana.core.lang.ast import SliceTuple
 
             return SliceTuple(slices=items)
+
+    # ===== FUNCTION COMPOSITION EXPRESSIONS =====
+    def function_composition_expr(self, items):
+        """Transform function_composition_expr rule."""
+        # Grammar: function_composition_expr: function_pipe_expr
+        return items[0]
+
+    def function_pipe_expr(self, items):
+        """Transform function_pipe_expr rule."""
+        # Grammar: function_pipe_expr: pipeline_stage (PIPE pipeline_stage)*
+        if len(items) == 1:
+            return items[0]
+        else:
+            # Multiple expressions with PIPE operators
+            result = items[0]
+            for i in range(1, len(items), 2):
+                if i + 1 < len(items):
+                    operator = BinaryOperator.PIPE
+                    right = items[i + 1]
+                    result = BinaryExpression(left=result, operator=operator, right=right)
+            return result
+
+    def pipeline_stage(self, items):
+        """Transform pipeline_stage rule."""
+        # Grammar: pipeline_stage: function_expr ["as" NAME]
+        if len(items) == 1:
+            # No "as" clause - just return the expression
+            return items[0]
+        else:
+            # Has "as" clause - create NamedPipelineStage
+            from dana.core.lang.ast import NamedPipelineStage
+
+            expression = items[0]
+            # Handle the case where items[1] might be None or not have a value attribute
+            if hasattr(items[1], "value"):
+                name = items[1].value
+            elif isinstance(items[1], str):
+                name = items[1]
+            else:
+                # Fallback - try to get the name from the token
+                name = str(items[1]) if items[1] is not None else None
+
+            # Only create NamedPipelineStage if we have a valid name
+            if name:
+                return NamedPipelineStage(expression=expression, name=name)
+            else:
+                # If no valid name, just return the expression
+                return expression
+
+    def function_expr(self, items):
+        """Transform function_expr rule."""
+        # Grammar: function_expr: function_name | function_call | function_list_literal
+        return items[0]
+
+    def function_name(self, items):
+        """Transform function_name rule."""
+        # Grammar: function_name: NAME
+        return Identifier(items[0].value)
+
+    def function_call(self, items):
+        """Transform function_call rule."""
+        # Grammar: function_call: NAME "(" [arguments] ")"
+        name = items[0].value
+        if len(items) > 1 and items[1] is not None:
+            # Process arguments through the proper method
+            # items[1] is a Tree with argument children
+            arguments = self._process_function_arguments(items[1].children)
+        else:
+            # No arguments - create empty args dict
+            arguments = {"__positional": []}
+
+        # Check if this function call contains a placeholder expression
+        # If so, treat it as a single-stage pipeline (placeholders are only valid in pipelines)
+        if self._contains_placeholder(arguments):
+            # PHASE B CHANGE: Don't create PipelineExpression for function calls with placeholders
+            # Let them be handled as regular FunctionCall nodes, which will trigger PartialFunction logic
+            # from dana.core.lang.ast import PipelineExpression
+            # return PipelineExpression(stages=[FunctionCall(name=name, args=arguments)])
+            pass
+
+        return FunctionCall(name=name, args=arguments)
+
+    def function_list_literal(self, items):
+        """Transform function_list_literal rule."""
+        # Grammar: function_list_literal: "[" [function_expr ("," function_expr)*] "]"
+        if len(items) == 0:
+            return ListLiteral(items=[])
+        else:
+            return ListLiteral(items=items)
+
+    def _contains_placeholder(self, arguments):
+        """Check if function call arguments contain a placeholder expression."""
+        if not isinstance(arguments, dict):
+            return False
+
+        # Check positional arguments
+        if "__positional" in arguments:
+            for arg in arguments["__positional"]:
+                if self._is_placeholder_expression(arg):
+                    return True
+
+        # Check keyword arguments
+        for key, arg in arguments.items():
+            if key != "__positional" and self._is_placeholder_expression(arg):
+                return True
+
+        return False
+
+    def _is_placeholder_expression(self, expr):
+        """Check if an expression is a placeholder expression."""
+        from dana.core.lang.ast import PlaceholderExpression
+
+        return isinstance(expr, PlaceholderExpression)
 
 
 # File updated to resolve GitHub CI syntax error - 2025-06-09

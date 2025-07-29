@@ -8,8 +8,8 @@ def get_multi_file_agent_generation_prompt(intentions: str, current_code: str = 
     Returns the multi-file agent generation prompt for the LLM, aligned with the normal_chat_with_document example, but including knowledge.na as a required file and conditional RAG resource usage.
     """
     rag_tools_block = 'rag_resource = use("rag", sources=["./docs"])'
-    rag_import_block = 'from tools import rag_resource\n'
-    rag_search_block = '    package.retrieval_result = str(rag_resource.query(query))'
+    rag_import_block = "from tools import rag_resource\n"
+    rag_search_block = "    package.retrieval_result = str(rag_resource.query(query))"
     return f'''
 You are Dana, an expert Dana language developer. Based on the user's intentions, generate a training project for Georgia that follows the modular, workflow-based pattern as in the 'normal_chat_with_document' example.
 

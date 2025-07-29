@@ -401,7 +401,7 @@ class TestLLMQueryExecutorAnthropicIntegration(unittest.TestCase):
         }
 
         # Execute query
-        result = Misc.safe_asyncio_run(self.executor.query_once, request)
+        _result = Misc.safe_asyncio_run(self.executor.query_once, request)
 
         # Verify the call was made
         self.assertTrue(mock_client.chat.completions.create.called)

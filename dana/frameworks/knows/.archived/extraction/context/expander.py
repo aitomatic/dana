@@ -309,11 +309,11 @@ Return your validation as JSON in this exact format:
 
     def _parse_expansion_response(self, response: BaseResponse, source_id: str) -> list[ContextExpansion]:
         """Parse LLM response for context expansions.
-        
+
         Args:
             response: LLM response
             source_id: Source knowledge point ID
-            
+
         Returns:
             List of parsed context expansions
         """
@@ -322,7 +322,7 @@ Return your validation as JSON in this exact format:
             content = response.content
             if content is None:
                 return []
-            
+
             # Handle markdown-wrapped JSON
             if "```json" in content:
                 start = content.find("```json") + 7
@@ -334,7 +334,7 @@ Return your validation as JSON in this exact format:
                 end = content.find("```", start)
                 if end != -1:
                     content = content[start:end].strip()
-            
+
             # Parse JSON
             parsed_data = json.loads(content)
 
@@ -362,11 +362,11 @@ Return your validation as JSON in this exact format:
 
     def _parse_validation_response(self, response: BaseResponse, context_id: str) -> ContextValidation:
         """Parse LLM response for context validation.
-        
+
         Args:
             response: LLM response
             context_id: Context ID being validated
-            
+
         Returns:
             Parsed context validation
         """
@@ -380,9 +380,9 @@ Return your validation as JSON in this exact format:
                     validation_score=0.0,
                     issues_found=["Empty response content"],
                     recommendations=["Review context manually"],
-                    metadata={"llm_generated": False, "parse_error": True}
+                    metadata={"llm_generated": False, "parse_error": True},
                 )
-            
+
             # Handle markdown-wrapped JSON
             if "```json" in content:
                 start = content.find("```json") + 7
@@ -394,7 +394,7 @@ Return your validation as JSON in this exact format:
                 end = content.find("```", start)
                 if end != -1:
                     content = content[start:end].strip()
-            
+
             # Parse JSON
             parsed_data = json.loads(content)
 

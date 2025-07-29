@@ -67,9 +67,8 @@ def poet(
     """
 
     # Create configuration object - filter out unsupported kwargs
-    supported_kwargs = {k: v for k, v in kwargs.items() 
-                       if k in ['optimize_for', 'enable_monitoring']}
-    
+    supported_kwargs = {k: v for k, v in kwargs.items() if k in ["optimize_for", "enable_monitoring"]}
+
     config = POETConfig(
         domain=domain,
         perceive=perceive or {},

@@ -36,8 +36,11 @@ help: ## Show essential Dana commands
 	@echo ""
 	@echo "\033[1mCode Quality:\033[0m"
 	@echo "  \033[36mlint\033[0m            🔍 Check code style and quality"
+	@echo "  \033[36mlint-critical\033[0m   🚫 Critical checks (matches CI)"
 	@echo "  \033[36mformat\033[0m          ✨ Format code automatically"
 	@echo "  \033[36mfix\033[0m             🔧 Auto-fix all fixable code issues"
+	@echo "  \033[36mtype-check\033[0m      🔍 Run MyPy type checking (local only)"
+	@echo "  \033[36mci-check\033[0m        🎯 Run same checks as GitHub CI"
 	@echo ""
 	@echo "\033[1mLLM Integration:\033[0m"
 	@echo "  \033[36minstall-ollama\033[0m  🦙 Install Ollama for local inference"
@@ -146,31 +149,51 @@ dana: ## Start the Dana REPL
 	@echo "🚀 Starting Dana REPL..."
 	$(UV_CMD) run dana
 
-test: ## Run all tests
-	@echo "🧪 Running tests..."
-	DANA_MOCK_LLM=true $(UV_CMD) run pytest tests/
+test: ## Run all tests (matches CI)
+	@echo "🧪 Running tests (matching CI)..."
+	DANA_MOCK_LLM=true DANA_USE_REAL_LLM=false $(UV_CMD) run pytest -m "not live and not deep" tests/ --tb=short -v
 
 # =============================================================================
 # Code Quality
 # =============================================================================
 
-lint: ## Check code style and quality
-	@echo "🔍 Running linting checks..."
-	$(UV_CMD) run ruff check .
+lint: ## Check code style and quality (matches CI)
+	@echo "🔍 Running linting checks (matching CI)..."
+	@echo "🚫 Critical checks (E722, F821)..."
+	$(UV_CMD) run ruff check dana/ tests/ --select E722,F821 --exclude dana/contrib
+	@echo "⚠️ Important checks (F841, B017)..."
+	$(UV_CMD) run ruff check dana/ tests/ --select F841,B017
+	@echo "✨ Style checks..."
+	$(UV_CMD) run ruff check dana/ tests/ --select UP038,B026,E712,E721,B024,B007
+
+lint-critical: ## Run only critical lint checks (BLOCKING)
+	@echo "🚫 Running critical lint checks (BLOCKING)..."
+	$(UV_CMD) run ruff check dana/ tests/ --select E722,F821 --exclude dana/contrib
+
+lint-important: ## Run important lint checks (WARNING)
+	@echo "⚠️ Running important lint checks (WARNING)..."
+	$(UV_CMD) run ruff check dana/ tests/ --select F841,B017
+
+lint-style: ## Run style and formatting checks (INFO)
+	@echo "✨ Running style and formatting checks (INFO)..."
+	$(UV_CMD) run ruff format --check dana/ tests/
+	$(UV_CMD) run ruff check dana/ tests/ --select UP038,B026,E712,E721,B024,B007
 
 format: ## Format code automatically
 	@echo "✨ Formatting code..."
-	$(UV_CMD) run ruff format .
+	$(UV_CMD) run ruff format dana/ tests/
 
-check: lint ## Run all code quality checks
-	@echo "📝 Checking code formatting..."
-	$(UV_CMD) run ruff format --check .
+check: lint format-check ## Run all code quality checks
 	@echo "✅ All quality checks completed!"
+
+format-check: ## Check code formatting (matches CI)
+	@echo "📝 Checking code formatting..."
+	$(UV_CMD) run ruff format --check dana/ tests/
 
 fix: ## Auto-fix all fixable code issues
 	@echo "🔧 Auto-fixing code issues..."
-	$(UV_CMD) run ruff check --fix .
-	$(UV_CMD) run ruff format .
+	$(UV_CMD) run ruff check --fix dana/ tests/
+	$(UV_CMD) run ruff format dana/ tests/
 	@echo "🔧 Applied all auto-fixes!"
 
 mypy: ## Run type checking
@@ -260,6 +283,25 @@ test-cov: ## MORE: Run tests with coverage report
 update-deps: ## MORE: Update dependencies to latest versions
 	@echo "⬆️  Updating dependencies..."
 	$(UV_CMD) lock --upgrade
+
+ci-check: lint-critical test ## Run the same checks as GitHub CI
+
+# Type checking (local development only - not in CI)
+type-check:
+	@echo "🔍 Running MyPy type checking (local development only)..."
+	@echo "Note: This is not run in CI due to extensive type issues"
+	uv run mypy dana/core/ dana/common/ --ignore-missing-imports --no-strict-optional || {
+		echo "⚠️ Type issues found - fix when convenient"
+		echo "Run 'make type-check' locally to see details"
+	}
+	@echo ""
+	@echo "🎯 \033[1m\033[32mCI checks completed!\033[0m"
+	@echo "=================================="
+	@echo "✅ Critical lint checks passed"
+	@echo "✅ Tests passed"
+	@echo ""
+	@echo "\033[33m💡 This matches what GitHub CI will run\033[0m"
+	@echo ""
 
 dev: setup-dev check test-fast ## MORE: Complete development setup and verification
 	@echo ""

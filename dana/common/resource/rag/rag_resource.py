@@ -22,12 +22,12 @@ class RAGResource(BaseResource):
         # Use DANAPATH if set, otherwise default to .cache/rag
         # if cache_dir is None:
         danapath = os.environ.get("DANAPATH")
-        
+
         if danapath:
             if cache_dir:
                 cache_dir = os.path.join(danapath, cache_dir)
             else:
-                cache_dir = os.path.join(danapath, ".cache", 'rag')
+                cache_dir = os.path.join(danapath, ".cache", "rag")
         else:
             cache_dir = ".cache/rag"
 

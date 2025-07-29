@@ -1,6 +1,6 @@
 """Tests for Document and Topic Pydantic schemas."""
 
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 import pytest
 from pydantic import ValidationError
@@ -68,7 +68,7 @@ class TestTopicRead:
 
     def test_topic_read_with_all_fields(self):
         """Test TopicRead with all valid fields."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         data = {"id": 1, "name": "Test Topic", "description": "A test topic", "created_at": now, "updated_at": now}
         topic = TopicRead(**data)
 
@@ -92,8 +92,8 @@ class TestTopicRead:
                 self.id = 1
                 self.name = "Test Topic"
                 self.description = "A test topic"
-                self.created_at = datetime.now(timezone.utc)
-                self.updated_at = datetime.now(timezone.utc)
+                self.created_at = datetime.now(UTC)
+                self.updated_at = datetime.now(UTC)
 
         orm_topic = MockTopic()
         topic_read = TopicRead.model_validate(orm_topic)
@@ -160,7 +160,7 @@ class TestDocumentRead:
 
     def test_document_read_with_all_fields(self):
         """Test DocumentRead with all valid fields."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         data = {
             "id": 1,
             "original_filename": "test.pdf",
@@ -202,8 +202,8 @@ class TestDocumentRead:
                 self.mime_type = "application/pdf"
                 self.topic_id = 1
                 self.agent_id = 2
-                self.created_at = datetime.now(timezone.utc)
-                self.updated_at = datetime.now(timezone.utc)
+                self.created_at = datetime.now(UTC)
+                self.updated_at = datetime.now(UTC)
 
         orm_document = MockDocument()
         document_read = DocumentRead.model_validate(orm_document)

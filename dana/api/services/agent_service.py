@@ -11,7 +11,6 @@ from typing import Any
 
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
-from dana.core.lang.dana_sandbox import DanaSandbox
 
 from dana.api.services.code_handler import CodeHandler
 
@@ -155,28 +154,24 @@ class AgentService:
             return CodeHandler.get_fallback_template(), str(e), conversation_analysis, None
 
     async def generate_agent_files_from_prompt(
-        self,
-        prompt: str,
-        messages: list[dict[str, Any]], 
-        agent_summary: dict[str, Any],
-        multi_file: bool = False
+        self, prompt: str, messages: list[dict[str, Any]], agent_summary: dict[str, Any], multi_file: bool = False
     ) -> tuple[str, str | None, dict[str, Any] | None]:
         """
         Generate Dana agent files from a specific prompt, conversation messages, and agent summary.
-        
+
         This function is designed for Phase 2 of the agent generation flow.
-        
+
         Args:
             prompt: Specific prompt for generating the agent files
             messages: List of conversation messages with 'role' and 'content' fields
             agent_summary: Dictionary containing agent description, capabilities, etc.
             multi_file: Whether to generate multi-file structure
-            
+
         Returns:
             Tuple of (Generated Dana code as string, error message or None, multi-file project or None)
         """
         logger.info("Generating agent files from prompt for Phase 2")
-        
+
         try:
             # Check if mock mode is enabled
             if os.environ.get("DANA_MOCK_AGENT_GENERATION", "").lower() == "true":
@@ -222,7 +217,7 @@ class AgentService:
                 # Handle multi-file response (always the case)
                 logger.info("Parsing multi-file response...")
                 multi_file_project = CodeHandler.parse_multi_file_response(generated_code)
-                
+
                 # Extract main file content for backward compatibility
                 main_file_content = ""
                 for file_info in multi_file_project["files"]:
@@ -341,8 +336,20 @@ class AgentService:
             vague_indicators = ["help", "assistant", "agent", "create", "make", "build", "something", "anything"]
 
             specific_indicators = [
-                "weather", "data", "analysis", "email", "calendar", "document", "research", "finance",
-                "customer", "sales", "support", "translate", "schedule", "appointment"
+                "weather",
+                "data",
+                "analysis",
+                "email",
+                "calendar",
+                "document",
+                "research",
+                "finance",
+                "customer",
+                "sales",
+                "support",
+                "translate",
+                "schedule",
+                "appointment",
             ]
 
             # Calculate vagueness score
@@ -446,7 +453,7 @@ Extract and summarize the user's intentions in a clear, concise way that can be 
         """Create a prompt for the LLM to generate Dana agent code."""
         if multi_file:
             return get_multi_file_agent_generation_prompt(intentions, current_code)
-        
+
         # Single file generation logic here
         if current_code:
             return f"""
@@ -470,16 +477,14 @@ User Intentions:
 Generate a simple Dana agent that meets the user's requirements.
 """
 
-    def _create_phase_2_prompt(
-        self, prompt: str, messages: list[dict[str, Any]], agent_summary: dict[str, Any], multi_file: bool
-    ) -> str:
+    def _create_phase_2_prompt(self, prompt: str, messages: list[dict[str, Any]], agent_summary: dict[str, Any], multi_file: bool) -> str:
         """Create an enhanced prompt for Phase 2 agent generation."""
         # Implementation from the original file
         conversation_text = "\\n".join([f"{msg.get('role', '')}: {msg.get('content', '')}" for msg in messages])
-        
+
         agent_name = agent_summary.get("name", "Custom Agent")
         agent_description = agent_summary.get("description", "A specialized agent for your needs")
-        
+
         enhanced_prompt = f"""
 You are Dana, an expert Dana language developer. Generate a complete multi-file training project for Georgia.
 
@@ -590,14 +595,14 @@ async def get_agent_service() -> AgentService:
 
 # Missing functions that were previously imported from deleted files
 
+
 def get_multi_file_agent_generation_prompt(intentions: str, current_code: str = "", has_docs_folder: bool = False) -> str:
     """
     Returns the multi-file agent generation prompt for the LLM.
     """
-    rag_tools_block = 'rag_resource = use("rag", sources=["./docs"])'
-    rag_import_block = 'from tools import rag_resource\n'
-    rag_search_block = '    package.retrieval_result = str(rag_resource.query(query))'
-    
+    rag_import_block = "from tools import rag_resource\n"
+    rag_search_block = "    package.retrieval_result = str(rag_resource.query(query))"
+
     return f'''
 You are Dana, an expert Dana language developer. Based on the user's intentions, generate a training project for Georgia that follows the modular, workflow-based pattern.
 

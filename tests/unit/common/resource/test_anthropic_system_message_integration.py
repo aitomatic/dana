@@ -130,7 +130,7 @@ class TestAnthropicSystemMessageIntegration(unittest.TestCase):
 
             mock_client.chat.completions.create.side_effect = capture_params
 
-            result = llm.query_sync(request)
+            _result = llm.query_sync(request)
 
             # Verify OpenAI messages remain unchanged
             messages = captured_params.get("messages", [])

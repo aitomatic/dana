@@ -1,29 +1,28 @@
 # Test implicit first-argument pipeline mode
 # This file tests the implicit mode where pipeline values are inserted as first arguments
 
-def test_implicit_mode():
-    def add_prefix(text: str, prefix: str = "Prefix: ") -> str:
-        return f"{prefix}{text}"
+def add_prefix(text: str, prefix: str = "Prefix: ") -> str:
+    return f"{prefix}{text}"
 
-    def to_uppercase(text: str) -> str:
-        return text.upper()
+def to_uppercase(text: str) -> str:
+    return text.upper()
 
-    def add_suffix(text: str, suffix: str = "!!!") -> str:
-        return f"{text}{suffix}"
+def add_suffix(text: str, suffix: str = "!!!") -> str:
+    return f"{text}{suffix}"
 
-    # Test basic pipeline
-    result = "hello" | add_prefix("Data: ") | to_uppercase | add_suffix("?")
-    assert result == "DATA: HELLO?", f"Expected 'DATA: HELLO?', got '{result}'"
+# Test basic pipeline using declarative function definition
+def basic_pipeline(text: str) = add_prefix("Data: ") | to_uppercase | add_suffix("?")
+result = basic_pipeline("hello")
+assert result == "DATA: HELLO?", f"Expected 'DATA: HELLO?', got '{result}'"
 
-    # Test with default arguments
-    result = "world" | add_prefix | to_uppercase
-    assert result == "PREFIX: WORLD", f"Expected 'PREFIX: WORLD', got '{result}'"
+# Test with default arguments
+def default_pipeline(text: str) = add_prefix | to_uppercase
+result = default_pipeline("world")
+assert result == "PREFIX: WORLD", f"Expected 'PREFIX: WORLD', got '{result}'"
 
-    # Test single stage
-    result = "test" | to_uppercase
-    assert result == "TEST", f"Expected 'TEST', got '{result}'"
+# Test single stage
+def single_stage_pipeline(text: str) = to_uppercase
+result = single_stage_pipeline("test")
+assert result == "TEST", f"Expected 'TEST', got '{result}'"
 
-    log("✅ All implicit mode tests passed")
-
-if __name__ == "__main__":
-    test_implicit_mode()
+log("✅ All implicit mode tests passed")

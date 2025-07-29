@@ -26,6 +26,7 @@ from dana.core.lang.ast import (
     FStringExpression,
     FunctionCall,
     FunctionDefinition,
+    MethodDefinition,
 )
 from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
 from dana.core.lang.interpreter.executor.function_error_handling import (
@@ -68,6 +69,7 @@ class FunctionExecutor(BaseExecutor):
         """Register handlers for function-related node types."""
         self._handlers = {
             FunctionDefinition: self.execute_function_definition,
+            MethodDefinition: self.execute_method_definition,
             FunctionCall: self.execute_function_call,
         }
 
@@ -136,6 +138,80 @@ class FunctionExecutor(BaseExecutor):
             # No decorators, store the DanaFunction as usual
             context.set(f"local:{node.name.name}", dana_func)
             return dana_func
+
+    def execute_method_definition(self, node: MethodDefinition, context: SandboxContext) -> Any:
+        """Execute a method definition and register it in the method registry.
+
+        Args:
+            node: The method definition to execute
+            context: The execution context
+
+        Returns:
+            The defined method
+        """
+        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+        from dana.core.lang.interpreter.struct_system import MethodRegistry, StructTypeRegistry
+
+        # Extract receiver type(s) from the receiver parameter
+        receiver_param = node.receiver
+        receiver_type_str = receiver_param.type_hint.name if receiver_param.type_hint else None
+
+        if not receiver_type_str:
+            raise SandboxError("Method definition requires typed receiver parameter")
+
+        # Parse union types (e.g., "Point | Circle | Rectangle")
+        # Handle spaces around pipe symbols
+        receiver_types = [t.strip() for t in receiver_type_str.split("|") if t.strip()]
+
+        # Validate that all receiver types exist
+        for type_name in receiver_types:
+            if not StructTypeRegistry.exists(type_name):
+                raise SandboxError(f"Unknown struct type '{type_name}' in method receiver")
+
+        # Extract parameter names (excluding receiver)
+        param_names = []
+        param_defaults = {}
+        for param in node.parameters:
+            if hasattr(param, "name"):
+                param_name = param.name
+                param_names.append(param_name)
+
+                # Extract default value if present
+                if hasattr(param, "default_value") and param.default_value is not None:
+                    try:
+                        default_value = self._evaluate_expression(param.default_value, context)
+                        param_defaults[param_name] = default_value
+                    except Exception as e:
+                        self.debug(f"Failed to evaluate default value for parameter {param_name}: {e}")
+
+        # Extract return type if present
+        return_type = None
+        if hasattr(node, "return_type") and node.return_type is not None:
+            if hasattr(node.return_type, "name"):
+                return_type = node.return_type.name
+            else:
+                return_type = str(node.return_type)
+
+        # Create the DanaFunction with receiver as the first parameter
+        all_params = [receiver_param.name] + param_names
+        dana_func = DanaFunction(
+            body=node.body, parameters=all_params, context=context, return_type=return_type, defaults=param_defaults, name=node.name.name
+        )
+
+        # Apply decorators if present
+        if node.decorators:
+            wrapped_func = self._apply_decorators(dana_func, node.decorators, context)
+            final_func = wrapped_func
+        else:
+            final_func = dana_func
+
+        # Register the method with all receiver types
+        MethodRegistry.register_method(receiver_types, node.name.name, final_func)
+
+        # Also store in context for direct access
+        context.set(f"local:{node.name.name}", final_func)
+
+        return final_func
 
     def _apply_decorators(self, func, decorators, context):
         """Apply decorators to a function, handling both simple and parameterized decorators."""
@@ -241,26 +317,21 @@ class FunctionExecutor(BaseExecutor):
             The result of the function call
         """
         self.debug(f"Executing function call: {node.name}")
-        
-        # Track whether we pushed a location to ensure proper stack cleanup
-        location_pushed = False
-        
         # Track location in error context if available
-        if hasattr(node, 'location') and node.location:
+        if hasattr(node, "location") and node.location:
             from dana.core.lang.interpreter.error_context import ExecutionLocation
-            
+
             location = ExecutionLocation(
                 filename=context.error_context.current_file,
                 line=node.location.line,
                 column=node.location.column,
                 function_name=f"function call: {node.name}",
-                source_line=context.error_context.get_source_line(
-                    context.error_context.current_file, node.location.line
-                ) if context.error_context.current_file and node.location.line else None
+                source_line=context.error_context.get_source_line(context.error_context.current_file, node.location.line)
+                if context.error_context.current_file and node.location.line
+                else None,
             )
             context.error_context.push_location(location)
-            location_pushed = True
-            self.debug(f"Pushed location to error context: {location}") 
+            self.debug(f"Pushed location to error context: {location}")
             self.debug(f"Error context stack size after push: {len(context.error_context.execution_stack)}")
 
         try:
@@ -314,8 +385,8 @@ class FunctionExecutor(BaseExecutor):
                 # If error handler doesn't handle it, raise original with context
                 raise SandboxError(f"Function '{getattr(node, 'name', 'unknown')}' execution failed: {dispatcher_error}") from dispatcher_error
         finally:
-            # Pop location from error context stack only if we pushed one
-            if location_pushed:
+            # Pop location from error context stack
+            if hasattr(node, "location") and node.location:
                 context.error_context.pop_location()
 
     def __setup_and_validate(self, node: FunctionCall) -> Any:
@@ -781,69 +852,68 @@ class FunctionExecutor(BaseExecutor):
             # Parse the string representation to extract the object and index
             # Format: "SubscriptExpression(object=Identifier(name='FUNCS_FOR_TEST'), index=Identifier(name='func_name'))"
             name_str = str(node.name)
-            
+
             # More robust parsing with error handling
             object_name = None
             index_name = None
-            
+
             # Extract object name with better error handling
             object_prefix = "Identifier(name='"
             object_start = name_str.find(object_prefix)
             if object_start == -1:
                 raise SandboxError(f"Could not find object identifier in subscript expression string: {name_str}")
-            
+
             object_start += len(object_prefix)
             object_end = name_str.find("'", object_start)
             if object_end == -1:
                 raise SandboxError(f"Could not find end of object name in subscript expression string: {name_str}")
-            
+
             object_name = name_str[object_start:object_end]
-            
+
             # Extract index name with better error handling
             index_prefix = "Identifier(name='"
             index_start = name_str.find(index_prefix, object_end)
             if index_start == -1:
                 raise SandboxError(f"Could not find index identifier in subscript expression string: {name_str}")
-            
+
             index_start += len(index_prefix)
             index_end = name_str.find("'", index_start)
             if index_end == -1:
                 raise SandboxError(f"Could not find end of index name in subscript expression string: {name_str}")
-            
+
             index_name = name_str[index_start:index_end]
-            
+
             # Validate that we extracted meaningful names
             if not object_name or not index_name:
                 raise SandboxError(f"Could not extract valid object and index names from subscript expression string: {name_str}")
-            
+
             self.debug(f"Parsed object_name: {object_name}, index_name: {index_name}")
-            
+
             # Get the object and index values from context
             from dana.core.lang.ast import Identifier
+
             object_value = self.parent.execute(Identifier(name=object_name), context)
             index_value = self.parent.execute(Identifier(name=index_name), context)
-            
+
             self.debug(f"Object value: {object_value}, index value: {index_value}")
-            
+
             # Access the subscript
             actual_function = object_value[index_value]
             self.debug(f"Resolved function: {actual_function} (type: {type(actual_function)})")
-            
+
             # Check if the resolved value is callable
             if not callable(actual_function):
                 raise SandboxError(f"Subscript expression '{name_str}' resolved to non-callable object: {actual_function}")
-            
+
             # Call the resolved function with the provided arguments
             self.debug(f"Calling resolved function with args={evaluated_args}, kwargs={evaluated_kwargs}")
             result = actual_function(*evaluated_args, **evaluated_kwargs)
             self.debug(f"Subscript call result: {result}")
             return result
-            
+
         except SandboxError:
             # Re-raise SandboxErrors as-is
             raise
         except Exception as e:
             # Convert other exceptions to SandboxError with context
             raise SandboxError(f"Subscript call from string '{node.name}' failed: {e}")
-
-

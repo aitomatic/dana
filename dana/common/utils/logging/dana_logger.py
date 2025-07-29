@@ -123,6 +123,28 @@ class DanaLogger:
         for logger_name in ["asyncio", "filelock"]:
             logging.getLogger(logger_name).setLevel(logging.WARNING)
 
+    def _prevent_automatic_root_handler(self) -> None:
+        """Prevent Python from automatically adding a StreamHandler to the root logger.
+
+        This is a critical fix for the duplicate logging issue. When Python detects
+        that a log message is being emitted and there are no handlers on the root logger,
+        it automatically adds a StreamHandler. This causes duplicate log messages.
+
+        By adding a no-op handler to the root logger, we prevent this automatic behavior.
+        """
+        root_logger = logging.getLogger()
+
+        # Only add the no-op handler if the root logger has no handlers
+        if not root_logger.handlers:
+            # Create a no-op handler that does nothing
+            class NoOpHandler(logging.Handler):
+                def emit(self, record):
+                    pass  # Do nothing with the log record
+
+            # Add the no-op handler to prevent automatic handler addition
+            root_logger.addHandler(NoOpHandler())
+            root_logger.setLevel(logging.WARNING)  # Set a reasonable default level
+
     def setLevel(self, level: int, scope: str | None = "dana") -> None:
         """Set the logging level with configurable scope.
 
@@ -311,6 +333,9 @@ DANA_LOGGER.configure()
 
 # Configure third-party logging globally
 DANA_LOGGER._configure_third_party_logging()
+
+# Prevent automatic root handler addition
+DANA_LOGGER._prevent_automatic_root_handler()
 
 # For backward compatibility, also create DanaLogger as alias
 # Legacy alias for backward compatibility

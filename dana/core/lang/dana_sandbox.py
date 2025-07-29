@@ -66,8 +66,7 @@ class DanaSandbox(Loggable):
     _resource_users = 0  # Count of instances using shared resources
     _pool_lock = None  # Will be initialized as threading.Lock() when needed
 
-    def __init__(self, debug_mode: bool = False, context: SandboxContext | None = None, 
-                 module_search_paths: list[str] | None = None):
+    def __init__(self, debug_mode: bool = False, context: SandboxContext | None = None, module_search_paths: list[str] | None = None):
         """
         Initialize a Dana sandbox.
 
@@ -185,6 +184,7 @@ class DanaSandbox(Loggable):
 
         # Initialize module system
         from dana.core.runtime.modules.core import initialize_module_system
+
         if self._module_search_paths is not None:
             initialize_module_system(self._module_search_paths)
         else:
@@ -371,16 +371,21 @@ class DanaSandbox(Loggable):
         try:
             # Convert to Path for easier manipulation
             file_path = Path(file_path).resolve()
-            
+
             # Add the file's directory to the module search path temporarily
             from dana.core.runtime.modules.core import get_module_loader
+
             loader = get_module_loader()
             file_dir = file_path.parent
-            
+
             # Add the file's directory to search paths if not already there
             if file_dir not in loader.search_paths:
                 loader.search_paths.insert(0, file_dir)
-            
+
+            # Set up error context with file information
+            if self._context.error_context:
+                self._context.error_context.set_file(str(file_path))
+
             # Read file
             with open(file_path) as f:
                 source_code = f.read()
@@ -401,23 +406,19 @@ class DanaSandbox(Loggable):
 
         except Exception as e:
             # Format error with location information
-            from dana.core.lang.interpreter.error_formatter import EnhancedErrorFormatter
             from dana.common.exceptions import EnhancedDanaError
-            
-            formatted_error = EnhancedErrorFormatter.format_developer_error(
-                e, 
-                self._context.error_context,
-                show_traceback=True
-            )
-            
+            from dana.core.lang.interpreter.error_formatter import EnhancedErrorFormatter
+
+            formatted_error = EnhancedErrorFormatter.format_developer_error(e, self._context.error_context, show_traceback=True)
+
             # Log the formatted error
             self.debug(f"Error context current location: {self._context.error_context.current_location}")
             self.debug(f"Error context stack size: {len(self._context.error_context.execution_stack)}")
-            self.error(f"Error executing Dana file:\n{formatted_error}")
-            
+            # self.error(f"Error executing Dana file:\n{formatted_error}")
+
             # Create an enhanced error with location information
             error_context = self._context.error_context
-            
+
             # If the error is already an EnhancedDanaError, preserve its location info
             if isinstance(e, EnhancedDanaError):
                 # Use existing location info from the error
@@ -425,8 +426,9 @@ class DanaSandbox(Loggable):
                     formatted_error,
                     filename=e.filename or (error_context.current_file if error_context else None),
                     line=e.line or (error_context.current_location.line if error_context and error_context.current_location else None),
-                    column=e.column or (error_context.current_location.column if error_context and error_context.current_location else None),
-                    traceback_str=e.traceback_str or (error_context.format_stack_trace() if error_context else None)
+                    column=e.column
+                    or (error_context.current_location.column if error_context and error_context.current_location else None),
+                    traceback_str=e.traceback_str or (error_context.format_stack_trace() if error_context else None),
                 )
             else:
                 enhanced_error = EnhancedDanaError(
@@ -434,10 +436,10 @@ class DanaSandbox(Loggable):
                     filename=error_context.current_file if error_context else None,
                     line=error_context.current_location.line if error_context and error_context.current_location else None,
                     column=error_context.current_location.column if error_context and error_context.current_location else None,
-                    traceback_str=error_context.format_stack_trace() if error_context else None
+                    traceback_str=error_context.format_stack_trace() if error_context else None,
                 )
             enhanced_error.__cause__ = e
-            
+
             return ExecutionResult(
                 success=False,
                 error=enhanced_error,
@@ -481,13 +483,13 @@ class DanaSandbox(Loggable):
             )
 
             # Format error with location information
-            from dana.core.lang.interpreter.error_formatter import EnhancedErrorFormatter
             from dana.common.exceptions import EnhancedDanaError
-            
+            from dana.core.lang.interpreter.error_formatter import EnhancedErrorFormatter
+
             formatted_error = EnhancedErrorFormatter.format_developer_error(
-                e, 
+                e,
                 self._context.error_context,
-                show_traceback=not is_repl_mode  # Show full traceback in non-REPL mode
+                show_traceback=not is_repl_mode,  # Show full traceback in non-REPL mode
             )
 
             if is_repl_mode:
@@ -496,10 +498,10 @@ class DanaSandbox(Loggable):
             else:
                 # In non-REPL mode (file execution), log as error for debugging
                 self.error(f"Error evaluating Dana code:\n{formatted_error}")
-            
+
             # Create an enhanced error with location information
             error_context = self._context.error_context
-            
+
             # If the error is already an EnhancedDanaError, preserve its location info
             if isinstance(e, EnhancedDanaError):
                 # Use existing location info from the error
@@ -507,8 +509,9 @@ class DanaSandbox(Loggable):
                     formatted_error,
                     filename=e.filename or (error_context.current_file if error_context else None),
                     line=e.line or (error_context.current_location.line if error_context and error_context.current_location else None),
-                    column=e.column or (error_context.current_location.column if error_context and error_context.current_location else None),
-                    traceback_str=e.traceback_str or (error_context.format_stack_trace() if error_context else None)
+                    column=e.column
+                    or (error_context.current_location.column if error_context and error_context.current_location else None),
+                    traceback_str=e.traceback_str or (error_context.format_stack_trace() if error_context else None),
                 )
             else:
                 enhanced_error = EnhancedDanaError(
@@ -516,7 +519,7 @@ class DanaSandbox(Loggable):
                     filename=error_context.current_file if error_context else None,
                     line=error_context.current_location.line if error_context and error_context.current_location else None,
                     column=error_context.current_location.column if error_context and error_context.current_location else None,
-                    traceback_str=error_context.format_stack_trace() if error_context else None
+                    traceback_str=error_context.format_stack_trace() if error_context else None,
                 )
             enhanced_error.__cause__ = e
 
@@ -544,8 +547,12 @@ class DanaSandbox(Loggable):
 
     @classmethod
     def quick_eval(
-        cls, source_code: str, filename: str | None = None, debug_mode: bool = False, 
-        context: SandboxContext | None = None, module_search_paths: list[str] | None = None
+        cls,
+        source_code: str,
+        filename: str | None = None,
+        debug_mode: bool = False,
+        context: SandboxContext | None = None,
+        module_search_paths: list[str] | None = None,
     ) -> ExecutionResult:
         """
         Quick evaluate Dana code without managing lifecycle.

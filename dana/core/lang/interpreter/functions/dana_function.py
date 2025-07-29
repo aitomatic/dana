@@ -148,10 +148,8 @@ class DanaFunction(SandboxFunction, Loggable):
             # Add function call to execution stack for debugging
             if hasattr(prepared_context, "error_context") and prepared_context.error_context:
                 from dana.core.lang.interpreter.error_context import ExecutionLocation
-                function_location = ExecutionLocation(
-                    function_name=self.__name__,
-                    filename=prepared_context.error_context.current_file
-                )
+
+                function_location = ExecutionLocation(function_name=self.__name__, filename=prepared_context.error_context.current_file)
                 prepared_context.error_context.push_location(function_location)
 
             # Execute each statement in the function body
@@ -160,7 +158,7 @@ class DanaFunction(SandboxFunction, Loggable):
                 try:
                     # Update current location for error reporting
                     if hasattr(prepared_context, "error_context") and prepared_context.error_context:
-                        prepared_context.error_context.current_location = getattr(statement, 'location', None)
+                        prepared_context.error_context.current_location = getattr(statement, "location", None)
 
                     # Use _interpreter attribute (with underscore)
                     if hasattr(prepared_context, "_interpreter") and prepared_context._interpreter is not None:
@@ -187,14 +185,14 @@ class DanaFunction(SandboxFunction, Loggable):
 
         except Exception as e:
             # Log the error with detailed context
-            self.error(f"Error executing Dana function '{self.__name__}': {e}", exc_info=True)
-            
+            # self.error(f"Error executing Dana function '{self.__name__}': {e}", exc_info=True)
+
             # Add function context to error if possible
             if prepared_context and hasattr(prepared_context, "error_context") and prepared_context.error_context:
                 error_context = prepared_context.error_context
-                if hasattr(e, 'add_context'):
+                if hasattr(e, "add_context"):
                     e.add_context(f"Function: {self.__name__}", error_context.current_location)
-            
+
             # Re-raise the exception
             raise
 
@@ -205,7 +203,7 @@ class DanaFunction(SandboxFunction, Loggable):
                     self.restore_context(prepared_context, original_context)
                 except Exception as restore_error:
                     self.error(f"Error restoring context after function execution: {restore_error}")
-            
+
             # Pop function call from execution stack
             if prepared_context and hasattr(prepared_context, "error_context") and prepared_context.error_context:
                 try:

@@ -19,6 +19,7 @@ from dana.core.lang.ast import (
     Decorator,
     FunctionDefinition,
     Identifier,
+    MethodDefinition,
     Parameter,
     StructDefinition,
     StructField,
@@ -70,6 +71,75 @@ class FunctionDefinitionTransformer(BaseTransformer):
 
         return FunctionDefinition(
             name=Identifier(name=func_name, location=location),
+            parameters=parameters,
+            body=block_items,
+            return_type=return_type,
+            decorators=decorators,
+            location=location,
+        )
+
+    def method_def(self, items):
+        """Transform a method definition rule into a MethodDefinition node.
+
+        Grammar: method_def: [decorators] "def" "(" typed_parameter ")" NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
+        """
+        relevant_items = self.main_transformer._filter_relevant_items(items)
+
+        if len(relevant_items) < 3:
+            raise ValueError(f"Method definition must have at least receiver, name, and body, got {len(relevant_items)} items")
+
+        current_index = 0
+        decorators = []
+
+        # Check for decorators
+        if current_index < len(relevant_items) and isinstance(relevant_items[current_index], list):
+            first_item = relevant_items[current_index]
+            if first_item and hasattr(first_item[0], "name"):  # Check if it's a list of Decorator objects
+                decorators = first_item
+                current_index += 1
+
+        # Extract receiver parameter
+        receiver_param = relevant_items[current_index]
+        if not isinstance(receiver_param, Parameter):
+            if hasattr(receiver_param, "data") and receiver_param.data == "typed_parameter":
+                receiver_param = self.main_transformer.assignment_transformer.typed_parameter(receiver_param.children)
+            else:
+                raise ValueError(f"Expected receiver Parameter, got {type(receiver_param)}")
+        current_index += 1
+
+        # Extract method name
+        method_name_token = relevant_items[current_index]
+        if not (isinstance(method_name_token, Token) and method_name_token.type == "NAME"):
+            raise ValueError(f"Expected method name token, got {method_name_token}")
+        method_name = method_name_token.value
+        current_index += 1
+
+        # Extract parameters (if any)
+        parameters = []
+        if current_index < len(relevant_items):
+            # Check if the next item is a list of parameters or something else
+            item = relevant_items[current_index]
+            if isinstance(item, list) or (hasattr(item, "data") and item.data == "parameters"):
+                parameters, current_index = self._resolve_function_parameters(relevant_items, current_index)
+            elif not (isinstance(item, Tree) and item.data == "block") and not isinstance(item, TypeHint):
+                # If it's not a block or type hint, try to parse it as parameters
+                parameters, current_index = self._resolve_function_parameters(relevant_items, current_index)
+
+        # Extract return type (if any)
+        return_type = None
+        if current_index < len(relevant_items):
+            item = relevant_items[current_index]
+            if isinstance(item, TypeHint) or (hasattr(item, "data") and item.data == "basic_type"):
+                return_type, current_index = self._extract_return_type(relevant_items, current_index)
+
+        # Extract method body
+        block_items = self._extract_function_body(relevant_items, current_index)
+
+        location = self.main_transformer.create_location(method_name_token)
+
+        return MethodDefinition(
+            receiver=receiver_param,
+            name=Identifier(name=method_name, location=location),
             parameters=parameters,
             body=block_items,
             return_type=return_type,
@@ -298,19 +368,19 @@ class FunctionDefinitionTransformer(BaseTransformer):
         struct_block = items[2] if len(items) > 2 else items[1]
 
         fields = []
+        docstring = None
+
         if hasattr(struct_block, "data") and struct_block.data == "struct_block":
-            # The children of struct_block are NL, INDENT, struct_fields, DEDENT...
-            # The struct_fields tree is what we want
-            struct_fields_tree = None
+            # The children of struct_block are NL, INDENT, [docstring], struct_fields, DEDENT...
             for child in struct_block.children:
-                if hasattr(child, "data") and child.data == "struct_fields":
+                if hasattr(child, "data") and child.data == "docstring":
+                    # Extract docstring content
+                    docstring = child.children[0].value.strip('"')
+                elif hasattr(child, "data") and child.data == "struct_fields":
                     struct_fields_tree = child
-                    break
+                    fields = [field for field in struct_fields_tree.children if isinstance(field, StructField)]
 
-            if struct_fields_tree:
-                fields = [child for child in struct_fields_tree.children if isinstance(child, StructField)]
-
-        return StructDefinition(name=name_token.value, fields=fields)
+        return StructDefinition(name=name_token.value, fields=fields, docstring=docstring)
 
     def struct_field(self, items):
         """Transform a struct field rule into a StructField node."""

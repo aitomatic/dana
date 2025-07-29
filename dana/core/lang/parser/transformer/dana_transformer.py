@@ -19,9 +19,10 @@ class DanaTransformer(Transformer):
         variables) is handled by its own class, and DanaTransformer delegates to them as needed.
         """
         super().__init__()
-        # Initialize sub-transformers
-        self.statement_transformer = StatementTransformer()
-        self.expression_transformer = ExpressionTransformer()
+        # Initialize expression transformer first
+        self.expression_transformer = ExpressionTransformer(self)
+        # Initialize statement transformer with reference to this main transformer
+        self.statement_transformer = StatementTransformer(self)
         self.fstring_transformer = FStringTransformer()
         self.variable_transformer = VariableTransformer()
         self.current_filename = None  # Track current filename for error reporting
@@ -30,13 +31,13 @@ class DanaTransformer(Transformer):
         """Set the current filename for all transformers."""
         self.current_filename = filename
         # Propagate to all sub-transformers
-        if hasattr(self.statement_transformer, 'set_filename'):
+        if hasattr(self.statement_transformer, "set_filename"):
             self.statement_transformer.set_filename(filename)
-        if hasattr(self.expression_transformer, 'set_filename'):
+        if hasattr(self.expression_transformer, "set_filename"):
             self.expression_transformer.set_filename(filename)
-        if hasattr(self.fstring_transformer, 'set_filename'):
+        if hasattr(self.fstring_transformer, "set_filename"):
             self.fstring_transformer.set_filename(filename)
-        if hasattr(self.variable_transformer, 'set_filename'):
+        if hasattr(self.variable_transformer, "set_filename"):
             self.variable_transformer.set_filename(filename)
 
     def transform(self, tree):
