@@ -70,7 +70,8 @@ with_stmt: "with" (with_context_manager | (NAME | USE) "(" [mixed_arguments] ")"
 struct_def: "struct" NAME ":" [COMMENT] struct_block -> struct_definition
 agent_def: "agent" NAME ":" [COMMENT] agent_block -> agent_definition
 
-struct_block: _NL _INDENT struct_fields _DEDENT
+struct_block: _NL _INDENT [docstring] struct_fields _DEDENT
+docstring: MULTILINE_STRING _NL
 struct_fields: struct_field+
 struct_field: NAME ":" basic_type ["=" expr] [COMMENT] _NL -> struct_field
 

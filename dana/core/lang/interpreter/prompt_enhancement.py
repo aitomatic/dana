@@ -183,8 +183,13 @@ class PromptEnhancer(Loggable):
 
         fields_text = "\n".join(field_descriptions)
 
+        # Include docstring if available
+        docstring_text = ""
+        if struct_type.docstring:
+            docstring_text = f"\nDescription: {struct_type.docstring}\n"
+
         return f"""
-{struct_name} struct fields:
+{struct_name} struct{docstring_text} fields:
 {fields_text}
 
 JSON Schema:
