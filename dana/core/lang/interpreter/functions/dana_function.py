@@ -185,7 +185,7 @@ class DanaFunction(SandboxFunction, Loggable):
 
         except Exception as e:
             # Log the error with detailed context
-            self.error(f"Error executing Dana function '{self.__name__}': {e}", exc_info=True)
+            # self.error(f"Error executing Dana function '{self.__name__}': {e}", exc_info=True)
 
             # Add function context to error if possible
             if prepared_context and hasattr(prepared_context, "error_context") and prepared_context.error_context:

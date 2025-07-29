@@ -19,18 +19,18 @@ def (data: TestData) get_info() -> str:
 # Test 4: Basic agent creation and methods
 def test_basic_agent():
     the_agent = TestAgent()
-    log(f"Agent created: {agent}")
-    log(f"Agent name: {agent.name}")
-    log(f"Agent domain: {agent.domain}")
-    return agent
+    log(f"Agent created: {the_agent}")
+    log(f"Agent name: {the_agent.name}")
+    log(f"Agent domain: {the_agent.domain}")
+    return the_agent
 
 # Test 5: Test if plan() and solve() methods exist
 def test_agent_methods():
-    agent = TestAgent()
+    the_agent = TestAgent()
     
     # Test if plan() method exists
     try:
-        plan_result = agent.plan("Test planning")
+        plan_result = the_agent.plan("Test planning")
         log(f"✅ plan() method works: {plan_result}")
         return {"plan": plan_result, "status": "success"}
     except Exception as e:
@@ -83,8 +83,8 @@ def run_targeted_tests():
     # Test agent creation
     log("\n3. Testing agent creation...")
     try:
-        agent = test_basic_agent()
-        results["agent_creation"] = agent
+        the_agent = test_basic_agent()
+        results["agent_creation"] = the_agent
         log(f"✅ Agent creation works")
     except Exception as e:
         results["agent_creation"] = f"❌ Failed: {e}"

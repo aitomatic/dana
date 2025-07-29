@@ -414,7 +414,7 @@ class DanaSandbox(Loggable):
             # Log the formatted error
             self.debug(f"Error context current location: {self._context.error_context.current_location}")
             self.debug(f"Error context stack size: {len(self._context.error_context.execution_stack)}")
-            self.error(f"Error executing Dana file:\n{formatted_error}")
+            # self.error(f"Error executing Dana file:\n{formatted_error}")
 
             # Create an enhanced error with location information
             error_context = self._context.error_context
