@@ -118,7 +118,10 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
         (response.updates_applied?.length > 0 || response.updated_domain_tree)
       ) {
         try {
-          await fetchAgent(parseInt(agent_id));
+          // Only refresh agent data for numeric IDs (regular agents)
+          if (!isNaN(Number(agent_id))) {
+            await fetchAgent(parseInt(agent_id));
+          }
         } catch (fetchError) {
           console.warn('Failed to refresh agent data:', fetchError);
         }

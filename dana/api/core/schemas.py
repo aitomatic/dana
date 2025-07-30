@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class AgentBase(BaseModel):
@@ -161,9 +161,26 @@ class ChatRequest(BaseModel):
 
     message: str
     conversation_id: int | None = None
-    agent_id: int
+    agent_id: Union[int, str]  # Support both integer IDs and string keys for prebuilt agents
     context: dict[str, Any] | None = None
     websocket_id: str | None = None
+
+    @field_validator('agent_id')
+    @classmethod
+    def validate_agent_id(cls, v):
+        """Validate agent_id field"""
+        if isinstance(v, int):
+            if v <= 0:
+                raise ValueError('agent_id must be a positive integer')
+        elif isinstance(v, str):
+            if not v.strip():
+                raise ValueError('agent_id string cannot be empty')
+            # For string agent_ids, they should be numeric (representing a number) or valid prebuilt agent keys
+            if not v.isdigit() and not v.replace('_', '').isalnum():
+                raise ValueError('agent_id string must be numeric or a valid prebuilt agent key (alphanumeric with underscores)')
+        else:
+            raise ValueError('agent_id must be either an integer or a string')
+        return v
 
 
 class ChatResponse(BaseModel):

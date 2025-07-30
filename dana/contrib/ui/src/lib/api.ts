@@ -71,7 +71,7 @@ export interface ApiError {
 export interface ChatRequest {
   message: string;
   conversation_id?: number;
-  agent_id: number;
+  agent_id: number | string; // Support both integer IDs and string keys for prebuilt agents
   context?: Record<string, any>;
   websocket_id?: string;
 }
@@ -641,6 +641,16 @@ class ApiService {
   async getSmartChatHistory(agentId: string | number) {
     const response = await this.client.get(`/agents/${agentId}/chat-history?type=smart_chat`);
     return response.data; // Should be an array of { sender, text }
+  }
+
+  async getTestChatHistory(agentId: string | number) {
+    const response = await this.client.get(`/agents/${agentId}/chat-history?type=test_chat`);
+    return response.data; // Should be an array of { sender, text, created_at }
+  }
+
+  async getAllChatHistory(agentId: string | number) {
+    const response = await this.client.get(`/agents/${agentId}/chat-history?type=all`);
+    return response.data; // Should be an array of { sender, text, type, created_at }
   }
 
   async getDomainKnowledge(agentId: string | number): Promise<DomainKnowledgeResponse> {

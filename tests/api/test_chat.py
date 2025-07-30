@@ -163,12 +163,12 @@ class TestChatEndpoint:
 
     def test_chat_with_agent_invalid_data_types(self, client):
         """Test chat with invalid data types"""
-        # Test invalid agent_id type
+        # Test invalid agent_id type - use a string with invalid characters
         response = client.post(
             "/api/chat/",
             json={
                 "message": "Hello, agent!",
-                "agent_id": "not_a_number",
+                "agent_id": "invalid@agent#id",
                 "context": {"user_id": 123}
             }
         )

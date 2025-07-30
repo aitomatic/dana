@@ -107,7 +107,7 @@ const BotMessage = ({
   }, [messageContent, message]);
 
   // Avatar image source - use dynamic avatar based on agent ID
-  const avatarSrc = agent_id ? getAgentAvatarSync(parseInt(agent_id)) : '/agent-avatar/agent-avatar-0.svg';
+  const avatarSrc = agent_id ? getAgentAvatarSync(agent_id) : '/agent-avatar/agent-avatar-0.svg';
 
   const isLastMessage = useMemo(() => {
     if (!messages || messages.length === 0) return false;
