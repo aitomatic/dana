@@ -26,7 +26,7 @@ product = multiply(4, 7)       # 28
 
 ---
 
-**What it is**: Python's import system, but simpler. If you know Python imports, you already know 90% of Dana imports. The main differences? Dana uses underscore prefix for privacy instead of Python's complex visibility rules, and directories automatically become packages without needing `__init__.na` files.
+**What it is**: Python's import system, but simpler. If you know Python imports, you already know 90% of Dana imports. The main differences? Dana uses underscore prefix for privacy instead of Python's complex visibility rules, and directories automatically become packages without any initialization files.
 
 ## Why Should You Care?
 
@@ -67,8 +67,8 @@ obj.__really_private()  # Fails - name mangled
 
 - **Same familiar syntax**: `import`, `from`, `as` - just like Python
 - **Clear privacy**: Underscore prefix actually prevents imports (no confusion!)
-- **No boilerplate**: No `__init__.na` required, no `public`/`private` keywords
-- **Simpler packages**: Directories automatically become packages (optional `__init__.na` for initialization)
+- **No boilerplate**: No initialization files required, no `public`/`private` keywords
+- **Simpler packages**: Directories automatically become packages
 
 ## The Big Picture
 
@@ -106,8 +106,8 @@ name = format_name("John", "Doe")  # "John Doe"
 
 - **Zero learning curve**: If you know Python imports, you know Dana imports
 - **Actually private**: Underscore prefix prevents imports (unlike Python's convention)
-- **Even simpler packages**: No `__init__.na` required - directories are automatically packages
-- **Flexible structure**: Nested folders work exactly like Python, with optional initialization
+- **Even simpler packages**: Directories are automatically packages - no initialization files needed
+- **Flexible structure**: Nested folders work exactly like Python
 - **Python interop**: Import `.py` modules seamlessly
 
 ## How to Use Imports (Python Style)
@@ -277,7 +277,7 @@ payment_success = process_payment(99.99, "USD")  # true
 
 ### The Big Change: Directory Packages (Revolutionary Simplicity)
 
-**Dana automatically treats directories containing `.na` files as packages!** No more `__init__.na` boilerplate.
+**Dana automatically treats directories containing `.na` files as packages!** No initialization files needed.
 
 ```dana
 # This just works - no setup needed!
@@ -287,14 +287,7 @@ from config.settings import DATABASE_URL
 
 ### Automatic Directory Packages (Even Simpler than Python)
 ```
-your_package/          # ← Automatically a package (no __init__.na needed!)
-└── submodule.na       # Your module
-```
-
-### Optional Initialization (When You Need It)
-```
-your_package/
-├── __init__.na        # ← Optional - only if you need initialization code
+your_package/          # ← Automatically a package (no initialization files needed!)
 └── submodule.na       # Your module
 ```
 
@@ -307,8 +300,7 @@ project/
 │   └── helpers.na     # Public: format(), Private: _validate()
 ├── config/            # ← Automatically a package
 │   └── settings.na    # Public: DATABASE_URL, Private: _SECRET_KEY
-└── advanced/          # ← Package with initialization
-    ├── __init__.na    # Optional - for package-level setup
+└── advanced/          # ← Package with algorithms
     └── algorithms.na  # Advanced algorithms
 ```
 
@@ -414,7 +406,7 @@ from config import DATABASE_URL
 - **Fast lookup**: Direct module resolution
 - **Clear boundaries**: No confusion about what's public vs private
 - **No runtime magic**: Simple underscore prefix rule
-- **Zero boilerplate**: No `__init__.na` files needed for basic packages
+- **Zero boilerplate**: No initialization files needed for packages
 - **Instant packages**: Directories automatically become packages
 
 ## Before vs After (Python Perspective)
@@ -446,4 +438,4 @@ def _private_method():  # Actually private!
 # from my_module import _private_method  # Error: private!
 ```
 
-**Bottom line**: Dana's import system is Python's import system, but with actually working privacy and automatic directory packages. If you know Python imports, you already know Dana imports. The key differences? Underscore prefix actually prevents imports instead of just being a convention, and directories automatically become packages without needing `__init__.na` files. 
+**Bottom line**: Dana's import system is Python's import system, but with actually working privacy and automatic directory packages. If you know Python imports, you already know Dana imports. The key differences? Underscore prefix actually prevents imports instead of just being a convention, and directories automatically become packages without any initialization files. 
