@@ -134,8 +134,9 @@ class DanaSandbox(Loggable):
                 self.info("Initializing new DanaSandbox resources")
                 self._initialize_new_resources()
 
+            # TODO(#262): Temporarily disabled API context storage
             # Store in context
-            self._context.set("system:api_client", self._api_client)
+            # self._context.set("system:api_client", self._api_client)
             self._context.set("system:llm_resource", self._llm_resource)
 
             # Register started APIClient as default POET client
@@ -170,15 +171,16 @@ class DanaSandbox(Loggable):
 
     def _initialize_new_resources(self):
         """Initialize new resources and potentially share them"""
+        # TODO(#262): Temporarily disabled API auto-start for development
         # Initialize API service
-        self._api_service = APIServiceManager()
-        self._api_service.startup()
+        # self._api_service = APIServiceManager()
+        # self._api_service.startup()
 
         # Get API client
-        self._api_client = self._api_service.get_client()
-        self._api_client.startup()
+        # self._api_client = self._api_service.get_client()
+        # self._api_client.startup()
 
-        # Initialize LLM resource
+        # Initialize LLM resource (required for core Dana functionalities involving language model operations)
         self._llm_resource = LLMResource()
         self._llm_resource.startup()
 
@@ -192,13 +194,14 @@ class DanaSandbox(Loggable):
 
         self._using_shared = False
 
+        # TODO(#262): Temporarily disabled API resource sharing
         # Make these resources available for sharing if none exist
-        if DanaSandbox._shared_api_service is None:
-            self.debug("Making resources available for sharing")
-            DanaSandbox._shared_api_service = self._api_service
-            DanaSandbox._shared_api_client = self._api_client
-            DanaSandbox._shared_llm_resource = self._llm_resource
-            DanaSandbox._resource_users = 1
+        # if DanaSandbox._shared_api_service is None:
+        #     self.debug("Making resources available for sharing")
+        #     DanaSandbox._shared_api_service = self._api_service
+        #     DanaSandbox._shared_api_client = self._api_client
+        #     DanaSandbox._shared_llm_resource = self._llm_resource
+        #     DanaSandbox._resource_users = 1
 
     def _cleanup(self):
         """Clean up this instance's resources - safe to call multiple times"""
