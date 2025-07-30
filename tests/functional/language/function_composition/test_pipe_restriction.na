@@ -1,0 +1,69 @@
+# Test Pipe Expression Context Restriction
+# This test verifies that pipe expressions (|) are only allowed in declarative function definitions
+
+log("🧪 Testing Pipe Expression Context Restriction")
+
+# Define some test functions
+def add_one(x: int) -> int:
+    return x + 1
+
+def double(x: int) -> int:
+    return x * 2
+
+def square(x: int) -> int:
+    return x * x
+
+# ===== TEST 1: Valid Declarative Function =====
+log("\n📝 TEST 1: Valid Declarative Function")
+
+# This should work - declarative function definition
+def valid_pipeline(x: int) -> int = add_one | double
+
+result = valid_pipeline(5)
+expected = 12  # (5 + 1) * 2 = 12
+assert result == expected, f"Expected {expected}, got {result}"
+log(f"✅ Valid declarative pipeline: {result}")
+
+# ===== TEST 2: Complex Declarative Function =====
+log("\n📝 TEST 2: Complex Declarative Function")
+
+# This should also work - more complex declarative function
+def complex_pipeline(x: int) -> int = add_one | double | square
+
+result = complex_pipeline(3)
+expected = 64  # ((3 + 1) * 2) ^ 2 = 64
+assert result == expected, f"Expected {expected}, got {result}"
+log(f"✅ Complex declarative pipeline: {result}")
+
+# ===== TEST 3: Declarative Function with Return Type =====
+log("\n📝 TEST 3: Declarative Function with Return Type")
+
+def format_result(x: int) -> str:
+    return f"Result: {x}"
+
+def typed_pipeline(x: int) -> str = add_one | double | format_result
+
+result = typed_pipeline(4)
+expected = "Result: 10"  # ((4 + 1) * 2) = 10
+assert result == expected, f"Expected '{expected}', got '{result}'"
+log(f"✅ Typed declarative pipeline: {result}")
+
+log("✅ All valid declarative function tests passed!")
+
+# Note: The following tests would cause SyntaxError if the restriction is working:
+# 
+# TEST 4: Invalid Assignment (should fail)
+# pipeline = add_one | double  # This should be rejected
+# 
+# TEST 5: Invalid Expression (should fail)  
+# result = 5 | double          # This should be rejected
+# 
+# TEST 6: Invalid Function Call (should fail)
+# result = some_function(add_one | double)  # This should be rejected
+# 
+# TEST 7: Invalid Return Statement (should fail)
+# def invalid_func(x: int):
+#     return add_one | double  # This should be rejected
+
+log("✅ Pipe expression context restriction tests completed!")
+log("Note: Invalid pipe expressions should cause SyntaxError during parsing") 

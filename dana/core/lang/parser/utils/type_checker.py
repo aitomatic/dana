@@ -40,6 +40,7 @@ from dana.core.lang.ast import (
     ImportStatement,
     ListLiteral,
     LiteralExpression,
+    MethodDefinition,
     Parameter,
     PassStatement,
     Program,
@@ -153,6 +154,8 @@ class TypeChecker:
             self.check_try_block(statement)
         elif isinstance(statement, FunctionDefinition):
             self.check_function_definition(statement)
+        elif isinstance(statement, MethodDefinition):
+            self.check_method_definition(statement)
         elif isinstance(statement, StructDefinition):
             self.check_struct_definition(statement)
         elif isinstance(statement, ImportStatement):
@@ -175,6 +178,9 @@ class TypeChecker:
             pass
         elif isinstance(statement, LiteralExpression):
             # Literal expressions as statements (e.g., standalone None) have no type implications
+            pass
+        elif isinstance(statement, DictLiteral):
+            # Dictionary literals as statements (e.g., standalone {...}) have no type implications
             pass
         else:
             raise TypeError(f"Unsupported statement type: {type(statement).__name__}", statement)
@@ -364,6 +370,57 @@ class TypeChecker:
                     self.environment.set(name, DanaType("any"))
 
         # Check the function body
+        for statement in node.body:
+            self.check_statement(statement)
+
+        # Restore the parent environment
+        self.environment = self.environment.parent or TypeEnvironment()
+
+    def check_method_definition(self, node: MethodDefinition) -> None:
+        """Check a method definition for type errors."""
+        # Create a new scope for the method
+        self.environment = TypeEnvironment(self.environment)
+
+        # Add receiver parameter to the environment
+        receiver = node.receiver
+        if isinstance(receiver, Parameter):
+            param_name = receiver.name
+            if ":" not in param_name and "." not in param_name:
+                param_name = f"local:{param_name}"
+
+            # Use type hint if available, otherwise default to 'any'
+            if receiver.type_hint is not None:
+                param_type = DanaType.from_type_hint(receiver.type_hint)
+            else:
+                param_type = DanaType("any")
+
+            self.environment.set(param_name, param_type)
+            # Also add unscoped version for convenience
+            if ":" in param_name:
+                _, name = param_name.split(":", 1)
+                self.environment.set(name, param_type)
+
+        # Add regular parameters to the environment
+        for param in node.parameters:
+            if isinstance(param, Parameter):
+                # Handle Parameter objects with optional type hints
+                param_name = param.name
+                if ":" not in param_name and "." not in param_name:
+                    param_name = f"local:{param_name}"
+
+                # Use type hint if available, otherwise default to 'any'
+                if param.type_hint is not None:
+                    param_type = DanaType.from_type_hint(param.type_hint)
+                else:
+                    param_type = DanaType("any")
+
+                self.environment.set(param_name, param_type)
+                # Also add unscoped version for convenience
+                if ":" in param_name:
+                    _, name = param_name.split(":", 1)
+                    self.environment.set(name, param_type)
+
+        # Check the method body
         for statement in node.body:
             self.check_statement(statement)
 

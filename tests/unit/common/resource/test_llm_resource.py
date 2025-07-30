@@ -106,7 +106,7 @@ class TestLLMResource(unittest.TestCase):
         """Test token management and context window enforcement."""
         # Create a long conversation that exceeds token limits
         long_message = "This is a test message. " * 1000  # Approximately 5000 tokens
-        messages = [
+        _messages = [
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": long_message},
             {"role": "assistant", "content": "I understand your question."},

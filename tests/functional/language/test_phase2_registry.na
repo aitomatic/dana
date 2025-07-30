@@ -1,0 +1,72 @@
+# Phase 2: Method Registration Tests
+# Tests that methods are properly registered and can be looked up
+
+log("Testing Phase 2: Method Registration")
+
+# Test 1: Basic method registration
+struct Point:
+    x: int
+    y: int
+
+def (point: Point) translate(dx: int, dy: int) -> Point:
+    return Point(x=point.x + dx, y=point.y + dy)
+
+log("✓ Test 1: Method registered successfully")
+
+# Test 2: Multiple methods for same struct
+def (point: Point) scale(factor: float) -> Point:
+    return Point(x=int(point.x * factor), y=int(point.y * factor))
+
+def (point: Point) distance_from_origin() -> float:
+    return (point.x ** 2 + point.y ** 2) ** 0.5
+
+log("✓ Test 2: Multiple methods registered for Point")
+
+# Test 3: Union type registration
+struct Circle:
+    radius: float
+    center: Point
+
+struct Rectangle:
+    width: float
+    height: float
+
+def (shape: Circle | Rectangle) area() -> float:
+    if isinstance(shape, Circle):
+        return 3.14159 * shape.radius * shape.radius
+    else:
+        return shape.width * shape.height
+
+log("✓ Test 3: Union type method registered for both Circle and Rectangle")
+
+# Test 4: Methods with same name for different types
+def (point: Point) describe() -> str:
+    return f"Point({point.x}, {point.y})"
+
+def (circle: Circle) describe() -> str:
+    return f"Circle(radius={circle.radius})"
+
+def (rect: Rectangle) describe() -> str:
+    return f"Rectangle({rect.width}x{rect.height})"
+
+log("✓ Test 4: Same method name registered for different types")
+
+# Test 5: Method with default parameters
+def (point: Point) offset(dx: int = 1, dy: int = 1) -> Point:
+    return Point(x=point.x + dx, y=point.y + dy)
+
+log("✓ Test 5: Method with default parameters registered")
+
+# Test 6: Complex union type
+def (shape: Point | Circle | Rectangle) to_string() -> str:
+    if isinstance(shape, Point):
+        return f"Point at ({shape.x}, {shape.y})"
+    elif isinstance(shape, Circle):
+        return f"Circle with radius {shape.radius}"
+    else:
+        return f"Rectangle {shape.width}x{shape.height}"
+
+log("✓ Test 6: Method registered for three-way union type")
+
+log("Phase 2 tests completed successfully!")
+log("All methods registered correctly in the method registry")

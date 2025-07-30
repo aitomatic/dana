@@ -49,9 +49,9 @@ async def test_conversation_filtering_by_agent(db_session: Session):
     service = ConversationService()
 
     # Create conversations for different agents
-    convo1 = await service.create_conversation(ConversationCreate(title="Chat 1", agent_id=agent1.id), db_session)
-    convo2 = await service.create_conversation(ConversationCreate(title="Chat 2", agent_id=agent1.id), db_session)
-    convo3 = await service.create_conversation(ConversationCreate(title="Chat 3", agent_id=agent2.id), db_session)
+    _convo1 = await service.create_conversation(ConversationCreate(title="Chat 1", agent_id=agent1.id), db_session)
+    _convo2 = await service.create_conversation(ConversationCreate(title="Chat 2", agent_id=agent1.id), db_session)
+    _convo3 = await service.create_conversation(ConversationCreate(title="Chat 3", agent_id=agent2.id), db_session)
 
     # Test filtering by agent_id
     agent1_conversations = await service.list_conversations(agent_id=agent1.id, limit=100, offset=0, db_session=db_session)

@@ -67,69 +67,6 @@ class DanaIndenter(PythonIndenter):
     DEDENT_type = "_DEDENT"
 
 
-def strip_lark_trees(node):
-    """Recursively walk the AST and raise if any Lark Tree nodes are found."""
-    if isinstance(node, Tree):
-        raise TypeError(f"Lark Tree node found in AST after transformation: {node.data}")
-    elif isinstance(node, list):
-        for item in node:
-            strip_lark_trees(item)
-    elif isinstance(node, dict):
-        for v in node.values():
-            strip_lark_trees(v)
-    elif hasattr(node, "__dict__"):
-        for v in vars(node).values():
-            strip_lark_trees(v)
-    # else: primitive, fine
-    return node
-
-
-def find_tree_nodes(node, tree_nodes=None, visited=None, path=None, max_depth=100):
-    """
-    Find Lark Tree nodes in an AST structure.
-
-    Args:
-        node: The node to check
-        tree_nodes: List to collect Tree nodes found (initialized if None)
-        visited: Set of object ids already visited to prevent recursion (initialized if None)
-        path: Current path in the object graph (initialized if None)
-        max_depth: Maximum recursion depth
-
-    Returns:
-        List of (path, tree_node) tuples where tree_node is a Lark Tree
-    """
-    if tree_nodes is None:
-        tree_nodes = []
-    if visited is None:
-        visited = set()
-    if path is None:
-        path = []
-
-    # Avoid recursion and cycles
-    obj_id = id(node)
-    if obj_id in visited or len(path) > max_depth:
-        return tree_nodes
-    visited.add(obj_id)
-
-    from lark import Tree
-
-    if isinstance(node, Tree):
-        tree_nodes.append((path.copy(), node))
-    elif isinstance(node, list):
-        for i, item in enumerate(node):
-            find_tree_nodes(item, tree_nodes, visited, path + [f"[{i}]"], max_depth)
-    elif isinstance(node, dict):
-        for k, v in node.items():
-            find_tree_nodes(v, tree_nodes, visited, path + [f"[{k!r}]"], max_depth)
-    elif hasattr(node, "__dict__"):
-        for k, v in vars(node).items():
-            # Skip private attributes and methods
-            if not k.startswith("_"):
-                find_tree_nodes(v, tree_nodes, visited, path + [f".{k}"], max_depth)
-
-    return tree_nodes
-
-
 class DanaParser(Lark, Loggable):
     """Grammar-based parser for Dana language.
 
@@ -237,16 +174,6 @@ class DanaParser(Lark, Loggable):
             ast.location = Location(source=self.current_filename, line=1, column=1)
 
         self.debug(f"Successfully parsed program with {len(ast.statements)} statements")
-
-        # Check for any remaining Lark Tree nodes in the AST
-        tree_nodes = find_tree_nodes(ast)
-        if tree_nodes:
-            self.warning(f"Found {len(tree_nodes)} Lark Tree nodes in the AST after transformation:")
-            for i, (path, tree) in enumerate(tree_nodes[:5]):  # Only show first 5
-                path_str = "".join(path)
-                self.warning(f"  {i + 1}. Tree node at 'ast{path_str}' with data='{tree.data}'")
-            if len(tree_nodes) > 5:
-                self.warning(f"  ... and {len(tree_nodes) - 5} more Tree nodes")
 
         # Perform type checking if enabled and parsing was successful
         if do_type_check and ast.statements:

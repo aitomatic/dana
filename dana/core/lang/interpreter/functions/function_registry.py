@@ -394,9 +394,8 @@ class FunctionRegistry:
             if isinstance(nested_kwargs, dict):
                 func_kwargs.update(nested_kwargs)
 
-        # Remove 'context' from kwargs to avoid duplicate context parameters
-        if "context" in func_kwargs:
-            func_kwargs.pop("context")
+        # Note: User context is now handled in the unified function dispatcher
+        # to avoid parameter conflicts with the system context
 
         # Security check - must happen regardless of how the function is called
         if hasattr(metadata, "is_public") and not metadata.is_public:

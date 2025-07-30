@@ -82,6 +82,7 @@ def show_help():
     print(f"  {colors.accent('dana deploy [file.na]')}  Deploy a .na file as an agent endpoint")
     print(f"  {colors.accent('dana config')}            Configure providers and create .env file")
     print(f"  {colors.accent('dana -h, --help')}        Show this help message")
+    print(f"  {colors.accent('dana --version')}         Show version information")
     print(f"  {colors.accent('dana --debug')}           Enable debug logging")
     print(f"  {colors.accent('dana start')}             Start the Dana API server")
     print("")
@@ -215,12 +216,14 @@ def main():
 
     try:
         parser = argparse.ArgumentParser(description="DANA Command Line Interface", add_help=False)
+        parser.add_argument("--version", action="store_true", help="Show version information")
         subparsers = parser.add_subparsers(dest="subcommand")
 
         # Default/run subcommand (legacy behavior)
         parser_run = subparsers.add_parser("run", add_help=False)
         parser_run.add_argument("file", nargs="?", help="DANA file to execute (.na)")
         parser_run.add_argument("-h", "--help", action="store_true", help="Show help message")
+        parser_run.add_argument("--version", action="store_true", help="Show version information")
         parser_run.add_argument("--no-color", action="store_true", help="Disable colored output")
         parser_run.add_argument("--force-color", action="store_true", help="Force colored output")
         parser_run.add_argument("--debug", action="store_true", help="Enable debug logging")
@@ -284,6 +287,13 @@ def main():
         # Parse subcommand
         args = parser.parse_args()
 
+        # Show version if requested
+        if args.version:
+            from dana import __version__
+
+            print(f"Dana {__version__}")
+            return 0
+
         if args.subcommand == "deploy":
             return handle_deploy_command(args)
         elif args.subcommand == "start":
@@ -310,6 +320,7 @@ def handle_main_command():
     parser = argparse.ArgumentParser(description="DANA Command Line Interface", add_help=False)
     parser.add_argument("file", nargs="?", help="DANA file to execute (.na)")
     parser.add_argument("-h", "--help", action="store_true", help="Show help message")
+    parser.add_argument("--version", action="store_true", help="Show version information")
     parser.add_argument("--no-color", action="store_true", help="Disable colored output")
     parser.add_argument("--force-color", action="store_true", help="Force colored output")
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
@@ -326,6 +337,13 @@ def handle_main_command():
     # Configure debug logging
     if args.debug:
         configure_debug_logging()
+
+    # Show version if requested
+    if args.version:
+        from dana import __version__
+
+        print(f"Dana {__version__}")
+        return 0
 
     # Show help if requested
     if args.help:
