@@ -134,7 +134,7 @@ class DanaSandbox(Loggable):
                 self.info("Initializing new DanaSandbox resources")
                 self._initialize_new_resources()
 
-            # TODO: Temporarily disabled API context storage
+            # TODO(#262): Temporarily disabled API context storage
             # Store in context
             # self._context.set("system:api_client", self._api_client)
             self._context.set("system:llm_resource", self._llm_resource)
@@ -171,7 +171,7 @@ class DanaSandbox(Loggable):
 
     def _initialize_new_resources(self):
         """Initialize new resources and potentially share them"""
-        # TODO: Temporarily disabled API auto-start for development
+        # TODO(#262): Temporarily disabled API auto-start for development
         # Initialize API service
         # self._api_service = APIServiceManager()
         # self._api_service.startup()
@@ -194,7 +194,7 @@ class DanaSandbox(Loggable):
 
         self._using_shared = False
 
-        # TODO: Temporarily disabled API resource sharing
+        # TODO(#262): Temporarily disabled API resource sharing
         # Make these resources available for sharing if none exist
         # if DanaSandbox._shared_api_service is None:
         #     self.debug("Making resources available for sharing")
