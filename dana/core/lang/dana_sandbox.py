@@ -180,7 +180,7 @@ class DanaSandbox(Loggable):
         # self._api_client = self._api_service.get_client()
         # self._api_client.startup()
 
-        # Initialize LLM resource (needed for core Dana functions like reason() and set_model())
+        # Initialize LLM resource (required for core Dana functionalities involving language model operations)
         self._llm_resource = LLMResource()
         self._llm_resource.startup()
 
