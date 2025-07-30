@@ -22,16 +22,10 @@ interface ChatPaneProps {
 
 export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose, isVisible }) => {
   const { agent_id } = useParams();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: `Hello! I'm ${agentName}. How can I help you today?`,
-      sender: 'agent',
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [currentStep, setCurrentStep] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -82,6 +76,59 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Load chat history when component mounts or agent_id changes
+  useEffect(() => {
+    const loadChatHistory = async () => {
+      if (!agent_id || !isVisible) return;
+
+      setIsLoadingHistory(true);
+      try {
+        // Try to load chat history (test_chat + smart_chat)
+        const chatHistory = await apiService.getAllChatHistory(agent_id);
+
+        if (chatHistory && chatHistory.length > 0) {
+          // Convert API response to Message format and sort by timestamp
+          const historyMessages: Message[] = chatHistory
+            .map((chat: any, index: number) => ({
+              id: `history-${index}`,
+              text: chat.text,
+              sender: chat.sender as 'user' | 'agent',
+              timestamp: new Date(chat.created_at),
+            }))
+            .sort((a: any, b: any) => a.timestamp.getTime() - b.timestamp.getTime());
+
+          setMessages(historyMessages);
+        } else {
+          // No history found, show welcome message
+          setMessages([]);
+          setMessages([
+            {
+              id: 'welcome',
+              text: `Hello! I'm ${agentName}. How can I help you today?`,
+              sender: 'agent',
+              timestamp: new Date(),
+            },
+          ]);
+        }
+      } catch (error) {
+        console.error('Error loading chat history:', error);
+        // On error, show welcome message
+        setMessages([
+          {
+            id: 'welcome',
+            text: `Hello! I'm ${agentName}. How can I help you today?`,
+            sender: 'agent',
+            timestamp: new Date(),
+          },
+        ]);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+
+    loadChatHistory();
+  }, [agent_id, agentName, isVisible]);
 
   const handleSendMessage = async () => {
     if (!inputText.trim() || isLoading || !agent_id) return;
@@ -141,9 +188,8 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
 
   return (
     <div
-      className={`w-[420px] min-w-[380px] bg-white max-h-[calc(100vh-64px)] rounded-lg shadow-md overflow-y-auto flex flex-col m-2  transform transition-transform duration-300 ease-in-out z-50 ${
-        isVisible ? 'translate-x-0' : 'translate-x-full'
-      }`}
+      className={`w-[420px] min-w-[380px] bg-white max-h-[calc(100vh-64px)] rounded-lg shadow-md overflow-y-auto flex flex-col m-2  transform transition-transform duration-300 ease-in-out z-50 ${isVisible ? 'translate-x-0' : 'translate-x-full'
+        }`}
     >
       {/* Header */}
       <div className="flex justify-between items-center p-4 border-b border-gray-200">
@@ -176,37 +222,49 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
 
       {/* Messages */}
       <div className="flex overflow-y-auto flex-col flex-1 p-4 space-y-4">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <div
-              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                message.sender === 'user'
-                  ? 'bg-white text-gray-900 border border-gray-200'
-                  : 'bg-gray-100 text-gray-900'
-              }`}
-            >
-              <MarkdownViewerSmall>{message.text ?? 'Empty message'}</MarkdownViewerSmall>
-              <p className="mt-1 text-xs opacity-70">
-                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </p>
-            </div>
-          </div>
-        ))}
-        {isLoading && (
-          <div className="flex justify-start">
+        {isLoadingHistory ? (
+          <div className="flex justify-center items-center h-full">
             <div className="grid grid-cols-[max-content_1fr] gap-2 items-center">
               <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
               <div className="text-sm text-gray-700">
-                <span className="font-medium">Thinking...</span>
-                {currentStep && (
-                  <div className="mt-1 text-xs italic text-blue-600">{currentStep}</div>
-                )}
+                <span className="font-medium">Loading chat history...</span>
               </div>
             </div>
           </div>
+        ) : (
+          <>
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message.sender === 'user'
+                    ? 'bg-white text-gray-900 border border-gray-200'
+                    : 'bg-gray-100 text-gray-900'
+                    }`}
+                >
+                  <MarkdownViewerSmall>{message.text ?? 'Empty message'}</MarkdownViewerSmall>
+                  <p className="mt-1 text-xs opacity-70">
+                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              </div>
+            ))}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="grid grid-cols-[max-content_1fr] gap-2 items-center">
+                  <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
+                  <div className="text-sm text-gray-700">
+                    <span className="font-medium">Thinking...</span>
+                    {currentStep && (
+                      <div className="mt-1 text-xs italic text-blue-600">{currentStep}</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
         <div ref={messagesEndRef} />
       </div>

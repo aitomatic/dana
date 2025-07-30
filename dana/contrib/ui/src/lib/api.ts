@@ -643,6 +643,16 @@ class ApiService {
     return response.data; // Should be an array of { sender, text }
   }
 
+  async getTestChatHistory(agentId: string | number) {
+    const response = await this.client.get(`/agents/${agentId}/chat-history?type=test_chat`);
+    return response.data; // Should be an array of { sender, text, created_at }
+  }
+
+  async getAllChatHistory(agentId: string | number) {
+    const response = await this.client.get(`/agents/${agentId}/chat-history?type=all`);
+    return response.data; // Should be an array of { sender, text, type, created_at }
+  }
+
   async getDomainKnowledge(agentId: string | number): Promise<DomainKnowledgeResponse> {
     const response = await this.client.get(`/agents/${agentId}/domain-knowledge`);
     return response.data; // Returns domain knowledge tree or { message: "No domain knowledge found" }

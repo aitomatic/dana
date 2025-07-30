@@ -1454,6 +1454,46 @@ async def test_agent_by_id(agent_id: str, request: dict, db: Session = Depends(g
         # Call the existing test_agent function
         result = await test_agent(test_request)
 
+        # Save chat history to database if the test was successful
+        if result.success and result.agent_response:
+            try:
+                # Convert agent_id to int if it's a numeric string (for database agents)
+                actual_agent_id = None
+                if agent_id.isdigit():
+                    actual_agent_id = int(agent_id)
+                else:
+                    # For prebuilt agents, we don't save to chat history since they don't have DB records
+                    logger.info(f"Skipping chat history for prebuilt agent: {agent_id}")
+                
+                if actual_agent_id:
+                    from dana.api.core.models import AgentChatHistory
+                    
+                    # Save user message
+                    user_chat = AgentChatHistory(
+                        agent_id=actual_agent_id,
+                        sender="user",
+                        text=message,
+                        type="test_chat"
+                    )
+                    db.add(user_chat)
+                    
+                    # Save agent response
+                    agent_chat = AgentChatHistory(
+                        agent_id=actual_agent_id,
+                        sender="agent",
+                        text=result.agent_response,
+                        type="test_chat"
+                    )
+                    db.add(agent_chat)
+                    
+                    db.commit()
+                    logger.info(f"Saved test chat history for agent {actual_agent_id}")
+                    
+            except Exception as chat_error:
+                logger.error(f"Failed to save chat history: {chat_error}")
+                # Don't fail the request if chat history saving fails
+                db.rollback()
+
         return {
             "success": result.success,
             "agent_response": result.agent_response,
