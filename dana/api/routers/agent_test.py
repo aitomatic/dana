@@ -186,6 +186,10 @@ async def _execute_folder_based_agent(
                         response_text = result.output.strip()
 
                     return response_text
+                except Exception as e:
+                    logger.error(f"Error: {e}")
+                    logger.exception(e)
+                    return None
                     
                 finally:
                     # Clean up the context to prevent state leakage
