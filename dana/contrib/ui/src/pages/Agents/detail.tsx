@@ -5,6 +5,9 @@ import { AgentPerformanceComparisonModal } from './AgentPerformanceComparisonMod
 import { AgentDetailHeader } from './AgentDetailHeader';
 import { AgentDetailSidebar } from './AgentDetailSidebar';
 import { AgentDetailTabs } from './AgentDetailTabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { XIcon } from 'lucide-react';
 
 // Mock template data
 export const TEMPLATES = [
@@ -83,6 +86,7 @@ export default function AgentDetailPage() {
   const { fetchAgent, isLoading, error } = useAgentStore();
   const [agent, setAgent] = useState<any>(null);
   const [showComparison, setShowComparison] = useState(false);
+  const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   // LIFTED TAB STATE
   const [activeTab, setActiveTab] = useState('Overview');
 
@@ -132,8 +136,8 @@ export default function AgentDetailPage() {
       <AgentDetailHeader
         onBack={() => navigate('/agents')}
         title="Train Your Agent"
-        onDeploy={() => {}}
-        onCancel={() => navigate('/agents')}
+        onDeploy={() => navigate('/agents')}
+        onCancel={() => setShowCancelConfirmation(true)}
       />
       <div className="grid grid-cols-[max-content_1fr] flex-1 w-full h-full">
         <AgentDetailSidebar />
@@ -148,6 +152,72 @@ export default function AgentDetailPage() {
         open={showComparison}
         onClose={() => setShowComparison(false)}
       />
+
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={showCancelConfirmation} onOpenChange={setShowCancelConfirmation}>
+        <DialogContent className="sm:max-w-md" showCloseButton={false}>
+          <div className="grid grid-cols-[1fr_max-content] items-center">
+            <div className="bg-[#FEF0C7] p-2 rounded-full max-w-max">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <path
+                  d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+                  stroke="#F79009"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M9 9C9 5.49997 14.5 5.5 14.5 9C14.5 11.5 12 10.9999 12 13.9999"
+                  stroke="#F79009"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M12 18.01L12.01 17.9989"
+                  stroke="#F79009"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+            <XIcon
+              className="text-gray-700 cursor-pointer"
+              onClick={() => setShowCancelConfirmation(false)}
+            />
+          </div>
+          <DialogDescription className="flex flex-col gap-2">
+            <div className="text-lg font-semibold text-gray-900">
+              Save your trained agent before exiting?
+            </div>
+            <div className="text-sm text-gray-600 mb-4">
+              You're about to leave the agent creation process. If you exit now, all your current
+              configurations will be lost.
+            </div>
+          </DialogDescription>
+          <DialogFooter className="grid grid-cols-2 gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setShowCancelConfirmation(false)}>
+              Discard & Exit
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => {
+                setShowCancelConfirmation(false);
+                navigate('/agents');
+              }}
+            >
+              Save & Exit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

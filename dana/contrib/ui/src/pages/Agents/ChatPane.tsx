@@ -5,6 +5,7 @@ import { useParams } from 'react-router-dom';
 import { apiService } from '@/lib/api';
 import { MarkdownViewerSmall } from './chat/markdown-viewer';
 import { useVariableUpdates } from '@/hooks/useVariableUpdates';
+import { getAgentAvatarSync } from '@/utils/avatar';
 
 interface Message {
   id: string;
@@ -140,13 +141,31 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
 
   return (
     <div
-      className={`w-[420px] min-w-[380px] bg-white max-h-[calc(100vh-64px)] rounded-lg shadow-md overflow-y-auto flex flex-col m-2 bg-gray-50 transform transition-transform duration-300 ease-in-out z-50 ${
+      className={`w-[420px] min-w-[380px] bg-white max-h-[calc(100vh-64px)] rounded-lg shadow-md overflow-y-auto flex flex-col m-2  transform transition-transform duration-300 ease-in-out z-50 ${
         isVisible ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
       {/* Header */}
       <div className="flex justify-between items-center p-4 border-b border-gray-200">
-        <h3 className="font-semibold text-gray-900">Chat with {agentName}</h3>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center">
+            <img
+              src={getAgentAvatarSync(parseInt(agent_id || '0'))}
+              alt={`${agentName} avatar`}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback to colored circle if image fails to load
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const parent = target.parentElement;
+                if (parent) {
+                  parent.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-pink-400 to-purple-400 flex items-center justify-center text-white text-sm font-bold">${agentName?.[0] || 'A'}</div>`;
+                }
+              }}
+            />
+          </div>
+          <h3 className="font-semibold text-gray-900">{agentName}</h3>
+        </div>
         <button
           onClick={onClose}
           className="p-1 text-gray-400 transition-colors cursor-pointer hover:text-gray-600"
@@ -170,29 +189,30 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
               }`}
             >
               <MarkdownViewerSmall>{message.text ?? 'Empty message'}</MarkdownViewerSmall>
-              <p className="mt-1 text-xs opacity-70">{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+              <p className="mt-1 text-xs opacity-70">
+                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
             </div>
           </div>
         ))}
         {isLoading && (
           <div className="flex justify-start">
-              <div className="flex items-center space-x-2">
+            <div className="grid grid-cols-[max-content_1fr] gap-2 items-center">
               <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
-                <div className="text-sm text-gray-700">
-                  <span className="font-medium">Thinking...</span>
-                  {currentStep && (
-                    <div className="mt-1 text-xs italic text-blue-600">{currentStep}</div>
-                  )}
-                </div>
+              <div className="text-sm text-gray-700">
+                <span className="font-medium">Thinking...</span>
+                {currentStep && (
+                  <div className="mt-1 text-xs italic text-blue-600">{currentStep}</div>
+                )}
               </div>
-        
+            </div>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}
-      <div className="p-4  ">
+      <div className="p-4">
         <div className="flex relative">
           <textarea
             value={inputText}
@@ -205,16 +225,15 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
             disabled={isLoading}
           />
           {inputText.trim() && (
-              <button
-                onClick={handleSendMessage}
-                className="absolute bottom-3 bg-gray-700 right-4 p-2 rounded-full text-white hover:text-blue-600 transition-colors"
-                title="Send message"
-                disabled={isLoading}
-              >
-                <ArrowUp className="w-4 h-4" strokeWidth={1.5} />
-              </button>
-            )}
-          
+            <button
+              onClick={handleSendMessage}
+              className="absolute bottom-3 right-4 p-2 text-white bg-gray-700 rounded-full transition-colors hover:text-blue-600"
+              title="Send message"
+              disabled={isLoading}
+            >
+              <ArrowUp className="w-4 h-4" strokeWidth={1.5} />
+            </button>
+          )}
         </div>
       </div>
     </div>

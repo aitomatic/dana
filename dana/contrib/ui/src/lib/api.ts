@@ -17,7 +17,7 @@ import type { DomainKnowledgeResponse } from '@/types/domainKnowledge';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
-const API_TIMEOUT = 300000; // 5 minutes
+const API_TIMEOUT = 3000000; // 5 minutes
 
 // API Response Types
 export interface ApiResponse<T = any> {
@@ -205,15 +205,11 @@ export interface CodeFixResponse {
   error?: string;
 }
 
-
-
 // Phase 2 specific schemas
 export interface AgentCodeGenerationRequest {
   agent_id: number;
   multi_file?: boolean;
 }
-
-
 
 // Agent Test API Types
 export interface AgentTestRequest {
@@ -432,7 +428,6 @@ class ApiService {
     return response.data;
   }
 
-
   // File Operations API Methods
   async openFileLocation(filePath: string): Promise<{ success: boolean; message: string }> {
     const encodedPath = encodeURIComponent(filePath);
@@ -478,11 +473,10 @@ class ApiService {
   // Agent Generation API Methods
   async generateAgent(request: AgentGenerationRequest): Promise<AgentGenerationResponse> {
     const response = await this.client.post<AgentGenerationResponse>('/agents/generate', request, {
-      timeout: 300000,
+      timeout: API_TIMEOUT,
     });
     return response.data;
   }
-
 
   // Phase 2: Code generation from existing description
   async generateAgentCode(
@@ -493,7 +487,7 @@ class ApiService {
       `/agents/${agentId}/generate-code`,
       request,
       {
-        timeout: 300000,
+        timeout: 3000000,
       },
     );
     return response.data;
@@ -531,13 +525,9 @@ class ApiService {
     const response = await this.client.post<AgentGenerationResponse>(
       '/agents/generate-from-prompt',
       request,
-      {
-        timeout: 3000000,
-      },
     );
     return response.data;
   }
-
 
   // Chat API Methods
   async chatWithAgent(request: ChatRequest): Promise<ChatResponse> {
@@ -548,7 +538,7 @@ class ApiService {
   // Agent Test API Methods
   async testAgent(request: AgentTestRequest): Promise<AgentTestResponse> {
     const response = await this.client.post<AgentTestResponse>('/agent-test/', request, {
-      timeout: 300000,
+      timeout: 3000000,
     });
     return response.data;
   }
@@ -674,7 +664,10 @@ class ApiService {
     return response.data;
   }
 
-  async getAgentFileContent(agentId: number, filePath: string): Promise<{
+  async getAgentFileContent(
+    agentId: number,
+    filePath: string,
+  ): Promise<{
     content: string;
     encoding: string;
     file_path: string;
@@ -686,7 +679,12 @@ class ApiService {
     return response.data;
   }
 
-  async updateAgentFileContent(agentId: number, filePath: string, content: string, encoding: string = 'utf-8'): Promise<{
+  async updateAgentFileContent(
+    agentId: number,
+    filePath: string,
+    content: string,
+    encoding: string = 'utf-8',
+  ): Promise<{
     success: boolean;
     message: string;
     file_path: string;
@@ -695,7 +693,7 @@ class ApiService {
     const encodedPath = encodeURIComponent(filePath);
     const response = await this.client.put(`/agents/${agentId}/files/${encodedPath}`, {
       content,
-      encoding
+      encoding,
     });
     return response.data;
   }
@@ -710,7 +708,10 @@ class ApiService {
     return response.data;
   }
 
-  async getTopicKnowledgeContent(agentId: string | number, topicPath: string): Promise<{
+  async getTopicKnowledgeContent(
+    agentId: string | number,
+    topicPath: string,
+  ): Promise<{
     success: boolean;
     topic_path: string;
     content?: any;
@@ -718,11 +719,18 @@ class ApiService {
     file_path?: string;
   }> {
     const encodedTopicPath = encodeURIComponent(topicPath);
-    const response = await this.client.get(`/agents/${agentId}/knowledge-content/${encodedTopicPath}`);
+    const response = await this.client.get(
+      `/agents/${agentId}/knowledge-content/${encodedTopicPath}`,
+    );
     return response.data;
   }
 
-  async testAgentById(agentId: string | number, message: string, context?: Record<string, any>, websocket_id?: string): Promise<{
+  async testAgentById(
+    agentId: string | number,
+    message: string,
+    context?: Record<string, any>,
+    websocket_id?: string,
+  ): Promise<{
     success: boolean;
     agent_response: string;
     error?: string;
@@ -732,9 +740,7 @@ class ApiService {
     const response = await this.client.post(`/agents/${agentId}/test`, {
       message,
       context: context || { user_id: 'test_user', session_id: 'chat_session' },
-      websocket_id
-    }, {
-      timeout: 300000, // 5 minutes timeout for agent testing
+      websocket_id,
     });
     return response.data;
   }
@@ -747,7 +753,9 @@ class ApiService {
 
   // Clone agent from prebuilt agent
   async cloneAgentFromPrebuilt(prebuiltKey: string): Promise<AgentRead> {
-    const response = await this.client.post<AgentRead>('/agents/from-prebuilt', { prebuilt_key: prebuiltKey });
+    const response = await this.client.post<AgentRead>('/agents/from-prebuilt', {
+      prebuilt_key: prebuiltKey,
+    });
     return response.data;
   }
 }

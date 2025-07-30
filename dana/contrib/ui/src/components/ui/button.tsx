@@ -9,7 +9,7 @@ const buttonVariants = tv({
   variants: {
     variant: {
       default:
-        'bg-brand-600 text-white  focus-visible:ring-brand-200 dark:focus-visible:ring-brand-800',
+        'bg-brand-600 text-white  focus-visible:ring-brand-200 dark:focus-visible:ring-brand-800 hover:bg-brand-700 hover:shadow-md',
       destructive:
         'bg-error-600 text-white  hover:bg-error-700 focus-visible:ring-error-200 dark:focus-visible:ring-error-800 dark:bg-error-600',
       outline:

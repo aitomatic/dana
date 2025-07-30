@@ -9,17 +9,29 @@ interface AgentDetailHeaderProps {
   onCancel?: () => void;
 }
 
-export const AgentDetailHeader: React.FC<AgentDetailHeaderProps> = ({ onBack, title, onDeploy, onCancel }) => (
-  <div className="flex items-center justify-between px-8 py-4 border-b bg-white" style={{ minHeight: 64 }}>
-    <div className='flex items-center gap-2 cursor-pointer ' onClick={onBack}>
-      <ArrowLeft className='w-4 h-4' />
-      <div className='font-semibold text-gray-700'>{title}</div>
+export const AgentDetailHeader: React.FC<AgentDetailHeaderProps> = ({
+  onBack,
+  title,
+  onDeploy,
+  onCancel,
+}) => (
+  <div
+    className="flex justify-between items-center px-6 py-4 bg-white border-b"
+    style={{ minHeight: 64 }}
+  >
+    <div className="flex gap-1 items-center cursor-pointer" onClick={onBack}>
+      <div className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
+        <ArrowLeft className="w-4 h-4" />
+      </div>
+      <div className="font-semibold text-gray-700">{title}</div>
     </div>
-    <div className='flex items-center gap-4'>
-      <div className='text-gray-500 text-sm cursor-pointer' onClick={onCancel}>Cancel</div>
-      <Button size="sm" onClick={onDeploy}>
-        Deploy
+    <div className="flex items-center">
+      <Button variant="ghost" className="text-sm text-gray-500 cursor-pointer px-4 py-1 font-medium" onClick={onCancel}>
+        Cancel
+      </Button>
+      <Button variant="default" className='px-4 py-1 font-medium' onClick={onDeploy}>
+        Save
       </Button>
     </div>
   </div>
-); 
+);

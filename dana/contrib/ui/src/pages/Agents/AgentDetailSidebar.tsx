@@ -7,6 +7,7 @@ import { useAgentStore } from '@/stores/agent-store';
 import { Plus } from 'lucide-react';
 import { ArrowUp } from 'iconoir-react';
 import { MarkdownViewerSmall } from './chat/markdown-viewer';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
   // Custom scrollbar styles
@@ -181,7 +182,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
       <style>{scrollbarStyles}</style>
       <div className="flex overflow-y-auto flex-col h-full group">
         <div
-          className="flex overflow-y-auto flex-col flex-1 gap-2 p-4 custom-scrollbar"
+          className="flex overflow-y-auto flex-col flex-1 gap-2 py-2 px-2 custom-scrollbar"
           style={{
             scrollbarWidth: 'thin',
             scrollbarColor: 'transparent transparent',
@@ -242,16 +243,22 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
                 target.style.height = Math.min(target.scrollHeight, 120) + 'px';
               }}
             />
-            <button
-              onClick={handleFileUpload}
-              className="absolute bottom-3 left-3 p-1 text-gray-400"
-              title="Add files"
-              disabled={loading}
-            >
-              <div className="flex justify-center items-center p-2 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-200 cursor-pointer">
-                <Plus className="w-4 h-4" />
-              </div>
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleFileUpload}
+                  className="absolute bottom-3 left-3 p-1 text-gray-400"
+                  disabled={loading}
+                >
+                  <div className="flex justify-center items-center p-2 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-200 cursor-pointer">
+                    <Plus className="w-4 h-4" />
+                  </div>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Add files</p>
+              </TooltipContent>
+            </Tooltip>
             {input.trim() && (
               <button
                 onClick={sendMessage}
@@ -278,7 +285,7 @@ export const AgentDetailSidebar: React.FC = () => {
           <img className="w-10 h-10 rounded-full" src={DanaAvatar} alt="Dana avatar" />
           <div>
             <div className="font-semibold text-gray-900">Dana</div>
-            <div className="text-xs text-gray-500">Agent builder assistant</div>
+            <div className="text-sm text-gray-500">Agent builder assistant</div>
           </div>
         </div>
         <div className="flex overflow-y-auto flex-col flex-1">
