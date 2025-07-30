@@ -5,7 +5,10 @@ This module provides the AgentPool class for managing multiple A2A agents and se
 the most appropriate agent for a given task based on skills.
 """
 
-from dana.agent.abstract_dana_agent import AbstractDanaAgent
+# TODO: Update to use new agent struct system
+# from dana.agent.abstract_dana_agent import AbstractDanaAgent
+from typing import Any
+
 from dana.common.resource.base_resource import BaseResource
 from dana.core.lang.sandbox_context import SandboxContext
 
@@ -19,7 +22,7 @@ class AgentPool(BaseResource):
         self,
         name: str,
         description: str | None = None,
-        agents: list[AbstractDanaAgent] | None = None,
+        agents: list | None = None,  # TODO: Type as AgentStructInstance
         exclude_self: bool = False,
         context: SandboxContext | None = None,
     ):
@@ -35,7 +38,7 @@ class AgentPool(BaseResource):
             ValueError: If neither agent_configs nor agents is provided
         """
         super().__init__(name, description)
-        self.agents: dict[str, AbstractDanaAgent] = {}
+        self.agents: dict[str, Any] = {}  # TODO: Type as AgentStructInstance
         self._selector = None
         self.context = context
         self.exclude_self = exclude_self
@@ -63,7 +66,7 @@ class AgentPool(BaseResource):
         """
         return list(self.agents.keys())
 
-    def get_agent(self, name: str) -> AbstractDanaAgent:
+    def get_agent(self, name: str) -> Any:  # TODO: Return AgentStructInstance
         """Get an agent by name.
 
         Args:
@@ -81,7 +84,7 @@ class AgentPool(BaseResource):
 
     def select_agent(
         self, task: any, strategy: str = "llm", included_resources: list[str | BaseResource] | None = None
-    ) -> AbstractDanaAgent | None:
+    ) -> Any | None:  # TODO: Return AgentStructInstance | None
         """Select an agent based on task requirements.
 
         Args:
@@ -119,7 +122,7 @@ class AgentPool(BaseResource):
         for agent in self.agents.values():
             agent.refresh_agent_card()
 
-    def add_agent(self, agent: AbstractDanaAgent) -> None:
+    def add_agent(self, agent: Any) -> None:  # TODO: Accept AgentStructInstance
         """Add an agent to the pool.
 
         Args:

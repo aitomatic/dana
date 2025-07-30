@@ -12,6 +12,8 @@ import json
 import os
 from typing import Any
 
+# Import new agent system
+from dana.agent import AgentStructInstance
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.queryable import QueryStrategy
 from dana.common.resource.llm.llm_resource import LLMResource
@@ -97,7 +99,6 @@ def old_reason_function(
     if actual_agents is not None:
         try:
             # Check if agents is an A2AAgent, AgentPool, or list of agents
-            from dana.agent.abstract_dana_agent import AbstractDanaAgent
             from dana.integrations.agent_to_agent.pool import AgentPool
 
             agent_pool = None
@@ -107,7 +108,7 @@ def old_reason_function(
                 agent_pool = actual_agents
                 logger.info(f"Using DANA agent pool for reasoning with {len(actual_agents.get_agent_cards())} agents")
 
-            elif isinstance(actual_agents, AbstractDanaAgent):
+            elif isinstance(actual_agents, AgentStructInstance):
                 # Single agent: create a temporary pool with just this agent
                 agent_pool = AgentPool(
                     name="temp_pool_single_agent",
@@ -119,7 +120,7 @@ def old_reason_function(
 
             elif isinstance(actual_agents, list):
                 # List of agents: create a temporary pool
-                if all(isinstance(agent, AbstractDanaAgent) for agent in actual_agents):
+                if all(isinstance(agent, AgentStructInstance) for agent in actual_agents):
                     agent_pool = AgentPool(
                         name="temp_pool_multiple_agents",
                         description="Temporary pool for multiple agent reasoning",
@@ -128,11 +129,11 @@ def old_reason_function(
                     )
                     logger.info(f"Using DANA agent list for reasoning with {len(actual_agents)} agents")
                 else:
-                    logger.warning("Invalid agents list: all items must be AbstractDanaAgent instances")
+                    logger.warning("Invalid agents list: all items must be AgentStructInstance instances")
 
             else:
                 logger.warning(
-                    f"Invalid agents parameter type: {type(actual_agents)}, expected AbstractDanaAgent, AgentPool, or list of AbstractDanaAgent"
+                    f"Invalid agents parameter type: {type(actual_agents)}, expected AgentStructInstance, AgentPool, or list of AgentStructInstance"
                 )
 
             # If we have a valid agent pool, select and use an agent

@@ -273,10 +273,8 @@ class ErrorUtils:
             pass
         else:
             # Check if a reserved keyword is in the previous tokens
-            reserved_keyword_in_previous = self._find_reserved_keyword_in_tokens(previous_tokens)
-            if not reserved_keyword_in_previous:
-                return None
-            token_value = reserved_keyword_in_previous
+            # For now, just return None if the token is not a reserved keyword
+            return None
 
         # Context detection
         if "EQUAL" in expected_tokens:

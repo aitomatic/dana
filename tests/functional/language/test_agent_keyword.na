@@ -1,0 +1,303 @@
+# Agent Keyword Functional Tests
+# Tests for the agent keyword and related language features
+
+# Test 1: Basic agent definition
+agent TestAgent:
+    name: str = "test_agent"
+    age: int = 25
+    skills: list = ["python", "dana"]
+
+def test_basic_agent_definition():
+    agent_instance = TestAgent()
+    
+    # Check that agent was created with correct fields
+    if agent_instance.name != "test_agent":
+        return "❌ Agent name field not set correctly"
+    if agent_instance.age != 25:
+        return "❌ Agent age field not set correctly"
+    if len(agent_instance.skills) != 2:
+        return "❌ Agent skills field not set correctly"
+    
+    return "✅ Basic agent definition works"
+
+# Test 2: Agent with custom fields
+agent CustomAgent:
+    role: str = "developer"
+    experience_years: int = 5
+    is_active: bool = true
+    preferences: dict = {"language": "python", "framework": "dana"}
+
+def test_custom_agent_fields():
+    agent_instance = CustomAgent()
+    
+    # Check custom field types and values
+    if agent_instance.role != "developer":
+        return "❌ Custom agent role field not set correctly"
+    if agent_instance.experience_years != 5:
+        return "❌ Custom agent experience field not set correctly"
+    if agent_instance.is_active != true:
+        return "❌ Custom agent boolean field not set correctly"
+    if agent_instance.preferences.get("language") != "python":
+        return "❌ Custom agent dict field not set correctly"
+    
+    return "✅ Custom agent fields work"
+
+# Test 3: Built-in agent methods
+def test_builtin_agent_methods():
+    agent_instance = TestAgent()
+    
+    # Test plan method
+    plan_result = agent_instance.plan("analyze code quality")
+    if "planning" not in plan_result.lower():
+        return "❌ Agent plan method not working"
+    if "TestAgent" not in plan_result:
+        return "❌ Agent name not in plan result"
+    
+    # Test solve method
+    solve_result = agent_instance.solve("fix bug in module")
+    if "solving" not in solve_result.lower():
+        return "❌ Agent solve method not working"
+    if "TestAgent" not in solve_result:
+        return "❌ Agent name not in solve result"
+    
+    # Test memory methods
+    remember_result = agent_instance.remember("bug_location", "line 42")
+    if remember_result != true:
+        return "❌ Agent remember method not working"
+    
+    recall_result = agent_instance.recall("bug_location")
+    if recall_result != "line 42":
+        return "❌ Agent recall method not working"
+    
+    return "✅ Built-in agent methods work"
+
+# Test 4: Agent method dispatch
+def test_agent_method_dispatch():
+    agent_instance = TestAgent()
+    
+    # Test that method calls work through dispatch
+    result = agent_instance.plan("test task")
+    if "planning" not in result.lower():
+        return "❌ Agent method dispatch failed"
+    if "TestAgent" not in result:
+        return "❌ Agent name not in dispatch result"
+    
+    return "✅ Agent method dispatch works"
+
+# Test 5: Agent inheritance and type checking
+def test_agent_inheritance():
+    agent_instance = TestAgent()
+    
+    # Test that agent methods work (which proves inheritance)
+    try:
+        plan_result = agent_instance.plan("test task")
+        if "planning" not in plan_result.lower():
+            return "❌ Agent plan method not working"
+        
+        solve_result = agent_instance.solve("test problem")
+        if "solving" not in solve_result.lower():
+            return "❌ Agent solve method not working"
+        
+        agent_instance.remember("test_key", "test_value")
+        memory_result = agent_instance.recall("test_key")
+        if memory_result != "test_value":
+            return "❌ Agent memory methods not working"
+        
+        return "✅ Agent inheritance works"
+    except Exception as e:
+        return f"❌ Agent inheritance test failed: {e}"
+
+# Test 6: Agent memory isolation
+def test_agent_memory_isolation():
+    agent1 = TestAgent()
+    agent2 = TestAgent()
+    
+    # Store different values in each agent's memory
+    agent1.remember("shared_key", "value1")
+    agent2.remember("shared_key", "value2")
+    
+    # Check that memories are isolated
+    if agent1.recall("shared_key") != "value1":
+        return "❌ Agent 1 memory isolation failed"
+    if agent2.recall("shared_key") != "value2":
+        return "❌ Agent 2 memory isolation failed"
+    
+    return "✅ Agent memory isolation works"
+
+# Test 7: Complex agent fields
+agent ComplexAgent:
+    name: str = "complex_agent"
+    metadata: dict = {"version": "1.0", "tags": ["ai", "agent"]}
+    capabilities: list = ["planning", "solving", "learning"]
+    settings: dict = {"timeout": 30, "retries": 3, "debug": false}
+
+def test_complex_agent_fields():
+    agent_instance = ComplexAgent()
+    
+    # Test complex field types
+    if agent_instance.name != "complex_agent":
+        return "❌ Complex agent name field not set correctly"
+    if agent_instance.metadata.get("version") != "1.0":
+        return "❌ Complex agent metadata field not set correctly"
+    if len(agent_instance.capabilities) != 3:
+        return "❌ Complex agent capabilities field not set correctly"
+    if agent_instance.settings.get("timeout") != 30:
+        return "❌ Complex agent settings field not set correctly"
+    
+    return "✅ Complex agent fields work"
+
+# Test 8: Multiple agent types
+agent AgentA:
+    type: str = "type_a"
+    priority: int = 1
+
+agent AgentB:
+    type: str = "type_b"
+    priority: int = 2
+
+def test_multiple_agent_types():
+    agent_a = AgentA()
+    agent_b = AgentB()
+    
+    # Test that different agent types work independently
+    if agent_a.type != "type_a":
+        return "❌ AgentA type field not set correctly"
+    if agent_b.type != "type_b":
+        return "❌ AgentB type field not set correctly"
+    if agent_a.priority != 1:
+        return "❌ AgentA priority field not set correctly"
+    if agent_b.priority != 2:
+        return "❌ AgentB priority field not set correctly"
+    
+    # Test that both agents have working methods
+    plan_a = agent_a.plan("task for agent a")
+    plan_b = agent_b.plan("task for agent b")
+    
+    if "planning" not in plan_a.lower():
+        return "❌ AgentA plan method not working"
+    if "planning" not in plan_b.lower():
+        return "❌ AgentB plan method not working"
+    
+    return "✅ Multiple agent types work"
+
+# Test 9: Agent method chaining
+def test_agent_method_chaining():
+    agent_instance = TestAgent()
+    
+    # Test that built-in methods work correctly
+    plan_result = agent_instance.plan("complex task")
+    solve_result = agent_instance.solve("complex problem")
+    
+    if "planning" not in plan_result.lower():
+        return "❌ Plan method chaining failed"
+    if "solving" not in solve_result.lower():
+        return "❌ Solve method chaining failed"
+    
+    return "✅ Agent method chaining works"
+
+# Test 10: Agent error handling
+def test_agent_error_handling():
+    agent_instance = TestAgent()
+    
+    # Test memory operations with missing keys
+    missing_result = agent_instance.recall("nonexistent_key")
+    if missing_result != None:
+        return "❌ Agent recall with missing key should return None"
+    
+    # Test that agent methods handle errors gracefully
+    try:
+        plan_result = agent_instance.plan("test task")
+        if "planning" not in plan_result.lower():
+            return "❌ Agent plan method error handling failed"
+    except Exception as e:
+        return f"❌ Agent plan method threw unexpected error: {e}"
+    
+    return "✅ Agent error handling works"
+
+# Test 11: Agent field access
+def test_agent_field_access():
+    agent_instance = TestAgent()
+    
+    # Test direct field access
+    if agent_instance.name != "test_agent":
+        return "❌ Direct field access failed for name"
+    if agent_instance.age != 25:
+        return "❌ Direct field access failed for age"
+    if len(agent_instance.skills) != 2:
+        return "❌ Direct field access failed for skills"
+    
+    return "✅ Agent field access works"
+
+# Test 12: Agent with no default values
+agent MinimalAgent:
+    name: str
+    role: str
+
+def test_minimal_agent():
+    # Test agent with required fields (no defaults)
+    agent_instance = MinimalAgent(name="minimal", role="tester")
+    
+    if agent_instance.name != "minimal":
+        return "❌ Minimal agent name not set correctly"
+    if agent_instance.role != "tester":
+        return "❌ Minimal agent role not set correctly"
+    
+    return "✅ Minimal agent works"
+
+# Test runner function
+def run_agent_keyword_tests():
+    log("=== Agent Keyword Functional Test Suite ===")
+    
+    tests = [
+        test_basic_agent_definition,
+        test_custom_agent_fields,
+        test_builtin_agent_methods,
+        test_agent_method_dispatch,
+        test_agent_inheritance,
+        test_agent_memory_isolation,
+        test_complex_agent_fields,
+        test_multiple_agent_types,
+        test_agent_method_chaining,
+        test_agent_error_handling,
+        test_agent_field_access,
+        test_minimal_agent
+    ]
+    
+    passed = 0
+    failed = 0
+    
+    for i in range(len(tests)):
+        test = tests[i]
+        test_num = i + 1
+        
+        try:
+            result = test()
+            if result.startswith("✅"):
+                log(f"✅ Test {test_num}: {result}")
+                passed += 1
+            else:
+                log(f"❌ Test {test_num}: {result}")
+                failed += 1
+        except Exception as e:
+            log(f"❌ Test {test_num}: Exception - {e}")
+            failed += 1
+    
+    log(f"\n=== Test Summary ===")
+    log(f"Passed: {passed}")
+    log(f"Failed: {failed}")
+    log(f"Total: {len(tests)}")
+    
+    if failed == 0:
+        log("🎉 All agent keyword tests passed!")
+    else:
+        log(f"⚠️  {failed} tests failed")
+    
+    return {
+        "passed": passed,
+        "failed": failed,
+        "total": len(tests)
+    }
+
+# Execute tests
+test_results = run_agent_keyword_tests()
+test_results 
