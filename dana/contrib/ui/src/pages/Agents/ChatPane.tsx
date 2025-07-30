@@ -150,7 +150,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center">
             <img
-              src={getAgentAvatarSync(parseInt(agent_id || '0'))}
+              src={getAgentAvatarSync(agent_id || '0')}
               alt={`${agentName} avatar`}
               className="w-full h-full object-cover"
               onError={(e) => {

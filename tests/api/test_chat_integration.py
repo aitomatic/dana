@@ -296,7 +296,7 @@ class TestChatIntegration:
             "/api/chat/",
             json={
                 "message": "Hello",
-                "agent_id": "not_a_number"
+                "agent_id": "invalid@agent#id"
             }
         )
         assert response.status_code == 422

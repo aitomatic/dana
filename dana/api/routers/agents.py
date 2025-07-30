@@ -1337,15 +1337,15 @@ async def get_agent_knowledge_status(agent_id: int, db: Session = Depends(get_db
 
 
 @router.post("/{agent_id}/test")
-async def test_agent_by_id(agent_id: int, request: dict, db: Session = Depends(get_db)):
+async def test_agent_by_id(agent_id: str, request: dict, db: Session = Depends(get_db)):
     """
     Test an agent by ID with a message.
 
-    This endpoint gets the agent details from the database by ID,
-    then runs the Dana file execution logic similar to /test-agent route.
+    This endpoint gets the agent details from the database by ID (for integer IDs)
+    or handles prebuilt agents (for string IDs), then runs the Dana file execution logic.
 
     Args:
-        agent_id: The ID of the agent to test
+        agent_id: The ID of the agent to test (integer for DB agents, string for prebuilt)
         request: Dict containing 'message' and optional context
         db: Database session
 
@@ -1358,15 +1358,73 @@ async def test_agent_by_id(agent_id: int, request: dict, db: Session = Depends(g
         if not message:
             raise HTTPException(status_code=400, detail="Message is required")
 
-        # Get the agent from database
-        agent = db.query(Agent).filter(Agent.id == agent_id).first()
-        if not agent:
-            raise HTTPException(status_code=404, detail="Agent not found")
+        agent_name = None
+        agent_description = None
+        folder_path = None
 
-        # Extract agent details
-        agent_name = agent.name
-        agent_description = agent.description or "A Dana agent"
-        folder_path = agent.config.get("folder_path") if agent.config else None
+        # Handle both integer and string agent IDs
+        if agent_id.isdigit():
+            # Handle regular agent (integer ID)
+            agent_id_int = int(agent_id)
+            agent = db.query(Agent).filter(Agent.id == agent_id_int).first()
+            if not agent:
+                raise HTTPException(status_code=404, detail="Agent not found")
+
+            # Extract agent details
+            agent_name = agent.name
+            agent_description = agent.description or "A Dana agent"
+            folder_path = agent.config.get("folder_path") if agent.config else None
+        else:
+            # Handle prebuilt agent (string ID)
+            logger.info(f"Testing prebuilt agent: {agent_id}")
+            
+            # Load prebuilt agents list
+            assets_path = (
+                Path(__file__).parent.parent / "server" / "assets" / "prebuilt_agents.json"
+            )
+            
+            try:
+                with open(assets_path, "r", encoding="utf-8") as f:
+                    prebuilt_agents = json.load(f)
+                
+                prebuilt_agent = next(
+                    (a for a in prebuilt_agents if a["key"] == agent_id), None
+                )
+                
+                if not prebuilt_agent:
+                    raise HTTPException(status_code=404, detail="Prebuilt agent not found")
+                
+                agent_name = prebuilt_agent["name"]
+                agent_description = prebuilt_agent.get("description", "A prebuilt Dana agent")
+                
+                # Check if prebuilt agent folder exists in assets
+                prebuilt_folder = (
+                    Path(__file__).parent.parent / "server" / "assets" / agent_id
+                )
+                
+                if not prebuilt_folder.exists():
+                    raise HTTPException(
+                        status_code=404, 
+                        detail=f"Prebuilt agent folder '{agent_id}' not found"
+                    )
+                
+                # Create agents directory if it doesn't exist
+                agents_dir = Path("agents")
+                agents_dir.mkdir(exist_ok=True)
+                
+                # Target folder in agents directory
+                target_folder = agents_dir / agent_id
+                
+                # Copy prebuilt folder to agents directory if not already there
+                if not target_folder.exists():
+                    shutil.copytree(prebuilt_folder, target_folder)
+                    logger.info(f"Copied prebuilt agent '{agent_id}' to {target_folder}")
+                
+                folder_path = str(target_folder)
+                
+            except (FileNotFoundError, json.JSONDecodeError) as e:
+                logger.error(f"Error loading prebuilt agents: {e}")
+                raise HTTPException(status_code=500, detail="Failed to load prebuilt agents")
 
         logger.info(
             f"Testing agent {agent_id} ({agent_name}) with message: '{message}'"

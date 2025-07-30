@@ -19,7 +19,14 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
   // Fetch agent data when on chat pages
   React.useEffect(() => {
     if (agent_id && location.pathname.includes('/chat')) {
-      fetchAgent(parseInt(agent_id)).catch(console.error);
+      // Only fetch agent details for numeric IDs (regular agents)
+      // Prebuilt agents with string IDs will be handled differently
+      if (!isNaN(Number(agent_id))) {
+        fetchAgent(parseInt(agent_id)).catch(console.error);
+      } else {
+        // For prebuilt agents, skip the fetch since they don't exist in the regular agents API
+        console.log('Prebuilt agent in chat:', agent_id);
+      }
     }
   }, [agent_id, location.pathname, fetchAgent]);
 

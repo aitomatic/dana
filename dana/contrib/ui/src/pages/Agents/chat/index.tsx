@@ -19,15 +19,18 @@ const AgentChat = () => {
     return savedState !== null ? JSON.parse(savedState) : true;
   });
 
+  // Check if agent_id is a prebuilt key (string) or numeric ID
+  const effectiveAgentId = agent_id; // Use the agent_id directly whether it's numeric or string
+
   const toggleSidebar = useCallback(() => {
     setIsSidebarCollapsed((prev: boolean) => !prev);
   }, []);
 
   const handleNewChat = useCallback(() => {
-    if (agent_id) {
-      navigate(`/agents/${agent_id}/chat`);
+    if (effectiveAgentId) {
+      navigate(`/agents/${effectiveAgentId}/chat`);
     }
-  }, [agent_id, navigate]);
+  }, [effectiveAgentId, navigate]);
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_COLLAPSED_KEY, JSON.stringify(isSidebarCollapsed));
@@ -43,7 +46,7 @@ const AgentChat = () => {
           )}
         >
           <div className="absolute inset-0 transition-none bg-background">
-            <ConversationsSidebar setIsSidebarCollapsed={setIsSidebarCollapsed} agentId={agent_id} />
+            <ConversationsSidebar setIsSidebarCollapsed={setIsSidebarCollapsed} agentId={effectiveAgentId} />
           </div>
         </div>
         <div
@@ -110,7 +113,7 @@ const AgentChat = () => {
                 </>
               </div>
             )}
-            <AgentChatView isSidebarCollapsed={isSidebarCollapsed} agentId={agent_id} conversationId={conversation_id} />
+            <AgentChatView isSidebarCollapsed={isSidebarCollapsed} agentId={effectiveAgentId} conversationId={conversation_id} />
           </div>
         </div>
       </div>

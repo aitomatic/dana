@@ -45,6 +45,9 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
     clearMessages,
     setError,
     clearError,
+    // Session conversation methods for prebuilt agents
+    loadSessionConversation,
+    createSessionConversation,
   } = useChatStore();
 
   // WebSocket for variable updates
@@ -79,14 +82,23 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
   // Set current agent ID when component mounts
   useEffect(() => {
     if (agentId) {
-      setCurrentAgentId(parseInt(agentId));
+      setCurrentAgentId(agentId);  // Pass agentId directly (supports both string and number)
     }
   }, [agentId, setCurrentAgentId]);
 
   // Fetch conversation if conversationId is provided
   useEffect(() => {
     console.log('Chat view: conversationId changed to:', conversationId);
-    if (conversationId) {
+    if (conversationId && agentId) {
+      // Check if this is a session conversation (starts with 'session_')
+      if (conversationId.startsWith('session_')) {
+        console.log('Loading session conversation:', conversationId);
+        if (typeof agentId === 'string') {
+          loadSessionConversation(conversationId, agentId);
+        }
+        return;
+      }
+
       // Check if this is a temporary conversation ID (very large number)
       const conversationIdNum = parseInt(conversationId);
       if (conversationIdNum > 1000000000) {
@@ -102,7 +114,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
       console.log('Clearing messages - no conversation ID');
       clearMessages();
     }
-  }, [conversationId, fetchConversation, clearMessages]);
+  }, [conversationId, agentId, fetchConversation, clearMessages, loadSessionConversation]);
 
   // Debug: Log messages when they change
   useEffect(() => {
@@ -119,21 +131,32 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
     try {
       clearError();
 
-      // If this is a new conversation, create a temporary conversation ID and navigate immediately
+      let effectiveConversationId = conversationId;
+
+      // If this is a new conversation, handle differently for prebuilt vs regular agents
       if (!conversationId) {
-        const tempConversationId = Date.now();
-        navigate(`/agents/${agentId}/chat/${tempConversationId}`);
+        if (typeof agentId === 'string') {
+          // For prebuilt agents, create a session conversation
+          const sessionId = createSessionConversation(agentId);
+          effectiveConversationId = sessionId;
+          navigate(`/agents/${agentId}/chat/${sessionId}`);
+        } else {
+          // For regular agents, create a temporary conversation ID
+          const tempConversationId = Date.now();
+          effectiveConversationId = tempConversationId.toString();
+          navigate(`/agents/${agentId}/chat/${tempConversationId}`);
+        }
       }
 
       const response = await sendMessage(
         data.message,
-        parseInt(agentId),
-        conversationId ? parseInt(conversationId) : undefined,
+        agentId,  // Pass agentId directly (supports both string and number)
+        effectiveConversationId,
         websocketId
       );
 
-      // If this was a new conversation, navigate to the actual conversation URL
-      if (!conversationId && response.conversation_id) {
+      // If this was a new conversation with a regular agent, navigate to the actual conversation URL
+      if (!conversationId && typeof agentId === 'number' && response.conversation_id) {
         navigate(`/agents/${agentId}/chat/${response.conversation_id}`);
       }
     } catch (error) {

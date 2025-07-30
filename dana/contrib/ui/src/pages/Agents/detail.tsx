@@ -92,7 +92,15 @@ export default function AgentDetailPage() {
 
   useEffect(() => {
     if (agent_id) {
-      fetchAgent(parseInt(agent_id)).then(setAgent).catch(console.error);
+      // Only fetch agent details for numeric IDs (regular agents)
+      // Prebuilt agents with string IDs will be handled differently
+      if (!isNaN(Number(agent_id))) {
+        fetchAgent(parseInt(agent_id)).then(setAgent).catch(console.error);
+      } else {
+        // For prebuilt agents, we might need to fetch different data or show different UI
+        console.log('Prebuilt agent detected:', agent_id);
+        // For now, set a placeholder or redirect to appropriate handler
+      }
     }
   }, [agent_id, fetchAgent]);
 
