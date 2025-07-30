@@ -31,11 +31,11 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
 
   // Generate unique WebSocket ID for this chat session
   const [websocketId] = useState(
-    () => `chatpane-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    () => `chatpane-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
   );
 
   // WebSocket for variable updates (console logging only)
-  const { updates } = useVariableUpdates(websocketId, {
+  const { updates, disconnect } = useVariableUpdates(websocketId, {
     maxUpdates: 50,
     autoConnect: true,
   });
@@ -129,6 +129,17 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
 
     loadChatHistory();
   }, [agent_id, agentName, isVisible]);
+
+  // Clean up WebSocket when component becomes invisible or unmounts
+  useEffect(() => {
+    if (!isVisible) {
+      disconnect();
+    }
+    // Clean up on unmount
+    return () => {
+      disconnect();
+    };
+  }, [isVisible, disconnect]);
 
   const handleSendMessage = async () => {
     if (!inputText.trim() || isLoading || !agent_id) return;

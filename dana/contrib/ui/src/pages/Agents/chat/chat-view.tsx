@@ -33,7 +33,9 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
   const [currentStep, setCurrentStep] = useState<string>('');
 
   // Generate unique WebSocket ID for this chat session
-  const [websocketId] = useState(() => `chatview-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+  const [websocketId] = useState(
+    () => `chatview-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+  );
 
   const {
     messages,
@@ -51,7 +53,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
   } = useChatStore();
 
   // WebSocket for variable updates
-  const { updates } = useVariableUpdates(websocketId, {
+  const { updates, disconnect } = useVariableUpdates(websocketId, {
     maxUpdates: 50,
     autoConnect: true,
   });
@@ -82,7 +84,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
   // Set current agent ID when component mounts
   useEffect(() => {
     if (agentId) {
-      setCurrentAgentId(agentId);  // Pass agentId directly (supports both string and number)
+      setCurrentAgentId(agentId); // Pass agentId directly (supports both string and number)
     }
   }, [agentId, setCurrentAgentId]);
 
@@ -116,13 +118,27 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
       console.log('Clearing messages - no conversation ID and not sending');
       clearMessages();
     }
-  }, [conversationId, agentId, fetchConversation, clearMessages, loadSessionConversation, isSending]);
+  }, [
+    conversationId,
+    agentId,
+    fetchConversation,
+    clearMessages,
+    loadSessionConversation,
+    isSending,
+  ]);
 
   // Debug: Log messages when they change
   useEffect(() => {
     console.log('Chat messages updated:', messages);
     console.log('Messages length:', messages?.length);
   }, [messages]);
+
+  // Clean up WebSocket on component unmount
+  useEffect(() => {
+    return () => {
+      disconnect();
+    };
+  }, [disconnect]);
 
   const onSendMessage = async (data: any) => {
     if (!agentId) {
@@ -150,19 +166,23 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
 
       const response = await sendMessage(
         data.message,
-        agentId,  // Pass agentId directly (supports both string and number)
+        agentId, // Pass agentId directly (supports both string and number)
         effectiveConversationId,
-        websocketId
+        websocketId,
       );
+
+      const responseConversationId = response.conversation_id;
+
+      const isPrebuiltAgent = isNaN(Number(agentId));
 
       // Navigate to the conversation URL after getting response
       if (!conversationId) {
-        if (typeof agentId === 'string' && effectiveConversationId) {
+        if (isPrebuiltAgent && effectiveConversationId) {
           // For prebuilt agents, navigate to session conversation
           navigate(`/agents/${agentId}/chat/${effectiveConversationId}`);
-        } else if (typeof agentId !== 'string' && response.conversation_id) {
+        } else if (!isPrebuiltAgent && responseConversationId) {
           // For regular agents, navigate to the actual conversation URL
-          navigate(`/agents/${agentId}/chat/${response.conversation_id}`);
+          navigate(`/agents/${agentId}/chat/${responseConversationId}`);
         }
       }
     } catch (error) {
@@ -183,9 +203,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
       <div className="flex relative items-center w-full h-full fade-in">
         <div className={contentClassName}>
           <div className="flex flex-col items-center">
-            <span className="text-[36px] font-medium text-gray-400">
-              How can I help you today?
-            </span>
+            <span className="text-[36px] font-medium text-gray-400">How can I help you today?</span>
           </div>
           <div className={`flex flex-col gap-2 transition-all duration-300 w-[700px]`}>
             <ChatBox
@@ -241,7 +259,11 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
                     ref={chatContainerRef}
                     className="overflow-y-auto items-center pt-2 pb-4 scrollbar-hide fade-in"
                   >
-                    <ChatSession messages={messages} isBotThinking={isSending} currentStep={currentStep} />
+                    <ChatSession
+                      messages={messages}
+                      isBotThinking={isSending}
+                      currentStep={currentStep}
+                    />
                   </div>
 
                   {/* Fixed chat box at bottom */}

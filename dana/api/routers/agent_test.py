@@ -3,6 +3,7 @@ from typing import Any
 import os
 import logging
 import asyncio
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
@@ -156,40 +157,58 @@ async def _execute_folder_based_agent(
         with ThreadPoolExecutor(max_workers=1) as executor:
 
             def run_agent_test():
-                # Create sandbox context in the thread
+                # Create a completely fresh sandbox context for each run
                 sandbox_context = SandboxContextWithNotifier(notifier=notifier)
+                
+                # Set system variables for this specific run
                 sandbox_context.set(
                     "system:user_id", str(request.context.get("user_id", "Lam"))
                 )
-                sandbox_context.set("system:session_id", "test-agent-creation")
+                sandbox_context.set("system:session_id", f"test-agent-creation-{uuid.uuid4().hex[:8]}")
                 sandbox_context.set(
                     "system:agent_instance_id", str(Path(folder_path).stem)
                 )
 
-                result = DanaSandbox.quick_run(
-                    file_path=temp_file_path, context=sandbox_context
-                )
+                try:
+                    result = DanaSandbox.quick_run(
+                        file_path=temp_file_path, context=sandbox_context
+                    )
 
-                print(f"sandbox_context: {sandbox_context.get_scope('local')}")
-                print("--------------------------------")
-                print(f"Sandbox context: {sandbox_context.get_state()}")
-                print("--------------------------------")
+                    if hasattr(result, "error"):
+                        logger.error(f"Error: {result.error}")
+                        logger.exception(result.error)
+                        
 
-                state = sandbox_context.get_state()
-                response_text = state.get("local", {}).get("response", "")
+                    state = sandbox_context.get_state()
+                    response_text = state.get("local", {}).get("response", "")
 
-                print("--------------------------------")
-                print(f"Response text: {response_text}")
-                print("--------------------------------")
+                    if not response_text and result.success and result.output:
+                        response_text = result.output.strip()
 
-                if not response_text and result.success and result.output:
-                    response_text = result.output.strip()
-
-                return response_text
+                    return response_text
+                    
+                finally:
+                    # Clean up the context to prevent state leakage
+                    sandbox_context.shutdown()
+                    
+                    # Clear global registries to prevent struct/module conflicts between runs
+                    from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+                    from dana.core.runtime.modules.core import reset_module_system
+                    
+                    StructTypeRegistry.clear()
+                    reset_module_system()
 
             result = await asyncio.get_event_loop().run_in_executor(
                 executor, run_agent_test
             )
+
+        print("--------------------------------")
+        print(f"Result: {result}")
+        print("--------------------------------")
+
+        print("--------------------------------")
+        print(f"Response text: {response_text}")
+        print("--------------------------------")
 
         if response_text or result:
             return AgentTestResponse(
@@ -371,13 +390,33 @@ async def _execute_code_based_agent(request: AgentTestRequest) -> AgentTestRespo
 
         # Run the blocking DanaSandbox.quick_run in a thread pool to avoid blocking the API
         loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(
-            None,
-            lambda: DanaSandbox.quick_run(
-                file_path=full_path,
-                context=SandboxContextWithNotifier(notifier=notifier),
-            ),
-        )
+        
+        def run_code_based_agent():
+            # Create a completely fresh sandbox context for each run
+            sandbox_context = SandboxContextWithNotifier(notifier=notifier)
+            
+            # Set system variables for this specific run
+            sandbox_context.set("system:user_id", str(request.context.get("user_id", "Lam") if request.context else "Lam"))
+            sandbox_context.set("system:session_id", f"test-agent-creation-{uuid.uuid4().hex[:8]}")
+            sandbox_context.set("system:agent_instance_id", request.agent_name or "Georgia")
+            
+            try:
+                return DanaSandbox.quick_run(
+                    file_path=full_path,
+                    context=sandbox_context,
+                )
+            finally:
+                # Clean up the context to prevent state leakage
+                sandbox_context.shutdown()
+                
+                # Clear global registries to prevent struct/module conflicts between runs
+                from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+                from dana.core.runtime.modules.core import reset_module_system
+                
+                StructTypeRegistry.clear()
+                reset_module_system()
+        
+        result = await loop.run_in_executor(None, run_code_based_agent)
 
         if not result.success:
             # Dana execution failed, use LLM fallback
