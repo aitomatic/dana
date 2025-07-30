@@ -404,6 +404,7 @@ class ExpressionExecutor(BaseExecutor):
             self.debug(f"DEBUG: Trying lambda methods in MethodRegistry for {method_name}")
             try:
                 from dana.core.lang.interpreter.struct_methods.lambda_receiver import LambdaMethodDispatcher
+
                 if LambdaMethodDispatcher.can_handle_method_call(obj, method_name):
                     self.debug("DEBUG: Found lambda method in MethodRegistry")
                     return LambdaMethodDispatcher.dispatch_method_call(obj, method_name, *args, **kwargs)
@@ -1087,52 +1088,54 @@ class ExpressionExecutor(BaseExecutor):
 
     def execute_lambda_expression(self, node: LambdaExpression, context: SandboxContext) -> Any:
         """Execute a lambda expression by creating a callable function object.
-        
+
         Args:
             node: The lambda expression to execute
             context: The execution context
-            
+
         Returns:
             A callable function object representing the lambda
         """
+
         def lambda_function(*args, **kwargs):
             """The callable function created from the lambda expression."""
             # Validate parameter compatibility if type checking is enabled
             try:
                 from dana.core.lang.type_system.lambda_types import LambdaTypeValidator
+
                 if not LambdaTypeValidator.validate_parameter_compatibility(node.parameters, list(args)):
                     raise SandboxError(f"Lambda parameter type mismatch: expected {len(node.parameters)} parameters, got {len(args)}")
             except ImportError:
                 # Type validation not available, continue without it
                 pass
-            
+
             # Create a new scope for lambda execution
-            lambda_context = context.create_child_scope()
-            
+            lambda_context = context.copy()
+
             # Handle receiver binding if present
             if node.receiver and args:
                 # Bind the first argument to the receiver
-                lambda_context.set_variable(node.receiver.name, args[0])
+                lambda_context.set(node.receiver.name, args[0])
                 args = args[1:]  # Remove the receiver from remaining args
-            
+
             # Bind parameters to arguments
             for i, param in enumerate(node.parameters):
                 if i < len(args):
-                    lambda_context.set_variable(param.name, args[i])
+                    lambda_context.set(param.name, args[i])
                 elif param.name in kwargs:
-                    lambda_context.set_variable(param.name, kwargs[param.name])
+                    lambda_context.set(param.name, kwargs[param.name])
                 # TODO: Handle default values if implemented
-            
+
             # Execute the lambda body
             try:
                 return self.parent.execute(node.body, lambda_context)
             except Exception as e:
                 raise SandboxError(f"Error executing lambda expression: {e}")
-        
+
         # Store metadata on the function for inspection
         lambda_function._dana_lambda = True
         lambda_function._dana_receiver = node.receiver
         lambda_function._dana_parameters = node.parameters
         lambda_function._dana_body = node.body
-        
+
         return lambda_function
