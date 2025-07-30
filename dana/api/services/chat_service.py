@@ -231,8 +231,8 @@ class ChatService:
             if conversation:
                 return conversation
             else:
-                # Conversation not found
-                raise ValueError(f"Conversation {chat_request.conversation_id} not found")
+                # Conversation not found, create a new one instead of raising error
+                logger.info(f"Conversation {chat_request.conversation_id} not found, creating new conversation")
 
         # Create new conversation
         conversation_data = ConversationCreate(

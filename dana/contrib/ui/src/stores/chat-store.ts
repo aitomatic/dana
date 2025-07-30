@@ -86,9 +86,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
   // Actions
   sendMessage: async (message: string, agentId: number | string, conversationId?: number | string, websocketId?: string) => {
-    set({ isSending: true, error: null });
-
-    // Immediately add user message to show it in the UI
+    // Immediately add user message to show it in the UI BEFORE setting isSending
     const { messages } = get();
     const tempUserMessage: MessageRead = {
       id: Date.now(), // Temporary ID
@@ -102,16 +100,26 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
     set({
       messages: [...messages, tempUserMessage],
+      isSending: true,
+      error: null
     });
 
     try {
       // For prebuilt agents with session IDs, don't send conversation_id to backend
       const isSessionConversation = typeof conversationId === 'string' && conversationId.startsWith('session_');
+      
+      // Handle conversation ID for request
+      let requestConversationId: number | undefined;
+      if (!isSessionConversation && conversationId) {
+        // Only send conversation_id if it's a valid number and not a session conversation
+        const numericId = typeof conversationId === 'string' ? parseInt(conversationId) : conversationId;
+        requestConversationId = !isNaN(numericId) && numericId < 1000000000 ? numericId : undefined;
+      }
 
       const request: ChatRequest = {
         message,
         agent_id: agentId,
-        conversation_id: isSessionConversation ? undefined : (conversationId as number),
+        conversation_id: requestConversationId,
         context: { user_id: 1 }, // TODO: Get from auth context
         websocket_id: websocketId,
       };
@@ -122,24 +130,29 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       // Handle both regular agents (conversation_id > 0) and prebuilt agents (conversation_id = 0)
       if (response.conversation_id !== null && response.conversation_id !== undefined) {
         const currentMessages = get().messages;
+        
+        // Update the last message (temporary user message) with proper IDs from response
+        const updatedUserMessage: MessageRead = {
+          ...currentMessages[currentMessages.length - 1], // Keep the existing user message
+          id: response.message_id || Date.now() - 1, // Update with response ID
+          conversation_id: response.conversation_id, // Update with proper conversation ID
+        };
+
+        // Create agent response message
+        const agentMessage: MessageRead = {
+          id: (response.message_id || Date.now()) + 1, // Ensure unique ID for agent message
+          conversation_id: response.conversation_id,
+          sender: 'agent',
+          content: response.agent_response,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        // Update messages: replace temp user message with updated one, add agent message
         const updatedMessages: MessageRead[] = [
-          ...currentMessages.slice(0, -1), // Remove the temporary user message
-          {
-            id: response.message_id || Date.now() - 1, // Use response ID or generate one
-            conversation_id: response.conversation_id,
-            sender: 'user',
-            content: message,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: response.message_id || Date.now(), // Use response ID or generate one
-            conversation_id: response.conversation_id,
-            sender: 'agent',
-            content: response.agent_response,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
+          ...currentMessages.slice(0, -1), // All messages except the last (temp user message)
+          updatedUserMessage, // Updated user message with proper IDs
+          agentMessage, // New agent response
         ];
 
         set({
@@ -195,16 +208,39 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
     try {
       const conversation = await apiService.getConversation(conversationId);
-      console.log('Fetched conversation:', conversation);
-      console.log('Conversation messages:', conversation.messages);
-      set({
-        selectedConversation: conversation,
-        messages: conversation.messages,
-        isLoading: false,
-      });
+      
+      if (conversation.messages && Array.isArray(conversation.messages)) {
+        set({
+          selectedConversation: conversation,
+          messages: conversation.messages,
+          isLoading: false,
+        });
+      } else {
+        set({
+          selectedConversation: conversation,
+          messages: [],
+          isLoading: false,
+        });
+      }
     } catch (error) {
+      // Check if it's a 404 error (conversation doesn't exist yet)
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as any;
+        if (axiosError.response?.status === 404) {
+          // Don't show error for 404, just set empty state
+          set({
+            selectedConversation: null,
+            messages: [],
+            isLoading: false,
+            error: null, // Don't show error for missing conversations
+          });
+          return;
+        }
+      }
+      
+      // For other errors, show the error message
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch conversation';
-      console.error('Error fetching conversation:', error);
+      console.error('Error fetching conversation:', errorMessage);
       set({
         selectedConversation: null,
         messages: [],

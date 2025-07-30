@@ -101,20 +101,22 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
 
       // Check if this is a temporary conversation ID (very large number)
       const conversationIdNum = parseInt(conversationId);
-      if (conversationIdNum > 1000000000) {
-        // Temporary ID (timestamp-based)
-        console.log('Temporary conversation ID detected, not fetching from API');
+      if (isNaN(conversationIdNum) || conversationIdNum > 1000000000) {
+        // Invalid or temporary ID (timestamp-based)
+        console.log('Invalid or temporary conversation ID detected:', conversationId);
         // Don't fetch, just keep the current messages
         return;
       }
 
       console.log('Fetching conversation:', conversationId);
       fetchConversation(conversationIdNum);
-    } else {
-      console.log('Clearing messages - no conversation ID');
+    } else if (!conversationId && !isSending) {
+      // Only clear messages if there's no conversation ID AND we're not currently sending a message
+      // This prevents clearing messages when starting a new conversation where a message is being sent
+      console.log('Clearing messages - no conversation ID and not sending');
       clearMessages();
     }
-  }, [conversationId, agentId, fetchConversation, clearMessages, loadSessionConversation]);
+  }, [conversationId, agentId, fetchConversation, clearMessages, loadSessionConversation, isSending]);
 
   // Debug: Log messages when they change
   useEffect(() => {
@@ -139,12 +141,10 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
           // For prebuilt agents, create a session conversation
           const sessionId = createSessionConversation(agentId);
           effectiveConversationId = sessionId;
-          navigate(`/agents/${agentId}/chat/${sessionId}`);
+          // Navigate AFTER sending message to avoid race condition
         } else {
-          // For regular agents, create a temporary conversation ID
-          const tempConversationId = Date.now();
-          effectiveConversationId = tempConversationId.toString();
-          navigate(`/agents/${agentId}/chat/${tempConversationId}`);
+          // For regular agents, use undefined conversation ID to let backend create one
+          effectiveConversationId = undefined;
         }
       }
 
@@ -155,9 +155,15 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
         websocketId
       );
 
-      // If this was a new conversation with a regular agent, navigate to the actual conversation URL
-      if (!conversationId && typeof agentId === 'number' && response.conversation_id) {
-        navigate(`/agents/${agentId}/chat/${response.conversation_id}`);
+      // Navigate to the conversation URL after getting response
+      if (!conversationId) {
+        if (typeof agentId === 'string' && effectiveConversationId) {
+          // For prebuilt agents, navigate to session conversation
+          navigate(`/agents/${agentId}/chat/${effectiveConversationId}`);
+        } else if (typeof agentId !== 'string' && response.conversation_id) {
+          // For regular agents, navigate to the actual conversation URL
+          navigate(`/agents/${agentId}/chat/${response.conversation_id}`);
+        }
       }
     } catch (error) {
       console.error('Failed to send message:', error);

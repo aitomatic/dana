@@ -107,21 +107,22 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
     deleteSessionConversation
   } = useChatStore();
 
+  console.log('agentId', agentId, typeof agentId);
+
   // Get session conversations for prebuilt agents
   const sessionConversations = typeof agentId === 'string' ? getSessionConversations(agentId) : [];
-  const allConversations = typeof agentId === 'string' ? sessionConversations : conversations;
+  const allConversations = (typeof agentId === 'string' && isNaN(Number(agentId))) ? sessionConversations : conversations;
 
   // Fetch conversations when agentId changes
   useEffect(() => {
     if (agentId) {
-      // Only fetch conversations for numeric agent IDs (regular agents)
-      // Prebuilt agents with string IDs may not have conversations or need different handling
-      if (!isNaN(Number(agentId))) {
-        fetchConversations(parseInt(agentId));
-      } else {
-        console.log('Prebuilt agent - conversations may not be available:', agentId);
-        // For prebuilt agents, we might skip conversation fetching or handle differently
+      // Check if this is a numeric agent ID (regular agent) vs string ID (prebuilt agent)
+      const numericAgentId = Number(agentId);
+      if (!isNaN(numericAgentId) && numericAgentId > 0) {
+        // This is a regular agent with numeric ID - fetch conversations from database
+        fetchConversations(numericAgentId);
       }
+      // For prebuilt agents (string IDs), conversations are handled via session storage
     }
   }, [agentId, fetchConversations]);
 
