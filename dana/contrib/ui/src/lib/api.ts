@@ -71,7 +71,7 @@ export interface ApiError {
 export interface ChatRequest {
   message: string;
   conversation_id?: number;
-  agent_id: number | string;  // Support both integer IDs and string keys for prebuilt agents
+  agent_id: number | string; // Support both integer IDs and string keys for prebuilt agents
   context?: Record<string, any>;
   websocket_id?: string;
 }

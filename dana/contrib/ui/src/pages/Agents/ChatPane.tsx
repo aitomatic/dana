@@ -85,7 +85,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
       setIsLoadingHistory(true);
       try {
         // Try to load chat history (test_chat + smart_chat)
-        const chatHistory = await apiService.getAllChatHistory(agent_id);
+        const chatHistory = await apiService.getTestChatHistory(agent_id);
 
         if (chatHistory && chatHistory.length > 0) {
           // Convert API response to Message format and sort by timestamp
@@ -199,24 +199,25 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
 
   return (
     <div
-      className={`w-[420px] min-w-[380px] bg-white max-h-[calc(100vh-64px)] rounded-lg shadow-md overflow-y-auto flex flex-col m-2  transform transition-transform duration-300 ease-in-out z-50 ${isVisible ? 'translate-x-0' : 'translate-x-full'
-        }`}
+      className={`w-[420px] min-w-[380px] bg-white max-h-[calc(100vh-64px)] rounded-lg shadow-md overflow-y-auto flex flex-col m-2  transform transition-transform duration-300 ease-in-out z-50 ${
+        isVisible ? 'translate-x-0' : 'translate-x-full'
+      }`}
     >
       {/* Header */}
       <div className="flex justify-between items-center p-4 border-b border-gray-200">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center">
+        <div className="flex gap-3 items-center">
+          <div className="flex overflow-hidden justify-center items-center w-8 h-8 rounded-full">
             <img
               src={getAgentAvatarSync(agent_id || '0')}
               alt={`${agentName} avatar`}
-              className="w-full h-full object-cover"
+              className="object-cover w-full h-full"
               onError={(e) => {
                 // Fallback to colored circle if image fails to load
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
                 const parent = target.parentElement;
                 if (parent) {
-                  parent.innerHTML = `<div class="w-full h-full bg-gradient-to-br from-pink-400 to-purple-400 flex items-center justify-center text-white text-sm font-bold">${agentName?.[0] || 'A'}</div>`;
+                  parent.innerHTML = `<div class="flex justify-center items-center w-full h-full text-sm font-bold text-white bg-gradient-to-br from-pink-400 to-purple-400">${agentName?.[0] || 'A'}</div>`;
                 }
               }}
             />
@@ -250,14 +251,18 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
                 className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message.sender === 'user'
-                    ? 'bg-white text-gray-900 border border-gray-200'
-                    : 'bg-gray-100 text-gray-900'
-                    }`}
+                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                    message.sender === 'user'
+                      ? 'bg-white text-gray-900 border border-gray-200'
+                      : 'bg-gray-100 text-gray-900'
+                  }`}
                 >
                   <MarkdownViewerSmall>{message.text ?? 'Empty message'}</MarkdownViewerSmall>
                   <p className="mt-1 text-xs opacity-70">
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {message.timestamp.toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
                   </p>
                 </div>
               </div>
