@@ -189,6 +189,10 @@ class AssignmentTransformer(BaseTransformer):
         # Transform the function composition expression
         composition = self._transform_function_composition(composition)
 
+        # Reset the declarative function context after processing
+        if hasattr(self, "expression_transformer") and self.expression_transformer is not None:
+            self.expression_transformer.set_declarative_function_context(False)
+
         # Create the DeclarativeFunctionDefinition node
         return DeclarativeFunctionDefinition(
             name=name,
@@ -210,15 +214,14 @@ class AssignmentTransformer(BaseTransformer):
         if not hasattr(self, "expression_transformer") or self.expression_transformer is None:
             raise AttributeError("The 'expression_transformer' attribute is not initialized.")
 
-        # Set declarative function context to allow pipe expressions
+        # Set declarative function context to allow pipe expressions and placeholders
         self.expression_transformer.set_declarative_function_context(True)
 
-        try:
-            composition = self.expression_transformer.expression([composition_tree])
-            return composition
-        finally:
-            # Reset the context after processing
-            self.expression_transformer.set_declarative_function_context(False)
+        composition = self.expression_transformer.expression([composition_tree])
+
+        # Don't reset the context here - let the caller handle it
+        # The context needs to be maintained during the entire transformation
+        return composition
 
     def _transform_parameter(self, param_tree):
         """Transform a parameter parse tree into a Parameter object."""

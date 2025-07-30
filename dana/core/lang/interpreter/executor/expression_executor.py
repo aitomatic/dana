@@ -33,6 +33,7 @@ from dana.core.lang.ast import (
     Identifier,
     ListLiteral,
     LiteralExpression,
+    NamedPipelineStage,
     ObjectFunctionCall,
     PipelineExpression,
     PlaceholderExpression,
@@ -111,8 +112,10 @@ class ExpressionExecutor(BaseExecutor):
             AttributeAccess: self.execute_attribute_access,
             SubscriptExpression: self.execute_subscript_expression,
             ObjectFunctionCall: self.execute_object_function_call,
+            NamedPipelineStage: self.execute_named_pipeline_stage,
             PlaceholderExpression: self.execute_placeholder_expression,
             PipelineExpression: self.execute_pipeline_expression,
+            FunctionCall: self.execute_function_call,
         }
 
     def execute_literal_expression(self, node: LiteralExpression, context: SandboxContext) -> Any:
@@ -341,13 +344,21 @@ class ExpressionExecutor(BaseExecutor):
 
         self.debug(f"DEBUG: Arguments: args={args}, kwargs={kwargs}")
 
-        # If the object is a struct, try to find the method in this order:
+        # If the object is a struct (including agent structs), try to find the method in this order:
         # 1. Look for a function with the method name in the scopes
         # 2. Look for a method on the struct type
         # 3. Look for a method on the object itself
+        # 4. For agent structs, look for built-in agent methods
         if hasattr(obj, "__struct_type__"):
             struct_type = obj.__struct_type__
             self.debug(f"DEBUG: Object is struct of type {struct_type}")
+
+            # Check if this is an agent struct
+            from dana.agent import AgentStructType
+
+            is_agent_struct = isinstance(struct_type, AgentStructType)
+            if is_agent_struct:
+                self.debug(f"DEBUG: Object is agent struct of type {struct_type.name}")
 
             # First try to find a function with the method name in the scopes
             func = None
@@ -394,6 +405,13 @@ class ExpressionExecutor(BaseExecutor):
                 self.debug("DEBUG: Found callable method on object")
                 return self.run_function(method, *args, **kwargs)
 
+            # For agent structs, try built-in agent methods
+            if is_agent_struct:
+                self.debug(f"DEBUG: Trying built-in agent methods for {method_name}")
+                if hasattr(obj, method_name) and callable(getattr(obj, method_name)):
+                    self.debug(f"DEBUG: Found built-in agent method {method_name}")
+                    return self.run_function(getattr(obj, method_name), *args, **kwargs)
+
             # If we get here, no method was found
             self.debug(f"DEBUG: No method found for {method_name}")
             # Print all available functions in the local scope
@@ -401,7 +419,14 @@ class ExpressionExecutor(BaseExecutor):
             self.debug(f"DEBUG: Local scope keys: {list(local_scope.keys())}")
             for k, v in local_scope.items():
                 self.debug(f"DEBUG: Local scope item: {k} -> {type(v)}")
-            raise AttributeError(f"Object of type StructInstance has no method {method_name}")
+
+            # Provide more specific error message for agent structs
+            if is_agent_struct:
+                raise AttributeError(
+                    f"Agent struct '{struct_type.name}' has no method '{method_name}'. Available built-in methods: plan, solve, remember, recall"
+                )
+            else:
+                raise AttributeError(f"Object of type StructInstance has no method {method_name}")
 
         # For non-struct objects, use getattr on the object itself
         self.debug("DEBUG: Not a struct, trying getattr on object")
@@ -722,6 +747,21 @@ class ExpressionExecutor(BaseExecutor):
         """
         return self.collection_processor.execute_list_literal(node, context)
 
+    def execute_named_pipeline_stage(self, node: NamedPipelineStage, context: SandboxContext) -> Any:
+        """Execute a named pipeline stage.
+
+        This method should not be called directly, as named pipeline stages are only
+        meaningful within pipeline contexts.
+
+        Args:
+            node: The named pipeline stage
+            context: The execution context
+
+        Returns:
+            Should raise an error as named pipeline stages are not standalone expressions
+        """
+        raise SandboxError("Named pipeline stages can only be used within pipeline operations")
+
     def execute_placeholder_expression(self, node: PlaceholderExpression, context: SandboxContext) -> Any:
         """Execute a placeholder expression.
 
@@ -799,6 +839,53 @@ class ExpressionExecutor(BaseExecutor):
                 return None
 
         return composed_function
+
+    def execute_function_call(self, node: FunctionCall, context: SandboxContext) -> Any:
+        """Execute a function call, routing function calls with placeholders to PartialFunction logic.
+
+        Args:
+            node: The function call to execute
+            context: The execution context
+
+        Returns:
+            The result of the function call, or a PartialFunction if placeholders are present
+        """
+        # Check if the function call contains placeholders
+        if self._has_placeholders(node):
+            # Route to pipe operation handler's PartialFunction logic
+            return self.pipe_operation_handler._resolve_function_call(node, context)
+        else:
+            # Delegate to normal function execution
+            if hasattr(self.parent, "_function_executor"):
+                return self.parent._function_executor.execute_function_call(node, context)
+            else:
+                # Fallback: use parent's general execute method
+                return self.parent.execute(node, context)
+
+    def _has_placeholders(self, node: FunctionCall) -> bool:
+        """Check if a function call contains PlaceholderExpression.
+
+        Args:
+            node: The function call to check
+
+        Returns:
+            True if the function call contains placeholders, False otherwise
+        """
+        # Handle case where args is None
+        if not node.args:
+            return False
+
+        if "__positional" in node.args:
+            for arg in node.args["__positional"]:
+                if isinstance(arg, PlaceholderExpression):
+                    return True
+
+        # Check keyword arguments too
+        for key, arg in node.args.items():
+            if key != "__positional" and isinstance(arg, PlaceholderExpression):
+                return True
+
+        return False
 
     def _execute_pipeline_stage(self, current_value: Any, stage: Any, context: SandboxContext) -> Any:
         """Execute a single pipeline stage with argument substitution.

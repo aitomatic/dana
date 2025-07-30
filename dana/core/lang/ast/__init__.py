@@ -189,8 +189,17 @@ class Identifier:
 # === Expressions ===
 @dataclass
 class PlaceholderExpression:
-    """A placeholder expression representing the $ symbol in pipeline operations."""
+    """A placeholder expression representing the $$ symbol in pipeline operations."""
 
+    location: Location | None = None
+
+
+@dataclass
+class NamedPipelineStage:
+    """A pipeline stage with an optional name capture (expr as name)."""
+
+    expression: Expression
+    name: str | None = None  # If present, capture result with this name
     location: Location | None = None
 
 
@@ -483,6 +492,7 @@ class StructDefinition:
 
     name: str
     fields: list["StructField"]
+    docstring: str | None = None  # Docstring extracted from preceding string literal
     location: Location | None = None
 
 

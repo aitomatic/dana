@@ -169,6 +169,11 @@ class ExpressionTransformer(BaseTransformer):
             # Use the tree traverser's unwrap_token for consistent token handling
             value = self.tree_traverser.unwrap_token(item)
             return LiteralExpression(value=value)
+
+        # Handle NamedPipelineStage objects (already transformed)
+        if hasattr(item, "__class__") and item.__class__.__name__ == "NamedPipelineStage":
+            return item
+
         raise TypeError(f"Cannot transform expression: {item} ({type(item)})")
 
     def _extract_operator_string(self, op_token):
@@ -935,7 +940,7 @@ class ExpressionTransformer(BaseTransformer):
 
     def function_pipe_expr(self, items):
         """Transform function_pipe_expr rule."""
-        # Grammar: function_pipe_expr: function_expr (PIPE function_expr)*
+        # Grammar: function_pipe_expr: pipeline_stage (PIPE pipeline_stage)*
         if len(items) == 1:
             return items[0]
         else:
@@ -947,6 +952,33 @@ class ExpressionTransformer(BaseTransformer):
                     right = items[i + 1]
                     result = BinaryExpression(left=result, operator=operator, right=right)
             return result
+
+    def pipeline_stage(self, items):
+        """Transform pipeline_stage rule."""
+        # Grammar: pipeline_stage: function_expr ["as" NAME]
+        if len(items) == 1:
+            # No "as" clause - just return the expression
+            return items[0]
+        else:
+            # Has "as" clause - create NamedPipelineStage
+            from dana.core.lang.ast import NamedPipelineStage
+
+            expression = items[0]
+            # Handle the case where items[1] might be None or not have a value attribute
+            if hasattr(items[1], "value"):
+                name = items[1].value
+            elif isinstance(items[1], str):
+                name = items[1]
+            else:
+                # Fallback - try to get the name from the token
+                name = str(items[1]) if items[1] is not None else None
+
+            # Only create NamedPipelineStage if we have a valid name
+            if name:
+                return NamedPipelineStage(expression=expression, name=name)
+            else:
+                # If no valid name, just return the expression
+                return expression
 
     def function_expr(self, items):
         """Transform function_expr rule."""
@@ -962,7 +994,23 @@ class ExpressionTransformer(BaseTransformer):
         """Transform function_call rule."""
         # Grammar: function_call: NAME "(" [arguments] ")"
         name = items[0].value
-        arguments = items[1] if len(items) > 1 else []
+        if len(items) > 1 and items[1] is not None:
+            # Process arguments through the proper method
+            # items[1] is a Tree with argument children
+            arguments = self._process_function_arguments(items[1].children)
+        else:
+            # No arguments - create empty args dict
+            arguments = {"__positional": []}
+
+        # Check if this function call contains a placeholder expression
+        # If so, treat it as a single-stage pipeline (placeholders are only valid in pipelines)
+        if self._contains_placeholder(arguments):
+            # PHASE B CHANGE: Don't create PipelineExpression for function calls with placeholders
+            # Let them be handled as regular FunctionCall nodes, which will trigger PartialFunction logic
+            # from dana.core.lang.ast import PipelineExpression
+            # return PipelineExpression(stages=[FunctionCall(name=name, args=arguments)])
+            pass
+
         return FunctionCall(name=name, args=arguments)
 
     def function_list_literal(self, items):
@@ -972,6 +1020,30 @@ class ExpressionTransformer(BaseTransformer):
             return ListLiteral(items=[])
         else:
             return ListLiteral(items=items)
+
+    def _contains_placeholder(self, arguments):
+        """Check if function call arguments contain a placeholder expression."""
+        if not isinstance(arguments, dict):
+            return False
+
+        # Check positional arguments
+        if "__positional" in arguments:
+            for arg in arguments["__positional"]:
+                if self._is_placeholder_expression(arg):
+                    return True
+
+        # Check keyword arguments
+        for key, arg in arguments.items():
+            if key != "__positional" and self._is_placeholder_expression(arg):
+                return True
+
+        return False
+
+    def _is_placeholder_expression(self, expr):
+        """Check if an expression is a placeholder expression."""
+        from dana.core.lang.ast import PlaceholderExpression
+
+        return isinstance(expr, PlaceholderExpression)
 
 
 # File updated to resolve GitHub CI syntax error - 2025-06-09

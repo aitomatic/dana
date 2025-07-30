@@ -78,10 +78,14 @@ class StatementTransformer(BaseTransformer):
     Methods are grouped by grammar hierarchy for clarity and maintainability.
     """
 
-    def __init__(self):
+    def __init__(self, main_transformer=None):
         """Initialize the statement transformer and its expression transformer."""
         super().__init__()
-        self.expression_transformer = ExpressionTransformer(self)
+        # Use the main transformer's expression transformer if available
+        if main_transformer and hasattr(main_transformer, "expression_transformer"):
+            self.expression_transformer = main_transformer.expression_transformer
+        else:
+            self.expression_transformer = ExpressionTransformer(self)
 
         # Initialize specialized transformers
         from dana.core.lang.parser.transformer.statement.agent_context_transformer import (

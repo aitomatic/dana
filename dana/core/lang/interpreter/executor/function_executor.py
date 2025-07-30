@@ -123,10 +123,11 @@ class FunctionExecutor(BaseExecutor):
 
         # Check if this function should be associated with an agent type
         # Import here to avoid circular imports
-        from dana.agent.agent_system import register_agent_method_from_function_def
+        # Temporarily commented out during migration to unified struct system
+        # from dana.agent.agent_system import register_agent_method_from_function_def
 
         # Try to register as agent method if first parameter is an agent type
-        register_agent_method_from_function_def(node, dana_func)
+        # register_agent_method_from_function_def(node, dana_func)
 
         # Apply decorators if present
         if node.decorators:
@@ -155,14 +156,14 @@ class FunctionExecutor(BaseExecutor):
         # Extract receiver type(s) from the receiver parameter
         receiver_param = node.receiver
         receiver_type_str = receiver_param.type_hint.name if receiver_param.type_hint else None
-        
+
         if not receiver_type_str:
             raise SandboxError("Method definition requires typed receiver parameter")
 
         # Parse union types (e.g., "Point | Circle | Rectangle")
         # Handle spaces around pipe symbols
         receiver_types = [t.strip() for t in receiver_type_str.split("|") if t.strip()]
-        
+
         # Validate that all receiver types exist
         for type_name in receiver_types:
             if not StructTypeRegistry.exists(type_name):
@@ -175,7 +176,7 @@ class FunctionExecutor(BaseExecutor):
             if hasattr(param, "name"):
                 param_name = param.name
                 param_names.append(param_name)
-                
+
                 # Extract default value if present
                 if hasattr(param, "default_value") and param.default_value is not None:
                     try:
@@ -195,12 +196,7 @@ class FunctionExecutor(BaseExecutor):
         # Create the DanaFunction with receiver as the first parameter
         all_params = [receiver_param.name] + param_names
         dana_func = DanaFunction(
-            body=node.body,
-            parameters=all_params,
-            context=context,
-            return_type=return_type,
-            defaults=param_defaults,
-            name=node.name.name
+            body=node.body, parameters=all_params, context=context, return_type=return_type, defaults=param_defaults, name=node.name.name
         )
 
         # Apply decorators if present
@@ -212,10 +208,10 @@ class FunctionExecutor(BaseExecutor):
 
         # Register the method with all receiver types
         MethodRegistry.register_method(receiver_types, node.name.name, final_func)
-        
+
         # Also store in context for direct access
         context.set(f"local:{node.name.name}", final_func)
-        
+
         return final_func
 
     def _apply_decorators(self, func, decorators, context):
