@@ -31,6 +31,7 @@ from dana.core.lang.ast import (
     FStringExpression,
     FunctionCall,
     Identifier,
+    LambdaExpression,
     ListLiteral,
     LiteralExpression,
     NamedPipelineStage,
@@ -116,6 +117,7 @@ class ExpressionExecutor(BaseExecutor):
             PlaceholderExpression: self.execute_placeholder_expression,
             PipelineExpression: self.execute_pipeline_expression,
             FunctionCall: self.execute_function_call,
+            LambdaExpression: self.execute_lambda_expression,
         }
 
     def execute_literal_expression(self, node: LiteralExpression, context: SandboxContext) -> Any:
@@ -397,6 +399,18 @@ class ExpressionExecutor(BaseExecutor):
             if method is not None and callable(method):
                 self.debug("DEBUG: Found callable method on struct_type")
                 return self.run_function(method, obj, *args, **kwargs)
+
+            # Try lambda methods registered in the MethodRegistry
+            self.debug(f"DEBUG: Trying lambda methods in MethodRegistry for {method_name}")
+            try:
+                from dana.core.lang.interpreter.struct_methods.lambda_receiver import LambdaMethodDispatcher
+                if LambdaMethodDispatcher.can_handle_method_call(obj, method_name):
+                    self.debug("DEBUG: Found lambda method in MethodRegistry")
+                    return LambdaMethodDispatcher.dispatch_method_call(obj, method_name, *args, **kwargs)
+            except ImportError:
+                self.debug("DEBUG: Lambda receiver support not available")
+            except Exception as e:
+                self.debug(f"DEBUG: Error checking lambda methods: {e}")
 
             # If no method found on struct type, try to find a method on the object itself
             self.debug(f"DEBUG: No method found on struct_type, trying object.{method_name}")
@@ -1070,3 +1084,55 @@ class ExpressionExecutor(BaseExecutor):
                     return True
 
         return False
+
+    def execute_lambda_expression(self, node: LambdaExpression, context: SandboxContext) -> Any:
+        """Execute a lambda expression by creating a callable function object.
+        
+        Args:
+            node: The lambda expression to execute
+            context: The execution context
+            
+        Returns:
+            A callable function object representing the lambda
+        """
+        def lambda_function(*args, **kwargs):
+            """The callable function created from the lambda expression."""
+            # Validate parameter compatibility if type checking is enabled
+            try:
+                from dana.core.lang.type_system.lambda_types import LambdaTypeValidator
+                if not LambdaTypeValidator.validate_parameter_compatibility(node.parameters, list(args)):
+                    raise SandboxError(f"Lambda parameter type mismatch: expected {len(node.parameters)} parameters, got {len(args)}")
+            except ImportError:
+                # Type validation not available, continue without it
+                pass
+            
+            # Create a new scope for lambda execution
+            lambda_context = context.create_child_scope()
+            
+            # Handle receiver binding if present
+            if node.receiver and args:
+                # Bind the first argument to the receiver
+                lambda_context.set_variable(node.receiver.name, args[0])
+                args = args[1:]  # Remove the receiver from remaining args
+            
+            # Bind parameters to arguments
+            for i, param in enumerate(node.parameters):
+                if i < len(args):
+                    lambda_context.set_variable(param.name, args[i])
+                elif param.name in kwargs:
+                    lambda_context.set_variable(param.name, kwargs[param.name])
+                # TODO: Handle default values if implemented
+            
+            # Execute the lambda body
+            try:
+                return self.parent.execute(node.body, lambda_context)
+            except Exception as e:
+                raise SandboxError(f"Error executing lambda expression: {e}")
+        
+        # Store metadata on the function for inspection
+        lambda_function._dana_lambda = True
+        lambda_function._dana_receiver = node.receiver
+        lambda_function._dana_parameters = node.parameters
+        lambda_function._dana_body = node.body
+        
+        return lambda_function

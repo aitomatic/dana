@@ -1045,5 +1045,26 @@ class ExpressionTransformer(BaseTransformer):
 
         return isinstance(expr, PlaceholderExpression)
 
+    def lambda_expr(self, items):
+        """Transform a lambda expression using the specialized lambda transformer."""
+        from dana.core.lang.parser.transformer.expression.lambda_transformer import LambdaTransformer
+        
+        lambda_transformer = LambdaTransformer(main_transformer=self.main_transformer)
+        return lambda_transformer.lambda_expr(items)
+
+    def lambda_receiver(self, items):
+        """Transform a lambda receiver using the specialized lambda transformer."""
+        from dana.core.lang.parser.transformer.expression.lambda_transformer import LambdaTransformer
+        
+        lambda_transformer = LambdaTransformer(main_transformer=self.main_transformer)
+        return lambda_transformer.lambda_receiver(items)
+
+    def lambda_params(self, items):
+        """Transform lambda parameters using the specialized lambda transformer."""
+        from dana.core.lang.parser.transformer.expression.lambda_transformer import LambdaTransformer
+        
+        lambda_transformer = LambdaTransformer(main_transformer=self.main_transformer)
+        return lambda_transformer.lambda_params(items)
+
 
 # File updated to resolve GitHub CI syntax error - 2025-06-09

@@ -379,6 +379,7 @@ atom: variable trailer*
     | NONE
     | collection
     | placeholder
+    | lambda_expr
     | "(" expr ")"
 
 // ===== COLLECTIONS =====
@@ -393,6 +394,11 @@ set: "{" list_items "}"
 list_items: expr ("," expr)* [","]
 dict_items: key_value_pair ("," key_value_pair)* [","]
 key_value_pair: expr ":" expr
+
+// ===== LAMBDA EXPRESSIONS =====
+lambda_expr: "lambda" [lambda_receiver] [lambda_params] "->" expr
+lambda_receiver: "(" NAME ":" basic_type ")"
+lambda_params: NAME [":" basic_type] ("," NAME [":" basic_type])*
 
 // ===== WHITESPACE AND COMMENTS =====
 // Modified to handle comments and newlines better

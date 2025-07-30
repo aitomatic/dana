@@ -489,6 +489,9 @@ class TypeChecker:
         elif hasattr(expression, "__class__") and expression.__class__.__name__ == "ObjectFunctionCall":
             # Handle ObjectFunctionCall
             return DanaType("any")  # Object function calls return dynamic results
+        elif hasattr(expression, "__class__") and expression.__class__.__name__ == "LambdaExpression":
+            # Handle LambdaExpression
+            return self.check_lambda_expression(expression)
         else:
             raise TypeError(f"Unsupported expression type: {type(expression).__name__}", expression)
 
@@ -686,6 +689,53 @@ class TypeChecker:
             self.check_expression(kwarg_value)
         # Use statements return dynamic objects, so return 'any' type
         return DanaType("any")
+
+    def check_lambda_expression(self, node: Any) -> DanaType:
+        """Check a lambda expression for type errors."""
+        # Import LambdaExpression here to avoid circular imports
+        from dana.core.lang.ast import LambdaExpression, Parameter, TypeHint
+        
+        if not hasattr(node, 'receiver') or not hasattr(node, 'parameters') or not hasattr(node, 'body'):
+            raise TypeError(f"Invalid lambda expression structure", node)
+        
+        # Create a new scope for lambda type checking
+        self.environment.push_scope()
+        
+        try:
+            # Type check receiver if present
+            if node.receiver:
+                if not isinstance(node.receiver, Parameter):
+                    raise TypeError(f"Lambda receiver must be a Parameter, got {type(node.receiver)}", node)
+                
+                if node.receiver.type_hint:
+                    receiver_type = DanaType.from_type_hint(node.receiver.type_hint)
+                    self.environment.set(node.receiver.name, receiver_type)
+                else:
+                    # Infer receiver type if not specified
+                    self.environment.set(node.receiver.name, DanaType("any"))
+            
+            # Type check parameters
+            for param in node.parameters:
+                if not isinstance(param, Parameter):
+                    raise TypeError(f"Lambda parameter must be a Parameter, got {type(param)}", node)
+                
+                if param.type_hint:
+                    param_type = DanaType.from_type_hint(param.type_hint)
+                    self.environment.set(param.name, param_type)
+                else:
+                    # Infer parameter type if not specified
+                    self.environment.set(param.name, DanaType("any"))
+            
+            # Type check the lambda body
+            body_type = self.check_expression(node.body)
+            
+            # Lambda expressions themselves have a function type
+            # For now, we'll return 'function' as the type
+            return DanaType("function")
+            
+        finally:
+            # Always pop the scope, even if an error occurs
+            self.environment.pop_scope()
 
     @staticmethod
     def check_types(program: Program) -> None:

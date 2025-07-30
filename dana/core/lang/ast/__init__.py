@@ -55,6 +55,7 @@ Expression = Union[
     "UseStatement",
     "PlaceholderExpression",
     "PipelineExpression",
+    "LambdaExpression",
 ]
 
 # A Statement is any node that primarily performs an action, but still produces a value.
@@ -137,6 +138,16 @@ class Parameter:
     name: str
     type_hint: TypeHint | None = None
     default_value: Expression | None = None
+    location: Location | None = None
+
+
+@dataclass
+class LambdaExpression:
+    """A lambda expression with optional receiver and parameters."""
+    
+    receiver: Parameter | None = None  # Optional struct receiver: (receiver: Type)
+    parameters: list[Parameter] = field(default_factory=list)  # Lambda parameters
+    body: Expression = None  # Lambda body expression
     location: Location | None = None
 
 
