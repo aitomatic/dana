@@ -8,10 +8,34 @@ Dana now supports **module-local imports**, making it easier and more intuitive 
 
 1. **Automatic Directory Inclusion**: The directory containing the current module is automatically included in the module search path
 2. **Sibling Imports**: Import modules in the same directory directly by name
-3. **Context-Aware**: Each module maintains its own import context based on its location
-4. **Backward Compatible**: Existing import mechanisms continue to work as before
+3. **Directory Packages**: Directories containing `.na` files automatically become packages (no `__init__.na` required)
+4. **Context-Aware**: Each module maintains its own import context based on its location
+5. **Backward Compatible**: Existing import mechanisms continue to work as before
 
 ## Basic Usage
+
+### Directory Packages (No `__init__.na` Required)
+
+Dana automatically treats directories containing `.na` files as packages:
+
+```
+math_library/          # Automatically a package
+├── basic.na           # Contains add(), subtract()
+├── advanced.na        # Contains calculus(), statistics()
+└── constants.na       # Contains PI, E, etc.
+```
+
+Import from directory packages directly:
+
+```dana
+# main.na
+from math_library.basic import add, subtract
+from math_library.advanced import calculus
+from math_library.constants import PI
+
+result = add(5, 3)
+area = PI * radius * radius
+```
 
 ### Sibling Module Imports
 
@@ -84,12 +108,11 @@ area = operations.circle_area(5.0)
 print(f"Area: {area}")
 ```
 
-### Example 2: Nested Modules
+### Example 2: Nested Modules (Directory Packages)
 
 ```
 app/
-├── utils/
-│   ├── __init__.na
+├── utils/             # Automatically a package (no __init__.na needed)
 │   ├── text.na
 │   └── numbers.na
 ├── models.na
@@ -144,15 +167,17 @@ result = moduleB.moduleC.value * moduleB.multiplier
 |---------|--------|------|
 | Current directory in path | Only for main script | Yes, for all modules |
 | Relative imports | Requires `.` syntax | Direct import works |
-| Package requirement | Needs `__init__.py` | Optional `__init__.na` |
+| Package requirement | Needs `__init__.py` | No `__init__.na` needed |
+| Directory packages | Not supported | Automatic |
 | Import syntax | `from . import sibling` | `import sibling` |
 
 ## Best Practices
 
 1. **Use direct imports for siblings**: Instead of complex relative paths, just use the module name
 2. **Organize related modules together**: Keep modules that import each other in the same directory
-3. **Use packages for hierarchy**: For larger projects, organize modules into packages with `__init__.na`
-4. **Avoid naming conflicts**: Be mindful of module names that might conflict with standard library modules
+3. **Use directories for organization**: Directories automatically become packages - no `__init__.na` needed
+4. **Add `__init__.na` only when needed**: For package-level initialization, imports, or exports
+5. **Avoid naming conflicts**: Be mindful of module names that might conflict with standard library modules
 
 ## Configuration
 
@@ -185,7 +210,7 @@ If a sibling module is not found:
 1. Ensure the file has a `.na` extension
 2. Check that the module name matches the filename (without extension)
 3. Verify there are no syntax errors in the module
-4. For packages, ensure `__init__.na` exists
+4. For packages, ensure the directory contains `.na` files (directories are automatically packages)
 
 ### Import Conflicts
 

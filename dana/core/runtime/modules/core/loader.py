@@ -248,11 +248,24 @@ class ModuleLoader(MetaPathFinder, Loader):
                             py_spec.submodule_search_locations = dana_spec.submodule_search_locations
                             return py_spec
 
-                        # Also check for package/__init__.na in parent's search paths
+                        # Also check for package/__init__.na in parent's search paths (legacy)
                         init_file = Path(search_path) / module_name / "__init__.na"
                         if init_file.is_file():
                             # Create and register Dana spec
                             dana_spec = ModuleSpec(name=fullname, loader=self, origin=str(init_file))
+                            self._setup_package_attributes(dana_spec)
+                            self.registry.register_spec(dana_spec)
+                            # Convert to Python spec
+                            py_spec = PyModuleSpec(name=dana_spec.name, loader=self, origin=dana_spec.origin)
+                            py_spec.has_location = dana_spec.has_location
+                            py_spec.submodule_search_locations = dana_spec.submodule_search_locations
+                            return py_spec
+
+                        # Also check for directory packages in parent's search paths (new)
+                        package_dir = Path(search_path) / module_name
+                        if package_dir.is_dir() and self._is_dana_package_directory(package_dir):
+                            # Create and register Dana spec
+                            dana_spec = ModuleSpec(name=fullname, loader=self, origin=str(package_dir))
                             self._setup_package_attributes(dana_spec)
                             self.registry.register_spec(dana_spec)
                             # Convert to Python spec
@@ -300,8 +313,8 @@ class ModuleLoader(MetaPathFinder, Loader):
     def _setup_package_attributes(self, spec: ModuleSpec) -> None:
         """Set up package attributes for a module spec.
 
-        This allows both __init__.na files and regular .na files to serve as packages
-        if they have subdirectories with modules.
+        This allows __init__.na files, directory packages, and regular .na files 
+        to serve as packages if they have subdirectories with modules.
 
         Args:
             spec: Module specification to set up
@@ -311,19 +324,26 @@ class ModuleLoader(MetaPathFinder, Loader):
 
         origin_path = Path(spec.origin)
 
-        # Case 1: __init__.na files are always packages
+        # Case 1: __init__.na files are always packages (legacy support)
         if origin_path.name == "__init__.na":
             spec.submodule_search_locations = [str(origin_path.parent)]
             if "." in spec.name:
                 spec.parent = spec.name.rsplit(".", 1)[0]
+        # Case 2: Directory packages (new: directories are packages)
+        elif origin_path.is_dir():
+            spec.submodule_search_locations = [str(origin_path)]
+            if "." in spec.name:
+                spec.parent = spec.name.rsplit(".", 1)[0]
         else:
-            # Case 2: Regular .na files can also be packages if they have a directory with the same name
+            # Case 3: Regular .na files can also be packages if they have a directory with the same name
             # This enables a.b.na to serve as a package for a.b.c modules
             module_dir = origin_path.parent / origin_path.stem
             if module_dir.is_dir():
                 # Check if the directory contains any .na files or subdirectories with __init__.na
                 has_submodules = any(f.suffix == ".na" for f in module_dir.iterdir() if f.is_file()) or any(
                     (subdir / "__init__.na").exists() for subdir in module_dir.iterdir() if subdir.is_dir()
+                ) or any(
+                    self._is_dana_package_directory(subdir) for subdir in module_dir.iterdir() if subdir.is_dir()
                 )
                 if has_submodules:
                     spec.submodule_search_locations = [str(module_dir)]
@@ -357,8 +377,14 @@ class ModuleLoader(MetaPathFinder, Loader):
         module = Module(__name__=spec.name, __file__=spec.origin)
 
         # Set up package attributes if this is a package
+        origin_path = Path(spec.origin)
         if spec.origin.endswith("__init__.na"):
-            module.__path__ = [str(Path(spec.origin).parent)]
+            # Legacy __init__.na package
+            module.__path__ = [str(origin_path.parent)]
+            module.__package__ = spec.name
+        elif origin_path.is_dir():
+            # Directory package (new)
+            module.__path__ = [str(origin_path)]
             module.__package__ = spec.name
         elif "." in spec.name:
             # Submodule of a package
@@ -384,8 +410,15 @@ class ModuleLoader(MetaPathFinder, Loader):
         # Start loading
         self.registry.start_loading(module.__name__)
         try:
+            # Handle directory packages (no source code to execute)
+            origin_path = Path(module.__file__)
+            if origin_path.is_dir():
+                # Directory package - nothing to execute, just finish loading
+                self.registry.finish_loading(module.__name__)
+                return
+            
             # Read source
-            source = Path(module.__file__).read_text()
+            source = origin_path.read_text()
 
             # Parse and compile
             from lark.exceptions import UnexpectedCharacters, UnexpectedToken
@@ -410,11 +443,10 @@ class ModuleLoader(MetaPathFinder, Loader):
             # Set current module and package for relative import resolution
             context._current_module = module.__name__
             # Set current package for relative import resolution
-            # Special case: for __init__.na files, the current package is the module itself
+            # Special case: for __init__.na files and directory packages, the current package is the module itself
             # For regular modules, the current package is the parent package
-            origin_path = Path(module.__file__) if module.__file__ else None
-            if origin_path and origin_path.name == "__init__.na":
-                # __init__.na file - current package is the module itself
+            if origin_path and (origin_path.name == "__init__.na" or origin_path.is_dir()):
+                # __init__.na file or directory package - current package is the module itself
                 context._current_package = module.__name__
             elif "." in module.__name__:
                 # Regular module - current package is parent package
@@ -528,10 +560,15 @@ class ModuleLoader(MetaPathFinder, Loader):
         if module_file.exists():
             return module_file
 
-        # Try package/__init__.na
+        # Try package/__init__.na (legacy support)
         init_file = directory / module_name / "__init__.na"
         if init_file.exists():
             return init_file
+
+        # Try directory package (new: directories containing .na files are packages)
+        package_dir = directory / module_name
+        if package_dir.is_dir() and self._is_dana_package_directory(package_dir):
+            return package_dir
 
         return None
 
@@ -550,9 +587,47 @@ class ModuleLoader(MetaPathFinder, Loader):
             if module_file.exists():
                 return module_file
 
-            # Try package/__init__.na
+            # Try package/__init__.na (legacy support)
             init_file = search_path / module_name / "__init__.na"
             if init_file.exists():
                 return init_file
 
+            # Try directory package (new: directories containing .na files are packages)
+            package_dir = search_path / module_name
+            if package_dir.is_dir() and self._is_dana_package_directory(package_dir):
+                return package_dir
+
         return None
+
+    def _is_dana_package_directory(self, directory: Path) -> bool:
+        """Check if a directory qualifies as a Dana package.
+        
+        A directory is considered a Dana package if it contains:
+        - At least one .na file, OR
+        - At least one subdirectory that is also a Dana package
+        
+        Args:
+            directory: Directory to check
+            
+        Returns:
+            True if directory is a Dana package, False otherwise
+        """
+        if not directory.is_dir():
+            return False
+            
+        # Check for direct .na files
+        for item in directory.iterdir():
+            if item.is_file() and item.suffix == ".na":
+                return True
+                
+        # Check for subdirectory packages
+        for item in directory.iterdir():
+            if item.is_dir():
+                # Check if subdirectory has __init__.na (legacy packages)
+                if (item / "__init__.na").exists():
+                    return True
+                # Check if subdirectory is itself a Dana package (recursive)
+                if self._is_dana_package_directory(item):
+                    return True
+                    
+        return False
