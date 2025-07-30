@@ -137,30 +137,30 @@ class AgentStructInstance(StructInstance):
     @property
     def agent_type(self) -> AgentStructType:
         """Get the agent type."""
-        return self._type
+        return self.__struct_type__
 
     def plan(self, task: str, context: dict | None = None) -> Any:
         """Execute agent planning method."""
-        if self.agent_type.has_agent_method("plan"):
-            return self.agent_type.agent_methods["plan"](self, task, context)
+        if self.__struct_type__.has_agent_method("plan"):
+            return self.__struct_type__.agent_methods["plan"](self, task, context)
         return default_plan_method(self, task, context)
 
     def solve(self, problem: str, context: dict | None = None) -> Any:
         """Execute agent problem-solving method."""
-        if self.agent_type.has_agent_method("solve"):
-            return self.agent_type.agent_methods["solve"](self, problem, context)
+        if self.__struct_type__.has_agent_method("solve"):
+            return self.__struct_type__.agent_methods["solve"](self, problem, context)
         return default_solve_method(self, problem, context)
 
     def remember(self, key: str, value: Any) -> bool:
         """Store information in agent memory."""
-        if self.agent_type.has_agent_method("remember"):
-            return self.agent_type.agent_methods["remember"](self, key, value)
+        if self.__struct_type__.has_agent_method("remember"):
+            return self.__struct_type__.agent_methods["remember"](self, key, value)
         return default_remember_method(self, key, value)
 
     def recall(self, key: str) -> Any:
         """Retrieve information from agent memory."""
-        if self.agent_type.has_agent_method("recall"):
-            return self.agent_type.agent_methods["recall"](self, key)
+        if self.__struct_type__.has_agent_method("recall"):
+            return self.__struct_type__.agent_methods["recall"](self, key)
         return default_recall_method(self, key)
 
 
