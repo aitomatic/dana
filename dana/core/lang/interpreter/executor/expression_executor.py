@@ -344,13 +344,21 @@ class ExpressionExecutor(BaseExecutor):
 
         self.debug(f"DEBUG: Arguments: args={args}, kwargs={kwargs}")
 
-        # If the object is a struct, try to find the method in this order:
+        # If the object is a struct (including agent structs), try to find the method in this order:
         # 1. Look for a function with the method name in the scopes
         # 2. Look for a method on the struct type
         # 3. Look for a method on the object itself
+        # 4. For agent structs, look for built-in agent methods
         if hasattr(obj, "__struct_type__"):
             struct_type = obj.__struct_type__
             self.debug(f"DEBUG: Object is struct of type {struct_type}")
+
+            # Check if this is an agent struct
+            from dana.agent import AgentStructType
+
+            is_agent_struct = isinstance(struct_type, AgentStructType)
+            if is_agent_struct:
+                self.debug(f"DEBUG: Object is agent struct of type {struct_type.name}")
 
             # First try to find a function with the method name in the scopes
             func = None
@@ -397,6 +405,13 @@ class ExpressionExecutor(BaseExecutor):
                 self.debug("DEBUG: Found callable method on object")
                 return self.run_function(method, *args, **kwargs)
 
+            # For agent structs, try built-in agent methods
+            if is_agent_struct:
+                self.debug(f"DEBUG: Trying built-in agent methods for {method_name}")
+                if hasattr(obj, method_name) and callable(getattr(obj, method_name)):
+                    self.debug(f"DEBUG: Found built-in agent method {method_name}")
+                    return self.run_function(getattr(obj, method_name), *args, **kwargs)
+
             # If we get here, no method was found
             self.debug(f"DEBUG: No method found for {method_name}")
             # Print all available functions in the local scope
@@ -404,7 +419,14 @@ class ExpressionExecutor(BaseExecutor):
             self.debug(f"DEBUG: Local scope keys: {list(local_scope.keys())}")
             for k, v in local_scope.items():
                 self.debug(f"DEBUG: Local scope item: {k} -> {type(v)}")
-            raise AttributeError(f"Object of type StructInstance has no method {method_name}")
+
+            # Provide more specific error message for agent structs
+            if is_agent_struct:
+                raise AttributeError(
+                    f"Agent struct '{struct_type.name}' has no method '{method_name}'. Available built-in methods: plan, solve, remember, recall"
+                )
+            else:
+                raise AttributeError(f"Object of type StructInstance has no method {method_name}")
 
         # For non-struct objects, use getattr on the object itself
         self.debug("DEBUG: Not a struct, trying getattr on object")
