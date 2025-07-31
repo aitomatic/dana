@@ -33,6 +33,7 @@ from dana.core.lang.ast import (
     FunctionCall,
     Identifier,
     LambdaExpression,
+    ListComprehension,
     ListLiteral,
     LiteralExpression,
     NamedPipelineStage,
@@ -120,6 +121,7 @@ class ExpressionExecutor(BaseExecutor):
             PipelineExpression: self.execute_pipeline_expression,
             FunctionCall: self.execute_function_call,
             LambdaExpression: self.execute_lambda_expression,
+            ListComprehension: self.execute_list_comprehension,
         }
 
     def execute_literal_expression(self, node: LiteralExpression, context: SandboxContext) -> Any:
@@ -1164,3 +1166,41 @@ class ExpressionExecutor(BaseExecutor):
         lambda_function._dana_body = node.body
 
         return lambda_function
+
+    def execute_list_comprehension(self, node: ListComprehension, context: SandboxContext) -> list:
+        """Execute a list comprehension expression.
+
+        Args:
+            node: The list comprehension to execute
+            context: The execution context
+
+        Returns:
+            A list containing the results of the comprehension
+        """
+        # Execute the iterable to get the sequence to iterate over
+        iterable = self.parent.execute(node.iterable, context)
+
+        if not hasattr(iterable, "__iter__"):
+            raise SandboxError(f"Cannot iterate over non-iterable object: {type(iterable).__name__}")
+
+        result = []
+
+        # Iterate over each item in the iterable
+        for item in iterable:
+            # Create a new scope for this iteration
+            iteration_context = context.copy()
+
+            # Bind the target variable to the current item
+            iteration_context.set(node.target, item)
+
+            # Check condition if present
+            if node.condition is not None:
+                condition_result = self.parent.execute(node.condition, iteration_context)
+                if not condition_result:
+                    continue  # Skip this item if condition is False
+
+            # Execute the expression for this item
+            expression_result = self.parent.execute(node.expression, iteration_context)
+            result.append(expression_result)
+
+        return result

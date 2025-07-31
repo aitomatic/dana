@@ -20,13 +20,13 @@ def test_lambda_as_struct_methods():
     private:point = Point(x=3, y=4)
     
     # Lambda expression as a method receiver
-    private:distance_from_origin = lambda self :: (self.x ** 2 + self.y ** 2) ** 0.5
+    private:distance_from_origin = lambda self -> (self.x ** 2 + self.y ** 2) ** 0.5
     private:distance = private:distance_from_origin(private:point)
     private:expected = 5.0
     assert abs(private:distance - private:expected) < 0.001, f"Expected {private:expected}, got {private:distance}"
     
     # Lambda to translate point
-    private:translate = lambda self, dx, dy :: Point(x=self.x + dx, y=self.y + dy)
+    private:translate = lambda self, dx, dy -> Point(x=self.x + dx, y=self.y + dy)
     private:new_point = private:translate(private:point, 2, -1)
     assert private:new_point.x == 5, f"Expected x=5, got {private:new_point.x}"
     assert private:new_point.y == 3, f"Expected y=3, got {private:new_point.y}"
@@ -38,18 +38,18 @@ def test_lambda_struct_field_operations():
     private:person = Person(name="Alice", age=25, email="alice@example.com")
     
     # Lambda to format person info
-    private:format_info = lambda self :: f"{self.name} ({self.age}) - {self.email}"
+    private:format_info = lambda self -> f"{self.name} ({self.age}) - {self.email}"
     private:info = private:format_info(private:person)
     private:expected = "Alice (25) - alice@example.com"
     assert private:info == private:expected, f"Expected '{private:expected}', got '{private:info}'"
     
     # Lambda to check if person is adult
-    private:is_adult = lambda self :: self.age >= 18
+    private:is_adult = lambda self -> self.age >= 18
     private:adult_status = private:is_adult(private:person)
     assert private:adult_status == True, f"Expected True, got {private:adult_status}"
     
     # Lambda to generate email domain
-    private:get_domain = lambda self :: self.email.split("@")[1] if "@" in self.email else ""
+    private:get_domain = lambda self -> self.email.split("@")[1] if "@" in self.email else ""
     private:domain = private:get_domain(private:person)
     assert private:domain == "example.com", f"Expected 'example.com', got '{private:domain}'"
     
@@ -60,9 +60,9 @@ def test_lambda_struct_chaining():
     private:calc = Calculator(base_value=10)
     
     # Lambda expressions for calculator operations
-    private:add = lambda self, x :: Calculator(base_value=self.base_value + x)
-    private:multiply = lambda self, x :: Calculator(base_value=self.base_value * x)
-    private:get_value = lambda self :: self.base_value
+    private:add = lambda self, x -> Calculator(base_value=self.base_value + x)
+    private:multiply = lambda self, x -> Calculator(base_value=self.base_value * x)
+    private:get_value = lambda self -> self.base_value
     
     # Chain operations
     private:calc1 = private:add(private:calc, 5)          # 10 + 5 = 15
@@ -83,13 +83,13 @@ def test_lambda_complex_struct_operations():
     ]
     
     # Lambda to calculate distance between two points
-    private:distance_between = lambda p1, p2 :: ((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2) ** 0.5
+    private:distance_between = lambda p1, p2 -> ((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2) ** 0.5
     private:dist = private:distance_between(private:points[0], private:points[1])
     private:expected_dist = ((1-3)**2 + (2-4)**2)**0.5  # sqrt(8) ≈ 2.828
     assert abs(private:dist - private:expected_dist) < 0.001, f"Expected {private:expected_dist}, got {private:dist}"
     
     # Lambda to find closest point to origin
-    private:distance_to_origin = lambda p :: (p.x ** 2 + p.y ** 2) ** 0.5
+    private:distance_to_origin = lambda p -> (p.x ** 2 + p.y ** 2) ** 0.5
     private:closest_point = min(private:points, key=private:distance_to_origin)
     assert private:closest_point.x == 1 and private:closest_point.y == 2, f"Expected Point(1,2), got Point({private:closest_point.x},{private:closest_point.y})"
     
@@ -98,7 +98,7 @@ def test_lambda_complex_struct_operations():
 # Test 5: Lambda expressions with struct validation
 def test_lambda_struct_validation():
     # Lambda for email validation
-    private:is_valid_email = lambda self :: "@" in self.email and "." in self.email.split("@")[1]
+    private:is_valid_email = lambda self -> "@" in self.email and "." in self.email.split("@")[1]
     
     private:valid_person = Person(name="Bob", age=30, email="bob@domain.com")
     private:invalid_person = Person(name="Charlie", age=25, email="invalid-email")
@@ -107,7 +107,7 @@ def test_lambda_struct_validation():
     assert private:is_valid_email(private:invalid_person) == False, "Expected invalid email to return False"
     
     # Lambda for age validation
-    private:is_valid_age = lambda self :: 0 <= self.age <= 150
+    private:is_valid_age = lambda self -> 0 <= self.age <= 150
     private:young_person = Person(name="David", age=5, email="david@test.com")
     private:old_person = Person(name="Eve", age=200, email="eve@test.com")
     
@@ -126,7 +126,7 @@ def test_lambda_struct_polymorphism():
     private:ext_point = ExtendedPoint(point=Point(x=2, y=3), color="red")
     
     # Lambda that works with both Point and ExtendedPoint
-    private:get_coordinates = lambda obj :: (obj.x, obj.y) if hasattr(obj, 'x') else (obj.point.x, obj.point.y)
+    private:get_coordinates = lambda obj -> (obj.x, obj.y) if hasattr(obj, 'x') else (obj.point.x, obj.point.y)
     
     private:simple_point = Point(x=1, y=1)
     private:coords1 = private:get_coordinates(private:simple_point)

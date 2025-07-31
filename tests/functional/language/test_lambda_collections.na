@@ -6,17 +6,17 @@ def test_lambda_with_lists():
     private:numbers = [1, 2, 3, 4, 5]
     
     # Test map equivalent using list comprehension with lambda
-    private:double = lambda x :: x * 2
+    private:double = lambda x -> x * 2
     private:doubled = [private:double(x) for x in private:numbers]
     assert private:doubled == [2, 4, 6, 8, 10], f"Expected [2, 4, 6, 8, 10], got {private:doubled}"
     
     # Test filter equivalent using list comprehension with lambda
-    private:is_even = lambda x :: x % 2 == 0
+    private:is_even = lambda x -> x % 2 == 0
     private:evens = [x for x in private:numbers if private:is_even(x)]
     assert private:evens == [2, 4], f"Expected [2, 4], got {private:evens}"
     
     # Test reduce equivalent using a lambda in a loop
-    private:add = lambda acc, x :: acc + x
+    private:add = lambda acc, x -> acc + x
     private:total = 0
     for num in private:numbers:
         private:total = private:add(private:total, num)
@@ -29,19 +29,19 @@ def test_lambda_with_dictionaries():
     private:data = {"apple": 5, "banana": 3, "cherry": 8, "date": 2}
     
     # Lambda to transform dictionary values
-    private:double_value = lambda k, v :: v * 2
+    private:double_value = lambda k, v -> v * 2
     private:doubled_values = {k: private:double_value(k, v) for k, v in private:data.items()}
     private:expected = {"apple": 10, "banana": 6, "cherry": 16, "date": 4}
     assert private:doubled_values == private:expected, f"Expected {private:expected}, got {private:doubled_values}"
     
     # Lambda to filter dictionary based on values
-    private:high_value = lambda k, v :: v >= 5
+    private:high_value = lambda k, v -> v >= 5
     private:high_items = {k: v for k, v in private:data.items() if private:high_value(k, v)}
     private:expected_high = {"apple": 5, "cherry": 8}
     assert private:high_items == private:expected_high, f"Expected {private:expected_high}, got {private:high_items}"
     
     # Lambda to create new dictionary structure
-    private:format_item = lambda k, v :: f"{k}: {v} items"
+    private:format_item = lambda k, v -> f"{k}: {v} items"
     private:formatted = {k: private:format_item(k, v) for k, v in private:data.items()}
     private:expected_formatted = {
         "apple": "apple: 5 items",
@@ -58,19 +58,19 @@ def test_lambda_with_nested_collections():
     private:matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
     
     # Lambda to flatten matrix
-    private:flatten_row = lambda row :: row
+    private:flatten_row = lambda row -> row
     private:flattened = []
     for row in private:matrix:
         private:flattened.extend(private:flatten_row(row))
     assert private:flattened == [1, 2, 3, 4, 5, 6, 7, 8, 9], f"Expected flattened list, got {private:flattened}"
     
     # Lambda to sum each row
-    private:sum_row = lambda row :: sum(row)
+    private:sum_row = lambda row -> sum(row)
     private:row_sums = [private:sum_row(row) for row in private:matrix]
     assert private:row_sums == [6, 15, 24], f"Expected [6, 15, 24], got {private:row_sums}"
     
     # Lambda to find max in each row
-    private:max_in_row = lambda row :: max(row)
+    private:max_in_row = lambda row -> max(row)
     private:max_values = [private:max_in_row(row) for row in private:matrix]
     assert private:max_values == [3, 6, 9], f"Expected [3, 6, 9], got {private:max_values}"
     
@@ -85,19 +85,19 @@ def test_lambda_sorting():
     ]
     
     # Lambda for sorting by age
-    private:get_age = lambda person :: person["age"]
+    private:get_age = lambda person -> person["age"]
     private:sorted_by_age = sorted(private:people, key=private:get_age)
     assert private:sorted_by_age[0]["name"] == "Bob", "Youngest person should be Bob"
     assert private:sorted_by_age[-1]["name"] == "Charlie", "Oldest person should be Charlie"
     
     # Lambda for sorting by score (descending)
-    private:get_score_desc = lambda person :: -person["score"]
+    private:get_score_desc = lambda person -> -person["score"]
     private:sorted_by_score = sorted(private:people, key=private:get_score_desc)
     assert private:sorted_by_score[0]["name"] == "Bob", "Highest score should be Bob"
     assert private:sorted_by_score[-1]["name"] == "Charlie", "Lowest score should be Charlie"
     
     # Lambda for custom comparison
-    private:compare_person = lambda p :: (p["age"], -p["score"])  # Age ascending, score descending
+    private:compare_person = lambda p -> (p["age"], -p["score"])  # Age ascending, score descending
     private:custom_sorted = sorted(private:people, key=private:compare_person)
     assert private:custom_sorted[0]["name"] == "Bob", "Bob should be first (youngest with high score)"
     
@@ -109,17 +109,17 @@ def test_lambda_with_sets():
     private:set2 = {4, 5, 6, 7, 8}
     
     # Lambda to check membership
-    private:in_both = lambda x :: x in private:set1 and x in private:set2
+    private:in_both = lambda x -> x in private:set1 and x in private:set2
     private:intersection_manual = {x for x in private:set1 if private:in_both(x)}
     assert private:intersection_manual == {4, 5}, f"Expected {{4, 5}}, got {private:intersection_manual}"
     
     # Lambda to transform set elements
-    private:square = lambda x :: x * x
+    private:square = lambda x -> x * x
     private:squared_set1 = {private:square(x) for x in private:set1}
     assert private:squared_set1 == {1, 4, 9, 16, 25}, f"Expected squared set, got {private:squared_set1}"
     
     # Lambda for set filtering
-    private:is_odd = lambda x :: x % 2 == 1
+    private:is_odd = lambda x -> x % 2 == 1
     private:odd_numbers = {x for x in private:set1 if private:is_odd(x)}
     assert private:odd_numbers == {1, 3, 5}, f"Expected {{1, 3, 5}}, got {private:odd_numbers}"
     
@@ -128,22 +128,22 @@ def test_lambda_with_sets():
 # Test 6: Lambda expressions for functional composition
 def test_lambda_composition():
     # Define lambda functions for composition
-    private:add_one = lambda x :: x + 1
-    private:multiply_two = lambda x :: x * 2
-    private:square = lambda x :: x * x
+    private:add_one = lambda x -> x + 1
+    private:multiply_two = lambda x -> x * 2
+    private:square = lambda x -> x * x
     
     # Manual composition
-    private:compose_two = lambda x :: private:multiply_two(private:add_one(x))
+    private:compose_two = lambda x -> private:multiply_two(private:add_one(x))
     private:result1 = private:compose_two(5)  # (5 + 1) * 2 = 12
     assert private:result1 == 12, f"Expected 12, got {private:result1}"
     
     # Three-function composition
-    private:compose_three = lambda x :: private:square(private:multiply_two(private:add_one(x)))
+    private:compose_three = lambda x -> private:square(private:multiply_two(private:add_one(x)))
     private:result2 = private:compose_three(3)  # ((3 + 1) * 2)^2 = 8^2 = 64
     assert private:result2 == 64, f"Expected 64, got {private:result2}"
     
     # Lambda returning lambda (higher-order function)
-    private:create_adder = lambda n :: (lambda x :: x + n)
+    private:create_adder = lambda n -> (lambda x -> x + n)
     private:add_five = private:create_adder(5)
     private:result3 = private:add_five(10)
     assert private:result3 == 15, f"Expected 15, got {private:result3}"
@@ -155,17 +155,17 @@ def test_lambda_string_processing():
     private:words = ["hello", "world", "dana", "language", "test"]
     
     # Lambda for string transformations
-    private:capitalize = lambda s :: s.capitalize()
+    private:capitalize = lambda s -> s.capitalize()
     private:capitalized = [private:capitalize(word) for word in private:words]
     assert private:capitalized == ["Hello", "World", "Dana", "Language", "Test"], f"Capitalization failed: {private:capitalized}"
     
     # Lambda for string filtering
-    private:is_long = lambda s :: len(s) > 4
+    private:is_long = lambda s -> len(s) > 4
     private:long_words = [word for word in private:words if private:is_long(word)]
     assert private:long_words == ["hello", "world", "language"], f"Expected long words, got {private:long_words}"
     
     # Lambda for string analysis
-    private:word_info = lambda w :: {"word": w, "length": len(w), "vowels": sum(1 for c in w if c in "aeiou")}
+    private:word_info = lambda w -> {"word": w, "length": len(w), "vowels": sum(1 for c in w if c in "aeiou")}
     private:word_analysis = [private:word_info(word) for word in private:words[:3]]
     assert private:word_analysis[0]["word"] == "hello", "Word analysis failed"
     assert private:word_analysis[0]["length"] == 5, "Length analysis failed"
@@ -178,13 +178,13 @@ def test_lambda_error_handling():
     private:data = [1, 2, 0, 4, 5]
     
     # Lambda with safe division
-    private:safe_reciprocal = lambda x :: 1.0 / x if x != 0 else float('inf')
+    private:safe_reciprocal = lambda x -> 1.0 / x if x != 0 else float('inf')
     private:reciprocals = [private:safe_reciprocal(x) for x in private:data]
     assert reciprocals[0] == 1.0, "First reciprocal should be 1.0"
     assert reciprocals[2] == float('inf'), "Reciprocal of 0 should be inf"
     
     # Lambda with type checking
-    private:safe_len = lambda obj :: len(obj) if hasattr(obj, '__len__') else 0
+    private:safe_len = lambda obj -> len(obj) if hasattr(obj, '__len__') else 0
     private:mixed_data = ["hello", 42, [1, 2, 3], None]
     private:lengths = [private:safe_len(item) for item in private:mixed_data]
     assert private:lengths == [5, 0, 3, 0], f"Expected [5, 0, 3, 0], got {private:lengths}"

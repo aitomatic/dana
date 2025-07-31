@@ -57,6 +57,7 @@ Expression = Union[
     "PlaceholderExpression",
     "PipelineExpression",
     "LambdaExpression",
+    "ListComprehension",
 ]
 
 # A Statement is any node that primarily performs an action, but still produces a value.
@@ -149,6 +150,17 @@ class LambdaExpression:
     receiver: Parameter | None = None  # Optional struct receiver: (receiver: Type)
     parameters: list[Parameter] = field(default_factory=list)  # Lambda parameters
     body: Expression = None  # Lambda body expression
+    location: Location | None = None
+
+
+@dataclass
+class ListComprehension:
+    """A list comprehension expression (e.g., [x * 2 for x in numbers if x > 0])."""
+
+    expression: Expression  # The expression to evaluate for each item
+    target: str  # The variable name for each item (e.g., 'x')
+    iterable: Expression  # The iterable to iterate over
+    condition: Expression | None = None  # Optional condition (e.g., 'x > 0')
     location: Location | None = None
 
 

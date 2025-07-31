@@ -1,0 +1,106 @@
+# Test list comprehensions
+log("Testing list comprehensions implementation")
+
+def test_basic_list_comprehensions():
+    """Test basic list comprehension functionality."""
+    log("=== Testing Basic List Comprehensions ===")
+    
+    # Basic list comprehension
+    private:numbers = [1, 2, 3, 4, 5]
+    private:doubled = [x * 2 for x in private:numbers]
+    assert private:doubled == [2, 4, 6, 8, 10], f"Expected [2, 4, 6, 8, 10], got {private:doubled}"
+    log("✅ Basic list comprehension works")
+    
+    # List comprehension with strings
+    private:words = ["hello", "world", "dana"]
+    private:lengths = [len(word) for word in private:words]
+    assert private:lengths == [5, 5, 4], f"Expected [5, 5, 4], got {private:lengths}"
+    log("✅ String list comprehension works")
+    
+    # List comprehension with more complex expressions
+    private:squares = [x * x for x in private:numbers]
+    assert private:squares == [1, 4, 9, 16, 25], f"Expected [1, 4, 9, 16, 25], got {private:squares}"
+    log("✅ Complex expression list comprehension works")
+
+def test_conditional_list_comprehensions():
+    """Test list comprehensions with conditions."""
+    log("=== Testing Conditional List Comprehensions ===")
+    
+    private:numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    
+    # Basic conditional
+    private:evens = [x for x in private:numbers if x % 2 == 0]
+    assert private:evens == [2, 4, 6, 8, 10], f"Expected [2, 4, 6, 8, 10], got {private:evens}"
+    log("✅ Basic conditional list comprehension works")
+    
+    # Conditional with transformation
+    private:even_squares = [x * x for x in private:numbers if x % 2 == 0]
+    assert private:even_squares == [4, 16, 36, 64, 100], f"Expected [4, 16, 36, 64, 100], got {private:even_squares}"
+    log("✅ Conditional with transformation works")
+    
+    # Complex condition
+    private:big_odds = [x for x in private:numbers if x % 2 == 1 and x > 5]
+    assert private:big_odds == [7, 9], f"Expected [7, 9], got {private:big_odds}"
+    log("✅ Complex conditional list comprehension works")
+
+def test_list_comprehensions_with_lambdas():
+    """Test list comprehensions combined with lambda expressions."""
+    log("=== Testing List Comprehensions with Lambdas ===")
+    
+    private:numbers = [1, 2, 3, 4, 5]
+    
+    # Lambda in list comprehension
+    private:double = lambda x -> x * 2
+    private:doubled = [private:double(x) for x in private:numbers]
+    assert private:doubled == [2, 4, 6, 8, 10], f"Expected [2, 4, 6, 8, 10], got {private:doubled}"
+    log("✅ Lambda in list comprehension works")
+    
+    # Lambda with condition
+    private:is_even = lambda x -> x % 2 == 0
+    private:evens = [x for x in private:numbers if private:is_even(x)]
+    assert private:evens == [2, 4], f"Expected [2, 4], got {private:evens}"
+    log("✅ Lambda condition in list comprehension works")
+
+def test_nested_list_comprehensions():
+    """Test nested data structures with list comprehensions."""
+    log("=== Testing Nested List Comprehensions ===")
+    
+    # Note: Nested comprehensions (multiple for clauses) are not implemented yet
+    # For now, let's test what we can with nested data access
+    
+    # List comprehension with nested access
+    private:data = [{"value": 1}, {"value": 2}, {"value": 3}]
+    private:values = [item["value"] for item in private:data]
+    assert private:values == [1, 2, 3], f"Expected [1, 2, 3], got {private:values}"
+    log("✅ Nested access in list comprehension works")
+
+def test_empty_and_edge_cases():
+    """Test edge cases for list comprehensions."""
+    log("=== Testing Edge Cases ===")
+    
+    # Empty list
+    private:empty = []
+    private:result = [x * 2 for x in private:empty]
+    assert private:result == [], f"Expected [], got {private:result}"
+    log("✅ Empty list comprehension works")
+    
+    # All items filtered out
+    private:numbers = [1, 3, 5, 7, 9]
+    private:evens = [x for x in private:numbers if x % 2 == 0]
+    assert private:evens == [], f"Expected [], got {private:evens}"
+    log("✅ All filtered out works")
+    
+    # Single item
+    private:single = [42]
+    private:result = [x * 2 for x in private:single]
+    assert private:result == [84], f"Expected [84], got {private:result}"
+    log("✅ Single item list comprehension works")
+
+# Run all tests
+test_basic_list_comprehensions()
+test_conditional_list_comprehensions()
+test_list_comprehensions_with_lambdas()
+test_nested_list_comprehensions()
+test_empty_and_edge_cases()
+
+log("🎉 All list comprehension tests passed!") 

@@ -42,6 +42,7 @@ from dana.core.lang.ast import (
     FunctionCall,
     Identifier,
     LambdaExpression,
+    ListComprehension,
     ListLiteral,
     LiteralExpression,
     ObjectFunctionCall,
@@ -161,7 +162,8 @@ class ExpressionTransformer(BaseTransformer):
             | UnaryExpression
             | PlaceholderExpression
             | PipelineExpression
-            | LambdaExpression,
+            | LambdaExpression
+            | ListComprehension,
         ):
             return item
         # If it's a primitive or FStringExpression, wrap as LiteralExpression
@@ -651,10 +653,20 @@ class ExpressionTransformer(BaseTransformer):
 
     def list(self, items):
         """
-        Transform a list literal into a ListLiteral AST node.
+        Transform a list literal or list comprehension into an AST node.
         """
         from dana.core.lang.ast import Expression
 
+        # Check if this is a list comprehension (items[0] would be a Tree with data="list_comprehension")
+        if items and hasattr(items[0], "data") and items[0].data == "list_comprehension":
+            # This is a list comprehension, delegate to the list_comprehension method
+            return self.list_comprehension([items[0]])
+
+        # Check if items[0] is already a ListComprehension (from previous processing)
+        if items and hasattr(items[0], "__class__") and items[0].__class__.__name__ == "ListComprehension":
+            return items[0]
+
+        # This is a regular list literal
         flat_items = self.flatten_items(items)
         # Ensure each item is properly cast to Expression type
         list_items: list[Expression] = []
@@ -1101,6 +1113,48 @@ class ExpressionTransformer(BaseTransformer):
 
         lambda_transformer = LambdaTransformer(main_transformer=self.main_transformer)
         return lambda_transformer.lambda_params(items)
+
+    def list_comprehension(self, items):
+        """Transform list comprehension parse tree to AST node."""
+        from dana.core.lang.ast import ListComprehension
+
+        if not items or len(items) < 1:
+            return None
+
+        # items[0] could be either a Tree (comprehension_body) or a list (if comprehension_body was already processed)
+        comprehension_body = items[0]
+
+        if isinstance(comprehension_body, list):
+            # comprehension_body was already processed and returned a list
+            body_children = comprehension_body
+        elif hasattr(comprehension_body, "data") and comprehension_body.data == "comprehension_body":
+            # comprehension_body is a Tree
+            body_children = comprehension_body.children
+        else:
+            return None
+
+        if len(body_children) < 3:
+            return None
+
+        # Extract components: expression, target, iterable, optional condition
+        expression = self.main_transformer.transform(body_children[0]) if self.main_transformer else body_children[0]
+        target = body_children[1].value if hasattr(body_children[1], "value") else str(body_children[1])
+        iterable = self.main_transformer.transform(body_children[2]) if self.main_transformer else body_children[2]
+
+        # Check for optional condition
+        condition = None
+        if len(body_children) > 3 and body_children[3]:
+            condition = self.main_transformer.transform(body_children[3]) if self.main_transformer else body_children[3]
+
+        return ListComprehension(expression=expression, target=target, iterable=iterable, condition=condition)
+
+    def comprehension_body(self, items):
+        """Transform comprehension body - just pass through to parent."""
+        return items
+
+    def comprehension_if(self, items):
+        """Transform comprehension condition - just pass through to parent."""
+        return items[0] if items else None
 
 
 # File updated to resolve GitHub CI syntax error - 2025-06-09
