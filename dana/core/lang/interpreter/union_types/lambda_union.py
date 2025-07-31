@@ -181,7 +181,7 @@ class LambdaUnionReceiver:
 
         # Create execution context
         context = SandboxContext()
-        lambda_context = context.create_child_scope()
+        lambda_context = context.copy()
 
         # Bind receiver
         lambda_context.set(self.receiver.name, receiver_instance)

@@ -79,8 +79,8 @@ class LambdaReceiver:
             # TODO: This should be passed from the caller
             context = SandboxContext()
 
-            # Create a child scope for method execution
-            method_context = context.create_child_scope()
+            # Create a copy of the context for method execution
+            method_context = context.copy()
 
             # Bind receiver to the receiver parameter
             method_context.set(self.receiver.name, receiver_instance)
