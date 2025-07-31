@@ -4,6 +4,7 @@ from lark import Token, Tree
 
 from dana.core.lang.ast import LambdaExpression, Parameter, TypeHint
 from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
+from dana.core.lang.type_system.constants import COMMON_TYPE_NAMES
 
 
 class LambdaTransformer(BaseTransformer):
@@ -121,9 +122,8 @@ class LambdaTransformer(BaseTransformer):
                     next_item = items[i + 1]
                     # If next item is a token, check if it looks like a type name
                     if isinstance(next_item, Token):
-                        # Common type names that should be treated as type hints
-                        type_names = {"int", "float", "str", "bool", "list", "dict", "tuple", "set", "any"}
-                        if next_item.value in type_names:
+                        # Check if the next item is in the predefined type names
+                        if next_item.value in COMMON_TYPE_NAMES:
                             type_hint = self._transform_type(next_item)
                             i += 1  # Skip the type
                     elif not isinstance(next_item, Token):

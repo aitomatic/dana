@@ -6,6 +6,7 @@ from dana.common.exceptions import SandboxError
 from dana.core.lang.ast import LambdaExpression, TypeHint
 from dana.core.lang.interpreter.struct_system import MethodRegistry, StructTypeRegistry
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.core.lang.type_system.constants import COMMON_TYPE_NAMES, PYTHON_TO_DANA_TYPE_MAPPING
 
 
 class UnionTypeHandler:
@@ -47,7 +48,7 @@ class UnionTypeHandler:
         """
         for type_name in type_names:
             # Check if it's a basic type
-            if type_name in ["int", "float", "str", "bool", "list", "dict", "any"]:
+            if type_name in COMMON_TYPE_NAMES:
                 continue
 
             # Check if it's a registered struct type
@@ -159,8 +160,8 @@ class LambdaUnionReceiver:
         if hasattr(instance, "__struct_type__"):
             return instance.__struct_type__.name
 
-        # For basic Python types, map to Dana type names
-        type_mapping = {int: "int", float: "float", str: "str", bool: "bool", list: "list", dict: "dict", type(None): "null"}
+        # Map Python types to Dana type names
+        type_mapping = PYTHON_TO_DANA_TYPE_MAPPING.copy()
 
         python_type = type(instance)
         return type_mapping.get(python_type, python_type.__name__)
