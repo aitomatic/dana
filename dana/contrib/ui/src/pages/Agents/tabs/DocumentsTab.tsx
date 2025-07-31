@@ -115,7 +115,7 @@ const DocumentsTab: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-6 h-full bg-white rounded-lg">
+    <div className="flex flex-col gap-4 px-6 pb-6 h-full bg-white rounded-lg">
       <input
         type="file"
         ref={fileInputRef}

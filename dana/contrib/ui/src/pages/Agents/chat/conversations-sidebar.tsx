@@ -228,7 +228,7 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
             <TooltipTrigger asChild>
               <div className="flex justify-center items-center rounded-md cursor-pointer hover:bg-gray-100 size-8">
                 <Tools
-                  onClick={() => { }}
+                  onClick={() => {  navigate(`/agents/${agentId}`);}}
                   width={18}
                   height={18}
                   className="text-gray-600 cursor-pointer"
@@ -236,7 +236,7 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
                 />
               </div>
             </TooltipTrigger>
-            <TooltipContent side="bottom">Manage Agent</TooltipContent>
+            <TooltipContent side="bottom">Train Agent</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
