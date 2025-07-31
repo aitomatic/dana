@@ -2,9 +2,11 @@
 
 ## Executive Summary
 
-Make all Dana functions concurrent by default, eliminating explicit concurrent/await syntax while providing automatic parallelism and optimized performance for agent workloads. The design leverages Dana's existing agent-as-struct system and follows KISS principles while ensuring thorough consideration of all critical aspects.
+Make Dana functions concurrent by default through transparent Promise[T] wrapping, eliminating explicit concurrent/await syntax while providing automatic parallelism and optimized performance for agent workloads. The design uses surgical changes to function execution with Promise[T] boundaries, keeping most executors simple and synchronous.
 
-**Key Innovation: Dual Delivery Mechanisms** - Dana provides both `deliver` (eager) and `return` (lazy) keywords with completely transparent typing. The natural choice of `deliver` encourages concurrent execution by default while `return` provides promise when specifically needed.
+**Key Innovation: Dual Delivery Mechanisms** - Dana provides both `deliver` (eager) and `return` (lazy) end-of-function keywords with completely transparent typing. The natural choice of `deliver` encourages concurrent execution by default while `return` provides lazy evaluation when specifically needed.
+
+**Architecture: Sync Executors + Promise[T] Boundaries** - Only Dana function calls enter the async world through Promise[T] wrapping. All other operations (collections, arithmetic, control flow) remain fast and synchronous, with Promise[T] handling transparent resolution when needed.
 
 ## 1. Problem and Context
 
@@ -27,7 +29,14 @@ Dana currently operates with a synchronous execution model where all operations 
 
 ## 2. Design
 
-### Core Principle: Transparent Concurrency with Dual Delivery Mechanisms
+### Core Principle: Promise[T] Boundaries with Dual Delivery Mechanisms
+
+Dana achieves concurrent-by-default through **surgical Promise[T] wrapping of Dana function calls only**. All other operations remain synchronous for maximum performance and simplicity.
+
+**Architecture Overview:**
+- **Dana Functions**: Entry/exit points to async world via Promise[T] wrapping
+- **Collections, Arithmetic, Control Flow**: Fast synchronous execution
+- **Promise[T]**: Transparent async boundary management with magic method resolution
 
 Dana provides two ways to complete functions, giving developers intuitive control over execution timing while maintaining completely transparent types:
 
@@ -35,35 +44,41 @@ Dana provides two ways to complete functions, giving developers intuitive contro
 Immediately evaluates `x`, waits for completion, and delivers the concrete value. Function execution blocks until `x` is fully computed. This is the natural choice for most operations.
 
 #### **`return x` - Lazy Execution**  
-Creates a lazy Promise around `x` and returns immediately without executing `x`. The Promise will execute `x` only when the value is accessed. Function returns instantly with a Promise[T] wrapper that appears as type T.
+Creates a lazy Promise[T] around `x` and returns immediately without executing `x`. The Promise[T] will execute `x` only when the value is accessed. Function returns instantly with a Promise[T] wrapper that appears as type T.
 
 ### Execution Model
 
-#### **Dual Delivery Mechanisms**
+#### **Promise[T] Boundary Architecture**
 
 ```dana
+// Dana functions are the ONLY entry points to async world
 def fetch_user(id: Int) -> User:          // Return type is just User, not Promise[User]
     if cache.has(id):
         deliver cache.get(id)             // Eager: immediate User value
     else:
-        return api.fetch(id)              // Lazy: evaluation that looks like User
+        return api.fetch(id)              // Lazy: Promise[T] wrapper that appears as User
 
 def load_model(size: String) -> MLModel:
     match size:
         "small":  deliver small_model     // Immediate delivery
         "large":  return load_large()     // Lazy - only loads if accessed
 
+// Everything else stays fast and synchronous:
+numbers = [1, 2, 3, 4, 5]                // Fast sync list creation
+doubled = [x * 2 for x in numbers]       // Fast sync comprehension
+total = sum(doubled)                     // Fast sync arithmetic
+
 // Usage is completely transparent:
-user = fetch_user(123)                    // user: User (might be eager or lazy)
-name = user.name                          // Automatically resolves if needed, always String
-model = load_model("large")               // Lazy evaluation created, no loading yet
+user = fetch_user(123)                    // user: User (Promise[T] wrapped internally)
+name = user.name                          // Promise[T] resolves here → concrete string
+model = load_model("large")               // Promise[T] created, no loading yet
 if should_use_model():
     prediction = model.predict(data)      // NOW the large model loads
 ```
 
 #### **Transparent Type System**
 
-Users never see `Promise[T]` types in function signatures or variable declarations. Everything appears as normal types (`User`, `List[Post]`, `Int`, etc.), but the runtime tracks which values are promises internally.
+Users never see `Promise[T]` types in function signatures or variable declarations. Everything appears as normal types (`User`, `List[Post]`, `Int`, etc.), but the runtime tracks which values are Promise[T] internally.
 
 ```dana
 // All these have normal types in the type system:
@@ -73,12 +88,12 @@ count: Int = len(posts)                   // Automatically resolves posts, then 
 message: String = f"User has {count} posts"  // All values resolved automatically
 ```
 
-#### **Transparent Promise Resolution**
+#### **Promise[T] Transparent Resolution**
 
-When promise values are accessed through any operation (field access, method calls, arithmetic, etc.), the runtime automatically resolves them:
+When Promise[T] values are accessed through any operation (field access, method calls, arithmetic, etc.), the runtime automatically resolves them:
 
 ```dana
-// Always lazy function - returns promise
+// Always lazy function - returns Promise[T]
 def expensive_computation() -> Data:
     return perform_heavy_work()
 
@@ -183,21 +198,53 @@ def (orchestrator: OrchestratorAgent) coordinate(task: dict) -> dict:
 Resources accessed via `use()` function can deliver either eager or lazy values:
 
 ```dana
-// Resource operations with conditional loading
-def get_detailed_data(user_id: str) -> dict:
-    return db.query("SELECT * FROM user_details WHERE id = ?", user_id)
+#### **Resource Operations**
 
-def get_api_data(user_id: str) -> dict:
-    return external_api.get_user_profile(user_id)
+Resource operations themselves remain synchronous, but Dana functions that use resources can be concurrent:
 
-def process_user_data(user_id: str) -> dict:
-    db = use("database")
+```dana
+// Resource operations stay synchronous for simplicity
+def process_database_records() -> List[Record]:
+    db = use("database")                   // Sync resource acquisition
+    records = db.query("SELECT * FROM users")  // Sync database query
     
-    // Always fetch basic user data (eager)
-    user_data = db.query("SELECT * FROM users WHERE id = ?", user_id)
-    
-    if user_data.needs_detailed_profile:
-        // Functions return promises - execution deferred until accessed
+    // Dana function processing can be concurrent
+    if heavy_processing_needed():
+        return process_heavy(records)      // Promise[T] - deferred until accessed
+    else:
+        deliver process_light(records)     // Eager - immediate processing
+
+// Usage with transparent Promise[T] resolution:
+results = process_database_records()      // May be Promise[List[Record]]
+count = len(results)                      // Promise[T] resolves here if needed
+```
+
+#### **Collection Processing**
+
+Collections and their operations remain fast and synchronous. Only Dana function calls within collections can introduce Promise[T]:
+
+```dana
+// Collection operations are synchronous and fast:
+users = [get_user(1), get_user(2), get_user(3)]   // 3 Dana function calls → 3 Promise[T]
+names = [u.name for u in users]                   // Promise[T] resolution for each user
+ages = [u.age for u in users]                     // Already resolved, fast access
+
+// Traditional operations stay synchronous:
+numbers = [1, 2, 3, 4, 5]
+doubled = [x * 2 for x in numbers]               // Fast sync arithmetic
+filtered = [x for x in doubled if x > 4]         // Fast sync filtering
+```
+
+#### **Smart Runtime Optimizations**
+
+The runtime can detect multiple Promise[T] accesses and optimize execution:
+
+```dana
+def load_user_dashboard(user_id: int) -> dict:
+    // These Dana functions return Promise[T] if they use 'return'
+    user_data = get_user_data(user_id)
+    if user_data.premium:
+        // Functions return Promise[T] - execution deferred until accessed
         detailed_data = get_detailed_data(user_id)  // Returns Promise[dict]
         api_data = get_api_data(user_id)            // Returns Promise[dict]
         
@@ -208,19 +255,20 @@ def process_user_data(user_id: str) -> dict:
 
 #### **Resource Lifecycle**
 - Resource acquisition (`use()`) remains synchronous for simplicity
-- Operations on resources can use either `return` or `promise`
+- Operations on resources stay synchronous
+- Dana functions that use resources can choose deliver/return
 - Resource cleanup happens automatically when scope ends
 
 ### Error Handling
 
 #### **Error Propagation**
 Errors propagate naturally through both eager and lazy execution chains:
-- Function errors bubble up to callers regardless of deliver mechanism
-- Promise errors surface when the return is accessed (automatically resolved)
+- Function errors bubble up to callers regardless of delivery mechanism
+- Promise[T] errors surface when the return is accessed (automatically resolved)
 - Agent method errors propagate to calling agents
 - Resource operation errors are handled by the calling function
 
-#### **Promise Error Semantics**
+#### **Promise[T] Error Semantics**
 ```dana
 def risky_operation() -> dict:
     safe_data = get_safe_data()                    // Eager, errors surface immediately
@@ -231,26 +279,26 @@ def risky_operation() -> dict:
         combined = merge(safe_data, risky_data)
         deliver combined
     except NetworkError as e:
-        // Handle error from return resolution
+        // Handle error from Promise[T] resolution
         deliver fallback_data(safe_data)
 ```
 
 #### **Error Context**
-- Stack traces preserve concurrent execution context and return resolution chains
+- Stack traces preserve concurrent execution context and Promise[T] resolution chains
 - Error messages include information about which operation (eager or lazy) failed
 - Partial failures in parallel operations are handled gracefully
 
 ### Control Flow
 
 #### **Sequential Execution When Needed**
-When operations must execute in sequence, the runtime detects dependencies:
+When operations must execute in sequence, the runtime detects dependencies automatically. Note that non-Dana operations remain synchronous regardless:
 
 ```dana
 def process_pipeline(data: dict) -> dict:
-    // These must be sequential due to data dependencies
-    cleaned = clean_data(data)      // Must complete first
-    validated = validate(cleaned)   // Depends on cleaned
-    processed = process(validated)  // Depends on validated
+    // These operations have dependencies and execute sequentially
+    cleaned = clean_data(data)      // Must complete first (sync or Promise[T])
+    validated = validate(cleaned)   // Depends on cleaned (sync or Promise[T])
+    processed = process(validated)  // Depends on validated (sync or Promise[T])
     deliver processed
 ```
 
@@ -260,14 +308,14 @@ For cases where explicit sequential execution is needed:
 ```dana
 def critical_operation() -> dict:
     sequential:
-        a = operation1()  // Must complete first
-        b = operation2()  // Must complete second
-        c = operation3()  // Must complete third
+        a = operation1()  // Must complete first (Dana function → Promise[T])
+        b = operation2()  // Must complete second (Dana function → Promise[T])
+        c = operation3()  // Must complete third (Dana function → Promise[T])
     deliver combine(a, b, c)
 ```
 
 #### **Mixed Eager/Lazy Execution**
-Functions can mix eager and lazy returns based on runtime conditions:
+Dana functions can mix eager and lazy returns based on runtime conditions:
 
 ```dana
 def adaptive_processing(complexity: String) -> Result:
@@ -284,7 +332,7 @@ def adaptive_processing(complexity: String) -> Result:
 ### Timeout and Cancellation
 
 #### **Method-Level Timeouts**
-Individual methods can have timeout constraints that work with both deliver mechanisms:
+Individual Dana methods can have timeout constraints that work with both delivery mechanisms:
 
 ```dana
 @timeout(5000)  // 5 seconds
@@ -296,7 +344,7 @@ def (agent: MyAgent) long_operation() -> dict:
 
 @timeout(30000)  // 30 seconds  
 def (agent: MyAgent) complex_analysis() -> dict:
-    return analyze_complex_data()               // Timeout applies to return resolution
+    return analyze_complex_data()               // Timeout applies to Promise[T] resolution
 ```
 
 #### **Cancellation Support**
@@ -511,90 +559,91 @@ result = agent.solve(problem)  // active state
 - **Interpreter**: Modify `DanaExecutor` and related components
 - **Runtime**: Update execution context and task management
 
-### Phase 1: Core Concurrent Runtime (2-3 weeks)
-**Objective**: Establish the foundation for concurrent-by-default execution
+### Phase 1: Promise[T] Foundation (1-2 weeks)
+**Objective**: Implement Promise[T] wrapper system and Dana function async boundaries
 
 **Key Components**:
-- Single concurrent execution path for all Dana operations
-- Automatic concurrent wrapping of function calls
-- Basic resource concurrent integration
-- Error propagation through concurrent chain
-- Runtime conflict detection
-- Basic observability and task tracing
+- Comprehensive Promise[T] class with all magic methods for transparent resolution
+- Dana function call detection and Promise[T] wrapping
+- Promise[T] resolution with ThreadPoolExecutor fallback for sync contexts
+- Basic deliver/return statement parsing and execution
+- Error propagation through Promise[T] resolution chains
+
+**Architecture**:
+- Keep ALL executors synchronous (collections, arithmetic, control flow, etc.)
+- Only wrap Dana function calls in Promise[T]
+- Promise[T] handles all async boundary management internally
+- Transparent resolution on any Promise[T] access
 
 **Dependencies**:
 - None (foundational phase)
 
 **Integration Points**:
-- Modify `DanaExecutor` to use concurrent execution path
-- Update function call handling in interpreter
-- Extend `use()` function for basic concurrent operations
-- Implement concurrent context management
-- Add conflict detection system
+- Modify FunctionExecutor to detect Dana functions and wrap in Promise[T]
+- Add deliver/return statement AST nodes and execution
+- Implement Promise[T] class in runtime with magic methods
+- Add Promise[T] transparent resolution for all operations
 
 **Testing Strategy**:
-- **Unit Tests**: All existing function call tests must pass
-- **Integration Tests**: Basic concurrent execution path validation
-- **Performance Tests**: Measure concurrent overhead vs sync execution
-- **Regression Tests**: Ensure no existing functionality breaks
-- **Conflict Detection Tests**: Verify safe parallel execution
+- **Promise[T] Unit Tests**: Test Promise[T] creation, resolution, and transparent access
+- **Dana Function Tests**: Verify Dana function calls return Promise[T] when using 'return'
+- **Transparent Operation Tests**: Test arithmetic, comparisons, attribute access on Promise[T]
+- **Error Propagation Tests**: Verify errors surface correctly from Promise[T] resolution
+- **Regression Tests**: Ensure all existing sync operations unchanged
 
 **Success Metrics**:
-- All existing Dana code continues to work
-- Basic concurrent execution path functional
-- Performance improvements measurable for I/O operations
-- Zero regressions in existing functionality
-- Runtime conflict detection working
+- All existing Dana code continues to work unchanged
+- Dana functions can use deliver/return keywords
+- Promise[T] values behave transparently as their wrapped type
+- Zero performance impact on non-Dana operations
+- Promise[T] resolution works in all contexts (sync/async)
 
 **Risk Mitigation**:
-- **Feature Flag**: Implement concurrent execution behind a feature flag
-- **Rollback Strategy**: Can revert to sync execution if critical issues arise
-- **Comprehensive Testing**: Extensive test coverage before deployment
-- **Performance Monitoring**: Track performance impact on existing workloads
+- **Surgical Changes**: Only FunctionExecutor and Promise[T] class touched
+- **Backward Compatibility**: All existing 'return' statements work unchanged
+- **Performance Isolation**: No overhead for operations that don't use Dana functions
+- **Comprehensive Testing**: Focus on Promise[T] transparency and edge cases
 
-### Phase 2: Dual Return Mechanisms (3-4 weeks)
-**Objective**: Implement the core `return` vs `promise` functionality with transparent typing
+### Phase 2: Promise[T] Optimizations and Advanced Features (2-3 weeks)
+**Objective**: Optimize Promise[T] system and add advanced concurrent features
 
 **Key Components**:
-- `promise` keyword implementation in parser and AST
-- Transparent return wrapper system with transparent resolution
-- Runtime return tracking and resolution
-- Smart parallelization detection for multiple promises
-- Error handling for return chains
-- Type system integration (transparent Promise[T] → T)
+- Smart parallelization detection for multiple Promise[T] accesses
+- Promise[T] caching and memoization
+- Advanced error handling and context preservation
+- Performance profiling and monitoring for Promise[T] usage
+- Integration with agent system for concurrent agent operations
 
 **Dependencies**:
-- Phase 1 concurrent runtime must be stable
-- Parser must support new `promise` keyword
-- Type system must handle transparent return types
+- Phase 1 Promise[T] foundation must be stable
+- All basic deliver/return functionality working
+- Promise[T] transparent resolution fully implemented
 
 **Integration Points**:
-- Extend Dana parser to recognize `promise` keyword
-- Implement return wrapper types in runtime
-- Add transparent resolution mechanisms to all value operations
-- Integrate return detection with existing concurrent parallelization
-- Update error handling for return resolution chains
+- Extend Promise[T] class with parallel resolution capabilities
+- Add Promise[T] performance monitoring and profiling
+- Integrate Promise[T] with agent method calls
+- Add Promise[T] caching and optimization systems
 
 **Testing Strategy**:
-- **Promise Unit Tests**: Test return creation, resolution, and transparent access
-- **Transparent Type Tests**: Verify users never see Promise[T] types
-- **Conditional Execution Tests**: Test promise and skipped computation
-- **Parallel Promise Tests**: Verify multiple promises can execute in parallel
-- **Error Propagation Tests**: Test error handling in return chains
-- **Performance Tests**: Measure benefits of conditional computation
+- **Parallel Promise[T] Tests**: Verify multiple Promise[T] can resolve in parallel
+- **Performance Tests**: Measure Promise[T] optimization benefits
+- **Agent Integration Tests**: Test Promise[T] with agent method calls
+- **Caching Tests**: Verify Promise[T] memoization works correctly
+- **Load Tests**: Test Promise[T] system under high concurrent load
 
 **Success Metrics**:
-- `promise` keyword works correctly in all function contexts
-- Transparent resolution is completely invisible to users
-- Conditional computation provides measurable performance benefits
-- Promise errors surface correctly when accessed
-- All existing code continues to work unchanged
+- Multiple Promise[T] resolve in parallel when possible
+- Promise[T] performance overhead minimized through caching
+- Agent operations benefit from Promise[T] lazy evaluation
+- Promise[T] system scales with concurrent load
+- Comprehensive monitoring and profiling available
 
 **Risk Mitigation**:
-- **Backward Compatibility**: All existing `return` statements work unchanged
-- **Gradual Rollout**: Promise functionality can be added incrementally
-- **Performance Monitoring**: Track overhead of return wrapper system
-- **Error Handling**: Robust error propagation from return resolution
+- **Incremental Features**: Add optimizations one at a time
+- **Performance Monitoring**: Track overhead of each optimization
+- **Feature Flags**: Advanced features can be disabled if needed
+- **Rollback Capability**: Can revert to basic Phase 1 Promise[T] system
 
 ### Phase 3: Agent Integration (1-2 weeks)
 **Objective**: Optimize agent workflows with concurrent benefits and dual deliver mechanisms
@@ -721,217 +770,113 @@ If all phases fail:
 ### Technical Implementation Details
 
 #### Runtime Changes
-- Modify `DanaExecutor` to use single concurrent execution path
-- Update all node types to support concurrent execution
-- Implement automatic task gathering and management
-- Add concurrent context management
-- Implement conflict detection system
-- **Add return wrapper system with transparent typing**
-- **Implement transparent resolution mechanisms for all operations**
-- **Add smart return parallelization detection**
+- **Promise[T] Class**: Implement comprehensive Promise[T] with all magic methods (__getattr__, __getitem__, __call__, etc.)
+- **FunctionExecutor Changes**: Detect Dana functions and wrap calls in Promise[T] when using 'return'
+- **Transparent Resolution**: Promise[T] automatically resolves on any access using ThreadPoolExecutor fallback
+- **Error Propagation**: Promise[T] preserves error context and location information
+- **Synchronous Executor Preservation**: Keep all other executors (collections, arithmetic, etc.) fast and synchronous
 
 #### Interpreter Changes
-- Update function call handling to be concurrent by default
-- Modify agent method dispatch to be concurrent
-- Implement resource concurrent wrapping
-- Add parallel execution detection
-- Add sequential block support
-- **Add `promise` keyword to parser and AST**
-- **Implement return statement execution**
-- **Add conditional execution optimization for promises**
+- **Deliver/Return Parsing**: Add deliver and return statement AST nodes to parser
+- **Dana Function Detection**: Identify Dana functions vs Python/builtin functions in FunctionExecutor
+- **Promise[T] Wrapping**: Wrap Dana function calls with Promise[T] only when function uses 'return'
+- **Transparent Integration**: Ensure Promise[T] works seamlessly with existing Dana operations
+- **Backward Compatibility**: All existing 'return' statements continue working unchanged
 
 #### Type System Integration
-- **Transparent return typing: Promise[T] appears as T to users**
-- **Transparent resolution integration with all type operations**
-- **Promise-aware type checking and inference**
-- **Error type propagation through return chains**
+- **Transparent Typing**: Promise[T] appears as T in all type annotations and signatures
+- **Magic Method Resolution**: Promise[T] supports all operations the wrapped type supports
+- **Error Type Preservation**: Errors from Promise[T] resolution maintain original type information
+- **No Promise[T] Exposure**: Users never see Promise[T] types in their code
 
 #### Resource System Integration
-- Extend `use()` function to support concurrent operations
-- Implement concurrent resource lifecycle management
-- Add resource pooling and optimization
-- Ensure proper error handling for concurrent resources
-- Add resource conflict resolution
-- **Integrate resource operations with return system**
-- **Support both eager and lazy resource operations** 
+- **Synchronous Resources**: Resource operations (use(), db.query(), etc.) remain synchronous
+- **Dana Function Integration**: Dana functions can choose deliver/return when using resources
+- **No Resource Concurrency**: Resources themselves are not made concurrent, only Dana functions using them
+- **Transparent Promise[T] Access**: Resources work transparently with Promise[T] values 
 
 ## 5. Benefits and Trade-offs
 
 ### Benefits
 
-#### **Core Async Benefits**
-- **60-80% faster** for I/O workloads with automatic parallelization
-- **No syntax changes** - existing code works unchanged
-- **Automatic parallelism** where safe (collections, independent operations)
-- **Better resource utilization** - CPU and network efficiency
-- **Scalable execution** - handle more concurrent operations
-- **Runtime safety** - automatic conflict detection
+#### **Core Promise[T] Benefits**
+- **60-80% faster** for I/O workloads through Promise[T] lazy evaluation
+- **Zero syntax changes** - existing code works unchanged
+- **Surgical implementation** - only Dana functions get Promise[T] treatment
+- **Better resource utilization** - CPU and network efficiency through lazy evaluation
+- **Scalable execution** - handle more concurrent operations through Promise[T] parallelization
+- **No executor complexity** - collections, arithmetic stay fast and synchronous
 
 #### **Dual Delivery Mechanism Benefits**
 - **Natural Concurrency Adoption** - `deliver` feels immediate and active, users choose it naturally
 - **Intuitive Lazy Semantics** - `return` naturally suggests "give this back when asked"
 - **Psychological Default to Concurrent** - eager execution becomes the obvious choice
 - **Conditional computation** - skip expensive work when results not needed with `return`
-- **Transparent promise** - users never see Promise[T] types
+- **Transparent Promise[T]** - users never see Promise[T] types
 - **Smart resource usage** - load models, data, or services only when accessed
 - **Performance control** - developers choose eager vs lazy execution naturally
 - **Zero cognitive overhead** - no concurrent/lazy syntax to learn
-- **Natural composition** - promises work seamlessly with all operations
-
-#### **Agent Workflow Benefits**
-- **Agent efficiency** - agents can start work conditionally
-- **Resource optimization** - expensive agent operations only when needed
-- **Parallel agent execution** - multiple agents can work simultaneously when using promises
-- **Simple agent code** - no complex concurrent coordination needed
+- **Natural composition** - Promise[T] works seamlessly with all operations
 
 #### **Developer Experience Benefits**
 - **Single mental model** - no sync/concurrent confusion
 - **Natural language semantics** - `deliver` and `return` feel intuitive
 - **Concurrent by psychology** - developers naturally choose eager execution
 - **Easy debugging** - values are always concrete when accessed
-- **Gradual adoption** - can add promise incrementally to existing code
+- **Gradual adoption** - can add return incrementally to existing code
 
 ### Trade-offs
 
 #### **Runtime Complexity**
-- **Promise wrapper overhead** - slight memory increase for return tracking
-- **Transparent resolution complexity** - runtime must intercept all value operations
-- **Execution timing** - harder to predict exactly when work happens with promises
-- **Debugging complexity** - promise can make timing less predictable
+- **Promise[T] wrapper overhead** - slight memory increase for lazy evaluation tracking
+- **Transparent resolution complexity** - runtime must intercept all value operations on Promise[T]
+- **Execution timing** - harder to predict exactly when work happens with lazy evaluation
+- **Debugging complexity** - Promise[T] can make timing less predictable
 
 #### **Developer Learning**
 - **New execution model** - developers need to understand eager vs lazy semantics
-- **Promise lifecycle** - understanding when promises resolve vs stay lazy
+- **Promise[T] lifecycle** - understanding when Promise[T] resolve vs stay lazy
 - **Performance characteristics** - different patterns for optimal performance
-- **Error timing** - return errors surface when accessed, not when created
-
-#### **Type System Complexity**
-- **Transparent typing** - type system must track Promise[T] internally while showing T
-- **Error propagation** - return error types must propagate correctly
-- **Type inference** - must infer whether expressions are eager or lazy
+- **Error timing** - lazy evaluation errors surface when accessed, not when created
 
 ### Risk Mitigation
 
 #### **Compatibility and Stability**
-- **Comprehensive testing** - ensure all existing code continues to work
-- **Backward compatibility** - all existing `return` statements work unchanged
-- **Gradual rollout** - implement return features incrementally
-- **Performance monitoring** - track overhead of return wrapper system
-
-#### **Developer Experience**
-- **Clear documentation** - guidance on when to use deliver vs promise
-- **Debugging tools** - enhanced debugging support for return resolution
-- **Error messages** - clear error messages for promise-related issues
-- **Migration guides** - help developers adopt return patterns effectively
+- **Surgical changes** - only FunctionExecutor and Promise[T] class modified
+- **Backward compatibility** - all existing 'return' statements work unchanged
+- **Performance isolation** - no overhead for operations that don't use Dana functions
+- **Gradual rollout** - implement Promise[T] features incrementally
 
 ## 6. Success Metrics
 
 ### Performance Metrics
-
-#### **Core Performance**
-- **60-80% performance improvement** for I/O-heavy workloads with automatic parallelization
-- **10-30% additional improvement** for workloads using conditional computation with promises
-- **Better resource utilization** (CPU, memory, network) with lazy loading patterns
-- **Scalability improvements** for concurrent operations with return parallelization
-
-#### **Promise-Specific Performance**
-- **Computational savings** measured by skipped expensive operations using promises
+- **60-80% performance improvement** for I/O-heavy workloads using Promise[T] lazy evaluation
+- **Zero performance regression** for operations not using Dana functions
 - **Memory efficiency** improvements from lazy resource loading
-- **Parallel execution gains** when multiple promises are accessed together
-- **Resource optimization** benefits from conditional agent and service activation
+- **Parallel execution gains** when multiple Promise[T] are accessed together
 
 ### Compatibility Metrics
-
-#### **Backward Compatibility**
 - **All existing tests pass** without modification
-- **No breaking changes** to existing code (all `return` statements work unchanged)
-- **Backward compatibility** maintained throughout implementation
-- **Existing agent workflows** continue to work with no modifications
-
-#### **Promise Integration**
-- **Seamless return adoption** - existing code can add promises incrementally
-- **Type compatibility** - Promise[T] values work everywhere T values work
-- **Library compatibility** - existing libraries work with return values transparently
+- **No breaking changes** to existing code
+- **Promise[T] transparency** - users never see Promise[T] types in their code
+- **Seamless integration** - Promise[T] values work everywhere T values work
 
 ### Developer Experience Metrics
-
-#### **Ease of Use**
 - **Zero learning curve** for basic usage (existing code unchanged)
-- **Intuitive return adoption** - developers can add `promise` keyword naturally
+- **Intuitive adoption** - developers naturally use deliver vs return appropriately
 - **Transparent operations** - users never need to think about Promise[T] types
-- **Natural composition** - promises compose with all existing Dana constructs
-
-#### **Development Productivity**
-- **Reduced development time** for agent workflows with conditional execution
-- **Simplified code** - no manual concurrent/await management required
-- **Better debugging experience** with promise-aware tools
-- **Improved performance** without code complexity
-
-### Quality Metrics
-
-#### **Reliability**
-- **Stable performance** across different workloads with mixed eager/lazy execution
-- **Reliable error handling** for both eager and lazy operations
-- **Consistent behavior** across different execution contexts
-- **Minimal performance regressions** for sync-heavy workloads
-
-#### **Promise System Quality**
-- **Transparent resolution reliability** - return resolution works correctly in all contexts
-- **Error propagation correctness** - return errors surface at the right time
-- **Memory management** - return wrappers are cleaned up properly
-- **Concurrency safety** - return resolution is thread-safe and deterministic
 
 ## 7. Future Considerations
 
 ### Potential Enhancements
-
-#### **Advanced Promise Features**
-- **Promise composition** - combine multiple promises efficiently
-- **Promise caching** - memoize return results for repeated access
-- **Promise cancellation** - cancel unresolved promises when no longer needed
-- **Promise streaming** - support for streaming return results
-
-#### **Smart Runtime Optimizations**
-- **Predictive return resolution** - start promising operations based on usage patterns
-- **Adaptive parallelization** - dynamically adjust parallel execution based on system load
-- **Resource prediction** - pre-load resources based on return usage patterns
-- **Execution planning** - optimize execution order for complex return dependency graphs
-
-#### **Development Tools**
-- **Promise profiler** - visualize return creation, resolution, and performance
-- **Execution tracer** - show eager vs lazy execution patterns
-- **Performance advisor** - suggest when to use deliver vs promise
-- **Promise debugger** - enhanced debugging for return resolution chains
-
-### Ecosystem Impact
-
-#### **Library and Framework Development**
-- **Promise-aware libraries** - standard patterns for library functions using promises
-- **Resource ecosystem** - standards for lazy resource implementations
-- **Agent patterns** - common patterns for agent development with promises
-- **Tooling integration** - development tools designed for promise-based development
-
-#### **Language Evolution**
-- **Promise syntax extensions** - potential syntactic sugar for common return patterns
-- **Type system evolution** - more sophisticated return type inference
-- **Error handling evolution** - enhanced error handling patterns for return chains
-- **Performance analysis** - built-in performance analysis for return usage
+- **Promise[T] composition** - combine multiple Promise[T] efficiently
+- **Promise[T] caching** - memoize results for repeated access
+- **Promise[T] cancellation** - cancel unresolved Promise[T] when no longer needed
+- **Advanced parallelization** - optimize execution order for complex Promise[T] dependency graphs
 
 ### Long-term Vision
-
-#### **Concurrency Leadership**
-- **Industry-leading promise** - Dana becomes the benchmark for transparent laziness
+- **Industry-leading lazy evaluation** - Dana becomes the benchmark for transparent laziness
 - **Agent-native performance** - optimal performance for agent workloads with selective computation
-- **Resource efficiency leadership** - industry-leading resource utilization with conditional loading
+- **Zero-overhead abstraction** - Promise[T] system with no performance cost when not used
 
-#### **Developer Experience Excellence**
-- **Zero-overhead abstraction** - return system with no performance cost when not used
-- **Intuitive concurrency** - most intuitive concurrent programming model in industry
-- **Transparent optimization** - runtime optimizes code automatically without developer intervention
-
-#### **Platform Integration**
-- **Cloud-native optimization** - return patterns optimized for cloud and serverless environments
-- **Distributed execution** - return system that works across distributed agent networks
-- **Edge computing** - efficient return resolution for edge and mobile environments
-
-The dual deliver mechanism with transparent return typing represents a significant evolution in programming language design, providing the benefits of promise and conditional computation while maintaining the simplicity and intuitive nature that makes Dana unique. 
+The dual delivery mechanism with transparent Promise[T] typing represents a significant evolution in programming language design, providing the benefits of lazy evaluation and conditional computation while maintaining the simplicity and intuitive nature that makes Dana unique. 
