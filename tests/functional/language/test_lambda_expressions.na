@@ -1,0 +1,102 @@
+# Comprehensive functional tests for lambda expressions
+log("Starting lambda expressions functional tests")
+
+# Helper function for higher-order function tests
+def apply_twice(func, x):
+    return func(func(x))
+
+# Helper function for closure tests
+def create_multiplier(factor):
+    return lambda x :: x * factor
+
+# Test 1: Basic lambda expressions
+def test_basic_lambdas():
+    # Simple lambda with no parameters
+    simple_lambda = lambda :: 42
+    result = simple_lambda()
+    assert result == 42, f"Expected 42, got {result}"
+    
+    # Lambda with one parameter
+    double = lambda x :: x * 2
+    result2 = double(5)
+    assert result2 == 10, f"Expected 10, got {result2}"
+    
+    # Lambda with multiple parameters
+    add = lambda x, y :: x + y
+    result3 = add(3, 7)
+    assert result3 == 10, f"Expected 10, got {result3}"
+    
+    log("✅ Basic lambda tests passed")
+
+# Test 2: Lambda expressions with different data types
+def test_lambda_data_types():
+    # String operations
+    greet = lambda name :: f"Hello, {name}!"
+    greeting = greet("Alice")
+    assert greeting == "Hello, Alice!", f"Expected 'Hello, Alice!', got {greeting}"
+    
+    # List operations
+    get_first = lambda lst :: lst[0] if len(lst) > 0 else None
+    first = get_first([1, 2, 3])
+    assert first == 1, f"Expected 1, got {first}"
+    
+    # Dictionary operations
+    get_value = lambda d, key :: d.get(key, "Not found")
+    value = get_value({"name": "Bob", "age": 25}, "name")
+    assert value == "Bob", f"Expected 'Bob', got {value}"
+    
+    log("✅ Lambda data type tests passed")
+
+# Test 3: Lambda expressions in higher-order functions
+def test_lambda_higher_order():
+    # Lambda passed to a function
+    increment = lambda x :: x + 1
+    result = apply_twice(increment, 5)
+    assert result == 7, f"Expected 7, got {result}"
+    
+    # Lambda with lambda composition
+    multiply_three = lambda x :: x * 3
+    add_five = lambda x :: x + 5
+    composed_result = add_five(multiply_three(4))
+    assert composed_result == 17, f"Expected 17, got {composed_result}"
+    
+    log("✅ Lambda higher-order function tests passed")
+
+# Test 4: Lambda expressions with local variables (closures)
+def test_lambda_closures():
+    # Simple closure test without complex variable capture
+    factor = 2
+    simple_multiply = lambda x :: x * factor
+    
+    result1 = simple_multiply(5)
+    assert result1 == 10, f"Expected 10, got {result1}"
+    
+    # Test with different factor
+    factor = 3
+    result2 = simple_multiply(5)
+    assert result2 == 15, f"Expected 15, got {result2}"
+    
+    log("✅ Lambda closure tests passed")
+
+# Test 5: Complex lambda expressions
+def test_complex_lambdas():
+    # Lambda with conditional logic
+    max_func = lambda a, b :: a if a > b else b
+    max_result = max_func(8, 3)
+    assert max_result == 8, f"Expected 8, got {max_result}"
+    
+    # Lambda with nested operations
+    complex_calc = lambda x, y :: (x + y) * 2 - 1
+    calc_result = complex_calc(3, 4)
+    assert calc_result == 13, f"Expected 13, got {calc_result}"
+    
+    log("✅ Complex lambda tests passed")
+
+# Run all tests
+test_basic_lambdas()
+test_lambda_data_types()
+test_lambda_higher_order()
+test_lambda_closures()
+test_complex_lambdas()
+
+log("🎉 All lambda expression functional tests completed successfully!") 
