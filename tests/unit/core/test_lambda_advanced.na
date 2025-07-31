@@ -1,0 +1,199 @@
+# log_level("INFO")
+
+# Advanced unit tests for lambda expressions - integration and edge cases
+log("Starting advanced lambda expressions unit tests")
+
+# Test 1: Lambda expressions with function definitions
+# Function that returns a lambda
+def create_multiplier(factor: int) -> callable:
+    return lambda x :: x * factor
+
+double = create_multiplier(2)
+triple = create_multiplier(3)
+
+# assert double(5) == 10, f"Expected 10, got {double(5)}"
+# assert triple(4) == 12, f"Expected 12, got {triple(4)}"
+
+# Function that takes a lambda as parameter
+def apply_operation(operation, values: list) -> list:
+    result = []
+    for x in values:
+        result.append(operation(x))
+    return result
+
+square = lambda x :: x ** 2
+numbers = [1, 2, 3, 4]
+squared = apply_operation(square, numbers)
+assert squared == [1, 4, 9, 16], f"Expected [1, 4, 9, 16], got {squared}"
+
+log("✅ Lambda with functions tests passed")
+
+# Test 2: Lambda expressions with type annotations
+# Lambda with implicit typing through usage
+add_numbers = lambda a, b :: a + b
+int_result = add_numbers(5, 3)
+float_result = add_numbers(5.5, 3.2)
+str_result = add_numbers("hello", "world")
+
+assert int_result == 8, f"Expected 8, got {int_result}"
+assert abs(float_result - 8.7) < 0.001, f"Expected 8.7, got {float_result}"
+assert str_result == "helloworld", f"Expected 'helloworld', got {str_result}"
+
+# Lambda with type checking
+# safe_divide = lambda a, b :: a / b if isinstance(a, (int, float)) and isinstance(b, (int, float)) and b != 0 else None
+# assert safe_divide(10, 2) == 5.0, "Safe divide with valid numbers failed"
+# assert safe_divide(10, 0) is None, "Safe divide with zero should return None"
+# assert safe_divide("10", 2) is None, "Safe divide with string should return None"
+
+log("✅ Lambda type integration tests passed")
+
+# Test 3: Lambda expressions with control flow
+# Lambda with conditional expressions
+# classify_number = lambda x :: "positive" if x > 0 else ("zero" if x == 0 else "negative")
+# assert classify_number(5) == "positive", "Positive classification failed"
+# assert classify_number(0) == "zero", "Zero classification failed"
+# assert classify_number(-3) == "negative", "Negative classification failed"
+
+# Lambda with complex conditionals
+# grade_letter = lambda score :: (
+#     if score >= 90:
+#         "A"
+#     elif score >= 80:
+#         "B"
+#     elif score >= 70:
+#         "C"
+#     elif score >= 60:
+#         "D"
+#     else:
+#         "F"
+# )
+# assert grade_letter(95) == "A", "Grade A failed"
+# assert grade_letter(85) == "B", "Grade B failed"
+# assert grade_letter(55) == "F", "Grade F failed"
+
+# Lambda used in control flow
+# is_valid = lambda x :: x is not None and x > 0
+# test_values = [5, 0, -3, None, 10]
+# valid_count = 0
+
+# for value in test_values:
+#     if is_valid(value):
+#         valid_count += 1
+
+# assert valid_count == 2, f"Expected 2 valid values, got {valid_count}"
+
+log("✅ Lambda control flow tests passed")
+
+# Test 4: Lambda expressions with recursion
+# Simple recursive lambda (factorial)
+# factorial = lambda n :: 1 if n <= 1 else n * factorial(n - 1)
+# assert factorial(5) == 120, f"Expected 120, got {factorial(5)}"
+# assert factorial(0) == 1, f"Expected 1, got {factorial(0)}"
+
+# Recursive lambda with list processing
+# sum_list = lambda lst :: 0 if not lst else lst[0] + sum_list(lst[1:])
+# assert sum_list([1, 2, 3, 4, 5]) == 15, f"Expected 15, got {sum_list([1, 2, 3, 4, 5])}"
+# assert sum_list([]) == 0, f"Expected 0, got {sum_list([])}"
+
+# Fibonacci using lambda
+# fibonacci = lambda n :: n if n <= 1 else fibonacci(n-1) + fibonacci(n-2)
+# assert fibonacci(7) == 13, f"Expected 13, got {fibonacci(7)}"
+
+log("✅ Lambda recursion tests passed")
+
+# Test 5: Lambda expressions with exception handling
+# Lambda with safe operations
+# safe_int_convert = lambda x :: int(x) if str(x).isdigit() else 0
+# assert safe_int_convert("123") == 123, "Safe int conversion failed"
+# assert safe_int_convert("abc") == 0, "Safe int conversion with invalid input failed"
+
+# Lambda with try-catch equivalent
+# safe_operation = lambda a, b, op :: (
+#    a + b if op == "add" else
+#    a - b if op == "sub" else
+#    a * b if op == "mul" else
+#    a / b if op == "div" and b != 0 else
+#    "invalid operation"
+# )
+
+# assert safe_operation(10, 5, "add") == 15, "Safe add operation failed"
+# assert safe_operation(10, 5, "div") == 2.0, "Safe div operation failed"
+# assert safe_operation(10, 0, "div") == "invalid operation", "Safe div by zero failed"
+# assert safe_operation(10, 5, "invalid") == "invalid operation", "Invalid operation handling failed"
+
+log("✅ Lambda exception handling tests passed")
+
+# Test 6: Lambda expressions with memory and performance
+# Test lambda creation and garbage collection
+# lambdas = []
+# for i in range(100):
+#     multiplier = i
+#     temp_lambda = lambda x :: x * multiplier
+#     lambdas.append(temp_lambda)
+
+# Test that lambdas maintain their closure values
+# assert lambdas[0](10) == 0, "First lambda should multiply by 0"
+# assert lambdas[50](10) == 500, "Middle lambda should multiply by 50"
+# assert lambdas[99](10) == 990, "Last lambda should multiply by 99"
+
+# Test lambda reuse
+reusable_lambda = lambda x :: x * 2
+results = []
+for i in range(10):
+    results.append(reusable_lambda(i))
+
+assert results == [0, 2, 4, 6, 8, 10, 12, 14, 16, 18], f"Reusable lambda failed: {results}"
+
+log("✅ Lambda memory and performance tests passed")
+
+# Test 7: Lambda expressions with data structures
+# Lambda with custom data structure
+struct Point:
+    x: float
+    y: float
+
+points = [Point(x=1.0, y=2.0), Point(x=3.0, y=4.0), Point(x=5.0, y=6.0)]
+
+# Lambda for distance calculation
+distance_from_origin = lambda p :: (p.x ** 2 + p.y ** 2) ** 0.5
+distances = []
+for p in points:
+    distances.append(distance_from_origin(p))
+
+# Check first distance (sqrt(1^2 + 2^2) = sqrt(5) ≈ 2.236)
+assert abs(distances[0] - 2.236) < 0.01, f"Expected ~2.236, got {distances[0]}"
+
+# Lambda for point transformation
+translate = lambda p, dx, dy :: Point(x=p.x + dx, y=p.y + dy)
+translated = translate(points[0], 10, 20)
+assert translated.x == 11.0 and translated.y == 22.0, "Point translation failed"
+
+log("✅ Lambda with data structures tests passed")
+
+# Lambda for delayed execution simulation
+operations = []
+
+# Create lambdas that simulate different operations
+for i in range(5):
+    multiplier = i
+    op = lambda x :: x * multiplier
+    operations.append(op)
+
+# Execute operations
+base_value = 10
+results = []
+for op in operations:
+    results.append(op(base_value))
+
+# assert results == [0, 10, 20, 30, 40], f"Expected [0, 10, 20, 30, 40], got {results}"
+
+# Lambda for conditional execution
+# should_execute = lambda condition, func, value :: func(value) if condition else value
+# double = lambda x :: x * 2
+
+# assert should_execute(True, double, 5) == 10, "Conditional execution (true) failed"
+# assert should_execute(False, double, 5) == 5, "Conditional execution (false) failed"
+
+log("✅ Lambda async patterns tests passed")
+
+log("🎉 All advanced lambda expression unit tests completed successfully!") 

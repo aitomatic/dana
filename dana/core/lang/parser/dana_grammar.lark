@@ -56,7 +56,7 @@ elif_stmt: "elif" expr ":" [COMMENT] block
 
 // Other compound statements
 while_stmt: "while" expr ":" [COMMENT] block
-for_stmt: "for" NAME "in" expr ":" [COMMENT] block
+for_stmt: "for" for_targets "in" expr ":" [COMMENT] block
 function_def: [decorators] "def" NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
 method_def: [decorators] "def" "(" typed_parameter ")" NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
 try_stmt: "try" ":" [COMMENT] block except_clause+ ["finally" ":" [COMMENT] block]
@@ -224,7 +224,10 @@ target: atom
 // ===== EXPRESSIONS =====
 expr: pipe_expr
 
-pipe_expr: or_expr (PIPE or_expr)*
+pipe_expr: conditional_expr (PIPE conditional_expr)*
+
+// Conditional expressions (ternary operator): expr if condition else expr
+conditional_expr: or_expr ["if" or_expr "else" conditional_expr]
 
 // ===== FUNCTION COMPOSITION EXPRESSIONS =====
 // Only allowed in declarative function definitions
@@ -382,20 +385,47 @@ atom: variable trailer*
     | NONE
     | collection
     | placeholder
+    | lambda_expr
     | "(" expr ")"
 
 // ===== COLLECTIONS =====
-collection: list | dict | tuple | set
+collection: list | set | dict | tuple
 
 list: "[" [list_items] "]"
-dict: "{" [dict_items] "}"
+    | list_comprehension
+dict: dict_comprehension
+    | "{" [dict_items] "}"
 tuple: "(" ")"
      | "(" expr "," [list_items] ")"
-set: "{" list_items "}"
+set: set_comprehension
+    | "{" list_items"}"
 
 list_items: expr ("," expr)* [","]
 dict_items: key_value_pair ("," key_value_pair)* [","]
 key_value_pair: expr ":" expr
+
+// ===== COMPREHENSIONS =====
+list_comprehension: "[" comprehension_body "]"
+set_comprehension: "{" comprehension_body "}"
+dict_comprehension: "{" dict_comprehension_body "}"
+comprehension_body: or_expr "for" for_targets "in" or_expr [comprehension_if]
+dict_comprehension_body: "(" or_expr ":" or_expr ")" "for" for_targets "in" or_expr [comprehension_if]
+
+
+comprehension_if: "if" or_expr
+
+// ===== FOR LOOP TARGETS =====
+for_targets: NAME | "(" for_target_list ")"
+for_target_list: NAME ("," NAME)*
+
+
+
+
+
+// ===== LAMBDA EXPRESSIONS =====
+lambda_expr: "lambda" [lambda_receiver] [lambda_params] "::" expr
+lambda_receiver: "(" NAME ":" basic_type ")"
+lambda_params: NAME [":" basic_type] ("," NAME [":" basic_type])*
 
 // ===== WHITESPACE AND COMMENTS =====
 // Modified to handle comments and newlines better
