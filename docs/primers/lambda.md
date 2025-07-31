@@ -24,6 +24,11 @@ translate_point = lambda (point: Point) dx: float, dy: float -> Point(
     y=point.y + dy
 )
 
+# Lambda with conditional expressions (ternary operator):
+get_first = lambda lst -> lst[0] if len(lst) > 0 else None
+max_func = lambda a, b -> a if a > b else b
+classify = lambda x -> "positive" if x > 0 else ("zero" if x == 0 else "negative")
+
 # Lambda in pipelines:
 pipeline = (lambda x -> x * 2) | (lambda y -> y + 1) | (lambda z -> z * z)
 result = pipeline(5)  # 5 → 10 → 11 → 121
@@ -88,6 +93,7 @@ This design choice makes Dana lambdas:
 - **Type safety**: Full type hint support
 - **Struct receivers**: Method-like behavior on data
 - **Complex expressions**: Multi-line and nested logic
+- **Conditional expressions**: Ternary operator support (`expr if condition else expr`)
 - **Pipeline integration**: Seamless composition
 - **Union types**: Handle multiple types elegantly
 
@@ -99,23 +105,28 @@ Lambda expressions in Dana serve multiple purposes:
 # 1. Simple anonymous functions
 square = lambda x -> x * x
 
-# 2. Type-safe operations
+# 2. Conditional logic with ternary operator
+get_first = lambda lst -> lst[0] if len(lst) > 0 else None
+max_func = lambda a, b -> a if a > b else b
+```
+
+# 3. Type-safe operations
 safe_divide = lambda x: float, y: float -> {
     return x / y if y != 0 else 0.0
 }
 
-# 3. Struct methods (receiver syntax)
+# 4. Struct methods (receiver syntax)
 scale_point = lambda (point: Point) factor: float -> Point(
     x=point.x * factor,
     y=point.y * factor
 )
 
-# 4. Pipeline components
+# 5. Pipeline components
 data_processor = (lambda x -> x.strip()) | 
                 (lambda x -> x.upper()) | 
                 (lambda x -> f"PROCESSED: {x}")
 
-# 5. Union type handlers
+# 6. Union type handlers
 shape_analyzer = lambda (shape: Point | Circle | Rectangle) -> {
     return "point" if shape._type.name == "Point"
     else "circle" if shape._type.name == "Circle"
@@ -179,6 +190,77 @@ safe_divide = lambda x: float, y: float -> {
 # Nested expressions
 quadratic = lambda a, b, c, x -> a * x * x + b * x + c
 ```
+
+## Conditional Expressions in Lambdas
+
+Lambda expressions support conditional expressions (ternary operator) for concise decision-making:
+
+```dana
+# Basic conditional expressions
+get_first = lambda lst -> lst[0] if len(lst) > 0 else None
+max_func = lambda a, b -> a if a > b else b
+min_func = lambda a, b -> a if a < b else b
+
+# Safe operations with conditionals
+safe_divide = lambda a, b -> a / b if b != 0 else float('inf')
+safe_sqrt = lambda x -> x ** 0.5 if x >= 0 else 0
+safe_reciprocal = lambda x -> 1.0 / x if x != 0 else float('inf')
+
+# String operations with conditionals
+string_ops = lambda s -> s.strip().lower() if s else ""
+format_name = lambda name -> name.title() if name else "Unknown"
+
+# Type-safe conversions
+safe_int_convert = lambda x -> int(x) if str(x).isdigit() else 0
+safe_float_convert = lambda x -> float(x) if str(x).replace('.', '').isdigit() else 0.0
+```
+
+**Nested Conditionals (Right-Associative)**:
+
+```dana
+# Multiple conditions with proper associativity
+classify_number = lambda x -> "positive" if x > 0 else ("zero" if x == 0 else "negative")
+
+# Grade calculation
+grade_calc = lambda score -> "A" if score >= 90 else ("B" if score >= 80 else ("C" if score >= 70 else "F"))
+
+# Complex classification
+status_check = lambda value -> "high" if value > 100 else ("medium" if value > 50 else ("low" if value > 0 else "zero"))
+```
+
+**Conditional Expressions with Struct Receivers**:
+
+```dana
+struct Person:
+    name: str
+    age: int
+    email: str
+
+# Conditional logic on struct fields
+get_display_name = lambda (person: Person) -> person.name if person.name else "Anonymous"
+is_adult = lambda (person: Person) -> True if person.age >= 18 else False
+get_domain = lambda (person: Person) -> person.email.split("@")[1] if "@" in person.email else ""
+```
+
+**Conditional Expressions in Pipelines**:
+
+```dana
+# Pipeline with conditional processing
+data_pipeline = (lambda x -> x.strip() if x else "") | 
+               (lambda x -> x.upper() if x else "") | 
+               (lambda x -> f"PROCESSED: {x}" if x else "EMPTY")
+
+# Conditional filtering in pipeline
+filter_pipeline = (lambda x -> x if x > 0 else None) | 
+                 (lambda x -> x * 2 if x else 0)
+```
+
+**Key Benefits**:
+- **Concise decision-making**: No need for verbose if/else blocks
+- **Functional style**: Expressions instead of statements
+- **Pipeline integration**: Seamless composition with other operations
+- **Type safety**: Works with Dana's type system
+- **Right-associative**: Proper handling of nested conditionals
 
 ## Lambda with Struct Receivers
 
@@ -379,6 +461,10 @@ strip_whitespace = lambda s -> s.strip()
 square = lambda x -> x * x
 cube = lambda x -> x * x * x
 absolute = lambda x -> x if x >= 0 else -x
+
+# Conditional transformations
+get_first = lambda lst -> lst[0] if len(lst) > 0 else None
+get_last = lambda lst -> lst[-1] if len(lst) > 0 else None
 ```
 
 **Validation and Filtering**:
@@ -389,9 +475,15 @@ is_positive = lambda x -> x > 0
 is_even = lambda x -> x % 2 == 0
 is_valid_email = lambda s -> "@" in s and "." in s
 
-# Safe operations
-safe_divide = lambda x, y -> x / y if y != 0 else 0
+# Safe operations with conditionals
+safe_divide = lambda x, y -> x / y if y != 0 else float('inf')
 safe_sqrt = lambda x -> x ** 0.5 if x >= 0 else 0
+safe_reciprocal = lambda x -> 1.0 / x if x != 0 else float('inf')
+safe_len = lambda obj -> len(obj) if hasattr(obj, '__len__') else 0
+
+# Conditional validation
+is_valid_score = lambda score -> True if 0 <= score <= 100 else False
+is_adult_age = lambda age -> True if age >= 18 else False
 ```
 
 **Struct Operations**:
@@ -401,11 +493,17 @@ struct Person:
     name: str
     age: int
     city: str
+    email: str
 
 # Struct transformation lambdas
 get_name = lambda (person: Person) -> person.name
 is_adult = lambda (person: Person) -> person.age >= 18
 format_info = lambda (person: Person) -> f"{person.name} ({person.age}) from {person.city}"
+
+# Conditional struct operations
+get_display_name = lambda (person: Person) -> person.name if person.name else "Anonymous"
+get_domain = lambda (person: Person) -> person.email.split("@")[1] if "@" in person.email else ""
+get_age_group = lambda (person: Person) -> "adult" if person.age >= 18 else "minor"
 ```
 
 ## Integration with Other Dana Features
@@ -454,12 +552,14 @@ Lambda expressions in Dana provide:
 - **Concise syntax** for simple functions
 - **Full type safety** with type hints
 - **Struct receivers** for method-like behavior
+- **Conditional expressions** for decision-making logic
 - **Union type support** for handling multiple types
 - **Pipeline integration** for data processing
 - **Higher-order function compatibility**
 
 They're perfect for:
 - Simple transformations and calculations
+- Conditional logic and decision-making
 - Pipeline components
 - Struct operations
 - Type-safe data processing
