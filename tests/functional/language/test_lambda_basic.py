@@ -1,7 +1,5 @@
 """Basic functional tests for lambda expressions."""
 
-import pytest
-
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.sandbox_context import SandboxContext
 
@@ -122,9 +120,3 @@ result = f(7)
         # Check receiver metadata
         assert hasattr(result, "_dana_receiver")
         assert result._dana_receiver is None
-
-    @pytest.mark.skip(reason="Struct receivers not yet implemented")
-    def test_lambda_with_struct_receiver(self):
-        """Test lambda expression with struct receiver (future implementation)."""
-        # code = "lambda (point: Point) dx: int :: point.x + dx"
-        # This test will be implemented in Phase 3
