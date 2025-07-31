@@ -1,0 +1,22 @@
+def embedding_field_constructor(row: dict) -> str:
+    return f'{row["description"]} {row["name"]} {row["category"]}'
+
+def metadata_constructor(row: dict) -> dict:
+    return {
+        "name": row["name"],
+        "category": row["category"],
+    }
+
+tabular_index_config = {    
+    "source": "data/others.csv",
+    "force_reload": True,
+    "table_name": "others",
+    "embedding_field_constructor": embedding_field_constructor,
+    "metadata_constructor": metadata_constructor,
+}
+
+tabular_index = use("tabular_index", tabular_index_config=tabular_index_config)
+
+data = tabular_index.retrieve("List some data", top_k=10)
+
+print(data)
