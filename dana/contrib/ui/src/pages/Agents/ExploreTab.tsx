@@ -72,9 +72,11 @@ export const ExploreTab: React.FC<{
                 }}
               />
             </div>
-            <span className="text-sm px-3 py-1 rounded-full text-gray-600 font-medium border border-gray-200 ml-2">
-                  {agent.config?.domain || 'Other'}
-                </span>
+            {agent.config?.domain && (
+                      <span className="text-sm px-3 py-1 rounded-full text-gray-600 font-medium border border-gray-200 ml-2">
+                        {agent.config.domain}
+                      </span>
+                    )}
                 </div>
             <div className="flex flex-col flex-1">
               <div className="flex gap-2 items-center">
@@ -126,7 +128,7 @@ export const ExploreTab: React.FC<{
             </span>
           </div> */}
           <div className="flex gap-2 justify-between items-center">
-            <Button variant="outline" className="w-1/2 text-sm font-semibold text-gray-500">
+            <Button variant="outline" className="w-1/2 text-sm font-semibold text-gray-700">
               Train
             </Button>
             <Button
@@ -135,7 +137,7 @@ export const ExploreTab: React.FC<{
                 navigate(`/agents/${agent.id}/chat`);
               }}
               variant="outline"
-              className="w-1/2 text-sm font-semibold text-gray-500"
+              className="w-1/2 text-sm font-semibold text-gray-700"
             >
               Use
             </Button>
