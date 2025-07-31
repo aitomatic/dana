@@ -31,7 +31,7 @@ export const ExploreTab: React.FC<{
         <Button
           key={domain}
           variant={selectedDomain === domain ? 'secondary' : 'outline'}
-          className={`rounded-full px-5 py-1 text-base font-medium ${selectedDomain === domain ? '' : 'bg-white'}`}
+          className={`rounded-full px-5 py-1 text-base font-medium ${selectedDomain === domain ? 'border-transparent border' : 'bg-white'}`}
           onClick={() => setSelectedDomain(domain)}
         >
           {domain}

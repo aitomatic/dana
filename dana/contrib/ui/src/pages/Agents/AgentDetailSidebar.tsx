@@ -283,7 +283,7 @@ export const AgentDetailSidebar: React.FC = () => {
   const selectedAgent = useAgentStore((s) => s.selectedAgent);
   return (
     <div className="w-[420px] min-w-[380px] max-h-[calc(100vh-64px)] overflow-y-auto flex flex-col p-2 bg-gray-50">
-      <div className="flex flex-col h-full bg-white rounded-lg shadow-md">
+      <div className="flex flex-col h-full bg-white rounded-lg">
         <div className="flex gap-3 items-center p-2 border-b border-gray-200">
           <img className="w-10 h-10 rounded-full" src={DanaAvatar} alt="Dana avatar" />
           <div>

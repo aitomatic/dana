@@ -83,13 +83,74 @@ export const TEMPLATES = [
 export default function AgentDetailPage() {
   const { agent_id } = useParams();
   const navigate = useNavigate();
-  const { fetchAgent, deleteAgent, isLoading, error } = useAgentStore();
+  const { fetchAgent, deleteAgent, updateAgent, isLoading, error } = useAgentStore();
   const [agent, setAgent] = useState<any>(null);
   const [showComparison, setShowComparison] = useState(false);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   // LIFTED TAB STATE
   const [activeTab, setActiveTab] = useState('Overview');
+
+  const handleDeploy = async () => {
+    if (!agent_id || isNaN(Number(agent_id)) || !agent) {
+      // For prebuilt agents or invalid IDs, just navigate
+      navigate('/agents');
+      return;
+    }
+
+    try {
+      // Update agent with status success in config
+      const updatedAgent = {
+        ...agent,
+        config: {
+          ...agent.config,
+          status: 'success',
+        },
+      };
+
+      await updateAgent(parseInt(agent_id), updatedAgent);
+      navigate(`/agents/${agent_id}/chat`);
+    } catch (error) {
+      console.error('Failed to deploy agent:', error);
+      // You might want to show an error message to the user here
+    }
+  };
+
+  const handleSaveAndExit = async () => {
+    if (!agent_id || isNaN(Number(agent_id)) || !agent) {
+      // For prebuilt agents or invalid IDs, just navigate
+      navigate('/agents');
+      return;
+    }
+
+    try {
+      // Update agent with status success in config
+      const updatedAgent = {
+        ...agent,
+        config: {
+          ...agent.config,
+          status: 'success',
+        },
+      };
+
+      await updateAgent(parseInt(agent_id), updatedAgent);
+      navigate('/agents');
+    } catch (error) {
+      console.error('Failed to deploy agent:', error);
+      // You might want to show an error message to the user here
+    }
+  };
+
+  const handleClose = () => {
+    // If agent has status 'success', navigate directly to agents page
+    if (agent && agent.config && agent.config.status === 'success') {
+      navigate('/agents');
+      return;
+    }
+
+    // Otherwise, show the delete confirmation dialog
+    setShowCancelConfirmation(true);
+  };
 
   const handleDiscardAndExit = async () => {
     if (!agent_id || isNaN(Number(agent_id))) {
@@ -166,8 +227,8 @@ export default function AgentDetailPage() {
       <AgentDetailHeader
         onBack={() => navigate(-1)}
         title="Train Your Agent"
-        onDeploy={() => navigate('/agents')}
-        onCancel={() => setShowCancelConfirmation(true)}
+        onDeploy={handleDeploy}
+        onCancel={handleClose}
       />
       <div className="grid grid-cols-[max-content_1fr] flex-1 w-full h-full">
         <AgentDetailSidebar />
@@ -236,14 +297,7 @@ export default function AgentDetailPage() {
             <Button variant="outline" onClick={handleDiscardAndExit} disabled={isDeleting}>
               {isDeleting ? 'Deleting...' : 'Discard & Exit'}
             </Button>
-            <Button
-              variant="default"
-              onClick={() => {
-                setShowCancelConfirmation(false);
-                navigate('/agents');
-              }}
-              disabled={isDeleting}
-            >
+            <Button variant="default" onClick={handleSaveAndExit} disabled={isDeleting}>
               Save & Exit
             </Button>
           </DialogFooter>

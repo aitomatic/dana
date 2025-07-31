@@ -199,7 +199,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
 
   return (
     <div
-      className={`w-[420px] min-w-[380px] bg-white max-h-[calc(100vh-64px)] rounded-lg shadow-md overflow-y-auto flex flex-col m-2  transform transition-transform duration-300 ease-in-out z-50 ${
+      className={`w-[420px] min-w-[380px] bg-white max-h-[calc(100vh-64px)] rounded-lg overflow-y-auto flex flex-col m-2 transform transition-transform duration-300 ease-in-out z-50 ${
         isVisible ? 'translate-x-0' : 'translate-x-full'
       }`}
     >

@@ -40,9 +40,9 @@ const KnowledgeBaseTab: React.FC = () => {
   }
 
   return (
-    <div className="flex bg-white  flex-col h-full border-gray-200 rounded-sm border">
+    <div className="flex flex-col h-full bg-white rounded-lg">
       {/* Sub-tab navigation */}
-      <div className="flex gap-2 px-4 py-4 ">
+      <div className="flex gap-2 px-4 py-4">
         {KNOWLEDGE_SUBTABS.map((subTab) => (
           <button
             key={subTab}
@@ -60,9 +60,7 @@ const KnowledgeBaseTab: React.FC = () => {
       </div>
 
       {/* Sub-tab content */}
-      <div className="flex-1 overflow-auto">
-        {renderSubTabContent()}
-      </div>
+      <div className="overflow-auto flex-1">{renderSubTabContent()}</div>
     </div>
   );
 };
