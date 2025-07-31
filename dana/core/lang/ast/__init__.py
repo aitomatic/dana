@@ -58,6 +58,8 @@ Expression = Union[
     "PipelineExpression",
     "LambdaExpression",
     "ListComprehension",
+    "SetComprehension",
+    "DictComprehension",
 ]
 
 # A Statement is any node that primarily performs an action, but still produces a value.
@@ -161,6 +163,29 @@ class ListComprehension:
     target: str  # The variable name for each item (e.g., 'x')
     iterable: Expression  # The iterable to iterate over
     condition: Expression | None = None  # Optional condition (e.g., 'x > 0')
+    location: Location | None = None
+
+
+@dataclass
+class SetComprehension:
+    """A set comprehension expression (e.g., {x * 2 for x in numbers if x > 0})."""
+
+    expression: Expression  # The expression to evaluate for each item
+    target: str  # The variable name for each item (e.g., 'x')
+    iterable: Expression  # The iterable to iterate over
+    condition: Expression | None = None  # Optional condition (e.g., 'x > 0')
+    location: Location | None = None
+
+
+@dataclass
+class DictComprehension:
+    """A dict comprehension expression (e.g., {k: v * 2 for k, v in data.items() if v > 0})."""
+
+    key_expr: Expression  # The key expression to evaluate for each item
+    value_expr: Expression  # The value expression to evaluate for each item
+    target: str  # The variable name for each item (e.g., 'k, v')
+    iterable: Expression  # The iterable to iterate over
+    condition: Expression | None = None  # Optional condition (e.g., 'v > 0')
     location: Location | None = None
 
 

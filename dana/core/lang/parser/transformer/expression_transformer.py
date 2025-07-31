@@ -36,6 +36,7 @@ from dana.core.lang.ast import (
     BinaryExpression,
     BinaryOperator,
     ConditionalExpression,
+    DictComprehension,
     DictLiteral,
     Expression,
     FStringExpression,
@@ -48,6 +49,7 @@ from dana.core.lang.ast import (
     ObjectFunctionCall,
     PipelineExpression,
     PlaceholderExpression,
+    SetComprehension,
     SetLiteral,
     SliceExpression,
     SubscriptExpression,
@@ -163,7 +165,9 @@ class ExpressionTransformer(BaseTransformer):
             | PlaceholderExpression
             | PipelineExpression
             | LambdaExpression
-            | ListComprehension,
+            | ListComprehension
+            | SetComprehension
+            | DictComprehension,
         ):
             return item
         # If it's a primitive or FStringExpression, wrap as LiteralExpression
@@ -677,25 +681,56 @@ class ExpressionTransformer(BaseTransformer):
         return ListLiteral(items=list_items)
 
     def dict(self, items):
+        """
+        Transform a dict literal or dict comprehension into an AST node.
+        """
+        from dana.core.lang.ast import DictLiteral
+
+        # Check if this is a dict comprehension by looking for comprehension patterns
+        if items and self._is_dict_comprehension(items):
+            return self._create_dict_comprehension(items)
+
+        # This is a regular dict literal
         flat_items = self.flatten_items(items)
         pairs = []
         for item in flat_items:
-            if isinstance(item, tuple) and len(item) == 2:
+            # Check if this individual item is a dict comprehension
+            if hasattr(item, "__class__") and item.__class__.__name__ == "DictComprehension":
+                # If we have a single dict comprehension, return it directly
+                if len(flat_items) == 1:
+                    return item
+                # Otherwise, this shouldn't happen - a dict literal can't contain a comprehension
+                raise ValueError("Dict literal cannot contain dict comprehension as an item")
+            elif isinstance(item, tuple) and len(item) == 2:
                 pairs.append(item)
             elif hasattr(item, "data") and item.data == "key_value_pair":
                 pair = self.key_value_pair(item.children)
                 pairs.append(pair)
-        from dana.core.lang.ast import DictLiteral
-
-        return DictLiteral(items=pairs)
+        result = DictLiteral(items=pairs)
+        return result
 
     def set(self, items):
-        flat_items = self.flatten_items(items)
+        """
+        Transform a set literal or set comprehension into an AST node.
+        """
         from dana.core.lang.ast import Expression, SetLiteral
 
+        # Check if this is a set comprehension by looking for comprehension patterns
+        if items and self._is_set_comprehension(items):
+            return self._create_set_comprehension(items)
+
+        # This is a regular set literal
+        flat_items = self.flatten_items(items)
         # Ensure each item is properly cast to Expression type
         set_items: list[Expression] = []
         for item in flat_items:
+            # Check if this individual item is a set comprehension
+            if hasattr(item, "__class__") and item.__class__.__name__ == "SetComprehension":
+                # If we have a single set comprehension, return it directly
+                if len(flat_items) == 1:
+                    return item
+                # Otherwise, this shouldn't happen - a set literal can't contain a comprehension
+                raise ValueError("Set literal cannot contain set comprehension as an item")
             expr = self.expression([item])
             set_items.append(cast(Expression, expr))
 
@@ -1148,6 +1183,82 @@ class ExpressionTransformer(BaseTransformer):
 
         return ListComprehension(expression=expression, target=target, iterable=iterable, condition=condition)
 
+    def set_comprehension(self, items):
+        """Transform set comprehension parse tree to AST node."""
+        from dana.core.lang.ast import SetComprehension
+
+        if not items or len(items) < 1:
+            return None
+
+        # items[0] could be either a Tree (comprehension_body) or a list (if comprehension_body was already processed)
+        comprehension_body = items[0]
+
+        if isinstance(comprehension_body, list):
+            # comprehension_body was already processed and returned a list
+            body_children = comprehension_body
+        elif hasattr(comprehension_body, "data") and comprehension_body.data == "comprehension_body":
+            # comprehension_body is a Tree
+            body_children = comprehension_body.children
+        else:
+            return None
+
+        if len(body_children) < 3:
+            return None
+
+        # Extract components: expression, target, iterable, optional condition
+        expression = self.main_transformer.transform(body_children[0]) if self.main_transformer else body_children[0]
+        target = body_children[1].value if hasattr(body_children[1], "value") else str(body_children[1])
+        iterable = self.main_transformer.transform(body_children[2]) if self.main_transformer else body_children[2]
+
+        # Check for optional condition
+        condition = None
+        if len(body_children) > 3 and body_children[3]:
+            condition = self.main_transformer.transform(body_children[3]) if self.main_transformer else body_children[3]
+
+        return SetComprehension(expression=expression, target=target, iterable=iterable, condition=condition)
+
+    def dict_comprehension(self, items):
+        """Transform dict comprehension parse tree to AST node."""
+        from dana.core.lang.ast import DictComprehension
+
+        if not items or len(items) < 1:
+            return None
+
+        # items[0] should be the result from dict_comprehension_body
+        comprehension_body = items[0]
+
+        if isinstance(comprehension_body, list):
+            # comprehension_body was already processed and returned a list
+            body_children = comprehension_body
+        elif hasattr(comprehension_body, "data") and comprehension_body.data == "dict_comprehension_body":
+            # comprehension_body is a Tree
+            body_children = comprehension_body.children
+        else:
+            return None
+
+        # The dict_comprehension_body method passes through the processed tokens
+        # Structure: [key_expr, value_expr, target, iterable, condition]
+        if len(body_children) < 4:  # Need at least key, value, target, iterable
+            return None
+
+        # Extract components from the simplified structure
+        key_expr = body_children[0]
+        value_expr = body_children[1]
+        target = body_children[2].value if hasattr(body_children[2], "value") else str(body_children[2])
+        iterable = body_children[3]
+
+        # Check for optional condition (5th element)
+        condition = None
+        if len(body_children) > 4 and body_children[4]:
+            condition = body_children[4]
+
+        result = DictComprehension(key_expr=key_expr, value_expr=value_expr, target=target, iterable=iterable, condition=condition)
+        return result
+
+    def dict_comprehension_body(self, items):
+        """Transform dict comprehension body - just pass through to parent."""
+        return items
+
     def comprehension_body(self, items):
         """Transform comprehension body - just pass through to parent."""
         return items
@@ -1155,6 +1266,144 @@ class ExpressionTransformer(BaseTransformer):
     def comprehension_if(self, items):
         """Transform comprehension condition - just pass through to parent."""
         return items[0] if items else None
+
+    def _is_set_comprehension(self, items):
+        """Check if the items represent a set comprehension pattern."""
+        # Look for pattern: expr for var in iterable [if condition]
+        if not items:
+            return False
+
+        flat_items = self.flatten_items(items)
+        if len(flat_items) < 3:
+            return False
+
+        # Check if we have the pattern: expr, 'for', var, 'in', iterable, [optional 'if', condition]
+        for item in flat_items:
+            if hasattr(item, "value") and item.value == "for":
+                # Found 'for' keyword, this looks like a comprehension
+                return True
+        return False
+
+    def _is_dict_comprehension(self, items):
+        """Check if the items represent a dict comprehension pattern."""
+        # Look for pattern: key_expr : value_expr for var in iterable [if condition]
+        if not items:
+            return False
+
+        flat_items = self.flatten_items(items)
+        if len(flat_items) < 5:  # Need at least: key, :, value, for, var, in, iterable
+            return False
+
+        # Check if we have the pattern with 'for' keyword and ':'
+        has_for = False
+        has_colon = False
+        for item in flat_items:
+            if hasattr(item, "value") and item.value == "for":
+                has_for = True
+            elif hasattr(item, "type") and item.type == "COLON":
+                has_colon = True
+
+        return has_for and has_colon
+
+    def _create_set_comprehension(self, items):
+        """Create a SetComprehension AST node from parsed items."""
+        from dana.core.lang.ast import SetComprehension
+
+        flat_items = self.flatten_items(items)
+
+        # Parse the comprehension pattern: expr for var in iterable [if condition]
+        expression = None
+        target = None
+        iterable = None
+        condition = None
+
+        i = 0
+        # Get expression (everything before 'for')
+        while i < len(flat_items) and not (hasattr(flat_items[i], "value") and flat_items[i].value == "for"):
+            if expression is None:
+                expression = self.main_transformer.transform(flat_items[i]) if self.main_transformer else flat_items[i]
+            i += 1
+
+        # Skip 'for'
+        i += 1
+
+        # Get target variable
+        if i < len(flat_items):
+            target = flat_items[i].value if hasattr(flat_items[i], "value") else str(flat_items[i])
+            i += 1
+
+        # Skip 'in'
+        if i < len(flat_items) and hasattr(flat_items[i], "value") and flat_items[i].value == "in":
+            i += 1
+
+        # Get iterable (everything before 'if' or end)
+        while i < len(flat_items) and not (hasattr(flat_items[i], "value") and flat_items[i].value == "if"):
+            if iterable is None:
+                iterable = self.main_transformer.transform(flat_items[i]) if self.main_transformer else flat_items[i]
+            i += 1
+
+        # Get condition if present
+        if i < len(flat_items) and hasattr(flat_items[i], "value") and flat_items[i].value == "if":
+            i += 1
+            if i < len(flat_items):
+                condition = self.main_transformer.transform(flat_items[i]) if self.main_transformer else flat_items[i]
+
+        return SetComprehension(expression=expression, target=target, iterable=iterable, condition=condition)
+
+    def _create_dict_comprehension(self, items):
+        """Create a DictComprehension AST node from parsed items."""
+        from dana.core.lang.ast import DictComprehension
+
+        flat_items = self.flatten_items(items)
+
+        # Parse the comprehension pattern: key_expr : value_expr for var in iterable [if condition]
+        key_expr = None
+        value_expr = None
+        target = None
+        iterable = None
+        condition = None
+
+        i = 0
+        # Get key expression (everything before ':')
+        while i < len(flat_items) and not (hasattr(flat_items[i], "type") and flat_items[i].type == "COLON"):
+            if key_expr is None:
+                key_expr = self.main_transformer.transform(flat_items[i]) if self.main_transformer else flat_items[i]
+            i += 1
+
+        # Skip ':'
+        i += 1
+
+        # Get value expression (everything before 'for')
+        while i < len(flat_items) and not (hasattr(flat_items[i], "value") and flat_items[i].value == "for"):
+            if value_expr is None:
+                value_expr = self.main_transformer.transform(flat_items[i]) if self.main_transformer else flat_items[i]
+            i += 1
+
+        # Skip 'for'
+        i += 1
+
+        # Get target variable
+        if i < len(flat_items):
+            target = flat_items[i].value if hasattr(flat_items[i], "value") else str(flat_items[i])
+            i += 1
+
+        # Skip 'in'
+        if i < len(flat_items) and hasattr(flat_items[i], "value") and flat_items[i].value == "in":
+            i += 1
+
+        # Get iterable (everything before 'if' or end)
+        while i < len(flat_items) and not (hasattr(flat_items[i], "value") and flat_items[i].value == "if"):
+            if iterable is None:
+                iterable = self.main_transformer.transform(flat_items[i]) if self.main_transformer else flat_items[i]
+            i += 1
+
+        # Get condition if present
+        if i < len(flat_items) and hasattr(flat_items[i], "value") and flat_items[i].value == "if":
+            i += 1
+            if i < len(flat_items):
+                condition = self.main_transformer.transform(flat_items[i]) if self.main_transformer else flat_items[i]
+
+        return DictComprehension(key_expr=key_expr, value_expr=value_expr, target=target, iterable=iterable, condition=condition)
 
 
 # File updated to resolve GitHub CI syntax error - 2025-06-09

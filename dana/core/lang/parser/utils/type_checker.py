@@ -495,6 +495,12 @@ class TypeChecker:
         elif hasattr(expression, "__class__") and expression.__class__.__name__ == "ListComprehension":
             # Handle ListComprehension
             return self.check_list_comprehension(expression)
+        elif hasattr(expression, "__class__") and expression.__class__.__name__ == "SetComprehension":
+            # Handle SetComprehension
+            return self.check_set_comprehension(expression)
+        elif hasattr(expression, "__class__") and expression.__class__.__name__ == "DictComprehension":
+            # Handle DictComprehension
+            return self.check_dict_comprehension(expression)
         else:
             raise TypeError(f"Unsupported expression type: {type(expression).__name__}", expression)
 
@@ -769,6 +775,75 @@ class TypeChecker:
 
             # List comprehensions return lists
             return DanaType("list")
+
+        finally:
+            # Always pop the scope, even if an error occurs
+            self.environment.pop_scope()
+
+    def check_set_comprehension(self, node: Any) -> DanaType:
+        """Check a set comprehension for type errors."""
+        # Import SetComprehension here to avoid circular imports
+
+        if not hasattr(node, "expression") or not hasattr(node, "target") or not hasattr(node, "iterable"):
+            raise TypeError("Invalid set comprehension structure", node)
+
+        # Create a new scope for set comprehension type checking
+        self.environment.push_scope()
+
+        try:
+            # Type check the iterable
+            self.check_expression(node.iterable)
+
+            # For now, we'll assume the target variable can be of any type
+            # In a more sophisticated implementation, we could infer the type from the iterable
+            self.environment.set(node.target, DanaType("any"))
+
+            # Type check the condition if present
+            if node.condition is not None:
+                condition_type = self.check_expression(node.condition)
+                if condition_type != DanaType("bool"):
+                    raise TypeError(f"Set comprehension condition must be a boolean, got {condition_type}", node)
+
+            # Type check the expression
+            self.check_expression(node.expression)
+
+            # Set comprehensions return sets
+            return DanaType("set")
+
+        finally:
+            # Always pop the scope, even if an error occurs
+            self.environment.pop_scope()
+
+    def check_dict_comprehension(self, node: Any) -> DanaType:
+        """Check a dict comprehension for type errors."""
+        # Import DictComprehension here to avoid circular imports
+
+        if not hasattr(node, "key_expr") or not hasattr(node, "value_expr") or not hasattr(node, "target") or not hasattr(node, "iterable"):
+            raise TypeError("Invalid dict comprehension structure", node)
+
+        # Create a new scope for dict comprehension type checking
+        self.environment.push_scope()
+
+        try:
+            # Type check the iterable
+            self.check_expression(node.iterable)
+
+            # For now, we'll assume the target variable can be of any type
+            # In a more sophisticated implementation, we could infer the type from the iterable
+            self.environment.set(node.target, DanaType("any"))
+
+            # Type check the condition if present
+            if node.condition is not None:
+                condition_type = self.check_expression(node.condition)
+                if condition_type != DanaType("bool"):
+                    raise TypeError(f"Dict comprehension condition must be a boolean, got {condition_type}", node)
+
+            # Type check the key and value expressions
+            self.check_expression(node.key_expr)
+            self.check_expression(node.value_expr)
+
+            # Dict comprehensions return dicts
+            return DanaType("dict")
 
         finally:
             # Always pop the scope, even if an error occurs

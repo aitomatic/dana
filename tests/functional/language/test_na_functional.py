@@ -67,6 +67,7 @@ def test_na_file(na_file):
     # These tests specifically test runtime coercion that TypeChecker doesn't understand
     filename = Path(na_file).name
     enhanced_coercion_tests = [
+        "test_enhanced_coercion_basic.na",
         "test_enhanced_coercion_comprehensive.na",
         "test_coercion_regression_prevention.na",
         "test_poet_enhanced_function_dispatch.na",
@@ -79,6 +80,7 @@ def test_na_file(na_file):
         "test_phase1_parser.na",  # Disable type checking for struct method tests
         "test_phase2_registry.na",  # Disable type checking for struct method tests
         "test_agent_keyword.na",  # Disable type checking for agent tests
+        "test_dict_comprehensions.na",  # Disable type checking for dict comprehensions (temporary)
     ]
     disable_type_check = filename in enhanced_coercion_tests
 

@@ -386,26 +386,37 @@ atom: variable trailer*
     | "(" expr ")"
 
 // ===== COLLECTIONS =====
-collection: list | dict | tuple | set
+collection: list | set | dict | tuple
 
 list: "[" [list_items] "]"
     | list_comprehension
-dict: "{" [dict_items] "}"
+dict: dict_comprehension
+    | "{" [dict_items] "}"
 tuple: "(" ")"
      | "(" expr "," [list_items] ")"
-set: "{" list_items"}"
+set: set_comprehension
+    | "{" list_items"}"
 
 list_items: expr ("," expr)* [","]
 dict_items: key_value_pair ("," key_value_pair)* [","]
 key_value_pair: expr ":" expr
 
-// ===== LIST COMPREHENSIONS =====
+// ===== COMPREHENSIONS =====
 list_comprehension: "[" comprehension_body "]"
+set_comprehension: "{" comprehension_body "}"
+dict_comprehension: "{" dict_comprehension_body "}"
 comprehension_body: or_expr "for" NAME "in" or_expr [comprehension_if]
+dict_comprehension_body: "(" or_expr ":" or_expr ")" "for" NAME "in" or_expr [comprehension_if]
+
+
 comprehension_if: "if" or_expr
 
+
+
+
+
 // ===== LAMBDA EXPRESSIONS =====
-lambda_expr: "lambda" [lambda_receiver] [lambda_params] "->" expr
+lambda_expr: "lambda" [lambda_receiver] [lambda_params] "::" expr
 lambda_receiver: "(" NAME ":" basic_type ")"
 lambda_params: NAME [":" basic_type] ("," NAME [":" basic_type])*
 

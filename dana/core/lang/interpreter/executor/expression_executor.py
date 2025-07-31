@@ -28,6 +28,7 @@ from dana.core.lang.ast import (
     BinaryExpression,
     BinaryOperator,
     ConditionalExpression,
+    DictComprehension,
     DictLiteral,
     FStringExpression,
     FunctionCall,
@@ -40,6 +41,7 @@ from dana.core.lang.ast import (
     ObjectFunctionCall,
     PipelineExpression,
     PlaceholderExpression,
+    SetComprehension,
     SetLiteral,
     SubscriptExpression,
     TupleLiteral,
@@ -122,6 +124,8 @@ class ExpressionExecutor(BaseExecutor):
             FunctionCall: self.execute_function_call,
             LambdaExpression: self.execute_lambda_expression,
             ListComprehension: self.execute_list_comprehension,
+            SetComprehension: self.execute_set_comprehension,
+            DictComprehension: self.execute_dict_comprehension,
         }
 
     def execute_literal_expression(self, node: LiteralExpression, context: SandboxContext) -> Any:
@@ -1202,5 +1206,82 @@ class ExpressionExecutor(BaseExecutor):
             # Execute the expression for this item
             expression_result = self.parent.execute(node.expression, iteration_context)
             result.append(expression_result)
+
+        return result
+
+    def execute_set_comprehension(self, node: SetComprehension, context: SandboxContext) -> set:
+        """Execute a set comprehension expression.
+
+        Args:
+            node: The set comprehension to execute
+            context: The execution context
+
+        Returns:
+            A set containing the results of the comprehension
+        """
+        # Execute the iterable to get the sequence to iterate over
+        iterable = self.parent.execute(node.iterable, context)
+
+        if not hasattr(iterable, "__iter__"):
+            raise SandboxError(f"Cannot iterate over non-iterable object: {type(iterable).__name__}")
+
+        result = set()
+
+        # Iterate over each item in the iterable
+        for item in iterable:
+            # Create a new scope for this iteration
+            iteration_context = context.copy()
+
+            # Bind the target variable to the current item
+            iteration_context.set(node.target, item)
+
+            # Check condition if present
+            if node.condition is not None:
+                condition_result = self.parent.execute(node.condition, iteration_context)
+                if not condition_result:
+                    continue  # Skip this item if condition is False
+
+            # Execute the expression for this item
+            expression_result = self.parent.execute(node.expression, iteration_context)
+            result.add(expression_result)
+
+        return result
+
+    def execute_dict_comprehension(self, node: DictComprehension, context: SandboxContext) -> dict:
+        """Execute a dict comprehension expression.
+
+        Args:
+            node: The dict comprehension to execute
+            context: The execution context
+
+        Returns:
+            A dict containing the results of the comprehension
+        """
+        # Execute the iterable to get the sequence to iterate over
+        iterable = self.parent.execute(node.iterable, context)
+
+        if not hasattr(iterable, "__iter__"):
+            raise SandboxError(f"Cannot iterate over non-iterable object: {type(iterable).__name__}")
+
+        result = {}
+
+        # Iterate over each item in the iterable
+        for item in iterable:
+            # Create a new scope for this iteration
+            iteration_context = context.copy()
+
+            # Bind the target variable to the current item
+            iteration_context.set(node.target, item)
+
+            # Check condition if present
+            if node.condition is not None:
+                condition_result = self.parent.execute(node.condition, iteration_context)
+                if not condition_result:
+                    continue  # Skip this item if condition is False
+
+            # Execute the key and value expressions for this item
+            key_result = self.parent.execute(node.key_expr, iteration_context)
+            value_result = self.parent.execute(node.value_expr, iteration_context)
+            result[key_result] = value_result
 
         return result

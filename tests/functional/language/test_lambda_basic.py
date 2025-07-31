@@ -16,7 +16,7 @@ class TestLambdaBasic:
 
     def test_simple_lambda_no_params(self):
         """Test a simple lambda expression with no parameters."""
-        code = "lambda -> 42"
+        code = "lambda :: 42"
         result = self.interpreter._eval(code, self.context)
 
         # The result should be a callable function
@@ -27,7 +27,7 @@ class TestLambdaBasic:
 
     def test_simple_lambda_with_param(self):
         """Test a simple lambda expression with one parameter."""
-        code = "lambda x -> x * 2"
+        code = "lambda x :: x * 2"
         result = self.interpreter._eval(code, self.context)
 
         # The result should be a callable function
@@ -39,7 +39,7 @@ class TestLambdaBasic:
 
     def test_lambda_with_multiple_params(self):
         """Test lambda expression with multiple parameters."""
-        code = "lambda x, y -> x + y"
+        code = "lambda x, y :: x + y"
         result = self.interpreter._eval(code, self.context)
 
         # The result should be a callable function
@@ -51,7 +51,7 @@ class TestLambdaBasic:
 
     def test_lambda_with_typed_params(self):
         """Test lambda expression with typed parameters."""
-        code = "lambda x: int, y: int -> x * y"
+        code = "lambda x: int, y: int :: x * y"
         result = self.interpreter._eval(code, self.context)
 
         # The result should be a callable function
@@ -63,7 +63,7 @@ class TestLambdaBasic:
 
     def test_lambda_complex_body(self):
         """Test lambda expression with complex body expression."""
-        code = "lambda x -> x * x + 1"
+        code = "lambda x :: x * x + 1"
         result = self.interpreter._eval(code, self.context)
 
         # The result should be a callable function
@@ -75,7 +75,7 @@ class TestLambdaBasic:
 
     def test_lambda_nested_expressions(self):
         """Test lambda expression with nested arithmetic."""
-        code = "lambda a, b -> (a + b) * (a - b)"
+        code = "lambda a, b :: (a + b) * (a - b)"
         result = self.interpreter._eval(code, self.context)
 
         # The result should be a callable function
@@ -88,7 +88,7 @@ class TestLambdaBasic:
     def test_lambda_assignment_and_call(self):
         """Test assigning lambda to variable and calling it."""
         code = """
-f = lambda x -> x * 3
+f = lambda x :: x * 3
 result = f(7)
 """
         result = self.interpreter._eval(code, self.context)
@@ -103,7 +103,7 @@ result = f(7)
 
     def test_lambda_metadata(self):
         """Test that lambda functions store metadata correctly."""
-        code = "lambda x: int, y: str -> x + 1"
+        code = "lambda x: int, y: str :: x + 1"
         result = self.interpreter._eval(code, self.context)
 
         # Check lambda metadata
@@ -116,7 +116,7 @@ result = f(7)
 
     def test_lambda_no_receiver_metadata(self):
         """Test that lambda without receiver has correct metadata."""
-        code = "lambda x -> x"
+        code = "lambda x :: x"
         result = self.interpreter._eval(code, self.context)
 
         # Check receiver metadata
@@ -126,5 +126,5 @@ result = f(7)
     @pytest.mark.skip(reason="Struct receivers not yet implemented")
     def test_lambda_with_struct_receiver(self):
         """Test lambda expression with struct receiver (future implementation)."""
-        # code = "lambda (point: Point) dx: int -> point.x + dx"
+        # code = "lambda (point: Point) dx: int :: point.x + dx"
         # This test will be implemented in Phase 3
