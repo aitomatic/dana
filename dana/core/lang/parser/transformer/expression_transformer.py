@@ -35,6 +35,7 @@ from dana.core.lang.ast import (
     AttributeAccess,
     BinaryExpression,
     BinaryOperator,
+    ConditionalExpression,
     DictLiteral,
     Expression,
     FStringExpression,
@@ -106,6 +107,7 @@ class ExpressionTransformer(BaseTransformer):
                     "comparison",
                     "and_expr",
                     "or_expr",
+                    "conditional_expr",
                 }:
                     # These rules have specialized transformers, dispatch directly
                     method = getattr(self, rule_name, None)
@@ -146,6 +148,7 @@ class ExpressionTransformer(BaseTransformer):
             LiteralExpression
             | Identifier
             | BinaryExpression
+            | ConditionalExpression
             | FunctionCall
             | ObjectFunctionCall
             | TupleLiteral
@@ -250,6 +253,37 @@ class ExpressionTransformer(BaseTransformer):
                     new_items.append("and")
             items = new_items
         return self._left_associative_binop(items, lambda op: BinaryOperator.AND)
+
+    def conditional_expr(self, items):
+        """Transform conditional expression (ternary operator) into ConditionalExpression AST node."""
+        from dana.core.lang.ast import ConditionalExpression
+
+        if len(items) == 1:
+            # No conditional, just return the or_expr
+            return self.expression([items[0]])
+        elif len(items) == 3 and items[1] is None and items[2] is None:
+            # No conditional (optional parts are None), just return the or_expr
+            return self.expression([items[0]])
+        elif len(items) == 3 and items[1] is not None and items[2] is not None:
+            # Conditional: value, condition, alternative (tokens filtered out)
+            true_branch = self.expression([items[0]])
+            condition = self.expression([items[1]])
+            false_branch = self.expression([items[2]])
+
+            location = getattr(true_branch, "location", None) or getattr(condition, "location", None)
+
+            return ConditionalExpression(condition=condition, true_branch=true_branch, false_branch=false_branch, location=location)
+        elif len(items) == 5:
+            # Full conditional: value "if" condition "else" alternative
+            true_branch = self.expression([items[0]])
+            condition = self.expression([items[2]])
+            false_branch = self.expression([items[4]])
+
+            location = getattr(true_branch, "location", None) or getattr(condition, "location", None)
+
+            return ConditionalExpression(condition=condition, true_branch=true_branch, false_branch=false_branch, location=location)
+        else:
+            raise ValueError(f"Unexpected number of items in conditional_expr: {len(items)} - {[type(item).__name__ for item in items]}")
 
     def placeholder_expression(self, items):
         """Transform placeholder expression into PlaceholderExpression AST node."""

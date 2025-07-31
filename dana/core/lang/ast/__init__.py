@@ -39,6 +39,7 @@ Expression = Union[
     "LiteralExpression",
     "Identifier",
     "BinaryExpression",
+    "ConditionalExpression",
     "FunctionCall",
     "ObjectFunctionCall",
     "FStringExpression",
@@ -144,7 +145,7 @@ class Parameter:
 @dataclass
 class LambdaExpression:
     """A lambda expression with optional receiver and parameters."""
-    
+
     receiver: Parameter | None = None  # Optional struct receiver: (receiver: Type)
     parameters: list[Parameter] = field(default_factory=list)  # Lambda parameters
     body: Expression = None  # Lambda body expression
@@ -238,6 +239,16 @@ class BinaryExpression:
     left: Expression
     operator: BinaryOperator
     right: Expression
+    location: Location | None = None
+
+
+@dataclass
+class ConditionalExpression:
+    """A conditional expression (e.g., x if condition else y)."""
+
+    condition: Expression
+    true_branch: Expression
+    false_branch: Expression
     location: Location | None = None
 
 

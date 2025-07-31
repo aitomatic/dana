@@ -221,7 +221,10 @@ target: atom
 // ===== EXPRESSIONS =====
 expr: pipe_expr
 
-pipe_expr: or_expr (PIPE or_expr)*
+pipe_expr: conditional_expr (PIPE conditional_expr)*
+
+// Conditional expressions (ternary operator): expr if condition else expr
+conditional_expr: or_expr ["if" or_expr "else" conditional_expr]
 
 // ===== FUNCTION COMPOSITION EXPRESSIONS =====
 // Only allowed in declarative function definitions
@@ -389,7 +392,7 @@ list: "[" [list_items] "]"
 dict: "{" [dict_items] "}"
 tuple: "(" ")"
      | "(" expr "," [list_items] ")"
-set: "{" list_items "}"
+set: "{" list_items"}"
 
 list_items: expr ("," expr)* [","]
 dict_items: key_value_pair ("," key_value_pair)* [","]

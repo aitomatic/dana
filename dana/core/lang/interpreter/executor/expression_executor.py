@@ -27,6 +27,7 @@ from dana.core.lang.ast import (
     AttributeAccess,
     BinaryExpression,
     BinaryOperator,
+    ConditionalExpression,
     DictLiteral,
     FStringExpression,
     FunctionCall,
@@ -104,6 +105,7 @@ class ExpressionExecutor(BaseExecutor):
             LiteralExpression: self.execute_literal_expression,
             Identifier: self.execute_identifier,
             BinaryExpression: self.execute_binary_expression,
+            ConditionalExpression: self.execute_conditional_expression,
             UnaryExpression: self.execute_unary_expression,
             DictLiteral: self.execute_dict_literal,
             ListLiteral: self.execute_list_literal,
@@ -168,6 +170,29 @@ class ExpressionExecutor(BaseExecutor):
             return self.binary_operation_handler.execute_binary_expression(node, context)
         except (TypeError, ValueError) as e:
             raise SandboxError(f"Error evaluating binary expression with operator '{node.operator}': {e}")
+
+    def execute_conditional_expression(self, node: ConditionalExpression, context: SandboxContext) -> Any:
+        """Execute a conditional expression (ternary operator).
+
+        Args:
+            node: The conditional expression to execute
+            context: The execution context
+
+        Returns:
+            The result of the conditional expression
+        """
+        try:
+            # Evaluate the condition
+            condition_value = self.parent.execute(node.condition, context)
+
+            # Python-like truthiness evaluation
+            if condition_value:
+                return self.parent.execute(node.true_branch, context)
+            else:
+                return self.parent.execute(node.false_branch, context)
+
+        except Exception as e:
+            raise SandboxError(f"Error evaluating conditional expression: {e}")
 
     def execute_unary_expression(self, node: UnaryExpression, context: SandboxContext) -> Any:
         """Execute a unary expression.
