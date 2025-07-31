@@ -2,11 +2,12 @@
 # Copyright © 2025 Aitomatic, Inc.
 
 def deliver(x):
-    pass
-    
+    return x
+
 # Test eager execution with deliver
 def eager_func():
     deliver(42)
+    return 42
 
 result = eager_func()
 assert result == 42
