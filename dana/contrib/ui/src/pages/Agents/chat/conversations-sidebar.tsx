@@ -222,7 +222,7 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
   return (
     <div className="flex flex-col h-full border-r border-gray-200 bg-background dark:border-gray-300">
       <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-300">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Conversations</h2>
+        <h2 className="text-md font-semibold text-gray-900 dark:text-gray-100">History</h2>
         <div className="flex flex-row items-center">
           <Tooltip>
             <TooltipTrigger asChild>

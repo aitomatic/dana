@@ -142,7 +142,7 @@ export default function AgentDetailPage() {
   return (
     <div className="flex flex-col w-full h-screen bg-gray-50">
       <AgentDetailHeader
-        onBack={() => navigate('/agents')}
+        onBack={() => navigate(-1)}
         title="Train Your Agent"
         onDeploy={() => navigate('/agents')}
         onCancel={() => setShowCancelConfirmation(true)}
