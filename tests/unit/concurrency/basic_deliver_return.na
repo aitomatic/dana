@@ -1,13 +1,9 @@
 # Unit tests for basic deliver/return dual delivery mechanism
 # Copyright © 2025 Aitomatic, Inc.
 
-def deliver(x):
-    return x
-
 # Test eager execution with deliver
 def eager_func():
-    deliver(42)
-    return 42
+    deliver 42
 
 result = eager_func()
 assert result == 42
@@ -30,7 +26,7 @@ def expensive_operation():
     return call_count * 10
 
 def eager_wrapper():
-    deliver(expensive_operation())
+    deliver expensive_operation()
 
 def lazy_wrapper():
     return expensive_operation()
@@ -71,10 +67,10 @@ result = empty_deliver()
 assert result == None
 print("✓ deliver with no value works")
 
-# Test conditional deliver/return
+// Test conditional deliver/return
 def conditional_func(use_eager: bool):
     if use_eager:
-        deliver("eager_result")
+        deliver "eager_result"
     else:
         return "lazy_result"
 
