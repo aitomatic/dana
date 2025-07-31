@@ -124,13 +124,13 @@ export default function AgentsPage() {
           className={` py-2 cursor-pointer font-semibold border-b-2 transition-colors ${activeTab === 'My Agent' ? 'border-blue-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-brand-600'}`}
           onClick={() => setActiveTab('My Agent')}
         >
-          My Agent
+          My Agents
         </button>
         <button
           className={`ml-2 py-2 cursor-pointer font-semibold border-b-2 transition-colors ${activeTab === 'Explore' ? 'border-blue-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-brand-600'}`}
           onClick={() => setActiveTab('Explore')}
         >
-          Pre-trained Agent
+          Pre-trained Agents
         </button>
       </div>
       {/* Tab Content */}

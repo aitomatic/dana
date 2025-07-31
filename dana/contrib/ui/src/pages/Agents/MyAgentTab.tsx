@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { getAgentAvatarSync } from '@/utils/avatar';
-
+import { Settings, Play} from 'iconoir-react';
 // Function to generate random avatar colors based on agent ID
 const getRandomAvatarColor = (agentId: string | number): string => {
   const colors = [
@@ -148,12 +148,12 @@ export const MyAgentTab: React.FC<{
                   </div>
                 </div>
                 <div className="text-gray-500 text-sm min-h-[40px]">
-                  {agent.details ||
-                    (agent.created_at ? `Created ${formatDate(agent.created_at)}` : '')}
+                  {/* {agent.details ||
+                    (agent.created_at ? `Created ${formatDate(agent.created_at)}` : '')} */}
                 </div>
                 <div className="flex gap-2 justify-between items-center">
-                  <Button variant="outline" className="w-1/2 text-sm font-semibold text-gray-700">
-                    Train
+                  <Button variant="outline" className="w-1/3 text-sm font-semibold text-gray-700">
+                  <Settings style={{ width: '20', height: '20' }} />Train
                   </Button>
                   <Button                     
                     onClick={(e) => {
@@ -161,9 +161,9 @@ export const MyAgentTab: React.FC<{
                       navigate(`/agents/${agent.id}/chat`);
                     }}
                     variant="outline"
-                    className="w-1/2 text-sm font-semibold text-gray-700"
+                    className="w-2/3 text-sm font-semibold text-gray-700"
                   >
-                    Use
+                    <Play style={{ width: '20', height: '20' }} />Use agent
                   </Button>
                 </div>
               </div>

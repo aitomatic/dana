@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { apiService } from '@/lib/api';
 import { getAgentAvatarSync } from '@/utils/avatar';
-import { Plus } from 'iconoir-react';
+import { Plus,  Settings, Play} from 'iconoir-react';
 
 export const ExploreTab: React.FC<{
   filteredAgents: any[];
@@ -129,7 +129,7 @@ export const ExploreTab: React.FC<{
           </div> */}
           <div className="flex gap-2 justify-between items-center">
             <Button variant="outline" className="w-1/2 text-sm font-semibold text-gray-700">
-              Train
+            <Settings style={{ width: '20', height: '20' }} />Train from this
             </Button>
             <Button
               onClick={(e) => {
@@ -139,7 +139,7 @@ export const ExploreTab: React.FC<{
               variant="outline"
               className="w-1/2 text-sm font-semibold text-gray-700"
             >
-              Use
+              <Play style={{ width: '20', height: '20' }} />Try agent
             </Button>
           </div>
         </div>
