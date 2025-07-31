@@ -14,27 +14,27 @@ def complex_calc(a: float, b: float, c: float, x: float) -> float:
     return a * x * x + b * x + c
 
 # Do this (concise lambda expressions):
-double = lambda x: int -> x * 2
-add = lambda x, y -> x + y
-quadratic = lambda a, b, c, x -> a * x * x + b * x + c
+double = lambda x: int :: x * 2
+add = lambda x, y :: x + y
+quadratic = lambda a, b, c, x :: a * x * x + b * x + c
 
 # Lambda with struct receiver (like methods):
-translate_point = lambda (point: Point) dx: float, dy: float -> Point(
+translate_point = lambda (point: Point) dx: float, dy: float :: Point(
     x=point.x + dx, 
     y=point.y + dy
 )
 
 # Lambda with conditional expressions (ternary operator):
-get_first = lambda lst -> lst[0] if len(lst) > 0 else None
-max_func = lambda a, b -> a if a > b else b
-classify = lambda x -> "positive" if x > 0 else ("zero" if x == 0 else "negative")
+get_first = lambda lst :: lst[0] if len(lst) > 0 else None
+max_func = lambda a, b :: a if a > b else b
+classify = lambda x :: "positive" if x > 0 else ("zero" if x == 0 else "negative")
 
 # Lambda in pipelines:
-pipeline = (lambda x -> x * 2) | (lambda y -> y + 1) | (lambda z -> z * z)
+pipeline = (lambda x :: x * 2) | (lambda y :: y + 1) | (lambda z :: z * z)
 result = pipeline(5)  # 5 → 10 → 11 → 121
 
 # Lambda with union types:
-area_calc = lambda (shape: Point | Circle | Rectangle) -> {
+area_calc = lambda (shape: Point | Circle | Rectangle) :: {
     return 0.0 if shape._type.name == "Point"
     else 3.14159 * shape.radius ** 2 if shape._type.name == "Circle"
     else shape.width * shape.height
@@ -64,12 +64,12 @@ add = lambda x, y: x + y
 Dana lambdas are much more powerful and use a clearer syntax:
 
 ```dana
-# Dana lambdas - full-featured with -> syntax
-double = lambda x: int -> x * 2
-add = lambda x: int, y: int -> x + y
+# Dana lambdas - full-featured with :: syntax
+double = lambda x: int :: x * 2
+add = lambda x: int, y: int :: x + y
 
 # With type hints, complex expressions, and struct receivers:
-translate_point = lambda (point: Point) dx: float, dy: float -> Point(
+translate_point = lambda (point: Point) dx: float, dy: float :: Point(
     x=point.x + dx, 
     y=point.y + dy
 )
@@ -79,12 +79,12 @@ point = Point(x=3, y=4)
 moved = translate_point(point, 2, 1)  # Point(x=5, y=5)
 ```
 
-**Key Syntax Difference**: Dana uses `->` instead of `:` for lambda bodies:
+**Key Syntax Difference**: Dana uses `::` instead of `:` for lambda bodies:
 - **Python**: `lambda x: x * 2` (uses `:` for body)
-- **Dana**: `lambda x -> x * 2` (uses `->` for body)
+- **Dana**: `lambda x :: x * 2` (uses `::` for body)
 
 This design choice makes Dana lambdas:
-- **More explicit**: `->` clearly indicates function/arrow relationship
+- **More explicit**: `::` clearly indicates function/arrow relationship
 - **Less confusing**: Avoids `:` being used for both type hints and lambda bodies
 - **Consistent**: Matches Dana's function return type syntax `def func() -> int`
 
@@ -103,31 +103,31 @@ Lambda expressions in Dana serve multiple purposes:
 
 ```dana
 # 1. Simple anonymous functions
-square = lambda x -> x * x
+square = lambda x :: x * x
 
 # 2. Conditional logic with ternary operator
-get_first = lambda lst -> lst[0] if len(lst) > 0 else None
-max_func = lambda a, b -> a if a > b else b
+get_first = lambda lst :: lst[0] if len(lst) > 0 else None
+max_func = lambda a, b :: a if a > b else b
 ```
 
 # 3. Type-safe operations
-safe_divide = lambda x: float, y: float -> {
+safe_divide = lambda x: float, y: float :: {
     return x / y if y != 0 else 0.0
 }
 
 # 4. Struct methods (receiver syntax)
-scale_point = lambda (point: Point) factor: float -> Point(
+scale_point = lambda (point: Point) factor: float :: Point(
     x=point.x * factor,
     y=point.y * factor
 )
 
 # 5. Pipeline components
-data_processor = (lambda x -> x.strip()) | 
-                (lambda x -> x.upper()) | 
-                (lambda x -> f"PROCESSED: {x}")
+data_processor = (lambda x :: x.strip()) | 
+                (lambda x :: x.upper()) | 
+                (lambda x :: f"PROCESSED: {x}")
 
 # 6. Union type handlers
-shape_analyzer = lambda (shape: Point | Circle | Rectangle) -> {
+shape_analyzer = lambda (shape: Point | Circle | Rectangle) :: {
     return "point" if shape._type.name == "Point"
     else "circle" if shape._type.name == "Circle"
     else "rectangle"
@@ -146,49 +146,49 @@ typed_add = lambda x, y: x + y  # No type hints in Python
 ```
 
 ```dana
-# Dana lambda syntax (uses -> for body)
-double = lambda x -> x * 2
-add = lambda x, y -> x + y
-typed_add = lambda x: int, y: int -> x + y  # Full type hints
+# Dana lambda syntax (uses :: for body)
+double = lambda x :: x * 2
+add = lambda x, y :: x + y
+typed_add = lambda x: int, y: int :: x + y  # Full type hints
 ```
 
 **Simple Lambda Expressions**:
 
 ```dana
 # No parameters
-zero = lambda -> 0
-constant = lambda -> "Hello, World!"
+zero = lambda :: 0
+constant = lambda :: "Hello, World!"
 
 # Single parameter
-double = lambda x -> x * 2
-square = lambda n -> n * n
+double = lambda x :: x * 2
+square = lambda n :: n * n
 
 # Multiple parameters
-add = lambda x, y -> x + y
-multiply = lambda a, b, c -> a * b * c
+add = lambda x, y :: x + y
+multiply = lambda a, b, c :: a * b * c
 
 # With type hints
-typed_add = lambda x: int, y: int -> x + y
-typed_multiply = lambda x: float, y: float -> x * y
+typed_add = lambda x: int, y: int :: x + y
+typed_multiply = lambda x: float, y: float :: x * y
 ```
 
 **Complex Lambda Bodies**:
 
 ```dana
 # Multi-line expressions with blocks
-complex_calc = lambda x: float, y: float -> {
+complex_calc = lambda x: float, y: float :: {
     temp = x * y
     result = temp + x + y
     return result * 2
 }
 
 # Conditional logic
-safe_divide = lambda x: float, y: float -> {
+safe_divide = lambda x: float, y: float :: {
     return x / y if y != 0 else 0.0
 }
 
 # Nested expressions
-quadratic = lambda a, b, c, x -> a * x * x + b * x + c
+quadratic = lambda a, b, c, x :: a * x * x + b * x + c
 ```
 
 ## Conditional Expressions in Lambdas
@@ -197,35 +197,35 @@ Lambda expressions support conditional expressions (ternary operator) for concis
 
 ```dana
 # Basic conditional expressions
-get_first = lambda lst -> lst[0] if len(lst) > 0 else None
-max_func = lambda a, b -> a if a > b else b
-min_func = lambda a, b -> a if a < b else b
+get_first = lambda lst :: lst[0] if len(lst) > 0 else None
+max_func = lambda a, b :: a if a > b else b
+min_func = lambda a, b :: a if a < b else b
 
 # Safe operations with conditionals
-safe_divide = lambda a, b -> a / b if b != 0 else float('inf')
-safe_sqrt = lambda x -> x ** 0.5 if x >= 0 else 0
-safe_reciprocal = lambda x -> 1.0 / x if x != 0 else float('inf')
+safe_divide = lambda a, b :: a / b if b != 0 else float('inf')
+safe_sqrt = lambda x :: x ** 0.5 if x >= 0 else 0
+safe_reciprocal = lambda x :: 1.0 / x if x != 0 else float('inf')
 
 # String operations with conditionals
-string_ops = lambda s -> s.strip().lower() if s else ""
-format_name = lambda name -> name.title() if name else "Unknown"
+string_ops = lambda s :: s.strip().lower() if s else ""
+format_name = lambda name :: name.title() if name else "Unknown"
 
 # Type-safe conversions
-safe_int_convert = lambda x -> int(x) if str(x).isdigit() else 0
-safe_float_convert = lambda x -> float(x) if str(x).replace('.', '').isdigit() else 0.0
+safe_int_convert = lambda x :: int(x) if str(x).isdigit() else 0
+safe_float_convert = lambda x :: float(x) if str(x).replace('.', '').isdigit() else 0.0
 ```
 
 **Nested Conditionals (Right-Associative)**:
 
 ```dana
 # Multiple conditions with proper associativity
-classify_number = lambda x -> "positive" if x > 0 else ("zero" if x == 0 else "negative")
+classify_number = lambda x :: "positive" if x > 0 else ("zero" if x == 0 else "negative")
 
 # Grade calculation
-grade_calc = lambda score -> "A" if score >= 90 else ("B" if score >= 80 else ("C" if score >= 70 else "F"))
+grade_calc = lambda score :: "A" if score >= 90 else ("B" if score >= 80 else ("C" if score >= 70 else "F"))
 
 # Complex classification
-status_check = lambda value -> "high" if value > 100 else ("medium" if value > 50 else ("low" if value > 0 else "zero"))
+status_check = lambda value :: "high" if value > 100 else ("medium" if value > 50 else ("low" if value > 0 else "zero"))
 ```
 
 **Conditional Expressions with Struct Receivers**:
@@ -237,22 +237,22 @@ struct Person:
     email: str
 
 # Conditional logic on struct fields
-get_display_name = lambda (person: Person) -> person.name if person.name else "Anonymous"
-is_adult = lambda (person: Person) -> True if person.age >= 18 else False
-get_domain = lambda (person: Person) -> person.email.split("@")[1] if "@" in person.email else ""
+get_display_name = lambda (person: Person) :: person.name if person.name else "Anonymous"
+is_adult = lambda (person: Person) :: True if person.age >= 18 else False
+get_domain = lambda (person: Person) :: person.email.split("@")[1] if "@" in person.email else ""
 ```
 
 **Conditional Expressions in Pipelines**:
 
 ```dana
 # Pipeline with conditional processing
-data_pipeline = (lambda x -> x.strip() if x else "") | 
-               (lambda x -> x.upper() if x else "") | 
-               (lambda x -> f"PROCESSED: {x}" if x else "EMPTY")
+data_pipeline = (lambda x :: x.strip() if x else "") | 
+               (lambda x :: x.upper() if x else "") | 
+               (lambda x :: f"PROCESSED: {x}" if x else "EMPTY")
 
 # Conditional filtering in pipeline
-filter_pipeline = (lambda x -> x if x > 0 else None) | 
-                 (lambda x -> x * 2 if x else 0)
+filter_pipeline = (lambda x :: x if x > 0 else None) | 
+                 (lambda x :: x * 2 if x else 0)
 ```
 
 **Key Benefits**:
@@ -272,12 +272,12 @@ struct Point:
     y: float
 
 # Lambda with receiver (like a method)
-translate_point = lambda (point: Point) dx: float, dy: float -> Point(
+translate_point = lambda (point: Point) dx: float, dy: float :: Point(
     x=point.x + dx,
     y=point.y + dy
 )
 
-scale_point = lambda (point: Point) factor: float -> Point(
+scale_point = lambda (point: Point) factor: float :: Point(
     x=point.x * factor,
     y=point.y * factor
 )
@@ -289,7 +289,7 @@ scaled = scale_point(point, 2.0)        # Point(x=6, y=8)
 ```
 
 **Receiver Syntax**:
-- `lambda (receiver: Type) param1, param2 -> expression`
+- `lambda (receiver: Type) param1, param2 :: expression`
 - The receiver is the first parameter, wrapped in parentheses
 - Type hints are supported for both receiver and parameters
 
@@ -311,14 +311,14 @@ struct Rectangle:
     height: float
 
 # Lambda with union receiver
-calculate_area = lambda (shape: Point | Circle | Rectangle) -> {
+calculate_area = lambda (shape: Point | Circle | Rectangle) :: {
     return 0.0 if shape._type.name == "Point"
     else 3.14159 * shape.radius ** 2 if shape._type.name == "Circle"
     else shape.width * shape.height
 }
 
 # Lambda with union receiver and parameters
-transform_shape = lambda (shape: Point | Circle | Rectangle) factor: float -> {
+transform_shape = lambda (shape: Point | Circle | Rectangle) factor: float :: {
     return Point(x=shape.x * factor, y=shape.y * factor) if shape._type.name == "Point"
     else Circle(radius=shape.radius * factor, center=shape.center) if shape._type.name == "Circle"
     else Rectangle(width=shape.width * factor, height=shape.height * factor)
@@ -340,13 +340,13 @@ Lambda expressions integrate seamlessly with Dana's pipeline syntax:
 
 ```dana
 # Simple pipeline with lambdas
-number_pipeline = (lambda x -> x * 2) | (lambda y -> y + 1) | (lambda z -> z * z)
+number_pipeline = (lambda x :: x * 2) | (lambda y :: y + 1) | (lambda z :: z * z)
 result = number_pipeline(5)  # 5 → 10 → 11 → 121
 
 # Text processing pipeline
-text_pipeline = (lambda x -> x.strip()) | 
-               (lambda x -> x.upper()) | 
-               (lambda x -> f"PROCESSED: {x}")
+text_pipeline = (lambda x :: x.strip()) | 
+               (lambda x :: x.upper()) | 
+               (lambda x :: f"PROCESSED: {x}")
 
 result = text_pipeline("  hello world  ")  # "PROCESSED: HELLO WORLD"
 
@@ -463,8 +463,8 @@ cube = lambda x -> x * x * x
 absolute = lambda x -> x if x >= 0 else -x
 
 # Conditional transformations
-get_first = lambda lst -> lst[0] if len(lst) > 0 else None
-get_last = lambda lst -> lst[-1] if len(lst) > 0 else None
+get_first = lambda lst :: lst[0] if len(lst) > 0 else None
+get_last = lambda lst :: lst[-1] if len(lst) > 0 else None
 ```
 
 **Validation and Filtering**:
@@ -476,14 +476,14 @@ is_even = lambda x -> x % 2 == 0
 is_valid_email = lambda s -> "@" in s and "." in s
 
 # Safe operations with conditionals
-safe_divide = lambda x, y -> x / y if y != 0 else float('inf')
-safe_sqrt = lambda x -> x ** 0.5 if x >= 0 else 0
-safe_reciprocal = lambda x -> 1.0 / x if x != 0 else float('inf')
-safe_len = lambda obj -> len(obj) if hasattr(obj, '__len__') else 0
+safe_divide = lambda x, y :: x / y if y != 0 else float('inf')
+safe_sqrt = lambda x :: x ** 0.5 if x >= 0 else 0
+safe_reciprocal = lambda x :: 1.0 / x if x != 0 else float('inf')
+safe_len = lambda obj :: len(obj) if hasattr(obj, '__len__') else 0
 
 # Conditional validation
-is_valid_score = lambda score -> True if 0 <= score <= 100 else False
-is_adult_age = lambda age -> True if age >= 18 else False
+is_valid_score = lambda score :: True if 0 <= score <= 100 else False
+is_adult_age = lambda age :: True if age >= 18 else False
 ```
 
 **Struct Operations**:
@@ -501,9 +501,9 @@ is_adult = lambda (person: Person) -> person.age >= 18
 format_info = lambda (person: Person) -> f"{person.name} ({person.age}) from {person.city}"
 
 # Conditional struct operations
-get_display_name = lambda (person: Person) -> person.name if person.name else "Anonymous"
-get_domain = lambda (person: Person) -> person.email.split("@")[1] if "@" in person.email else ""
-get_age_group = lambda (person: Person) -> "adult" if person.age >= 18 else "minor"
+get_display_name = lambda (person: Person) :: person.name if person.name else "Anonymous"
+get_domain = lambda (person: Person) :: person.email.split("@")[1] if "@" in person.email else ""
+get_age_group = lambda (person: Person) :: "adult" if person.age >= 18 else "minor"
 ```
 
 ## Integration with Other Dana Features
@@ -517,7 +517,7 @@ def process_data(data: list, transform):
 
 # Usage with lambda
 numbers = [1, 2, 3, 4, 5]
-squares = process_data(numbers, lambda x -> x * x)
+squares = process_data(numbers, lambda x :: x * x)
 ```
 
 **Lambda with Agents**:
@@ -531,7 +531,7 @@ agent DataProcessor:
 
 # Usage
 processor = DataProcessor()
-result = processor.process_with_lambda([1, 2, 3], lambda x -> x * 2)
+result = processor.process_with_lambda([1, 2, 3], lambda x :: x * 2)
 ```
 
 **Lambda in Workflows**:
@@ -539,9 +539,9 @@ result = processor.process_with_lambda([1, 2, 3], lambda x -> x * 2)
 ```dana
 @poet(domain="data_analysis")
 def data_analysis_workflow = (
-    (lambda data -> data.strip()) |
-    (lambda clean -> clean.upper()) |
-    (lambda upper -> f"ANALYZED: {upper}")
+    (lambda data :: data.strip()) |
+    (lambda clean :: clean.upper()) |
+    (lambda upper :: f"ANALYZED: {upper}")
 )
 ```
 
