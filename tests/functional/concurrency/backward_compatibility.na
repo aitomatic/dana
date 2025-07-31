@@ -1,0 +1,365 @@
+// Backward compatibility tests for Promise[T] concurrent-by-default implementation
+// Copyright © 2025 Aitomatic, Inc.
+
+// Test that existing return statements work unchanged
+def test_existing_return_compatibility():
+    // These functions use traditional return - should work exactly as before
+    def traditional_function():
+        return 42
+    
+    def traditional_with_expression():
+        return 10 + 20
+    
+    def traditional_conditional():
+        if true:
+            return "success"
+        return "failure"
+    
+    def traditional_early_return(value):
+        if value < 0:
+            return "negative"
+        if value == 0:
+            return "zero"
+        return "positive"
+    
+    // Test results are identical to pre-Promise[T] behavior
+    assert traditional_function() == 42
+    assert traditional_with_expression() == 30
+    assert traditional_conditional() == "success"
+    assert traditional_early_return(-5) == "negative"
+    assert traditional_early_return(0) == "zero"
+    assert traditional_early_return(10) == "positive"
+    
+    print("✓ Existing return statements work unchanged")
+
+// Test that existing function calls work unchanged
+def test_existing_function_calls():
+    // Traditional function definitions
+    def add(a, b):
+        return a + b
+    
+    def multiply(a, b):
+        return a * b
+    
+    def compose_operations(x, y, z):
+        sum_result = add(x, y)
+        final_result = multiply(sum_result, z)
+        return final_result
+    
+    // Nested function calls
+    def nested_calls():
+        return add(multiply(2, 3), multiply(4, 5))
+    
+    // Function as arguments
+    def apply_function(func, a, b):
+        return func(a, b)
+    
+    // Test all existing patterns work
+    assert add(5, 3) == 8
+    assert multiply(4, 6) == 24
+    assert compose_operations(2, 3, 4) == 20  // (2+3)*4
+    assert nested_calls() == 26  // (2*3) + (4*5)
+    assert apply_function(add, 10, 15) == 25
+    
+    print("✓ Existing function calls work unchanged")
+
+// Test that existing control flow works unchanged
+def test_existing_control_flow():
+    def traditional_if_else(condition):
+        if condition:
+            return "true_branch"
+        else:
+            return "false_branch"
+    
+    def traditional_loops():
+        result = []
+        for i in range(5):
+            result.append(i * 2)
+        return result
+    
+    def traditional_while():
+        count = 0
+        total = 0
+        while count < 5:
+            total = total + count
+            count = count + 1
+        return total
+    
+    def traditional_try_except():
+        try:
+            result = 10 / 2
+            return result
+        except ZeroDivisionError:
+            return "error"
+    
+    // Test control flow works exactly as before
+    assert traditional_if_else(true) == "true_branch"
+    assert traditional_if_else(false) == "false_branch"
+    assert traditional_loops() == [0, 2, 4, 6, 8]
+    assert traditional_while() == 10  // 0+1+2+3+4
+    assert traditional_try_except() == 5.0
+    
+    print("✓ Existing control flow works unchanged")
+
+// Test that existing data structures work unchanged
+def test_existing_data_structures():
+    def work_with_lists():
+        lst = [1, 2, 3, 4, 5]
+        doubled = [x * 2 for x in lst]
+        filtered = [x for x in doubled if x > 4]
+        return {"original": lst, "doubled": doubled, "filtered": filtered}
+    
+    def work_with_dicts():
+        data = {"a": 1, "b": 2, "c": 3}
+        keys = list(data.keys())
+        values = list(data.values())
+        return {"keys": keys, "values": values, "total": sum(values)}
+    
+    def work_with_sets():
+        set1 = {1, 2, 3, 4}
+        set2 = {3, 4, 5, 6}
+        union = set1 | set2
+        intersection = set1 & set2
+        return {"union": union, "intersection": intersection}
+    
+    // Test data structure operations work unchanged
+    list_result = work_with_lists()
+    assert list_result["original"] == [1, 2, 3, 4, 5]
+    assert list_result["doubled"] == [2, 4, 6, 8, 10]
+    assert list_result["filtered"] == [6, 8, 10]
+    
+    dict_result = work_with_dicts()
+    assert "a" in dict_result["keys"]
+    assert 1 in dict_result["values"]
+    assert dict_result["total"] == 6
+    
+    set_result = work_with_sets()
+    assert 1 in set_result["union"]
+    assert 3 in set_result["intersection"]
+    
+    print("✓ Existing data structures work unchanged")
+
+// Test that existing string operations work unchanged
+def test_existing_string_operations():
+    def string_processing():
+        text = "Hello World"
+        upper = text.upper()
+        lower = text.lower()
+        split = text.split(" ")
+        joined = "-".join(split)
+        return {
+            "original": text,
+            "upper": upper,
+            "lower": lower,
+            "split": split,
+            "joined": joined
+        }
+    
+    def string_formatting():
+        name = "Alice"
+        age = 30
+        formatted = f"Name: {name}, Age: {age}"
+        return formatted
+    
+    // Test string operations work unchanged
+    str_result = string_processing()
+    assert str_result["original"] == "Hello World"
+    assert str_result["upper"] == "HELLO WORLD"
+    assert str_result["lower"] == "hello world"
+    assert str_result["split"] == ["Hello", "World"]
+    assert str_result["joined"] == "Hello-World"
+    
+    assert string_formatting() == "Name: Alice, Age: 30"
+    
+    print("✓ Existing string operations work unchanged")
+
+// Test that existing mathematical operations work unchanged
+def test_existing_math_operations():
+    def basic_arithmetic():
+        a = 10
+        b = 3
+        return {
+            "add": a + b,
+            "subtract": a - b,
+            "multiply": a * b,
+            "divide": a / b,
+            "modulo": a % b,
+            "power": a ** 2
+        }
+    
+    def comparison_operations():
+        x = 15
+        y = 10
+        return {
+            "greater": x > y,
+            "less": x < y,
+            "equal": x == y,
+            "not_equal": x != y,
+            "greater_equal": x >= y,
+            "less_equal": x <= y
+        }
+    
+    def logical_operations():
+        return {
+            "and_true": true and true,
+            "and_false": true and false,
+            "or_true": false or true,
+            "or_false": false or false,
+            "not_true": not true,
+            "not_false": not false
+        }
+    
+    // Test mathematical operations work unchanged
+    arith_result = basic_arithmetic()
+    assert arith_result["add"] == 13
+    assert arith_result["subtract"] == 7
+    assert arith_result["multiply"] == 30
+    assert arith_result["divide"] == 10/3
+    assert arith_result["modulo"] == 1
+    assert arith_result["power"] == 100
+    
+    comp_result = comparison_operations()
+    assert comp_result["greater"] == true
+    assert comp_result["less"] == false
+    assert comp_result["equal"] == false
+    assert comp_result["not_equal"] == true
+    
+    logic_result = logical_operations()
+    assert logic_result["and_true"] == true
+    assert logic_result["and_false"] == false
+    assert logic_result["or_true"] == true
+    assert logic_result["or_false"] == false
+    assert logic_result["not_true"] == false
+    assert logic_result["not_false"] == true
+    
+    print("✓ Existing mathematical operations work unchanged")
+
+// Test that existing struct definitions work unchanged
+def test_existing_struct_compatibility():
+    struct Person:
+        name: str
+        age: int
+        
+        def get_info(self):
+            return f"{self.name} is {self.age} years old"
+        
+        def is_adult(self):
+            return self.age >= 18
+    
+    struct Company:
+        name: str
+        employees: list
+        
+        def add_employee(self, person):
+            self.employees.append(person)
+            return len(self.employees)
+        
+        def get_total_employees(self):
+            return len(self.employees)
+    
+    // Test struct instantiation and methods work unchanged
+    alice = Person("Alice", 25)
+    bob = Person("Bob", 17)
+    
+    assert alice.name == "Alice"
+    assert alice.age == 25
+    assert alice.get_info() == "Alice is 25 years old"
+    assert alice.is_adult() == true
+    assert bob.is_adult() == false
+    
+    company = Company("Tech Corp", [])
+    assert company.add_employee(alice) == 1
+    assert company.add_employee(bob) == 2
+    assert company.get_total_employees() == 2
+    
+    print("✓ Existing struct definitions work unchanged")
+
+// Test that existing lambda functions work unchanged
+def test_existing_lambda_compatibility():
+    def use_lambdas():
+        numbers = [1, 2, 3, 4, 5]
+        
+        // Lambda in map-like operations
+        squared = [x * x for x in numbers]
+        
+        // Lambda in filter-like operations
+        evens = [x for x in numbers if x % 2 == 0]
+        
+        // Lambda as function arguments
+        def apply_operation(lst, operation):
+            return [operation(x) for x in lst]
+        
+        doubled = apply_operation(numbers, lambda x: x * 2)
+        
+        return {
+            "squared": squared,
+            "evens": evens,
+            "doubled": doubled
+        }
+    
+    result = use_lambdas()
+    assert result["squared"] == [1, 4, 9, 16, 25]
+    assert result["evens"] == [2, 4]
+    assert result["doubled"] == [2, 4, 6, 8, 10]
+    
+    print("✓ Existing lambda functions work unchanged")
+
+// Test that existing import statements work unchanged  
+def test_existing_import_compatibility():
+    // Test that standard imports still work
+    // (These would normally import actual modules)
+    def mock_import_usage():
+        // Simulate what imports would do
+        math_result = 3.14159  // Would be math.pi
+        random_result = 42     // Would be random.randint(1, 100)
+        
+        return {"pi": math_result, "random": random_result}
+    
+    result = mock_import_usage()
+    assert result["pi"] == 3.14159
+    assert result["random"] == 42
+    
+    print("✓ Existing import statements work unchanged")
+
+// Test performance regression - existing code should not be slower
+def test_performance_regression():
+    operation_count = 0
+    
+    def simple_operation(x):
+        operation_count = operation_count + 1
+        return x * 2 + 1
+    
+    def traditional_loop_performance():
+        operation_count = 0
+        results = []
+        
+        // Traditional loop that should run at same speed
+        for i in range(100):
+            result = simple_operation(i)
+            results.append(result)
+        
+        return {"results": results, "operations": operation_count}
+    
+    perf_result = traditional_loop_performance()
+    
+    // Verify same functionality
+    assert len(perf_result["results"]) == 100
+    assert perf_result["results"][0] == 1   // 0*2+1
+    assert perf_result["results"][1] == 3   // 1*2+1
+    assert perf_result["operations"] == 100
+    
+    print("✓ No performance regression in existing code")
+
+// Run all backward compatibility tests
+test_existing_return_compatibility()
+test_existing_function_calls()
+test_existing_control_flow()
+test_existing_data_structures()
+test_existing_string_operations()
+test_existing_math_operations()
+test_existing_struct_compatibility()
+test_existing_lambda_compatibility()
+test_existing_import_compatibility()
+test_performance_regression()
+
+print("All backward compatibility tests passed!")

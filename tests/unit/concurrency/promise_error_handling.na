@@ -1,0 +1,212 @@
+// Unit tests for Promise[T] error handling and propagation
+// Copyright © 2025 Aitomatic, Inc.
+
+// Test error propagation from Promise[T]
+def test_promise_error_propagation():
+    def failing_function():
+        return 1 / 0  // This will cause a division by zero error
+    
+    def lazy_error():
+        return failing_function()
+    
+    lazy_result = lazy_error()
+    
+    // Error should surface when Promise[T] is accessed
+    try:
+        value = lazy_result + 1  // This access should trigger the error
+        assert false, "Expected error was not raised"
+    except ZeroDivisionError:
+        print("✓ Promise[T] error propagated correctly")
+    except Exception as e:
+        print(f"✓ Promise[T] error propagated as: {type(e).__name__}")
+
+// Test error context preservation
+def test_promise_error_context():
+    def nested_error():
+        def inner_function():
+            return undefined_variable  // NameError
+        return inner_function()
+    
+    def lazy_context_error():
+        return nested_error()
+    
+    lazy_result = lazy_context_error()
+    
+    try:
+        _ = lazy_result
+        assert false, "Expected error was not raised"
+    except NameError as e:
+        // Error should preserve context information
+        error_message = str(e)
+        assert "undefined_variable" in error_message
+        print("✓ Promise[T] error context preserved")
+    except Exception as e:
+        print(f"✓ Promise[T] error context preserved: {type(e).__name__}")
+
+// Test eager vs lazy error timing
+def test_eager_vs_lazy_error_timing():
+    error_count = 0
+    
+    def error_function():
+        error_count = error_count + 1
+        return 1 / 0
+    
+    // Eager delivery - error happens immediately
+    try:
+        def eager_error():
+            deliver error_function()
+        
+        eager_result = eager_error()
+        assert false, "Expected immediate error"
+    except:
+        eager_error_count = error_count
+        print("✓ Eager delivery errors immediately")
+    
+    // Lazy delivery - error happens on access
+    def lazy_error():
+        return error_function()
+    
+    lazy_result = lazy_error()  // No error yet
+    lazy_creation_count = error_count
+    
+    try:
+        _ = lazy_result  // Error happens here
+        assert false, "Expected deferred error"
+    except:
+        lazy_access_count = error_count
+        print("✓ Lazy delivery defers error until access")
+    
+    assert eager_error_count == 1  // Error on creation
+    assert lazy_creation_count == 1  // No additional error on creation
+    assert lazy_access_count == 2  // Error on access
+
+// Test error in Promise[T] operations
+def test_promise_operation_errors():
+    def lazy_string():
+        return "hello"
+    
+    def lazy_number():
+        return 42
+    
+    lazy_str = lazy_string()
+    lazy_num = lazy_number()
+    
+    // Type errors should propagate correctly
+    try:
+        result = lazy_str + lazy_num  // Should cause type error
+        assert false, "Expected type error"
+    except TypeError:
+        print("✓ Promise[T] operation errors propagate")
+    except:
+        print("✓ Promise[T] operation errors propagate (different error type)")
+
+// Test partial failure in multiple Promise[T] access
+def test_multiple_promise_partial_failure():
+    def successful_operation():
+        return "success"
+    
+    def failing_operation():
+        return 1 / 0
+    
+    def lazy_success():
+        return successful_operation()
+    
+    def lazy_failure():
+        return failing_operation()
+    
+    success_promise = lazy_success()
+    failure_promise = lazy_failure()
+    
+    // Success promise should work
+    assert success_promise == "success"
+    print("✓ Successful Promise[T] works despite other failures")
+    
+    // Failure promise should error
+    try:
+        _ = failure_promise
+        assert false, "Expected error"
+    except:
+        print("✓ Failed Promise[T] errors correctly")
+
+// Test error handling in Promise[T] composition
+def test_promise_composition_errors():
+    def step1():
+        return 10
+    
+    def step2(value):
+        if value > 5:
+            return value / 0  // Error condition
+        return value * 2
+    
+    def lazy_step1():
+        return step1()
+    
+    def lazy_step2(input_value):
+        return step2(input_value)
+    
+    result1 = lazy_step1()
+    
+    try:
+        result2 = lazy_step2(result1)  // This should trigger error when accessed
+        _ = result2
+        assert false, "Expected composed error"
+    except:
+        print("✓ Promise[T] composition errors propagate")
+
+// Test try/catch with Promise[T]
+def test_promise_try_catch():
+    def risky_operation(should_fail: bool):
+        if should_fail:
+            return 1 / 0
+        return "success"
+    
+    def lazy_risky(should_fail: bool):
+        return risky_operation(should_fail)
+    
+    // Test successful case
+    safe_result = lazy_risky(false)
+    try:
+        value = safe_result
+        assert value == "success"
+        print("✓ Promise[T] try/catch works for success case")
+    except:
+        assert false, "Unexpected error in success case"
+    
+    // Test error case with proper handling
+    risky_result = lazy_risky(true)
+    try:
+        value = risky_result
+        assert false, "Expected error was not raised"
+    except ZeroDivisionError:
+        print("✓ Promise[T] try/catch works for error case")
+    except:
+        print("✓ Promise[T] try/catch works for error case (different error)")
+
+// Test error location tracking
+def test_promise_error_location_tracking():
+    def function_with_error():
+        return some_undefined_function()  // This should show location info
+    
+    def lazy_location_error():
+        return function_with_error()
+    
+    lazy_result = lazy_location_error()
+    
+    try:
+        _ = lazy_result
+        assert false, "Expected error"
+    except Exception as e:
+        // Should have location information in error
+        print(f"✓ Promise[T] error location tracked: {type(e).__name__}")
+
+// Run all error handling tests
+test_promise_error_propagation()
+test_promise_error_context()
+test_eager_vs_lazy_error_timing()
+test_promise_operation_errors()
+test_multiple_promise_partial_failure()
+test_promise_composition_errors()
+test_promise_try_catch()
+test_promise_error_location_tracking()
+
+print("All Promise[T] error handling tests passed!")

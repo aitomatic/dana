@@ -1,0 +1,87 @@
+# Unit tests for basic deliver/return dual delivery mechanism
+# Copyright © 2025 Aitomatic, Inc.
+
+def deliver(x):
+    pass
+    
+# Test eager execution with deliver
+def eager_func():
+    deliver(42)
+
+result = eager_func()
+assert result == 42
+print("✓ deliver executes immediately")
+
+# Test lazy execution with return  
+def lazy_func():
+    return 84
+
+result = lazy_func()
+# Result should resolve to 84 when accessed
+assert result == 84
+print("✓ return creates lazy Promise[T]")
+
+# Test deliver vs return behavior
+call_count = 0
+
+def expensive_operation():
+    call_count = call_count + 1
+    return call_count * 10
+
+def eager_wrapper():
+    deliver(expensive_operation())
+
+def lazy_wrapper():
+    return expensive_operation()
+
+# Eager: function executes immediately
+eager_result = eager_wrapper()
+first_count = call_count
+
+# Lazy: function execution deferred until access
+lazy_result = lazy_wrapper()
+second_count = call_count
+
+# Access lazy result to trigger execution
+lazy_value = lazy_result
+final_count = call_count
+
+assert first_count == 1  # eager executed immediately
+assert second_count == 1  # lazy not yet executed
+assert final_count == 2   # lazy executed on access
+assert eager_result == 10
+assert lazy_value == 20
+
+print("✓ deliver/return timing behavior correct")
+
+# Test return with no value
+def empty_return():
+    return
+
+result = empty_return()
+assert result == None
+print("✓ return with no value works")
+
+# Test deliver with no value  
+def empty_deliver():
+    deliver
+
+result = empty_deliver()
+assert result == None
+print("✓ deliver with no value works")
+
+# Test conditional deliver/return
+def conditional_func(use_eager: bool):
+    if use_eager:
+        deliver("eager_result")
+    else:
+        return "lazy_result"
+
+eager_result = conditional_func(true)
+lazy_result = conditional_func(false)
+
+assert eager_result == "eager_result"
+assert lazy_result == "lazy_result"
+print("✓ conditional deliver/return works")
+
+print("All basic deliver/return tests passed!")
