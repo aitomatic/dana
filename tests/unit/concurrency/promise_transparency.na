@@ -1,0 +1,206 @@
+// Unit tests for Promise[T] transparency in all operations
+// Copyright © 2025 Aitomatic, Inc.
+
+// Test arithmetic operations with Promise[T]
+def test_promise_arithmetic():
+    def lazy_five():
+        return 5
+    
+    def lazy_three():
+        return 3
+    
+    lazy_a = lazy_five()
+    lazy_b = lazy_three()
+    eager_c = 2
+    
+    // All arithmetic should work transparently
+    assert lazy_a + lazy_b == 8
+    assert lazy_a - lazy_b == 2  
+    assert lazy_a * lazy_b == 15
+    assert lazy_a / lazy_b == 5/3
+    assert lazy_a ** eager_c == 25
+    assert lazy_a % lazy_b == 2
+    
+    // Mixed Promise[T] and concrete values
+    assert lazy_a + eager_c == 7
+    assert eager_c * lazy_a == 10
+    
+    print("✓ Promise[T] arithmetic operations transparent")
+
+// Test comparison operations with Promise[T]
+def test_promise_comparisons():
+    def lazy_ten():
+        return 10
+    
+    def lazy_five():
+        return 5
+    
+    lazy_big = lazy_ten()
+    lazy_small = lazy_five()
+    concrete_seven = 7
+    
+    // All comparisons should work transparently
+    assert lazy_big > lazy_small
+    assert lazy_small < lazy_big
+    assert lazy_big >= lazy_small
+    assert lazy_small <= lazy_big
+    assert lazy_big == 10
+    assert lazy_small != 10
+    
+    // Mixed comparisons
+    assert lazy_big > concrete_seven
+    assert concrete_seven > lazy_small
+    
+    print("✓ Promise[T] comparison operations transparent")
+
+// Test string operations with Promise[T]
+def test_promise_string_operations():
+    def lazy_hello():
+        return "hello"
+    
+    def lazy_world():
+        return "world"
+    
+    lazy_str1 = lazy_hello()
+    lazy_str2 = lazy_world()
+    concrete_space = " "
+    
+    // String concatenation
+    full_string = lazy_str1 + concrete_space + lazy_str2
+    assert full_string == "hello world"
+    
+    // String methods
+    assert len(lazy_str1) == 5
+    assert lazy_str1.upper() == "HELLO"
+    assert "ell" in lazy_str1
+    
+    // String indexing
+    assert lazy_str1[0] == "h"
+    assert lazy_str1[1:3] == "el"
+    
+    print("✓ Promise[T] string operations transparent")
+
+// Test collection operations with Promise[T]
+def test_promise_collection_operations():
+    def lazy_list():
+        return [1, 2, 3, 4, 5]
+    
+    def lazy_dict():
+        return {"a": 1, "b": 2, "c": 3}
+    
+    lazy_lst = lazy_list()
+    lazy_dct = lazy_dict()
+    
+    // List operations
+    assert len(lazy_lst) == 5
+    assert lazy_lst[0] == 1
+    assert lazy_lst[1:3] == [2, 3]
+    assert 3 in lazy_lst
+    
+    // Dict operations
+    assert len(lazy_dct) == 3
+    assert lazy_dct["a"] == 1
+    assert "b" in lazy_dct
+    assert lazy_dct.keys() == ["a", "b", "c"]
+    
+    print("✓ Promise[T] collection operations transparent")
+
+// Test function calls on Promise[T] values
+def test_promise_function_calls():
+    def create_calculator():
+        return {"add": lambda x, y: x + y, "multiply": lambda x, y: x * y}
+    
+    def lazy_calculator():
+        return create_calculator()
+    
+    lazy_calc = lazy_calculator()
+    
+    // Method calls should work transparently
+    result1 = lazy_calc["add"](3, 4)
+    result2 = lazy_calc["multiply"](5, 6)
+    
+    assert result1 == 7
+    assert result2 == 30
+    
+    print("✓ Promise[T] function calls transparent")
+
+// Test attribute access on Promise[T] values
+def test_promise_attribute_access():
+    struct Point:
+        x: int
+        y: int
+        
+        def distance_from_origin(self):
+            return (self.x**2 + self.y**2)**0.5
+    
+    def lazy_point():
+        return Point(3, 4)
+    
+    lazy_pt = lazy_point()
+    
+    // Attribute access should work transparently
+    assert lazy_pt.x == 3
+    assert lazy_pt.y == 4
+    assert lazy_pt.distance_from_origin() == 5.0
+    
+    print("✓ Promise[T] attribute access transparent")
+
+// Test nested Promise[T] operations
+def test_nested_promise_operations():
+    def lazy_data():
+        return {"users": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]}
+    
+    lazy_result = lazy_data()
+    
+    // Complex nested access should work
+    first_user = lazy_result["users"][0]
+    assert first_user["name"] == "Alice"
+    assert first_user["age"] == 30
+    
+    // Chained operations
+    names = [user["name"] for user in lazy_result["users"]]
+    assert names == ["Alice", "Bob"]
+    
+    print("✓ Promise[T] nested operations transparent")
+
+// Test Promise[T] in boolean contexts
+def test_promise_boolean_context():
+    def lazy_true():
+        return true
+    
+    def lazy_false():
+        return false
+    
+    def lazy_empty_list():
+        return []
+    
+    def lazy_non_empty_list():
+        return [1, 2, 3]
+    
+    // Boolean evaluation should work transparently
+    assert lazy_true()
+    assert not lazy_false()
+    assert not lazy_empty_list()
+    assert lazy_non_empty_list()
+    
+    // In conditional contexts
+    if lazy_true():
+        truth_test = "passed"
+    else:
+        truth_test = "failed"
+    
+    assert truth_test == "passed"
+    
+    print("✓ Promise[T] boolean context transparent")
+
+// Run all transparency tests
+test_promise_arithmetic()
+test_promise_comparisons()
+test_promise_string_operations()
+test_promise_collection_operations()
+test_promise_function_calls()
+test_promise_attribute_access()
+test_nested_promise_operations()
+test_promise_boolean_context()
+
+print("All Promise[T] transparency tests passed!")
