@@ -1,7 +1,7 @@
-// Functional tests for agent system integration with Promise[T] concurrency
-// Copyright © 2025 Aitomatic, Inc.
+# Functional tests for agent system integration with Promise[T] concurrency
+# Copyright © 2025 Aitomatic, Inc.
 
-// Test agent method calls with deliver/return
+# Test agent method calls with deliver/return
 def test_agent_deliver_return():
     agent DataProcessor:
         name: str = "DataProcessor"
@@ -14,22 +14,22 @@ def test_agent_deliver_return():
     
     processor = DataProcessor()
     
-    // Test eager agent method
+    # Test eager agent method
     immediate_result = processor.process_immediately([1, 2, 3])
     assert immediate_result["processed"] == [1, 2, 3]
     assert immediate_result["timestamp"] == "now"
     
-    // Test lazy agent method  
+    # Test lazy agent method  
     lazy_result = processor.process_lazily([4, 5, 6])
     assert lazy_result["processed"] == [4, 5, 6]
     assert lazy_result["timestamp"] == "deferred"
     
     print("✓ Agent methods with deliver/return work")
 
-// Test concurrent agent operations
+# Test concurrent agent operations
 def test_concurrent_agent_operations():
     agent APIClient:
-        base_url: str = "https://api.example.com"
+        base_url: str = "https:#api.example.com"
         
         def (self) fetch_users():
             return [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]
@@ -42,19 +42,19 @@ def test_concurrent_agent_operations():
     
     client = APIClient()
     
-    // Start multiple concurrent operations
+    # Start multiple concurrent operations
     users_promise = client.fetch_users()
     posts_promise = client.fetch_posts()
     comments_promise = client.fetch_comments()
     
-    // Combine results
+    # Combine results
     dashboard_data = {
         "users": users_promise,
         "posts": posts_promise,
         "comments": comments_promise
     }
     
-    // Verify results
+    # Verify results
     assert len(dashboard_data["users"]) == 2
     assert len(dashboard_data["posts"]) == 2
     assert len(dashboard_data["comments"]) == 2
@@ -62,7 +62,7 @@ def test_concurrent_agent_operations():
     
     print("✓ Concurrent agent operations work")
 
-// Test agent communication with Promise[T]
+# Test agent communication with Promise[T]
 def test_agent_communication():
     agent ResearchAgent:
         expertise: str = "research"
@@ -89,10 +89,10 @@ def test_agent_communication():
             researcher = ResearchAgent()
             analyzer = AnalysisAgent()
             
-            // Mix of eager and lazy agent communication
-            quick_info = researcher.quick_summary(topic)  // Eager
-            detailed_research = researcher.research_topic(topic)  // Lazy
-            analysis = analyzer.analyze_data(detailed_research)  // Lazy, depends on research
+            # Mix of eager and lazy agent communication
+            quick_info = researcher.quick_summary(topic)  # Eager
+            detailed_research = researcher.research_topic(topic)  # Lazy
+            analysis = analyzer.analyze_data(detailed_research)  # Lazy, depends on research
             
             return {
                 "quick": quick_info,
@@ -103,14 +103,14 @@ def test_agent_communication():
     orchestrator = OrchestratorAgent()
     result = orchestrator.coordinate_research("AI Ethics")
     
-    // Verify coordinated results
+    # Verify coordinated results
     assert "Quick summary: AI Ethics" in result["quick"]
     assert "Research results for: AI Ethics" in result["detailed"]
     assert "Analysis of: Research results for: AI Ethics" in result["analysis"]
     
     print("✓ Agent communication with Promise[T] works")
 
-// Test conditional agent execution
+# Test conditional agent execution
 def test_conditional_agent_execution():
     agent ComputeAgent:
         power_level: str = "standard"
@@ -119,7 +119,7 @@ def test_conditional_agent_execution():
             deliver len(data) * 2
         
         def (self) heavy_computation(data):
-            // Expensive operation - only run when needed
+            # Expensive operation - only run when needed
             return sum(x * x for x in data)
     
     agent TaskCoordinator:
@@ -128,11 +128,11 @@ def test_conditional_agent_execution():
         def (self) process_workload(data, complexity: str):
             compute_agent = ComputeAgent()
             
-            // Always do light computation
+            # Always do light computation
             basic_result = compute_agent.light_computation(data)
             
             if complexity == "high":
-                // Heavy computation only when needed
+                # Heavy computation only when needed
                 heavy_result = compute_agent.heavy_computation(data)
                 return {"basic": basic_result, "heavy": heavy_result}
             else:
@@ -140,19 +140,19 @@ def test_conditional_agent_execution():
     
     coordinator = TaskCoordinator()
     
-    // Test low complexity - no heavy computation
+    # Test low complexity - no heavy computation
     simple_result = coordinator.process_workload([1, 2, 3], "low")
-    assert simple_result["basic"] == 6  // len([1,2,3]) * 2
+    assert simple_result["basic"] == 6  # len([1,2,3]) * 2
     assert "heavy" not in simple_result
     
-    // Test high complexity - includes heavy computation
+    # Test high complexity - includes heavy computation
     complex_result = coordinator.process_workload([1, 2, 3], "high")
     assert complex_result["basic"] == 6
-    assert complex_result["heavy"] == 14  // 1^2 + 2^2 + 3^2
+    assert complex_result["heavy"] == 14  # 1^2 + 2^2 + 3^2
     
     print("✓ Conditional agent execution works")
 
-// Test agent pipeline with Promise[T]
+# Test agent pipeline with Promise[T]
 def test_agent_pipeline():
     agent DataIngestionAgent:
         source: str = "database"
@@ -188,7 +188,7 @@ def test_agent_pipeline():
             cleaning = DataCleaningAgent()
             analysis = DataAnalysisAgent()
             
-            // Chain operations with Promise[T]
+            # Chain operations with Promise[T]
             raw_data = ingestion.ingest_data()
             clean_data = cleaning.clean_data(raw_data)
             final_analysis = analysis.analyze(clean_data)
@@ -198,16 +198,16 @@ def test_agent_pipeline():
     coordinator = PipelineCoordinator()
     result = coordinator.run_pipeline()
     
-    // Verify pipeline results
+    # Verify pipeline results
     analysis = result["analysis"]
-    assert analysis["count"] == 4  // [20, 30, 40, 50]
+    assert analysis["count"] == 4  # [20, 30, 40, 50]
     assert analysis["mean"] == 35.0
     assert analysis["max"] == 50
     assert analysis["min"] == 20
     
     print("✓ Agent pipeline with Promise[T] works")
 
-// Test error handling in agent concurrency
+# Test error handling in agent concurrency
 def test_agent_error_handling():
     agent FlakyService:
         reliability: str = "low"
@@ -216,7 +216,7 @@ def test_agent_error_handling():
             deliver "success"
         
         def (self) unreliable_operation():
-            return 1 / 0  // This will fail
+            return 1 / 0  # This will fail
     
     agent ErrorHandler:
         name: str = "handler"
@@ -224,15 +224,15 @@ def test_agent_error_handling():
         def (self) safe_operations():
             service = FlakyService()
             
-            // One reliable, one unreliable
+            # One reliable, one unreliable
             safe_result = service.reliable_operation()
             risky_result = service.unreliable_operation()
             
             try:
-                // This should work
+                # This should work
                 assert safe_result == "success"
                 
-                // This should fail when accessed
+                # This should fail when accessed
                 _ = risky_result
                 return {"status": "unexpected_success"}
             except:
@@ -241,13 +241,13 @@ def test_agent_error_handling():
     handler = ErrorHandler()
     result = handler.safe_operations()
     
-    // Verify error handling
+    # Verify error handling
     assert result["status"] == "handled_error"
     assert result["safe"] == "success"
     
     print("✓ Agent error handling with Promise[T] works")
 
-// Test agent resource management with Promise[T]
+# Test agent resource management with Promise[T]
 def test_agent_resource_management():
     agent DatabaseAgent:
         connection_pool: str = "main"
@@ -274,12 +274,12 @@ def test_agent_resource_management():
             db = DatabaseAgent()
             cache = CacheAgent()
             
-            // Mix of database and cache operations
+            # Mix of database and cache operations
             users = db.query_users()
             orders = db.query_orders()
             cached_stats = cache.get_cached_data("stats")
             
-            // Expensive operation only if needed
+            # Expensive operation only if needed
             computed_data = cache.expensive_computation()
             
             return {
@@ -292,7 +292,7 @@ def test_agent_resource_management():
     coordinator = ResourceCoordinator()
     dashboard = coordinator.load_dashboard()
     
-    // Verify resource coordination
+    # Verify resource coordination
     assert len(dashboard["users"]) == 2
     assert len(dashboard["orders"]) == 2
     assert dashboard["stats"] == "cached_stats"
@@ -300,7 +300,7 @@ def test_agent_resource_management():
     
     print("✓ Agent resource management with Promise[T] works")
 
-// Run all agent integration tests
+# Run all agent integration tests
 test_agent_deliver_return()
 test_concurrent_agent_operations()
 test_agent_communication()

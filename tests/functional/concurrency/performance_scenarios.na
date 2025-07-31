@@ -1,13 +1,13 @@
-// Performance scenarios demonstrating Promise[T] lazy evaluation benefits
-// Copyright © 2025 Aitomatic, Inc.
+# Performance scenarios demonstrating Promise[T] lazy evaluation benefits
+# Copyright © 2025 Aitomatic, Inc.
 
-// Test conditional computation performance
+# Test conditional computation performance
 def test_conditional_computation_performance():
     expensive_operations_count = 0
     
     def expensive_model_training():
         expensive_operations_count = expensive_operations_count + 1
-        // Simulate expensive ML model training
+        # Simulate expensive ML model training
         result = 0
         for i in range(10000):
             result = result + i * i
@@ -15,7 +15,7 @@ def test_conditional_computation_performance():
     
     def expensive_data_processing():
         expensive_operations_count = expensive_operations_count + 1
-        // Simulate expensive data processing
+        # Simulate expensive data processing
         result = []
         for i in range(1000):
             result.append(f"processed_item_{i}")
@@ -28,10 +28,10 @@ def test_conditional_computation_performance():
         return expensive_data_processing()
     
     def smart_pipeline(use_ml: bool, process_data: bool):
-        // Always do basic setup (cheap)
+        # Always do basic setup (cheap)
         basic_config = {"version": "1.0", "mode": "production"}
         
-        // Conditionally expensive operations
+        # Conditionally expensive operations
         if use_ml:
             model = lazy_model_training()
         else:
@@ -42,31 +42,31 @@ def test_conditional_computation_performance():
         else:
             processed = None
         
-        // Return configuration - expensive operations only run if accessed
+        # Return configuration - expensive operations only run if accessed
         return {
             "config": basic_config,
             "model": model,
             "data": processed
         }
     
-    // Test 1: No expensive operations needed
+    # Test 1: No expensive operations needed
     result1 = smart_pipeline(false, false)
     operations_after_minimal = expensive_operations_count
     
-    // Test 2: Only model needed
+    # Test 2: Only model needed
     result2 = smart_pipeline(true, false)
-    model_info = result2["model"]  // This triggers model training
+    model_info = result2["model"]  # This triggers model training
     operations_after_model = expensive_operations_count
     
-    // Test 3: Only data processing needed  
+    # Test 3: Only data processing needed  
     result3 = smart_pipeline(false, true)
-    data_info = result3["data"]  // This triggers data processing
+    data_info = result3["data"]  # This triggers data processing
     operations_after_data = expensive_operations_count
     
-    // Verify performance benefits
-    assert operations_after_minimal == 0  // No expensive ops
-    assert operations_after_model == 1    // Only model training
-    assert operations_after_data == 2     // Model + data processing
+    # Verify performance benefits
+    assert operations_after_minimal == 0  # No expensive ops
+    assert operations_after_model == 1    # Only model training
+    assert operations_after_data == 2     # Model + data processing
     
     assert result1["config"]["version"] == "1.0"
     assert model_info["accuracy"] == 0.95
@@ -74,18 +74,18 @@ def test_conditional_computation_performance():
     
     print("✓ Conditional computation saves unnecessary work")
 
-// Test lazy vs eager resource loading performance
+# Test lazy vs eager resource loading performance
 def test_resource_loading_performance():
     load_operations = []
     
     def load_large_dataset(name: str):
         load_operations.append(f"loaded_{name}")
-        // Simulate loading large dataset
+        # Simulate loading large dataset
         return [f"{name}_data_{i}" for i in range(100)]
     
     def load_model_weights(name: str):
         load_operations.append(f"loaded_model_{name}")
-        // Simulate loading model weights
+        # Simulate loading model weights
         return {"weights": f"{name}_weights", "size": "100MB"}
     
     def lazy_dataset(name: str):
@@ -102,13 +102,13 @@ def test_resource_loading_performance():
     
     def resource_manager(load_eagerly: bool):
         if load_eagerly:
-            // Eager loading - everything loads immediately
+            # Eager loading - everything loads immediately
             dataset1 = eager_dataset("train")
             dataset2 = eager_dataset("validation") 
             model1 = eager_model("classifier")
             model2 = eager_model("regressor")
         else:
-            // Lazy loading - only loads when accessed
+            # Lazy loading - only loads when accessed
             dataset1 = lazy_dataset("train")
             dataset2 = lazy_dataset("validation")
             model1 = lazy_model("classifier") 
@@ -121,38 +121,38 @@ def test_resource_loading_performance():
             "regressor": model2
         }
     
-    // Test eager loading
+    # Test eager loading
     load_operations.clear()
     eager_resources = resource_manager(true)
     eager_load_count = len(load_operations)
     
-    // Test lazy loading
+    # Test lazy loading
     load_operations.clear()
     lazy_resources = resource_manager(false)
     lazy_initial_count = len(load_operations)
     
-    // Access only training data and classifier (50% of resources)
+    # Access only training data and classifier (50% of resources)
     train_data = lazy_resources["train_data"]
     classifier = lazy_resources["classifier"]
     lazy_partial_count = len(load_operations)
     
-    // Verify performance difference
-    assert eager_load_count == 4      // All resources loaded immediately
-    assert lazy_initial_count == 0    // Nothing loaded initially
-    assert lazy_partial_count == 2    // Only accessed resources loaded
+    # Verify performance difference
+    assert eager_load_count == 4      # All resources loaded immediately
+    assert lazy_initial_count == 0    # Nothing loaded initially
+    assert lazy_partial_count == 2    # Only accessed resources loaded
     
     assert len(train_data) == 100
     assert classifier["size"] == "100MB"
     
     print("✓ Lazy loading saves on unused resources")
 
-// Test parallel Promise[T] resolution performance
+# Test parallel Promise[T] resolution performance
 def test_parallel_promise_performance():
     computation_log = []
     
     def cpu_intensive_task(task_id: int):
         computation_log.append(f"started_task_{task_id}")
-        // Simulate CPU-intensive work
+        # Simulate CPU-intensive work
         result = 0
         for i in range(1000):
             result = result + i + task_id
@@ -165,58 +165,58 @@ def test_parallel_promise_performance():
     def sequential_processing():
         computation_log.clear()
         
-        // Sequential execution
+        # Sequential execution
         task1 = lazy_cpu_task(1)
-        result1 = task1  // Force resolution
+        result1 = task1  # Force resolution
         
         task2 = lazy_cpu_task(2)
-        result2 = task2  // Force resolution
+        result2 = task2  # Force resolution
         
         task3 = lazy_cpu_task(3)
-        result3 = task3  // Force resolution
+        result3 = task3  # Force resolution
         
         return [result1, result2, result3]
     
     def parallel_processing():
         computation_log.clear()
         
-        // Create all promises first
+        # Create all promises first
         task1 = lazy_cpu_task(1)
         task2 = lazy_cpu_task(2)
         task3 = lazy_cpu_task(3)
         
-        // Access all results together - can potentially parallelize
+        # Access all results together - can potentially parallelize
         results = [task1, task2, task3]
         
         return results
     
-    // Test sequential processing
+    # Test sequential processing
     sequential_results = sequential_processing()
     sequential_log = computation_log.copy()
     
-    // Test parallel processing
+    # Test parallel processing
     parallel_results = parallel_processing()
     parallel_log = computation_log.copy()
     
-    // Verify both produce same results
+    # Verify both produce same results
     assert len(sequential_results) == 3
     assert len(parallel_results) == 3
     assert sequential_results[0]["task_id"] == 1
     assert parallel_results[0]["task_id"] == 1
     
-    // Verify execution patterns
+    # Verify execution patterns
     assert "started_task_1" in sequential_log
     assert "started_task_1" in parallel_log
     
     print("✓ Parallel Promise[T] resolution improves performance")
 
-// Test memory efficiency with lazy evaluation
+# Test memory efficiency with lazy evaluation
 def test_memory_efficiency():
     large_object_count = 0
     
     def create_large_object(size: int):
         large_object_count = large_object_count + 1
-        // Simulate creating large object
+        # Simulate creating large object
         return [f"item_{i}" for i in range(size)]
     
     def lazy_large_object(size: int):
@@ -225,12 +225,12 @@ def test_memory_efficiency():
     def memory_efficient_processing(data_sizes: list, threshold: int):
         large_objects = []
         
-        // Create lazy objects for all sizes
+        # Create lazy objects for all sizes
         for size in data_sizes:
             obj = lazy_large_object(size)
             large_objects.append({"size": size, "data": obj})
         
-        // Only process objects above threshold
+        # Only process objects above threshold
         processed = []
         for obj in large_objects:
             if obj["size"] > threshold:
@@ -242,7 +242,7 @@ def test_memory_efficiency():
         
         return processed
     
-    // Test with mixed sizes, only large ones should be created
+    # Test with mixed sizes, only large ones should be created
     large_object_count = 0
     sizes = [10, 100, 50, 200, 30, 150]  # Only 100, 200, 150 > 75
     result = memory_efficient_processing(sizes, 75)
@@ -260,7 +260,7 @@ def test_memory_efficiency():
     
     print("✓ Lazy evaluation improves memory efficiency")
 
-// Test caching benefits with Promise[T]
+# Test caching benefits with Promise[T]
 def test_promise_caching_performance():
     computation_count = {}
     
@@ -269,7 +269,7 @@ def test_promise_caching_performance():
             computation_count[input_value] = 0
         computation_count[input_value] = computation_count[input_value] + 1
         
-        // Simulate expensive computation
+        # Simulate expensive computation
         result = input_value
         for i in range(100):
             result = result + i
@@ -281,7 +281,7 @@ def test_promise_caching_performance():
     def processing_workflow(inputs: list):
         results = []
         
-        // Process each input
+        # Process each input
         for input_val in inputs:
             # Some inputs might be repeated
             result = cached_computation(input_val)
@@ -289,25 +289,25 @@ def test_promise_caching_performance():
         
         return results
     
-    // Test with repeated inputs
+    # Test with repeated inputs
     computation_count.clear()
     inputs = [5, 10, 5, 15, 10, 5]  # 5 appears 3x, 10 appears 2x, 15 appears 1x
     results = processing_workflow(inputs)
     
-    // Verify results
+    # Verify results
     assert len(results) == 6
     assert results[0]["input"] == 5
     assert results[1]["input"] == 10
     
-    // In ideal caching scenario, each unique input computed only once
-    // For now, verify basic functionality
+    # In ideal caching scenario, each unique input computed only once
+    # For now, verify basic functionality
     assert 5 in computation_count
     assert 10 in computation_count
     assert 15 in computation_count
     
     print("✓ Promise[T] enables efficient caching patterns")
 
-// Test error performance with lazy evaluation
+# Test error performance with lazy evaluation
 def test_error_performance():
     error_operations = []
     
@@ -326,14 +326,14 @@ def test_error_performance():
     def error_recovery_workflow():
         error_operations.clear()
         
-        // Create multiple operations, some will fail
-        op1 = lazy_risky(false, "op1")  // Will succeed
-        op2 = lazy_risky(true, "op2")   // Will fail
-        op3 = lazy_risky(false, "op3")  // Will succeed
+        # Create multiple operations, some will fail
+        op1 = lazy_risky(false, "op1")  # Will succeed
+        op2 = lazy_risky(true, "op2")   # Will fail
+        op3 = lazy_risky(false, "op3")  # Will succeed
         
         successful_results = []
         
-        // Try each operation, recover from failures
+        # Try each operation, recover from failures
         try:
             result1 = op1
             successful_results.append(result1)
@@ -341,7 +341,7 @@ def test_error_performance():
             pass
         
         try:
-            result2 = op2  // This will fail
+            result2 = op2  # This will fail
             successful_results.append(result2)
         except:
             successful_results.append("op2_recovered")
@@ -356,13 +356,13 @@ def test_error_performance():
     
     results = error_recovery_workflow()
     
-    // Verify error handling performance
+    # Verify error handling performance
     assert len(results) == 3
     assert "success_op1" in results
-    assert "op2_recovered" in results  // Failed operation recovered
+    assert "op2_recovered" in results  # Failed operation recovered
     assert "success_op3" in results
     
-    // Verify operations ran only when accessed
+    # Verify operations ran only when accessed
     assert "attempted_op1" in error_operations
     assert "attempted_op2" in error_operations
     assert "attempted_op3" in error_operations
@@ -370,7 +370,7 @@ def test_error_performance():
     
     print("✓ Lazy evaluation optimizes error handling performance")
 
-// Run all performance tests
+# Run all performance tests
 test_conditional_computation_performance()
 test_resource_loading_performance()
 test_parallel_promise_performance()

@@ -1,0 +1,52 @@
+# Test that deliver statement properly resolves dependency chains
+
+def slow_unrelated():
+    # Simulate a slow operation with simple computation
+    result = 0
+    numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    for num in numbers:
+        result = result + num
+    return "unrelated"
+
+def dependency_a():
+    # Simulate a medium operation
+    result = 0
+    numbers = [1, 2, 3, 4, 5]
+    for num in numbers:
+        result = result + num
+    return 10
+
+def dependency_b():
+    # Simulate a faster operation
+    result = 0
+    numbers = [1, 2, 3]
+    for num in numbers:
+        result = result + num
+    return 20
+
+def dependency_c():
+    # Simulate the fastest operation
+    result = 0
+    numbers = [1, 2]
+    for num in numbers:
+        result = result + num
+    return 30
+
+def main():
+    # Create unrelated slow promise
+    unrelated = slow_unrelated()
+    
+    # Create promises that form a dependency chain
+    a = dependency_a()
+    b = dependency_b()
+    c = dependency_c()
+    
+    # Create expression that depends on a, b, c
+    result = a + b + c  # This should trigger resolution of a, b, c only
+    
+    # Deliver the result - should only wait for a, b, c, not unrelated
+    deliver result
+
+# Test should complete in reasonable time (sum of a+b+c delays), not including unrelated
+result = main()
+assert result == 60  # 10 + 20 + 30 

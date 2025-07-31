@@ -9,7 +9,7 @@ from typing import Any
 
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.interpreter.executor.control_flow.exceptions import ReturnException
+from dana.core.lang.interpreter.executor.control_flow.exceptions import DeliverException, ReturnException
 from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
 from dana.core.lang.sandbox_context import SandboxContext
 
@@ -172,6 +172,9 @@ class DanaFunction(SandboxFunction, Loggable):
                         raise RuntimeError("No interpreter available in context")
                 except ReturnException as e:
                     # Return statement was encountered - return its value
+                    return e.value
+                except DeliverException as e:
+                    # Deliver statement was encountered - return its value (eager execution)
                     return e.value
                 except Exception as e:
                     # Wrap in SandboxError with location information

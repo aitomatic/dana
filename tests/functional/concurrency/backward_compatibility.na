@@ -1,9 +1,9 @@
-// Backward compatibility tests for Promise[T] concurrent-by-default implementation
-// Copyright © 2025 Aitomatic, Inc.
+# Backward compatibility tests for Promise[T] concurrent-by-default implementation
+# Copyright © 2025 Aitomatic, Inc.
 
-// Test that existing return statements work unchanged
+# Test that existing return statements work unchanged
 def test_existing_return_compatibility():
-    // These functions use traditional return - should work exactly as before
+    # These functions use traditional return - should work exactly as before
     def traditional_function():
         return 42
     
@@ -22,7 +22,7 @@ def test_existing_return_compatibility():
             return "zero"
         return "positive"
     
-    // Test results are identical to pre-Promise[T] behavior
+    # Test results are identical to pre-Promise[T] behavior
     assert traditional_function() == 42
     assert traditional_with_expression() == 30
     assert traditional_conditional() == "success"
@@ -32,9 +32,9 @@ def test_existing_return_compatibility():
     
     print("✓ Existing return statements work unchanged")
 
-// Test that existing function calls work unchanged
+# Test that existing function calls work unchanged
 def test_existing_function_calls():
-    // Traditional function definitions
+    # Traditional function definitions
     def add(a, b):
         return a + b
     
@@ -46,24 +46,24 @@ def test_existing_function_calls():
         final_result = multiply(sum_result, z)
         return final_result
     
-    // Nested function calls
+    # Nested function calls
     def nested_calls():
         return add(multiply(2, 3), multiply(4, 5))
     
-    // Function as arguments
+    # Function as arguments
     def apply_function(func, a, b):
         return func(a, b)
     
-    // Test all existing patterns work
+    # Test all existing patterns work
     assert add(5, 3) == 8
     assert multiply(4, 6) == 24
-    assert compose_operations(2, 3, 4) == 20  // (2+3)*4
-    assert nested_calls() == 26  // (2*3) + (4*5)
+    assert compose_operations(2, 3, 4) == 20  # (2+3)*4
+    assert nested_calls() == 26  # (2*3) + (4*5)
     assert apply_function(add, 10, 15) == 25
     
     print("✓ Existing function calls work unchanged")
 
-// Test that existing control flow works unchanged
+# Test that existing control flow works unchanged
 def test_existing_control_flow():
     def traditional_if_else(condition):
         if condition:
@@ -92,16 +92,16 @@ def test_existing_control_flow():
         except ZeroDivisionError:
             return "error"
     
-    // Test control flow works exactly as before
+    # Test control flow works exactly as before
     assert traditional_if_else(true) == "true_branch"
     assert traditional_if_else(false) == "false_branch"
     assert traditional_loops() == [0, 2, 4, 6, 8]
-    assert traditional_while() == 10  // 0+1+2+3+4
+    assert traditional_while() == 10  # 0+1+2+3+4
     assert traditional_try_except() == 5.0
     
     print("✓ Existing control flow works unchanged")
 
-// Test that existing data structures work unchanged
+# Test that existing data structures work unchanged
 def test_existing_data_structures():
     def work_with_lists():
         lst = [1, 2, 3, 4, 5]
@@ -122,7 +122,7 @@ def test_existing_data_structures():
         intersection = set1 & set2
         return {"union": union, "intersection": intersection}
     
-    // Test data structure operations work unchanged
+    # Test data structure operations work unchanged
     list_result = work_with_lists()
     assert list_result["original"] == [1, 2, 3, 4, 5]
     assert list_result["doubled"] == [2, 4, 6, 8, 10]
@@ -139,7 +139,7 @@ def test_existing_data_structures():
     
     print("✓ Existing data structures work unchanged")
 
-// Test that existing string operations work unchanged
+# Test that existing string operations work unchanged
 def test_existing_string_operations():
     def string_processing():
         text = "Hello World"
@@ -161,7 +161,7 @@ def test_existing_string_operations():
         formatted = f"Name: {name}, Age: {age}"
         return formatted
     
-    // Test string operations work unchanged
+    # Test string operations work unchanged
     str_result = string_processing()
     assert str_result["original"] == "Hello World"
     assert str_result["upper"] == "HELLO WORLD"
@@ -173,7 +173,7 @@ def test_existing_string_operations():
     
     print("✓ Existing string operations work unchanged")
 
-// Test that existing mathematical operations work unchanged
+# Test that existing mathematical operations work unchanged
 def test_existing_math_operations():
     def basic_arithmetic():
         a = 10
@@ -209,7 +209,7 @@ def test_existing_math_operations():
             "not_false": not false
         }
     
-    // Test mathematical operations work unchanged
+    # Test mathematical operations work unchanged
     arith_result = basic_arithmetic()
     assert arith_result["add"] == 13
     assert arith_result["subtract"] == 7
@@ -234,7 +234,7 @@ def test_existing_math_operations():
     
     print("✓ Existing mathematical operations work unchanged")
 
-// Test that existing struct definitions work unchanged
+# Test that existing struct definitions work unchanged
 def test_existing_struct_compatibility():
     struct Person:
         name: str
@@ -257,7 +257,7 @@ def test_existing_struct_compatibility():
         def get_total_employees(self):
             return len(self.employees)
     
-    // Test struct instantiation and methods work unchanged
+    # Test struct instantiation and methods work unchanged
     alice = Person("Alice", 25)
     bob = Person("Bob", 17)
     
@@ -274,18 +274,18 @@ def test_existing_struct_compatibility():
     
     print("✓ Existing struct definitions work unchanged")
 
-// Test that existing lambda functions work unchanged
+# Test that existing lambda functions work unchanged
 def test_existing_lambda_compatibility():
     def use_lambdas():
         numbers = [1, 2, 3, 4, 5]
         
-        // Lambda in map-like operations
+        # Lambda in map-like operations
         squared = [x * x for x in numbers]
         
-        // Lambda in filter-like operations
+        # Lambda in filter-like operations
         evens = [x for x in numbers if x % 2 == 0]
         
-        // Lambda as function arguments
+        # Lambda as function arguments
         def apply_operation(lst, operation):
             return [operation(x) for x in lst]
         
@@ -304,14 +304,14 @@ def test_existing_lambda_compatibility():
     
     print("✓ Existing lambda functions work unchanged")
 
-// Test that existing import statements work unchanged  
+# Test that existing import statements work unchanged  
 def test_existing_import_compatibility():
-    // Test that standard imports still work
-    // (These would normally import actual modules)
+    # Test that standard imports still work
+    # (These would normally import actual modules)
     def mock_import_usage():
-        // Simulate what imports would do
-        math_result = 3.14159  // Would be math.pi
-        random_result = 42     // Would be random.randint(1, 100)
+        # Simulate what imports would do
+        math_result = 3.14159  # Would be math.pi
+        random_result = 42     # Would be random.randint(1, 100)
         
         return {"pi": math_result, "random": random_result}
     
@@ -321,7 +321,7 @@ def test_existing_import_compatibility():
     
     print("✓ Existing import statements work unchanged")
 
-// Test performance regression - existing code should not be slower
+# Test performance regression - existing code should not be slower
 def test_performance_regression():
     operation_count = 0
     
@@ -333,7 +333,7 @@ def test_performance_regression():
         operation_count = 0
         results = []
         
-        // Traditional loop that should run at same speed
+        # Traditional loop that should run at same speed
         for i in range(100):
             result = simple_operation(i)
             results.append(result)
@@ -342,15 +342,15 @@ def test_performance_regression():
     
     perf_result = traditional_loop_performance()
     
-    // Verify same functionality
+    # Verify same functionality
     assert len(perf_result["results"]) == 100
-    assert perf_result["results"][0] == 1   // 0*2+1
-    assert perf_result["results"][1] == 3   // 1*2+1
+    assert perf_result["results"][0] == 1   # 0*2+1
+    assert perf_result["results"][1] == 3   # 1*2+1
     assert perf_result["operations"] == 100
     
     print("✓ No performance regression in existing code")
 
-// Run all backward compatibility tests
+# Run all backward compatibility tests
 test_existing_return_compatibility()
 test_existing_function_calls()
 test_existing_control_flow()
