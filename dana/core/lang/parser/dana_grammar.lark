@@ -396,7 +396,7 @@ dict_items: key_value_pair ("," key_value_pair)* [","]
 key_value_pair: expr ":" expr
 
 // ===== LAMBDA EXPRESSIONS =====
-lambda_expr: "lambda" [lambda_receiver] [lambda_params] "->" expr
+lambda_expr: "lambda" [lambda_receiver] [lambda_params] "::" expr
 lambda_receiver: "(" NAME ":" basic_type ")"
 lambda_params: NAME [":" basic_type] ("," NAME [":" basic_type])*
 
