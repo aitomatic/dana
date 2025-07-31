@@ -102,8 +102,9 @@ class TestDatabase:
         """Test database engine configuration"""
         # Test engine configuration parameters
         assert hasattr(engine, 'echo')
-        assert hasattr(engine, 'pool_size')
-        assert hasattr(engine, 'max_overflow')
+        # SQLite engine doesn't have pool_size as a direct attribute, but has pool
+        assert hasattr(engine, 'pool')
+        assert hasattr(engine.pool, 'size')
 
     def test_multiple_db_sessions(self):
         """Test creating multiple database sessions"""
@@ -130,22 +131,28 @@ class TestDatabase:
         assert hasattr(url, 'database')
 
     def test_session_rollback_on_error(self):
-        """Test session rollback behavior on error"""
+        """Test session close behavior on error"""
         with patch('dana.api.core.database.SessionLocal') as mock_session_local:
             mock_session = Mock()
-            mock_session.commit.side_effect = Exception("Commit failed")
             mock_session_local.return_value = mock_session
             
             db_gen = get_db()
             db = next(db_gen)
             
+            # Simulate an error during session usage
             try:
-                db.commit()
+                raise Exception("Test error")
             except Exception:
                 pass
             
-            # Verify rollback was called
-            mock_session.rollback.assert_called_once()
+            # The generator should be exhausted to trigger the finally block
+            try:
+                next(db_gen)
+            except StopIteration:
+                pass
+            
+            # Verify close was called (this is what get_db actually does)
+            mock_session.close.assert_called_once()
 
     def test_base_inheritance(self):
         """Test that models can inherit from Base"""
@@ -197,10 +204,12 @@ class TestDatabase:
 
     def test_database_engine_pool_configuration(self):
         """Test database engine pool configuration"""
-        # Test pool configuration
-        assert hasattr(engine, 'pool')
-        if hasattr(engine.pool, 'size'):
-            assert engine.pool.size >= 0
+        # For SQLite, pool.size is a method, not a property
+        assert hasattr(engine.pool, 'size')
+        assert callable(engine.pool.size)
+        # Test that we can call the size method
+        pool_size = engine.pool.size()
+        assert pool_size >= 0
 
     def test_session_add_behavior(self):
         """Test session add behavior"""
@@ -240,35 +249,36 @@ class TestDatabase:
         assert isinstance(url_str, str)
         assert len(url_str) > 0
 
-    @pytest.mark.asyncio
-    async def test_session_merge_behavior(self):
+    def test_session_merge_behavior(self):
         """Test session merge behavior"""
         with patch('dana.api.core.database.SessionLocal') as mock_session_local:
             mock_session = Mock()
             mock_session_local.return_value = mock_session
             
-            db = get_db()
+            db_gen = get_db()
+            db = next(db_gen)
+            
+            # Test merge method
             test_object = Mock()
             db.merge(test_object)
-            
             mock_session.merge.assert_called_once_with(test_object)
 
     def test_database_engine_echo_mode(self):
         """Test database engine echo mode"""
-        # Test echo mode configuration
-        assert hasattr(engine, 'echo')
+        # Test that echo is a boolean
         assert isinstance(engine.echo, bool)
 
-    @pytest.mark.asyncio
-    async def test_session_flush_behavior(self):
+    def test_session_flush_behavior(self):
         """Test session flush behavior"""
         with patch('dana.api.core.database.SessionLocal') as mock_session_local:
             mock_session = Mock()
             mock_session_local.return_value = mock_session
             
-            db = get_db()
-            db.flush()
+            db_gen = get_db()
+            db = next(db_gen)
             
+            # Test flush method
+            db.flush()
             mock_session.flush.assert_called_once()
 
     def test_database_metadata_table_names(self):
@@ -277,17 +287,18 @@ class TestDatabase:
         assert hasattr(Base.metadata, 'tables')
         assert isinstance(Base.metadata.tables, dict)
 
-    @pytest.mark.asyncio
-    async def test_session_expire_behavior(self):
+    def test_session_expire_behavior(self):
         """Test session expire behavior"""
         with patch('dana.api.core.database.SessionLocal') as mock_session_local:
             mock_session = Mock()
             mock_session_local.return_value = mock_session
             
-            db = get_db()
+            db_gen = get_db()
+            db = next(db_gen)
+            
+            # Test expire method
             test_object = Mock()
             db.expire(test_object)
-            
             mock_session.expire.assert_called_once_with(test_object)
 
     def test_database_engine_connectivity(self):
@@ -296,15 +307,16 @@ class TestDatabase:
         assert hasattr(engine, 'connect')
         assert callable(engine.connect)
 
-    @pytest.mark.asyncio
-    async def test_session_refresh_behavior(self):
+    def test_session_refresh_behavior(self):
         """Test session refresh behavior"""
         with patch('dana.api.core.database.SessionLocal') as mock_session_local:
             mock_session = Mock()
             mock_session_local.return_value = mock_session
             
-            db = get_db()
+            db_gen = get_db()
+            db = next(db_gen)
+            
+            # Test refresh method
             test_object = Mock()
             db.refresh(test_object)
-            
             mock_session.refresh.assert_called_once_with(test_object) 

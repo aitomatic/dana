@@ -33,7 +33,9 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
   const [currentStep, setCurrentStep] = useState<string>('');
 
   // Generate unique WebSocket ID for this chat session
-  const [websocketId] = useState(() => `chatview-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+  const [websocketId] = useState(
+    () => `chatview-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+  );
 
   const {
     messages,
@@ -45,10 +47,13 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
     clearMessages,
     setError,
     clearError,
+    // Session conversation methods for prebuilt agents
+    loadSessionConversation,
+    createSessionConversation,
   } = useChatStore();
 
   // WebSocket for variable updates
-  const { updates } = useVariableUpdates(websocketId, {
+  const { updates, disconnect } = useVariableUpdates(websocketId, {
     maxUpdates: 50,
     autoConnect: true,
   });
@@ -79,36 +84,61 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
   // Set current agent ID when component mounts
   useEffect(() => {
     if (agentId) {
-      setCurrentAgentId(parseInt(agentId));
+      setCurrentAgentId(agentId); // Pass agentId directly (supports both string and number)
     }
   }, [agentId, setCurrentAgentId]);
 
   // Fetch conversation if conversationId is provided
   useEffect(() => {
     console.log('Chat view: conversationId changed to:', conversationId);
-    if (conversationId) {
+    if (conversationId && agentId) {
+      // Check if this is a session conversation (starts with 'session_')
+      if (conversationId.startsWith('session_')) {
+        console.log('Loading session conversation:', conversationId);
+        if (typeof agentId === 'string') {
+          loadSessionConversation(conversationId, agentId);
+        }
+        return;
+      }
+
       // Check if this is a temporary conversation ID (very large number)
       const conversationIdNum = parseInt(conversationId);
-      if (conversationIdNum > 1000000000) {
-        // Temporary ID (timestamp-based)
-        console.log('Temporary conversation ID detected, not fetching from API');
+      if (isNaN(conversationIdNum) || conversationIdNum > 1000000000) {
+        // Invalid or temporary ID (timestamp-based)
+        console.log('Invalid or temporary conversation ID detected:', conversationId);
         // Don't fetch, just keep the current messages
         return;
       }
 
       console.log('Fetching conversation:', conversationId);
       fetchConversation(conversationIdNum);
-    } else {
-      console.log('Clearing messages - no conversation ID');
+    } else if (!conversationId && !isSending) {
+      // Only clear messages if there's no conversation ID AND we're not currently sending a message
+      // This prevents clearing messages when starting a new conversation where a message is being sent
+      console.log('Clearing messages - no conversation ID and not sending');
       clearMessages();
     }
-  }, [conversationId, fetchConversation, clearMessages]);
+  }, [
+    conversationId,
+    agentId,
+    fetchConversation,
+    clearMessages,
+    loadSessionConversation,
+    isSending,
+  ]);
 
   // Debug: Log messages when they change
   useEffect(() => {
     console.log('Chat messages updated:', messages);
     console.log('Messages length:', messages?.length);
   }, [messages]);
+
+  // Clean up WebSocket on component unmount
+  useEffect(() => {
+    return () => {
+      disconnect();
+    };
+  }, [disconnect]);
 
   const onSendMessage = async (data: any) => {
     if (!agentId) {
@@ -119,22 +149,41 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
     try {
       clearError();
 
-      // If this is a new conversation, create a temporary conversation ID and navigate immediately
+      let effectiveConversationId = conversationId;
+
+      // If this is a new conversation, handle differently for prebuilt vs regular agents
       if (!conversationId) {
-        const tempConversationId = Date.now();
-        navigate(`/agents/${agentId}/chat/${tempConversationId}`);
+        if (typeof agentId === 'string') {
+          // For prebuilt agents, create a session conversation
+          const sessionId = createSessionConversation(agentId);
+          effectiveConversationId = sessionId;
+          // Navigate AFTER sending message to avoid race condition
+        } else {
+          // For regular agents, use undefined conversation ID to let backend create one
+          effectiveConversationId = undefined;
+        }
       }
 
       const response = await sendMessage(
         data.message,
-        parseInt(agentId),
-        conversationId ? parseInt(conversationId) : undefined,
-        websocketId
+        agentId, // Pass agentId directly (supports both string and number)
+        effectiveConversationId,
+        websocketId,
       );
 
-      // If this was a new conversation, navigate to the actual conversation URL
-      if (!conversationId && response.conversation_id) {
-        navigate(`/agents/${agentId}/chat/${response.conversation_id}`);
+      const responseConversationId = response.conversation_id;
+
+      const isPrebuiltAgent = isNaN(Number(agentId));
+
+      // Navigate to the conversation URL after getting response
+      if (!conversationId) {
+        if (isPrebuiltAgent && effectiveConversationId) {
+          // For prebuilt agents, navigate to session conversation
+          navigate(`/agents/${agentId}/chat/${effectiveConversationId}`);
+        } else if (!isPrebuiltAgent && responseConversationId) {
+          // For regular agents, navigate to the actual conversation URL
+          navigate(`/agents/${agentId}/chat/${responseConversationId}`);
+        }
       }
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -154,9 +203,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
       <div className="flex relative items-center w-full h-full fade-in">
         <div className={contentClassName}>
           <div className="flex flex-col items-center">
-            <span className="text-[36px] font-medium text-gray-400">
-              How can I help you today?
-            </span>
+            <span className="text-[36px] font-medium text-gray-400">How can I help you today?</span>
           </div>
           <div className={`flex flex-col gap-2 transition-all duration-300 w-[700px]`}>
             <ChatBox
@@ -212,7 +259,11 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
                     ref={chatContainerRef}
                     className="overflow-y-auto items-center pt-2 pb-4 scrollbar-hide fade-in"
                   >
-                    <ChatSession messages={messages} isBotThinking={isSending} currentStep={currentStep} />
+                    <ChatSession
+                      messages={messages}
+                      isBotThinking={isSending}
+                      currentStep={currentStep}
+                    />
                   </div>
 
                   {/* Fixed chat box at bottom */}

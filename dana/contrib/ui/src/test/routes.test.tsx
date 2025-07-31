@@ -33,7 +33,26 @@ vi.mock('../stores/chat-store', () => ({
     setError: vi.fn(),
     clearError: vi.fn(),
     reset: vi.fn(),
+    getSessionConversations: vi.fn(() => []),
+    deleteSessionConversation: vi.fn(),
   }),
+}));
+
+// Mock the agent store functions
+vi.mock('../stores/agent-store', () => ({
+  useAgentStore: vi.fn(() => ({
+    agents: [],
+    fetchAgents: vi.fn(),
+    fetchAgent: vi.fn(() => Promise.resolve({ id: 1, name: 'Test Agent' })),
+    selectedAgent: null,
+    isLoading: false,
+  })),
+  fetchAgent: vi.fn(() => Promise.resolve({ id: 1, name: 'Test Agent' })),
+}));
+
+// Mock the session store functions
+vi.mock('../stores/session-store', () => ({
+  getSessionConversations: vi.fn(() => Promise.resolve([])),
 }));
 
 const TestApp = () => (
@@ -120,18 +139,22 @@ describe('Routes', () => {
     agentStoreSpy = vi.spyOn(agentStore, 'useAgentStore').mockReturnValue({
       agents: [mockAgent],
       fetchAgents: vi.fn(),
+      fetchAgent: vi.fn(),
+      selectedAgent: null,
       isLoading: false,
     });
     window.history.pushState({}, '', '/agents');
     render(<TestApp />);
-    expect(screen.getAllByText('Domain-Expert Agents').length).toBeGreaterThan(0);
+    // Use getAllByText since there are multiple elements with this text
+    expect(screen.getAllByText('Dana Expert Agents').length).toBeGreaterThan(0);
   });
-
 
   it('should render agent detail page at /agents/:agent_id', () => {
     agentStoreSpy = vi.spyOn(agentStore, 'useAgentStore').mockReturnValue({
       agents: [],
       fetchAgents: vi.fn(),
+      fetchAgent: vi.fn(() => Promise.resolve(mockAgent)),
+      selectedAgent: null,
       isLoading: false,
     });
     window.history.pushState({}, '', '/agents/1');
@@ -140,18 +163,39 @@ describe('Routes', () => {
   });
 
   it('should render chat page at /agents/:agent_id/chat', () => {
+    agentStoreSpy = vi.spyOn(agentStore, 'useAgentStore').mockReturnValue({
+      agents: [],
+      fetchAgents: vi.fn(),
+      fetchAgent: vi.fn(() => Promise.resolve(mockAgent)),
+      selectedAgent: null,
+      isLoading: false,
+    });
     window.history.pushState({}, '', '/agents/1/chat');
     render(<TestApp />);
     expect(screen.getByText('Agent Chat')).toBeInTheDocument();
   });
 
   it('should render chat page with conversation at /agents/:agent_id/chat/:conversation_id', () => {
+    agentStoreSpy = vi.spyOn(agentStore, 'useAgentStore').mockReturnValue({
+      agents: [],
+      fetchAgents: vi.fn(),
+      fetchAgent: vi.fn(() => Promise.resolve(mockAgent)),
+      selectedAgent: null,
+      isLoading: false,
+    });
     window.history.pushState({}, '', '/agents/1/chat/123');
     render(<TestApp />);
     expect(screen.getByText('Agent Chat')).toBeInTheDocument();
   });
 
   it('should render library page at /library', () => {
+    agentStoreSpy = vi.spyOn(agentStore, 'useAgentStore').mockReturnValue({
+      agents: [],
+      fetchAgents: vi.fn(),
+      fetchAgent: vi.fn(() => Promise.resolve(mockAgent)),
+      selectedAgent: null,
+      isLoading: false,
+    });
     window.history.pushState({}, '', '/library');
     render(<TestApp />);
     expect(screen.getByRole('heading', { name: 'Library' })).toBeInTheDocument();
@@ -161,10 +205,13 @@ describe('Routes', () => {
     agentStoreSpy = vi.spyOn(agentStore, 'useAgentStore').mockReturnValue({
       agents: [mockAgent],
       fetchAgents: vi.fn(),
+      fetchAgent: vi.fn(),
+      selectedAgent: null,
       isLoading: false,
     });
     window.history.pushState({}, '', '/');
     render(<TestApp />);
-    expect(screen.getAllByText('Domain-Expert Agents').length).toBeGreaterThan(0);
+    // Use getAllByText since there are multiple elements with this text
+    expect(screen.getAllByText('Dana Expert Agents').length).toBeGreaterThan(0);
   });
 });

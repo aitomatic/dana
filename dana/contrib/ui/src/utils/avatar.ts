@@ -7,7 +7,7 @@
  * @param agentId - The agent ID to get avatar for
  * @returns Promise<string> - The avatar URL
  */
-export const getAgentAvatar = async (agentId: number): Promise<string> => {
+export const getAgentAvatar = async (agentId: number | string): Promise<string> => {
   try {
     const response = await fetch(`/api/agents/${agentId}/avatar`);
     if (response.ok) {
@@ -16,8 +16,8 @@ export const getAgentAvatar = async (agentId: number): Promise<string> => {
   } catch (error) {
     console.warn('Failed to fetch agent avatar:', error);
   }
-  // Fallback to default avatar
-  return '/agent-avatar/agent-avatar-1.svg';
+  // Fallback to sync method
+  return getAgentAvatarSync(agentId);
 };
 
 /**
@@ -25,10 +25,17 @@ export const getAgentAvatar = async (agentId: number): Promise<string> => {
  * @param agentId - The agent ID to get avatar for
  * @returns string - The avatar URL
  */
-export const getAgentAvatarSync = (agentId: number): string => {
-  // Try to use the agent-specific avatar first
-  if (agentId >= 1 && agentId <= 30) {
-    return `/agent-avatar/agent-avatar-${agentId}.svg`;
+export const getAgentAvatarSync = (agentId: number | string): string => {
+  // Handle prebuilt agents (string IDs)
+  if (typeof agentId === 'string') {
+    // For prebuilt agents, use a consistent avatar based on the string
+    return `/agent-avatar/prebuilt-${agentId}.svg`;
+  }
+  
+  // Handle numeric agent IDs
+  const numericId = Number(agentId);
+  if (numericId >= 1 && numericId <= 30) {
+    return `/agent-avatar/agent-avatar-${numericId}.svg`;
   }
   // Fallback to default avatar
   return '/agent-avatar/agent-avatar-1.svg';
@@ -39,8 +46,12 @@ export const getAgentAvatarSync = (agentId: number): string => {
  * @param agentId - The agent ID to check
  * @returns boolean - True if agent has a specific avatar
  */
-export const hasAgentAvatar = (agentId: number): boolean => {
-  return agentId >= 1 && agentId <= 30;
+export const hasAgentAvatar = (agentId: number | string): boolean => {
+  if (typeof agentId === 'string') {
+    return true; // Prebuilt agents always have avatars
+  }
+  const numericId = Number(agentId);
+  return numericId >= 1 && numericId <= 30;
 };
 
 /**
@@ -48,7 +59,7 @@ export const hasAgentAvatar = (agentId: number): boolean => {
  * @param agentId - The agent ID
  * @returns string - CSS gradient class
  */
-export const getAgentAvatarColor = (agentId: number): string => {
+export const getAgentAvatarColor = (agentId: number | string): string => {
   const colors = [
     'from-blue-400 to-blue-600',
     'from-green-400 to-green-600',

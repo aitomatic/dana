@@ -96,13 +96,33 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
   const [selectedConversation, setSelectedConversation] = useState<ConversationRead | null>(null);
   const [newName, setNewName] = useState('');
 
-  const { conversations, isLoading, fetchConversations, updateConversation, deleteConversation } =
-    useChatStore();
+  const {
+    conversations,
+    isLoading,
+    fetchConversations,
+    updateConversation,
+    deleteConversation,
+    // Session conversation methods for prebuilt agents
+    getSessionConversations,
+    deleteSessionConversation
+  } = useChatStore();
+
+  console.log('agentId', agentId, typeof agentId);
+
+  // Get session conversations for prebuilt agents
+  const sessionConversations = typeof agentId === 'string' ? getSessionConversations(agentId) : [];
+  const allConversations = (typeof agentId === 'string' && isNaN(Number(agentId))) ? sessionConversations : conversations;
 
   // Fetch conversations when agentId changes
   useEffect(() => {
     if (agentId) {
-      fetchConversations(parseInt(agentId));
+      // Check if this is a numeric agent ID (regular agent) vs string ID (prebuilt agent)
+      const numericAgentId = Number(agentId);
+      if (!isNaN(numericAgentId) && numericAgentId > 0) {
+        // This is a regular agent with numeric ID - fetch conversations from database
+        fetchConversations(numericAgentId);
+      }
+      // For prebuilt agents (string IDs), conversations are handled via session storage
     }
   }, [agentId, fetchConversations]);
 
@@ -116,7 +136,7 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
         setIsRenameOpen(false);
         setNewName('');
         // Refresh conversations
-        if (agentId) {
+        if (agentId && !isNaN(Number(agentId))) {
           fetchConversations(parseInt(agentId));
         }
       } catch (error) {
@@ -133,14 +153,26 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
   const confirmDelete = async () => {
     if (selectedConversation) {
       try {
-        await deleteConversation(selectedConversation.id);
+        // Check if this is a session conversation
+        const isSessionConv = 'agentId' in selectedConversation;
+
+        if (isSessionConv) {
+          // Delete session conversation
+          deleteSessionConversation(selectedConversation.id.toString());
+        } else {
+          // Delete regular conversation
+          await deleteConversation(selectedConversation.id);
+        }
+
         setIsDeleteOpen(false);
+
         // If we're currently viewing this conversation, navigate to agent chat
-        if (conversation_id && parseInt(conversation_id) === selectedConversation.id) {
+        if (conversation_id === String(selectedConversation.id)) {
           navigate(`/agents/${agentId}/chat`);
         }
-        // Refresh conversations
-        if (agentId) {
+
+        // Refresh conversations for regular agents
+        if (!isSessionConv && agentId && !isNaN(Number(agentId))) {
           fetchConversations(parseInt(agentId));
         }
       } catch (error) {
@@ -151,6 +183,15 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
 
   const handleSelectConversation = (conversation: ConversationRead) => {
     navigate(`/agents/${agentId}/chat/${conversation.id}`);
+  };
+
+  const handleSelectSessionConversation = (sessionConversation: any) => {
+    navigate(`/agents/${agentId}/chat/${sessionConversation.id}`);
+  };
+
+  const handleDeleteSession = (sessionConversation: any) => {
+    setSelectedConversation(sessionConversation);
+    setIsDeleteOpen(true);
   };
 
   const handleOpenRename = (conversation: ConversationRead) => {
@@ -187,7 +228,7 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
             <TooltipTrigger asChild>
               <div className="flex justify-center items-center rounded-md cursor-pointer hover:bg-gray-100 size-8">
                 <Tools
-                  onClick={() => {}}
+                  onClick={() => { }}
                   width={18}
                   height={18}
                   className="text-gray-600 cursor-pointer"
@@ -219,17 +260,24 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
             <div className="flex justify-center items-center p-4">
               <div className="text-sm text-gray-500">Loading conversations...</div>
             </div>
-          ) : conversations.length > 0 ? (
-            conversations.map((conversation: ConversationRead) => (
-              <ConversationItem
-                key={conversation.id}
-                conversation={conversation}
-                isActive={conversation.id === parseInt(conversation_id || '0')}
-                onSelect={() => handleSelectConversation(conversation)}
-                onRename={() => handleOpenRename(conversation)}
-                onDelete={() => handleDelete(conversation)}
-              />
-            ))
+          ) : allConversations.length > 0 ? (
+            allConversations.map((conversation: ConversationRead | any) => {
+              // Handle both regular conversations and session conversations
+              const isSessionConv = 'agentId' in conversation; // Session conversations have agentId property
+              const conversationId = isSessionConv ? conversation.id : conversation.id;
+              const isActive = conversationId === conversation_id;
+
+              return (
+                <ConversationItem
+                  key={conversationId}
+                  conversation={conversation}
+                  isActive={isActive}
+                  onSelect={() => isSessionConv ? handleSelectSessionConversation(conversation) : handleSelectConversation(conversation)}
+                  onRename={() => handleOpenRename(conversation)}
+                  onDelete={() => isSessionConv ? handleDeleteSession(conversation) : handleDelete(conversation)}
+                />
+              );
+            })
           ) : (
             <span className="pl-3 mt-4 text-sm text-gray-400">History is empty</span>
           )}

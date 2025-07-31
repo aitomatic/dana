@@ -46,6 +46,7 @@
     "react-pdf": "^10.0.1",
     "react-router-dom": "^7.6.3",
     "react-syntax-highlighter": "^5.8.0",
+    "react-use-websocket": "^4.13.0",
     "reactflow": "^11.11.4",
     "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.1",

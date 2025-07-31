@@ -7,7 +7,7 @@ const BotThinking = ({ message, avatar, currentStep }: { message?: string; avata
   const { agent_id } = useParams<{ agent_id: string }>();
 
   // Use dynamic avatar based on agent ID, fallback to provided avatar or default
-  const avatarSrc = avatar || (agent_id ? getAgentAvatarSync(parseInt(agent_id)) : '/agent-avatar/agent-avatar-0.svg');
+  const avatarSrc = avatar || (agent_id ? getAgentAvatarSync(agent_id) : '/agent-avatar/agent-avatar-0.svg');
 
   return (
     <div className="grid grid-cols-[max-content_1fr] items-start w-full gap-2 px-6 py-4">
