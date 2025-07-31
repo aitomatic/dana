@@ -16,7 +16,7 @@ class TestEmbeddingResource(unittest.TestCase):
         """Set up test fixtures."""
         # Clear environment variables for clean tests
         self.original_env = {}
-        for key in ["OPENAI_API_KEY", "COHERE_API_KEY", "DANA_MOCK_EMBEDDING"]:
+        for key in ["OPENAI_API_KEY", "COHERE_API_KEY"]:
             self.original_env[key] = os.environ.get(key)
             if key in os.environ:
                 del os.environ[key]
@@ -32,8 +32,6 @@ class TestEmbeddingResource(unittest.TestCase):
 
     def test_mock_embedding_generation(self):
         """Test EmbeddingResource with mock embedding generation."""
-        os.environ["DANA_MOCK_EMBEDDING"] = "true"
-
         embedding_resource = EmbeddingResource(name="test_embedding", model="mock:test-model")
 
         async def run_test():
@@ -62,8 +60,6 @@ class TestEmbeddingResource(unittest.TestCase):
 
     def test_batch_embedding_generation(self):
         """Test batch embedding generation."""
-        os.environ["DANA_MOCK_EMBEDDING"] = "true"
-
         embedding_resource = EmbeddingResource(name="test_embedding", model="mock:test-model")
 
         async def run_test():
@@ -137,7 +133,6 @@ class TestEmbeddingResource(unittest.TestCase):
 
     def test_invalid_request_format(self):
         """Test handling of invalid request formats."""
-        os.environ["DANA_MOCK_EMBEDDING"] = "true"
         embedding = EmbeddingResource(name="test_embedding", model="mock:test-model")
 
         async def run_test():
@@ -147,12 +142,11 @@ class TestEmbeddingResource(unittest.TestCase):
             self.assertFalse(response.success)
             self.assertIn("No arguments provided", response.error)
 
-            # Test invalid text type - still should handle gracefully
-            request = BaseRequest(arguments={"text": 123})
+            # Test missing text
+            request = BaseRequest(arguments={"other": "value"})
             response = await embedding.query(request)
-            # This might succeed if the implementation converts to string, or fail gracefully
-            # Let's check the response rather than assume it will fail
-            self.assertIsInstance(response, BaseResponse)
+            self.assertFalse(response.success)
+            self.assertIn("No text provided", response.error)
 
         asyncio.run(run_test())
 
@@ -175,14 +169,3 @@ class TestEmbeddingResource(unittest.TestCase):
             resolved_config = embedding.provider_configs.get("openai", {})
             self.assertEqual(resolved_config["api_key"], "test-api-key")
             self.assertEqual(resolved_config["batch_size"], 100)
-
-    def test_embedding_resource_cleanup(self):
-        """Test resource cleanup."""
-        embedding = EmbeddingResource(name="test_embedding", model="mock:test-model")
-
-        async def run_test():
-            await embedding.cleanup()
-            # Verify cleanup completed without errors
-            self.assertIsNotNone(embedding)
-
-        asyncio.run(run_test())

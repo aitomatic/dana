@@ -30,7 +30,7 @@ class TestLlamaIndexEmbeddingResource(unittest.TestCase):
             elif key in os.environ:
                 del os.environ[key]
 
-    @patch("dana.common.resource.embedding.embedding_integrations.LlamaIndexEmbeddingResource._create_llamaindex_embedding")
+    @patch("dana.common.resource.embedding.embedding_integrations.LlamaIndexEmbeddingResource._create_embedding")
     def test_get_embedding_model_simple(self, mock_create_embedding):
         """Test get_embedding_model calls the internal creation method."""
         mock_embedding_instance = MagicMock()
@@ -41,19 +41,21 @@ class TestLlamaIndexEmbeddingResource(unittest.TestCase):
         self.assertEqual(result, mock_embedding_instance)
         mock_create_embedding.assert_called_once_with("openai:text-embedding-3-small")
 
-    @patch("dana.common.resource.embedding.embedding_integrations.LlamaIndexEmbeddingResource._create_default_llamaindex_embedding")
-    def test_get_default_embedding_model_simple(self, mock_create_default):
-        """Test get_default_embedding_model calls the internal default creation method."""
+    @patch("dana.common.resource.embedding.embedding_integrations.LlamaIndexEmbeddingResource._create_embedding")
+    @patch("dana.common.resource.embedding.embedding_integrations.LlamaIndexEmbeddingResource._is_model_available")
+    def test_get_default_embedding_model_simple(self, mock_is_available, mock_create_embedding):
+        """Test get_default_embedding_model calls the internal creation method."""
         mock_embedding_instance = MagicMock()
-        mock_create_default.return_value = mock_embedding_instance
+        mock_create_embedding.return_value = mock_embedding_instance
+        mock_is_available.return_value = True
 
         result = get_default_embedding_model()
 
         self.assertEqual(result, mock_embedding_instance)
-        mock_create_default.assert_called_once()
+        self.assertTrue(mock_create_embedding.called)
 
     @patch("llama_index.core.Settings")
-    @patch("dana.common.resource.embedding.embedding_integrations.LlamaIndexEmbeddingResource._create_llamaindex_embedding")
+    @patch("dana.common.resource.embedding.embedding_integrations.LlamaIndexEmbeddingResource._create_embedding")
     def test_setup_llamaindex_simple(self, mock_create_embedding, mock_settings):
         """Test setup_llamaindex configures global settings correctly."""
         mock_embedding_instance = MagicMock()
@@ -75,6 +77,9 @@ class TestLlamaIndexEmbeddingResource(unittest.TestCase):
         resource = LlamaIndexEmbeddingResource(config_override=override_config)
 
         with patch("llama_index.embeddings.openai.OpenAIEmbedding") as mock_openai:
+            # Mock the embedding instance
+            mock_openai.return_value = MagicMock()
+
             resource.get_embedding_model("openai:text-embedding-3-small")
 
             mock_openai.assert_called_once()

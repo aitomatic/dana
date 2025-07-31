@@ -9,7 +9,6 @@ MIT License
 """
 
 from .embedding_resource import EmbeddingResource
-from .embedding_configuration_manager import EmbeddingConfigurationManager
 from .embedding_query_executor import EmbeddingQueryExecutor
 
 # Simple LlamaIndex integration
@@ -24,7 +23,6 @@ from .embedding_integrations import (
 __all__ = [
     # Core embedding system
     "EmbeddingResource",
-    "EmbeddingConfigurationManager",
     "EmbeddingQueryExecutor",
     # Simple LlamaIndex integration
     "setup_llamaindex",

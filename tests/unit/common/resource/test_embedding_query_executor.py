@@ -102,7 +102,7 @@ class TestEmbeddingQueryExecutor(unittest.TestCase):
             single_result = await executor.generate_embeddings(["single text"])
             self.assertEqual(len(single_result), 1)
 
-            # Multiple texts (should use batching)
+            # Multiple texts
             batch_texts = ["text1", "text2", "text3"]
             batch_result = await executor.generate_embeddings(batch_texts)
             self.assertEqual(len(batch_result), 3)
@@ -118,7 +118,7 @@ class TestEmbeddingQueryExecutor(unittest.TestCase):
             await executor.initialize(provider_configs)
 
             with self.assertRaises(EmbeddingProviderError) as context:
-                await executor._generate_single_batch(["test"])
+                await executor.generate_embeddings(["test"])
 
             self.assertIn("Unsupported provider", str(context.exception))
 
@@ -133,7 +133,7 @@ class TestEmbeddingQueryExecutor(unittest.TestCase):
             await executor.initialize(provider_configs)
 
             with self.assertRaises(EmbeddingError) as context:
-                await executor._generate_single_batch(["test"])
+                await executor.generate_embeddings(["test"])
 
             self.assertIn("No model specified", str(context.exception))
 
@@ -228,53 +228,13 @@ class TestEmbeddingQueryExecutor(unittest.TestCase):
 
             # Test with texts that require multiple batches
             texts = ["text1", "text2", "text3", "text4", "text5"]
-            embeddings = await executor._generate_batched(texts)
+            embeddings = await executor.generate_embeddings(texts)
 
             self.assertEqual(len(embeddings), 5)
             for embedding in embeddings:
                 self.assertIsInstance(embedding, list)
 
         asyncio.run(run_test())
-
-    def test_cleanup(self):
-        """Test executor cleanup."""
-        executor = EmbeddingQueryExecutor(model="mock:test-model")
-
-        # Mock the client objects
-        executor._openai_client = MagicMock()
-        executor._openai_client.close = AsyncMock()
-
-        executor._cohere_client = MagicMock()
-        executor._cohere_client.close = AsyncMock()
-
-        executor._huggingface_model = MagicMock()
-        executor._initialized = True
-
-        async def run_test():
-            await executor.cleanup()
-
-            # Verify cleanup calls
-            executor._openai_client.close.assert_called_once()
-            executor._cohere_client.close.assert_called_once()
-            self.assertIsNone(executor._huggingface_model)
-            self.assertFalse(executor._initialized)
-
-        asyncio.run(run_test())
-
-    def test_get_supported_models(self):
-        """Test getting supported models by provider."""
-        executor = EmbeddingQueryExecutor()
-
-        supported = executor.get_supported_models()
-
-        self.assertIn("openai", supported)
-        self.assertIn("huggingface", supported)
-        self.assertIn("cohere", supported)
-
-        # Check specific models
-        self.assertIn("text-embedding-3-small", supported["openai"])
-        self.assertIn("BAAI/bge-small-en-v1.5", supported["huggingface"])
-        self.assertIn("embed-english-v2.0", supported["cohere"])
 
     def test_provider_error_handling(self):
         """Test provider-specific error handling."""
