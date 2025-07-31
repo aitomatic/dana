@@ -106,7 +106,7 @@ export default function AgentsPage() {
         </div>
       </div>
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-gray-200">
+      <div className="flex gap-4 mb-6 border-b border-gray-200">
         <button
           className={`ml-2 py-2 cursor-pointer font-semibold border-b-2 transition-colors ${activeTab === 'Explore' ? 'border-blue-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-brand-600'}`}
           onClick={() => setActiveTab('Explore')}
