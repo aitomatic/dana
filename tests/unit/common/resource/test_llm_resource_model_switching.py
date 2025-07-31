@@ -272,6 +272,7 @@ class TestLLMResourceModelSwitching:
             ]
         ), f"Expected model format validation error after switching, got: {error_message}"
 
+    @pytest.mark.live
     def test_actual_aisuite_model_format_validation(self):
         """Test that actually triggers the AISuite model format validation error."""
         import os
@@ -346,6 +347,7 @@ class TestLLMResourceModelSwitching:
                 or "unexpected error" in error_message.lower()
             ), f"Expected model format validation error from config, got: {error_message}"
 
+    @pytest.mark.live
     def test_local_model_bug_is_fixed(self):
         """Test that the local model bug is fixed - correct model format transformation."""
         import os
