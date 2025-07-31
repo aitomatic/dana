@@ -27,7 +27,7 @@ export function TeamSwitcher({
       <SidebarMenuItem>
         <SidebarMenuButton
           size="lg"
-          className="hover:bg-transparent hover:cursor-default hover:text-inherit"
+          className="hover:bg-transparent hover:cursor-default hover:text-inherit active:bg-transparent active:text-gray-900"
         >
           <activeTeam.logo className="rounded-md size-8" />
           <div className="grid flex-1 text-sm leading-tight text-left">

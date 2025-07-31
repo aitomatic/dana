@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { apiService } from '@/lib/api';
 import { getAgentAvatarSync } from '@/utils/avatar';
-import { Plus,  Settings, Play} from 'iconoir-react';
+import { Plus, Settings, Play } from 'iconoir-react';
 
 export const ExploreTab: React.FC<{
   filteredAgents: any[];
@@ -12,13 +12,21 @@ export const ExploreTab: React.FC<{
   DOMAINS: string[];
   handleCreateAgent: () => Promise<void>;
   creating: boolean;
-}> = ({ filteredAgents, selectedDomain, setSelectedDomain, navigate, DOMAINS, handleCreateAgent, creating }) => (
+}> = ({
+  filteredAgents,
+  selectedDomain,
+  setSelectedDomain,
+  navigate,
+  DOMAINS,
+  handleCreateAgent,
+  creating,
+}) => (
   <>
     {/* Domain tabs */}
-    <div className="flex justify-between items-center mb-4 text-gray-600">     
-      <p>Pre-trained agents with built-in domain expertise by Aitomatic</p></div>
+    <div className="flex justify-between items-center mb-4 text-gray-600">
+      <p>Pre-trained agents with built-in domain expertise by Aitomatic</p>
+    </div>
     <div className="flex flex-wrap gap-2 mb-6">
- 
       {DOMAINS.map((domain) => (
         <Button
           key={domain}
@@ -53,31 +61,31 @@ export const ExploreTab: React.FC<{
             }
           }}
         >
-          <div className="flex gap-4 flex-col">
-            <div className="flex gap-2 items-center justify-between">
-            <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center">
-              <img
-                src={getAgentAvatarSync(agent.id)}
-                alt={`${agent.name} avatar`}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  // Fallback to colored circle if image fails to load
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                  const parent = target.parentElement;
-                  if (parent) {
-                    parent.className = `w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 to-purple-400 flex items-center justify-center text-white text-lg font-bold`;
-                    parent.innerHTML = `<span className="text-white">${agent.name[0]}</span>`;
-                  }
-                }}
-              />
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-2 justify-between items-center">
+              <div className="flex overflow-hidden justify-center items-center w-12 h-12 rounded-full">
+                <img
+                  src={getAgentAvatarSync(agent.id)}
+                  alt={`${agent.name} avatar`}
+                  className="object-cover w-full h-full"
+                  onError={(e) => {
+                    // Fallback to colored circle if image fails to load
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent) {
+                      parent.className = `flex justify-center items-center w-12 h-12 text-lg font-bold text-white bg-gradient-to-br from-pink-400 to-purple-400 rounded-full`;
+                      parent.innerHTML = `<span className="text-white">${agent.name[0]}</span>`;
+                    }
+                  }}
+                />
+              </div>
+              {agent.config?.domain && (
+                <span className="px-3 py-1 ml-2 text-sm font-medium text-gray-600 rounded-full border border-gray-200">
+                  {agent.config.domain}
+                </span>
+              )}
             </div>
-            {agent.config?.domain && (
-                      <span className="text-sm px-3 py-1 rounded-full text-gray-600 font-medium border border-gray-200 ml-2">
-                        {agent.config.domain}
-                      </span>
-                    )}
-                </div>
             <div className="flex flex-col flex-1">
               <div className="flex gap-2 items-center">
                 <span
@@ -92,7 +100,6 @@ export const ExploreTab: React.FC<{
                 >
                   {agent.name}
                 </span>
-              
               </div>
               <span
                 className="mt-1 text-sm font-medium text-gray-600 line-clamp-2 max-h-[20px]"
@@ -129,7 +136,8 @@ export const ExploreTab: React.FC<{
           </div> */}
           <div className="flex gap-2 justify-between items-center">
             <Button variant="outline" className="w-1/2 text-sm font-semibold text-gray-700">
-            <Settings style={{ width: '20', height: '20' }} />Train from this
+              <Settings style={{ width: '20', height: '20' }} />
+              Train from this
             </Button>
             <Button
               onClick={(e) => {
@@ -139,18 +147,23 @@ export const ExploreTab: React.FC<{
               variant="outline"
               className="w-1/2 text-sm font-semibold text-gray-700"
             >
-              <Play style={{ width: '20', height: '20' }} />Try agent
+              <Play style={{ width: '20', height: '20' }} />
+              Try agent
             </Button>
           </div>
         </div>
       ))}
     </div>
-    <div className="flex justify-center flex-col mt-8 bg-gray-50 p-8 rounded-lg gap-2">
-      <div className="text-lg font-semibold text-gray-900">Can't find a pre-trained agent for your domain?</div>
-      <div className="text-sm text-gray-700">Train your own agent with support from <b>Dana</b>, our training expert.</div>
-      <Button 
-        variant="default" 
-        className='w-[200px] px-4 py-1 mt-2 font-semibold'
+    <div className="flex flex-col gap-2 justify-center p-8 mt-8 bg-gray-50 rounded-lg">
+      <div className="text-lg font-semibold text-gray-900">
+        Can't find a pre-trained agent for your domain?
+      </div>
+      <div className="text-sm text-gray-700">
+        Train your own agent with support from <b>Dana</b>, our training expert.
+      </div>
+      <Button
+        variant="default"
+        className="w-[200px] px-4 py-1 mt-2 font-semibold"
         onClick={handleCreateAgent}
         disabled={creating}
       >

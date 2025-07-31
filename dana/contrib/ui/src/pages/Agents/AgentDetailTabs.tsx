@@ -50,15 +50,15 @@ export const AgentDetailTabs: React.FC<{
               <Button
                 variant="outline"
                 // size="sm"
-                className="rounded-full bg-white text-gray-700 border-gray-200 hover:bg-gray-50 flex items-center gap-2 px-3 py-2"
+                className="flex gap-2 items-center px-3 py-2 text-gray-700 bg-white rounded-full border-gray-200 hover:bg-gray-50"
                 onClick={() => setIsChatOpen(!isChatOpen)}
               >
                 {/* Agent Avatar */}
-                <div className="flex justify-center items-center w-6 h-6 rounded-full overflow-hidden">
+                <div className="flex overflow-hidden justify-center items-center w-6 h-6 rounded-full">
                   <img
                     src={getAgentAvatarSync(selectedAgent?.id || 0)}
                     alt={`${selectedAgent?.name || 'Agent'} avatar`}
-                    className="w-full h-full object-cover"
+                    className="object-cover w-full h-full"
                     onError={(e) => {
                       // Fallback to colored circle if image fails to load
                       const target = e.target as HTMLImageElement;
@@ -74,7 +74,6 @@ export const AgentDetailTabs: React.FC<{
 
                 {/* Chat Text */}
                 <span className="text-sm font-medium">
-                  
                   Chat with {selectedAgent?.name || 'Agent'}
                 </span>
               </Button>

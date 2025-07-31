@@ -185,7 +185,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
       <style>{scrollbarStyles}</style>
       <div className="flex overflow-y-auto flex-col h-full group">
         <div
-          className="flex overflow-y-auto flex-col flex-1 gap-2 py-2 px-2 custom-scrollbar"
+          className="flex overflow-y-auto flex-col flex-1 gap-2 px-2 py-2 custom-scrollbar"
           style={{
             scrollbarWidth: 'thin',
             scrollbarColor: 'transparent transparent',
@@ -253,7 +253,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
                   className="absolute bottom-3 left-3 p-1 text-gray-400"
                   disabled={loading}
                 >
-                  <div className="flex justify-center items-center p-2 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-200 cursor-pointer">
+                  <div className="flex justify-center items-center p-2 text-gray-700 rounded-full border border-gray-300 cursor-pointer hover:bg-gray-200">
                     <Plus className="w-4 h-4" />
                   </div>
                 </button>
@@ -265,7 +265,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
             {input.trim() && (
               <button
                 onClick={sendMessage}
-                className="absolute bottom-4 bg-gray-700 right-3 p-2 rounded-full text-white hover:text-blue-600 transition-colors"
+                className="absolute right-3 bottom-4 p-2 text-white bg-gray-700 rounded-full transition-colors hover:text-blue-600"
                 title="Send message"
                 disabled={loading}
               >
