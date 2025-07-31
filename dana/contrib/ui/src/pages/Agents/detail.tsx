@@ -83,12 +83,34 @@ export const TEMPLATES = [
 export default function AgentDetailPage() {
   const { agent_id } = useParams();
   const navigate = useNavigate();
-  const { fetchAgent, isLoading, error } = useAgentStore();
+  const { fetchAgent, deleteAgent, isLoading, error } = useAgentStore();
   const [agent, setAgent] = useState<any>(null);
   const [showComparison, setShowComparison] = useState(false);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   // LIFTED TAB STATE
   const [activeTab, setActiveTab] = useState('Overview');
+
+  const handleDiscardAndExit = async () => {
+    if (!agent_id || isNaN(Number(agent_id))) {
+      // For prebuilt agents or invalid IDs, just close dialog and navigate
+      setShowCancelConfirmation(false);
+      navigate('/agents');
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await deleteAgent(parseInt(agent_id));
+      setShowCancelConfirmation(false);
+      navigate('/agents');
+    } catch (error) {
+      console.error('Failed to delete agent:', error);
+      // You might want to show an error message to the user here
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   useEffect(() => {
     if (agent_id) {
@@ -205,14 +227,14 @@ export default function AgentDetailPage() {
             <div className="text-lg font-semibold text-gray-900">
               Save your trained agent before exiting?
             </div>
-            <div className="text-sm text-gray-600 mb-4">
+            <div className="mb-4 text-sm text-gray-600">
               You're about to leave the agent creation process. If you exit now, all your current
               configurations will be lost.
             </div>
           </DialogDescription>
           <DialogFooter className="grid grid-cols-2 gap-2 sm:gap-2">
-            <Button variant="outline" onClick={() => setShowCancelConfirmation(false)}>
-              Discard & Exit
+            <Button variant="outline" onClick={handleDiscardAndExit} disabled={isDeleting}>
+              {isDeleting ? 'Deleting...' : 'Discard & Exit'}
             </Button>
             <Button
               variant="default"
@@ -220,6 +242,7 @@ export default function AgentDetailPage() {
                 setShowCancelConfirmation(false);
                 navigate('/agents');
               }}
+              disabled={isDeleting}
             >
               Save & Exit
             </Button>

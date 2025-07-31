@@ -6,12 +6,7 @@
     "description": "Personal Finance Advisor & Investment Specialist",
     "config": {
       "domain": "Finance",
-      "specialties": [
-        "budgeting",
-        "investment analysis",
-        "financial planning",
-        "risk assessment"
-      ],
+      "specialties": ["budgeting", "investment analysis", "financial planning", "risk assessment"],
       "skills": [
         "portfolio optimization",
         "market research",

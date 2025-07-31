@@ -30,9 +30,8 @@ export default function AgentsPage() {
   };
 
   // Tabs: My Agent, Explore
-  const [activeTab, setActiveTab] = useState(() =>
-    agents && agents.length === 0 ? 'Explore' : 'My Agent',
-  );
+  const [activeTab, setActiveTab] = useState('Explore');
+
   useEffect(() => {
     if (agents && agents.length === 0) setActiveTab('Explore');
   }, [agents]);
@@ -42,8 +41,6 @@ export default function AgentsPage() {
     fetchPrebuiltAgents();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  console.log('prebuiltAgents', prebuiltAgents);
 
   // Filter prebuilt agents by domain and search
   const filteredAgents = prebuiltAgents.filter((agent: any) => {
@@ -106,31 +103,21 @@ export default function AgentsPage() {
               className="py-2 pr-4 pl-10 w-full text-base text-gray-900 bg-white rounded-lg border border-gray-200 focus:outline-none focus:bg-gray-50"
             />
           </div>
-          {/* {activeTab === 'My Agent' && (
-            <Button
-              onClick={handleCreateAgent}
-              variant="default"
-              disabled={creating}
-              className="flex hover:bg-brand-700 items-center gap-2">
-              <Plus style={{ width: '20', height: '20' }} />
-              <label className="text-sm font-semibold">Train an Agent</label>
-            </Button>
-          )} */}
         </div>
       </div>
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-gray-200">
         <button
-          className={` py-2 cursor-pointer font-semibold border-b-2 transition-colors ${activeTab === 'My Agent' ? 'border-blue-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-brand-600'}`}
-          onClick={() => setActiveTab('My Agent')}
-        >
-          My Agents
-        </button>
-        <button
           className={`ml-2 py-2 cursor-pointer font-semibold border-b-2 transition-colors ${activeTab === 'Explore' ? 'border-blue-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-brand-600'}`}
           onClick={() => setActiveTab('Explore')}
         >
           Pre-trained Agents
+        </button>
+        <button
+          className={` py-2 cursor-pointer font-semibold border-b-2 transition-colors ${activeTab === 'My Agent' ? 'border-blue-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-brand-600'}`}
+          onClick={() => setActiveTab('My Agent')}
+        >
+          My Agents
         </button>
       </div>
       {/* Tab Content */}

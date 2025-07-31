@@ -47,7 +47,8 @@ from dana.api.services.domain_knowledge_version_service import (
     get_domain_knowledge_version_service,
     DomainKnowledgeVersionService,
 )
-from dana.api.core.models import Agent, AgentChatHistory
+from dana.api.services.agent_deletion_service import get_agent_deletion_service, AgentDeletionService
+from dana.api.core.models import Agent, AgentChatHistory, Document, Conversation
 from datetime import datetime, timezone
 from dana.api.services.knowledge_status_manager import (
     KnowledgeStatusManager,
@@ -65,7 +66,7 @@ router = APIRouter(prefix="/agents", tags=["agents"])
 def clear_agent_cache(agent_folder_path: str) -> None:
     """
     Remove the .cache folder from an agent's directory to force RAG rebuild.
-    
+
     Args:
         agent_folder_path: Path to the agent's folder
     """
@@ -140,68 +141,68 @@ async def _auto_generate_basic_agent_code(
 
 def _add_uuids_to_domain_knowledge(domain_data: dict) -> dict:
     """Add UUIDs to existing domain knowledge structure"""
-    
+
     def add_uuid_to_node(node: dict, path_so_far: list[str] = None) -> dict:
         if path_so_far is None:
             path_so_far = []
-        
+
         topic_name = node.get("topic", "")
-        
+
         # Build current path for stable UUID generation
         if topic_name.lower() not in ["root", "untitled"]:
             current_path = path_so_far + [topic_name]
         else:
             current_path = path_so_far
-        
+
         # Generate stable UUID based on path
         path_str = " - ".join(current_path) if current_path else "root"
         namespace = uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')
         node_uuid = str(uuid.uuid5(namespace, path_str))
-        
+
         # Create enhanced node with UUID
         enhanced_node = {
             "id": node_uuid,
             "topic": topic_name,
             "children": []
         }
-        
+
         # Process children recursively
         for child in node.get("children", []):
             enhanced_child = add_uuid_to_node(child, current_path)
             enhanced_node["children"].append(enhanced_child)
-        
+
         return enhanced_node
-    
+
     if "root" not in domain_data:
         return domain_data
-    
+
     # Preserve other fields and add UUID to root
     result = domain_data.copy()
     result["root"] = add_uuid_to_node(domain_data["root"])
-    
+
     return result
 
 
 def _ensure_domain_knowledge_has_uuids(domain_knowledge_path: str):
     """Ensure domain knowledge file has UUIDs, add them if missing"""
-    
+
     try:
         with open(domain_knowledge_path, "r", encoding="utf-8") as f:
             domain_data = json.load(f)
-        
+
         # Check if root already has UUID
         if "root" in domain_data and domain_data["root"].get("id"):
             return  # Already has UUIDs
-        
+
         # Add UUIDs
         enhanced_data = _add_uuids_to_domain_knowledge(domain_data)
-        
+
         # Save back to file
         with open(domain_knowledge_path, "w", encoding="utf-8") as f:
             json.dump(enhanced_data, f, indent=2, ensure_ascii=False)
-        
+
         logger.info(f"Added UUIDs to domain knowledge at {domain_knowledge_path}")
-        
+
     except Exception as e:
         logger.error(f"Error adding UUIDs to domain knowledge: {e}")
 
@@ -242,45 +243,45 @@ struct RetrievalPackage:
 QUERY_GENERATION_PROMPT = """
 You are **QuerySmith**, an expert search-query engineer for a Retrieval-Augmented Generation (RAG) pipeline.
 
-**Task**  
+**Task**
 Given the USER_REQUEST below, craft **one** concise query string (≤ 12 tokens) that will maximize recall of the most semantically relevant documents.
 
-**Process**  
-1. **Extract Core Concepts** – identify the main entities, actions, and qualifiers.  
-2. **Select High-Signal Terms** – keep nouns/verbs with the strongest discriminative power; drop stop-words and vague modifiers.  
-3. **Synonym Check** – if a well-known synonym outperforms the original term in typical search engines, substitute it.  
-4. **Context Packing** – arrange terms from most to least important; group multi-word entities in quotes (“like this”).  
+**Process**
+1. **Extract Core Concepts** – identify the main entities, actions, and qualifiers.
+2. **Select High-Signal Terms** – keep nouns/verbs with the strongest discriminative power; drop stop-words and vague modifiers.
+3. **Synonym Check** – if a well-known synonym outperforms the original term in typical search engines, substitute it.
+4. **Context Packing** – arrange terms from most to least important; group multi-word entities in quotes (“like this”).
 5. **Final Polish** – ensure the string is lowercase, free of punctuation except quotes, and contains **no** explanatory text.
 
-**Output Format**  
+**Output Format**
 Return **only** the final query string on a single line. No markdown, labels, or additional commentary.
 
 ---
 
-USER_REQUEST: 
+USER_REQUEST:
 {user_input}
 """
 
 QUERY_DECISION_PROMPT = """
 You are **RetrievalGate**, a binary decision agent guarding a Retrieval-Augmented Generation (RAG) pipeline.
 
-Task  
+Task
 Analyze the USER_REQUEST below and decide whether external document retrieval is required to answer it accurately.
 
-Decision Rules  
-1. External-Knowledge Need – Does the request demand up-to-date facts, statistics, citations, or niche info unlikely to be in the model’s parameters?  
-2. Internal Sufficiency – Could the model satisfy the request with its own reasoning, creativity, or general knowledge?  
-3. Explicit User Cue – If the user explicitly asks to “look up,” “cite,” “fetch,” “search,” or mentions a source/corpus, retrieval is required.  
+Decision Rules
+1. External-Knowledge Need – Does the request demand up-to-date facts, statistics, citations, or niche info unlikely to be in the model’s parameters?
+2. Internal Sufficiency – Could the model satisfy the request with its own reasoning, creativity, or general knowledge?
+3. Explicit User Cue – If the user explicitly asks to “look up,” “cite,” “fetch,” “search,” or mentions a source/corpus, retrieval is required.
 4. Ambiguity Buffer – When uncertain, default to retrieval (erring on completeness).
 
-Output Format  
-Return **only** one lowercase Boolean literal on a single line:  
-- `true`  → retrieval is needed  
+Output Format
+Return **only** one lowercase Boolean literal on a single line:
+- `true`  → retrieval is needed
 - `false` → retrieval is not needed
 
 ---
 
-USER_REQUEST: 
+USER_REQUEST:
 {user_input}
 """
 
@@ -289,49 +290,49 @@ You are **RAGResponder**, an expert answer-composer for a Retrieval-Augmented Ge
 
 ────────────────────────────────────────
 INPUTS
-• USER_REQUEST: The user’s natural-language question.  
+• USER_REQUEST: The user’s natural-language question.
 • RETRIEVED_DOCS: *Optional* — multiple objects, each with:
     - metadata
     - content
   If no external retrieval was performed, RETRIEVED_DOCS will be empty.
 
 ────────────────────────────────────────
-TASK  
+TASK
 Produce a single, well-structured answer that satisfies USER_REQUEST.
 
 ────────────────────────────────────────
-GUIDELINES  
-1. **Grounding Strategy**  
-   • If RETRIEVED_DOCS is **non-empty**, read the top-scoring snippets first.  
-   • Extract only the facts truly relevant to the question.  
+GUIDELINES
+1. **Grounding Strategy**
+   • If RETRIEVED_DOCS is **non-empty**, read the top-scoring snippets first.
+   • Extract only the facts truly relevant to the question.
    • Integrate those facts into your reasoning and cite them inline as **[doc_id]**.
 
-2. **Fallback Strategy**  
-   • If RETRIEVED_DOCS is **empty**, rely on your internal knowledge.  
+2. **Fallback Strategy**
+   • If RETRIEVED_DOCS is **empty**, rely on your internal knowledge.
    • Answer confidently but avoid invented specifics (no hallucinations).
 
-3. **Citation Rules**  
-   • Cite **every** external fact or quotation with its matching [doc_id].  
-   • Do **not** cite when drawing solely from internal knowledge.  
+3. **Citation Rules**
+   • Cite **every** external fact or quotation with its matching [doc_id].
+   • Do **not** cite when drawing solely from internal knowledge.
    • Never reference retrieval *scores* or expose raw snippets.
 
-4. **Answer Quality**  
-   • Prioritize clarity, accuracy, and completeness.  
-   • Use short paragraphs, bullets, or headings if it helps readability.  
+4. **Answer Quality**
+   • Prioritize clarity, accuracy, and completeness.
+   • Use short paragraphs, bullets, or headings if it helps readability.
    • Maintain a neutral, informative tone unless the user requests otherwise.
 
 ────────────────────────────────────────
-OUTPUT FORMAT  
+OUTPUT FORMAT
 Return **only** the answer text—no markdown fences, JSON, or additional labels.
 Citations must appear inline in square brackets, e.g.:
     Solar power capacity grew by 24 % in 2024 [energy_outlook_2025].
 
 ────────────────────────────────────────
-RETRIEVED_DOCS: 
+RETRIEVED_DOCS:
 {retrieved_docs}
 
 ────────────────────────────────────────
-USER_REQUEST: 
+USER_REQUEST:
 {user_input}
 """
 '''
@@ -361,11 +362,11 @@ def search_document(package: RetrievalPackage) -> RetrievalPackage:
     query = package.query
     if package.refined_query != "":
         query = package.refined_query
-    
+
     # Query both knowledge sources
     doc_result = str(doc_knowledge.query(query))
     contextual_result = str(contextual_knowledge.query(query))
-    
+
     package.retrieval_result = doc_result + contextual_result
     return package
 
@@ -679,21 +680,53 @@ async def update_agent(
 
 
 @router.delete("/{agent_id}")
-async def delete_agent(agent_id: int, db: Session = Depends(get_db)):
-    """Delete an agent."""
+async def delete_agent(
+    agent_id: int,
+    db: Session = Depends(get_db),
+    deletion_service: AgentDeletionService = Depends(get_agent_deletion_service)
+):
+    """Delete an agent and all associated resources."""
     try:
-        db_agent = db.query(Agent).filter(Agent.id == agent_id).first()
-        if not db_agent:
-            raise HTTPException(status_code=404, detail="Agent not found")
-
-        db.delete(db_agent)
-        db.commit()
-
-        return {"message": "Agent deleted successfully"}
-    except HTTPException:
-        raise
+        result = await deletion_service.delete_agent_comprehensive(agent_id, db)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(f"Error deleting agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/{agent_id}/soft")
+async def soft_delete_agent(
+    agent_id: int,
+    db: Session = Depends(get_db),
+    deletion_service: AgentDeletionService = Depends(get_agent_deletion_service)
+):
+    """Soft delete an agent by marking it as deleted without removing files."""
+    try:
+        result = await deletion_service.soft_delete_agent(agent_id, db)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error soft deleting agent {agent_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/cleanup-orphaned-files")
+async def cleanup_orphaned_files(
+    db: Session = Depends(get_db),
+    deletion_service: AgentDeletionService = Depends(get_agent_deletion_service)
+):
+    """Clean up orphaned files that don't have corresponding database records."""
+    try:
+        result = await deletion_service.cleanup_orphaned_files(db)
+        return {
+            "message": "Cleanup completed successfully",
+            "cleanup_stats": result
+        }
+    except Exception as e:
+        logger.error(f"Error during cleanup: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -926,10 +959,10 @@ async def upload_agent_document(
             db_session=db,
             upload_directory=docs_folder,
         )
-        
+
         # Clear cache to force RAG rebuild with new document
         clear_agent_cache(folder_path)
-        
+
         return document
     except HTTPException:
         raise
@@ -977,7 +1010,7 @@ async def list_agent_files(agent_id: int, db: Session = Depends(get_db)):
         # Sort files with custom ordering for .na files
         def get_file_sort_priority(file_info):
             filename = file_info["name"].lower()
-            
+
             # Define the priority order for .na files
             if filename == "main.na":
                 return (0, filename)
@@ -997,7 +1030,7 @@ async def list_agent_files(agent_id: int, db: Session = Depends(get_db)):
             else:
                 # Non-.na files come last, sorted alphabetically
                 return (7, filename)
-        
+
         files.sort(key=get_file_sort_priority)
         return {"files": files}
 
@@ -1223,7 +1256,7 @@ def run_generation(agent_id: int):
                 path = path_so_far
             else:
                 path = path_so_far + [node.topic]
-            
+
             if not getattr(node, "children", []):
                 return [(path, node)]
             leaves = []
@@ -1377,51 +1410,51 @@ async def test_agent_by_id(agent_id: str, request: dict, db: Session = Depends(g
         else:
             # Handle prebuilt agent (string ID)
             logger.info(f"Testing prebuilt agent: {agent_id}")
-            
+
             # Load prebuilt agents list
             assets_path = (
                 Path(__file__).parent.parent / "server" / "assets" / "prebuilt_agents.json"
             )
-            
+
             try:
                 with open(assets_path, "r", encoding="utf-8") as f:
                     prebuilt_agents = json.load(f)
-                
+
                 prebuilt_agent = next(
                     (a for a in prebuilt_agents if a["key"] == agent_id), None
                 )
-                
+
                 if not prebuilt_agent:
                     raise HTTPException(status_code=404, detail="Prebuilt agent not found")
-                
+
                 agent_name = prebuilt_agent["name"]
                 agent_description = prebuilt_agent.get("description", "A prebuilt Dana agent")
-                
+
                 # Check if prebuilt agent folder exists in assets
                 prebuilt_folder = (
                     Path(__file__).parent.parent / "server" / "assets" / agent_id
                 )
-                
+
                 if not prebuilt_folder.exists():
                     raise HTTPException(
-                        status_code=404, 
+                        status_code=404,
                         detail=f"Prebuilt agent folder '{agent_id}' not found"
                     )
-                
+
                 # Create agents directory if it doesn't exist
                 agents_dir = Path("agents")
                 agents_dir.mkdir(exist_ok=True)
-                
+
                 # Target folder in agents directory
                 target_folder = agents_dir / agent_id
-                
+
                 # Copy prebuilt folder to agents directory if not already there
                 if not target_folder.exists():
                     shutil.copytree(prebuilt_folder, target_folder)
                     logger.info(f"Copied prebuilt agent '{agent_id}' to {target_folder}")
-                
+
                 folder_path = str(target_folder)
-                
+
             except (FileNotFoundError, json.JSONDecodeError) as e:
                 logger.error(f"Error loading prebuilt agents: {e}")
                 raise HTTPException(status_code=500, detail="Failed to load prebuilt agents")
@@ -1464,10 +1497,10 @@ async def test_agent_by_id(agent_id: str, request: dict, db: Session = Depends(g
                 else:
                     # For prebuilt agents, we don't save to chat history since they don't have DB records
                     logger.info(f"Skipping chat history for prebuilt agent: {agent_id}")
-                
+
                 if actual_agent_id:
                     from dana.api.core.models import AgentChatHistory
-                    
+
                     # Save user message
                     user_chat = AgentChatHistory(
                         agent_id=actual_agent_id,
@@ -1476,7 +1509,7 @@ async def test_agent_by_id(agent_id: str, request: dict, db: Session = Depends(g
                         type="test_chat"
                     )
                     db.add(user_chat)
-                    
+
                     # Save agent response
                     agent_chat = AgentChatHistory(
                         agent_id=actual_agent_id,
@@ -1485,10 +1518,10 @@ async def test_agent_by_id(agent_id: str, request: dict, db: Session = Depends(g
                         type="test_chat"
                     )
                     db.add(agent_chat)
-                    
+
                     db.commit()
                     logger.info(f"Saved test chat history for agent {actual_agent_id}")
-                    
+
             except Exception as chat_error:
                 logger.error(f"Failed to save chat history: {chat_error}")
                 # Don't fail the request if chat history saving fails
@@ -1521,10 +1554,10 @@ async def get_domain_knowledge_versions(
         agent = db.query(Agent).filter(Agent.id == agent_id).first()
         if not agent:
             raise HTTPException(status_code=404, detail="Agent not found")
-        
+
         versions = version_service.get_versions(agent_id)
         return {"versions": versions}
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -1546,35 +1579,35 @@ async def revert_domain_knowledge(
         agent = db.query(Agent).filter(Agent.id == agent_id).first()
         if not agent:
             raise HTTPException(status_code=404, detail="Agent not found")
-        
+
         target_version = request.get("version")
         if not target_version:
             raise HTTPException(status_code=400, detail="Version number is required")
-        
+
         # Revert to the specified version
         reverted_tree = version_service.revert_to_version(agent_id, target_version)
         if not reverted_tree:
             raise HTTPException(status_code=404, detail="Version not found or revert failed")
-        
+
         # Save the reverted tree as current
         save_success = await domain_service.save_agent_domain_knowledge(
             agent_id, reverted_tree, db, agent
         )
-        
+
         if not save_success:
             raise HTTPException(status_code=500, detail="Failed to save reverted tree")
-        
+
         # Clear cache to force RAG rebuild
         folder_path = agent.config.get("folder_path") if agent.config else None
         if folder_path:
             clear_agent_cache(folder_path)
-        
+
         return {
             "success": True,
             "message": f"Successfully reverted to version {target_version}",
             "current_version": reverted_tree.version,
         }
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -1589,20 +1622,20 @@ async def get_agent_avatar(agent_id: int):
         # Verify agent exists
         from dana.api.core.database import get_db
         from sqlalchemy.orm import Session
-        
+
         # Get database session
         db = next(get_db())
         agent = db.query(Agent).filter(Agent.id == agent_id).first()
         if not agent:
             raise HTTPException(status_code=404, detail="Agent not found")
-        
+
         # Get avatar using avatar service
         avatar_service = AvatarService()
         avatar_file_path = avatar_service.get_avatar_file_path(agent_id)
-        
+
         if not avatar_file_path or not avatar_file_path.exists():
             raise HTTPException(status_code=404, detail="Avatar not found")
-        
+
         # Return the avatar file
         from fastapi.responses import FileResponse
         return FileResponse(
@@ -1610,7 +1643,7 @@ async def get_agent_avatar(agent_id: int):
             media_type="image/svg+xml",
             filename=f"agent-avatar-{agent_id}.svg"
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:

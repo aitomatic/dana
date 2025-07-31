@@ -1,7 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogFooter, DialogHeader } from '@/components/ui/dialog';
 import { getAgentAvatarSync } from '@/utils/avatar';
-import { Settings, Play} from 'iconoir-react';
+import { Settings, Play, MoreVert, Trash, HelpCircle } from 'iconoir-react';
+import { useAgentStore } from '@/stores/agent-store';
 // Function to generate random avatar colors based on agent ID
 const getRandomAvatarColor = (agentId: string | number): string => {
   const colors = [
@@ -30,53 +38,39 @@ const getRandomAvatarColor = (agentId: string | number): string => {
   return colors[Math.abs(hash) % colors.length];
 };
 
-// Helper function to format dates in a user-friendly way
-const formatDate = (dateString: string | undefined): string => {
-  if (!dateString) return '';
-
-  try {
-    const date = new Date(dateString);
-    const now = new Date();
-
-    // Check if it's the same day by comparing dates (not time)
-    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    const nowOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const diffTime = nowOnly.getTime() - dateOnly.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) {
-      return 'Today';
-    } else if (diffDays === 1) {
-      return 'Yesterday';
-    } else if (diffDays < 7) {
-      return `${diffDays} days ago`;
-    } else if (diffDays < 30) {
-      const weeks = Math.floor(diffDays / 7);
-      return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
-    } else if (diffDays < 365) {
-      const months = Math.floor(diffDays / 30);
-      return months === 1 ? '1 month ago' : `${months} months ago`;
-    } else {
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      });
-    }
-  } catch (error) {
-    return '';
-  }
-};
-
 export const MyAgentTab: React.FC<{
   agents: any[];
   navigate: (url: string) => void;
 }> = ({ agents, navigate }) => {
+  const { deleteAgent, isDeleting } = useAgentStore();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [agentToDelete, setAgentToDelete] = useState<any>(null);
+
+  const handleDeleteClick = (e: React.MouseEvent, agent: any) => {
+    e.stopPropagation();
+    setAgentToDelete(agent);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (agentToDelete) {
+      try {
+        await deleteAgent(agentToDelete.id);
+        setDeleteDialogOpen(false);
+        setAgentToDelete(null);
+      } catch (error) {
+        console.error('Error deleting agent:', error);
+      }
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setAgentToDelete(null);
+  };
+
   return (
     <>
-      
-      <div className="flex justify-between items-center mb-6 text-gray-600">     <p>Custom agents trained by you</p></div>
-     
       {/* User's agents list */}
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
         {agents && agents.length > 0 ? (
@@ -93,13 +87,13 @@ export const MyAgentTab: React.FC<{
                 className="flex flex-col gap-4 p-6 bg-white rounded-2xl border border-gray-200 transition-shadow cursor-pointer hover:shadow-md"
                 onClick={() => navigate(`/agents/${agent.id}`)}
               >
-                <div className="flex gap-4 flex-col">
-                  <div className="flex gap-2 items-center justify-between">
-                    <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center">
+                <div className="flex flex-col gap-4">
+                  <div className="flex gap-2 justify-between">
+                    <div className="flex overflow-hidden justify-center items-center w-12 h-12 rounded-full">
                       <img
                         src={getAgentAvatarSync(agent.id)}
                         alt={`${agent.name} avatar`}
-                        className="w-full h-full object-cover"
+                        className="object-cover w-full h-full"
                         onError={(e) => {
                           // Fallback to colored circle if image fails to load
                           const target = e.target as HTMLImageElement;
@@ -112,11 +106,36 @@ export const MyAgentTab: React.FC<{
                         }}
                       />
                     </div>
-                    {agent.config?.domain && (
-                      <span className="text-sm px-3 py-1 rounded-full text-gray-600 font-medium border border-gray-200 ml-2">
-                        {agent.config.domain}
-                      </span>
-                    )}
+                    <div className="flex gap-2 items-start">
+                      {agent.config?.domain && (
+                        <div className="flex px-2 py-1 rounded-full border border-gray-200 h-fit w-fit">
+                          <span className="text-sm font-medium text-gray-600">
+                            {agent.config.domain}
+                          </span>
+                        </div>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <div
+                            className="flex justify-center items-start mt-1 cursor-pointer"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreVert className="text-gray-600 size-4" strokeWidth={3} />
+                          </div>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteClick(e, agent);
+                            }}
+                          >
+                            <Trash className="text-gray-700 size-4" strokeWidth={2} />
+                            <span className="text-sm font-medium text-gray-700">Delete Agent</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                   <div className="flex flex-col flex-1">
                     <div className="flex gap-2 items-center">
@@ -147,15 +166,12 @@ export const MyAgentTab: React.FC<{
                     </span>
                   </div>
                 </div>
-                <div className="text-gray-500 text-sm min-h-[40px]">
-                  {/* {agent.details ||
-                    (agent.created_at ? `Created ${formatDate(agent.created_at)}` : '')} */}
-                </div>
                 <div className="flex gap-2 justify-between items-center">
                   <Button variant="outline" className="w-1/3 text-sm font-semibold text-gray-700">
-                  <Settings style={{ width: '20', height: '20' }} />Train
+                    <Settings style={{ width: '20', height: '20' }} />
+                    Train
                   </Button>
-                  <Button                     
+                  <Button
                     onClick={(e) => {
                       e.stopPropagation();
                       navigate(`/agents/${agent.id}/chat`);
@@ -163,7 +179,8 @@ export const MyAgentTab: React.FC<{
                     variant="outline"
                     className="w-2/3 text-sm font-semibold text-gray-700"
                   >
-                    <Play style={{ width: '20', height: '20' }} />Use agent
+                    <Play style={{ width: '20', height: '20' }} />
+                    Use agent
                   </Button>
                 </div>
               </div>
@@ -174,6 +191,32 @@ export const MyAgentTab: React.FC<{
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <div className="flex flex-col gap-1">
+              <div className="flex justify-center items-center rounded-full size-12 bg-warning-50">
+                <HelpCircle className="text-warning-600 size-6" strokeWidth={2} />
+              </div>
+              <span className="text-lg font-semibold text-gray-900">Delete Agent?</span>
+              <span className="text-sm text-gray-600">
+                This action will permanently delete the agent and all of its associated data. Are
+                you sure you want to continue?
+              </span>
+            </div>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancelDelete} className="w-1/2">
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmDelete} className="w-1/2" disabled={isDeleting}>
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
