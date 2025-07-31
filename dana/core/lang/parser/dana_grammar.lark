@@ -56,7 +56,7 @@ elif_stmt: "elif" expr ":" [COMMENT] block
 
 // Other compound statements
 while_stmt: "while" expr ":" [COMMENT] block
-for_stmt: "for" NAME "in" expr ":" [COMMENT] block
+for_stmt: "for" for_targets "in" expr ":" [COMMENT] block
 function_def: [decorators] "def" NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
 method_def: [decorators] "def" "(" typed_parameter ")" NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
 try_stmt: "try" ":" [COMMENT] block except_clause+ ["finally" ":" [COMMENT] block]
@@ -405,11 +405,15 @@ key_value_pair: expr ":" expr
 list_comprehension: "[" comprehension_body "]"
 set_comprehension: "{" comprehension_body "}"
 dict_comprehension: "{" dict_comprehension_body "}"
-comprehension_body: or_expr "for" NAME "in" or_expr [comprehension_if]
-dict_comprehension_body: "(" or_expr ":" or_expr ")" "for" NAME "in" or_expr [comprehension_if]
+comprehension_body: or_expr "for" for_targets "in" or_expr [comprehension_if]
+dict_comprehension_body: "(" or_expr ":" or_expr ")" "for" for_targets "in" or_expr [comprehension_if]
 
 
 comprehension_if: "if" or_expr
+
+// ===== FOR LOOP TARGETS =====
+for_targets: NAME | "(" for_target_list ")"
+for_target_list: NAME ("," NAME)*
 
 
 

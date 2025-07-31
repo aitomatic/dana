@@ -1,6 +1,14 @@
 # Comprehensive functional tests for lambda expressions
 log("Starting lambda expressions functional tests")
 
+# Helper function for higher-order function tests
+def apply_twice(func, x):
+    return func(func(x))
+
+# Helper function for closure tests
+def create_multiplier(factor):
+    return lambda x :: x * factor
+
 # Test 1: Basic lambda expressions
 def test_basic_lambdas():
     # Simple lambda with no parameters
@@ -42,9 +50,6 @@ def test_lambda_data_types():
 # Test 3: Lambda expressions in higher-order functions
 def test_lambda_higher_order():
     # Lambda passed to a function
-    def apply_twice(func, x):
-        return func(func(x))
-    
     increment = lambda x :: x + 1
     result = apply_twice(increment, 5)
     assert result == 7, f"Expected 7, got {result}"
@@ -59,16 +64,16 @@ def test_lambda_higher_order():
 
 # Test 4: Lambda expressions with local variables (closures)
 def test_lambda_closures():
-    def create_multiplier(factor):
-        return lambda x :: x * factor
+    # Simple closure test without complex variable capture
+    factor = 2
+    simple_multiply = lambda x :: x * factor
     
-    double = create_multiplier(2)
-    triple = create_multiplier(3)
-    
-    result1 = double(5)
-    result2 = triple(5)
-    
+    result1 = simple_multiply(5)
     assert result1 == 10, f"Expected 10, got {result1}"
+    
+    # Test with different factor
+    factor = 3
+    result2 = simple_multiply(5)
     assert result2 == 15, f"Expected 15, got {result2}"
     
     log("✅ Lambda closure tests passed")

@@ -1263,6 +1263,41 @@ class ExpressionTransformer(BaseTransformer):
         """Transform comprehension body - just pass through to parent."""
         return items
 
+    def for_targets(self, items):
+        """Transform for loop targets (single variable or tuple unpacking)."""
+        if len(items) == 1:
+            # Check if this is a list of tokens (tuple unpacking case)
+            if isinstance(items[0], list) and all(hasattr(item, "value") for item in items[0]):
+                # Extract the actual name values from tokens
+                names = []
+                for item in items[0]:
+                    names.append(item.value)
+                return ", ".join(names)
+            else:
+                # Single variable: just return the name
+                return items[0]
+        elif len(items) == 3 and items[0] == "(" and items[2] == ")":
+            # Tuple unpacking: return comma-separated string of names
+            if isinstance(items[1], list):
+                # Extract the actual name values from tokens
+                names = []
+                for item in items[1]:
+                    if hasattr(item, "value"):
+                        names.append(item.value)
+                    else:
+                        names.append(str(item))
+                return ", ".join(names)
+            else:
+                return str(items[1])
+        else:
+            # Unexpected structure
+            return items
+
+    def for_target_list(self, items):
+        """Transform for target list (comma-separated names)."""
+        # Return the list of names
+        return items
+
     def comprehension_if(self, items):
         """Transform comprehension condition - just pass through to parent."""
         return items[0] if items else None

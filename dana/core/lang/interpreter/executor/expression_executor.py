@@ -1194,8 +1194,19 @@ class ExpressionExecutor(BaseExecutor):
             # Create a new scope for this iteration
             iteration_context = context.copy()
 
-            # Bind the target variable to the current item
-            iteration_context.set(node.target, item)
+            # Bind the target variable(s) to the current item
+            if "," in node.target:
+                # Tuple unpacking: split target names and assign corresponding values
+                target_names = [name.strip() for name in node.target.split(",")]
+                if isinstance(item, list | tuple) and len(item) == len(target_names):
+                    for name, value in zip(target_names, item, strict=False):
+                        iteration_context.set(name, value)
+                else:
+                    # If item is not a tuple/list or doesn't match, assign the whole item to first target
+                    iteration_context.set(target_names[0], item)
+            else:
+                # Single variable assignment
+                iteration_context.set(node.target, item)
 
             # Check condition if present
             if node.condition is not None:
@@ -1232,8 +1243,19 @@ class ExpressionExecutor(BaseExecutor):
             # Create a new scope for this iteration
             iteration_context = context.copy()
 
-            # Bind the target variable to the current item
-            iteration_context.set(node.target, item)
+            # Bind the target variable(s) to the current item
+            if "," in node.target:
+                # Tuple unpacking: split target names and assign corresponding values
+                target_names = [name.strip() for name in node.target.split(",")]
+                if isinstance(item, list | tuple) and len(item) == len(target_names):
+                    for name, value in zip(target_names, item, strict=False):
+                        iteration_context.set(name, value)
+                else:
+                    # If item is not a tuple/list or doesn't match, assign the whole item to first target
+                    iteration_context.set(target_names[0], item)
+            else:
+                # Single variable assignment
+                iteration_context.set(node.target, item)
 
             # Check condition if present
             if node.condition is not None:
@@ -1270,8 +1292,19 @@ class ExpressionExecutor(BaseExecutor):
             # Create a new scope for this iteration
             iteration_context = context.copy()
 
-            # Bind the target variable to the current item
-            iteration_context.set(node.target, item)
+            # Bind the target variable(s) to the current item
+            if "," in node.target:
+                # Tuple unpacking: split target names and assign corresponding values
+                target_names = [name.strip() for name in node.target.split(",")]
+                if isinstance(item, list | tuple) and len(item) == len(target_names):
+                    for name, value in zip(target_names, item, strict=False):
+                        iteration_context.set(name, value)
+                else:
+                    # If item is not a tuple/list or doesn't match, assign the whole item to first target
+                    iteration_context.set(target_names[0], item)
+            else:
+                # Single variable assignment
+                iteration_context.set(node.target, item)
 
             # Check condition if present
             if node.condition is not None:
