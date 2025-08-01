@@ -33,12 +33,13 @@ const ConversationItem = ({
     <div
       key={conversation.id}
       className={cn(
-        'flex relative px-4 py-2 w-full rounded-lg cursor-pointer group',
+        'flex relative items-center px-4 w-full rounded-lg cursor-pointer group',
+        'h-10', // 40px height
         isActive ? 'bg-gray-100' : 'hover:bg-gray-50',
       )}
       onClick={onSelect}
     >
-      <div className="flex v-align-center flex-col flex-1">
+      <div className="flex flex-col flex-1">
         <div
           className={cn(
             'min-w-0 text-sm font-medium truncate',
@@ -104,14 +105,15 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
     deleteConversation,
     // Session conversation methods for prebuilt agents
     getSessionConversations,
-    deleteSessionConversation
+    deleteSessionConversation,
   } = useChatStore();
 
   console.log('agentId', agentId, typeof agentId);
 
   // Get session conversations for prebuilt agents
   const sessionConversations = typeof agentId === 'string' ? getSessionConversations(agentId) : [];
-  const allConversations = (typeof agentId === 'string' && isNaN(Number(agentId))) ? sessionConversations : conversations;
+  const allConversations =
+    typeof agentId === 'string' && isNaN(Number(agentId)) ? sessionConversations : conversations;
 
   // Fetch conversations when agentId changes
   useEffect(() => {
@@ -204,31 +206,18 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
     navigate(`/agents/${agentId}/chat`);
   };
 
-  // const handleCreateConversation = async () => {
-  //   if (agentId) {
-  //     try {
-  //       await createConversation({
-  //         title: "New conversation",
-  //         agent_id: parseInt(agentId),
-  //       });
-  //       // Refresh conversations
-  //       fetchConversations(parseInt(agentId));
-  //     } catch (error) {
-  //       console.error('Failed to create conversation:', error);
-  //     }
-  //   }
-  // };
-
   return (
     <div className="flex flex-col h-full border-r border-gray-200 bg-background dark:border-gray-300">
       <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-300">
-        <h2 className="text-md font-semibold text-gray-900 dark:text-gray-100">History</h2>
+        <h2 className="font-semibold text-gray-900 text-md dark:text-gray-100">History</h2>
         <div className="flex flex-row items-center">
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex justify-center items-center rounded-md cursor-pointer hover:bg-gray-100 size-8">
                 <Tools
-                  onClick={() => {  navigate(`/agents/${agentId}`);}}
+                  onClick={() => {
+                    navigate(`/agents/${agentId}`);
+                  }}
                   width={18}
                   height={18}
                   className="text-gray-600 cursor-pointer"
@@ -255,7 +244,7 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
       </div>
 
       <div className="flex flex-col gap-2 h-[calc(100vh-130px)] overflow-scroll scrollbar-hide">
-        <div className="flex flex-col gap-3 px-2">
+        <div className="flex flex-col gap-3 px-2 mt-4">
           {isLoading ? (
             <div className="flex justify-center items-center p-4">
               <div className="text-sm text-gray-500">Loading conversations...</div>
@@ -272,14 +261,20 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
                   key={conversationId}
                   conversation={conversation}
                   isActive={isActive}
-                  onSelect={() => isSessionConv ? handleSelectSessionConversation(conversation) : handleSelectConversation(conversation)}
+                  onSelect={() =>
+                    isSessionConv
+                      ? handleSelectSessionConversation(conversation)
+                      : handleSelectConversation(conversation)
+                  }
                   onRename={() => handleOpenRename(conversation)}
-                  onDelete={() => isSessionConv ? handleDeleteSession(conversation) : handleDelete(conversation)}
+                  onDelete={() =>
+                    isSessionConv ? handleDeleteSession(conversation) : handleDelete(conversation)
+                  }
                 />
               );
             })
           ) : (
-            <span className="pl-3 mt-4 text-sm text-gray-400">History is empty</span>
+            <span className="pl-3 text-sm text-gray-400">History is empty</span>
           )}
         </div>
       </div>

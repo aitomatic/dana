@@ -9,6 +9,7 @@ import { Tools } from 'iconoir-react';
 import { Button } from '@/components/ui/button';
 import { useAgentStore } from '@/stores/agent-store';
 import { getAgentAvatarSync } from '@/utils/avatar';
+import type { NavigateFunction } from 'react-router-dom';
 
 const TABS = ['Overview', 'Knowledge Base', 'Tools', 'Code'];
 
@@ -20,11 +21,11 @@ const TAB_ICONS = {
 };
 
 export const AgentDetailTabs: React.FC<{
-  onShowComparison: () => void;
   children?: React.ReactNode;
   activeTab: string;
   setActiveTab: (tab: string) => void;
-}> = ({ onShowComparison, children, activeTab, setActiveTab }) => {
+  navigate: NavigateFunction;
+}> = ({ children, activeTab, setActiveTab, navigate }) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const { selectedAgent } = useAgentStore();
   return (
@@ -81,7 +82,7 @@ export const AgentDetailTabs: React.FC<{
           </div>
         </div>
         {/* Tab content */}
-        {activeTab === 'Overview' && <OverviewTab onShowComparison={onShowComparison} />}
+        {activeTab === 'Overview' && <OverviewTab navigate={navigate} />}
         {activeTab === 'Knowledge Base' && <KnowledgeBaseTab />}
         {activeTab === 'Tools' && <ToolsTab />}
         {activeTab === 'Code' && <CodeTab />}

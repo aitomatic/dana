@@ -11,15 +11,15 @@ const nodeStyles = `
   .custom-node {
     transition: all 0.2s ease;
   }
-  
+
   .custom-node.selected {
-    
+
     transform: scale(1.02) !important;
     z-index: 10 !important;
     animation: selectedPulse 2s ease-in-out infinite;
   }
-  
-  
+
+
   @keyframes selectedPulse {
     0%, 100% {
       box-shadow: 0 0 0 1px #333, 0 4px 12px rgba(59, 130, 246, 0.3);
@@ -184,17 +184,6 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
     return baseClasses.join(' ');
   };
 
-  // Render selection indicator
-  const renderSelectionIndicator = () => {
-    if (!isSelected) return null;
-    
-    return (
-      <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center shadow-lg animate-pulse">
-        {/* <CheckIcon size={14} className="text-white" /> */}
-      </div>
-    );
-  };
-
   // Get node styling based on knowledge status and node type
   const getNodeStyling = () => {
     const baseStyle = {
@@ -216,12 +205,14 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
     };
 
     // Add selection highlighting
-    const selectionStyle = isSelected ? {
-      // boxShadow: '0 0 0 1px #3B82F6, 0 4px 12px rgba(59, 130, 246, 0.3)',
-      border: 'none',
-      transform: 'scale(1.02)',
-      zIndex: 10,
-    } : {};
+    const selectionStyle = isSelected
+      ? {
+          // boxShadow: '0 0 0 1px #3B82F6, 0 4px 12px rgba(59, 130, 246, 0.3)',
+          border: 'none',
+          transform: 'scale(1.02)',
+          zIndex: 10,
+        }
+      : {};
 
     if (!isLeafNode) {
       // Parent nodes - different styling based on expansion state
@@ -229,7 +220,11 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
         ...baseStyle,
         ...selectionStyle,
         background: hasChildren ? (isExpanded ? '#EBF8FF' : '#F6FAFF') : '#F6FAFF',
-        border: hasChildren ? (isExpanded ? '2px solid #3B82F6' : '2px solid #93C5FD') : '2px solid #E0E0E0',
+        border: hasChildren
+          ? isExpanded
+            ? '2px solid #3B82F6'
+            : '2px solid #93C5FD'
+          : '2px solid #E0E0E0',
         fontWeight: hasChildren ? 'bold' : 'normal',
       };
     }
@@ -292,10 +287,12 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
         )}
         <span>{nodeData.label}</span>
         {isLeafNode && knowledgeStatus && (
-          <span style={{ fontSize: '16px', marginLeft: 8 }}>{getStatusIcon(knowledgeStatus.status)}</span>
+          <span style={{ fontSize: '16px', marginLeft: 8 }}>
+            {getStatusIcon(knowledgeStatus.status)}
+          </span>
         )}
       </div>
-    
+
       {/* Handles can be hidden or removed if not needed */}
       <Handle
         type="target"

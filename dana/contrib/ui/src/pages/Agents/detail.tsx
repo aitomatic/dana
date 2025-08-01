@@ -144,8 +144,7 @@ export default function AgentDetailPage() {
   const handleClose = () => {
     // If agent has status 'success', navigate directly to agents page
     if (agent && agent.config && agent.config.status === 'success') {
-      navigate('/agents');
-      return;
+      return navigate(-1);
     }
 
     // Otherwise, show the delete confirmation dialog
@@ -233,11 +232,7 @@ export default function AgentDetailPage() {
       <div className="grid grid-cols-[max-content_1fr] flex-1 w-full h-full">
         <AgentDetailSidebar />
         {/* Pass activeTab and setActiveTab to AgentDetailTabs */}
-        <AgentDetailTabs
-          onShowComparison={() => setShowComparison(true)}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-        />
+        <AgentDetailTabs activeTab={activeTab} setActiveTab={setActiveTab} navigate={navigate} />
       </div>
       <AgentPerformanceComparisonModal
         open={showComparison}
@@ -286,10 +281,11 @@ export default function AgentDetailPage() {
           </div>
           <DialogDescription className="flex flex-col gap-2">
             <div className="text-lg font-semibold text-gray-900">
-            Save to your agents before close?
+              Save to your agents before close?
             </div>
             <div className="mb-4 text-sm text-gray-600">
-            You haven’t made any changes. If you close now, the agent will not be saved to your agents.
+              You haven’t made any changes. If you close now, the agent will not be saved to your
+              agents.
             </div>
           </DialogDescription>
           <DialogFooter className="grid grid-cols-2 gap-2 sm:gap-2">

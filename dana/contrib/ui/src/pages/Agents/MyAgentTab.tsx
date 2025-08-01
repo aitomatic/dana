@@ -6,10 +6,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Dialog, DialogContent, DialogFooter, DialogHeader } from '@/components/ui/dialog';
 import { getAgentAvatarSync } from '@/utils/avatar';
-import { Settings, Play, MoreVert, Trash, HelpCircle } from 'iconoir-react';
+import { Settings, Play, MoreVert, Trash } from 'iconoir-react';
 import { useAgentStore } from '@/stores/agent-store';
+import { DeleteAgentDialog } from '@/components/delete-agent-dialog';
+
 // Function to generate random avatar colors based on agent ID
 const getRandomAvatarColor = (agentId: string | number): string => {
   const colors = [
@@ -64,6 +65,11 @@ export const MyAgentTab: React.FC<{
     }
   };
 
+  const handleDeleteSuccess = () => {
+    // Redirect to agents page with my tab selected after successful deletion
+    navigate('/agents?tab=my');
+  };
+
   const handleCancelDelete = () => {
     setDeleteDialogOpen(false);
     setAgentToDelete(null);
@@ -100,28 +106,25 @@ export const MyAgentTab: React.FC<{
                           target.style.display = 'none';
                           const parent = target.parentElement;
                           if (parent) {
-                            parent.className = `w-12 h-12 rounded-full bg-gradient-to-br ${getRandomAvatarColor(agent.id)} flex items-center justify-center text-white text-lg font-bold`;
+                            parent.className = `flex justify-center items-center w-12 h-12 text-lg font-bold text-white bg-gradient-to-br ${getRandomAvatarColor(
+                              agent.id,
+                            )} rounded-full`;
                             parent.innerHTML = `<span className="text-white">${agent.name[0]}</span>`;
                           }
                         }}
                       />
                     </div>
-                    <div className="flex gap-2 items-start">
-                      {agent.config?.domain && (
-                        <div className="flex px-2 py-1 rounded-full border border-gray-200 h-fit w-fit">
-                          <span className="text-sm font-medium text-gray-600">
-                            {agent.config.domain}
-                          </span>
-                        </div>
-                      )}
+                    <div className="flex gap-2">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <div
-                            className="flex justify-center items-start mt-1 cursor-pointer"
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="p-1 w-8 h-8"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <MoreVert className="text-gray-600 size-4" strokeWidth={3} />
-                          </div>
+                            <MoreVert className="text-gray-700 size-4" strokeWidth={2} />
+                          </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start">
                           <DropdownMenuItem
@@ -192,31 +195,15 @@ export const MyAgentTab: React.FC<{
         )}
       </div>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <div className="flex flex-col gap-1">
-              <div className="flex justify-center items-center rounded-full size-12 bg-warning-50">
-                <HelpCircle className="text-warning-600 size-6" strokeWidth={2} />
-              </div>
-              <span className="text-lg font-semibold text-gray-900">Delete Agent?</span>
-              <span className="text-sm text-gray-600">
-                This action will permanently delete the agent and all of its associated data. Are
-                you sure you want to continue?
-              </span>
-            </div>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={handleCancelDelete} className="w-1/2">
-              Cancel
-            </Button>
-            <Button onClick={handleConfirmDelete} className="w-1/2" disabled={isDeleting}>
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Delete Agent Dialog */}
+      <DeleteAgentDialog
+        isOpen={deleteDialogOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        onSuccess={handleDeleteSuccess}
+        isDeleting={isDeleting}
+        agentName={agentToDelete?.name}
+      />
     </>
   );
 };
