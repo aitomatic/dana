@@ -1,19 +1,29 @@
 """Financial-Analysis Types."""
 
 
+from typing.py import Optional
+
+
 __all__ = [
     'CompanyAndPeriodAndCurrency',
     'CurrAndPrevNums',
 ]
 
 
+# TODO: have doc_path outside of this struct, in outer context
 struct CompanyAndPeriodAndCurrency:
+    """Company, period, currency, and optional financial document path."""
+
     company: str
     period: str
     currency: str = 'dollars'
 
+    doc_path: Optional[str] = None
+
 
 struct CurrAndPrevNums:
+    """Current and previous numerical values of a financial metric."""
+
     curr: float
     prev: float
     unit_of_measurement: str

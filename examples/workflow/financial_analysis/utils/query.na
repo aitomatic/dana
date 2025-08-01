@@ -78,4 +78,8 @@ QUERY
 {query}
 ', level='info')
 
+    if args.doc_path:
+        with use('rag', sources=[args.doc_path]) as docs_resource:
+            return reason(query)
+
     return reason(query)
