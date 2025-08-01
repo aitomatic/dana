@@ -5,7 +5,7 @@ from .fin_statements import get_lt_debt, get_lt_debt_2y, get_lt_debt_3y
 from .fin_statements import get_st_debt, get_st_debt_2y, get_st_debt_3y
 from .fin_statements import get_equity
 
-from .utils import FinQueryArgs
+from .utils import FinDoc
 
 
 __all__ = [
@@ -32,7 +32,7 @@ and using the following intermediate results:
 State your result together with the supporting calculation(s).
 ')
 
-def calc_total_debt(args: FinQueryArgs) = [get_lt_debt, get_st_debt] | _total_debt
+def calc_total_debt(doc: FinDoc) = [get_lt_debt, get_st_debt] | _total_debt
 
 
 def _total_debt_2y(intermed_results):
@@ -54,7 +54,7 @@ and using the following intermediate results:
 State your result together with the supporting calculation(s).
 ')
 
-def calc_total_debt_2y(args: FinQueryArgs) = [get_lt_debt_2y, get_st_debt_2y] | _total_debt_2y
+def calc_total_debt_2y(doc: FinDoc) = [get_lt_debt_2y, get_st_debt_2y] | _total_debt_2y
 
 
 def _total_debt_3y(intermed_results):
@@ -76,7 +76,7 @@ and using the following intermediate results:
 State your result together with the supporting calculation(s).
 ')
 
-def calc_total_debt_3y(args: FinQueryArgs) = [get_lt_debt_3y, get_st_debt_3y] | _total_debt_3y
+def calc_total_debt_3y(doc: FinDoc) = [get_lt_debt_3y, get_st_debt_3y] | _total_debt_3y
 
 
 def _de_ratio(intermed_results):
@@ -94,4 +94,4 @@ and using the following intermediate results:
 State your result together with the supporting calculation(s).
 ')
 
-def calc_de_ratio(args: FinQueryArgs) = [calc_total_debt, get_equity] | _de_ratio
+def calc_de_ratio(doc: FinDoc) = [calc_total_debt, get_equity] | _de_ratio

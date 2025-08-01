@@ -1,13 +1,13 @@
 """Financial Data Query."""
 
 
-from .types import FinQueryArgs
+from .types import FinDoc
 
 
 __all__ = ['query_fin_data']
 
 
-def query_fin_data(args: FinQueryArgs,
+def query_fin_data(doc: FinDoc,
                    line_item: str, statement: str,
                    as_at_period_end: bool = False,
                    n_years: int = 1) -> str:  # TODO: Literal[1, 2, 3]
@@ -72,14 +72,8 @@ of {args.company.upper()}
 
 {time_period_str}?')
 
-    log(message=f'
-QUERY
------
-{query}
-', level='info')
-
-    if args.doc_path:
-        with use('rag', sources=[args.doc_path]) as docs_resource:
+    if doc.path:
+        with use('rag', sources=[doc.path]) as docs_resource:
             return reason(query)
 
     return llm(query)

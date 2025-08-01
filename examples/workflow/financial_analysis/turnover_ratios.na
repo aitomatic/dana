@@ -4,7 +4,7 @@
 from .fin_statements import get_total_asset_2y, get_fixed_asset_2y, get_inventory_2y
 from .fin_statements import get_rev, get_cogs
 
-from .utils import FinQueryArgs
+from .utils import FinDoc
 
 
 __all__ = [
@@ -34,7 +34,7 @@ and using the following intermediate results:
 State your result together with the supporting calculation(s).
 ')
 
-def calc_total_asset_turnover_ratio(args: FinQueryArgs) = [get_rev, get_total_asset_2y] | _total_asset_turnover_ratio
+def calc_total_asset_turnover_ratio(doc: FinDoc) = [get_rev, get_total_asset_2y] | _total_asset_turnover_ratio
 
 
 def _fixed_asset_turnover_ratio(intermed_results):
@@ -56,7 +56,7 @@ and using the following intermediate results:
 State your result together with the supporting calculation(s).
 ')
 
-def calc_fixed_asset_turnover_ratio(args: FinQueryArgs) = [get_rev, get_fixed_asset_2y] | _fixed_asset_turnover_ratio
+def calc_fixed_asset_turnover_ratio(doc: FinDoc) = [get_rev, get_fixed_asset_2y] | _fixed_asset_turnover_ratio
 
 
 def _inventory_turnover_ratio(intermed_results):
@@ -78,4 +78,4 @@ and using the following intermediate results:
 State your result together with the supporting calculation(s).
 ')
 
-def calc_inventory_turnover_ratio(args: FinQueryArgs) = [get_cogs, get_inventory_2y] | _inventory_turnover_ratio
+def calc_inventory_turnover_ratio(doc: FinDoc) = [get_cogs, get_inventory_2y] | _inventory_turnover_ratio

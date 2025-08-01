@@ -4,7 +4,7 @@
 from .fin_statements import get_op_income, get_op_income_2y, get_op_income_3y
 from .fin_statements import get_deprec_and_amort, get_deprec_and_amort_2y, get_deprec_and_amort_3y
 
-from .utils import FinQueryArgs
+from .utils import FinDoc
 
 
 __all__ = [
@@ -31,7 +31,7 @@ and using the following intermediate results:
 State your result together with the supporting calculation(s).
 ')
 
-def calc_ebitda(args: FinQueryArgs) = [get_op_income, get_deprec_and_amort] | _ebitda
+def calc_ebitda(doc: FinDoc) = [get_op_income, get_deprec_and_amort] | _ebitda
 
 
 def _ebitda_2y(intermed_results):
@@ -53,7 +53,7 @@ and using the following intermediate results:
 State your result together with the supporting calculation(s).
 ')
 
-def calc_ebitda_2y(args: FinQueryArgs) = [get_op_income_2y, get_deprec_and_amort_2y] | _ebitda_2y
+def calc_ebitda_2y(doc: FinDoc) = [get_op_income_2y, get_deprec_and_amort_2y] | _ebitda_2y
 
 
 def _ebitda_3y(intermed_results):
@@ -75,4 +75,4 @@ and using the following intermediate results:
 State your result together with the supporting calculation(s).
 ')
 
-def calc_ebitda_3y(args: FinQueryArgs) = [get_op_income_3y, get_deprec_and_amort_3y] | _ebitda_3y
+def calc_ebitda_3y(doc: FinDoc) = [get_op_income_3y, get_deprec_and_amort_3y] | _ebitda_3y
