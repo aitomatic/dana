@@ -424,6 +424,9 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   const onNodeClick = async (_: React.MouseEvent, node: FlowNode) => {
     const nodeData = node.data;
 
+    // Set the selected node for highlighting
+    setSelectedNodeId(node.id);
+
     // If it's a leaf node, show the knowledge sidebar
     if (nodeData.isLeafNode) {
       const topicPath = nodeData.nodePath;
@@ -475,8 +478,6 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         });
       }
 
-      // Also set as selected for info popup
-      // setSelectedNodeId(node.id);
       return;
     }
 
@@ -515,15 +516,14 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         setEdges(flowEdges);
       }
     }
-
-    // Always set as selected for info popup
-    // setSelectedNodeId(node.id);
   };
 
   // Optionally, handle pane click to clear selection
   const onPaneClick = () => {
-    setSelectedNodeId(null);
-    // Don't close sidebar on pane click to allow sidebar interaction
+    // Only clear selection if sidebar is not open
+    if (!sidebarOpen) {
+      setSelectedNodeId(null);
+    }
   };
 
   // Handler for the button
@@ -651,7 +651,10 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       {/* Knowledge Sidebar */}
       <KnowledgeSidebar
         isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
+        onClose={() => {
+          setSidebarOpen(false);
+          setSelectedNodeId(null); // Clear selection when sidebar closes
+        }}
         topicPath={sidebarTopicPath}
         content={sidebarContent}
         loading={sidebarLoading}

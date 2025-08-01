@@ -6,6 +6,37 @@ import FileIcon from '@/components/file-icon';
 import type { KnowledgeTopicStatus } from '@/lib/api';
 import { CheckIcon, Loader2Icon, XIcon, ChevronRight, ChevronDown } from 'lucide-react';
 
+// Add CSS styles for node selection
+const nodeStyles = `
+  .custom-node {
+    transition: all 0.2s ease;
+  }
+  
+  .custom-node.selected {
+    
+    transform: scale(1.02) !important;
+    z-index: 10 !important;
+    animation: selectedPulse 2s ease-in-out infinite;
+  }
+  
+  
+  @keyframes selectedPulse {
+    0%, 100% {
+      box-shadow: 0 0 0 1px #333, 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 0 1px #333, 0 4px 16px rgba(59, 130, 246, 0.4);
+    }
+  }
+`;
+
+// Inject styles
+if (typeof document !== 'undefined') {
+  const styleElement = document.createElement('style');
+  styleElement.textContent = nodeStyles;
+  document.head.appendChild(styleElement);
+}
+
 interface CustomNodeProps extends NodeProps {
   isSelected: boolean;
   onNodeClick: (event: React.MouseEvent) => void;
@@ -146,6 +177,24 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
     }
   }, [isSelected]);
 
+  // Get CSS classes for the node
+  const getNodeClasses = () => {
+    const baseClasses = ['custom-node'];
+    if (isSelected) baseClasses.push('selected');
+    return baseClasses.join(' ');
+  };
+
+  // Render selection indicator
+  const renderSelectionIndicator = () => {
+    if (!isSelected) return null;
+    
+    return (
+      <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center shadow-lg animate-pulse">
+        {/* <CheckIcon size={14} className="text-white" /> */}
+      </div>
+    );
+  };
+
   // Get node styling based on knowledge status and node type
   const getNodeStyling = () => {
     const baseStyle = {
@@ -163,12 +212,22 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
       justifyContent: 'center',
       position: 'relative' as const,
       cursor: hasChildren ? 'pointer' : 'default',
+      transition: 'all 0.2s ease', // Add smooth transitions
     };
+
+    // Add selection highlighting
+    const selectionStyle = isSelected ? {
+      // boxShadow: '0 0 0 1px #3B82F6, 0 4px 12px rgba(59, 130, 246, 0.3)',
+      border: 'none',
+      transform: 'scale(1.02)',
+      zIndex: 10,
+    } : {};
 
     if (!isLeafNode) {
       // Parent nodes - different styling based on expansion state
       return {
         ...baseStyle,
+        ...selectionStyle,
         background: hasChildren ? (isExpanded ? '#EBF8FF' : '#F6FAFF') : '#F6FAFF',
         border: hasChildren ? (isExpanded ? '2px solid #3B82F6' : '2px solid #93C5FD') : '2px solid #E0E0E0',
         fontWeight: hasChildren ? 'bold' : 'normal',
@@ -186,24 +245,28 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
       case 'in_progress':
         return {
           ...baseStyle,
+          ...selectionStyle,
           background: '#DBEAFE', // Light blue
           border: '2px solid #3B82F6', // Blue border
         };
       case 'success':
         return {
           ...baseStyle,
+          ...selectionStyle,
           background: '#D1FAE5', // Light green
           border: '2px solid #10B981', // Green border
         };
       case 'failed':
         return {
           ...baseStyle,
+          ...selectionStyle,
           background: '#FEE2E2', // Light red
           border: '2px solid #EF4444', // Red border
         };
       default:
         return {
           ...baseStyle,
+          ...selectionStyle,
           background: '#F3F4F6', // Light gray
           border: '2px solid #9CA3AF', // Gray border
         };
@@ -211,7 +274,7 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
   };
 
   return (
-    <div ref={nodeRef} className="relative" style={getNodeStyling()} onClick={onNodeClick}>
+    <div ref={nodeRef} className={getNodeClasses()} style={getNodeStyling()} onClick={onNodeClick}>
       <div
         style={{
           width: '100%',
@@ -232,6 +295,7 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
           <span style={{ fontSize: '16px', marginLeft: 8 }}>{getStatusIcon(knowledgeStatus.status)}</span>
         )}
       </div>
+    
       {/* Handles can be hidden or removed if not needed */}
       <Handle
         type="target"
