@@ -211,22 +211,24 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
       <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-300">
         <h2 className="font-semibold text-gray-900 text-md dark:text-gray-100">History</h2>
         <div className="flex flex-row items-center">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex justify-center items-center rounded-md cursor-pointer hover:bg-gray-100 size-8">
-                <Tools
-                  onClick={() => {
-                    navigate(`/agents/${agentId}`);
-                  }}
-                  width={18}
-                  height={18}
-                  className="text-gray-600 cursor-pointer"
-                  strokeWidth={1.5}
-                />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Train Agent</TooltipContent>
-          </Tooltip>
+          {agentId && !isNaN(Number(agentId)) && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex justify-center items-center rounded-md cursor-pointer hover:bg-gray-100 size-8">
+                  <Tools
+                    onClick={() => {
+                      navigate(`/agents/${agentId}`);
+                    }}
+                    width={18}
+                    height={18}
+                    className="text-gray-600 cursor-pointer"
+                    strokeWidth={1.5}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Train Agent</TooltipContent>
+            </Tooltip>
+          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex justify-center items-center rounded-md cursor-pointer hover:bg-gray-100 size-8">

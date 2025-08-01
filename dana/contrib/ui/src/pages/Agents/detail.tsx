@@ -222,7 +222,7 @@ export default function AgentDetailPage() {
   return (
     <div className="flex flex-col w-full h-screen bg-gray-50">
       <AgentDetailHeader
-        onBack={() => navigate(-1)}
+        onBack={handleClose}
         title="Train Your Agent"
         onDeploy={handleDeploy}
         onCancel={handleClose}

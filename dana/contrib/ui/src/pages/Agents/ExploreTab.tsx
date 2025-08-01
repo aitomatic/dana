@@ -43,23 +43,7 @@ export const ExploreTab: React.FC<{
       {filteredAgents.map((agent) => (
         <div
           key={agent.id}
-          className="flex flex-col gap-4 p-6 bg-white rounded-2xl border border-gray-200 transition-shadow cursor-pointer hover:shadow-md"
-          onClick={async () => {
-            console.log('agent', agent);
-            if (agent.is_prebuilt) {
-              try {
-                const newAgent = await apiService.cloneAgentFromPrebuilt(agent.key);
-                if (newAgent && newAgent.id) {
-                  navigate(`/agents/${newAgent.id}`);
-                }
-              } catch (err) {
-                // Optionally show error toast
-                console.error(err);
-              }
-            } else {
-              navigate(`/agents/${agent.id}/chat`);
-            }
-          }}
+          className="flex flex-col gap-4 p-6 bg-white rounded-2xl border border-gray-200 transition-shadow hover:shadow-md"
         >
           <div className="flex flex-col gap-4">
             <div className="flex gap-2 justify-between items-center">
@@ -135,7 +119,25 @@ export const ExploreTab: React.FC<{
             </span>
           </div> */}
           <div className="flex gap-2 justify-between items-center">
-            <Button variant="outline" className="w-1/2 text-sm font-semibold text-gray-700">
+            <Button
+              onClick={async () => {
+                if (agent.is_prebuilt) {
+                  try {
+                    const newAgent = await apiService.cloneAgentFromPrebuilt(agent.key);
+                    if (newAgent && newAgent.id) {
+                      navigate(`/agents/${newAgent.id}`);
+                    }
+                  } catch (err) {
+                    // Optionally show error toast
+                    console.error(err);
+                  }
+                } else {
+                  navigate(`/agents/${agent.id}/chat`);
+                }
+              }}
+              variant="outline"
+              className="w-1/2 text-sm font-semibold text-gray-700"
+            >
               <Settings style={{ width: '20', height: '20' }} />
               Train from this
             </Button>
