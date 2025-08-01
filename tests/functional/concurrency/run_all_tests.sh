@@ -1,19 +1,76 @@
 #!/bin/bash
 # Dana Concurrent-by-Default Test Runner
 # Copyright © 2025 Aitomatic, Inc.
+# 
+# This script automatically checks for the 'dana' command availability
+# and provides helpful fallback options if not found in PATH.
 
 set -e  # Exit on any error
+
+# Colors for output
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Check if dana command is available
+check_dana_command() {
+    if ! command -v dana &> /dev/null; then
+        echo -e "${RED}Error: 'dana' command not found in PATH${NC}"
+        echo
+        echo -e "${YELLOW}Please ensure Dana is properly installed and available:${NC}"
+        echo "1. Check if Dana is installed:"
+        echo "   - Look for dana binary in your installation directory"
+        echo "   - Check if it's in your PATH environment variable"
+        echo
+        echo "2. Common installation locations:"
+        echo "   - ./bin/dana (if running from project root)"
+        echo "   - /usr/local/bin/dana (system-wide installation)"
+        echo "   - ~/.local/bin/dana (user installation)"
+        echo
+        echo "3. Alternative ways to run Dana:"
+        echo "   - Use full path: ./bin/dana (if in project root)"
+        echo "   - Use Python module: python -m dana"
+        echo "   - Activate virtual environment first"
+        echo
+        echo -e "${BLUE}Attempting to find Dana installation...${NC}"
+        
+        # Try to find dana in common locations
+        local found_dana=""
+        for path in "./bin/dana" "/usr/local/bin/dana" "$HOME/.local/bin/dana" "$(pwd)/bin/dana"; do
+            if [ -x "$path" ]; then
+                found_dana="$path"
+                echo -e "${GREEN}Found Dana at: $path${NC}"
+                break
+            fi
+        done
+        
+        if [ -n "$found_dana" ]; then
+            echo -e "${YELLOW}Using Dana from: $found_dana${NC}"
+            echo "You can add this to your PATH or use the full path."
+            echo
+            # Set DANA_CMD for use in the script
+            export DANA_CMD="$found_dana"
+        else
+            echo -e "${RED}Could not find Dana installation.${NC}"
+            echo "Please install Dana or ensure it's properly configured."
+            exit 1
+        fi
+    else
+        export DANA_CMD="dana"
+        echo -e "${GREEN}✓ Dana command found: $(which dana)${NC}"
+    fi
+}
 
 echo "=========================================="
 echo "Dana Concurrent-by-Default Test Suite"
 echo "=========================================="
 echo
 
-# Colors for output
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+# Check for dana command availability
+check_dana_command
+echo
 
 # Function to run a test file
 run_test() {
@@ -23,7 +80,7 @@ run_test() {
     echo -e "${YELLOW}Running: $test_name${NC}"
     echo "File: $test_file"
     
-    if dana "$test_file"; then
+    if "$DANA_CMD" "$test_file"; then
         echo -e "${GREEN}✓ PASSED: $test_name${NC}"
         echo
         return 0
