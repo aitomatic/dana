@@ -39,7 +39,7 @@ class TestLlamaIndexEmbeddingResource(unittest.TestCase):
         result = get_embedding_model("openai:text-embedding-3-small")
 
         self.assertEqual(result, mock_embedding_instance)
-        mock_create_embedding.assert_called_once_with("openai:text-embedding-3-small")
+        mock_create_embedding.assert_called_once_with("openai:text-embedding-3-small", None)
 
     @patch("dana.common.resource.embedding.embedding_integrations.LlamaIndexEmbeddingResource._create_embedding")
     @patch("dana.common.resource.embedding.embedding_integrations.LlamaIndexEmbeddingResource._is_model_available")
@@ -63,7 +63,7 @@ class TestLlamaIndexEmbeddingResource(unittest.TestCase):
 
         setup_llamaindex("openai:text-embedding-3-small", chunk_size=512)
 
-        mock_create_embedding.assert_called_once_with("openai:text-embedding-3-small")
+        mock_create_embedding.assert_called_once_with("openai:text-embedding-3-small", None)
         self.assertEqual(mock_settings.embed_model, mock_embedding_instance)
         self.assertEqual(mock_settings.chunk_size, 512)
 
