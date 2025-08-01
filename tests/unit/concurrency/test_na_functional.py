@@ -21,11 +21,6 @@ def get_na_files():
     return [str(f) for f in current_dir.glob("*.na")]
 
 
-# Add a marker for na_file tests
-def pytest_configure(config):
-    config.addinivalue_line("markers", "na_file: mark tests that execute .na files")
-
-
 @pytest.mark.na_file
 @pytest.mark.parametrize("na_file", get_na_files())
 def test_na_file(na_file):

@@ -18,6 +18,7 @@ def pytest_configure(config):
     """Register custom markers."""
     config.addinivalue_line("markers", "llm: mark test as requiring an LLM connection")
     config.addinivalue_line("markers", "live: mark test as requiring external services (deselect with '-m \"not live\"')")
+    config.addinivalue_line("markers", "na_file: mark tests that execute .na files")
 
 
 def pytest_collection_modifyitems(config, items):
