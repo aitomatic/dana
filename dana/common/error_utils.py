@@ -273,7 +273,7 @@ class ErrorUtils:
             pass
         else:
             # Check if a reserved keyword is in the previous tokens
-            reserved_keyword_in_previous = self._find_reserved_keyword_in_tokens(previous_tokens)
+            reserved_keyword_in_previous = ErrorUtils._find_reserved_keyword_in_tokens(previous_tokens)
             if not reserved_keyword_in_previous:
                 return None
             token_value = reserved_keyword_in_previous
@@ -382,6 +382,33 @@ class ErrorUtils:
             return ErrorUtils.create_state_error(error_msg, node, e), False
         else:
             return ErrorUtils.create_runtime_error(error_msg, node, e), False
+
+    @staticmethod
+    def _find_reserved_keyword_in_tokens(tokens: list[str]) -> str | None:
+        """Find the first reserved keyword in a list of token strings.
+
+        Args:
+            tokens: List of token strings in various formats
+
+        Returns:
+            The first reserved keyword found, or None if none found
+        """
+        for token_str in tokens:
+            if isinstance(token_str, str):
+                if token_str.startswith("Token('"):
+                    # Already formatted token string
+                    token_match = re.search(r"Token\('([^']+)', '([^']+)'\)", token_str)
+                    if token_match:
+                        _, token_value = token_match.groups()
+                        if token_value in ErrorUtils.RESERVED_KEYWORDS:
+                            return token_value
+                else:
+                    # Raw token string - extract all Token patterns
+                    token_patterns = re.findall(r"Token\('([^']+)', '([^']+)'\)", token_str)
+                    for _, token_value in token_patterns:
+                        if token_value in ErrorUtils.RESERVED_KEYWORDS:
+                            return token_value
+        return None
 
     @staticmethod
     def format_user_error(e, user_input=None):

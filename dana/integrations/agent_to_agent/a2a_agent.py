@@ -1,10 +1,11 @@
-from dana.agent.abstract_dana_agent import AbstractDanaAgent
+# TODO: Update to use new agent struct system
+# from dana.agent.abstract_dana_agent import AbstractDanaAgent
 from dana.common.mixins import ToolCallable
 from dana.common.utils import Misc
 from dana.integrations.agent_to_agent.a2a.client.a2a_client import BaseA2AClient
 
 
-class A2AAgent(AbstractDanaAgent):
+class A2AAgent:  # TODO: Inherit from new agent system
     """A2A Resource"""
 
     def __init__(
@@ -19,7 +20,10 @@ class A2AAgent(AbstractDanaAgent):
     ):
         if url is None:
             raise ValueError("url is required")
-        super().__init__(name, description, config)
+        # TODO: Update to use new agent system
+        self._name = name
+        self._description = description or ""
+        self._config = config or {}
         self.client = BaseA2AClient(
             endpoint_url=url,
             headers=headers,
@@ -29,7 +33,17 @@ class A2AAgent(AbstractDanaAgent):
         if description is None:
             agent_card = self.agent_card
             if agent_card and isinstance(agent_card, dict):
-                self.description = agent_card.get("description", self.description)
+                self._description = agent_card.get("description", self._description)
+
+    @property
+    def name(self) -> str:
+        """Get the agent name."""
+        return self._name
+
+    @property
+    def description(self) -> str:
+        """Get the agent description."""
+        return self._description
 
     @property
     def agent_card(self) -> dict[str, any]:
