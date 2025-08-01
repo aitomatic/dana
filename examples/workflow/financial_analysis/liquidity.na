@@ -32,7 +32,7 @@ __all__ = [
 
 
 def _quick_asset(intermed_results):
-    return reason(
+    deliver reason(
 f'Calculate `Quick Assets` according to formula:
 
 `Quick Assets` = (
@@ -52,7 +52,7 @@ def calc_quick_asset(args: FinQueryArgs) = [get_cash_and_equiv, get_st_inv, get_
 
 
 def _quick_asset_2y(intermed_results):
-    return reason(
+    deliver reason(
 f'Calculate `Quick Assets` as at past 2 annual fiscal period ends according to formula:
 
 `Quick Assets` = (
@@ -72,7 +72,7 @@ def calc_quick_asset_2y(args: FinQueryArgs) = [get_cash_and_equiv_2y, get_st_inv
 
 
 def _quick_asset_3y(intermed_results):
-    return reason(
+    deliver reason(
 f'Calculate `Quick Assets` as at past 3 annual fiscal period ends according to formula:
 
 `Quick Assets` = (
@@ -92,7 +92,7 @@ def calc_quick_asset_3y(args: FinQueryArgs) = [get_cash_and_equiv_3y, get_st_inv
 
 
 def _quick_ratio(intermed_results):
-    return reason(
+    deliver reason(
 f'Calculate `Quick Ratio` according to formula:
 
 `Quick Ratio` = `Quick Assets` / `(Total) Current Liabilities`
@@ -108,7 +108,7 @@ def calc_quick_ratio(args: FinQueryArgs) = [calc_quick_asset, get_curr_liab] | _
 
 
 def _quick_ratio_assessment(quick_ratio):
-    return reason(
+    deliver reason(
 f'Assess liquidity health of through its `Quick Ratio` of {quick_ratio}:
 - if `Quick Ratio` >= 1, then liquidity is healthy
 - otherwise, liquidity is not very healthy')
@@ -117,7 +117,7 @@ def assess_quick_ratio(args: FinQueryArgs) = calc_quick_ratio | _quick_ratio_ass
 
 
 def _net_work_cap(intermed_results):
-    return reason(
+    deliver reason(
 f'Calculate `(Net) Working Capital` according to formula:
 
 `(Net) Working Capital` = `(Total) Current Assets` - `(Total) Current Liabilities`
@@ -133,7 +133,7 @@ def calc_net_work_cap(args: FinQueryArgs) = [get_curr_asset, get_curr_liab] | _n
 
 
 def _work_cap_ratio(intermed_results):
-    return reason(
+    deliver reason(
 f'Calculate `(Net) Working Capital Ratio` according to formula:
 
 `(Net) Working Capital Ratio` = `(Total) Current Assets` / `(Total) Current Liabilities`
@@ -149,7 +149,7 @@ def calc_work_cap_ratio(args: FinQueryArgs) = [get_curr_asset, get_curr_liab] | 
 
 
 def _op_cf_ratio(intermed_results):
-    return reason(
+    deliver reason(
 f'Calculate `(Net) Cash Flows from Operations Ratio` according to formula:
 
 `(Net) Cash Flows from Operations Ratio` = (
@@ -168,7 +168,7 @@ def calc_op_cf_ratio(args: FinQueryArgs) = [get_op_cf, get_curr_liab] | _op_cf_r
 
 
 def _fcf(intermed_results):
-    return reason(
+    deliver reason(
 f'Calculate `Free Cash Flow, a.k.a. FCF` according to formula:
 
 `Free Cash Flow, a.k.a. FCF` = (
@@ -188,7 +188,7 @@ def calc_fcf(args: FinQueryArgs) = [get_op_cf, get_capex] | _fcf
 
 
 def _fcf_conv_ratio(intermed_results):
-    return reason(
+    deliver reason(
 f'Calculate `Free Cash Flow Conversion Ratio` according to formula:
 
 `Free Cash Flow Conversion Ratio` = (
@@ -207,7 +207,7 @@ def calc_fcf_conv_ratio(args: FinQueryArgs) = [calc_fcf, get_net_income] | _fcf_
 
 
 def _dio(intermed_results):
-    return reason(
+    deliver reason(
 f'Calculate `Days Inventory Outstanding, a.k.a. DIO` according to formula:
 
 `Days Inventory Outstanding, a.k.a. DIO` = (
@@ -226,7 +226,7 @@ def calc_dio(args: FinQueryArgs) = [get_inventory_2y, get_cogs] | _dio
 
 
 def _dso(intermed_results):
-    return reason(
+    deliver reason(
 f'Calculate `Days Sales Outstanding, a.k.a. DSO` according to formula:
 
 `Days Sales Outstanding, a.k.a. DSO` = (
@@ -245,7 +245,7 @@ def calc_dso(args: FinQueryArgs) = [get_recvable_2y, get_rev] | _dso
 
 
 def _dpo(intermed_results):
-    return reason(
+    deliver reason(
 f'Calculate `Days Payable Outstanding, a.k.a. DPO` according to formula:
 
 `Days Payable Outstanding, a.k.a. DPO` = (
@@ -265,7 +265,7 @@ def calc_dpo(args: FinQueryArgs) = [get_payable_2y, get_cogs, get_inventory_2y] 
 
 
 def _ccc(intermed_results):
-    return reason(
+    deliver reason(
 f'Calculate `Cash Conversion Cycle, a.k.a. CCC` according to formula:
 
 `Cash Conversion Cycle, a.k.a. CCC` = (
