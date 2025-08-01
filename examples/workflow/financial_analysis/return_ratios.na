@@ -27,6 +27,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_roa_ratio(args: FinQueryArgs) = [get_net_income, get_total_asset_2y] | _roa_ratio
@@ -47,6 +49,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_roe_ratio(args: FinQueryArgs) = [get_net_income, get_equity_2y] | _roe_ratio

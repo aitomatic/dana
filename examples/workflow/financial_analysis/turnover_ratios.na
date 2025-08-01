@@ -30,6 +30,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_total_asset_turnover_ratio(args: FinQueryArgs) = [get_rev, get_total_asset_2y] | _total_asset_turnover_ratio
@@ -50,6 +52,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_fixed_asset_turnover_ratio(args: FinQueryArgs) = [get_rev, get_fixed_asset_2y] | _fixed_asset_turnover_ratio
@@ -70,6 +74,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_inventory_turnover_ratio(args: FinQueryArgs) = [get_cogs, get_inventory_2y] | _inventory_turnover_ratio

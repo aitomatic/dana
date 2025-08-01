@@ -46,6 +46,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_quick_asset(args: FinQueryArgs) = [get_cash_and_equiv, get_st_inv, get_recvable] | _quick_asset
@@ -66,6 +68,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_quick_asset_2y(args: FinQueryArgs) = [get_cash_and_equiv_2y, get_st_inv_2y, get_recvable_2y] | _quick_asset_2y
@@ -86,6 +90,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_quick_asset_3y(args: FinQueryArgs) = [get_cash_and_equiv_3y, get_st_inv_3y, get_recvable_3y] | _quick_asset_3y
@@ -102,6 +108,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_quick_ratio(args: FinQueryArgs) = [calc_quick_asset, get_curr_liab] | _quick_ratio
@@ -127,6 +135,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_net_work_cap(args: FinQueryArgs) = [get_curr_asset, get_curr_liab] | _net_work_cap
@@ -143,6 +153,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_work_cap_ratio(args: FinQueryArgs) = [get_curr_asset, get_curr_liab] | _work_cap_ratio
@@ -162,6 +174,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_op_cf_ratio(args: FinQueryArgs) = [get_op_cf, get_curr_liab] | _op_cf_ratio
@@ -182,6 +196,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_fcf(args: FinQueryArgs) = [get_op_cf, get_capex] | _fcf
@@ -201,6 +217,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_fcf_conv_ratio(args: FinQueryArgs) = [calc_fcf, get_net_income] | _fcf_conv_ratio
@@ -220,6 +238,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_dio(args: FinQueryArgs) = [get_inventory_2y, get_cogs] | _dio
@@ -239,6 +259,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_dso(args: FinQueryArgs) = [get_recvable_2y, get_rev] | _dso
@@ -259,6 +281,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_dpo(args: FinQueryArgs) = [get_payable_2y, get_cogs, get_inventory_2y] | _dpo
@@ -279,6 +303,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_ccc(args: FinQueryArgs) = [calc_dio, calc_dso, calc_dpo] | _ccc

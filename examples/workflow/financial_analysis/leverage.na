@@ -28,6 +28,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_total_debt(args: FinQueryArgs) = [get_lt_debt, get_st_debt] | _total_debt
@@ -48,6 +50,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_total_debt_2y(args: FinQueryArgs) = [get_lt_debt_2y, get_st_debt_2y] | _total_debt_2y
@@ -68,6 +72,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_total_debt_3y(args: FinQueryArgs) = [get_lt_debt_3y, get_st_debt_3y] | _total_debt_3y
@@ -84,6 +90,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_de_ratio(args: FinQueryArgs) = [calc_total_debt, get_equity] | _de_ratio
