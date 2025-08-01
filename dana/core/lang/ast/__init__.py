@@ -652,6 +652,14 @@ class ReturnStatement:
 
 
 @dataclass
+class DeliverStatement:
+    """Deliver statement for eager execution."""
+
+    value: Expression | None = None
+    location: Location | None = None
+
+
+@dataclass
 class RaiseStatement:
     """Raise statement."""
 

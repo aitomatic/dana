@@ -1,0 +1,26 @@
+# Test to debug string parsing issue
+# Copyright © 2025 Aitomatic, Inc.
+
+def create_calculator():
+    return {"add": lambda x, y :: x + y, "multiply": lambda x, y :: x * y}
+
+def lazy_calculator():
+    return create_calculator()
+
+def test_simple_function_call():
+    calc = create_calculator()
+    
+    # Test direct function call
+    result = calc["add"](3, 4)
+    assert result == 7
+    
+    print("✓ Direct function call working")
+
+def test_lazy_function_call():
+    lazy_calc = lazy_calculator()
+    
+    # Test lazy function call
+    result = lazy_calc["add"](3, 4)
+    assert result == 7
+    
+    print("✓ Lazy function call working") 

@@ -274,6 +274,7 @@ local:origin = create_origin()
         origin = result.final_context.get("local:origin")
         assert origin is not None
 
+        # Promises are automatically resolved by default
         assert isinstance(origin, StructInstance)
         assert origin.struct_type.name == "Point"
         assert origin.get_field("x") == 0

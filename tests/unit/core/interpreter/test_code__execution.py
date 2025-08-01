@@ -421,7 +421,7 @@ system:z = 3
     parent_context.set("private:parent_var", "parent_value")
 
     # Create a child context that inherits from the parent
-    child_context = SandboxContext(parent=parent_context)
+    child_context = parent_context.create_child_context()
 
     # Execute in the child context
     interpreter = DanaInterpreter()

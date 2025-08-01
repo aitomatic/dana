@@ -1,7 +1,7 @@
 """Real provider switching tests using actual API keys.
 
 These tests are excluded from normal pytest runs but verify real functionality.
-Run with: pytest -m real_api tests/dana/integration/test_real_provider_switching.py
+Run with: pytest -m live tests/dana/integration/test_real_provider_switching.py
 """
 
 import os
@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from dana.core.lang.dana_sandbox import DanaSandbox
 
 
-@pytest.mark.real_api
+@pytest.mark.live
 class TestRealProviderSwitching:
     """Test real provider switching with actual API calls."""
 
@@ -49,6 +49,7 @@ class TestRealProviderSwitching:
         if hasattr(self, "sandbox"):
             self.sandbox._cleanup()
 
+    @pytest.mark.live
     def test_real_openai_call(self):
         """Test actual OpenAI API call."""
         print("\n🧪 Testing real OpenAI API call...")
@@ -71,6 +72,7 @@ class TestRealProviderSwitching:
 
         assert result.success, f"OpenAI API call failed: {result.error}"
 
+    @pytest.mark.live
     def test_real_anthropic_call(self):
         """Test actual Anthropic API call."""
         print("\n🧪 Testing real Anthropic API call...")
@@ -93,6 +95,7 @@ class TestRealProviderSwitching:
 
         assert result.success, f"Anthropic API call failed: {result.error}"
 
+    @pytest.mark.live
     def test_real_provider_switching_sequence(self):
         """Test switching between real providers in sequence."""
         print("\n🧪 Testing real provider switching sequence...")
@@ -134,6 +137,7 @@ class TestRealProviderSwitching:
 
         print("   🎉 All provider switches successful!")
 
+    @pytest.mark.live
     def test_real_rapid_switching(self):
         """Test rapid switching between providers to catch any state issues."""
         print("\n🧪 Testing rapid provider switching...")
@@ -166,6 +170,7 @@ class TestRealProviderSwitching:
 
         print("   🎉 Rapid switching successful!")
 
+    @pytest.mark.live
     def test_real_system_message_handling(self):
         """Test system message handling across providers."""
         print("\n🧪 Testing system message handling...")
@@ -192,6 +197,7 @@ class TestRealProviderSwitching:
 
         print("   🎉 System message handling works!")
 
+    @pytest.mark.live
     def test_real_error_recovery(self):
         """Test error recovery with real providers."""
         print("\n🧪 Testing error recovery...")
@@ -230,4 +236,4 @@ if __name__ == "__main__":
     print("🚀 Running real API provider tests...")
     print("📝 Note: These tests make actual API calls and will consume credits")
 
-    pytest.main(["-v", "-m", "real_api", __file__])
+    pytest.main(["-v", "-m", "live", __file__])

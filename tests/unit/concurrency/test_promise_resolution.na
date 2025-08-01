@@ -1,0 +1,31 @@
+# Test Promise resolution
+# Copyright © 2025 Aitomatic, Inc.
+
+def lazy_value():
+    return "Hello, World!"
+
+def lazy_number():
+    return 42
+
+def test_promise_resolution():
+    promise = lazy_value()
+    
+    # Test that the Promise is resolved when accessed
+    assert str(promise) == "Hello, World!"
+    assert len(promise) == 13
+    
+    print("✓ Promise resolution working correctly")
+
+def test_promise_arithmetic():
+    promise = lazy_number()
+    
+    # Test arithmetic operations
+    assert promise + 8 == 50
+    assert promise * 2 == 84
+    assert promise / 2 == 21
+    
+    print("✓ Promise arithmetic working correctly")
+
+# Run the tests
+test_promise_resolution()
+test_promise_arithmetic()

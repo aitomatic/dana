@@ -9,12 +9,15 @@ After fix: Test should work correctly
 
 import os
 
+import pytest
+
 from dana.core.lang.dana_sandbox import DanaSandbox
 
 
 class TestAnthropicProxiesError:
     """Test that reproduces the 'proxies' error with Anthropic model."""
 
+    @pytest.mark.live
     def test_reproduce_anthropic_proxies_error(self):
         """Reproduce the exact 'proxies' error from the user's report."""
         # Set up Anthropic API key for testing
@@ -47,6 +50,7 @@ class TestAnthropicProxiesError:
             if "ANTHROPIC_API_KEY" in os.environ:
                 del os.environ["ANTHROPIC_API_KEY"]
 
+    @pytest.mark.live
     def test_reproduce_proxies_error_no_mock(self):
         """Try to reproduce the proxies error with mocking explicitly disabled."""
         # Explicitly disable mocking

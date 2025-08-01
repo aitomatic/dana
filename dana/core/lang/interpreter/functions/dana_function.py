@@ -9,7 +9,7 @@ from typing import Any
 
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.interpreter.executor.control_flow.exceptions import ReturnException
+from dana.core.lang.interpreter.executor.control_flow.exceptions import DeliverException, ReturnException
 from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
 from dana.core.lang.sandbox_context import SandboxContext
 
@@ -68,7 +68,8 @@ class DanaFunction(SandboxFunction, Loggable):
         # If context is not a SandboxContext, assume it's a positional argument
         if not isinstance(context, SandboxContext):
             args = [context] + args
-            context = self.context.copy() if self.context else SandboxContext()
+            # Use the current context at call time, not an empty context
+            context = SandboxContext() if self.context is None else self.context.copy()
 
         # Start with the function's original module context (for access to module's public/private variables)
         if self.context is not None:
@@ -78,7 +79,7 @@ class DanaFunction(SandboxFunction, Loggable):
                 if hasattr(context, "_interpreter") and context._interpreter is not None:
                     prepared_context._interpreter = context._interpreter
         else:
-            # Fallback to current context if no module context available
+            # Always use the current context at call time if no module context available
             prepared_context = context.copy()
 
         # Store original local scope so we can restore it later
@@ -167,11 +168,14 @@ class DanaFunction(SandboxFunction, Loggable):
                         # Update result with the statement's value if it's not None
                         if stmt_result is not None:
                             result = stmt_result
-                        self.debug(f"statement {i}: {statement}, result: {stmt_result}")
+                        self.debug(f"statement {i}: {statement}, result type: {type(stmt_result).__name__}")
                     else:
                         raise RuntimeError("No interpreter available in context")
                 except ReturnException as e:
                     # Return statement was encountered - return its value
+                    return e.value
+                except DeliverException as e:
+                    # Deliver statement was encountered - return its value (eager execution)
                     return e.value
                 except Exception as e:
                     # Wrap in SandboxError with location information
@@ -181,6 +185,7 @@ class DanaFunction(SandboxFunction, Loggable):
                     raise SandboxError(error_msg) from e
 
             # Return the last non-None result
+            # Don't resolve Promises here - let the caller decide when to resolve
             return result
 
         except Exception as e:

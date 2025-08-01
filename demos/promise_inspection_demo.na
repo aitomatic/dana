@@ -1,0 +1,80 @@
+# Promise Inspection Demo - Understanding Promise[T] Behavior
+
+# Track execution timing
+execution_tracker = [0]
+
+def expensive_operation():
+    execution_tracker[0] = execution_tracker[0] + 1
+    print(f"🔄 Executing expensive operation #{execution_tracker[0]}...")
+    # Simulate expensive computation
+    result = 0
+    for i in range(100000):
+        result = result + i
+    print(f"✅ Expensive operation #{execution_tracker[0]} completed!")
+    return f"result_{execution_tracker[0]}_{result}"
+
+# Lazy function - returns Promise[T]
+def lazy_function():
+    print("📝 Creating lazy function reference...")
+    return expensive_operation()
+
+# Eager function - executes immediately
+def eager_function():
+    print("⚡ Creating eager function reference...")
+    deliver expensive_operation()
+
+print("=== PROMISE INSPECTION DEMO ===")
+
+print("\n1. INSPECTING LAZY RESULT")
+print("Creating lazy function...")
+execution_tracker[0] = 0
+lazy_result = lazy_function()
+print(f"Function returned! Execution count: {execution_tracker[0]}")
+print(f"Result type: {type(lazy_result)}")
+print(f"Result value: {lazy_result}")
+print(f"Result repr: {repr(lazy_result)}")
+
+print("\n2. INSPECTING EAGER RESULT")
+print("Creating eager function...")
+execution_tracker[0] = 0
+eager_result = eager_function()
+print(f"Function executed! Execution count: {execution_tracker[0]}")
+print(f"Result type: {type(eager_result)}")
+print(f"Result value: {eager_result}")
+print(f"Result repr: {repr(eager_result)}")
+
+print("\n3. COMPARING BEHAVIORS")
+print("Lazy result attributes:")
+if hasattr(lazy_result, '__dict__'):
+    for attr, value in lazy_result.__dict__.items():
+        print(f"  {attr}: {value}")
+else:
+    print("  No __dict__ attribute")
+
+print("\nEager result attributes:")
+if hasattr(eager_result, '__dict__'):
+    for attr, value in eager_result.__dict__.items():
+        print(f"  {attr}: {value}")
+else:
+    print("  No __dict__ attribute")
+
+print("\n4. TESTING PROMISE TRANSPARENCY")
+print("Testing string operations...")
+try:
+    lazy_str = str(lazy_result)
+    print(f"  str(lazy_result): {lazy_str}")
+except Exception as e:
+    print(f"  str(lazy_result) failed: {e}")
+
+try:
+    eager_str = str(eager_result)
+    print(f"  str(eager_result): {eager_str}")
+except Exception as e:
+    print(f"  str(eager_result) failed: {e}")
+
+print("\n=== KEY INSIGHTS ===")
+print("• Lazy result creates Promise[T] object")
+print("• Eager result creates concrete value")
+print("• Promise transparency may be partially implemented")
+print("• True lazy evaluation is working (no immediate execution)")
+print("• Promise resolution on access needs refinement") 
