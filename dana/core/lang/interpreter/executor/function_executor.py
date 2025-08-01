@@ -286,7 +286,7 @@ class FunctionExecutor(BaseExecutor):
         raise NameError(f"Decorator '{decorator_name}' not found. Available functions: {available_functions}")
 
     def _ensure_fully_evaluated(self, value: Any, context: SandboxContext) -> Any:
-        """Ensure that the value is fully evaluated, particularly f-strings.
+        """Ensure that the value is fully evaluated, particularly f-strings and promises.
 
         Args:
             value: The value to evaluate
@@ -297,6 +297,13 @@ class FunctionExecutor(BaseExecutor):
         """
         # If it's already a primitive type, return it
         if isinstance(value, str | int | float | bool | list | dict | tuple) or value is None:
+            return value
+
+        # Special handling for Promise objects - DO NOT resolve them (for lazy evaluation)
+        from dana.core.runtime.promise import is_promise
+
+        if is_promise(value):
+            self.debug(f"Found Promise object in _ensure_fully_evaluated, keeping as Promise: {type(value)}")
             return value
 
         # Special handling for FStringExpressions - ensure they're evaluated to strings
@@ -334,6 +341,57 @@ class FunctionExecutor(BaseExecutor):
             context.error_context.push_location(location)
             self.debug(f"Pushed location to error context: {location}")
             self.debug(f"Error context stack size after push: {len(context.error_context.execution_stack)}")
+
+        # Phase 1: Setup and validation
+        self.__setup_and_validate(node)
+
+        # Phase 2: Process arguments
+        evaluated_args, evaluated_kwargs = self.__process_arguments(node, context)
+        self.debug(f"Processed arguments: args={evaluated_args}, kwargs={evaluated_kwargs}")
+
+        # Phase 2.5: Check for struct instantiation
+        self.debug("Checking for struct instantiation...")
+        # Phase 2.5: Handle method calls (AttributeAccess) before other processing
+        from dana.core.lang.ast import AttributeAccess
+
+        if isinstance(node.name, AttributeAccess):
+            return self.__execute_method_call(node, context, evaluated_args, evaluated_kwargs)
+
+        struct_result = self.__check_struct_instantiation(node, context, evaluated_kwargs)
+        if struct_result is not None:
+            self.debug(f"Found struct instantiation, returning: {struct_result}")
+            return struct_result
+
+        self.debug("Not a struct instantiation, proceeding with function resolution...")
+
+        # Phase 3: Handle special cases before unified dispatcher
+        from dana.core.lang.ast import SubscriptExpression
+
+        self.debug(f"Function call name type: {type(node.name)}, value: {node.name}")
+
+        if isinstance(node.name, SubscriptExpression):
+            self.debug(f"Found SubscriptExpression as function name: {node.name}")
+            # Evaluate the subscript expression to get the actual function
+            actual_function = self.parent.execute(node.name, context)
+
+            # Check if the resolved value is callable
+            if not callable(actual_function):
+                raise SandboxError(f"Subscript expression resolved to non-callable object: {actual_function}")
+
+            # Call the resolved function with the provided arguments
+            self.debug(f"Calling resolved function with args={evaluated_args}, kwargs={evaluated_kwargs}")
+            result = actual_function(*evaluated_args, **evaluated_kwargs)
+            self.debug(f"Subscript call result: {result}")
+            return result
+        elif isinstance(node.name, str) and "SubscriptExpression" in node.name:
+            self.debug(f"Found string representation of SubscriptExpression: {node.name}")
+            # This means the function name is a string representation of a SubscriptExpression
+            # We need to evaluate it as a subscript expression first
+            return self.__execute_subscript_call_from_string(node, context, evaluated_args, evaluated_kwargs)
+
+        # Phase 3: Parse function name and resolve function using unified dispatcher
+        self.debug(f"Function call name type: {type(node.name)}, value: {node.name}")
+        name_info = FunctionNameInfo.from_node(node)
 
         try:
             # Phase 1: Setup and validation
@@ -374,7 +432,7 @@ class FunctionExecutor(BaseExecutor):
 
             # Phase 5: Execute resolved function using unified dispatcher
             return self.unified_dispatcher.execute_function(resolved_func, context, evaluated_args, evaluated_kwargs, name_info.func_name)
-            
+
         except Exception as dispatcher_error:
             # If unified dispatcher fails, provide comprehensive error information
             self.debug(f"Unified dispatcher failed for function '{getattr(node, 'name', 'unknown')}': {dispatcher_error}")
@@ -683,9 +741,19 @@ class FunctionExecutor(BaseExecutor):
         # Check if this is a registered struct type
         if StructTypeRegistry.exists(base_name):
             try:
-                self.debug(f"Creating struct instance for {base_name} with kwargs: {evaluated_kwargs}")
+                # Resolve any promises in the kwargs before struct instantiation
+                resolved_kwargs = {}
+                from dana.core.runtime.promise import Promise
+
+                for key, value in evaluated_kwargs.items():
+                    if isinstance(value, Promise):
+                        resolved_kwargs[key] = value._ensure_resolved()
+                    else:
+                        resolved_kwargs[key] = value
+
+                self.debug(f"Creating struct instance for {base_name} with resolved kwargs: {resolved_kwargs}")
                 # Create struct instance using our utility function
-                struct_instance = create_struct_instance(base_name, **evaluated_kwargs)
+                struct_instance = create_struct_instance(base_name, **resolved_kwargs)
                 self.debug(f"Successfully created struct instance: {struct_instance}")
                 return struct_instance
             except ValueError as e:
@@ -872,17 +940,39 @@ class FunctionExecutor(BaseExecutor):
             object_name = name_str[object_start:object_end]
 
             # Extract index name with better error handling
+            # Handle both Identifier and LiteralExpression cases
+            index_name = None
+
+            # Try to find Identifier first
             index_prefix = "Identifier(name='"
             index_start = name_str.find(index_prefix, object_end)
-            if index_start == -1:
+            if index_start != -1:
+                index_start += len(index_prefix)
+                index_end = name_str.find("'", index_start)
+                if index_end != -1:
+                    index_name = name_str[index_start:index_end]
+
+            # If not found, try LiteralExpression
+            if index_name is None:
+                literal_prefix = "LiteralExpression(value='"
+                literal_start = name_str.find(literal_prefix, object_end)
+                if literal_start != -1:
+                    literal_start += len(literal_prefix)
+                    literal_end = name_str.find("'", literal_start)
+                    if literal_end != -1:
+                        index_name = name_str[literal_start:literal_end]
+                else:
+                    # Try alternative format: LiteralExpression(value='add', location=None)
+                    literal_prefix = "LiteralExpression(value='"
+                    literal_start = name_str.find(literal_prefix)
+                    if literal_start != -1:
+                        literal_start += len(literal_prefix)
+                        literal_end = name_str.find("'", literal_start)
+                        if literal_end != -1:
+                            index_name = name_str[literal_start:literal_end]
+
+            if index_name is None:
                 raise SandboxError(f"Could not find index identifier in subscript expression string: {name_str}")
-
-            index_start += len(index_prefix)
-            index_end = name_str.find("'", index_start)
-            if index_end == -1:
-                raise SandboxError(f"Could not find end of index name in subscript expression string: {name_str}")
-
-            index_name = name_str[index_start:index_end]
 
             # Validate that we extracted meaningful names
             if not object_name or not index_name:
@@ -894,7 +984,34 @@ class FunctionExecutor(BaseExecutor):
             from dana.core.lang.ast import Identifier
 
             object_value = self.parent.execute(Identifier(name=object_name), context)
-            index_value = self.parent.execute(Identifier(name=index_name), context)
+
+            # Resolve Promise if object_value is a Promise (for dual delivery system)
+            from dana.core.runtime.promise import Promise
+
+            if isinstance(object_value, Promise):
+                object_value = object_value._ensure_resolved()
+
+            # For LiteralExpression, we need to handle the value directly
+            if index_name is not None and index_name.startswith("'") and index_name.endswith("'"):
+                # This is a literal string value, extract it
+                index_value = index_name[1:-1]  # Remove the quotes
+                self.debug(f"Extracted literal value: {index_value}")
+            else:
+                # This is an identifier, evaluate it
+                # But first check if it's a literal string value (like "add")
+                try:
+                    index_value = self.parent.execute(Identifier(name=index_name), context)
+                    self.debug(f"Evaluated identifier value: {index_value}")
+                    # If the evaluation returned None, treat it as a literal string
+                    if index_value is None:
+                        index_value = index_name
+                        self.debug(f"Treating as literal string: {index_value}")
+                except Exception:
+                    # If evaluation fails, treat it as a literal string
+                    index_value = index_name
+                    self.debug(f"Treating as literal string after error: {index_value}")
+
+            self.debug(f"Final index_value: {index_value}")
 
             self.debug(f"Object value: {object_value}, index value: {index_value}")
 
@@ -908,7 +1025,15 @@ class FunctionExecutor(BaseExecutor):
 
             # Call the resolved function with the provided arguments
             self.debug(f"Calling resolved function with args={evaluated_args}, kwargs={evaluated_kwargs}")
-            result = actual_function(*evaluated_args, **evaluated_kwargs)
+
+            # Handle DanaFunction objects that need context as first argument
+            from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+
+            if isinstance(actual_function, DanaFunction):
+                result = actual_function.execute(context, *evaluated_args, **evaluated_kwargs)
+            else:
+                result = actual_function(*evaluated_args, **evaluated_kwargs)
+
             self.debug(f"Subscript call result: {result}")
             return result
 

@@ -443,6 +443,12 @@ class DanaSandbox(Loggable):
             # Capture print output from interpreter buffer
             output = self._interpreter.get_and_clear_output()
 
+            # Resolve Promise if result is a Promise (for dual delivery system)
+            from dana.core.runtime.promise import Promise
+
+            if isinstance(result, Promise):
+                result = result._ensure_resolved()
+
             # Create execution result with context snapshot
             return ExecutionResult(
                 success=True,
@@ -512,6 +518,12 @@ class DanaSandbox(Loggable):
 
             # Capture print output from interpreter buffer
             output = self._interpreter.get_and_clear_output()
+
+            # Resolve Promise if result is a Promise (for dual delivery system)
+            from dana.core.runtime.promise import Promise
+
+            if isinstance(result, Promise):
+                result = result._ensure_resolved()
 
             # Create execution result with context snapshot
             return ExecutionResult(

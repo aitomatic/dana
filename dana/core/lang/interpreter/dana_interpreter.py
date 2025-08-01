@@ -183,6 +183,12 @@ class DanaInterpreter(Loggable):
         finally:
             # Restore original interpreter reference
             context._interpreter = original_interpreter
+
+        # Resolve Promise if result is a Promise (for dual delivery system)
+        from dana.core.runtime.promise import Promise
+
+        if isinstance(result, Promise):
+            return result._ensure_resolved()
         return result
 
     # ============================================================================
@@ -212,7 +218,12 @@ class DanaInterpreter(Loggable):
             The result of executing the program
         """
         # Route through new _execute method for convergent code path
-        return self._execute(program, context)
+        result = self._execute(program, context)
+        from dana.core.runtime.promise import Promise
+
+        if isinstance(result, Promise):
+            return result._ensure_resolved()
+        return result
 
     def execute_statement(self, statement: Any, context: SandboxContext) -> Any:
         """Execute a single statement.
@@ -338,7 +349,7 @@ class DanaInterpreter(Loggable):
 
         def dana_function(*args, **kwargs):
             # Create new context for function execution
-            function_context = SandboxContext(parent=context)
+            function_context = context.create_child_context()
             # Bind parameters to arguments
             self._bind_function_parameters(func_def.parameters, args, kwargs, function_context)
 

@@ -270,7 +270,7 @@ context = SandboxContext()
 manager = ContextManager(context)
 
 # Create child context
-child_context = SandboxContext(parent=context)
+child_context = context.create_child_context()
 ```
 
 ### Variable Operations
