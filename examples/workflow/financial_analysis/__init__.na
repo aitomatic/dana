@@ -181,7 +181,7 @@ from .income_util_ratios import calc_eff_tax_rate
 from .income_util_ratios import calc_div_payout_ratio
 from .income_util_ratios import calc_retention_ratio
 
-from .utils import CompanyAndPeriodAndCurrency
+from .utils import FinQueryArgs
 
 
 __all__ = [
@@ -289,5 +289,5 @@ __all__ = [
     'calc_div_payout_ratio',
     'calc_retention_ratio',
 
-    'CompanyAndPeriodAndCurrency',
+    'FinQueryArgs',
 ]

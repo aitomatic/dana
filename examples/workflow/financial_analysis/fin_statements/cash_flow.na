@@ -1,7 +1,7 @@
 """Cash Flow Statement Items."""
 
 
-from ..utils import query_fin_data, CompanyAndPeriodAndCurrency, CurrAndPrevNums
+from ..utils import query_fin_data, FinQueryArgs, CurrAndPrevNums
 
 
 __all__ = [
@@ -30,7 +30,7 @@ DnA_LINE_ITEM: str = 'Depreciation & Amortization, a.k.a. D&A (of Fixed Assets o
 DIV_LINE_ITEM: str = 'Cash Dividends'
 
 
-def get_op_cf(args: CompanyAndPeriodAndCurrency) -> float:
+def get_op_cf(args: FinQueryArgs) -> float:
     """Get Operating Cash Flow from Cash Flow Statement."""
 
     return query_fin_data(args,
@@ -38,7 +38,7 @@ def get_op_cf(args: CompanyAndPeriodAndCurrency) -> float:
                           statement=CF_STATEMENT)
 
 
-def get_op_cf_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+def get_op_cf_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     """Get 2 years of Operating Cash Flow from Cash Flow Statement."""
 
     return query_fin_data(args,
@@ -47,7 +47,7 @@ def get_op_cf_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
                           n_years=2)
 
 
-def get_op_cf_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+def get_op_cf_3y(args: FinQueryArgs) -> tuple[float]:
     """Get 3 years of Operating Cash Flow from Cash Flow Statement."""
 
     return query_fin_data(args,
@@ -56,7 +56,7 @@ def get_op_cf_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
                           n_years=3)
 
 
-def get_capex(args: CompanyAndPeriodAndCurrency) -> float:
+def get_capex(args: FinQueryArgs) -> float:
     """Get Capital Expenditure(s) from Cash Flow Statement."""
 
     return query_fin_data(args,
@@ -64,7 +64,7 @@ def get_capex(args: CompanyAndPeriodAndCurrency) -> float:
                           statement=CF_STATEMENT)
 
 
-def get_capex_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+def get_capex_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     """Get 2 years of Capital Expenditure(s) from Cash Flow Statement."""
 
     return query_fin_data(args,
@@ -73,7 +73,7 @@ def get_capex_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
                           n_years=2)
 
 
-def get_capex_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+def get_capex_3y(args: FinQueryArgs) -> tuple[float]:
     """Get 3 years of Capital Expenditure(s) from Cash Flow Statement."""
 
     return query_fin_data(args,
@@ -82,7 +82,7 @@ def get_capex_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
                           n_years=3)
 
 
-def get_deprec_and_amort(args: CompanyAndPeriodAndCurrency) -> float:
+def get_deprec_and_amort(args: FinQueryArgs) -> float:
     """Get Depreciation & Amortization from Cash Flow Statement."""
 
     return query_fin_data(args,
@@ -90,7 +90,7 @@ def get_deprec_and_amort(args: CompanyAndPeriodAndCurrency) -> float:
                           statement=CF_STATEMENT)
 
 
-def get_deprec_and_amort_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+def get_deprec_and_amort_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     """Get 2 years of Depreciation & Amortization from Cash Flow Statement."""
 
     return query_fin_data(args,
@@ -99,7 +99,7 @@ def get_deprec_and_amort_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNum
                           n_years=2)
 
 
-def get_deprec_and_amort_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+def get_deprec_and_amort_3y(args: FinQueryArgs) -> tuple[float]:
     """Get 3 years of Depreciation & Amortization from Cash Flow Statement."""
 
     return query_fin_data(args,
@@ -108,7 +108,7 @@ def get_deprec_and_amort_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
                           n_years=3)
 
 
-def get_div(args: CompanyAndPeriodAndCurrency) -> float:
+def get_div(args: FinQueryArgs) -> float:
     """Get Dividend from Cash Flow Statement."""
 
     return query_fin_data(args,
@@ -116,7 +116,7 @@ def get_div(args: CompanyAndPeriodAndCurrency) -> float:
                           statement=CF_STATEMENT)
 
 
-def get_div_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
+def get_div_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     """Get 2 years of Dividend from Cash Flow Statement."""
 
     return query_fin_data(args,
@@ -125,7 +125,7 @@ def get_div_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
                           n_years=2)
 
 
-def get_div_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
+def get_div_3y(args: FinQueryArgs) -> tuple[float]:
     """Get 3 years of Dividend from Cash Flow Statement."""
 
     return query_fin_data(args,

@@ -64,11 +64,11 @@ from .leverage import calc_de_ratio
 from .income_util_ratios import calc_int_cov_ratio, calc_eff_tax_rate
 from .income_util_ratios import calc_div_payout_ratio, calc_retention_ratio
 
-from .utils import CompanyAndPeriodAndCurrency
+from .utils import FinQueryArgs
 
 TEST_DOC_PATH: str = 'test-assets/AMD_2022_10K.pdf'
 
-TEST_ARGS = CompanyAndPeriodAndCurrency(company='AMD', period='2022')
+TEST_ARGS = FinQueryArgs(company='AMD', period='2022')
 
 WORKFLOWS_BY_ANALYSIS_AREA: dict[str, list[callable]] = {
     'statements_reading': [

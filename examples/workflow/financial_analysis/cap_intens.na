@@ -19,7 +19,7 @@ from .fin_statements import get_rev, get_rev_3y
 # )
 from .return_ratios import calc_roa_ratio
 
-from .utils import sum_over_sum, CompanyAndPeriodAndCurrency
+from .utils import sum_over_sum, FinQueryArgs
 
 
 __all__ = [

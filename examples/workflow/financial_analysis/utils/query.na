@@ -1,13 +1,13 @@
 """Financial Data Query."""
 
 
-from .types import CompanyAndPeriodAndCurrency
+from .types import FinQueryArgs
 
 
 __all__ = ['query_fin_data']
 
 
-def query_fin_data(args: CompanyAndPeriodAndCurrency,
+def query_fin_data(args: FinQueryArgs,
                    line_item: str, statement: str,
                    as_at_period_end: bool = False,
                    n_years: int = 1) -> str:  # TODO: Literal[1, 2, 3]

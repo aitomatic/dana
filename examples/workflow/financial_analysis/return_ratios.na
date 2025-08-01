@@ -9,7 +9,7 @@
 # )
 from .fin_statements import get_total_asset_2y, get_equity_2y, get_net_income
 
-from .utils import over_avg_denom, CompanyAndPeriodAndCurrency
+from .utils import over_avg_denom, FinQueryArgs
 
 
 __all__ = [

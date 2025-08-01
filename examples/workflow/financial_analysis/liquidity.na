@@ -27,7 +27,7 @@ from .fin_statements import get_cash_and_equiv, get_cash_and_equiv_2y, get_cash_
 from .fin_statements import get_st_inv, get_st_inv_2y, get_st_inv_3y
 from .fin_statements import get_recvable, get_recvable_2y, get_recvable_3y
 
-from .utils import CompanyAndPeriodAndCurrency, CurrAndPrevNums
+from .utils import FinQueryArgs, CurrAndPrevNums
 
 
 __all__ = [

@@ -5,14 +5,14 @@ from typing.py import Optional
 
 
 __all__ = [
-    'CompanyAndPeriodAndCurrency',
+    'FinQueryArgs',
     'CurrAndPrevNums',
 ]
 
 
 # TODO: have doc_path outside of this struct, in outer context
-struct CompanyAndPeriodAndCurrency:
-    """Company, period, currency, and optional financial document path."""
+struct FinQueryArgs:
+    """Financial query arguments."""
 
     company: str
     period: str
