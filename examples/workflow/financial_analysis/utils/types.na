@@ -5,20 +5,20 @@ from typing.py import Optional
 
 
 __all__ = [
-    'FinQueryArgs',
+    'FinDoc',
     'CurrAndPrevNums',
 ]
 
 
-# TODO: have doc_path outside of this struct, in outer context
-struct FinQueryArgs:
+# TODO: have path outside of this struct, in outer context
+struct FinDoc:
     """Financial query arguments."""
 
     company: str
     period: str
     currency: str = 'dollars'
 
-    doc_path: Optional[str] = None
+    path: Optional[str] = None
 
 
 struct CurrAndPrevNums:

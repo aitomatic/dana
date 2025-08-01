@@ -64,11 +64,11 @@ from .leverage import calc_de_ratio
 from .income_util_ratios import calc_int_cov_ratio, calc_eff_tax_rate
 from .income_util_ratios import calc_div_payout_ratio, calc_retention_ratio
 
-from .utils import FinQueryArgs
+from .utils import FinDoc
 
-TEST_DOC_PATH: str = 'test-assets/AMD_2022_10K.pdf'
+TEST_path: str = 'test-assets/AMD_2022_10K.pdf'
 
-TEST_ARGS = FinQueryArgs(company='AMD', period='2022')
+TEST_ARGS = FinDoc(company='AMD', period='2022')
 
 WORKFLOWS_BY_ANALYSIS_AREA: dict[str, list[callable]] = {
     'statements_reading': [
@@ -165,7 +165,7 @@ WORKFLOWS_BY_ANALYSIS_AREA: dict[str, list[callable]] = {
 # ==============================
 def test_all_workflows():
     """Test all workflows for all analysis areas."""
-    with use('rag', sources=[TEST_DOC_PATH]) as test_docs:
+    with use('rag', sources=[TEST_path]) as test_docs:
         for area in WORKFLOWS_BY_ANALYSIS_AREA:
             workflows = WORKFLOWS_BY_ANALYSIS_AREA[area]
             print(f'=== Testing {area} ===')

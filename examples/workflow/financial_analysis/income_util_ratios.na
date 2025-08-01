@@ -5,7 +5,7 @@ from .fin_statements import get_ebit, get_int_exp
 from .fin_statements import get_ebt, get_tax_exp
 from .fin_statements import get_net_income, get_div
 
-from .utils import FinQueryArgs
+from .utils import FinDoc
 
 
 __all__ = [
@@ -34,7 +34,7 @@ and using the following intermediate results:
 State your result together with the supporting calculation(s).
 ')
 
-def calc_int_cov_ratio(args: FinQueryArgs) = [get_ebit, get_int_exp] | _int_cov_ratio
+def calc_int_cov_ratio(doc: FinDoc) = [get_ebit, get_int_exp] | _int_cov_ratio
 
 
 def _eff_tax_rate(intermed_results):
@@ -55,7 +55,7 @@ and using the following intermediate results:
 State your result together with the supporting calculation(s).
 ')
 
-def calc_eff_tax_rate(args: FinQueryArgs) = [get_tax_exp, get_ebt] | _eff_tax_rate
+def calc_eff_tax_rate(doc: FinDoc) = [get_tax_exp, get_ebt] | _eff_tax_rate
 
 
 def _div_payout_ratio(intermed_results):
@@ -76,7 +76,7 @@ and using the following intermediate results:
 State your result together with the supporting calculation(s).
 ')
 
-def calc_div_payout_ratio(args: FinQueryArgs) = [get_div, get_net_income] | _div_payout_ratio
+def calc_div_payout_ratio(doc: FinDoc) = [get_div, get_net_income] | _div_payout_ratio
 
 
 def _retention_ratio(intermed_results):
@@ -94,4 +94,4 @@ and using the following intermediate results:
 State your result together with the supporting calculation(s).
 ')
 
-def calc_retention_ratio(args: FinQueryArgs) = calc_div_payout_ratio | _retention_ratio
+def calc_retention_ratio(doc: FinDoc) = calc_div_payout_ratio | _retention_ratio

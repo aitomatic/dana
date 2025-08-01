@@ -7,7 +7,7 @@ from .fin_statements import get_rev, get_rev_3y
 
 from .return_ratios import calc_roa_ratio
 
-from .utils import FinQueryArgs
+from .utils import FinDoc
 
 
 __all__ = [
@@ -30,7 +30,7 @@ using the following intermediate results:
 State your result together with the supporting calculation(s).
 ')
 
-def calc_fixed_asset_over_total_asset(args: FinQueryArgs) = [get_fixed_asset, get_total_asset] | _fixed_asset_over_total_asset
+def calc_fixed_asset_over_total_asset(doc: FinDoc) = [get_fixed_asset, get_total_asset] | _fixed_asset_over_total_asset
 
 
 def _total_asset_over_rev(intermed_results):
@@ -45,7 +45,7 @@ as decimal value, using the following intermediate results:
 State your result together with the supporting calculation(s).
 ')
 
-def calc_total_asset_over_rev(args: FinQueryArgs) = [get_total_asset, get_rev] | _total_asset_over_rev
+def calc_total_asset_over_rev(doc: FinDoc) = [get_total_asset, get_rev] | _total_asset_over_rev
 
 
 def _capex_over_rev(intermed_results):
@@ -62,7 +62,7 @@ as percentage value, using the following intermediate results:
 State your result together with the supporting calculation(s).
 ')
 
-def calc_capex_over_rev(args: FinQueryArgs) = [get_capex, get_rev] | _capex_over_rev
+def calc_capex_over_rev(doc: FinDoc) = [get_capex, get_rev] | _capex_over_rev
 
 
 def _capex_over_rev_3y_avg(intermed_results):
@@ -80,7 +80,7 @@ as percentage value, using the sum-divided-by-sum method, and the following inte
 State your result together with the supporting calculation(s).
 ')
 
-def calc_capex_over_rev_3y_avg(args: FinQueryArgs) = [get_capex_3y, get_rev_3y] | _capex_over_rev_3y_avg_pct
+def calc_capex_over_rev_3y_avg(doc: FinDoc) = [get_capex_3y, get_rev_3y] | _capex_over_rev_3y_avg_pct
 
 
 def _cap_intens_assessment(intermed_results):
@@ -113,4 +113,4 @@ using the following intermediate results:
 State your result together with the supporting calculation(s).
 ')
 
-def assess_cap_intens(args: FinQueryArgs) = [calc_fixed_asset_over_total_asset, calc_total_asset_over_rev, calc_capex_over_rev, calc_roa_ratio] | _cap_intens_assessment
+def assess_cap_intens(doc: FinDoc) = [calc_fixed_asset_over_total_asset, calc_total_asset_over_rev, calc_capex_over_rev, calc_roa_ratio] | _cap_intens_assessment

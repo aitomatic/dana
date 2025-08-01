@@ -11,7 +11,7 @@ from .fin_statements import get_net_income, get_net_income_3y
 
 from .adj_income import calc_ebitda, calc_ebitda_3y
 
-from .utils import FinQueryArgs
+from .utils import FinDoc
 
 
 __all__ = [
@@ -50,7 +50,7 @@ as percentage value according to formula:
     `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
 )
 """
-def calc_cogs_margin(args: FinQueryArgs) = [get_rev, get_cogs] | calc_margin_ratio
+def calc_cogs_margin(doc: FinDoc) = [get_rev, get_cogs] | calc_margin_ratio
 
 
 """
@@ -59,7 +59,7 @@ by dividing sum of `(Total) Cost of Goods Sold, a.k.a. (Total) COGS, or (Total) 
 by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
 and return division result as percentage value
 """
-def calc_cogs_margin_3y_avg(args: FinQueryArgs) = [get_rev_3y, get_cogs_3y] | calc_avg_margin_ratio
+def calc_cogs_margin_3y_avg(doc: FinDoc) = [get_rev_3y, get_cogs_3y] | calc_avg_margin_ratio
 
 
 """
@@ -71,7 +71,7 @@ as percentage values according to formula:
     `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
 )
 """
-def calc_gross_margin(args: FinQueryArgs) = [get_rev, get_gross_income] | calc_margin_ratio
+def calc_gross_margin(doc: FinDoc) = [get_rev, get_gross_income] | calc_margin_ratio
 
 
 """
@@ -80,7 +80,7 @@ by dividing sum of `Gross Income, a.k.a. Gross Profit, or Gross Earnings (or Los
 by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
 and return division result as percentage value
 """
-def calc_gross_margin_3y_avg(args: FinQueryArgs) = [get_rev_3y, get_gross_income_3y] | calc_avg_margin_ratio
+def calc_gross_margin_3y_avg(doc: FinDoc) = [get_rev_3y, get_gross_income_3y] | calc_avg_margin_ratio
 
 
 """
@@ -92,7 +92,7 @@ as percentage value according to formula:
     / `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
 )
 """
-def calc_ebitda_margin(args: FinQueryArgs) = [get_rev, calc_ebitda] | calc_margin_ratio
+def calc_ebitda_margin(doc: FinDoc) = [get_rev, calc_ebitda] | calc_margin_ratio
 
 
 """
@@ -101,7 +101,7 @@ by dividing sum of `(Unadjusted) Earnings before Interest, Tax, Depreciation & A
 by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
 and return division result as percentage value
 """
-def calc_ebitda_margin_3y_avg(args: FinQueryArgs) = [get_rev_3y, calc_ebitda_3y] | calc_avg_margin_ratio
+def calc_ebitda_margin_3y_avg(doc: FinDoc) = [get_rev_3y, calc_ebitda_3y] | calc_avg_margin_ratio
 
 
 """
@@ -113,7 +113,7 @@ as percentage value according to formula:
     `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
 )
 """
-def calc_da_margin(args: FinQueryArgs) = [get_rev, get_deprec_and_amort] | calc_margin_ratio
+def calc_da_margin(doc: FinDoc) = [get_rev, get_deprec_and_amort] | calc_margin_ratio
 
 
 """
@@ -125,7 +125,7 @@ as percentage value according to formula:
     `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
 )
 """
-def calc_op_margin(args: FinQueryArgs) = [get_rev, get_op_income] | calc_margin_ratio
+def calc_op_margin(doc: FinDoc) = [get_rev, get_op_income] | calc_margin_ratio
 
 
 """
@@ -137,7 +137,7 @@ a.k.a. Operating Profit, or Operating Earnings (or Loss(es))`
 by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
 and return division result as percentage value
 """
-def calc_op_margin_3y_avg(args: FinQueryArgs) = [get_rev_3y, get_op_income_3y] | calc_avg_margin_ratio
+def calc_op_margin_3y_avg(doc: FinDoc) = [get_rev_3y, get_op_income_3y] | calc_avg_margin_ratio
 
 
 """
@@ -149,7 +149,7 @@ as percentage value according to formula:
     `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
 )
 """
-def calc_ebit_margin(args: FinQueryArgs) = [get_rev, get_ebit] | calc_margin_ratio
+def calc_ebit_margin(doc: FinDoc) = [get_rev, get_ebit] | calc_margin_ratio
 
 
 """
@@ -158,7 +158,7 @@ by dividing sum of `Earnings before Interest & Tax, a.k.a. EBIT`
 by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
 and return division result as percentage value
 """
-def calc_ebit_margin_3y_avg(args: FinQueryArgs) = [get_rev_3y, get_ebit_3y] | calc_avg_margin_ratio
+def calc_ebit_margin_3y_avg(doc: FinDoc) = [get_rev_3y, get_ebit_3y] | calc_avg_margin_ratio
 
 
 """
@@ -170,7 +170,7 @@ as percentage value according to formula:
     `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
 )
 """
-def calc_net_margin(args: FinQueryArgs) = [get_rev, get_net_income] | calc_margin_ratio
+def calc_net_margin(doc: FinDoc) = [get_rev, get_net_income] | calc_margin_ratio
 
 
 """
@@ -181,4 +181,4 @@ by dividing sum of `Net Income, a.k.a. Net Profit, or Net Earnings (or Loss(es))
 by sum of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`,
 and return division result as percentage value
 """
-def calc_net_margin_3y_avg(args: FinQueryArgs) = [get_rev_3y, get_net_income_3y] | calc_avg_margin_ratio
+def calc_net_margin_3y_avg(doc: FinDoc) = [get_rev_3y, get_net_income_3y] | calc_avg_margin_ratio
