@@ -1,14 +1,62 @@
 # Unit tests for Promise[T] transparency in all operations
 # Copyright © 2025 Aitomatic, Inc.
 
+# Global functions to avoid nested function scoping issues
+def lazy_five():
+    return 5
+
+def lazy_three():
+    return 3
+
+def lazy_ten():
+    return 10
+
+def lazy_hello():
+    return "hello"
+
+def lazy_world():
+    return "world"
+
+def lazy_list():
+    return [1, 2, 3, 4, 5]
+
+def lazy_dict():
+    return {"a": 1, "b": 2, "c": 3}
+
+def lazy_true():
+    return true
+
+def lazy_false():
+    return false
+
+def lazy_empty_list():
+    return []
+
+def lazy_non_empty_list():
+    return [1, 2, 3]
+
+def lazy_data():
+    return {"users": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]}
+
+def create_calculator():
+    return {"add": lambda x, y :: x + y, "multiply": lambda x, y :: x * y}
+
+def lazy_calculator():
+    return create_calculator()
+
+def distance_from_origin(point):
+    return (point.x**2 + point.y**2)**0.5
+
+# Define Point struct at top level for use by lazy_point()
+struct Point:
+    x: int
+    y: int
+
+def lazy_point():
+    return Point(x=3, y=4)
+
 # Test arithmetic operations with Promise[T]
 def test_promise_arithmetic():
-    def lazy_five():
-        return 5
-    
-    def lazy_three():
-        return 3
-    
     lazy_a = lazy_five()
     lazy_b = lazy_three()
     eager_c = 2
@@ -29,12 +77,6 @@ def test_promise_arithmetic():
 
 # Test comparison operations with Promise[T]
 def test_promise_comparisons():
-    def lazy_ten():
-        return 10
-    
-    def lazy_five():
-        return 5
-    
     lazy_big = lazy_ten()
     lazy_small = lazy_five()
     concrete_seven = 7
@@ -55,12 +97,6 @@ def test_promise_comparisons():
 
 # Test string operations with Promise[T]
 def test_promise_string_operations():
-    def lazy_hello():
-        return "hello"
-    
-    def lazy_world():
-        return "world"
-    
     lazy_str1 = lazy_hello()
     lazy_str2 = lazy_world()
     concrete_space = " "
@@ -82,12 +118,6 @@ def test_promise_string_operations():
 
 # Test collection operations with Promise[T]
 def test_promise_collection_operations():
-    def lazy_list():
-        return [1, 2, 3, 4, 5]
-    
-    def lazy_dict():
-        return {"a": 1, "b": 2, "c": 3}
-    
     lazy_lst = lazy_list()
     lazy_dct = lazy_dict()
     
@@ -101,18 +131,12 @@ def test_promise_collection_operations():
     assert len(lazy_dct) == 3
     assert lazy_dct["a"] == 1
     assert "b" in lazy_dct
-    assert lazy_dct.keys() == ["a", "b", "c"]
+    assert list(lazy_dct.keys()) == ["a", "b", "c"]
     
     print("✓ Promise[T] collection operations transparent")
 
 # Test function calls on Promise[T] values
 def test_promise_function_calls():
-    def create_calculator():
-        return {"add": lambda x, y :: x + y, "multiply": lambda x, y :: x * y}
-    
-    def lazy_calculator():
-        return create_calculator()
-    
     lazy_calc = lazy_calculator()
     
     # Method calls should work transparently
@@ -126,16 +150,6 @@ def test_promise_function_calls():
 
 # Test attribute access on Promise[T] values
 def test_promise_attribute_access():
-    struct Point:
-        x: int
-        y: int
-    
-    def distance_from_origin(point):
-        return (point.x**2 + point.y**2)**0.5
-    
-    def lazy_point():
-        return Point(3, 4)
-    
     lazy_pt = lazy_point()
     
     # Attribute access should work transparently
@@ -147,9 +161,6 @@ def test_promise_attribute_access():
 
 # Test nested Promise[T] operations
 def test_nested_promise_operations():
-    def lazy_data():
-        return {"users": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]}
-    
     lazy_result = lazy_data()
     
     # Complex nested access should work
@@ -165,18 +176,6 @@ def test_nested_promise_operations():
 
 # Test Promise[T] in boolean contexts
 def test_promise_boolean_context():
-    def lazy_true():
-        return true
-    
-    def lazy_false():
-        return false
-    
-    def lazy_empty_list():
-        return []
-    
-    def lazy_non_empty_list():
-        return [1, 2, 3]
-    
     # Boolean evaluation should work transparently
     assert lazy_true()
     assert not lazy_false()

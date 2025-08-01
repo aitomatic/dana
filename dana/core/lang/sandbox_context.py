@@ -453,6 +453,27 @@ class SandboxContext:
 
         return new_context
 
+    def create_child_context(self) -> "SandboxContext":
+        """Create a child context that inherits from this context.
+
+        A child context:
+        - Has its own fresh local scope
+        - Shares global scopes (private, public, system) with the parent
+        - Inherits the parent's interpreter and other properties
+        - Is useful for function execution where you need isolated local variables
+          but want to maintain access to global state
+
+        Returns:
+            A new SandboxContext that is a child of this context
+        """
+        child_context = SandboxContext(parent=self, manager=self._manager)
+
+        # Copy the interpreter from parent
+        if hasattr(self, "_interpreter") and self._interpreter is not None:
+            child_context._interpreter = self._interpreter
+
+        return child_context
+
     def sanitize(self) -> "SandboxContext":
         """Create a sanitized copy of this context.
 

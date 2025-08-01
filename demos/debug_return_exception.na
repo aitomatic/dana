@@ -1,0 +1,37 @@
+# Debug ReturnException
+print("=== DEBUG RETURN EXCEPTION ===")
+
+def lazy_five():
+    print("lazy_five() called - START")
+    print("About to execute return 5")
+    result = 5
+    print(f"Return value: {result}")
+    return result
+
+def eager_five():
+    print("eager_five() called - START")
+    print("About to execute deliver 5")
+    deliver 5
+
+print("1. Testing return (should create Promise)...")
+print("Calling lazy_five()...")
+
+# The issue is that the Promise is being resolved immediately
+# Let me check if we can see the Promise object before resolution
+lazy_result = lazy_five()
+
+# The Promise should be transparent, but let's see if we can detect it
+print(f"lazy_result type: {type(lazy_result)}")
+print(f"lazy_result value: {lazy_result}")
+
+# Check if it's actually a Promise by looking at the __class__ method
+print(f"lazy_result.__class__: {lazy_result.__class__}")
+
+# Try to call the __class__ method to see what it returns
+try:
+    class_info = lazy_result.__class__()
+    print(f"lazy_result.__class__() result: {class_info}")
+except Exception as e:
+    print(f"Error calling lazy_result.__class__(): {e}")
+
+print("=== DEBUG COMPLETE ===") 

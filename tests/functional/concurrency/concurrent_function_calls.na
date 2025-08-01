@@ -17,13 +17,13 @@ def test_concurrent_data_fetching():
         return {"theme": "dark", "notifications": true}
     
     # Lazy functions that return promises for concurrent execution
-    def get_user_data(user_id: int):
+    def get_user_data(user_id):
         return fetch_user_data(user_id)
     
-    def get_user_posts(user_id: int):
+    def get_user_posts(user_id):
         return fetch_user_posts(user_id)
     
-    def get_user_settings(user_id: int):
+    def get_user_settings(user_id):
         return fetch_user_settings(user_id)
     
     # Start all data fetches - these can potentially run in parallel
@@ -189,7 +189,7 @@ def test_data_processing_workflow():
             "total_count": len(data),
             "high_performers": len(data),
             "statistics": stats,
-            "top_performer": max(data, key=lambda x: x["score"])["name"]
+            "top_performer": max(data, key=lambda x :: x["score"])["name"]
         }
     
     # Lazy processing functions

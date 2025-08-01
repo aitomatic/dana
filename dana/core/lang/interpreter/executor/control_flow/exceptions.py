@@ -32,7 +32,8 @@ class ReturnException(Exception):
             value: The value to return
         """
         self.value = value
-        super().__init__(f"Return with value: {value}")
+        # Don't convert value to string to avoid triggering promise resolution
+        super().__init__(f"Return with value: {type(value).__name__}")
 
 
 class DeliverException(Exception):
@@ -45,4 +46,5 @@ class DeliverException(Exception):
             value: The value to deliver
         """
         self.value = value
-        super().__init__(f"Deliver with value: {value}")
+        # Don't convert value to string to avoid triggering promise resolution
+        super().__init__(f"Deliver with value: {type(value).__name__}")

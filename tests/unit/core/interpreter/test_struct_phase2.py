@@ -9,6 +9,7 @@ from dana.core.lang.interpreter.struct_system import (
     StructInstance,
     StructTypeRegistry,
 )
+from dana.core.runtime.promise import Promise
 
 
 class TestStructExecution:
@@ -273,6 +274,10 @@ local:origin = create_origin()
         assert result.final_context is not None
         origin = result.final_context.get("local:origin")
         assert origin is not None
+
+        # Handle Promise resolution
+        if isinstance(origin, Promise):
+            origin = origin._ensure_resolved()
 
         assert isinstance(origin, StructInstance)
         assert origin.struct_type.name == "Point"

@@ -356,25 +356,13 @@ class FunctionRegistry:
         *args: Any,
         **kwargs: Any,
     ) -> Any:
-        """Call a function with arguments and optional context.
+        from dana.core.runtime.promise import Promise
 
-        This method resolves the function by name and namespace,
-        then calls it with the provided arguments and context.
+        def _resolve_if_promise(value):
+            if isinstance(value, Promise):
+                return value._ensure_resolved()
+            return value
 
-        Args:
-            name: Function name
-            context: Optional context to use for execution
-            namespace: Optional namespace
-            *args: Positional arguments
-            **kwargs: Keyword arguments
-
-        Returns:
-            The function result
-
-        Raises:
-            KeyError: If function not found
-            SandboxError: If function call fails
-        """
         # Resolve the function
         func, func_type, metadata = self.resolve(name, namespace)
 
@@ -443,6 +431,13 @@ class FunctionRegistry:
                 if "use_mock" in func_kwargs:
                     use_mock = func_kwargs.pop("use_mock")
 
+                # Handle context keyword argument specially
+                if "context" in func_kwargs:
+                    # The context keyword argument should be merged into options
+                    context_data = func_kwargs.pop("context")
+                    if isinstance(context_data, dict):
+                        options["context"] = context_data
+
                 # All remaining kwargs go into options
                 if func_kwargs:
                     options.update(func_kwargs)
@@ -450,26 +445,26 @@ class FunctionRegistry:
                 # Security check for reason function: only trusted functions can receive context
                 if not func._is_trusted_for_context():
                     # Call without context - this will likely fail but maintains security
-                    return wrapped_func(prompt)
+                    return _resolve_if_promise(wrapped_func(prompt))
 
                 # Call with correct signature: reason_function(context, prompt, options, use_mock)
                 if options and use_mock is not None:
-                    return wrapped_func(context, prompt, options, use_mock)
+                    return _resolve_if_promise(wrapped_func(context, prompt, options, use_mock))
                 elif options:
-                    return wrapped_func(context, prompt, options)
+                    return _resolve_if_promise(wrapped_func(context, prompt, options))
                 elif use_mock is not None:
-                    return wrapped_func(context, prompt, None, use_mock)
+                    return _resolve_if_promise(wrapped_func(context, prompt, None, use_mock))
                 else:
-                    return wrapped_func(context, prompt)
+                    return _resolve_if_promise(wrapped_func(context, prompt))
             # Special case for the process function
             elif func_name == "process" and len(positional_args) == 1:
                 # Security check: only trusted functions can receive context
                 if not func._is_trusted_for_context():
                     # Call without context
-                    return wrapped_func(positional_args[0])
+                    return _resolve_if_promise(wrapped_func(positional_args[0]))
                 else:
                     # Pass the single argument followed by context
-                    return wrapped_func(positional_args[0], context)
+                    return _resolve_if_promise(wrapped_func(positional_args[0], context))
 
             # Call with context as first argument if expected, with error handling
             try:
@@ -477,13 +472,13 @@ class FunctionRegistry:
                     # Security check: only trusted functions can receive context
                     if not func._is_trusted_for_context():
                         # Function wants context but is not trusted - call without context
-                        return wrapped_func(*positional_args, **func_kwargs)
+                        return _resolve_if_promise(wrapped_func(*positional_args, **func_kwargs))
                     else:
                         # First parameter is context and function is trusted
-                        return wrapped_func(context, *positional_args, **func_kwargs)
+                        return _resolve_if_promise(wrapped_func(context, *positional_args, **func_kwargs))
                 else:
                     # No context parameter
-                    return wrapped_func(*positional_args, **func_kwargs)
+                    return _resolve_if_promise(wrapped_func(*positional_args, **func_kwargs))
             except Exception as e:
                 # Standardize error handling for direct function calls
                 import traceback
@@ -499,7 +494,7 @@ class FunctionRegistry:
             # Direct call to the PythonFunction's execute method
             if context is None:
                 context = SandboxContext()  # Create a default context if none provided
-            return func.execute(context, *positional_args, **func_kwargs)
+            return _resolve_if_promise(func.execute(context, *positional_args, **func_kwargs))
         else:
             # Check if it's a DanaFunction and call via execute method
             from dana.core.lang.interpreter.functions.dana_function import DanaFunction
@@ -508,10 +503,10 @@ class FunctionRegistry:
                 # DanaFunction objects have an execute method that needs context
                 if context is None:
                     context = SandboxContext()  # Create a default context if none provided
-                return func.execute(context, *positional_args, **func_kwargs)
+                return _resolve_if_promise(func.execute(context, *positional_args, **func_kwargs))
             elif callable(func):
                 # Fallback - call the function directly if it's a regular callable
-                return func(context, *positional_args, **func_kwargs)
+                return _resolve_if_promise(func(context, *positional_args, **func_kwargs))
             else:
                 # Not a callable
                 raise SandboxError(f"Function '{name}' is not callable")

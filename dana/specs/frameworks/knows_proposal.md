@@ -1,3 +1,6 @@
+| [← CORRAL](./corral_design.md) | [Core Language →](../core/language.md) |
+|---|---|
+
 **Author:** Dana Language Team  
 **Date:** 2025-01-22  
 **Version:** 0.9.0  
