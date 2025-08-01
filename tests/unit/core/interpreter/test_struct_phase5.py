@@ -361,7 +361,7 @@ local:result3 = valid_config.safe_get_value()
         result2 = result.final_context.get("local:result2")
         result3 = result.final_context.get("local:result3")
 
-        # Promises are automatically resolved by default
+        # Promises are resolved transparently when accessed
         assert result1 is True  # Valid config
         assert result2 is False  # Invalid config
         assert result3 == 10  # Safe get value
