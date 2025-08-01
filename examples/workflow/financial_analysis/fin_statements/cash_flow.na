@@ -33,102 +33,162 @@ DIV_LINE_ITEM: str = 'Cash Dividends'
 def get_op_cf(args: FinQueryArgs) -> float:
     """Get Operating Cash Flow from Cash Flow Statement."""
 
-    return query_fin_data(args,
-                          line_item=OP_CF_LINE_ITEM,
-                          statement=CF_STATEMENT)
+    op_cf = query_fin_data(
+        args,
+        line_item=OP_CF_LINE_ITEM,
+        statement=CF_STATEMENT)
+
+    print(op_cf)
+
+    return op_cf
 
 
 def get_op_cf_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     """Get 2 years of Operating Cash Flow from Cash Flow Statement."""
 
-    return query_fin_data(args,
-                          line_item=OP_CF_LINE_ITEM,
-                          statement=CF_STATEMENT,
-                          n_years=2)
+    op_cf_2y = query_fin_data(
+        args,
+        line_item=OP_CF_LINE_ITEM,
+        statement=CF_STATEMENT,
+        n_years=2)
+
+    print(op_cf_2y)
+
+    return op_cf_2y
 
 
 def get_op_cf_3y(args: FinQueryArgs) -> tuple[float]:
     """Get 3 years of Operating Cash Flow from Cash Flow Statement."""
 
-    return query_fin_data(args,
-                          line_item=OP_CF_LINE_ITEM,
-                          statement=CF_STATEMENT,
-                          n_years=3)
+    op_cf_3y = query_fin_data(
+        args,
+        line_item=OP_CF_LINE_ITEM,
+        statement=CF_STATEMENT,
+        n_years=3)
+
+    print(op_cf_3y)
+
+    return op_cf_3y
 
 
 def get_capex(args: FinQueryArgs) -> float:
     """Get Capital Expenditure(s) from Cash Flow Statement."""
 
-    return query_fin_data(args,
-                          line_item=CAPEX_LINE_ITEM,
-                          statement=CF_STATEMENT)
+    capex = query_fin_data(
+        args,
+        line_item=CAPEX_LINE_ITEM,
+        statement=CF_STATEMENT)
+
+    print(capex)
+
+    return capex
 
 
 def get_capex_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     """Get 2 years of Capital Expenditure(s) from Cash Flow Statement."""
 
-    return query_fin_data(args,
-                          line_item=CAPEX_LINE_ITEM,
-                          statement=CF_STATEMENT,
-                          n_years=2)
+    capex_2y = query_fin_data(
+        args,
+        line_item=CAPEX_LINE_ITEM,
+        statement=CF_STATEMENT,
+        n_years=2)
+
+    print(capex_2y)
+
+    return capex_2y
 
 
 def get_capex_3y(args: FinQueryArgs) -> tuple[float]:
     """Get 3 years of Capital Expenditure(s) from Cash Flow Statement."""
 
-    return query_fin_data(args,
-                          line_item=CAPEX_LINE_ITEM,
-                          statement=CF_STATEMENT,
-                          n_years=3)
+    capex_3y = query_fin_data(
+        args,
+        line_item=CAPEX_LINE_ITEM,
+        statement=CF_STATEMENT,
+        n_years=3)
+
+    print(capex_3y)
+
+    return capex_3y
 
 
 def get_deprec_and_amort(args: FinQueryArgs) -> float:
     """Get Depreciation & Amortization from Cash Flow Statement."""
 
-    return query_fin_data(args,
-                          line_item=DnA_LINE_ITEM,
-                          statement=CF_STATEMENT)
+    deprec_and_amort = query_fin_data(
+        args,
+        line_item=DnA_LINE_ITEM,
+        statement=CF_STATEMENT)
+
+    print(deprec_and_amort)
+
+    return deprec_and_amort
 
 
 def get_deprec_and_amort_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     """Get 2 years of Depreciation & Amortization from Cash Flow Statement."""
 
-    return query_fin_data(args,
-                          line_item=DnA_LINE_ITEM,
-                          statement=CF_STATEMENT,
-                          n_years=2)
+    deprec_and_amort_2y = query_fin_data(
+        args,
+        line_item=DnA_LINE_ITEM,
+        statement=CF_STATEMENT,
+        n_years=2)
+
+    print(deprec_and_amort_2y)
+
+    return deprec_and_amort_2y
 
 
 def get_deprec_and_amort_3y(args: FinQueryArgs) -> tuple[float]:
     """Get 3 years of Depreciation & Amortization from Cash Flow Statement."""
 
-    return query_fin_data(args,
-                          line_item=DnA_LINE_ITEM,
-                          statement=CF_STATEMENT,
-                          n_years=3)
+    deprec_and_amort_3y = query_fin_data(
+        args,
+        line_item=DnA_LINE_ITEM,
+        statement=CF_STATEMENT,
+        n_years=3)
+
+    print(deprec_and_amort_3y)
+
+    return deprec_and_amort_3y
 
 
 def get_div(args: FinQueryArgs) -> float:
     """Get Dividend from Cash Flow Statement."""
 
-    return query_fin_data(args,
-                          line_item=DIV_LINE_ITEM,
-                          statement=CF_STATEMENT)
+    div = query_fin_data(
+        args,
+        line_item=DIV_LINE_ITEM,
+        statement=CF_STATEMENT)
+
+    print(div)
+
+    return div
 
 
 def get_div_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     """Get 2 years of Dividend from Cash Flow Statement."""
 
-    return query_fin_data(args,
-                          line_item=DIV_LINE_ITEM,
-                          statement=CF_STATEMENT,
-                          n_years=2)
+    div_2y = query_fin_data(
+        args,
+        line_item=DIV_LINE_ITEM,
+        statement=CF_STATEMENT,
+        n_years=2)
+
+    print(div_2y)
+
+    return div_2y
 
 
 def get_div_3y(args: FinQueryArgs) -> tuple[float]:
     """Get 3 years of Dividend from Cash Flow Statement."""
 
-    return query_fin_data(args,
-                          line_item=DIV_LINE_ITEM,
-                          statement=CF_STATEMENT,
-                          n_years=3)
+    div_3y = query_fin_data(
+        args,
+        line_item=DIV_LINE_ITEM,
+        statement=CF_STATEMENT,
+        n_years=3)
+
+    print(div_3y)
+
+    return div_3y

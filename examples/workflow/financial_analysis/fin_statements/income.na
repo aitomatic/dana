@@ -58,258 +58,408 @@ NET_INCOME_LINE_ITEM: str = 'Net Income, a.k.a. Net Profit, or Net Earnings (or 
 def get_rev(args: FinQueryArgs) -> float:
     """Get Revenue from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=REV_LINE_ITEM,
-                          statement=INCOME_STATEMENT)
+    rev = query_fin_data(
+        args,
+        line_item=REV_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    print(rev)
+
+    return rev
 
 
 def get_rev_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     """Get 2 years of Revenue from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=REV_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=2)
+    rev_2y = query_fin_data(
+        args,
+        line_item=REV_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    print(rev_2y)
+
+    return rev_2y
 
 
 def get_rev_3y(args: FinQueryArgs) -> tuple[float]:
     """Get 3 years of Revenue from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=REV_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=3)
+    rev_3y = query_fin_data(
+        args,
+        line_item=REV_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    print(rev_3y)
+
+    return rev_3y
 
 
 def get_cogs(args: FinQueryArgs) -> float:
     """Get Cost of Goods Sold from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=COGS_LINE_ITEM,
-                          statement=INCOME_STATEMENT)
+    cogs = query_fin_data(
+        args,
+        line_item=COGS_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    print(cogs)
+
+    return cogs
 
 
 def get_cogs_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     """Get 2 years of Cost of Goods Sold from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=COGS_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=2)
+    cogs_2y = query_fin_data(
+        args,
+        line_item=COGS_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    print(cogs_2y)
+
+    return cogs_2y
 
 
 def get_cogs_3y(args: FinQueryArgs) -> tuple[float]:
     """Get 3 years of Cost of Goods Sold from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=COGS_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=3)
+    cogs_3y = query_fin_data(
+        args,
+        line_item=COGS_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    print(cogs_3y)
+
+    return cogs_3y
 
 
 def get_gross_income(args: FinQueryArgs) -> float:
     """Get Gross Income from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=GROSS_INCOME_LINE_ITEM,
-                          statement=INCOME_STATEMENT)
+    gross_income = query_fin_data(
+        args,
+        line_item=GROSS_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    print(gross_income)
+
+    return gross_income
 
 
 def get_gross_income_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     """Get 2 years of Gross Income from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=GROSS_INCOME_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=2)
+    gross_income_2y = query_fin_data(
+        args,
+        line_item=GROSS_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    print(gross_income_2y)
+
+    return gross_income_2y
 
 
 def get_gross_income_3y(args: FinQueryArgs) -> tuple[float]:
     """Get 3 years of Gross Income from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=GROSS_INCOME_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=3)
+    gross_income_3y = query_fin_data(
+        args,
+        line_item=GROSS_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    print(gross_income_3y)
+
+    return gross_income_3y
 
 
 def get_ga_exp(args: FinQueryArgs) -> float:
     """Get General and Administrative Expenses from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=GnA_EXP_LINE_ITEM,
-                          statement=INCOME_STATEMENT)
+    ga_exp = query_fin_data(
+        args,
+        line_item=GnA_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    print(ga_exp)
+
+    return ga_exp
 
 
 def get_ga_exp_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     """Get 2 years of General and Administrative Expenses from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=GnA_EXP_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=2)
+    ga_exp_2y = query_fin_data(
+        args,
+        line_item=GnA_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    print(ga_exp_2y)
+
+    return ga_exp_2y
 
 
 def get_ga_exp_3y(args: FinQueryArgs) -> tuple[float]:
     """Get 3 years of General and Administrative Expenses from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=GnA_EXP_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=3)
+    ga_exp_3y = query_fin_data(
+        args,
+        line_item=GnA_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    print(ga_exp_3y)
+
+    return ga_exp_3y
 
 
 def get_op_income(args: FinQueryArgs) -> float:
     """Get Operating Income from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=OP_INCOME_LINE_ITEM,
-                          statement=INCOME_STATEMENT)
+    op_income = query_fin_data(
+        args,
+        line_item=OP_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    print(op_income)
+
+    return op_income
 
 
 def get_op_income_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     """Get 2 years of Operating Income from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=OP_INCOME_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=2)
+    op_income_2y = query_fin_data(
+        args,
+        line_item=OP_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    print(op_income_2y)
+
+    return op_income_2y
 
 
 def get_op_income_3y(args: FinQueryArgs) -> tuple[float]:
     """Get 3 years of Operating Income from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=OP_INCOME_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=3)
+    op_income_3y = query_fin_data(
+        args,
+        line_item=OP_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    print(op_income_3y)
+
+    return op_income_3y
 
 
 def get_ebit(args: FinQueryArgs) -> float:
     """Get Earnings before Interest & Tax from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=EBIT_LINE_ITEM,
-                          statement=INCOME_STATEMENT)
+    ebit = query_fin_data(
+        args,
+        line_item=EBIT_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    print(ebit)
+
+    return ebit
 
 
 def get_ebit_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     """Get 2 years of Earnings before Interest & Tax from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=EBIT_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=2)
+    ebit_2y = query_fin_data(
+        args,
+        line_item=EBIT_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    print(ebit_2y)
+
+    return ebit_2y
 
 
 def get_ebit_3y(args: FinQueryArgs) -> tuple[float]:
     """Get 3 years of Earnings before Interest & Tax from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=EBIT_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=3)
+    ebit_3y = query_fin_data(
+        args,
+        line_item=EBIT_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    print(ebit_3y)
+
+    return ebit_3y
 
 
 def get_int_exp(args: FinQueryArgs) -> float:
     """Get Interest Expense from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=INT_EXP_LINE_ITEM,
-                          statement=INCOME_STATEMENT)
+    int_exp = query_fin_data(
+        args,
+        line_item=INT_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    print(int_exp)
+
+    return int_exp
 
 
 def get_int_exp_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     """Get 2 years of Interest Expense from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=INT_EXP_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=2)
+    int_exp_2y = query_fin_data(
+        args,
+        line_item=INT_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    print(int_exp_2y)
+
+    return int_exp_2y
 
 
 def get_int_exp_3y(args: FinQueryArgs) -> tuple[float]:
     """Get 3 years of Interest Expense from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=INT_EXP_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=3)
+    int_exp_3y = query_fin_data(
+        args,
+        line_item=INT_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    print(int_exp_3y)
+
+    return int_exp_3y
 
 
 def get_ebt(args: FinQueryArgs) -> float:
     """Get Earnings before Tax from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=EBT_LINE_ITEM,
-                          statement=INCOME_STATEMENT)
+    ebt = query_fin_data(
+        args,
+        line_item=EBT_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    print(ebt)
+
+    return ebt
 
 
 def get_ebt_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     """Get 2 years of Earnings before Tax from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=EBT_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=2)
+    ebt_2y = query_fin_data(
+        args,
+        line_item=EBT_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    print(ebt_2y)
+
+    return ebt_2y
 
 
 def get_ebt_3y(args: FinQueryArgs) -> tuple[float]:
     """Get 3 years of Earnings before Tax from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=EBT_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=3)
+    ebt_3y = query_fin_data(
+        args,
+        line_item=EBT_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    print(ebt_3y)
+
+    return ebt_3y
 
 
 def get_tax_exp(args: FinQueryArgs) -> float:
     """Get (Income) Tax Expense from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=TAX_EXP_LINE_ITEM,
-                          statement=INCOME_STATEMENT)
+    tax_exp = query_fin_data(
+        args,
+        line_item=TAX_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    print(tax_exp)
+
+    return tax_exp
 
 
 def get_tax_exp_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     """Get 2 years of (Income) Tax Expense from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=TAX_EXP_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=2)
+    tax_exp_2y = query_fin_data(
+        args,
+        line_item=TAX_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    print(tax_exp_2y)
+
+    return tax_exp_2y
 
 
 def get_tax_exp_3y(args: FinQueryArgs) -> tuple[float]:
     """Get 3 years of (Income) Tax Expense from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=TAX_EXP_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=3)
+    tax_exp_3y = query_fin_data(
+        args,
+        line_item=TAX_EXP_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    print(tax_exp_3y)
+
+    return tax_exp_3y
 
 
 def get_net_income(args: FinQueryArgs) -> float:
     """Get Net Income from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=NET_INCOME_LINE_ITEM,
-                          statement=INCOME_STATEMENT)
+    net_income = query_fin_data(
+        args,
+        line_item=NET_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT)
+
+    print(net_income)
+
+    return net_income
 
 
 def get_net_income_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     """Get 2 years of Net Income from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=NET_INCOME_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=2)
+    net_income_2y = query_fin_data(
+        args,
+        line_item=NET_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=2)
+
+    print(net_income_2y)
+
+    return net_income_2y
 
 
 def get_net_income_3y(args: FinQueryArgs) -> tuple[float]:
     """Get 3 years of Net Income from Income Statement."""
 
-    return query_fin_data(args,
-                          line_item=NET_INCOME_LINE_ITEM,
-                          statement=INCOME_STATEMENT,
-                          n_years=3)
+    net_income_3y = query_fin_data(
+        args,
+        line_item=NET_INCOME_LINE_ITEM,
+        statement=INCOME_STATEMENT,
+        n_years=3)
+
+    print(net_income_3y)
+
+    return net_income_3y
