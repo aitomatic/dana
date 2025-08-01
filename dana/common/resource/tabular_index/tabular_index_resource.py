@@ -52,16 +52,21 @@ class TabularIndexResource(BaseResource):
         Args:
             source: Path to data source (CSV or Parquet)
             embedding_field_constructor: Function to create embedding text from row
-            table_name: Name for the index table
+            table_name: Name for the index table (also used as DuckDB filename: {table_name}.db)
             metadata_constructor: Optional function to create metadata from row
             excluded_embed_metadata_keys: Keys to exclude from embedding metadata
-            cache_dir: Directory for caching
+            cache_dir: Directory for DuckDB storage (default: .cache/tabular_index)
             force_reload: Whether to force reload from source
             embedding_config: Optional embedding override in format:
                             {"model_name": "openai:text-embedding-3-large", "dimensions": 3072}
             vector_store_config: Optional vector store configuration
             name: Resource name
             description: Resource description
+
+        Note:
+            Each TabularIndexResource creates its own DuckDB file at:
+            {cache_dir}/{sanitized_table_name}.db with table name {table_name}
+            This ensures proper resource isolation and prevents naming conflicts.
         """
         super().__init__(name, description)
 
@@ -143,24 +148,73 @@ class TabularIndexResource(BaseResource):
         except Exception as e:
             raise ValueError(f"Invalid embedding configuration: {e}") from e
 
-    def _create_vector_store_config(self, vector_store_config: dict[str, Any] | None) -> dict[str, Any]:
-        """Create vector store configuration dictionary for legacy compatibility.
+    def _create_vector_store_config(self, vector_store_config: dict[str, Any] | None):
+        """Create structured vector store configuration.
+
+        Uses the user-provided cache_dir and table_name from TabularConfig instead of hardcoded values.
+        This ensures proper resource isolation with separate DB files per resource.
 
         Args:
             vector_store_config: Optional vector store configuration
 
         Returns:
-            Configuration dictionary in legacy format for VectorStoreFactory.create_from_legacy_dict
+            Structured VectorStoreConfig object for VectorStoreFactory.create_with_provider
         """
-        if not vector_store_config:
-            # Provide sensible defaults in legacy format
-            return {
-                "provider": "duckdb",
-                "storage_config": {"path": ".cache/vector_db", "filename": "tabular_index.db", "table_name": "vectors"},
-            }
+        from dana.common.resource.vector_store import create_duckdb_config, create_pgvector_config
 
-        # Return in legacy format
-        return {"provider": vector_store_config.get("provider", "duckdb"), "storage_config": vector_store_config.get("storage_config", {})}
+        if not vector_store_config:
+            # Use tabular config values to create structured config
+            safe_table_name = self._sanitize_filename(self._tabular_config.table_name)
+            return create_duckdb_config(
+                path=self._tabular_config.cache_dir,  # Use user's cache_dir
+                filename=f"{safe_table_name}.db",  # Use table_name for filename
+                table_name=self._tabular_config.table_name,  # Use user's table_name
+            )
+
+        # Convert provided config to structured format
+        provider_name = vector_store_config.get("provider", "duckdb")
+        storage_config = vector_store_config.get("storage_config", {})
+
+        if provider_name == "duckdb":
+            return create_duckdb_config(
+                path=storage_config.get("path", self._tabular_config.cache_dir),
+                filename=storage_config.get("filename", f"{self._sanitize_filename(self._tabular_config.table_name)}.db"),
+                table_name=storage_config.get("table_name", self._tabular_config.table_name),
+            )
+        elif provider_name == "pgvector":
+            # Handle nested structure directly - much cleaner!
+            return create_pgvector_config(
+                host=storage_config.get("host", "localhost"),
+                port=storage_config.get("port", 5432),
+                database=storage_config.get("database", "vector_db"),
+                user=storage_config.get("user", "postgres"),
+                password=storage_config.get("password", ""),
+                schema_name=storage_config.get("schema_name", "public"),
+                table_name=storage_config.get("table_name", "vectors"),
+                use_halfvec=storage_config.get("use_halfvec", False),
+                hybrid_search=storage_config.get("hybrid_search", False),
+                hnsw_config=storage_config.get("hnsw", None),  # Pass nested config directly
+            )
+        else:
+            raise ValueError(f"Unsupported vector store provider: {provider_name}")
+
+    def _sanitize_filename(self, name: str) -> str:
+        """Sanitize table name for use as filename.
+
+        Replaces problematic characters with underscores and truncates if too long.
+
+        Args:
+            name: Original table name
+
+        Returns:
+            Sanitized filename safe for filesystem use
+        """
+        import re
+
+        # Replace problematic characters with underscores
+        safe_name = re.sub(r"[^\w\-_.]", "_", name)
+        # Truncate if too long (common filesystem limit is 255, leave room for .db extension)
+        return safe_name[:200]
 
     def _create_embedding_component(self) -> tuple[Any, int]:
         """Create embedding component using factory.
@@ -189,37 +243,8 @@ class TabularIndexResource(BaseResource):
             ValueError: If vector store creation fails
         """
         try:
-            # Use legacy dictionary format for backward compatibility
-            return VectorStoreFactory.create_from_legacy_dict_with_provider(self._vector_store_config, self._embed_dim)
-        except AttributeError:
-            # Fallback if create_from_legacy_dict_with_provider doesn't exist yet
-            try:
-                # Convert legacy config to structured config for create_with_provider
-                from dana.common.resource.vector_store import create_duckdb_config, create_pgvector_config
-
-                provider_name = self._vector_store_config.get("provider", "duckdb")
-                storage_config = self._vector_store_config.get("storage_config", {})
-
-                if provider_name == "duckdb":
-                    structured_config = create_duckdb_config(
-                        path=storage_config.get("path", ".cache/vector_db"),
-                        filename=storage_config.get("filename", "vector_store.db"),
-                        table_name=storage_config.get("table_name", "vectors"),
-                    )
-                elif provider_name == "pgvector":
-                    # Extract HNSW config from nested structure
-                    hnsw_config = storage_config.get("hnsw", {})
-                    config_kwargs = {**storage_config}
-                    config_kwargs.update(hnsw_config)  # Flatten HNSW config
-                    config_kwargs.pop("hnsw", None)  # Remove nested hnsw dict
-                    structured_config = create_pgvector_config(**config_kwargs)
-                else:
-                    raise ValueError(f"Unsupported vector store provider: {provider_name}")
-
-                return VectorStoreFactory.create_with_provider(structured_config, self._embed_dim)
-
-            except Exception as fallback_error:
-                raise ValueError(f"Failed to create vector store component: {fallback_error}") from fallback_error
+            # Use structured config directly - much cleaner!
+            return VectorStoreFactory.create_with_provider(self._vector_store_config, self._embed_dim)
         except Exception as e:
             raise ValueError(f"Failed to create vector store component: {e}") from e
 
@@ -278,6 +303,6 @@ class TabularIndexResource(BaseResource):
         return self._embedding_config
 
     @property
-    def vector_store_config(self) -> dict[str, Any]:
+    def vector_store_config(self):
         """Get vector store configuration (read-only)."""
         return self._vector_store_config

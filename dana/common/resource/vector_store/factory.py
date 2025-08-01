@@ -5,7 +5,6 @@ This factory provides a clean, consistent interface for creating vector stores
 across the entire codebase with proper provider abstraction.
 """
 
-from typing import Any
 from llama_index.core.vector_stores.types import VectorStore
 
 from .config import VectorStoreConfig, create_duckdb_config, create_pgvector_config
@@ -138,98 +137,6 @@ class VectorStoreFactory:
             raise ValueError(f"Unsupported vector store provider: {provider}")
 
         return VectorStoreFactory.create(config, embed_dim)
-
-    @staticmethod
-    def create_from_legacy_dict(config_dict: dict[str, Any], embed_dim: int) -> VectorStore:
-        """Create vector store from legacy dictionary configuration.
-
-        This method provides backward compatibility with the old configuration format
-        used by tabular_index and other existing modules.
-
-        Args:
-            config_dict: Legacy configuration dictionary with nested structure
-            embed_dim: Embedding dimension
-
-        Returns:
-            Configured vector store instance
-
-        Example:
-            config = {
-                "provider": "duckdb",
-                "storage_config": {
-                    "path": ".cache/vectors",
-                    "filename": "store.db",
-                    "table_name": "vectors"
-                }
-            }
-            store = VectorStoreFactory.create_from_legacy_dict(config, 1536)
-        """
-        provider = config_dict.get("provider", "duckdb")
-        storage_config = config_dict.get("storage_config", {})
-
-        if provider == "duckdb":
-            config = create_duckdb_config(
-                path=storage_config.get("path", ".cache/vector_db"),
-                filename=storage_config.get("filename", "vector_store.db"),
-                table_name=storage_config.get("table_name", "vectors"),
-            )
-        elif provider == "pgvector":
-            # Extract HNSW config from nested structure
-            hnsw_config = storage_config.get("hnsw", {})
-            config_kwargs = {**storage_config}
-            config_kwargs.update(hnsw_config)  # Flatten HNSW config
-            config_kwargs.pop("hnsw", None)  # Remove nested hnsw dict
-            config = create_pgvector_config(**config_kwargs)
-        else:
-            raise ValueError(f"Unsupported vector store provider: {provider}")
-
-        return VectorStoreFactory.create(config, embed_dim)
-
-    @staticmethod
-    def create_from_legacy_dict_with_provider(config_dict: dict[str, Any], embed_dim: int) -> VectorStoreProviderProtocol:
-        """Create vector store provider from legacy dictionary configuration.
-
-        This method provides backward compatibility with the old configuration format.
-        The vector store is accessible via provider.vector_store.
-
-        Args:
-            config_dict: Legacy configuration dictionary with nested structure
-            embed_dim: Embedding dimension
-
-        Returns:
-            Provider wrapper (vector store accessible via provider.vector_store)
-
-        Example:
-            config = {
-                "provider": "duckdb",
-                "storage_config": {
-                    "path": ".cache/vectors",
-                    "filename": "store.db",
-                    "table_name": "vectors"
-                }
-            }
-            provider = VectorStoreFactory.create_from_legacy_dict_with_provider(config, 1536)
-        """
-        provider = config_dict.get("provider", "duckdb")
-        storage_config = config_dict.get("storage_config", {})
-
-        if provider == "duckdb":
-            config = create_duckdb_config(
-                path=storage_config.get("path", ".cache/vector_db"),
-                filename=storage_config.get("filename", "vector_store.db"),
-                table_name=storage_config.get("table_name", "vectors"),
-            )
-        elif provider == "pgvector":
-            # Extract HNSW config from nested structure
-            hnsw_config = storage_config.get("hnsw", {})
-            config_kwargs = {**storage_config}
-            config_kwargs.update(hnsw_config)  # Flatten HNSW config
-            config_kwargs.pop("hnsw", None)  # Remove nested hnsw dict
-            config = create_pgvector_config(**config_kwargs)
-        else:
-            raise ValueError(f"Unsupported vector store provider: {provider}")
-
-        return VectorStoreFactory.create_with_provider(config, embed_dim)
 
     @staticmethod
     def get_supported_providers() -> list[str]:

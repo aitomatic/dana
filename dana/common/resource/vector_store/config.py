@@ -119,10 +119,29 @@ def create_pgvector_config(
     password: str = "",
     schema_name: str = "public",
     table_name: str = "vectors",
-    **kwargs,
+    use_halfvec: bool = False,
+    hybrid_search: bool = False,
+    hnsw_config: dict[str, Any] | None = None,
 ) -> VectorStoreConfig:
-    """Create a PostgreSQL/PGVector configuration."""
-    hnsw_config = HNSWConfig(**{k: v for k, v in kwargs.items() if k.startswith(("m", "ef_", "dist_"))})
+    """Create a PostgreSQL/PGVector configuration.
+
+    Args:
+        host: PostgreSQL host
+        port: PostgreSQL port
+        database: Database name
+        user: PostgreSQL user
+        password: PostgreSQL password
+        schema_name: Schema name
+        table_name: Table name for vectors
+        use_halfvec: Whether to use half-precision vectors
+        hybrid_search: Whether to enable hybrid search
+        hnsw_config: HNSW configuration dict (e.g., {"m": 32, "ef_construction": 200})
+
+    Returns:
+        Structured VectorStoreConfig for PGVector
+    """
+    # Create HNSW config directly from nested dict - much cleaner!
+    hnsw = HNSWConfig(**(hnsw_config or {}))
 
     return VectorStoreConfig(
         provider="pgvector",
@@ -134,8 +153,8 @@ def create_pgvector_config(
             password=password,
             schema_name=schema_name,
             table_name=table_name,
-            use_halfvec=kwargs.get("use_halfvec", False),
-            hybrid_search=kwargs.get("hybrid_search", False),
-            hnsw=hnsw_config,
+            use_halfvec=use_halfvec,
+            hybrid_search=hybrid_search,
+            hnsw=hnsw,
         ),
     )

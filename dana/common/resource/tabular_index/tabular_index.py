@@ -202,9 +202,9 @@ class TabularIndex:
         if not self.index:
             await self.initialize()
 
-        # TODO: Implement actual retrieval logic
         print(f"Retrieving {num_results} results for query: {query}")
-        return [{"placeholder": "result"}]
+        nodes = await self.index.as_retriever(similarity_top_k=num_results).aretrieve(query)  # type: ignore
+        return [{"text": node.text, "metadata": node.metadata} for node in nodes]
 
     async def single_search(
         self, query: str, top_k: int = 10, callback: Callable[[str, list[dict[str, Any]]], None] | None = None
@@ -222,7 +222,6 @@ class TabularIndex:
         if not self.index:
             await self.initialize()
 
-        # TODO: Implement actual single search logic
         result = {"query": query, "results": []}
 
         if callback:
