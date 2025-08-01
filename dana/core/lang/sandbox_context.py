@@ -198,12 +198,13 @@ class SandboxContext:
         # For local scope, set in current context
         self._state[scope][var_name] = value
 
-    def get(self, key: str, default: Any = None) -> Any:
+    def get(self, key: str, default: Any = None, auto_resolve: bool = True) -> Any:
         """Get a value from the context using a scoped key.
 
         Args:
             key: The scoped key (e.g., 'local:variable' or 'private:test')
             default: Default value if key not found
+            auto_resolve: If True (default), automatically resolve Promises
 
         Returns:
             The value associated with the key, or default if not found
@@ -217,16 +218,25 @@ class SandboxContext:
                 while root._parent is not None:
                     root = root._parent
                 if scope in root._state and var_name in root._state[scope]:
-                    return root._state[scope][var_name]
-                return default
-
+                    value = root._state[scope][var_name]
+                else:
+                    value = default
             # For local scope, search current context first
-            if scope in self._state and var_name in self._state[scope]:
-                return self._state[scope][var_name]
+            elif scope in self._state and var_name in self._state[scope]:
+                value = self._state[scope][var_name]
             elif self._parent:
-                return self._parent.get(key, default)
+                value = self._parent.get(key, default)
             else:
-                return default
+                value = default
+
+            # Auto-resolve Promise if requested and value is a Promise
+            if auto_resolve:
+                from dana.core.runtime.promise import Promise
+
+                if isinstance(value, Promise):
+                    return value._ensure_resolved()
+
+            return value
         except StateError:
             # Invalid key format or unknown scope
             return default
