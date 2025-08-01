@@ -18,9 +18,22 @@ class OutputFormatter(Loggable):
         super().__init__()
         self.colors = colors
 
-    def format_result(self, result) -> None:
+    def format_result(self, result, preserve_promises: bool = False) -> None:
         """Format and display execution result."""
         if result is not None:
+            # Check if we should preserve Promise display
+            if preserve_promises:
+                # Import Promise class to check instance
+                try:
+                    from dana.core.runtime.promise import Promise
+                    if isinstance(result, Promise):
+                        print(f"{self.colors.accent('Promise[T] (pending)')}")
+                        return
+                except ImportError:
+                    # If Promise class not available, fall back to normal display
+                    pass
+            
+            # Normal display - show the resolved value
             print(f"{self.colors.accent(str(result))}")
 
     def format_error(self, error: Exception) -> None:

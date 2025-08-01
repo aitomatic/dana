@@ -130,11 +130,17 @@ class DanaREPLApp(Loggable):
                     break
 
                 # Handle special commands
-                if await self.command_handler.handle_command(line):
+                command_result = await self.command_handler.handle_command(line)
+                if command_result[0]:  # is_command
                     self.debug("Handled special command")
-                    # Check if it was a ## command to force multiline
-                    if line.strip() == "##":
+                    # Check if it was a / command to force multiline
+                    if line.strip() == "/":
                         self.input_processor.state.in_multiline = True
+                    # Check if it's a /promise command
+                    elif command_result[1] is not None and command_result[2]:  # has code and preserve_promises
+                        # Store input context for promise commands too
+                        self._store_input_context()
+                        self._execute_program(command_result[1], preserve_promises=True)
                     continue
 
                 # Check for orphaned else/elif statements
@@ -170,7 +176,7 @@ class DanaREPLApp(Loggable):
         except Exception as e:
             self.debug(f"Could not store input context: {e}")
 
-    def _execute_program(self, program: str) -> None:
+    def _execute_program(self, program: str, preserve_promises: bool = False) -> None:
         """Execute a Dana program and handle the result or errors."""
         try:
             self.debug(f"Executing program: {program}")
@@ -182,7 +188,7 @@ class DanaREPLApp(Loggable):
                 print(print_output)
 
             # Display the result if it's not None
-            self.output_formatter.format_result(result)
+            self.output_formatter.format_result(result, preserve_promises=preserve_promises)
         except Exception as e:
             self.output_formatter.format_error(e)
 
