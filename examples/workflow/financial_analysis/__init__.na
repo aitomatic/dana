@@ -44,7 +44,7 @@ from .margin_ratios import calc_net_margin, calc_net_margin_3y_avg
 
 from .return_ratios import calc_roa_ratio, calc_roe_ratio
 
-from .liquidity import calc_quick_ratio, assess_quick_ratio
+from .liquidity import calc_quick_ratio
 from .liquidity import calc_net_work_cap, calc_work_cap_ratio
 from .liquidity import calc_op_cf_ratio
 from .liquidity import calc_fcf, calc_fcf_conv_ratio
@@ -137,7 +137,7 @@ __all__ = [
 
     'calc_roa_ratio', 'calc_roe_ratio',
 
-    'calc_quick_ratio', 'assess_quick_ratio',
+    'calc_quick_ratio',
 
     'calc_net_work_cap',
     'calc_work_cap_ratio',

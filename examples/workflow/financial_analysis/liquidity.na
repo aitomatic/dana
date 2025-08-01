@@ -15,7 +15,7 @@ from .utils import FinQueryArgs
 
 
 __all__ = [
-    'calc_quick_ratio', 'assess_quick_ratio',
+    'calc_quick_ratio',
 
     'calc_net_work_cap',
     'calc_work_cap_ratio',
@@ -109,19 +109,14 @@ and using the following intermediate results:
 {intermed_results}
 ```
 
+From there, assess liquidity health:
+- if `Quick Ratio` >= 1, then liquidity is healthy
+- otherwise, liquidity is not very healthy
+
 State your result together with the supporting calculation(s).
 ')
 
 def calc_quick_ratio(args: FinQueryArgs) = [calc_quick_asset, get_curr_liab] | _quick_ratio
-
-
-def _quick_ratio_assessment(quick_ratio):
-    deliver llm(
-f'Assess liquidity health of through its `Quick Ratio` of {quick_ratio}:
-- if `Quick Ratio` >= 1, then liquidity is healthy
-- otherwise, liquidity is not very healthy')
-
-def assess_quick_ratio(args: FinQueryArgs) = calc_quick_ratio | _quick_ratio_assessment
 
 
 def _net_work_cap(intermed_results):
