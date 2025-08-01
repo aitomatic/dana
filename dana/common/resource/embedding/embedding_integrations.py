@@ -20,9 +20,14 @@ class LlamaIndexEmbeddingResource(Loggable):
         super().__init__()
         self.config_override = config_override
 
-    def get_embedding_model(self, model_name: str):
-        """Get a LlamaIndex embedding model."""
-        return self._create_embedding(model_name)
+    def get_embedding_model(self, model_name: str, dimension_override: int | None = None):
+        """Get a LlamaIndex embedding model.
+
+        Args:
+            model_name: Model name in format 'provider:model_name'
+            dimension_override: Override embedding dimension from upstream config
+        """
+        return self._create_embedding(model_name, dimension_override)
 
     def get_default_embedding_model(self):
         """Get a LlamaIndex embedding model using auto-selection."""
@@ -68,8 +73,13 @@ class LlamaIndexEmbeddingResource(Loggable):
                 result[key] = value
         return result
 
-    def _create_embedding(self, model_name: str):
-        """Create a LlamaIndex embedding model."""
+    def _create_embedding(self, model_name: str, dimension_override: int | None = None):
+        """Create a LlamaIndex embedding model.
+
+        Args:
+            model_name: Model name in format 'provider:model_name'
+            dimension_override: Override embedding dimension from upstream config
+        """
         if ":" not in model_name:
             raise EmbeddingError(f"Invalid model format: {model_name}. Expected 'provider:model_name'")
 
@@ -78,11 +88,11 @@ class LlamaIndexEmbeddingResource(Loggable):
         provider_config = config.get("embedding", {}).get("provider_configs", {}).get(provider, {})
 
         if provider == "openai":
-            return self._create_openai_embedding(model_id, provider_config)
+            return self._create_openai_embedding(model_id, provider_config, dimension_override)
         elif provider == "cohere":
-            return self._create_cohere_embedding(model_id, provider_config)
+            return self._create_cohere_embedding(model_id, provider_config, dimension_override)
         elif provider == "huggingface":
-            return self._create_huggingface_embedding(model_id, provider_config)
+            return self._create_huggingface_embedding(model_id, provider_config, dimension_override)
         else:
             raise EmbeddingError(f"Unsupported provider: {provider}")
 
@@ -109,8 +119,14 @@ class LlamaIndexEmbeddingResource(Loggable):
             return os.getenv(value[4:], "")
         return value
 
-    def _create_openai_embedding(self, model_name: str, provider_config: dict[str, Any]):
-        """Create OpenAI LlamaIndex embedding."""
+    def _create_openai_embedding(self, model_name: str, provider_config: dict[str, Any], dimension_override: int | None = None):
+        """Create OpenAI LlamaIndex embedding.
+
+        Args:
+            model_name: OpenAI model name
+            provider_config: Provider configuration from dana_config.json
+            dimension_override: Override dimension from upstream config (takes precedence)
+        """
         try:
             from llama_index.embeddings.openai import OpenAIEmbedding  # type: ignore
         except ImportError:
@@ -120,15 +136,24 @@ class LlamaIndexEmbeddingResource(Loggable):
         if not api_key:
             raise EmbeddingError("OpenAI API key not found")
 
+        # Use dimension_override if provided, else fall back to provider_config
+        dimensions = dimension_override if dimension_override is not None else provider_config.get("dimension", 1024)
+
         return OpenAIEmbedding(
             api_key=api_key,
             model=model_name,
             embed_batch_size=provider_config.get("batch_size", 100),
-            dimensions=provider_config.get("dimension", 1024),
+            dimensions=dimensions,
         )
 
-    def _create_cohere_embedding(self, model_name: str, provider_config: dict[str, Any]):
-        """Create Cohere LlamaIndex embedding."""
+    def _create_cohere_embedding(self, model_name: str, provider_config: dict[str, Any], dimension_override: int | None = None):
+        """Create Cohere LlamaIndex embedding.
+
+        Args:
+            model_name: Cohere model name
+            provider_config: Provider configuration from dana_config.json
+            dimension_override: Override dimension from upstream config (Note: Cohere models have fixed dimensions)
+        """
         try:
             from llama_index.embeddings.cohere import CohereEmbedding  # type: ignore
         except ImportError:
@@ -138,19 +163,29 @@ class LlamaIndexEmbeddingResource(Loggable):
         if not api_key:
             raise EmbeddingError("Cohere API key not found")
 
+        # Note: CohereEmbedding doesn't accept dimensions parameter - dimensions are model-specific
+        # dimension_override is accepted for API consistency but not used
         return CohereEmbedding(
             api_key=api_key,
             model_name=model_name,
             embed_batch_size=provider_config.get("batch_size", 64),
         )
 
-    def _create_huggingface_embedding(self, model_name: str, provider_config: dict[str, Any]):
-        """Create HuggingFace LlamaIndex embedding."""
+    def _create_huggingface_embedding(self, model_name: str, provider_config: dict[str, Any], dimension_override: int | None = None):
+        """Create HuggingFace LlamaIndex embedding.
+
+        Args:
+            model_name: HuggingFace model name
+            provider_config: Provider configuration from dana_config.json
+            dimension_override: Override dimension from upstream config (Note: HF models have fixed dimensions)
+        """
         try:
             from llama_index.embeddings.huggingface import HuggingFaceEmbedding  # type: ignore
         except ImportError:
             raise EmbeddingError("Install: pip install llama-index-embeddings-huggingface")
 
+        # Note: HuggingFaceEmbedding doesn't accept dimensions parameter - dimensions are model-specific
+        # dimension_override is accepted for API consistency but not used
         return HuggingFaceEmbedding(
             model_name=model_name,
             cache_folder=provider_config.get("cache_dir", ".cache/huggingface"),
@@ -162,6 +197,7 @@ class LlamaIndexEmbeddingResource(Loggable):
 _default_resource = LlamaIndexEmbeddingResource()
 get_embedding_model = _default_resource.get_embedding_model
 get_default_embedding_model = _default_resource.get_default_embedding_model
+default_embedding_model = _default_resource.get_default_embedding_model()
 setup_llamaindex = _default_resource.setup_llamaindex
 
 # Backward compatibility alias

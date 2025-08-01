@@ -86,8 +86,8 @@ def use_function(context: SandboxContext, function_name: str, *args, _name: str 
         tabular_index_params = kwargs.get("tabular_index_config", {})
         # Create resource with config dict
         resource = TabularIndexResource(
-            tabular_index_config=tabular_index_params,
             name=_name,
+            **tabular_index_params,
         )
         context.set_resource(_name, resource)
         return resource

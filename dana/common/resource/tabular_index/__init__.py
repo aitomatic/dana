@@ -1,4 +1,15 @@
 from .tabular_index_resource import TabularIndexResource
-from .tabluar_index import TabularIndex, TabularIndexConfig
+from .tabular_index import TabularIndex
+from .config import TabularConfig, EmbeddingConfig, VectorStoreConfig, BatchSearchConfig
+from .factories import EmbeddingFactory, VectorStoreFactory
 
-__all__ = ["TabularIndexResource", "TabularIndex", "TabularIndexConfig"]
+__all__ = [
+    "TabularIndexResource",
+    "TabularIndex",
+    "TabularConfig",
+    "EmbeddingConfig",
+    "VectorStoreConfig",
+    "BatchSearchConfig",
+    "EmbeddingFactory",
+    "VectorStoreFactory",
+]

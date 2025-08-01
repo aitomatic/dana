@@ -1,14 +1,14 @@
 def embedding_field_constructor(row: dict) -> str:
-    return f'{row["description"]} {row["name"]} {row["category"]}'
+    return f'{row.get("description", "")} {row.get("name", "")} {row.get("category", "")}'
 
 def metadata_constructor(row: dict) -> dict:
     return {
-        "name": row["name"],
-        "category": row["category"],
+        "name": row.get("name", ""),
+        "category": row.get("category", ""),
     }
 
 tabular_index_config = {    
-    "source": "data/others.csv",
+    "source": "tmp/test_csv/input_product_field.csv",
     "force_reload": True,
     "table_name": "others",
     "embedding_field_constructor": embedding_field_constructor,
