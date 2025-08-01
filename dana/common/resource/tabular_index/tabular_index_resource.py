@@ -13,8 +13,9 @@ from collections.abc import Callable
 
 from dana.common.resource.base_resource import BaseResource
 from dana.common.resource.tabular_index.tabular_index import TabularIndex
-from dana.common.resource.tabular_index.config import TabularConfig, EmbeddingConfig, VectorStoreConfig, BatchSearchConfig
-from dana.common.resource.tabular_index.factories import EmbeddingFactory, VectorStoreFactory
+from dana.common.resource.tabular_index.config import TabularConfig, EmbeddingConfig, BatchSearchConfig
+from dana.common.resource.vector_store import VectorStoreFactory
+from dana.common.resource.embedding import EmbeddingFactory
 from dana.common.exceptions import EmbeddingError
 
 
@@ -142,27 +143,24 @@ class TabularIndexResource(BaseResource):
         except Exception as e:
             raise ValueError(f"Invalid embedding configuration: {e}") from e
 
-    def _create_vector_store_config(self, vector_store_config: dict[str, Any] | None) -> VectorStoreConfig:
-        """Create vector store configuration with defaults.
+    def _create_vector_store_config(self, vector_store_config: dict[str, Any] | None) -> dict[str, Any]:
+        """Create vector store configuration dictionary for legacy compatibility.
 
         Args:
             vector_store_config: Optional vector store configuration
 
         Returns:
-            VectorStoreConfig object with defaults
+            Configuration dictionary in legacy format for VectorStoreFactory.create_from_legacy_dict
         """
         if not vector_store_config:
-            # Provide sensible defaults
-            return VectorStoreConfig(
-                provider="duckdb", storage_config={"path": ".cache/vector_db", "filename": "tabular_index.db", "table_name": "vectors"}
-            )
+            # Provide sensible defaults in legacy format
+            return {
+                "provider": "duckdb",
+                "storage_config": {"path": ".cache/vector_db", "filename": "tabular_index.db", "table_name": "vectors"},
+            }
 
-        try:
-            return VectorStoreConfig(
-                provider=vector_store_config.get("provider", "duckdb"), storage_config=vector_store_config.get("storage_config", {})
-            )
-        except Exception as e:
-            raise ValueError(f"Invalid vector store configuration: {e}") from e
+        # Return in legacy format
+        return {"provider": vector_store_config.get("provider", "duckdb"), "storage_config": vector_store_config.get("storage_config", {})}
 
     def _create_embedding_component(self) -> tuple[Any, int]:
         """Create embedding component using factory.
@@ -173,8 +171,11 @@ class TabularIndexResource(BaseResource):
         Raises:
             EmbeddingError: If embedding creation fails
         """
+        config_dict = {}
         try:
-            return EmbeddingFactory.create(self._embedding_config)
+            if self._embedding_config:
+                config_dict = {"model_name": self._embedding_config.model_name, "dimensions": self._embedding_config.dimensions}
+            return EmbeddingFactory.create_from_dict(config_dict)
         except Exception as e:
             raise EmbeddingError(f"Failed to create embedding component: {e}") from e
 
@@ -188,7 +189,8 @@ class TabularIndexResource(BaseResource):
             ValueError: If vector store creation fails
         """
         try:
-            return VectorStoreFactory.create(self._vector_store_config, self._embed_dim)
+            # Use legacy dictionary format for backward compatibility
+            return VectorStoreFactory.create_from_legacy_dict(self._vector_store_config, self._embed_dim)
         except Exception as e:
             raise ValueError(f"Failed to create vector store component: {e}") from e
 
@@ -247,6 +249,6 @@ class TabularIndexResource(BaseResource):
         return self._embedding_config
 
     @property
-    def vector_store_config(self) -> VectorStoreConfig:
+    def vector_store_config(self) -> dict[str, Any]:
         """Get vector store configuration (read-only)."""
         return self._vector_store_config

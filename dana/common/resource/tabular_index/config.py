@@ -8,7 +8,6 @@ Follows separation of concerns principle:
 """
 
 from dataclasses import dataclass, field
-from typing import Any
 from collections.abc import Callable
 from pathlib import Path
 
@@ -57,22 +56,6 @@ class EmbeddingConfig:
         """Validate configuration after initialization."""
         if ":" not in self.model_name:
             raise ValueError(f"Invalid model format: {self.model_name}. Expected 'provider:model_name'")
-
-
-@dataclass
-class VectorStoreConfig:
-    """Configuration for vector storage.
-
-    Handles only vector store concerns.
-    """
-
-    provider: str
-    storage_config: dict[str, Any] = field(default_factory=dict)
-
-    def __post_init__(self):
-        """Validate configuration after initialization."""
-        if self.provider not in ["duckdb", "pgvector"]:
-            raise ValueError(f"Unsupported vector store provider: {self.provider}")
 
 
 @dataclass

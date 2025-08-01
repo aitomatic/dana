@@ -18,6 +18,7 @@ from .embedding_integrations import (
     get_embedding_model,
     get_default_embedding_model,
     RAGEmbeddingResource,  # Backward compatibility alias
+    EmbeddingFactory,
 )
 
 __all__ = [
@@ -30,4 +31,5 @@ __all__ = [
     "get_embedding_model",
     "get_default_embedding_model",
     "RAGEmbeddingResource",
+    "EmbeddingFactory",
 ]

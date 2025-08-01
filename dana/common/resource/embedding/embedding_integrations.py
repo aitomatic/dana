@@ -193,6 +193,96 @@ class LlamaIndexEmbeddingResource(Loggable):
         )
 
 
+class EmbeddingFactory:
+    """Factory for creating embedding models with proper dimension handling.
+
+    This factory provides a clean interface for creating embedding models
+    across the entire codebase, not limited to any specific module.
+    """
+
+    @staticmethod
+    def create_from_config(model_name: str | None = None, dimensions: int | None = None) -> tuple[Any, int]:
+        """Create embedding model from simple configuration parameters.
+
+        Args:
+            model_name: Model name in format 'provider:model_name' or None for default
+            dimensions: Explicit dimensions or None for auto-detection
+
+        Returns:
+            Tuple of (embedding_model, actual_dimensions)
+
+        Raises:
+            EmbeddingError: If embedding model creation fails
+        """
+        try:
+            embedding_resource = LlamaIndexEmbeddingResource()
+
+            if model_name:
+                # Use specified model
+                embedding_model = embedding_resource.get_embedding_model(model_name, dimensions)
+
+                # Get actual dimensions
+                if dimensions:
+                    actual_dimensions = dimensions
+                else:
+                    actual_dimensions = EmbeddingFactory._extract_dimensions(embedding_model)
+            else:
+                # Use default from dana_config.json
+                embedding_model = embedding_resource.get_default_embedding_model()
+                actual_dimensions = EmbeddingFactory._extract_dimensions(embedding_model)
+
+            return embedding_model, actual_dimensions
+
+        except Exception as e:
+            raise EmbeddingError(f"Failed to create embedding model: {e}") from e
+
+    @staticmethod
+    def create_from_dict(config: dict[str, Any] | None = None) -> tuple[Any, int]:
+        """Create embedding model from dictionary configuration.
+
+        Args:
+            config: Configuration dict with 'model_name' and optional 'dimensions'
+                   or None for defaults
+
+        Returns:
+            Tuple of (embedding_model, actual_dimensions)
+
+        Raises:
+            EmbeddingError: If embedding model creation fails
+        """
+        if not config:
+            return EmbeddingFactory.create_from_config()
+
+        model_name = config.get("model_name")
+        dimensions = config.get("dimensions")
+
+        return EmbeddingFactory.create_from_config(model_name, dimensions)
+
+    @staticmethod
+    def _extract_dimensions(embedding_model: Any) -> int:
+        """Extract dimensions from embedding model.
+
+        Args:
+            embedding_model: LlamaIndex BaseEmbedding instance
+
+        Returns:
+            Embedding dimension
+
+        Raises:
+            EmbeddingError: If dimension cannot be determined
+        """
+        # Strategy 1: Try to get from model object attributes
+        if hasattr(embedding_model, "dimensions") and embedding_model.dimensions:
+            return embedding_model.dimensions
+
+        # Strategy 2: Generate a test embedding to get dimension
+        try:
+            test_embedding = embedding_model.get_text_embedding("test")
+            return len(test_embedding)
+        except Exception as e:
+            raise EmbeddingError(f"Cannot determine embedding dimension: {e}")
+
+
 # Convenience functions using default instance
 _default_resource = LlamaIndexEmbeddingResource()
 get_embedding_model = _default_resource.get_embedding_model
