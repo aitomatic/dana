@@ -244,7 +244,7 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
       </div>
 
       <div className="flex flex-col gap-2 h-[calc(100vh-130px)] overflow-scroll scrollbar-hide">
-        <div className="flex flex-col gap-3 px-2 mt-4">
+        <div className="flex flex-col gap-3 px-2 mt-3">
           {isLoading ? (
             <div className="flex justify-center items-center p-4">
               <div className="text-sm text-gray-500">Loading conversations...</div>
@@ -254,7 +254,7 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
               // Handle both regular conversations and session conversations
               const isSessionConv = 'agentId' in conversation; // Session conversations have agentId property
               const conversationId = isSessionConv ? conversation.id : conversation.id;
-              const isActive = conversationId === conversation_id;
+              const isActive = Number(conversationId) === Number(conversation_id);
 
               return (
                 <ConversationItem
