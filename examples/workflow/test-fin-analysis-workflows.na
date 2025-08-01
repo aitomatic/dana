@@ -11,35 +11,35 @@ from financial_analysis.liquidity import assess_quick_ratio, calc_ccc
 # several financial cases to study
 DOCS_DIR = 'financial_analysis/docs'
 
-_3M_22 = FinQueryArgs(company='3M', period='2022', doc_path=f'{DOCS_DIR}/3M_2022_10K.pdf')
-AMD_22 = FinQueryArgs(company='AMD', period='2022', doc_path=f'{DOCS_DIR}/AMD_2022_10K.pdf')
-GENMILLS_19 = FinQueryArgs(company='General Mills', period='2019', doc_path=f'{DOCS_DIR}/GENERALMILLS_2019_10K.pdf')
-VERIZON_22 = FinQueryArgs(company='Verizon', period='2022', doc_path=f'{DOCS_DIR}/VERIZON_2022_10K.pdf')
+_3M = FinQueryArgs(company='3M', period='2022', doc_path=f'{DOCS_DIR}/3M_2022_10K.pdf')
+AMD = FinQueryArgs(company='AMD', period='2022', doc_path=f'{DOCS_DIR}/AMD_2022_10K.pdf')
+GEN_MILLS = FinQueryArgs(company='General Mills', period='2019', doc_path=f'{DOCS_DIR}/GENERALMILLS_2019_10K.pdf')
+VERIZON = FinQueryArgs(company='Verizon', period='2022', doc_path=f'{DOCS_DIR}/VERIZON_2022_10K.pdf')
 
 
 # Capital-Intensity assessment
-print(f'
-3M 2022 CAPITAL INTENSITY
-=========================
+print(f"
+3M's CAPITAL INTENSITY
+======================
 {assess_cap_intens(_3M_22)}
-')
+")
 
-print(f'
-VERIZON 2022 CAPITAL INTENSITY
-==============================
-{assess_cap_intens(VERIZON_22)}
-')
+print(f"
+VERIZON's CAPITAL INTENSITY
+===========================
+{assess_cap_intens(VERIZON)}
+")
 
 # Liquidity assessment by Quick Ratio
-print(f'
-AMD 2022 QUICK RATIO
-====================
-{assess_quick_ratio(AMD_22)}
-')
+print(f"
+AMD's QUICK RATIO
+=================
+{assess_quick_ratio(AMD)}
+")
 
 # Liquidity assessment by Cash Conversion Cycle
-print(f'
-GENMILLS 2019 CASH CONVERSION CYCLE
-===================================
-{calc_ccc(GENMILLS_19)}
-')
+print(f"
+GENERAL MILLS's CASH CONVERSION CYCLE
+=====================================
+{calc_ccc(GEN_MILLS)}
+")

@@ -104,7 +104,7 @@ and using the following intermediate results:
 ```
 ')
 
-def calc_quick_ratio(args: FinQueryArgs) = [calc_quick_asset, get_curr_liab] | _calc_quick_ratio
+def calc_quick_ratio(args: FinQueryArgs) = [calc_quick_asset, get_curr_liab] | _quick_ratio
 
 
 def _quick_ratio_assessment(quick_ratio):
