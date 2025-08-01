@@ -27,16 +27,21 @@ from dana.core.lang.ast import (
     AttributeAccess,
     BinaryExpression,
     BinaryOperator,
+    ConditionalExpression,
+    DictComprehension,
     DictLiteral,
     FStringExpression,
     FunctionCall,
     Identifier,
+    LambdaExpression,
+    ListComprehension,
     ListLiteral,
     LiteralExpression,
     NamedPipelineStage,
     ObjectFunctionCall,
     PipelineExpression,
     PlaceholderExpression,
+    SetComprehension,
     SetLiteral,
     SubscriptExpression,
     TupleLiteral,
@@ -103,6 +108,7 @@ class ExpressionExecutor(BaseExecutor):
             LiteralExpression: self.execute_literal_expression,
             Identifier: self.execute_identifier,
             BinaryExpression: self.execute_binary_expression,
+            ConditionalExpression: self.execute_conditional_expression,
             UnaryExpression: self.execute_unary_expression,
             DictLiteral: self.execute_dict_literal,
             ListLiteral: self.execute_list_literal,
@@ -116,6 +122,10 @@ class ExpressionExecutor(BaseExecutor):
             PlaceholderExpression: self.execute_placeholder_expression,
             PipelineExpression: self.execute_pipeline_expression,
             FunctionCall: self.execute_function_call,
+            LambdaExpression: self.execute_lambda_expression,
+            ListComprehension: self.execute_list_comprehension,
+            SetComprehension: self.execute_set_comprehension,
+            DictComprehension: self.execute_dict_comprehension,
         }
 
     def execute_literal_expression(self, node: LiteralExpression, context: SandboxContext) -> Any:
@@ -166,6 +176,29 @@ class ExpressionExecutor(BaseExecutor):
             return self.binary_operation_handler.execute_binary_expression(node, context)
         except (TypeError, ValueError) as e:
             raise SandboxError(f"Error evaluating binary expression with operator '{node.operator}': {e}")
+
+    def execute_conditional_expression(self, node: ConditionalExpression, context: SandboxContext) -> Any:
+        """Execute a conditional expression (ternary operator).
+
+        Args:
+            node: The conditional expression to execute
+            context: The execution context
+
+        Returns:
+            The result of the conditional expression
+        """
+        try:
+            # Evaluate the condition
+            condition_value = self.parent.execute(node.condition, context)
+
+            # Python-like truthiness evaluation
+            if condition_value:
+                return self.parent.execute(node.true_branch, context)
+            else:
+                return self.parent.execute(node.false_branch, context)
+
+        except Exception as e:
+            raise SandboxError(f"Error evaluating conditional expression: {e}")
 
     def execute_unary_expression(self, node: UnaryExpression, context: SandboxContext) -> Any:
         """Execute a unary expression.
@@ -344,13 +377,21 @@ class ExpressionExecutor(BaseExecutor):
 
         self.debug(f"DEBUG: Arguments: args={args}, kwargs={kwargs}")
 
-        # If the object is a struct, try to find the method in this order:
+        # If the object is a struct (including agent structs), try to find the method in this order:
         # 1. Look for a function with the method name in the scopes
         # 2. Look for a method on the struct type
         # 3. Look for a method on the object itself
+        # 4. For agent structs, look for built-in agent methods
         if hasattr(obj, "__struct_type__"):
             struct_type = obj.__struct_type__
             self.debug(f"DEBUG: Object is struct of type {struct_type}")
+
+            # Check if this is an agent struct
+            from dana.agent import AgentStructType
+
+            is_agent_struct = isinstance(struct_type, AgentStructType)
+            if is_agent_struct:
+                self.debug(f"DEBUG: Object is agent struct of type {struct_type.name}")
 
             # First try to find a function with the method name in the scopes
             func = None
@@ -390,12 +431,32 @@ class ExpressionExecutor(BaseExecutor):
                 self.debug("DEBUG: Found callable method on struct_type")
                 return self.run_function(method, obj, *args, **kwargs)
 
+            # Try lambda methods registered in the MethodRegistry
+            self.debug(f"DEBUG: Trying lambda methods in MethodRegistry for {method_name}")
+            try:
+                from dana.core.lang.interpreter.struct_methods.lambda_receiver import LambdaMethodDispatcher
+
+                if LambdaMethodDispatcher.can_handle_method_call(obj, method_name):
+                    self.debug("DEBUG: Found lambda method in MethodRegistry")
+                    return LambdaMethodDispatcher.dispatch_method_call(obj, method_name, *args, **kwargs)
+            except ImportError:
+                self.debug("DEBUG: Lambda receiver support not available")
+            except Exception as e:
+                self.debug(f"DEBUG: Error checking lambda methods: {e}")
+
             # If no method found on struct type, try to find a method on the object itself
             self.debug(f"DEBUG: No method found on struct_type, trying object.{method_name}")
             method = getattr(obj, method_name, None)
             if method is not None and callable(method):
                 self.debug("DEBUG: Found callable method on object")
                 return self.run_function(method, *args, **kwargs)
+
+            # For agent structs, try built-in agent methods
+            if is_agent_struct:
+                self.debug(f"DEBUG: Trying built-in agent methods for {method_name}")
+                if hasattr(obj, method_name) and callable(getattr(obj, method_name)):
+                    self.debug(f"DEBUG: Found built-in agent method {method_name}")
+                    return self.run_function(getattr(obj, method_name), *args, **kwargs)
 
             # If we get here, no method was found
             self.debug(f"DEBUG: No method found for {method_name}")
@@ -404,7 +465,14 @@ class ExpressionExecutor(BaseExecutor):
             self.debug(f"DEBUG: Local scope keys: {list(local_scope.keys())}")
             for k, v in local_scope.items():
                 self.debug(f"DEBUG: Local scope item: {k} -> {type(v)}")
-            raise AttributeError(f"Object of type StructInstance has no method {method_name}")
+
+            # Provide more specific error message for agent structs
+            if is_agent_struct:
+                raise AttributeError(
+                    f"Agent struct '{struct_type.name}' has no method '{method_name}'. Available built-in methods: plan, solve, remember, recall"
+                )
+            else:
+                raise AttributeError(f"Object of type StructInstance has no method {method_name}")
 
         # For non-struct objects, use getattr on the object itself
         self.debug("DEBUG: Not a struct, trying getattr on object")
@@ -1048,3 +1116,205 @@ class ExpressionExecutor(BaseExecutor):
                     return True
 
         return False
+
+    def execute_lambda_expression(self, node: LambdaExpression, context: SandboxContext) -> Any:
+        """Execute a lambda expression by creating a callable function object.
+
+        Args:
+            node: The lambda expression to execute
+            context: The execution context
+
+        Returns:
+            A callable function object representing the lambda
+        """
+
+        def lambda_function(*args, **kwargs):
+            """The callable function created from the lambda expression."""
+            # Validate parameter compatibility if type checking is enabled
+            try:
+                from dana.core.lang.type_system.lambda_types import LambdaTypeValidator
+
+                if not LambdaTypeValidator.validate_parameter_compatibility(node.parameters, list(args)):
+                    raise SandboxError(f"Lambda parameter type mismatch: expected {len(node.parameters)} parameters, got {len(args)}")
+            except ImportError:
+                # Type validation not available, continue without it
+                pass
+
+            # Create a new scope for lambda execution
+            lambda_context = context.copy()
+
+            # Handle receiver binding if present
+            if node.receiver and args:
+                # Bind the first argument to the receiver
+                lambda_context.set(node.receiver.name, args[0])
+                args = args[1:]  # Remove the receiver from remaining args
+
+            # Bind parameters to arguments
+            for i, param in enumerate(node.parameters):
+                if i < len(args):
+                    lambda_context.set(param.name, args[i])
+                elif param.name in kwargs:
+                    lambda_context.set(param.name, kwargs[param.name])
+                # TODO: Handle default values if implemented
+
+            # Execute the lambda body
+            try:
+                return self.parent.execute(node.body, lambda_context)
+            except Exception as e:
+                raise SandboxError(f"Error executing lambda expression: {e}")
+
+        # Store metadata on the function for inspection
+        lambda_function._dana_lambda = True
+        lambda_function._dana_receiver = node.receiver
+        lambda_function._dana_parameters = node.parameters
+        lambda_function._dana_body = node.body
+
+        return lambda_function
+
+    def execute_list_comprehension(self, node: ListComprehension, context: SandboxContext) -> list:
+        """Execute a list comprehension expression.
+
+        Args:
+            node: The list comprehension to execute
+            context: The execution context
+
+        Returns:
+            A list containing the results of the comprehension
+        """
+        # Execute the iterable to get the sequence to iterate over
+        iterable = self.parent.execute(node.iterable, context)
+
+        if not hasattr(iterable, "__iter__"):
+            raise SandboxError(f"Cannot iterate over non-iterable object: {type(iterable).__name__}")
+
+        result = []
+
+        # Iterate over each item in the iterable
+        for item in iterable:
+            # Create a new scope for this iteration
+            iteration_context = context.copy()
+
+            # Bind the target variable(s) to the current item
+            if "," in node.target:
+                # Tuple unpacking: split target names and assign corresponding values
+                target_names = [name.strip() for name in node.target.split(",")]
+                if isinstance(item, list | tuple) and len(item) == len(target_names):
+                    for name, value in zip(target_names, item, strict=False):
+                        iteration_context.set(name, value)
+                else:
+                    # If item is not a tuple/list or doesn't match, assign the whole item to first target
+                    iteration_context.set(target_names[0], item)
+            else:
+                # Single variable assignment
+                iteration_context.set(node.target, item)
+
+            # Check condition if present
+            if node.condition is not None:
+                condition_result = self.parent.execute(node.condition, iteration_context)
+                if not condition_result:
+                    continue  # Skip this item if condition is False
+
+            # Execute the expression for this item
+            expression_result = self.parent.execute(node.expression, iteration_context)
+            result.append(expression_result)
+
+        return result
+
+    def execute_set_comprehension(self, node: SetComprehension, context: SandboxContext) -> set:
+        """Execute a set comprehension expression.
+
+        Args:
+            node: The set comprehension to execute
+            context: The execution context
+
+        Returns:
+            A set containing the results of the comprehension
+        """
+        # Execute the iterable to get the sequence to iterate over
+        iterable = self.parent.execute(node.iterable, context)
+
+        if not hasattr(iterable, "__iter__"):
+            raise SandboxError(f"Cannot iterate over non-iterable object: {type(iterable).__name__}")
+
+        result = set()
+
+        # Iterate over each item in the iterable
+        for item in iterable:
+            # Create a new scope for this iteration
+            iteration_context = context.copy()
+
+            # Bind the target variable(s) to the current item
+            if "," in node.target:
+                # Tuple unpacking: split target names and assign corresponding values
+                target_names = [name.strip() for name in node.target.split(",")]
+                if isinstance(item, list | tuple) and len(item) == len(target_names):
+                    for name, value in zip(target_names, item, strict=False):
+                        iteration_context.set(name, value)
+                else:
+                    # If item is not a tuple/list or doesn't match, assign the whole item to first target
+                    iteration_context.set(target_names[0], item)
+            else:
+                # Single variable assignment
+                iteration_context.set(node.target, item)
+
+            # Check condition if present
+            if node.condition is not None:
+                condition_result = self.parent.execute(node.condition, iteration_context)
+                if not condition_result:
+                    continue  # Skip this item if condition is False
+
+            # Execute the expression for this item
+            expression_result = self.parent.execute(node.expression, iteration_context)
+            result.add(expression_result)
+
+        return result
+
+    def execute_dict_comprehension(self, node: DictComprehension, context: SandboxContext) -> dict:
+        """Execute a dict comprehension expression.
+
+        Args:
+            node: The dict comprehension to execute
+            context: The execution context
+
+        Returns:
+            A dict containing the results of the comprehension
+        """
+        # Execute the iterable to get the sequence to iterate over
+        iterable = self.parent.execute(node.iterable, context)
+
+        if not hasattr(iterable, "__iter__"):
+            raise SandboxError(f"Cannot iterate over non-iterable object: {type(iterable).__name__}")
+
+        result = {}
+
+        # Iterate over each item in the iterable
+        for item in iterable:
+            # Create a new scope for this iteration
+            iteration_context = context.copy()
+
+            # Bind the target variable(s) to the current item
+            if "," in node.target:
+                # Tuple unpacking: split target names and assign corresponding values
+                target_names = [name.strip() for name in node.target.split(",")]
+                if isinstance(item, list | tuple) and len(item) == len(target_names):
+                    for name, value in zip(target_names, item, strict=False):
+                        iteration_context.set(name, value)
+                else:
+                    # If item is not a tuple/list or doesn't match, assign the whole item to first target
+                    iteration_context.set(target_names[0], item)
+            else:
+                # Single variable assignment
+                iteration_context.set(node.target, item)
+
+            # Check condition if present
+            if node.condition is not None:
+                condition_result = self.parent.execute(node.condition, iteration_context)
+                if not condition_result:
+                    continue  # Skip this item if condition is False
+
+            # Execute the key and value expressions for this item
+            key_result = self.parent.execute(node.key_expr, iteration_context)
+            value_result = self.parent.execute(node.value_expr, iteration_context)
+            result[key_result] = value_result
+
+        return result

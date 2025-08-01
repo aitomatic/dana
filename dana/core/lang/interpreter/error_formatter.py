@@ -127,9 +127,11 @@ class EnhancedErrorFormatter:
                         previous_tokens = []
                         for token_type, token_value in token_patterns:
                             previous_tokens.append(f"Token('{token_type}', '{token_value}')")
-                            if token_value in ErrorUtils.RESERVED_KEYWORDS:
-                                is_reserved_keyword_error = True
-                                actual_keyword = token_value
+
+                        # Use the shared method to find reserved keywords
+                        actual_keyword = ErrorUtils._find_reserved_keyword_in_tokens(previous_tokens)
+                        if actual_keyword:
+                            is_reserved_keyword_error = True
 
                 if is_reserved_keyword_error and actual_keyword:
                     # Extract expected tokens

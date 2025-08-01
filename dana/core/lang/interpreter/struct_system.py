@@ -453,7 +453,13 @@ class StructTypeRegistry:
             available_types = cls.list_types()
             raise ValueError(f"Unknown struct type '{struct_name}'. Available types: {available_types}")
 
-        return StructInstance(struct_type, values)
+        # Check if this is an agent struct type
+        from dana.agent import AgentStructType, AgentStructInstance
+
+        if isinstance(struct_type, AgentStructType):
+            return AgentStructInstance(struct_type, values)
+        else:
+            return StructInstance(struct_type, values)
 
     @classmethod
     def get_schema(cls, struct_name: str) -> dict[str, Any]:

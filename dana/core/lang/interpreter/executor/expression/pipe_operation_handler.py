@@ -257,6 +257,10 @@ class PipeOperationHandler(Loggable):
         if isinstance(expr, ListLiteral):
             return self._resolve_list_literal(expr, context)
 
+        # Handle lambda expressions
+        if hasattr(expr, "__class__") and expr.__class__.__name__ == "LambdaExpression":
+            return self._resolve_lambda_expression(expr, context)
+
         # Handle already composed functions and SandboxFunctions
         if isinstance(expr, SandboxFunction | ParallelFunction):
             return expr
@@ -319,6 +323,27 @@ class PipeOperationHandler(Loggable):
 
         # Create a ParallelFunction that will execute all functions with the same input
         return ParallelFunction(functions, context=context)
+
+    def _resolve_lambda_expression(self, lambda_expr: Any, context: SandboxContext) -> Any:
+        """Resolve a lambda expression to a pipeline-compatible function."""
+        try:
+            from dana.core.lang.interpreter.pipeline.lambda_pipeline import LambdaPipelineIntegrator
+            
+            # Validate lambda for pipeline use
+            if not LambdaPipelineIntegrator.validate_lambda_for_pipeline(lambda_expr):
+                raise SandboxError(f"Lambda expression is not suitable for pipeline use")
+            
+            # Create pipeline function wrapper
+            return LambdaPipelineIntegrator.resolve_lambda_to_pipeline_function(lambda_expr, context)
+            
+        except ImportError:
+            # Fall back to basic lambda execution if pipeline integration not available
+            if self.parent_executor and hasattr(self.parent_executor, 'execute_lambda_expression'):
+                lambda_func = self.parent_executor.execute_lambda_expression(lambda_expr, context)
+                if callable(lambda_func):
+                    return lambda_func
+            
+            raise SandboxError("Lambda expressions not supported in pipeline operations")
 
     def _create_partial_function(self, func: Any, func_call: FunctionCall, context: SandboxContext) -> Any:
         """Create a partial function that remembers the original arguments.

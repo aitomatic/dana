@@ -134,8 +134,9 @@ class DanaSandbox(Loggable):
                 self.info("Initializing new DanaSandbox resources")
                 self._initialize_new_resources()
 
+            # TODO(#262): Temporarily disabled API context storage
             # Store in context
-            self._context.set("system:api_client", self._api_client)
+            # self._context.set("system:api_client", self._api_client)
             self._context.set("system:llm_resource", self._llm_resource)
 
             # Register started APIClient as default POET client
@@ -170,15 +171,16 @@ class DanaSandbox(Loggable):
 
     def _initialize_new_resources(self):
         """Initialize new resources and potentially share them"""
+        # TODO(#262): Temporarily disabled API auto-start for development
         # Initialize API service
-        self._api_service = APIServiceManager()
-        self._api_service.startup()
+        # self._api_service = APIServiceManager()
+        # self._api_service.startup()
 
         # Get API client
-        self._api_client = self._api_service.get_client()
-        self._api_client.startup()
+        # self._api_client = self._api_service.get_client()
+        # self._api_client.startup()
 
-        # Initialize LLM resource
+        # Initialize LLM resource (required for core Dana functionalities involving language model operations)
         self._llm_resource = LLMResource()
         self._llm_resource.startup()
 
@@ -192,13 +194,14 @@ class DanaSandbox(Loggable):
 
         self._using_shared = False
 
+        # TODO(#262): Temporarily disabled API resource sharing
         # Make these resources available for sharing if none exist
-        if DanaSandbox._shared_api_service is None:
-            self.debug("Making resources available for sharing")
-            DanaSandbox._shared_api_service = self._api_service
-            DanaSandbox._shared_api_client = self._api_client
-            DanaSandbox._shared_llm_resource = self._llm_resource
-            DanaSandbox._resource_users = 1
+        # if DanaSandbox._shared_api_service is None:
+        #     self.debug("Making resources available for sharing")
+        #     DanaSandbox._shared_api_service = self._api_service
+        #     DanaSandbox._shared_api_client = self._api_client
+        #     DanaSandbox._shared_llm_resource = self._llm_resource
+        #     DanaSandbox._resource_users = 1
 
     def _cleanup(self):
         """Clean up this instance's resources - safe to call multiple times"""
@@ -277,7 +280,13 @@ class DanaSandbox(Loggable):
             try:
                 cls._shared_llm_resource.shutdown()
             except Exception as e:
-                cls.log_warning(f"Error shutting down shared LLM resource: {e}")
+                try:
+                    logger = cls.get_class_logger()
+                    if logger and logger.handlers:
+                        cls.log_warning(f"Error shutting down shared LLM resource: {e}")
+                except Exception:
+                    # Logger may be closed during process exit
+                    pass
             finally:
                 cls._shared_llm_resource = None
 
@@ -285,7 +294,13 @@ class DanaSandbox(Loggable):
             try:
                 cls._shared_api_client.shutdown()
             except Exception as e:
-                cls.log_warning(f"Error shutting down shared API client: {e}")
+                try:
+                    logger = cls.get_class_logger()
+                    if logger and logger.handlers:
+                        cls.log_warning(f"Error shutting down shared API client: {e}")
+                except Exception:
+                    # Logger may be closed during process exit
+                    pass
             finally:
                 cls._shared_api_client = None
 
@@ -293,7 +308,13 @@ class DanaSandbox(Loggable):
             try:
                 cls._shared_api_service.shutdown()
             except Exception as e:
-                cls.log_warning(f"Error shutting down shared API service: {e}")
+                try:
+                    logger = cls.get_class_logger()
+                    if logger and logger.handlers:
+                        cls.log_warning(f"Error shutting down shared API service: {e}")
+                except Exception:
+                    # Logger may be closed during process exit
+                    pass
             finally:
                 cls._shared_api_service = None
 
@@ -321,7 +342,15 @@ class DanaSandbox(Loggable):
     @classmethod
     def _cleanup_all_instances(cls):
         """Clean up all remaining instances - called by atexit"""
-        cls.log_debug("Process exit: cleaning up all DanaSandbox instances")
+        # Check if logger is available before logging
+        try:
+            logger = cls.get_class_logger()
+            if logger and logger.handlers:
+                cls.log_debug("Process exit: cleaning up all DanaSandbox instances")
+        except Exception:
+            # Logger may be closed during process exit
+            pass
+
         instance_count = 0
         for instance in list(cls._instances):
             try:
@@ -329,10 +358,22 @@ class DanaSandbox(Loggable):
                     instance._cleanup()
                     instance_count += 1
             except Exception as e:
-                cls.log_error(f"Error cleaning up DanaSandbox instance: {e}")
+                try:
+                    logger = cls.get_class_logger()
+                    if logger and logger.handlers:
+                        cls.log_error(f"Error cleaning up DanaSandbox instance: {e}")
+                except Exception:
+                    # Logger may be closed during process exit
+                    pass
 
         if instance_count > 0:
-            cls.log_info(f"Cleaned up {instance_count} DanaSandbox instances at process exit")
+            try:
+                logger = cls.get_class_logger()
+                if logger and logger.handlers:
+                    cls.log_info(f"Cleaned up {instance_count} DanaSandbox instances at process exit")
+            except Exception:
+                # Logger may be closed during process exit
+                pass
 
     @classmethod
     def cleanup_all(cls):
@@ -340,7 +381,13 @@ class DanaSandbox(Loggable):
         Manually clean up all instances - useful for testing or explicit resource management.
         This is safer than relying only on garbage collection or process exit.
         """
-        cls.log_info("Manual cleanup of all DanaSandbox instances requested")
+        try:
+            logger = cls.get_class_logger()
+            if logger and logger.handlers:
+                cls.log_info("Manual cleanup of all DanaSandbox instances requested")
+        except Exception:
+            # Logger may be closed during process exit
+            pass
         cls._cleanup_all_instances()
 
     def is_healthy(self) -> bool:

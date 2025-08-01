@@ -176,7 +176,14 @@ class DanaModuleLoader(MetaPathFinder, Loader):
         if module_file:
             if self._debug:
                 print(f"DEBUG: Found Dana module '{fullname}' at {module_file}")
-            return ModuleSpec(fullname, self, origin=str(module_file))
+            
+            spec = ModuleSpec(fullname, self, origin=str(module_file))
+            
+            # Set up package attributes for directory packages
+            if module_file.is_dir():
+                spec.submodule_search_locations = [str(module_file)]
+            
+            return spec
 
         return None
 
@@ -185,7 +192,24 @@ class DanaModuleLoader(MetaPathFinder, Loader):
         module = types.ModuleType(spec.name)
         module.__file__ = spec.origin
         module.__loader__ = self
-        module.__package__ = spec.parent or ""
+        
+        # Set up package attributes
+        origin_path = Path(spec.origin)
+        if spec.origin.endswith("__init__.na"):
+            # Legacy __init__.na package
+            module.__path__ = [str(origin_path.parent)]
+            module.__package__ = spec.name
+        elif origin_path.is_dir():
+            # Directory package (new)
+            module.__path__ = [str(origin_path)]
+            module.__package__ = spec.name
+        elif "." in spec.name:
+            # Submodule of a package
+            module.__package__ = spec.name.rsplit(".", 1)[0]
+        else:
+            # Top-level module
+            module.__package__ = ""
+            
         return module
 
     def exec_module(self, module: types.ModuleType) -> None:
@@ -201,13 +225,21 @@ class DanaModuleLoader(MetaPathFinder, Loader):
                 if self._debug:
                     print(f"DEBUG: Executing Dana module '{module.__name__}' from {module.__file__}")
 
-                # Execute the Dana module through sandbox interface using new exec_module method
-                result = self._sandbox_interface.exec_module(module.__file__)
-                if not result.success:
-                    raise ImportError(f"Failed to execute Dana module {module.__name__}: {result.error}")
+                # Handle directory packages (no code to execute)
+                module_path = Path(module.__file__)
+                if module_path.is_dir():
+                    # Directory package - create empty wrapper 
+                    from dana.core.lang.sandbox_context import SandboxContext
+                    empty_context = SandboxContext()
+                    dana_wrapper = DanaModuleWrapper(module.__name__, self._sandbox_interface, empty_context, self._debug)
+                else:
+                    # Execute the Dana module through sandbox interface using new exec_module method
+                    result = self._sandbox_interface.exec_module(module.__file__)
+                    if not result.success:
+                        raise ImportError(f"Failed to execute Dana module {module.__name__}: {result.error}")
 
-                # Create wrapper for the module
-                dana_wrapper = DanaModuleWrapper(module.__name__, self._sandbox_interface, result.final_context, self._debug)
+                    # Create wrapper for the module
+                    dana_wrapper = DanaModuleWrapper(module.__name__, self._sandbox_interface, result.final_context, self._debug)
 
                 # Cache the loaded module
                 self._loaded_modules[module.__name__] = dana_wrapper
@@ -228,19 +260,83 @@ class DanaModuleLoader(MetaPathFinder, Loader):
     def _find_dana_module(self, fullname: str) -> Path | None:
         """Find a Dana .na file for the given module name."""
         module_name = fullname.split(".")[-1]
+        
+        # If this is a submodule (contains dots), check if parent package is already loaded
+        if "." in fullname:
+            parent_name = fullname.rsplit(".", 1)[0]
+            if parent_name in sys.modules:
+                parent_module = sys.modules[parent_name]
+                if hasattr(parent_module, "__path__"):
+                    # Search in parent package's search locations
+                    for parent_path in parent_module.__path__:
+                        parent_path_obj = Path(parent_path)
+                        
+                        # Try direct .na file
+                        na_file = parent_path_obj / f"{module_name}.na"
+                        if na_file.exists():
+                            return na_file
 
+                        # Try package with __init__.na (legacy support)
+                        package_init = parent_path_obj / module_name / "__init__.na"
+                        if package_init.exists():
+                            return package_init
+
+                        # Try directory package (new: directories containing .na files are packages)
+                        package_dir = parent_path_obj / module_name
+                        if package_dir.is_dir() and self._is_dana_package_directory(package_dir):
+                            return package_dir
+
+        # Search in configured search paths
         for search_path in self.search_paths:
             # Try direct .na file
             na_file = search_path / f"{module_name}.na"
             if na_file.exists():
                 return na_file
 
-            # Try package with __init__.na
+            # Try package with __init__.na (legacy support)
             package_init = search_path / module_name / "__init__.na"
             if package_init.exists():
                 return package_init
 
+            # Try directory package (new: directories containing .na files are packages)
+            package_dir = search_path / module_name
+            if package_dir.is_dir() and self._is_dana_package_directory(package_dir):
+                return package_dir
+
         return None
+
+    def _is_dana_package_directory(self, directory: Path) -> bool:
+        """Check if a directory qualifies as a Dana package.
+        
+        A directory is considered a Dana package if it contains:
+        - At least one .na file, OR
+        - At least one subdirectory that is also a Dana package
+        
+        Args:
+            directory: Directory to check
+            
+        Returns:
+            True if directory is a Dana package, False otherwise
+        """
+        if not directory.is_dir():
+            return False
+            
+        # Check for direct .na files
+        for item in directory.iterdir():
+            if item.is_file() and item.suffix == ".na":
+                return True
+                
+        # Check for subdirectory packages
+        for item in directory.iterdir():
+            if item.is_dir():
+                # Check if subdirectory has __init__.na (legacy packages)
+                if (item / "__init__.na").exists():
+                    return True
+                # Check if subdirectory is itself a Dana package (recursive)
+                if self._is_dana_package_directory(item):
+                    return True
+                    
+        return False
 
     def _is_standard_library_module(self, fullname: str) -> bool:
         """Check if this is a standard library module that should be skipped."""

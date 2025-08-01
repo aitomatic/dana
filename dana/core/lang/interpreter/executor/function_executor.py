@@ -123,10 +123,11 @@ class FunctionExecutor(BaseExecutor):
 
         # Check if this function should be associated with an agent type
         # Import here to avoid circular imports
-        from dana.agent.agent_system import register_agent_method_from_function_def
+        # Temporarily commented out during migration to unified struct system
+        # from dana.agent.agent_system import register_agent_method_from_function_def
 
         # Try to register as agent method if first parameter is an agent type
-        register_agent_method_from_function_def(node, dana_func)
+        # register_agent_method_from_function_def(node, dana_func)
 
         # Apply decorators if present
         if node.decorators:

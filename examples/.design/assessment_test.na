@@ -18,16 +18,20 @@ agent QualityInspector:
 # Define memory methods for QualityInspector
 def (inspector: QualityInspector) remember(key: str, value: str):
     # Store in agent's memory
-    if not hasattr(inspector, "_memory"):
-        inspector._memory = {}
-    inspector._memory[key] = value
+    try:
+        inspector._memory[key] = value
+    except AttributeError:
+        # Memory not initialized yet, create it
+        inspector._memory = {key: value}
     return true
 
 def (inspector: QualityInspector) recall(key: str) -> str:
     # Retrieve from agent's memory
-    if hasattr(inspector, "_memory"):
+    try:
         return inspector._memory.get(key, "")
-    return ""
+    except AttributeError:
+        # Memory not initialized yet
+        return ""
 
 # Test 3: Try struct methods (previously missing)
 def (defect: DefectData) calculate_severity() -> str:
@@ -110,27 +114,35 @@ agent ProductionManager:
 
 # Define memory methods for ProcessEngineer
 def (engineer: ProcessEngineer) remember(key: str, value: str):
-    if not hasattr(engineer, "_memory"):
-        engineer._memory = {}
-    engineer._memory[key] = value
+    try:
+        engineer._memory[key] = value
+    except AttributeError:
+        # Memory not initialized yet, create it
+        engineer._memory = {key: value}
     return true
 
 def (engineer: ProcessEngineer) recall(key: str) -> str:
-    if hasattr(engineer, "_memory"):
+    try:
         return engineer._memory.get(key, "")
-    return ""
+    except AttributeError:
+        # Memory not initialized yet
+        return ""
 
 # Define memory methods for ProductionManager
 def (manager: ProductionManager) remember(key: str, value: str):
-    if not hasattr(manager, "_memory"):
-        manager._memory = {}
-    manager._memory[key] = value
+    try:
+        manager._memory[key] = value
+    except AttributeError:
+        # Memory not initialized yet, create it
+        manager._memory = {key: value}
     return true
 
 def (manager: ProductionManager) recall(key: str) -> str:
-    if hasattr(manager, "_memory"):
+    try:
         return manager._memory.get(key, "")
-    return ""
+    except AttributeError:
+        # Memory not initialized yet
+        return ""
 
 def test_multi_agent_coordination():
     inspector = QualityInspector()
