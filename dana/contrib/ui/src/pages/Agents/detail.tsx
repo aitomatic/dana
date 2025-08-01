@@ -83,8 +83,7 @@ export const TEMPLATES = [
 export default function AgentDetailPage() {
   const { agent_id } = useParams();
   const navigate = useNavigate();
-  const { fetchAgent, deleteAgent, updateAgent, isLoading, error } = useAgentStore();
-  const [agent, setAgent] = useState<any>(null);
+  const { fetchAgent, deleteAgent, updateAgent, isLoading, error, selectedAgent } = useAgentStore();
   const [showComparison, setShowComparison] = useState(false);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -92,7 +91,7 @@ export default function AgentDetailPage() {
   const [activeTab, setActiveTab] = useState('Overview');
 
   const handleDeploy = async () => {
-    if (!agent_id || isNaN(Number(agent_id)) || !agent) {
+    if (!agent_id || isNaN(Number(agent_id)) || !selectedAgent) {
       // For prebuilt agents or invalid IDs, just navigate
       navigate('/agents');
       return;
@@ -100,15 +99,14 @@ export default function AgentDetailPage() {
 
     try {
       // Update agent with status success in config
-      const updatedAgent = {
-        ...agent,
+      await updateAgent(parseInt(agent_id), {
+        name: selectedAgent.name,
+        description: selectedAgent.description,
         config: {
-          ...agent.config,
+          ...selectedAgent.config,
           status: 'success',
         },
-      };
-
-      await updateAgent(parseInt(agent_id), updatedAgent);
+      });
       navigate(`/agents/${agent_id}/chat`);
     } catch (error) {
       console.error('Failed to deploy agent:', error);
@@ -117,7 +115,7 @@ export default function AgentDetailPage() {
   };
 
   const handleSaveAndExit = async () => {
-    if (!agent_id || isNaN(Number(agent_id)) || !agent) {
+    if (!agent_id || isNaN(Number(agent_id)) || !selectedAgent) {
       // For prebuilt agents or invalid IDs, just navigate
       navigate('/agents');
       return;
@@ -126,9 +124,9 @@ export default function AgentDetailPage() {
     try {
       // Update agent with status success in config
       const updatedAgent = {
-        ...agent,
+        ...selectedAgent,
         config: {
-          ...agent.config,
+          ...selectedAgent.config,
           status: 'success',
         },
       };
@@ -143,7 +141,7 @@ export default function AgentDetailPage() {
 
   const handleClose = () => {
     // If agent has status 'success', navigate directly to agents page
-    if (agent && agent.config && agent.config.status === 'success') {
+    if (selectedAgent && selectedAgent.config && selectedAgent.config.status === 'success') {
       return navigate(-1);
     }
 
@@ -177,7 +175,7 @@ export default function AgentDetailPage() {
       // Only fetch agent details for numeric IDs (regular agents)
       // Prebuilt agents with string IDs will be handled differently
       if (!isNaN(Number(agent_id))) {
-        fetchAgent(parseInt(agent_id)).then(setAgent).catch(console.error);
+        fetchAgent(parseInt(agent_id)).catch(console.error);
       } else {
         // For prebuilt agents, we might need to fetch different data or show different UI
         console.log('Prebuilt agent detected:', agent_id);
@@ -204,7 +202,7 @@ export default function AgentDetailPage() {
     );
   }
 
-  if (error || (!isLoading && !agent)) {
+  if (error || (!isLoading && !selectedAgent)) {
     return (
       <div className="flex justify-center items-center w-full h-full">
         <div className="flex flex-col items-center max-w-md text-center">
