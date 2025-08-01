@@ -81,11 +81,11 @@ class TabularIndexResource(BaseResource):
 
         # Create components using factories (dependency injection)
         self._embedding_model, self._embed_dim = self._create_embedding_component()
-        self._vector_store = self._create_vector_store_component()
+        self._vector_store_provider = self._create_vector_store_component()
 
         # Create TabularIndex with injected dependencies - clean and simple!
         self._tabular_index = TabularIndex(
-            config=self._tabular_config, embedding_model=self._embedding_model, vector_store=self._vector_store
+            config=self._tabular_config, embedding_model=self._embedding_model, provider=self._vector_store_provider
         )
 
         self._is_ready = False
@@ -180,17 +180,46 @@ class TabularIndexResource(BaseResource):
             raise EmbeddingError(f"Failed to create embedding component: {e}") from e
 
     def _create_vector_store_component(self) -> Any:
-        """Create vector store component using factory.
+        """Create vector store provider using factory.
 
         Returns:
-            Configured vector store
+            Vector store provider (which contains the vector store)
 
         Raises:
             ValueError: If vector store creation fails
         """
         try:
             # Use legacy dictionary format for backward compatibility
-            return VectorStoreFactory.create_from_legacy_dict(self._vector_store_config, self._embed_dim)
+            return VectorStoreFactory.create_from_legacy_dict_with_provider(self._vector_store_config, self._embed_dim)
+        except AttributeError:
+            # Fallback if create_from_legacy_dict_with_provider doesn't exist yet
+            try:
+                # Convert legacy config to structured config for create_with_provider
+                from dana.common.resource.vector_store import create_duckdb_config, create_pgvector_config
+
+                provider_name = self._vector_store_config.get("provider", "duckdb")
+                storage_config = self._vector_store_config.get("storage_config", {})
+
+                if provider_name == "duckdb":
+                    structured_config = create_duckdb_config(
+                        path=storage_config.get("path", ".cache/vector_db"),
+                        filename=storage_config.get("filename", "vector_store.db"),
+                        table_name=storage_config.get("table_name", "vectors"),
+                    )
+                elif provider_name == "pgvector":
+                    # Extract HNSW config from nested structure
+                    hnsw_config = storage_config.get("hnsw", {})
+                    config_kwargs = {**storage_config}
+                    config_kwargs.update(hnsw_config)  # Flatten HNSW config
+                    config_kwargs.pop("hnsw", None)  # Remove nested hnsw dict
+                    structured_config = create_pgvector_config(**config_kwargs)
+                else:
+                    raise ValueError(f"Unsupported vector store provider: {provider_name}")
+
+                return VectorStoreFactory.create_with_provider(structured_config, self._embed_dim)
+
+            except Exception as fallback_error:
+                raise ValueError(f"Failed to create vector store component: {fallback_error}") from fallback_error
         except Exception as e:
             raise ValueError(f"Failed to create vector store component: {e}") from e
 

@@ -9,7 +9,7 @@ from typing import Any
 from llama_index.core.vector_stores.types import VectorStore
 
 from .config import VectorStoreConfig, create_duckdb_config, create_pgvector_config
-from .providers import DuckDBProvider, PGVectorProvider
+from .providers import DuckDBProvider, PGVectorProvider, VectorStoreProviderProtocol
 
 
 class VectorStoreFactory:
@@ -42,6 +42,54 @@ class VectorStoreFactory:
             provider_config = config.pgvector
             PGVectorProvider.validate_config(provider_config)
             return PGVectorProvider.create(provider_config, embed_dim)
+
+        else:
+            raise ValueError(f"Unsupported vector store provider: {config.provider}")
+
+    @staticmethod
+    def create_with_provider(config: VectorStoreConfig, embed_dim: int) -> VectorStoreProviderProtocol:
+        """Create vector store provider with lifecycle management.
+
+        This method creates a provider wrapper that implements the VectorStoreProviderProtocol
+        for lifecycle management operations. The vector store is accessible via provider.vector_store.
+
+        Args:
+            config: Structured vector store configuration
+            embed_dim: Embedding dimension
+
+        Returns:
+            Provider wrapper (vector store accessible via provider.vector_store)
+
+        Raises:
+            ValueError: If unsupported provider or invalid configuration
+
+        Example:
+            config = create_duckdb_config(path=".cache/vectors")
+            provider = VectorStoreFactory.create_with_provider(config, 1536)
+
+            # Use vector store for LlamaIndex operations
+            index = VectorStoreIndex([], storage_context=StorageContext.from_defaults(vector_store=provider.vector_store))
+
+            # Use provider for lifecycle management
+            if not provider.exists() or not provider.has_data():
+                # Need to rebuild
+                pass
+        """
+        if config.provider == "duckdb":
+            provider_config = config.duckdb
+            DuckDBProvider.validate_config(provider_config)
+            vector_store = DuckDBProvider.create(provider_config, embed_dim)
+            # Type cast is safe since DuckDBProvider.create returns DuckDBVectorStore
+            provider = DuckDBProvider(vector_store)  # type: ignore
+            return provider
+
+        elif config.provider == "pgvector":
+            provider_config = config.pgvector
+            PGVectorProvider.validate_config(provider_config)
+            vector_store = PGVectorProvider.create(provider_config, embed_dim)
+            # Type cast is safe since PGVectorProvider.create returns PGVectorStore
+            provider = PGVectorProvider(vector_store)  # type: ignore
+            return provider
 
         else:
             raise ValueError(f"Unsupported vector store provider: {config.provider}")
@@ -136,6 +184,52 @@ class VectorStoreFactory:
             raise ValueError(f"Unsupported vector store provider: {provider}")
 
         return VectorStoreFactory.create(config, embed_dim)
+
+    @staticmethod
+    def create_from_legacy_dict_with_provider(config_dict: dict[str, Any], embed_dim: int) -> VectorStoreProviderProtocol:
+        """Create vector store provider from legacy dictionary configuration.
+
+        This method provides backward compatibility with the old configuration format.
+        The vector store is accessible via provider.vector_store.
+
+        Args:
+            config_dict: Legacy configuration dictionary with nested structure
+            embed_dim: Embedding dimension
+
+        Returns:
+            Provider wrapper (vector store accessible via provider.vector_store)
+
+        Example:
+            config = {
+                "provider": "duckdb",
+                "storage_config": {
+                    "path": ".cache/vectors",
+                    "filename": "store.db",
+                    "table_name": "vectors"
+                }
+            }
+            provider = VectorStoreFactory.create_from_legacy_dict_with_provider(config, 1536)
+        """
+        provider = config_dict.get("provider", "duckdb")
+        storage_config = config_dict.get("storage_config", {})
+
+        if provider == "duckdb":
+            config = create_duckdb_config(
+                path=storage_config.get("path", ".cache/vector_db"),
+                filename=storage_config.get("filename", "vector_store.db"),
+                table_name=storage_config.get("table_name", "vectors"),
+            )
+        elif provider == "pgvector":
+            # Extract HNSW config from nested structure
+            hnsw_config = storage_config.get("hnsw", {})
+            config_kwargs = {**storage_config}
+            config_kwargs.update(hnsw_config)  # Flatten HNSW config
+            config_kwargs.pop("hnsw", None)  # Remove nested hnsw dict
+            config = create_pgvector_config(**config_kwargs)
+        else:
+            raise ValueError(f"Unsupported vector store provider: {provider}")
+
+        return VectorStoreFactory.create_with_provider(config, embed_dim)
 
     @staticmethod
     def get_supported_providers() -> list[str]:

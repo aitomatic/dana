@@ -10,15 +10,19 @@ Key improvements:
 
 from typing import Any
 from collections.abc import Callable
+import logging
+import os
 import time
 import pandas as pd
 
 from llama_index.core.schema import Document
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core import VectorStoreIndex, StorageContext
-from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 from dana.common.resource.tabular_index.config import TabularConfig, BatchSearchConfig
+from dana.common.resource.vector_store import VectorStoreProviderProtocol
+
+logger = logging.getLogger(__name__)
 
 
 class TabularIndex:
@@ -29,41 +33,161 @@ class TabularIndex:
     test and maintain.
     """
 
-    def __init__(self, config: TabularConfig, embedding_model: BaseEmbedding, vector_store: BasePydanticVectorStore):
+    def __init__(self, config: TabularConfig, embedding_model: BaseEmbedding, provider: VectorStoreProviderProtocol):
         """Initialize TabularIndex with injected dependencies.
 
         Args:
             config: Tabular processing configuration
             embedding_model: Fully configured embedding model
-            vector_store: Fully configured vector store
+            provider: Vector store provider for lifecycle management (contains vector_store)
         """
         self.config = config
         self.embedding_model = embedding_model
-        self.vector_store = vector_store
+        self.provider = provider
         self.index: VectorStoreIndex | None = None
 
     async def initialize(self) -> None:
-        """Initialize and build the tabular index."""
-        await self._load_tabular_index()
+        """Initialize tabular index following ADR-001 architecture."""
+        logger.info("Initializing TabularIndex...")
 
-    async def _load_tabular_index(self) -> None:
-        """Load the tabular index from cache or rebuild if needed."""
-        if self.config.force_reload:
-            await self.reload_tabular_index()
+        if self._should_rebuild():
+            logger.info("Index rebuild required")
+            self._validate_rebuild_preconditions()
+            self.index = await self._rebuild_index()
         else:
-            await self.load_tabular_index_from_cache()
+            logger.info("Loading existing index")
+            self.index = await self._load_existing_index()
 
-    async def reload_tabular_index(self) -> None:
-        """Reload the tabular index from the source."""
-        self.index = await self._build_index()
+        logger.info("TabularIndex initialization complete")
 
-    async def load_tabular_index_from_cache(self) -> None:
-        """Load the tabular index from cache.
+    def _should_rebuild(self) -> bool:
+        """Determine if index rebuild is needed (ADR-001 core decision logic).
 
-        TODO: Implement actual caching logic based on requirements.
-        For now, just rebuild the index.
+        Returns:
+            True if rebuild is needed, False if existing index can be used
         """
-        self.index = await self._build_index()
+        # Core ADR-001 decision logic:
+        # IF force_reload = True: → Rebuild
+        # ELSE IF vector_store_exists() AND has_data(): → Use existing
+        # ELSE: → Rebuild (first time or empty store)
+
+        if self.config.force_reload:
+            logger.info("Rebuild triggered: force_reload=True")
+            return True
+
+        if not self._vector_store_exists():
+            logger.info("Rebuild triggered: vector store does not exist")
+            return True
+
+        if not self._vector_store_has_data():
+            logger.info("Rebuild triggered: vector store exists but has no data")
+            return True
+
+        logger.info("Using existing vector store (exists and has data)")
+        return False
+
+    def _validate_rebuild_preconditions(self) -> None:
+        """Validate preconditions before rebuilding (ADR-001 safety checks).
+
+        Raises:
+            FileNotFoundError: If source data is not accessible
+            ValueError: If configuration is invalid for rebuild
+        """
+        logger.debug("Validating rebuild preconditions...")
+
+        # Check source data is accessible
+        if not os.path.exists(self.config.source):
+            raise FileNotFoundError(f"Source data not found: {self.config.source}")
+
+        # Check source data is readable
+        try:
+            if self.config.source.endswith((".csv", ".parquet")):
+                # Quick read test (just header)
+                if self.config.source.endswith(".csv"):
+                    pd.read_csv(self.config.source, nrows=0)
+                else:
+                    pd.read_parquet(self.config.source).head(0)
+        except Exception as e:
+            raise ValueError(f"Source data is not readable: {e}")
+
+        # Validate embedding model is available
+        if self.embedding_model is None:
+            raise ValueError("Embedding model is not configured")
+
+        # Validate vector store provider is configured
+        if self.provider is None:
+            raise ValueError("Vector store provider is not configured")
+
+        logger.debug("Rebuild preconditions validated successfully")
+
+    async def _rebuild_index(self) -> VectorStoreIndex:
+        """Rebuild index from scratch (ADR-001 rebuild path).
+
+        Returns:
+            Newly built VectorStoreIndex
+        """
+        logger.info("Starting index rebuild...")
+
+        # Drop existing vector store data if it exists
+        self._drop_existing_vector_store()
+
+        # Build new index
+        return await self._build_index()
+
+    async def _load_existing_index(self) -> VectorStoreIndex:
+        """Load index from existing vector store (ADR-001 load existing path).
+
+        Returns:
+            VectorStoreIndex loaded from existing vector store
+        """
+        logger.info("Loading index from existing vector store...")
+
+        try:
+            # Create index from existing vector store without adding documents
+            storage_context = StorageContext.from_defaults(vector_store=self.provider.vector_store)
+            index = VectorStoreIndex([], storage_context=storage_context, embed_model=self.embedding_model)
+
+            # Log statistics about loaded index
+            row_count = self._get_vector_store_row_count()
+            logger.info(f"Successfully loaded existing index with {row_count} embeddings")
+
+            return index
+
+        except Exception as e:
+            logger.error(f"Failed to load existing index: {e}")
+            logger.info("Falling back to rebuild...")
+            return await self._rebuild_index()
+
+    def _vector_store_exists(self) -> bool:
+        """Check if vector store exists and is accessible.
+
+        Returns:
+            True if vector store exists, False otherwise
+        """
+        return self.provider.exists()
+
+    def _vector_store_has_data(self) -> bool:
+        """Check if vector store contains data.
+
+        Returns:
+            True if vector store has data, False otherwise
+        """
+        return self.provider.has_data()
+
+    def _get_vector_store_row_count(self) -> int:
+        """Get the number of rows/embeddings in the vector store.
+
+        Returns:
+            Number of rows in vector store, 0 if cannot determine
+        """
+        return self.provider.get_row_count()
+
+    def _drop_existing_vector_store(self) -> None:
+        """Drop/clear existing vector store data before rebuild.
+
+        This ensures atomic rebuild - we only drop after validating we can rebuild.
+        """
+        self.provider.drop_data()
 
     async def retrieve(self, query: str, num_results: int = 10) -> list[dict[str, Any]]:
         """Retrieve documents based on query.
@@ -157,14 +281,20 @@ class TabularIndex:
         Returns:
             Built vector store index
         """
-        print(f"Building index from source: {self.config.source}")
+        logger.info(f"Building index from source: {self.config.source}")
 
         # Load and process data
         df = self._load_dataframe_from_source()
+        logger.info(f"Loaded {len(df)} rows from source data")
+
         documents = self._create_documents(df)
+        logger.info(f"Created {len(documents)} documents for indexing")
 
         # Create index with injected dependencies - clean and simple!
-        return self._create_index(documents)
+        index = self._create_index(documents)
+        logger.info("Index build completed successfully")
+
+        return index
 
     def _load_dataframe_from_source(self) -> pd.DataFrame:
         """Load dataframe from configured source.
@@ -220,9 +350,8 @@ class TabularIndex:
             documents.append(doc)
 
         if skipped_count > 0:
-            print(f"Skipped {skipped_count} rows due to empty embedding text")
-
-        print(f"Created {len(documents)} documents from {len(df)} rows")
+            logger.warning(f"Skipped {skipped_count} rows due to empty embedding text")
+        logger.debug(f"Document creation complete: {len(documents)} documents from {len(df)} rows")
         return documents
 
     def _create_index(self, documents: list[Document]) -> VectorStoreIndex:
@@ -235,9 +364,9 @@ class TabularIndex:
             Created VectorStoreIndex
         """
         # Clean implementation - just use injected dependencies!
-        storage_context = StorageContext.from_defaults(vector_store=self.vector_store)
+        storage_context = StorageContext.from_defaults(vector_store=self.provider.vector_store)
 
-        print("Building vector index...")
+        logger.info(f"Building vector index from {len(documents)} documents...")
         t1 = time.time()
 
         index = VectorStoreIndex.from_documents(
@@ -245,7 +374,7 @@ class TabularIndex:
         )
 
         build_time = time.time() - t1
-        print("✅ Index built successfully!")
-        print(f"\033[93m🕒 Index build time: {build_time:.2f}s\033[0m")
+        logger.info("✅ Vector index built successfully!")
+        logger.info(f"🕒 Index build time: {build_time:.2f}s")
 
         return index

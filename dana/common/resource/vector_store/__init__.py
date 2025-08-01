@@ -24,7 +24,7 @@ from .config import (
     create_pgvector_config,
 )
 from .factory import VectorStoreFactory
-from .providers import DuckDBProvider, PGVectorProvider
+from .providers import DuckDBProvider, PGVectorProvider, VectorStoreProviderProtocol, BaseVectorStoreProvider
 
 __all__ = [
     # Main configuration classes
@@ -34,6 +34,9 @@ __all__ = [
     "HNSWConfig",
     # Factory
     "VectorStoreFactory",
+    # Provider interface
+    "VectorStoreProviderProtocol",
+    "BaseVectorStoreProvider",
     # Providers (for advanced use cases)
     "DuckDBProvider",
     "PGVectorProvider",
