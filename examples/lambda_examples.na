@@ -1,0 +1,229 @@
+# Dana Lambda Examples
+# Comprehensive examples demonstrating lambda functionality
+
+# ==============================================================================
+# Phase 1: Basic Lambda Syntax
+# ==============================================================================
+
+# Simple lambda with no parameters
+zero = lambda :: 0
+print(zero())  # Output: 0
+
+# Lambda with single parameter
+double = lambda x :: x * 2
+print(double(5))  # Output: 10
+
+# Lambda with multiple parameters
+add = lambda x, y :: x + y
+print(add(3, 4))  # Output: 7
+
+# Lambda with typed parameters
+multiply = lambda x: int, y: int :: x * y
+print(multiply(6, 7))  # Output: 42
+
+# Lambda with complex expression
+quadratic = lambda a, b, c, x :: a * x * x + b * x + c
+print(quadratic(1, 2, 3, 4))  # Output: 27 (1*16 + 2*4 + 3)
+
+# ==============================================================================
+# Phase 2: Type System Integration
+# ==============================================================================
+
+# Lambda assignment with type inference
+square = lambda n: float :: n * n
+result = square(3.5)
+print(result)  # Output: 12.25
+
+# Lambda in arithmetic expressions
+calculate = lambda base: int, exp: int :: base ** exp
+power_result = calculate(2, 8)
+print(power_result)  # Output: 256
+
+# ==============================================================================
+# Phase 3: Struct Receiver Support
+# ==============================================================================
+
+# Define some example structs
+struct Point:
+    x: float = 0.0
+    y: float = 0.0
+
+struct Circle:
+    center: Point = Point()
+    radius: float = 1.0
+
+struct Rectangle:
+    width: float = 1.0
+    height: float = 1.0
+
+# Lambda with struct receiver
+translate_point = lambda (point: Point) dx: float, dy: float :: Point(
+    x=point.x + dx,
+    y=point.y + dy
+)
+
+# Usage of lambda with struct receiver
+p1 = Point(x=1.0, y=2.0)
+p2 = translate_point(p1, 3.0, 4.0)
+print(f"Translated point: ({p2.x}, {p2.y})")  # Output: (4.0, 6.0)
+
+# Lambda method for scaling points
+scale_point = lambda (point: Point) factor: float :: Point(
+    x=point.x * factor,
+    y=point.y * factor
+)
+
+p3 = scale_point(p1, 2.0)
+print(f"Scaled point: ({p3.x}, {p3.y})")  # Output: (2.0, 4.0)
+
+# ==============================================================================
+# Phase 4: Pipeline Integration
+# ==============================================================================
+
+# Lambdas in pipeline composition
+pipeline = (lambda x :: x * 2) | (lambda y :: y + 1) | (lambda z :: z * z)
+result = pipeline(3)  # ((3 * 2) + 1) * ((3 * 2) + 1) = 7 * 7 = 49
+print(f"Pipeline result: {result}")
+
+# Data transformation pipeline
+data_pipeline = (lambda data :: data.strip()) | 
+                (lambda clean :: clean.upper()) | 
+                (lambda upper :: f"PROCESSED: {upper}")
+
+text_result = data_pipeline("  hello world  ")
+print(text_result)  # Output: "PROCESSED: HELLO WORLD"
+
+# Numeric processing pipeline
+math_pipeline = (lambda x :: x / 2) | (lambda y :: y + 10) | (lambda z :: int(z))
+num_result = math_pipeline(30)  # (30/2) + 10 = 25
+print(f"Math pipeline: {num_result}")
+
+# ==============================================================================
+# Phase 5: Union Type Support
+# ==============================================================================
+
+# Lambda with union type receiver
+calculate_area = lambda (shape: Point | Circle | Rectangle) :: {
+    if isinstance(shape, Point):
+        return 0.0  # Points have no area
+    elif isinstance(shape, Circle):
+        return 3.14159 * shape.radius * shape.radius
+    elif isinstance(shape, Rectangle):
+        return shape.width * shape.height
+    else:
+        return 0.0
+}
+
+# Test union type lambda with different shapes
+point = Point(x=1, y=2)
+circle = Circle(center=Point(), radius=5.0)
+rectangle = Rectangle(width=4.0, height=6.0)
+
+print(f"Point area: {calculate_area(point)}")      # Output: 0.0
+print(f"Circle area: {calculate_area(circle)}")    # Output: ~78.54
+print(f"Rectangle area: {calculate_area(rectangle)}")  # Output: 24.0
+
+# Union type lambda for perimeter calculation
+calculate_perimeter = lambda (shape: Circle | Rectangle) :: {
+    if isinstance(shape, Circle):
+        return 2 * 3.14159 * shape.radius
+    elif isinstance(shape, Rectangle):
+        return 2 * (shape.width + shape.height)
+    else:
+        return 0.0
+}
+
+print(f"Circle perimeter: {calculate_perimeter(circle)}")    # Output: ~31.42
+print(f"Rectangle perimeter: {calculate_perimeter(rectangle)}")  # Output: 20.0
+
+# ==============================================================================
+# Advanced Examples: Combining All Features
+# ==============================================================================
+
+# Complex lambda with union receiver in pipeline
+shape_processor = (lambda (shape: Point | Circle | Rectangle) :: {
+    return {
+        "type": type(shape).__name__,
+        "area": calculate_area(shape),
+        "valid": True
+    }
+}) | (lambda info :: f"{info['type']}: area={info['area']}")
+
+shapes = [point, circle, rectangle]
+for shape in shapes:
+    description = shape_processor(shape)
+    print(description)
+
+# Lambda with multiple parameters and receiver in pipeline
+transform_and_scale = lambda (shape: Circle | Rectangle) scale: float :: {
+    if isinstance(shape, Circle):
+        return Circle(center=shape.center, radius=shape.radius * scale)
+    elif isinstance(shape, Rectangle):
+        return Rectangle(width=shape.width * scale, height=shape.height * scale)
+}
+
+# Pipeline combining transformation and calculation
+shape_analysis = (lambda shape :: transform_and_scale(shape, 2.0)) | 
+                 (lambda scaled :: calculate_area(scaled)) |
+                 (lambda area :: f"Scaled area: {area}")
+
+circle_analysis = shape_analysis(circle)
+rectangle_analysis = shape_analysis(rectangle)
+
+print(circle_analysis)    # Output: Scaled area with doubled radius
+print(rectangle_analysis) # Output: Scaled area with doubled dimensions
+
+# ==============================================================================
+# Functional Programming Patterns
+# ==============================================================================
+
+# Higher-order functions with lambdas
+map_func = lambda (collection: list) transform :: [transform(item) for item in collection]
+filter_func = lambda (collection: list) predicate :: [item for item in collection if predicate(item)]
+reduce_func = lambda (collection: list) reducer, initial :: {
+    result = initial
+    for item in collection:
+        result = reducer(result, item)
+    return result
+}
+
+# Using higher-order functions
+numbers = [1, 2, 3, 4, 5]
+doubled = map_func(numbers, lambda x :: x * 2)
+evens = filter_func(numbers, lambda x :: x % 2 == 0)
+sum_all = reduce_func(numbers, lambda acc, x :: acc + x, 0)
+
+print(f"Doubled: {doubled}")  # Output: [2, 4, 6, 8, 10]
+print(f"Evens: {evens}")      # Output: [2, 4]
+print(f"Sum: {sum_all}")      # Output: 15
+
+# ==============================================================================
+# Error Handling Examples
+# ==============================================================================
+
+# Lambda with validation
+safe_divide = lambda x: float, y: float :: {
+    if y == 0.0:
+        return None
+    else:
+        return x / y
+}
+
+print(safe_divide(10.0, 2.0))  # Output: 5.0
+print(safe_divide(10.0, 0.0))  # Output: None
+
+# Lambda with type checking in union receiver
+safe_area = lambda (shape: Point | Circle | Rectangle) :: {
+    try:
+        return calculate_area(shape)
+    except Exception as e:
+        return f"Error calculating area: {e}"
+}
+
+# This demonstrates the comprehensive lambda functionality implemented:
+# 1. Basic lambda syntax with parameters and type hints
+# 2. Type system integration with inference and checking
+# 3. Struct receiver support for method-like behavior
+# 4. Pipeline integration for functional composition
+# 5. Union type support for polymorphic receivers
+# 6. Advanced patterns combining all features

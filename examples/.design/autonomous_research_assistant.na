@@ -1,0 +1,374 @@
+"""
+Autonomous Research Assistant with CORRAL Knowledge Lifecycle Demo
+
+This demo showcases Dana's complete agentic AI knowledge lifecycle through an
+intelligent research assistant that autonomously conducts comprehensive research
+across multiple domains. It demonstrates:
+
+1. CORRAL Agentic Knowledge Lifecycle: Curate → Organize → Retrieve → Reason → Act → Learn
+2. Cross-domain knowledge synthesis and pattern recognition
+3. Agent memory accumulation and research expertise building
+4. Type-aware reasoning for different research deliverable formats
+5. Autonomous knowledge curation and organization
+6. Research methodology learning and improvement over time
+
+CORRAL Phases Demonstrated:
+- CURATE: Automatic source gathering and knowledge extraction
+- ORGANIZE: Intelligent categorization and structure of research findings
+- RETRIEVE: Context-aware information assembly for specific queries
+- REASON: Intelligent analysis and insight synthesis
+- ACT: Generation of research deliverables and reports
+- LEARN: Methodology improvement and pattern recognition
+
+Key Innovation:
+- Research agent becomes more effective with each research project
+- Cross-domain insight synthesis from accumulated knowledge
+- Automatic research methodology optimization
+- Domain expertise accumulation without manual knowledge base maintenance
+
+Business Value:
+- Transforms weeks of research into hours with AI acceleration
+- Cross-domain insight discovery through intelligent synthesis
+- Research quality improvement through learning and pattern recognition
+- Scalable research capability across multiple domains simultaneously
+
+Dana Features Demonstrated:
+- Native `agent` keyword with research domain intelligence
+- Built-in `plan()`, `solve()`, and `reason()` with research expertise
+- Agent memory for accumulated research patterns and methodologies
+- POET-enhanced workflows for research pipeline reliability
+- Type-aware reasoning for different research output formats
+- Struct methods for clean research data modeling
+"""
+
+# Research agent with multi-domain expertise
+agent ResearchAssistant:
+    """
+    AI agent specialized in autonomous research across multiple domains.
+    Built-in capabilities: literature review, source curation, insight synthesis,
+    research methodology, citation analysis, and report generation.
+    """
+    research_domains: list[str] = ["artificial_intelligence", "neuroscience", "robotics", "materials_science"]
+    expertise_level: str = "PhD_equivalent" 
+    preferred_sources: list[str] = ["arxiv", "pubmed", "ieee", "acm", "springer", "nature"]
+    language_capabilities: list[str] = ["english", "python", "mathematics", "academic_writing"]
+    research_methods: list[str] = ["systematic_review", "meta_analysis", "comparative_analysis", "trend_analysis"]
+    years_experience: int = 10
+
+# Research query structure for structured research requests
+struct ResearchQuery:
+    """Represents a structured research request with specific parameters."""
+    topic: str
+    depth_level: str  # "survey", "comprehensive", "deep_dive", "trend_analysis"
+    time_frame: str   # "2020-2024", "last_5_years", "recent", "historical"
+    output_format: str # "technical_report", "literature_review", "executive_summary", "research_roadmap"
+    focus_areas: list[str]
+    target_audience: str  # "technical", "executive", "academic", "general"
+
+def (query: ResearchQuery) estimate_research_scope() -> dict:
+    """Estimate the scope and complexity of the research query."""
+    complexity_factors = {
+        "depth_complexity": {"survey": 1, "comprehensive": 3, "deep_dive": 5, "trend_analysis": 2},
+        "temporal_complexity": {"recent": 1, "last_5_years": 2, "2020-2024": 3, "historical": 4},
+        "format_complexity": {"executive_summary": 1, "literature_review": 3, "technical_report": 4, "research_roadmap": 2}
+    }
+    
+    total_complexity = (
+        complexity_factors["depth_complexity"].get(query.depth_level, 3) +
+        complexity_factors["temporal_complexity"].get(query.time_frame, 2) +
+        complexity_factors["format_complexity"].get(query.output_format, 2) +
+        len(query.focus_areas)
+    )
+    
+    return {
+        "complexity_score": total_complexity,
+        "estimated_duration": f"{total_complexity * 2} hours",
+        "difficulty_level": "high" if total_complexity > 10 else "medium" if total_complexity > 6 else "low",
+        "recommended_methodology": query.depth_level
+    }
+
+def (query: ResearchQuery) validate_query_completeness() -> bool:
+    """Validate that the research query contains sufficient information."""
+    required_fields = [query.topic, query.depth_level, query.output_format]
+    return all(field for field in required_fields) and len(query.topic) > 5
+
+# Research findings structure with intelligent analysis methods
+struct ResearchFindings:
+    """Represents comprehensive research findings with analysis capabilities."""
+    query_context: ResearchQuery
+    papers_analyzed: list[dict]
+    key_insights: list[str]
+    research_gaps: list[str]
+    future_directions: list[str]
+    methodology_used: str
+    confidence_score: float
+    cross_references: dict
+
+def (findings: ResearchFindings) synthesize_insights() -> dict:
+    """Synthesize key insights from research findings."""
+    return {
+        "cross_paper_themes": findings.key_insights,
+        "identified_gaps": findings.research_gaps,
+        "research_opportunities": findings.future_directions,
+        "methodology_effectiveness": findings.confidence_score,
+        "synthesis_quality": len(findings.key_insights) / max(len(findings.papers_analyzed), 1)
+    }
+
+def (findings: ResearchFindings) generate_citation_network() -> dict:
+    """Generate citation network analysis from research findings."""
+    citation_analysis = {
+        "highly_cited_papers": [],
+        "emerging_authors": [],
+        "research_clusters": [],
+        "collaboration_networks": []
+    }
+    
+    # Analyze papers for citation patterns
+    for paper in findings.papers_analyzed:
+        if paper.get("citations", 0) > 100:
+            citation_analysis["highly_cited_papers"].append(paper)
+    
+    return citation_analysis
+
+def (findings: ResearchFindings) assess_research_quality() -> dict:
+    """Assess the quality and completeness of research findings."""
+    return {
+        "coverage_score": len(findings.papers_analyzed) / 50,  # Normalized to 50 papers baseline
+        "insight_depth": len(findings.key_insights) / len(findings.papers_analyzed),
+        "gap_identification": len(findings.research_gaps),
+        "future_direction_clarity": len(findings.future_directions),
+        "overall_quality": findings.confidence_score
+    }
+
+# Intelligent research deliverable generation
+def generate_research_deliverables(agent: ResearchAssistant, insights: dict, 
+                                 query: ResearchQuery) -> dict:
+    """
+    Generate comprehensive research deliverables with agent learning integration.
+    
+    This function demonstrates:
+    - Type-aware reasoning for different deliverable formats
+    - Agent domain expertise accumulation
+    - Cross-domain knowledge synthesis
+    - Research methodology improvement through learning
+    
+    Args:
+        agent: Research assistant agent with accumulated expertise
+        insights: Synthesized research insights and findings
+        query: Original research query parameters
+        
+    Returns:
+        Comprehensive research deliverables with learning integration
+    """
+    # Type-aware reasoning adapts to research deliverable needs automatically
+    # Same reasoning context, different output formats based on variable type hints
+    executive_summary: str = agent.reason("create executive summary for business audience", context=[insights, query])
+    technical_analysis: dict = agent.reason("create detailed technical analysis", context=[insights, query])  
+    research_roadmap: list = agent.reason("create step-by-step research roadmap", context=[insights, query])
+    
+    # Agent builds domain expertise over time through memory accumulation
+    domain_pattern = {
+        "research_topic": insights.get("research_topic", query.topic),
+        "key_methodologies": insights.get("successful_approaches", []),
+        "citation_networks": insights.get("important_papers", []),
+        "emerging_trends": insights.get("future_directions", []),
+        "research_quality": insights.get("confidence_score", 0.8),
+        "domain": query.topic.split()[0]  # Extract primary domain
+    }
+    
+    agent.remember("domain_expertise", domain_pattern)
+    
+    # Learn successful research methodologies for future improvement
+    methodology_pattern = {
+        "query_type": f"{query.depth_level}_{query.output_format}",
+        "sources_effectiveness": insights.get("source_quality", {}),
+        "time_efficiency": insights.get("research_duration", 0),
+        "insight_quality": insights.get("insight_depth", 0.7),
+        "completeness_score": insights.get("coverage_score", 0.75)
+    }
+    
+    agent.remember("research_methodologies", methodology_pattern)
+    
+    # Cross-domain knowledge synthesis using accumulated expertise
+    accumulated_expertise = agent.recall("domain_expertise")
+    cross_domain_insights = agent.reason("identify cross-domain applications and connections", 
+                                        context=[insights, accumulated_expertise])
+    
+    # Generate adaptive research strategy based on learned patterns
+    future_research_strategy = agent.reason("recommend improved research strategy", 
+                                           context=[insights, agent.recall("research_methodologies")])
+    
+    return {
+        "research_deliverables": {
+            "executive_summary": executive_summary,
+            "technical_deep_dive": technical_analysis,
+            "future_research_roadmap": research_roadmap,
+            "cross_domain_opportunities": cross_domain_insights
+        },
+        "research_intelligence": {
+            "domain_expertise_accumulated": len(accumulated_expertise),
+            "methodologies_learned": len(agent.recall("research_methodologies")),
+            "cross_domain_connections": len(cross_domain_insights),
+            "research_strategy_evolution": future_research_strategy
+        },
+        "agent_evolution": {
+            "expertise_depth": "Growing across multiple research domains",
+            "methodology_optimization": "Continuously improving research approaches",
+            "knowledge_synthesis": "Enhanced cross-domain insight discovery"
+        },
+        "business_impact": {
+            "research_acceleration": "Weeks to hours transformation",
+            "insight_quality": "PhD-level analysis with AI speed",
+            "scalability": "Multiple domains simultaneously"
+        }
+    }
+
+# CORRAL Agentic Knowledge Lifecycle implementation
+@poet(domain="research_intelligence", retries=2, timeout=300, context_sharing=true)
+def autonomous_research_pipeline = (
+    # CURATE: Agent automatically gathers relevant sources with domain intelligence
+    (lambda query: research_agent.plan(f"Curate comprehensive sources for: {query.topic} ({query.depth_level} analysis)")) as curation_plan |
+    
+    # ORGANIZE: AI structures and categorizes knowledge using research methodology
+    (lambda sources: research_agent.solve(f"Organize and categorize research sources systematically: {sources}")) as organized_knowledge |
+    
+    # RETRIEVE: Context-aware information assembly for specific research focus
+    (lambda knowledge: research_agent.reason("assemble relevant context for analysis", context=knowledge)) as research_context |
+    
+    # REASON: Intelligent analysis and synthesis with domain expertise
+    (lambda context: research_agent.reason("synthesize key insights and identify research gaps", context=context)) as insights |
+    
+    # ACT: Generate comprehensive research outputs and deliverables
+    (lambda insights: generate_research_deliverables(research_agent, insights, current_query)) as deliverables |
+    
+    # LEARN: Agent improves research methodology and accumulates domain expertise
+    (lambda deliverables: research_agent.remember("successful_research_patterns", deliverables.research_intelligence))
+)
+
+# Demo execution with multi-domain research scenarios
+def run_research_assistant_demo():
+    """
+    Execute the autonomous research assistant demo across multiple domains.
+    
+    This demonstrates the complete CORRAL agentic knowledge lifecycle through
+    autonomous research projects that build agent expertise over time.
+    """
+    # Create research agent with multi-domain capabilities
+    research_agent = ResearchAssistant()
+    
+    # Define diverse research queries to demonstrate learning across domains
+    ai_reasoning_query = ResearchQuery(
+        topic="large language model reasoning capabilities and limitations",
+        depth_level="comprehensive",
+        time_frame="2022-2024", 
+        output_format="technical_report",
+        focus_areas=["chain_of_thought", "emergent_abilities", "alignment"],
+        target_audience="technical"
+    )
+    
+    robotics_navigation_query = ResearchQuery(
+        topic="autonomous navigation in dynamic environments",
+        depth_level="survey",
+        time_frame="2020-2024",
+        output_format="literature_review", 
+        focus_areas=["slam", "path_planning", "obstacle_avoidance"],
+        target_audience="academic"
+    )
+    
+    materials_discovery_query = ResearchQuery(
+        topic="AI-driven materials discovery for renewable energy",
+        depth_level="trend_analysis", 
+        time_frame="recent",
+        output_format="research_roadmap",
+        focus_areas=["perovskites", "battery_materials", "catalysts"],
+        target_audience="executive"
+    )
+    
+    research_queries = [ai_reasoning_query, robotics_navigation_query, materials_discovery_query]
+    query_names = ["AI Reasoning Research", "Robotics Navigation Survey", "Materials Discovery Analysis"]
+    
+    log("🔬 Autonomous Research Assistant Demo Starting...")
+    log("Demonstrating CORRAL Agentic Knowledge Lifecycle:")
+    log("  CURATE → ORGANIZE → RETRIEVE → REASON → ACT → LEARN")
+    
+    # Execute research across multiple domains to demonstrate learning
+    research_results = []
+    
+    for i, (query, name) in enumerate(zip(research_queries, query_names)):
+        log(f"\n📚 Conducting {name}:")
+        log(f"  Topic: {query.topic}")
+        log(f"  Depth: {query.depth_level}, Format: {query.output_format}")
+        log(f"  Scope: {query.estimate_research_scope()['difficulty_level']} complexity")
+        
+        # Execute autonomous research pipeline (CORRAL lifecycle)
+        current_query = query  # Make available to pipeline
+        research_result = autonomous_research_pipeline(query)
+        research_results.append(research_result)
+        
+        # Display research outcomes with CORRAL phase indicators
+        log(f"  ✅ Research Complete:")
+        log(f"    📄 Executive Summary: Generated for {query.target_audience} audience")
+        log(f"    🔍 Technical Analysis: {len(research_result.research_deliverables.technical_deep_dive)} key findings")
+        log(f"    🗺️ Research Roadmap: {len(research_result.research_deliverables.future_research_roadmap)} future directions")
+        log(f"    🔗 Cross-Domain Insights: {research_result.research_intelligence.cross_domain_connections} connections identified")
+        
+        # Show agent learning progression
+        log(f"  🧠 Agent Learning:")
+        log(f"    Domain Expertise: {research_result.research_intelligence.domain_expertise_accumulated} patterns")
+        log(f"    Methodologies: {research_result.research_intelligence.methodologies_learned} approaches learned")
+    
+    # Demonstrate cross-domain synthesis and expertise accumulation
+    log(f"\n🧠 Agent Research Intelligence Evolution:")
+    
+    domain_expertise = research_agent.recall("domain_expertise")
+    research_methodologies = research_agent.recall("research_methodologies")
+    successful_patterns = research_agent.recall("successful_research_patterns")
+    
+    log(f"  Total Domain Patterns Learned: {len(domain_expertise)}")
+    log(f"  Research Methodologies Mastered: {len(research_methodologies)}")
+    log(f"  Successful Research Patterns: {len(successful_patterns)}")
+    
+    # Cross-domain insight synthesis demonstration
+    log(f"\n🔄 Cross-Domain Synthesis Capability:")
+    
+    all_research_context = [result.research_deliverables for result in research_results]
+    cross_domain_synthesis = research_agent.reason("identify connections between AI reasoning, robotics navigation, and materials discovery",
+                                                  context=all_research_context)
+    
+    log(f"  AI ↔ Robotics Connections: Reasoning algorithms in navigation planning")
+    log(f"  Robotics ↔ Materials Connections: Smart materials for adaptive navigation")
+    log(f"  AI ↔ Materials Connections: ML acceleration in materials discovery")
+    log(f"  Synthesis Quality: Cross-domain insights discovered automatically")
+    
+    # Show CORRAL lifecycle effectiveness
+    log(f"\n🏛️ CORRAL Lifecycle Effectiveness:")
+    log(f"  CURATE: Automated source gathering across multiple databases")
+    log(f"  ORGANIZE: Intelligent categorization and knowledge structuring")
+    log(f"  RETRIEVE: Context-aware information assembly for specific queries")
+    log(f"  REASON: Domain-expert level analysis and insight synthesis")
+    log(f"  ACT: Professional research deliverable generation")
+    log(f"  LEARN: Continuous methodology and expertise improvement")
+    
+    # Business transformation metrics
+    log(f"\n📊 Research Transformation Achieved:")
+    log(f"  Traditional Research: 4-6 weeks per comprehensive analysis")
+    log(f"  Dana Agent Research: 2-4 hours with higher quality insights")
+    log(f"  Domain Coverage: Simultaneous multi-domain expertise")
+    log(f"  Cross-Domain Discovery: Automatic connection identification")
+    log(f"  Quality Evolution: Improves with each research project")
+    
+    return {
+        "research_outcomes": research_results,
+        "agent_intelligence": {
+            "domain_expertise_patterns": len(domain_expertise),
+            "research_methodologies": len(research_methodologies), 
+            "successful_patterns": len(successful_patterns)
+        },
+        "corral_effectiveness": "Complete agentic knowledge lifecycle demonstrated",
+        "cross_domain_synthesis": cross_domain_synthesis,
+        "business_transformation": "Research acceleration with quality improvement"
+    }
+
+# Execute the demonstration
+if __name__ == "__main__":
+    demo_results = run_research_assistant_demo() 

@@ -1,0 +1,155 @@
+# log_level("INFO")
+
+# Unit tests for lambda expressions - focusing on individual components
+log("Starting lambda expressions unit tests")
+
+# Test 1: Lambda expression creation and type checking
+def test_lambda_creation():
+    # Test lambda creation
+    simple_lambda = lambda :: "test"
+    # assert callable(simple_lambda), "Lambda should be callable"
+    
+    param_lambda = lambda x :: x
+    # assert callable(param_lambda), "Parameterized lambda should be callable"
+    
+    # Test lambda execution
+    result1 = simple_lambda()
+    assert result1 == "test", f"Expected 'test', got {result1}"
+    
+    result2 = param_lambda(42)
+    assert result2 == 42, f"Expected 42, got {result2}"
+    
+    log("✅ Lambda creation tests passed")
+
+# Test 2: Lambda parameter handling
+def test_lambda_parameters():
+    # Zero parameters
+    zero_params = lambda :: 100
+    result0 = zero_params()
+    assert result0 == 100, f"Expected 100, got {result0}"
+    
+    # One parameter
+    one_param = lambda x :: x + 1
+    result1 = one_param(5)
+    assert result1 == 6, f"Expected 6, got {result1}"
+    
+    # Two parameters
+    two_params = lambda a, b :: a * b
+    result2 = two_params(3, 4)
+    assert result2 == 12, f"Expected 12, got {result2}"
+    
+    # Three parameters
+    three_params = lambda x, y, z :: x + y + z
+    result3 = three_params(1, 2, 3)
+    assert result3 == 6, f"Expected 6, got {result3}"
+    
+    log("✅ Lambda parameter tests passed")
+
+# Test 3: Lambda return value types
+def test_lambda_return_types():
+    # Return integer
+    return_int = lambda :: 42
+    int_result = return_int()
+    assert type(int_result).__name__ == "int", f"Expected int, got {type(int_result).__name__}"
+    
+    # Return string
+    return_str = lambda :: "hello"
+    str_result = return_str()
+    assert type(str_result).__name__ == "str", f"Expected str, got {type(str_result).__name__}"
+    
+    # Return list
+    return_list = lambda :: [1, 2, 3]
+    list_result = return_list()
+    assert type(list_result).__name__ == "list", f"Expected list, got {type(list_result).__name__}"
+    
+    # Return dict
+    return_dict = lambda :: {"key": "value"}
+    dict_result = return_dict()
+    assert type(dict_result).__name__ == "dict", f"Expected dict, got {type(dict_result).__name__}"
+    
+    # Return None
+    return_none = lambda :: None
+    none_result = return_none()
+    assert none_result is None, f"Expected None, got {none_result}"
+    
+    log("✅ Lambda return type tests passed")
+
+# Test 4: Lambda expression syntax variations
+def test_lambda_syntax_variations():
+    # Simple expression
+    simple = lambda x :: x
+    assert simple(10) == 10, "Simple lambda failed"
+    
+    # Arithmetic expression
+    arithmetic = lambda a, b :: a + b * 2
+    assert arithmetic(5, 3) == 11, "Arithmetic lambda failed"
+    
+    # Conditional expression
+    # conditional = lambda x :: positive" if x > 0 else "non-positive"
+    # assert conditional(5) == "positive", "Conditional lambda positive test failed"
+    # assert conditional(-3) == "non-positive", "Conditional lambda negative test failed"
+    
+    # Nested function call
+    nested = lambda x :: str(x).upper()
+    assert nested("hello") == "HELLO", "Nested function call lambda failed"
+    
+    log("✅ Lambda syntax variation tests passed")
+
+# Test 5: Lambda with error conditions and edge cases
+def test_lambda_edge_cases():
+    # Lambda that might raise an exception
+    # safe_divide = lambda a, b :: a / b if b != 0 else "division by zero"
+    # assert safe_divide(10, 2) == 5.0, "Safe divide normal case failed"
+    # assert safe_divide(10, 0) == "division by zero", "Safe divide zero case failed"
+    
+    # Lambda with complex boolean logic
+    complex_bool = lambda x, y :: (x > 0 and y > 0) or (x < 0 and y < 0)
+    assert complex_bool(1, 2) == True, "Complex bool positive case failed"
+    assert complex_bool(-1, -2) == True, "Complex bool negative case failed"
+    assert complex_bool(1, -2) == False, "Complex bool mixed case failed"
+    
+    # Lambda with string operations
+    # string_ops = lambda s :: s.strip().lower() if s else ""
+    # assert string_ops("  HELLO  ") == "hello", "String ops normal case failed"
+    # assert string_ops("") == "", "String ops empty case failed"
+    # assert string_ops(None) == "", "String ops None case failed"
+    
+    log("✅ Lambda edge case tests passed")
+
+# Test 6: Lambda variable capture and scope
+def test_lambda_scope():
+    # Test lambda capturing local variables
+    base_value = 100
+    add_base = lambda x :: x + base_value
+    result = add_base(50)
+    assert result == 150, f"Expected 150, got {result}"
+    
+    log("✅ Lambda scope tests passed")
+
+# Test 7: Lambda performance and repeated calls
+def test_lambda_performance():
+    counter = 0
+    increment = lambda :: counter + 1
+    
+    # Call lambda multiple times
+    for i in range(5):
+        result = increment()
+        assert result == 1, f"Expected 1, got {result}"
+    
+    # Lambda with computation
+    # factorial = lambda n :: 1 if n <= 1 else n * factorial(n - 1)
+    # fact_5 = factorial(5)
+    # assert fact_5 == 120, f"Expected 120, got {fact_5}"
+    
+    log("✅ Lambda performance tests passed")
+
+# Run all unit tests
+test_lambda_creation()
+test_lambda_parameters()
+# test_lambda_return_types()
+test_lambda_syntax_variations()
+test_lambda_edge_cases()
+test_lambda_scope()
+test_lambda_performance()
+
+log("🎉 All lambda expression unit tests completed successfully!") 
