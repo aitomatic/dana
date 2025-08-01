@@ -63,8 +63,6 @@ def get_rev(args: FinQueryArgs) -> float:
         line_item=REV_LINE_ITEM,
         statement=INCOME_STATEMENT)
 
-    print(rev)
-
     return rev
 
 
@@ -76,8 +74,6 @@ def get_rev_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         line_item=REV_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=2)
-
-    print(rev_2y)
 
     return rev_2y
 
@@ -91,8 +87,6 @@ def get_rev_3y(args: FinQueryArgs) -> tuple[float]:
         statement=INCOME_STATEMENT,
         n_years=3)
 
-    print(rev_3y)
-
     return rev_3y
 
 
@@ -103,8 +97,6 @@ def get_cogs(args: FinQueryArgs) -> float:
         args,
         line_item=COGS_LINE_ITEM,
         statement=INCOME_STATEMENT)
-
-    print(cogs)
 
     return cogs
 
@@ -118,8 +110,6 @@ def get_cogs_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         statement=INCOME_STATEMENT,
         n_years=2)
 
-    print(cogs_2y)
-
     return cogs_2y
 
 
@@ -132,8 +122,6 @@ def get_cogs_3y(args: FinQueryArgs) -> tuple[float]:
         statement=INCOME_STATEMENT,
         n_years=3)
 
-    print(cogs_3y)
-
     return cogs_3y
 
 
@@ -144,8 +132,6 @@ def get_gross_income(args: FinQueryArgs) -> float:
         args,
         line_item=GROSS_INCOME_LINE_ITEM,
         statement=INCOME_STATEMENT)
-
-    print(gross_income)
 
     return gross_income
 
@@ -159,8 +145,6 @@ def get_gross_income_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         statement=INCOME_STATEMENT,
         n_years=2)
 
-    print(gross_income_2y)
-
     return gross_income_2y
 
 
@@ -173,8 +157,6 @@ def get_gross_income_3y(args: FinQueryArgs) -> tuple[float]:
         statement=INCOME_STATEMENT,
         n_years=3)
 
-    print(gross_income_3y)
-
     return gross_income_3y
 
 
@@ -185,8 +167,6 @@ def get_ga_exp(args: FinQueryArgs) -> float:
         args,
         line_item=GnA_EXP_LINE_ITEM,
         statement=INCOME_STATEMENT)
-
-    print(ga_exp)
 
     return ga_exp
 
@@ -200,8 +180,6 @@ def get_ga_exp_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         statement=INCOME_STATEMENT,
         n_years=2)
 
-    print(ga_exp_2y)
-
     return ga_exp_2y
 
 
@@ -214,8 +192,6 @@ def get_ga_exp_3y(args: FinQueryArgs) -> tuple[float]:
         statement=INCOME_STATEMENT,
         n_years=3)
 
-    print(ga_exp_3y)
-
     return ga_exp_3y
 
 
@@ -226,8 +202,6 @@ def get_op_income(args: FinQueryArgs) -> float:
         args,
         line_item=OP_INCOME_LINE_ITEM,
         statement=INCOME_STATEMENT)
-
-    print(op_income)
 
     return op_income
 
@@ -241,8 +215,6 @@ def get_op_income_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         statement=INCOME_STATEMENT,
         n_years=2)
 
-    print(op_income_2y)
-
     return op_income_2y
 
 
@@ -255,8 +227,6 @@ def get_op_income_3y(args: FinQueryArgs) -> tuple[float]:
         statement=INCOME_STATEMENT,
         n_years=3)
 
-    print(op_income_3y)
-
     return op_income_3y
 
 
@@ -267,8 +237,6 @@ def get_ebit(args: FinQueryArgs) -> float:
         args,
         line_item=EBIT_LINE_ITEM,
         statement=INCOME_STATEMENT)
-
-    print(ebit)
 
     return ebit
 
@@ -282,8 +250,6 @@ def get_ebit_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         statement=INCOME_STATEMENT,
         n_years=2)
 
-    print(ebit_2y)
-
     return ebit_2y
 
 
@@ -296,8 +262,6 @@ def get_ebit_3y(args: FinQueryArgs) -> tuple[float]:
         statement=INCOME_STATEMENT,
         n_years=3)
 
-    print(ebit_3y)
-
     return ebit_3y
 
 
@@ -308,8 +272,6 @@ def get_int_exp(args: FinQueryArgs) -> float:
         args,
         line_item=INT_EXP_LINE_ITEM,
         statement=INCOME_STATEMENT)
-
-    print(int_exp)
 
     return int_exp
 
@@ -323,8 +285,6 @@ def get_int_exp_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         statement=INCOME_STATEMENT,
         n_years=2)
 
-    print(int_exp_2y)
-
     return int_exp_2y
 
 
@@ -337,8 +297,6 @@ def get_int_exp_3y(args: FinQueryArgs) -> tuple[float]:
         statement=INCOME_STATEMENT,
         n_years=3)
 
-    print(int_exp_3y)
-
     return int_exp_3y
 
 
@@ -349,8 +307,6 @@ def get_ebt(args: FinQueryArgs) -> float:
         args,
         line_item=EBT_LINE_ITEM,
         statement=INCOME_STATEMENT)
-
-    print(ebt)
 
     return ebt
 
@@ -364,8 +320,6 @@ def get_ebt_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         statement=INCOME_STATEMENT,
         n_years=2)
 
-    print(ebt_2y)
-
     return ebt_2y
 
 
@@ -378,8 +332,6 @@ def get_ebt_3y(args: FinQueryArgs) -> tuple[float]:
         statement=INCOME_STATEMENT,
         n_years=3)
 
-    print(ebt_3y)
-
     return ebt_3y
 
 
@@ -390,8 +342,6 @@ def get_tax_exp(args: FinQueryArgs) -> float:
         args,
         line_item=TAX_EXP_LINE_ITEM,
         statement=INCOME_STATEMENT)
-
-    print(tax_exp)
 
     return tax_exp
 
@@ -405,8 +355,6 @@ def get_tax_exp_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         statement=INCOME_STATEMENT,
         n_years=2)
 
-    print(tax_exp_2y)
-
     return tax_exp_2y
 
 
@@ -419,8 +367,6 @@ def get_tax_exp_3y(args: FinQueryArgs) -> tuple[float]:
         statement=INCOME_STATEMENT,
         n_years=3)
 
-    print(tax_exp_3y)
-
     return tax_exp_3y
 
 
@@ -431,8 +377,6 @@ def get_net_income(args: FinQueryArgs) -> float:
         args,
         line_item=NET_INCOME_LINE_ITEM,
         statement=INCOME_STATEMENT)
-
-    print(net_income)
 
     return net_income
 
@@ -446,8 +390,6 @@ def get_net_income_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         statement=INCOME_STATEMENT,
         n_years=2)
 
-    print(net_income_2y)
-
     return net_income_2y
 
 
@@ -459,7 +401,5 @@ def get_net_income_3y(args: FinQueryArgs) -> tuple[float]:
         line_item=NET_INCOME_LINE_ITEM,
         statement=INCOME_STATEMENT,
         n_years=3)
-
-    print(net_income_3y)
 
     return net_income_3y
