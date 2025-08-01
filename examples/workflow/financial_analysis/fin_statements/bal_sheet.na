@@ -373,6 +373,7 @@ def get_st_debt_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
 
 def get_equity(args: CompanyAndPeriodAndCurrency) -> float:
     """Get Total Equity from Balance Sheet."""
+
     return query_fin_data(args,
                          line_item=EQUITY_LINE_ITEM,
                          statement=BAL_SHEET,
@@ -380,6 +381,7 @@ def get_equity(args: CompanyAndPeriodAndCurrency) -> float:
 
 def get_equity_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
     """Get 2 years of Total Equity from Balance Sheet."""
+
     return query_fin_data(args,
                          line_item=EQUITY_LINE_ITEM,
                          statement=BAL_SHEET,
@@ -388,6 +390,7 @@ def get_equity_2y(args: CompanyAndPeriodAndCurrency) -> CurrAndPrevNums:
 
 def get_equity_3y(args: CompanyAndPeriodAndCurrency) -> tuple[float]:
     """Get 3 years of Total Equity from Balance Sheet."""
+
     return query_fin_data(args,
                          line_item=EQUITY_LINE_ITEM,
                          statement=BAL_SHEET,
