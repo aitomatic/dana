@@ -27,6 +27,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_ebitda(args: FinQueryArgs) = [get_op_income, get_deprec_and_amort] | _ebitda
@@ -47,6 +49,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_ebitda_2y(args: FinQueryArgs) = [get_op_income_2y, get_deprec_and_amort_2y] | _ebitda_2y
@@ -67,6 +71,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_ebitda_3y(args: FinQueryArgs) = [get_op_income_3y, get_deprec_and_amort_3y] | _ebitda_3y

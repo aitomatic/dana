@@ -26,6 +26,8 @@ using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_fixed_asset_over_total_asset(args: FinQueryArgs) = [get_fixed_asset, get_total_asset] | _fixed_asset_over_total_asset
@@ -39,6 +41,8 @@ as decimal value, using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_total_asset_over_rev(args: FinQueryArgs) = [get_total_asset, get_rev] | _total_asset_over_rev
@@ -54,6 +58,8 @@ as percentage value, using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_capex_over_rev(args: FinQueryArgs) = [get_capex, get_rev] | _capex_over_rev
@@ -70,6 +76,8 @@ as percentage value, using the sum-divided-by-sum method, and the following inte
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_capex_over_rev_3y_avg(args: FinQueryArgs) = [get_capex_3y, get_rev_3y] | _capex_over_rev_3y_avg_pct
@@ -101,6 +109,8 @@ using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def assess_cap_intens(args: FinQueryArgs) = [calc_fixed_asset_over_total_asset, calc_total_asset_over_rev, calc_capex_over_rev, calc_roa_ratio] | _cap_intens_assessment

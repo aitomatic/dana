@@ -30,6 +30,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_int_cov_ratio(args: FinQueryArgs) = [get_ebit, get_int_exp] | _int_cov_ratio
@@ -49,6 +51,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_eff_tax_rate(args: FinQueryArgs) = [get_tax_exp, get_ebt] | _eff_tax_rate
@@ -68,6 +72,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_div_payout_ratio(args: FinQueryArgs) = [get_div, get_net_income] | _div_payout_ratio
@@ -84,6 +90,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
 def calc_retention_ratio(args: FinQueryArgs) = calc_div_payout_ratio | _retention_ratio
