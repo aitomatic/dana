@@ -33,82 +33,65 @@ __all__ = [
 ]
 
 
-"""
-Calculate `Fixed Assets` as proportion of `Total Assets` for {COMPANY}
-as percentage value
-"""
-# TODO: lambdas in Dana
-def _calc_fixed_asset_over_total_asset_fn(fixed_asset, total_asset):
-    return fixed_asset / total_asset
-# calc_fixed_asset_over_total_asset = (
-#     [get_fixed_asset, get_total_asset] |
-#     (lambda fixed_asset, total_asset: fixed_asset / total_asset)
-# )
-calc_fixed_asset_over_total_asset = (
-    get_fixed_asset | get_total_asset | _calc_fixed_asset_over_total_asset_fn
-)
+def _calc_fixed_asset_over_total_asset_pct(intermediate_results: list[float]) -> float:
+    return reason(
+f'Calculate `Fixed Assets` as proportion of `Total Assets` as percentage value,
+using the following intermediate results:
+
+```
+{intermediate_results}
+```
+')
+
+def calc_fixed_asset_over_total_asset(args: FinQueryArgs) -> float = [get_fixed_asset, get_total_asset] | _calc_fixed_asset_over_total_asset_pct
 
 
-"""
-Calculate `Total Assets` relative to `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
-for {COMPANY} as decimal value
-"""
-# TODO: lambdas in Dana
-def _calc_total_asset_over_rev_fn(total_asset, rev):
-    return total_asset / rev
-# calc_total_asset_over_rev = (
-#     [get_total_asset, get_rev] |
-#     (lambda total_asset, rev: total_asset / rev)
-# )
-calc_total_asset_over_rev = (
-    get_total_asset | get_rev | _calc_total_asset_over_rev_fn
-)
+def _calc_total_asset_over_rev_ratio(intermediate_results: list[float]) -> float:
+    return reason(
+f'Calculate `Total Assets` relative to `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
+as decimal value, using the following intermediate results:
+
+```
+{intermediate_results}
+```
+')
+
+def calc_total_asset_over_rev(args: FinQueryArgs) -> float = [get_total_asset, get_rev] | _calc_total_asset_over_rev_ratio
 
 
-"""
-Calculate `Capital Expenditure(s), a.k.a. CapEx, or Capital Spending,
- or Property, Plant & Equipment (PP&E) Expenditure(s)/Purchase(s)`
+def _calc_capex_over_rev_pct(intermediate_results: list[float]) -> float:
+    return reason(
+f'Calculate `Capital Expenditure(s), a.k.a. CapEx, or Capital Spending,
+or Property, Plant & Equipment (PP&E) Expenditure(s)/Purchase(s)`
 as proportion of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
-for {COMPANY} as percentage value
-"""
-# TODO: lambdas in Dana
-def _calc_capex_over_rev_fn(capex, rev):
-    return capex / rev
-# calc_capex_over_rev = (
-#     [get_capex, get_rev] |
-#     (lambda capex, rev: capex / rev)
-# )
-calc_capex_over_rev = (
-    get_capex | get_rev | _calc_capex_over_rev_fn
-)
+as percentage value, using the following intermediate results:
+
+```
+{intermediate_results}
+```
+')
+
+def calc_capex_over_rev(args: FinQueryArgs) -> float = [get_capex, get_rev] | _calc_capex_over_rev_pct
 
 
-"""
-Calculate 3-year average of
+def _calc_capex_over_rev_3y_avg_pct(intermediate_results: list[tuple[float]]) -> float:
+    return reason(
+f'Calculate 3-year average of
 `Capital Expenditure(s), a.k.a. CapEx, or Capital Spending,
- or Property, Plant & Equipment (PP&E) Expenditure(s)/Purchase(s)`
+or Property, Plant & Equipment (PP&E) Expenditure(s)/Purchase(s)`
 as proportion of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
-for {COMPANY} as percentage value
-"""
-# TODO: lambdas in Dana
-def _calc_capex_over_rev_3y_avg_fn(capex_nums, rev_nums):
-    return sum_over_sum(capex_nums, rev_nums)
-# calc_capex_over_rev_3y_avg = (
-#     [get_capex_3y, get_rev_3y] |
-#     (lambda capex_nums, rev_nums: sum_over_sum(capex_nums, rev_nums))
-# )
-calc_capex_over_rev_3y_avg = (
-    get_capex_3y | get_rev_3y | _calc_capex_over_rev_3y_avg_fn
-)
+as percentage value, using the sum-divided-by-sum method, and the following intermediate results:
 
+```
+{intermediate_results}
+```
+')
 
-"""
-Assess whether {COMPANY} is capital-intensive according to {PERIOD} fiscal period data
-"""
-# TODO: lambdas in Dana
-def _assess_cap_intens_fn(fixed_asset_over_total_asset, total_asset_over_rev, capex_over_rev, roa):
-    return reason(f"""
-Capital-intensive businesses tend to have one or several of the following characteristics:
+def calc_capex_over_rev_3y_avg(args: FinQueryArgs) -> float = [get_capex_3y, get_rev_3y] | _calc_capex_over_rev_3y_avg_pct
+
+def _make_cap_intens_assess(intermediate_results: list[float]) -> str:
+    return reason(
+f'Capital-intensive businesses tend to have one or several of the following characteristics:
 
 - high `(Net) Fixed Assets, a.k.a. (Net) Property, Plant & Equipment (PP&E)` as proportion of `Total Assets`,
   e.g., over 25%;
@@ -126,21 +109,12 @@ Capital-intensive businesses tend to have one or several of the following charac
 - low `Return on (Total) Assets, a.k.a. RoA or RoTA`,
   e.g., under 10%,
 
-Assess whether {COMPANY} is capital-intensive according to {PERIOD} fiscal period metrics
-as follows:
-- Fixed Asset over Total Asset: {fixed_asset_over_total_asset}
-- Total Asset over Revenue: {total_asset_over_rev}
-- CapEx over Revenue: {capex_over_rev}
-- RoA: {roa}
-""")
-# assess_cap_intens = (
-#     [calc_fixed_asset_over_total_asset, calc_total_asset_over_rev, calc_capex_over_rev, calc_roa_ratio] |
-#     (lambda fixed_asset_over_total_asset, total_asset_over_rev, capex_over_rev, roa: (
-#         reason(f"""
-# Capital-intensive businesses tend to have one or several of the following characteristics:
-# ...
-# """))
-# )
-assess_cap_intens = (
-    [calc_fixed_asset_over_total_asset, calc_total_asset_over_rev, calc_capex_over_rev, calc_roa_ratio] | _assess_cap_intens_fn
-)
+Assess whether company is capital-intensive according to the concerned fiscal period data,
+using the following intermediate results:
+
+```
+{intermediate_results}
+```
+')
+
+def assess_cap_intens(args: FinQueryArgs) -> str = [calc_fixed_asset_over_total_asset, calc_total_asset_over_rev, calc_capex_over_rev, calc_roa_ratio] | _make_cap_intens_assess

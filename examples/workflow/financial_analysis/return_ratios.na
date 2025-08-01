@@ -18,45 +18,41 @@ __all__ = [
 ]
 
 
-"""
-Calculate `Return on (Total) Assets, a.k.a. RoA or RoTA`
-of {COMPANY} for {PERIOD} annual fiscal period
+def _calc_roa_ratio_pct(intermediate_results: list[float]) -> float:
+    return reason(
+f'Calculate `Return on (Total) Assets, a.k.a. RoA or RoTA`
 as percentage value according to formula:
 
 `Return on (Total) Assets, a.k.a. RoA or RoTA` = (
     `Net Income, a.k.a. Net Profit, or Net Earnings (or Loss(es)) (Attributable to Shareholders)` /
     `average Total Assets, typically between two consecutive fiscal year-ends`
 )
-"""
-# TODO: lambdas in Dana
-def _calc_roa_ratio_fn(net_income, total_asset_nums):
-    return over_avg_denom(net_income, total_asset_nums)
-# calc_roa_ratio = (
-#     [get_net_income, get_total_asset_2y] |
-#     (lambda net_income, total_asset_nums: over_avg_denom(net_income, total_asset_nums))
-# )
-calc_roa_ratio = (
-    get_net_income | get_total_asset_2y | _calc_roa_ratio_fn
-)
+
+and using the following intermediate results:
+
+```
+{intermediate_results}
+```
+')
+
+def calc_roa_ratio(args: FinQueryArgs) -> float = [get_net_income, get_total_asset_2y] | _calc_roa_ratio_pct
 
 
-"""
-Calculate `Return on Equity, a.k.a. RoE`
-of {COMPANY} for {PERIOD} annual fiscal period
+def _calc_roe_ratio_pct(intermediate_results: list[float]) -> float:
+    return reason(
+f'Calculate `Return on Equity, a.k.a. RoE`
 as percentage value according to formula:
 
 `Return on Equity, a.k.a. RoE` = (
     `Net Income, a.k.a. Net Profit, or Net Earnings (or Loss(es)) (Attributable to Shareholders)` /
     `average Equity, typically between two consecutive fiscal year-ends`
 )
-"""
-# TODO: lambdas in Dana
-def _calc_roe_ratio_fn(net_income, equity_nums):
-    return over_avg_denom(net_income, equity_nums)
-# calc_roe_ratio = (
-#     [get_net_income, get_equity_2y] |
-#     (lambda net_income, equity_nums: over_avg_denom(net_income, equity_nums))
-# )
-calc_roe_ratio = (
-    get_net_income | get_equity_2y | _calc_roe_ratio_fn
-)
+
+and using the following intermediate results:
+
+```
+{intermediate_results}
+```
+')
+
+def calc_roe_ratio(args: FinQueryArgs) -> float = [get_net_income, get_equity_2y] | _calc_roe_ratio_pct
