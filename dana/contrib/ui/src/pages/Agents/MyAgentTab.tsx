@@ -169,7 +169,14 @@ export const MyAgentTab: React.FC<{
                   </div>
                 </div>
                 <div className="flex gap-2 justify-between items-center">
-                  <Button variant="outline" className="w-1/3 text-sm font-semibold text-gray-700">
+                  <Button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/agents/${agent.id}`);
+                    }}
+                    variant="outline" 
+                    className="w-1/3 text-sm font-semibold text-gray-700"
+                  >
                     <Settings style={{ width: '20', height: '20' }} />
                     Train
                   </Button>
