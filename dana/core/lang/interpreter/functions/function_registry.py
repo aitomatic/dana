@@ -356,11 +356,9 @@ class FunctionRegistry:
         *args: Any,
         **kwargs: Any,
     ) -> Any:
-        from dana.core.runtime.promise import Promise
-
         def _resolve_if_promise(value):
-            if isinstance(value, Promise):
-                return value._ensure_resolved()
+            # Don't automatically resolve Promises - let them be resolved when accessed
+            # This preserves the Promise system's lazy evaluation behavior
             return value
 
         # Resolve the function

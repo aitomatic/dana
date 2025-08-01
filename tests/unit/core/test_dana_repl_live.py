@@ -1,5 +1,6 @@
-"""Live tests for the Dana REPL."""
+"""Live/interactive tests for the Dana REPL."""
 
+import builtins
 from unittest.mock import patch
 
 import pytest
@@ -44,12 +45,12 @@ async def test_dana_repl_multiline():
 async def test_dana_repl_nlp_commands():
     """Test NLP-related commands."""
     mock_inputs = [
-        "##nlp status",  # Check initial status
-        "##nlp on",  # Enable NLP
-        "##nlp status",  # Verify enabled
-        "##nlp test",  # Run NLP test
-        "##nlp off",  # Disable NLP
-        "##nlp status",  # Verify disabled
+        "/nlp status",  # Check initial status
+        "/nlp on",  # Enable NLP
+        "/nlp status",  # Verify enabled
+        "/nlp test",  # Run NLP test
+        "/nlp off",  # Disable NLP
+        "/nlp status",  # Verify disabled
         "exit",
     ]
 
@@ -66,7 +67,7 @@ async def test_dana_repl_nlp_commands():
 async def test_dana_repl_nlp_transcoding():
     """Test NLP transcoding functionality."""
     mock_inputs = [
-        "##nlp on",
+        "/nlp on",
         "calculate 10 + 20",  # Should be transcoded to Dana code
         "add 42 and 17",  # Should be transcoded to Dana code
         "exit",
@@ -145,6 +146,37 @@ async def test_dana_repl_simple_assignment():
 
         # Verify the inputs were processed
         assert mock_prompt.call_count == len(mock_inputs)
+
+
+@pytest.mark.asyncio
+async def test_dana_repl_promise_command():
+    """Test /promise command functionality."""
+    mock_inputs = [
+        "/promise x = 42",  # Test /promise with assignment
+        "x",  # Check that x has the resolved value
+        "/promise 10 + 5",  # Test /promise with expression  
+        "exit",
+    ]
+
+    with patch("dana.core.repl.ui.prompt_session_manager.PromptSession.prompt_async") as mock_prompt:
+        mock_prompt.side_effect = mock_inputs
+
+        app = DanaREPLApp()
+        
+        # Capture stdout to verify promise display
+        captured_output = []
+        original_print = builtins.print
+        
+        def capture_print(*args, **kwargs):
+            captured_output.append(" ".join(str(arg) for arg in args))
+            original_print(*args, **kwargs)
+        
+        with patch("builtins.print", side_effect=capture_print):
+            await app.run()
+
+        # Check that Promise display was shown for /promise commands
+        output_text = " ".join(captured_output)
+        assert "Promise[T] (pending)" in output_text, f"Expected Promise display in output: {output_text}"
 
 
 if __name__ == "__main__":
