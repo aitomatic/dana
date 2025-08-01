@@ -204,7 +204,17 @@ class Promise(Loggable):
         """Ensure the promise is resolved, throwing any errors."""
         if not self._resolved:
             self.debug("Promise._ensure_resolved: Resolving promise")
-            self._resolve_sync()
+
+            # Check if we have an async computation
+            if inspect.iscoroutine(self._computation):
+                self.debug("Promise._ensure_resolved: Using safe_asyncio_run for async computation")
+                # Use safe_asyncio_run to handle async computations
+                from dana.common.utils.misc import Misc
+
+                Misc.safe_asyncio_run(self._resolve_async)
+                # _resolve_async sets self._result and self._resolved
+            else:
+                self._resolve_sync()
         else:
             self.debug("Promise._ensure_resolved: Promise already resolved")
 
