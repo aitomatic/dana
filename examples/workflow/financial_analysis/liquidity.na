@@ -1,33 +1,17 @@
 """Liquidity Metrics."""
 
 
-# TODO: parenthesized importing in Dana
-# from .fin_statements import (
-#     get_curr_asset, get_curr_asset_2y, get_curr_asset_3y,
-#
-#     get_cash_and_equiv, get_cash_and_equiv_2y, get_cash_and_equiv_3y,
-#     get_st_inv, get_st_inv_2y, get_st_inv_3y,
-#     get_recvable, get_recvable_2y, get_recvable_3y,
-#
-#     get_inventory_2y,
-#
-#     get_curr_liab, get_curr_liab_2y, get_curr_liab_3y,
-#
-#     get_payable_2y,
-#
-#     get_op_cf,
-#     get_capex,
-#
-#     get_rev,
-#     get_cogs,
-#     get_net_income,
-# )
 from .fin_statements import get_curr_asset, get_curr_asset_2y, get_curr_asset_3y
 from .fin_statements import get_cash_and_equiv, get_cash_and_equiv_2y, get_cash_and_equiv_3y
 from .fin_statements import get_st_inv, get_st_inv_2y, get_st_inv_3y
 from .fin_statements import get_recvable, get_recvable_2y, get_recvable_3y
+from .fin_statements import get_inventory_2y
+from .fin_statements import get_curr_liab, get_curr_liab_2y, get_curr_liab_3y
+from .fin_statements import get_payable_2y
+from .fin_statements import get_op_cf, get_capex
+from .fin_statements import get_rev, get_cogs, get_net_income
 
-from .utils import FinQueryArgs, CurrAndPrevNums
+from .utils import FinQueryArgs
 
 
 __all__ = [
@@ -47,305 +31,254 @@ __all__ = [
 ]
 
 
-"""
-Calculate `Quick Assets` of {COMPANY} as at {PERIOD} fiscal period end
-in {CURRENCY} according to formula:
+def _quick_asset(intermed_results):
+    return reason(
+f'Calculate `Quick Assets` according to formula:
 
 `Quick Assets` = (
     `Cash & Cash Equivalents` +
     `Short-Term Investments or (Current) Marketable Securities` +
     `(Net) Accounts Receivable, a.k.a. (Net) (Trade) Receivables`
 )
-"""
-calc_quick_asset = (
-    [get_cash_and_equiv, get_st_inv, get_recvable] | sum
-)
+
+and using the following intermediate results:
+
+```
+{intermed_results}
+```
+')
+
+def calc_quick_asset(args: FinQueryArgs) = [get_cash_and_equiv, get_st_inv, get_recvable] | _quick_asset
 
 
-"""
-Calculate `Quick Assets` of {COMPANY} as at past 2 annual fiscal period ends
-in {CURRENCY} according to formula:
-
-`Quick Assets` = (
-    `Cash & Cash Equivalents` +
-    `Short-Term Investments or (Current) Marketable Securities` +
-    `(Net) Accounts Receivable, a.k.a. (Net) (Trade) Receivables`
-)
-"""
-# TODO: lambdas in Dana
-def _calc_quick_asset_2y_sum(cash_and_equiv_nums, st_inv_nums, recvable_nums):
-    return CurrAndPrevNums(curr=cash_and_equiv_nums.curr + st_inv_nums.curr + recvable_nums.curr,
-                           prev=cash_and_equiv_nums.prev + st_inv_nums.prev + recvable_nums.prev,
-                           unit_of_measurement=cash_and_equiv_nums.unit_of_measurement)
-# calc_quick_asset_2y = (
-#     [get_cash_and_equiv_2y, get_st_inv_2y, get_recvable_2y] |
-#     (lambda cash_and_equiv_nums, st_inv_nums, recvable_nums:
-#      CurrAndPrevNums(curr=cash_and_equiv_nums.curr + st_inv_nums.curr + recvable_nums.curr,
-#                      prev=cash_and_equiv_nums.prev + st_inv_nums.prev + recvable_nums.prev))
-# )
-calc_quick_asset_2y = (
-    [get_cash_and_equiv_2y, get_st_inv_2y, get_recvable_2y] | _calc_quick_asset_2y_sum
-)
-
-"""
-Calculate `Quick Assets` of {COMPANY} as at past 3 annual fiscal period ends
-in {CURRENCY} according to formula:
+def _quick_asset_2y(intermed_results):
+    return reason(
+f'Calculate `Quick Assets` as at past 2 annual fiscal period ends according to formula:
 
 `Quick Assets` = (
     `Cash & Cash Equivalents` +
     `Short-Term Investments or (Current) Marketable Securities` +
     `(Net) Accounts Receivable, a.k.a. (Net) (Trade) Receivables`
 )
-"""
-# TODO: lambdas in Dana
-def _calc_quick_asset_3y_sum(cash_and_equiv_nums, st_inv_nums, recvable_nums):
-    return (
-        cash_and_equiv_nums[0] + st_inv_nums[0] + recvable_nums[0],
-        cash_and_equiv_nums[1] + st_inv_nums[1] + recvable_nums[1],
-        cash_and_equiv_nums[2] + st_inv_nums[2] + recvable_nums[2]
-    )
-# calc_quick_asset_3y = (
-#     [get_cash_and_equiv_3y, get_st_inv_3y, get_recvable_3y] |
-#     (lambda cash_and_equiv_nums, st_inv_nums, recvable_nums:
-#      ((cash_and_equiv_nums[0] + st_inv_nums[0] + recvable_nums[0],
-#        cash_and_equiv_nums[1] + st_inv_nums[1] + recvable_nums[1],
-#        cash_and_equiv_nums[2] + st_inv_nums[2] + recvable_nums[2])))
-# )
-calc_quick_asset_3y = (
-    [get_cash_and_equiv_3y, get_st_inv_3y, get_recvable_3y] | _calc_quick_asset_3y_sum
+
+and using the following intermediate results:
+
+```
+{intermed_results}
+```
+')
+
+def calc_quick_asset_2y(args: FinQueryArgs) = [get_cash_and_equiv_2y, get_st_inv_2y, get_recvable_2y] | _quick_asset_2y
+
+
+def _quick_asset_3y(intermed_results):
+    return reason(
+f'Calculate `Quick Assets` as at past 3 annual fiscal period ends according to formula:
+
+`Quick Assets` = (
+    `Cash & Cash Equivalents` +
+    `Short-Term Investments or (Current) Marketable Securities` +
+    `(Net) Accounts Receivable, a.k.a. (Net) (Trade) Receivables`
 )
 
+and using the following intermediate results:
 
-"""
-Calculate `Quick Ratio` of {COMPANY} as at {PERIOD} fiscal period end
-as decimal value according to formula:
+```
+{intermed_results}
+```
+')
+
+def calc_quick_asset_3y(args: FinQueryArgs) = [get_cash_and_equiv_3y, get_st_inv_3y, get_recvable_3y] | _quick_asset_3y
+
+
+def _quick_ratio(intermed_results):
+    return reason(
+f'Calculate `Quick Ratio` according to formula:
 
 `Quick Ratio` = `Quick Assets` / `(Total) Current Liabilities`
-"""
-# TODO: lambdas in Dana
-def _calc_quick_ratio_fn(quick_asset, curr_liab):
-    return quick_asset / curr_liab
-# calc_quick_ratio = (
-#     [calc_quick_asset, get_curr_liab] |
-#     (lambda quick_asset, curr_liab: quick_asset / curr_liab)
-# )
-calc_quick_ratio = (
-    [calc_quick_asset, get_curr_liab] | _calc_quick_ratio_fn
-)
+
+and using the following intermediate results:
+
+```
+{intermed_results}
+```
+')
+
+def calc_quick_ratio(args: FinQueryArgs) = [calc_quick_asset, get_curr_liab] | _calc_quick_ratio
 
 
-"""
-Assess liquidity health of {COMPANY} through its `Quick Ratio`
-as at {PERIOD} fiscal period end
-"""
-# TODO: lambdas in Dana
-def _assess_quick_ratio_fn(quick_ratio):
-    # TODO: ... if ... else ... pattern in Dana
-    if quick_ratio >= 1:
-        return "Liquidity is healthy"
-    else:
-        return "Liquidity is not very healthy"
-# assess_quick_ratio = (
-#     calc_quick_ratio |
-#     (lambda quick_ratio: "Liquidity is healthy" if quick_ratio >= 1 else "Liquidity is not very healthy")
-# )
-assess_quick_ratio = (
-    calc_quick_ratio | _assess_quick_ratio_fn
-)
+def _quick_ratio_assessment(quick_ratio):
+    return reason(
+f'Assess liquidity health of through its `Quick Ratio` of {quick_ratio}:
+- if `Quick Ratio` >= 1, then liquidity is healthy
+- otherwise, liquidity is not very healthy')
+
+def assess_quick_ratio(args: FinQueryArgs) = calc_quick_ratio | _quick_ratio_assessment
 
 
-"""
-Calculate `(Net) Working Capital` of {COMPANY} as at {PERIOD} fiscal period end,
-in {CURRENCY} according to formula:
+def _net_work_cap(intermed_results):
+    return reason(
+f'Calculate `(Net) Working Capital` according to formula:
 
 `(Net) Working Capital` = `(Total) Current Assets` - `(Total) Current Liabilities`
-"""
-# TODO: lambdas in Dana
-def _calc_net_work_cap_fn(curr_asset, curr_liab):
-    return curr_asset - curr_liab
-# calc_net_work_cap = (
-#     [get_curr_asset, get_curr_liab] |
-#     (lambda curr_asset, curr_liab: curr_asset - curr_liab)
-# )
-calc_net_work_cap = (
-    [get_curr_asset, get_curr_liab] | _calc_net_work_cap_fn
-)
+
+and using the following intermediate results:
+
+```
+{intermed_results}
+```
+')
+
+def calc_net_work_cap(args: FinQueryArgs) = [get_curr_asset, get_curr_liab] | _net_work_cap
 
 
-"""
-Calculate `Working Capital Ratio`
-of {COMPANY} as at {PERIOD} fiscal period end
-as decimal value according to formula:
+def _work_cap_ratio(intermed_results):
+    return reason(
+f'Calculate `(Net) Working Capital Ratio` according to formula:
 
-`Working Capital Ratio` = `(Total) Current Assets` / `(Total) Current Liabilities`
-"""
-# TODO: lambdas in Dana
-def _calc_work_cap_ratio_fn(curr_asset, curr_liab):
-    return curr_asset / curr_liab
-# calc_work_cap_ratio = (
-#     [get_curr_asset, get_curr_liab] |
-#     (lambda curr_asset, curr_liab: curr_asset / curr_liab)
-# )
-calc_work_cap_ratio = (
-    [get_curr_asset, get_curr_liab] | _calc_work_cap_ratio_fn
-)
+`(Net) Working Capital Ratio` = `(Total) Current Assets` / `(Total) Current Liabilities`
+
+and using the following intermediate results:
+
+```
+{intermed_results}
+```
+')
+
+def calc_work_cap_ratio(args: FinQueryArgs) = [get_curr_asset, get_curr_liab] | _work_cap_ratio
 
 
-"""
-Calculate `Operating Cash Flow Ratio`
-of {COMPANY} for {PERIOD} annual fiscal period
-as decimal value according to formula:
+def _op_cf_ratio(intermed_results):
+    return reason(
+f'Calculate `(Net) Cash Flows from Operations Ratio` according to formula:
 
-`Operating Cash Flow Ratio` = (
+`(Net) Cash Flows from Operations Ratio` = (
     `(Net) Cash Flows from Operations, a.k.a. (Net) Operating Cash Flows`
     / `(Total) Current Liabilities`
 )
-"""
-# TODO: lambdas in Dana
-def _calc_op_cf_ratio_fn(op_cash_flow, curr_liab):
-    return op_cash_flow / curr_liab
-# calc_op_cf_ratio = (
-#     [get_op_cf, get_curr_liab] |
-#     (lambda op_cash_flow, curr_liab: op_cash_flow / curr_liab)
-# )
-calc_op_cf_ratio = (
-    [get_op_cf, get_curr_liab] | _calc_op_cf_ratio_fn
-)
+
+and using the following intermediate results:
+
+```
+{intermed_results}
+```
+')
+
+def calc_op_cf_ratio(args: FinQueryArgs) = [get_op_cf, get_curr_liab] | _op_cf_ratio
 
 
-"""
-Calculate `Free Cash Flow, a.k.a. FCF`
-of {COMPANY} for {PERIOD} fiscal period
-in {CURRENCY} according to formula:
+def _fcf(intermed_results):
+    return reason(
+f'Calculate `Free Cash Flow, a.k.a. FCF` according to formula:
 
 `Free Cash Flow, a.k.a. FCF` = (
     `(Net) Cash Flows from Operations, a.k.a. (Net) Operating Cash Flows` -
     `Capital Expenditure(s), a.k.a. CapEx, or Capital Spending,
      or Property, Plant & Equipment (PP&E) Expenditure(s)/Purchase(s)`
 )
-"""
-# TODO: lambdas in Dana
-def _calc_fcf_fn(op_cash_flow, capex):
-    return op_cash_flow - capex
-# calc_fcf = (
-#     [get_op_cf, get_capex] |
-#     (lambda op_cash_flow, capex: op_cash_flow - capex)
-# )
-calc_fcf = (
-    [get_op_cf, get_capex] | _calc_fcf_fn
-)
+
+and using the following intermediate results:
+
+```
+{intermed_results}
+```
+')
+
+def calc_fcf(args: FinQueryArgs) = [get_op_cf, get_capex] | _fcf
 
 
-"""
-Calculate `Free Cash Flow Conversion Ratio` of {COMPANY}
-as percentage values according to formula:
+def _fcf_conv_ratio(intermed_results):
+    return reason(
+f'Calculate `Free Cash Flow Conversion Ratio` according to formula:
 
 `Free Cash Flow Conversion Ratio` = (
     `Free Cash Flow, a.k.a. FCF` /
     `Net Income, a.k.a. Net Profit, or Net Earnings (or Loss(es)) (Attributable to Shareholders)`
 )
-"""
-# TODO: lambdas in Dana
-def _calc_fcf_conv_ratio_fn(fcf, net_income):
-    return fcf / net_income
-# calc_fcf_conv_ratio = (
-#     [calc_fcf, get_net_income] |
-#     (lambda fcf, net_income: fcf / net_income)
-# )
-calc_fcf_conv_ratio = (
-    [calc_fcf, get_net_income] | _calc_fcf_conv_ratio_fn
-)
+
+and using the following intermediate results:
+
+```
+{intermed_results}
+```
+')
+
+def calc_fcf_conv_ratio(args: FinQueryArgs) = [calc_fcf, get_net_income] | _fcf_conv_ratio
 
 
-"""
-Calculate `Days Inventory Outstanding, a.k.a. DIO`
-for {COMPANY} for {PERIOD} annual fiscal period
-as decimal value according to formula:
+def _dio(intermed_results):
+    return reason(
+f'Calculate `Days Inventory Outstanding, a.k.a. DIO` according to formula:
 
 `Days Inventory Outstanding, a.k.a. DIO` = (
-    365 * `average (Total) (Net) Inventory(ies), typically between two consecutive fiscal year-ends`
+    365 * `average (Total) Inventory, typically between two consecutive fiscal year-ends`
     / `(Total) Cost of Goods Sold, a.k.a. (Total) COGS, or (Total) Cost of Sales, or (Total) Cost of Revenue`
 )
-"""
-# TODO: lambdas in Dana
-def _calc_dio_fn(inventory_nums, cogs):
-    return (365 * (inventory_nums.curr + inventory_nums.prev) / 2) / cogs
-# calc_dio = (
-#     [get_inventory_2y, get_cogs] |
-#     (lambda inventory_nums, cogs:
-#      (365 * (inventory_nums.curr + inventory_nums.prev) / 2) / cogs)
-# )
-calc_dio = (
-    [get_inventory_2y, get_cogs] | _calc_dio_fn
+
+and using the following intermediate results:
+
+```
+{intermed_results}
+```
+')
+
+def calc_dio(args: FinQueryArgs) = [get_inventory_2y, get_cogs] | _dio
+
+
+def _dso(intermed_results):
+    return reason(
+f'Calculate `Days Sales Outstanding, a.k.a. DSO` according to formula:
+
+`Days Sales Outstanding, a.k.a. DSO` = (
+    365 * `average (Net) Accounts Receivable, typically between two consecutive fiscal year-ends`
+    / `(Total) Revenue, a.k.a. (Total) Sales`
 )
 
+and using the following intermediate results:
 
-"""
-Calculate `Days Sales Oustanding, a.k.a. DSO`
-for {COMPANY} for {PERIOD} annual fiscal period
-as decimal value according to formula:
+```
+{intermed_results}
+```
+')
 
-`Days Sales Oustanding, a.k.a. DSO` = (
-    365 * `average (Net) Accounts Receivable, a.k.a. (Net) (Trade) Receivables,
-           typically between two consecutive fiscal year-ends`
-    / `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
-)
-"""
-# TODO: lambdas in Dana
-def _calc_dso_fn(recvable_nums, rev):
-    return (365 * (recvable_nums.curr + recvable_nums.prev) / 2) / rev
-# calc_dso = (
-#     [get_recvable_2y, get_rev] |
-#     (lambda recvable_nums, rev:
-#      (365 * (recvable_nums.curr + recvable_nums.prev) / 2) / rev)
-# )
-calc_dso = (
-    [get_recvable_2y, get_rev] | _calc_dso_fn
-)
+def calc_dso(args: FinQueryArgs) = [get_recvable_2y, get_rev] | _dso
 
 
-"""
-Calculate `Days Payable Outstanding, a.k.a. DPO` for {COMPANY} for {PERIOD} annual fiscal period
-as decimal value according to formula:
+def _dpo(intermed_results):
+    return reason(
+f'Calculate `Days Payable Outstanding, a.k.a. DPO` according to formula:
 
 `Days Payable Outstanding, a.k.a. DPO` = (
     365 * `average Accounts Payable, typically between two consecutive fiscal year-ends`
     / (`(Total) Cost of Goods Sold, a.k.a. (Total) COGS, or (Total) Cost of Sales, or (Total) Cost of Revenue` +
        `change in (Total) (Net) Inventory(ies), typically between two consecutive fiscal year-ends`)
 )
-"""
-# TODO: lambdas in Dana
-def _calc_dpo_fn(payable_nums, cogs, inventory_nums):
-    return (365 * (payable_nums.curr + payable_nums.prev) / 2) / (cogs + (inventory_nums.curr - inventory_nums.prev))
-# calc_dpo = (
-#     [get_payable_2y, get_cogs, get_inventory_2y] |
-#     (lambda payable_nums, cogs, inventory_nums:
-#      (365 * (payable_nums.curr + payable_nums.prev) / 2) /
-#      (cogs + (inventory_nums.curr - inventory_nums.prev)))
-# )
-calc_dpo = (
-    [get_payable_2y, get_cogs, get_inventory_2y] | _calc_dpo_fn
-)
+
+and using the following intermediate results:
+
+```
+{intermed_results}
+```
+')
+
+def calc_dpo(args: FinQueryArgs) = [get_payable_2y, get_cogs, get_inventory_2y] | _dpo
 
 
-"""
-Calculate `Cash Conversion Cycle, a.k.a. CCC`
-of {COMPANY} for {PERIOD} annual fiscal period
-as decimal value according to formula:
+def _ccc(intermed_results):
+    return reason(
+f'Calculate `Cash Conversion Cycle, a.k.a. CCC` according to formula:
 
 `Cash Conversion Cycle, a.k.a. CCC` = (
     `Days Inventory Outstanding, a.k.a. DIO`
     + `Days Sales Oustanding, a.k.a. DSO`
     - `Days Payable Outstanding, a.k.a. DPO`
 )
-"""
-# TODO: lambdas in Dana
-def _calc_ccc_fn(dio, dso, dpo):
-    return dio + dso - dpo
-# calc_ccc = (
-#     [calc_dio, calc_dso, calc_dpo] |
-#     (lambda dio, dso, dpo: dio + dso - dpo)
-# )
-calc_ccc = (
-    [calc_dio, calc_dso, calc_dpo] | _calc_ccc_fn
-)
+
+and using the following intermediate results:
+
+```
+{intermed_results}
+```
+')
+
+def calc_ccc(args: FinQueryArgs) = [calc_dio, calc_dso, calc_dpo] | _ccc

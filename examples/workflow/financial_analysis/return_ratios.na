@@ -1,12 +1,6 @@
 """Return on Capital Metrics."""
 
 
-# TODO: parenthesized importing in Dana
-# from .fin_statements import (
-#     get_total_asset_2y,
-#     get_equity_2y,
-#     get_net_income,
-# )
 from .fin_statements import get_total_asset_2y, get_equity_2y, get_net_income
 
 from .utils import over_avg_denom, FinQueryArgs
@@ -18,7 +12,7 @@ __all__ = [
 ]
 
 
-def _calc_roa_ratio_pct(intermediate_results: list[float]) -> float:
+def _roa_ratio(intermed_results):
     return reason(
 f'Calculate `Return on (Total) Assets, a.k.a. RoA or RoTA`
 as percentage value according to formula:
@@ -31,14 +25,14 @@ as percentage value according to formula:
 and using the following intermediate results:
 
 ```
-{intermediate_results}
+{intermed_results}
 ```
 ')
 
-def calc_roa_ratio(args: FinQueryArgs) -> float = [get_net_income, get_total_asset_2y] | _calc_roa_ratio_pct
+def calc_roa_ratio(args: FinQueryArgs) = [get_net_income, get_total_asset_2y] | _roa_ratio
 
 
-def _calc_roe_ratio_pct(intermediate_results: list[float]) -> float:
+def _roe_ratio(intermed_results):
     return reason(
 f'Calculate `Return on Equity, a.k.a. RoE`
 as percentage value according to formula:
@@ -51,8 +45,8 @@ as percentage value according to formula:
 and using the following intermediate results:
 
 ```
-{intermediate_results}
+{intermed_results}
 ```
 ')
 
-def calc_roe_ratio(args: FinQueryArgs) -> float = [get_net_income, get_equity_2y] | _calc_roe_ratio_pct
+def calc_roe_ratio(args: FinQueryArgs) = [get_net_income, get_equity_2y] | _roe_ratio

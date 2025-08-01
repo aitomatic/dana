@@ -1,65 +1,50 @@
 """Capital Intensity/Intensiveness Metrics."""
 
 
-# TODO: parenthesized importing in Dana
-# from .fin_statements import (
-#     get_total_asset, get_fixed_asset,
-#
-#     get_capex, get_capex_3y,
-#
-#     get_rev, get_rev_3y,
-# )
 from .fin_statements import get_total_asset, get_fixed_asset
 from .fin_statements import get_capex, get_capex_3y
 from .fin_statements import get_rev, get_rev_3y
 
-# TODO: parenthesized importing in Dana
-# from .return_ratios import (
-#     calc_roa_ratio,
-# )
 from .return_ratios import calc_roa_ratio
 
-from .utils import sum_over_sum, FinQueryArgs
+from .utils import FinQueryArgs
 
 
 __all__ = [
     'calc_fixed_asset_over_total_asset',
-
     'calc_total_asset_over_rev',
-
     'calc_capex_over_rev', 'calc_capex_over_rev_3y_avg',
-
     'assess_cap_intens',
 ]
 
 
-def _calc_fixed_asset_over_total_asset_pct(intermediate_results: list[float]) -> float:
+def _fixed_asset_over_total_asset(intermed_results):
     return reason(
 f'Calculate `Fixed Assets` as proportion of `Total Assets` as percentage value,
 using the following intermediate results:
 
 ```
-{intermediate_results}
+{intermed_results}
 ```
 ')
 
-def calc_fixed_asset_over_total_asset(args: FinQueryArgs) -> float = [get_fixed_asset, get_total_asset] | _calc_fixed_asset_over_total_asset_pct
+def calc_fixed_asset_over_total_asset(args: FinQueryArgs) = [get_fixed_asset, get_total_asset] | _fixed_asset_over_total_asset
 
 
-def _calc_total_asset_over_rev_ratio(intermediate_results: list[float]) -> float:
+def _total_asset_over_rev(intermed_results):
     return reason(
 f'Calculate `Total Assets` relative to `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
 as decimal value, using the following intermediate results:
 
 ```
-{intermediate_results}
+{intermed_results}
 ```
 ')
 
-def calc_total_asset_over_rev(args: FinQueryArgs) -> float = [get_total_asset, get_rev] | _calc_total_asset_over_rev_ratio
+def calc_total_asset_over_rev(args: FinQueryArgs) = [get_total_asset, get_rev] | _total_asset_over_rev
 
 
-def _calc_capex_over_rev_pct(intermediate_results: list[float]) -> float:
+def _capex_over_rev(intermed_results):
     return reason(
 f'Calculate `Capital Expenditure(s), a.k.a. CapEx, or Capital Spending,
 or Property, Plant & Equipment (PP&E) Expenditure(s)/Purchase(s)`
@@ -67,14 +52,14 @@ as proportion of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sal
 as percentage value, using the following intermediate results:
 
 ```
-{intermediate_results}
+{intermed_results}
 ```
 ')
 
-def calc_capex_over_rev(args: FinQueryArgs) -> float = [get_capex, get_rev] | _calc_capex_over_rev_pct
+def calc_capex_over_rev(args: FinQueryArgs) = [get_capex, get_rev] | _capex_over_rev
 
 
-def _calc_capex_over_rev_3y_avg_pct(intermediate_results: list[tuple[float]]) -> float:
+def _capex_over_rev_3y_avg(intermed_results):
     return reason(
 f'Calculate 3-year average of
 `Capital Expenditure(s), a.k.a. CapEx, or Capital Spending,
@@ -83,13 +68,14 @@ as proportion of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sal
 as percentage value, using the sum-divided-by-sum method, and the following intermediate results:
 
 ```
-{intermediate_results}
+{intermed_results}
 ```
 ')
 
-def calc_capex_over_rev_3y_avg(args: FinQueryArgs) -> float = [get_capex_3y, get_rev_3y] | _calc_capex_over_rev_3y_avg_pct
+def calc_capex_over_rev_3y_avg(args: FinQueryArgs) = [get_capex_3y, get_rev_3y] | _capex_over_rev_3y_avg_pct
 
-def _make_cap_intens_assess(intermediate_results: list[float]) -> str:
+
+def _cap_intens_assessment(intermed_results):
     return reason(
 f'Capital-intensive businesses tend to have one or several of the following characteristics:
 
@@ -113,8 +99,8 @@ Assess whether company is capital-intensive according to the concerned fiscal pe
 using the following intermediate results:
 
 ```
-{intermediate_results}
+{intermed_results}
 ```
 ')
 
-def assess_cap_intens(args: FinQueryArgs) -> str = [calc_fixed_asset_over_total_asset, calc_total_asset_over_rev, calc_capex_over_rev, calc_roa_ratio] | _make_cap_intens_assess
+def assess_cap_intens(args: FinQueryArgs) = [calc_fixed_asset_over_total_asset, calc_total_asset_over_rev, calc_capex_over_rev, calc_roa_ratio] | _cap_intens_assessment

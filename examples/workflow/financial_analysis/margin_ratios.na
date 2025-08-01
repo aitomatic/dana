@@ -1,22 +1,6 @@
 """Margin Ratios."""
 
 
-# TODO: parenthesized importing in Dana
-# from .fin_statements import (
-#     get_rev, get_rev_3y,
-#
-#     get_cogs, get_cogs_3y,
-#
-#     get_gross_income, get_gross_income_3y,
-#
-#     get_deprec_and_amort,
-#
-#     get_op_income, get_op_income_3y,
-#
-#     get_ebit, get_ebit_3y,
-#
-#     get_net_income, get_net_income_3y,
-# )
 from .fin_statements import get_rev, get_rev_3y
 from .fin_statements import get_cogs, get_cogs_3y
 from .fin_statements import get_gross_income, get_gross_income_3y
@@ -25,10 +9,6 @@ from .fin_statements import get_op_income, get_op_income_3y
 from .fin_statements import get_ebit, get_ebit_3y
 from .fin_statements import get_net_income, get_net_income_3y
 
-# TODO: parenthesized importing in Dana
-# from .adj_income import (
-#     calc_ebitda, calc_ebitda_3y,
-# )
 from .adj_income import calc_ebitda, calc_ebitda_3y
 
 from .utils import FinQueryArgs
@@ -36,17 +16,11 @@ from .utils import FinQueryArgs
 
 __all__ = [
     'calc_cogs_margin', 'calc_cogs_margin_3y_avg',
-
     'calc_gross_margin', 'calc_gross_margin_3y_avg',
-
     'calc_ebitda_margin', 'calc_ebitda_margin_3y_avg',
-
     'calc_da_margin',
-
     'calc_op_margin', 'calc_op_margin_3y_avg',
-
     'calc_ebit_margin', 'calc_ebit_margin_3y_avg',
-
     'calc_net_margin', 'calc_net_margin_3y_avg',
 ]
 
