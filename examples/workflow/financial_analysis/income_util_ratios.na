@@ -17,7 +17,7 @@ __all__ = [
 
 
 def _int_cov_ratio(intermed_results):
-    return reason(
+    deliver llm(
 f'Calculate `Interest Coverage Ratio` according to formula:
 
 `Interest Coverage Ratio` = `Earnings before Interest & Tax, a.k.a. EBIT` / `Interest Expense`
@@ -36,7 +36,7 @@ def calc_int_cov_ratio(args: FinQueryArgs) = [get_ebit, get_int_exp] | _int_cov_
 
 
 def _eff_tax_rate(intermed_results):
-    return reason(
+    deliver llm(
 f'Calculate `Effective (Income) Tax Rate` according to formula:
 
 `Effective (Income) Tax Rate` = (
@@ -55,7 +55,7 @@ def calc_eff_tax_rate(args: FinQueryArgs) = [get_tax_exp, get_ebt] | _eff_tax_ra
 
 
 def _div_payout_ratio(intermed_results):
-    return reason(
+    deliver llm(
 f'Calculate `Dividend Payout Ratio` according to formula:
 
 `Dividend Payout Ratio` = (
@@ -74,7 +74,7 @@ def calc_div_payout_ratio(args: FinQueryArgs) = [get_div, get_net_income] | _div
 
 
 def _retention_ratio(intermed_results):
-    return reason(
+    deliver llm(
 f'Calculate `Retention Ratio` according to formula:
 
 `Retention Ratio` = 1 - `Dividend Payout Ratio`

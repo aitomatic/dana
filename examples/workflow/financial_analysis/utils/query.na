@@ -82,4 +82,4 @@ QUERY
         with use('rag', sources=[args.doc_path]) as docs_resource:
             return reason(query)
 
-    return reason(query)
+    return llm(query)
