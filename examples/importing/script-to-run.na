@@ -1,0 +1,10 @@
+"""A script."""
+
+from pkg import PKG_CONST, SUBMODULE_CONST, NESTED_CONST, UTIL_CONST
+from standalone_module import STANDALONE_CONST
+
+print(PKG_CONST)
+print(SUBMODULE_CONST)
+print(NESTED_CONST)
+print(UTIL_CONST)
+print(STANDALONE_CONST)
