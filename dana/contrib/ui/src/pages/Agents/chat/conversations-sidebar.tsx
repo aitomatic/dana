@@ -38,7 +38,7 @@ const ConversationItem = ({
       )}
       onClick={onSelect}
     >
-      <div className="flex flex-col flex-1 gap-2 min-w-0">
+      <div className="flex v-align-center flex-col flex-1">
         <div
           className={cn(
             'min-w-0 text-sm font-medium truncate',

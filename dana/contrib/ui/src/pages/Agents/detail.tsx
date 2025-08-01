@@ -286,19 +286,18 @@ export default function AgentDetailPage() {
           </div>
           <DialogDescription className="flex flex-col gap-2">
             <div className="text-lg font-semibold text-gray-900">
-              Save your trained agent before exiting?
+            Save to your agents before close?
             </div>
             <div className="mb-4 text-sm text-gray-600">
-              You're about to leave the agent creation process. If you exit now, all your current
-              configurations will be lost.
+            You haven’t made any changes. If you close now, the agent will not be saved to your agents.
             </div>
           </DialogDescription>
           <DialogFooter className="grid grid-cols-2 gap-2 sm:gap-2">
             <Button variant="outline" onClick={handleDiscardAndExit} disabled={isDeleting}>
-              {isDeleting ? 'Deleting...' : 'Discard & Exit'}
+              {isDeleting ? 'Do not save' : 'Do not save'}
             </Button>
             <Button variant="default" onClick={handleSaveAndExit} disabled={isDeleting}>
-              Save & Exit
+              Save & Close
             </Button>
           </DialogFooter>
         </DialogContent>
