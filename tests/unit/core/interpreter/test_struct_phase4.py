@@ -9,6 +9,7 @@ from dana.core.lang.interpreter.struct_system import (
     StructInstance,
     StructTypeRegistry,
 )
+from dana.core.runtime.promise import Promise
 
 
 class TestMethodSyntaxTransformation:
@@ -44,6 +45,12 @@ local:distance_method_result = distance(point)
         distance_direct = result.final_context.get("local:distance_result")
         distance_method = result.final_context.get("local:distance_method_result")
 
+        # Resolve Promises if needed
+        if isinstance(distance_direct, Promise):
+            distance_direct = distance_direct._ensure_resolved()
+        if isinstance(distance_method, Promise):
+            distance_method = distance_method._ensure_resolved()
+
         assert distance_direct == distance_method
         assert distance_direct == 25.0  # 3-4-5 triangle
 
@@ -69,6 +76,12 @@ local:result_method = point.add_offset(5, 3)
         assert result.final_context is not None
         result_direct = result.final_context.get("local:result_direct")
         result_method = result.final_context.get("local:result_method")
+
+        # Resolve Promises if needed
+        if isinstance(result_direct, Promise):
+            result_direct = result_direct._ensure_resolved()
+        if isinstance(result_method, Promise):
+            result_method = result_method._ensure_resolved()
 
         assert isinstance(result_direct, StructInstance)
         assert isinstance(result_method, StructInstance)
@@ -96,6 +109,12 @@ local:result_method = rect.scale(x_factor=2.0, y_factor=1.5)
         assert result.final_context is not None
         result_direct = result.final_context.get("local:result_direct")
         result_method = result.final_context.get("local:result_method")
+
+        # Resolve Promises if needed
+        if isinstance(result_direct, Promise):
+            result_direct = result_direct._ensure_resolved()
+        if isinstance(result_method, Promise):
+            result_method = result_method._ensure_resolved()
 
         assert isinstance(result_direct, StructInstance)
         assert isinstance(result_method, StructInstance)
@@ -300,6 +319,12 @@ local:result2 = point1.add_scalar(5)      # Should call add_scalar(point1, 5)
         result1 = result.final_context.get("local:result1")
         result2 = result.final_context.get("local:result2")
 
+        # Resolve Promises if needed
+        if isinstance(result1, Promise):
+            result1 = result1._ensure_resolved()
+        if isinstance(result2, Promise):
+            result2 = result2._ensure_resolved()
+
         assert isinstance(result1, StructInstance)
         assert isinstance(result2, StructInstance)
         assert result1.x == 4  # 1 + 3
@@ -330,6 +355,12 @@ local:updated2 = config.update_config("new_name", 20)
         assert result.final_context is not None
         updated1 = result.final_context.get("local:updated1")
         updated2 = result.final_context.get("local:updated2")
+
+        # Resolve Promises if needed
+        if isinstance(updated1, Promise):
+            updated1 = updated1._ensure_resolved()
+        if isinstance(updated2, Promise):
+            updated2 = updated2._ensure_resolved()
 
         assert isinstance(updated1, StructInstance)
         assert isinstance(updated2, StructInstance)
@@ -383,6 +414,12 @@ local:normalized2 = vector.normalize(2.0)   # Custom length
         normalized1 = result.final_context.get("local:normalized1")
         normalized2 = result.final_context.get("local:normalized2")
 
+        # Resolve Promises if needed
+        if isinstance(normalized1, Promise):
+            normalized1 = normalized1._ensure_resolved()
+        if isinstance(normalized2, Promise):
+            normalized2 = normalized2._ensure_resolved()
+
         assert isinstance(normalized1, StructInstance)
         assert isinstance(normalized2, StructInstance)
 
@@ -420,6 +457,12 @@ local:as_int = data.process(as_string=false)
         assert result.final_context is not None
         as_string = result.final_context.get("local:as_string")
         as_int = result.final_context.get("local:as_int")
+
+        # Resolve Promises if needed
+        if isinstance(as_string, Promise):
+            as_string = as_string._ensure_resolved()
+        if isinstance(as_int, Promise):
+            as_int = as_int._ensure_resolved()
 
         assert as_string == "42"
         assert as_int == 42

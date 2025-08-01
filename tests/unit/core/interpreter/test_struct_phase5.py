@@ -13,6 +13,7 @@ from dana.core.lang.interpreter.struct_system import (
     StructInstance,
     StructTypeRegistry,
 )
+from dana.core.runtime.promise import Promise
 
 
 class TestRealWorldScenarios:
@@ -74,20 +75,29 @@ local:total_revenue = processed_order1.amount + processed_order2.amount
         # Verify customer creation
         assert result.final_context is not None
         customer1 = result.final_context.get("local:customer1")
+        if isinstance(customer1, Promise):
+            customer1 = customer1._ensure_resolved()
         assert isinstance(customer1, StructInstance)
         assert customer1.name == "Alice Smith"
         assert customer1.age == 30
 
         # Verify order processing with method syntax
         processed_order1 = result.final_context.get("local:processed_order1")
+        if isinstance(processed_order1, Promise):
+            processed_order1 = processed_order1._ensure_resolved()
         assert isinstance(processed_order1, StructInstance)
         assert processed_order1.status == "processed"
         assert processed_order1.amount == 150.50
-        assert isinstance(processed_order1.customer, StructInstance)
-        assert processed_order1.customer.name == "Alice Smith"
+        customer = processed_order1.customer
+        if isinstance(customer, Promise):
+            customer = customer._ensure_resolved()
+        assert isinstance(customer, StructInstance)
+        assert customer.name == "Alice Smith"
 
         # Verify simple calculation
         total_revenue = result.final_context.get("local:total_revenue")
+        if isinstance(total_revenue, Promise):
+            total_revenue = total_revenue._ensure_resolved()
         assert total_revenue == 225.75  # 150.50 + 75.25
 
     def test_hierarchical_organization_structure(self):
@@ -127,10 +137,15 @@ local:eng_cost = eng_dept.calculate_department_cost()
         # Verify department structure
         assert result.final_context is not None
         eng_dept = result.final_context.get("local:eng_dept")
+        if isinstance(eng_dept, Promise):
+            eng_dept = eng_dept._ensure_resolved()
         assert isinstance(eng_dept, StructInstance)
         assert eng_dept.name == "Engineering"
-        assert isinstance(eng_dept.manager, StructInstance)
-        assert eng_dept.manager.name == "Sarah Manager"
+        manager = eng_dept.manager
+        if isinstance(manager, Promise):
+            manager = manager._ensure_resolved()
+        assert isinstance(manager, StructInstance)
+        assert manager.name == "Sarah Manager"
 
         # Verify department calculation using method syntax
         eng_cost = result.final_context.get("local:eng_cost")
@@ -174,6 +189,8 @@ local:moved_player = player.move_player(3.0, 2.0)
         # Verify player movement using method syntax
         assert result.final_context is not None
         moved_player = result.final_context.get("local:moved_player")
+        if isinstance(moved_player, Promise):
+            moved_player = moved_player._ensure_resolved()
         assert isinstance(moved_player, StructInstance)
         assert moved_player.position.x == 3.0
         assert moved_player.position.y == 2.0
@@ -317,6 +334,8 @@ local:is_completed = processed_task.completed
         # Verify task processing
         assert result.final_context is not None
         processed_task = result.final_context.get("local:processed_task")
+        if isinstance(processed_task, Promise):
+            processed_task = processed_task._ensure_resolved()
         assert isinstance(processed_task, StructInstance)
         assert processed_task.completed is True  # High priority task should be completed
 
@@ -358,6 +377,14 @@ local:result3 = valid_config.safe_get_value()
         result1 = result.final_context.get("local:result1")
         result2 = result.final_context.get("local:result2")
         result3 = result.final_context.get("local:result3")
+
+        # Resolve Promises if needed
+        if isinstance(result1, Promise):
+            result1 = result1._ensure_resolved()
+        if isinstance(result2, Promise):
+            result2 = result2._ensure_resolved()
+        if isinstance(result3, Promise):
+            result3 = result3._ensure_resolved()
 
         assert result1 is True  # Valid config
         assert result2 is False  # Invalid config
