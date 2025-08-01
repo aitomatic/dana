@@ -1,0 +1,209 @@
+# Functional tests for lambda expressions with collections and functional programming
+log("Starting lambda expressions with collections tests")
+
+# Test 1: Lambda expressions with list operations
+def test_lambda_with_lists():
+    numbers = [1, 2, 3, 4, 5]
+    
+    # Test map equivalent using list comprehension with lambda
+    double = lambda x :: x * 2
+    doubled = [double(x) for x in numbers]
+    assert doubled == [2, 4, 6, 8, 10], f"Expected [2, 4, 6, 8, 10], got {doubled}"
+    
+    # Test filter equivalent using list comprehension with lambda
+    is_even = lambda x :: x % 2 == 0
+    evens = [x for x in numbers if is_even(x)]
+    assert evens == [2, 4], f"Expected [2, 4], got {evens}"
+    
+    # Test reduce equivalent using a lambda in a loop
+    add = lambda acc, x :: acc + x
+    total = 0
+    for num in numbers:
+        total = add(total, num)
+    assert total == 15, f"Expected 15, got {total}"
+    
+    log("✅ Lambda with lists tests passed")
+
+# Test 2: Lambda expressions with dictionary operations
+def test_lambda_with_dictionaries():
+    data = {"apple": 5, "banana": 3, "cherry": 8, "date": 2}
+    
+    # Lambda to transform dictionary values
+    double_value = lambda k, v :: v * 2
+    doubled_values = {(k: double_value(k, v)) for (k, v) in data.items()}
+    expected = {"apple": 10, "banana": 6, "cherry": 16, "date": 4}
+    assert doubled_values == expected, f"Expected {expected}, got {doubled_values}"
+    
+    # Lambda to filter dictionary based on values
+    high_value = lambda k, v :: v >= 5
+    high_items = {(k: v) for (k, v) in data.items() if high_value(k, v)}
+    expected_high = {"apple": 5, "cherry": 8}
+    assert high_items == expected_high, f"Expected {expected_high}, got {high_items}"
+    
+    # Lambda to create new dictionary structure
+    format_item = lambda k, v :: f"{k}: {v} items"
+    formatted = {(k: format_item(k, v)) for (k, v) in data.items()}
+    expected_formatted = {
+        "apple": "apple: 5 items",
+        "banana": "banana: 3 items", 
+        "cherry": "cherry: 8 items",
+        "date": "date: 2 items"
+    }
+    assert formatted == expected_formatted, f"Expected formatted dict, got {formatted}"
+    
+    log("✅ Lambda with dictionaries tests passed")
+
+# Test 3: Lambda expressions with nested collections
+def test_lambda_with_nested_collections():
+    matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+    
+    # Lambda to flatten matrix
+    flatten_row = lambda row :: row
+    flattened = []
+    for row in matrix:
+        flattened.extend(flatten_row(row))
+    assert flattened == [1, 2, 3, 4, 5, 6, 7, 8, 9], f"Expected flattened list, got {flattened}"
+    
+    # Lambda to sum each row
+    sum_row = lambda row :: sum(row)
+    row_sums = [sum_row(row) for row in matrix]
+    assert row_sums == [6, 15, 24], f"Expected [6, 15, 24], got {row_sums}"
+    
+    # Lambda to find max in each row
+    max_in_row = lambda row :: max(row)
+    max_values = [max_in_row(row) for row in matrix]
+    assert max_values == [3, 6, 9], f"Expected [3, 6, 9], got {max_values}"
+    
+    log("✅ Lambda with nested collections tests passed")
+
+# Test 4: Lambda expressions for sorting
+def test_lambda_sorting():
+    people = [
+        {"name": "Alice", "age": 30, "score": 85},
+        {"name": "Bob", "age": 25, "score": 92},
+        {"name": "Charlie", "age": 35, "score": 78}
+    ]
+    
+    # Test lambda functions for extracting values
+    get_age = lambda person :: person["age"]
+    get_score = lambda person :: person["score"]
+    get_name = lambda person :: person["name"]
+    
+    # Test the lambda functions work correctly
+    alice_age = get_age(people[0])
+    bob_score = get_score(people[1])
+    charlie_name = get_name(people[2])
+    
+    assert alice_age == 30, f"Expected 30, got {alice_age}"
+    assert bob_score == 92, f"Expected 92, got {bob_score}"
+    assert charlie_name == "Charlie", f"Expected 'Charlie', got {charlie_name}"
+    
+    # Test lambda for score comparison (descending)
+    get_score_desc = lambda person :: -person["score"]
+    bob_score_desc = get_score_desc(people[1])  # Bob has highest score
+    alice_score_desc = get_score_desc(people[0])
+    
+    assert bob_score_desc < alice_score_desc, "Bob should have higher score (lower negative value)"
+    
+    # Test lambda for custom comparison
+    compare_person = lambda p :: (p["age"], -p["score"])  # Age ascending, score descending
+    bob_key = compare_person(people[1])  # Bob: (25, -92)
+    alice_key = compare_person(people[0])  # Alice: (30, -85)
+    
+    assert bob_key < alice_key, "Bob should be sorted first (younger age)"
+    
+    log("✅ Lambda sorting tests passed")
+
+# Test 5: Lambda expressions with set operations
+def test_lambda_with_sets():
+    set1 = {1, 2, 3, 4, 5}
+    set2 = {4, 5, 6, 7, 8}
+    
+    # Lambda to check membership
+    in_both = lambda x :: x in set1 and x in set2
+    intersection_manual = {x for x in set1 if in_both(x)}
+    assert intersection_manual == {4, 5}, f"Expected {{4, 5}}, got {intersection_manual}"
+    
+    # Lambda to transform set elements
+    square = lambda x :: x * x
+    squared_set1 = {square(x) for x in set1}
+    assert squared_set1 == {1, 4, 9, 16, 25}, f"Expected squared set, got {squared_set1}"
+    
+    # Lambda for set filtering
+    is_odd = lambda x :: x % 2 == 1
+    odd_numbers = {x for x in set1 if is_odd(x)}
+    assert odd_numbers == {1, 3, 5}, f"Expected {{1, 3, 5}}, got {odd_numbers}"
+    
+    log("✅ Lambda with sets tests passed")
+
+# Test 6: Lambda expressions for functional composition
+def test_lambda_composition():
+    # Define lambda functions for composition
+    add_one = lambda x :: x + 1
+    multiply_two = lambda x :: x * 2
+    square = lambda x :: x * x
+    
+    # Manual composition
+    compose_two = lambda x :: multiply_two(add_one(x))
+    result1 = compose_two(5)  # (5 + 1) * 2 = 12
+    assert result1 == 12, f"Expected 12, got {result1}"
+    
+    # Three-function composition
+    compose_three = lambda x :: square(multiply_two(add_one(x)))
+    result2 = compose_three(3)  # ((3 + 1) * 2)^2 = 8^2 = 64
+    assert result2 == 64, f"Expected 64, got {result2}"
+    
+    # Lambda returning lambda (higher-order function)
+    create_adder = lambda n :: (lambda x :: x + n)
+    add_five = create_adder(5)
+    result3 = add_five(10)
+    assert result3 == 15, f"Expected 15, got {result3}"
+    
+    log("✅ Lambda composition tests passed")
+
+# Test 7: Lambda expressions with string processing
+def test_lambda_string_processing():
+    words = ["hello", "world", "dana", "language", "test"]
+    
+    # Lambda for string transformations
+    capitalize = lambda s :: s.capitalize()
+    capitalized = [capitalize(word) for word in words]
+    assert capitalized == ["Hello", "World", "Dana", "Language", "Test"], f"Capitalization failed: {capitalized}"
+    
+    # Lambda for string filtering
+    is_long = lambda s :: len(s) > 4
+    long_words = [word for word in words if is_long(word)]
+    assert long_words == ["hello", "world", "language"], f"Expected long words, got {long_words}"
+    
+    # Lambda for string analysis
+    word_info = lambda w :: {"word": w, "length": len(w), "vowels": len([c for c in w if c in "aeiou"])}
+    word_analysis = [word_info(word) for word in words[:3]]
+    assert word_analysis[0]["word"] == "hello", "Word analysis failed"
+    assert word_analysis[0]["length"] == 5, "Length analysis failed"
+    assert word_analysis[0]["vowels"] == 2, "Vowel count failed"
+    
+    log("✅ Lambda string processing tests passed")
+
+# Test 8: Lambda expressions with error handling
+def test_lambda_error_handling():
+    data = [1, 2, 0, 4, 5]
+    
+    # Lambda with safe division
+    safe_reciprocal = lambda x :: 1.0 / x if x != 0 else float('inf')
+    reciprocals = [safe_reciprocal(x) for x in data]
+    assert reciprocals[0] == 1.0, "First reciprocal should be 1.0"
+    assert reciprocals[2] == float('inf'), "Reciprocal of 0 should be inf"
+    
+    log("✅ Lambda error handling tests passed")
+
+# Run all tests
+test_lambda_with_lists()
+test_lambda_with_dictionaries()
+test_lambda_with_nested_collections()
+test_lambda_sorting()
+test_lambda_with_sets()
+test_lambda_composition()
+test_lambda_string_processing()
+test_lambda_error_handling()
+
+log("🎉 All lambda expressions with collections tests completed successfully!") 
