@@ -95,13 +95,10 @@ class Promise(Loggable):
         super().__init__()
         self._computation = computation
         self._context = context
+        # Initialize promise state
         self._resolved = False
         self._result = None
         self._error = None
-
-        # Debug logging
-        self.debug(f"Promise created with computation: {type(computation)}")
-        self.debug(f"Promise initial state: _resolved={self._resolved}, _result={self._result}")
 
         self._lock = threading.Lock()
         self._creation_location = self._get_creation_location()
@@ -145,32 +142,28 @@ class Promise(Loggable):
                         self._result = await loop.run_in_executor(executor, self._computation)
 
                 self._resolved = True
-                self.debug(f"Promise resolved successfully: {type(self._result)}")
 
             except Exception as e:
                 self._error = PromiseError(e, self._creation_location, self._get_resolution_location())
                 self._resolved = True
                 self.error(f"Promise resolution failed: {e}")
+                raise  # Re-raise the exception
 
     def _resolve_sync(self):
         """Resolve the promise synchronously."""
         if self._resolved:
-            self.debug("Promise already resolved in _resolve_sync")
             return
 
         with self._lock:
             if self._resolved:  # Double-check after acquiring lock
-                self.debug("Promise already resolved in _resolve_sync (after lock)")
                 return
 
-            self.debug("Starting promise resolution in _resolve_sync")
             try:
                 # Check if we need to resolve other promises in parallel first
                 group = get_current_promise_group()
                 pending = group.get_pending_promises()
 
                 if len(pending) > 1:
-                    self.debug(f"Found {len(pending)} pending promises")
                     # Multiple promises need resolution - use async execution
                     loop = None
                     try:
@@ -183,46 +176,46 @@ class Promise(Loggable):
                         asyncio.create_task(group.resolve_all_pending())
                         # Continue with sync resolution for now
 
-                self.debug("About to execute computation")
                 if inspect.iscoroutine(self._computation):
                     # Cannot resolve async computation synchronously
                     raise RuntimeError("Cannot resolve async computation in sync context")
                 else:
-                    self.debug("Executing computation function")
-                self._result = self._computation()
-                self.debug(f"Computation result: {self._result}")
+                    self._result = self._computation()
 
                 self._resolved = True
-                self.debug(f"Promise resolved synchronously: {type(self._result)}")
 
             except Exception as e:
                 self._error = PromiseError(e, self._creation_location, self._get_resolution_location())
                 self._resolved = True
                 self.error(f"Promise resolution failed: {e}")
+                raise  # Re-raise the exception
 
     def _ensure_resolved(self):
-        """Ensure the promise is resolved, throwing any errors."""
-        if not self._resolved:
-            self.debug("Promise._ensure_resolved: Resolving promise")
+        """Ensure the promise is resolved and return the result."""
+        if self._resolved:
+            if self._error:
+                raise self._error.original_error
+            return self._result
 
-            # Check if we have an async computation
-            if inspect.iscoroutine(self._computation):
-                self.debug("Promise._ensure_resolved: Using safe_asyncio_run for async computation")
-                # Use safe_asyncio_run to handle async computations
-                from dana.common.utils.misc import Misc
+        # Resolve the promise
+        try:
+            from dana.common.utils.misc import Misc
 
+            if asyncio.iscoroutine(self._computation):
+                # Async computation
                 Misc.safe_asyncio_run(self._resolve_async)
-                # _resolve_async sets self._result and self._resolved
             else:
+                # Sync computation
                 self._resolve_sync()
-        else:
-            self.debug("Promise._ensure_resolved: Promise already resolved")
 
-        if self._error:
-            # Re-raise the original error for transparent error handling
+            self._resolved = True
+            return self._result
+
+        except Exception as e:
+            self._error = PromiseError(e, self._creation_location, self._get_resolution_location())
+            self._resolved = True
+            self.error(f"Promise resolution failed: {e}")
             raise self._error.original_error
-
-        return self._result
 
     # === Transparent Operations ===
     # Make Promise[T] behave exactly like T for all operations
@@ -249,6 +242,15 @@ class Promise(Loggable):
 
     def __str__(self):
         """Transparent string conversion."""
+        # Check if we should preserve promises (for /promise command)
+        preserve_promises = getattr(self._context, "_preserve_promises", False)
+        if preserve_promises:
+            return "Promise[T] (pending)"
+
+        # Check if Promise has an error
+        if self._resolved and self._error:
+            return str(self._error.original_error)
+
         result = self._ensure_resolved()
         return str(result)
 

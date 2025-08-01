@@ -234,7 +234,13 @@ class SandboxContext:
                 from dana.core.runtime.promise import Promise
 
                 if isinstance(value, Promise):
-                    return value._ensure_resolved()
+                    # Check if we should preserve promises (for /promise command)
+                    preserve_promises = getattr(self, "_preserve_promises", False)
+                    if preserve_promises:
+                        # Don't resolve the Promise - return it as-is
+                        return value
+                    else:
+                        return value._ensure_resolved()
 
             return value
         except StateError:

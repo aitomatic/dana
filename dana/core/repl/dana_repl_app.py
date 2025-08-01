@@ -140,6 +140,7 @@ class DanaREPLApp(Loggable):
                     elif command_result[1] is not None and command_result[2]:  # has code and preserve_promises
                         # Store input context for promise commands too
                         self._store_input_context()
+
                         self._execute_program(command_result[1], preserve_promises=True)
                     continue
 
@@ -180,7 +181,7 @@ class DanaREPLApp(Loggable):
         """Execute a Dana program and handle the result or errors."""
         try:
             self.debug(f"Executing program: {program}")
-            result = self.repl.execute(program)
+            result = self.repl.execute(program, preserve_promises=preserve_promises)
 
             # Capture and display any print output from the interpreter
             print_output = self.repl.interpreter.get_and_clear_output()
