@@ -1,0 +1,42 @@
+# Minimal Agent Test - Dana 0.4.0
+
+log_level("info")
+
+# Test 1: Basic agent definition
+agent TestAgent:
+    name: str = "test_agent"
+    domain: str = "testing"
+
+# Test 2: Agent creation
+agent_instance = TestAgent()
+
+# Test 3: Access agent properties
+log(f"Agent name: {agent_instance.name}")
+log(f"Agent domain: {agent_instance.domain}")
+
+# Test 4: Test plan() method
+try:
+    plan_result = agent_instance.plan("Test planning")
+    log(f"✅ plan() works: {plan_result}")
+except Exception as e:
+    log(f"❌ plan() failed: {e}")
+
+# Test 5: Test solve() method
+try:
+    solve_result = agent_instance.solve("Test problem")
+    log(f"✅ solve() works: {solve_result}")
+except Exception as e:
+    log(f"❌ solve() failed: {e}")
+
+# Test 6: Test basic reason() function
+basic_reason = reason("What is 2 + 2?")
+log(f"Basic reason works: {basic_reason}")
+
+# Final result
+result = {
+    "agent_creation": "success",
+    "plan_method": "tested",
+    "solve_method": "tested",
+    "basic_reason": basic_reason
+}
+result 

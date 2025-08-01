@@ -1,0 +1,131 @@
+# Test set comprehensions
+log("Testing set comprehensions implementation")
+
+def is_empty_set(s):
+    """Check if a set is empty by trying to iterate over it."""
+    for item in s:
+        return False
+    return True
+
+def test_basic_set_comprehensions():
+    """Test basic set comprehension functionality."""
+    log("=== Testing Basic Set Comprehensions ===")
+    
+    # Basic set comprehension
+    private:numbers = [1, 2, 3, 4, 5]
+    private:doubled = {x * 2 for x in private:numbers}
+    assert private:doubled == {2, 4, 6, 8, 10}, f"Expected {{2, 4, 6, 8, 10}}, got {private:doubled}"
+    log("✅ Basic set comprehension works")
+    
+    # Set comprehension with strings
+    private:words = ["hello", "world", "dana"]
+    private:lengths = {len(word) for word in private:words}
+    assert private:lengths == {4, 5}, f"Expected {{4, 5}}, got {private:lengths}"
+    log("✅ String set comprehension works (duplicates removed)")
+    
+    # Set comprehension with more complex expressions
+    private:squares = {x * x for x in private:numbers}
+    assert private:squares == {1, 4, 9, 16, 25}, f"Expected {{1, 4, 9, 16, 25}}, got {private:squares}"
+    log("✅ Complex expression set comprehension works")
+
+def test_conditional_set_comprehensions():
+    """Test set comprehensions with conditions."""
+    log("=== Testing Conditional Set Comprehensions ===")
+    
+    private:numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    
+    # Basic conditional
+    private:evens = {x for x in private:numbers if x % 2 == 0}
+    assert private:evens == {2, 4, 6, 8, 10}, f"Expected {{2, 4, 6, 8, 10}}, got {private:evens}"
+    log("✅ Basic conditional set comprehension works")
+    
+    # Conditional with transformation
+    private:even_squares = {x * x for x in private:numbers if x % 2 == 0}
+    assert private:even_squares == {4, 16, 36, 64, 100}, f"Expected {{4, 16, 36, 64, 100}}, got {private:even_squares}"
+    log("✅ Conditional with transformation works")
+    
+    # Complex condition
+    private:big_odds = {x for x in private:numbers if x % 2 == 1 and x > 5}
+    assert private:big_odds == {7, 9}, f"Expected {{7, 9}}, got {private:big_odds}"
+    log("✅ Complex conditional set comprehension works")
+
+def test_set_comprehensions_with_lambdas():
+    """Test set comprehensions combined with lambda expressions."""
+    log("=== Testing Set Comprehensions with Lambdas ===")
+    
+    private:numbers = [1, 2, 3, 4, 5]
+    
+    # Lambda in set comprehension
+    private:double = lambda x :: x * 2
+    private:doubled = {private:double(x) for x in private:numbers}
+    assert private:doubled == {2, 4, 6, 8, 10}, f"Expected {{2, 4, 6, 8, 10}}, got {private:doubled}"
+    log("✅ Lambda in set comprehension works")
+    
+    # Lambda with condition
+    private:is_even = lambda x :: x % 2 == 0
+    private:evens = {x for x in private:numbers if private:is_even(x)}
+    assert private:evens == {2, 4}, f"Expected {{2, 4}}, got {private:evens}"
+    log("✅ Lambda condition in set comprehension works")
+
+def test_nested_set_comprehensions():
+    """Test nested data structures with set comprehensions."""
+    log("=== Testing Nested Set Comprehensions ===")
+    
+    # Set comprehension with nested access
+    private:data = [{"value": 1}, {"value": 2}, {"value": 3}]
+    private:values = {item["value"] for item in private:data}
+    assert private:values == {1, 2, 3}, f"Expected {{1, 2, 3}}, got {private:values}"
+    log("✅ Nested access in set comprehension works")
+
+def test_empty_and_edge_cases():
+    """Test edge cases for set comprehensions."""
+    log("=== Testing Edge Cases ===")
+    
+    # Empty list
+    private:empty = []
+    private:result = {x * 2 for x in private:empty}
+    assert is_empty_set(private:result), f"Expected empty set, got {private:result}"
+    log("✅ Empty set comprehension works")
+    
+    # All items filtered out
+    private:numbers = [1, 3, 5, 7, 9]
+    private:evens = {x for x in private:numbers if x % 2 == 0}
+    assert is_empty_set(private:evens), f"Expected empty set, got {private:evens}"
+    log("✅ All filtered out works")
+    
+    # Single item
+    private:single = [42]
+    private:result = {x * 2 for x in private:single}
+    assert private:result == {84}, f"Expected {{84}}, got {private:result}"
+    log("✅ Single item set comprehension works")
+    
+    # Duplicate values (should be removed in sets)
+    private:duplicates = [1, 1, 2, 2, 3, 3]
+    private:unique = {x for x in private:duplicates}
+    assert private:unique == {1, 2, 3}, f"Expected {{1, 2, 3}}, got {private:unique}"
+    log("✅ Duplicate removal in set comprehension works")
+
+def test_set_comprehensions_with_different_iterables():
+    """Test set comprehensions with different iterable types."""
+    log("=== Testing Set Comprehensions with Different Iterables ===")
+    
+    # With range
+    private:range_squares = {x * x for x in range(5)}
+    assert private:range_squares == {0, 1, 4, 9, 16}, f"Expected {{0, 1, 4, 9, 16}}, got {private:range_squares}"
+    log("✅ Set comprehension with range works")
+    
+    # With string (iterating over characters)
+    private:word = "hello"
+    private:chars = {c for c in private:word}
+    assert private:chars == {'h', 'e', 'l', 'o'}, f"Expected {{'h', 'e', 'l', 'o'}}, got {private:chars}"
+    log("✅ Set comprehension with string works")
+
+# Run all tests
+test_basic_set_comprehensions()
+test_conditional_set_comprehensions()
+test_set_comprehensions_with_lambdas()
+test_nested_set_comprehensions()
+test_empty_and_edge_cases()
+test_set_comprehensions_with_different_iterables()
+
+log("🎉 All set comprehension tests passed!") 

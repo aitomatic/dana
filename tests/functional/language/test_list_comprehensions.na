@@ -1,0 +1,106 @@
+# Test list comprehensions
+log("Testing list comprehensions implementation")
+
+def test_basic_list_comprehensions():
+    """Test basic list comprehension functionality."""
+    log("=== Testing Basic List Comprehensions ===")
+    
+    # Basic list comprehension
+    numbers = [1, 2, 3, 4, 5]
+    doubled = [x * 2 for x in numbers]
+    assert doubled == [2, 4, 6, 8, 10], f"Expected [2, 4, 6, 8, 10], got {doubled}"
+    log("✅ Basic list comprehension works")
+    
+    # List comprehension with strings
+    words = ["hello", "world", "dana"]
+    lengths = [len(word) for word in words]
+    assert lengths == [5, 5, 4], f"Expected [5, 5, 4], got {lengths}"
+    log("✅ String list comprehension works")
+    
+    # List comprehension with more complex expressions
+    squares = [x * x for x in numbers]
+    assert squares == [1, 4, 9, 16, 25], f"Expected [1, 4, 9, 16, 25], got {squares}"
+    log("✅ Complex expression list comprehension works")
+
+def test_conditional_list_comprehensions():
+    """Test list comprehensions with conditions."""
+    log("=== Testing Conditional List Comprehensions ===")
+    
+    numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    
+    # Basic conditional
+    evens = [x for x in numbers if x % 2 == 0]
+    assert evens == [2, 4, 6, 8, 10], f"Expected [2, 4, 6, 8, 10], got {evens}"
+    log("✅ Basic conditional list comprehension works")
+    
+    # Conditional with transformation
+    even_squares = [x * x for x in numbers if x % 2 == 0]
+    assert even_squares == [4, 16, 36, 64, 100], f"Expected [4, 16, 36, 64, 100], got {even_squares}"
+    log("✅ Conditional with transformation works")
+    
+    # Complex condition
+    big_odds = [x for x in numbers if x % 2 == 1 and x > 5]
+    assert big_odds == [7, 9], f"Expected [7, 9], got {big_odds}"
+    log("✅ Complex conditional list comprehension works")
+
+def test_list_comprehensions_with_lambdas():
+    """Test list comprehensions combined with lambda expressions."""
+    log("=== Testing List Comprehensions with Lambdas ===")
+    
+    numbers = [1, 2, 3, 4, 5]
+    
+    # Lambda in list comprehension
+    double = lambda x :: x * 2
+    doubled = [double(x) for x in numbers]
+    assert doubled == [2, 4, 6, 8, 10], f"Expected [2, 4, 6, 8, 10], got {doubled}"
+    log("✅ Lambda in list comprehension works")
+    
+    # Lambda with condition
+    is_even = lambda x :: x % 2 == 0
+    evens = [x for x in numbers if is_even(x)]
+    assert evens == [2, 4], f"Expected [2, 4], got {evens}"
+    log("✅ Lambda condition in list comprehension works")
+
+def test_nested_list_comprehensions():
+    """Test nested data structures with list comprehensions."""
+    log("=== Testing Nested List Comprehensions ===")
+    
+    # Note: Nested comprehensions (multiple for clauses) are not implemented yet
+    # For now, let's test what we can with nested data access
+    
+    # List comprehension with nested access
+    data = [{"value": 1}, {"value": 2}, {"value": 3}]
+    values = [item["value"] for item in data]
+    assert values == [1, 2, 3], f"Expected [1, 2, 3], got {values}"
+    log("✅ Nested access in list comprehension works")
+
+def test_empty_and_edge_cases():
+    """Test edge cases for list comprehensions."""
+    log("=== Testing Edge Cases ===")
+    
+    # Empty list
+    empty = []
+    result = [x * 2 for x in empty]
+    assert result == [], f"Expected [], got {result}"
+    log("✅ Empty list comprehension works")
+    
+    # All items filtered out
+    numbers = [1, 3, 5, 7, 9]
+    evens = [x for x in numbers if x % 2 == 0]
+    assert evens == [], f"Expected [], got {evens}"
+    log("✅ All filtered out works")
+    
+    # Single item
+    single = [42]
+    result = [x * 2 for x in single]
+    assert result == [84], f"Expected [84], got {result}"
+    log("✅ Single item list comprehension works")
+
+# Run all tests
+test_basic_list_comprehensions()
+test_conditional_list_comprehensions()
+test_list_comprehensions_with_lambdas()
+test_nested_list_comprehensions()
+test_empty_and_edge_cases()
+
+log("🎉 All list comprehension tests passed!") 

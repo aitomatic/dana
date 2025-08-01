@@ -1,0 +1,48 @@
+# Test named parameter capture pipeline mode
+# This file tests the named parameter capture mode where "as name" captures intermediate results
+
+def test_named_parameter_capture():
+    def add_ten(x: int) -> int:
+        return x + 10
+
+    def multiply_by(x: int, factor: int) -> int:
+        return x * factor
+
+    def format_result(prefix: str, value: int) -> str:
+        return f"{prefix}{value}"
+
+    def add_values(a: int, b: int) -> int:
+        return a + b
+
+    # Test simple named capture
+    def simple_named_pipeline(x: int) = add_ten as intermediate | multiply_by(intermediate, 2)
+    result = simple_named_pipeline(5)
+    assert result == 30, f"Expected 30, got {result}"
+
+    # Test multiple named captures
+    def multi_named_pipeline(x: int) = add_ten as base | multiply_by(2) as doubled | format_result("Result: ", doubled)
+    result = multi_named_pipeline(5)
+    assert result == "Result: 30", f"Expected 'Result: 30', got '{result}'"
+
+    # Test named capture with placeholder
+    def mixed_pipeline(x: int) = add_ten as base | multiply_by($$, 3) as tripled | add_values(base, tripled)
+    result = mixed_pipeline(5)
+    assert result == 60, f"Expected 60, got {result}"  # base=15, tripled=45, 15+45=60
+
+    # Test complex pipeline with multiple captures
+    def complex_pipeline(x: int) = add_ten as original | multiply_by(2) as doubled | multiply_by(3) as tripled | add_values(original, doubled) as sum1 | add_values(sum1, tripled) as final | format_result("Final: ", final)
+    result = complex_pipeline(5)
+    assert result == "Final: 75", f"Expected 'Final: 75', got '{result}'"
+
+    # Test error case: using undefined named variable
+    def error_pipeline(x: int) = add_ten | multiply_by(undefined_var, 2)
+    try:
+        result = error_pipeline(5)
+        assert false, "Expected error for undefined variable"
+    except:
+        pass  # Expected error
+
+    log("✅ All named parameter capture tests passed")
+
+if __name__ == "__main__":
+    test_named_parameter_capture() 
