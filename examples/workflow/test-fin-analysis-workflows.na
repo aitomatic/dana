@@ -2,7 +2,7 @@
 
 
 from financial_analysis.cap_intens import assess_cap_intens
-from financial_analysis.liquidity import assess_quick_ratio, calc_ccc
+from financial_analysis.liquidity import calc_quick_ratio, calc_ccc
 
 
 # log_level('info')  # enable this for more verbose logging
@@ -34,7 +34,7 @@ VERIZON's CAPITAL INTENSITY
 print(f"
 AMD's QUICK RATIO
 =================
-{assess_quick_ratio(AMD)}
+{calc_quick_ratio(AMD)}
 ")
 
 # Liquidity assessment by Cash Conversion Cycle
