@@ -9,10 +9,11 @@ from dana.core.runtime.promise import Promise
 
 # AST imports will be added in Phase 1 when deliver/return statement tests are implemented
 
+from unittest.mock import Mock
 try:
-    from unittest.mock import AsyncMock, Mock
+    from unittest.mock import AsyncMock
 except ImportError:
-    from unittest.mock import Mock
+    raise ImportError("AsyncMock is not available. Please use Python 3.8 or later.")
 
 
 class TestDualDeliveryFoundation:
