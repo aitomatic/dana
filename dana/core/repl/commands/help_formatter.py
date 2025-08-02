@@ -30,10 +30,10 @@ class HelpFormatter(Loggable):
         print(f"  {self.colors.accent('exit')}, {self.colors.accent('quit')}      - Exit the REPL")
 
         print(f"\n{self.colors.bold('Special Commands:')}")
-        print(f"  {self.colors.accent('##nlp on')}        - Enable natural language processing mode")
-        print(f"  {self.colors.accent('##nlp off')}       - Disable natural language processing mode")
-        print(f"  {self.colors.accent('##nlp status')}    - Check if NLP mode is enabled")
-        print(f"  {self.colors.accent('##nlp test')}      - Test the NLP transcoder functionality")
+        print(f"  {self.colors.accent('/nlp on')}         - Enable natural language processing mode")
+        print(f"  {self.colors.accent('/nlp off')}        - Disable natural language processing mode")
+        print(f"  {self.colors.accent('/nlp status')}     - Check if NLP mode is enabled")
+        print(f"  {self.colors.accent('/nlp test')}       - Test the NLP transcoder functionality")
 
         # Dynamic core functions listing
         print(f"\n{self.colors.bold('Core Functions:')}")
@@ -47,13 +47,19 @@ class HelpFormatter(Loggable):
         print(f"                  {self.colors.accent('    private:x = private:x + 1')}")
         print(f"  {self.colors.bold('Functions:')}      {self.colors.accent('func add(a, b): return a + b')}")
 
+        print(f"\n{self.colors.bold('Promise Display Examples:')}")
+        print(
+            f"  {self.colors.accent('some_async_function()')}                  - Automatically shows Promise meta info if result is a Promise"
+        )
+
         print(f"\n{self.colors.bold('Tips:')}")
         print(f"  {self.colors.accent('•')} Use {self.colors.bold('Tab')} for command completion")
         print(f"  {self.colors.accent('•')} Press {self.colors.bold('Ctrl+C')} to cancel current input")
-        print(f"  {self.colors.accent('•')} Use {self.colors.bold('##')} on a new line to force execution of multiline block")
+        print(f"  {self.colors.accent('•')} Use {self.colors.bold('/')} on a new line to force execution of multiline block")
         print(f"  {self.colors.accent('•')} Multi-line mode automatically activates for incomplete statements")
         print(f"  {self.colors.accent('•')} Press {self.colors.bold('Enter')} on an empty line to execute multiline blocks")
         print(f"  {self.colors.accent('•')} Try describing actions in plain language when NLP mode is on")
+        print(f"  {self.colors.accent('•')} Promise objects are automatically detected and show meta info instead of resolving")
         print()
 
     def show_core_functions(self) -> None:
@@ -148,8 +154,8 @@ class HelpFormatter(Loggable):
         print("     ...     # else body")
         print(f"     ... {self.colors.bold('[empty line to execute]')}")
         print("")
-        print(f"  2. {self.colors.accent('Or start with ## to force multiline mode:')}")
-        print("     >>> ##")
+        print(f"  2. {self.colors.accent('Or start with / to force multiline mode:')}")
+        print("     >>> /")
         print("     ... if condition:")
         print("     ...     # statements")
         print("     ... else:")

@@ -130,10 +130,11 @@ class DanaREPLApp(Loggable):
                     break
 
                 # Handle special commands
-                if await self.command_handler.handle_command(line):
+                command_result = await self.command_handler.handle_command(line)
+                if command_result[0]:  # is_command
                     self.debug("Handled special command")
-                    # Check if it was a ## command to force multiline
-                    if line.strip() == "##":
+                    # Check if it was a / command to force multiline
+                    if line.strip() == "/":
                         self.input_processor.state.in_multiline = True
                     continue
 
