@@ -198,13 +198,12 @@ class REPL(Loggable):
             formatted.append(f"  {tip}")
         return "\n".join(formatted)
 
-    def execute(self, program_source: str, initial_context: dict[str, Any] | None = None, preserve_promises: bool = False) -> Any:
+    def execute(self, program_source: str, initial_context: dict[str, Any] | None = None) -> Any:
         """Execute a Dana program and return the result value.
 
         Args:
             program_source: The Dana program source code to execute
             initial_context: Optional initial context to set before execution
-            preserve_promises: If True, don't resolve Promise objects (for /promise command)
 
         Returns:
             The result of executing the program
@@ -234,7 +233,7 @@ class REPL(Loggable):
 
         # Execute using DanaSandbox
         try:
-            result = self.sandbox.eval(program_source, preserve_promises=preserve_promises)
+            result = self.sandbox.eval(program_source)
 
             if result.success:
                 # Restore any print output to the interpreter buffer so tests can access it

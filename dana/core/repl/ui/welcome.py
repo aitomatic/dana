@@ -41,7 +41,6 @@ class WelcomeDisplay:
         print(f"\n{self.colors.bold('Quick Commands:')}")
         print(f"  • {self.colors.accent('/')} - Force execution of multi-line block")
         print(f"  • {self.colors.accent('/nlp on/off')} - Toggle natural language processing mode")
-        print(f"  • {self.colors.accent('/promise <code>')} - Display Promise objects instead of resolved values")
         print(f"  • {self.colors.accent('Ctrl+C')} - Cancel the current input")
 
         print(f"\nType {self.colors.bold('help')} for full documentation\n")

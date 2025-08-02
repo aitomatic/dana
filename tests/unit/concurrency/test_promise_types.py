@@ -7,7 +7,6 @@ focusing on correctness rather than precise timing.
 
 import pytest
 import time
-from unittest.mock import patch
 
 from dana.core.lang.sandbox_context import SandboxContext
 from dana.core.concurrency import LazyPromise, EagerPromise, BasePromise
@@ -209,7 +208,7 @@ class TestPromiseTypes:
         # Access results
         results = [str(p1), str(p2), str(p3)]
 
-        assert results == ["eager1", "eager2", "eager3"]
+        assert results == ["EagerPromise['eager1']", "EagerPromise['eager2']", "EagerPromise['eager3']"]
         assert execution_count == 3
 
     def test_repr_and_str_differences(self, context):
@@ -224,24 +223,22 @@ class TestPromiseTypes:
         assert "LazyPromise" in repr(lazy)
         assert "EagerPromise" in repr(eager)
 
-        # Test str resolves to actual value
+        # Test str behavior: LazyPromise resolves to actual value, EagerPromise shows meta info
         assert str(lazy) == "test_value"
-        assert str(eager) == "test_value"
+        assert str(eager) == "EagerPromise['test_value']"
 
-    def test_preserve_promises_flag(self, context):
-        """Test that _preserve_promises flag works for both types."""
+    def test_promise_string_behavior(self, context):
+        """Test promise string behavior."""
         lazy = LazyPromise.create(lambda: "test_value", context)
         eager = EagerPromise.create(lambda: "test_value", context)
-
-        # Set preserve promises flag
-        context._preserve_promises = True
 
         lazy_str = str(lazy)
         eager_str = str(eager)
 
-        assert "LazyPromise" in lazy_str and "pending" in lazy_str
-        # Note: EagerPromise might show as resolved if execution completed
-        assert "EagerPromise" in eager_str
+        # LazyPromise resolves transparently to the value
+        assert lazy_str == "test_value"
+        # EagerPromise shows meta info
+        assert "EagerPromise" in eager_str and "test_value" in eager_str
 
     def test_creation_location_tracking_both_types(self, context):
         """Test that both types track creation location."""

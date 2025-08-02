@@ -234,13 +234,8 @@ class SandboxContext:
                 from dana.core.concurrency import BasePromise
 
                 if isinstance(value, BasePromise):
-                    # Check if we should preserve promises (for /promise command)
-                    preserve_promises = getattr(self, "_preserve_promises", False)
-                    if preserve_promises:
-                        # Don't resolve the Promise - return it as-is
-                        return value
-                    else:
-                        return value._ensure_resolved()
+                    # Auto-resolve promises to their values
+                    return value._ensure_resolved()
 
             return value
         except StateError:
@@ -466,7 +461,7 @@ class SandboxContext:
                     # Copy other private attributes
                     setattr(target_context, attr_name, copy.copy(attr_value))
             elif attr_name not in ["_parent", "_manager"] + (["_state"] if skip_state else []):
-                # Copy all other attributes (interpreter, preserve_promises, etc.)
+                # Copy all other attributes (interpreter, etc.)
                 # Skip _parent, _manager (handled in constructor), and optionally _state
                 try:
                     # Try shallow copy first (most attributes)

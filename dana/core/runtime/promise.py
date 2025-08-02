@@ -18,19 +18,12 @@ from dana.core.concurrency.lazy_promise import (
 )
 
 
-# Factory function for backward compatibility
-def create_promise(computation, context):
-    """Create a new LazyPromise[T] wrapper (lazy evaluation by default)."""
-    return LazyPromise.create(computation, context)
-
-
 # Re-export everything with LazyPromise names
 __all__ = [
     "LazyPromise",
     "PromiseError",
     "PromiseGroup",
     "get_current_promise_group",
-    "create_promise",
     "is_promise",
     "resolve_promise",
 ]

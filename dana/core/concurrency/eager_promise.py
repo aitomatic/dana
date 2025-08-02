@@ -11,7 +11,7 @@ import asyncio
 import inspect
 import threading
 from collections.abc import Callable, Coroutine
-from concurrent.futures import ThreadPoolExecutor, Future
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Union
 
 from dana.core.lang.sandbox_context import SandboxContext
@@ -45,13 +45,7 @@ class EagerPromise(BasePromise):
         self._start_execution()
 
     def _start_execution(self):
-        """Start executing the computation immediately, unless preserve_promises is set."""
-        # Check if we should preserve promises (defer execution like LazyPromise)
-        preserve_promises = getattr(self._context, "_preserve_promises", False)
-        if preserve_promises:
-            self.debug("Preserve promises flag set, deferring execution until access")
-            return
-
+        """Start executing the computation immediately."""
         if inspect.iscoroutine(self._computation):
             # For coroutines, create an asyncio task
             try:
@@ -101,17 +95,10 @@ class EagerPromise(BasePromise):
 
     def _ensure_resolved(self):
         """Ensure the promise is resolved and return the result."""
-        # If execution was deferred due to preserve_promises, start it now
+        # If execution was somehow not started, start it now
         if not self._resolved and not self._task and not self._future and not hasattr(self, "_delayed_coroutine"):
-            self.debug("Execution was deferred, starting now")
-            preserve_promises = getattr(self._context, "_preserve_promises", False)
-            if preserve_promises:
-                # Temporarily disable preserve_promises to allow execution
-                self._context._preserve_promises = False
-                self._start_execution()
-                self._context._preserve_promises = True
-            else:
-                self._start_execution()
+            self.debug("Execution was not started, starting now")
+            self._start_execution()
 
         # Handle delayed coroutine execution
         if hasattr(self, "_delayed_coroutine") and self._delayed_coroutine and not self._resolved:
@@ -141,15 +128,24 @@ class EagerPromise(BasePromise):
         if self._future and not self._resolved:
             try:
                 # Get result from future (this will block if not done)
-                result = self._future.result()
+                self._future.result()
                 # The _execute_sync method already set _result and _resolved
             except Exception:
                 # Future might have completed with error
                 pass
 
-        # Spin wait for any remaining cases
-        while not self._resolved:
+        # Spin wait for any remaining cases with timeout
+        timeout_count = 0
+        max_timeout = 5000  # 5 seconds (5000 * 0.001)
+        while not self._resolved and timeout_count < max_timeout:
             threading.Event().wait(0.001)  # Small sleep to avoid busy waiting
+            timeout_count += 1
+
+        if not self._resolved:
+            # If still not resolved after timeout, there's likely a deadlock
+            error_msg = "EagerPromise timed out after 5 seconds. This suggests a deadlock or synchronization issue."
+            self._error = PromiseError(RuntimeError(error_msg), self._creation_location, self._get_resolution_location())
+            self._resolved = True
 
         if self._error:
             raise self._error.original_error
@@ -162,19 +158,16 @@ class EagerPromise(BasePromise):
 
     # Override __str__ to show execution status for eager promises
     def __str__(self):
-        """Transparent string conversion."""
-        # Check if we should preserve promises (for /promise command)
-        preserve_promises = getattr(self._context, "_preserve_promises", False)
-        if preserve_promises:
-            if self._resolved:
-                return f"EagerPromise[T] (resolved: {self._result})"
-            elif self._task or self._future:
-                return "EagerPromise[T] (executing)"
+        """String representation showing EagerPromise meta info."""
+        if self._resolved:
+            if self._error:
+                return f"EagerPromise[Error: {self._error.original_error}]"
             else:
-                return "EagerPromise[T] (pending)"
-
-        # Use parent class implementation
-        return super().__str__()
+                return f"EagerPromise[{repr(self._result)}]"
+        elif self._task or self._future:
+            return "EagerPromise[<executing>]"
+        else:
+            return "EagerPromise[<pending>]"
 
     def __repr__(self):
         """Transparent representation."""

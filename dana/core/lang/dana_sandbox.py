@@ -440,13 +440,6 @@ class DanaSandbox(Loggable):
             # Execute through _eval (convergent path)
             result = self._interpreter._eval(source_code, context=self._context, filename=str(file_path))
 
-            # Auto-resolve promises
-            if result is not None:
-                from dana.core.concurrency import BasePromise
-
-                if isinstance(result, BasePromise):
-                    result = result._ensure_resolved()
-
             # Capture print output from interpreter buffer
             output = self._interpreter.get_and_clear_output()
 
@@ -500,14 +493,13 @@ class DanaSandbox(Loggable):
                 final_context=self._context.copy(),
             )
 
-    def eval(self, source_code: str, filename: str | None = None, preserve_promises: bool = False) -> ExecutionResult:
+    def eval(self, source_code: str, filename: str | None = None) -> ExecutionResult:
         """
         Evaluate Dana source code.
 
         Args:
             source_code: Dana code to execute
             filename: Optional filename for error reporting
-            preserve_promises: If True, don't resolve Promise objects (for /promise command)
 
         Returns:
             ExecutionResult with success status and results
@@ -515,21 +507,8 @@ class DanaSandbox(Loggable):
         self._ensure_initialized()  # Auto-initialize on first use
 
         try:
-            # Set preserve_promises flag in context if needed
-            if preserve_promises:
-                self._context.set("system:__preserve_promises", True)
-                # Also set on context object for Promise.__str__ method
-                self._context._preserve_promises = True
-
             # Execute through _eval (convergent path)
             result = self._interpreter._eval(source_code, context=self._context, filename=filename)
-
-            # Auto-resolve promises unless preserve_promises is True
-            if not preserve_promises and result is not None:
-                from dana.core.concurrency import BasePromise
-
-                if isinstance(result, BasePromise):
-                    result = result._ensure_resolved()
 
             # Capture print output from interpreter buffer
             output = self._interpreter.get_and_clear_output()
@@ -596,13 +575,6 @@ class DanaSandbox(Loggable):
                 error=enhanced_error,
                 final_context=self._context.copy(),
             )
-        finally:
-            # Clean up preserve_promises flag
-            if preserve_promises:
-                self._context.delete("system:__preserve_promises")
-                # Also clean up on context object
-                if hasattr(self._context, "_preserve_promises"):
-                    delattr(self._context, "_preserve_promises")
 
     @classmethod
     def quick_run(cls, file_path: str | Path, debug_mode: bool = False, context: SandboxContext | None = None) -> ExecutionResult:

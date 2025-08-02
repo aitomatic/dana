@@ -22,19 +22,14 @@ class CommandHandler(Loggable):
         self.colors = colors
         self.help_formatter = HelpFormatter(repl, colors)
 
-    async def handle_command(self, cmd: str) -> tuple[bool, str | None, bool]:
-        """Process a command and return (is_command, code, preserve_promises)."""
+    async def handle_command(self, cmd: str) -> tuple[bool, str | None]:
+        """Process a command and return (is_command, code)."""
         cmd = cmd.strip()
-
-        # Handle /promise prefix
-        if cmd.startswith("/promise "):
-            actual_code = cmd[9:].strip()  # Remove "/promise " prefix
-            return True, actual_code, True  # (is_command, code, preserve_promises)
 
         # Process help commands
         if cmd in ["help", "?"]:
             self.help_formatter.show_help()
-            return True, None, False
+            return True, None
 
         # Process special "/" commands
         if cmd.startswith("/"):
@@ -42,29 +37,29 @@ class CommandHandler(Loggable):
             if not parts:
                 # Just "/" - force multiline mode
                 print(f"{self.colors.accent('✅ Forced multiline mode - type your code, end with empty line')}")
-                return True, None, False  # Handle in main loop with special flag
+                return True, None
 
             if parts[0] == "nlp":
                 if len(parts) == 1:
                     self.help_formatter.show_nlp_status()
-                    return True, None, False
+                    return True, None
                 elif len(parts) == 2:
                     if parts[1] == "on":
                         self.repl.set_nlp_mode(True)
                         print(f"{self.colors.accent('✅ NLP mode enabled')}")
-                        return True, None, False
+                        return True, None
                     elif parts[1] == "off":
                         self.repl.set_nlp_mode(False)
                         print(f"{self.colors.error('❌ NLP mode disabled')}")
-                        return True, None, False
+                        return True, None
                     elif parts[1] == "status":
                         self.help_formatter.show_nlp_status()
-                        return True, None, False
+                        return True, None
                     elif parts[1] == "test":
                         await self._run_nlp_test()
-                        return True, None, False
+                        return True, None
 
-        return False, None, False
+        return False, None
 
     async def _run_nlp_test(self) -> None:
         """Run NLP transcoder test."""

@@ -9,7 +9,6 @@ Copyright © 2025 Aitomatic, Inc.
 
 import abc
 import traceback
-from typing import Any
 
 from dana.common.mixins.loggable import Loggable
 from dana.core.lang.sandbox_context import SandboxContext
@@ -117,15 +116,7 @@ class BasePromise(Loggable, abc.ABC):
         return result(*args, **kwargs)
 
     def __str__(self):
-        """Transparent string conversion."""
-        # Check if we should preserve promises (for /promise command)
-        preserve_promises = getattr(self._context, "_preserve_promises", False)
-        if preserve_promises:
-            if self._resolved:
-                return f"{self.__class__.__name__}[T] (resolved)"
-            else:
-                return f"{self.__class__.__name__}[T] (pending)"
-
+        """Transparent string conversion - show resolved value."""
         # Check if Promise has an error
         if self._resolved and self._error:
             return str(self._error.original_error)
