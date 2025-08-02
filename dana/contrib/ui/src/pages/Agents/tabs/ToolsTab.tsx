@@ -1,7 +1,15 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { IconSearch, IconPlus, IconDatabase, IconCalendar, IconCloud, IconWorld, IconListCheck } from '@tabler/icons-react';
+import {
+  IconSearch,
+  IconPlus,
+  IconDatabase,
+  IconCalendar,
+  IconCloud,
+  IconWorld,
+  IconListCheck,
+} from '@tabler/icons-react';
 
 // Mock tool data
 const mockTools = [
@@ -65,15 +73,15 @@ const ToolsTab: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredTools = mockTools.filter((tool) =>
-    tool.name.toLowerCase().includes(searchTerm.toLowerCase())
+    tool.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (
-    <div className="flex flex-col p-6 h-full bg-white shadow rounded-lg">
+    <div className="flex flex-col p-6 h-full bg-white rounded-lg">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Tools</h1>
         <Button variant="outline" className="flex items-center">
-          <IconPlus className="w-4 h-4 mr-2" /> Add Tool
+          <IconPlus className="mr-2 w-4 h-4" /> Add Tool
         </Button>
       </div>
       <div className="mb-6 max-w-sm">
@@ -87,7 +95,7 @@ const ToolsTab: React.FC = () => {
           />
         </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
         {filteredTools.map((tool) => (
           <div
             key={tool.id}
@@ -97,7 +105,7 @@ const ToolsTab: React.FC = () => {
               {tool.icon}
               <span className="ml-3 text-lg font-semibold text-gray-900">{tool.name}</span>
             </div>
-            <p className="text-gray-600 text-sm flex-1">{tool.description}</p>
+            <p className="flex-1 text-sm text-gray-600">{tool.description}</p>
           </div>
         ))}
       </div>
@@ -105,4 +113,4 @@ const ToolsTab: React.FC = () => {
   );
 };
 
-export default ToolsTab; 
+export default ToolsTab;

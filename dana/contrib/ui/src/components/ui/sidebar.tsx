@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
 import { tv, type VariantProps } from 'tailwind-variants';
-import { IconLayoutSidebarLeftExpand, IconLayoutSidebarRightExpand } from '@tabler/icons-react';
+import { IconLayoutSidebarLeftExpand } from '@tabler/icons-react';
 
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSidebar, SidebarContext } from '@/hooks/use-sidebar';
@@ -156,7 +156,7 @@ function Sidebar({
       <div
         data-slot="sidebar"
         className={cn(
-          'bg-sidebar text-sidebar-foreground flex h-full w-[var(--sidebar-width)] flex-col',
+          'flex flex-col h-full bg-sidebar text-sidebar-foreground w-[var(--sidebar-width)]',
           className,
         )}
         {...props}
@@ -185,7 +185,7 @@ function Sidebar({
             <SheetTitle>Sidebar</SheetTitle>
             <SheetDescription>Displays the mobile sidebar.</SheetDescription>
           </SheetHeader>
-          <div className="flex h-full w-full flex-col">{children}</div>
+          <div className="flex flex-col w-full h-full">{children}</div>
         </SheetContent>
       </Sheet>
     );
@@ -193,7 +193,7 @@ function Sidebar({
 
   return (
     <div
-      className="group peer text-sidebar-foreground hidden md:block"
+      className="hidden group peer text-sidebar-foreground md:block"
       data-state={state}
       data-collapsible={state === 'collapsed' ? collapsible : ''}
       data-variant={variant}
@@ -242,27 +242,25 @@ function Sidebar({
 function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<typeof Button>) {
   const { toggleSidebar, state } = useSidebar();
 
-  return (
-    <Button
-      data-sidebar="trigger"
-      data-slot="sidebar-trigger"
-      variant="ghost"
-      size="icon"
-      className={cn('cursor-pointer size-8', className)}
-      onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(event);
-        toggleSidebar();
-      }}
-      {...props}
-    >
-      {state === 'expanded' ? (
-        <IconLayoutSidebarRightExpand className="size-6" strokeWidth={1.5} />
-      ) : (
-        <IconLayoutSidebarLeftExpand className="size-6" strokeWidth={1.5} />
-      )}
-      <span className="sr-only">Toggle Sidebar</span>
-    </Button>
-  );
+  if (state !== 'expanded') {
+    return (
+      <Button
+        data-sidebar="trigger"
+        data-slot="sidebar-trigger"
+        variant="ghost"
+        size="icon"
+        className={cn('cursor-pointer size-8', className)}
+        onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+          onClick?.(event);
+          toggleSidebar();
+        }}
+        {...props}
+      >
+        <IconLayoutSidebarLeftExpand className="text-gray-500 size-6" strokeWidth={1.5} />
+        <span className="sr-only">Toggle Sidebar</span>
+      </Button>
+    );
+  }
 }
 
 function SidebarRail({ className, ...props }: React.ComponentProps<'button'>) {
@@ -309,7 +307,7 @@ function SidebarInput({ className, ...props }: React.ComponentProps<typeof Input
     <Input
       data-slot="sidebar-input"
       data-sidebar="input"
-      className={cn('bg-background h-8 w-full shadow-none', className)}
+      className={cn('w-full h-8 shadow-none bg-background', className)}
       {...props}
     />
   );
@@ -320,7 +318,7 @@ function SidebarHeader({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="sidebar-header"
       data-sidebar="header"
-      className={cn('flex flex-col gap-2 p-2 border-b h-16 items-center justify-center', className)}
+      className={cn('flex flex-col gap-2 justify-center items-center p-2 h-16 border-b', className)}
       {...props}
     />
   );
@@ -342,7 +340,7 @@ function SidebarSeparator({ className, ...props }: React.ComponentProps<typeof S
     <Separator
       data-slot="sidebar-separator"
       data-sidebar="separator"
-      className={cn('bg-sidebar-border mx-2 w-auto', className)}
+      className={cn('mx-2 w-auto bg-sidebar-border', className)}
       {...props}
     />
   );
@@ -367,7 +365,7 @@ function SidebarGroup({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="sidebar-group"
       data-sidebar="group"
-      className={cn('relative flex w-full min-w-0 flex-col p-2', className)}
+      className={cn('flex relative flex-col p-2 w-full min-w-0', className)}
       {...props}
     />
   );
@@ -433,7 +431,7 @@ function SidebarMenu({ className, ...props }: React.ComponentProps<'ul'>) {
     <ul
       data-slot="sidebar-menu"
       data-sidebar="menu"
-      className={cn('flex w-full min-w-0 flex-col gap-2', className)}
+      className={cn('flex flex-col gap-2 w-full min-w-0', className)}
       {...props}
     />
   );
@@ -444,7 +442,7 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<'li'>) {
     <li
       data-slot="sidebar-menu-item"
       data-sidebar="menu-item"
-      className={cn('group/menu-item relative', className)}
+      className={cn('relative group/menu-item', className)}
       {...props}
     />
   );
@@ -587,10 +585,10 @@ function SidebarMenuSkeleton({
     <div
       data-slot="sidebar-menu-skeleton"
       data-sidebar="menu-skeleton"
-      className={cn('flex h-8 items-center gap-2 rounded-md px-2', className)}
+      className={cn('flex gap-2 items-center px-2 h-8 rounded-md', className)}
       {...props}
     >
-      {showIcon && <Skeleton className="size-5 rounded-md" data-sidebar="menu-skeleton-icon" />}
+      {showIcon && <Skeleton className="rounded-md size-5" data-sidebar="menu-skeleton-icon" />}
       <Skeleton
         className="h-4 max-w-[var(--skeleton-width)] flex-1"
         data-sidebar="menu-skeleton-text"
@@ -624,7 +622,7 @@ function SidebarMenuSubItem({ className, ...props }: React.ComponentProps<'li'>)
     <li
       data-slot="sidebar-menu-sub-item"
       data-sidebar="menu-sub-item"
-      className={cn('group/menu-sub-item relative', className)}
+      className={cn('relative group/menu-sub-item', className)}
       {...props}
     />
   );

@@ -199,7 +199,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
 
   return (
     <div
-      className={`w-[420px] min-w-[380px] bg-white max-h-[calc(100vh-64px)] rounded-lg shadow-md overflow-y-auto flex flex-col m-2  transform transition-transform duration-300 ease-in-out z-50 ${
+      className={`w-[420px] min-w-[380px] bg-white max-h-[calc(100vh-64px)] rounded-lg overflow-y-auto flex flex-col m-2 transform transition-transform duration-300 ease-in-out z-50 ${
         isVisible ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
@@ -215,10 +215,10 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
                 // Fallback to colored circle if image fails to load
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
-                const parent = target.parentElement;
-                if (parent) {
-                  parent.innerHTML = `<div class="flex justify-center items-center w-full h-full text-sm font-bold text-white bg-gradient-to-br from-pink-400 to-purple-400">${agentName?.[0] || 'A'}</div>`;
-                }
+                //const parent = target.parentElement;
+                // if (parent) {
+                //   parent.innerHTML = `<div class="flex justify-center items-center w-full h-full text-sm font-bold text-white bg-gradient-to-br from-pink-400 to-purple-400">${agentName?.[0] || 'A'}</div>`;
+                // }
               }}
             />
           </div>

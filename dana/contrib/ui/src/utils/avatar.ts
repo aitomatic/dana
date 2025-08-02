@@ -27,10 +27,10 @@ export const getAgentAvatar = async (agentId: number | string): Promise<string> 
  */
 export const getAgentAvatarSync = (agentId: number | string): string => {
   // Handle prebuilt agents (string IDs)
-  if (typeof agentId === 'string') {
-    // For prebuilt agents, use a consistent avatar based on the string
-    return `/agent-avatar/prebuilt-${agentId}.svg`;
-  }
+  // if (typeof agentId === 'string') {
+  //   // For prebuilt agents, use a consistent avatar based on the string
+  //   return `/agent-avatar/prebuilt-${agentId}.svg`;
+  // }
   
   // Handle numeric agent IDs
   const numericId = Number(agentId);

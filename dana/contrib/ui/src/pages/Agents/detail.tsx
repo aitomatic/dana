@@ -83,19 +83,99 @@ export const TEMPLATES = [
 export default function AgentDetailPage() {
   const { agent_id } = useParams();
   const navigate = useNavigate();
-  const { fetchAgent, isLoading, error } = useAgentStore();
-  const [agent, setAgent] = useState<any>(null);
+  const { fetchAgent, deleteAgent, updateAgent, isLoading, error, selectedAgent } = useAgentStore();
   const [showComparison, setShowComparison] = useState(false);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   // LIFTED TAB STATE
   const [activeTab, setActiveTab] = useState('Overview');
+
+  const handleDeploy = async () => {
+    if (!agent_id || isNaN(Number(agent_id)) || !selectedAgent) {
+      // For prebuilt agents or invalid IDs, just navigate
+      navigate('/agents');
+      return;
+    }
+
+    try {
+      // Update agent with status success in config
+      await updateAgent(parseInt(agent_id), {
+        name: selectedAgent.name,
+        description: selectedAgent.description,
+        config: {
+          ...selectedAgent.config,
+          status: 'success',
+        },
+      });
+      navigate(`/agents/${agent_id}/chat`);
+    } catch (error) {
+      console.error('Failed to deploy agent:', error);
+      // You might want to show an error message to the user here
+    }
+  };
+
+  const handleSaveAndExit = async () => {
+    if (!agent_id || isNaN(Number(agent_id)) || !selectedAgent) {
+      // For prebuilt agents or invalid IDs, just navigate
+      navigate('/agents');
+      return;
+    }
+
+    try {
+      // Update agent with status success in config
+      const updatedAgent = {
+        ...selectedAgent,
+        config: {
+          ...selectedAgent.config,
+          status: 'success',
+        },
+      };
+
+      await updateAgent(parseInt(agent_id), updatedAgent);
+      navigate('/agents');
+    } catch (error) {
+      console.error('Failed to deploy agent:', error);
+      // You might want to show an error message to the user here
+    }
+  };
+
+  const handleClose = () => {
+    // If agent has status 'success', navigate directly to agents page
+    if (selectedAgent && selectedAgent.config && selectedAgent.config.status === 'success') {
+      return navigate(-1);
+    }
+
+    // Otherwise, show the delete confirmation dialog
+    setShowCancelConfirmation(true);
+  };
+
+  const handleDiscardAndExit = async () => {
+    if (!agent_id || isNaN(Number(agent_id))) {
+      // For prebuilt agents or invalid IDs, just close dialog and navigate
+      setShowCancelConfirmation(false);
+      navigate('/agents');
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await deleteAgent(parseInt(agent_id));
+      setShowCancelConfirmation(false);
+      navigate('/agents');
+    } catch (error) {
+      console.error('Failed to delete agent:', error);
+      // You might want to show an error message to the user here
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   useEffect(() => {
     if (agent_id) {
       // Only fetch agent details for numeric IDs (regular agents)
       // Prebuilt agents with string IDs will be handled differently
       if (!isNaN(Number(agent_id))) {
-        fetchAgent(parseInt(agent_id)).then(setAgent).catch(console.error);
+        fetchAgent(parseInt(agent_id)).catch(console.error);
       } else {
         // For prebuilt agents, we might need to fetch different data or show different UI
         console.log('Prebuilt agent detected:', agent_id);
@@ -122,7 +202,7 @@ export default function AgentDetailPage() {
     );
   }
 
-  if (error || (!isLoading && !agent)) {
+  if (error || (!isLoading && !selectedAgent)) {
     return (
       <div className="flex justify-center items-center w-full h-full">
         <div className="flex flex-col items-center max-w-md text-center">
@@ -142,19 +222,15 @@ export default function AgentDetailPage() {
   return (
     <div className="flex flex-col w-full h-screen bg-gray-50">
       <AgentDetailHeader
-        onBack={() => navigate('/agents')}
+        onBack={handleClose}
         title="Train Your Agent"
-        onDeploy={() => navigate('/agents')}
-        onCancel={() => setShowCancelConfirmation(true)}
+        onDeploy={handleDeploy}
+        onCancel={handleClose}
       />
       <div className="grid grid-cols-[max-content_1fr] flex-1 w-full h-full">
         <AgentDetailSidebar />
         {/* Pass activeTab and setActiveTab to AgentDetailTabs */}
-        <AgentDetailTabs
-          onShowComparison={() => setShowComparison(true)}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-        />
+        <AgentDetailTabs activeTab={activeTab} setActiveTab={setActiveTab} navigate={navigate} />
       </div>
       <AgentPerformanceComparisonModal
         open={showComparison}
@@ -203,25 +279,19 @@ export default function AgentDetailPage() {
           </div>
           <DialogDescription className="flex flex-col gap-2">
             <div className="text-lg font-semibold text-gray-900">
-              Save your trained agent before exiting?
+              Save to your agents before close?
             </div>
-            <div className="text-sm text-gray-600 mb-4">
-              You're about to leave the agent creation process. If you exit now, all your current
-              configurations will be lost.
+            <div className="mb-4 text-sm text-gray-600">
+              You haven’t made any changes. If you close now, the agent will not be saved to your
+              agents.
             </div>
           </DialogDescription>
           <DialogFooter className="grid grid-cols-2 gap-2 sm:gap-2">
-            <Button variant="outline" onClick={() => setShowCancelConfirmation(false)}>
-              Discard & Exit
+            <Button variant="outline" onClick={handleDiscardAndExit} disabled={isDeleting}>
+              {isDeleting ? 'Do not save' : 'Do not save'}
             </Button>
-            <Button
-              variant="default"
-              onClick={() => {
-                setShowCancelConfirmation(false);
-                navigate('/agents');
-              }}
-            >
-              Save & Exit
+            <Button variant="default" onClick={handleSaveAndExit} disabled={isDeleting}>
+              Save & Close
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -9,6 +9,7 @@ import { Tools } from 'iconoir-react';
 import { Button } from '@/components/ui/button';
 import { useAgentStore } from '@/stores/agent-store';
 import { getAgentAvatarSync } from '@/utils/avatar';
+import type { NavigateFunction } from 'react-router-dom';
 
 const TABS = ['Overview', 'Knowledge Base', 'Tools', 'Code'];
 
@@ -20,15 +21,15 @@ const TAB_ICONS = {
 };
 
 export const AgentDetailTabs: React.FC<{
-  onShowComparison: () => void;
   children?: React.ReactNode;
   activeTab: string;
   setActiveTab: (tab: string) => void;
-}> = ({ onShowComparison, children, activeTab, setActiveTab }) => {
+  navigate: NavigateFunction;
+}> = ({ children, activeTab, setActiveTab, navigate }) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const { selectedAgent } = useAgentStore();
   return (
-    <div className="grid grid-cols-[1fr_max-content] h-full relative max-h-[calc(100vh-100px)]">
+    <div className="grid grid-cols-[1fr_max-content] h-full relative ">
       {/* Main content area */}
       <div className="flex overflow-auto flex-col flex-1 gap-2 p-2 h-full">
         {/* Tab bar */}
@@ -50,15 +51,15 @@ export const AgentDetailTabs: React.FC<{
               <Button
                 variant="outline"
                 // size="sm"
-                className="rounded-full bg-white text-gray-700 border-gray-200 hover:bg-gray-50 flex items-center gap-2 px-3 py-2"
+                className="flex gap-2 items-center px-3 py-2 text-gray-700 bg-white rounded-full border-gray-200 hover:bg-gray-50"
                 onClick={() => setIsChatOpen(!isChatOpen)}
               >
                 {/* Agent Avatar */}
-                <div className="flex justify-center items-center w-6 h-6 rounded-full overflow-hidden">
+                <div className="flex overflow-hidden justify-center items-center w-6 h-6 rounded-full">
                   <img
                     src={getAgentAvatarSync(selectedAgent?.id || 0)}
                     alt={`${selectedAgent?.name || 'Agent'} avatar`}
-                    className="w-full h-full object-cover"
+                    className="object-cover w-full h-full"
                     onError={(e) => {
                       // Fallback to colored circle if image fails to load
                       const target = e.target as HTMLImageElement;
@@ -74,7 +75,6 @@ export const AgentDetailTabs: React.FC<{
 
                 {/* Chat Text */}
                 <span className="text-sm font-medium">
-                  
                   Chat with {selectedAgent?.name || 'Agent'}
                 </span>
               </Button>
@@ -82,7 +82,7 @@ export const AgentDetailTabs: React.FC<{
           </div>
         </div>
         {/* Tab content */}
-        {activeTab === 'Overview' && <OverviewTab onShowComparison={onShowComparison} />}
+        {activeTab === 'Overview' && <OverviewTab navigate={navigate} />}
         {activeTab === 'Knowledge Base' && <KnowledgeBaseTab />}
         {activeTab === 'Tools' && <ToolsTab />}
         {activeTab === 'Code' && <CodeTab />}

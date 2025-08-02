@@ -40,16 +40,16 @@ const KnowledgeBaseTab: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-white rounded-lg">
       {/* Sub-tab navigation */}
-      <div className="flex gap-1 p-2 bg-gray-50 ">
+      <div className="flex gap-2 px-4 py-4">
         {KNOWLEDGE_SUBTABS.map((subTab) => (
           <button
             key={subTab}
             className={`cursor-pointer px-3 py-2 font-medium text-sm flex items-center gap-2 rounded-full transition-colors ${
               activeSubTab === subTab
-                ? 'bg-white text-primary shadow-sm border border-gray-200'
-                : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+                ? 'text-primary shadow-sm border bg-gray-100 border-gray-200'
+                : 'text-gray-500 border border-gray-200 hover:text-gray-800 hover:bg-gray-100'
             }`}
             onClick={() => setActiveSubTab(subTab)}
           >
@@ -60,9 +60,7 @@ const KnowledgeBaseTab: React.FC = () => {
       </div>
 
       {/* Sub-tab content */}
-      <div className="flex-1 overflow-auto">
-        {renderSubTabContent()}
-      </div>
+      <div className="overflow-auto flex-1">{renderSubTabContent()}</div>
     </div>
   );
 };

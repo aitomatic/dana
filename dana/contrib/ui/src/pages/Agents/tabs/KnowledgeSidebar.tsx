@@ -161,10 +161,10 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
   return (
     <div className="flex fixed inset-0 z-50">
       {/* Background overlay */}
-      <div className="flex-1 bg-black bg-opacity-20" onClick={onClose} />
+      <div className="flex-1  " onClick={onClose} />
 
       {/* Sidebar */}
-      <div className="flex flex-col w-96 max-h-full bg-white border-l border-gray-200 shadow-xl">
+      <div className="flex flex-col w-200 max-h-full bg-white border-l border-gray-200 shadow-xl">
         {/* Header */}
         <div className="flex justify-between items-center p-4 bg-gray-50 border-b border-gray-200">
           <div className="flex-1 min-w-0">
