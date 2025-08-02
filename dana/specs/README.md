@@ -14,10 +14,28 @@ dana/specs/
 ├── core/          # Language features (syntax, grammar, types)
 ├── advanced/      # Complex features (methods, composition)
 ├── agent/         # Agent system and capabilities
+│   ├── capabilities.md           # Objective-driven agent design
+│   └── agent_keyword.md          # Agent keyword design specification
 ├── frameworks/    # Language frameworks (POET, KNOWS, Corral)
+│   ├── poet_design.md              # POET framework design
+│   ├── corral_design.md            # CORRAL framework design
+│   ├── knows_proposal.md           # KNOWS framework proposal
+│   ├── knows_workflow.md           # KNOWS workflow design
+│   ├── knows_retrieval.md          # KNOWS retrieval design
+│   ├── knows_ingestion.md          # KNOWS ingestion design
+│   ├── corral_curation.md          # CORRAL curation design
+│   └── poet_*.md                   # POET examples and use cases
 ├── runtime/       # Execution engine components
+│   ├── concurrency.md              # Concurrent-by-default design
+│   ├── interpreter.md              # Interpreter architecture
+│   ├── ast.md                      # Abstract syntax tree
+│   └── repl.md                     # Read-eval-print loop
 ├── integrations/  # External system integrations
+│   └── vscode.md                   # VS Code language support
 ├── common/        # Shared infrastructure
+│   ├── infrastructure.md           # Common infrastructure design
+│   ├── resource.md                 # Resource system design
+│   └── io.md                       # IO system design
 ├── archive/       # Deprecated/historical designs
 └── templates/     # Document templates and standards
 ```

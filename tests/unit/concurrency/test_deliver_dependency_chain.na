@@ -1,0 +1,40 @@
+# Test that deliver properly handles dependency chains
+
+def create_promise_a():
+    # This creates a promise that will be resolved
+    return "promise_a_result"
+
+def create_promise_b():
+    # This creates another promise
+    return "promise_b_result"
+
+def create_promise_c():
+    # This creates a third promise
+    return "promise_c_result"
+
+def create_unrelated_promise():
+    # This creates an unrelated promise that shouldn't be needed
+    return "unrelated_result"
+
+def main():
+    # Create unrelated promise
+    unrelated = create_unrelated_promise()
+    
+    # Create promises that will be dependencies
+    a = create_promise_a()
+    b = create_promise_b()
+    c = create_promise_c()
+    
+    # Create a value that depends on a, b, c
+    # This should trigger resolution of a, b, c when evaluated
+    dependent_value = a + "_" + b + "_" + c
+    
+    # Deliver the dependent value
+    # Current behavior: resolves ALL promises (including unrelated)
+    # Expected behavior: should resolve a, b, c when dependent_value is evaluated
+    deliver dependent_value
+
+# Test the result
+result = main()
+expected = "promise_a_result_promise_b_result_promise_c_result"
+assert result == expected, f"Expected {expected}, got {result}" 

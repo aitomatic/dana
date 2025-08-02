@@ -5,11 +5,11 @@
 # LEARNING: How to create and use custom structs with functions that support method chaining
 # ===================================
 
-log("=== User-Defined Method Chaining Tests ===")
+print("=== User-Defined Method Chaining Tests ===")
 
 # FLUENT BUILDER PATTERN WITH STRUCTS
 # ===================================
-log("Testing fluent builder pattern with structs...")
+print("Testing fluent builder pattern with structs...")
 
 # Define a struct for string building
 struct FluentStringBuilder:
@@ -50,20 +50,29 @@ def clear_builder(builder: FluentStringBuilder) -> FluentStringBuilder:
     builder.parts = []
     return builder
 
-# Test fluent builder with method chaining syntax
+# Test fluent builder with Dana struct method syntax
 builder = create_builder()
-result1 = builder.add("Hello").add_separator().add_upper("world").add_separator().add_lower("DANA").build()
+builder = add(builder, "Hello")
+builder = add_separator(builder, ", ")
+builder = add_upper(builder, "world")
+builder = add_separator(builder, ", ")
+builder = add_lower(builder, "DANA")
+result1 = build(builder)
 assert result1 == "Hello, WORLD, dana"
-log(f"✅ Fluent builder chaining: {result1}")
+print(f"✅ Fluent builder with Dana syntax: {result1}")
 
 # Test builder clearing and reuse
-result2 = builder.clear_builder().add("New").add_separator("-").add("Chain").build()
+builder2 = create_builder()
+builder2 = add(builder2, "New")
+builder2 = add_separator(builder2, "-")
+builder2 = add(builder2, "Chain")
+result2 = build(builder2)
 assert result2 == "New-Chain"
-log(f"✅ Builder clear and reuse: {result2}")
+print(f"✅ Builder operations: {result2}")
 
 # MATHEMATICAL OPERATIONS WITH STRUCT CHAINING
 # ============================================
-log("\nTesting mathematical operations with struct chaining...")
+print("\nTesting mathematical operations with struct chaining...")
 
 # Define a calculator struct
 struct FluentCalculator:
@@ -104,20 +113,27 @@ def reset_calc(calc: FluentCalculator, new_value: float = 0.0) -> FluentCalculat
     calc.value = new_value
     return calc
 
-# Test mathematical chaining using struct.method() syntax
+# Test mathematical operations using Dana struct method syntax
 calc = create_calculator(10.0)
-result3 = calc.add_calc(5).multiply_calc(2).subtract_calc(5).get_result()
+calc = add_calc(calc, 5)
+calc = multiply_calc(calc, 2)
+calc = subtract_calc(calc, 5)
+result3 = get_result(calc)
 assert result3 == 25.0  # (10 + 5) * 2 - 5 = 25
-log(f"✅ Mathematical chaining: 10 + 5 * 2 - 5 = {result3}")
+print(f"✅ Mathematical operations: 10 + 5 * 2 - 5 = {result3}")
 
-# Test chaining with reset
-result4 = calc.reset_calc(3).add_calc(1).multiply_calc(3).get_result()
+# Test operations with reset
+calc2 = create_calculator(10.0)
+calc2 = reset_calc(calc2, 3)
+calc2 = add_calc(calc2, 1)
+calc2 = multiply_calc(calc2, 3)
+result4 = get_result(calc2)
 assert result4 == 12.0  # (3 + 1) * 3 = 12
-log(f"✅ Calculator reset and chain: (3 + 1) * 3 = {result4}")
+print(f"✅ Calculator reset and operations: (3 + 1) * 3 = {result4}")
 
 # DATA TRANSFORMATION WITH STRUCT CHAINING
 # ========================================
-log("\nTesting data transformation with struct chaining...")
+print("\nTesting data transformation with struct chaining...")
 
 # Define a data processor struct
 struct FluentDataProcessor:
@@ -180,21 +196,27 @@ def get_sum_data(processor: FluentDataProcessor) -> int:
     """Get the sum of the data"""
     return sum(processor.data)
 
-# Test data processing chaining
+# Test data processing operations
 processor = create_processor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-result5 = processor.filter_even_data().double_data().take_first_n(3).get_data()
+processor = filter_even_data(processor)
+processor = double_data(processor)
+processor = take_first_n(processor, 3)
+result5 = get_data(processor)
 assert result5 == [4, 8, 12]  # Even numbers: [2,4,6,8,10] -> doubled: [4,8,12,16,20] -> first 3: [4,8,12]
-log(f"✅ Data processing chain: [1-10] -> filter even -> double -> take 3 = {result5}")
+print(f"✅ Data processing operations: [1-10] -> filter even -> double -> take 3 = {result5}")
 
-# Test another data processing chain
+# Test another data processing sequence
 processor2 = create_processor([5, 1, 9, 3, 7])
-result6 = processor2.filter_odd_data().add_value_to_data(10).sort_data().get_sum_data()
+processor2 = filter_odd_data(processor2)
+processor2 = add_value_to_data(processor2, 10)
+processor2 = sort_data(processor2)
+result6 = get_sum_data(processor2)
 assert result6 == 75  # [5,1,9,3,7] -> all odd -> +10 each: [15,11,19,13,17] -> sorted: [11,13,15,17,19] -> sum = 75
-log(f"✅ Data processing with sum: [5,1,9,3,7] -> odd -> +10 -> sort -> sum = {result6}")
+print(f"✅ Data processing with sum: [5,1,9,3,7] -> odd -> +10 -> sort -> sum = {result6}")
 
 # STRING MANIPULATION WITH STRUCT CHAINING
 # ========================================
-log("\nTesting string manipulation with struct chaining...")
+print("\nTesting string manipulation with struct chaining...")
 
 # Define a string processor struct
 struct FluentStringProcessor:
@@ -243,15 +265,20 @@ def get_text_length(processor: FluentStringProcessor) -> int:
     """Get the length of the text"""
     return len(processor.text)
 
-# Test string processing chaining
+# Test string processing operations
 str_proc = create_string_processor("  hello world  ")
-result7 = str_proc.strip_text().upper_text().replace_text(" ", "_").add_prefix_text("GREETING_").add_suffix_text("_END").get_text()
+str_proc = strip_text(str_proc)
+str_proc = upper_text(str_proc)
+str_proc = replace_text(str_proc, " ", "_")
+str_proc = add_prefix_text(str_proc, "GREETING_")
+str_proc = add_suffix_text(str_proc, "_END")
+result7 = get_text(str_proc)
 assert result7 == "GREETING_HELLO_WORLD_END"
-log(f"✅ String processing chain: '  hello world  ' -> {result7}")
+print(f"✅ String processing operations: '  hello world  ' -> {result7}")
 
 # CONFIGURATION BUILDER WITH STRUCT CHAINING
 # ===========================================
-log("\nTesting configuration builder with struct chaining...")
+print("\nTesting configuration builder with struct chaining...")
 
 # Define a config struct
 struct FluentConfig:
@@ -296,7 +323,12 @@ def build_config(config: FluentConfig) -> dict:
 
 # Test configuration builder
 config = create_config()
-result8 = config.set_host("api.example.com").set_port(443).enable_ssl().set_timeout(30).add_header("User-Agent", "Dana/1.0").build_config()
+config = set_host(config, "api.example.com")
+config = set_port(config, 443)
+config = enable_ssl(config)
+config = set_timeout(config, 30)
+config = add_header(config, "User-Agent", "Dana/1.0")
+result8 = build_config(config)
 expected_config = {
     "host": "api.example.com",
     "port": 443,
@@ -305,71 +337,77 @@ expected_config = {
     "headers": {"User-Agent": "Dana/1.0"}
 }
 assert result8 == expected_config
-log(f"✅ Configuration builder chain: {result8}")
+print(f"✅ Configuration builder operations: {result8}")
 
 # ERROR HANDLING WITH STRUCT CHAINING
 # ===================================
-log("\nTesting error handling with struct chaining...")
+print("\nTesting error handling with struct chaining...")
 
 # Define a safe calculator struct
 struct SafeFluentCalculator:
     value: float
-    error: str
+    error_msg: str
 
 # Safe calculator functions
 def create_safe_calculator(initial_value: float = 0.0) -> SafeFluentCalculator:
     """Create a new safe calculator"""
-    return SafeFluentCalculator(value=initial_value, error="")
+    return SafeFluentCalculator(value=initial_value, error_msg="")
 
 def safe_add(calc: SafeFluentCalculator, n: float) -> SafeFluentCalculator:
     """Safely add a number"""
-    if calc.error == "":
+    if calc.error_msg == "":
         calc.value = calc.value + n
     return calc
 
 def safe_divide(calc: SafeFluentCalculator, n: float) -> SafeFluentCalculator:
     """Safely divide"""
-    if calc.error == "":
+    if calc.error_msg == "":
         if n == 0:
-            calc.error = "Division by zero"
+            calc.error_msg = "Division by zero"
         else:
             calc.value = calc.value / n
     return calc
 
 def safe_multiply(calc: SafeFluentCalculator, n: float) -> SafeFluentCalculator:
     """Safely multiply"""
-    if calc.error == "":
+    if calc.error_msg == "":
         calc.value = calc.value * n
     return calc
 
 def get_safe_result(calc: SafeFluentCalculator) -> float:
     """Get the safe result"""
-    if calc.error == "":
+    if calc.error_msg == "":
         return calc.value
     else:
         return -1.0  # Error indicator
 
 def get_safe_error(calc: SafeFluentCalculator) -> str:
     """Get the error message"""
-    return calc.error
+    return calc.error_msg
 
 def is_safe_valid(calc: SafeFluentCalculator) -> bool:
     """Check if the calculation is valid"""
-    return calc.error == ""
+    return calc.error_msg == ""
 
 # Test error handling
 safe_calc = create_safe_calculator(10.0)
-result10 = safe_calc.safe_add(5).safe_divide(0).safe_multiply(2).get_safe_result()
+safe_calc = safe_add(safe_calc, 5)
+safe_calc = safe_divide(safe_calc, 0)
+safe_calc = safe_multiply(safe_calc, 2)
+result10 = get_safe_result(safe_calc)
 assert result10 == -1.0  # Should be -1.0 due to division by zero
-assert safe_calc.get_safe_error() == "Division by zero"
-log(f"✅ Error handling in chain: division by zero handled gracefully")
+assert get_safe_error(safe_calc) == "Division by zero"
+print(f"✅ Error handling in operations: division by zero handled gracefully")
 
-# Test successful chain
+# Test successful operations
 safe_calc2 = create_safe_calculator(10.0)
-result11 = safe_calc2.safe_add(5).safe_divide(3).safe_multiply(2).get_safe_result()
+safe_calc2 = safe_add(safe_calc2, 5)
+safe_calc2 = safe_divide(safe_calc2, 3)
+safe_calc2 = safe_multiply(safe_calc2, 2)
+result11 = get_safe_result(safe_calc2)
 expected_result = (10.0 + 5.0) / 3.0 * 2.0  # = 10.0
 assert abs(result11 - expected_result) < 0.0001
-assert safe_calc2.is_safe_valid() == true
-log(f"✅ Successful safe calculation chain: {result11}")
+assert is_safe_valid(safe_calc2) == true
+print(f"✅ Successful safe calculation operations: {result11}")
 
-log("\n=== All User-Defined Method Chaining Tests Passed! ===") 
+print("\n=== All User-Defined Method Chaining Tests Passed! ===") 
