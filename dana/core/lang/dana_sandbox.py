@@ -440,6 +440,13 @@ class DanaSandbox(Loggable):
             # Execute through _eval (convergent path)
             result = self._interpreter._eval(source_code, context=self._context, filename=str(file_path))
 
+            # Auto-resolve promises
+            if result is not None:
+                from dana.core.concurrency import BasePromise
+
+                if isinstance(result, BasePromise):
+                    result = result._ensure_resolved()
+
             # Capture print output from interpreter buffer
             output = self._interpreter.get_and_clear_output()
 
@@ -516,6 +523,13 @@ class DanaSandbox(Loggable):
 
             # Execute through _eval (convergent path)
             result = self._interpreter._eval(source_code, context=self._context, filename=filename)
+
+            # Auto-resolve promises unless preserve_promises is True
+            if not preserve_promises and result is not None:
+                from dana.core.concurrency import BasePromise
+
+                if isinstance(result, BasePromise):
+                    result = result._ensure_resolved()
 
             # Capture print output from interpreter buffer
             output = self._interpreter.get_and_clear_output()

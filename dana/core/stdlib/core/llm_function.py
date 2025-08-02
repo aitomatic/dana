@@ -18,7 +18,7 @@ from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.logging import DANA_LOGGER
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.runtime.promise import create_promise
+from dana.core.concurrency import LazyPromise
 
 
 def llm_function(
@@ -166,4 +166,4 @@ def llm_function(
 
     # Create and return a Promise that wraps the async function
     logger.debug("Creating Promise for async LLM call")
-    return create_promise(_async_llm_call(), context)
+    return LazyPromise.create(_async_llm_call(), context)

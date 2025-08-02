@@ -89,8 +89,8 @@ class ControlFlowUtils(Loggable):
 
             self.debug("About to create Promise for return statement")
 
-            # Create a Promise[T] for lazy evaluation
-            from dana.core.runtime.promise import create_promise
+            # Create a Promise[T] for eager evaluation (concurrent by default)
+            from dana.core.concurrency import EagerPromise
 
             # Create a computation function that will evaluate the return value when accessed
             # Capture a copy of the current context to preserve function arguments and local variables
@@ -124,10 +124,10 @@ class ControlFlowUtils(Loggable):
                     self.debug(f"Return computation failed with error: {e}")
                     raise
 
-            # Create Promise[T] wrapper for lazy evaluation
-            self.debug("Calling create_promise...")
+            # Create Promise[T] wrapper for eager evaluation (concurrent by default)
+            self.debug("Calling EagerPromise.create...")
             self.debug(f"Return computation function: {return_computation}")
-            promise_value = create_promise(return_computation, captured_context)
+            promise_value = EagerPromise.create(return_computation, captured_context)
             self.debug(f"Promise created: {type(promise_value)}")
             self.debug(f"Executing return statement with Promise[T] value: {type(promise_value)}")
         else:

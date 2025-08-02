@@ -710,10 +710,10 @@ class FunctionExecutor(BaseExecutor):
             try:
                 # Resolve any promises in the kwargs before struct instantiation
                 resolved_kwargs = {}
-                from dana.core.runtime.promise import Promise
+                from dana.core.concurrency import BasePromise
 
                 for key, value in evaluated_kwargs.items():
-                    if isinstance(value, Promise):
+                    if isinstance(value, BasePromise):
                         resolved_kwargs[key] = value._ensure_resolved()
                     else:
                         resolved_kwargs[key] = value
@@ -953,9 +953,9 @@ class FunctionExecutor(BaseExecutor):
             object_value = self.parent.execute(Identifier(name=object_name), context)
 
             # Resolve Promise if object_value is a Promise (for dual delivery system)
-            from dana.core.runtime.promise import Promise
+            from dana.core.concurrency import BasePromise
 
-            if isinstance(object_value, Promise):
+            if isinstance(object_value, BasePromise):
                 object_value = object_value._ensure_resolved()
 
             # For LiteralExpression, we need to handle the value directly

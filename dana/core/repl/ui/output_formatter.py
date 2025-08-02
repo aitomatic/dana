@@ -21,22 +21,22 @@ class OutputFormatter(Loggable):
     def format_result(self, result, preserve_promises: bool = False) -> None:
         """Format and display execution result."""
         if result is not None:
-            # Import Promise class to check instance
+            # Import promise classes to check instance
             try:
-                from dana.core.runtime.promise import Promise
+                from dana.core.concurrency import BasePromise
 
-                if isinstance(result, Promise):
+                if isinstance(result, BasePromise):
                     if preserve_promises:
-                        # Show Promise[T] (pending) without resolving
-                        print(f"{self.colors.accent('Promise[T] (pending) - execution completed instantly')}")
+                        # Show promise without resolving - use str() which respects preserve flag
+                        print(f"{self.colors.accent(str(result))}")
                         return
                     else:
-                        # Resolve the Promise and show the actual result
+                        # Resolve the promise and show the actual result
                         resolved_result = result._ensure_resolved()
                         print(f"{self.colors.accent(str(resolved_result))}")
                         return
             except ImportError:
-                # If Promise class not available, fall back to normal display
+                # If promise classes not available, fall back to normal display
                 pass
 
             # Normal display - show the resolved value
