@@ -6,13 +6,13 @@ Unified tools for financial statement analysis with session management and CSV e
 import hashlib
 import json
 import logging
-import os
 import re
 import tempfile
 import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+import os
 
 
 from dana.common.mixins.tool_callable import ToolCallable
@@ -21,13 +21,13 @@ from dana.common.resource.rag.financial_statement_rag_resource import (
     FinancialStatementRAGResource,
 )
 from dana.common.resource.coding.coding_resource import CodingResource
-from dana.common.resource.financial_resources.prompts import (
-    create_liquidity_ratios_prompt,
-    create_leverage_ratios_prompt,
-    create_efficiency_ratios_prompt,
-    create_profitability_ratios_prompt,
-    create_market_value_ratios_prompt,
-)
+# from dana.common.resource.financial_resources.prompts import (
+#     create_liquidity_ratios_prompt,
+#     create_leverage_ratios_prompt,
+#     create_efficiency_ratios_prompt,
+#     create_profitability_ratios_prompt,
+#     create_market_value_ratios_prompt,
+# )
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +76,7 @@ class FinancialStatementTools(BaseResource):
         debug: bool = True,
         output_dir: str = None,
         finance_rag: FinancialStatementRAGResource | None = None,
+        company: str = "default",  # Company name for this instance
         **kwargs,
     ):
         super().__init__(
@@ -83,7 +84,8 @@ class FinancialStatementTools(BaseResource):
             description or "Financial statement analysis tools with markdown export",
         )
         self.debug = debug
-        self.sessions = {}  # session_id -> FinancialSession
+        self.company = company
+        self.cache = {}  # In-memory cache: company -> cached_data
         
         # Set output directory for markdown files
         if output_dir:
@@ -105,6 +107,9 @@ class FinancialStatementTools(BaseResource):
             debug=debug,
             **kwargs,
         )
+        
+        # Initialize session for this company
+        self.session = FinancialSession(f"session_{company}", company)
 
     async def initialize(self) -> None:
         """Initialize the financial tools resource."""
@@ -112,19 +117,117 @@ class FinancialStatementTools(BaseResource):
         await self.financial_rag.initialize()
         await self.coding_resource.initialize()
         
+        # Initialization logging removed for brevity
+
+    def _get_from_cache(self, cache_key: str) -> Optional[Any]:
+        """Retrieve data from cache."""
+        cached_data = self.cache.get(cache_key)
+        if cached_data:
+            if self.debug:
+                print(f"CACHE HIT: {cache_key}")
+            return cached_data
         if self.debug:
-            logger.info(f"Financial statement tools [{self.name}] initialized")
-            logger.info(f"Markdown output directory: {self.output_dir}")
+            print(f"CACHE MISS: {cache_key}")
+        return None
 
-    def _create_session(self, company: str) -> str:
-        """Create a new analysis session."""
-        session_id = f"fin_session_{uuid.uuid4().hex[:8]}"
-        self.sessions[session_id] = FinancialSession(session_id, company)
-        return session_id
+    def _store_in_cache(self, cache_key: str, data: Any) -> None:
+        """Store data in cache."""
+        self.cache[cache_key] = data
+        # Cache storage logging removed for brevity
 
-    def _get_session(self, session_id: str) -> Optional[FinancialSession]:
-        """Retrieve an existing session."""
-        return self.sessions.get(session_id)
+    def clear_cache(self) -> Dict[str, Any]:
+        """Clear all cached data."""
+        cache_size = len(self.cache)
+        self.cache.clear()
+        return {
+            "cache_cleared": True,
+            "entries_removed": cache_size,
+            "message": f"Cleared {cache_size} cache entries"
+        }
+
+    async def _execute_ratio_calculation_with_cache(
+        self, 
+        ratio_type: str, 
+        prompt_generator, 
+        bs_file: str, 
+        is_file: str = "", 
+        company_name: str = "Company", 
+        market_data: str = ""
+    ) -> str:
+        """Execute ratio calculation with caching support."""
+        # Simple cache key using company and ratio type
+        cache_key = f"{self.company}_{ratio_type}"
+        
+        # Cache check logging removed for brevity
+        
+        # Try to get from cache first
+        cached_result = self._get_from_cache(cache_key)
+        
+        if cached_result:
+            # Use cached results
+            # Using cached results
+            return cached_result
+        
+        # Execute fresh calculation
+        # Executing fresh calculation
+        
+        # Read file contents
+        try:
+            # Read balance sheet if provided
+            bs_content = ""
+            if bs_file:
+                with open(bs_file, 'r', encoding='utf-8') as f:
+                    bs_content = f.read()
+                # File read successful
+            
+            # Read income statement if provided  
+            is_content = ""
+            if is_file:
+                with open(is_file, 'r', encoding='utf-8') as f:
+                    is_content = f.read()
+                # File read successful
+            
+            # Check if files are empty
+            if bs_file and not bs_content.strip():
+                return "Error: Balance sheet file is empty"
+            if is_file and not is_content.strip():
+                return "Error: Income statement file is empty"
+                
+        except Exception as e:
+            error_msg = f"Failed to read financial statement files: {str(e)}"
+            logger.error(error_msg)
+            return error_msg
+        
+        # Generate prompt using the provided generator function
+        if market_data:
+            prompt = prompt_generator(bs_content, is_content, company_name, market_data)
+        elif is_content:
+            prompt = prompt_generator(bs_content, is_content, company_name)
+        else:
+            prompt = prompt_generator(bs_content, company_name)
+        
+        # Executing calculation
+        
+        # Use CodingResource to generate AND execute Python code
+        try:
+            execution_result = await self.coding_resource.execute_code(prompt)
+            
+            is_successful = not execution_result.startswith("Error:") and not execution_result.startswith("Failed")
+            
+            # Calculation completed
+            
+            # Cache the results if successful
+            if is_successful:
+                self._store_in_cache(cache_key, execution_result)
+                # Results cached
+                
+            # Return the text output directly
+            return execution_result
+                
+        except Exception as e:
+            error_msg = f"Failed to execute {ratio_type} calculation: {str(e)}"
+            logger.error(error_msg)
+            return error_msg
 
     def _save_to_markdown(self, statement_data: str, session: FinancialSession, statement_type: str) -> str:
         """Save financial statement data to markdown file."""
@@ -145,8 +248,7 @@ class FinancialStatementTools(BaseResource):
         
         session.add_output_file(statement_type, str(filepath))
         
-        if self.debug:
-            logger.info(f"Saved {statement_type} to markdown: {filepath}")
+        # File saved
             
         return str(filepath)
 
@@ -154,31 +256,25 @@ class FinancialStatementTools(BaseResource):
     @ToolCallable.tool
     async def load_financial_data(
         self,
-        company: str,
+        company: str = None,  # Optional - uses instance company if not provided
         periods: str = "latest",  # "latest", "2023", "Q1-Q4 2023"
         source: str = "rag",  # Currently only "rag" is implemented
-    ) -> Dict[str, Any]:
-        """@description Loads all financial statements (balance sheet, income statement, cash flow) for a company. MUST be called FIRST before any ratio analysis. Returns ready-to-use tool calls for financial analysis."""
+    ) -> str:
+        """@description: Loads all financial statements (balance sheet, income statement, cash flow) for a company. MUST be called FIRST before any ratio analysis. Returns ready-to-use tool calls for financial analysis."""
+        # Use instance company if not provided
+        if not company:
+            company = self.company
+            
         # Always include all three financial statements
         statements = ["balance_sheet", "income_statement", "cash_flow"]
-        # Create new session
-        session_id = self._create_session(company)
-        session = self._get_session(session_id)
+        session = self.session
         
         if self.debug:
-            print(f"\n[FinancialTools] Creating session {session_id} for {company}")
-            print(f"[FinancialTools] Requested statements: {statements}")
-            print(f"[FinancialTools] Period: {periods}")
+            print(f"\nCALL: load_financial_data(company='{company}', periods='{periods}', source='{source}')")
 
-        results = {
-            "session_id": session_id,
-            "company": company,
-            "periods_requested": periods,
-            "statements_loaded": [],
-            "markdown_files": {},
-            "errors": [],
-            "summary": {},
-        }
+        markdown_files = {}
+        statements_loaded = []
+        errors = []
 
         # Map statement types to RAG methods
         statement_extractors = {
@@ -190,660 +286,328 @@ class FinancialStatementTools(BaseResource):
         # Extract each requested statement
         for statement_type in statements:
             if statement_type not in statement_extractors:
-                results["errors"].append(f"Unknown statement type: {statement_type}")
+                errors.append(f"Unknown statement type: {statement_type}")
                 continue
 
             try:
-                if self.debug:
-                    print(f"\n[FinancialTools] Extracting {statement_type}...")
+                # Processing statement
 
-                # Get the extraction method
-                extractor = statement_extractors[statement_type]
+                # Simple cache key
+                cache_key = f"{company}_{statement_type}"
                 
-                # Extract data using RAG
-                extracted_data = await extractor(
-                    company=company,
-                    period=periods,
-                    format_output="timeseries"  # Request structured format
-                )
+                # Try to get from cache first
+                cached_data = self._get_from_cache(cache_key)
+                
+                if cached_data:
+                    # Use cached data
+                    extracted_data = cached_data["extracted_data"]
+                    md_path = cached_data["md_path"]
+                    
+                    # Store in session
+                    session.store_statement(statement_type, extracted_data)
+                    
+                    # Using cached data
+                else:
+                    # Extract fresh data using RAG
+                    # Extracting fresh data
+                    
+                    extractor = statement_extractors[statement_type]
+                    extracted_data = await extractor(
+                        company=company,
+                        period=periods,
+                        format_output="timeseries"  # Request structured format
+                    )
 
-                # Store in session
-                session.store_statement(statement_type, extracted_data)
+                    # Store in session
+                    session.store_statement(statement_type, extracted_data)
+                    
+                    # Save to markdown file
+                    md_path = self._save_to_markdown(extracted_data, session, statement_type)
+                    
+                    # Cache the results
+                    cache_data = {
+                        "extracted_data": extracted_data,
+                        "md_path": md_path
+                    }
+                    self._store_in_cache(cache_key, cache_data)
+                    
+                    # Data extracted and cached
                 
-                # Save to markdown file
-                md_path = self._save_to_markdown(extracted_data, session, statement_type)
-                
-                results["statements_loaded"].append(statement_type)
-                results["markdown_files"][statement_type] = md_path
-                
-                # Add summary info
-                results["summary"][statement_type] = {
-                    "length": len(extracted_data),
-                    "markdown_path": md_path,
-                }
-                
-                if self.debug:
-                    print(f"[FinancialTools] {statement_type} extracted successfully")
-                    print(f"[FinancialTools] Content length: {len(extracted_data)} characters")
-                    print(f"[FinancialTools] Markdown saved to: {md_path}")
+                statements_loaded.append(statement_type)
+                markdown_files[statement_type] = md_path
 
             except Exception as e:
                 error_msg = f"Failed to extract {statement_type}: {str(e)}"
-                results["errors"].append(error_msg)
+                errors.append(error_msg)
                 logger.error(error_msg)
 
-        # Set data quality indicator and create LLM-friendly guidance
-        if len(results["statements_loaded"]) == len(statements):
-            results["data_quality"] = "complete"
+        # Create markdown output for LLM consumption
+        if len(statements_loaded) == len(statements):
+            # Success - all data loaded
+            bs_file = markdown_files.get("balance_sheet", "")
+            is_file = markdown_files.get("income_statement", "")
+            cf_file = markdown_files.get("cash_flow", "")
             
-            # Create LLM-friendly file references
-            bs_file = results["markdown_files"].get("balance_sheet", "")
-            is_file = results["markdown_files"].get("income_statement", "")
-            cf_file = results["markdown_files"].get("cash_flow", "")
-            
-            results["available_tools"] = {
-                "liquidity_ratios": f"calculate_liquidity_ratios(bs_file='{bs_file}', company_name='{company}')",
-                "leverage_ratios": f"calculate_leverage_ratios(bs_file='{bs_file}', is_file='{is_file}', company_name='{company}')",
-                "efficiency_ratios": f"calculate_efficiency_ratios(bs_file='{bs_file}', is_file='{is_file}', company_name='{company}')",
-                "profitability_ratios": f"calculate_profitability_ratios(bs_file='{bs_file}', is_file='{is_file}', company_name='{company}')",
-                "market_value_ratios": f"calculate_market_value_ratios(bs_file='{bs_file}', is_file='{is_file}', company_name='{company}', market_data='')"
-            }
-            
-            results["guidance"] = f"SUCCESS: All financial data loaded for {company}. Available files:\n" + \
-                                f"• Balance Sheet: {bs_file}\n" + \
-                                f"• Income Statement: {is_file}\n" + \
-                                f"• Cash Flow: {cf_file}\n\n" + \
-                                f"Use load_file(file_path='<path>') to read file contents, or use these ratio analysis tools:\n" + \
-                                f"• Liquidity analysis: {results['available_tools']['liquidity_ratios']}\n" + \
-                                f"• Leverage analysis: {results['available_tools']['leverage_ratios']}\n" + \
-                                f"• Efficiency analysis: {results['available_tools']['efficiency_ratios']}\n" + \
-                                f"• Profitability analysis: {results['available_tools']['profitability_ratios']}\n" + \
-                                f"• Market valuation: {results['available_tools']['market_value_ratios']}"
-                                
-        elif len(results["statements_loaded"]) > 0:
-            results["data_quality"] = "partial"
-            missing = set(statements) - set(results["statements_loaded"])
-            results["guidance"] = f"PARTIAL: Data loaded for {results['statements_loaded']}. Missing: {list(missing)}. Some ratio analyses may not be available."
-        else:
-            results["data_quality"] = "failed"
-            results["guidance"] = "FAILED: No financial data could be loaded. Check company name and document availability."
+            markdown_output = f"""# Financial Data Loading Results ✅
 
-        return results
+**Company:** {company}  
+**Status:** SUCCESS - All financial statements loaded  
+
+## Available Financial Statements
+
+| Statement Type | File Path |
+|----------------|-----------|
+| Balance Sheet | `{bs_file}` |
+| Income Statement | `{is_file}` |
+| Cash Flow | `{cf_file}` |
+
+### 📄 File Access
+To read the actual financial statement content:
+```python
+load_file(file_path='{bs_file}')  # Load balance sheet content
+load_file(file_path='{is_file}')  # Load income statement content  
+load_file(file_path='{cf_file}')  # Load cash flow content
+```
+
+## Summary
+- ✅ All required financial data successfully loaded
+- 🎯 Ready for comprehensive financial analysis
+- ⚡ Cached results available for faster subsequent access
+"""
+            
+        elif len(statements_loaded) > 0:
+            # Partial success
+            missing = list(set(statements) - set(statements_loaded))
+            loaded_files = []
+            
+            for stmt_type in statements_loaded:
+                file_path = markdown_files.get(stmt_type, "")
+                loaded_files.append(f"- **{stmt_type.replace('_', ' ').title()}**: `{file_path}`")
+            
+            markdown_output = f"""# Financial Data Loading Results ⚠️
+
+**Company:** {company}  
+**Status:** PARTIAL - Some data missing  
+
+## ✅ Successfully Loaded
+{chr(10).join(loaded_files)}
+
+## ❌ Missing Statements
+{chr(10).join([f"- {stmt.replace('_', ' ').title()}" for stmt in missing])}
+
+## ⚠️ Impact
+Some financial ratio analyses may not be available due to missing data.
+
+## Next Steps
+- Check if missing statements exist in source documents
+- Use available statements for partial analysis
+- Consider re-running with different period parameters
+"""
+            
+        else:
+            # Complete failure
+            error_list = "\n".join([f"- {error}" for error in errors]) if errors else "- Unknown error occurred"
+            
+            markdown_output = f"""# Financial Data Loading Results ❌
+
+**Company:** {company}  
+**Status:** FAILED - No data could be loaded  
+
+## 🚫 Errors Encountered
+{error_list}
+
+## 🔧 Troubleshooting Steps
+1. **Verify company name** - Check spelling and exact name format
+2. **Check document availability** - Ensure financial documents exist in source
+3. **Try different periods** - Use 'latest', specific year like '2023', or quarters like 'Q1-Q4 2023'
+4. **Verify data source** - Confirm RAG system has access to company documents
+
+## 📞 Support
+If issues persist, check the document sources and RAG configuration.
+"""
+
+        return markdown_output
+
+    async def get_cache_info(self) -> Dict[str, Any]:
+        """@description: Shows cache statistics and information. Use to check cache performance and manage cached data."""
+        return {
+            "company": self.company,
+            "cache_entries_count": len(self.cache),
+            "cache_keys": list(self.cache.keys()),
+            "cache_enabled": True,
+            "actions": {
+                "clear_cache": "Use clear_cache() to remove all cached data"
+            }
+        }
 
     @ToolCallable.tool
     async def load_file(
         self,
         file_path: str,  # Path to the markdown file to load
-    ) -> Dict[str, Any]:
-        """@description Loads the content of a financial statement markdown file. Use this to read file contents before analysis or when you need to see the actual financial data."""
+    ) -> str:
+        """@description: Loads the content of a financial statement markdown file. Use this to read file contents before analysis or when you need to see the actual financial data."""
         if self.debug:
-            print(f"\n[FinancialTools] Loading file: {file_path}")
+            print(f"\nCALL: load_file(file_path='{file_path}')")
             
-        results = {
-            "file_path": file_path,
-            "errors": []
-        }
-        
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
             
-            results["content"] = content
-            results["content_length"] = len(content)
-            results["loaded_successfully"] = True
-            
             if self.debug:
-                print(f"[FinancialTools] Successfully loaded {len(content)} characters from {file_path}")
+                print(f"RESPONSE: Loaded {len(content)} characters")
+            
+            return f'Content of `{file_path}` : \n {content}'
                 
         except FileNotFoundError:
             error_msg = f"File not found: {file_path}"
-            results["errors"].append(error_msg)
-            results["content"] = ""
-            results["loaded_successfully"] = False
             logger.error(error_msg)
+            return error_msg
             
         except Exception as e:
             error_msg = f"Failed to load file {file_path}: {str(e)}"
-            results["errors"].append(error_msg)
-            results["content"] = ""
-            results["loaded_successfully"] = False
             logger.error(error_msg)
-        
-        return results
+            return error_msg
 
-    @ToolCallable.tool
-    async def calculate_liquidity_ratios(
-        self,
-        bs_file: str,  # Path to balance sheet markdown file
-        company_name: str = "Company",  # Company name for context
-    ) -> Dict[str, Any]:
-        """@description Analyzes company's ability to pay short-term debts and cash position. Use when user asks about liquidity, cash flow, or financial health. Returns calculated ratios with numerical results."""
-        if self.debug:
-            print(f"\n[FinancialTools] Generating liquidity ratios code for {company_name}")
-            print(f"[FinancialTools] Balance Sheet file: {bs_file}")
-            
-        results = {
-            "data_sources": {
-                "balance_sheet": bs_file
-            },
-            "company": company_name,
-            "errors": []
-        }
-        
-        # Read balance sheet content
-        try:
-            if self.debug:
-                print(f"[FinancialTools] Reading balance sheet file: {bs_file}")
-                
-            with open(bs_file, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            if self.debug:
-                print(f"[FinancialTools] Read {len(content)} characters from balance sheet")
-                
-        except Exception as e:
-            error_msg = f"Failed to read balance sheet file {bs_file}: {str(e)}"
-            results["errors"].append(error_msg)
-            logger.error(error_msg)
-            return results
-        
-        if not content.strip():
-            results["errors"].append("Balance sheet file is empty")
-            return results
-        
-        # Create the prompt using our template and execute directly with CodingResource
-        prompt = create_liquidity_ratios_prompt(content, company_name)
-        
-        if self.debug:
-            print(f"[FinancialTools] Generated prompt length: {len(prompt)} characters")
-            print("[FinancialTools] Executing liquidity ratios calculation with CodingResource...")
-        
-        # Use CodingResource to generate AND execute Python code in one step
-        try:
-            execution_result = await self.coding_resource.execute_code(prompt)
-            
-            results["execution_result"] = execution_result
-            results["executed_successfully"] = not execution_result.startswith("Error:") and not execution_result.startswith("Failed")
-            
-            if self.debug:
-                print(f"[FinancialTools] Code execution result:")
-                print(execution_result)
-                
-        except Exception as e:
-            error_msg = f"Failed to execute liquidity ratios calculation: {str(e)}"
-            results["errors"].append(error_msg)
-            results["execution_result"] = error_msg
-            results["executed_successfully"] = False
-            logger.error(error_msg)
-        
-        return results
+    # @ToolCallable.tool
+    # async def calculate_liquidity_ratios(
+    #     self,
+    #     bs_file: str,  # Path to balance sheet markdown file
+    #     company_name: str = "Company",  # Company name for context
+    # ) -> str:
+    #     """@description: Calculates 12 liquidity ratios including Current Ratio, Quick Ratio, Cash Ratio, Working Capital, Super Quick Ratio, Cash Coverage, Operating CF Ratio, Net WC Ratio, Current Assets Ratio, Liquid Assets Ratio, Receivables Liquidity, and Inventory to WC. Use for analyzing short-term financial health, cash position, or ability to meet obligations."""
+    #     if self.debug:
+    #         print(f"\nCALL: calculate_liquidity_ratios(bs_file='{bs_file}', company_name='{company_name}')")
+    #     result = await self._execute_ratio_calculation_with_cache(
+    #         ratio_type="liquidity_ratios",
+    #         prompt_generator=create_liquidity_ratios_prompt,
+    #         bs_file=bs_file,
+    #         company_name=company_name
+    #     )
+    #     if self.debug:
+    #         cached = "CACHED" if self._get_from_cache(f"{self.company}_liquidity_ratios") is not None else "FRESH"
+    #         print(f"RESPONSE: {cached} - {len(result)} characters")
+    #     return result
 
-    @ToolCallable.tool
-    async def calculate_leverage_ratios(
-        self,
-        bs_file: str,  # Path to balance sheet markdown file
-        is_file: str,  # Path to income statement markdown file
-        company_name: str = "Company",  # Company name for context
-    ) -> Dict[str, Any]:
-        """@description Analyzes company's debt levels and financial leverage using balance sheet and income statement. Use when user asks about debt, leverage, or financial risk. Returns calculated ratios with numerical results."""
-        if self.debug:
-            print(f"\n[FinancialTools] Generating leverage ratios code for {company_name}")
-            print(f"[FinancialTools] Balance Sheet file: {bs_file}")
-            print(f"[FinancialTools] Income Statement file: {is_file}")
-            
-        results = {
-            "data_sources": {
-                "balance_sheet": bs_file,
-                "income_statement": is_file
-            },
-            "company": company_name,
-            "errors": []
-        }
-        
-        # Read balance sheet content
-        try:
-            if self.debug:
-                print(f"[FinancialTools] Reading balance sheet file: {bs_file}")
-                
-            with open(bs_file, 'r', encoding='utf-8') as f:
-                bs_content = f.read()
-            
-            if self.debug:
-                print(f"[FinancialTools] Read {len(bs_content)} characters from balance sheet")
-                
-        except Exception as e:
-            error_msg = f"Failed to read balance sheet file {bs_file}: {str(e)}"
-            results["errors"].append(error_msg)
-            logger.error(error_msg)
-            return results
-        
-        # Read income statement content
-        try:
-            if self.debug:
-                print(f"[FinancialTools] Reading income statement file: {is_file}")
-                
-            with open(is_file, 'r', encoding='utf-8') as f:
-                is_content = f.read()
-            
-            if self.debug:
-                print(f"[FinancialTools] Read {len(is_content)} characters from income statement")
-                
-        except Exception as e:
-            error_msg = f"Failed to read income statement file {is_file}: {str(e)}"
-            results["errors"].append(error_msg)
-            logger.error(error_msg)
-            return results
-        
-        if not bs_content.strip():
-            results["errors"].append("Balance sheet file is empty")
-            return results
-            
-        if not is_content.strip():
-            results["errors"].append("Income statement file is empty")
-            return results
-        
-        # Create the prompt using our template and execute directly with CodingResource
-        prompt = create_leverage_ratios_prompt(bs_content, is_content, company_name)
-        
-        if self.debug:
-            print(f"[FinancialTools] Generated prompt length: {len(prompt)} characters")
-            print("[FinancialTools] Executing leverage ratios calculation with CodingResource...")
-        
-        # Use CodingResource to generate AND execute Python code in one step
-        try:
-            execution_result = await self.coding_resource.execute_code(prompt)
-            
-            results["execution_result"] = execution_result
-            results["executed_successfully"] = not execution_result.startswith("Error:") and not execution_result.startswith("Failed")
-            
-            if self.debug:
-                print(f"[FinancialTools] Code execution result:")
-                print(execution_result)
-                
-        except Exception as e:
-            error_msg = f"Failed to execute leverage ratios calculation: {str(e)}"
-            results["errors"].append(error_msg)
-            results["execution_result"] = error_msg
-            results["executed_successfully"] = False
-            logger.error(error_msg)
-        
-        return results
+    # @ToolCallable.tool
+    # async def calculate_leverage_ratios(
+    #     self,
+    #     bs_file: str,  # Path to balance sheet markdown file
+    #     is_file: str,  # Path to income statement markdown file
+    #     company_name: str = "Company",  # Company name for context
+    # ) -> str:
+    #     """@description: Calculates 10 leverage ratios including Debt-to-Equity, Debt-to-Assets, Equity Ratio, LT Debt-to-Equity, Interest Coverage, Times Interest Earned, Equity Multiplier, LT Debt-to-Capital, Asset Coverage, and Financial Leverage. Use for analyzing debt levels, financial risk, or capital structure."""
+    #     if self.debug:
+    #         print(f"\nCALL: calculate_leverage_ratios(bs_file='{bs_file}', is_file='{is_file}', company_name='{company_name}')")
+    #     result = await self._execute_ratio_calculation_with_cache(
+    #         ratio_type="leverage_ratios",
+    #         prompt_generator=create_leverage_ratios_prompt,
+    #         bs_file=bs_file,
+    #         is_file=is_file,
+    #         company_name=company_name
+    #     )
+    #     if self.debug:
+    #         cached = "CACHED" if self._get_from_cache(f"{self.company}_leverage_ratios") is not None else "FRESH"
+    #         print(f"RESPONSE: {cached} - {len(result)} characters")
+    #     return result
 
-    @ToolCallable.tool
-    async def calculate_efficiency_ratios(
-        self,
-        bs_file: str,  # Path to balance sheet markdown file
-        is_file: str,  # Path to income statement markdown file
-        company_name: str = "Company",  # Company name for context
-    ) -> Dict[str, Any]:
-        """@description Analyzes how efficiently company uses assets to generate revenue. Use when user asks about asset utilization, turnover ratios, or operational efficiency. Returns calculated ratios with numerical results."""
-        if self.debug:
-            print(f"\n[FinancialTools] Generating efficiency ratios code for {company_name}")
-            print(f"[FinancialTools] Balance Sheet file: {bs_file}")
-            print(f"[FinancialTools] Income Statement file: {is_file}")
-            
-        results = {
-            "data_sources": {
-                "balance_sheet": bs_file,
-                "income_statement": is_file
-            },
-            "company": company_name,
-            "errors": []
-        }
-        
-        # Read balance sheet content
-        try:
-            if self.debug:
-                print(f"[FinancialTools] Reading balance sheet file: {bs_file}")
-                
-            with open(bs_file, 'r', encoding='utf-8') as f:
-                bs_content = f.read()
-            
-            if self.debug:
-                print(f"[FinancialTools] Read {len(bs_content)} characters from balance sheet")
-                
-        except Exception as e:
-            error_msg = f"Failed to read balance sheet file {bs_file}: {str(e)}"
-            results["errors"].append(error_msg)
-            logger.error(error_msg)
-            return results
-        
-        # Read income statement content
-        try:
-            if self.debug:
-                print(f"[FinancialTools] Reading income statement file: {is_file}")
-                
-            with open(is_file, 'r', encoding='utf-8') as f:
-                is_content = f.read()
-            
-            if self.debug:
-                print(f"[FinancialTools] Read {len(is_content)} characters from income statement")
-                
-        except Exception as e:
-            error_msg = f"Failed to read income statement file {is_file}: {str(e)}"
-            results["errors"].append(error_msg)
-            logger.error(error_msg)
-            return results
-        
-        if not bs_content.strip():
-            results["errors"].append("Balance sheet file is empty")
-            return results
-            
-        if not is_content.strip():
-            results["errors"].append("Income statement file is empty")
-            return results
-        
-        # Create the prompt using our template and execute directly with CodingResource
-        prompt = create_efficiency_ratios_prompt(bs_content, is_content, company_name)
-        
-        if self.debug:
-            print(f"[FinancialTools] Generated prompt length: {len(prompt)} characters")
-            print("[FinancialTools] Executing efficiency ratios calculation with CodingResource...")
-        
-        # Use CodingResource to generate AND execute Python code in one step
-        try:
-            execution_result = await self.coding_resource.execute_code(prompt)
-            
-            results["execution_result"] = execution_result
-            results["executed_successfully"] = not execution_result.startswith("Error:") and not execution_result.startswith("Failed")
-            
-            if self.debug:
-                print(f"[FinancialTools] Code execution result:")
-                print(execution_result)
-                
-        except Exception as e:
-            error_msg = f"Failed to execute efficiency ratios calculation: {str(e)}"
-            results["errors"].append(error_msg)
-            results["execution_result"] = error_msg
-            results["executed_successfully"] = False
-            logger.error(error_msg)
-        
-        return results
+    # @ToolCallable.tool
+    # async def calculate_efficiency_ratios(
+    #     self,
+    #     bs_file: str,  # Path to balance sheet markdown file
+    #     is_file: str,  # Path to income statement markdown file
+    #     company_name: str = "Company",  # Company name for context
+    # ) -> str:
+    #     """@description: Calculates 12 efficiency ratios including Asset Turnover, Fixed Asset Turnover, Current Asset Turnover, Inventory Turnover, Days Sales in Inventory, Receivables Turnover, Days Sales Outstanding, Payables Turnover, Days Payable Outstanding, Working Capital Turnover, and Cash Conversion Cycle. Use for analyzing operational efficiency or asset utilization."""
+    #     if self.debug:
+    #         print(f"\nCALL: calculate_efficiency_ratios(bs_file='{bs_file}', is_file='{is_file}', company_name='{company_name}')")
+    #     result = await self._execute_ratio_calculation_with_cache(
+    #         ratio_type="efficiency_ratios",
+    #         prompt_generator=create_efficiency_ratios_prompt,
+    #         bs_file=bs_file,
+    #         is_file=is_file,
+    #         company_name=company_name
+    #     )
+    #     if self.debug:
+    #         cached = "CACHED" if self._get_from_cache(f"{self.company}_efficiency_ratios") is not None else "FRESH"
+    #         print(f"RESPONSE: {cached} - {len(result)} characters")
+    #     return result
 
-    @ToolCallable.tool
-    async def calculate_profitability_ratios(
-        self,
-        bs_file: str,  # Path to balance sheet markdown file
-        is_file: str,  # Path to income statement markdown file
-        company_name: str = "Company",  # Company name for context
-    ) -> Dict[str, Any]:
-        """@description Analyzes company's ability to generate profits from operations and investments. Use when user asks about margins, returns, ROA, ROE, or profitability. Returns calculated ratios with numerical results."""
-        if self.debug:
-            print(f"\n[FinancialTools] Generating profitability ratios code for {company_name}")
-            print(f"[FinancialTools] Balance Sheet file: {bs_file}")
-            print(f"[FinancialTools] Income Statement file: {is_file}")
-            
-        results = {
-            "data_sources": {
-                "balance_sheet": bs_file,
-                "income_statement": is_file
-            },
-            "company": company_name,
-            "errors": []
-        }
-        
-        # Read balance sheet content
-        try:
-            if self.debug:
-                print(f"[FinancialTools] Reading balance sheet file: {bs_file}")
-                
-            with open(bs_file, 'r', encoding='utf-8') as f:
-                bs_content = f.read()
-            
-            if self.debug:
-                print(f"[FinancialTools] Read {len(bs_content)} characters from balance sheet")
-                
-        except Exception as e:
-            error_msg = f"Failed to read balance sheet file {bs_file}: {str(e)}"
-            results["errors"].append(error_msg)
-            logger.error(error_msg)
-            return results
-        
-        # Read income statement content
-        try:
-            if self.debug:
-                print(f"[FinancialTools] Reading income statement file: {is_file}")
-                
-            with open(is_file, 'r', encoding='utf-8') as f:
-                is_content = f.read()
-            
-            if self.debug:
-                print(f"[FinancialTools] Read {len(is_content)} characters from income statement")
-                
-        except Exception as e:
-            error_msg = f"Failed to read income statement file {is_file}: {str(e)}"
-            results["errors"].append(error_msg)
-            logger.error(error_msg)
-            return results
-        
-        if not bs_content.strip():
-            results["errors"].append("Balance sheet file is empty")
-            return results
-            
-        if not is_content.strip():
-            results["errors"].append("Income statement file is empty")
-            return results
-        
-        # Create the prompt using our template and execute directly with CodingResource
-        prompt = create_profitability_ratios_prompt(bs_content, is_content, company_name)
-        
-        if self.debug:
-            print(f"[FinancialTools] Generated prompt length: {len(prompt)} characters")
-            print("[FinancialTools] Executing profitability ratios calculation with CodingResource...")
-        
-        # Use CodingResource to generate AND execute Python code in one step
-        try:
-            execution_result = await self.coding_resource.execute_code(prompt)
-            
-            results["execution_result"] = execution_result
-            results["executed_successfully"] = not execution_result.startswith("Error:") and not execution_result.startswith("Failed")
-            
-            if self.debug:
-                print(f"[FinancialTools] Code execution result:")
-                print(execution_result)
-                
-        except Exception as e:
-            error_msg = f"Failed to execute profitability ratios calculation: {str(e)}"
-            results["errors"].append(error_msg)
-            results["execution_result"] = error_msg
-            results["executed_successfully"] = False
-            logger.error(error_msg)
-        
-        return results
+    # @ToolCallable.tool
+    # async def calculate_profitability_ratios(
+    #     self,
+    #     bs_file: str,  # Path to balance sheet markdown file
+    #     is_file: str,  # Path to income statement markdown file
+    #     company_name: str = "Company",  # Company name for context
+    # ) -> str:
+    #     """@description: Calculates 12 profitability ratios including Gross Margin, Operating Margin, Net Margin, EBITDA Margin, ROA (Return on Assets), ROE (Return on Equity), ROIC (Return on Invested Capital), ROCE (Return on Capital Employed), Asset Turnover, Equity Multiplier, Financial Leverage, and DuPont ROE. Use for analyzing profit margins, returns, or overall profitability."""
+    #     if self.debug:
+    #         print(f"\nCALL: calculate_profitability_ratios(bs_file='{bs_file}', is_file='{is_file}', company_name='{company_name}')")
+    #     result = await self._execute_ratio_calculation_with_cache(
+    #         ratio_type="profitability_ratios",
+    #         prompt_generator=create_profitability_ratios_prompt,
+    #         bs_file=bs_file,
+    #         is_file=is_file,
+    #         company_name=company_name
+    #     )
+    #     if self.debug:
+    #         cached = "CACHED" if self._get_from_cache(f"{self.company}_profitability_ratios") is not None else "FRESH"
+    #         print(f"RESPONSE: {cached} - {len(result)} characters")
+    #     return result
 
-    @ToolCallable.tool
-    async def calculate_market_value_ratios(
-        self,
-        bs_file: str,  # Path to balance sheet markdown file
-        is_file: str,  # Path to income statement markdown file
-        company_name: str = "Company",  # Company name for context
-        market_data: str = "",  # Optional market data (stock price, shares, market cap)
-    ) -> Dict[str, Any]:
-        """@description Analyzes company's market valuation relative to financial metrics. Use when user asks about P/E, P/B, market multiples, or stock valuation. Returns calculated ratios with numerical results."""
-        if self.debug:
-            print(f"\n[FinancialTools] Generating market value ratios code for {company_name}")
-            print(f"[FinancialTools] Balance Sheet file: {bs_file}")
-            print(f"[FinancialTools] Income Statement file: {is_file}")
-            print(f"[FinancialTools] Market data provided: {'Yes' if market_data.strip() else 'No'}")
-            
-        results = {
-            "data_sources": {
-                "balance_sheet": bs_file,
-                "income_statement": is_file,
-                "market_data": "provided" if market_data.strip() else "not_provided"
-            },
-            "company": company_name,
-            "errors": []
-        }
-        
-        # Read balance sheet content
-        try:
-            if self.debug:
-                print(f"[FinancialTools] Reading balance sheet file: {bs_file}")
-                
-            with open(bs_file, 'r', encoding='utf-8') as f:
-                bs_content = f.read()
-            
-            if self.debug:
-                print(f"[FinancialTools] Read {len(bs_content)} characters from balance sheet")
-                
-        except Exception as e:
-            error_msg = f"Failed to read balance sheet file {bs_file}: {str(e)}"
-            results["errors"].append(error_msg)
-            logger.error(error_msg)
-            return results
-        
-        # Read income statement content
-        try:
-            if self.debug:
-                print(f"[FinancialTools] Reading income statement file: {is_file}")
-                
-            with open(is_file, 'r', encoding='utf-8') as f:
-                is_content = f.read()
-            
-            if self.debug:
-                print(f"[FinancialTools] Read {len(is_content)} characters from income statement")
-                
-        except Exception as e:
-            error_msg = f"Failed to read income statement file {is_file}: {str(e)}"
-            results["errors"].append(error_msg)
-            logger.error(error_msg)
-            return results
-        
-        if not bs_content.strip():
-            results["errors"].append("Balance sheet file is empty")
-            return results
-            
-        if not is_content.strip():
-            results["errors"].append("Income statement file is empty")
-            return results
-        
-        # Create the prompt using our template and execute directly with CodingResource
-        prompt = create_market_value_ratios_prompt(bs_content, is_content, company_name, market_data)
-        
-        if self.debug:
-            print(f"[FinancialTools] Generated prompt length: {len(prompt)} characters")
-            print("[FinancialTools] Executing market value ratios calculation with CodingResource...")
-        
-        # Use CodingResource to generate AND execute Python code in one step
-        try:
-            execution_result = await self.coding_resource.execute_code(prompt)
-            
-            results["execution_result"] = execution_result
-            results["executed_successfully"] = not execution_result.startswith("Error:") and not execution_result.startswith("Failed")
-            
-            if self.debug:
-                print(f"[FinancialTools] Code execution result:")
-                print(execution_result)
-                
-        except Exception as e:
-            error_msg = f"Failed to execute market value ratios calculation: {str(e)}"
-            results["errors"].append(error_msg)
-            results["execution_result"] = error_msg
-            results["executed_successfully"] = False
-            logger.error(error_msg)
-        
-        return results
+    # @ToolCallable.tool
+    # async def calculate_market_value_ratios(
+    #     self,
+    #     bs_file: str,  # Path to balance sheet markdown file
+    #     is_file: str,  # Path to income statement markdown file
+    #     company_name: str = "Company",  # Company name for context
+    #     market_data: str = "",  # Optional market data (stock price, shares, market cap)
+    # ) -> str:
+    #     """@description: Calculates 12 market value ratios including EPS, Book Value per Share, Revenue per Share, Cash Flow per Share, P/E Ratio, P/B Ratio, P/S Ratio, P/CF Ratio, Market-to-Book, Enterprise Value, EV/Revenue, and EV/EBITDA. Use for analyzing stock valuation, market multiples, or investment metrics. Requires market data for full analysis."""
+    #     if self.debug:
+    #         print(f"\nCALL: calculate_market_value_ratios(bs_file='{bs_file}', is_file='{is_file}', company_name='{company_name}', market_data='{market_data[:50]}...')")
+    #     result = await self._execute_ratio_calculation_with_cache(
+    #         ratio_type="market_value_ratios",
+    #         prompt_generator=create_market_value_ratios_prompt,
+    #         bs_file=bs_file,
+    #         is_file=is_file,
+    #         company_name=company_name,
+    #         market_data=market_data
+    #     )
+    #     if self.debug:
+    #         cached = "CACHED" if self._get_from_cache(f"{self.company}_market_value_ratios") is not None else "FRESH"
+    #         print(f"RESPONSE: {cached} - {len(result)} characters")
+    #     return result
 
-    
-    async def get_session_info(
-        self,
-        session_id: str
-    ) -> Dict[str, Any]:
-        """Get information about a session and its available data."""
-        session = self._get_session(session_id)
-        if not session:
-            return {"error": f"Session {session_id} not found"}
-
-        return {
-            "session_id": session_id,
-            "company": session.company,
-            "created_at": session.created_at.isoformat(),
-            "available_statements": list(session.financial_data.keys()),
-            "output_files": session.output_files,
-            "metadata": session.metadata,
-        }
-
-    @ToolCallable.tool
-    async def list_sessions(self) -> Dict[str, Any]:
-        """List all available sessions."""
-        sessions_info = []
-        for session_id, session in self.sessions.items():
-            sessions_info.append({
-                "session_id": session_id,
-                "company": session.company,
-                "created_at": session.created_at.isoformat(),
-                "statements": list(session.financial_data.keys()),
-            })
-        
-        return {
-            "total_sessions": len(sessions_info),
-            "sessions": sessions_info,
-        }
+    async def query(self, query : str) -> str:
+        pass
     
 if __name__ == "__main__":
     import asyncio
-    finance_resource = FinancialStatementTools(description="Financial statement analysis tools with CSV export", debug=True, 
-                                               sources=["/Users/lam/Desktop/repos/opendxa/agents/agent_5_untitled_agent/docs"])
+    finance_resource = FinancialStatementTools(
+        description="Financial statement analysis tools with simplified caching", 
+        debug=True,
+        company="Aitomatic",
+        sources=["/Users/lam/Desktop/repos/opendxa/agents/agent_5_untitled_agent/docs"]
+    )
     asyncio.run(finance_resource.initialize())
-    # Test the improved load_financial_data output
-    result = asyncio.run(finance_resource.load_financial_data(company="Aitomatic", periods="latest", source="rag"))
-    print("=== load_financial_data output ===")
-    print(f"Data quality: {result.get('data_quality')}")
-    print(f"Guidance: {result.get('guidance')}")
-    if 'available_tools' in result:
-        print("\nAvailable tools:")
-        for tool_name, tool_call in result['available_tools'].items():
-            print(f"  {tool_name}: {tool_call}")
-    print("="*50)
     
-    # Test load_file tool with one of the generated files
-    if result.get('data_quality') == 'complete' and 'markdown_files' in result:
-        bs_file = result['markdown_files'].get('balance_sheet')
-        if bs_file:
-            print(f"\n=== Testing load_file with balance sheet ===")
-            file_result = asyncio.run(finance_resource.load_file(file_path=bs_file))
-            print(f"File loaded: {file_result.get('loaded_successfully')}")
-            print(f"Content length: {file_result.get('content_length')} characters")
-            if file_result.get('content'):
-                # Show first 500 characters as preview
-                preview = file_result['content'][:500] + "..." if len(file_result['content']) > 500 else file_result['content']
-                print(f"Content preview:\n{preview}")
-            print("="*50)
+    # Test the simplified interface
+    # print("=== First call (should cache data) ===")
+    # markdown_result1 = asyncio.run(finance_resource.load_financial_data(periods="latest"))
+    # print("MARKDOWN OUTPUT:")
+    # print(markdown_result1)
     
-    # Test liquidity ratios
-    # result = asyncio.run(finance_resource.calculate_liquidity_ratios(bs_file="/var/folders/v8/1y4wbb0942nb4fv3wjf5rm5m0000gn/T/financial_analysis/Aitomatic_balance_sheet_20250730_213444.md", company_name="Aitomatic"))
-    # print(result)
+    # print("\n=== Cache info after first call ===")
+    # cache_info = asyncio.run(finance_resource.get_cache_info())
+    # print(f"Company: {cache_info.get('company')}")
+    # print(f"Cache entries: {cache_info.get('cache_entries_count')}")
+    # print(f"Cache keys: {cache_info.get('cache_keys')}")
     
-    # Test leverage ratios
-    # result = asyncio.run(finance_resource.calculate_leverage_ratios(
-    #     bs_file="/var/folders/v8/1y4wbb0942nb4fv3wjf5rm5m0000gn/T/financial_analysis/Aitomatic_balance_sheet_20250730_212350.md", 
-    #     is_file="/var/folders/v8/1y4wbb0942nb4fv3wjf5rm5m0000gn/T/financial_analysis/Aitomatic_income_statement_20250730_212419.md",
-    #     company_name="Aitomatic"
-    # ))
-    # print(result)
-    
-    # Test efficiency ratios
-    # result = asyncio.run(finance_resource.calculate_efficiency_ratios(
-    #     bs_file="/var/folders/v8/1y4wbb0942nb4fv3wjf5rm5m0000gn/T/financial_analysis/Aitomatic_balance_sheet_20250730_212350.md", 
-    #     is_file="/var/folders/v8/1y4wbb0942nb4fv3wjf5rm5m0000gn/T/financial_analysis/Aitomatic_income_statement_20250730_212419.md",
-    #     company_name="Aitomatic"
-    # ))
-    # print(result)
-    
-    # Test profitability ratios
-    # result = asyncio.run(finance_resource.calculate_profitability_ratios(
-    #     bs_file="/var/folders/v8/1y4wbb0942nb4fv3wjf5rm5m0000gn/T/financial_analysis/Aitomatic_balance_sheet_20250730_212350.md", 
-    #     is_file="/var/folders/v8/1y4wbb0942nb4fv3wjf5rm5m0000gn/T/financial_analysis/Aitomatic_income_statement_20250730_212419.md",
-    #     company_name="Aitomatic"
-    # ))
-    # print(result)
-    
-    # Test market value ratios (without market data)
-    # result = asyncio.run(finance_resource.calculate_market_value_ratios(
-    #     bs_file="/var/folders/v8/1y4wbb0942nb4fv3wjf5rm5m0000gn/T/financial_analysis/Aitomatic_balance_sheet_20250730_212350.md", 
-    #     is_file="/var/folders/v8/1y4wbb0942nb4fv3wjf5rm5m0000gn/T/financial_analysis/Aitomatic_income_statement_20250730_212419.md",
-    #     company_name="Aitomatic",
-    #     market_data=""  # No market data provided - will show per-share metrics and N/A for market ratios
-    # ))
-    # print(result)
+    # print("\n=== Second call (should use cache) ===")
+    # markdown_result2 = asyncio.run(finance_resource.create_financial_forecast(
+    #     forecast_request="Grow revenue by 20% annually, maintain 40% gross margin, and reduce operating expenses by 10% annually.", 
+    #     bs_file="agents/financial_stmt_analysis/docs/[FI] FY21-25 Aitomatic Financials - FY24 BS.md",
+    #     is_file="agents/financial_stmt_analysis/docs/[FI] FY21-25 Aitomatic Financials - FY24 P&L.md",
+    #     cf_file="agents/financial_stmt_analysis/docs/[FI] FY21-25 Aitomatic Financials - FY24 CF.md"))
+    # print("MARKDOWN OUTPUT (should use cached data):")
+    # print(markdown_result2)

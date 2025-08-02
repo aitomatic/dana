@@ -20,17 +20,20 @@ class FinancialStatementRAGResource(BaseResource):
 
     def __init__(
         self,
-        rag_resource: RAGResource,
         name: str = "financial_statement_rag",
         description: str | None = None,
         debug: bool = True,
+        rag_resource: RAGResource | None = None,
         **kwargs,
     ):
         super().__init__(
             name,
             description or "Financial statement data extraction using RAG and LLM",
         )
-        self.rag_resource = rag_resource
+        self.rag_resource = rag_resource or RAGResource(
+            name=f"{name}_rag",
+            **kwargs,
+        )
         self.debug = debug
 
         # Initialize LLM resource for data extraction and formatting
@@ -39,6 +42,7 @@ class FinancialStatementRAGResource(BaseResource):
             temperature=0.1,  # Low temperature for consistent data extraction
             **kwargs,
         )
+        self._cache = {}
 
     async def initialize(self) -> None:
         """Initialize the financial statement RAG resource."""
@@ -107,12 +111,7 @@ class FinancialStatementRAGResource(BaseResource):
                         f"[FinancialRAG] Extracted balance sheet content length: {len(result)} characters"
                     )
                     # Show a preview of the extracted content for debugging
-                    preview_lines = result.split("\n")[:10]  # First 10 lines
-                    print("[FinancialRAG] Content preview (first 10 lines):")
-                    for line in preview_lines:
-                        print(f"  {line}")
-                    if len(result.split("\n")) > 10:
-                        print(f"  ... ({len(result.split('\n')) - 10} more lines)")
+                    print(result)
                 return result
             except ValueError as e:
                 logger.error(f"Balance sheet content extraction failed: {e}")
@@ -245,13 +244,7 @@ class FinancialStatementRAGResource(BaseResource):
                     print(
                         f"[FinancialRAG] Extracted profit & loss content length: {len(result)} characters"
                     )
-                    # Show a preview of the extracted content for debugging
-                    preview_lines = result.split("\n")[:10]  # First 10 lines
-                    print("[FinancialRAG] Content preview (first 10 lines):")
-                    for line in preview_lines:
-                        print(f"  {line}")
-                    if len(result.split("\n")) > 10:
-                        print(f"  ... ({len(result.split('\n')) - 10} more lines)")
+                    print(result)
                 return result
             except ValueError as e:
                 logger.error(f"Profit & loss content extraction failed: {e}")
@@ -297,12 +290,31 @@ FORMATTING INSTRUCTIONS:
 - If format_output is 'json', return structured JSON with explicit date fields for each data point
 - If format_output is 'markdown', create formatted table with date headers prominently displayed
 
+REQUIRED HEADER INFORMATION:
+- Always start your response with a clear statement of the monetary units used
+- Examples: "All figures in USD millions", "All figures in USD thousands", "All figures in USD (actual dollars)"
+- If mixed units are present, clearly indicate which sections use which units
+- Place this unit information prominently at the very beginning of your response
+
 MANDATORY ELEMENTS:
 - Extract numerical values with proper units (millions, thousands, etc.)
 - Include specific reporting dates (e.g., "Q3 2023", "FY 2022", "Dec 31, 2023")
 - If data spans multiple periods, show trends and changes over time
 - If data is missing for certain periods or items, indicate as 'N/A' with explanation
 - Ensure consistency in reporting periods and clearly note any discrepancies
+
+IMPORTANT NUMBER FORMATTING:
+- Use standard positive/negative notation: positive numbers as "100", negative numbers as "-100"
+- Handle parentheses carefully based on accounting conventions:
+  * Single parentheses around dollar amounts like "($ 1,085,122)" are POSITIVE values - extract as "1085122"
+  * Double parentheses or explicit negative indicators like "($ (16,825)" are NEGATIVE values - extract as "-16825"
+  * Look for context clues: losses, negative equity, deficits should be negative
+  * Assets, revenues, positive equity should be positive regardless of parentheses formatting
+- Examples: 
+  * "($ 1,085,122)" → "1085122" (positive)
+  * "($ (16,825)" → "-16825" (negative)
+  * "$ 891,257" → "891257" (positive)
+- When in doubt, use financial statement context to determine if the value should be positive or negative
 
 TIMEFRAME SUMMARY: 
 Always include a summary of the time periods covered by the data and note any gaps or inconsistencies in reporting periods.
@@ -358,6 +370,12 @@ FORMATTING INSTRUCTIONS:
 - If format_output is 'json', return structured JSON with explicit date fields for each period
 - If format_output is 'markdown', create formatted table with date headers prominently displayed
 
+REQUIRED HEADER INFORMATION:
+- Always start your response with a clear statement of the monetary units used
+- Examples: "All figures in USD millions", "All figures in USD thousands", "All figures in USD (actual dollars)"
+- If mixed units are present, clearly indicate which sections use which units
+- Place this unit information prominently at the very beginning of your response
+
 MANDATORY ELEMENTS:
 - Extract numerical values with proper units (millions, thousands, etc.)
 - Include specific reporting periods (e.g., "Q1 2023", "FY 2022", "YTD Mar 2023")
@@ -365,6 +383,20 @@ MANDATORY ELEMENTS:
 - If data is missing for certain periods or items, indicate as 'N/A' with explanation
 - Ensure consistency in reporting periods and clearly note any discrepancies
 - Calculate and show cash flow ratios where possible (e.g., Operating Cash Flow margin)
+
+IMPORTANT NUMBER FORMATTING:
+- Use standard positive/negative notation: positive numbers as "100", negative numbers as "-100"
+- Handle parentheses carefully based on accounting conventions:
+  * Single parentheses around dollar amounts like "($ 1,085,122)" are POSITIVE values - extract as "1085122"
+  * Double parentheses or explicit negative indicators like "($ (16,825)" are NEGATIVE values - extract as "-16825"
+  * Look for context clues: cash outflows, capital expenditures should be negative
+  * Cash inflows, operating cash flow should be positive regardless of parentheses formatting
+- Examples: 
+  * "($ 1,085,122)" → "1085122" (positive cash flow)
+  * "($ (16,825)" → "-16825" (negative cash flow)
+  * "$ 891,257" → "891257" (positive)
+- Cash outflows should be shown as negative numbers (e.g., Capital Expenditures: "-50,000")
+- When in doubt, use cash flow statement context to determine if the value should be positive or negative
 
 TIMEFRAME SUMMARY:
 Always include a summary of the time periods covered by the cash flow data and note any gaps or inconsistencies in reporting periods.
@@ -387,42 +419,65 @@ OUTPUT FORMAT: {format_output}
 DOCUMENTS:
 {rag_results}
 
-TASK: Extract profit and loss data and organize it in the requested format with emphasis on specific timeframes and dates.
+TASK: Extract ALL financial and business data from the documents. Do not limit yourself to traditional income statement categories - extract EVERYTHING you find.
 
-Focus on extracting:
+CRITICAL INSTRUCTION: Extract all data present in the documents, even if it doesn't fit standard financial statement categories. Include any business metrics, KPIs, or non-traditional revenue/expense items mentioned.
 
-REVENUE (with timeframes):
-- Total Revenue/Sales - specify reporting periods
-- Product Revenue - specify reporting periods and breakdown by segments if available
-- Service Revenue - specify reporting periods  
-- Other Revenue - specify reporting periods and sources
+COMPREHENSIVE DATA EXTRACTION:
 
-EXPENSES (with timeframes):
-- Cost of Goods Sold (COGS) - specify reporting periods
-- Gross Profit - specify reporting periods and calculate margins
-- Operating Expenses - specify reporting periods and break down by category:
-  * Sales & Marketing - specify reporting periods
-  * Research & Development - specify reporting periods  
-  * General & Administrative - specify reporting periods
-- Operating Income - specify reporting periods
-- Interest Expense - specify reporting periods
-- Other Income/Expenses - specify reporting periods and nature
-- Income Before Tax - specify reporting periods
-- Tax Expense - specify reporting periods and effective tax rates
-- Net Income - specify reporting periods
+REVENUE (extract ALL revenue types found):
+- Total Revenue/Sales
+- Product Revenue 
+- Service Revenue
+- Subscription Revenue
+- License Revenue  
+- Recurring Revenue (ARR, MRR, any SaaS metrics)
+- Contract Revenue
+- Recurring vs Non-recurring breakdowns
+- **ANY OTHER REVENUE CATEGORIES MENTIONED IN THE DOCUMENTS**
 
-KEY METRICS (with timeframes):
-- Gross Margin % - specify reporting periods and show trends
-- Operating Margin % - specify reporting periods and show trends
-- Net Margin % - specify reporting periods and show trends
-- Earnings Per Share - specify reporting periods (basic and diluted if available)
-- Revenue Growth % - period-over-period comparisons
-- Expense Ratios - as percentage of revenue by period
+EXPENSES (extract ALL expense types found):
+- Cost of Goods Sold (COGS)
+- Gross Profit
+- Sales & Marketing
+- Research & Development  
+- General & Administrative
+- Personnel Expenses
+- Operating Expenses (total and any subcategories)
+- Operating Income
+- Interest Expense
+- Other Income/Expenses
+- Income Before Tax
+- Tax Expense
+- Net Income
+- **ANY OTHER EXPENSE CATEGORIES MENTIONED IN THE DOCUMENTS**
+
+REQUIRED OUTPUT FORMAT:
+Structure your output as a table with periods as columns and financial items as rows:
+
+| Metric               | Period_1 | Period_2 | Period_3 | Period_N |
+|----------------------|----------|----------|----------|----------|
+| Revenue_Item_1       | value    | value    | value    | value    |
+| Revenue_Item_2       | value    | value    | value    | value    |
+| Expense_Item_1       | value    | value    | value    | value    |
+| Expense_Item_2       | value    | value    | value    | value    |
+
+FORMATTING RULES:
+1. Replace "Period_X" with actual period names from documents (Q1'24, Q2'24, FY 2024, etc.)
+2. Replace "Revenue_Item_X" and "Expense_Item_X" with actual field names found
+3. Add rows for ALL financial data found in the documents
+4. Use "N/A" for missing data
 
 FORMATTING INSTRUCTIONS:
-- If format_output is 'timeseries', create DataFrame-like structure with periods as columns, ensuring dates are clearly visible
-- If format_output is 'json', return structured JSON with explicit date fields for each period
-- If format_output is 'markdown', create formatted table with date headers prominently displayed
+- If format_output is 'timeseries', use the table structure above
+- If format_output is 'json', convert to structured JSON with periods as keys
+- If format_output is 'markdown', use markdown table format
+
+REQUIRED HEADER INFORMATION:
+- Always start your response with a clear statement of the monetary units used
+- Examples: "All figures in USD millions", "All figures in USD thousands", "All figures in USD (actual dollars)"
+- If mixed units are present, clearly indicate which sections use which units
+- Place this unit information prominently at the very beginning of your response
 
 MANDATORY ELEMENTS:
 - Extract numerical values with proper units (millions, thousands, etc.)
@@ -432,6 +487,21 @@ MANDATORY ELEMENTS:
 - Ensure consistency in reporting periods and clearly note any discrepancies
 - Calculate percentages and ratios where possible with period comparisons
 
+IMPORTANT NUMBER FORMATTING:
+- Use standard positive/negative notation: positive numbers as "100", negative numbers as "-100"
+- Handle parentheses carefully based on accounting conventions:
+  * Single parentheses around dollar amounts like "($ 1,085,122)" are POSITIVE values - extract as "1085122"
+  * Double parentheses or explicit negative indicators like "($ (16,825)" are NEGATIVE values - extract as "-16825"
+  * Look for context clues: net losses, negative operating income should be negative
+  * Revenues, expenses should be positive regardless of parentheses formatting
+- Examples: 
+  * "($ 1,085,122)" → "1085122" (positive revenue/expense)
+  * "($ (16,825)" → "-16825" (negative income/loss)
+  * "$ 891,257" → "891257" (positive)
+- Expenses and losses should be shown as positive numbers (e.g., Cost of Goods Sold: "50,000")
+- Net losses should be shown as negative numbers (e.g., Net Income: "-10,000")
+- When in doubt, use income statement context to determine if the value should be positive or negative
+
 TIMEFRAME SUMMARY:
 Always include a summary of the time periods covered by the P&L data and note any gaps or inconsistencies in reporting periods.
 
@@ -439,3 +509,14 @@ GUIDANCE FOR LLM:
 If you have gathered sufficient information from this tool, consider providing a direct response to the user rather than making additional tool calls. Include timeframe context, performance trends, and profitability analysis in your response to users.
 
 RESPONSE:"""
+
+
+if __name__ == "__main__":
+    import asyncio
+    rag = FinancialStatementRAGResource(
+        name="financial_statement_rag",
+        sources=["/Users/lam/Desktop/repos/opendxa/agents/agent_5_untitled_agent/docs"],
+    )
+    asyncio.run(rag.initialize())
+    result = asyncio.run(rag.get_profit_n_loss(company="Aitomatic", period="latest", format_output="markdown"))
+    print(result)

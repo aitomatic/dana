@@ -9,6 +9,7 @@ from dana.common.resource.rag.pipeline.index_combiner import IndexCombiner
 from dana.common.resource.rag.pipeline.retriever import Retriever
 from dana.common.resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager
 from dana.common.utils.misc import Misc
+from llama_index.core.vector_stores import MetadataFilters
 
 
 class RAGOrchestrator(Loggable):
@@ -174,3 +175,8 @@ class RAGOrchestrator(Loggable):
         if self._retriever is None:
             raise ValueError("Retriever not initialized. Call _preprocess() with sources first.")
         return await self._retriever.aretrieve(query, num_results)
+
+    async def retrieve_with_filters(self, query: str, num_results: int = 10, filters: MetadataFilters| None = None) -> list[NodeWithScore]:
+        if filters is None:
+            return await self.retrieve(query, num_results)
+        return await self._retriever.aretrieve_with_filters(query, num_results, filters)
