@@ -36,24 +36,24 @@ python --version  # Should be 3.12+
 
 **Semiconductor Packaging Use Case:**
 ```bash
-cd opendxa/knows/.design/use-cases/semiconductor-packaging-vision-alignment
+cd dana/knows/.design/use-cases/semiconductor-packaging-vision-alignment
 python knowledge_evolution_simulation.py
 ```
 
 **IC Design FAE Use Case:**
 ```bash
-cd opendxa/knows/.design/use-cases/ic-design-fae-customer-support
+cd dana/knows/.design/use-cases/ic-design-fae-customer-support
 python knowledge_evolution_simulation.py
 ```
 
 #### **Option 2: Basic CORRAL Simulations**
 ```bash
 # Semiconductor use case
-cd opendxa/knows/.design/use-cases/semiconductor-packaging-vision-alignment
+cd dana/knows/.design/use-cases/semiconductor-packaging-vision-alignment
 python corral_simulation.py
 
 # FAE use case
-cd opendxa/knows/.design/use-cases/ic-design-fae-customer-support
+cd dana/knows/.design/use-cases/ic-design-fae-customer-support
 python corral_simulation.py
 ```
 
@@ -160,7 +160,7 @@ uv run pytest tests/knows/test_context_expansion.py -v
 ## 📊 **Key Files to Review**
 
 ### **Core Simulation Files**
-- `opendxa/knows/.design/use-cases/README.md` - Overview and setup instructions
+- `dana/knows/.design/use-cases/README.md` - Overview and setup instructions
 - `*/*/knowledge_evolution_simulation.py` - Main simulation demonstrations
 - `*/*/corral_simulation.py` - Basic CORRAL lifecycle examples
 - `tests/knows/*.py` - Test coverage for core functionality

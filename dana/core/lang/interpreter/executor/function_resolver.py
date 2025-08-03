@@ -22,7 +22,7 @@ import logging
 from enum import Enum
 from typing import Any
 
-from dana.core.lang.exceptions import SandboxError
+from dana.common.exceptions import SandboxError
 from dana.core.lang.interpreter.executor.function_name_utils import FunctionNameInfo
 from dana.core.lang.sandbox_context import SandboxContext
 

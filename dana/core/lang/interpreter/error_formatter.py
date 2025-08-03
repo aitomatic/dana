@@ -8,6 +8,9 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
+import re
+
+from dana.common.error_utils import ErrorUtils
 from dana.core.lang.interpreter.error_context import ErrorContext
 
 
@@ -94,6 +97,71 @@ class EnhancedErrorFormatter:
         Returns:
             Formatted error message in clean developer format
         """
+        # Check for reserved keyword errors first
+        error_msg = str(error)
+        previous_tokens = []  # Initialize to avoid scoping issues
+
+        if "Unexpected token" in error_msg:
+            # Try to extract error details
+            line_match = re.search(r"line (\d+), col(?:umn)? (\d+)", error_msg)
+            token_match = re.search(r"Unexpected token Token\('([^']+)', '([^']+)'\)", error_msg)
+
+            if token_match:
+                token_type, token_value = token_match.groups()
+
+                # Check if this is a reserved keyword error (either direct or in previous tokens)
+                is_reserved_keyword_error = False
+                actual_keyword = None
+
+                if token_value in ErrorUtils.RESERVED_KEYWORDS:
+                    is_reserved_keyword_error = True
+                    actual_keyword = token_value
+                else:
+                    # Check if a reserved keyword is in the previous tokens
+                    previous_match = re.search(r"Previous tokens: \[(.*?)\]", error_msg)
+                    if previous_match:
+                        previous_text = previous_match.group(1)
+                        # The previous tokens are in format: Token('AGENT', 'agent')
+                        # We need to extract all Token(...) patterns properly
+                        token_patterns = re.findall(r"Token\('([^']+)', '([^']+)'\)", previous_text)
+                        previous_tokens = []
+                        for token_type, token_value in token_patterns:
+                            previous_tokens.append(f"Token('{token_type}', '{token_value}')")
+
+                        # Use the shared method to find reserved keywords
+                        actual_keyword = ErrorUtils._find_reserved_keyword_in_tokens(previous_tokens)
+                        if actual_keyword:
+                            is_reserved_keyword_error = True
+
+                if is_reserved_keyword_error and actual_keyword:
+                    # Extract expected tokens
+                    expected_tokens = []
+
+                    # Parse expected tokens
+                    expected_match = re.search(r"Expected one of:\s*(.*?)(?:\n|$)", error_msg, re.DOTALL)
+                    if expected_match:
+                        expected_text = expected_match.group(1)
+                        expected_tokens = [line.strip().replace("*", "").strip() for line in expected_text.split("\n") if line.strip()]
+
+                    # Detect context
+                    context = ErrorUtils.detect_reserved_keyword_context(error_msg, expected_tokens, previous_tokens)
+
+                    if context and line_match:
+                        line_num = int(line_match.group(1))
+                        column_num = int(line_match.group(2))
+
+                        # Get source line if available
+                        source_line = ""
+                        if error_context and error_context.current_file and line_num:
+                            source_line = error_context.get_source_line(error_context.current_file, line_num) or ""
+
+                        # Create enhanced error message
+                        enhanced_msg = ErrorUtils.create_reserved_keyword_error_message(
+                            actual_keyword, context, line_num, column_num, source_line
+                        )
+                        return enhanced_msg
+
+        # Fall back to original formatting for non-reserved keyword errors
         lines = []
 
         # Header

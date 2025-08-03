@@ -1,0 +1,47 @@
+# Test dict comprehensions with parentheses syntax
+log("=== Dict Comprehensions Test Suite ===")
+
+# Test 1: Basic dict comprehension
+log("Test 1: Basic dict comprehension")
+private:numbers = [1, 2, 3]
+private:result = {(x: x*2) for x in private:numbers}
+log(f"Basic comprehension result: {private:result}")
+# Expected: {1: 2, 2: 4, 3: 6}
+
+# Test 2: Dict comprehension with filtering
+log("Test 2: Dict comprehension with filtering")
+private:filtered = {(x: x*2) for x in private:numbers if x > 1}
+log(f"Filtered comprehension result: {private:filtered}")
+# Expected: {2: 4, 3: 6}
+
+# Test 3: Dict comprehension with string keys
+log("Test 3: Dict comprehension with string keys")
+private:words = ["hello", "world", "dana"]
+private:word_lengths = {(word: len(word)) for word in private:words}
+log(f"Word lengths: {private:word_lengths}")
+# Expected: {"hello": 5, "world": 5, "dana": 4}
+
+# Test 4: Dict comprehension with nested data
+log("Test 4: Dict comprehension with nested data")
+private:data = [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]
+private:name_ages = {(item["name"]: item["age"]) for item in private:data}
+log(f"Name-age mapping: {private:name_ages}")
+# Expected: {"Alice": 30, "Bob": 25}
+
+# Test 5: Empty result (all filtered out)
+log("Test 5: Empty result")
+private:empty_result = {(x: x) for x in private:numbers if x > 10}
+log(f"Empty result: {private:empty_result}")
+# Expected: {}
+
+# Test 6: Dict literals still work (no parentheses)
+log("Test 6: Dict literals still work")
+private:regular_dict = {"key1": "value1", "key2": "value2"}
+log(f"Regular dict literal: {private:regular_dict}")
+# Expected: {"key1": "value1", "key2": "value2"}
+
+log("=== Dict Comprehensions Test Complete ===")
+
+# Note: This syntax {(key: value) for item in items} disambiguates from dict literals
+# Dict literals: {"key": "value"} - no parentheses
+# Dict comprehensions: {(key: value) for item in items} - parentheses around key-value pair 

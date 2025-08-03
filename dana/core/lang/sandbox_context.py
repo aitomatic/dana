@@ -198,12 +198,13 @@ class SandboxContext:
         # For local scope, set in current context
         self._state[scope][var_name] = value
 
-    def get(self, key: str, default: Any = None) -> Any:
+    def get(self, key: str, default: Any = None, auto_resolve: bool = True) -> Any:
         """Get a value from the context using a scoped key.
 
         Args:
             key: The scoped key (e.g., 'local:variable' or 'private:test')
             default: Default value if key not found
+            auto_resolve: If True (default), automatically resolve Promises
 
         Returns:
             The value associated with the key, or default if not found
@@ -217,16 +218,26 @@ class SandboxContext:
                 while root._parent is not None:
                     root = root._parent
                 if scope in root._state and var_name in root._state[scope]:
-                    return root._state[scope][var_name]
-                return default
-
+                    value = root._state[scope][var_name]
+                else:
+                    value = default
             # For local scope, search current context first
-            if scope in self._state and var_name in self._state[scope]:
-                return self._state[scope][var_name]
+            elif scope in self._state and var_name in self._state[scope]:
+                value = self._state[scope][var_name]
             elif self._parent:
-                return self._parent.get(key, default)
+                value = self._parent.get(key, default)
             else:
-                return default
+                value = default
+
+            # Auto-resolve Promise if requested and value is a Promise
+            if auto_resolve:
+                from dana.core.concurrency import BasePromise
+
+                if isinstance(value, BasePromise):
+                    # Auto-resolve promises to their values
+                    return value._ensure_resolved()
+
+            return value
         except StateError:
             # Invalid key format or unknown scope
             return default
@@ -424,30 +435,78 @@ class SandboxContext:
         for scope, values in other._state.items():
             self._state[scope].update(values)
 
+    def _copy_attributes(self, target_context: "SandboxContext", skip_state: bool = False, skip_resources: bool = False) -> None:
+        """Copy attributes from this context to target context.
+
+        Args:
+            target_context: Context to copy attributes to
+            skip_state: If True, don't copy state (for child contexts that inherit state)
+            skip_resources: If True, don't copy resources/agents (for child contexts that inherit them)
+        """
+        import copy
+
+        # Copy all instance attributes dynamically
+        for attr_name, attr_value in self.__dict__.items():
+            if attr_name.startswith("_SandboxContext__"):
+                # Handle private attributes (resources and agents)
+                if skip_resources and (attr_name.endswith("__resources") or attr_name.endswith("__agents")):
+                    continue  # Skip resources for child contexts
+                elif attr_name.endswith("__resources") or attr_name.endswith("__agents"):
+                    # Shallow copy the nested dictionaries (resources can't be deep copied)
+                    copied_dict = {}
+                    for scope, scope_dict in attr_value.items():
+                        copied_dict[scope] = copy.copy(scope_dict)
+                    setattr(target_context, attr_name, copied_dict)
+                else:
+                    # Copy other private attributes
+                    setattr(target_context, attr_name, copy.copy(attr_value))
+            elif attr_name not in ["_parent", "_manager"] + (["_state"] if skip_state else []):
+                # Copy all other attributes (interpreter, etc.)
+                # Skip _parent, _manager (handled in constructor), and optionally _state
+                try:
+                    # Try shallow copy first (most attributes)
+                    setattr(target_context, attr_name, copy.copy(attr_value))
+                except (TypeError, copy.Error):
+                    # If shallow copy fails, just reference (for non-copyable objects)
+                    setattr(target_context, attr_name, attr_value)
+
     def copy(self) -> "SandboxContext":
         """Create a copy of this context.
 
         Returns:
             A new SandboxContext with the same state
         """
-        new_context = SandboxContext()
+        # Create new context with same parent and manager
+        new_context = SandboxContext(parent=self._parent, manager=self._manager)
+
+        # Copy the state (this handles all scope data)
         new_context.set_state(self.get_state())
 
-        # Also copy resource and agent registrations
-        # This ensures that Dana functions have access to resources from their original module context
-        # Use shallow copy since resources contain objects that can't be deep copied
-        import copy
-
-        new_context._SandboxContext__resources = copy.copy(self._SandboxContext__resources)
-        new_context._SandboxContext__agents = copy.copy(self._SandboxContext__agents)
-
-        # Copy the nested dictionaries for each scope
-        for scope in new_context._SandboxContext__resources:
-            new_context._SandboxContext__resources[scope] = copy.copy(self._SandboxContext__resources[scope])
-        for scope in new_context._SandboxContext__agents:
-            new_context._SandboxContext__agents[scope] = copy.copy(self._SandboxContext__agents[scope])
+        # Copy all attributes
+        self._copy_attributes(new_context, skip_state=False, skip_resources=False)
 
         return new_context
+
+    def create_child_context(self) -> "SandboxContext":
+        """Create a child context that inherits from this context.
+
+        A child context:
+        - Has its own fresh local scope
+        - Shares global scopes (private, public, system) with the parent
+        - Inherits the parent's interpreter and other properties
+        - Is useful for function execution where you need isolated local variables
+          but want to maintain access to global state
+
+        Returns:
+            A new SandboxContext that is a child of this context
+        """
+        # Create child with this context as parent
+        child_context = SandboxContext(parent=self, manager=self._manager)
+
+        # Copy attributes but skip state and resources (inherited via parent chain)
+        self._copy_attributes(child_context, skip_state=True, skip_resources=True)
+
+        return child_context
 
     def sanitize(self) -> "SandboxContext":
         """Create a sanitized copy of this context.

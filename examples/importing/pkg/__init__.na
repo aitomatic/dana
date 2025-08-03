@@ -1,0 +1,13 @@
+"""A package."""
+
+from .submodule import SUBMODULE_CONST
+from .big_submodule.submodule import NESTED_CONST, UTIL_CONST
+
+__all__ = [
+    'PKG_CONST',
+    'SUBMODULE_CONST',
+    'NESTED_CONST',
+    'UTIL_CONST',
+]
+
+PKG_CONST = 'pkg const'

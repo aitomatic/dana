@@ -1,0 +1,5 @@
+"""A util sub-module."""
+
+__all__ = ['UTIL_CONST']
+
+UTIL_CONST = 'utility const'

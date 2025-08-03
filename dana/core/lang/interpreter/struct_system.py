@@ -32,6 +32,7 @@ class StructType:
     field_order: list[str]  # Maintain field declaration order
     field_comments: dict[str, str]  # Maps field name to comment/description
     field_defaults: dict[str, Any] = None  # Maps field name to default value
+    docstring: str | None = None  # Struct docstring
 
     def __post_init__(self):
         """Validate struct type after initialization."""
@@ -127,6 +128,10 @@ class StructType:
     def get_field_comment(self, field_name: str) -> str | None:
         """Get the comment/description for a specific field."""
         return self.field_comments.get(field_name)
+
+    def get_docstring(self) -> str | None:
+        """Get the struct docstring."""
+        return self.docstring
 
     def get_field_description(self, field_name: str) -> str:
         """Get a formatted description of a field including type and comment."""
@@ -344,6 +349,54 @@ class StructInstance:
         return method(self, *args, **kwargs)
 
 
+class MethodRegistry:
+    """Global registry for struct methods with explicit receivers."""
+
+    _instance: Optional["MethodRegistry"] = None
+    _methods: dict[tuple[str, str], Any] = {}  # (type_name, method_name) -> DanaFunction
+
+    def __new__(cls) -> "MethodRegistry":
+        """Singleton pattern for global registry."""
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    @classmethod
+    def register_method(cls, receiver_types: list[str], method_name: str, function: Any) -> None:
+        """Register a method for one or more receiver types.
+
+        Args:
+            receiver_types: List of struct type names (from union types)
+            method_name: Name of the method
+            function: The DanaFunction to register
+        """
+        for type_name in receiver_types:
+            key = (type_name, method_name)
+            if key in cls._methods:
+                raise ValueError(f"Method '{method_name}' already defined for type '{type_name}'")
+            cls._methods[key] = function
+
+    @classmethod
+    def get_method(cls, type_name: str, method_name: str) -> Any | None:
+        """Get a method for a specific type."""
+        return cls._methods.get((type_name, method_name))
+
+    @classmethod
+    def has_method(cls, type_name: str, method_name: str) -> bool:
+        """Check if a method exists for a type."""
+        return (type_name, method_name) in cls._methods
+
+    @classmethod
+    def get_methods_for_type(cls, type_name: str) -> dict[str, Any]:
+        """Get all methods for a specific type."""
+        return {method_name: func for (t_name, method_name), func in cls._methods.items() if t_name == type_name}
+
+    @classmethod
+    def clear(cls) -> None:
+        """Clear all registered methods (for testing)."""
+        cls._methods.clear()
+
+
 class StructTypeRegistry:
     """Global registry for struct types."""
 
@@ -400,7 +453,13 @@ class StructTypeRegistry:
             available_types = cls.list_types()
             raise ValueError(f"Unknown struct type '{struct_name}'. Available types: {available_types}")
 
-        return StructInstance(struct_type, values)
+        # Check if this is an agent struct type
+        from dana.agent import AgentStructType, AgentStructInstance
+
+        if isinstance(struct_type, AgentStructType):
+            return AgentStructInstance(struct_type, values)
+        else:
+            return StructInstance(struct_type, values)
 
     @classmethod
     def get_schema(cls, struct_name: str) -> dict[str, Any]:
@@ -548,7 +607,12 @@ def create_struct_type_from_ast(struct_def, context=None) -> StructType:
             field_comments[field.name] = field.comment
 
     return StructType(
-        name=struct_def.name, fields=fields, field_order=field_order, field_defaults=field_defaults or None, field_comments=field_comments
+        name=struct_def.name,
+        fields=fields,
+        field_order=field_order,
+        field_defaults=field_defaults or None,
+        field_comments=field_comments,
+        docstring=struct_def.docstring,
     )
 
 

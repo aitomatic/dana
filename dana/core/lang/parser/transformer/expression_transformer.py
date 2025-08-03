@@ -35,16 +35,21 @@ from dana.core.lang.ast import (
     AttributeAccess,
     BinaryExpression,
     BinaryOperator,
+    ConditionalExpression,
+    DictComprehension,
     DictLiteral,
     Expression,
     FStringExpression,
     FunctionCall,
     Identifier,
+    LambdaExpression,
+    ListComprehension,
     ListLiteral,
     LiteralExpression,
     ObjectFunctionCall,
     PipelineExpression,
     PlaceholderExpression,
+    SetComprehension,
     SetLiteral,
     SliceExpression,
     SubscriptExpression,
@@ -60,12 +65,22 @@ ValidExprType = LiteralExpression | Identifier | BinaryExpression | FunctionCall
 
 
 class ExpressionTransformer(BaseTransformer):
-    """
-    Transforms Lark parse trees for Dana expressions into AST nodes.
+    """Transform expression parse trees into AST Expression nodes."""
 
-    Handles all expression grammar rules, including operator precedence, literals, collections,
-    function calls, attribute access, and constants. Methods are grouped by grammar hierarchy for clarity.
-    """
+    def __init__(self, main_transformer=None):
+        """Initialize the ExpressionTransformer.
+
+        Args:
+            main_transformer: Optional main transformer instance for coordination.
+                            Can be None for standalone usage.
+        """
+        super().__init__()
+        self.main_transformer = main_transformer
+        self._in_declarative_function = False
+
+    def set_declarative_function_context(self, in_declarative_function: bool):
+        """Set whether we're currently in a declarative function context."""
+        self._in_declarative_function = in_declarative_function
 
     def expression(self, items):
         if not items:
@@ -95,6 +110,7 @@ class ExpressionTransformer(BaseTransformer):
                     "comparison",
                     "and_expr",
                     "or_expr",
+                    "conditional_expr",
                 }:
                     # These rules have specialized transformers, dispatch directly
                     method = getattr(self, rule_name, None)
@@ -135,6 +151,7 @@ class ExpressionTransformer(BaseTransformer):
             LiteralExpression
             | Identifier
             | BinaryExpression
+            | ConditionalExpression
             | FunctionCall
             | ObjectFunctionCall
             | TupleLiteral
@@ -146,7 +163,11 @@ class ExpressionTransformer(BaseTransformer):
             | FStringExpression
             | UnaryExpression
             | PlaceholderExpression
-            | PipelineExpression,
+            | PipelineExpression
+            | LambdaExpression
+            | ListComprehension
+            | SetComprehension
+            | DictComprehension,
         ):
             return item
         # If it's a primitive or FStringExpression, wrap as LiteralExpression
@@ -159,6 +180,11 @@ class ExpressionTransformer(BaseTransformer):
             # Use the tree traverser's unwrap_token for consistent token handling
             value = self.tree_traverser.unwrap_token(item)
             return LiteralExpression(value=value)
+
+        # Handle NamedPipelineStage objects (already transformed)
+        if hasattr(item, "__class__") and item.__class__.__name__ == "NamedPipelineStage":
+            return item
+
         raise TypeError(f"Cannot transform expression: {item} ({type(item)})")
 
     def _extract_operator_string(self, op_token):
@@ -234,6 +260,37 @@ class ExpressionTransformer(BaseTransformer):
             items = new_items
         return self._left_associative_binop(items, lambda op: BinaryOperator.AND)
 
+    def conditional_expr(self, items):
+        """Transform conditional expression (ternary operator) into ConditionalExpression AST node."""
+        from dana.core.lang.ast import ConditionalExpression
+
+        if len(items) == 1:
+            # No conditional, just return the or_expr
+            return self.expression([items[0]])
+        elif len(items) == 3 and items[1] is None and items[2] is None:
+            # No conditional (optional parts are None), just return the or_expr
+            return self.expression([items[0]])
+        elif len(items) == 3 and items[1] is not None and items[2] is not None:
+            # Conditional: value, condition, alternative (tokens filtered out)
+            true_branch = self.expression([items[0]])
+            condition = self.expression([items[1]])
+            false_branch = self.expression([items[2]])
+
+            location = getattr(true_branch, "location", None) or getattr(condition, "location", None)
+
+            return ConditionalExpression(condition=condition, true_branch=true_branch, false_branch=false_branch, location=location)
+        elif len(items) == 5:
+            # Full conditional: value "if" condition "else" alternative
+            true_branch = self.expression([items[0]])
+            condition = self.expression([items[2]])
+            false_branch = self.expression([items[4]])
+
+            location = getattr(true_branch, "location", None) or getattr(condition, "location", None)
+
+            return ConditionalExpression(condition=condition, true_branch=true_branch, false_branch=false_branch, location=location)
+        else:
+            raise ValueError(f"Unexpected number of items in conditional_expr: {len(items)} - {[type(item).__name__ for item in items]}")
+
     def placeholder_expression(self, items):
         """Transform placeholder expression into PlaceholderExpression AST node."""
         return PlaceholderExpression()
@@ -246,6 +303,9 @@ class ExpressionTransformer(BaseTransformer):
         This method collects all expressions separated by PIPE tokens and creates
         a PipelineExpression with the stages list. Only creates PipelineExpression
         if there are actual PIPE tokens (at least one | operator).
+
+        Rejects pipe expressions in non-declarative function contexts.
+        Only allows pipe expressions in declarative function definitions.
         """
         stages = []
         has_pipe = False
@@ -274,8 +334,39 @@ class ExpressionTransformer(BaseTransformer):
         if not has_pipe and len(stages) == 1:
             return stages[0]
 
+        # Enforce declarative function context restriction
+        if not self._is_in_declarative_function_context():
+            raise SyntaxError(
+                "Pipe expressions (|) are only allowed in declarative function definitions. "
+                "Use 'def function_name() = expr1 | expr2' syntax instead of assignment."
+            )
+
         # Otherwise, create PipelineExpression
         return PipelineExpression(stages=stages)
+
+    def _is_in_declarative_function_context(self):
+        """Check if we're currently parsing a declarative function definition."""
+        return self._in_declarative_function
+
+    def _is_literal_expression(self, expr):
+        """Check if an expression is a literal value that should be rejected in pipe contexts."""
+        from dana.core.lang.ast import LiteralExpression
+
+        # Direct literal expressions
+        if isinstance(expr, LiteralExpression):
+            return True
+
+        # Check for common literal patterns
+        if hasattr(expr, "value"):
+            # String literals, numbers, booleans, etc.
+            if isinstance(expr.value, str | int | float | bool | type(None)):
+                return True
+
+        # Check for string literals with specific attributes
+        if hasattr(expr, "type") and expr.type in ["REGULAR_STRING", "SINGLE_QUOTED_STRING", "F_STRING_TOKEN"]:
+            return True
+
+        return False
 
     def not_expr(self, items):
         """
@@ -566,10 +657,20 @@ class ExpressionTransformer(BaseTransformer):
 
     def list(self, items):
         """
-        Transform a list literal into a ListLiteral AST node.
+        Transform a list literal or list comprehension into an AST node.
         """
         from dana.core.lang.ast import Expression
 
+        # Check if this is a list comprehension (items[0] would be a Tree with data="list_comprehension")
+        if items and hasattr(items[0], "data") and items[0].data == "list_comprehension":
+            # This is a list comprehension, delegate to the list_comprehension method
+            return self.list_comprehension([items[0]])
+
+        # Check if items[0] is already a ListComprehension (from previous processing)
+        if items and hasattr(items[0], "__class__") and items[0].__class__.__name__ == "ListComprehension":
+            return items[0]
+
+        # This is a regular list literal
         flat_items = self.flatten_items(items)
         # Ensure each item is properly cast to Expression type
         list_items: list[Expression] = []
@@ -580,25 +681,56 @@ class ExpressionTransformer(BaseTransformer):
         return ListLiteral(items=list_items)
 
     def dict(self, items):
+        """
+        Transform a dict literal or dict comprehension into an AST node.
+        """
+        from dana.core.lang.ast import DictLiteral
+
+        # Check if this is a dict comprehension by looking for comprehension patterns
+        if items and self._is_dict_comprehension(items):
+            return self._create_dict_comprehension(items)
+
+        # This is a regular dict literal
         flat_items = self.flatten_items(items)
         pairs = []
         for item in flat_items:
-            if isinstance(item, tuple) and len(item) == 2:
+            # Check if this individual item is a dict comprehension
+            if hasattr(item, "__class__") and item.__class__.__name__ == "DictComprehension":
+                # If we have a single dict comprehension, return it directly
+                if len(flat_items) == 1:
+                    return item
+                # Otherwise, this shouldn't happen - a dict literal can't contain a comprehension
+                raise ValueError("Dict literal cannot contain dict comprehension as an item")
+            elif isinstance(item, tuple) and len(item) == 2:
                 pairs.append(item)
             elif hasattr(item, "data") and item.data == "key_value_pair":
                 pair = self.key_value_pair(item.children)
                 pairs.append(pair)
-        from dana.core.lang.ast import DictLiteral
-
-        return DictLiteral(items=pairs)
+        result = DictLiteral(items=pairs)
+        return result
 
     def set(self, items):
-        flat_items = self.flatten_items(items)
+        """
+        Transform a set literal or set comprehension into an AST node.
+        """
         from dana.core.lang.ast import Expression, SetLiteral
 
+        # Check if this is a set comprehension by looking for comprehension patterns
+        if items and self._is_set_comprehension(items):
+            return self._create_set_comprehension(items)
+
+        # This is a regular set literal
+        flat_items = self.flatten_items(items)
         # Ensure each item is properly cast to Expression type
         set_items: list[Expression] = []
         for item in flat_items:
+            # Check if this individual item is a set comprehension
+            if hasattr(item, "__class__") and item.__class__.__name__ == "SetComprehension":
+                # If we have a single set comprehension, return it directly
+                if len(flat_items) == 1:
+                    return item
+                # Otherwise, this shouldn't happen - a set literal can't contain a comprehension
+                raise ValueError("Set literal cannot contain set comprehension as an item")
             expr = self.expression([item])
             set_items.append(cast(Expression, expr))
 
@@ -882,6 +1014,431 @@ class ExpressionTransformer(BaseTransformer):
             from dana.core.lang.ast import SliceTuple
 
             return SliceTuple(slices=items)
+
+    # ===== FUNCTION COMPOSITION EXPRESSIONS =====
+    def function_composition_expr(self, items):
+        """Transform function_composition_expr rule."""
+        # Grammar: function_composition_expr: function_pipe_expr
+        return items[0]
+
+    def function_pipe_expr(self, items):
+        """Transform function_pipe_expr rule."""
+        # Grammar: function_pipe_expr: pipeline_stage (PIPE pipeline_stage)*
+        if len(items) == 1:
+            return items[0]
+        else:
+            # Multiple expressions with PIPE operators
+            result = items[0]
+            for i in range(1, len(items), 2):
+                if i + 1 < len(items):
+                    operator = BinaryOperator.PIPE
+                    right = items[i + 1]
+                    result = BinaryExpression(left=result, operator=operator, right=right)
+            return result
+
+    def pipeline_stage(self, items):
+        """Transform pipeline_stage rule."""
+        # Grammar: pipeline_stage: function_expr ["as" NAME]
+        if len(items) == 1:
+            # No "as" clause - just return the expression
+            return items[0]
+        else:
+            # Has "as" clause - create NamedPipelineStage
+            from dana.core.lang.ast import NamedPipelineStage
+
+            expression = items[0]
+            # Handle the case where items[1] might be None or not have a value attribute
+            if hasattr(items[1], "value"):
+                name = items[1].value
+            elif isinstance(items[1], str):
+                name = items[1]
+            else:
+                # Fallback - try to get the name from the token
+                name = str(items[1]) if items[1] is not None else None
+
+            # Only create NamedPipelineStage if we have a valid name
+            if name:
+                return NamedPipelineStage(expression=expression, name=name)
+            else:
+                # If no valid name, just return the expression
+                return expression
+
+    def function_expr(self, items):
+        """Transform function_expr rule."""
+        # Grammar: function_expr: function_name | function_call | function_list_literal
+        return items[0]
+
+    def function_name(self, items):
+        """Transform function_name rule."""
+        # Grammar: function_name: NAME
+        return Identifier(items[0].value)
+
+    def function_call(self, items):
+        """Transform function_call rule."""
+        # Grammar: function_call: NAME "(" [arguments] ")"
+        name = items[0].value
+        if len(items) > 1 and items[1] is not None:
+            # Process arguments through the proper method
+            # items[1] is a Tree with argument children
+            arguments = self._process_function_arguments(items[1].children)
+        else:
+            # No arguments - create empty args dict
+            arguments = {"__positional": []}
+
+        # Check if this function call contains a placeholder expression
+        # If so, treat it as a single-stage pipeline (placeholders are only valid in pipelines)
+        if self._contains_placeholder(arguments):
+            # PHASE B CHANGE: Don't create PipelineExpression for function calls with placeholders
+            # Let them be handled as regular FunctionCall nodes, which will trigger PartialFunction logic
+            # from dana.core.lang.ast import PipelineExpression
+            # return PipelineExpression(stages=[FunctionCall(name=name, args=arguments)])
+            pass
+
+        return FunctionCall(name=name, args=arguments)
+
+    def function_list_literal(self, items):
+        """Transform function_list_literal rule."""
+        # Grammar: function_list_literal: "[" [function_expr ("," function_expr)*] "]"
+        if len(items) == 0:
+            return ListLiteral(items=[])
+        else:
+            return ListLiteral(items=items)
+
+    def _contains_placeholder(self, arguments):
+        """Check if function call arguments contain a placeholder expression."""
+        if not isinstance(arguments, dict):
+            return False
+
+        # Check positional arguments
+        if "__positional" in arguments:
+            for arg in arguments["__positional"]:
+                if self._is_placeholder_expression(arg):
+                    return True
+
+        # Check keyword arguments
+        for key, arg in arguments.items():
+            if key != "__positional" and self._is_placeholder_expression(arg):
+                return True
+
+        return False
+
+    def _is_placeholder_expression(self, expr):
+        """Check if an expression is a placeholder expression."""
+        from dana.core.lang.ast import PlaceholderExpression
+
+        return isinstance(expr, PlaceholderExpression)
+
+    def lambda_expr(self, items):
+        """Transform a lambda expression using the specialized lambda transformer."""
+        from dana.core.lang.parser.transformer.expression.lambda_transformer import LambdaTransformer
+
+        lambda_transformer = LambdaTransformer(main_transformer=self.main_transformer)
+        return lambda_transformer.lambda_expr(items)
+
+    def lambda_receiver(self, items):
+        """Transform a lambda receiver using the specialized lambda transformer."""
+        from dana.core.lang.parser.transformer.expression.lambda_transformer import LambdaTransformer
+
+        lambda_transformer = LambdaTransformer(main_transformer=self.main_transformer)
+        return lambda_transformer.lambda_receiver(items)
+
+    def lambda_params(self, items):
+        """Transform lambda parameters using the specialized lambda transformer."""
+        from dana.core.lang.parser.transformer.expression.lambda_transformer import LambdaTransformer
+
+        lambda_transformer = LambdaTransformer(main_transformer=self.main_transformer)
+        return lambda_transformer.lambda_params(items)
+
+    def list_comprehension(self, items):
+        """Transform list comprehension parse tree to AST node."""
+        from dana.core.lang.ast import ListComprehension
+
+        if not items or len(items) < 1:
+            return None
+
+        # items[0] could be either a Tree (comprehension_body) or a list (if comprehension_body was already processed)
+        comprehension_body = items[0]
+
+        if isinstance(comprehension_body, list):
+            # comprehension_body was already processed and returned a list
+            body_children = comprehension_body
+        elif hasattr(comprehension_body, "data") and comprehension_body.data == "comprehension_body":
+            # comprehension_body is a Tree
+            body_children = comprehension_body.children
+        else:
+            return None
+
+        if len(body_children) < 3:
+            return None
+
+        # Extract components: expression, target, iterable, optional condition
+        expression = self.main_transformer.transform(body_children[0]) if self.main_transformer else body_children[0]
+        target = body_children[1].value if hasattr(body_children[1], "value") else str(body_children[1])
+        iterable = self.main_transformer.transform(body_children[2]) if self.main_transformer else body_children[2]
+
+        # Check for optional condition
+        condition = None
+        if len(body_children) > 3 and body_children[3]:
+            condition = self.main_transformer.transform(body_children[3]) if self.main_transformer else body_children[3]
+
+        return ListComprehension(expression=expression, target=target, iterable=iterable, condition=condition)
+
+    def set_comprehension(self, items):
+        """Transform set comprehension parse tree to AST node."""
+        from dana.core.lang.ast import SetComprehension
+
+        if not items or len(items) < 1:
+            return None
+
+        # items[0] could be either a Tree (comprehension_body) or a list (if comprehension_body was already processed)
+        comprehension_body = items[0]
+
+        if isinstance(comprehension_body, list):
+            # comprehension_body was already processed and returned a list
+            body_children = comprehension_body
+        elif hasattr(comprehension_body, "data") and comprehension_body.data == "comprehension_body":
+            # comprehension_body is a Tree
+            body_children = comprehension_body.children
+        else:
+            return None
+
+        if len(body_children) < 3:
+            return None
+
+        # Extract components: expression, target, iterable, optional condition
+        expression = self.main_transformer.transform(body_children[0]) if self.main_transformer else body_children[0]
+        target = body_children[1].value if hasattr(body_children[1], "value") else str(body_children[1])
+        iterable = self.main_transformer.transform(body_children[2]) if self.main_transformer else body_children[2]
+
+        # Check for optional condition
+        condition = None
+        if len(body_children) > 3 and body_children[3]:
+            condition = self.main_transformer.transform(body_children[3]) if self.main_transformer else body_children[3]
+
+        return SetComprehension(expression=expression, target=target, iterable=iterable, condition=condition)
+
+    def dict_comprehension(self, items):
+        """Transform dict comprehension parse tree to AST node."""
+        from dana.core.lang.ast import DictComprehension
+
+        if not items or len(items) < 1:
+            return None
+
+        # items[0] should be the result from dict_comprehension_body
+        comprehension_body = items[0]
+
+        if isinstance(comprehension_body, list):
+            # comprehension_body was already processed and returned a list
+            body_children = comprehension_body
+        elif hasattr(comprehension_body, "data") and comprehension_body.data == "dict_comprehension_body":
+            # comprehension_body is a Tree
+            body_children = comprehension_body.children
+        else:
+            return None
+
+        # The dict_comprehension_body method passes through the processed tokens
+        # Structure: [key_expr, value_expr, target, iterable, condition]
+        if len(body_children) < 4:  # Need at least key, value, target, iterable
+            return None
+
+        # Extract components from the simplified structure
+        key_expr = body_children[0]
+        value_expr = body_children[1]
+        target = body_children[2].value if hasattr(body_children[2], "value") else str(body_children[2])
+        iterable = body_children[3]
+
+        # Check for optional condition (5th element)
+        condition = None
+        if len(body_children) > 4 and body_children[4]:
+            condition = body_children[4]
+
+        result = DictComprehension(key_expr=key_expr, value_expr=value_expr, target=target, iterable=iterable, condition=condition)
+        return result
+
+    def dict_comprehension_body(self, items):
+        """Transform dict comprehension body - just pass through to parent."""
+        return items
+
+    def comprehension_body(self, items):
+        """Transform comprehension body - just pass through to parent."""
+        return items
+
+    def for_targets(self, items):
+        """Transform for loop targets (single variable or tuple unpacking)."""
+        if len(items) == 1:
+            # Check if this is a list of tokens (tuple unpacking case)
+            if isinstance(items[0], list) and all(hasattr(item, "value") for item in items[0]):
+                # Extract the actual name values from tokens
+                names = []
+                for item in items[0]:
+                    names.append(item.value)
+                return ", ".join(names)
+            else:
+                # Single variable: just return the name
+                return items[0]
+        elif len(items) == 3 and items[0] == "(" and items[2] == ")":
+            # Tuple unpacking: return comma-separated string of names
+            if isinstance(items[1], list):
+                # Extract the actual name values from tokens
+                names = []
+                for item in items[1]:
+                    if hasattr(item, "value"):
+                        names.append(item.value)
+                    else:
+                        names.append(str(item))
+                return ", ".join(names)
+            else:
+                return str(items[1])
+        else:
+            # Unexpected structure
+            return items
+
+    def for_target_list(self, items):
+        """Transform for target list (comma-separated names)."""
+        # Return the list of names
+        return items
+
+    def comprehension_if(self, items):
+        """Transform comprehension condition - just pass through to parent."""
+        return items[0] if items else None
+
+    def _is_set_comprehension(self, items):
+        """Check if the items represent a set comprehension pattern."""
+        # Look for pattern: expr for var in iterable [if condition]
+        if not items:
+            return False
+
+        flat_items = self.flatten_items(items)
+        if len(flat_items) < 3:
+            return False
+
+        # Check if we have the pattern: expr, 'for', var, 'in', iterable, [optional 'if', condition]
+        for item in flat_items:
+            if hasattr(item, "value") and item.value == "for":
+                # Found 'for' keyword, this looks like a comprehension
+                return True
+        return False
+
+    def _is_dict_comprehension(self, items):
+        """Check if the items represent a dict comprehension pattern."""
+        # Look for pattern: key_expr : value_expr for var in iterable [if condition]
+        if not items:
+            return False
+
+        flat_items = self.flatten_items(items)
+        if len(flat_items) < 5:  # Need at least: key, :, value, for, var, in, iterable
+            return False
+
+        # Check if we have the pattern with 'for' keyword and ':'
+        has_for = False
+        has_colon = False
+        for item in flat_items:
+            if hasattr(item, "value") and item.value == "for":
+                has_for = True
+            elif hasattr(item, "type") and item.type == "COLON":
+                has_colon = True
+
+        return has_for and has_colon
+
+    def _create_set_comprehension(self, items):
+        """Create a SetComprehension AST node from parsed items."""
+        from dana.core.lang.ast import SetComprehension
+
+        flat_items = self.flatten_items(items)
+
+        # Parse the comprehension pattern: expr for var in iterable [if condition]
+        expression = None
+        target = None
+        iterable = None
+        condition = None
+
+        i = 0
+        # Get expression (everything before 'for')
+        while i < len(flat_items) and not (hasattr(flat_items[i], "value") and flat_items[i].value == "for"):
+            if expression is None:
+                expression = self.main_transformer.transform(flat_items[i]) if self.main_transformer else flat_items[i]
+            i += 1
+
+        # Skip 'for'
+        i += 1
+
+        # Get target variable
+        if i < len(flat_items):
+            target = flat_items[i].value if hasattr(flat_items[i], "value") else str(flat_items[i])
+            i += 1
+
+        # Skip 'in'
+        if i < len(flat_items) and hasattr(flat_items[i], "value") and flat_items[i].value == "in":
+            i += 1
+
+        # Get iterable (everything before 'if' or end)
+        while i < len(flat_items) and not (hasattr(flat_items[i], "value") and flat_items[i].value == "if"):
+            if iterable is None:
+                iterable = self.main_transformer.transform(flat_items[i]) if self.main_transformer else flat_items[i]
+            i += 1
+
+        # Get condition if present
+        if i < len(flat_items) and hasattr(flat_items[i], "value") and flat_items[i].value == "if":
+            i += 1
+            if i < len(flat_items):
+                condition = self.main_transformer.transform(flat_items[i]) if self.main_transformer else flat_items[i]
+
+        return SetComprehension(expression=expression, target=target, iterable=iterable, condition=condition)
+
+    def _create_dict_comprehension(self, items):
+        """Create a DictComprehension AST node from parsed items."""
+        from dana.core.lang.ast import DictComprehension
+
+        flat_items = self.flatten_items(items)
+
+        # Parse the comprehension pattern: key_expr : value_expr for var in iterable [if condition]
+        key_expr = None
+        value_expr = None
+        target = None
+        iterable = None
+        condition = None
+
+        i = 0
+        # Get key expression (everything before ':')
+        while i < len(flat_items) and not (hasattr(flat_items[i], "type") and flat_items[i].type == "COLON"):
+            if key_expr is None:
+                key_expr = self.main_transformer.transform(flat_items[i]) if self.main_transformer else flat_items[i]
+            i += 1
+
+        # Skip ':'
+        i += 1
+
+        # Get value expression (everything before 'for')
+        while i < len(flat_items) and not (hasattr(flat_items[i], "value") and flat_items[i].value == "for"):
+            if value_expr is None:
+                value_expr = self.main_transformer.transform(flat_items[i]) if self.main_transformer else flat_items[i]
+            i += 1
+
+        # Skip 'for'
+        i += 1
+
+        # Get target variable
+        if i < len(flat_items):
+            target = flat_items[i].value if hasattr(flat_items[i], "value") else str(flat_items[i])
+            i += 1
+
+        # Skip 'in'
+        if i < len(flat_items) and hasattr(flat_items[i], "value") and flat_items[i].value == "in":
+            i += 1
+
+        # Get iterable (everything before 'if' or end)
+        while i < len(flat_items) and not (hasattr(flat_items[i], "value") and flat_items[i].value == "if"):
+            if iterable is None:
+                iterable = self.main_transformer.transform(flat_items[i]) if self.main_transformer else flat_items[i]
+            i += 1
+
+        # Get condition if present
+        if i < len(flat_items) and hasattr(flat_items[i], "value") and flat_items[i].value == "if":
+            i += 1
+            if i < len(flat_items):
+                condition = self.main_transformer.transform(flat_items[i]) if self.main_transformer else flat_items[i]
+
+        return DictComprehension(key_expr=key_expr, value_expr=value_expr, target=target, iterable=iterable, condition=condition)
 
 
 # File updated to resolve GitHub CI syntax error - 2025-06-09

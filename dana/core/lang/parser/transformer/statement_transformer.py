@@ -51,7 +51,6 @@ from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
 from dana.core.lang.parser.transformer.expression_transformer import (
     ExpressionTransformer,
 )
-from dana.core.lang.parser.utils.tree_utils import TreeTraverser
 
 # Allowed types for Assignment.value
 AllowedAssignmentValue = (
@@ -79,11 +78,14 @@ class StatementTransformer(BaseTransformer):
     Methods are grouped by grammar hierarchy for clarity and maintainability.
     """
 
-    def __init__(self):
+    def __init__(self, main_transformer=None):
         """Initialize the statement transformer and its expression transformer."""
         super().__init__()
-        self.expression_transformer = ExpressionTransformer()
-        self.tree_traverser = TreeTraverser()
+        # Use the main transformer's expression transformer if available
+        if main_transformer and hasattr(main_transformer, "expression_transformer"):
+            self.expression_transformer = main_transformer.expression_transformer
+        else:
+            self.expression_transformer = ExpressionTransformer(self)
 
         # Initialize specialized transformers
         from dana.core.lang.parser.transformer.statement.agent_context_transformer import (
@@ -312,6 +314,10 @@ class StatementTransformer(BaseTransformer):
         """Transform a function definition rule into a FunctionDefinition node."""
         return self.function_definition_transformer.function_def(items)
 
+    def method_def(self, items):
+        """Transform a method definition rule into a MethodDefinition node."""
+        return self.function_definition_transformer.method_def(items)
+
     def decorators(self, items):
         """Transform decorators rule into a list of Decorator nodes."""
         return self.function_definition_transformer.decorators(items)
@@ -362,6 +368,13 @@ class StatementTransformer(BaseTransformer):
         """
         return self.assignment_transformer.assignment(items)
 
+    def declarative_function_assignment(self, items):
+        """
+        Transform a declarative function assignment rule into a DeclarativeFunctionDefinition node.
+        Grammar: declarative_function_assignment: "def" NAME "(" [parameters] ")" ["->" basic_type] "=" atom
+        """
+        return self.assignment_transformer.declarative_function_assignment(items)
+
     def expr_stmt(self, items):
         """Transform a bare expression statement (expr_stmt) into an Expression AST node."""
         return self.import_simple_statement_transformer.expr_stmt(items)
@@ -369,6 +382,10 @@ class StatementTransformer(BaseTransformer):
     def return_stmt(self, items):
         """Transform a return statement rule into a ReturnStatement node."""
         return self.import_simple_statement_transformer.return_stmt(items)
+
+    def deliver_stmt(self, items):
+        """Transform a deliver statement rule into a DeliverStatement node."""
+        return self.import_simple_statement_transformer.deliver_stmt(items)
 
     def break_stmt(self, items):
         """Transform a break statement rule into a BreakStatement node."""

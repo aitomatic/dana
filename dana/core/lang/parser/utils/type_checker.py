@@ -40,6 +40,7 @@ from dana.core.lang.ast import (
     ImportStatement,
     ListLiteral,
     LiteralExpression,
+    MethodDefinition,
     Parameter,
     PassStatement,
     Program,
@@ -153,6 +154,8 @@ class TypeChecker:
             self.check_try_block(statement)
         elif isinstance(statement, FunctionDefinition):
             self.check_function_definition(statement)
+        elif isinstance(statement, MethodDefinition):
+            self.check_method_definition(statement)
         elif isinstance(statement, StructDefinition):
             self.check_struct_definition(statement)
         elif isinstance(statement, ImportStatement):
@@ -175,6 +178,9 @@ class TypeChecker:
             pass
         elif isinstance(statement, LiteralExpression):
             # Literal expressions as statements (e.g., standalone None) have no type implications
+            pass
+        elif isinstance(statement, DictLiteral):
+            # Dictionary literals as statements (e.g., standalone {...}) have no type implications
             pass
         else:
             raise TypeError(f"Unsupported statement type: {type(statement).__name__}", statement)
@@ -370,6 +376,57 @@ class TypeChecker:
         # Restore the parent environment
         self.environment = self.environment.parent or TypeEnvironment()
 
+    def check_method_definition(self, node: MethodDefinition) -> None:
+        """Check a method definition for type errors."""
+        # Create a new scope for the method
+        self.environment = TypeEnvironment(self.environment)
+
+        # Add receiver parameter to the environment
+        receiver = node.receiver
+        if isinstance(receiver, Parameter):
+            param_name = receiver.name
+            if ":" not in param_name and "." not in param_name:
+                param_name = f"local:{param_name}"
+
+            # Use type hint if available, otherwise default to 'any'
+            if receiver.type_hint is not None:
+                param_type = DanaType.from_type_hint(receiver.type_hint)
+            else:
+                param_type = DanaType("any")
+
+            self.environment.set(param_name, param_type)
+            # Also add unscoped version for convenience
+            if ":" in param_name:
+                _, name = param_name.split(":", 1)
+                self.environment.set(name, param_type)
+
+        # Add regular parameters to the environment
+        for param in node.parameters:
+            if isinstance(param, Parameter):
+                # Handle Parameter objects with optional type hints
+                param_name = param.name
+                if ":" not in param_name and "." not in param_name:
+                    param_name = f"local:{param_name}"
+
+                # Use type hint if available, otherwise default to 'any'
+                if param.type_hint is not None:
+                    param_type = DanaType.from_type_hint(param.type_hint)
+                else:
+                    param_type = DanaType("any")
+
+                self.environment.set(param_name, param_type)
+                # Also add unscoped version for convenience
+                if ":" in param_name:
+                    _, name = param_name.split(":", 1)
+                    self.environment.set(name, param_type)
+
+        # Check the method body
+        for statement in node.body:
+            self.check_statement(statement)
+
+        # Restore the parent environment
+        self.environment = self.environment.parent or TypeEnvironment()
+
     def check_struct_definition(self, node: StructDefinition) -> None:
         """Check a struct definition for type errors."""
         # Validate that all fields have proper type hints
@@ -432,6 +489,18 @@ class TypeChecker:
         elif hasattr(expression, "__class__") and expression.__class__.__name__ == "ObjectFunctionCall":
             # Handle ObjectFunctionCall
             return DanaType("any")  # Object function calls return dynamic results
+        elif hasattr(expression, "__class__") and expression.__class__.__name__ == "LambdaExpression":
+            # Handle LambdaExpression
+            return self.check_lambda_expression(expression)
+        elif hasattr(expression, "__class__") and expression.__class__.__name__ == "ListComprehension":
+            # Handle ListComprehension
+            return self.check_list_comprehension(expression)
+        elif hasattr(expression, "__class__") and expression.__class__.__name__ == "SetComprehension":
+            # Handle SetComprehension
+            return self.check_set_comprehension(expression)
+        elif hasattr(expression, "__class__") and expression.__class__.__name__ == "DictComprehension":
+            # Handle DictComprehension
+            return self.check_dict_comprehension(expression)
         else:
             raise TypeError(f"Unsupported expression type: {type(expression).__name__}", expression)
 
@@ -629,6 +698,156 @@ class TypeChecker:
             self.check_expression(kwarg_value)
         # Use statements return dynamic objects, so return 'any' type
         return DanaType("any")
+
+    def check_lambda_expression(self, node: Any) -> DanaType:
+        """Check a lambda expression for type errors."""
+        # Import LambdaExpression here to avoid circular imports
+        from dana.core.lang.ast import Parameter
+
+        if not hasattr(node, "receiver") or not hasattr(node, "parameters") or not hasattr(node, "body"):
+            raise TypeError("Invalid lambda expression structure", node)
+
+        # Create a new scope for lambda type checking
+        self.environment.push_scope()
+
+        try:
+            # Type check receiver if present
+            if node.receiver:
+                if not isinstance(node.receiver, Parameter):
+                    raise TypeError(f"Lambda receiver must be a Parameter, got {type(node.receiver)}", node)
+
+                if node.receiver.type_hint:
+                    receiver_type = DanaType.from_type_hint(node.receiver.type_hint)
+                    self.environment.set(node.receiver.name, receiver_type)
+                else:
+                    # Infer receiver type if not specified
+                    self.environment.set(node.receiver.name, DanaType("any"))
+
+            # Type check parameters
+            for param in node.parameters:
+                if not isinstance(param, Parameter):
+                    raise TypeError(f"Lambda parameter must be a Parameter, got {type(param)}", node)
+
+                if param.type_hint:
+                    param_type = DanaType.from_type_hint(param.type_hint)
+                    self.environment.set(param.name, param_type)
+                else:
+                    # Infer parameter type if not specified
+                    self.environment.set(param.name, DanaType("any"))
+
+            # Type check the lambda body
+            self.check_expression(node.body)
+
+            # Lambda expressions themselves have a function type
+            # For now, we'll return 'function' as the type
+            return DanaType("function")
+
+        finally:
+            # Always pop the scope, even if an error occurs
+            self.environment.pop_scope()
+
+    def check_list_comprehension(self, node: Any) -> DanaType:
+        """Check a list comprehension for type errors."""
+        # Import ListComprehension here to avoid circular imports
+
+        if not hasattr(node, "expression") or not hasattr(node, "target") or not hasattr(node, "iterable"):
+            raise TypeError("Invalid list comprehension structure", node)
+
+        # Create a new scope for list comprehension type checking
+        self.environment.push_scope()
+
+        try:
+            # Type check the iterable
+            self.check_expression(node.iterable)
+
+            # For now, we'll assume the target variable can be of any type
+            # In a more sophisticated implementation, we could infer the type from the iterable
+            self.environment.set(node.target, DanaType("any"))
+
+            # Type check the condition if present
+            if node.condition is not None:
+                condition_type = self.check_expression(node.condition)
+                if condition_type != DanaType("bool"):
+                    raise TypeError(f"List comprehension condition must be a boolean, got {condition_type}", node)
+
+            # Type check the expression
+            self.check_expression(node.expression)
+
+            # List comprehensions return lists
+            return DanaType("list")
+
+        finally:
+            # Always pop the scope, even if an error occurs
+            self.environment.pop_scope()
+
+    def check_set_comprehension(self, node: Any) -> DanaType:
+        """Check a set comprehension for type errors."""
+        # Import SetComprehension here to avoid circular imports
+
+        if not hasattr(node, "expression") or not hasattr(node, "target") or not hasattr(node, "iterable"):
+            raise TypeError("Invalid set comprehension structure", node)
+
+        # Create a new scope for set comprehension type checking
+        self.environment.push_scope()
+
+        try:
+            # Type check the iterable
+            self.check_expression(node.iterable)
+
+            # For now, we'll assume the target variable can be of any type
+            # In a more sophisticated implementation, we could infer the type from the iterable
+            self.environment.set(node.target, DanaType("any"))
+
+            # Type check the condition if present
+            if node.condition is not None:
+                condition_type = self.check_expression(node.condition)
+                if condition_type != DanaType("bool"):
+                    raise TypeError(f"Set comprehension condition must be a boolean, got {condition_type}", node)
+
+            # Type check the expression
+            self.check_expression(node.expression)
+
+            # Set comprehensions return sets
+            return DanaType("set")
+
+        finally:
+            # Always pop the scope, even if an error occurs
+            self.environment.pop_scope()
+
+    def check_dict_comprehension(self, node: Any) -> DanaType:
+        """Check a dict comprehension for type errors."""
+        # Import DictComprehension here to avoid circular imports
+
+        if not hasattr(node, "key_expr") or not hasattr(node, "value_expr") or not hasattr(node, "target") or not hasattr(node, "iterable"):
+            raise TypeError("Invalid dict comprehension structure", node)
+
+        # Create a new scope for dict comprehension type checking
+        self.environment.push_scope()
+
+        try:
+            # Type check the iterable
+            self.check_expression(node.iterable)
+
+            # For now, we'll assume the target variable can be of any type
+            # In a more sophisticated implementation, we could infer the type from the iterable
+            self.environment.set(node.target, DanaType("any"))
+
+            # Type check the condition if present
+            if node.condition is not None:
+                condition_type = self.check_expression(node.condition)
+                if condition_type != DanaType("bool"):
+                    raise TypeError(f"Dict comprehension condition must be a boolean, got {condition_type}", node)
+
+            # Type check the key and value expressions
+            self.check_expression(node.key_expr)
+            self.check_expression(node.value_expr)
+
+            # Dict comprehensions return dicts
+            return DanaType("dict")
+
+        finally:
+            # Always pop the scope, even if an error occurs
+            self.environment.pop_scope()
 
     @staticmethod
     def check_types(program: Program) -> None:

@@ -1,0 +1,43 @@
+# Test reason function with user context
+
+# Run all tests
+log("=== Testing reason function with context ===")
+
+# Test 1: Basic context merging
+basic_result = reason("What are the numbers?", context={"numbers": [5, 3]}, use_mock=true)
+log(f"Basic context test result: {basic_result}")
+
+# Test 2: Context with multiple values
+multiple_result = reason("What is the user's name and age?", context={
+    "name": "Alice",
+    "age": 30,
+    "preferences": ["coffee", "books"]
+}, use_mock=true)
+log(f"Multiple context values test result: {multiple_result}")
+
+# Test 3: Context with nested data
+nested_result = reason("What is the configuration?", context={
+    "config": {
+        "debug": True,
+        "timeout": 30,
+        "features": ["feature1", "feature2"]
+    }
+}, use_mock=true)
+log(f"Nested context test result: {nested_result}")
+
+# Test 4: Empty context (should still work)
+empty_result = reason("What is 2 + 2?", context={}, use_mock=true)
+log(f"Empty context test result: {empty_result}")
+
+# Test 5: No context parameter (backward compatibility)
+no_context_result = reason("What is 2 + 2?", use_mock=true)
+log(f"No context test result: {no_context_result}")
+
+# Return results for verification
+{
+    "basic": basic_result,
+    "multiple": multiple_result,
+    "nested": nested_result,
+    "empty": empty_result,
+    "no_context": no_context_result
+} 

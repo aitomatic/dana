@@ -7,11 +7,12 @@ This module provides the ModuleAgent class for wrapping Dana modules as agents.
 import inspect
 from typing import Any
 
-from dana.agent.abstract_dana_agent import AbstractDanaAgent
+# TODO: Update to use new agent struct system
+# from dana.agent.abstract_dana_agent import AbstractDanaAgent
 from dana.integrations.agent_to_agent.a2a.common.module_agent_utils import get_module_agent_info
 
 
-class ModuleAgent(AbstractDanaAgent):
+class ModuleAgent:  # TODO: Inherit from new agent system
     """Agent wrapper for Dana modules."""
 
     def __init__(self, name: str, module: Any, context: Any, **kwargs):
@@ -24,12 +25,20 @@ class ModuleAgent(AbstractDanaAgent):
             context: Dana execution context
             **kwargs: Additional arguments
         """
-        super().__init__(name=name, **kwargs)
+        # TODO: Update to use new agent system
+        self._name = name
+        self._description = kwargs.get("description", f"Module agent wrapping {getattr(module, '__name__', 'unknown')}")
+        self._config = kwargs
         self.module = module
         self.context = context
         # Note: logger is provided by Loggable mixin, no need to set it
 
-        self.debug(f"Created module agent: {self.name}")
+        self.debug(f"Created module agent: {self._name}")
+
+    @property
+    def name(self) -> str:
+        """Get the agent name."""
+        return self._name
 
     @property
     def agent_card(self) -> dict[str, Any]:

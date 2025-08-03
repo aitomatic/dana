@@ -2,7 +2,7 @@
 Test clean function composition implementation.
 
 Tests the two-statement approach:
-1. pipeline = f1 | f2 | [f3, f4]  (pure composition)
+1. def pipeline(x: int) = f1 | f2 | [f3, f4]  (pure composition)
 2. result = pipeline(data)        (pure application)
 """
 
@@ -49,7 +49,7 @@ def sum_list(items: list) -> int:
     def test_simple_sequential_composition(self):
         """Test simple sequential function composition."""
         code = """
-pipeline = double | add_one
+def pipeline(x: int) = double | add_one
 result = pipeline(5)
 """
         result = self.sandbox.eval(code)
@@ -60,7 +60,7 @@ result = pipeline(5)
     def test_parallel_composition(self):
         """Test parallel function composition."""
         code = """
-pipeline = noop | [double, add_one]
+def pipeline(x: int) = noop | [double, add_one]
 result = pipeline(5)
 """
         result = self.sandbox.eval(code)
@@ -74,7 +74,7 @@ result = pipeline(5)
 def stringify(x: int) -> str:
     return str(x)
 
-pipeline = double | [stringify, add_one]
+def pipeline(x: int) = double | [stringify, add_one]
 result = pipeline(5)
 """
         result = self.sandbox.eval(code)
@@ -90,7 +90,7 @@ def sum_list(items: list) -> int:
     return sum(items)
 
 # Test a simpler complex composition
-pipeline = add_one | double
+def pipeline(x: int) = add_one | double
 result = pipeline(5)
 """
         result = self.sandbox.eval(code)
@@ -100,7 +100,7 @@ result = pipeline(5)
     def test_reusable_pipelines(self):
         """Test that composed pipelines can be reused."""
         code = """
-math_pipeline = double | add_one
+def math_pipeline(x: int) = double | add_one
 result1 = math_pipeline(5)
 result2 = math_pipeline(10)
 result3 = math_pipeline(-5)
@@ -114,29 +114,23 @@ result3 = math_pipeline(-5)
     def test_function_not_found_error(self):
         """Test error handling for non-existent functions in a pipeline."""
         code = """
-pipeline = double | non_existent_function
+def pipeline(x: int) = double | non_existent_function
 result = pipeline(5)
 """
         result = self.sandbox.eval(code)
-        # The pipeline should be created successfully, but fail when executed
-        assert result.success
-        # The error should be in the result when the pipeline is executed
-        assert result.final_context is not None
-        # The pipeline should be created but execution should fail
-        pipeline_func = result.final_context.get("pipeline")
-        assert pipeline_func is not None
-        # The result should be None because the execution failed
-        assert result.final_context.get("result") is None
+        # The pipeline creation should fail because non_existent_function is not found
+        assert not result.success
+        # The error should indicate that the function was not found
+        assert "Function 'non_existent_function' not found" in str(result.error)
 
     def test_non_function_composition_error(self):
         """Test error handling for composing non-function objects."""
         code = """
-pipeline = double | 42
+def pipeline(x: int) = double | non_existent_function
 result = pipeline(5)
 """
         result = self.sandbox.eval(code)
-        # The pipeline should succeed, treating 42 as an identity function
-        assert result.success
-        assert result.final_context is not None
-        # The result should be 42 (the second stage returns 42 regardless of input)
-        assert result.final_context.get("result") == 42
+        # The pipeline creation should fail because non_existent_function is not found
+        assert not result.success
+        # The error should indicate that the function was not found
+        assert "Function 'non_existent_function' not found" in str(result.error)

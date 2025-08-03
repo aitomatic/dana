@@ -1,3 +1,5 @@
+# log_level("INFO")
+
 # Test for pipeline assignment and application
 
 def double(x: int) -> int:
@@ -6,31 +8,27 @@ def double(x: int) -> int:
 def add_ten(x: int) -> int:
     return x + 10
 
-def test_pipeline_assignment():
-    # Test basic pipeline assignment and application
-    pipeline = double | add_ten
-    result = pipeline(5)
-    expected = 20  # 5 * 2 + 10 = 20
-    assert result == expected, f"Expected {expected}, got {result}"
-    
-    # Test reusable pipeline
-    math_pipeline = double | add_ten
-    result1 = math_pipeline(3)   # 3 * 2 + 10 = 16
-    result2 = math_pipeline(7)   # 7 * 2 + 10 = 24
-    
-    assert result1 == 16, f"Expected 16, got {result1}"
-    assert result2 == 24, f"Expected 24, got {result2}"
-    
-    # Test more complex pipeline
-    def square(x: int) -> int:
-        return x * x
-    
-    complex_pipeline = double | square | add_ten
-    result = complex_pipeline(3)  # 3 * 2 = 6, 6² = 36, 36 + 10 = 46
-    expected = 46
-    assert result == expected, f"Expected {expected}, got {result}"
-    
-    log("✅ All pipeline assignment tests passed")
+# Test basic pipeline assignment and application
+def pipeline(x: int) -> int = double | add_ten
+result = pipeline(5)
+expected = 20  # 5 * 2 + 10 = 20
+assert result == expected, f"Expected {expected}, got {result}"
 
-if __name__ == "__main__":
-    test_pipeline_assignment()
+# Test reusable pipeline
+def math_pipeline(x: int) -> int = double | add_ten
+result1 = math_pipeline(3)   # 3 * 2 + 10 = 16
+result2 = math_pipeline(7)   # 7 * 2 + 10 = 24
+
+assert result1 == 16, f"Expected 16, got {result1}"
+assert result2 == 24, f"Expected 24, got {result2}"
+
+# Test more complex pipeline
+def square(x: int) -> int:
+    return x * x
+
+def complex_pipeline(x: int) -> int = double | square | add_ten
+result = complex_pipeline(3)  # 3 * 2 = 6, 6² = 36, 36 + 10 = 46
+expected = 46
+assert result == expected, f"Expected {expected}, got {result}"
+
+log("✅ All pipeline assignment tests passed")

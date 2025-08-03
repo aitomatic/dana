@@ -19,9 +19,10 @@ class DanaTransformer(Transformer):
         variables) is handled by its own class, and DanaTransformer delegates to them as needed.
         """
         super().__init__()
-        # Initialize sub-transformers
-        self.statement_transformer = StatementTransformer()
-        self.expression_transformer = ExpressionTransformer()
+        # Initialize expression transformer first
+        self.expression_transformer = ExpressionTransformer(self)
+        # Initialize statement transformer with reference to this main transformer
+        self.statement_transformer = StatementTransformer(self)
         self.fstring_transformer = FStringTransformer()
         self.variable_transformer = VariableTransformer()
         self.current_filename = None  # Track current filename for error reporting

@@ -308,16 +308,13 @@ project_info = config.name + " - " + str(config.value)
 standard_value = "available"
 """)
 
-        # Initialize with tmp_path in search path
-        initialize_module_system([str(tmp_path)])
-
-        # Evaluate code without file context
+        # Evaluate code without file context, passing the search path directly
         code = """
 import standard_module
 result = standard_module.standard_value
 """
 
-        result = DanaSandbox.quick_eval(code)
+        result = DanaSandbox.quick_eval(code, module_search_paths=[str(tmp_path)])
 
         assert result.success
         assert result.final_context.get("local:result") == "available"
