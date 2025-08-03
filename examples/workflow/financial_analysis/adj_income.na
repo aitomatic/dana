@@ -13,7 +13,7 @@ __all__ = [
 
 
 def _ebitda(intermed_results):
-    deliver llm(
+    return llm(
 f'Calculate `(Unadjusted) Earnings before Interest, Tax, Depreciation & Amortization, a.k.a. EBITDA`
 according to formula:
 
@@ -23,19 +23,16 @@ according to formula:
 )
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_ebitda(doc: FinDoc) = [get_op_income, get_deprec_and_amort] | _ebitda
+def calc_ebitda(doc: FinDoc) -> float = [get_op_income, get_deprec_and_amort] | _ebitda
 
 
 def _ebitda_2y(intermed_results):
-    deliver llm(
+    return llm(
 f'Calculate `(Unadjusted) Earnings before Interest, Tax, Depreciation & Amortization, a.k.a. EBITDA`
 for past 2 annual fiscal periods according to formula:
 
@@ -45,19 +42,16 @@ for past 2 annual fiscal periods according to formula:
 )
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_ebitda_2y(doc: FinDoc) = [get_op_income_2y, get_deprec_and_amort_2y] | _ebitda_2y
+def calc_ebitda_2y(doc: FinDoc) -> float = [get_op_income_2y, get_deprec_and_amort_2y] | _ebitda_2y
 
 
 def _ebitda_3y(intermed_results):
-    deliver llm(
+    return llm(
 f'Calculate `(Unadjusted) Earnings before Interest, Tax, Depreciation & Amortization, a.k.a. EBITDA`
 for past 3 annual fiscal periods according to formula:
 
@@ -67,12 +61,9 @@ for past 3 annual fiscal periods according to formula:
 )
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_ebitda_3y(doc: FinDoc) = [get_op_income_3y, get_deprec_and_amort_3y] | _ebitda_3y
+def calc_ebitda_3y(doc: FinDoc) -> float = [get_op_income_3y, get_deprec_and_amort_3y] | _ebitda_3y

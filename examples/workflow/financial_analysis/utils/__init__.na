@@ -1,4 +1,4 @@
-"""Financial Analysis Utilities."""
+"""Financial-Analysis Utilities."""
 
 
 from .calc import over_avg_denom, sum_over_sum

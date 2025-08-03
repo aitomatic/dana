@@ -17,7 +17,7 @@ __all__ = [
 
 
 def _int_cov_ratio(intermed_results):
-    deliver llm(
+    return llm(
 f'Calculate `Interest Coverage Ratio` according to formula:
 
 `Interest Coverage Ratio` = `Earnings before Interest & Tax, a.k.a. EBIT` / `Interest Expense`
@@ -26,19 +26,16 @@ f'Calculate `Interest Coverage Ratio` according to formula:
  it is conventional to say `Interest Coverage Ratio` is zero)
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_int_cov_ratio(doc: FinDoc) = [get_ebit, get_int_exp] | _int_cov_ratio
+def calc_int_cov_ratio(doc: FinDoc) -> float = [get_ebit, get_int_exp] | _int_cov_ratio
 
 
 def _eff_tax_rate(intermed_results):
-    deliver llm(
+    return llm(
 f'Calculate `Effective (Income) Tax Rate` according to formula:
 
 `Effective (Income) Tax Rate` = (
@@ -47,19 +44,16 @@ f'Calculate `Effective (Income) Tax Rate` according to formula:
 )
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_eff_tax_rate(doc: FinDoc) = [get_tax_exp, get_ebt] | _eff_tax_rate
+def calc_eff_tax_rate(doc: FinDoc) -> float = [get_tax_exp, get_ebt] | _eff_tax_rate
 
 
 def _div_payout_ratio(intermed_results):
-    deliver llm(
+    return llm(
 f'Calculate `Dividend Payout Ratio` according to formula:
 
 `Dividend Payout Ratio` = (
@@ -68,19 +62,16 @@ f'Calculate `Dividend Payout Ratio` according to formula:
 )
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_div_payout_ratio(doc: FinDoc) = [get_div, get_net_income] | _div_payout_ratio
+def calc_div_payout_ratio(doc: FinDoc) -> float = [get_div, get_net_income] | _div_payout_ratio
 
 
 def _retention_ratio(intermed_results):
-    deliver llm(
+    return llm(
 f'Calculate `Retention Ratio` according to formula:
 
 `Retention Ratio` = 1 - `Dividend Payout Ratio`
@@ -90,8 +81,6 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
-
-State your result together with the supporting calculation(s).
-')
+State your result together with the supporting calculation(s).')
 
 def calc_retention_ratio(doc: FinDoc) = calc_div_payout_ratio | _retention_ratio

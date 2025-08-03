@@ -78,7 +78,7 @@ def get_rev_2y(doc: FinDoc) -> CurrAndPrevNums:
     return rev_2y
 
 
-def get_rev_3y(doc: FinDoc) -> tuple[float]:
+def get_rev_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Revenue from Income Statement."""
 
     rev_3y = query_fin_data(
@@ -113,7 +113,7 @@ def get_cogs_2y(doc: FinDoc) -> CurrAndPrevNums:
     return cogs_2y
 
 
-def get_cogs_3y(doc: FinDoc) -> tuple[float]:
+def get_cogs_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Cost of Goods Sold from Income Statement."""
 
     cogs_3y = query_fin_data(
@@ -148,7 +148,7 @@ def get_gross_income_2y(doc: FinDoc) -> CurrAndPrevNums:
     return gross_income_2y
 
 
-def get_gross_income_3y(doc: FinDoc) -> tuple[float]:
+def get_gross_income_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Gross Income from Income Statement."""
 
     gross_income_3y = query_fin_data(
@@ -183,7 +183,7 @@ def get_ga_exp_2y(doc: FinDoc) -> CurrAndPrevNums:
     return ga_exp_2y
 
 
-def get_ga_exp_3y(doc: FinDoc) -> tuple[float]:
+def get_ga_exp_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of General and Administrative Expenses from Income Statement."""
 
     ga_exp_3y = query_fin_data(
@@ -218,7 +218,7 @@ def get_op_income_2y(doc: FinDoc) -> CurrAndPrevNums:
     return op_income_2y
 
 
-def get_op_income_3y(doc: FinDoc) -> tuple[float]:
+def get_op_income_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Operating Income from Income Statement."""
 
     op_income_3y = query_fin_data(
@@ -253,7 +253,7 @@ def get_ebit_2y(doc: FinDoc) -> CurrAndPrevNums:
     return ebit_2y
 
 
-def get_ebit_3y(doc: FinDoc) -> tuple[float]:
+def get_ebit_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Earnings before Interest & Tax from Income Statement."""
 
     ebit_3y = query_fin_data(
@@ -288,7 +288,7 @@ def get_int_exp_2y(doc: FinDoc) -> CurrAndPrevNums:
     return int_exp_2y
 
 
-def get_int_exp_3y(doc: FinDoc) -> tuple[float]:
+def get_int_exp_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Interest Expense from Income Statement."""
 
     int_exp_3y = query_fin_data(
@@ -323,7 +323,7 @@ def get_ebt_2y(doc: FinDoc) -> CurrAndPrevNums:
     return ebt_2y
 
 
-def get_ebt_3y(doc: FinDoc) -> tuple[float]:
+def get_ebt_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Earnings before Tax from Income Statement."""
 
     ebt_3y = query_fin_data(
@@ -358,7 +358,7 @@ def get_tax_exp_2y(doc: FinDoc) -> CurrAndPrevNums:
     return tax_exp_2y
 
 
-def get_tax_exp_3y(doc: FinDoc) -> tuple[float]:
+def get_tax_exp_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of (Income) Tax Expense from Income Statement."""
 
     tax_exp_3y = query_fin_data(
@@ -393,7 +393,7 @@ def get_net_income_2y(doc: FinDoc) -> CurrAndPrevNums:
     return net_income_2y
 
 
-def get_net_income_3y(doc: FinDoc) -> tuple[float]:
+def get_net_income_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Net Income from Income Statement."""
 
     net_income_3y = query_fin_data(
