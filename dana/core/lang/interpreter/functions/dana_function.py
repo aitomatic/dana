@@ -9,7 +9,7 @@ from typing import Any
 
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.interpreter.executor.control_flow.exceptions import ReturnException
+from dana.core.lang.interpreter.executor.control_flow.exceptions import DeliverException, ReturnException
 from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
 from dana.core.lang.sandbox_context import SandboxContext
 
@@ -50,58 +50,44 @@ class DanaFunction(SandboxFunction, Loggable):
         """
         Prepare context for a Dana function.
 
-        For Dana functions:
-        - Starts with the function's original module context (for access to module variables)
-        - Creates a clean local scope for the function
-        - Sets up interpreter if needed
-        - Applies default values for parameters
-        - Maps arguments to the local scope
-
-        Args:
-            context: The current execution context or a positional argument
-            args: Positional arguments
-            kwargs: Keyword arguments
-
-        Returns:
-            Prepared context
+        This method creates a context that combines:
+        1. The function's own context (for access to module functions)
+        2. The current context (for access to current variables)
+        3. Function parameters and arguments
         """
-        # If context is not a SandboxContext, assume it's a positional argument
-        if not isinstance(context, SandboxContext):
-            args = [context] + args
-            context = self.context.copy() if self.context else SandboxContext()
-
-        # Start with the function's original module context (for access to module's public/private variables)
+        # If the function has its own context, use it as the base
         if self.context is not None:
-            prepared_context = self.context.copy()
-            # Copy interpreter from current execution context if the module context doesn't have one
-            if not hasattr(prepared_context, "_interpreter") or prepared_context._interpreter is None:
-                if hasattr(context, "_interpreter") and context._interpreter is not None:
-                    prepared_context._interpreter = context._interpreter
+            # Create a child context from the function's context
+            # This gives access to module functions and other context
+            prepared_context = self.context.create_child_context()
+
+            # Merge the current context's local scope into the prepared context
+            # This allows the function to access current variables
+            if isinstance(context, SandboxContext):
+                for key, value in context.get_scope("local").items():
+                    prepared_context.set(f"local:{key}", value)
         else:
-            # Fallback to current context if no module context available
-            prepared_context = context.copy()
+            # Fallback to using the passed context if function has no context
+            prepared_context = context
 
         # Store original local scope so we can restore it later
         original_locals = prepared_context.get_scope("local").copy()
         prepared_context._original_locals = original_locals
 
-        # Keep existing variables but prepare to add function parameters
-        # Don't clear the local scope - preserve existing variables
-
         # First, apply default values for all parameters that have them
         for param_name in self.parameters:
             if param_name in self.defaults:
-                prepared_context.set(param_name, self.defaults[param_name])
+                prepared_context.set_in_scope(param_name, self.defaults[param_name], scope="local")
 
         # Map positional arguments to parameters in the local scope (can override defaults)
         for i, param_name in enumerate(self.parameters):
             if i < len(args):
-                prepared_context.set(param_name, args[i])
+                prepared_context.set_in_scope(param_name, args[i], scope="local")
 
         # Map keyword arguments to the local scope (can override defaults and positional args)
         for kwarg_name, kwarg_value in kwargs.items():
             if kwarg_name in self.parameters:
-                prepared_context.set(kwarg_name, kwarg_value)
+                prepared_context.set_in_scope(kwarg_name, kwarg_value, scope="local")
 
         return prepared_context
 
@@ -167,11 +153,14 @@ class DanaFunction(SandboxFunction, Loggable):
                         # Update result with the statement's value if it's not None
                         if stmt_result is not None:
                             result = stmt_result
-                        self.debug(f"statement {i}: {statement}, result: {stmt_result}")
+                        self.debug(f"statement {i}: {statement}, result type: {type(stmt_result).__name__}")
                     else:
                         raise RuntimeError("No interpreter available in context")
                 except ReturnException as e:
                     # Return statement was encountered - return its value
+                    return e.value
+                except DeliverException as e:
+                    # Deliver statement was encountered - return its value (eager execution)
                     return e.value
                 except Exception as e:
                     # Wrap in SandboxError with location information
@@ -181,6 +170,7 @@ class DanaFunction(SandboxFunction, Loggable):
                     raise SandboxError(error_msg) from e
 
             # Return the last non-None result
+            # Don't resolve Promises here - let the caller decide when to resolve
             return result
 
         except Exception as e:

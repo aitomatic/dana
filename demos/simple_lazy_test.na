@@ -1,0 +1,28 @@
+# Simple Lazy Test
+print("=== SIMPLE LAZY TEST ===")
+
+def simple_operation():
+    print("🔍 Simple operation executed!")
+    return "simple_result"
+
+def lazy_function():
+    print("📝 Creating lazy function...")
+    return simple_operation()
+
+def eager_function():
+    print("⚡ Creating eager function...")
+    deliver simple_operation()
+
+print("1. Creating lazy reference...")
+lazy_result = lazy_function()
+print(f"Lazy result type: {type(lazy_result)}")
+
+print("\n2. Creating eager reference...")
+eager_result = eager_function()
+print(f"Eager result type: {type(eager_result)}")
+
+print("\n3. Accessing lazy result...")
+lazy_value = lazy_result
+print(f"Lazy value: {lazy_value}")
+
+print("=== TEST COMPLETE ===") 

@@ -1,0 +1,18 @@
+# Debug AST Structure
+print("=== DEBUG AST STRUCTURE ===")
+
+def simple_operation():
+    print("🔍 Simple operation executed!")
+    return "simple_result"
+
+def lazy_function():
+    print("📝 Creating lazy function...")
+    return simple_operation()
+
+print("1. Creating lazy reference...")
+lazy_result = lazy_function()
+
+print("2. Testing the result...")
+print(f"Lazy result: {lazy_result}")
+
+print("=== DEBUG COMPLETE ===") 

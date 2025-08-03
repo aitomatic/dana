@@ -313,7 +313,7 @@ class ModuleLoader(MetaPathFinder, Loader):
     def _setup_package_attributes(self, spec: ModuleSpec) -> None:
         """Set up package attributes for a module spec.
 
-        This allows __init__.na files, directory packages, and regular .na files 
+        This allows __init__.na files, directory packages, and regular .na files
         to serve as packages if they have subdirectories with modules.
 
         Args:
@@ -340,10 +340,10 @@ class ModuleLoader(MetaPathFinder, Loader):
             module_dir = origin_path.parent / origin_path.stem
             if module_dir.is_dir():
                 # Check if the directory contains any .na files or subdirectories with __init__.na
-                has_submodules = any(f.suffix == ".na" for f in module_dir.iterdir() if f.is_file()) or any(
-                    (subdir / "__init__.na").exists() for subdir in module_dir.iterdir() if subdir.is_dir()
-                ) or any(
-                    self._is_dana_package_directory(subdir) for subdir in module_dir.iterdir() if subdir.is_dir()
+                has_submodules = (
+                    any(f.suffix == ".na" for f in module_dir.iterdir() if f.is_file())
+                    or any((subdir / "__init__.na").exists() for subdir in module_dir.iterdir() if subdir.is_dir())
+                    or any(self._is_dana_package_directory(subdir) for subdir in module_dir.iterdir() if subdir.is_dir())
                 )
                 if has_submodules:
                     spec.submodule_search_locations = [str(module_dir)]
@@ -416,7 +416,7 @@ class ModuleLoader(MetaPathFinder, Loader):
                 # Directory package - nothing to execute, just finish loading
                 self.registry.finish_loading(module.__name__)
                 return
-            
+
             # Read source
             source = origin_path.read_text()
 
@@ -471,6 +471,12 @@ class ModuleLoader(MetaPathFinder, Loader):
             # Public variables should be accessible as module attributes
             public_vars = context.get_scope("public")
             module.__dict__.update(public_vars)
+
+            # Merge public_vars into the global public scope (root context)
+            root_context = context
+            while getattr(root_context, "parent_context", None) is not None:
+                root_context = root_context.parent_context
+            root_context._state["public"].update(public_vars)
 
             # Include system scope variables for agent functionality
             # This allows modules with system:agent_name and system:agent_description to be used as agents
@@ -536,8 +542,8 @@ class ModuleLoader(MetaPathFinder, Loader):
                         name=func_name, func=func_obj, namespace="local", func_type=FunctionType.DANA, metadata=metadata, overwrite=True
                     )
 
-                    # Ensure the function's execution context has access to the interpreter
-                    if func_obj.context is not None:
+                    # Ensure the function has access to the interpreter
+                    if func_obj.context:
                         if not hasattr(func_obj.context, "_interpreter") or func_obj.context._interpreter is None:
                             func_obj.context._interpreter = interpreter
 
@@ -601,25 +607,25 @@ class ModuleLoader(MetaPathFinder, Loader):
 
     def _is_dana_package_directory(self, directory: Path) -> bool:
         """Check if a directory qualifies as a Dana package.
-        
+
         A directory is considered a Dana package if it contains:
         - At least one .na file, OR
         - At least one subdirectory that is also a Dana package
-        
+
         Args:
             directory: Directory to check
-            
+
         Returns:
             True if directory is a Dana package, False otherwise
         """
         if not directory.is_dir():
             return False
-            
+
         # Check for direct .na files
         for item in directory.iterdir():
             if item.is_file() and item.suffix == ".na":
                 return True
-                
+
         # Check for subdirectory packages
         for item in directory.iterdir():
             if item.is_dir():
@@ -629,5 +635,5 @@ class ModuleLoader(MetaPathFinder, Loader):
                 # Check if subdirectory is itself a Dana package (recursive)
                 if self._is_dana_package_directory(item):
                     return True
-                    
+
         return False
