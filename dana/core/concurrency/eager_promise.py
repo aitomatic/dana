@@ -60,20 +60,16 @@ class EagerPromise(BasePromise):
     def _start_execution(self):
         """Start executing the computation immediately."""
         if inspect.iscoroutine(self._computation):
-            # For coroutines, prefer immediate execution to avoid async deadlocks
+            # For coroutines, check if we're in a running event loop
             try:
                 # Try to get the current event loop
                 loop = asyncio.get_running_loop()
-                # Check if we're already in an async context that might deadlock
-                if self._is_potential_async_deadlock(loop):
-                    # Execute immediately to avoid deadlock
-                    self.debug("Potential async deadlock detected, executing immediately")
-                    self._execute_async_immediately()
-                else:
-                    # Safe to create async task
-                    self._task = loop.create_task(self._execute_async())
+                # We're in a running loop - create a task and let it run
+                # Don't try to execute immediately to avoid asyncio.run() error
+                self._task = loop.create_task(self._execute_async())
+                self.debug("Created async task in running loop")
             except RuntimeError:
-                # No running loop - execute immediately instead of delaying
+                # No running loop - execute immediately using asyncio.run()
                 self.debug("No event loop available, executing immediately")
                 self._execute_async_immediately()
         else:
@@ -110,12 +106,21 @@ class EagerPromise(BasePromise):
     def _execute_async_immediately(self):
         """Execute async computation immediately to avoid deadlocks."""
         try:
-            # Use asyncio.run() to execute the coroutine immediately
             import asyncio
 
-            self._result = asyncio.run(self._computation)
-            self._resolved = True
-            self.debug(f"Eager promise async executed immediately: {type(self._result)}")
+            # This method should only be called when there's no running event loop
+            # Check if we're in a running event loop (this should not happen)
+            try:
+                loop = asyncio.get_running_loop()
+                # This shouldn't happen - we should have created a task instead
+                self.error("Unexpected: _execute_async_immediately called with running event loop")
+                self._task = loop.create_task(self._execute_async())
+                return
+            except RuntimeError:
+                # No running loop, use asyncio.run()
+                self._result = asyncio.run(self._computation)
+                self._resolved = True
+                self.debug(f"Eager promise async executed immediately: {type(self._result)}")
         except Exception as e:
             self._error = PromiseError(e, self._creation_location, self._get_resolution_location())
             self._resolved = True
@@ -188,7 +193,14 @@ class EagerPromise(BasePromise):
                     except (RuntimeError, TimeoutError):
                         # No event loop or timeout - execute immediately
                         self.debug("Async task deadlock detected, executing immediately")
-                        self._execute_async_immediately()
+                        # Only call _execute_async_immediately if we're not in a running loop
+                        try:
+                            asyncio.get_running_loop()
+                            # We're in a running loop, don't try to execute immediately
+                            self.debug("In running event loop, not executing immediately")
+                        except RuntimeError:
+                            # No running loop, safe to execute immediately
+                            self._execute_async_immediately()
             except Exception as e:
                 # Task might have completed with error or we had a deadlock
                 self.debug(f"Async task handling failed: {e}")
