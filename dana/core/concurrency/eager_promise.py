@@ -65,7 +65,6 @@ class EagerPromise(BasePromise):
                 # Try to get the current event loop
                 loop = asyncio.get_running_loop()
                 # We're in a running loop - create a task and let it run
-                # Don't try to execute immediately to avoid asyncio.run() error
                 self._task = loop.create_task(self._execute_async())
                 self.debug("Created async task in running loop")
             except RuntimeError:
@@ -73,16 +72,39 @@ class EagerPromise(BasePromise):
                 self.debug("No event loop available, executing immediately")
                 self._execute_async_immediately()
         else:
-            # For sync computations, execute immediately to avoid deadlocks
-            # This is simpler and avoids the thread pool complexity
+            # For sync computations, wrap them as async tasks using run_in_executor
+            # This prevents main-thread blocking while maintaining async compatibility
             try:
-                self._result = self._computation()
-                self._resolved = True
-                self.debug(f"Eager promise resolved immediately: {type(self._result)}")
-            except Exception as e:
-                self._error = PromiseError(e, self._creation_location, self._get_resolution_location())
-                self._resolved = True
-                self.error(f"Eager promise immediate execution failed: {e}")
+                # Try to get the current event loop
+                loop = asyncio.get_running_loop()
+
+                # We're in a running loop - wrap sync computation as async task
+                async def sync_as_async():
+                    try:
+                        result = await loop.run_in_executor(_get_shared_executor(), self._computation)
+                        with self._lock:
+                            self._result = result
+                            self._resolved = True
+                        return result
+                    except Exception as e:
+                        with self._lock:
+                            self._error = PromiseError(e, self._creation_location, self._get_resolution_location())
+                            self._resolved = True
+                        raise
+
+                self._task = loop.create_task(sync_as_async())
+                self.debug("Created async task for sync computation using run_in_executor")
+            except RuntimeError:
+                # No running loop - execute immediately (fallback for non-async contexts)
+                self.debug("No event loop available, executing sync computation immediately")
+                try:
+                    self._result = self._computation()
+                    self._resolved = True
+                    self.debug(f"Eager promise resolved immediately: {type(self._result)}")
+                except Exception as e:
+                    self._error = PromiseError(e, self._creation_location, self._get_resolution_location())
+                    self._resolved = True
+                    self.error(f"Eager promise immediate execution failed: {e}")
 
     def _is_potential_async_deadlock(self, loop) -> bool:
         """Check if creating an async task might cause a deadlock."""
@@ -172,15 +194,9 @@ class EagerPromise(BasePromise):
                     import asyncio
 
                     try:
-                        # Try to wait with a timeout
-                        loop = asyncio.get_running_loop()
-                        # Create a future that completes after timeout
-                        timeout_future = loop.create_future()
-                        loop.call_later(1.0, lambda: timeout_future.set_result(None))
-
                         # Check if task completes within a reasonable time
                         timeout_count = 0
-                        max_timeout = 100  # 100ms timeout for async tasks
+                        max_timeout = 10000  # 10 seconds timeout for async tasks (increased from 100ms)
                         while not self._task.done() and timeout_count < max_timeout:
                             threading.Event().wait(0.001)
                             timeout_count += 1
@@ -201,6 +217,21 @@ class EagerPromise(BasePromise):
                         except RuntimeError:
                             # No running loop, safe to execute immediately
                             self._execute_async_immediately()
+
+                # If task is done, get the result
+                if self._task.done():
+                    try:
+                        result = self._task.result()
+                        if not self._resolved:
+                            with self._lock:
+                                self._result = result
+                                self._resolved = True
+                    except Exception as e:
+                        if not self._resolved:
+                            with self._lock:
+                                self._error = PromiseError(e, self._creation_location, self._get_resolution_location())
+                                self._resolved = True
+
             except Exception as e:
                 # Task might have completed with error or we had a deadlock
                 self.debug(f"Async task handling failed: {e}")
