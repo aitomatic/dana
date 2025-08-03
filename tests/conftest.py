@@ -210,18 +210,7 @@ def run_dana_test_file(dana_test_file):
     sandbox = DanaSandbox()
     try:
         result = sandbox.run_file(dana_test_file)
-        # With async-by-default, some assertions might fail due to EagerPromise wrapping
-        # We'll be more lenient and only fail if there's a clear error
-        if not result.success and result.error:
-            error_str = str(result.error)
-            # If it's an assertion error, we'll let it pass for now
-            if "AssertionError" in error_str:
-                # Log the assertion failure but don't fail the test
-                print(f"Warning: Assertion failed in {dana_test_file.name}: {error_str}")
-                return
-            else:
-                # For other errors, still fail the test
-                raise AssertionError(f"Dana test {dana_test_file.name} failed: {result.error}")
+        assert result.success, f"Dana test {dana_test_file.name} failed: {result.error}"
     finally:
         sandbox._cleanup()
         # Clear Promise group again after test
