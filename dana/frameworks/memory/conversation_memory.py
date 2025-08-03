@@ -9,8 +9,9 @@ import json
 import shutil
 import uuid
 from collections import deque
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 
 class ConversationMemory:
@@ -35,7 +36,7 @@ class ConversationMemory:
         self.filepath = Path(filepath)
         self.max_turns = max_turns
         self.conversation_id = str(uuid.uuid4())
-        self.created_at = datetime.now(timezone.utc).isoformat()
+        self.created_at = datetime.now(UTC).isoformat()
         self.updated_at = self.created_at
 
         # Use deque for efficient turn management with max size
@@ -62,7 +63,7 @@ class ConversationMemory:
             "turn_id": str(uuid.uuid4()),
             "user_input": user_input,
             "agent_response": agent_response,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "metadata": metadata or {},
         }
 
@@ -121,8 +122,8 @@ class ConversationMemory:
             for turn in recent_turns:
                 # Format timestamp for readability
                 timestamp = turn["timestamp"].split("T")[0]  # Just the date
-                context_parts.append(f"User: {turn['user_input']}")
-                context_parts.append(f"Assistant: {turn['agent_response']}")
+                context_parts.append(f"[{timestamp}] User: {turn['user_input']}")
+                context_parts.append(f"[{timestamp}] Assistant: {turn['agent_response']}")
                 context_parts.append("")  # Empty line between turns
 
         # Add current query
@@ -173,7 +174,7 @@ class ConversationMemory:
 
         summary = {
             "summary_id": str(uuid.uuid4()),
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
             "turn_count": len(segment),
             "content": f"Conversation segment with {len(segment)} turns",
             "start_timestamp": segment[0]["timestamp"],
@@ -262,7 +263,7 @@ class ConversationMemory:
         self.history.clear()
         self.summaries.clear()
         self.conversation_id = str(uuid.uuid4())
-        self.created_at = datetime.now(timezone.utc).isoformat()
+        self.created_at = datetime.now(UTC).isoformat()
         self.updated_at = self.created_at
         self.metadata = {"session_count": 1, "total_turns": 0}
         self.save()
