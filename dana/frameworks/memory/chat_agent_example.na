@@ -1,0 +1,81 @@
+# Example Dana agent with chat capabilities and conversation memory
+
+# A helpful assistant that remembers conversations
+agent HelpfulAssistant:
+    name = "Assistant"
+    personality = "friendly and helpful"
+    expertise = "general assistance and problem solving"
+    
+    # The chat method is automatically available!
+    # It will:
+    # 1. Remember conversation history
+    # 2. Build context from previous turns
+    # 3. Use LLM if available to generate responses
+    # 4. Persist conversations across sessions
+
+# Create an instance of our assistant
+assistant = HelpfulAssistant()
+
+# Example conversation
+print("=== Chat with HelpfulAssistant ===\n")
+
+# First interaction
+response1 = assistant.chat("Hello! My name is Dana.")
+print(f"User: Hello! My name is Dana.")
+print(f"Assistant: {response1}\n")
+
+# Ask a question
+response2 = assistant.chat("What can you help me with?")
+print(f"User: What can you help me with?")
+print(f"Assistant: {response2}\n")
+
+# Test memory
+response3 = assistant.chat("Do you remember my name?")
+print(f"User: Do you remember my name?")
+print(f"Assistant: {response3}\n")
+
+# The conversation is automatically saved to:
+# agent_memories/HelpfulAssistant_conversation.json
+
+# You can also use the other agent methods:
+plan = assistant.plan("Help user learn Python programming")
+print(f"\nPlan: {plan}")
+
+# Store something in simple memory
+assistant.remember("user_goal", "learn Python")
+goal = assistant.recall("user_goal")
+print(f"\nRemembered goal: {goal}")
+
+# Advanced usage: Chat with custom context
+response4 = assistant.chat(
+    "How should I start?",
+    context={"topic": "Python programming", "level": "beginner"},
+    max_context_turns=3  # Only include last 3 turns in context
+)
+print(f"\nUser: How should I start?")
+print(f"Assistant: {response4}")
+
+# Check conversation statistics
+stats = assistant.get_conversation_stats()
+print(f"\nConversation Statistics:")
+print(f"- Total turns: {stats['total_turns']}")
+print(f"- Active turns in memory: {stats['active_turns']}")
+print(f"- Session count: {stats['session_count']}")
+
+# Clear conversation memory if needed
+# assistant.clear_conversation_memory()
+
+# The agent automatically uses LLMResource if available!
+# If you have API keys configured (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.)
+# in your environment or dana_config.json, the agent will automatically
+# use the LLM for much better responses.
+#
+# The system gracefully falls back to simple responses when no LLM is configured.
+#
+# Example with working LLM:
+# export OPENAI_API_KEY="your-key-here"
+# response = assistant.chat("Explain recursion to me")
+# # This would generate a proper LLM response using conversation context
+#
+# You can also manually set an LLM function:
+# assistant._context['llm'] = your_custom_llm_function
