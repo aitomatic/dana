@@ -383,6 +383,10 @@ class StatementTransformer(BaseTransformer):
         """Transform a return statement rule into a ReturnStatement node."""
         return self.import_simple_statement_transformer.return_stmt(items)
 
+    def deliver_stmt(self, items):
+        """Transform a deliver statement rule into a DeliverStatement node."""
+        return self.import_simple_statement_transformer.deliver_stmt(items)
+
     def break_stmt(self, items):
         """Transform a break statement rule into a BreakStatement node."""
         return self.import_simple_statement_transformer.break_stmt(items)

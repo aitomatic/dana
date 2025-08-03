@@ -122,6 +122,7 @@ simple_stmt: assignment
            | declarative_function_assignment
            | expr_stmt
            | return_stmt
+           | deliver_stmt
            | break_stmt
            | continue_stmt
            | pass_stmt
@@ -151,6 +152,7 @@ FROM.2: "from"
 DEF.2: "def"
 STRUCT.2: "struct"
 RETURN.2: "return"
+DELIVER.2: "deliver"
 PASS.2: "pass"
 BREAK.2: "break"
 CONTINUE.2: "continue"
@@ -181,6 +183,7 @@ compound_op: PLUS_EQUALS | MINUS_EQUALS | MULT_EQUALS | DIV_EQUALS
 
 expr_stmt: expr
 return_stmt: "return" [expr]
+deliver_stmt: "deliver" [expr]
 break_stmt: "break"
 continue_stmt: "continue"
 pass_stmt: "pass"
@@ -352,7 +355,7 @@ MULTILINE_STRING: /""".*?"""/s | /'''.*?'''/s
 
 // Define the NAME token with higher priority than keywords to handle identifiers containing keywords
 // Priority 3 is higher than NOT_OP (priority 2), ensuring names like 'not_var' are tokenized as NAME
-NAME.3: /(?!(True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|if|else|elif|while|for|def|struct|try|except|finally|raise|assert|import|from|with|use|agent|agent_pool|lambda|yield|global|nonlocal|del|and|or|not|in|is|export|as)\b)([a-zA-Z_][a-zA-Z0-9_]*)/
+NAME.3: /(?!(True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|deliver|if|else|elif|while|for|def|struct|try|except|finally|raise|assert|import|from|with|use|agent|agent_pool|lambda|yield|global|nonlocal|del|and|or|not|in|is|export|as)\b)([a-zA-Z_][a-zA-Z0-9_]*)/
 
 // Basic string literals with f-strings
 string_literal: REGULAR_STRING

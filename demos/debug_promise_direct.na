@@ -1,0 +1,33 @@
+# Debug Promise Direct
+print("=== DEBUG PROMISE DIRECT ===")
+
+def simple_operation():
+    print("🔍 Simple operation executed!")
+    return "simple_result"
+
+def lazy_function():
+    print("📝 Creating lazy function...")
+    return simple_operation()
+
+print("1. Creating lazy reference...")
+lazy_result = lazy_function()
+
+# Check the Promise object directly without accessing it
+print(f"Lazy result type: {type(lazy_result)}")
+print(f"Lazy result type name: {type(lazy_result)}")
+
+# Try to access the Promise object's internal state
+print(f"Lazy result object: {lazy_result}")
+
+# Check if the Promise is already resolved by looking at its __class__ method
+print(f"Lazy result.__class__: {lazy_result.__class__}")
+
+# Try to call the __class__ method to see if it's already resolved
+try:
+    class_info = lazy_result.__class__()
+    print(f"Lazy result.__class__() result: {class_info}")
+    print(f"Is Promise already resolved? {class_info != type(lazy_result)}")
+except Exception as e:
+    print(f"Error calling lazy_result.__class__(): {e}")
+
+print("=== DEBUG COMPLETE ===") 

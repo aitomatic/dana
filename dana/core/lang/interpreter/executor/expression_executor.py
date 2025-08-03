@@ -410,11 +410,11 @@ class ExpressionExecutor(BaseExecutor):
             if func is not None:
                 self.debug(f"DEBUG: Found function, type: {type(func)}")
                 # Use the function's own context as the base if available
-                base_context = getattr(func, "context", None) or context
+                getattr(func, "context", None) or context
                 if hasattr(func, "execute"):
                     self.debug("DEBUG: Using function.execute() with base_context")
-                    # Create a new context that inherits from base_context
-                    func_context = SandboxContext(parent=base_context)
+                    # Create a new context that inherits from the current context to ensure isolation
+                    func_context = context.create_child_context()
                     # Ensure the interpreter is available in the new context
                     if hasattr(context, "_interpreter") and context._interpreter is not None:
                         func_context._interpreter = context._interpreter
@@ -504,9 +504,14 @@ class ExpressionExecutor(BaseExecutor):
             The value at the specified index or slice
         """
         from dana.core.lang.ast import SliceExpression, SliceTuple
+        from dana.core.runtime.promise import is_promise, resolve_promise
 
         # Get the target object
         target = self.parent.execute(node.object, context)
+
+        # Resolve Promise if target is a Promise object
+        if is_promise(target):
+            target = resolve_promise(target)
 
         # Check the type of index operation
         if isinstance(node.index, SliceExpression):

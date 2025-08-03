@@ -5,6 +5,7 @@ from .agent_function import *
 from .enhanced_reason_function import *
 from .feedback_function import *
 from .knows_functions import *
+from .llm_function import *
 from .log_function import *
 from .log_level_function import *
 from .poet_function import *

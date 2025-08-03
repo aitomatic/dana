@@ -1,0 +1,39 @@
+# Debug Promise Transparency
+print("=== DEBUG PROMISE TRANSPARENCY ===")
+
+def lazy_five():
+    print("lazy_five() called")
+    return 5
+
+def lazy_three():
+    print("lazy_three() called")
+    return 3
+
+print("1. Creating lazy promises...")
+lazy_a = lazy_five()
+lazy_b = lazy_three()
+eager_c = 2
+
+print(f"2. Types: lazy_a={type(lazy_a)}, lazy_b={type(lazy_b)}, eager_c={type(eager_c)}")
+
+print("3. Testing arithmetic...")
+try:
+    result = lazy_a + lazy_b
+    print(f"✓ lazy_a + lazy_b = {result}")
+except Exception as e:
+    print(f"✗ Error in lazy_a + lazy_b: {e}")
+
+try:
+    result = lazy_a + eager_c
+    print(f"✓ lazy_a + eager_c = {result}")
+except Exception as e:
+    print(f"✗ Error in lazy_a + eager_c: {e}")
+
+print("4. Testing direct access...")
+try:
+    value_a = lazy_a
+    print(f"✓ lazy_a value: {value_a}")
+except Exception as e:
+    print(f"✗ Error accessing lazy_a: {e}")
+
+print("=== DEBUG COMPLETE ===") 
