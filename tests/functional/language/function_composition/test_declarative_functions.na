@@ -1,6 +1,8 @@
 # Declarative Function Definition Tests
 # Tests the new syntax: def func(...) = f1 | f2 | f3
 
+log_level("INFO")
+
 log("🧪 Testing Declarative Function Definitions")
 
 # ===== TEST 1: Basic Declarative Function =====

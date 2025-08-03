@@ -96,8 +96,10 @@ total_tests=0
 passed_tests=0
 failed_tests=0
 
-# Change to workspace directory
-cd /workspace
+# Change to workspace directory (configurable; defaults to repo root)
+WORKSPACE_DIR="${WORKSPACE_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
+cd "$WORKSPACE_DIR"
+echo "Using workspace directory: $WORKSPACE_DIR"
 
 echo "Phase 1: Unit Tests"
 echo "==================="
