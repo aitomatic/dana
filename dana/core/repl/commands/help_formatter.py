@@ -134,6 +134,72 @@ class HelpFormatter(Loggable):
             fallback = f"  {self.colors.accent('print(...)')}, {self.colors.accent('log(...)')}, {self.colors.accent('log_level(...)')}, {self.colors.accent('reason(...)')}"
             print_formatted_text(ANSI(fallback))
 
+    def _show_core_functions_plain(self) -> None:
+        """Display available core functions organized by category (plain text version for testing)."""
+        try:
+            # Get all core functions from the registry
+            registry = self.repl.interpreter.function_registry
+            core_functions = registry.list("local")
+
+            if not core_functions:
+                print("  No core functions found")
+                return
+
+            # Organize functions by category
+            categories = {
+                "Output": ["print", "old_reason", "reason", "context_aware_reason", "register_original_reason"],
+                "Logging": ["log", "log_level"],
+                "AI/Reasoning": ["llm", "reason", "old_reason", "context_aware_reason"],
+                "Other": [],
+            }
+
+            # Categorize functions
+            for func in core_functions:
+                categorized = False
+                for _, funcs in categories.items():
+                    if func in funcs:
+                        categorized = True
+                        break
+                if not categorized:
+                    categories["Other"].append(func)
+
+            # Display each category
+            for category, funcs in categories.items():
+                if funcs:
+                    print(f"  {category}:        ", end="")
+                    func_list = []
+                    for func in funcs:
+                        if func in core_functions:  # Only show if actually available
+                            func_list.append(f"{func}(...)")
+                    if func_list:
+                        print(", ".join(func_list))
+                    else:
+                        print("")
+
+            # Show some example usages
+            print("\n  Function Examples:")
+            # Show practical examples
+            print('    print("Hello", "World", 123)    - Print multiple values')
+            # Show logging examples
+            print('    log("Debug info", "debug")      - Log with level')
+            # Show more examples
+            print('    log_level("info")               - Set logging level')
+            # Show reasoning example
+            print('    reason("What is 2+2?")           - AI reasoning')
+
+        except Exception as e:
+            print(f"  Error listing core functions: {e}")
+            # Fallback list
+            print("  print(...), log(...), log_level(...), reason(...)")
+
+    def show_core_functions(self) -> None:
+        """Public method to display core functions (calls private _show_core_functions)."""
+        self._show_core_functions()
+
+    def show_core_functions_plain(self) -> None:
+        """Public method to display core functions in plain text (for testing)."""
+        self._show_core_functions_plain()
+
     def show_nlp_status(self) -> None:
         """Display current NLP status and configuration."""
         status = self.repl.get_nlp_mode()

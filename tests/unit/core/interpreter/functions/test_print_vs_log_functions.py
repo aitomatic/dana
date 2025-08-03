@@ -291,7 +291,7 @@ class TestDynamicHelp:
         sys.stdout = captured_output = StringIO()
 
         try:
-            app.command_handler.help_formatter.show_core_functions()
+            app.command_handler.help_formatter.show_core_functions_plain()
             help_output = captured_output.getvalue()
         finally:
             sys.stdout = old_stdout
@@ -302,7 +302,8 @@ class TestDynamicHelp:
 
         # All core functions should appear in the help output
         for func_name in core_functions:
-            assert func_name in help_output, f"Function {func_name} not found in help output"
+            # Check for function name with parentheses (as displayed in help)
+            assert f"{func_name}(...)" in help_output, f"Function {func_name}(...) not found in help output"
 
         # Verify categories are shown
         assert "Output:" in help_output or "print" in help_output
@@ -326,7 +327,7 @@ class TestDynamicHelp:
         sys.stdout = captured_output = StringIO()
 
         try:
-            app.command_handler.help_formatter.show_core_functions()
+            app.command_handler.help_formatter.show_core_functions_plain()
             initial_help = captured_output.getvalue()
         finally:
             sys.stdout = old_stdout
@@ -341,14 +342,14 @@ class TestDynamicHelp:
         sys.stdout = captured_output = StringIO()
 
         try:
-            app.command_handler.help_formatter.show_core_functions()
+            app.command_handler.help_formatter.show_core_functions_plain()
             updated_help = captured_output.getvalue()
         finally:
             sys.stdout = old_stdout
 
         # Verify the new function appears in updated help
-        assert "test_func" not in initial_help
-        assert "test_func" in updated_help
+        assert "test_func(...)" not in initial_help
+        assert "test_func(...)" in updated_help
         assert "Other:" in updated_help  # Should appear in "Other" category
 
     def test_tab_completion_includes_core_functions(self):
@@ -399,7 +400,7 @@ class TestDynamicHelp:
             sys.stdout = captured_output = StringIO()
 
             try:
-                command_handler.help_formatter.show_core_functions()
+                command_handler.help_formatter.show_core_functions_plain()
                 help_output = captured_output.getvalue()
             finally:
                 sys.stdout = old_stdout

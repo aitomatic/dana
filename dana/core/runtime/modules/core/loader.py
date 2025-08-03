@@ -542,8 +542,8 @@ class ModuleLoader(MetaPathFinder, Loader):
                         name=func_name, func=func_obj, namespace="local", func_type=FunctionType.DANA, metadata=metadata, overwrite=True
                     )
 
-                    # Ensure the function's execution context has access to the interpreter
-                    if func_obj.context is not None:
+                    # Ensure the function has access to the interpreter
+                    if func_obj.context:
                         if not hasattr(func_obj.context, "_interpreter") or func_obj.context._interpreter is None:
                             func_obj.context._interpreter = interpreter
 

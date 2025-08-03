@@ -49,9 +49,26 @@ class DanaFunction(SandboxFunction, Loggable):
     def prepare_context(self, context: SandboxContext | Any, args: list[Any], kwargs: dict[str, Any]) -> SandboxContext:
         """
         Prepare context for a Dana function.
+
+        This method creates a context that combines:
+        1. The function's own context (for access to module functions)
+        2. The current context (for access to current variables)
+        3. Function parameters and arguments
         """
-        # Always use the context passed in (should be a child context)
-        prepared_context = context
+        # If the function has its own context, use it as the base
+        if self.context is not None:
+            # Create a child context from the function's context
+            # This gives access to module functions and other context
+            prepared_context = self.context.create_child_context()
+
+            # Merge the current context's local scope into the prepared context
+            # This allows the function to access current variables
+            if isinstance(context, SandboxContext):
+                for key, value in context.get_scope("local").items():
+                    prepared_context.set(f"local:{key}", value)
+        else:
+            # Fallback to using the passed context if function has no context
+            prepared_context = context
 
         # Store original local scope so we can restore it later
         original_locals = prepared_context.get_scope("local").copy()
