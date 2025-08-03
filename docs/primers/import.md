@@ -16,6 +16,15 @@ from math_utils import _complex_calc  # ❌ Error - actually private!
 result = math_utils.add(5, 3)  # 8
 product = multiply(4, 7)       # 28
 
+# Python ecosystem - import any Python package!
+import pandas as pd
+import requests
+from datetime import datetime
+
+df = pd.DataFrame({"name": ["Alice"], "age": [25]})
+response = requests.get("https://api.example.com")
+now = datetime.now()
+
 # Package structure (simpler than Python):
 # my_package/        # Directory automatically becomes a package
 #   utils.na
@@ -128,13 +137,70 @@ recipe = curate.curate_knowledge_recipe(...)
 ```
 
 ### Python Module Import
-```dana
-import json.py as json
-import pandas.py as pd
 
+**🚀 Leverage the entire Python ecosystem!** Import any Python package/module - from built-ins like `os` and `json` to popular libraries like `numpy`, `pandas`, `requests`, `flask`, `tensorflow`, and thousands more from PyPI.
+
+**Useful Examples**:
+```dana
+# Data processing
+import pandas as pd
+import numpy as np
+df = pd.DataFrame({"name": ["Alice", "Bob"], "age": [25, 30]})
+
+# Web requests
+import requests
+response = requests.get("https://api.example.com/data")
+
+# File operations
+import os, json
+files = os.listdir(".")
 data = json.loads('{"key": "value"}')
-df = pd.DataFrame({"a": [1, 2, 3]})
+
+# Date/time
+from datetime import datetime
+now = datetime.now()
 ```
+
+**Quick Reference**:
+```dana
+import math                    # Basic import
+from math import sqrt, pi      # From import
+import math as m               # With alias
+from math import sqrt as sq    # From with alias
+import my_module.py            # Local Python file
+```
+
+**Common Python modules work seamlessly**:
+```dana
+import os, json, datetime, random
+import numpy as np
+import pandas as pd
+
+files = os.listdir(".")
+data = json.dumps({"key": "value"})
+array = np.array([1, 2, 3])
+```
+
+**Local Python files**:
+```dana
+# utils.py
+def greet(name): return f"Hello, {name}!"
+
+# main.na
+import utils.py
+message = utils.greet("World")
+```
+
+**Error handling**:
+```dana
+try:
+    import pandas as pd
+    df = pd.DataFrame({"a": [1, 2, 3]})
+except ImportError:
+    print("pandas not available")
+```
+
+That's it! Python imports work exactly like Python - no special syntax needed.
 
 ### Framework Modules
 ```dana

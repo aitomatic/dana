@@ -328,21 +328,21 @@ class PipeOperationHandler(Loggable):
         """Resolve a lambda expression to a pipeline-compatible function."""
         try:
             from dana.core.lang.interpreter.pipeline.lambda_pipeline import LambdaPipelineIntegrator
-            
+
             # Validate lambda for pipeline use
             if not LambdaPipelineIntegrator.validate_lambda_for_pipeline(lambda_expr):
-                raise SandboxError(f"Lambda expression is not suitable for pipeline use")
-            
+                raise SandboxError("Lambda expression is not suitable for pipeline use")
+
             # Create pipeline function wrapper
             return LambdaPipelineIntegrator.resolve_lambda_to_pipeline_function(lambda_expr, context)
-            
+
         except ImportError:
             # Fall back to basic lambda execution if pipeline integration not available
-            if self.parent_executor and hasattr(self.parent_executor, 'execute_lambda_expression'):
+            if self.parent_executor and hasattr(self.parent_executor, "execute_lambda_expression"):
                 lambda_func = self.parent_executor.execute_lambda_expression(lambda_expr, context)
                 if callable(lambda_func):
                     return lambda_func
-            
+
             raise SandboxError("Lambda expressions not supported in pipeline operations")
 
     def _create_partial_function(self, func: Any, func_call: FunctionCall, context: SandboxContext) -> Any:

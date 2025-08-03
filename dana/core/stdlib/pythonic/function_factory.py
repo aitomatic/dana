@@ -15,7 +15,7 @@ from dana.common.exceptions import SandboxError
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata, FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.runtime.promise import Promise
+from dana.core.concurrency import LazyPromise
 
 
 class UnsupportedReason(Enum):
@@ -37,10 +37,10 @@ class PythonicFunctionFactory:
     @staticmethod
     def _smart_max(*args):
         """Smart max wrapper that supports both max(iterable) and max(a, b, ...) syntax."""
-        # Resolve any Promise objects in arguments
+        # Resolve any LazyPromise objects in arguments
         resolved_args = []
         for arg in args:
-            if isinstance(arg, Promise):
+            if isinstance(arg, LazyPromise):
                 resolved_args.append(arg._ensure_resolved())
             else:
                 resolved_args.append(arg)
@@ -63,10 +63,10 @@ class PythonicFunctionFactory:
     @staticmethod
     def _smart_min(*args):
         """Smart min wrapper that supports both min(iterable) and min(a, b, ...) syntax."""
-        # Resolve any Promise objects in arguments
+        # Resolve any LazyPromise objects in arguments
         resolved_args = []
         for arg in args:
-            if isinstance(arg, Promise):
+            if isinstance(arg, LazyPromise):
                 resolved_args.append(arg._ensure_resolved())
             else:
                 resolved_args.append(arg)
@@ -89,10 +89,10 @@ class PythonicFunctionFactory:
     @staticmethod
     def _smart_sum(*args):
         """Smart sum wrapper that supports both sum(iterable) and sum(iterable, start) syntax."""
-        # Resolve any Promise objects in arguments
+        # Resolve any LazyPromise objects in arguments
         resolved_args = []
         for arg in args:
-            if isinstance(arg, Promise):
+            if isinstance(arg, LazyPromise):
                 resolved_args.append(arg._ensure_resolved())
             else:
                 resolved_args.append(arg)
@@ -110,9 +110,9 @@ class PythonicFunctionFactory:
         # Numeric functions
         "len": {
             "func": len,
-            "types": [list, dict, str, tuple, Promise],
+            "types": [list, dict, str, tuple, LazyPromise],
             "doc": "Return the length of an object",
-            "signatures": [(list,), (dict,), (str,), (tuple,), (Promise,)],
+            "signatures": [(list,), (dict,), (str,), (tuple,), (LazyPromise,)],
         },
         # Smart wrappers for flexible argument handling
         "sum": {
@@ -161,34 +161,34 @@ class PythonicFunctionFactory:
         },
         "abs": {
             "func": abs,
-            "types": [int, float, Promise],
+            "types": [int, float, LazyPromise],
             "doc": "Return the absolute value of a number",
-            "signatures": [(int,), (float,), (Promise,)],
+            "signatures": [(int,), (float,), (LazyPromise,)],
         },
         "round": {
             "func": round,
-            "types": [float, int, Promise],
+            "types": [float, int, LazyPromise],
             "doc": "Round a number to a given precision",
-            "signatures": [(float,), (int,), (float, int), (Promise,)],
+            "signatures": [(float,), (int,), (float, int), (LazyPromise,)],
         },
         # Type conversion functions
         "int": {
             "func": int,
-            "types": [str, float, bool, Promise],
+            "types": [str, float, bool, LazyPromise],
             "doc": "Convert a value to an integer",
-            "signatures": [(str,), (float,), (bool,), (Promise,)],
+            "signatures": [(str,), (float,), (bool,), (LazyPromise,)],
         },
         "float": {
             "func": float,
-            "types": [str, int, bool, Promise],
+            "types": [str, int, bool, LazyPromise],
             "doc": "Convert a value to a float",
-            "signatures": [(str,), (int,), (bool,), (Promise,)],
+            "signatures": [(str,), (int,), (bool,), (LazyPromise,)],
         },
         "bool": {
             "func": lambda v: PythonicFunctionFactory._semantic_bool_wrapper(v),
-            "types": [str, int, float, list, dict, Promise],
+            "types": [str, int, float, list, dict, LazyPromise],
             "doc": "Convert a value to a boolean with semantic understanding",
-            "signatures": [(str,), (int,), (float,), (list,), (dict,), (Promise,)],
+            "signatures": [(str,), (int,), (float,), (list,), (dict,), (LazyPromise,)],
         },
         "type": {
             # SECURITY: Dana's type() function is NOT the same as Python's type() function.
@@ -198,48 +198,48 @@ class PythonicFunctionFactory:
             # to class hierarchies and internal Python type system details.
             # Dana: type(obj) -> "str", Python: type(obj).__name__ -> "str"
             "func": lambda v: type(v).__name__,
-            "types": [object, Promise],
+            "types": [object, LazyPromise],
             "doc": "Return the type name of a value as a string (e.g., 'int', 'list', 'dict'). SECURITY NOTE: Unlike Python's type(), this returns a string for sandbox security.",
-            "signatures": [(object,), (Promise,)],
+            "signatures": [(object,), (LazyPromise,)],
         },
         # Collection functions
         "sorted": {
             "func": sorted,
-            "types": [list, tuple, Promise],
+            "types": [list, tuple, LazyPromise],
             "doc": "Return a new sorted list from an iterable",
-            "signatures": [(list,), (tuple,), (Promise,)],
+            "signatures": [(list,), (tuple,), (LazyPromise,)],
         },
         "reversed": {
             "func": reversed,
-            "types": [list, tuple, str, Promise],
+            "types": [list, tuple, str, LazyPromise],
             "doc": "Return a reverse iterator",
-            "signatures": [(list,), (tuple,), (str,), (Promise,)],
+            "signatures": [(list,), (tuple,), (str,), (LazyPromise,)],
         },
         "enumerate": {
             "func": enumerate,
-            "types": [list, tuple, str, Promise],
+            "types": [list, tuple, str, LazyPromise],
             "doc": "Return an enumerate object",
-            "signatures": [(list,), (tuple,), (str,), (Promise,)],
+            "signatures": [(list,), (tuple,), (str,), (LazyPromise,)],
         },
         # Logic functions
         "all": {
             "func": all,
-            "types": [list, tuple, Promise],
+            "types": [list, tuple, LazyPromise],
             "doc": "Return True if all elements are true",
-            "signatures": [(list,), (tuple,), (Promise,)],
+            "signatures": [(list,), (tuple,), (LazyPromise,)],
         },
         "any": {
             "func": any,
-            "types": [list, tuple, Promise],
+            "types": [list, tuple, LazyPromise],
             "doc": "Return True if any element is true",
-            "signatures": [(list,), (tuple,), (Promise,)],
+            "signatures": [(list,), (tuple,), (LazyPromise,)],
         },
         # Range function
         "range": {"func": range, "types": [int], "doc": "Return a range object", "signatures": [(int,), (int, int), (int, int, int)]},
         # List constructor
         "list": {
             "func": list,
-            "types": [list, tuple, str, range, type(reversed([])), type({}.keys()), Promise],
+            "types": [list, tuple, str, range, type(reversed([])), type({}.keys()), LazyPromise],
             "doc": "Convert an iterable to a list",
             "signatures": [
                 (list,),
@@ -249,7 +249,7 @@ class PythonicFunctionFactory:
                 (type(reversed([])),),
                 (type(enumerate([])),),
                 (type({}.keys()),),
-                (Promise,),
+                (LazyPromise,),
             ],
         },
     }
@@ -457,10 +457,10 @@ class PythonicFunctionFactory:
 
     @classmethod
     def _resolve_promise_args(cls, args: tuple) -> tuple:
-        """Resolve any Promise objects in the arguments to their actual values."""
+        """Resolve any LazyPromise objects in the arguments to their actual values."""
         resolved_args = []
         for arg in args:
-            if isinstance(arg, Promise):
+            if isinstance(arg, LazyPromise):
                 resolved_args.append(arg._ensure_resolved())
             else:
                 resolved_args.append(arg)
@@ -494,7 +494,7 @@ class PythonicFunctionFactory:
         signatures = config["signatures"]
 
         def dana_wrapper(context: SandboxContext, *args, **kwargs):
-            # Resolve any Promise objects in the arguments
+            # Resolve any LazyPromise objects in the arguments
             resolved_args = cls._resolve_promise_args(args)
 
             # Validate arguments against signatures

@@ -25,7 +25,7 @@ INTEGRATION PATTERN:
     dana.py (CLI Router) → dana_repl_app.py (Interactive UI) → repl.py (Execution Engine)
 
 TYPICAL FLOW:
-    1. dana.py detects no file argument → calls dana_repl_app.main()
+    1. dana.py detects no file argument → calls dana_repl_app.dana_repl_main()
     2. DanaREPLApp initializes UI components and REPL engine
     3. Interactive loop: get input → process commands → execute via repl.py → format output
     4. Repeat until user exits
@@ -61,10 +61,12 @@ Dana REPL: Interactive command-line interface for Dana.
 import asyncio
 import logging
 import sys
+import time
 
+from dana.common.error_utils import DanaError
 from dana.common.mixins.loggable import Loggable
 from dana.common.resource.llm.llm_resource import LLMResource
-from dana.common.terminal_utils import ColorScheme, supports_color
+from dana.common.terminal_utils import ColorScheme
 from dana.core.lang.log_manager import LogLevel
 from dana.core.repl.commands import CommandHandler
 from dana.core.repl.input import InputProcessor
@@ -75,30 +77,74 @@ from dana.core.repl.ui import OutputFormatter, PromptSessionManager, WelcomeDisp
 LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
 
 
+async def dana_repl_main(debug: bool = False) -> None:
+    """Main entry point for the Dana REPL."""
+    import argparse
+
+    # When called from dana.py, debug parameter is passed directly
+    # When called as module (__main__.py), parse command line arguments
+    if debug is not False or len(sys.argv) == 1:
+        # Called from dana.py with debug parameter
+        log_level = LogLevel.DEBUG if debug else LogLevel.WARN
+    else:
+        # Called as module, parse command line arguments
+        parser = argparse.ArgumentParser(description="Dana Interactive REPL")
+        parser.add_argument(
+            "--log-level",
+            choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+            default="WARNING",
+            help="Set the logging level (default: WARNING)",
+        )
+
+        args = parser.parse_args()
+
+        # Convert string to LogLevel enum
+        log_level_map = {
+            "DEBUG": LogLevel.DEBUG,
+            "INFO": LogLevel.INFO,
+            "WARNING": LogLevel.WARN,
+            "ERROR": LogLevel.ERROR,
+        }
+        log_level = log_level_map[args.log_level]
+
+    try:
+        # Handle Windows event loop policy
+        if sys.platform == "win32":
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+        app = DanaREPLApp(log_level=log_level)
+        await app.run()
+    except KeyboardInterrupt:
+        print("\nGoodbye! Dana REPL terminated.")
+    except Exception as e:
+        print(f"Error starting Dana REPL: {e}")
+        sys.exit(1)
+
+
 class DanaREPLApp(Loggable):
-    """Main Dana REPL application."""
+    """Main Dana REPL application with TIMING DIAGNOSTICS and BACKGROUND EXECUTION."""
 
     def __init__(self, log_level: LogLevel = LogLevel.WARN):
-        """Initialize the REPL application.
-
-        Args:
-            log_level: Initial log level (default: WARN)
-        """
+        """Initialize the Dana REPL app."""
         super().__init__()
+        self._session_start = time.time()  # Track session timing
+        self._background_tasks = set()  # Track background execution tasks
 
-        # Initialize color scheme
-        self.colors = ColorScheme(supports_color())
+        # Color scheme and UI setup
+        from dana.common.terminal_utils import supports_color
 
-        # Initialize core components
+        self.colors = ColorScheme(use_colors=supports_color())
+
+        # Core components
         self.repl = self._setup_repl(log_level)
-        self.input_processor = InputProcessor()
-        self.command_handler = CommandHandler(self.repl, self.colors)
-        self.prompt_manager = PromptSessionManager(self.repl, self.colors)
         self.welcome_display = WelcomeDisplay(self.colors)
         self.output_formatter = OutputFormatter(self.colors)
+        self.input_processor = InputProcessor()
+        self.prompt_manager = PromptSessionManager(self.repl, self.colors)
+        self.command_handler = CommandHandler(self.repl, self.colors)
 
     def _setup_repl(self, log_level: LogLevel) -> REPL:
-        """Set up the REPL instance."""
+        """Set up the Dana REPL."""
         return REPL(llm_resource=LLMResource(), log_level=log_level)
 
     async def run(self) -> None:
@@ -112,6 +158,7 @@ class DanaREPLApp(Loggable):
             try:
                 # Get input with appropriate prompt
                 prompt_text = self.prompt_manager.get_prompt(self.input_processor.in_multiline)
+
                 line = await self.prompt_manager.prompt_async(prompt_text)
                 self.debug(f"Got input: '{line}'")
 
@@ -121,7 +168,7 @@ class DanaREPLApp(Loggable):
                     if executed_program:
                         # Store input context for multiline programs too
                         self._store_input_context()
-                        self._execute_program(executed_program)
+                        self._start_background_execution(executed_program)
                         last_executed_program = executed_program
                     continue
 
@@ -136,25 +183,19 @@ class DanaREPLApp(Loggable):
                     # Check if it was a / command to force multiline
                     if line.strip() == "/":
                         self.input_processor.state.in_multiline = True
-                    # Check if it's a /promise command
-                    elif command_result[1] is not None and command_result[2]:  # has code and preserve_promises
-                        # Store input context for promise commands too
-                        self._store_input_context()
-
-                        self._execute_program(command_result[1], preserve_promises=True)
                     continue
 
                 # Check for orphaned else/elif statements
                 if self._handle_orphaned_else_statement(line, last_executed_program):
                     continue
 
-                # For single-line input, execute immediately
+                # For single-line input, execute immediately in background
                 self.debug("Executing single line input")
                 # Track single-line input in history for IPV context
                 self.input_processor.state.add_to_history(line)
                 # Store input context in sandbox context for IPV access
                 self._store_input_context()
-                self._execute_program(line)
+                self._start_background_execution(line)
                 last_executed_program = line
 
             except KeyboardInterrupt:
@@ -165,7 +206,25 @@ class DanaREPLApp(Loggable):
                 break
             except Exception as e:
                 self.output_formatter.format_error(e)
-                self.input_processor.reset()
+
+        # Clean up any remaining background tasks before exiting
+        await self._cleanup_background_tasks()
+
+    async def _cleanup_background_tasks(self) -> None:
+        """Clean up any remaining background tasks."""
+        if self._background_tasks:
+            self.debug(f"Cleaning up {len(self._background_tasks)} background tasks")
+
+            # Cancel all remaining tasks
+            for task in self._background_tasks:
+                if not task.done():
+                    task.cancel()
+
+            # Wait for all tasks to finish cancellation
+            if self._background_tasks:
+                await asyncio.gather(*self._background_tasks, return_exceptions=True)
+
+            self._background_tasks.clear()
 
     def _store_input_context(self) -> None:
         """Store the current input context in the sandbox context for IPV access."""
@@ -177,11 +236,41 @@ class DanaREPLApp(Loggable):
         except Exception as e:
             self.debug(f"Could not store input context: {e}")
 
-    def _execute_program(self, program: str, preserve_promises: bool = False) -> None:
+    def _start_background_execution(self, program: str) -> None:
+        """Start program execution in background and return immediately."""
+        # Create background task
+        task = asyncio.create_task(self._execute_program_background(program))
+
+        # Add to background tasks set
+        self._background_tasks.add(task)
+
+        # Add callback to remove task when done
+        task.add_done_callback(self._background_tasks.discard)
+
+    async def _execute_program_background(self, program: str) -> None:
+        """Execute a Dana program in the background with safe output handling."""
+        try:
+            # Execute without patch_stdout first
+            await self._execute_program(program)
+        except Exception as e:
+            # Handle errors in background execution
+            self.debug(f"Background execution error: {e}")
+            # For errors, always use patch_stdout to be safe
+            from prompt_toolkit.patch_stdout import patch_stdout
+
+            with patch_stdout():
+                self.output_formatter.format_error(e)
+
+    async def _execute_program(self, program: str) -> None:
         """Execute a Dana program and handle the result or errors."""
         try:
             self.debug(f"Executing program: {program}")
-            result = self.repl.execute(program, preserve_promises=preserve_promises)
+
+            # Use run_in_executor to prevent blocking the main event loop
+            loop = asyncio.get_running_loop()
+
+            # Execute Dana program in thread pool to avoid blocking
+            result = await loop.run_in_executor(None, self.repl.execute, program)
 
             # Capture and display any print output from the interpreter
             print_output = self.repl.interpreter.get_and_clear_output()
@@ -189,70 +278,44 @@ class DanaREPLApp(Loggable):
                 print(print_output)
 
             # Display the result if it's not None
-            self.output_formatter.format_result(result, preserve_promises=preserve_promises)
+            if result is not None:
+                await self.output_formatter.format_result_async(result)
+
         except Exception as e:
-            self.output_formatter.format_error(e)
+            self.debug(f"Execution error: {e}")
+            raise  # Let the background wrapper handle it
 
     def _handle_exit_commands(self, line: str) -> bool:
-        """Handle exit commands.
+        """
+        Handle exit commands.
+
+        Args:
+            line: The input line to check
 
         Returns:
-            True if exit command was detected and we should break the main loop
+            True if this was an exit command, False otherwise
         """
-        if line.strip() in ["exit", "quit"]:
-            self.debug("Exit command received")
-            self.output_formatter.show_goodbye()
-            return True
-        return False
+        exit_commands = ["exit", "quit"]
+        return line.strip().lower() in exit_commands
 
     def _handle_orphaned_else_statement(self, line: str, last_executed_program: str | None) -> bool:
-        """Handle orphaned else/elif statements with helpful guidance.
+        """
+        Handle orphaned else/elif statements by suggesting completion.
+
+        Args:
+            line: The input line to check
+            last_executed_program: The last executed program for context
 
         Returns:
-            True if orphaned statement was handled and we should continue
+            True if this was an orphaned statement that was handled, False otherwise
         """
-        if self.input_processor.is_orphaned_else_statement(line) and last_executed_program:
-            self.debug("Detected orphaned else statement, providing guidance")
-            self.command_handler.help_formatter.show_orphaned_else_guidance()
-            return True
+        line_stripped = line.strip()
+
+        # Check for orphaned else/elif
+        if line_stripped.startswith(("else:", "elif ")):
+            if not last_executed_program or not last_executed_program.strip().startswith("if "):
+                error_msg = f"Orphaned '{line_stripped.split()[0]}' statement. Did you mean to start with an 'if' statement first?"
+                self.output_formatter.format_error(DanaError(error_msg))
+                return True
+
         return False
-
-
-async def main(debug=False):
-    """Run the Dana REPL."""
-
-    # Check for command line arguments
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Dana REPL")
-    parser.add_argument("--no-color", action="store_true", help="Disable colored output")
-    parser.add_argument("--force-color", action="store_true", help="Force colored output")
-    parser.add_argument("--debug", action="store_true", help="Enable debug mode")
-
-    args = parser.parse_args()
-
-    # Override debug flag if it was passed in
-    if debug:
-        args.debug = True
-
-    # Handle color settings - these will be applied when ColorScheme is created
-    if args.no_color:
-        import os
-
-        os.environ["NO_COLOR"] = "1"
-    elif args.force_color:
-        import os
-
-        os.environ["FORCE_COLOR"] = "1"
-
-    # Set log level based on debug flag
-    log_level = LogLevel.DEBUG if args.debug else LogLevel.WARN
-
-    app = DanaREPLApp(log_level=log_level)
-    await app.run()
-
-
-if __name__ == "__main__":
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-    asyncio.run(main())

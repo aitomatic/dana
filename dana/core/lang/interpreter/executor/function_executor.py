@@ -743,10 +743,10 @@ class FunctionExecutor(BaseExecutor):
             try:
                 # Resolve any promises in the kwargs before struct instantiation
                 resolved_kwargs = {}
-                from dana.core.runtime.promise import Promise
+                from dana.core.concurrency import BasePromise
 
                 for key, value in evaluated_kwargs.items():
-                    if isinstance(value, Promise):
+                    if isinstance(value, BasePromise):
                         resolved_kwargs[key] = value._ensure_resolved()
                     else:
                         resolved_kwargs[key] = value
@@ -831,7 +831,9 @@ class FunctionExecutor(BaseExecutor):
                     )
 
                     if isinstance(func_obj, DanaFunction):
-                        result = func_obj.execute(context, *transformed_args, **evaluated_kwargs)
+                        # Use a fresh child context to prevent parameter leakage
+                        child_context = context.create_child_context()
+                        result = func_obj.execute(child_context, *transformed_args, **evaluated_kwargs)
                         self.debug(f"Dana method transformation successful (context): {method_name}({target_object}, ...) = {result}")
                         return result
                     else:
@@ -854,7 +856,9 @@ class FunctionExecutor(BaseExecutor):
                         )
 
                         if isinstance(func_obj, DanaFunction):
-                            result = func_obj.execute(context, *transformed_args, **evaluated_kwargs)
+                            # Use a fresh child context to prevent parameter leakage
+                            child_context = context.create_child_context()
+                            result = func_obj.execute(child_context, *transformed_args, **evaluated_kwargs)
                             self.debug(f"Dana method transformation successful ({scope}): {method_name}({target_object}, ...) = {result}")
                             return result
                         else:
@@ -986,9 +990,9 @@ class FunctionExecutor(BaseExecutor):
             object_value = self.parent.execute(Identifier(name=object_name), context)
 
             # Resolve Promise if object_value is a Promise (for dual delivery system)
-            from dana.core.runtime.promise import Promise
+            from dana.core.concurrency import BasePromise
 
-            if isinstance(object_value, Promise):
+            if isinstance(object_value, BasePromise):
                 object_value = object_value._ensure_resolved()
 
             # For LiteralExpression, we need to handle the value directly
