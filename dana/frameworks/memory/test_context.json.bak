@@ -1,0 +1,26 @@
+{
+  "conversation_id": "ae9ff219-1060-4bf2-a69b-4e2c938dca53",
+  "created_at": "2025-08-03T07:54:21.362591Z",
+  "updated_at": "2025-08-03T07:54:21.362836Z",
+  "history": [
+    {
+      "turn_id": "61ff8d6e-0b86-4390-b0b6-106d2f6d3af5",
+      "user_input": "What's your name?",
+      "agent_response": "I'm Claude, an AI assistant.",
+      "timestamp": "2025-08-03T07:54:21.362623Z",
+      "metadata": {}
+    },
+    {
+      "turn_id": "808aa702-a474-4de2-99e6-1e5d9ea47087",
+      "user_input": "Can you help with Python?",
+      "agent_response": "Yes, I can help with Python programming.",
+      "timestamp": "2025-08-03T07:54:21.362836Z",
+      "metadata": {}
+    }
+  ],
+  "summaries": [],
+  "metadata": {
+    "session_count": 1,
+    "total_turns": 2
+  }
+}

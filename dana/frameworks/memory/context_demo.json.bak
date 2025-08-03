@@ -1,0 +1,26 @@
+{
+  "conversation_id": "6dbce661-9980-47aa-bb6c-d9b6d9c24cb6",
+  "created_at": "2025-08-03T07:55:38.163936Z",
+  "updated_at": "2025-08-03T07:55:38.164167Z",
+  "history": [
+    {
+      "turn_id": "8064f3b6-547f-4712-a913-bd90cefaf7ec",
+      "user_input": "What's the capital of France?",
+      "agent_response": "The capital of France is Paris.",
+      "timestamp": "2025-08-03T07:55:38.163970Z",
+      "metadata": {}
+    },
+    {
+      "turn_id": "f00f3928-8d92-48e1-bbcf-db083a933bfc",
+      "user_input": "How about Italy?",
+      "agent_response": "The capital of Italy is Rome.",
+      "timestamp": "2025-08-03T07:55:38.164167Z",
+      "metadata": {}
+    }
+  ],
+  "summaries": [],
+  "metadata": {
+    "session_count": 1,
+    "total_turns": 2
+  }
+}
