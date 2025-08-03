@@ -14,8 +14,22 @@ from collections.abc import Callable, Coroutine
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Union
 
-from dana.core.lang.sandbox_context import SandboxContext
 from dana.core.concurrency.base_promise import BasePromise, PromiseError
+from dana.core.lang.sandbox_context import SandboxContext
+
+# Shared thread pool for all EagerPromise instances to prevent deadlocks
+_shared_executor = None
+_executor_lock = threading.Lock()
+
+
+def _get_shared_executor() -> ThreadPoolExecutor:
+    """Get the shared thread pool executor for EagerPromise instances."""
+    global _shared_executor
+    if _shared_executor is None:
+        with _executor_lock:
+            if _shared_executor is None:
+                _shared_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="EagerPromise")
+    return _shared_executor
 
 
 class EagerPromise(BasePromise):
@@ -58,10 +72,16 @@ class EagerPromise(BasePromise):
                 self._delayed_coroutine = True
                 return
         else:
-            # For sync computations, run in thread pool
-            executor = ThreadPoolExecutor(max_workers=1)
-            self._future = executor.submit(self._execute_sync)
-            # Don't wait for completion - let it run in background
+            # For sync computations, execute immediately to avoid deadlocks
+            # This is simpler and avoids the thread pool complexity
+            try:
+                self._result = self._computation()
+                self._resolved = True
+                self.debug(f"Eager promise resolved immediately: {type(self._result)}")
+            except Exception as e:
+                self._error = PromiseError(e, self._creation_location, self._get_resolution_location())
+                self._resolved = True
+                self.error(f"Eager promise immediate execution failed: {e}")
 
     async def _execute_async(self):
         """Execute the async computation."""
@@ -124,7 +144,7 @@ class EagerPromise(BasePromise):
                 # Task might have completed in the meantime
                 pass
 
-        # Wait for sync computations
+        # Wait for sync computations (if using thread pool)
         if self._future and not self._resolved:
             try:
                 # Get result from future (this will block if not done)
@@ -159,6 +179,7 @@ class EagerPromise(BasePromise):
     # Override __str__ to show execution status for eager promises
     def __str__(self):
         """String representation showing EagerPromise meta info."""
+        # Don't call _ensure_resolved() to avoid deadlocks
         if self._resolved:
             if self._error:
                 return f"EagerPromise[Error: {self._error.original_error}]"
