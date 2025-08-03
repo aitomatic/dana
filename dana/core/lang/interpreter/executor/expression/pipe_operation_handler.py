@@ -58,11 +58,10 @@ class ParallelFunction(SandboxFunction):
 
         return results
 
-    def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> SandboxContext:
+    def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> None:
         """Restore context after function execution (required by SandboxFunction)."""
         # For parallel functions, we don't need special context restoration
-        # Return the original context as expected by the interface contract
-        return original_context
+        pass
 
     def _call_function(self, func: Any, context: SandboxContext, *args, **kwargs) -> Any:
         """Call a function with proper context handling."""
