@@ -56,7 +56,15 @@ class ParallelFunction(SandboxFunction):
                 result = self._call_function(func, context, *args, **kwargs)
                 results.append(result)
 
-        return results
+        # Auto-resolve any promises in the results
+        resolved_results = []
+        for result in results:
+            if hasattr(result, "_ensure_resolved"):
+                resolved_results.append(result._ensure_resolved())
+            else:
+                resolved_results.append(result)
+
+        return resolved_results
 
     def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> None:
         """Restore context after function execution (required by SandboxFunction)."""
