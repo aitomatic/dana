@@ -79,7 +79,7 @@ def get_total_asset_2y(doc: FinDoc) -> CurrAndPrevNums:
     return total_asset_2y
 
 
-def get_total_asset_3y(doc: FinDoc) -> tuple[float]:
+def get_total_asset_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Total Assets from Balance Sheet."""
 
     total_asset_3y = query_fin_data(
@@ -117,7 +117,7 @@ def get_fixed_asset_2y(doc: FinDoc) -> CurrAndPrevNums:
     return fixed_asset_2y
 
 
-def get_fixed_asset_3y(doc: FinDoc) -> tuple[float]:
+def get_fixed_asset_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Fixed Assets from Balance Sheet."""
 
     fixed_asset_3y = query_fin_data(
@@ -155,7 +155,7 @@ def get_curr_asset_2y(doc: FinDoc) -> CurrAndPrevNums:
     return curr_asset_2y
 
 
-def get_curr_asset_3y(doc: FinDoc) -> tuple[float]:
+def get_curr_asset_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Current Assets from Balance Sheet."""
 
     curr_asset_3y = query_fin_data(
@@ -193,7 +193,7 @@ def get_cash_and_equiv_2y(doc: FinDoc) -> CurrAndPrevNums:
     return cash_and_equiv_2y
 
 
-def get_cash_and_equiv_3y(doc: FinDoc) -> tuple[float]:
+def get_cash_and_equiv_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Cash & Cash Equivalents from Balance Sheet."""
 
     cash_and_equiv_3y = query_fin_data(
@@ -231,7 +231,7 @@ def get_st_inv_2y(doc: FinDoc) -> CurrAndPrevNums:
     return st_inv_2y
 
 
-def get_st_inv_3y(doc: FinDoc) -> tuple[float]:
+def get_st_inv_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Short-Term Investments from Balance Sheet."""
 
     st_inv_3y = query_fin_data(
@@ -269,7 +269,7 @@ def get_recvable_2y(doc: FinDoc) -> CurrAndPrevNums:
     return recvable_2y
 
 
-def get_recvable_3y(doc: FinDoc) -> tuple[float]:
+def get_recvable_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Accounts Receivable from Balance Sheet."""
 
     recvable_3y = query_fin_data(
@@ -307,7 +307,7 @@ def get_inventory_2y(doc: FinDoc) -> CurrAndPrevNums:
     return inventory_2y
 
 
-def get_inventory_3y(doc: FinDoc) -> tuple[float]:
+def get_inventory_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Inventories from Balance Sheet."""
 
     inventory_3y = query_fin_data(
@@ -345,7 +345,7 @@ def get_curr_liab_2y(doc: FinDoc) -> CurrAndPrevNums:
     return curr_liab_2y
 
 
-def get_curr_liab_3y(doc: FinDoc) -> tuple[float]:
+def get_curr_liab_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Current Liabilities from Balance Sheet."""
 
     curr_liab_3y = query_fin_data(
@@ -383,7 +383,7 @@ def get_payable_2y(doc: FinDoc) -> CurrAndPrevNums:
     return payable_2y
 
 
-def get_payable_3y(doc: FinDoc) -> tuple[float]:
+def get_payable_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Accounts Payable from Balance Sheet."""
 
     payable_3y = query_fin_data(
@@ -421,7 +421,7 @@ def get_lt_debt_2y(doc: FinDoc) -> CurrAndPrevNums:
     return lt_debt_2y
 
 
-def get_lt_debt_3y(doc: FinDoc) -> tuple[float]:
+def get_lt_debt_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Long-Term Debt from Balance Sheet."""
 
     lt_debt_3y = query_fin_data(
@@ -459,7 +459,7 @@ def get_st_debt_2y(doc: FinDoc) -> CurrAndPrevNums:
     return st_debt_2y
 
 
-def get_st_debt_3y(doc: FinDoc) -> tuple[float]:
+def get_st_debt_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Short-Term Debt from Balance Sheet."""
 
     st_debt_3y = query_fin_data(
@@ -497,7 +497,7 @@ def get_equity_2y(doc: FinDoc) -> CurrAndPrevNums:
     return equity_2y
 
 
-def get_equity_3y(doc: FinDoc) -> tuple[float]:
+def get_equity_3y(doc: FinDoc) -> tuple[float, float, float]:
     """Get 3 years of Total Equity from Balance Sheet."""
 
     equity_3y = query_fin_data(

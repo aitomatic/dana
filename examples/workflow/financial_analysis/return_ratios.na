@@ -13,9 +13,9 @@ __all__ = [
 
 
 def _roa_ratio(intermed_results):
-    deliver llm(
+    return llm(
 f'Calculate `Return on (Total) Assets, a.k.a. RoA or RoTA`
-as percentage value according to formula:
+as decimal value according to formula:
 
 `Return on (Total) Assets, a.k.a. RoA or RoTA` = (
     `Net Income, a.k.a. Net Profit, or Net Earnings (or Loss(es)) (Attributable to Shareholders)` /
@@ -23,21 +23,18 @@ as percentage value according to formula:
 )
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_roa_ratio(doc: FinDoc) = [get_net_income, get_total_asset_2y] | _roa_ratio
+def calc_roa_ratio(doc: FinDoc) -> float = [get_net_income, get_total_asset_2y] | _roa_ratio
 
 
 def _roe_ratio(intermed_results):
-    deliver llm(
+    return llm(
 f'Calculate `Return on Equity, a.k.a. RoE`
-as percentage value according to formula:
+as decimal value according to formula:
 
 `Return on Equity, a.k.a. RoE` = (
     `Net Income, a.k.a. Net Profit, or Net Earnings (or Loss(es)) (Attributable to Shareholders)` /
@@ -45,12 +42,9 @@ as percentage value according to formula:
 )
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_roe_ratio(doc: FinDoc) = [get_net_income, get_equity_2y] | _roe_ratio
+def calc_roe_ratio(doc: FinDoc) -> float = [get_net_income, get_equity_2y] | _roe_ratio

@@ -16,7 +16,7 @@ __all__ = [
 
 
 def _total_asset_turnover_ratio(intermed_results):
-    deliver llm(
+    return llm(
 f'Calculate `(Total) Asset Turnover Ratio`
 as decimal value according to formula:
 
@@ -26,19 +26,18 @@ as decimal value according to formula:
 )
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_total_asset_turnover_ratio(doc: FinDoc) = [get_rev, get_total_asset_2y] | _total_asset_turnover_ratio
+def calc_total_asset_turnover_ratio(doc: FinDoc) -> float = (
+    [get_rev, get_total_asset_2y] | _total_asset_turnover_ratio
+)
 
 
 def _fixed_asset_turnover_ratio(intermed_results):
-    deliver llm(
+    return llm(
 f'Calculate `(Fixed) Asset Turnover Ratio`
 as decimal value according to formula:
 
@@ -48,19 +47,18 @@ as decimal value according to formula:
 )
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_fixed_asset_turnover_ratio(doc: FinDoc) = [get_rev, get_fixed_asset_2y] | _fixed_asset_turnover_ratio
+def calc_fixed_asset_turnover_ratio(doc: FinDoc) -> float = (
+    [get_rev, get_fixed_asset_2y] | _fixed_asset_turnover_ratio
+)
 
 
 def _inventory_turnover_ratio(intermed_results):
-    deliver llm(
+    return llm(
 f'Calculate `Inventory Turnover Ratio`
 as decimal value according to formula:
 
@@ -70,12 +68,11 @@ as decimal value according to formula:
 )
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_inventory_turnover_ratio(doc: FinDoc) = [get_cogs, get_inventory_2y] | _inventory_turnover_ratio
+def calc_inventory_turnover_ratio(doc: FinDoc) -> float = (
+    [get_cogs, get_inventory_2y] | _inventory_turnover_ratio
+)
