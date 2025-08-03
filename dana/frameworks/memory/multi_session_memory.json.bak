@@ -1,0 +1,40 @@
+{
+  "conversation_id": "80e206ab-8e30-461d-8a00-f115f966bb8d",
+  "created_at": "2025-08-03T07:55:38.161812Z",
+  "updated_at": "2025-08-03T07:55:38.163046Z",
+  "history": [
+    {
+      "turn_id": "c612405f-eb9b-4928-b8e6-8e3916fce15f",
+      "user_input": "Hi, my name is Sarah",
+      "agent_response": "I don't think you've told me your name yet.",
+      "timestamp": "2025-08-03T07:55:38.161864Z",
+      "metadata": {}
+    },
+    {
+      "turn_id": "48293866-ed8b-4f28-80d4-508b46666f69",
+      "user_input": "I'm learning about machine learning",
+      "agent_response": "Hi there! What would you like to talk about?",
+      "timestamp": "2025-08-03T07:55:38.162088Z",
+      "metadata": {}
+    },
+    {
+      "turn_id": "1eb20267-d6b8-4b2e-974a-6aa51d685ec8",
+      "user_input": "Bye for now",
+      "agent_response": "Goodbye! Our conversation is saved and I'll remember it next time.",
+      "timestamp": "2025-08-03T07:55:38.162530Z",
+      "metadata": {}
+    },
+    {
+      "turn_id": "2c28777d-5c29-4789-91ff-b9714ba47d78",
+      "user_input": "Do you remember my name?",
+      "agent_response": "I remember we discussed: learning, machine, sarah",
+      "timestamp": "2025-08-03T07:55:38.163046Z",
+      "metadata": {}
+    }
+  ],
+  "summaries": [],
+  "metadata": {
+    "session_count": 2,
+    "total_turns": 4
+  }
+}

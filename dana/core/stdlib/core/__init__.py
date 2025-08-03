@@ -1,7 +1,6 @@
 """Dana core functions."""
 
 # Import all core functions for easy access
-from .agent_function import *
 from .enhanced_reason_function import *
 from .feedback_function import *
 from .knows_functions import *

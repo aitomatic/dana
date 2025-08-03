@@ -13,7 +13,7 @@
 
 * Enhanced Command History:
  * Searchable command history.
- * Persistent history across sessions (e.g., saved to a file like `~/.dana_history`).
+ * Persistent history across sessions (e.g., saved to a file like `~/.dana/repl_history`).
 
 * Magic Commands (similar to IPython):
  * `%load <filepath>`: Load and execute a Dana script from a file into the current REPL session.
