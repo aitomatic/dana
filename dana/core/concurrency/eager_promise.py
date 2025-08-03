@@ -10,6 +10,7 @@ Copyright © 2025 Aitomatic, Inc.
 import asyncio
 import inspect
 import threading
+import time
 from collections.abc import Callable, Coroutine
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Union
@@ -41,18 +42,20 @@ class EagerPromise(BasePromise):
     to start async operations immediately.
     """
 
-    def __init__(self, computation: Union[Callable[[], Any], Coroutine], context: SandboxContext):
+    def __init__(self, computation: Union[Callable[[], Any], Coroutine], context: SandboxContext, timeout_seconds: float = 10.0):
         """
         Initialize an eager promise that starts execution immediately.
 
         Args:
             computation: Callable that returns the actual value, or coroutine
             context: Execution context for the computation
+            timeout_seconds: Timeout in seconds for async operations (default: 10.0)
         """
         super().__init__(computation, context)
         self._task = None  # Store the asyncio task
         self._future = None  # Store the concurrent.futures.Future for sync execution (legacy)
         self._lock = threading.Lock()
+        self._timeout_seconds = timeout_seconds
 
         # Start execution immediately
         self._start_execution()
@@ -64,9 +67,38 @@ class EagerPromise(BasePromise):
             try:
                 # Try to get the current event loop
                 loop = asyncio.get_running_loop()
-                # We're in a running loop - create a task and let it run
-                self._task = loop.create_task(self._execute_async())
-                self.debug("Created async task in running loop")
+
+                # CRITICAL FIX: Don't run LLM tasks on the main event loop
+                # Use thread pool to prevent blocking prompt-toolkit
+                async def run_in_thread():
+                    """Run the coroutine in a separate thread to avoid blocking the main event loop."""
+                    try:
+                        # Create a new event loop in the thread and run the computation
+                        import concurrent.futures
+
+                        def thread_runner():
+                            return asyncio.run(self._computation)
+
+                        with concurrent.futures.ThreadPoolExecutor() as executor:
+                            future = executor.submit(thread_runner)
+                            result = future.result()
+
+                        with self._lock:
+                            self._result = result
+                            self._resolved = True
+                            self.debug(f"Eager promise resolved in thread: {type(self._result)}")
+                        return result
+                    except Exception as e:
+                        with self._lock:
+                            self._error = PromiseError(e, self._creation_location, self._get_resolution_location())
+                            self._resolved = True
+                            self.error(f"Eager promise thread execution failed: {e}")
+                        raise
+
+                # Create task that runs in thread pool
+                self._task = loop.create_task(run_in_thread())
+                self.debug("Created async task using thread pool to avoid event loop blocking")
+
             except RuntimeError:
                 # No running loop - execute immediately using asyncio.run()
                 self.debug("No event loop available, executing immediately")
@@ -179,84 +211,81 @@ class EagerPromise(BasePromise):
                 self.error(f"Eager promise sync execution failed: {e}")
 
     def _ensure_resolved(self):
-        """Ensure the promise is resolved and return the result."""
-        # If execution was somehow not started, start it now
-        if not self._resolved and not self._task and not self._future:
-            self.debug("Execution was not started, starting now")
-            self._start_execution()
+        """
+        Ensure the promise is resolved before accessing the result.
 
-        # Handle async tasks with deadlock prevention
-        if self._task and not self._resolved:
+        This method handles both sync and async contexts intelligently:
+        - In sync context: Uses busy wait (legacy behavior)
+        - In async context: Raises helpful error directing to await_result()
+        """
+        with self._lock:
+            if self._resolved:
+                if self._error:
+                    raise self._error.original_error
+                return self._result
+
+        # Check if we're in an async context
+        try:
+            # If this succeeds, we're in a running event loop
+            asyncio.get_running_loop()
+
+            # We're in an async context - we should NOT block the event loop
+            # The caller should use async methods instead
+            if self._task and not self._task.done():
+                # Async task is still running, don't block the event loop
+                error_msg = (
+                    "EagerPromise cannot be resolved synchronously in async context while task is executing.\n"
+                    "SOLUTION: Use 'await promise.await_result()' instead of accessing .result directly.\n"
+                    "This prevents blocking the prompt_toolkit event loop."
+                )
+                self.debug(f"Blocking sync resolution in async context: {error_msg}")
+                raise RuntimeError(error_msg)
+            elif not self._resolved:
+                # No task but not resolved - something went wrong
+                error_msg = (
+                    "EagerPromise not resolved and no async task found.\n"
+                    "SOLUTION: Use 'await promise.await_result()' for async-safe resolution."
+                )
+                self.debug(f"Promise not resolved in async context: {error_msg}")
+                raise RuntimeError(error_msg)
+
+        except RuntimeError as e:
+            if "no running event loop" in str(e):
+                # We're in sync context - use the original busy wait behavior
+                self.debug("No event loop detected, using sync resolution")
+                pass  # Continue to sync waiting below
+            else:
+                # Re-raise our custom RuntimeErrors with helpful messages
+                raise
+
+        # Legacy sync context handling - only reached if no event loop
+        # Handle legacy sync futures (from old thread-based execution)
+        if self._future and not self._future.done():
             try:
-                # Check if task is done first
-                if not self._task.done():
-                    # Use a timeout to prevent infinite waiting
-                    import asyncio
-
-                    try:
-                        # Check if task completes within a reasonable time
-                        timeout_count = 0
-                        max_timeout = 10000  # 10 seconds timeout for async tasks (increased from 100ms)
-                        while not self._task.done() and timeout_count < max_timeout:
-                            threading.Event().wait(0.001)
-                            timeout_count += 1
-
-                        if not self._task.done():
-                            # Task is taking too long, potential deadlock
-                            self.debug("Async task timeout, potential deadlock detected")
-                            raise TimeoutError("Async task timed out")
-
-                    except (RuntimeError, TimeoutError):
-                        # No event loop or timeout - execute immediately
-                        self.debug("Async task deadlock detected, executing immediately")
-                        # Only call _execute_async_immediately if we're not in a running loop
-                        try:
-                            asyncio.get_running_loop()
-                            # We're in a running loop, don't try to execute immediately
-                            self.debug("In running event loop, not executing immediately")
-                        except RuntimeError:
-                            # No running loop, safe to execute immediately
-                            self._execute_async_immediately()
-
-                # If task is done, get the result
-                if self._task.done():
-                    try:
-                        result = self._task.result()
-                        if not self._resolved:
-                            with self._lock:
-                                self._result = result
-                                self._resolved = True
-                    except Exception as e:
-                        if not self._resolved:
-                            with self._lock:
-                                self._error = PromiseError(e, self._creation_location, self._get_resolution_location())
-                                self._resolved = True
-
-            except Exception as e:
-                # Task might have completed with error or we had a deadlock
-                self.debug(f"Async task handling failed: {e}")
-                pass
-
-        # Wait for sync computations (if using thread pool - legacy support)
-        if self._future and not self._resolved:
-            try:
-                # Get result from future (this will block if not done)
-                self._future.result()
-                # The _execute_sync method already set _result and _resolved
+                # Wait for thread-based future to complete
+                result = self._future.result(timeout=self._timeout_seconds)
+                with self._lock:
+                    self._result = result
+                    self._resolved = True
+                    return self._result
             except Exception:
                 # Future might have completed with error
                 pass
 
-        # Spin wait for any remaining cases with timeout
+        # Final sync busy wait for any remaining cases (legacy compatibility)
+        # Only reached in sync context without running event loop
         timeout_count = 0
-        max_timeout = 5000  # 5 seconds (5000 * 0.001)
+        max_timeout = int(self._timeout_seconds * 1000)  # Convert to milliseconds
+        self.debug(f"Starting sync busy wait with timeout {self._timeout_seconds}s")
+
         while not self._resolved and timeout_count < max_timeout:
-            threading.Event().wait(0.001)  # Small sleep to avoid busy waiting
+            time.sleep(0.001)  # Small sleep to avoid busy waiting
             timeout_count += 1
 
         if not self._resolved:
             # If still not resolved after timeout, there's likely a deadlock
-            error_msg = "EagerPromise timed out after 5 seconds. This suggests a deadlock or synchronization issue."
+            error_msg = f"EagerPromise timed out after {self._timeout_seconds} seconds. This suggests a deadlock or synchronization issue."
+            self.error(error_msg)
             self._error = PromiseError(RuntimeError(error_msg), self._creation_location, self._get_resolution_location())
             self._resolved = True
 
@@ -268,6 +297,41 @@ class EagerPromise(BasePromise):
         """Wait for the async task to complete."""
         if self._task:
             await self._task
+
+    async def await_result(self):
+        """
+        Safely await the EagerPromise result in async contexts.
+
+        This is the recommended method for accessing EagerPromise results
+        from within prompt_toolkit or other async contexts to avoid blocking
+        the main event loop.
+
+        Returns:
+            The resolved value of the promise
+
+        Raises:
+            The original error if the promise failed
+        """
+        # If already resolved, return immediately
+        with self._lock:
+            if self._resolved:
+                if self._error:
+                    raise self._error.original_error
+                return self._result
+
+        # Wait for the task to complete if we have one
+        if self._task:
+            await self._task
+
+        # Check again after waiting
+        with self._lock:
+            if self._resolved:
+                if self._error:
+                    raise self._error.original_error
+                return self._result
+            else:
+                # This shouldn't happen, but handle gracefully
+                raise RuntimeError("EagerPromise task completed but promise not resolved")
 
     # Override __str__ to show execution status for eager promises
     def __str__(self):
@@ -292,18 +356,21 @@ class EagerPromise(BasePromise):
         return "EagerPromise[<executing>]"
 
     @classmethod
-    def create(cls, computation: Union[Callable[[], Any], Coroutine], context: SandboxContext) -> "EagerPromise":
+    def create(
+        cls, computation: Union[Callable[[], Any], Coroutine], context: SandboxContext, timeout_seconds: float = 10.0
+    ) -> "EagerPromise":
         """
         Factory method to create a new EagerPromise[T].
 
         Args:
             computation: Callable that returns the actual value or coroutine
             context: Execution context
+            timeout_seconds: Timeout in seconds for async operations (default: 10.0)
 
         Returns:
             EagerPromise[T] that executes immediately and blocks on access
         """
-        return cls(computation, context)
+        return cls(computation, context, timeout_seconds)
 
 
 def is_eager_promise(obj: Any) -> bool:
