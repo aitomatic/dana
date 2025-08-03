@@ -57,7 +57,8 @@ dependencies = [
     # API Server
     "fastapi",
     "uvicorn",
-    # Testing Framework (needed for Dana runtime)
+    # Testing Frameworks
+    "datest",
     "pytest",
     "pytest-asyncio",
     "pytest-mock",
