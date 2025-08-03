@@ -82,7 +82,7 @@ docs/.ai-only/ai_output/
 
 # Visual Studio Code configs
 # --------------------------
-.vscode/extensions.json
+# .vscode/extensions.json
 # .vscode/launch.json
 # .vscode/settings.json
 
