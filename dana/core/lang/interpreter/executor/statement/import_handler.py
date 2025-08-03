@@ -218,6 +218,13 @@ class ImportHandler(Loggable):
             # Set module in context using the context name
             context.set_in_scope(context_name, module, scope="local")
 
+            # Merge public variables from the module into the global public scope
+            if hasattr(module, "__dict__"):
+                for key, value in module.__dict__.items():
+                    if not key.startswith("_") and not callable(value):
+                        # This is a public variable from the module
+                        context.set_in_scope(key, value, scope="public")
+
             # For submodule imports like 'utils.text', also create parent namespace
             if "." in context_name:
                 self._create_parent_namespaces(context_name, module, context)
@@ -372,6 +379,10 @@ class ImportHandler(Loggable):
         """
         if not self.function_registry:
             return
+
+        # If this is an alias import, update the function's __name__ attribute
+        if context_name != original_name and hasattr(func, "__name__"):
+            func.__name__ = context_name
 
         try:
             # Import here to avoid circular imports

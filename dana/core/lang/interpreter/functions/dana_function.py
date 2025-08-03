@@ -49,60 +49,28 @@ class DanaFunction(SandboxFunction, Loggable):
     def prepare_context(self, context: SandboxContext | Any, args: list[Any], kwargs: dict[str, Any]) -> SandboxContext:
         """
         Prepare context for a Dana function.
-
-        For Dana functions:
-        - Starts with the function's original module context (for access to module variables)
-        - Creates a clean local scope for the function
-        - Sets up interpreter if needed
-        - Applies default values for parameters
-        - Maps arguments to the local scope
-
-        Args:
-            context: The current execution context or a positional argument
-            args: Positional arguments
-            kwargs: Keyword arguments
-
-        Returns:
-            Prepared context
         """
-        # If context is not a SandboxContext, assume it's a positional argument
-        if not isinstance(context, SandboxContext):
-            args = [context] + args
-            # Use the current context at call time, not an empty context
-            context = SandboxContext() if self.context is None else self.context.copy()
-
-        # Start with the function's original module context (for access to module's public/private variables)
-        if self.context is not None:
-            prepared_context = self.context.copy()
-            # Copy interpreter from current execution context if the module context doesn't have one
-            if not hasattr(prepared_context, "_interpreter") or prepared_context._interpreter is None:
-                if hasattr(context, "_interpreter") and context._interpreter is not None:
-                    prepared_context._interpreter = context._interpreter
-        else:
-            # Always use the current context at call time if no module context available
-            prepared_context = context.copy()
+        # Always use the context passed in (should be a child context)
+        prepared_context = context
 
         # Store original local scope so we can restore it later
         original_locals = prepared_context.get_scope("local").copy()
         prepared_context._original_locals = original_locals
 
-        # Keep existing variables but prepare to add function parameters
-        # Don't clear the local scope - preserve existing variables
-
         # First, apply default values for all parameters that have them
         for param_name in self.parameters:
             if param_name in self.defaults:
-                prepared_context.set(param_name, self.defaults[param_name])
+                prepared_context.set_in_scope(param_name, self.defaults[param_name], scope="local")
 
         # Map positional arguments to parameters in the local scope (can override defaults)
         for i, param_name in enumerate(self.parameters):
             if i < len(args):
-                prepared_context.set(param_name, args[i])
+                prepared_context.set_in_scope(param_name, args[i], scope="local")
 
         # Map keyword arguments to the local scope (can override defaults and positional args)
         for kwarg_name, kwarg_value in kwargs.items():
             if kwarg_name in self.parameters:
-                prepared_context.set(kwarg_name, kwarg_value)
+                prepared_context.set_in_scope(kwarg_name, kwarg_value, scope="local")
 
         return prepared_context
 

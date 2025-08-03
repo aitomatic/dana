@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 
 from dana.common.utils.misc import Misc, ParsedArgKwargsResults
 
@@ -6,7 +6,7 @@ from dana.common.utils.misc import Misc, ParsedArgKwargsResults
 class BaseTransport(ABC):
     """Abstract base class for MCP transport implementations."""
 
-# Removed abstract __init__ method as it creates an unclear API contract.
+    # Removed abstract __init__ method as it creates an unclear API contract.
 
     @classmethod
     def parse_init_params(cls, *args, **kwargs) -> ParsedArgKwargsResults:

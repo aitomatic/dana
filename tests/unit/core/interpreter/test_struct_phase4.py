@@ -421,6 +421,9 @@ local:as_int = data.process(as_string=false)
 """
 
         result: ExecutionResult = self.sandbox.eval(code)
+        print(f"DEBUG: Execution success: {result.success}")
+        if not result.success:
+            print(f"DEBUG: Execution error: {result.error}")
         assert result.success, f"Execution failed: {result.error}"
 
         assert result.final_context is not None
@@ -428,5 +431,20 @@ local:as_int = data.process(as_string=false)
         as_int = result.final_context.get("local:as_int")
 
         # Promises are automatically resolved by default
+        print(f"DEBUG: as_string = {as_string} (type: {type(as_string)})")
+        print(f"DEBUG: as_int = {as_int} (type: {type(as_int)})")
+
+        # Debug: Check if as_string is an EagerPromise
+        if hasattr(as_string, "_value"):
+            print(f"DEBUG: as_string._value = {as_string._value}")
+        if hasattr(as_string, "result"):
+            print(f"DEBUG: as_string.result = {as_string.result}")
+
+        # Debug: Check what's in the local scope
+        local_scope = result.final_context._state.get("local", {})
+        print(f"DEBUG: Local scope keys: {list(local_scope.keys())}")
+        for k, v in local_scope.items():
+            print(f"DEBUG: {k} -> {type(v)}")
+
         assert as_string == "42"
         assert as_int == 42

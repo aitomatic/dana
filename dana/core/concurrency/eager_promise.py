@@ -51,9 +51,8 @@ class EagerPromise(BasePromise):
         """
         super().__init__(computation, context)
         self._task = None  # Store the asyncio task
-        self._future = None  # Store the concurrent.futures.Future for sync execution
+        self._future = None  # Store the concurrent.futures.Future for sync execution (legacy)
         self._lock = threading.Lock()
-        self._delayed_coroutine = False
 
         # Start execution immediately
         self._start_execution()
@@ -61,16 +60,22 @@ class EagerPromise(BasePromise):
     def _start_execution(self):
         """Start executing the computation immediately."""
         if inspect.iscoroutine(self._computation):
-            # For coroutines, create an asyncio task
+            # For coroutines, prefer immediate execution to avoid async deadlocks
             try:
+                # Try to get the current event loop
                 loop = asyncio.get_running_loop()
-                self._task = loop.create_task(self._execute_async())
+                # Check if we're already in an async context that might deadlock
+                if self._is_potential_async_deadlock(loop):
+                    # Execute immediately to avoid deadlock
+                    self.debug("Potential async deadlock detected, executing immediately")
+                    self._execute_async_immediately()
+                else:
+                    # Safe to create async task
+                    self._task = loop.create_task(self._execute_async())
             except RuntimeError:
-                # No running loop - for now, we'll delay execution until access
-                # This prevents issues with REPL and other environments
-                self.debug("No event loop available, delaying coroutine execution until access")
-                self._delayed_coroutine = True
-                return
+                # No running loop - execute immediately instead of delaying
+                self.debug("No event loop available, executing immediately")
+                self._execute_async_immediately()
         else:
             # For sync computations, execute immediately to avoid deadlocks
             # This is simpler and avoids the thread pool complexity
@@ -82,6 +87,39 @@ class EagerPromise(BasePromise):
                 self._error = PromiseError(e, self._creation_location, self._get_resolution_location())
                 self._resolved = True
                 self.error(f"Eager promise immediate execution failed: {e}")
+
+    def _is_potential_async_deadlock(self, loop) -> bool:
+        """Check if creating an async task might cause a deadlock."""
+        # Check if there are already pending tasks that might depend on this one
+        pending_tasks = [task for task in asyncio.all_tasks(loop) if not task.done()]
+
+        # If there are many pending tasks, there's a higher risk of deadlock
+        if len(pending_tasks) > 10:
+            self.debug(f"Many pending tasks ({len(pending_tasks)}), avoiding potential deadlock")
+            return True
+
+        # Check if we're in a nested async context
+        current_task = asyncio.current_task(loop)
+        if current_task and current_task in pending_tasks:
+            # We're already in an async task, creating another might cause deadlock
+            self.debug("Already in async task context, avoiding potential deadlock")
+            return True
+
+        return False
+
+    def _execute_async_immediately(self):
+        """Execute async computation immediately to avoid deadlocks."""
+        try:
+            # Use asyncio.run() to execute the coroutine immediately
+            import asyncio
+
+            self._result = asyncio.run(self._computation)
+            self._resolved = True
+            self.debug(f"Eager promise async executed immediately: {type(self._result)}")
+        except Exception as e:
+            self._error = PromiseError(e, self._creation_location, self._get_resolution_location())
+            self._resolved = True
+            self.error(f"Eager promise async immediate execution failed: {e}")
 
     async def _execute_async(self):
         """Execute the async computation."""
@@ -116,35 +154,47 @@ class EagerPromise(BasePromise):
     def _ensure_resolved(self):
         """Ensure the promise is resolved and return the result."""
         # If execution was somehow not started, start it now
-        if not self._resolved and not self._task and not self._future and not hasattr(self, "_delayed_coroutine"):
+        if not self._resolved and not self._task and not self._future:
             self.debug("Execution was not started, starting now")
             self._start_execution()
 
-        # Handle delayed coroutine execution
-        if hasattr(self, "_delayed_coroutine") and self._delayed_coroutine and not self._resolved:
-            # Execute the coroutine now
-            from dana.common.utils.misc import Misc
-
-            try:
-                Misc.safe_asyncio_run(self._execute_async())
-            except Exception as e:
-                self._error = PromiseError(e, self._creation_location, self._get_resolution_location())
-                self._resolved = True
-                raise self._error.original_error
-
-        # If we have a task, wait for it
+        # Handle async tasks with deadlock prevention
         if self._task and not self._resolved:
             try:
                 # Check if task is done first
                 if not self._task.done():
-                    from dana.common.utils.misc import Misc
+                    # Use a timeout to prevent infinite waiting
+                    import asyncio
 
-                    Misc.safe_asyncio_run(self._wait_for_task())
-            except Exception:
-                # Task might have completed in the meantime
+                    try:
+                        # Try to wait with a timeout
+                        loop = asyncio.get_running_loop()
+                        # Create a future that completes after timeout
+                        timeout_future = loop.create_future()
+                        loop.call_later(1.0, lambda: timeout_future.set_result(None))
+
+                        # Check if task completes within a reasonable time
+                        timeout_count = 0
+                        max_timeout = 100  # 100ms timeout for async tasks
+                        while not self._task.done() and timeout_count < max_timeout:
+                            threading.Event().wait(0.001)
+                            timeout_count += 1
+
+                        if not self._task.done():
+                            # Task is taking too long, potential deadlock
+                            self.debug("Async task timeout, potential deadlock detected")
+                            raise TimeoutError("Async task timed out")
+
+                    except (RuntimeError, TimeoutError):
+                        # No event loop or timeout - execute immediately
+                        self.debug("Async task deadlock detected, executing immediately")
+                        self._execute_async_immediately()
+            except Exception as e:
+                # Task might have completed with error or we had a deadlock
+                self.debug(f"Async task handling failed: {e}")
                 pass
 
-        # Wait for sync computations (if using thread pool)
+        # Wait for sync computations (if using thread pool - legacy support)
         if self._future and not self._resolved:
             try:
                 # Get result from future (this will block if not done)

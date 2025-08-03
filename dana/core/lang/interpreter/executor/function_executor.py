@@ -798,7 +798,9 @@ class FunctionExecutor(BaseExecutor):
                     )
 
                     if isinstance(func_obj, DanaFunction):
-                        result = func_obj.execute(context, *transformed_args, **evaluated_kwargs)
+                        # Use a fresh child context to prevent parameter leakage
+                        child_context = context.create_child_context()
+                        result = func_obj.execute(child_context, *transformed_args, **evaluated_kwargs)
                         self.debug(f"Dana method transformation successful (context): {method_name}({target_object}, ...) = {result}")
                         return result
                     else:
@@ -821,7 +823,9 @@ class FunctionExecutor(BaseExecutor):
                         )
 
                         if isinstance(func_obj, DanaFunction):
-                            result = func_obj.execute(context, *transformed_args, **evaluated_kwargs)
+                            # Use a fresh child context to prevent parameter leakage
+                            child_context = context.create_child_context()
+                            result = func_obj.execute(child_context, *transformed_args, **evaluated_kwargs)
                             self.debug(f"Dana method transformation successful ({scope}): {method_name}({target_object}, ...) = {result}")
                             return result
                         else:
