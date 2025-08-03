@@ -1,0 +1,33 @@
+{
+  "conversation_id": "ea8bc572-7456-4488-84ed-993dc82645f9",
+  "created_at": "2025-08-03T07:54:21.354789Z",
+  "updated_at": "2025-08-03T07:54:21.357776Z",
+  "history": [
+    {
+      "turn_id": "c7878900-1055-4334-b3e6-cf625d65f126",
+      "user_input": "Hi, my name is Alice",
+      "agent_response": "Hello Alice! Nice to meet you.",
+      "timestamp": "2025-08-03T07:54:21.355245Z",
+      "metadata": {}
+    },
+    {
+      "turn_id": "c055b597-7a11-4625-a9d8-557cde46657a",
+      "user_input": "What's the weather like?",
+      "agent_response": "I don't have access to weather data, but I can help with other questions.",
+      "timestamp": "2025-08-03T07:54:21.355631Z",
+      "metadata": {}
+    },
+    {
+      "turn_id": "6325f4c5-68b4-4ae4-8f02-20aa7cb09aeb",
+      "user_input": "Can you remember my name?",
+      "agent_response": "Yes, your name is Alice.",
+      "timestamp": "2025-08-03T07:54:21.357776Z",
+      "metadata": {}
+    }
+  ],
+  "summaries": [],
+  "metadata": {
+    "session_count": 1,
+    "total_turns": 3
+  }
+}

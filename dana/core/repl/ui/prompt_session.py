@@ -24,7 +24,7 @@ from dana.common.terminal_utils import ColorScheme, get_dana_lexer
 from dana.core.repl.repl import REPL
 
 # Constants
-HISTORY_FILE = os.path.expanduser("~/.dana_history")
+HISTORY_FILE = os.path.expanduser("~/.dana/repl_history")
 MULTILINE_PROMPT = "... "
 STANDARD_PROMPT = ">>> "
 MAX_HISTORY_SIZE = 50000  # 50KB max for auto-suggest to prevent blocking
@@ -83,6 +83,11 @@ class PromptSessionManager(Loggable):
         history = None
         auto_suggest = None
         enable_history_search = True
+
+        # Ensure the .dana directory exists
+        history_dir = os.path.dirname(HISTORY_FILE)
+        if not os.path.exists(history_dir):
+            os.makedirs(history_dir, exist_ok=True)
 
         if os.path.exists(HISTORY_FILE):
             history_size = os.path.getsize(HISTORY_FILE)
