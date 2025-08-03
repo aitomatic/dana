@@ -26,10 +26,8 @@ using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-
-def calc_fixed_asset_over_total_asset(doc: FinDoc) -> float = (
-    [get_fixed_asset, get_total_asset] | _fixed_asset_over_total_asset
-)
+# TODO: parenthesized workflow def
+def calc_fixed_asset_over_total_asset(doc: FinDoc) -> float = [get_fixed_asset, get_total_asset] | _fixed_asset_over_total_asset
 
 
 def _total_asset_over_rev(intermed_results):
@@ -40,7 +38,7 @@ as decimal value, using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-
+# TODO: parenthesized workflow def
 def calc_total_asset_over_rev(doc: FinDoc) -> float = [get_total_asset, get_rev] | _total_asset_over_rev
 
 
@@ -54,7 +52,7 @@ using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-
+# TODO: parenthesized workflow def
 def calc_capex_over_rev(doc: FinDoc) -> float = [get_capex, get_rev] | _capex_over_rev
 
 
@@ -69,7 +67,7 @@ using the sum-divided-by-sum method, and the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-
+# TODO: parenthesized workflow def
 def calc_capex_over_rev_3y_avg(doc: FinDoc) -> float = [get_capex_3y, get_rev_3y] | _capex_over_rev_3y_avg_pct
 
 
@@ -99,8 +97,8 @@ using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-
-def assess_cap_intens(doc: FinDoc) = [calc_fixed_asset_over_total_asset,
-                                      calc_total_asset_over_rev,
-                                      calc_capex_over_rev,
-                                      calc_roa_ratio] | _cap_intens_assessment
+# TODO: parenthesized workflow def
+def assess_cap_intens(doc: FinDoc) -> str = [calc_fixed_asset_over_total_asset,
+                                             calc_total_asset_over_rev,
+                                             calc_capex_over_rev,
+                                             calc_roa_ratio] | _cap_intens_assessment

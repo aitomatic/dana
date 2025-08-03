@@ -46,10 +46,8 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-
-def calc_quick_asset(doc: FinDoc) -> float = (
-    [get_cash_and_equiv, get_st_inv, get_recvable] | _quick_asset
-)
+# TODO: parenthesized workflow def
+def calc_quick_asset(doc: FinDoc) -> float = [get_cash_and_equiv, get_st_inv, get_recvable] | _quick_asset
 
 
 def _quick_asset_2y(intermed_results):
@@ -67,10 +65,8 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-
-def calc_quick_asset_2y(doc: FinDoc) -> float = (
-    [get_cash_and_equiv_2y, get_st_inv_2y, get_recvable_2y] | _quick_asset_2y
-)
+# TODO: parenthesized workflow def
+def calc_quick_asset_2y(doc: FinDoc) -> float = [get_cash_and_equiv_2y, get_st_inv_2y, get_recvable_2y] | _quick_asset_2y
 
 
 def _quick_asset_3y(intermed_results):
@@ -88,10 +84,8 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-
-def calc_quick_asset_3y(doc: FinDoc) -> float = (
-    [get_cash_and_equiv_3y, get_st_inv_3y, get_recvable_3y] | _quick_asset_3y
-)
+# TODO: parenthesized workflow def
+def calc_quick_asset_3y(doc: FinDoc) -> float = [get_cash_and_equiv_3y, get_st_inv_3y, get_recvable_3y] | _quick_asset_3y
 
 
 def _quick_ratio(intermed_results):
@@ -110,7 +104,7 @@ From there, assess liquidity health:
 - otherwise, liquidity is not very healthy
 
 State your result together with the supporting calculation(s).')
-
+# TODO: parenthesized workflow def
 def calc_quick_ratio(doc: FinDoc) -> float = [calc_quick_asset, get_curr_liab] | _quick_ratio
 
 
@@ -125,7 +119,7 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-
+# TODO: parenthesized workflow def
 def calc_net_work_cap(doc: FinDoc) -> float = [get_curr_asset, get_curr_liab] | _net_work_cap
 
 
@@ -140,7 +134,7 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-
+# TODO: parenthesized workflow def
 def calc_work_cap_ratio(doc: FinDoc) -> float = [get_curr_asset, get_curr_liab] | _work_cap_ratio
 
 
@@ -158,7 +152,7 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-
+# TODO: parenthesized workflow def
 def calc_op_cf_ratio(doc: FinDoc) -> float = [get_op_cf, get_curr_liab] | _op_cf_ratio
 
 
@@ -177,7 +171,7 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-
+# TODO: parenthesized workflow def
 def calc_fcf(doc: FinDoc) -> float = [get_op_cf, get_capex] | _fcf
 
 
@@ -195,7 +189,7 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-
+# TODO: parenthesized workflow def
 def calc_fcf_conv_ratio(doc: FinDoc) -> float = [calc_fcf, get_net_income] | _fcf_conv_ratio
 
 
@@ -213,7 +207,7 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-
+# TODO: parenthesized workflow def
 def calc_dio(doc: FinDoc) -> float = [get_inventory_2y, get_cogs] | _dio
 
 
@@ -231,7 +225,7 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-
+# TODO: parenthesized workflow def
 def calc_dso(doc: FinDoc) -> float = [get_recvable_2y, get_rev] | _dso
 
 
@@ -250,7 +244,7 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-
+# TODO: parenthesized workflow def
 def calc_dpo(doc: FinDoc) -> float = [get_payable_2y, get_cogs, get_inventory_2y] | _dpo
 
 
@@ -269,5 +263,5 @@ and using the following intermediate results:
 {intermed_results}
 ```
 State your result together with the supporting calculation(s).')
-
+# TODO: parenthesized workflow def
 def calc_ccc(doc: FinDoc) -> float = [calc_dio, calc_dso, calc_dpo] | _ccc
