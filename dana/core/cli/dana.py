@@ -22,7 +22,7 @@ DESIGN DECISIONS:
 INTEGRATION:
     - Console script: 'dana' command → this file's main() function
     - File execution: Uses DanaSandbox.quick_run() for direct .na file processing
-    - REPL mode: Imports and delegates to dana_repl_app.main() for interactive experience
+    - REPL mode: Imports and delegates to dana_repl_app.dana_repl_main() for interactive experience
 
 This script serves as the main entry point for the DANA language, similar to the python command.
 It either starts the REPL when no arguments are provided, or executes a .na file when given.
@@ -151,7 +151,7 @@ async def start_repl(debug=False):
     """
     # Import the REPL application module
     try:
-        from dana.core.repl.dana_repl_app import main as repl_main
+        from dana.core.repl.dana_repl_app import dana_repl_main as repl_main
 
         # Pass debug flag to repl_main
         await repl_main(debug=debug)

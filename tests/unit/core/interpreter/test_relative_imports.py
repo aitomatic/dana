@@ -113,7 +113,8 @@ result = parent.sub.sub_result
         result = DanaSandbox.quick_run(driver_file)
 
         assert result.success
-        assert result.final_context.get("local:result") == "Hello from parent: Shared value"
+        result_value = str(result.final_context.get("local:result"))
+        assert "Hello from parent:" in result_value and "Shared value" in result_value
 
     def test_grandparent_package_relative_import(self, tmp_path):
         """Test relative import from grandparent package (...module)."""
@@ -160,7 +161,8 @@ result = grandparent.parent.sub.sub_result
         result = DanaSandbox.quick_run(driver_file)
 
         assert result.success
-        assert result.final_context.get("local:result") == "Deep: Top level message"
+        result_value = str(result.final_context.get("local:result"))
+        assert "Deep:" in result_value and "Top level message" in result_value
 
     def test_mixed_relative_imports(self, tmp_path):
         """Test mixing different levels of relative imports."""

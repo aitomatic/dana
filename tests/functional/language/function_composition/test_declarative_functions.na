@@ -1,6 +1,8 @@
 # Declarative Function Definition Tests
 # Tests the new syntax: def func(...) = f1 | f2 | f3
 
+log_level("INFO")
+
 log("🧪 Testing Declarative Function Definitions")
 
 # ===== TEST 1: Basic Declarative Function =====
@@ -92,7 +94,10 @@ def validate_data(data: list) -> list:
     return data
 
 def double_values(data: list) -> list:
-    return data
+    doubled = []
+    for item in data:
+        doubled.append(item * 2)
+    return doubled
 
 def sum_values(data: list) -> int:
     return sum(data)
@@ -105,7 +110,7 @@ def data_processing_pipeline(data: list) -> str = validate_data | double_values 
 
 # Test execution
 result = data_processing_pipeline([1, 2, 3])
-expected = "Total: 6"  # [1,2,3] -> [1,2,3] -> 6
+expected = "Total: 12"  # [1,2,3] -> [2,4,6] -> 12
 assert result == expected, f"Expected '{expected}', got '{result}'"
 log(f"✅ Data processing pipeline: {result}")
 

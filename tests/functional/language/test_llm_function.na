@@ -1,0 +1,111 @@
+# Test the new llm() function that returns promises for concurrency demonstration
+
+# Test basic llm() function call
+def test_basic_llm_call() -> None:
+    # Set mock mode for testing
+    setenv("DANA_MOCK_LLM", "true")
+    
+    # Call llm() function - should return a promise
+    result = llm("What is 2+2?")
+    
+    # The result should be a promise that resolves to a string
+    print("Result type:", type(result))
+    print("Result:", result)
+    
+    # Verify it's a string (promise should be transparent)
+    assert(type(result) == "str")
+    assert(len(result) > 0)
+
+# Test llm() function with options
+def test_llm_with_options() -> None:
+    # Set mock mode for testing
+    setenv("DANA_MOCK_LLM", "true")
+    
+    # Call llm() with custom options
+    result = llm("Explain quantum physics", {
+        "temperature": 0.3,
+        "max_tokens": 100,
+        "system_message": "You are a helpful physics tutor."
+    })
+    
+    print("Result with options:", result)
+    assert(type(result) == "str")
+    assert(len(result) > 0)
+
+# Test concurrency demonstration with multiple llm() calls
+def test_concurrency_demo() -> None:
+    # Set mock mode for testing
+    setenv("DANA_MOCK_LLM", "true")
+    
+    print("Starting concurrent LLM calls...")
+    
+    # Make multiple llm() calls - these should be promises that can run concurrently
+    promise1 = llm("What is the capital of France?")
+    promise2 = llm("What is the capital of Japan?")
+    promise3 = llm("What is the capital of Brazil?")
+    
+    print("All promises created, now accessing them...")
+    
+    # Access the promises - this should trigger concurrent resolution
+    result1 = promise1
+    result2 = promise2
+    result3 = promise3
+    
+    print("Results:")
+    print("France:", result1)
+    print("Japan:", result2)
+    print("Brazil:", result3)
+    
+    # Verify all results are strings
+    assert(type(result1) == "str")
+    assert(type(result2) == "str")
+    assert(type(result3) == "str")
+    assert(len(result1) > 0)
+    assert(len(result2) > 0)
+    assert(len(result3) > 0)
+
+# Test comparison with reason() function
+def test_llm_vs_reason() -> None:
+    # Set mock mode for testing
+    setenv("DANA_MOCK_LLM", "true")
+    
+    print("Testing llm() vs reason()...")
+    
+    # reason() should be synchronous
+    start_time = time()
+    reason_result = reason("What is 1+1?")
+    reason_time = time() - start_time
+    
+    # llm() should return a promise immediately
+    start_time = time()
+    llm_promise = llm("What is 1+1?")
+    llm_promise_time = time() - start_time
+    
+    # Access the promise
+    start_time = time()
+    llm_result = llm_promise
+    llm_resolve_time = time() - start_time
+    
+    print("reason() time:", reason_time)
+    print("llm() promise creation time:", llm_promise_time)
+    print("llm() promise resolution time:", llm_resolve_time)
+    
+    # The promise creation should be very fast
+    assert(llm_promise_time < 0.1)
+    
+    # Results should be similar
+    assert(type(reason_result) == "str")
+    assert(type(llm_result) == "str")
+    assert(len(reason_result) > 0)
+    assert(len(llm_result) > 0)
+
+# Run all tests
+def main() -> None:
+    print("Testing llm() function...")
+    
+    test_basic_llm_call()
+    test_llm_with_options()
+    test_concurrency_demo()
+    test_llm_vs_reason()
+    
+    print("All llm() function tests passed!") 
