@@ -13,7 +13,6 @@ from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
 
-
 # Import the real PythonicFunctionFactory
 from dana.libs.stdlib.pythonic.function_factory import PythonicFunctionFactory, UnsupportedReason
 
@@ -239,7 +238,9 @@ class TestUnsupportedFunctionRegistry:
     def test_unsupported_functions_registered(self):
         """Test that unsupported functions are registered with error handlers."""
         registry = FunctionRegistry()
-        # register_pythonic_builtins(registry) # This line is removed as per the new_code
+        from dana.libs.stdlib.pythonic.function_factory import register_pythonic_builtins
+
+        register_pythonic_builtins(registry)
 
         # Test that unsupported functions are "registered" (with error handlers)
         assert registry.has("eval")
@@ -249,7 +250,9 @@ class TestUnsupportedFunctionRegistry:
     def test_calling_unsupported_through_registry(self):
         """Test calling unsupported functions through the registry."""
         registry = FunctionRegistry()
-        # register_pythonic_builtins(registry) # This line is removed as per the new_code
+        from dana.libs.stdlib.pythonic.function_factory import register_pythonic_builtins
+
+        register_pythonic_builtins(registry)
         context = SandboxContext()
 
         # Test calling eval through registry
@@ -281,7 +284,9 @@ class TestUnsupportedFunctionRegistry:
         registry.register("eval", PythonFunction(safe_eval, trusted_for_context=True), func_type=FunctionType.PYTHON, overwrite=True)
 
         # Now register built-ins (should overwrite the custom eval with error handler)
-        # register_pythonic_builtins(registry) # This line is removed as per the new_code
+        from dana.libs.stdlib.pythonic.function_factory import register_pythonic_builtins
+
+        register_pythonic_builtins(registry)
 
         # The built-in error handler should now be active, not the custom function
         context = SandboxContext()

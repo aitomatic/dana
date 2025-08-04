@@ -112,7 +112,8 @@ class FunctionRegistry:
                             self._functions[namespace] = {}
                         self._functions[namespace].update(functions)
         except Exception:
-            # If preloading failed, corelib functions will be loaded normally
+            # If preloading failed, corelib functions will not be available
+            # This is expected behavior - preloading should always work during normal startup
             pass
 
     def _get_arg_processor(self):

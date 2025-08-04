@@ -129,7 +129,9 @@ def test_register_pythonic_builtins():
     registry = FunctionRegistry()
 
     # Register the built-ins
-    # register_pythonic_builtins(registry) # This line is removed as per the new_code
+    from dana.libs.stdlib.pythonic.function_factory import register_pythonic_builtins
+
+    register_pythonic_builtins(registry)
 
     # Test that functions are registered
     assert registry.has("len")
@@ -159,7 +161,9 @@ def test_function_lookup_order():
     registry.register("len", PythonFunction(custom_len, trusted_for_context=True), func_type=FunctionType.PYTHON, overwrite=True)
 
     # Now register built-ins (should overwrite custom function for safety)
-    # register_pythonic_builtins(registry) # This line is removed as per the new_code
+    from dana.libs.stdlib.pythonic.function_factory import register_pythonic_builtins
+
+    register_pythonic_builtins(registry)
 
     # The built-in function should now take precedence
     context = SandboxContext()

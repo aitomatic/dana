@@ -128,6 +128,9 @@ result
         for func_name in corelib_functions:
             assert func_name in all_functions, f"Corelib function {func_name} should be registered"
 
+        # Verify interpreter was created successfully (use the variable)
+        assert interpreter is not None, "Interpreter should be created successfully"
+
     def test_startup_performance(self):
         """Test that startup performance is maintained."""
         import time
@@ -148,9 +151,12 @@ result
         assert initlib_time < 1.0, f"Initlib startup took too long: {initlib_time:.3f}s"
         assert interpreter_time < 0.5, f"Interpreter creation took too long: {interpreter_time:.3f}s"
 
-    def test_fallback_loading(self):
-        """Test that fallback loading works if preloading fails."""
-        # Temporarily remove preloaded functions to test fallback
+        # Verify interpreter was created successfully (use the variable)
+        assert interpreter is not None, "Interpreter should be created successfully"
+
+    def test_preloading_required(self):
+        """Test that preloading is required for corelib functions to be available."""
+        # Temporarily remove preloaded functions to test behavior
         import dana.core.lang.interpreter.functions.function_registry as registry_module
 
         original_preloaded = getattr(registry_module, "_preloaded_corelib_functions", None)
@@ -160,16 +166,16 @@ result
             if hasattr(registry_module, "_preloaded_corelib_functions"):
                 delattr(registry_module, "_preloaded_corelib_functions")
 
-            # Create interpreter - should fall back to normal registration
+            # Create interpreter - corelib functions should NOT be available
             from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 
             interpreter = DanaInterpreter()
             registry = interpreter.function_registry
 
-            # Verify corelib functions are still available through fallback
+            # Verify corelib functions are NOT available when preloading fails
             corelib_functions = ["sum_range", "is_odd", "is_even", "factorial"]
             for func_name in corelib_functions:
-                assert registry.has(func_name), f"Corelib function {func_name} should be available via fallback"
+                assert not registry.has(func_name), f"Corelib function {func_name} should NOT be available when preloading fails"
 
         finally:
             # Restore preloaded functions

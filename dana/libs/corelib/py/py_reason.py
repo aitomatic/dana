@@ -14,7 +14,6 @@ from dana.common.exceptions import SandboxError
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.logging import DANA_LOGGER
-from dana.core.concurrency import EagerPromise
 from dana.core.lang.sandbox_context import SandboxContext
 
 # ============================================================================
@@ -28,7 +27,7 @@ def old_reason_function(
     options: dict[str, Any] | None = None,
     use_mock: bool | None = None,
 ) -> Any:
-    """Execute the original reason function to make an async LLM call and return a Promise.
+    """Execute the original reason function to make a synchronous LLM call.
 
     This is the legacy implementation that provides basic LLM reasoning without
     POET enhancements. It's kept for backward compatibility and as a fallback.
@@ -45,7 +44,7 @@ def old_reason_function(
                   If None, defaults to checking DANA_MOCK_LLM environment variable.
 
     Returns:
-        A Promise that will resolve to the LLM's response to the prompt
+        The LLM's response to the prompt
 
     Raises:
         SandboxError: If the function execution fails or parameters are invalid
@@ -89,84 +88,77 @@ def old_reason_function(
     except Exception as e:
         logger.debug(f"Could not get available resources: {e}")
 
-    # Create an async function that will be wrapped in a Promise
-    async def _async_llm_call():
-        """Async function that performs the actual LLM call."""
-        try:
-            # Log what's happening
-            logger.debug(f"Starting async LLM call with prompt: {prompt[:500]}{'...' if len(prompt) > 500 else ''}")
+    try:
+        # Log what's happening
+        logger.debug(f"Starting synchronous LLM call with prompt: {prompt[:500]}{'...' if len(prompt) > 500 else ''}")
 
-            # Prepare system message
-            system_message = options.get("system_message", "You are a helpful AI assistant. Respond concisely and accurately.")
+        # Prepare system message
+        system_message = options.get("system_message", "You are a helpful AI assistant. Respond concisely and accurately.")
 
-            # Set up the messages
-            messages = [{"role": "system", "content": system_message}, {"role": "user", "content": prompt}]
+        # Set up the messages
+        messages = [{"role": "system", "content": system_message}, {"role": "user", "content": prompt}]
 
-            # Prepare LLM parameters and execute the query
-            request_params = {
-                "messages": messages,
-                "temperature": options.get("temperature", 0.7),
-                "max_tokens": options.get("max_tokens", None),
-            }
+        # Prepare LLM parameters and execute the query
+        request_params = {
+            "messages": messages,
+            "temperature": options.get("temperature", 0.7),
+            "max_tokens": options.get("max_tokens", None),
+        }
 
-            # Add resources if available
-            if resources:
-                request_params["available_resources"] = resources
+        # Add resources if available
+        if resources:
+            request_params["available_resources"] = resources
 
-            request = BaseRequest(arguments=request_params)
+        request = BaseRequest(arguments=request_params)
 
-            # Make the async call directly
-            response = await llm_resource.query(request)
+        # Make the synchronous call
+        response = llm_resource.query_sync(request)
 
-            if not response.success:
-                raise SandboxError(f"LLM call failed: {response.error}")
+        if not response.success:
+            raise SandboxError(f"LLM call failed: {response.error}")
 
-            # Process the response
-            result = response.content
-            logger.debug(f"Raw LLM response type: {type(result)}")
+        # Process the response
+        result = response.content
+        logger.debug(f"Raw LLM response type: {type(result)}")
 
-            # Extract just the text content from the response
-            if isinstance(result, dict):
-                logger.debug(f"Raw response keys: {result.keys()}")
-                # Handle different LLM response structures
-                if "choices" in result and result["choices"] and isinstance(result["choices"], list):
-                    # OpenAI/Anthropic style response
-                    first_choice = result["choices"][0]
-                    if hasattr(first_choice, "message") and hasattr(first_choice.message, "content"):
-                        # Handle object-style responses
-                        result = first_choice.message.content
-                    elif isinstance(first_choice, dict) and "message" in first_choice:
-                        # Handle dict-style responses
-                        message = first_choice["message"]
-                        if hasattr(message, "content"):
-                            result = message.content
-                        elif isinstance(message, dict) and "content" in message:
-                            result = message["content"]
-                elif "response" in result:
-                    # Some providers use "response" field
-                    result = result["response"]
-                elif "content" in result:
-                    # Some providers use "content" field directly
-                    result = result["content"]
+        # Extract just the text content from the response
+        if isinstance(result, dict):
+            logger.debug(f"Raw response keys: {result.keys()}")
+            # Handle different LLM response structures
+            if "choices" in result and result["choices"] and isinstance(result["choices"], list):
+                # OpenAI/Anthropic style response
+                first_choice = result["choices"][0]
+                if hasattr(first_choice, "message") and hasattr(first_choice.message, "content"):
+                    # Handle object-style responses
+                    result = first_choice.message.content
+                elif isinstance(first_choice, dict) and "message" in first_choice:
+                    # Handle dict-style responses
+                    message = first_choice["message"]
+                    if hasattr(message, "content"):
+                        result = message.content
+                    elif isinstance(message, dict) and "content" in message:
+                        result = message["content"]
+            elif "response" in result:
+                # Some providers use "response" field
+                result = result["response"]
+            elif "content" in result:
+                # Some providers use "content" field directly
+                result = result["content"]
 
-            # Handle format conversion if needed
-            format_type = options.get("format", "text")
-            if format_type == "json" and isinstance(result, str):
-                try:
-                    # Try to parse the result as JSON
-                    result = json.loads(result)
-                except json.JSONDecodeError:
-                    logger.warning(f"Warning: Could not parse LLM response as JSON: {result[:100]}")
+        # Handle format conversion if needed
+        format_type = options.get("format", "text")
+        if format_type == "json" and isinstance(result, str):
+            try:
+                # Try to parse the result as JSON
+                result = json.loads(result)
+            except json.JSONDecodeError:
+                logger.warning(f"Warning: Could not parse LLM response as JSON: {result[:100]}")
 
-            return result
+        return result
 
-        except Exception as e:
-            logger.error(f"Error during async LLM call: {str(e)}")
-            raise SandboxError(f"Error during async LLM call: {str(e)}") from e
-
-    # Create and return a Promise that wraps the async function
-    logger.debug("Creating Promise for async LLM call")
-    return EagerPromise.create(_async_llm_call(), context, timeout_seconds=60.0)
+    except Exception as e:
+        logger.error(f"Error during synchronous LLM call: {str(e)}")
+        raise SandboxError(f"Error during synchronous LLM call: {str(e)}") from e
 
 
 # ============================================================================
