@@ -29,6 +29,19 @@ from dana.core.lang.interpreter.functions.function_registry import FunctionRegis
 from dana.core.lang.sandbox_context import SandboxContext
 
 
+def _auto_resolve_promises(items):
+    """Auto-resolve any promises in a collection of items."""
+    from dana.core.concurrency import BasePromise
+
+    resolved_items = []
+    for item in items:
+        if isinstance(item, BasePromise):
+            resolved_items.append(item._ensure_resolved())
+        else:
+            resolved_items.append(item)
+    return resolved_items
+
+
 class CollectionExecutor(BaseExecutor):
     """Specialized executor for collection literals.
 
@@ -71,7 +84,10 @@ class CollectionExecutor(BaseExecutor):
             The tuple value
         """
         # Process each item in the tuple, ensuring AST nodes are evaluated
-        return tuple(self.parent.execute(item, context) for item in node.items)
+        items = [self.parent.execute(item, context) for item in node.items]
+        # Auto-resolve any promises
+        resolved_items = _auto_resolve_promises(items)
+        return tuple(resolved_items)
 
     def execute_dict_literal(self, node: DictLiteral, context: SandboxContext) -> dict:
         """Execute a dict literal.
@@ -84,7 +100,15 @@ class CollectionExecutor(BaseExecutor):
             The dict value
         """
         # Process each key-value pair, ensuring AST nodes are evaluated for both key and value
-        return {self.parent.execute(key, context): self.parent.execute(value, context) for key, value in node.items}
+        result = {}
+        for key, value in node.items:
+            key_result = self.parent.execute(key, context)
+            value_result = self.parent.execute(value, context)
+            # Auto-resolve any promises
+            resolved_key = key_result._ensure_resolved() if hasattr(key_result, "_ensure_resolved") else key_result
+            resolved_value = value_result._ensure_resolved() if hasattr(value_result, "_ensure_resolved") else value_result
+            result[resolved_key] = resolved_value
+        return result
 
     def execute_set_literal(self, node: SetLiteral, context: SandboxContext) -> set:
         """Execute a set literal.
@@ -97,7 +121,10 @@ class CollectionExecutor(BaseExecutor):
             The set value
         """
         # Process each item in the set, ensuring AST nodes are evaluated
-        return {self.parent.execute(item, context) for item in node.items}
+        items = [self.parent.execute(item, context) for item in node.items]
+        # Auto-resolve any promises
+        resolved_items = _auto_resolve_promises(items)
+        return set(resolved_items)
 
     def execute_fstring_expression(self, node: FStringExpression, context: SandboxContext) -> str:
         """Execute an f-string expression.
@@ -151,4 +178,7 @@ class CollectionExecutor(BaseExecutor):
             The list value
         """
         # Process each item in the list, ensuring AST nodes are evaluated
-        return [self.parent.execute(item, context) for item in node.items]
+        items = [self.parent.execute(item, context) for item in node.items]
+        # Auto-resolve any promises
+        resolved_items = _auto_resolve_promises(items)
+        return resolved_items

@@ -3,6 +3,8 @@ Prompt session management for Dana REPL.
 
 This module provides the PromptSessionManager class that sets up
 and manages the prompt session with history, completion, and key bindings.
+
+FIXED VERSION: Prevents blocking when background async tasks are running.
 """
 
 import os
@@ -22,9 +24,10 @@ from dana.common.terminal_utils import ColorScheme, get_dana_lexer
 from dana.core.repl.repl import REPL
 
 # Constants
-HISTORY_FILE = os.path.expanduser("~/.dana_history")
+HISTORY_FILE = os.path.expanduser("~/.dana/repl_history")
 MULTILINE_PROMPT = "... "
 STANDARD_PROMPT = ">>> "
+MAX_HISTORY_SIZE = 50000  # 50KB max for auto-suggest to prevent blocking
 
 
 class PromptSessionManager(Loggable):
@@ -58,6 +61,20 @@ class PromptSessionManager(Loggable):
             b = event.app.current_buffer
             b.start_history_lines_completion()
 
+        # Add ESC key binding for cancellation during execution
+        @kb.add(Keys.Escape)
+        def _(event):
+            """Handle ESC key for operation cancellation."""
+            # Check if we're currently executing a program
+            if hasattr(self.repl, "_cancellation_requested"):
+                # Signal cancellation
+                self.repl.request_cancellation()
+                event.app.output.write("\n⏹️  Cancelling operation...\n")
+                event.app.output.flush()
+            else:
+                # Normal ESC behavior (clear current input)
+                event.app.current_buffer.reset()
+
         keywords = self._get_completion_keywords()
 
         # Define syntax highlighting style
@@ -76,20 +93,51 @@ class PromptSessionManager(Loggable):
             }
         )
 
+        # FIXED: Smart history and auto-suggest configuration to prevent blocking
+        history = None
+        auto_suggest = None
+        enable_history_search = True
+
+        # Ensure the .dana directory exists
+        history_dir = os.path.dirname(HISTORY_FILE)
+        if not os.path.exists(history_dir):
+            os.makedirs(history_dir, exist_ok=True)
+
+        if os.path.exists(HISTORY_FILE):
+            history_size = os.path.getsize(HISTORY_FILE)
+            history = FileHistory(HISTORY_FILE)
+
+            # Only enable auto-suggest and history search for reasonably sized history files
+            if history_size <= MAX_HISTORY_SIZE:
+                auto_suggest = AutoSuggestFromHistory()
+                enable_history_search = True
+                self.debug(f"Auto-suggest and history search enabled for history file ({history_size} bytes)")
+            else:
+                auto_suggest = None
+                enable_history_search = False  # AGGRESSIVE FIX: Disable history search for large files
+                self.info(f"Auto-suggest and history search disabled: history file too large ({history_size} bytes)")
+        else:
+            history = FileHistory(HISTORY_FILE)
+            enable_history_search = True
+
         return PromptSession(
-            history=FileHistory(HISTORY_FILE),
-            auto_suggest=AutoSuggestFromHistory(),
+            history=history,
+            auto_suggest=auto_suggest,  # Conditionally enabled based on history size
             completer=WordCompleter(keywords, ignore_case=True),
             key_bindings=kb,
             multiline=False,
             style=style,
             lexer=self.dana_lexer,  # Use our pygments lexer for syntax highlighting
-            enable_history_search=True,
-            complete_while_typing=True,
-            complete_in_thread=True,
+            enable_history_search=enable_history_search,  # AGGRESSIVE FIX: Conditionally enabled
+            # CRITICAL FIX: Disable features that cause blocking with background async tasks
+            complete_while_typing=False,  # FIXED: Don't trigger completion on every keystroke
+            complete_in_thread=False,  # FIXED: Don't use threads to avoid asyncio conflicts
+            # AGGRESSIVE FIX: Disable additional features that could cause blocking
+            swap_light_and_dark_colors=False,  # Disable color swapping
             mouse_support=False,  # Disable mouse support to prevent terminal issues
             enable_system_prompt=True,  # Enable system prompt for better terminal compatibility
             enable_suspend=True,  # Allow suspending the REPL with Ctrl+Z
+            refresh_interval=0.1,  # Faster refresh to reduce perceived lag
         )
 
     def _get_completion_keywords(self) -> list[str]:
@@ -132,14 +180,14 @@ class PromptSessionManager(Loggable):
         # Dynamically add core function names to keywords
         try:
             registry = self.repl.interpreter.function_registry
-            core_functions = registry.list("local")
+            core_functions = registry.list("system")
             if core_functions:
                 keywords.extend(core_functions)
                 self.debug(f"Added {len(core_functions)} core functions to tab completion: {core_functions}")
         except Exception as e:
             self.debug(f"Could not add core functions to tab completion: {e}")
             # Fallback: add known common functions
-            keywords.extend(["print", "log", "log_level", "reason"])
+            keywords.extend(["print", "log", "log_level", "reason", "llm"])
 
         return keywords
 

@@ -67,6 +67,9 @@ class AssignmentHandler(Loggable):
                 raise SandboxError("Parent executor not properly initialized")
             value = self.parent_executor.parent.execute(node.value, context)
 
+            # Note: We don't resolve Promise here to maintain lazy evaluation
+            # Promises will be resolved when accessed, not when assigned
+
             # Apply type coercion if needed
             if target_type is not None:
                 value = self._apply_type_coercion(value, target_type, node.target)

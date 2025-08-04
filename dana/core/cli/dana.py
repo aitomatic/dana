@@ -22,7 +22,7 @@ DESIGN DECISIONS:
 INTEGRATION:
     - Console script: 'dana' command → this file's main() function
     - File execution: Uses DanaSandbox.quick_run() for direct .na file processing
-    - REPL mode: Imports and delegates to dana_repl_app.main() for interactive experience
+    - REPL mode: Imports and delegates to dana_repl_app.dana_repl_main() for interactive experience
 
 This script serves as the main entry point for the DANA language, similar to the python command.
 It either starts the REPL when no arguments are provided, or executes a .na file when given.
@@ -50,7 +50,6 @@ import asyncio
 import logging
 import os
 import sys
-from pathlib import Path
 
 import uvicorn
 
@@ -66,7 +65,6 @@ from dana.common.terminal_utils import ColorScheme, print_header, supports_color
 from dana.common.utils.logging import DANA_LOGGER
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.core.lang.log_manager import LogLevel, SandboxLogger
-from dana.util.env import load_dana_env
 
 # Initialize color scheme
 colors = ColorScheme(supports_color())
@@ -96,7 +94,7 @@ def show_help():
 def execute_file(file_path, debug=False):
     """Execute a DANA file using the new DanaSandbox API."""
     # if developer puts an .env file in the script's directory, load it
-    load_dana_env(dot_env_file_path=Path(file_path).parent / ".env")
+    # Note: Environment loading is now handled automatically by initlib startup
 
     print_header(f"DANA Execution: {os.path.basename(file_path)}", colors=colors)
 
@@ -151,7 +149,7 @@ async def start_repl(debug=False):
     """
     # Import the REPL application module
     try:
-        from dana.core.repl.dana_repl_app import main as repl_main
+        from dana.core.repl.dana_repl_app import dana_repl_main as repl_main
 
         # Pass debug flag to repl_main
         await repl_main(debug=debug)
@@ -212,7 +210,7 @@ def handle_start_command(args):
 def main():
     """Main entry point for the DANA CLI."""
     # if developer puts an .env file in the current working directory, load it
-    load_dana_env(dot_env_file_path=Path.cwd() / ".env")
+    # Note: Environment loading is now handled automatically by initlib startup
 
     try:
         parser = argparse.ArgumentParser(description="DANA Command Line Interface", add_help=False)

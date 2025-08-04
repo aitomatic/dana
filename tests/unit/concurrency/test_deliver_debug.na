@@ -1,0 +1,34 @@
+# Test to debug deliver behavior with dependencies
+
+def create_promise(name):
+    # Create a simple promise that returns a string
+    return f"result_{name}"
+
+def main():
+    print("=== Starting test ===")
+    
+    # Create promises
+    print("Creating promise A")
+    a = create_promise("A")
+    
+    print("Creating promise B") 
+    b = create_promise("B")
+    
+    print("Creating promise C")
+    c = create_promise("C")
+    
+    print("Creating unrelated promise")
+    unrelated = create_promise("UNRELATED")
+    
+    print("Creating dependent expression")
+    dependent = a + "_" + b + "_" + c
+    
+    print("=== About to deliver ===")
+    # This should show us the order of resolution
+    deliver dependent
+    
+    print("=== Deliver completed ===")
+
+# Run the test
+result = main()
+print(f"Final result: {result}") 

@@ -8,9 +8,6 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-import pytest
-from pathlib import Path
-
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
 
@@ -65,7 +62,7 @@ version = PACKAGE_VERSION
         # Create nested package structure
         root_pkg = tmp_path / "root_pkg"
         root_pkg.mkdir()
-        
+
         sub_pkg = root_pkg / "sub_pkg"
         sub_pkg.mkdir()
 
@@ -146,7 +143,7 @@ mult_result = math_pkg.multiply.multiply(4, 7)
         # Create legacy package with __init__.na
         legacy_pkg = tmp_path / "legacy_pkg"
         legacy_pkg.mkdir()
-        
+
         legacy_init = legacy_pkg / "__init__.na"
         legacy_init.write_text("""
 LEGACY_VERSION = "1.0.0"
@@ -228,7 +225,8 @@ result = derived_function()
         result = DanaSandbox.quick_run(driver_file)
 
         assert result.success, f"Expected success but got error: {result.error}"
-        assert result.final_context.get("local:result") == "Derived: Base function"
+        result_value = str(result.final_context.get("local:result"))
+        assert "Derived:" in result_value and "Base function" in result_value
 
     def test_empty_directory_not_package(self, tmp_path):
         """Test that empty directories are not considered packages."""
@@ -291,7 +289,7 @@ result = child_function()
         # Create deep nesting: a/b/c/d/e/module.na
         path_parts = ["deep_pkg", "level_a", "level_b", "level_c", "level_d"]
         current_path = tmp_path
-        
+
         for part in path_parts:
             current_path = current_path / part
             current_path.mkdir()

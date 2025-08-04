@@ -90,6 +90,32 @@ class FunctionRegistry:
         self._functions: dict[str, dict[str, tuple[Callable, FunctionType, FunctionMetadata]]] = {}
         self._arg_processor = None  # Will be initialized on first use
 
+        # Load preloaded corelib functions if available
+        self._load_preloaded_corelib_functions()
+
+    def _load_preloaded_corelib_functions(self):
+        """Load preloaded corelib functions from initlib startup.
+
+        This method loads core library functions that were preloaded during
+        Dana startup to avoid the need for deferred registration.
+        """
+        try:
+            # Check if preloaded functions are available in the module
+            import dana.core.lang.interpreter.functions.function_registry as registry_module
+
+            if hasattr(registry_module, "_preloaded_corelib_functions"):
+                preloaded_functions = registry_module._preloaded_corelib_functions
+                if preloaded_functions:
+                    # Merge preloaded functions into this registry
+                    for namespace, functions in preloaded_functions.items():
+                        if namespace not in self._functions:
+                            self._functions[namespace] = {}
+                        self._functions[namespace].update(functions)
+        except Exception:
+            # If preloading failed, corelib functions will not be available
+            # This is expected behavior - preloading should always work during normal startup
+            pass
+
     def _get_arg_processor(self):
         """
         Get or create the ArgumentProcessor.
@@ -324,7 +350,7 @@ class FunctionRegistry:
 
         Args:
             name: Function name to resolve
-            namespace: Optional namespace
+            namespace: Optional namespace. If None, searches all namespaces.
 
         Returns:
             Tuple of (function, type, metadata)
@@ -332,6 +358,10 @@ class FunctionRegistry:
         Raises:
             FunctionRegistryError: If function not found
         """
+        # If namespace is explicitly None, search across all namespaces
+        if namespace is None:
+            return self._resolve_across_namespaces(name)
+
         ns, name = self._remap_namespace_and_name(namespace, name)
         if ns in self._functions and name in self._functions[ns]:
             return self._functions[ns][name]
@@ -348,6 +378,40 @@ class FunctionRegistry:
             call_stack=call_stack,
         )
 
+    def _resolve_across_namespaces(self, name: str) -> tuple[Callable, FunctionType, FunctionMetadata]:
+        """Search for a function across all namespaces in priority order.
+
+        Priority order: system > public > private > local
+
+        Args:
+            name: Function name to resolve
+
+        Returns:
+            Tuple of (function, type, metadata)
+
+        Raises:
+            FunctionRegistryError: If function not found in any namespace
+        """
+        # Search in priority order: system first (built-ins), then others
+        search_order = ["system", "public", "private", "local"]
+
+        for namespace in search_order:
+            if namespace in self._functions and name in self._functions[namespace]:
+                return self._functions[namespace][name]
+
+        # Function not found in any namespace
+        calling_function = self._get_calling_function_context()
+        call_stack = self._get_call_stack()
+
+        raise FunctionRegistryError(
+            f"Function '{name}' not found in any namespace. Searched: {search_order}",
+            function_name=name,
+            namespace=None,
+            operation="resolve",
+            calling_function=calling_function,
+            call_stack=call_stack,
+        )
+
     def call(
         self,
         name: str,
@@ -356,25 +420,11 @@ class FunctionRegistry:
         *args: Any,
         **kwargs: Any,
     ) -> Any:
-        """Call a function with arguments and optional context.
+        def _resolve_if_promise(value):
+            # Don't automatically resolve Promises - let them be resolved when accessed
+            # This preserves the Promise system's lazy evaluation behavior
+            return value
 
-        This method resolves the function by name and namespace,
-        then calls it with the provided arguments and context.
-
-        Args:
-            name: Function name
-            context: Optional context to use for execution
-            namespace: Optional namespace
-            *args: Positional arguments
-            **kwargs: Keyword arguments
-
-        Returns:
-            The function result
-
-        Raises:
-            KeyError: If function not found
-            SandboxError: If function call fails
-        """
         # Resolve the function
         func, func_type, metadata = self.resolve(name, namespace)
 
@@ -443,6 +493,13 @@ class FunctionRegistry:
                 if "use_mock" in func_kwargs:
                     use_mock = func_kwargs.pop("use_mock")
 
+                # Handle context keyword argument specially
+                if "context" in func_kwargs:
+                    # The context keyword argument should be merged into options
+                    context_data = func_kwargs.pop("context")
+                    if isinstance(context_data, dict):
+                        options["context"] = context_data
+
                 # All remaining kwargs go into options
                 if func_kwargs:
                     options.update(func_kwargs)
@@ -450,26 +507,26 @@ class FunctionRegistry:
                 # Security check for reason function: only trusted functions can receive context
                 if not func._is_trusted_for_context():
                     # Call without context - this will likely fail but maintains security
-                    return wrapped_func(prompt)
+                    return _resolve_if_promise(wrapped_func(prompt))
 
                 # Call with correct signature: reason_function(context, prompt, options, use_mock)
                 if options and use_mock is not None:
-                    return wrapped_func(context, prompt, options, use_mock)
+                    return _resolve_if_promise(wrapped_func(context, prompt, options, use_mock))
                 elif options:
-                    return wrapped_func(context, prompt, options)
+                    return _resolve_if_promise(wrapped_func(context, prompt, options))
                 elif use_mock is not None:
-                    return wrapped_func(context, prompt, None, use_mock)
+                    return _resolve_if_promise(wrapped_func(context, prompt, None, use_mock))
                 else:
-                    return wrapped_func(context, prompt)
+                    return _resolve_if_promise(wrapped_func(context, prompt))
             # Special case for the process function
             elif func_name == "process" and len(positional_args) == 1:
                 # Security check: only trusted functions can receive context
                 if not func._is_trusted_for_context():
                     # Call without context
-                    return wrapped_func(positional_args[0])
+                    return _resolve_if_promise(wrapped_func(positional_args[0]))
                 else:
                     # Pass the single argument followed by context
-                    return wrapped_func(positional_args[0], context)
+                    return _resolve_if_promise(wrapped_func(positional_args[0], context))
 
             # Call with context as first argument if expected, with error handling
             try:
@@ -477,13 +534,13 @@ class FunctionRegistry:
                     # Security check: only trusted functions can receive context
                     if not func._is_trusted_for_context():
                         # Function wants context but is not trusted - call without context
-                        return wrapped_func(*positional_args, **func_kwargs)
+                        return _resolve_if_promise(wrapped_func(*positional_args, **func_kwargs))
                     else:
                         # First parameter is context and function is trusted
-                        return wrapped_func(context, *positional_args, **func_kwargs)
+                        return _resolve_if_promise(wrapped_func(context, *positional_args, **func_kwargs))
                 else:
                     # No context parameter
-                    return wrapped_func(*positional_args, **func_kwargs)
+                    return _resolve_if_promise(wrapped_func(*positional_args, **func_kwargs))
             except Exception as e:
                 # Standardize error handling for direct function calls
                 import traceback
@@ -499,7 +556,7 @@ class FunctionRegistry:
             # Direct call to the PythonFunction's execute method
             if context is None:
                 context = SandboxContext()  # Create a default context if none provided
-            return func.execute(context, *positional_args, **func_kwargs)
+            return _resolve_if_promise(func.execute(context, *positional_args, **func_kwargs))
         else:
             # Check if it's a DanaFunction and call via execute method
             from dana.core.lang.interpreter.functions.dana_function import DanaFunction
@@ -508,10 +565,10 @@ class FunctionRegistry:
                 # DanaFunction objects have an execute method that needs context
                 if context is None:
                     context = SandboxContext()  # Create a default context if none provided
-                return func.execute(context, *positional_args, **func_kwargs)
+                return _resolve_if_promise(func.execute(context, *positional_args, **func_kwargs))
             elif callable(func):
                 # Fallback - call the function directly if it's a regular callable
-                return func(context, *positional_args, **func_kwargs)
+                return _resolve_if_promise(func(context, *positional_args, **func_kwargs))
             else:
                 # Not a callable
                 raise SandboxError(f"Function '{name}' is not callable")
@@ -520,26 +577,55 @@ class FunctionRegistry:
         """List all functions in a namespace.
 
         Args:
-            namespace: Optional namespace to list from
+            namespace: Optional namespace to list from. If None, lists from all namespaces.
 
         Returns:
             List of function names
         """
-        ns, _ = self._remap_namespace_and_name(namespace, "")
-        return list(self._functions.get(ns, {}).keys())
+        if namespace is None:
+            # Return functions from all namespaces
+            all_functions = []
+            for ns_functions in self._functions.values():
+                all_functions.extend(ns_functions.keys())
+            return list(set(all_functions))  # Remove duplicates
+        else:
+            ns, _ = self._remap_namespace_and_name(namespace, "")
+            return list(self._functions.get(ns, {}).keys())
 
     def has(self, name: str, namespace: str | None = None) -> bool:
         """Check if a function exists.
 
         Args:
             name: Function name
-            namespace: Optional namespace
+            namespace: Optional namespace. If None, searches all namespaces.
 
         Returns:
             True if function exists
         """
+        # If namespace is explicitly None, search across all namespaces
+        if namespace is None:
+            return self._has_across_namespaces(name)
+
         ns, name = self._remap_namespace_and_name(namespace, name)
         return ns in self._functions and name in self._functions[ns]
+
+    def _has_across_namespaces(self, name: str) -> bool:
+        """Check if a function exists in any namespace.
+
+        Args:
+            name: Function name
+
+        Returns:
+            True if function exists in any namespace
+        """
+        # Search in priority order: system first (built-ins), then others
+        search_order = ["system", "public", "private", "local"]
+
+        for namespace in search_order:
+            if namespace in self._functions and name in self._functions[namespace]:
+                return True
+
+        return False
 
     def get_metadata(self, name: str, namespace: str | None = None) -> FunctionMetadata:
         """Get metadata for a function.

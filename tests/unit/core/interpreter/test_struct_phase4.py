@@ -44,6 +44,7 @@ local:distance_method_result = distance(point)
         distance_direct = result.final_context.get("local:distance_result")
         distance_method = result.final_context.get("local:distance_method_result")
 
+        # Promises are automatically resolved by default
         assert distance_direct == distance_method
         assert distance_direct == 25.0  # 3-4-5 triangle
 
@@ -70,6 +71,7 @@ local:result_method = point.add_offset(5, 3)
         result_direct = result.final_context.get("local:result_direct")
         result_method = result.final_context.get("local:result_method")
 
+        # Promises are automatically resolved by default
         assert isinstance(result_direct, StructInstance)
         assert isinstance(result_method, StructInstance)
         assert result_direct.x == result_method.x == 15
@@ -97,6 +99,7 @@ local:result_method = rect.scale(x_factor=2.0, y_factor=1.5)
         result_direct = result.final_context.get("local:result_direct")
         result_method = result.final_context.get("local:result_method")
 
+        # Promises are automatically resolved by default
         assert isinstance(result_direct, StructInstance)
         assert isinstance(result_method, StructInstance)
         assert result_direct.width == result_method.width == 20  # 10 * 2.0
@@ -300,6 +303,7 @@ local:result2 = point1.add_scalar(5)      # Should call add_scalar(point1, 5)
         result1 = result.final_context.get("local:result1")
         result2 = result.final_context.get("local:result2")
 
+        # Promises are automatically resolved by default
         assert isinstance(result1, StructInstance)
         assert isinstance(result2, StructInstance)
         assert result1.x == 4  # 1 + 3
@@ -331,6 +335,7 @@ local:updated2 = config.update_config("new_name", 20)
         updated1 = result.final_context.get("local:updated1")
         updated2 = result.final_context.get("local:updated2")
 
+        # Promises are automatically resolved by default
         assert isinstance(updated1, StructInstance)
         assert isinstance(updated2, StructInstance)
         assert updated1.name == "new_name"
@@ -383,6 +388,7 @@ local:normalized2 = vector.normalize(2.0)   # Custom length
         normalized1 = result.final_context.get("local:normalized1")
         normalized2 = result.final_context.get("local:normalized2")
 
+        # Promises are automatically resolved by default
         assert isinstance(normalized1, StructInstance)
         assert isinstance(normalized2, StructInstance)
 
@@ -415,11 +421,30 @@ local:as_int = data.process(as_string=false)
 """
 
         result: ExecutionResult = self.sandbox.eval(code)
+        print(f"DEBUG: Execution success: {result.success}")
+        if not result.success:
+            print(f"DEBUG: Execution error: {result.error}")
         assert result.success, f"Execution failed: {result.error}"
 
         assert result.final_context is not None
         as_string = result.final_context.get("local:as_string")
         as_int = result.final_context.get("local:as_int")
+
+        # Promises are automatically resolved by default
+        print(f"DEBUG: as_string = {as_string} (type: {type(as_string)})")
+        print(f"DEBUG: as_int = {as_int} (type: {type(as_int)})")
+
+        # Debug: Check if as_string is an EagerPromise
+        if hasattr(as_string, "_value"):
+            print(f"DEBUG: as_string._value = {as_string._value}")
+        if hasattr(as_string, "result"):
+            print(f"DEBUG: as_string.result = {as_string.result}")
+
+        # Debug: Check what's in the local scope
+        local_scope = result.final_context._state.get("local", {})
+        print(f"DEBUG: Local scope keys: {list(local_scope.keys())}")
+        for k, v in local_scope.items():
+            print(f"DEBUG: {k} -> {type(v)}")
 
         assert as_string == "42"
         assert as_int == 42

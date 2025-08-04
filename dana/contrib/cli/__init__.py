@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 
 from dana.core.lang.dana_sandbox import DanaSandbox
-from dana.util.env import load_dana_env
+
 
 from .dana_input_args_parser import parse_dana_input_args
 
@@ -30,7 +30,7 @@ def main():
         args.inputs.remove("--debug")
 
     # load the .env file if it exists in the same directory as the script
-    load_dana_env(dot_env_file_path=Path(args.file_path).parent / ".env")
+    # Note: Environment loading is now handled automatically by initlib startup
 
     # Get the file's directory for module search paths
     file_dir = str(Path(args.file_path).parent.resolve())

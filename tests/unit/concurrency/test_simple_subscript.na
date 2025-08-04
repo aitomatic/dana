@@ -1,0 +1,28 @@
+# Simple test for Promise subscript transparency
+# Copyright © 2025 Aitomatic, Inc.
+
+def lazy_dict():
+    return {"a": 1, "b": 2, "c": 3}
+
+def test_simple_subscript():
+    lazy_dct = lazy_dict()
+    
+    # Test basic subscript access
+    assert lazy_dct["a"] == 1
+    assert lazy_dct["b"] == 2
+    assert lazy_dct["c"] == 3
+    
+    print("✓ Simple Promise subscript access working")
+
+def test_simple_list_subscript():
+    def lazy_list():
+        return [10, 20, 30, 40, 50]
+    
+    lazy_lst = lazy_list()
+    
+    # Test list subscript access
+    assert lazy_lst[0] == 10
+    assert lazy_lst[1] == 20
+    assert lazy_lst[-1] == 50
+    
+    print("✓ Simple Promise list subscript access working") 

@@ -218,6 +218,13 @@ class ImportHandler(Loggable):
             # Set module in context using the context name
             context.set_in_scope(context_name, module, scope="local")
 
+            # Merge public variables from the module into the global public scope
+            if hasattr(module, "__dict__"):
+                for key, value in module.__dict__.items():
+                    if not key.startswith("_") and not callable(value):
+                        # This is a public variable from the module
+                        context.set_in_scope(key, value, scope="public")
+
             # For submodule imports like 'utils.text', also create parent namespace
             if "." in context_name:
                 self._create_parent_namespaces(context_name, module, context)
@@ -291,52 +298,31 @@ class ImportHandler(Loggable):
         if cache_key in self._module_cache:
             module = self._module_cache[cache_key]
         else:
-            # Get the module loader
-            from dana.core.runtime.modules.core import get_module_loader, get_module_registry
+            # Use the Dana module system directly
+            from dana.core.runtime.modules.core import get_module_loader
 
             loader = get_module_loader()
 
-            # Get the current module's file path if available
-            current_module_file = None
-            current_module_name = getattr(context, "_current_module", None)
-            if current_module_name:
-                try:
-                    registry = get_module_registry()
-                    if registry:
-                        current_module = registry.get_module(current_module_name)
-                        current_module_file = current_module.__file__
-                except Exception:
-                    # Module not found in registry, that's okay
-                    pass
+            # Find the module spec
+            spec = loader.find_spec(absolute_module_name)
+            if spec is None:
+                raise SandboxError(f"Module '{module_name}' not found")
 
-            try:
-                # Find and load the module
-                # Pass the current module's file path as a hint via the path parameter
-                path = [f"__dana_importing_from__:{current_module_file}"] if current_module_file else None
-                spec = loader.find_spec(absolute_module_name, path=path)
-                if spec is None:
-                    raise ModuleNotFoundError(f"Dana module '{absolute_module_name}' not found")
+            # Create and execute the module
+            module = loader.create_module(spec)
+            if module is None:
+                raise SandboxError(f"Could not create module '{module_name}'")
 
-                # Create and execute the module
-                module = loader.create_module(spec)
-                if module is None:
-                    raise ImportError(f"Could not create Dana module '{absolute_module_name}'")
+            loader.exec_module(module)
 
-                loader.exec_module(module)
-
-                # Cache the module
-                if len(self._module_cache) < self.MODULE_CACHE_SIZE:
-                    self._module_cache[cache_key] = module
-
-            except Exception as e:
-                # Convert to SandboxError for consistency
-                raise SandboxError(f"Error loading Dana module '{absolute_module_name}': {e}") from e
+            # Cache the module
+            self._module_cache[cache_key] = module
 
         # Import specific names from the module
         for name, alias in names:
             # Check if the name exists in the module
             if not hasattr(module, name):
-                raise SandboxError(f"Cannot import name '{name}' from Dana module '{absolute_module_name}'")
+                raise SandboxError(f"Cannot import name '{name}' from Dana module '{absolute_module_name}': name not found")
 
             # Enforce underscore privacy rule: reject names starting with '_'
             if name.startswith("_"):
@@ -351,7 +337,7 @@ class ImportHandler(Loggable):
             # Get the object from the module
             obj = getattr(module, name)
 
-            # Determine the name to use in the context
+            # Use alias if provided, otherwise use original name
             context_name = alias if alias else name
 
             # Set the object in the local context
@@ -360,6 +346,15 @@ class ImportHandler(Loggable):
             # If it's a function, also register it in the function registry for calls
             if callable(obj) and self.function_registry:
                 self._register_imported_function(obj, context_name, module_name, name)
+
+                # For DanaFunction objects, ensure they have access to the module's context
+                from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+
+                if isinstance(obj, DanaFunction) and obj.context is not None:
+                    # Copy all module functions to the function's context so it can call them
+                    for module_name_key, module_obj in module.__dict__.items():
+                        if callable(module_obj) and not module_name_key.startswith("__"):
+                            obj.context.set_in_scope(module_name_key, module_obj, scope="local")
 
     def _register_imported_function(self, func: callable, context_name: str, module_name: str, original_name: str) -> None:
         """Register an imported function in the function registry with optimized handling.
@@ -373,25 +368,40 @@ class ImportHandler(Loggable):
         if not self.function_registry:
             return
 
+        # If this is an alias import, update the function's __name__ attribute
+        # But only if it's writable (not for builtin functions)
+        if context_name != original_name and hasattr(func, "__name__"):
+            try:
+                func.__name__ = context_name
+            except (AttributeError, TypeError):
+                # __name__ is not writable (e.g., builtin functions), skip modification
+                pass
+
         try:
             # Import here to avoid circular imports
             from dana.core.lang.interpreter.executor.function_resolver import FunctionType
-            from dana.core.lang.interpreter.functions.python_function import PythonFunction
+            from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+            from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata
 
-            # Wrap the function in a PythonFunction wrapper for Dana compatibility
-            wrapped_func = PythonFunction(
-                func=func,
-                trusted_for_context=True,
-            )
+            # Determine function type and create metadata
+            if isinstance(func, DanaFunction):
+                func_type = FunctionType.DANA
+                metadata = FunctionMetadata(source_file=f"<imported from {module_name}>")
+                metadata.context_aware = True
+                metadata.is_public = True
+            else:
+                func_type = FunctionType.PYTHON
+                metadata = FunctionMetadata(source_file=f"<imported from {module_name}>")
+                metadata.context_aware = False
+                metadata.is_public = True
 
-            # Register in the appropriate scope
+            metadata.doc = f"Imported from {module_name}.{original_name}"
+
+            # Register the function under the alias name (or original name if no alias)
             self.function_registry.register(
-                name=context_name,
-                func=wrapped_func,
-                func_type=FunctionType.PYTHON,
-                namespace="local",
-                overwrite=True,  # Allow overwriting for imports
+                name=context_name, func=func, namespace="local", func_type=func_type, metadata=metadata, overwrite=True
             )
+
             self.debug(f"Registered imported function '{context_name}' from module '{module_name}'")
 
         except Exception as reg_err:

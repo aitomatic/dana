@@ -202,7 +202,8 @@ class UnifiedFunctionDispatcher:
                 for key, value in user_context.items():
                     context.set(f"local:{key}", value)
 
-        raw_result = self.function_registry.call(resolved_name, context, "", *evaluated_args, **evaluated_kwargs)
+        # Use None namespace to let the registry search across all namespaces
+        raw_result = self.function_registry.call(resolved_name, context, None, *evaluated_args, **evaluated_kwargs)
         return self._assign_and_coerce_result(raw_result, func_name)
 
     def _execute_dana_function(
@@ -214,7 +215,22 @@ class UnifiedFunctionDispatcher:
         func_name: str,
     ) -> Any:
         """Execute a Dana function."""
-        raw_result = resolved_func.func.execute(context, *evaluated_args, **evaluated_kwargs)
+        from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+
+        # For Dana functions, use the function's own context as the base
+        # This ensures it has access to module functions and other context
+        if isinstance(resolved_func.func, DanaFunction) and resolved_func.func.context is not None:
+            # Use the function's context as the base, but merge in the current context
+            # This allows the function to access both its module functions and the current context
+            execution_context = resolved_func.func.context.create_child_context()
+            # Merge the current context's local scope into the execution context
+            for key, value in context.get_scope("local").items():
+                execution_context.set(f"local:{key}", value)
+        else:
+            # Fallback to current context for non-DanaFunction objects
+            execution_context = context
+
+        raw_result = resolved_func.func.execute(execution_context, *evaluated_args, **evaluated_kwargs)
         return self._assign_and_coerce_result(raw_result, func_name)
 
     def _execute_python_function(
