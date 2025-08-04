@@ -88,7 +88,7 @@ with use("mcp", url="http://test.com") as client:
 """
 
         sandbox = DanaSandbox()
-        result = sandbox.eval(code)
+        result = sandbox.execute_string(code)
 
         assert result.success, f"Execution failed: {result.error}"
         # Verify the context has the expected result
@@ -104,7 +104,7 @@ with use("mcp", "arg1", "arg2", url="http://test.com", port=8080) as client:
 """
 
         sandbox = DanaSandbox()
-        result = sandbox.eval(code)
+        result = sandbox.execute_string(code)
 
         assert result.success, f"Execution failed: {result.error}"
 
@@ -125,7 +125,7 @@ with mcp_client as client:
 """
 
         sandbox = DanaSandbox()
-        result = sandbox.eval(code)
+        result = sandbox.execute_string(code)
 
         assert result.success, f"Execution failed: {result.error}"
 
@@ -146,7 +146,7 @@ with private:mcp_client as client:
 """
 
         sandbox = DanaSandbox()
-        result = sandbox.eval(code)
+        result = sandbox.execute_string(code)
 
         assert result.success, f"Execution failed: {result.error}"
 
@@ -168,7 +168,7 @@ final_exited_status = client_ref.is_exited
 """
 
         sandbox = DanaSandbox()
-        result = sandbox.eval(code)
+        result = sandbox.execute_string(code)
 
         assert result.success, f"Execution failed: {result.error}"
 
@@ -193,7 +193,7 @@ with mcp_obj as client:
 """
 
         sandbox = DanaSandbox()
-        result = sandbox.eval(code)
+        result = sandbox.execute_string(code)
 
         assert result.success, f"Execution failed: {result.error}"
 
@@ -217,7 +217,7 @@ with use("mcp", url="http://outer.com") as outer_client:
 """
 
         sandbox = DanaSandbox()
-        result = sandbox.eval(code)
+        result = sandbox.execute_string(code)
 
         assert result.success, f"Execution failed: {result.error}"
 
@@ -243,7 +243,7 @@ types_match = client1_type == client2_type
 """
 
         sandbox = DanaSandbox()
-        result = sandbox.eval(code)
+        result = sandbox.execute_string(code)
 
         assert result.success, f"Execution failed: {result.error}"
 
@@ -274,7 +274,7 @@ with not_a_context_manager as client:
 """
 
         sandbox = DanaSandbox()
-        result = sandbox.eval(code)
+        result = sandbox.execute_string(code)
 
         assert not result.success, "Should fail with non-context manager object"
         assert "does not return a context manager" in str(result.error)
@@ -287,7 +287,7 @@ with undefined_variable as client:
 """
 
         sandbox = DanaSandbox()
-        result = sandbox.eval(code)
+        result = sandbox.execute_string(code)
 
         assert not result.success, "Should fail with undefined variable"
         # The exact error message may vary, but it should be about the undefined variable
@@ -302,7 +302,7 @@ with websearch as websearch:
 """
 
         sandbox = DanaSandbox()
-        result = sandbox.eval(code)
+        result = sandbox.execute_string(code)
 
         # Should fail with variable shadowing error
         assert not result.success, "Should fail with variable shadowing error"
@@ -326,7 +326,7 @@ final_name = websearch.name
 """
 
         sandbox = DanaSandbox()
-        result = sandbox.eval(code)
+        result = sandbox.execute_string(code)
 
         assert result.success, f"Execution failed: {result.error}"
 
@@ -360,7 +360,7 @@ good_still_accessible = True
 """
 
         sandbox = DanaSandbox()
-        result = sandbox.eval(code_good)
+        result = sandbox.execute_string(code_good)
         assert result.success, f"Good version failed: {result.error}"
 
         good_original = self._get_from_context(result, "local:good_original_name")
@@ -398,7 +398,7 @@ test_function()
 """
 
         sandbox = DanaSandbox()
-        result = sandbox.eval(code)
+        result = sandbox.execute_string(code)
 
         assert result.success, f"Execution failed: {result.error}"
         # The function was called successfully, which means the with statement worked
@@ -414,7 +414,7 @@ def get_client_info():
 """
 
         sandbox = DanaSandbox()
-        result = sandbox.eval(code)
+        result = sandbox.execute_string(code)
 
         assert result.success, f"Execution failed: {result.error}"
         # If execution succeeded, it means the with statement was parsed and executed correctly

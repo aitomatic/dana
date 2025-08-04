@@ -26,5 +26,5 @@ def test_pipeline_files(na_file):
     sandbox = DanaSandbox(debug_mode=True)
     with open(na_file) as f:
         code = f.read()
-    result = sandbox.eval(code)
+    result = sandbox.execute_string(code)
     assert result.success, f"Test file {na_file} failed: {result.error}"

@@ -439,7 +439,7 @@ async def generate_agent_code_na(messages: list[dict[str, Any]], current_code: s
 
         try:
             # Execute the .na file using DanaSandbox.quick_run with file path
-            result = DanaSandbox.quick_run(file_path=temp_file_path)
+            result = DanaSandbox.execute_file_once(file_path=temp_file_path)
 
             if result.success:
                 generated_code = result.result
@@ -643,7 +643,7 @@ def _test_generated_code(code: str) -> Any:
 
         try:
             # Test the code using DanaSandbox.quick_run
-            result = DanaSandbox.quick_run(file_path=temp_file_path)
+            result = DanaSandbox.execute_file_once(file_path=temp_file_path)
             return result
         finally:
             # Clean up the temporary file
@@ -688,7 +688,7 @@ async def _fix_generated_code_with_agent(code: str, error: str, messages: list[d
 
         try:
             # Execute the code fixer
-            result = DanaSandbox.quick_run(file_path=temp_file_path)
+            result = DanaSandbox.execute_file_once(file_path=temp_file_path)
 
             if result.success and result.result:
                 # Test the fixed code

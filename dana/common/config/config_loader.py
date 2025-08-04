@@ -120,24 +120,16 @@ class ConfigLoader(Loggable):
             ConfigurationError: If the file doesn't exist, isn't a file,
                                 or contains invalid JSON.
         """
-        print(f"ConfigLoader: Loading config from path: {path}")
-        print(f"ConfigLoader: Path exists: {path.exists()}, is_file: {path.is_file()}")
-
         if not path.is_file():
-            print(f"ConfigLoader: Path is not a valid file: {path}")
             raise ConfigurationError(f"Config path does not point to a valid file: {path}")
 
         try:
             with open(path, encoding="utf-8") as f:
                 config = json.load(f)
-                print(f"ConfigLoader: Successfully loaded config from {path}")
-                print(f"ConfigLoader: Config keys: {list(config.keys())}")
                 return config
         except json.JSONDecodeError as e:
-            print(f"ConfigLoader: JSON decode error loading {path}: {e}")
             raise ConfigurationError(f"Invalid JSON in config file: {path}") from e
         except Exception as e:
-            print(f"ConfigLoader: Unexpected error loading {path}: {e}")
             # Catch other potential issues like permission errors
             raise ConfigurationError(f"Failed to load config from {path}: {e}") from e
 
@@ -165,20 +157,15 @@ class ConfigLoader(Loggable):
         """
         # Return cached config if available
         if self._cached_config is not None:
-            print("ConfigLoader: Returning cached config")
             return self._cached_config
 
-        print("ConfigLoader: Starting config search...")
         config_path_env = os.getenv("DANA_CONFIG")
-        print(f"ConfigLoader: DANA_CONFIG environment variable: {config_path_env}")
 
         # 1. Check Environment Variable
         if config_path_env:
             env_path = Path(config_path_env).resolve()
-            print(f"ConfigLoader: Attempting to load config from DANA_CONFIG: {env_path}")
             try:
                 config = self._load_config_from_path(env_path)
-                print(f"ConfigLoader: Successfully loaded config from DANA_CONFIG: {env_path}")
                 self._cached_config = config  # Cache the result
                 return config
             except ConfigurationError as e:
@@ -187,45 +174,29 @@ class ConfigLoader(Loggable):
 
         # 2. Check Current Working Directory
         cwd_path = Path.cwd() / self.DEFAULT_CONFIG_FILENAME
-        print(f"ConfigLoader: Checking CWD path: {cwd_path}")
         if cwd_path.is_file():
-            print(f"ConfigLoader: Found config in CWD, loading: {cwd_path}")
             # No try-except here, let _load_config_from_path handle errors
             config = self._load_config_from_path(cwd_path)
-            print(f"ConfigLoader: Successfully loaded config from CWD: {cwd_path}")
             self._cached_config = config  # Cache the result
             return config
-        else:
-            print(f"ConfigLoader: No config found in CWD: {cwd_path}")
 
         # 3. Check User's Home Directory (~/.dana/)
         home_path = Path.home() / ".dana" / self.DEFAULT_CONFIG_FILENAME
-        print(f"ConfigLoader: Checking home path: {home_path}")
         if home_path.is_file():
-            print(f"ConfigLoader: Found config in home directory, loading: {home_path}")
             # No try-except here, let _load_config_from_path handle errors
             config = self._load_config_from_path(home_path)
-            print(f"ConfigLoader: Successfully loaded config from home directory: {home_path}")
             self._cached_config = config  # Cache the result
             return config
-        else:
-            print(f"ConfigLoader: No config found in home directory: {home_path}")
 
         # 4. Check Dana Library Directory (default config)
         lib_path = self.config_dir / self.DEFAULT_CONFIG_FILENAME
-        print(f"ConfigLoader: Checking library path: {lib_path}")
         if lib_path.is_file():
-            print(f"ConfigLoader: Found config in library directory, loading: {lib_path}")
             # No try-except here, let _load_config_from_path handle errors
             config = self._load_config_from_path(lib_path)
-            print(f"ConfigLoader: Successfully loaded config from library directory: {lib_path}")
             self._cached_config = config  # Cache the result
             return config
-        else:
-            print(f"ConfigLoader: No config found in library directory: {lib_path}")
 
         # If not found anywhere
-        print("ConfigLoader: No config file found in any location")
         raise ConfigurationError(
             f"Default config '{self.DEFAULT_CONFIG_FILENAME}' not found.\n"
             f"Checked locations:\n"

@@ -403,7 +403,7 @@ class DanaSandbox(Loggable):
             and self._llm_resource is not None
         )
 
-    def run_file(self, file_path: str | Path) -> ExecutionResult:
+    def execute_file(self, file_path: str | Path) -> ExecutionResult:
         """
         Run a Dana file.
 
@@ -493,7 +493,7 @@ class DanaSandbox(Loggable):
                 final_context=self._context.copy(),
             )
 
-    def eval(self, source_code: str, filename: str | None = None) -> ExecutionResult:
+    def execute_string(self, source_code: str, filename: str | None = None) -> ExecutionResult:
         """
         Evaluate Dana source code.
 
@@ -577,7 +577,7 @@ class DanaSandbox(Loggable):
             )
 
     @classmethod
-    def quick_run(cls, file_path: str | Path, debug_mode: bool = False, context: SandboxContext | None = None) -> ExecutionResult:
+    def execute_file_once(cls, file_path: str | Path, debug_mode: bool = False, context: SandboxContext | None = None) -> ExecutionResult:
         """
         Quick run a Dana file without managing lifecycle.
 
@@ -590,10 +590,10 @@ class DanaSandbox(Loggable):
             ExecutionResult with success status and results
         """
         with cls(debug_mode=debug_mode, context=context) as sandbox:
-            return sandbox.run_file(file_path)
+            return sandbox.execute_file(file_path)
 
     @classmethod
-    def quick_eval(
+    def execute_string_once(
         cls,
         source_code: str,
         filename: str | None = None,
@@ -615,7 +615,7 @@ class DanaSandbox(Loggable):
             ExecutionResult with success status and results
         """
         with cls(debug_mode=debug_mode, context=context, module_search_paths=module_search_paths) as sandbox:
-            return sandbox.eval(source_code, filename)
+            return sandbox.execute_string(source_code, filename)
 
     def __enter__(self) -> "DanaSandbox":
         """Context manager entry - ensures initialization."""
@@ -639,11 +639,11 @@ class DanaSandbox(Loggable):
         """Public accessor for the sandbox execution context."""
         return self._context
 
-    def load_file(self, file_path: str) -> None:
+    def _deprecated_load_file(self, file_path: str) -> None:
         """Load and evaluate a Dana file in the sandbox context."""
         with open(file_path, encoding="utf-8") as f:
             source_code = f.read()
-        self.eval(source_code, filename=file_path)
+        self.execute_string(source_code, filename=file_path)
 
     @property
     def function_registry(self):

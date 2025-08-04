@@ -273,7 +273,7 @@ def pipeline(text: str) = add_prefix_wrapper | to_uppercase | add_suffix_wrapper
 # Apply the composed function to data
 result = pipeline("hello")
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         result_value = result.final_context.get("result")
@@ -300,7 +300,7 @@ def pipeline(text: str) = wrap_text_wrapper | add_prefix_wrapper
 # Apply the composed function to data
 result = pipeline("world")
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         result_value = result.final_context.get("result")
