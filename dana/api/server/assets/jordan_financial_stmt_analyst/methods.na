@@ -17,6 +17,7 @@ from common import get_enchance_step_prompt
 import yaml.py
 
 STEPS_TO_START_COMPRESSION = 3
+N_STEPS_TO_MERGE = 2
 
 def get_tools() -> str:
     tools = {}
@@ -73,7 +74,19 @@ def plan_ahead(data : State, complexity : str) -> State:
     
     # Step 4: Parse the plan into steps using STEP_BREAK (---)
     steps = str_plan.split(STEP_BREAK)
-    data.steps = steps
+    new_steps = []
+    current_buffer = []
+    for step in steps:
+        if ("STEP" in step):
+            current_buffer.append(step)
+            if len(current_buffer) == N_STEPS_TO_MERGE:
+                new_step = "\n".join(current_buffer)
+                new_steps.append(new_step)
+                current_buffer = []
+    if len(current_buffer) > 0:
+        new_step = "\n".join(current_buffer)
+        new_steps.append(new_step)
+    data.steps = new_steps
     return data
 
 def should_get_data(data: State) -> bool:
