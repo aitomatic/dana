@@ -51,7 +51,7 @@ version = PACKAGE_VERSION
         initialize_module_system([str(tmp_path)])
 
         # Run driver module
-        result = DanaSandbox.quick_run(driver_file)
+        result = DanaSandbox.execute_file_once(driver_file)
 
         assert result.success, f"Expected success but got error: {result.error}"
         assert result.final_context.get("local:result") == "Hello, World!"
@@ -93,7 +93,7 @@ sub_result = sub_function()
         initialize_module_system([str(tmp_path)])
 
         # Run driver module
-        result = DanaSandbox.quick_run(driver_file)
+        result = DanaSandbox.execute_file_once(driver_file)
 
         assert result.success, f"Expected success but got error: {result.error}"
         assert result.final_context.get("local:root_result") == "From root package"
@@ -132,7 +132,7 @@ mult_result = math_pkg.multiply.multiply(4, 7)
         initialize_module_system([str(tmp_path)])
 
         # Run driver module
-        result = DanaSandbox.quick_run(driver_file)
+        result = DanaSandbox.execute_file_once(driver_file)
 
         assert result.success, f"Expected success but got error: {result.error}"
         assert result.final_context.get("local:add_result") == 8
@@ -181,7 +181,7 @@ new_result = new_function()
         initialize_module_system([str(tmp_path)])
 
         # Run driver module
-        result = DanaSandbox.quick_run(driver_file)
+        result = DanaSandbox.execute_file_once(driver_file)
 
         assert result.success, f"Expected success but got error: {result.error}"
         assert result.final_context.get("local:legacy_version") == "1.0.0"
@@ -222,7 +222,7 @@ result = derived_function()
         initialize_module_system([str(tmp_path)])
 
         # Run driver module
-        result = DanaSandbox.quick_run(driver_file)
+        result = DanaSandbox.execute_file_once(driver_file)
 
         assert result.success, f"Expected success but got error: {result.error}"
         result_value = str(result.final_context.get("local:result"))
@@ -245,7 +245,7 @@ result = "Should not reach here"
         initialize_module_system([str(tmp_path)])
 
         # Run driver module - this should fail
-        result = DanaSandbox.quick_run(driver_file)
+        result = DanaSandbox.execute_file_once(driver_file)
 
         # This should fail because empty directory is not a valid package
         assert not result.success, "Expected failure but got success"
@@ -279,7 +279,7 @@ result = child_function()
         initialize_module_system([str(tmp_path)])
 
         # Run driver module
-        result = DanaSandbox.quick_run(driver_file)
+        result = DanaSandbox.execute_file_once(driver_file)
 
         assert result.success, f"Expected success but got error: {result.error}"
         assert result.final_context.get("local:result") == "From child package"
@@ -313,7 +313,7 @@ result = deep_function()
         initialize_module_system([str(tmp_path)])
 
         # Run driver module
-        result = DanaSandbox.quick_run(driver_file)
+        result = DanaSandbox.execute_file_once(driver_file)
 
         assert result.success, f"Expected success but got error: {result.error}"
         assert result.final_context.get("local:result") == "From deep nested package"

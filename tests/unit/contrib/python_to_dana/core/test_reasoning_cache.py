@@ -463,7 +463,7 @@ class TestInProcessSandboxCacheIntegration:
         mock_result = Mock()
         mock_result.success = True
         mock_result.result = "2+2 equals 4"
-        mock_sandbox.eval.return_value = mock_result
+        mock_sandbox.execute_string.return_value = mock_result
         mock_sandbox_class.return_value = mock_sandbox
 
         sandbox = InProcessSandboxInterface(debug=True)
@@ -476,7 +476,7 @@ class TestInProcessSandboxCacheIntegration:
         # Assert
         assert result1 == "2+2 equals 4"
         assert result2 == "2+2 equals 4"
-        assert mock_sandbox.eval.call_count == 2  # Only called twice (cache hit on second call)
+        assert mock_sandbox.execute_string.call_count == 2  # Only called twice (cache hit on second call)
 
     @patch("dana.integrations.python.to_dana.core.inprocess_sandbox.DanaSandbox")
     def test_sandbox_reason_without_cache(self, mock_sandbox_class):
@@ -486,7 +486,7 @@ class TestInProcessSandboxCacheIntegration:
         mock_result = Mock()
         mock_result.success = True
         mock_result.result = "2+2 equals 4"
-        mock_sandbox.eval.return_value = mock_result
+        mock_sandbox.execute_string.return_value = mock_result
         mock_sandbox_class.return_value = mock_sandbox
 
         sandbox = InProcessSandboxInterface(enable_cache=False)
@@ -498,7 +498,7 @@ class TestInProcessSandboxCacheIntegration:
         # Assert
         assert result1 == "2+2 equals 4"
         assert result2 == "2+2 equals 4"
-        assert mock_sandbox.eval.call_count == 2  # Called again (no caching)
+        assert mock_sandbox.execute_string.call_count == 2  # Called again (no caching)
 
     @patch("dana.integrations.python.to_dana.core.inprocess_sandbox.DanaSandbox")
     @pytest.mark.parametrize("test_case", cache_with_options_params, ids=lambda x: x["name"])
@@ -509,7 +509,7 @@ class TestInProcessSandboxCacheIntegration:
         mock_result = Mock()
         mock_result.success = True
         mock_result.result = "response"
-        mock_sandbox.eval.return_value = mock_result
+        mock_sandbox.execute_string.return_value = mock_result
         mock_sandbox_class.return_value = mock_sandbox
 
         sandbox = InProcessSandboxInterface()
@@ -519,7 +519,7 @@ class TestInProcessSandboxCacheIntegration:
             sandbox.reason(prompt, options)
 
         # Assert
-        assert mock_sandbox.eval.call_count == test_case["expected_call_count"]
+        assert mock_sandbox.execute_string.call_count == test_case["expected_call_count"]
 
     @patch("dana.integrations.python.to_dana.core.inprocess_sandbox.DanaSandbox")
     def test_sandbox_cache_stats_and_management(self, mock_sandbox_class):
@@ -529,7 +529,7 @@ class TestInProcessSandboxCacheIntegration:
         mock_result = Mock()
         mock_result.success = True
         mock_result.result = "response"
-        mock_sandbox.eval.return_value = mock_result
+        mock_sandbox.execute_string.return_value = mock_result
         mock_sandbox_class.return_value = mock_sandbox
 
         sandbox = InProcessSandboxInterface()
@@ -591,7 +591,7 @@ class TestInProcessSandboxCacheIntegration:
         mock_result = Mock()
         mock_result.success = True
         mock_result.result = "response"
-        mock_sandbox.eval.return_value = mock_result
+        mock_sandbox.execute_string.return_value = mock_result
         mock_sandbox_class.return_value = mock_sandbox
 
         sandbox = InProcessSandboxInterface()

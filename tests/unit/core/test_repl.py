@@ -127,12 +127,12 @@ private:result
 
         # Mock all needed methods to isolate the test
         with patch.object(repl, "_format_error_message"):  # Prevent error formatting
-            with patch.object(repl.sandbox, "eval") as mock_eval:
-                # Set up sandbox eval to return success
+            with patch.object(repl.sandbox, "execute_string") as mock_execute_string:
+                # Set up sandbox execute_string to return success
                 mock_result = MagicMock()
                 mock_result.success = True
                 mock_result.result = 5
-                mock_eval.return_value = mock_result
+                mock_execute_string.return_value = mock_result
 
                 # Execute with NLP input - this should use the mocked safe_asyncio_run
                 with patch("dana.common.utils.Misc.safe_asyncio_run", mock_safe_asyncio_run):

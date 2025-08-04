@@ -244,7 +244,7 @@ class REPL(Loggable):
 
         # Execute using DanaSandbox
         try:
-            result = self.sandbox.eval(program_source)
+            result = self.sandbox.execute_string(program_source)
 
             if result.success:
                 # Restore any print output to the interpreter buffer so tests can access it

@@ -49,7 +49,7 @@ zero_decimal: bool = bool("0.0")
 zero_negative: bool = bool("-0")
 false_string: bool = bool("false")"""
 
-        result = self.sandbox.eval(test_code)
+        result = self.sandbox.execute_string(test_code)
         if not result.success:
             print(f"Error executing test code: {result.error}")
             print(f"Output: {result.output}")
@@ -73,7 +73,7 @@ false_string: bool = bool("false")"""
 one_eq_true: bool = ("1" == True)
 false_eq_false: bool = ("false" == False)"""
 
-        result = self.sandbox.eval(test_code)
+        result = self.sandbox.execute_string(test_code)
         self.assertTrue(result.success)
         context = result.final_context
         self.assertIsNotNone(context)
@@ -91,7 +91,7 @@ no_way: bool = bool("no way")
 absolutely_not: bool = bool("absolutely not")
 nope: bool = bool("nope")"""
 
-        result = self.sandbox.eval(test_code)
+        result = self.sandbox.execute_string(test_code)
         self.assertTrue(result.success)
         context = result.final_context
         self.assertIsNotNone(context)
@@ -115,7 +115,7 @@ nope: bool = bool("nope")"""
         ]
 
         for code, expected_error in test_cases:
-            result = self.sandbox.eval(code)
+            result = self.sandbox.execute_string(code)
             if result.success:
                 print(f"Unexpected success for: {code}")
                 print(f"Final context: {result.final_context}")
@@ -135,7 +135,7 @@ float_string: float = float("3.14")
 empty_string: bool = bool("")
 true_string: bool = bool("anything")"""
 
-        result = self.sandbox.eval(test_code)
+        result = self.sandbox.execute_string(test_code)
         self.assertTrue(result.success)
         context = result.final_context
         self.assertIsNotNone(context)
@@ -174,7 +174,7 @@ class TestSemanticFunctionDispatchDesired(unittest.TestCase):
         pi_exists: bool = reason("what is pi?")
         """
 
-        result = self.sandbox.eval(test_code)
+        result = self.sandbox.execute_string(test_code)
         self.assertTrue(result.success)
         context = result.final_context
         self.assertIsNotNone(context)
@@ -205,7 +205,7 @@ class TestSemanticFunctionDispatchDesired(unittest.TestCase):
         risk_level: int = reason("Should we deploy to production?")
         """
 
-        result = self.sandbox.eval(test_code)
+        result = self.sandbox.execute_string(test_code)
         self.assertTrue(result.success)
         context = result.final_context
         self.assertIsNotNone(context)
@@ -238,7 +238,7 @@ class TestSemanticFunctionDispatchDesired(unittest.TestCase):
         false_string: bool = bool("false")
         """
 
-        result = self.sandbox.eval(test_code)
+        result = self.sandbox.execute_string(test_code)
         self.assertTrue(result.success)
         context = result.final_context
         self.assertIsNotNone(context)
@@ -262,7 +262,7 @@ class TestSemanticFunctionDispatchDesired(unittest.TestCase):
         false_equals_false: bool = ("false" == False)
         """
 
-        result = self.sandbox.eval(test_code)
+        result = self.sandbox.execute_string(test_code)
         self.assertTrue(result.success)
         context = result.final_context
         self.assertIsNotNone(context)
@@ -289,7 +289,7 @@ class TestSemanticFunctionDispatchDesired(unittest.TestCase):
         never: bool = bool("never")
         """
 
-        result = self.sandbox.eval(test_code)
+        result = self.sandbox.execute_string(test_code)
         self.assertTrue(result.success)
         context = result.final_context
         self.assertIsNotNone(context)
