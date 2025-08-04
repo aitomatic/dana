@@ -45,7 +45,8 @@ Generate complete, executable Python code that calculates ALL the following liqu
 
 REQUIREMENTS:
 - Parse the markdown table data into a Python dictionary
-- Handle negative numbers in parentheses format like ($1,000) → -1,000
+- IMPORTANT: Fix sign convention - if all values appear negative, convert them to positive (common extraction artifact)
+- Handle negative numbers in parentheses format like ($1,000) → -1,000 (true negatives)
 - Handle missing data gracefully (use 0 or return None)
 - Handle division by zero appropriately
 - Use absolute values for ratio calculations where appropriate
@@ -67,7 +68,8 @@ DATA EXTRACTION GUIDELINES:
 - Extract all time periods from table headers
 
 OUTPUT FORMAT:
-Generate Python code following this EXACT template structure. Fill in the periods and values from the markdown data:
+Generate Python code following this EXACT template structure. Fill in the periods and values from the markdown data.
+The final output will be transposed to show periods as columns and ratios as rows:
 
 ```python
 import pandas as pd
@@ -76,16 +78,31 @@ import pandas as pd
 company_name = "ACTUAL COMPANY NAME"
 
 # Extract data from markdown and create pandas Series
-current_assets = pd.Series({{"period_1": value1, "period_2": value2, ...}})
-current_liabilities = pd.Series({{"period_1": value1, "period_2": value2, ...}})
-total_assets = pd.Series({{"period_1": value1, "period_2": value2, ...}})
-cash = pd.Series({{"period_1": value1, "period_2": value2, ...}})
-cash_equivalents = pd.Series({{"period_1": value1, "period_2": value2, ...}})  # Use 0 if not available
-marketable_securities = pd.Series({{"period_1": value1, "period_2": value2, ...}})  # Use 0 if not available
-accounts_receivable = pd.Series({{"period_1": value1, "period_2": value2, ...}})  # Use 0 if not available
-inventories = pd.Series({{"period_1": value1, "period_2": value2, ...}})  # Use 0 if not available
-prepaid_expenses = pd.Series({{"period_1": value1, "period_2": value2, ...}})  # Use 0 if not available
-operating_cash_flow = pd.Series({{"period_1": value1, "period_2": value2, ...}})  # Use 0 if not available
+# IMPORTANT: Apply sign correction if needed (common extraction artifact makes all values negative)
+raw_current_assets = pd.Series({{"period_1": value1, "period_2": value2, ...}})
+raw_current_liabilities = pd.Series({{"period_1": value1, "period_2": value2, ...}})
+raw_total_assets = pd.Series({{"period_1": value1, "period_2": value2, ...}})
+raw_cash = pd.Series({{"period_1": value1, "period_2": value2, ...}})
+raw_cash_equivalents = pd.Series({{"period_1": value1, "period_2": value2, ...}})  # Use 0 if not available
+raw_marketable_securities = pd.Series({{"period_1": value1, "period_2": value2, ...}})  # Use 0 if not available
+raw_accounts_receivable = pd.Series({{"period_1": value1, "period_2": value2, ...}})  # Use 0 if not available
+raw_inventories = pd.Series({{"period_1": value1, "period_2": value2, ...}})  # Use 0 if not available
+raw_prepaid_expenses = pd.Series({{"period_1": value1, "period_2": value2, ...}})  # Use 0 if not available
+raw_operating_cash_flow = pd.Series({{"period_1": value1, "period_2": value2, ...}})  # Use 0 if not available
+
+# Apply sign correction - if assets appear negative, flip signs (common extraction issue)
+sign_correction = -1 if raw_total_assets.mean() < 0 else 1
+
+current_assets = raw_current_assets * sign_correction
+current_liabilities = raw_current_liabilities * sign_correction  
+total_assets = raw_total_assets * sign_correction
+cash = raw_cash * sign_correction
+cash_equivalents = raw_cash_equivalents * sign_correction
+marketable_securities = raw_marketable_securities * sign_correction
+accounts_receivable = raw_accounts_receivable * sign_correction
+inventories = raw_inventories * sign_correction
+prepaid_expenses = raw_prepaid_expenses * sign_correction
+operating_cash_flow = raw_operating_cash_flow * sign_correction
 
 # Calculate comprehensive liquidity ratios
 current_ratios = current_assets / current_liabilities
@@ -117,11 +134,12 @@ liquidity_df = pd.DataFrame({{
     'Working Capital': working_capital
 }})
 
-# Display results in markdown format
+# Display results in markdown format with periods as columns
 print("# Liquidity Ratios Analysis")
 print(f"**Company:** {{company_name}}")
 print()
-print(liquidity_df.to_markdown(floatfmt='.2f'))
+# Transpose to have periods as columns and ratios as rows
+print(liquidity_df.T.to_markdown(floatfmt='.2f'))
 ```
 
 IMPORTANT:
@@ -209,7 +227,8 @@ INCOME STATEMENT:
 - Extract all time periods from table headers
 
 OUTPUT FORMAT:
-Generate Python code following this EXACT template structure. Fill in the periods and values from the markdown data:
+Generate Python code following this EXACT template structure. Fill in the periods and values from the markdown data.
+The final output will be transposed to show periods as columns and ratios as rows:
 
 ```python
 import pandas as pd
@@ -260,11 +279,12 @@ leverage_df = pd.DataFrame({{
     'Financial Leverage': financial_leverage
 }})
 
-# Display results in markdown format
+# Display results in markdown format with periods as columns
 print("# Leverage Ratios Analysis")
 print(f"**Company:** {{company_name}}")
 print()
-print(leverage_df.to_markdown(floatfmt='.2f'))
+# Transpose to have periods as columns and ratios as rows
+print(leverage_df.T.to_markdown(floatfmt='.2f'))
 ```
 
 IMPORTANT:
@@ -352,7 +372,8 @@ INCOME STATEMENT:
 - Extract all time periods from table headers
 
 OUTPUT FORMAT:
-Generate Python code following this EXACT template structure. Fill in the periods and values from the markdown data:
+Generate Python code following this EXACT template structure. Fill in the periods and values from the markdown data.
+The final output will be transposed to show periods as columns and ratios as rows:
 
 ```python
 import pandas as pd
@@ -419,11 +440,12 @@ efficiency_df = pd.DataFrame({{
     'Cash Conversion Cycle': cash_conversion_cycle
 }})
 
-# Display results in markdown format
+# Display results in markdown format with periods as columns
 print("# Efficiency Ratios Analysis")
 print(f"**Company:** {{company_name}}")
 print()
-print(efficiency_df.to_markdown(floatfmt='.2f'))
+# Transpose to have periods as columns and ratios as rows
+print(efficiency_df.T.to_markdown(floatfmt='.2f'))
 ```
 
 IMPORTANT:
@@ -518,7 +540,8 @@ INCOME STATEMENT:
 - Extract all time periods from table headers
 
 OUTPUT FORMAT:
-Generate Python code following this EXACT template structure. Fill in the periods and values from the markdown data:
+Generate Python code following this EXACT template structure. Fill in the periods and values from the markdown data.
+The final output will be transposed to show periods as columns and ratios as rows:
 
 ```python
 import pandas as pd
@@ -587,11 +610,12 @@ profitability_df = pd.DataFrame({{
     'DuPont ROE (%)': dupont_roe
 }})
 
-# Display results in markdown format
+# Display results in markdown format with periods as columns
 print("# Profitability Ratios Analysis")
 print(f"**Company:** {{company_name}}")
 print()
-print(profitability_df.to_markdown(floatfmt='.2f'))
+# Transpose to have periods as columns and ratios as rows
+print(profitability_df.T.to_markdown(floatfmt='.2f'))
 ```
 
 IMPORTANT:
@@ -694,7 +718,8 @@ MARKET DATA (if provided):
 - If not provided, use placeholder values
 
 OUTPUT FORMAT:
-Generate Python code following this EXACT template structure. Fill in the periods and values from the markdown data:
+Generate Python code following this EXACT template structure. Fill in the periods and values from the markdown data.
+The final output will be transposed to show periods as columns and ratios as rows:
 
 ```python
 import pandas as pd
@@ -772,13 +797,14 @@ market_value_df = pd.DataFrame({{
     'EV/EBITDA': ev_ebitda
 }})
 
-# Display results in markdown format
+# Display results in markdown format with periods as columns
 print("# Market Value Ratios Analysis")
 print(f"**Company:** {company_name}")
 if not market_data_available:
     print("**Note:** Market data not provided. Valuation ratios marked as N/A.")
 print()
-print(market_value_df.to_markdown(floatfmt='.2f'))
+# Transpose to have periods as columns and ratios as rows
+print(market_value_df.T.to_markdown(floatfmt='.2f'))
 ```
 
 IMPORTANT:
