@@ -30,7 +30,7 @@ const DocumentsTab: React.FC = () => {
   const [data, setData] = useState<LibraryItem[]>([]);
   const [uploadingFiles, setUploadingFiles] = useState<string[]>([]); // Track which files are uploading
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Note: Using local uploadingFiles state instead of global document store for per-file tracking
 
   // Load agent-specific documents
@@ -74,18 +74,18 @@ const DocumentsTab: React.FC = () => {
   const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0 || !agent_id) return;
-    
+
     const fileList = Array.from(files);
-    const fileNames = fileList.map(f => f.name);
-    
+    const fileNames = fileList.map((f) => f.name);
+
     // Set uploading state for these files
     setUploadingFiles(fileNames);
-    
+
     try {
       for (const file of fileList) {
         await apiService.uploadAgentDocument(agent_id, file);
         // Remove this file from uploading list as it completes
-        setUploadingFiles(prev => prev.filter(name => name !== file.name));
+        setUploadingFiles((prev) => prev.filter((name) => name !== file.name));
         // Reload documents immediately after each file upload for better UX
         await loadDocuments();
       }
@@ -130,9 +130,9 @@ const DocumentsTab: React.FC = () => {
         <div className="flex items-center space-x-2">
           <Button onClick={handleAddFileClick} disabled={uploadingFiles.length > 0}>
             {uploadingFiles.length > 0 ? (
-              <IconLoader2 className="mr-2 w-4 h-4 animate-spin" />
+              <IconLoader2 className="animate-spin size-4" />
             ) : (
-              <IconPlus className="mr-2 w-4 h-4" />
+              <IconPlus className="size-4" />
             )}
             {uploadingFiles.length > 0 ? 'Uploading...' : 'Add file'}
           </Button>
@@ -152,14 +152,14 @@ const DocumentsTab: React.FC = () => {
       </div>
       {/* Upload Progress Indicator */}
       {uploadingFiles.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+        <div className="p-4 mb-4 bg-blue-50 rounded-lg border border-blue-200">
           <div className="flex items-center space-x-3">
             <IconUpload className="w-5 h-5 text-blue-600" />
             <div className="flex-1">
               <div className="font-medium text-blue-900">
                 Uploading {uploadingFiles.length} file{uploadingFiles.length > 1 ? 's' : ''}...
               </div>
-              <div className="text-sm text-blue-700 mt-1">
+              <div className="mt-1 text-sm text-blue-700">
                 {uploadingFiles.map((fileName, index) => (
                   <div key={index} className="flex items-center space-x-2">
                     <IconLoader2 className="w-3 h-3 animate-spin" />
@@ -171,7 +171,7 @@ const DocumentsTab: React.FC = () => {
           </div>
         </div>
       )}
-      
+
       <div className="flex-1">
         <LibraryTable data={filteredData} loading={loading} mode="library" />
       </div>

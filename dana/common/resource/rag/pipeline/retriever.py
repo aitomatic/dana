@@ -1,5 +1,10 @@
 from llama_index.core import VectorStoreIndex
-from llama_index.core.schema import NodeWithScore
+from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.core.vector_stores import (
+    MetadataFilter,
+    MetadataFilters,
+    FilterOperator,
+)
 
 
 class Retriever:
@@ -15,6 +20,11 @@ class Retriever:
 
     async def aretrieve(self, query: str, num_results: int = 10) -> list[NodeWithScore]:
         return await self._index.as_retriever(similarity_top_k=num_results).aretrieve(query)
+    
+    async def aretrieve_with_filters(self, query: str, num_results: int = 10, filters: MetadataFilters| None = None) -> list[NodeWithScore]:
+        if filters is None:
+            return await self.aretrieve(query, num_results)
+        return await self._index.as_retriever(similarity_top_k=num_results, filters=filters).aretrieve(query)
 
     def get_all_filenames(self) -> list[str]:
         """Get all filenames from the index.

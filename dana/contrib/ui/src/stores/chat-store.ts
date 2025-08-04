@@ -85,7 +85,18 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   error: null,
 
   // Actions
-  sendMessage: async (message: string, agentId: number | string, conversationId?: number | string, websocketId?: string) => {
+  sendMessage: async (messageData: string | { message: string; role: string; files?: any[] }, agentId: number | string, conversationId?: number | string, websocketId?: string) => {
+    // Handle both string messages and message objects with files
+    const message = typeof messageData === 'string' ? messageData : messageData.message;
+    const files = typeof messageData === 'string' ? undefined : messageData.files;
+    
+    // Create message content that includes file information
+    let messageContent = message;
+    if (files && files.length > 0) {
+      const fileList = files.map(f => `📎 ${f.name}`).join('\n');
+      messageContent = `${message}${message ? '\n\n' : ''}Attached files:\n${fileList}`;
+    }
+
     // Immediately add user message to show it in the UI BEFORE setting isSending
     const { messages } = get();
     const tempUserMessage: MessageRead = {
@@ -93,7 +104,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       // @ts-ignore
       conversation_id: conversationId || 0,
       sender: 'user',
-      content: message,
+      content: messageContent,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -117,7 +128,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       }
 
       const request: ChatRequest = {
-        message,
+        message: messageContent,
         agent_id: agentId,
         conversation_id: requestConversationId,
         context: { user_id: 1 }, // TODO: Get from auth context

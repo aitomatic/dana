@@ -26,6 +26,17 @@ class RAGResource(BaseResource):
         initial_multiplier: int = 2,
     ):
         super().__init__(name, description)
+        self.post_init(sources=sources, 
+                       name=name, 
+                       cache_dir=cache_dir, 
+                       force_reload=force_reload, 
+                       chunk_size=chunk_size, 
+                       chunk_overlap=chunk_overlap, 
+                       debug=debug, 
+                       reranking=reranking, 
+                       initial_multiplier=initial_multiplier)
+
+    def post_init(self, sources: list[str], name: str, cache_dir: str, force_reload: bool, chunk_size: int, chunk_overlap: int, debug: bool, reranking: bool, initial_multiplier: int):
         Settings.chunk_size = chunk_size
         Settings.chunk_overlap = chunk_overlap
         self.sources = sources
@@ -58,6 +69,7 @@ class RAGResource(BaseResource):
             )
         else:
             self._llm_reranker = None
+
 
     @property
     def filenames(self) -> list[str]:
@@ -150,8 +162,9 @@ class RAGResource(BaseResource):
             response = await self._llm_reranker.query(request)
 
             if response.success:
+                content = Misc.get_response_content(response)
                 # Parse the response to get ranked document IDs
-                ranked_ids = self._parse_reranking_response(response.content)
+                ranked_ids = self._parse_reranking_response(content)
 
                 # Reorder results based on LLM ranking (only include LLM-selected documents)
                 reranked_results = []

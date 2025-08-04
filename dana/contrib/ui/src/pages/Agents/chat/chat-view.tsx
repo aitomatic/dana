@@ -165,7 +165,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
       }
 
       const response = await sendMessage(
-        data.message,
+        data, // Pass the entire data object which includes message and files
         agentId, // Pass agentId directly (supports both string and number)
         effectiveConversationId,
         websocketId,
@@ -208,7 +208,8 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
           <div className={`flex flex-col gap-2 transition-all duration-300 w-[700px]`}>
             <ChatBox
               files={files}
-              isShowUpload={false}
+              isShowUpload={true}
+              agentId={agentId}
               placeholder="Ask me anything"
               handleSendMessage={onSendMessage}
             />
@@ -270,7 +271,8 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
                   <div className="sticky bottom-6 w-full bg-background">
                     <ChatBox
                       files={files}
-                      isShowUpload={false}
+                      isShowUpload={true}
+                      agentId={agentId}
                       placeholder="Ask me anything"
                       handleSendMessage={onSendMessage}
                     />

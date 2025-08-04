@@ -4,13 +4,19 @@ import { getAgentAvatarSync } from '@/utils/avatar';
 import { Pencil, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Trash } from 'iconoir-react';
+import { DeleteAgentDialog } from '@/components/delete-agent-dialog';
+import type { NavigateFunction } from 'react-router-dom';
 
-const OverviewTab: React.FC<{ onShowComparison: () => void }> = () => {
+const OverviewTab: React.FC<{
+  navigate: NavigateFunction;
+}> = ({ navigate }) => {
   const agent = useAgentStore((s) => s.selectedAgent);
-  const { updateAgent } = useAgentStore();
+  const { updateAgent, deleteAgent, isDeleting } = useAgentStore();
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(agent?.name || '');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleEditName = () => {
     setIsEditingName(true);
@@ -39,6 +45,31 @@ const OverviewTab: React.FC<{ onShowComparison: () => void }> = () => {
   const handleCancelEdit = () => {
     setIsEditingName(false);
     setEditedName(agent?.name || '');
+  };
+
+  const handleDeleteAgent = async () => {
+    if (!agent) return;
+
+    try {
+      await deleteAgent(agent.id);
+      setDeleteDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to delete agent:', error);
+      // You might want to show a toast notification here
+    }
+  };
+
+  const handleDeleteSuccess = () => {
+    // Redirect to agents page with my tab selected after successful deletion
+    navigate('/agents?tab=my');
+  };
+
+  const handleDeleteClick = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteDialogOpen(false);
   };
 
   // Update editedName when agent changes
@@ -131,7 +162,23 @@ const OverviewTab: React.FC<{ onShowComparison: () => void }> = () => {
             </div>
           </div>
         </div>
+        <div className="flex">
+          <Button variant="outline" className="w-fit" onClick={handleDeleteClick}>
+            <Trash className="size-4" strokeWidth={2} />
+            Delete Agent
+          </Button>
+        </div>
       </div>
+
+      {/* Delete Agent Dialog */}
+      <DeleteAgentDialog
+        isOpen={deleteDialogOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleDeleteAgent}
+        onSuccess={handleDeleteSuccess}
+        isDeleting={isDeleting}
+        agentName={agent?.name}
+      />
     </div>
   );
 };

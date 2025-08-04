@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAgentStore } from '@/stores/agent-store';
 import { apiService } from '@/lib/api';
 import { MyAgentTab } from './MyAgentTab';
@@ -7,8 +7,17 @@ import { ExploreTab } from './ExploreTab';
 
 const DOMAINS = ['All domains', 'Finance', 'Semiconductor', 'Sales', 'Engineering', 'Research'];
 
+// Tab configuration with URL-friendly identifiers
+const TAB_CONFIG = {
+  explore: 'Explore',
+  my: 'My Agent',
+} as const;
+
+type TabId = keyof typeof TAB_CONFIG;
+
 export default function AgentsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { agents, fetchAgents } = useAgentStore();
   const [myAgentSearch, setMyAgentSearch] = useState('');
   const [exploreSearch, setExploreSearch] = useState('');
@@ -16,6 +25,17 @@ export default function AgentsPage() {
   const [creating, setCreating] = useState(false);
 
   const [prebuiltAgents, setPrebuiltAgents] = useState<any[]>([]);
+
+  // Get activeTab from URL params, default to 'explore'
+  const activeTabId = (searchParams.get('tab') as TabId) || 'explore';
+  const activeTab = TAB_CONFIG[activeTabId];
+
+  // Function to update activeTab in URL
+  const setActiveTab = (tabId: TabId) => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('tab', tabId);
+    setSearchParams(newSearchParams);
+  };
 
   // Function to fetch prebuilt agents using axios API service
   const fetchPrebuiltAgents = async () => {
@@ -29,12 +49,12 @@ export default function AgentsPage() {
     }
   };
 
-  // Tabs: My Agent, Explore
-  const [activeTab, setActiveTab] = useState('Explore');
-
   useEffect(() => {
-    if (agents && agents.length === 0) setActiveTab('Explore');
-  }, [agents]);
+    // If no agents and no tab specified, default to explore
+    if (agents && agents.length === 0 && !searchParams.get('tab')) {
+      setActiveTab('explore');
+    }
+  }, [agents, searchParams]);
 
   useEffect(() => {
     fetchAgents();
@@ -109,13 +129,13 @@ export default function AgentsPage() {
       <div className="flex gap-4 mb-6 border-b border-gray-200">
         <button
           className={`ml-2 py-2 cursor-pointer font-semibold border-b-2 transition-colors ${activeTab === 'Explore' ? 'border-blue-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-brand-600'}`}
-          onClick={() => setActiveTab('Explore')}
+          onClick={() => setActiveTab('explore')}
         >
           Pre-trained Agents
         </button>
         <button
           className={` py-2 cursor-pointer font-semibold border-b-2 transition-colors ${activeTab === 'My Agent' ? 'border-blue-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-brand-600'}`}
-          onClick={() => setActiveTab('My Agent')}
+          onClick={() => setActiveTab('my')}
         >
           My Agents
         </button>
