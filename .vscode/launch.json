@@ -19,6 +19,17 @@
       "args": ["${file}", "${input:danaArgs}"],
       "cwd": "${fileDirname}",
       "console": "integratedTerminal"
+    },
+    {
+      "name" : "Debug Dana File",
+      "type": "python",
+      "request": "launch",
+      "module": "dana.core.cli.dana",
+      "args": ["${file}"],
+      "console": "integratedTerminal",
+      "env" : {
+        "DANAPATH" : "${workspaceFolder}"
+      }
     }
   ]
 }
