@@ -21,12 +21,12 @@
     "**/dana_grammar_embedded.py"
   ],
   "pythonVersion": "3.12",
-  "pythonPlatform": "Darwin",
+  "pythonPlatform": "All",
   "executionEnvironments": [
     {
       "root": ".",
       "pythonVersion": "3.12",
-      "pythonPlatform": "Darwin",
+      "pythonPlatform": "All",
       "extraPaths": [
         "./dana",
         "./tests"
@@ -37,5 +37,5 @@
   "reportInvalidTypeForm": "none",
   "reportMissingImports": "warning",
   "reportMissingTypeStubs": false,
-  "reportPossibleUnusedVariable": "none",
+  "reportPossiblyUnboundVariable": "none",
 }
