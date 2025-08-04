@@ -22,7 +22,7 @@ def run_na_file_service(request: RunNAFileRequest):
         sandbox = DanaSandbox()
 
         # Execute the file
-        result = sandbox.run_file(request.file_path, input_data=request.input)
+        result = sandbox.execute_file(request.file_path, input_data=request.input)
 
         return RunNAFileResponse(
             success=True, output=result.get("output", ""), result=result.get("result"), final_context=result.get("context", {})

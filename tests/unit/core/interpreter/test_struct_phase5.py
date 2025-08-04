@@ -68,7 +68,7 @@ local:processed_order2 = order2.process_order()
 local:total_revenue = processed_order1.amount + processed_order2.amount
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert result.success, f"Execution failed: {result.error}"
 
         # Verify customer creation
@@ -122,7 +122,7 @@ local:eng_dept = Department(
 local:eng_cost = eng_dept.calculate_department_cost()
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert result.success, f"Execution failed: {result.error}"
 
         # Verify department structure
@@ -170,7 +170,7 @@ local:player = Player(
 local:moved_player = player.move_player(3.0, 2.0)
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert result.success, f"Execution failed: {result.error}"
 
         # Verify player movement using method syntax
@@ -215,8 +215,8 @@ while count < 100:
 """
 
         # Execute both tests
-        struct_result: ExecutionResult = self.sandbox.eval(struct_code)
-        dict_result: ExecutionResult = self.sandbox.eval(dict_code)
+        struct_result: ExecutionResult = self.sandbox.execute_string(struct_code)
+        dict_result: ExecutionResult = self.sandbox.execute_string(dict_code)
 
         assert struct_result.success, f"Struct creation failed: {struct_result.error}"
         assert dict_result.success, f"Dict creation failed: {dict_result.error}"
@@ -275,8 +275,8 @@ while count < 1000:
 """
 
         # Execute both tests
-        struct_result: ExecutionResult = self.sandbox.eval(struct_access)
-        dict_result: ExecutionResult = self.sandbox.eval(dict_access)
+        struct_result: ExecutionResult = self.sandbox.execute_string(struct_access)
+        dict_result: ExecutionResult = self.sandbox.execute_string(dict_access)
 
         assert struct_result.success, f"Struct access failed: {struct_result.error}"
         assert dict_result.success, f"Dict access failed: {dict_result.error}"
@@ -320,7 +320,7 @@ local:processed_task = high_priority.process_task()
 local:is_completed = processed_task.completed
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert result.success, f"Execution failed: {result.error}"
 
         # Verify task processing
@@ -359,7 +359,7 @@ local:result2 = invalid_config.validate_config()
 local:result3 = valid_config.safe_get_value()
 """
 
-        result: ExecutionResult = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.execute_string(code)
         assert result.success, f"Execution failed: {result.error}"
 
         # Verify validation results

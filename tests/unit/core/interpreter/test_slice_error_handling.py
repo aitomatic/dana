@@ -17,7 +17,7 @@ class TestSliceErrorHandling:
 test_list = [1, 2, 3, 4, 5]
 result = test_list["start":2]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         assert not result.success
         assert "Slice start must be integer" in str(result.error)
         assert "got str" in str(result.error)
@@ -27,7 +27,7 @@ result = test_list["start":2]
 test_list = [1, 2, 3, 4, 5]
 result = test_list[1:"stop"]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         assert not result.success
         assert "Slice stop must be integer" in str(result.error)
         assert "got str" in str(result.error)
@@ -37,7 +37,7 @@ result = test_list[1:"stop"]
 test_list = [1, 2, 3, 4, 5]
 result = test_list[1:4:"step"]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         assert not result.success
         assert "Slice step must be integer" in str(result.error)
         assert "got str" in str(result.error)
@@ -48,7 +48,7 @@ result = test_list[1:4:"step"]
 test_list = [1, 2, 3, 4, 5]
 result = test_list[1:4:0]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         assert not result.success
         assert "Slice step cannot be zero" in str(result.error)
         assert "positive values" in str(result.error)
@@ -60,7 +60,7 @@ result = test_list[1:4:0]
 test_number = 42
 result = test_number[1:3]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         assert not result.success
         assert "Slice operation not supported on int" in str(result.error)
         assert "lists, tuples, strings, dictionaries" in str(result.error)
@@ -72,7 +72,7 @@ result = test_number[1:3]
 test_list = [1, 2, 3]
 result = test_list[5:7]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         assert not result.success
         assert "Slice start index 5 is out of bounds" in str(result.error)
         assert "length 3" in str(result.error)
@@ -83,7 +83,7 @@ result = test_list[5:7]
 test_list = [1, 2, 3]
 result = test_list[1:10]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         assert not result.success
         assert "Slice stop index 10 is out of bounds" in str(result.error)
         assert "length 3" in str(result.error)
@@ -95,7 +95,7 @@ result = test_list[1:10]
 test_list = [1, 2, 3, 4, 5]
 result = test_list[1:4:-1]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         assert not result.success
         assert "Invalid reverse slice" in str(result.error)
         assert "when step is negative (-1)" in str(result.error)
@@ -109,7 +109,7 @@ result = test_list[1:4:-1]
 test_list = [1, 2, 3]
 result = test_list[5]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         assert not result.success
         assert "Index 5 is out of bounds for list of length 3" in str(result.error)
         assert "Valid indices: 0 to 2" in str(result.error)
@@ -119,7 +119,7 @@ result = test_list[5]
 test_dict = {"a": 1, "b": 2, "c": 3}
 result = test_dict["missing_key"]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         assert not result.success
         assert "Key 'missing_key' not found in dictionary" in str(result.error)
         assert "Available keys include:" in str(result.error)
@@ -131,7 +131,7 @@ result = test_dict["missing_key"]
 test_list = [1, 2, 3, 4, 5]
 result = test_list[1:4]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("local:result") == [2, 3, 4]
@@ -141,7 +141,7 @@ result = test_list[1:4]
 test_list = [1, 2, 3, 4, 5, 6]
 result = test_list[0:6:2]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("local:result") == [1, 3, 5]
@@ -151,7 +151,7 @@ result = test_list[0:6:2]
 test_list = [1, 2, 3, 4, 5]
 result = test_list[4:1:-1]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("local:result") == [5, 4, 3]
@@ -161,7 +161,7 @@ result = test_list[4:1:-1]
 test_list = [1, 2, 3, 4, 5]
 result = test_list[-3:-1]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("local:result") == [3, 4]
@@ -178,7 +178,7 @@ class TestSliceContextualErrors:
 test_list = [1, 2, 3]
 result = test_list[10:20]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         assert not result.success
         # Should include target type and length in error context
         error_str = str(result.error)
@@ -192,7 +192,7 @@ result = test_list[10:20]
 test_list = [1, 2, 3]
 result = test_list[10:20:2]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         assert not result.success
         error_str = str(result.error)
         # Should include helpful error context (the actual behavior)
@@ -206,7 +206,7 @@ result = test_list[10:20:2]
 test_list = [1, 2, 3, 4, 5]
 result = test_list[10:20]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         # Should fail due to bounds validation, not produce empty result
         assert not result.success
         assert "out of bounds" in str(result.error)
@@ -224,7 +224,7 @@ class TestSliceValidationEdgeCases:
 test_list = [1, 2, 3, 4, 5]
 result = test_list[None:3]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("local:result") == [1, 2, 3]
@@ -233,7 +233,7 @@ result = test_list[None:3]
 test_list = [1, 2, 3, 4, 5]
 result = test_list[1:None]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("local:result") == [2, 3, 4, 5]
@@ -244,7 +244,7 @@ result = test_list[1:None]
 test_string = "hello world"
 result = test_string[0:5]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("local:result") == "hello"
@@ -254,7 +254,7 @@ result = test_string[0:5]
 test_string = "hello"
 result = test_string[10:20]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         assert not result.success
         assert "out of bounds" in str(result.error)
 
@@ -264,7 +264,7 @@ result = test_string[10:20]
 test_tuple = (1, 2, 3, 4, 5)
 result = test_tuple[1:4]
 """
-        result = fresh_sandbox.eval(code)
+        result = fresh_sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("local:result") == (2, 3, 4)

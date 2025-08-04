@@ -25,16 +25,13 @@ def register_corelib_functions(registry: FunctionRegistry) -> None:
     Args:
         registry: The function registry to register functions with
     """
-    print("Corelib: Starting core library function registration...")
-
     # Get the corelib directory
     corelib_dir = Path(__file__).parent
 
     # Register Python functions (from py/ directory)
     py_dir = corelib_dir / "py"
     if py_dir.exists():
-        registered_python_functions = _register_python_functions(py_dir, registry)
-        print(f"Corelib: Registered {len(registered_python_functions)} Python functions: {', '.join(registered_python_functions)}")
+        _registered_python_functions = _register_python_functions(py_dir, registry)
 
     # Register Dana functions (from na/ directory)
     na_dir = corelib_dir / "na"
@@ -45,17 +42,13 @@ def register_corelib_functions(registry: FunctionRegistry) -> None:
             _load_init_module(init_file, registry)
 
         # Then register individual functions as wrappers
-        registered_dana_functions = _register_dana_functions_from_init(registry)
-        print(f"Corelib: Registered {len(registered_dana_functions)} Dana functions: {', '.join(registered_dana_functions)}")
+        _registered_dana_functions = _register_dana_functions_from_init(registry)
 
     # Register pythonic built-in functions
     from dana.libs.stdlib.pythonic.function_factory import PythonicFunctionFactory, register_pythonic_builtins
 
     register_pythonic_builtins(registry)
-    pythonic_builtin_functions = list(PythonicFunctionFactory.FUNCTION_CONFIGS.keys())
-    print(f"Corelib: Registered {len(pythonic_builtin_functions)} pythonic built-in functions: {', '.join(pythonic_builtin_functions)}")
-
-    print(f"Corelib: Registration complete. Total functions: {len(registry.list())}")
+    _pythonic_builtin_functions = list(PythonicFunctionFactory.FUNCTION_CONFIGS.keys())
 
 
 def _register_python_functions(py_dir: Path, registry: FunctionRegistry) -> list[str]:
@@ -119,9 +112,6 @@ def _register_python_module(module_name: str, registry: FunctionRegistry) -> lis
                             trusted_for_context=True,  # Core library functions are always trusted
                         )
                         registered_functions.append(dana_func_name)
-        else:
-            # Module doesn't have __all__ - skip it
-            print(f"Corelib: Module {module_name} has no __all__ attribute, skipping")
 
     except Exception as e:
         print(f"Corelib: Error registering module {module_name}: {e}")
@@ -161,8 +151,6 @@ def _load_init_module(init_file: Path, registry: FunctionRegistry) -> None:
     # Store the context for later use in function wrappers
     registry._init_context = context
 
-    print("Corelib: Loaded __init__.na module")
-
 
 def _register_dana_functions_from_init(registry: FunctionRegistry) -> list[str]:
     """Register Dana functions as wrappers to already-imported symbols.
@@ -178,7 +166,6 @@ def _register_dana_functions_from_init(registry: FunctionRegistry) -> list[str]:
     # Get the context from the loaded __init__.na
     context = getattr(registry, "_init_context", None)
     if not context:
-        print("Corelib: No init context available, skipping Dana function registration")
         return registered_functions
 
     # Define the functions we want to register from each module
@@ -190,14 +177,12 @@ def _register_dana_functions_from_init(registry: FunctionRegistry) -> list[str]:
     for module_name, func_names in module_functions.items():
         # Get the module object from the context
         if module_name not in context.get_scope("local"):
-            print(f"Corelib: Module '{module_name}' not found in init context")
             continue
 
         module_obj = context.get_scope("local")[module_name]
 
         for func_name in func_names:
             if not hasattr(module_obj, func_name):
-                print(f"Corelib: Function '{func_name}' not found in module '{module_name}'")
                 continue
 
             # Create a simple wrapper that calls the imported function
