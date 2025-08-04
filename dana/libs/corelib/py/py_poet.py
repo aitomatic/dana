@@ -5,7 +5,7 @@ This module provides a Dana function that allows users to apply POET enhancement
 to any function call directly from Dana code.
 """
 
-__all__ = ["py_poet", "py_apply_poet"]
+__all__ = ["py_poet", "py_apply_poet", "py_poet_decorator", "py_poet_call"]
 
 from typing import Any
 
@@ -14,6 +14,64 @@ from dana.frameworks.poet import POETConfig
 
 
 def py_poet(
+    context: SandboxContext,
+    domain: str | None = None,
+    **kwargs,
+) -> Any:
+    """
+    POET decorator for Dana functions.
+
+    This function creates a decorator that can be used with the @poet syntax.
+    It wraps the actual poet decorator from the frameworks module.
+
+    Args:
+        context: The sandbox context (automatically injected)
+        domain: Domain specialization
+        **kwargs: Additional configuration options
+
+    Returns:
+        A decorator function that enhances Dana functions with POET capabilities
+    """
+    # Import the actual decorator from the frameworks module
+    from dana.frameworks.poet.core.decorator import poet
+
+    # Create the decorator with the provided arguments
+    decorator = poet(domain=domain, **kwargs)
+
+    # Return the decorator (it will be called with the function to decorate)
+    return decorator
+
+
+def py_poet_decorator(
+    context: SandboxContext,
+    domain: str | None = None,
+    **kwargs,
+) -> Any:
+    """
+    POET decorator factory for Dana functions.
+
+    This function creates a decorator that can be used with the @poet syntax.
+    It wraps the actual poet decorator from the frameworks module.
+
+    Args:
+        context: The sandbox context (automatically injected)
+        domain: Domain specialization
+        **kwargs: Additional configuration options
+
+    Returns:
+        A decorator function that enhances Dana functions with POET capabilities
+    """
+    # Import the actual decorator from the frameworks module
+    from dana.frameworks.poet.core.decorator import poet
+
+    # Create the decorator with the provided arguments
+    decorator = poet(domain=domain, **kwargs)
+
+    # Return the decorator (it will be called with the function to decorate)
+    return decorator
+
+
+def py_poet_call(
     context: SandboxContext,
     func_name: str,
     args: list | None = None,

@@ -258,9 +258,21 @@ class FunctionExecutor(BaseExecutor):
         decorator_name = decorator.name
 
         # Try function registry first (most common case)
-        if self.function_registry and self.function_registry.has(decorator_name, "core"):
-            func, _, _ = self.function_registry.resolve(decorator_name, "core")
-            return func
+        if self.function_registry:
+            # Try core namespace first (for built-in decorators)
+            if self.function_registry.has(decorator_name, "core"):
+                func, _, _ = self.function_registry.resolve(decorator_name, "core")
+                return func
+
+            # Try local namespace (for user-defined decorators like poet)
+            if self.function_registry.has(decorator_name, "local"):
+                func, _, _ = self.function_registry.resolve(decorator_name, "local")
+                return func
+
+            # Try without specifying namespace (will search all namespaces)
+            if self.function_registry.has(decorator_name):
+                func, _, _ = self.function_registry.resolve(decorator_name)
+                return func
 
         # Try local context
         try:

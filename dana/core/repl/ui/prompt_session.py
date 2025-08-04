@@ -61,6 +61,20 @@ class PromptSessionManager(Loggable):
             b = event.app.current_buffer
             b.start_history_lines_completion()
 
+        # Add ESC key binding for cancellation during execution
+        @kb.add(Keys.Escape)
+        def _(event):
+            """Handle ESC key for operation cancellation."""
+            # Check if we're currently executing a program
+            if hasattr(self.repl, "_cancellation_requested"):
+                # Signal cancellation
+                self.repl.request_cancellation()
+                event.app.output.write("\n⏹️  Cancelling operation...\n")
+                event.app.output.flush()
+            else:
+                # Normal ESC behavior (clear current input)
+                event.app.current_buffer.reset()
+
         keywords = self._get_completion_keywords()
 
         # Define syntax highlighting style

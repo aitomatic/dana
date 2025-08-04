@@ -20,6 +20,7 @@ class OutputFormatter(Loggable):
         """Initialize output formatter."""
         super().__init__()
         self.colors = colors
+        self._progress_shown = False
 
     def format_result(self, result) -> None:
         """Format and display execution result."""
@@ -83,3 +84,28 @@ class OutputFormatter(Loggable):
     def show_goodbye(self) -> None:
         """Show goodbye message."""
         print("Goodbye! Dana REPL terminated.")
+
+    async def show_progress(self, message: str) -> None:
+        """Show a progress indicator."""
+        if not self._progress_shown:
+            print(f"\n⏳ {message}", end="", flush=True)
+            self._progress_shown = True
+
+    async def update_progress(self, message: str) -> None:
+        """Update the progress message."""
+        if self._progress_shown:
+            print(f"\r⏳ {message}", end="", flush=True)
+
+    async def hide_progress(self) -> None:
+        """Hide the progress indicator."""
+        if self._progress_shown:
+            print("\r" + " " * 80 + "\r", end="", flush=True)
+            self._progress_shown = False
+
+    async def show_cancelled(self) -> None:
+        """Show cancellation message."""
+        print("\n⏹️  Operation cancelled by user")
+
+    async def show_completed(self, elapsed_time: float) -> None:
+        """Show completion message."""
+        print(f"\n✅ Completed in {elapsed_time:.1f}s")

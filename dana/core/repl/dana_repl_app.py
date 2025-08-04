@@ -122,13 +122,21 @@ async def dana_repl_main(debug: bool = False) -> None:
 
 
 class DanaREPLApp(Loggable):
-    """Main Dana REPL application with TIMING DIAGNOSTICS and BACKGROUND EXECUTION."""
+    """Main Dana REPL application with BLOCKING EXECUTION and ESC CANCELLATION.
+
+    Features:
+    - Blocking execution until operation completes
+    - ESC cancellation during execution
+    - Progress indicators for long operations
+    - Responsive cancellation with ESC key
+    """
 
     def __init__(self, log_level: LogLevel = LogLevel.WARN):
-        """Initialize the Dana REPL app."""
+        """Initialize the Dana REPL application."""
         super().__init__()
         self._session_start = time.time()  # Track session timing
         self._background_tasks = set()  # Track background execution tasks
+        self._cancellation_requested = False  # Cancellation flag
 
         # Color scheme and UI setup
         from dana.common.terminal_utils import supports_color
@@ -168,7 +176,7 @@ class DanaREPLApp(Loggable):
                     if executed_program:
                         # Store input context for multiline programs too
                         self._store_input_context()
-                        self._start_background_execution(executed_program)
+                        await self._execute_program_blocking(executed_program)
                         last_executed_program = executed_program
                     continue
 
@@ -189,13 +197,13 @@ class DanaREPLApp(Loggable):
                 if self._handle_orphaned_else_statement(line, last_executed_program):
                     continue
 
-                # For single-line input, execute immediately in background
+                # For single-line input, execute immediately and block until completion
                 self.debug("Executing single line input")
                 # Track single-line input in history for IPV context
                 self.input_processor.state.add_to_history(line)
                 # Store input context in sandbox context for IPV access
                 self._store_input_context()
-                self._start_background_execution(line)
+                await self._execute_program_blocking(line)
                 last_executed_program = line
 
             except KeyboardInterrupt:
@@ -236,54 +244,78 @@ class DanaREPLApp(Loggable):
         except Exception as e:
             self.debug(f"Could not store input context: {e}")
 
-    def _start_background_execution(self, program: str) -> None:
-        """Start program execution in background and return immediately."""
-        # Create background task
-        task = asyncio.create_task(self._execute_program_background(program))
-
-        # Add to background tasks set
-        self._background_tasks.add(task)
-
-        # Add callback to remove task when done
-        task.add_done_callback(self._background_tasks.discard)
-
-    async def _execute_program_background(self, program: str) -> None:
-        """Execute a Dana program in the background with safe output handling."""
+    async def _execute_program_blocking(self, program: str) -> None:
+        """Execute program with blocking behavior and ESC cancellation support."""
         try:
-            # Execute without patch_stdout first
-            await self._execute_program(program)
-        except Exception as e:
-            # Handle errors in background execution
-            self.debug(f"Background execution error: {e}")
-            # For errors, always use patch_stdout to be safe
-            from prompt_toolkit.patch_stdout import patch_stdout
+            self.debug(f"Starting blocking execution for: {program}")
 
-            with patch_stdout():
-                self.output_formatter.format_error(e)
+            # Reset cancellation flag
+            self._cancellation_requested = False
 
-    async def _execute_program(self, program: str) -> None:
-        """Execute a Dana program and handle the result or errors."""
-        try:
-            self.debug(f"Executing program: {program}")
-
-            # Use run_in_executor to prevent blocking the main event loop
+            # Start execution in background thread
             loop = asyncio.get_running_loop()
+            future = loop.run_in_executor(None, self.repl.execute, program)
 
-            # Execute Dana program in thread pool to avoid blocking
-            result = await loop.run_in_executor(None, self.repl.execute, program)
+            # Track polling time
+            start_time = time.time()
+            poll_count = 0
 
-            # Capture and display any print output from the interpreter
+            # Block and poll every 100ms until completion or cancellation
+            while not future.done():
+                await asyncio.sleep(0.1)  # 100ms polling interval
+                poll_count += 1
+
+                # Check for cancellation request
+                if self._cancellation_requested:
+                    self.debug("Cancellation requested, stopping execution")
+                    future.cancel()
+                    await self.output_formatter.hide_progress()
+                    await self.output_formatter.show_cancelled()
+                    return
+
+                # Show progress indicator after 500ms
+                if poll_count == 5:
+                    elapsed = time.time() - start_time
+                    await self.output_formatter.show_progress(f"Executing... ({elapsed:.1f}s) [ESC to cancel]")
+
+                # Update progress message every 2 seconds
+                elif poll_count > 5 and poll_count % 20 == 0:
+                    elapsed = time.time() - start_time
+                    await self.output_formatter.update_progress(f"Executing... ({elapsed:.1f}s) [ESC to cancel]")
+
+            # Hide progress indicator
+            if poll_count >= 5:
+                await self.output_formatter.hide_progress()
+
+            # Check if cancelled
+            if future.cancelled():
+                await self.output_formatter.show_cancelled()
+                return
+
+            # Get the result
+            result = future.result()
+
+            # Display results
             print_output = self.repl.interpreter.get_and_clear_output()
             if print_output:
                 print(print_output)
-
-            # Display the result if it's not None
             if result is not None:
                 await self.output_formatter.format_result_async(result)
 
+        except asyncio.CancelledError:
+            await self.output_formatter.hide_progress()
+            await self.output_formatter.show_cancelled()
+            raise
         except Exception as e:
-            self.debug(f"Execution error: {e}")
-            raise  # Let the background wrapper handle it
+            if poll_count >= 5:
+                await self.output_formatter.hide_progress()
+            self.debug(f"Blocking execution error: {e}")
+            raise
+
+    def request_cancellation(self) -> None:
+        """Request cancellation of the current execution."""
+        self._cancellation_requested = True
+        self.debug("Cancellation requested by user")
 
     def _handle_exit_commands(self, line: str) -> bool:
         """
