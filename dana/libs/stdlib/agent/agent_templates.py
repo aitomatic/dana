@@ -8,7 +8,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from dana.agent.agent_struct_system import AgentStructInstance
+from dana.agent.agent_struct_system import AgentStructInstance, AgentStructType, register_agent_struct_type
 
 
 def agent_from_template(template_name: str, **kwargs) -> AgentStructInstance:
@@ -62,8 +62,13 @@ def agent_from_template(template_name: str, **kwargs) -> AgentStructInstance:
     fields = template["default_fields"].copy()
     fields.update(kwargs)
 
-    # Create agent using core function
-    return agent(agent_type, fields)
+    # Create agent instance directly using agent system
+    # Create agent struct type if it doesn't exist
+    agent_struct_type = AgentStructType(name=agent_type)
+    register_agent_struct_type(agent_struct_type)
+
+    # Create and return agent instance
+    return AgentStructInstance(agent_struct_type, fields)
 
 
 # Pre-built agent creation functions for common use cases

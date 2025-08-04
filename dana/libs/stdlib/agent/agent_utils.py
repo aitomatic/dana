@@ -10,7 +10,7 @@ MIT License
 
 from typing import Any
 
-from dana.agent.agent_struct_system import AgentStructInstance
+from dana.agent.agent_struct_system import AgentStructInstance, AgentStructType, register_agent_struct_type
 
 
 def create_agent_pool(agent_type: str, count: int, configs: list[dict[str, Any]] | None = None) -> list[AgentStructInstance]:
@@ -38,7 +38,10 @@ def create_agent_pool(agent_type: str, count: int, configs: list[dict[str, Any]]
     agents = []
     for i in range(count):
         config = configs[i] if configs and i < len(configs) else {}
-        agent_instance = agent(agent_type, config)
+        # Create agent instance directly using agent system
+        agent_struct_type = AgentStructType(name=agent_type)
+        register_agent_struct_type(agent_struct_type)
+        agent_instance = AgentStructInstance(agent_struct_type, config)
         agents.append(agent_instance)
     return agents
 
