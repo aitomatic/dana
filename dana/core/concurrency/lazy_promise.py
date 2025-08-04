@@ -16,8 +16,8 @@ from collections.abc import Callable, Coroutine
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Union
 
-from dana.core.lang.sandbox_context import SandboxContext
 from dana.core.concurrency.base_promise import BasePromise, PromiseError
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class PromiseGroup:
@@ -203,6 +203,17 @@ class LazyPromise(BasePromise):
             LazyPromise[T] that appears as T but executes lazily
         """
         return cls(computation, context)
+
+    # LazyPromise uses the transparent __str__ from BasePromise
+    # This means str(lazy_promise) resolves to the actual value, not meta info
+
+    def __repr__(self):
+        """Show meta representation without resolving the promise."""
+        if self._resolved:
+            if self._error:
+                return f"LazyPromise[Error: {self._error.original_error}]"
+            return f"LazyPromise[{repr(self._result)}]"
+        return "LazyPromise[<pending>]"
 
 
 def is_lazy_promise(obj: Any) -> bool:

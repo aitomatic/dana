@@ -1,5 +1,6 @@
 {
   "recommendations": [
+    "ms-python.python",
     "charliermarsh.ruff",
     "davidanson.vscode-markdownlint",
     "tamasfe.even-better-toml"
