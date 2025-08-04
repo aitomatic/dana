@@ -169,13 +169,13 @@ export const MyAgentTab: React.FC<{
                   </div>
                 </div>
                 <div className="flex gap-2 justify-between items-center">
-                  <Button 
+                  <Button
                     onClick={(e) => {
                       e.stopPropagation();
                       navigate(`/agents/${agent.id}`);
                     }}
-                    variant="outline" 
-                    className="w-1/3 text-sm font-semibold text-gray-700"
+                    variant="outline"
+                    className="w-1/2 text-sm font-semibold text-gray-700"
                   >
                     <Settings style={{ width: '20', height: '20' }} />
                     Train
@@ -186,7 +186,7 @@ export const MyAgentTab: React.FC<{
                       navigate(`/agents/${agent.id}/chat`);
                     }}
                     variant="outline"
-                    className="w-2/3 text-sm font-semibold text-gray-700"
+                    className="w-1/2 text-sm font-semibold text-gray-700"
                   >
                     <Play style={{ width: '20', height: '20' }} />
                     Use agent

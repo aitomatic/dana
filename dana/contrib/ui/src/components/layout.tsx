@@ -3,8 +3,10 @@ import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './app-sidebar';
 import { ArrowLeft } from 'iconoir-react';
+import { Settings } from 'iconoir-react';
 import { useAgentStore } from '@/stores/agent-store';
 import { apiService } from '@/lib/api';
+import { Button } from '@/components/ui/button';
 // import { Button } from './ui/button';
 // import { apiService } from '@/lib/api';
 
@@ -95,42 +97,36 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
               {isChatPage && (
                 <button
                   onClick={() => navigate('/agents')}
-                  className="flex justify-center items-center w-8 h-8 rounded-lg transition-colors hover:bg-gray-100"
+                  className="flex justify-center items-center w-8 h-8 rounded-lg transition-colors hover:bg-gray-100 cursor-pointer"
                   aria-label="Back to agents"
                 >
-                  <ArrowLeft width={20} height={20} className="text-gray-500" />
+                  <ArrowLeft width={18} height={18} className="text-gray-500" />
                 </button>
               )}
               <span className="font-semibold text-md">{getPageTitle()}</span>
             </div>
-            {/* {isChatPage &&
-              (agent_id === 'sofia_finance_expert' || agent_id === 'jordan_financial_analyst') && (
-                <div>
-                  <Button
-                    onClick={async () => {
-                      if (selectedAgent?.config?.is_prebuilt) {
-                        try {
-                          const newAgent = await apiService.cloneAgentFromPrebuilt(
-                            selectedAgent?.config?.key,
-                          );
-                          if (newAgent && newAgent.id) {
-                            navigate(`/agents/${newAgent.id}`);
-                          }
-                        } catch (err) {
-                          // Optionally show error toast
-                          console.error(err);
-                        }
-                      } else {
-                        navigate(`/agents/${selectedAgent?.id}/chat`);
+            {isChatPage && agent_id && isNaN(Number(agent_id)) && prebuiltAgent && (
+              <div>
+                <Button
+                  onClick={async () => {
+                    try {
+                      const newAgent = await apiService.cloneAgentFromPrebuilt(prebuiltAgent.key);
+                      if (newAgent && newAgent.id) {
+                        navigate(`/agents/${newAgent.id}`);
                       }
-                    }}
-                    className="font-semibold"
-                    variant="default"
-                  >
-                    Train from this Agent
-                  </Button>
-                </div>
-              )} */}
+                    } catch (err) {
+                      // Optionally show error toast
+                      console.error(err);
+                    }
+                  }}
+                  className="font-semibold"
+                  variant="outline"
+                >
+                  <Settings style={{ width: '16', height: '16' }} />
+                  Train from this
+                </Button>
+              </div>
+            )}
           </div>
         </header>
         <main className="overflow-auto flex-1">{children}</main>
