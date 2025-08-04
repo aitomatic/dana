@@ -155,7 +155,9 @@ const ChatBox = ({ handleSendMessage, placeholder, id, agentId, isShowUpload = f
   const ControlsArea = useMemo(
     () => (
       <div className={cn('flex flex-row-reverse items-end w-full h-10 gap-2 justify-between')}>
-        <div className={cn('flex items-center gap-4')}>{MemoizedSendButton}</div>
+        <div className={cn('w-full justify-between flex items-center gap-4')}>
+          {MemoizedSendButton}
+        </div>
       </div>
     ),
     [MemoizedSendButton],
