@@ -47,17 +47,13 @@ class OutputFormatter(Loggable):
             try:
                 from dana.core.concurrency import BasePromise
                 from dana.core.concurrency.eager_promise import EagerPromise
+                from dana.core.concurrency.lazy_promise import LazyPromise
 
-                if isinstance(result, EagerPromise):
-                    # For EagerPromise, use async-safe resolution
-                    try:
-                        resolved_result = await result.await_result()
-                        print_formatted_text(ANSI(self.colors.accent(str(resolved_result))))
-                        return
-                    except Exception as e:
-                        # If resolution fails, show the promise meta info with error
-                        print_formatted_text(ANSI(self.colors.accent(f"EagerPromise[Error: {e}]")))
-                        return
+                if isinstance(result, EagerPromise | LazyPromise):
+                    # For both EagerPromise and LazyPromise, show the promise object itself (don't await)
+                    # This allows llm() calls to return quickly with the Promise
+                    print_formatted_text(ANSI(self.colors.accent(str(result))))
+                    return
                 elif isinstance(result, BasePromise):
                     # For other promise types, show meta info instead of resolving
                     print_formatted_text(ANSI(self.colors.accent(str(result))))

@@ -103,6 +103,7 @@ class TestUnifiedExecution(unittest.TestCase):
         self.interpreter.function_registry.register(
             name="reason",
             func=mock_reason_function,
+            namespace="system",  # Register in system namespace where the real function is
             func_type=FunctionType.PYTHON,
             overwrite=True,  # Override the real reason function
             trusted_for_context=True,  # Mock function needs context access

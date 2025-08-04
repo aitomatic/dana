@@ -18,13 +18,13 @@ class TestTextFunctions:
 
     def test_text_functions_registered(self):
         """Test that text functions are properly registered."""
-        # Check that all text functions are registered in the local namespace
-        assert "capitalize_words" in self.registry._functions["local"]
-        assert "title_case" in self.registry._functions["local"]
+        # Check that all text functions are registered in the system namespace
+        assert "capitalize_words" in self.registry._functions["system"]
+        assert "title_case" in self.registry._functions["system"]
 
     def test_capitalize_words_function(self):
         """Test capitalize_words function."""
-        func = self.registry._functions["local"]["capitalize_words"][0]
+        func = self.registry._functions["system"]["capitalize_words"][0]
 
         # Test basic functionality
         result = func.execute(None, "hello world")
@@ -38,7 +38,7 @@ class TestTextFunctions:
 
     def test_title_case_function(self):
         """Test title_case function."""
-        func = self.registry._functions["local"]["title_case"][0]
+        func = self.registry._functions["system"]["title_case"][0]
 
         # Test basic functionality
         result = func.execute(None, "hello world")
@@ -52,8 +52,8 @@ class TestTextFunctions:
 
     def test_function_argument_validation(self):
         """Test that functions properly validate their arguments."""
-        capitalize_func = self.registry._functions["local"]["capitalize_words"][0]
-        title_case_func = self.registry._functions["local"]["title_case"][0]
+        capitalize_func = self.registry._functions["system"]["capitalize_words"][0]
+        title_case_func = self.registry._functions["system"]["title_case"][0]
 
         # Test wrong argument types
         with pytest.raises(TypeError, match="capitalize_words argument must be a string"):

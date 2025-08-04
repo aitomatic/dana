@@ -21,6 +21,7 @@ import logging
 from typing import Any
 
 from dana.common.exceptions import SandboxError
+from dana.common.runtime_scopes import RuntimeScopes
 from dana.core.lang.ast import (
     AttributeAccess,
     FStringExpression,
@@ -257,32 +258,34 @@ class FunctionExecutor(BaseExecutor):
         """Resolve a decorator to a callable function."""
         decorator_name = decorator.name
 
-        # Try function registry first (most common case)
+        # Try function registry first - search all namespaces systematically
         if self.function_registry:
-            # Try core namespace first (for built-in decorators)
-            if self.function_registry.has(decorator_name, "core"):
-                func, _, _ = self.function_registry.resolve(decorator_name, "core")
-                return func
+            # Search all available namespaces in order of preference
+            namespaces_to_check = RuntimeScopes.ALL
 
-            # Try local namespace (for user-defined decorators like poet)
-            if self.function_registry.has(decorator_name, "local"):
-                func, _, _ = self.function_registry.resolve(decorator_name, "local")
-                return func
+            for namespace in namespaces_to_check:
+                if self.function_registry.has(decorator_name, namespace):
+                    func, _, _ = self.function_registry.resolve(decorator_name, namespace)
+                    return func
 
-            # Try without specifying namespace (will search all namespaces)
+            # Fallback: search without specifying namespace (searches all namespaces)
             if self.function_registry.has(decorator_name):
                 func, _, _ = self.function_registry.resolve(decorator_name)
                 return func
 
-        # Try local context
-        try:
-            local_func = context.get(f"local:{decorator_name}")
-            if callable(local_func):
-                return local_func
-        except Exception:
-            pass
+        # Try context lookups - search all scopes systematically
+        context_scopes = RuntimeScopes.ALL
 
-        # Try global context
+        for scope in context_scopes:
+            try:
+                # Try scoped lookup: local:decorator_name
+                scoped_func = context.get(f"{scope}:{decorator_name}")
+                if callable(scoped_func):
+                    return scoped_func
+            except Exception:
+                pass
+
+        # Try global context (no scope prefix)
         try:
             global_func = context.get(decorator_name)
             if callable(global_func):

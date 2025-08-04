@@ -83,7 +83,9 @@ def test_original_failing_case():
     def mock_reason(*args, **kwargs):
         return "DANA is a digital wallet"
 
-    interpreter.function_registry.register(name="reason", func=mock_reason, func_type=FunctionType.PYTHON, overwrite=True)
+    interpreter.function_registry.register(
+        name="reason", func=mock_reason, namespace="system", func_type=FunctionType.PYTHON, overwrite=True
+    )
 
     code = """
 question_2 = "What is DANA"

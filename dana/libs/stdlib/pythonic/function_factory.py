@@ -12,10 +12,11 @@ from enum import Enum
 from typing import Any
 
 from dana.common.exceptions import SandboxError
+from dana.common.runtime_scopes import RuntimeScopes
+from dana.core.concurrency import LazyPromise
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata, FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.concurrency import LazyPromise
 
 
 class UnsupportedReason(Enum):
@@ -790,6 +791,7 @@ def register_pythonic_builtins(registry: FunctionRegistry) -> None:
         registry.register(
             name=function_name,
             func=wrapper,
+            namespace=RuntimeScopes.SYSTEM,
             func_type=FunctionType.PYTHON,
             metadata=metadata,
             overwrite=True,  # Built-ins take precedence for safety
@@ -818,6 +820,7 @@ def register_pythonic_builtins(registry: FunctionRegistry) -> None:
         registry.register(
             name=function_name,
             func=handler,
+            namespace=RuntimeScopes.SYSTEM,
             func_type=FunctionType.PYTHON,
             metadata=metadata,
             overwrite=True,  # Built-in error handlers take precedence for security

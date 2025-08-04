@@ -11,6 +11,7 @@ This module provides a helper function to automatically register all core librar
 import importlib
 from pathlib import Path
 
+from dana.common.runtime_scopes import RuntimeScopes
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 
@@ -112,6 +113,7 @@ def _register_python_module(module_name: str, registry: FunctionRegistry) -> lis
                         registry.register(
                             name=dana_func_name,
                             func=func,
+                            namespace=RuntimeScopes.SYSTEM,
                             func_type=FunctionType.REGISTRY,
                             overwrite=True,
                             trusted_for_context=True,  # Core library functions are always trusted
@@ -231,6 +233,7 @@ def _register_dana_functions_from_init(registry: FunctionRegistry) -> list[str]:
             registry.register(
                 name=func_name,
                 func=python_func,
+                namespace=RuntimeScopes.SYSTEM,
                 func_type=FunctionType.PYTHON,
                 overwrite=True,
                 trusted_for_context=True,

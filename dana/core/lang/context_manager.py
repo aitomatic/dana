@@ -78,7 +78,7 @@ class ContextManager:
             raise StateError(f"Unknown scope: {scope}")
 
         # For global scopes, set in root context
-        if scope in RuntimeScopes.GLOBAL:
+        if scope in RuntimeScopes.GLOBALS:
             root = self.context
             while root._parent is not None:
                 root = root._parent

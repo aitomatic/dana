@@ -304,7 +304,7 @@ class TestDynamicHelp:
 
         # Verify core functions are listed
         registry = app.repl.interpreter.function_registry
-        core_functions = registry.list("local")
+        core_functions = registry.list("system")
 
         # All core functions should appear in the help output
         for func_name in core_functions:
@@ -342,7 +342,7 @@ class TestDynamicHelp:
         def test_function(context, message: str, options=None):
             return f"Test: {message}"
 
-        registry.register("test_func", test_function, "local")
+        registry.register("test_func", test_function, "system")
 
         # Capture updated help output
         sys.stdout = captured_output = StringIO()
@@ -368,7 +368,7 @@ class TestDynamicHelp:
 
         # Get core functions from registry
         registry = app.repl.interpreter.function_registry
-        core_functions = registry.list("local")
+        core_functions = registry.list("system")
 
         # Get completer words from prompt session
         completer = app.prompt_manager.prompt_session.completer

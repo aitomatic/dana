@@ -87,27 +87,35 @@ def _preload_corelib_functions():
     This ensures core library functions are available immediately when
     DanaInterpreter is created, without requiring deferred registration.
     """
+    print("Corelib: Starting preload of core library functions...")
     try:
         # Import and register core library functions
         from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
         from dana.libs.corelib.register_corelib_functions import register_corelib_functions
 
+        print("Corelib: Creating temporary registry...")
         # Create a temporary registry for preloading
         temp_registry = FunctionRegistry()
 
+        print("Corelib: Registering core library functions...")
         # Register core library functions
         register_corelib_functions(temp_registry)
 
+        print("Corelib: Storing preloaded functions...")
         # Store the preloaded functions for later use by DanaInterpreter
         # This avoids the need for deferred registration
         import dana.core.lang.interpreter.functions.function_registry as registry_module
 
         registry_module._preloaded_corelib_functions = temp_registry._functions.copy()
+        print(f"Corelib: Successfully preloaded {len(temp_registry._functions)} namespaces")
 
     except Exception as e:
         # Log error but don't fail startup - corelib functions will be loaded normally
         import logging
+        import traceback
 
+        print(f"Corelib: Failed to preload corelib functions: {e}")
+        print(f"Corelib: Traceback: {traceback.format_exc()}")
         logging.warning(f"Failed to preload corelib functions: {e}")
 
 

@@ -180,7 +180,7 @@ class PromptSessionManager(Loggable):
         # Dynamically add core function names to keywords
         try:
             registry = self.repl.interpreter.function_registry
-            core_functions = registry.list("local")
+            core_functions = registry.list("system")
             if core_functions:
                 keywords.extend(core_functions)
                 self.debug(f"Added {len(core_functions)} core functions to tab completion: {core_functions}")

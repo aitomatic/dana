@@ -18,15 +18,15 @@ class TestMathFunctions:
 
     def test_math_functions_registered(self):
         """Test that math functions are properly registered."""
-        # Check that all math functions are registered in the local namespace
-        assert "sum_range" in self.registry._functions["local"]
-        assert "is_odd" in self.registry._functions["local"]
-        assert "is_even" in self.registry._functions["local"]
-        assert "factorial" in self.registry._functions["local"]
+        # Check that all math functions are registered in the system namespace
+        assert "sum_range" in self.registry._functions["system"]
+        assert "is_odd" in self.registry._functions["system"]
+        assert "is_even" in self.registry._functions["system"]
+        assert "factorial" in self.registry._functions["system"]
 
     def test_sum_range_function(self):
         """Test sum_range function."""
-        func = self.registry._functions["local"]["sum_range"][0]
+        func = self.registry._functions["system"]["sum_range"][0]
 
         # Test basic functionality
         result = func.execute(None, 1, 5)
@@ -37,7 +37,7 @@ class TestMathFunctions:
 
     def test_is_odd_function(self):
         """Test is_odd function."""
-        func = self.registry._functions["local"]["is_odd"][0]
+        func = self.registry._functions["system"]["is_odd"][0]
 
         # Test odd numbers
         assert func.execute(None, 1) is True
@@ -51,7 +51,7 @@ class TestMathFunctions:
 
     def test_is_even_function(self):
         """Test is_even function."""
-        func = self.registry._functions["local"]["is_even"][0]
+        func = self.registry._functions["system"]["is_even"][0]
 
         # Test even numbers
         assert func.execute(None, 0) is True
@@ -65,7 +65,7 @@ class TestMathFunctions:
 
     def test_factorial_function(self):
         """Test factorial function."""
-        func = self.registry._functions["local"]["factorial"][0]
+        func = self.registry._functions["system"]["factorial"][0]
 
         # Test basic factorials
         assert func.execute(None, 0) == 1
@@ -77,9 +77,9 @@ class TestMathFunctions:
 
     def test_function_argument_validation(self):
         """Test that functions properly validate their arguments."""
-        sum_range_func = self.registry._functions["local"]["sum_range"][0]
-        is_odd_func = self.registry._functions["local"]["is_odd"][0]
-        factorial_func = self.registry._functions["local"]["factorial"][0]
+        sum_range_func = self.registry._functions["system"]["sum_range"][0]
+        is_odd_func = self.registry._functions["system"]["is_odd"][0]
+        factorial_func = self.registry._functions["system"]["factorial"][0]
 
         # Test wrong argument types
         with pytest.raises(TypeError, match="sum_range arguments must be integers"):

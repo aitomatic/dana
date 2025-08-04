@@ -65,7 +65,8 @@ class CoreFunctionResolver(FunctionResolverInterface):
 
         for name_to_try in names_to_try:
             try:
-                if self.function_registry.has(name_to_try):
+                # Use None to search across all namespaces
+                if self.function_registry.has(name_to_try, None):
                     return True
             except Exception:
                 continue
@@ -100,13 +101,18 @@ class CoreFunctionResolver(FunctionResolverInterface):
 
         for name_to_try in names_to_try:
             try:
-                if self.function_registry.has(name_to_try):
+                # Use None to search across all namespaces
+                if self.function_registry.has(name_to_try, None):
                     self.logger.debug(f"Found in registry: {name_to_try}")
                     return ResolvedFunction(
                         func=None,  # Registry functions don't expose the actual function object
                         func_type=FunctionType.REGISTRY,
                         source="registry",
-                        metadata={"resolved_name": name_to_try, "original_name": name_info.original_name, "registry_lookup": True},
+                        metadata={
+                            "resolved_name": name_to_try,
+                            "original_name": name_info.original_name,
+                            "registry_lookup": True,
+                        },
                     )
             except Exception as e:
                 self.logger.debug(f"Registry lookup failed for '{name_to_try}': {e}")
