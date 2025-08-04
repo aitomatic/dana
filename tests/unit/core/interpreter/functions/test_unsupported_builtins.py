@@ -12,11 +12,10 @@ from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.stdlib.pythonic.function_factory import (
-    PythonicFunctionFactory,
-    UnsupportedReason,
-    register_pythonic_builtins,
-)
+
+
+# Import the real PythonicFunctionFactory
+from dana.libs.stdlib.pythonic.function_factory import PythonicFunctionFactory, UnsupportedReason
 
 
 class TestUnsupportedFunctions:
@@ -24,20 +23,19 @@ class TestUnsupportedFunctions:
 
     def test_unsupported_function_detection(self):
         """Test that unsupported functions are properly detected."""
-        factory = PythonicFunctionFactory()
 
         # Test known unsupported functions
-        assert factory.is_unsupported("eval")
-        assert factory.is_unsupported("exec")
-        assert factory.is_unsupported("open")
-        assert factory.is_unsupported("globals")
-        assert factory.is_unsupported("locals")
+        assert PythonicFunctionFactory.is_unsupported("eval")
+        assert PythonicFunctionFactory.is_unsupported("exec")
+        assert PythonicFunctionFactory.is_unsupported("open")
+        assert PythonicFunctionFactory.is_unsupported("globals")
+        assert PythonicFunctionFactory.is_unsupported("locals")
 
         # Test that supported functions are not marked as unsupported
-        assert not factory.is_unsupported("len")
-        assert not factory.is_unsupported("sum")
-        assert not factory.is_unsupported("max")
-        assert not factory.is_unsupported("print")
+        assert not PythonicFunctionFactory.is_unsupported("len")
+        assert not PythonicFunctionFactory.is_unsupported("sum")
+        assert not PythonicFunctionFactory.is_unsupported("max")
+        assert not PythonicFunctionFactory.is_unsupported("print")
 
     def test_eval_function_blocked(self):
         """Test that eval() is properly blocked."""
@@ -241,7 +239,7 @@ class TestUnsupportedFunctionRegistry:
     def test_unsupported_functions_registered(self):
         """Test that unsupported functions are registered with error handlers."""
         registry = FunctionRegistry()
-        register_pythonic_builtins(registry)
+        # register_pythonic_builtins(registry) # This line is removed as per the new_code
 
         # Test that unsupported functions are "registered" (with error handlers)
         assert registry.has("eval")
@@ -251,7 +249,7 @@ class TestUnsupportedFunctionRegistry:
     def test_calling_unsupported_through_registry(self):
         """Test calling unsupported functions through the registry."""
         registry = FunctionRegistry()
-        register_pythonic_builtins(registry)
+        # register_pythonic_builtins(registry) # This line is removed as per the new_code
         context = SandboxContext()
 
         # Test calling eval through registry
@@ -283,7 +281,7 @@ class TestUnsupportedFunctionRegistry:
         registry.register("eval", PythonFunction(safe_eval, trusted_for_context=True), func_type=FunctionType.PYTHON, overwrite=True)
 
         # Now register built-ins (should overwrite the custom eval with error handler)
-        register_pythonic_builtins(registry)
+        # register_pythonic_builtins(registry) # This line is removed as per the new_code
 
         # The built-in error handler should now be active, not the custom function
         context = SandboxContext()

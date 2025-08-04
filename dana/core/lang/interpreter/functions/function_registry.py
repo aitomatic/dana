@@ -90,6 +90,31 @@ class FunctionRegistry:
         self._functions: dict[str, dict[str, tuple[Callable, FunctionType, FunctionMetadata]]] = {}
         self._arg_processor = None  # Will be initialized on first use
 
+        # Load preloaded corelib functions if available
+        self._load_preloaded_corelib_functions()
+
+    def _load_preloaded_corelib_functions(self):
+        """Load preloaded corelib functions from initlib startup.
+
+        This method loads core library functions that were preloaded during
+        Dana startup to avoid the need for deferred registration.
+        """
+        try:
+            # Check if preloaded functions are available in the module
+            import dana.core.lang.interpreter.functions.function_registry as registry_module
+
+            if hasattr(registry_module, "_preloaded_corelib_functions"):
+                preloaded_functions = registry_module._preloaded_corelib_functions
+                if preloaded_functions:
+                    # Merge preloaded functions into this registry
+                    for namespace, functions in preloaded_functions.items():
+                        if namespace not in self._functions:
+                            self._functions[namespace] = {}
+                        self._functions[namespace].update(functions)
+        except Exception:
+            # If preloading failed, corelib functions will be loaded normally
+            pass
+
     def _get_arg_processor(self):
         """
         Get or create the ArgumentProcessor.

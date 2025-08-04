@@ -196,7 +196,18 @@ class REPL(Loggable):
                     break
         if tip:
             formatted.append(f"  {tip}")
-        return "\n".join(formatted)
+
+        # Don't add "Error:" prefix if the message already contains it or is a formatted error
+        result = "\n".join(formatted)
+        if "Error:" in error_msg or "=== Dana Runtime Error ===" in error_msg:
+            # If the error message already contains "Error:" or is a formatted error,
+            # just return the original error message with user input prepended
+            if user_input:
+                return f"Error:\n  Input: {user_input}\n  {error_msg}"
+            else:
+                return error_msg
+        else:
+            return result
 
     def execute(self, program_source: str, initial_context: dict[str, Any] | None = None) -> Any:
         """Execute a Dana program and return the result value.

@@ -89,9 +89,6 @@ class DanaInterpreter(Loggable):
         from dana.core.lang.interpreter.functions.function_registry import (
             FunctionRegistry,
         )
-        from dana.core.stdlib.core.register_core_functions import (
-            register_core_functions,
-        )
 
         self._function_registry = FunctionRegistry()
 
@@ -99,8 +96,11 @@ class DanaInterpreter(Loggable):
         if hasattr(self.__class__, "_function_registry_use_arg_processor"):
             self._function_registry._use_arg_processor = self.__class__._function_registry_use_arg_processor
 
-        # Register all core functions automatically
-        register_core_functions(self._function_registry)
+        # Core library functions are preloaded during startup in initlib
+        # and automatically loaded by FunctionRegistry.__init__()
+
+        # Stdlib functions are NOT automatically registered
+        # They must be imported explicitly using use() or import statements
 
         self.debug("Function registry initialized")
 
