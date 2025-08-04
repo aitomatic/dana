@@ -1,7 +1,8 @@
 // SendButton.tsx - Send button component
-import { ArrowUp, Plus } from 'iconoir-react';
+import { ArrowUp, Attachment } from 'iconoir-react';
 import { IconLoader2 } from '@tabler/icons-react';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SendButtonProps {
   message: string | null | undefined;
@@ -27,23 +28,29 @@ const SendButton = ({
     <div className="flex gap-2 items-center w-full justify-between">
       {/* File Upload Button */}
       {onFileUpload && (
-        <div
-          onClick={!isSubmitting && !isUploading ? onFileUpload : () => {}}
-          className={cn(
-            'flex items-center justify-center w-9 h-9 border bg-white border-gray-300 rounded-full transition-all duration-200 cursor-pointer',
-            isSubmitting || isUploading
-              ? 'opacity-50 cursor-not-allowed bg-gray-100'
-              : ' hover:bg-gray-100',
-          )}
-          style={{ pointerEvents: isSubmitting || isUploading ? 'none' : 'auto' }}
-          title="Upload files"
-        >
-          {isUploading ? (
-            <IconLoader2 className="w-4 h-4 text-gray-600 animate-spin" />
-          ) : (
-            <Plus className="w-5 h-5 text-gray-500" />
-          )}
-        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              onClick={!isSubmitting && !isUploading ? onFileUpload : () => {}}
+              className={cn(
+                'flex items-center justify-center w-9 h-9 border bg-white border-gray-300 rounded-full transition-all duration-200 cursor-pointer',
+                isSubmitting || isUploading
+                  ? 'opacity-50 cursor-not-allowed bg-gray-100'
+                  : ' hover:bg-gray-100',
+              )}
+              style={{ pointerEvents: isSubmitting || isUploading ? 'none' : 'auto' }}
+            >
+              {isUploading ? (
+                <IconLoader2 className="w-4 h-4 text-gray-600 animate-spin" />
+              ) : (
+                <Attachment className="w-4 h-4 text-gray-500" />
+              )}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Add files</p>
+          </TooltipContent>
+        </Tooltip>
       )}
 
       {/* Send Button */}

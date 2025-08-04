@@ -5,7 +5,7 @@ import { useParams } from 'react-router-dom';
 import { useSmartChatStore } from '@/stores/smart-chat-store';
 import { useAgentStore } from '@/stores/agent-store';
 import { Plus } from 'lucide-react';
-import { ArrowUp } from 'iconoir-react';
+import { ArrowUp, Attachment } from 'iconoir-react';
 import { MarkdownViewerSmall } from './chat/markdown-viewer';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -73,7 +73,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
             sender: 'agent',
             text: displayName
               ? `Hi! I'm here to help you to customize **${displayName}**. What would you like to do?`
-              : `Hi! I'm here to help you get started. What would you like you agent to do?`,
+              : `Hi! I'm Dana. I’m here to help you to train your agent. First of all, what expertise your agent should have?`,
           });
         }
       } catch (e) {
@@ -254,7 +254,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
                   disabled={loading}
                 >
                   <div className="flex justify-center items-center p-2 text-gray-700 rounded-full border border-gray-300 cursor-pointer hover:bg-gray-200">
-                    <Plus className="w-4 h-4" />
+                    <Attachment className="w-4 h-4" />
                   </div>
                 </button>
               </TooltipTrigger>

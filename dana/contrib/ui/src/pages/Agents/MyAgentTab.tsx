@@ -10,6 +10,7 @@ import { getAgentAvatarSync } from '@/utils/avatar';
 import { Settings, Play, MoreVert, Trash } from 'iconoir-react';
 import { useAgentStore } from '@/stores/agent-store';
 import { DeleteAgentDialog } from '@/components/delete-agent-dialog';
+import { toast } from 'sonner';
 
 // Function to generate random avatar colors based on agent ID
 const getRandomAvatarColor = (agentId: string | number): string => {
@@ -66,6 +67,25 @@ export const MyAgentTab: React.FC<{
   };
 
   const handleDeleteSuccess = () => {
+    // Show success toast notification with custom styling
+    toast.success(
+      <div>
+        <span style={{ fontWeight: 'bold' }}>{agentToDelete?.name}</span> has been deleted
+        successfully
+      </div>,
+      {
+        style: {
+          background: '#f0fdf4',
+          color: '#166534',
+          border: '1px solid #bbf7d0',
+          borderRadius: '8px',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
+      },
+    );
+
     // Redirect to agents page with my tab selected after successful deletion
     navigate('/agents?tab=my');
   };
