@@ -185,15 +185,15 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
   };
 
   // Render selection indicator
-  const renderSelectionIndicator = () => {
-    if (!isSelected) return null;
+  // const renderSelectionIndicator = () => {
+  //   if (!isSelected) return null;
 
-    return (
-      <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center shadow-lg animate-pulse">
-        {/* <CheckIcon size={14} className="text-white" /> */}
-      </div>
-    );
-  };
+  //   return (
+  //     <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center shadow-lg animate-pulse">
+  //       {/* <CheckIcon size={14} className="text-white" /> */}
+  //     </div>
+  //   );
+  // };
 
   // Get node styling based on knowledge status and node type
   const getNodeStyling = () => {

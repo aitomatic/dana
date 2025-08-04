@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
-import { ChatPlusIn, Tools } from 'iconoir-react';
+import { ChatPlusIn, Settings } from 'iconoir-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -215,7 +215,7 @@ const ConversationsSidebar: React.FC<ConversationsSidebarProps> = ({ agentId }) 
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex justify-center items-center rounded-md cursor-pointer hover:bg-gray-100 size-8">
-                  <Tools
+                  <Settings
                     onClick={() => {
                       navigate(`/agents/${agentId}`);
                     }}
