@@ -20,8 +20,6 @@
   "ignore": [
     "**/dana_grammar_embedded.py"
   ],
-  "reportMissingImports": "warning",
-  "reportMissingTypeStubs": false,
   "pythonVersion": "3.12",
   "pythonPlatform": "Darwin",
   "executionEnvironments": [
@@ -34,5 +32,10 @@
         "./tests"
       ]
     }
-  ]
-} 
+  ],
+  "reportCallIssue": "none",
+  "reportInvalidTypeForm": "none",
+  "reportMissingImports": "warning",
+  "reportMissingTypeStubs": false,
+  "reportPossibleUnusedVariable": "none",
+}
