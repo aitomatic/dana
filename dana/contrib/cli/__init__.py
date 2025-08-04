@@ -71,10 +71,10 @@ def main():
 """
 
         # run the appended source code with custom search paths
-        DanaSandbox.quick_eval(
+        DanaSandbox.execute_string_once(
             source_code=source_code_with_main_call, filename=args.file_path, debug_mode=args.debug, module_search_paths=[file_dir]
         )
     # otherwise, run the script
     else:
-        # For regular file execution, we can rely on run_file to set up the search paths
-        DanaSandbox.quick_run(file_path=args.file_path, debug_mode=args.debug)
+        # For regular file execution, we can rely on execute_file to set up the search paths
+        DanaSandbox.execute_file_once(file_path=args.file_path, debug_mode=args.debug)

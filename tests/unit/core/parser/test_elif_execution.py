@@ -41,7 +41,7 @@ def test_basic_elif_execution(sandbox):
         result4 = test_elif(-1)
     """)
 
-    result = sandbox.eval(code)
+    result = sandbox.execute_string(code)
 
     # Verify execution was successful
     assert result.success, f"Execution failed: {result.error}"
@@ -77,7 +77,7 @@ def test_elif_with_complex_conditions(sandbox):
         result6 = categorize_student(50, 70)  # failing
     """)
 
-    result = sandbox.eval(code)
+    result = sandbox.execute_string(code)
 
     assert result.success, f"Execution failed: {result.error}"
     assert result.final_context.get("result1") == "excellent"
@@ -112,7 +112,7 @@ def test_elif_with_side_effects(sandbox):
         result4 = test_side_effects(99)
     """)
 
-    result = sandbox.eval(code)
+    result = sandbox.execute_string(code)
 
     assert result.success, f"Execution failed: {result.error}"
 
@@ -164,7 +164,7 @@ def test_nested_elif_chains(sandbox):
         unknown_result = process_data("pressure", 50)
     """)
 
-    result = sandbox.eval(code)
+    result = sandbox.execute_string(code)
 
     assert result.success, f"Execution failed: {result.error}"
 
@@ -216,7 +216,7 @@ def test_elif_with_variable_assignments(sandbox):
         result_c = calculate_grade(75)
     """)
 
-    result = sandbox.eval(code)
+    result = sandbox.execute_string(code)
 
     assert result.success, f"Execution failed: {result.error}"
 
@@ -268,7 +268,7 @@ def test_elif_with_early_return(sandbox):
         result2 = test_early_return(4)
     """)
 
-    result = sandbox.eval(code)
+    result = sandbox.execute_string(code)
 
     assert result.success, f"Execution failed: {result.error}"
 
@@ -315,7 +315,7 @@ def test_elif_chain_with_loops(sandbox):
         unchanged = process_numbers(input_numbers, "unknown")
     """)
 
-    result = sandbox.eval(code)
+    result = sandbox.execute_string(code)
 
     assert result.success, f"Execution failed: {result.error}"
 
@@ -364,7 +364,7 @@ def test_elif_with_function_calls(sandbox):
         result_unknown = calculate(5, 3, "unknown")
     """)
 
-    result = sandbox.eval(code)
+    result = sandbox.execute_string(code)
 
     assert result.success, f"Execution failed: {result.error}"
 
@@ -412,7 +412,7 @@ def test_elif_execution_order(sandbox):
         result_65 = test_overlapping(65)  # Should be "F"
     """)
 
-    result = sandbox.eval(code)
+    result = sandbox.execute_string(code)
 
     assert result.success, f"Execution failed: {result.error}"
 

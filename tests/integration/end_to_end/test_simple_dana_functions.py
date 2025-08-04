@@ -40,7 +40,7 @@ class TestSimpleDanaFunctions(unittest.TestCase):
     def test_basic_log_function(self):
         """Test basic log function works."""
         code = 'log("Hello from Dana!")'
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
 
         if not result.success:
             print(f"FAILED: {result.error}")
@@ -55,7 +55,7 @@ class TestSimpleDanaFunctions(unittest.TestCase):
 x = 5
 log(f"x = {x}")
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
 
         if not result.success:
             print(f"FAILED: {result.error}")
@@ -70,7 +70,7 @@ log(f"x = {x}")
 set_model("openai:gpt-4")
 log("set_model function exists")
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
 
         if not result.success:
             print(f"FAILED: {result.error}")
@@ -85,7 +85,7 @@ log("set_model function exists")
 result = reason("What is 2+2?")
 log(f"reason function works: {result is not None}")
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
 
         if not result.success:
             print(f"FAILED: {result.error}")

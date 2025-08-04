@@ -97,7 +97,7 @@ result
 """
 
         # Execute the test code
-        result = sandbox.eval(test_code)
+        result = sandbox.execute_string(test_code)
 
         # Verify execution was successful
         assert result.success, f"Stdlib loading test failed: {result.error}"
