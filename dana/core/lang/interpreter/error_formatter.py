@@ -8,8 +8,6 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-import re
-
 from dana.common.error_utils import ErrorUtils
 from dana.core.lang.interpreter.error_context import ErrorContext
 
@@ -97,6 +95,8 @@ class EnhancedErrorFormatter:
         Returns:
             Formatted error message in clean developer format
         """
+        import re  # Ensure re is available in this method
+
         # Check for reserved keyword errors first
         error_msg = str(error)
         previous_tokens = []  # Initialize to avoid scoping issues
@@ -222,6 +222,46 @@ class EnhancedErrorFormatter:
         elif "not defined" in error_msg:
             lines.append("Root cause: Attempted to use an undefined variable or function")
             lines.append("Suggested fix: Check spelling and ensure variable/function is defined before use")
+        elif "Function" in error_msg and "not found" in error_msg:
+            # Extract function name from error message
+            import re
+
+            func_match = re.search(r"Function '([^']+)'", error_msg)
+            if func_match:
+                func_name = func_match.group(1)
+                lines.append(f"Root cause: Function '{func_name}' is not available in the current scope")
+                lines.append("Suggested fix: Import the function using one of these methods:")
+                lines.append(f'  • use("{func_name}")  # Import from stdlib (if use() is available)')
+                lines.append(f"  • import stdlib.core.{func_name}_functions  # Full import")
+                lines.append("  • Check if the function is available in the current namespace")
+
+                # Provide specific guidance for common functions
+                if func_name in ["reason", "llm", "log", "print", "agent"]:
+                    lines.append("")
+                    lines.append("Note: These are stdlib functions that require explicit import.")
+                    lines.append("If use() is not available, try:")
+                    lines.append(f"  • import stdlib.core.{func_name}_function")
+                    lines.append("  • Or check if the function is available in your Dana environment")
+
+                # Suggest similar function names
+                similar_functions = []
+                if func_name == "no":
+                    similar_functions.append("noop")
+                elif func_name == "yes":
+                    similar_functions.append("noop")
+                elif func_name == "prnt":
+                    similar_functions.append("print")
+                elif func_name == "logg":
+                    similar_functions.append("log")
+
+                if similar_functions:
+                    lines.append("")
+                    lines.append("Did you mean:")
+                    for similar_func in similar_functions:
+                        lines.append(f"  • {similar_func}()")
+            else:
+                lines.append("Root cause: Function not found in the current scope")
+                lines.append("Suggested fix: Import the function using use() or import statements")
         else:
             lines.append("Problem: See error message above")
             lines.append("Debug tip: Check the execution trace above for the source of the error")

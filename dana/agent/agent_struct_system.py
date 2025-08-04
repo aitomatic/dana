@@ -216,7 +216,7 @@ class AgentStructInstance(StructInstance):
         """Get Dana's stdlib llm_function with sandbox context."""
         try:
             from dana.core.lang.sandbox_context import SandboxContext
-            from dana.core.stdlib.core.llm_function import llm_function
+            from dana.libs.corelib.py.py_llm import py_llm
 
             # Create a minimal sandbox context for LLM calls
             # In a real Dana execution environment, this would be provided
@@ -227,7 +227,7 @@ class AgentStructInstance(StructInstance):
             def wrapped_llm_function(prompt: str) -> str:
                 try:
                     # Call Dana's llm_function which returns a Promise
-                    promise = llm_function(context, prompt)
+                    promise = py_llm(context, prompt)
 
                     # Properly resolve the Promise to get the actual content
                     if hasattr(promise, "_ensure_resolved"):

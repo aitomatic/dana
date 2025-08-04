@@ -27,7 +27,7 @@ class TestCleanComposition:
     def setup_method(self):
         """Set up the interpreter and context for each test."""
         self.sandbox = DanaSandbox(debug_mode=True)
-        self.sandbox.eval(
+        self.sandbox.execute_string(
             """
 def add_one(x: int) -> int:
     return x + 1
@@ -52,7 +52,7 @@ def sum_list(items: list) -> int:
 def pipeline(x: int) = double | add_one
 result = pipeline(5)
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("result") == 11
@@ -63,7 +63,7 @@ result = pipeline(5)
 def pipeline(x: int) = noop | [double, add_one]
 result = pipeline(5)
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("result") == [10, 6]
@@ -77,7 +77,7 @@ def stringify(x: int) -> str:
 def pipeline(x: int) = double | [stringify, add_one]
 result = pipeline(5)
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         pipeline_result = result.final_context.get("result")
@@ -93,7 +93,7 @@ def sum_list(items: list) -> int:
 def pipeline(x: int) = add_one | double
 result = pipeline(5)
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context.get("result") == 12  # (5 + 1) * 2 = 12
 
@@ -105,7 +105,7 @@ result1 = math_pipeline(5)
 result2 = math_pipeline(10)
 result3 = math_pipeline(-5)
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context.get("result1") == 11
         assert result.final_context.get("result2") == 21
@@ -117,7 +117,7 @@ result3 = math_pipeline(-5)
 def pipeline(x: int) = double | non_existent_function
 result = pipeline(5)
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         # The pipeline creation should fail because non_existent_function is not found
         assert not result.success
         # The error should indicate that the function was not found
@@ -129,7 +129,7 @@ result = pipeline(5)
 def pipeline(x: int) = double | non_existent_function
 result = pipeline(5)
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         # The pipeline creation should fail because non_existent_function is not found
         assert not result.success
         # The error should indicate that the function was not found

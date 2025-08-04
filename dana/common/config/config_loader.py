@@ -2,24 +2,29 @@
 
 This module provides centralized configuration management using the ConfigLoader
 class. It supports loading configuration from 'dana_config.json' with a
-defined search order and allows overriding via the DANA_CONFIG environment
+defined search hierarchy and allows overriding via the DANA_CONFIG environment
 variable.
+
+Search Hierarchy for 'dana_config.json':
+1. DANA_CONFIG environment variable (absolute path override)
+2. Current Working Directory (./dana_config.json) - project override
+3. User Home Directory (~/.dana/dana_config.json) - user global config
+4. Dana Library Directory (dana/dana_config.json) - default fallback
 
 Features:
 - Singleton pattern for consistent config access
-- Standardized path resolution for config files
-- Search order for 'dana_config.json': DANA_CONFIG env var -> CWD -> Project Root
-- Clear error handling for config loading failures
+- Hierarchical search with user override support
+- Clear error handling with detailed location reporting
+- Environment variable override capability
 
 Example:
-    # Get config using the default search order
+    # Get config using the default search hierarchy
     loader = ConfigLoader()
     config = loader.get_default_config()
 
-    # If DANA_CONFIG is set, it overrides the search order:
+    # Override with environment variable
     # export DANA_CONFIG=/path/to/my_config.json
     # python my_script.py
-    # Now loader.get_default_config() will load from /path/to/my_config.json
 """
 
 import json
@@ -32,19 +37,22 @@ from dana.common.mixins.loggable import Loggable
 
 
 class ConfigLoader(Loggable):
-    """Centralized configuration loader with environment variable support and search order.
+    """Centralized configuration loader with hierarchical search and environment variable support.
 
     Implements the singleton pattern for consistent access. Loads configuration
     from 'dana_config.json' based on a search hierarchy that allows user overrides.
 
     Search Hierarchy for 'dana_config.json' (used by get_default_config):
-    1. Path specified by the DANA_CONFIG environment variable.
-    2. 'dana_config.json' in the Current Working Directory (CWD) - user override.
-    3. 'dana_config.json' in the dana library directory - default config.
+    1. DANA_CONFIG environment variable (absolute path override)
+    2. Current Working Directory (./dana_config.json) - project override
+    3. User Home Directory (~/.dana/dana_config.json) - user global config
+    4. Dana Library Directory (dana/dana_config.json) - default fallback
 
-    This design allows users of the Dana library to override the default configuration
-    by placing their own dana_config.json in their project directory, while falling
-    back to the library's default configuration if no user override is found.
+    This design allows users to override the default configuration at multiple levels:
+    - Environment variable for absolute control
+    - Project directory for project-specific settings
+    - Home directory for user global preferences
+    - Library directory as the ultimate fallback
 
     Attributes:
         _instance: Singleton instance of the ConfigLoader.
@@ -52,10 +60,10 @@ class ConfigLoader(Loggable):
 
     Example:
         >>> loader = ConfigLoader()
-        >>> # Loads config based on DANA_CONFIG, CWD, or library default
+        >>> # Loads config based on search hierarchy
         >>> config = loader.get_default_config()
 
-        >>> # Load a specific, non-default config file from the library directory
+        >>> # Load a specific config file from the library directory
         >>> other_config = loader.load_config("other_settings.json")
     """
 
@@ -76,7 +84,11 @@ class ConfigLoader(Loggable):
         # Check if already initialized to avoid double initialization
         if not hasattr(self, "_initialized"):
             super().__init__()  # Initialize Loggable mixin
+            self._cached_config = None  # Cache for the default config
+            self.debug("ConfigLoader initialized")
             self._initialized = True
+        else:
+            self.debug("ConfigLoader already initialized (singleton)")
 
     @property
     def config_dir(self) -> Path:
@@ -113,7 +125,8 @@ class ConfigLoader(Loggable):
 
         try:
             with open(path, encoding="utf-8") as f:
-                return json.load(f)
+                config = json.load(f)
+                return config
         except json.JSONDecodeError as e:
             raise ConfigurationError(f"Invalid JSON in config file: {path}") from e
         except Exception as e:
@@ -123,13 +136,17 @@ class ConfigLoader(Loggable):
     def get_default_config(self) -> dict[str, Any]:
         """Gets the default configuration following the search hierarchy.
 
-        Searches for and loads 'dana_config.json' based on the following order:
-        1. Path specified by the DANA_CONFIG environment variable.
-        2. 'dana_config.json' in the Current Working Directory (CWD) - user override.
-        3. 'dana_config.json' in the dana library directory - default config.
+        Searches for and loads 'dana_config.json' based on the following hierarchy:
+        1. DANA_CONFIG environment variable (absolute path override)
+        2. Current Working Directory (./dana_config.json) - project override
+        3. User Home Directory (~/.dana/dana_config.json) - user global config
+        4. Dana Library Directory (dana/dana_config.json) - default fallback
 
-        This allows users to override the library's default configuration by placing
-        their own dana_config.json in their project directory.
+        This allows users to override the default configuration at multiple levels,
+        from project-specific settings to user global preferences.
+
+        The configuration is cached after the first load to improve performance
+        and avoid repeated file I/O operations.
 
         Returns:
             A dictionary containing the loaded default configuration.
@@ -138,14 +155,19 @@ class ConfigLoader(Loggable):
             ConfigurationError: If no configuration file is found in any of the
                                 specified locations or if loading/parsing fails.
         """
+        # Return cached config if available
+        if self._cached_config is not None:
+            return self._cached_config
+
         config_path_env = os.getenv("DANA_CONFIG")
 
         # 1. Check Environment Variable
         if config_path_env:
             env_path = Path(config_path_env).resolve()
-            self.debug(f"Attempting to load config from DANA_CONFIG: {env_path}")
             try:
-                return self._load_config_from_path(env_path)
+                config = self._load_config_from_path(env_path)
+                self._cached_config = config  # Cache the result
+                return config
             except ConfigurationError as e:
                 # Raise specific error if env var path fails
                 raise ConfigurationError(f"Failed to load config from DANA_CONFIG ({env_path}): {e}")
@@ -153,16 +175,26 @@ class ConfigLoader(Loggable):
         # 2. Check Current Working Directory
         cwd_path = Path.cwd() / self.DEFAULT_CONFIG_FILENAME
         if cwd_path.is_file():
-            self.debug(f"Attempting to load config from CWD: {cwd_path}")
             # No try-except here, let _load_config_from_path handle errors
-            return self._load_config_from_path(cwd_path)
+            config = self._load_config_from_path(cwd_path)
+            self._cached_config = config  # Cache the result
+            return config
 
-        # 3. Check Dana Library Directory (default config)
+        # 3. Check User's Home Directory (~/.dana/)
+        home_path = Path.home() / ".dana" / self.DEFAULT_CONFIG_FILENAME
+        if home_path.is_file():
+            # No try-except here, let _load_config_from_path handle errors
+            config = self._load_config_from_path(home_path)
+            self._cached_config = config  # Cache the result
+            return config
+
+        # 4. Check Dana Library Directory (default config)
         lib_path = self.config_dir / self.DEFAULT_CONFIG_FILENAME
         if lib_path.is_file():
-            self.debug(f"Attempting to load config from library directory: {lib_path}")
             # No try-except here, let _load_config_from_path handle errors
-            return self._load_config_from_path(lib_path)
+            config = self._load_config_from_path(lib_path)
+            self._cached_config = config  # Cache the result
+            return config
 
         # If not found anywhere
         raise ConfigurationError(
@@ -170,6 +202,7 @@ class ConfigLoader(Loggable):
             f"Checked locations:\n"
             f"- DANA_CONFIG environment variable: (not set or failed)\n"
             f"- Current Working Directory: {cwd_path}\n"
+            f"- User Home Directory: {home_path}\n"
             f"- Dana Library Directory: {lib_path}"
         )
 
@@ -194,3 +227,12 @@ class ConfigLoader(Loggable):
         """
         config_path = self.config_dir / config_name
         return self._load_config_from_path(config_path)
+
+    def clear_cache(self) -> None:
+        """Clear the cached configuration.
+
+        This forces the next call to get_default_config() to reload the config
+        from disk. Useful for testing or when config files might have changed.
+        """
+        self._cached_config = None
+        self.debug("Config cache cleared")
