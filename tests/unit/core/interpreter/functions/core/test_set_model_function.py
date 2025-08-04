@@ -7,7 +7,7 @@ from unittest.mock import patch
 from dana.common.exceptions import SandboxError
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.stdlib.core.set_model_function import set_model_function
+from dana.libs.corelib.py.py_set_model import py_set_model as set_model_function
 
 
 class TestSetModelFunction(unittest.TestCase):
@@ -109,7 +109,7 @@ class TestSetModelFunction(unittest.TestCase):
 
         self.assertEqual(result, "openai:gpt-4o")
 
-    @patch("dana.core.stdlib.core.set_model_function.LLMResource")
+    @patch("dana.libs.corelib.py.py_set_model.LLMResource")
     def test_set_model_llm_resource_creation_error(self, mock_llm_resource):
         """Test error handling when LLMResource creation fails."""
         # Mock LLMResource to raise an exception
@@ -236,9 +236,7 @@ class TestSetModelFunction(unittest.TestCase):
 
     def test_get_available_model_names_helper(self):
         """Test the helper function that gets available model names."""
-        from dana.core.stdlib.core.set_model_function import (
-            _get_available_model_names,
-        )
+        from dana.libs.corelib.py.py_set_model import _get_available_model_names
 
         models = _get_available_model_names()
 
@@ -253,9 +251,7 @@ class TestSetModelFunction(unittest.TestCase):
 
     def test_find_closest_model_match_helper(self):
         """Test the fuzzy matching helper function directly."""
-        from dana.core.stdlib.core.set_model_function import (
-            _find_closest_model_match,
-        )
+        from dana.libs.corelib.py.py_set_model import _find_closest_model_match
 
         available_models = [
             "openai:gpt-4o",
@@ -384,7 +380,7 @@ class TestSetModelFunction(unittest.TestCase):
 
     def test_bug_fixes_model_matching(self):
         """Test specific bug fixes for model matching logic."""
-        from dana.core.stdlib.core.set_model_function import _find_closest_model_match
+        from dana.libs.corelib.py.py_set_model import _find_closest_model_match
 
         # Test Bug Fix 1: Groq model pattern should match llama-3.1-70b-versatile
         available_models = ["groq:llama-3.1-70b-versatile", "groq:llama-3.1-8b-instant", "openai:gpt-4o"]
