@@ -35,8 +35,8 @@ def py_print(
     output = sep.join(str(value) for value in values)
 
     # Add to output buffer if available
-    # if hasattr(context, "_interpreter") and hasattr(context._interpreter, "_executor"):
-    #     context._interpreter._executor._output_buffer.append(output + end.rstrip("\n"))
+    if hasattr(context, "_interpreter") and hasattr(context._interpreter, "_executor"):
+        context._interpreter._executor._output_buffer.append(output + end.rstrip("\n"))  # type: ignore
 
     # Also print to stdout for immediate feedback
-    print(output, end=end, flush=True)
+    # print(output, end=end, flush=True)

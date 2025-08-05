@@ -231,31 +231,50 @@ class PromiseFactory:
         if PromiseExecutionContext.is_nested():
             # We're already inside an EagerPromise - execute synchronously
             # to prevent thread pool exhaustion and deadlock
+            if inspect.iscoroutine(computation):
+                import asyncio
+
+                return asyncio.run(computation)
             return computation()  # type: ignore
 
         # Strategy 2: Simple expression optimization
         if ast_node and ExpressionComplexityAnalyzer.is_simple_expression(ast_node):
             # Simple expressions don't benefit from concurrency
             # Execute synchronously to avoid unnecessary overhead
+            if inspect.iscoroutine(computation):
+                import asyncio
+
+                return asyncio.run(computation)
             return computation()  # type: ignore
 
         # Strategy 3: Deep nesting prevention
         nesting_depth = PromiseExecutionContext.get_nesting_depth()
         if nesting_depth >= 3:  # Configurable threshold
             # Prevent excessively deep Promise nesting
+            if inspect.iscoroutine(computation):
+                import asyncio
+
+                return asyncio.run(computation)
             return computation()  # type: ignore
 
-        # Strategy 4: Create EagerPromise for complex expressions
-        # Wrap the computation to track execution context
+        # Strategy 4: Context-aware computation wrapper
         def context_aware_computation():
+            """Execute computation with proper context tracking."""
             try:
                 PromiseExecutionContext.enter_eager_execution()
                 PromiseExecutionContext.increment_depth()
-                return computation()  # type: ignore
+                if inspect.iscoroutine(computation):
+                    import asyncio
+
+                    result = asyncio.run(computation)
+                else:
+                    result = computation()
+                return result
             finally:
                 PromiseExecutionContext.decrement_depth()
                 PromiseExecutionContext.exit_eager_execution()
 
+        # Create EagerPromise for complex expressions that benefit from concurrency
         return EagerPromise.create(context_aware_computation, executor)
 
     @staticmethod
@@ -317,5 +336,15 @@ class PromiseFactory:
 
             return PromiseFactory.create_return_promise(wrapped_computation, None, ast_node, context_info)
 
-        # For coroutines, create EagerPromise directly
-        return EagerPromise.create(computation, None)
+        # For coroutines, wrap them in a callable function
+        if inspect.iscoroutine(computation):
+            # Wrap coroutine in a callable function
+            def wrapped_coroutine():
+                import asyncio
+
+                return asyncio.run(computation)
+
+            return EagerPromise.create(wrapped_coroutine, None)
+        else:
+            # For coroutine functions, create EagerPromise directly
+            return EagerPromise.create(computation, None)
