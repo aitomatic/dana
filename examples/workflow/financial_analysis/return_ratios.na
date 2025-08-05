@@ -3,7 +3,7 @@
 
 from .fin_statements import get_total_asset_2y, get_equity_2y, get_net_income
 
-from .utils import over_avg_denom, FinQueryArgs
+from .utils import over_avg_denom, FinDoc
 
 
 __all__ = [
@@ -27,9 +27,11 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
-def calc_roa_ratio(args: FinQueryArgs) = [get_net_income, get_total_asset_2y] | _roa_ratio
+def calc_roa_ratio(doc: FinDoc) = [get_net_income, get_total_asset_2y] | _roa_ratio
 
 
 def _roe_ratio(intermed_results):
@@ -47,6 +49,8 @@ and using the following intermediate results:
 ```
 {intermed_results}
 ```
+
+State your result together with the supporting calculation(s).
 ')
 
-def calc_roe_ratio(args: FinQueryArgs) = [get_net_income, get_equity_2y] | _roe_ratio
+def calc_roe_ratio(doc: FinDoc) = [get_net_income, get_equity_2y] | _roe_ratio

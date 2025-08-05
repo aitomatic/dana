@@ -1,7 +1,7 @@
 """Balance Sheet Items."""
 
 
-from ..utils import query_fin_data, FinQueryArgs, CurrAndPrevNums
+from ..utils import query_fin_data, FinDoc, CurrAndPrevNums
 
 
 __all__ = [
@@ -54,11 +54,11 @@ ST_DEBT_LINE_ITEM: str = 'Short-Term Debt, or Current Portion of (Long-Term) Deb
 EQUITY_LINE_ITEM: str = "Total Equity, a.k.a. Shareholders' Equity, or Net Assets"
 
 
-def get_total_asset(args: FinQueryArgs) -> float:
+def get_total_asset(doc: FinDoc) -> float:
     """Get Total Assets from Balance Sheet."""
 
     total_asset = query_fin_data(
-        args,
+        doc,
         line_item=TA_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
@@ -66,11 +66,11 @@ def get_total_asset(args: FinQueryArgs) -> float:
     return total_asset
 
 
-def get_total_asset_2y(args: FinQueryArgs) -> CurrAndPrevNums:
+def get_total_asset_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of Total Assets from Balance Sheet."""
 
     total_asset_2y = query_fin_data(
-        args,
+        doc,
         line_item=TA_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -79,11 +79,11 @@ def get_total_asset_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     return total_asset_2y
 
 
-def get_total_asset_3y(args: FinQueryArgs) -> tuple[float]:
+def get_total_asset_3y(doc: FinDoc) -> tuple[float]:
     """Get 3 years of Total Assets from Balance Sheet."""
 
     total_asset_3y = query_fin_data(
-        args,
+        doc,
         line_item=TA_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -92,11 +92,11 @@ def get_total_asset_3y(args: FinQueryArgs) -> tuple[float]:
     return total_asset_3y
 
 
-def get_fixed_asset(args: FinQueryArgs) -> float:
+def get_fixed_asset(doc: FinDoc) -> float:
     """Get Fixed Assets from Balance Sheet."""
 
     fixed_asset = query_fin_data(
-        args,
+        doc,
         line_item=FA_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
@@ -104,11 +104,11 @@ def get_fixed_asset(args: FinQueryArgs) -> float:
     return fixed_asset
 
 
-def get_fixed_asset_2y(args: FinQueryArgs) -> CurrAndPrevNums:
+def get_fixed_asset_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of Fixed Assets from Balance Sheet."""
 
     fixed_asset_2y = query_fin_data(
-        args,
+        doc,
         line_item=FA_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -117,11 +117,11 @@ def get_fixed_asset_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     return fixed_asset_2y
 
 
-def get_fixed_asset_3y(args: FinQueryArgs) -> tuple[float]:
+def get_fixed_asset_3y(doc: FinDoc) -> tuple[float]:
     """Get 3 years of Fixed Assets from Balance Sheet."""
 
     fixed_asset_3y = query_fin_data(
-        args,
+        doc,
         line_item=FA_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -130,11 +130,11 @@ def get_fixed_asset_3y(args: FinQueryArgs) -> tuple[float]:
     return fixed_asset_3y
 
 
-def get_curr_asset(args: FinQueryArgs) -> float:
+def get_curr_asset(doc: FinDoc) -> float:
     """Get Current Assets from Balance Sheet."""
 
     curr_asset = query_fin_data(
-        args,
+        doc,
         line_item=CURR_ASSET_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
@@ -142,11 +142,11 @@ def get_curr_asset(args: FinQueryArgs) -> float:
     return curr_asset
 
 
-def get_curr_asset_2y(args: FinQueryArgs) -> CurrAndPrevNums:
+def get_curr_asset_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of Current Assets from Balance Sheet."""
 
     curr_asset_2y = query_fin_data(
-        args,
+        doc,
         line_item=CURR_ASSET_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -155,11 +155,11 @@ def get_curr_asset_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     return curr_asset_2y
 
 
-def get_curr_asset_3y(args: FinQueryArgs) -> tuple[float]:
+def get_curr_asset_3y(doc: FinDoc) -> tuple[float]:
     """Get 3 years of Current Assets from Balance Sheet."""
 
     curr_asset_3y = query_fin_data(
-        args,
+        doc,
         line_item=CURR_ASSET_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -168,11 +168,11 @@ def get_curr_asset_3y(args: FinQueryArgs) -> tuple[float]:
     return curr_asset_3y
 
 
-def get_cash_and_equiv(args: FinQueryArgs) -> float:
+def get_cash_and_equiv(doc: FinDoc) -> float:
     """Get Cash & Cash Equivalents from Balance Sheet."""
 
     cash_and_equiv = query_fin_data(
-        args,
+        doc,
         line_item=CASH_AND_EQUIV_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
@@ -180,11 +180,11 @@ def get_cash_and_equiv(args: FinQueryArgs) -> float:
     return cash_and_equiv
 
 
-def get_cash_and_equiv_2y(args: FinQueryArgs) -> CurrAndPrevNums:
+def get_cash_and_equiv_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of Cash & Cash Equivalents from Balance Sheet."""
 
     cash_and_equiv_2y = query_fin_data(
-        args,
+        doc,
         line_item=CASH_AND_EQUIV_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -193,11 +193,11 @@ def get_cash_and_equiv_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     return cash_and_equiv_2y
 
 
-def get_cash_and_equiv_3y(args: FinQueryArgs) -> tuple[float]:
+def get_cash_and_equiv_3y(doc: FinDoc) -> tuple[float]:
     """Get 3 years of Cash & Cash Equivalents from Balance Sheet."""
 
     cash_and_equiv_3y = query_fin_data(
-        args,
+        doc,
         line_item=CASH_AND_EQUIV_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -206,11 +206,11 @@ def get_cash_and_equiv_3y(args: FinQueryArgs) -> tuple[float]:
     return cash_and_equiv_3y
 
 
-def get_st_inv(args: FinQueryArgs) -> float:
+def get_st_inv(doc: FinDoc) -> float:
     """Get Short-Term Investments from Balance Sheet."""
 
     st_inv = query_fin_data(
-        args,
+        doc,
         line_item=ST_INV_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
@@ -218,11 +218,11 @@ def get_st_inv(args: FinQueryArgs) -> float:
     return st_inv
 
 
-def get_st_inv_2y(args: FinQueryArgs) -> CurrAndPrevNums:
+def get_st_inv_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of Short-Term Investments from Balance Sheet."""
 
     st_inv_2y = query_fin_data(
-        args,
+        doc,
         line_item=ST_INV_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -231,11 +231,11 @@ def get_st_inv_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     return st_inv_2y
 
 
-def get_st_inv_3y(args: FinQueryArgs) -> tuple[float]:
+def get_st_inv_3y(doc: FinDoc) -> tuple[float]:
     """Get 3 years of Short-Term Investments from Balance Sheet."""
 
     st_inv_3y = query_fin_data(
-        args,
+        doc,
         line_item=ST_INV_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -244,11 +244,11 @@ def get_st_inv_3y(args: FinQueryArgs) -> tuple[float]:
     return st_inv_3y
 
 
-def get_recvable(args: FinQueryArgs) -> float:
+def get_recvable(doc: FinDoc) -> float:
     """Get Accounts Receivable from Balance Sheet."""
 
     recvable = query_fin_data(
-        args,
+        doc,
         line_item=RECVABLE_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
@@ -256,11 +256,11 @@ def get_recvable(args: FinQueryArgs) -> float:
     return recvable
 
 
-def get_recvable_2y(args: FinQueryArgs) -> CurrAndPrevNums:
+def get_recvable_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of Accounts Receivable from Balance Sheet."""
 
     recvable_2y = query_fin_data(
-        args,
+        doc,
         line_item=RECVABLE_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -269,11 +269,11 @@ def get_recvable_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     return recvable_2y
 
 
-def get_recvable_3y(args: FinQueryArgs) -> tuple[float]:
+def get_recvable_3y(doc: FinDoc) -> tuple[float]:
     """Get 3 years of Accounts Receivable from Balance Sheet."""
 
     recvable_3y = query_fin_data(
-        args,
+        doc,
         line_item=RECVABLE_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -282,11 +282,11 @@ def get_recvable_3y(args: FinQueryArgs) -> tuple[float]:
     return recvable_3y
 
 
-def get_inventory(args: FinQueryArgs) -> float:
+def get_inventory(doc: FinDoc) -> float:
     """Get Inventories from Balance Sheet."""
 
     inventory = query_fin_data(
-        args,
+        doc,
         line_item=INVENTORY_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
@@ -294,11 +294,11 @@ def get_inventory(args: FinQueryArgs) -> float:
     return inventory
 
 
-def get_inventory_2y(args: FinQueryArgs) -> CurrAndPrevNums:
+def get_inventory_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of Inventories from Balance Sheet."""
 
     inventory_2y = query_fin_data(
-        args,
+        doc,
         line_item=INVENTORY_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -307,11 +307,11 @@ def get_inventory_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     return inventory_2y
 
 
-def get_inventory_3y(args: FinQueryArgs) -> tuple[float]:
+def get_inventory_3y(doc: FinDoc) -> tuple[float]:
     """Get 3 years of Inventories from Balance Sheet."""
 
     inventory_3y = query_fin_data(
-        args,
+        doc,
         line_item=INVENTORY_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -320,11 +320,11 @@ def get_inventory_3y(args: FinQueryArgs) -> tuple[float]:
     return inventory_3y
 
 
-def get_curr_liab(args: FinQueryArgs) -> float:
+def get_curr_liab(doc: FinDoc) -> float:
     """Get Current Liabilities from Balance Sheet."""
 
     curr_liab = query_fin_data(
-        args,
+        doc,
         line_item=CURR_LIAB_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
@@ -332,11 +332,11 @@ def get_curr_liab(args: FinQueryArgs) -> float:
     return curr_liab
 
 
-def get_curr_liab_2y(args: FinQueryArgs) -> CurrAndPrevNums:
+def get_curr_liab_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of Current Liabilities from Balance Sheet."""
 
     curr_liab_2y = query_fin_data(
-        args,
+        doc,
         line_item=CURR_LIAB_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -345,11 +345,11 @@ def get_curr_liab_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     return curr_liab_2y
 
 
-def get_curr_liab_3y(args: FinQueryArgs) -> tuple[float]:
+def get_curr_liab_3y(doc: FinDoc) -> tuple[float]:
     """Get 3 years of Current Liabilities from Balance Sheet."""
 
     curr_liab_3y = query_fin_data(
-        args,
+        doc,
         line_item=CURR_LIAB_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -358,11 +358,11 @@ def get_curr_liab_3y(args: FinQueryArgs) -> tuple[float]:
     return curr_liab_3y
 
 
-def get_payable(args: FinQueryArgs) -> float:
+def get_payable(doc: FinDoc) -> float:
     """Get Accounts Payable from Balance Sheet."""
 
     payable = query_fin_data(
-        args,
+        doc,
         line_item=PAYABLE_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
@@ -370,11 +370,11 @@ def get_payable(args: FinQueryArgs) -> float:
     return payable
 
 
-def get_payable_2y(args: FinQueryArgs) -> CurrAndPrevNums:
+def get_payable_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of Accounts Payable from Balance Sheet."""
 
     payable_2y = query_fin_data(
-        args,
+        doc,
         line_item=PAYABLE_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -383,11 +383,11 @@ def get_payable_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     return payable_2y
 
 
-def get_payable_3y(args: FinQueryArgs) -> tuple[float]:
+def get_payable_3y(doc: FinDoc) -> tuple[float]:
     """Get 3 years of Accounts Payable from Balance Sheet."""
 
     payable_3y = query_fin_data(
-        args,
+        doc,
         line_item=PAYABLE_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -396,11 +396,11 @@ def get_payable_3y(args: FinQueryArgs) -> tuple[float]:
     return payable_3y
 
 
-def get_lt_debt(args: FinQueryArgs) -> float:
+def get_lt_debt(doc: FinDoc) -> float:
     """Get Long-Term Debt from Balance Sheet."""
 
     lt_debt = query_fin_data(
-        args,
+        doc,
         line_item=LT_DEBT_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
@@ -408,11 +408,11 @@ def get_lt_debt(args: FinQueryArgs) -> float:
     return lt_debt
 
 
-def get_lt_debt_2y(args: FinQueryArgs) -> CurrAndPrevNums:
+def get_lt_debt_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of Long-Term Debt from Balance Sheet."""
 
     lt_debt_2y = query_fin_data(
-        args,
+        doc,
         line_item=LT_DEBT_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -421,11 +421,11 @@ def get_lt_debt_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     return lt_debt_2y
 
 
-def get_lt_debt_3y(args: FinQueryArgs) -> tuple[float]:
+def get_lt_debt_3y(doc: FinDoc) -> tuple[float]:
     """Get 3 years of Long-Term Debt from Balance Sheet."""
 
     lt_debt_3y = query_fin_data(
-        args,
+        doc,
         line_item=LT_DEBT_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -434,11 +434,11 @@ def get_lt_debt_3y(args: FinQueryArgs) -> tuple[float]:
     return lt_debt_3y
 
 
-def get_st_debt(args: FinQueryArgs) -> float:
+def get_st_debt(doc: FinDoc) -> float:
     """Get Short-Term Debt from Balance Sheet."""
 
     st_debt = query_fin_data(
-        args,
+        doc,
         line_item=ST_DEBT_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
@@ -446,11 +446,11 @@ def get_st_debt(args: FinQueryArgs) -> float:
     return st_debt
 
 
-def get_st_debt_2y(args: FinQueryArgs) -> CurrAndPrevNums:
+def get_st_debt_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of Short-Term Debt from Balance Sheet."""
 
     st_debt_2y = query_fin_data(
-        args,
+        doc,
         line_item=ST_DEBT_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -459,11 +459,11 @@ def get_st_debt_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     return st_debt_2y
 
 
-def get_st_debt_3y(args: FinQueryArgs) -> tuple[float]:
+def get_st_debt_3y(doc: FinDoc) -> tuple[float]:
     """Get 3 years of Short-Term Debt from Balance Sheet."""
 
     st_debt_3y = query_fin_data(
-        args,
+        doc,
         line_item=ST_DEBT_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -472,11 +472,11 @@ def get_st_debt_3y(args: FinQueryArgs) -> tuple[float]:
     return st_debt_3y
 
 
-def get_equity(args: FinQueryArgs) -> float:
+def get_equity(doc: FinDoc) -> float:
     """Get Total Equity from Balance Sheet."""
 
     equity = query_fin_data(
-        args,
+        doc,
         line_item=EQUITY_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
@@ -484,11 +484,11 @@ def get_equity(args: FinQueryArgs) -> float:
     return equity
 
 
-def get_equity_2y(args: FinQueryArgs) -> CurrAndPrevNums:
+def get_equity_2y(doc: FinDoc) -> CurrAndPrevNums:
     """Get 2 years of Total Equity from Balance Sheet."""
 
     equity_2y = query_fin_data(
-        args,
+        doc,
         line_item=EQUITY_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
@@ -497,11 +497,11 @@ def get_equity_2y(args: FinQueryArgs) -> CurrAndPrevNums:
     return equity_2y
 
 
-def get_equity_3y(args: FinQueryArgs) -> tuple[float]:
+def get_equity_3y(doc: FinDoc) -> tuple[float]:
     """Get 3 years of Total Equity from Balance Sheet."""
 
     equity_3y = query_fin_data(
-        args,
+        doc,
         line_item=EQUITY_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True,
