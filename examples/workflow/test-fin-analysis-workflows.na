@@ -4,6 +4,8 @@
 from financial_analysis.cap_intens import assess_cap_intens
 from financial_analysis.liquidity import calc_quick_ratio, calc_ccc
 
+from financial_analysis.utils import FinDoc
+
 
 # log_level('info')  # enable this for more verbose logging
 
@@ -11,10 +13,10 @@ from financial_analysis.liquidity import calc_quick_ratio, calc_ccc
 # several financial cases to study
 DOCS_DIR = 'financial_analysis/docs'
 
-MMM = FinQueryArgs(company='3M', period='2022', doc_path=f'{DOCS_DIR}/3M_2022_10K.pdf')
-AMD = FinQueryArgs(company='AMD', period='2022', doc_path=f'{DOCS_DIR}/AMD_2022_10K.pdf')
-GEN_MILLS = FinQueryArgs(company='General Mills', period='2019', doc_path=f'{DOCS_DIR}/GENERALMILLS_2019_10K.pdf')
-VERIZON = FinQueryArgs(company='Verizon', period='2022', doc_path=f'{DOCS_DIR}/VERIZON_2022_10K.pdf')
+MMM = FinDoc(company='3M', period='2022', path=f'{DOCS_DIR}/3M_2022_10K.pdf')
+AMD = FinDoc(company='AMD', period='2022', path=f'{DOCS_DIR}/AMD_2022_10K.pdf')
+GEN_MILLS = FinDoc(company='General Mills', period='2019', path=f'{DOCS_DIR}/GENERALMILLS_2019_10K.pdf')
+VERIZON = FinDoc(company='Verizon', period='2022', path=f'{DOCS_DIR}/VERIZON_2022_10K.pdf')
 
 
 # Capital-Intensity assessment
