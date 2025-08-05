@@ -22,7 +22,7 @@ DESIGN DECISIONS:
 INTEGRATION:
     - Console script: 'dana' command → this file's main() function
     - File execution: Uses DanaSandbox.quick_run() for direct .na file processing
-    - REPL mode: Imports and delegates to dana_repl_app.main() for interactive experience
+    - REPL mode: Imports and delegates to dana_repl_app.dana_repl_main() for interactive experience
 
 This script serves as the main entry point for the DANA language, similar to the python command.
 It either starts the REPL when no arguments are provided, or executes a .na file when given.
@@ -49,8 +49,8 @@ import argparse
 import asyncio
 import logging
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import uvicorn
 
@@ -82,6 +82,7 @@ def show_help():
     print(f"  {colors.accent('dana deploy [file.na]')}  Deploy a .na file as an agent endpoint")
     print(f"  {colors.accent('dana config')}            Configure providers and create .env file")
     print(f"  {colors.accent('dana -h, --help')}        Show this help message")
+    print(f"  {colors.accent('dana --version')}         Show version information")
     print(f"  {colors.accent('dana --debug')}           Enable debug logging")
     print(f"  {colors.accent('dana start')}             Start the Dana API server")
     print("")
@@ -121,10 +122,23 @@ def execute_file(file_path, debug=False):
 
         print(f"\n{colors.bold('✓ Program execution completed successfully')}")
     else:
-        print(f"\n{colors.error(f'Error: {result.error}')}")
-        import traceback
+        # Enhanced error display - show just the error message, not the full traceback
+        error_msg = str(result.error)
+        print(f"\n{colors.error('Error:')}")
 
-        traceback.print_exc()
+        # Format the error message for display
+        error_lines = error_msg.split("\n")
+        for line in error_lines:
+            if line.strip():
+                print(f"  {line}")
+
+        # In debug mode, also show the full traceback
+        if debug:
+            import traceback
+
+            print(f"\n{colors.bold('Full traceback:')}")
+            traceback.print_exc()
+
         sys.exit(1)
 
 
@@ -137,7 +151,7 @@ async def start_repl(debug=False):
     """
     # Import the REPL application module
     try:
-        from dana.core.repl.dana_repl_app import main as repl_main
+        from dana.core.repl.dana_repl_app import dana_repl_main as repl_main
 
         # Pass debug flag to repl_main
         await repl_main(debug=debug)
@@ -202,12 +216,14 @@ def main():
 
     try:
         parser = argparse.ArgumentParser(description="DANA Command Line Interface", add_help=False)
+        parser.add_argument("--version", action="store_true", help="Show version information")
         subparsers = parser.add_subparsers(dest="subcommand")
 
         # Default/run subcommand (legacy behavior)
         parser_run = subparsers.add_parser("run", add_help=False)
         parser_run.add_argument("file", nargs="?", help="DANA file to execute (.na)")
         parser_run.add_argument("-h", "--help", action="store_true", help="Show help message")
+        parser_run.add_argument("--version", action="store_true", help="Show version information")
         parser_run.add_argument("--no-color", action="store_true", help="Disable colored output")
         parser_run.add_argument("--force-color", action="store_true", help="Force colored output")
         parser_run.add_argument("--debug", action="store_true", help="Enable debug logging")
@@ -215,20 +231,52 @@ def main():
         # Deploy subcommand for single file
         parser_deploy = subparsers.add_parser("deploy", help="Deploy a .na file as an agent endpoint")
         parser_deploy.add_argument("file", help="Single .na file to deploy")
-        parser_deploy.add_argument("--protocol", choices=["mcp", "a2a"], default="a2a", help="Protocol to use (default: a2a)")
-        parser_deploy.add_argument("--host", default="0.0.0.0", help="Host to bind the server (default: 0.0.0.0)")
-        parser_deploy.add_argument("--port", type=int, default=8000, help="Port to bind the server (default: 8000)")
+        parser_deploy.add_argument(
+            "--protocol",
+            choices=["mcp", "a2a"],
+            default="a2a",
+            help="Protocol to use (default: a2a)",
+        )
+        parser_deploy.add_argument(
+            "--host",
+            default="0.0.0.0",
+            help="Host to bind the server (default: 0.0.0.0)",
+        )
+        parser_deploy.add_argument(
+            "--port",
+            type=int,
+            default=8000,
+            help="Port to bind the server (default: 8000)",
+        )
 
         # Config subcommand for provider configuration
         parser_config = subparsers.add_parser("config", help="Configure DANA providers and create .env file")
-        parser_config.add_argument("--output", "-o", default=".env", help="Output file for environment variables (default: .env)")
-        parser_config.add_argument("--validate", action="store_true", help="Only validate current configuration without prompting")
+        parser_config.add_argument(
+            "--output",
+            "-o",
+            default=".env",
+            help="Output file for environment variables (default: .env)",
+        )
+        parser_config.add_argument(
+            "--validate",
+            action="store_true",
+            help="Only validate current configuration without prompting",
+        )
         parser_config.add_argument("--debug", action="store_true", help="Enable debug logging")
 
         # Serve subcommand for API server
         parser_serve = subparsers.add_parser("start", help="Start the Dana API server")
-        parser_serve.add_argument("--host", default="127.0.0.1", help="Host to bind the server (default: 127.0.0.1)")
-        parser_serve.add_argument("--port", type=int, default=8080, help="Port to bind the server (default: 8080)")
+        parser_serve.add_argument(
+            "--host",
+            default="127.0.0.1",
+            help="Host to bind the server (default: 127.0.0.1)",
+        )
+        parser_serve.add_argument(
+            "--port",
+            type=int,
+            default=8080,
+            help="Port to bind the server (default: 8080)",
+        )
         parser_serve.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
         parser_serve.add_argument("--log-level", default="info", help="Log level (default: info)")
 
@@ -238,6 +286,13 @@ def main():
 
         # Parse subcommand
         args = parser.parse_args()
+
+        # Show version if requested
+        if args.version:
+            from dana import __version__
+
+            print(f"Dana {__version__}")
+            return 0
 
         if args.subcommand == "deploy":
             return handle_deploy_command(args)
@@ -265,6 +320,7 @@ def handle_main_command():
     parser = argparse.ArgumentParser(description="DANA Command Line Interface", add_help=False)
     parser.add_argument("file", nargs="?", help="DANA file to execute (.na)")
     parser.add_argument("-h", "--help", action="store_true", help="Show help message")
+    parser.add_argument("--version", action="store_true", help="Show version information")
     parser.add_argument("--no-color", action="store_true", help="Disable colored output")
     parser.add_argument("--force-color", action="store_true", help="Force colored output")
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
@@ -281,6 +337,13 @@ def handle_main_command():
     # Configure debug logging
     if args.debug:
         configure_debug_logging()
+
+    # Show version if requested
+    if args.version:
+        from dana import __version__
+
+        print(f"Dana {__version__}")
+        return 0
 
     # Show help if requested
     if args.help:

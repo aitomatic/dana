@@ -11,6 +11,25 @@ def health():
     return {"status": "healthy", "service": "Dana API"}
 
 
+@router.get("/api")
+def get_root_info():
+    """Get root API information"""
+    return {
+        "service": "Dana API",
+        "version": "1.0.0",
+        "status": "running",
+        "endpoints": {
+            "health": "/health",
+            "agents": "/api/agents",
+            "chat": "/api/chat",
+            "conversations": "/api/conversations",
+            "documents": "/api/documents",
+            "topics": "/api/topics",
+            "agent-test": "/api/agent-test",
+        },
+    }
+
+
 @router.get("/")
 def serve_react_index():
     static_dir = os.path.join(os.path.dirname(__file__), "../static")

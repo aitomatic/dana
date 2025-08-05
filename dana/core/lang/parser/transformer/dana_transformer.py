@@ -9,40 +9,55 @@ from dana.core.lang.parser.transformer.variable_transformer import VariableTrans
 
 
 class DanaTransformer(Transformer):
-    """
-    Unified Dana AST transformer that delegates to specialized transformers for statements, expressions,
-    f-strings, and variables.
-
-    When Lark calls a transformation method (e.g., assignment, expr, f_string, variable), this class
-    automatically forwards the call to the appropriate specialized transformer. This keeps grammar logic
-    modular and maintainable, while providing a single entry point for parsing.
-    """
+    """Main transformer that delegates to specialized transformers for different rule types."""
 
     def __init__(self):
-        """
-        Initialize all specialized transformers. Each grammar domain (statements, expressions, f-strings,
+        """Initialize the main transformer and its specialized components.
+
+        DanaTransformer acts as a facade that routes transformation requests to appropriate
+        specialized transformers. Each major category of the Dana grammar (statements, expressions,
         variables) is handled by its own class, and DanaTransformer delegates to them as needed.
         """
         super().__init__()
-        self._statement_transformer = StatementTransformer()
-        self._expression_transformer = ExpressionTransformer()
-        self._fstring_transformer = FStringTransformer()
-        self._variable_transformer = VariableTransformer()
+        # Initialize expression transformer first
+        self.expression_transformer = ExpressionTransformer(self)
+        # Initialize statement transformer with reference to this main transformer
+        self.statement_transformer = StatementTransformer(self)
+        self.fstring_transformer = FStringTransformer()
+        self.variable_transformer = VariableTransformer()
+        self.current_filename = None  # Track current filename for error reporting
+
+    def set_filename(self, filename: str | None) -> None:
+        """Set the current filename for all transformers."""
+        self.current_filename = filename
+        # Propagate to all sub-transformers
+        if hasattr(self.statement_transformer, "set_filename"):
+            self.statement_transformer.set_filename(filename)
+        if hasattr(self.expression_transformer, "set_filename"):
+            self.expression_transformer.set_filename(filename)
+        if hasattr(self.fstring_transformer, "set_filename"):
+            self.fstring_transformer.set_filename(filename)
+        if hasattr(self.variable_transformer, "set_filename"):
+            self.variable_transformer.set_filename(filename)
+
+    def transform(self, tree):
+        """Transform the parse tree with filename context."""
+        return super().transform(tree)
 
     def __getattr__(self, name):
         """
         Delegate method calls to the appropriate specialized transformer. When a transformation method
-        is not found directly on DanaTransformer, this will search each sub-transformer in order and
-        return the first match.
+        is called on DanaTransformer that it doesn't directly implement, this method looks for it
+        in the specialized transformers.
         """
-        # Check each specialized transformer to see if it implements the requested method.
+        # Check each transformer for the requested method
         # If found, delegate the call to that transformer. This enables seamless routing of
         # transformation methods (e.g., assignment, expr, f_string, variable) to the correct handler.
         for transformer in [
-            self._statement_transformer,
-            self._expression_transformer,
-            self._fstring_transformer,
-            self._variable_transformer,
+            self.statement_transformer,
+            self.expression_transformer,
+            self.fstring_transformer,
+            self.variable_transformer,
         ]:
             if hasattr(transformer, name):
                 return getattr(transformer, name)

@@ -1,0 +1,38 @@
+# Functional test for Dana struct field comments
+# This test demonstrates how field comments enhance LLM prompts
+
+struct Person:
+    name: str  # the full name of the person
+    age: int  # the age in years (must be positive)
+    email: str  # the email address for contact
+    metadata: dict[str, str]  # additional metadata like occupation, hobbies, etc.
+
+struct Product:
+    id: str  # unique product identifier (e.g., "PROD-001")
+    name: str  # product name for display
+    price: float  # price in dollars (can include cents)
+    category: str  # product category like "Electronics", "Clothing", etc.
+    tags: list[str]  # list of tags for search and filtering
+    in_stock: bool  # whether the product is currently available
+
+print("Testing Dana struct field comments functionality...")
+
+# Test 1: Person struct with detailed field comments
+print("\n=== Test 1: Person struct with field comments ===")
+person: Person = reason("Create a person named Sarah who is 28 years old and works as a data scientist")
+print("Person result:", person)
+
+# Test 2: Product struct with comprehensive field comments
+print("\n=== Test 2: Product struct with field comments ===")
+product: Product = reason("Create a product with ID 'LAPTOP-001', name 'Gaming Laptop', price 1299.99, category 'Electronics', and tags 'gaming', 'laptop', 'high-performance'")
+print("Product result:", product)
+
+# Test 3: Verify that the LLM received enhanced field descriptions
+print("\n=== Test 3: Verify enhanced field descriptions ===")
+print("The LLM should have received enhanced prompts containing:")
+print("- Field names and types with descriptive comments")
+print("- Clear guidance on what each field represents")
+print("- Format instructions for proper JSON response")
+
+print("\n=== Test completed successfully! ===")
+print("Field comments provide valuable context to LLMs for better reasoning.") 

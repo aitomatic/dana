@@ -272,6 +272,7 @@ class TestLLMResourceModelSwitching:
             ]
         ), f"Expected model format validation error after switching, got: {error_message}"
 
+    @pytest.mark.live
     def test_actual_aisuite_model_format_validation(self):
         """Test that actually triggers the AISuite model format validation error."""
         import os
@@ -346,6 +347,7 @@ class TestLLMResourceModelSwitching:
                 or "unexpected error" in error_message.lower()
             ), f"Expected model format validation error from config, got: {error_message}"
 
+    @pytest.mark.live
     def test_local_model_bug_is_fixed(self):
         """Test that the local model bug is fixed - correct model format transformation."""
         import os
@@ -363,9 +365,9 @@ class TestLLMResourceModelSwitching:
         }
 
         llm_default = LLMResource(name="test_local_default", model="local", provider_configs=provider_configs_default)
-        assert llm_default.aisuite_model_name == "openai:microsoft/Phi-3.5-mini-instruct", (
-            f"Expected default openai format, got: {llm_default.aisuite_model_name}"
-        )
+        assert (
+            llm_default.aisuite_model_name == "openai:microsoft/Phi-3.5-mini-instruct"
+        ), f"Expected default openai format, got: {llm_default.aisuite_model_name}"
 
         # Test 2: Explicit api_type="openai"
         provider_configs_openai = {
@@ -378,9 +380,9 @@ class TestLLMResourceModelSwitching:
         }
 
         llm_openai = LLMResource(name="test_local_openai", model="local", provider_configs=provider_configs_openai)
-        assert llm_openai.aisuite_model_name == "openai:microsoft/Phi-3.5-mini-instruct", (
-            f"Expected openai format, got: {llm_openai.aisuite_model_name}"
-        )
+        assert (
+            llm_openai.aisuite_model_name == "openai:microsoft/Phi-3.5-mini-instruct"
+        ), f"Expected openai format, got: {llm_openai.aisuite_model_name}"
 
         # Test 3: Different api_type (e.g., "anthropic" for local Anthropic-compatible API)
         provider_configs_anthropic = {
@@ -393,9 +395,9 @@ class TestLLMResourceModelSwitching:
         }
 
         llm_anthropic = LLMResource(name="test_local_anthropic", model="local", provider_configs=provider_configs_anthropic)
-        assert llm_anthropic.aisuite_model_name == "anthropic:claude-3.5-sonnet", (
-            f"Expected anthropic format, got: {llm_anthropic.aisuite_model_name}"
-        )
+        assert (
+            llm_anthropic.aisuite_model_name == "anthropic:claude-3.5-sonnet"
+        ), f"Expected anthropic format, got: {llm_anthropic.aisuite_model_name}"
 
         # Verify the fix for the original bug case
         llm = llm_openai  # Use the openai case for the main test
@@ -409,9 +411,9 @@ class TestLLMResourceModelSwitching:
         import asyncio
 
         asyncio.run(llm.initialize())
-        assert llm._query_executor.model == "openai:microsoft/Phi-3.5-mini-instruct", (
-            f"Query executor should receive AISuite format, got: {llm._query_executor.model}"
-        )
+        assert (
+            llm._query_executor.model == "openai:microsoft/Phi-3.5-mini-instruct"
+        ), f"Query executor should receive AISuite format, got: {llm._query_executor.model}"
 
         # Enable mock mode to test the query without real API calls
         original_mock = os.environ.get("DANA_MOCK_LLM")
@@ -428,9 +430,9 @@ class TestLLMResourceModelSwitching:
 
             # Additional verification: the query executor should have the correct model format
             # This ensures that AISuite receives "openai:microsoft/Phi-3.5-mini-instruct" instead of just "microsoft/Phi-3.5-mini-instruct"
-            assert llm._query_executor.model.startswith("openai:"), (
-                f"Query executor model should start with 'openai:' for AISuite compatibility, got: {llm._query_executor.model}"
-            )
+            assert llm._query_executor.model.startswith(
+                "openai:"
+            ), f"Query executor model should start with 'openai:' for AISuite compatibility, got: {llm._query_executor.model}"
 
         finally:
             # Restore original mock environment
@@ -459,6 +461,6 @@ class TestLLMResourceModelSwitching:
 
             llm = LLMResource(name=f"test_api_type_{api_type or 'default'}", model="local", provider_configs=provider_configs)
 
-            assert llm.aisuite_model_name == expected_aisuite_name, (
-                f"For api_type={api_type}, expected {expected_aisuite_name}, got: {llm.aisuite_model_name}"
-            )
+            assert (
+                llm.aisuite_model_name == expected_aisuite_name
+            ), f"For api_type={api_type}, expected {expected_aisuite_name}, got: {llm.aisuite_model_name}"

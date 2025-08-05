@@ -1,0 +1,55 @@
+# Test explicit placeholder pipeline mode
+# This file tests the explicit mode where $$ placeholders determine substitution
+
+def test_explicit_mode():
+    def format_message(prefix: str, text: str, suffix: str) -> str:
+        return f"{prefix}{text}{suffix}"
+
+    def multiply_text(text: str, multiplier: int) -> str:
+        return text * multiplier
+
+    def surround_with(text: str, left: str, right: str) -> str:
+        return f"{left}{text}{right}"
+
+    # Test middle placeholder
+    def middle_placeholder_pipeline(text: str) = format_message("Start: ", $$, " :End")
+    result = middle_placeholder_pipeline("hello")
+    assert result == "Start: hello :End", f"Expected 'Start: hello :End', got '{result}'"
+
+    # Test first placeholder
+    def first_placeholder_pipeline(text: str) = format_message($$, "MIDDLE", "!!!")
+    result = first_placeholder_pipeline("world")
+    assert result == "worldMIDDLE!!!", f"Expected 'worldMIDDLE!!!', got '{result}'"
+
+    # Test multiple stages with placeholder
+    def multi_stage_pipeline(text: str) = surround_with("[", $$, "]") | multiply_text(2)
+    result = multi_stage_pipeline("test")
+    assert result == "[test][test]", f"Expected '[test][test]', got '{result}'"
+
+    # Test nested placeholders
+    def nested_placeholder_pipeline(text: str) = surround_with("(", $$, ")") | surround_with("{", $$, "}")
+    result = nested_placeholder_pipeline("data")
+    assert result == "{(data)}", f"Expected '{{(data)}}', got '{result}'"
+
+    # Test placeholder in first position (missing from original)
+    def first_pos_pipeline(text: str) = format_message($$, "MIDDLE", "!!!")
+    result = first_pos_pipeline("world")
+    assert result == "worldMIDDLE!!!", f"Expected 'worldMIDDLE!!!', got '{result}'"
+
+    # Test placeholder in last position
+    def last_pos_pipeline(text: str) = format_message("START", "MIDDLE", $$)
+    result = last_pos_pipeline("end")
+    assert result == "STARTMIDDLEend", f"Expected 'STARTMIDDLEend', got '{result}'"
+
+    # Test multiple placeholders in same function call
+    def multi_placeholder_func(a: str, b: str, c: str, d: str) -> str:
+        return f"{a}-{b}-{c}-{d}"
+
+    def multi_placeholder_pipeline(text: str) = multi_placeholder_func("start", $$, "middle", $$)
+    result = multi_placeholder_pipeline("value")
+    assert result == "start-value-middle-value", f"Expected 'start-value-middle-value', got '{result}'"
+
+    log("✅ All explicit mode tests passed")
+
+if __name__ == "__main__":
+    test_explicit_mode()

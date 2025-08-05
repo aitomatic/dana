@@ -1,22 +1,22 @@
 from dana.common.resource.base_resource import BaseResource
 from dana.common.utils.misc import Misc
 from dana.core.lang.sandbox_context import SandboxContext
-from pathlib import Path
-from typing import Callable
+from collections.abc import Callable
 from functools import wraps
 import asyncio
 
+
 def create_function_with_better_doc_string(func: Callable, doc_string: str) -> Callable:
-    """Create a function with a better doc string.
-    """
+    """Create a function with a better doc string."""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)
-    
+
     @wraps(func)
     async def async_wrapper(*args, **kwargs):
         return await func(*args, **kwargs)
-    
+
     if asyncio.iscoroutinefunction(func):
         async_wrapper.__doc__ = doc_string
         return async_wrapper

@@ -86,8 +86,12 @@ class DanaInterpreter(Loggable):
 
     def _init_function_registry(self):
         """Initialize the function registry."""
-        from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
-        from dana.core.stdlib.core.register_core_functions import register_core_functions
+        from dana.core.lang.interpreter.functions.function_registry import (
+            FunctionRegistry,
+        )
+        from dana.core.stdlib.core.register_core_functions import (
+            register_core_functions,
+        )
 
         self._function_registry = FunctionRegistry()
 
@@ -141,9 +145,9 @@ class DanaInterpreter(Loggable):
         Returns:
             Raw execution result
         """
-        # Parse the source code
+        # Parse the source code with filename for error reporting
         parser = ParserCache.get_parser("dana")
-        ast = parser.parse(source_code)
+        ast = parser.parse(source_code, filename=filename)
 
         # Execute through _execute (convergent path)
         return self._execute(ast, context)
@@ -166,6 +170,10 @@ class DanaInterpreter(Loggable):
         context._interpreter = self
 
         try:
+            # Set up error context with filename if available
+            if hasattr(ast, "location") and ast.location and ast.location.source:
+                context.error_context.set_file(ast.location.source)
+
             context.set_execution_status(ExecutionStatus.RUNNING)
             result = self._executor.execute(ast, context)
             context.set_execution_status(ExecutionStatus.COMPLETED)
@@ -175,6 +183,7 @@ class DanaInterpreter(Loggable):
         finally:
             # Restore original interpreter reference
             context._interpreter = original_interpreter
+
         return result
 
     # ============================================================================
@@ -204,7 +213,8 @@ class DanaInterpreter(Loggable):
             The result of executing the program
         """
         # Route through new _execute method for convergent code path
-        return self._execute(program, context)
+        result = self._execute(program, context)
+        return result
 
     def execute_statement(self, statement: Any, context: SandboxContext) -> Any:
         """Execute a single statement.
@@ -330,7 +340,7 @@ class DanaInterpreter(Loggable):
 
         def dana_function(*args, **kwargs):
             # Create new context for function execution
-            function_context = SandboxContext(parent=context)
+            function_context = context.create_child_context()
             # Bind parameters to arguments
             self._bind_function_parameters(func_def.parameters, args, kwargs, function_context)
 

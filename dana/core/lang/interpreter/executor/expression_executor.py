@@ -21,28 +21,45 @@ import asyncio
 from collections.abc import Callable
 from typing import Any
 
-from dana.common.exceptions import SandboxError
+from dana.common.exceptions import SandboxError, StateError
 from dana.common.utils.misc import Misc
 from dana.core.lang.ast import (
     AttributeAccess,
     BinaryExpression,
     BinaryOperator,
+    ConditionalExpression,
+    DictComprehension,
     DictLiteral,
     FStringExpression,
+    FunctionCall,
     Identifier,
+    LambdaExpression,
+    ListComprehension,
     ListLiteral,
     LiteralExpression,
+    NamedPipelineStage,
     ObjectFunctionCall,
+    PipelineExpression,
+    PlaceholderExpression,
+    SetComprehension,
     SetLiteral,
     SubscriptExpression,
     TupleLiteral,
     UnaryExpression,
 )
 from dana.core.lang.interpreter.executor.base_executor import BaseExecutor
-from dana.core.lang.interpreter.executor.expression.binary_operation_handler import BinaryOperationHandler
-from dana.core.lang.interpreter.executor.expression.collection_processor import CollectionProcessor
-from dana.core.lang.interpreter.executor.expression.identifier_resolver import IdentifierResolver
-from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import PipeOperationHandler
+from dana.core.lang.interpreter.executor.expression.binary_operation_handler import (
+    BinaryOperationHandler,
+)
+from dana.core.lang.interpreter.executor.expression.collection_processor import (
+    CollectionProcessor,
+)
+from dana.core.lang.interpreter.executor.expression.identifier_resolver import (
+    IdentifierResolver,
+)
+from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import (
+    PipeOperationHandler,
+)
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
 
@@ -91,6 +108,7 @@ class ExpressionExecutor(BaseExecutor):
             LiteralExpression: self.execute_literal_expression,
             Identifier: self.execute_identifier,
             BinaryExpression: self.execute_binary_expression,
+            ConditionalExpression: self.execute_conditional_expression,
             UnaryExpression: self.execute_unary_expression,
             DictLiteral: self.execute_dict_literal,
             ListLiteral: self.execute_list_literal,
@@ -100,6 +118,14 @@ class ExpressionExecutor(BaseExecutor):
             AttributeAccess: self.execute_attribute_access,
             SubscriptExpression: self.execute_subscript_expression,
             ObjectFunctionCall: self.execute_object_function_call,
+            NamedPipelineStage: self.execute_named_pipeline_stage,
+            PlaceholderExpression: self.execute_placeholder_expression,
+            PipelineExpression: self.execute_pipeline_expression,
+            FunctionCall: self.execute_function_call,
+            LambdaExpression: self.execute_lambda_expression,
+            ListComprehension: self.execute_list_comprehension,
+            SetComprehension: self.execute_set_comprehension,
+            DictComprehension: self.execute_dict_comprehension,
         }
 
     def execute_literal_expression(self, node: LiteralExpression, context: SandboxContext) -> Any:
@@ -150,6 +176,29 @@ class ExpressionExecutor(BaseExecutor):
             return self.binary_operation_handler.execute_binary_expression(node, context)
         except (TypeError, ValueError) as e:
             raise SandboxError(f"Error evaluating binary expression with operator '{node.operator}': {e}")
+
+    def execute_conditional_expression(self, node: ConditionalExpression, context: SandboxContext) -> Any:
+        """Execute a conditional expression (ternary operator).
+
+        Args:
+            node: The conditional expression to execute
+            context: The execution context
+
+        Returns:
+            The result of the conditional expression
+        """
+        try:
+            # Evaluate the condition
+            condition_value = self.parent.execute(node.condition, context)
+
+            # Python-like truthiness evaluation
+            if condition_value:
+                return self.parent.execute(node.true_branch, context)
+            else:
+                return self.parent.execute(node.false_branch, context)
+
+        except Exception as e:
+            raise SandboxError(f"Error evaluating conditional expression: {e}")
 
     def execute_unary_expression(self, node: UnaryExpression, context: SandboxContext) -> Any:
         """Execute a unary expression.
@@ -229,20 +278,66 @@ class ExpressionExecutor(BaseExecutor):
 
         Returns:
             The value of the attribute
+
+        Raises:
+            AttributeError: If the attribute doesn't exist, with location information
         """
-        # Get the target object
-        target = self.parent.execute(node.object, context)
+        self.debug(f"Executing attribute access: {node.attribute} on {node.object}")
+        self.debug(f"Node location: {getattr(node, 'location', 'No location')}")
 
-        # Access the attribute
-        if hasattr(target, node.attribute):
-            return getattr(target, node.attribute)
+        # Track location in error context if available
+        if hasattr(node, "location") and node.location:
+            from dana.core.lang.interpreter.error_context import ExecutionLocation
 
-        # Support dictionary access with dot notation
-        if isinstance(target, dict) and node.attribute in target:
-            return target[node.attribute]
+            location = ExecutionLocation(
+                filename=context.error_context.current_file,
+                line=node.location.line,
+                column=node.location.column,
+                function_name=f"attribute access: {node.attribute}",
+                source_line=context.error_context.get_source_line(context.error_context.current_file, node.location.line)
+                if context.error_context.current_file and node.location.line
+                else None,
+            )
+            context.error_context.push_location(location)
+            self.debug(f"Pushed location to error context: {location}")
+            self.debug(f"Error context stack size after push: {len(context.error_context.execution_stack)}")
 
-        raise AttributeError(f"'{type(target).__name__}' object has no attribute '{node.attribute}'")
-    
+        try:
+            # Get the target object
+            target = self.parent.execute(node.object, context)
+
+            # Access the attribute
+            if hasattr(target, node.attribute):
+                return getattr(target, node.attribute)
+
+            # Support dictionary access with dot notation
+            if isinstance(target, dict) and node.attribute in target:
+                return target[node.attribute]
+
+            raise AttributeError(f"'{type(target).__name__}' object has no attribute '{node.attribute}'")
+        except AttributeError as e:
+            # Re-raise with location information if available
+            if hasattr(node, "location") and node.location:
+                location = node.location
+                # Format location info
+                loc_info = []
+                if location.source:
+                    loc_info.append(f'File "{location.source}"')
+                loc_info.append(f"line {location.line}")
+                loc_info.append(f"column {location.column}")
+
+                # Create enhanced error message
+                enhanced_msg = (
+                    f"Traceback (most recent call last):\n  {', '.join(loc_info)}, in attribute access: {node.attribute}\n\n{str(e)}"
+                )
+
+                # Create new exception with enhanced message but keep original for debugging
+                new_error = AttributeError(enhanced_msg)
+                new_error.__cause__ = e
+                raise new_error
+            else:
+                raise
+
     def run_function(self, func: Callable, *args, **kwargs) -> Any:
         if asyncio.iscoroutinefunction(func):
             return Misc.safe_asyncio_run(func, *args, **kwargs)
@@ -282,13 +377,21 @@ class ExpressionExecutor(BaseExecutor):
 
         self.debug(f"DEBUG: Arguments: args={args}, kwargs={kwargs}")
 
-        # If the object is a struct, try to find the method in this order:
+        # If the object is a struct (including agent structs), try to find the method in this order:
         # 1. Look for a function with the method name in the scopes
         # 2. Look for a method on the struct type
         # 3. Look for a method on the object itself
+        # 4. For agent structs, look for built-in agent methods
         if hasattr(obj, "__struct_type__"):
             struct_type = obj.__struct_type__
             self.debug(f"DEBUG: Object is struct of type {struct_type}")
+
+            # Check if this is an agent struct
+            from dana.agent import AgentStructType
+
+            is_agent_struct = isinstance(struct_type, AgentStructType)
+            if is_agent_struct:
+                self.debug(f"DEBUG: Object is agent struct of type {struct_type.name}")
 
             # First try to find a function with the method name in the scopes
             func = None
@@ -307,11 +410,11 @@ class ExpressionExecutor(BaseExecutor):
             if func is not None:
                 self.debug(f"DEBUG: Found function, type: {type(func)}")
                 # Use the function's own context as the base if available
-                base_context = getattr(func, "context", None) or context
+                getattr(func, "context", None) or context
                 if hasattr(func, "execute"):
                     self.debug("DEBUG: Using function.execute() with base_context")
-                    # Create a new context that inherits from base_context
-                    func_context = SandboxContext(parent=base_context)
+                    # Create a new context that inherits from the current context to ensure isolation
+                    func_context = context.create_child_context()
                     # Ensure the interpreter is available in the new context
                     if hasattr(context, "_interpreter") and context._interpreter is not None:
                         func_context._interpreter = context._interpreter
@@ -328,12 +431,32 @@ class ExpressionExecutor(BaseExecutor):
                 self.debug("DEBUG: Found callable method on struct_type")
                 return self.run_function(method, obj, *args, **kwargs)
 
+            # Try lambda methods registered in the MethodRegistry
+            self.debug(f"DEBUG: Trying lambda methods in MethodRegistry for {method_name}")
+            try:
+                from dana.core.lang.interpreter.struct_methods.lambda_receiver import LambdaMethodDispatcher
+
+                if LambdaMethodDispatcher.can_handle_method_call(obj, method_name):
+                    self.debug("DEBUG: Found lambda method in MethodRegistry")
+                    return LambdaMethodDispatcher.dispatch_method_call(obj, method_name, *args, **kwargs)
+            except ImportError:
+                self.debug("DEBUG: Lambda receiver support not available")
+            except Exception as e:
+                self.debug(f"DEBUG: Error checking lambda methods: {e}")
+
             # If no method found on struct type, try to find a method on the object itself
             self.debug(f"DEBUG: No method found on struct_type, trying object.{method_name}")
             method = getattr(obj, method_name, None)
             if method is not None and callable(method):
                 self.debug("DEBUG: Found callable method on object")
                 return self.run_function(method, *args, **kwargs)
+
+            # For agent structs, try built-in agent methods
+            if is_agent_struct:
+                self.debug(f"DEBUG: Trying built-in agent methods for {method_name}")
+                if hasattr(obj, method_name) and callable(getattr(obj, method_name)):
+                    self.debug(f"DEBUG: Found built-in agent method {method_name}")
+                    return self.run_function(getattr(obj, method_name), *args, **kwargs)
 
             # If we get here, no method was found
             self.debug(f"DEBUG: No method found for {method_name}")
@@ -342,7 +465,14 @@ class ExpressionExecutor(BaseExecutor):
             self.debug(f"DEBUG: Local scope keys: {list(local_scope.keys())}")
             for k, v in local_scope.items():
                 self.debug(f"DEBUG: Local scope item: {k} -> {type(v)}")
-            raise AttributeError(f"Object of type StructInstance has no method {method_name}")
+
+            # Provide more specific error message for agent structs
+            if is_agent_struct:
+                raise AttributeError(
+                    f"Agent struct '{struct_type.name}' has no method '{method_name}'. Available built-in methods: plan, solve, remember, recall"
+                )
+            else:
+                raise AttributeError(f"Object of type StructInstance has no method {method_name}")
 
         # For non-struct objects, use getattr on the object itself
         self.debug("DEBUG: Not a struct, trying getattr on object")
@@ -374,9 +504,14 @@ class ExpressionExecutor(BaseExecutor):
             The value at the specified index or slice
         """
         from dana.core.lang.ast import SliceExpression, SliceTuple
+        from dana.core.runtime.promise import is_promise, resolve_promise
 
         # Get the target object
         target = self.parent.execute(node.object, context)
+
+        # Resolve Promise if target is a Promise object
+        if is_promise(target):
+            target = resolve_promise(target)
 
         # Check the type of index operation
         if isinstance(node.index, SliceExpression):
@@ -662,3 +797,529 @@ class ExpressionExecutor(BaseExecutor):
             The list value
         """
         return self.collection_processor.execute_list_literal(node, context)
+
+    def execute_named_pipeline_stage(self, node: NamedPipelineStage, context: SandboxContext) -> Any:
+        """Execute a named pipeline stage.
+
+        This method should not be called directly, as named pipeline stages are only
+        meaningful within pipeline contexts.
+
+        Args:
+            node: The named pipeline stage
+            context: The execution context
+
+        Returns:
+            Should raise an error as named pipeline stages are not standalone expressions
+        """
+        raise SandboxError("Named pipeline stages can only be used within pipeline operations")
+
+    def execute_placeholder_expression(self, node: PlaceholderExpression, context: SandboxContext) -> Any:
+        """Execute a placeholder expression.
+
+        This method should not be called directly, as placeholders are only
+        meaningful within pipeline contexts.
+
+        Args:
+            node: The placeholder expression
+            context: The execution context
+
+        Returns:
+            Should raise an error as placeholders are not standalone expressions
+        """
+        raise SandboxError("Placeholder expressions ($) can only be used within pipeline operations")
+
+    def _resolve_pipeline_function(self, identifier: Identifier, context: SandboxContext) -> Any:
+        """Resolve an identifier to a function for pipeline execution.
+
+        This method tries to resolve functions from both the context and function registry,
+        giving priority to context variables but falling back to core functions.
+
+        Args:
+            identifier: The identifier to resolve
+            context: The execution context
+
+        Returns:
+            The resolved function object or None if not found
+        """
+        # Try context first (user-defined functions, variables)
+        try:
+            resolved_value = context.get(identifier.name)
+            if resolved_value is not None:
+                return resolved_value
+        except (KeyError, AttributeError, StateError):
+            pass
+
+        # Try function registry for core functions
+        if hasattr(context, "_interpreter") and hasattr(context._interpreter, "function_registry"):
+            registry = context._interpreter.function_registry
+            if registry.has(identifier.name):
+                resolved_func, func_type, metadata = registry.resolve(identifier.name)
+                return resolved_func
+
+        # Return None if not found (will be handled by caller)
+        return None
+
+    def execute_pipeline_expression(self, node: PipelineExpression, context: SandboxContext) -> Any:
+        """Execute a pipeline expression as a function composition.
+
+        Args:
+            node: The pipeline expression containing stages
+            context: The execution context
+
+        Returns:
+            A composed function that can be called with an initial value
+        """
+        if not node.stages:
+            # Return identity function for empty pipeline
+            def identity_function(initial_value):
+                return initial_value
+
+            return identity_function
+
+        # Create a composed function
+        def composed_function(initial_value):
+            current_value = initial_value
+
+            try:
+                for stage in node.stages:
+                    current_value = self._execute_pipeline_stage(current_value, stage, context)
+
+                return current_value
+            except SandboxError:
+                # If pipeline execution fails, return None to allow graceful error handling
+                return None
+
+        return composed_function
+
+    def execute_function_call(self, node: FunctionCall, context: SandboxContext) -> Any:
+        """Execute a function call, routing function calls with placeholders to PartialFunction logic.
+
+        Args:
+            node: The function call to execute
+            context: The execution context
+
+        Returns:
+            The result of the function call, or a PartialFunction if placeholders are present
+        """
+        # Check if the function call contains placeholders
+        if self._has_placeholders(node):
+            # Route to pipe operation handler's PartialFunction logic
+            return self.pipe_operation_handler._resolve_function_call(node, context)
+        else:
+            # Delegate to normal function execution
+            if hasattr(self.parent, "_function_executor"):
+                return self.parent._function_executor.execute_function_call(node, context)
+            else:
+                # Fallback: use parent's general execute method
+                return self.parent.execute(node, context)
+
+    def _has_placeholders(self, node: FunctionCall) -> bool:
+        """Check if a function call contains PlaceholderExpression.
+
+        Args:
+            node: The function call to check
+
+        Returns:
+            True if the function call contains placeholders, False otherwise
+        """
+        # Handle case where args is None
+        if not node.args:
+            return False
+
+        if "__positional" in node.args:
+            for arg in node.args["__positional"]:
+                if isinstance(arg, PlaceholderExpression):
+                    return True
+
+        # Check keyword arguments too
+        for key, arg in node.args.items():
+            if key != "__positional" and isinstance(arg, PlaceholderExpression):
+                return True
+
+        return False
+
+    def _execute_pipeline_stage(self, current_value: Any, stage: Any, context: SandboxContext) -> Any:
+        """Execute a single pipeline stage with argument substitution.
+
+        Args:
+            current_value: The current value from previous stage
+            stage: The stage to execute (typically a FunctionCall)
+            context: The execution context
+
+        Returns:
+            The result of executing this stage
+        """
+        # Handle different stage types
+        if isinstance(stage, FunctionCall):
+            return self._execute_function_call_stage(current_value, stage, context)
+        elif isinstance(stage, PlaceholderExpression):
+            # This shouldn't happen in a proper pipeline, but handle defensively
+            return current_value
+        else:
+            # For other expression types (like direct function identifiers), resolve properly
+            # This handles the case where we have function identifiers like 'f1' in the pipeline
+
+            # For identifier stages, use proper function resolution
+            if isinstance(stage, Identifier):
+                func = self._resolve_pipeline_function(stage, context)
+
+                if callable(func):
+                    # Special handling for ParallelFunction - pass the current_value to each function
+                    from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import (
+                        ParallelFunction,
+                    )
+
+                    if isinstance(func, ParallelFunction):
+                        return func.execute(context, current_value)
+
+                    # For core functions registered in function registry
+                    if hasattr(context, "_interpreter") and hasattr(context._interpreter, "function_registry"):
+                        registry = context._interpreter.function_registry
+                        if registry.has(stage.name):
+                            # Call through registry to ensure proper argument handling for core functions
+                            return registry.call(stage.name, context, None, current_value)
+
+                    # For SandboxFunction objects (like user-defined DanaFunction), use execute method
+                    from dana.core.lang.interpreter.functions.sandbox_function import (
+                        SandboxFunction,
+                    )
+
+                    if isinstance(func, SandboxFunction):
+                        return func.execute(context, current_value)
+
+                    # Default: direct call for non-registry functions
+                    return func(current_value)
+                else:
+                    # Create an error function that will fail when called, preserving original behavior
+                    def error_function(value):
+                        if func is None:
+                            raise SandboxError(f"Function '{stage.name}' not found")
+                        else:
+                            raise SandboxError(f"'{stage.name}' is not callable (type: {type(func).__name__})")
+
+                    return error_function(current_value)
+
+            # For other types, use the original resolution
+            else:
+                result = self.parent.execute(stage, context)
+
+                # Handle ListLiteral AST nodes that should be converted to ParallelFunction
+                if isinstance(result, ListLiteral):
+                    # Convert ListLiteral to list of functions, then to ParallelFunction
+                    functions = []
+                    for item in result.items:
+                        func = self.parent.execute(item, context)
+                        if not callable(func):
+                            raise SandboxError(f"Cannot use non-function '{func}' of type {type(func).__name__} in parallel composition")
+                        functions.append(func)
+
+                    from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import (
+                        ParallelFunction,
+                    )
+
+                    parallel_func = ParallelFunction(functions, context)
+                    return parallel_func.execute(context, current_value)
+
+                # Check if this is a list of functions that should be converted to ParallelFunction
+                elif isinstance(result, list) and all(callable(item) for item in result):
+                    from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import (
+                        ParallelFunction,
+                    )
+
+                    parallel_func = ParallelFunction(result, context)
+                    return parallel_func.execute(context, current_value)
+
+                # Handle callable functions
+                elif callable(result):
+                    from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import (
+                        ParallelFunction,
+                    )
+
+                    if isinstance(result, ParallelFunction):
+                        return result.execute(context, current_value)
+                    else:
+                        return result(current_value)
+                else:
+                    return result
+
+    def _execute_function_call_stage(self, current_value: Any, func_call: FunctionCall, context: SandboxContext) -> Any:
+        """Execute a function call stage with pipeline argument substitution.
+
+        Args:
+            current_value: The value to substitute into the function call
+            func_call: The function call to execute
+            context: The execution context
+
+        Returns:
+            The result of the function call
+        """
+
+        # Resolve the function
+        func_name = func_call.name
+        if isinstance(func_name, str):
+            func = self.parent.execute(Identifier(name=func_name), context)
+        else:
+            # Handle attribute access or other callable expressions
+            func = self.parent.execute(func_name, context)
+
+        if not callable(func):
+            raise SandboxError(f"'{func_name}' is not callable")
+
+        # Process arguments with placeholder substitution
+        args = []
+        kwargs = {}
+
+        if isinstance(func_call.args, dict):
+            # Handle positional arguments
+            if "__positional" in func_call.args:
+                for arg_expr in func_call.args["__positional"]:
+                    if self._contains_placeholder(arg_expr):
+                        args.append(current_value)
+                    else:
+                        args.append(self.parent.execute(arg_expr, context))
+
+            # Handle keyword arguments
+            for key, arg_expr in func_call.args.items():
+                if key != "__positional":
+                    if self._contains_placeholder(arg_expr):
+                        kwargs[key] = current_value
+                    else:
+                        kwargs[key] = self.parent.execute(arg_expr, context)
+        else:
+            # Fallback for other argument formats
+            args = [current_value]
+
+        # Check if we need implicit first-argument insertion
+        has_placeholder = any(self._contains_placeholder(arg) for arg in func_call.args.get("__positional", []))
+
+        if not has_placeholder:
+            # No placeholders found, insert current_value as first argument
+            args.insert(0, current_value)
+
+        # Execute the function
+        return self.run_function(func, *args, **kwargs)
+
+    def _contains_placeholder(self, expr: Any) -> bool:
+        """Check if an expression contains a placeholder.
+
+        Args:
+            expr: The expression to check
+
+        Returns:
+            True if the expression contains a PlaceholderExpression
+        """
+        if isinstance(expr, PlaceholderExpression):
+            return True
+
+        # Recursively check nested expressions
+        if hasattr(expr, "args") and isinstance(expr.args, dict):
+            for arg in expr.args.get("__positional", []):
+                if isinstance(arg, PlaceholderExpression):
+                    return True
+            for arg in expr.args.values():
+                if isinstance(arg, PlaceholderExpression):
+                    return True
+
+        return False
+
+    def execute_lambda_expression(self, node: LambdaExpression, context: SandboxContext) -> Any:
+        """Execute a lambda expression by creating a callable function object.
+
+        Args:
+            node: The lambda expression to execute
+            context: The execution context
+
+        Returns:
+            A callable function object representing the lambda
+        """
+
+        def lambda_function(*args, **kwargs):
+            """The callable function created from the lambda expression."""
+            # Validate parameter compatibility if type checking is enabled
+            try:
+                from dana.core.lang.type_system.lambda_types import LambdaTypeValidator
+
+                if not LambdaTypeValidator.validate_parameter_compatibility(node.parameters, list(args)):
+                    raise SandboxError(f"Lambda parameter type mismatch: expected {len(node.parameters)} parameters, got {len(args)}")
+            except ImportError:
+                # Type validation not available, continue without it
+                pass
+
+            # Create a new scope for lambda execution
+            lambda_context = context.copy()
+
+            # Handle receiver binding if present
+            if node.receiver and args:
+                # Bind the first argument to the receiver
+                lambda_context.set(node.receiver.name, args[0])
+                args = args[1:]  # Remove the receiver from remaining args
+
+            # Bind parameters to arguments
+            for i, param in enumerate(node.parameters):
+                if i < len(args):
+                    lambda_context.set(param.name, args[i])
+                elif param.name in kwargs:
+                    lambda_context.set(param.name, kwargs[param.name])
+                # TODO: Handle default values if implemented
+
+            # Execute the lambda body
+            try:
+                return self.parent.execute(node.body, lambda_context)
+            except Exception as e:
+                raise SandboxError(f"Error executing lambda expression: {e}")
+
+        # Store metadata on the function for inspection
+        lambda_function._dana_lambda = True
+        lambda_function._dana_receiver = node.receiver
+        lambda_function._dana_parameters = node.parameters
+        lambda_function._dana_body = node.body
+
+        return lambda_function
+
+    def execute_list_comprehension(self, node: ListComprehension, context: SandboxContext) -> list:
+        """Execute a list comprehension expression.
+
+        Args:
+            node: The list comprehension to execute
+            context: The execution context
+
+        Returns:
+            A list containing the results of the comprehension
+        """
+        # Execute the iterable to get the sequence to iterate over
+        iterable = self.parent.execute(node.iterable, context)
+
+        if not hasattr(iterable, "__iter__"):
+            raise SandboxError(f"Cannot iterate over non-iterable object: {type(iterable).__name__}")
+
+        result = []
+
+        # Iterate over each item in the iterable
+        for item in iterable:
+            # Create a new scope for this iteration
+            iteration_context = context.copy()
+
+            # Bind the target variable(s) to the current item
+            if "," in node.target:
+                # Tuple unpacking: split target names and assign corresponding values
+                target_names = [name.strip() for name in node.target.split(",")]
+                if isinstance(item, list | tuple) and len(item) == len(target_names):
+                    for name, value in zip(target_names, item, strict=False):
+                        iteration_context.set(name, value)
+                else:
+                    # If item is not a tuple/list or doesn't match, assign the whole item to first target
+                    iteration_context.set(target_names[0], item)
+            else:
+                # Single variable assignment
+                iteration_context.set(node.target, item)
+
+            # Check condition if present
+            if node.condition is not None:
+                condition_result = self.parent.execute(node.condition, iteration_context)
+                if not condition_result:
+                    continue  # Skip this item if condition is False
+
+            # Execute the expression for this item
+            expression_result = self.parent.execute(node.expression, iteration_context)
+            result.append(expression_result)
+
+        return result
+
+    def execute_set_comprehension(self, node: SetComprehension, context: SandboxContext) -> set:
+        """Execute a set comprehension expression.
+
+        Args:
+            node: The set comprehension to execute
+            context: The execution context
+
+        Returns:
+            A set containing the results of the comprehension
+        """
+        # Execute the iterable to get the sequence to iterate over
+        iterable = self.parent.execute(node.iterable, context)
+
+        if not hasattr(iterable, "__iter__"):
+            raise SandboxError(f"Cannot iterate over non-iterable object: {type(iterable).__name__}")
+
+        result = set()
+
+        # Iterate over each item in the iterable
+        for item in iterable:
+            # Create a new scope for this iteration
+            iteration_context = context.copy()
+
+            # Bind the target variable(s) to the current item
+            if "," in node.target:
+                # Tuple unpacking: split target names and assign corresponding values
+                target_names = [name.strip() for name in node.target.split(",")]
+                if isinstance(item, list | tuple) and len(item) == len(target_names):
+                    for name, value in zip(target_names, item, strict=False):
+                        iteration_context.set(name, value)
+                else:
+                    # If item is not a tuple/list or doesn't match, assign the whole item to first target
+                    iteration_context.set(target_names[0], item)
+            else:
+                # Single variable assignment
+                iteration_context.set(node.target, item)
+
+            # Check condition if present
+            if node.condition is not None:
+                condition_result = self.parent.execute(node.condition, iteration_context)
+                if not condition_result:
+                    continue  # Skip this item if condition is False
+
+            # Execute the expression for this item
+            expression_result = self.parent.execute(node.expression, iteration_context)
+            result.add(expression_result)
+
+        return result
+
+    def execute_dict_comprehension(self, node: DictComprehension, context: SandboxContext) -> dict:
+        """Execute a dict comprehension expression.
+
+        Args:
+            node: The dict comprehension to execute
+            context: The execution context
+
+        Returns:
+            A dict containing the results of the comprehension
+        """
+        # Execute the iterable to get the sequence to iterate over
+        iterable = self.parent.execute(node.iterable, context)
+
+        if not hasattr(iterable, "__iter__"):
+            raise SandboxError(f"Cannot iterate over non-iterable object: {type(iterable).__name__}")
+
+        result = {}
+
+        # Iterate over each item in the iterable
+        for item in iterable:
+            # Create a new scope for this iteration
+            iteration_context = context.copy()
+
+            # Bind the target variable(s) to the current item
+            if "," in node.target:
+                # Tuple unpacking: split target names and assign corresponding values
+                target_names = [name.strip() for name in node.target.split(",")]
+                if isinstance(item, list | tuple) and len(item) == len(target_names):
+                    for name, value in zip(target_names, item, strict=False):
+                        iteration_context.set(name, value)
+                else:
+                    # If item is not a tuple/list or doesn't match, assign the whole item to first target
+                    iteration_context.set(target_names[0], item)
+            else:
+                # Single variable assignment
+                iteration_context.set(node.target, item)
+
+            # Check condition if present
+            if node.condition is not None:
+                condition_result = self.parent.execute(node.condition, iteration_context)
+                if not condition_result:
+                    continue  # Skip this item if condition is False
+
+            # Execute the key and value expressions for this item
+            key_result = self.parent.execute(node.key_expr, iteration_context)
+            value_result = self.parent.execute(node.value_expr, iteration_context)
+            result[key_result] = value_result
+
+        return result

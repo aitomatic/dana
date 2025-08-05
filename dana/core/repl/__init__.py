@@ -31,6 +31,6 @@ Discord: https://discord.gg/6jGD4PYk
 
 # Import main REPL components
 from ..cli.dana import main as dana_main
-from .dana_repl_app import main as dana_repl
+from .dana_repl_app import dana_repl_main as dana_repl
 
 __all__ = ["dana_main", "dana_repl"]

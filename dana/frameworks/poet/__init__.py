@@ -3,21 +3,55 @@
 Implementation focusing on core transpilation and learning capabilities.
 """
 
-from .client import POETClient
-from .decorator import poet
+# Core POET components
+# Configuration and setup utilities
+from .config import (
+    data_processing,
+    financial_services,
+    healthcare,
+    poet_for_domain,
+    quick_setup,
+    retail_ecommerce,
+    security,
+)
+from .core import POETConfig, POETEnhancer, POETError, POETResult, POETTranspilationError, poet
 from .domains import DomainRegistry
-from .enhancer import POETEnhancer
-from .phases import enforce, operate, perceive
-from .types import POETConfig, POETResult
+from . import enforce, operate, perceive, train
+
+# Development and testing utilities
+from .utils import (
+    POETPhaseDebugger,
+    POETTestMode,
+    debug_poet_function,
+    performance_benchmark,
+    test_poet_function,
+)
 
 __all__ = [
-    "poet", 
-    "POETConfig", 
+    # Core POET
+    "poet",
+    "POETConfig",
     "POETResult",
     "POETEnhancer",
-    "POETClient", 
+    "POETError",
+    "POETTranspilationError",
     "DomainRegistry",
     "perceive",
-    "operate", 
-    "enforce"
+    "operate",
+    "enforce",
+    "train",
+    # Domain wizards
+    "financial_services",
+    "healthcare",
+    "retail_ecommerce",
+    "data_processing",
+    "security",
+    "quick_setup",
+    "poet_for_domain",
+    # Testing and debugging
+    "debug_poet_function",
+    "test_poet_function",
+    "performance_benchmark",
+    "POETTestMode",
+    "POETPhaseDebugger",
 ]

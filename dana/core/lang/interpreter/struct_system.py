@@ -30,7 +30,9 @@ class StructType:
     name: str
     fields: dict[str, str]  # Maps field name to type name string
     field_order: list[str]  # Maintain field declaration order
+    field_comments: dict[str, str]  # Maps field name to comment/description
     field_defaults: dict[str, Any] = None  # Maps field name to default value
+    docstring: str | None = None  # Struct docstring
 
     def __post_init__(self):
         """Validate struct type after initialization."""
@@ -44,6 +46,10 @@ class StructType:
         if set(self.field_order) != set(self.fields.keys()):
             raise ValueError(f"Field order mismatch in struct '{self.name}'")
 
+        # Initialize field_comments if not provided
+        if not hasattr(self, "field_comments"):
+            self.field_comments = {}
+
     def validate_instantiation(self, args: dict[str, Any]) -> bool:
         """Validate that provided arguments match struct field requirements."""
         # Check all required fields are present (fields without defaults)
@@ -51,7 +57,7 @@ class StructType:
         for field_name in self.fields.keys():
             if self.field_defaults is None or field_name not in self.field_defaults:
                 required_fields.add(field_name)
-        
+
         missing_fields = required_fields - set(args.keys())
         if missing_fields:
             raise ValueError(
@@ -119,6 +125,24 @@ class StructType:
         """Get the type name for a specific field."""
         return self.fields.get(field_name)
 
+    def get_field_comment(self, field_name: str) -> str | None:
+        """Get the comment/description for a specific field."""
+        return self.field_comments.get(field_name)
+
+    def get_docstring(self) -> str | None:
+        """Get the struct docstring."""
+        return self.docstring
+
+    def get_field_description(self, field_name: str) -> str:
+        """Get a formatted description of a field including type and comment."""
+        field_type = self.fields.get(field_name, "unknown")
+        comment = self.field_comments.get(field_name)
+
+        if comment:
+            return f"{field_name}: {field_type}  # {comment}"
+        else:
+            return f"{field_name}: {field_type}"
+
     def __repr__(self) -> str:
         field_strs = [f"{name}: {type_name}" for name, type_name in self.fields.items()]
         return f"StructType({self.name}, fields=[{', '.join(field_strs)}])"
@@ -140,10 +164,10 @@ class StructInstance:
             # Start with defaults
             for field_name, default_value in struct_type.field_defaults.items():
                 complete_values[field_name] = default_value
-        
+
         # Override with provided values
         complete_values.update(values)
-        
+
         # Validate values match struct type
         struct_type.validate_instantiation(complete_values)
 
@@ -325,6 +349,54 @@ class StructInstance:
         return method(self, *args, **kwargs)
 
 
+class MethodRegistry:
+    """Global registry for struct methods with explicit receivers."""
+
+    _instance: Optional["MethodRegistry"] = None
+    _methods: dict[tuple[str, str], Any] = {}  # (type_name, method_name) -> DanaFunction
+
+    def __new__(cls) -> "MethodRegistry":
+        """Singleton pattern for global registry."""
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    @classmethod
+    def register_method(cls, receiver_types: list[str], method_name: str, function: Any) -> None:
+        """Register a method for one or more receiver types.
+
+        Args:
+            receiver_types: List of struct type names (from union types)
+            method_name: Name of the method
+            function: The DanaFunction to register
+        """
+        for type_name in receiver_types:
+            key = (type_name, method_name)
+            if key in cls._methods:
+                raise ValueError(f"Method '{method_name}' already defined for type '{type_name}'")
+            cls._methods[key] = function
+
+    @classmethod
+    def get_method(cls, type_name: str, method_name: str) -> Any | None:
+        """Get a method for a specific type."""
+        return cls._methods.get((type_name, method_name))
+
+    @classmethod
+    def has_method(cls, type_name: str, method_name: str) -> bool:
+        """Check if a method exists for a type."""
+        return (type_name, method_name) in cls._methods
+
+    @classmethod
+    def get_methods_for_type(cls, type_name: str) -> dict[str, Any]:
+        """Get all methods for a specific type."""
+        return {method_name: func for (t_name, method_name), func in cls._methods.items() if t_name == type_name}
+
+    @classmethod
+    def clear(cls) -> None:
+        """Clear all registered methods (for testing)."""
+        cls._methods.clear()
+
+
 class StructTypeRegistry:
     """Global registry for struct types."""
 
@@ -343,12 +415,13 @@ class StructTypeRegistry:
         if struct_type.name in cls._types:
             # Check if this is the same struct definition
             existing_struct = cls._types[struct_type.name]
-            if (existing_struct.fields == struct_type.fields and 
-                existing_struct.field_order == struct_type.field_order):
+            if existing_struct.fields == struct_type.fields and existing_struct.field_order == struct_type.field_order:
                 # Same struct definition - allow idempotent registration
                 return
             else:
-                raise ValueError(f"Struct type '{struct_type.name}' is already registered with different definition. Struct names must be unique.")
+                raise ValueError(
+                    f"Struct type '{struct_type.name}' is already registered with different definition. Struct names must be unique."
+                )
 
         cls._types[struct_type.name] = struct_type
 
@@ -380,7 +453,13 @@ class StructTypeRegistry:
             available_types = cls.list_types()
             raise ValueError(f"Unknown struct type '{struct_name}'. Available types: {available_types}")
 
-        return StructInstance(struct_type, values)
+        # Check if this is an agent struct type
+        from dana.agent import AgentStructType, AgentStructInstance
+
+        if isinstance(struct_type, AgentStructType):
+            return AgentStructInstance(struct_type, values)
+        else:
+            return StructInstance(struct_type, values)
 
     @classmethod
     def get_schema(cls, struct_name: str) -> dict[str, Any]:
@@ -491,11 +570,11 @@ class StructTypeRegistry:
 
 def create_struct_type_from_ast(struct_def, context=None) -> StructType:
     """Create a StructType from a StructDefinition AST node.
-    
+
     Args:
         struct_def: The StructDefinition AST node
         context: Optional sandbox context for evaluating default values
-    
+
     Returns:
         StructType with fields and default values
     """
@@ -508,6 +587,7 @@ def create_struct_type_from_ast(struct_def, context=None) -> StructType:
     fields = {}
     field_order = []
     field_defaults = {}
+    field_comments = {}
 
     for field in struct_def.fields:
         if field.type_hint is None:
@@ -516,13 +596,24 @@ def create_struct_type_from_ast(struct_def, context=None) -> StructType:
             raise ValueError(f"Field {field.name} type hint {field.type_hint} has no name attribute")
         fields[field.name] = field.type_hint.name  # Store the type name string, not the TypeHint object
         field_order.append(field.name)
-        
+
         # Handle default value if present
         if field.default_value is not None:
             # For now, store the AST node - it will be evaluated when needed
             field_defaults[field.name] = field.default_value
 
-    return StructType(name=struct_def.name, fields=fields, field_order=field_order, field_defaults=field_defaults or None)
+        # Store field comment if present
+        if field.comment:
+            field_comments[field.name] = field.comment
+
+    return StructType(
+        name=struct_def.name,
+        fields=fields,
+        field_order=field_order,
+        field_defaults=field_defaults or None,
+        field_comments=field_comments,
+        docstring=struct_def.docstring,
+    )
 
 
 # Convenience functions for common operations

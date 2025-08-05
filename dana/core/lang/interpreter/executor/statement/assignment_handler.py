@@ -12,7 +12,13 @@ from typing import Any
 
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.ast import Assignment, AttributeAccess, Identifier, SubscriptExpression
+from dana.core.lang.ast import (
+    Assignment,
+    AttributeAccess,
+    CompoundAssignment,
+    Identifier,
+    SubscriptExpression,
+)
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -61,8 +67,8 @@ class AssignmentHandler(Loggable):
                 raise SandboxError("Parent executor not properly initialized")
             value = self.parent_executor.parent.execute(node.value, context)
 
-            # Convert function lists to ParallelFunction for clean composition
-            value = self._convert_function_list_to_parallel(value, context)
+            # Note: We don't resolve Promise here to maintain lazy evaluation
+            # Promises will be resolved when accessed, not when assigned
 
             # Apply type coercion if needed
             if target_type is not None:
@@ -83,6 +89,84 @@ class AssignmentHandler(Loggable):
             # Clean up type information
             context.set("system:__current_assignment_type", None)
 
+    def execute_compound_assignment(self, node: CompoundAssignment, context: SandboxContext) -> Any:
+        """Execute a compound assignment statement (e.g., x += 1).
+
+        Args:
+            node: The compound assignment to execute
+            context: The execution context
+
+        Returns:
+            The assigned value after the operation
+        """
+        self._assignment_count += 1
+
+        try:
+            # First, get the current value of the target
+            if isinstance(node.target, Identifier):
+                # Simple variable: x += 1
+                try:
+                    current_value = context.get(node.target.name)
+                except KeyError:
+                    raise SandboxError(f"Undefined variable '{node.target.name}' in compound assignment")
+
+            elif isinstance(node.target, SubscriptExpression):
+                # Subscript: obj[key] += 1
+                if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
+                    raise SandboxError("Parent executor not properly initialized")
+                target_obj = self.parent_executor.parent.execute(node.target.object, context)
+                index = self.parent_executor.parent.execute(node.target.index, context)
+                try:
+                    current_value = target_obj[index]
+                except (KeyError, IndexError, TypeError) as e:
+                    raise SandboxError(f"Cannot access index/key in compound assignment: {e}")
+
+            elif isinstance(node.target, AttributeAccess):
+                # Attribute: obj.attr += 1
+                if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
+                    raise SandboxError("Parent executor not properly initialized")
+                target_obj = self.parent_executor.parent.execute(node.target.object, context)
+                try:
+                    current_value = getattr(target_obj, node.target.attribute)
+                except AttributeError:
+                    raise SandboxError(f"Attribute '{node.target.attribute}' not found in compound assignment")
+
+            else:
+                raise SandboxError(f"Unsupported compound assignment target type: {type(node.target).__name__}")
+
+            # Evaluate the right-hand side
+            if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
+                raise SandboxError("Parent executor not properly initialized")
+            rhs_value = self.parent_executor.parent.execute(node.value, context)
+
+            # Apply the operation based on the operator
+            if node.operator == "+=":
+                new_value = current_value + rhs_value
+            elif node.operator == "-=":
+                new_value = current_value - rhs_value
+            elif node.operator == "*=":
+                new_value = current_value * rhs_value
+            elif node.operator == "/=":
+                new_value = current_value / rhs_value
+            else:
+                raise SandboxError(f"Unknown compound assignment operator: {node.operator}")
+
+            # Assign the new value back
+            self._execute_assignment_by_target(node.target, new_value, context)
+
+            # Store the last value for implicit return
+            context.set("system:__last_value", new_value)
+
+            # Trace assignment if enabled
+            self._trace_assignment(node.target, new_value)
+
+            return new_value
+
+        except SandboxError:
+            raise
+        except Exception as e:
+            raise SandboxError(f"Error in compound assignment: {e}")
+
     def _process_type_hint(self, node: Assignment, context: SandboxContext) -> type | None:
         """Process type hint for assignment with caching.
 
@@ -99,58 +183,85 @@ class AssignmentHandler(Loggable):
         if not hasattr(node.type_hint, "name"):
             return None
 
-        type_name = node.type_hint.name.lower()
-        target_type = self._type_mapping_cache.get(type_name)
+        type_name = node.type_hint.name
+
+        # First check basic Python types
+        target_type = self._type_mapping_cache.get(type_name.lower())
 
         if target_type:
             # Set the type information for IPV to access
             context.set("system:__current_assignment_type", target_type)
+            return target_type
 
-        return target_type
+        # Check if this is a Dana struct type
+        try:
+            from dana.core.lang.interpreter.struct_system import StructTypeRegistry
 
-    def _apply_type_coercion(self, value: Any, target_type: type, target_node: Any) -> Any:
+            if StructTypeRegistry.exists(type_name):
+                # This is a Dana struct type - set it in context for POET system
+                context.set("system:__current_assignment_type", type_name)
+                # Return a special marker for Dana struct types
+                return type_name  # Return the string name for Dana struct types
+
+        except ImportError:
+            # Struct system not available, continue without it
+            pass
+
+        # If we get here, it's an unknown type
+        # Still set it in context in case the POET system can handle it
+        context.set("system:__current_assignment_type", type_name)
+        return type_name
+
+    def _apply_type_coercion(self, value: Any, target_type: type | str, target_node: Any) -> Any:
         """Apply type coercion with caching for performance.
 
         Args:
             value: The value to coerce
-            target_type: The target type
+            target_type: The target type (Python type or Dana struct type name)
             target_node: The assignment target node for error reporting
 
         Returns:
             The coerced value
         """
-        # Create cache key based on value type and target type
-        cache_key = (type(value).__name__, target_type.__name__, str(value)[:50])
+        # Handle both Python types and Dana struct type names
+        if isinstance(target_type, str):
+            # This is a Dana struct type name - skip coercion for now
+            # The POET system will handle the conversion
+            return value
+        else:
+            # This is a Python type - apply standard coercion
+            # Create cache key based on value type and target type
+            cache_key = (type(value).__name__, target_type.__name__, str(value)[:50])
 
-        # Check cache first
-        if cache_key in self._coercion_cache:
-            cached_result, cached_exception = self._coercion_cache[cache_key]
-            if cached_exception:
-                raise cached_exception
-            return cached_result
+            # Check cache first
+            if cache_key in self._coercion_cache:
+                cached_result, cached_exception = self._coercion_cache[cache_key]
+                if cached_exception:
+                    raise cached_exception
+                return cached_result
 
-        try:
-            from dana.core.lang.interpreter.unified_coercion import TypeCoercion
+            try:
+                from dana.core.lang.interpreter.unified_coercion import TypeCoercion
 
-            coerced_value = TypeCoercion.coerce_value(value, target_type)
+                coerced_value = TypeCoercion.coerce_value(value, target_type)
 
-            # Cache successful coercion
-            if len(self._coercion_cache) < self.TYPE_COERCION_CACHE_SIZE:
-                self._coercion_cache[cache_key] = (coerced_value, None)
+                # Cache successful coercion
+                if len(self._coercion_cache) < self.TYPE_COERCION_CACHE_SIZE:
+                    self._coercion_cache[cache_key] = (coerced_value, None)
 
-            return coerced_value
+                return coerced_value
 
-        except Exception as e:
-            target_name = self._get_assignment_target_name(target_node)
-            error = SandboxError(
-                f"Assignment to '{target_name}' failed: cannot coerce value '{value}' to type '{target_type.__name__}': {e}"
-            )
+            except Exception as e:
+                target_name = self._get_assignment_target_name(target_node)
+                error = SandboxError(
+                    f"Assignment to '{target_name}' failed: cannot coerce value '{value}' to type '{target_type.__name__}': {e}"
+                )
 
-            # Cache the error to avoid repeated coercion attempts
-            if len(self._coercion_cache) < self.TYPE_COERCION_CACHE_SIZE:
-                self._coercion_cache[cache_key] = (None, error)
+                # Cache the error to avoid repeated coercion attempts
+                if len(self._coercion_cache) < self.TYPE_COERCION_CACHE_SIZE:
+                    self._coercion_cache[cache_key] = (None, error)
 
-            raise error
+                raise error
 
     def _execute_assignment_by_target(self, target: Any, value: Any, context: SandboxContext) -> None:
         """Execute assignment based on target type with optimized dispatch.
@@ -334,34 +445,3 @@ class AssignmentHandler(Loggable):
             "total_assignments": self._assignment_count,
             "cache_utilization_percent": round(len(self._coercion_cache) / max(self.TYPE_COERCION_CACHE_SIZE, 1) * 100, 2),
         }
-
-    def _convert_function_list_to_parallel(self, value: Any, context: SandboxContext) -> Any:
-        """Convert a list of functions to a ParallelFunction for clean composition.
-
-        This enables standalone parallel composition like: pipeline = [f1, f2]
-
-        Args:
-            value: The value to potentially convert
-            context: The execution context
-
-        Returns:
-            ParallelFunction if value is a list of functions, otherwise the original value
-        """
-        # Only convert if value is a list
-        if not isinstance(value, list):
-            return value
-
-        # Check if all items in the list are callable (functions)
-        if not value:  # Empty list
-            return value
-
-        for item in value:
-            if not callable(item):
-                # Contains non-callable items, don't convert
-                return value
-
-        # All items are callable, convert to ParallelFunction
-        # Import here to avoid circular imports
-        from dana.core.lang.interpreter.executor.expression.pipe_operation_handler import ParallelFunction
-
-        return ParallelFunction(value, context)

@@ -39,6 +39,7 @@ Expression = Union[
     "LiteralExpression",
     "Identifier",
     "BinaryExpression",
+    "ConditionalExpression",
     "FunctionCall",
     "ObjectFunctionCall",
     "FStringExpression",
@@ -53,16 +54,25 @@ Expression = Union[
     "TupleLiteral",
     "StructLiteral",
     "UseStatement",
+    "PlaceholderExpression",
+    "PipelineExpression",
+    "LambdaExpression",
+    "ListComprehension",
+    "SetComprehension",
+    "DictComprehension",
 ]
 
 # A Statement is any node that primarily performs an action, but still produces a value.
 Statement = Union[
     "Assignment",
+    "CompoundAssignment",  # Compound assignments like x += 1
     "Conditional",
     "WhileLoop",
     "ForLoop",
     "TryBlock",
     "FunctionDefinition",
+    "MethodDefinition",
+    "DeclarativeFunctionDefinition",  # Declarative function definitions
     "StructDefinition",
     "AgentDefinition",
     "ImportStatement",
@@ -95,6 +105,7 @@ class BinaryOperator(Enum):
     AND = "and"
     OR = "or"
     IN = "in"
+    NOT_IN = "not in"
     IS = "is"
     IS_NOT = "is not"
     ADD = "+"
@@ -131,6 +142,50 @@ class Parameter:
     name: str
     type_hint: TypeHint | None = None
     default_value: Expression | None = None
+    location: Location | None = None
+
+
+@dataclass
+class LambdaExpression:
+    """A lambda expression with optional receiver and parameters."""
+
+    receiver: Parameter | None = None  # Optional struct receiver: (receiver: Type)
+    parameters: list[Parameter] = field(default_factory=list)  # Lambda parameters
+    body: Expression = None  # Lambda body expression
+    location: Location | None = None
+
+
+@dataclass
+class ListComprehension:
+    """A list comprehension expression (e.g., [x * 2 for x in numbers if x > 0])."""
+
+    expression: Expression  # The expression to evaluate for each item
+    target: str  # The variable name for each item (e.g., 'x')
+    iterable: Expression  # The iterable to iterate over
+    condition: Expression | None = None  # Optional condition (e.g., 'x > 0')
+    location: Location | None = None
+
+
+@dataclass
+class SetComprehension:
+    """A set comprehension expression (e.g., {x * 2 for x in numbers if x > 0})."""
+
+    expression: Expression  # The expression to evaluate for each item
+    target: str  # The variable name for each item (e.g., 'x')
+    iterable: Expression  # The iterable to iterate over
+    condition: Expression | None = None  # Optional condition (e.g., 'x > 0')
+    location: Location | None = None
+
+
+@dataclass
+class DictComprehension:
+    """A dict comprehension expression (e.g., {k: v * 2 for k, v in data.items() if v > 0})."""
+
+    key_expr: Expression  # The key expression to evaluate for each item
+    value_expr: Expression  # The value expression to evaluate for each item
+    target: str  # The variable name for each item (e.g., 'k, v')
+    iterable: Expression  # The iterable to iterate over
+    condition: Expression | None = None  # Optional condition (e.g., 'v > 0')
     location: Location | None = None
 
 
@@ -182,6 +237,30 @@ class Identifier:
 
 # === Expressions ===
 @dataclass
+class PlaceholderExpression:
+    """A placeholder expression representing the $$ symbol in pipeline operations."""
+
+    location: Location | None = None
+
+
+@dataclass
+class NamedPipelineStage:
+    """A pipeline stage with an optional name capture (expr as name)."""
+
+    expression: Expression
+    name: str | None = None  # If present, capture result with this name
+    location: Location | None = None
+
+
+@dataclass
+class PipelineExpression:
+    """A pipeline expression representing function composition via the | operator."""
+
+    stages: list[Expression]
+    location: Location | None = None
+
+
+@dataclass
 class UnaryExpression:
     """A unary operation (e.g., -x, not y)."""
 
@@ -197,6 +276,16 @@ class BinaryExpression:
     left: Expression
     operator: BinaryOperator
     right: Expression
+    location: Location | None = None
+
+
+@dataclass
+class ConditionalExpression:
+    """A conditional expression (e.g., x if condition else y)."""
+
+    condition: Expression
+    true_branch: Expression
+    false_branch: Expression
     location: Location | None = None
 
 
@@ -340,8 +429,19 @@ class Assignment:
         "UseStatement",  # Added to support function_call_assignment: target = use_stmt
         "AgentStatement",  # Added to support agent statement assignments
         "AgentPoolStatement",  # Added to support agent pool statement assignments
+        "DeclarativeFunctionDefinition",  # Added to support declarative function definitions
     ]
     type_hint: TypeHint | None = None  # For typed assignments like x: int = 42
+    location: Location | None = None
+
+
+@dataclass
+class CompoundAssignment:
+    """Compound assignment statement (e.g., x += 1, obj.attr *= 2). Returns the assigned value."""
+
+    target: Identifier | SubscriptExpression | AttributeAccess  # Same targets as Assignment
+    operator: str  # "+=" | "-=" | "*=" | "/="
+    value: Expression  # Right-hand side expression
     location: Location | None = None
 
 
@@ -421,11 +521,37 @@ class FunctionDefinition:
 
 
 @dataclass
+class MethodDefinition:
+    """Method definition statement with explicit receiver (e.g., def (point: Point) translate(dx, dy):)."""
+
+    receiver: Parameter  # The receiver parameter (e.g., point: Point)
+    name: Identifier  # Method name
+    parameters: list[Parameter]  # Regular parameters (excluding receiver)
+    body: list[Statement]
+    return_type: TypeHint | None = None
+    decorators: list["Decorator"] = field(default_factory=list)
+    location: Location | None = None
+
+
+@dataclass
+class DeclarativeFunctionDefinition:
+    """Declarative function definition statement (e.g., def func(x: int) -> str = f1 | f2)."""
+
+    name: Identifier
+    parameters: list[Parameter]
+    composition: Expression  # The pipe composition expression
+    return_type: TypeHint | None = None
+    docstring: str | None = None  # Docstring extracted from preceding string literal
+    location: Location | None = None
+
+
+@dataclass
 class StructDefinition:
     """Struct definition statement (e.g., struct Point: x: int, y: int)."""
 
     name: str
     fields: list["StructField"]
+    docstring: str | None = None  # Docstring extracted from preceding string literal
     location: Location | None = None
 
 
@@ -435,6 +561,7 @@ class StructField:
 
     name: str
     type_hint: TypeHint
+    comment: str | None = None  # Field description from inline comment
     default_value: Expression | None = None
     location: Location | None = None
 
@@ -519,6 +646,14 @@ class PassStatement:
 @dataclass
 class ReturnStatement:
     """Return statement."""
+
+    value: Expression | None = None
+    location: Location | None = None
+
+
+@dataclass
+class DeliverStatement:
+    """Deliver statement for eager execution."""
 
     value: Expression | None = None
     location: Location | None = None

@@ -1,6 +1,6 @@
 # PyPI Deployment Guide
 
-Complete guide for deploying dana-agent packages to PyPI using automated CI/CD pipeline.
+Complete guide for deploying `dana` packages to PyPI using automated CI/CD pipeline.
 
 ## 🎯 Overview
 
@@ -53,7 +53,7 @@ git push origin release/pypi
 # Patch release: 0.25.7.19 → 0.25.8.0
 ./bin/bump-version.py patch --commit
 
-# Minor release: 0.25.7.19 → 0.26.0.0  
+# Minor release: 0.25.7.19 → 0.26.0.0
 ./bin/bump-version.py minor --commit
 
 # Major release: 0.25.7.19 → 1.0.0.0
@@ -76,7 +76,7 @@ The automated pipeline runs three parallel jobs:
 
 ### Job 2: Security Scan (Parallel)
 - **Dependency vulnerabilities** (Safety)
-- **Code security issues** (Bandit) 
+- **Code security issues** (Bandit)
 - **Secret detection** (basic patterns)
 - **Non-blocking** - warnings only
 
@@ -178,10 +178,10 @@ The pipeline expects these files to exist:
 ## 📈 Monitoring
 
 - **GitHub Actions**: Repository → Actions tab
-- **PyPI**: [dana-agent package page](https://pypi.org/project/dana-agent/)
+- **PyPI**: [dana package page](https://pypi.org/project/dana/)
 - **Downloads**: Track usage statistics on PyPI
 - **Issues**: Monitor for deployment failures via email/notifications
 
 ---
 
-**Need Help?** Check the workflow logs in GitHub Actions for detailed error messages. 
+**Need Help?** Check the workflow logs in GitHub Actions for detailed error messages.

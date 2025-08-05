@@ -216,9 +216,9 @@ class TestImportPerformance:
         repeated_stats = self.measure_execution_time(repeated_import, iterations=10)
 
         # Repeated imports should be faster (or at least not slower)
-        assert repeated_stats["avg_time"] <= first_stats["avg_time"] * 1.5, (
-            f"Caching not effective: first={first_stats['avg_time']:.4f}s, repeated={repeated_stats['avg_time']:.4f}s"
-        )
+        assert (
+            repeated_stats["avg_time"] <= first_stats["avg_time"] * 1.5
+        ), f"Caching not effective: first={first_stats['avg_time']:.4f}s, repeated={repeated_stats['avg_time']:.4f}s"
 
         print(f"First import: {first_stats['avg_time']:.4f}s")
         print(f"Repeated import: {repeated_stats['avg_time']:.4f}s")

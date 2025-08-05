@@ -29,7 +29,7 @@ def extract_text_from_response(response: Message) -> str:
                 for part in google_format["parts"]:
                     if part.get("type") == "text" and "text" in part:
                         return part["text"]
-        except:
+        except Exception:
             pass
 
     raise ValueError(f"No text response from response: {response}")

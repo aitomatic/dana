@@ -18,12 +18,15 @@ venv/
 .env
 .env.*
 !.env.example
+dana-config.json
+!dana-config.json.example
 
 # Testing and coverage
 .coverage
 pytest.ini
 
 # Logs and data
+local.db
 .dana/
 .poet/
 logs/
@@ -60,6 +63,7 @@ node_modules/
 .cache/
 .ipynb_checkpoints/
 .cursor/
+CLAUDE.md
 
 .vscode/launch.json
 .vscode/settings.json
@@ -74,3 +78,4 @@ dana/api/server/static/
 dana/contrib/ui/public/static/
 generated/
 agents/
+docs/.ai-only/ai_output/

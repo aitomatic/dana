@@ -1,0 +1,78 @@
+# Test mixed pipeline modes and edge cases
+# This file tests combining implicit and explicit modes in pipelines
+
+def test_mixed_modes():
+    def identity(x: Any) -> Any:
+        return x
+
+    def add_numbers(a: int, b: int) -> int:
+        return a + b
+
+    def combine_strings(args: list) -> str:
+        return "-".join(args)
+
+    def process_list(items: list, prefix: str = "item:") -> list:
+        result = []
+        for item in items:
+            result.append(prefix + " " + str(item))
+        return result
+
+    # Test numeric pipeline
+    def numeric_pipeline(x: int) = add_numbers(10) | add_numbers(3)
+    result = numeric_pipeline(5)
+    expected = 18  # 5 + 10 + 3
+    assert result == expected, f"Expected {expected}, got {result}"
+
+    # Test list processing
+    def list_pipeline(data: list) = process_list("num:")
+    result = list_pipeline([1, 2, 3])
+    expected = ["num: 1", "num: 2", "num: 3"]
+    assert result == expected, f"Expected {expected}, got {result}"
+
+    # Test string operations with mixed modes
+    def string_pipeline(text: str) = identity | combine_strings(["world", "test"])
+    result = string_pipeline("hello")
+    expected = "hello-world-test"
+    assert result == expected, f"Expected {expected}, got {result}"
+
+    # Test numeric with placeholder (should default to implicit)
+    def multiply_by(a: int, multiplier: int = 2) -> int:
+        return a * multiplier
+
+    def multiply_pipeline(x: int) = x | multiply_by(3)
+    result = multiply_pipeline(7)
+    expected = 21  # 7 * 3
+    assert result == expected, f"Expected {expected}, got {result}"
+
+    # Test complex mixed pipeline with both implicit and explicit modes
+    def format_with_prefix(text: str, prefix: str) -> str:
+        return f"{prefix}{text}"
+
+    def wrap_with_brackets(text: str, left: str, right: str) -> str:
+        return f"{left}{text}{right}"
+
+    def complex_mixed_pipeline(text: str) = format_with_prefix("INFO: ") | wrap_with_brackets("[", $$, "]")
+    result = complex_mixed_pipeline("data")
+    expected = "[INFO: data]"
+    assert result == expected, f"Expected '{expected}', got '{result}'"
+
+    # Test with list operations and mixed modes
+    def add_to_list(lst: list, item: Any) -> list:
+        return lst + [item]
+
+    def filter_even(lst: list) -> list:
+        result = []
+        for x in lst:
+            if x % 2 == 0:
+                result.append(x)
+        return result
+
+    def list_processing_pipeline(data: list) = add_to_list(5) | filter_even
+    result = list_processing_pipeline([1, 2, 3, 4])
+    expected = [2, 4]
+    assert result == expected, f"Expected {expected}, got {result}"
+
+    log("✅ All mixed mode tests passed")
+
+if __name__ == "__main__":
+    test_mixed_modes()

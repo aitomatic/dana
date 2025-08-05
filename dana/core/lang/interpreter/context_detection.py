@@ -13,7 +13,7 @@ from enum import Enum
 from typing import Any
 
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.ast import Assignment, TypeHint
+from dana.core.lang.ast import Assignment, FunctionCall, TypeHint
 
 
 class ContextType(Enum):
@@ -24,6 +24,7 @@ class ContextType(Enum):
     RETURN_VALUE = "return_value"
     CONDITIONAL = "conditional"
     EXPRESSION = "expression"
+    FUNCTION_CALL = "function_call"  # NEW: For function call contexts like cast()
     UNKNOWN = "unknown"
 
 
@@ -78,6 +79,65 @@ class ContextDetector(Loggable):
             confidence=1.0,  # Explicit type hints have highest confidence
             source_node=assignment_node,
             metadata={"target": str(assignment_node.target), "explicit_hint": True},
+        )
+
+    def detect_function_call_context(self, func_call_node: FunctionCall) -> TypeContext | None:
+        """Detect type context from function calls, specifically cast() calls.
+
+        Args:
+            func_call_node: FunctionCall AST node
+
+        Returns:
+            TypeContext if cast() call with type argument is detected, None otherwise
+        """
+        if not isinstance(func_call_node, FunctionCall):
+            self.debug(f"Expected FunctionCall node, got {type(func_call_node)}")
+            return None
+
+        # Check if this is a cast() function call
+        if func_call_node.name != "cast":
+            return None
+
+        # Check if cast() has at least 2 arguments (target_type, value)
+        if not hasattr(func_call_node, "args") or not func_call_node.args:
+            self.debug("cast() call has no arguments")
+            return None
+
+        # Extract arguments - cast() should have (target_type, value)
+        args = func_call_node.args
+        if isinstance(args, dict) and "__positional" in args:
+            positional_args = args["__positional"]
+        elif isinstance(args, list):
+            positional_args = args
+        else:
+            self.debug(f"Unexpected args format in cast() call: {type(args)}")
+            return None
+
+        if len(positional_args) < 2:
+            self.debug(f"cast() call has insufficient arguments: {len(positional_args)}")
+            return None
+
+        # The first argument should be the target type
+        # __positional is always a list according to the AST structure
+        target_type_arg = positional_args[0]  # type: ignore
+
+        # Extract type name from the target type argument
+        if hasattr(target_type_arg, "name"):
+            type_name = target_type_arg.name
+        elif hasattr(target_type_arg, "value"):
+            type_name = target_type_arg.value
+        else:
+            self.debug(f"Cannot extract type name from cast() argument: {target_type_arg}")
+            return None
+
+        self.debug(f"Detected cast() function call context: {type_name}")
+
+        return TypeContext(
+            expected_type=type_name,
+            context_type=ContextType.FUNCTION_CALL,
+            confidence=0.95,  # High confidence for explicit cast() calls
+            source_node=func_call_node,
+            metadata={"function_name": "cast", "cast_target_type": type_name, "explicit_cast": True},
         )
 
     def detect_function_parameter_context(self, param_name: str, param_type: str) -> TypeContext:
@@ -196,14 +256,23 @@ class ContextDetector(Loggable):
             if hasattr(context, "get"):
                 current_assignment_type = context.get("system:__current_assignment_type")
                 if current_assignment_type is not None:
-                    type_name = current_assignment_type.__name__
+                    # Handle both Python types and Dana struct type names
+                    if hasattr(current_assignment_type, "__name__"):
+                        # Python type (int, str, etc.)
+                        type_name = current_assignment_type.__name__
+                        metadata = {"source": "assignment_handler", "python_type": current_assignment_type}
+                    else:
+                        # Dana struct type name (string)
+                        type_name = str(current_assignment_type)
+                        metadata = {"source": "assignment_handler", "dana_struct_type": type_name}
+
                     self.debug(f"Found assignment type in context: {type_name}")
                     return TypeContext(
                         expected_type=type_name,
                         context_type=ContextType.ASSIGNMENT,
                         confidence=1.0,  # Highest confidence - direct from assignment
                         source_node=None,
-                        metadata={"source": "assignment_handler", "python_type": current_assignment_type},
+                        metadata=metadata,
                     )
 
             # Try to get current AST node being executed
@@ -211,6 +280,8 @@ class ContextDetector(Loggable):
                 current_node = context.get_current_node()
                 if isinstance(current_node, Assignment) and current_node.type_hint:
                     return self.detect_assignment_context(current_node)
+                elif isinstance(current_node, FunctionCall):
+                    return self.detect_function_call_context(current_node)
 
             # Try to infer from execution context
             return self._infer_from_execution_context(context)
@@ -234,9 +305,11 @@ class ContextDetector(Loggable):
                 execution_stack = context.get_execution_stack()
 
                 for frame in reversed(execution_stack):
-                    if hasattr(frame, "node") and isinstance(frame.node, Assignment):
-                        if hasattr(frame.node, "type_hint") and frame.node.type_hint:
+                    if hasattr(frame, "node"):
+                        if isinstance(frame.node, Assignment) and frame.node.type_hint:
                             return self.detect_assignment_context(frame.node)
+                        elif isinstance(frame.node, FunctionCall):
+                            return self.detect_function_call_context(frame.node)
 
             # Check for assignment context in the sandbox state
             if hasattr(context, "_state") and hasattr(context._state, "current_assignment"):

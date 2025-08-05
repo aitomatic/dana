@@ -1,0 +1,35 @@
+# Simple pipeline definition example
+# This demonstrates the simplified pipeline functionality
+
+log("=== Pipeline Definition Example ===")
+
+# Define some simple functions
+def add_two(n):
+    return n + 2
+
+def multiply_three(n):
+    return n * 3
+
+def format_result(n, prefix="Result: "):
+    return f"{prefix}{n}"
+
+# Create pipeline definitions
+basic_pipeline = add_two | multiply_three
+formatted_pipeline = add_two | multiply_three | format_result
+
+# Test the pipeline definitions
+log("\nTesting basic pipeline:")
+result1 = basic_pipeline(5)
+log(f"basic_pipeline(5) = {result1}")  # Should be (5+2)*3 = 21
+
+log("\nTesting formatted pipeline:")
+result2 = formatted_pipeline(5)
+log(f"formatted_pipeline(5) = {result2}")  # Should be "Result: 21"
+
+# Test with different starting values
+log("\nTesting with different values:")
+for value in [1, 10, -3]:
+    result = formatted_pipeline(value)
+    log(f"formatted_pipeline({value}) = {result}")
+
+log("\n✅ Pipeline definition functionality working correctly!")

@@ -1,0 +1,190 @@
+# Test edge cases and error scenarios for pipeline expressions
+# This file tests edge cases that are covered in Python tests but missing in Dana tests
+
+def test_empty_pipeline():
+    """Test empty pipeline behavior - should return input unchanged."""
+    # Identity function for empty pipeline behavior
+    def identity(x: Any) -> Any:
+        return x
+    
+    # Empty pipeline should return the input value unchanged
+    def empty_pipeline(text: str) = identity
+    result = empty_pipeline("test")
+    assert result == "test", f"Expected 'test', got '{result}'"
+    
+    # Test with different types
+    def empty_numeric_pipeline(x: int) = identity
+    result = empty_numeric_pipeline(42)
+    assert result == 42, f"Expected 42, got {result}"
+    
+    def empty_list_pipeline(data: list) = identity
+    result = empty_list_pipeline([1, 2, 3])
+    assert result == [1, 2, 3], f"Expected [1, 2, 3], got {result}"
+    
+    log("✅ Empty pipeline tests passed")
+
+def test_nested_function_calls():
+    """Test pipeline with nested function calls as stages."""
+    def process_text(text: str, processor: Any) -> str:
+        return processor(text)
+    
+    def upper_processor(text: str) -> str:
+        return text.upper()
+    
+    def lower_processor(text: str) -> str:
+        return text.lower()
+    
+    # Test using function result as argument in next stage
+    def nested_func_pipeline(text: str) = process_text(upper_processor)
+    result = nested_func_pipeline("Hello")
+    assert result == "HELLO", f"Expected 'HELLO', got '{result}'"
+    
+    # Test with multiple nested function calls
+    def multi_nested_pipeline(text: str) = process_text(lower_processor) | process_text(upper_processor)
+    result = multi_nested_pipeline("WORLD")
+    assert result == "WORLD", f"Expected 'WORLD', got '{result}'"
+    
+    log("✅ Nested function calls tests passed")
+
+def test_placeholder_error_cases():
+    """Test error cases related to placeholder usage."""
+    def simple_func(text: str) -> str:
+        return f"processed: {text}"
+    
+        # Note: Standalone $$ placeholder is a syntax error that should be caught at parse time
+    # This test is removed since it's not a valid Dana syntax
+    
+    # Test multiple placeholders in same function call
+    def multi_arg_func(a: str, b: str, c: str) -> str:
+        return f"{a}-{b}-{c}"
+
+    def multi_placeholder_pipeline(text: str) = multi_arg_func("start", $$, "end")
+    result = multi_placeholder_pipeline("middle")
+    assert result == "start-middle-end", f"Expected 'start-middle-end', got '{result}'"
+    
+    # Test placeholder in first position
+    def first_placeholder_pipeline(text: str) = multi_arg_func($$, "second", "third")
+    result = first_placeholder_pipeline("first")
+    assert result == "first-second-third", f"Expected 'first-second-third', got '{result}'"
+    
+    # Test placeholder in last position
+    def last_placeholder_pipeline(text: str) = multi_arg_func("first", "second", $$)
+    result = last_placeholder_pipeline("last")
+    assert result == "first-second-last", f"Expected 'first-second-last', got '{result}'"
+    
+    log("✅ Placeholder error cases tests passed")
+
+def test_complex_pipeline_scenarios():
+    """Test complex pipeline scenarios with multiple stages and mixed modes."""
+    def format_complex(prefix: str, middle: str, suffix: str, extra: str) -> str:
+        return f"{prefix}[{middle}]{suffix}({extra})"
+    
+    def wrap_text(text: str, wrapper: str) -> str:
+        return f"{wrapper}{text}{wrapper}"
+    
+    def add_prefix(text: str, prefix: str = "PREFIX: ") -> str:
+        return f"{prefix}{text}"
+    
+    # Test complex pipeline with multiple placeholders and mixed modes
+    def complex_placeholder_pipeline(text: str) = format_complex("start", $$, "end", "extra") | wrap_text("*")
+    result = complex_placeholder_pipeline("middle")
+    assert result == "*start[middle]end(extra)*", f"Expected '*start[middle]end(extra)*', got '{result}'"
+    
+    # Test pipeline with both implicit and explicit modes
+    def mixed_mode_pipeline(text: str) = add_prefix("INFO: ") | wrap_text("(", ")") | wrap_text("{", "}")
+    result = mixed_mode_pipeline("data")
+    assert result == "{INFO: (data)}", f"Expected '{{INFO: (data)}}', got '{result}'"
+    
+    # Test numeric operations with complex pipeline
+    def add(a: int, b: int) -> int:
+        return a + b
+    
+    def multiply(a: int, b: int) -> int:
+        return a * b
+    
+    def subtract(a: int, b: int) -> int:
+        return a - b
+    
+    def numeric_complex_pipeline(x: int) = x | add(10) | multiply(2) | subtract(5)
+    result = numeric_complex_pipeline(5)
+    expected = 25  # (5 + 10) * 2 - 5
+    assert result == expected, f"Expected {expected}, got {result}"
+    
+    log("✅ Complex pipeline scenarios tests passed")
+
+def test_type_safety_and_edge_cases():
+    """Test type safety and various edge cases."""
+    def identity(x: Any) -> Any:
+        return x
+    
+    def safe_divide(a: float, b: float) -> float:
+        if b == 0:
+            return float('inf')
+        return a / b
+    
+    # Test with None values
+    def none_pipeline(x: Any) = x | identity
+    result = none_pipeline(None)
+    assert result is None, f"Expected None, got {result}"
+    
+    # Test with boolean values
+    def bool_pipeline(x: bool) = x | identity
+    result = bool_pipeline(True)
+    assert result is True, f"Expected True, got {result}"
+    
+    # Test with zero values
+    def zero_pipeline(x: int) = x | safe_divide(10)
+    result = zero_pipeline(0)
+    assert result == float('inf'), f"Expected inf, got {result}"
+    
+    # Test with empty strings
+    def empty_string_pipeline(text: str) = identity
+    result = empty_string_pipeline("")
+    assert result == "", f"Expected empty string, got '{result}'"
+    
+    # Test with empty lists
+    def empty_list_pipeline(data: list) = identity
+    result = empty_list_pipeline([])
+    assert result == [], f"Expected empty list, got {result}"
+    
+    log("✅ Type safety and edge cases tests passed")
+
+def test_pipeline_with_lambdas():
+    """Test pipeline with lambda functions and anonymous functions."""
+    # Test with lambda-like behavior using simple functions
+    def double(x: int) -> int:
+        return x * 2
+    
+    def square(x: int) -> int:
+        return x * x
+    
+    def add_one(x: int) -> int:
+        return x + 1
+    
+    # Test chain of simple transformations
+    def transform_pipeline(x: int) = double | square | add_one
+    result = transform_pipeline(3)
+    expected = 37  # ((3 * 2) ^ 2) + 1 = (6 ^ 2) + 1 = 36 + 1
+    assert result == expected, f"Expected {expected}, got {result}"
+    
+    # Test with string transformations
+    def reverse(text: str) -> str:
+        return text[::-1]
+    
+    def capitalize(text: str) -> str:
+        return text.capitalize()
+    
+    def string_transform_pipeline(text: str) = reverse | capitalize
+    result = string_transform_pipeline("hello")
+    assert result == "Olleh", f"Expected 'Olleh', got '{result}'"
+    
+    log("✅ Pipeline with lambdas tests passed")
+
+if __name__ == "__main__":
+    test_empty_pipeline()
+    test_nested_function_calls()
+    test_placeholder_error_cases()
+    test_complex_pipeline_scenarios()
+    test_type_safety_and_edge_cases()
+    test_pipeline_with_lambdas()
+    log("🎉 All edge case tests completed successfully!") 

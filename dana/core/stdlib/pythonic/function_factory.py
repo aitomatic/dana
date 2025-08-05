@@ -15,6 +15,7 @@ from dana.common.exceptions import SandboxError
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata, FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.core.concurrency import LazyPromise
 
 
 class UnsupportedReason(Enum):
@@ -33,38 +34,161 @@ class UnsupportedReason(Enum):
 class PythonicFunctionFactory:
     """Factory for creating Pythonic built-in function wrappers."""
 
+    @staticmethod
+    def _smart_max(*args):
+        """Smart max wrapper that supports both max(iterable) and max(a, b, ...) syntax."""
+        # Resolve any LazyPromise objects in arguments
+        resolved_args = []
+        for arg in args:
+            if isinstance(arg, LazyPromise):
+                resolved_args.append(arg._ensure_resolved())
+            else:
+                resolved_args.append(arg)
+
+        if len(resolved_args) == 0:
+            raise TypeError("max expected at least 1 argument, got 0")
+        elif len(resolved_args) == 1:
+            # Single argument case
+            if isinstance(resolved_args[0], list | tuple):
+                if len(resolved_args[0]) == 0:
+                    raise ValueError("max() arg is an empty sequence")
+                return max(resolved_args[0])  # max([1,2,3]) or max((1,2,3))
+            else:
+                # Single non-iterable argument: just return it
+                return resolved_args[0]  # max(42) returns 42
+        else:
+            # Multiple arguments case
+            return max(*resolved_args)  # max(1,2,3) or max(1,2)
+
+    @staticmethod
+    def _smart_min(*args):
+        """Smart min wrapper that supports both min(iterable) and min(a, b, ...) syntax."""
+        # Resolve any LazyPromise objects in arguments
+        resolved_args = []
+        for arg in args:
+            if isinstance(arg, LazyPromise):
+                resolved_args.append(arg._ensure_resolved())
+            else:
+                resolved_args.append(arg)
+
+        if len(resolved_args) == 0:
+            raise TypeError("min expected at least 1 argument, got 0")
+        elif len(resolved_args) == 1:
+            # Single argument case
+            if isinstance(resolved_args[0], list | tuple):
+                if len(resolved_args[0]) == 0:
+                    raise ValueError("min() arg is an empty sequence")
+                return min(resolved_args[0])  # min([1,2,3]) or min((1,2,3))
+            else:
+                # Single non-iterable argument: just return it
+                return resolved_args[0]  # min(42) returns 42
+        else:
+            # Multiple arguments case
+            return min(*resolved_args)  # min(1,2,3) or min(1,2)
+
+    @staticmethod
+    def _smart_sum(*args):
+        """Smart sum wrapper that supports both sum(iterable) and sum(iterable, start) syntax."""
+        # Resolve any LazyPromise objects in arguments
+        resolved_args = []
+        for arg in args:
+            if isinstance(arg, LazyPromise):
+                resolved_args.append(arg._ensure_resolved())
+            else:
+                resolved_args.append(arg)
+
+        if len(resolved_args) == 1:
+            return sum(resolved_args[0])  # sum([1,2,3])
+        elif len(resolved_args) == 2:
+            return sum(resolved_args[0], resolved_args[1])  # sum([1,2,3], 10)
+        else:
+            # This should not happen due to signature validation, but just in case
+            raise TypeError(f"sum expected 1 or 2 arguments, got {len(resolved_args)}")
+
     # Configuration-driven approach with type validation
     FUNCTION_CONFIGS = {
         # Numeric functions
         "len": {
             "func": len,
-            "types": [list, dict, str, tuple],
+            "types": [list, dict, str, tuple, LazyPromise],
             "doc": "Return the length of an object",
-            "signatures": [(list,), (dict,), (str,), (tuple,)],
+            "signatures": [(list,), (dict,), (str,), (tuple,), (LazyPromise,)],
         },
-        "sum": {"func": sum, "types": [list, tuple], "doc": "Return the sum of a sequence of numbers", "signatures": [(list,), (tuple,)]},
-        "max": {"func": max, "types": [list, tuple], "doc": "Return the largest item in an iterable", "signatures": [(list,), (tuple,)]},
-        "min": {"func": min, "types": [list, tuple], "doc": "Return the smallest item in an iterable", "signatures": [(list,), (tuple,)]},
-        "abs": {"func": abs, "types": [int, float], "doc": "Return the absolute value of a number", "signatures": [(int,), (float,)]},
+        # Smart wrappers for flexible argument handling
+        "sum": {
+            "func": _smart_sum.__func__,
+            "types": [],  # Skip type validation - smart wrapper handles it
+            "doc": "Return the sum of a sequence of numbers, optionally with a start value",
+            "signatures": [
+                (list,),
+                (tuple,),
+                (list, int),
+                (list, float),
+                (tuple, int),
+                (tuple, float),
+            ],  # Allow list/tuple with optional start
+        },
+        "max": {
+            "func": _smart_max.__func__,
+            "types": [],  # Skip type validation - smart wrapper handles it
+            "doc": "Return the largest item in an iterable or among multiple arguments",
+            "signatures": [],  # Skip signature validation - smart wrapper handles it
+        },
+        "min": {
+            "func": _smart_min.__func__,
+            "types": [],  # Skip type validation - smart wrapper handles it
+            "doc": "Return the smallest item in an iterable or among multiple arguments",
+            "signatures": [],  # Skip signature validation - smart wrapper handles it
+        },
+        # Original basic versions (strict iterable-only)
+        "basic_sum": {
+            "func": sum,
+            "types": [list, tuple],
+            "doc": "Return the sum of a sequence of numbers (strict iterable-only version)",
+            "signatures": [(list,), (tuple,)],
+        },
+        "basic_max": {
+            "func": max,
+            "types": [list, tuple],
+            "doc": "Return the largest item in an iterable (strict iterable-only version)",
+            "signatures": [(list,), (tuple,)],
+        },
+        "basic_min": {
+            "func": min,
+            "types": [list, tuple],
+            "doc": "Return the smallest item in an iterable (strict iterable-only version)",
+            "signatures": [(list,), (tuple,)],
+        },
+        "abs": {
+            "func": abs,
+            "types": [int, float, LazyPromise],
+            "doc": "Return the absolute value of a number",
+            "signatures": [(int,), (float,), (LazyPromise,)],
+        },
         "round": {
             "func": round,
-            "types": [float, int],
+            "types": [float, int, LazyPromise],
             "doc": "Round a number to a given precision",
-            "signatures": [(float,), (int,), (float, int)],
+            "signatures": [(float,), (int,), (float, int), (LazyPromise,)],
         },
         # Type conversion functions
         "int": {
             "func": int,
-            "types": [str, float, bool],
+            "types": [str, float, bool, LazyPromise],
             "doc": "Convert a value to an integer",
-            "signatures": [(str,), (float,), (bool,)],
+            "signatures": [(str,), (float,), (bool,), (LazyPromise,)],
         },
-        "float": {"func": float, "types": [str, int, bool], "doc": "Convert a value to a float", "signatures": [(str,), (int,), (bool,)]},
+        "float": {
+            "func": float,
+            "types": [str, int, bool, LazyPromise],
+            "doc": "Convert a value to a float",
+            "signatures": [(str,), (int,), (bool,), (LazyPromise,)],
+        },
         "bool": {
             "func": lambda v: PythonicFunctionFactory._semantic_bool_wrapper(v),
-            "types": [str, int, float, list, dict],
+            "types": [str, int, float, list, dict, LazyPromise],
             "doc": "Convert a value to a boolean with semantic understanding",
-            "signatures": [(str,), (int,), (float,), (list,), (dict,)],
+            "signatures": [(str,), (int,), (float,), (list,), (dict,), (LazyPromise,)],
         },
         "type": {
             # SECURITY: Dana's type() function is NOT the same as Python's type() function.
@@ -74,40 +198,59 @@ class PythonicFunctionFactory:
             # to class hierarchies and internal Python type system details.
             # Dana: type(obj) -> "str", Python: type(obj).__name__ -> "str"
             "func": lambda v: type(v).__name__,
-            "types": [object],
+            "types": [object, LazyPromise],
             "doc": "Return the type name of a value as a string (e.g., 'int', 'list', 'dict'). SECURITY NOTE: Unlike Python's type(), this returns a string for sandbox security.",
-            "signatures": [(object,)],
+            "signatures": [(object,), (LazyPromise,)],
         },
         # Collection functions
         "sorted": {
             "func": sorted,
-            "types": [list, tuple],
+            "types": [list, tuple, LazyPromise],
             "doc": "Return a new sorted list from an iterable",
-            "signatures": [(list,), (tuple,)],
+            "signatures": [(list,), (tuple,), (LazyPromise,)],
         },
         "reversed": {
             "func": reversed,
-            "types": [list, tuple, str],
+            "types": [list, tuple, str, LazyPromise],
             "doc": "Return a reverse iterator",
-            "signatures": [(list,), (tuple,), (str,)],
+            "signatures": [(list,), (tuple,), (str,), (LazyPromise,)],
         },
         "enumerate": {
             "func": enumerate,
-            "types": [list, tuple, str],
+            "types": [list, tuple, str, LazyPromise],
             "doc": "Return an enumerate object",
-            "signatures": [(list,), (tuple,), (str,)],
+            "signatures": [(list,), (tuple,), (str,), (LazyPromise,)],
         },
         # Logic functions
-        "all": {"func": all, "types": [list, tuple], "doc": "Return True if all elements are true", "signatures": [(list,), (tuple,)]},
-        "any": {"func": any, "types": [list, tuple], "doc": "Return True if any element is true", "signatures": [(list,), (tuple,)]},
+        "all": {
+            "func": all,
+            "types": [list, tuple, LazyPromise],
+            "doc": "Return True if all elements are true",
+            "signatures": [(list,), (tuple,), (LazyPromise,)],
+        },
+        "any": {
+            "func": any,
+            "types": [list, tuple, LazyPromise],
+            "doc": "Return True if any element is true",
+            "signatures": [(list,), (tuple,), (LazyPromise,)],
+        },
         # Range function
         "range": {"func": range, "types": [int], "doc": "Return a range object", "signatures": [(int,), (int, int), (int, int, int)]},
         # List constructor
         "list": {
             "func": list,
-            "types": [list, tuple, str, range, type(reversed([]))],
+            "types": [list, tuple, str, range, type(reversed([])), type({}.keys()), LazyPromise],
             "doc": "Convert an iterable to a list",
-            "signatures": [(list,), (tuple,), (str,), (range,), (type(reversed([])),), (type(enumerate([])),)],
+            "signatures": [
+                (list,),
+                (tuple,),
+                (str,),
+                (range,),
+                (type(reversed([])),),
+                (type(enumerate([])),),
+                (type({}.keys()),),
+                (LazyPromise,),
+            ],
         },
     }
 
@@ -313,6 +456,17 @@ class PythonicFunctionFactory:
     }
 
     @classmethod
+    def _resolve_promise_args(cls, args: tuple) -> tuple:
+        """Resolve any LazyPromise objects in the arguments to their actual values."""
+        resolved_args = []
+        for arg in args:
+            if isinstance(arg, LazyPromise):
+                resolved_args.append(arg._ensure_resolved())
+            else:
+                resolved_args.append(arg)
+        return tuple(resolved_args)
+
+    @classmethod
     def _semantic_bool_wrapper(cls, value):
         """Enhanced boolean conversion with semantic understanding."""
         try:
@@ -340,12 +494,15 @@ class PythonicFunctionFactory:
         signatures = config["signatures"]
 
         def dana_wrapper(context: SandboxContext, *args, **kwargs):
+            # Resolve any LazyPromise objects in the arguments
+            resolved_args = cls._resolve_promise_args(args)
+
             # Validate arguments against signatures
-            cls._validate_args(name, args, signatures)
+            cls._validate_args(name, resolved_args, signatures)
 
             # Execute the Python function with safety guards
             try:
-                return cls._execute_with_guards(python_func, args)
+                return cls._execute_with_guards(python_func, resolved_args)
             except Exception as e:
                 raise SandboxError(f"Built-in function '{name}' failed: {str(e)}")
 
@@ -485,6 +642,10 @@ If this is a custom function, make sure it's:
     @classmethod
     def _validate_args(cls, name: str, args: tuple, expected_signatures: list[tuple]):
         """Validate arguments against expected type signatures."""
+        # Skip validation for functions with empty signatures (smart wrappers handle their own validation)
+        if not expected_signatures:
+            return
+
         valid_signature = False
 
         for signature in expected_signatures:
@@ -494,9 +655,32 @@ If this is a custom function, make sure it's:
                     break
 
         if not valid_signature:
-            arg_types = [type(arg).__name__ for arg in args]
-            expected_sigs = [f"({', '.join(t.__name__ for t in sig)})" for sig in expected_signatures]
-            raise TypeError(f"Invalid arguments for '{name}': got ({', '.join(arg_types)}), expected one of: {', '.join(expected_sigs)}")
+            expected_arg_counts = sorted(set(len(sig) for sig in expected_signatures))
+            actual_arg_count = len(args)
+
+            # For "basic_" functions (strict validation versions), always show detailed signature errors
+            if name.startswith("basic_"):
+                arg_types = [type(arg).__name__ for arg in args]
+                expected_sigs = [f"({', '.join(t.__name__ for t in sig)})" for sig in expected_signatures]
+                raise TypeError(
+                    f"Invalid arguments for '{name}': got ({', '.join(arg_types)}), expected one of: {', '.join(expected_sigs)}"
+                )
+            # Generate user-friendly error messages for smart wrapper functions
+            elif actual_arg_count == 0 and min(expected_arg_counts) > 0:
+                raise TypeError(
+                    f"{name} expected at least {min(expected_arg_counts)} argument{'s' if min(expected_arg_counts) > 1 else ''}, got 0"
+                )
+            elif actual_arg_count > max(expected_arg_counts):
+                raise TypeError(
+                    f"{name} expected at most {max(expected_arg_counts)} argument{'s' if max(expected_arg_counts) > 1 else ''}, got {actual_arg_count}"
+                )
+            else:
+                # Fall back to detailed signature error for type mismatches
+                arg_types = [type(arg).__name__ for arg in args]
+                expected_sigs = [f"({', '.join(t.__name__ for t in sig)})" for sig in expected_signatures]
+                raise TypeError(
+                    f"Invalid arguments for '{name}': got ({', '.join(arg_types)}), expected one of: {', '.join(expected_sigs)}"
+                )
 
     @classmethod
     def _execute_with_guards(cls, func: callable, args: tuple):

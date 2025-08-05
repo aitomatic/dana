@@ -43,6 +43,10 @@ class ImportSimpleStatementTransformer(BaseTransformer):
         """Transform a return statement rule into a ReturnStatement node."""
         return SimpleStatementHelper.create_return_statement(items, self.expression_transformer)
 
+    def deliver_stmt(self, items):
+        """Transform a deliver statement rule into a DeliverStatement node."""
+        return SimpleStatementHelper.create_deliver_statement(items, self.expression_transformer)
+
     def break_stmt(self, items):
         """Transform a break statement rule into a BreakStatement node."""
         return SimpleStatementHelper.create_break_statement()
@@ -118,11 +122,13 @@ class ImportSimpleStatementTransformer(BaseTransformer):
         """Transform a from_import rule into an ImportFromStatement node.
 
         Grammar:
-            from_import: FROM (relative_module_path | module_path) IMPORT NAME ["as" NAME]
+            from_import: FROM (relative_module_path | module_path) IMPORT import_name_list
+            import_name_list: import_name ("," import_name)*
+            import_name: NAME ["as" NAME]
             module_path: NAME ("." NAME)*
             relative_module_path: DOT+ [module_path]
 
-        Parse tree structure: [FROM, module_path_or_relative, IMPORT, NAME, [alias_name | None]]
+        Parse tree structure: [FROM, module_path_or_relative, IMPORT, import_name_list_tree]
         """
         # Get the module_path or relative_module_path (first item, FROM token already consumed)
         module_path_item = items[0]
@@ -166,20 +172,43 @@ class ImportSimpleStatementTransformer(BaseTransformer):
                 # Fallback to string representation
                 module = str(module_path_item)
 
-        # Get the imported name (second item)
-        # Structure: [module_path_or_relative, name_token, AS_token_or_None, alias_token_or_None]
-        name = ""
-        alias = None
+        # Get the import_name_list (third item after FROM and module_path)
+        # Structure: [module_path_or_relative, import_name_list_tree]
+        import_names = []
 
-        if len(items) >= 2 and isinstance(items[1], Token) and items[1].type == "NAME":
-            name = items[1].value
+        if len(items) >= 2:
+            import_name_list_item = items[1]
 
-        # Check for alias (fourth element, after AS token)
-        if len(items) >= 4 and items[2] is not None and isinstance(items[2], Token) and items[2].type == "AS":
-            if isinstance(items[3], Token) and items[3].type == "NAME":
-                alias = items[3].value
+            if isinstance(import_name_list_item, Tree) and getattr(import_name_list_item, "data", None) == "import_name_list":
+                # Extract all import names from the list
+                for child in import_name_list_item.children:
+                    if isinstance(child, Tree) and getattr(child, "data", None) == "import_name":
+                        # Extract name and optional alias from import_name
+                        name = ""
+                        alias = None
 
-        return ImportFromStatement(module=module, names=[(name, alias)])
+                        for subchild in child.children:
+                            if isinstance(subchild, Token) and subchild.type == "NAME":
+                                if name == "":  # First NAME token is the import name
+                                    name = subchild.value
+                                else:  # Second NAME token (after AS) is the alias
+                                    alias = subchild.value
+                            elif isinstance(subchild, Token) and subchild.type == "AS":
+                                # AS token, next token will be the alias
+                                pass
+
+                        if name:  # Only add if we found a valid name
+                            import_names.append((name, alias))
+            else:
+                # Fallback: treat as single import (backward compatibility)
+                if isinstance(import_name_list_item, Token) and import_name_list_item.type == "NAME":
+                    import_names.append((import_name_list_item.value, None))
+
+        # If no names were extracted, create a default empty list
+        if not import_names:
+            import_names = [("", None)]
+
+        return ImportFromStatement(module=module, names=import_names)
 
     # === Argument Handling ===
 

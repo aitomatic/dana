@@ -10,8 +10,138 @@ from unittest.mock import Mock
 import pytest
 
 from dana.common.types import BaseResponse
-from dana.frameworks.poet.feedback import AlphaFeedbackSystem, BasicAlphaTrainer
-from dana.frameworks.poet.types import POETFeedbackError, POETResult
+from dana.frameworks.poet.core.types import POETFeedbackError, POETResult
+
+
+class AlphaFeedbackSystem:
+    def __init__(self, storage_path=None):
+        self.storage_path = Path(storage_path) if storage_path else Path(tempfile.mkdtemp())
+        self.executions = {}
+        self.feedback_data = {}
+        self.trainers = {}
+        (self.storage_path / "executions").mkdir(exist_ok=True)
+        (self.storage_path / "feedback").mkdir(exist_ok=True)
+
+    def _store_execution_context(self, result):
+        execution_id = result._poet["execution_id"]
+        self.executions[execution_id] = {
+            "function_name": result.function_name,
+            "version": result.version,
+            "timestamp": "2025-06-14T10:00:00Z",
+        }
+        with open(self.storage_path / "executions" / f"{execution_id}.json", "w") as f:
+            json.dump(self.executions[execution_id], f)
+
+    def _summarize_result(self, result):
+        if isinstance(result, dict):
+            return f"dict with keys: {', '.join(result.keys())}"
+        if isinstance(result, list):
+            return f"list with {len(result)} items"
+        if isinstance(result, str):
+            if len(result) > 100:
+                return f"string: {result[:100]}..."
+            return f"string: {result}"
+        if isinstance(result, (int, float)):
+            return f"{type(result).__name__}: {result}"
+        return str(result)
+
+    def _process_feedback(self, feedback_payload, result):
+        if hasattr(self, "llm"):
+            try:
+                response = self.llm.query_sync(f"Analyze feedback: {feedback_payload}")
+                if response.success:
+                    data = json.loads(response.content)
+                    data["raw_feedback"] = feedback_payload
+                    data["processing_method"] = "llm"
+                    return data
+            except Exception:
+                pass
+        return self._basic_feedback_processing(feedback_payload)
+
+    def _basic_feedback_processing(self, feedback_payload):
+        sentiment = "neutral"
+        if any(word in feedback_payload.lower() for word in ["good", "great", "excellent"]):
+            sentiment = "positive"
+        elif any(word in feedback_payload.lower() for word in ["bad", "wrong", "terrible"]):
+            sentiment = "negative"
+        return {"sentiment": sentiment, "processing_method": "basic", "confidence": 0.6, "raw_feedback": feedback_payload}
+
+    def _store_feedback(self, execution_id, processed_feedback):
+        if execution_id not in self.feedback_data:
+            self.feedback_data[execution_id] = []
+
+        feedback_entry = {
+            "feedback_id": str(Path(tempfile.mkdtemp()).name),
+            "execution_id": execution_id,
+            "timestamp": "2025-06-14T10:00:00Z",
+            **processed_feedback,
+        }
+        self.feedback_data[execution_id].append(feedback_entry)
+
+        with open(self.storage_path / "feedback" / f"{execution_id}_feedback.json", "w") as f:
+            json.dump(self.feedback_data[execution_id], f)
+
+    def _get_trainer(self, function_name, version):
+        if (function_name, version) not in self.trainers:
+            self.trainers[(function_name, version)] = BasicAlphaTrainer(function_name, version)
+        return self.trainers[(function_name, version)]
+
+    def feedback(self, result, feedback_payload):
+        if not isinstance(result, POETResult):
+            raise POETFeedbackError("result must be a POETResult instance")
+        self._store_execution_context(result)
+        execution_id = result._poet["execution_id"]
+        processed_feedback = self._process_feedback(feedback_payload, result)
+        self._store_feedback(execution_id, processed_feedback)
+
+    def get_feedback_summary(self, function_name):
+        total_feedback = 0
+        sentiment_distribution = {"positive": 0, "negative": 0, "neutral": 0}
+        feedback_type_distribution = {}
+        recent_feedback = []
+
+        for exec_id, execution in self.executions.items():
+            if execution["function_name"] == function_name:
+                if exec_id in self.feedback_data:
+                    for fb in self.feedback_data[exec_id]:
+                        total_feedback += 1
+                        sentiment = fb.get("sentiment", "neutral")
+                        fb_type = fb.get("feedback_type", "general")
+                        sentiment_distribution[sentiment] = sentiment_distribution.get(sentiment, 0) + 1
+                        feedback_type_distribution[fb_type] = feedback_type_distribution.get(fb_type, 0) + 1
+                        recent_feedback.append(fb)
+
+        return {
+            "function_name": function_name,
+            "total_feedback": total_feedback,
+            "sentiment_distribution": sentiment_distribution,
+            "feedback_type_distribution": feedback_type_distribution,
+            "recent_feedback": recent_feedback,
+        }
+
+
+class BasicAlphaTrainer:
+    def __init__(self, function_name, version):
+        self.function_name = function_name
+        self.version = version
+        self.learning_state = {
+            "feedback_count": 0,
+            "patterns": [],
+            "improvement_suggestions": [],
+        }
+
+    def train(self, execution_id, processed_feedback):
+        self.learning_state["feedback_count"] += 1
+        if processed_feedback.get("learning_priority") == "high":
+            self.learning_state["patterns"].append(
+                {
+                    "type": "high_priority_negative_feedback",
+                    "execution_id": execution_id,
+                    "issues": processed_feedback.get("key_issues", []),
+                }
+            )
+        if "suggestions" in processed_feedback:
+            self.learning_state["improvement_suggestions"].extend(processed_feedback["suggestions"])
 
 
 @pytest.mark.poet

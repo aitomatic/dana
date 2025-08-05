@@ -46,11 +46,14 @@ log("Testing dictionary comprehension...")
 try:
     keys = ["a", "b", "c"]
     values = [1, 2, 3]
-    dict_comp = {k: v for k, v in zip(keys, values)}  # Expected to fail - dict comprehension
-    log(f"ERROR: Dictionary comprehension worked unexpectedly: {dict_comp}")
+    # Note: Old syntax {k: v for ...} is no longer supported
+    # New Dana syntax requires parentheses: {(k: v) for ...}
+    dict_comp = {k: v for k, v in zip(keys, values)}  # Expected to fail - old syntax
+    log(f"ERROR: Old dictionary comprehension syntax worked unexpectedly: {dict_comp}")
     assert false  # Should not reach here
 except:
-    log("✅ Dictionary comprehension correctly failed as expected")
+    log("✅ Old dictionary comprehension syntax correctly failed as expected")
+    log("    Note: Use new syntax {(k: v) for ...} instead")
 
 # Test 5: Set comprehension
 log("Testing set comprehension...")

@@ -86,6 +86,8 @@ class BinaryOperationHandler(Loggable):
                 return bool(left or right)
             elif node.operator == BinaryOperator.IN:
                 return left in right
+            elif node.operator == BinaryOperator.NOT_IN:
+                return left not in right
             elif node.operator == BinaryOperator.IS:
                 return left is right
             elif node.operator == BinaryOperator.IS_NOT:

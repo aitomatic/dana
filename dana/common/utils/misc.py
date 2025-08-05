@@ -24,26 +24,30 @@ from dana.common.types import BaseResponse
 asyncio_logger = logging.getLogger("asyncio")
 asyncio_logger.setLevel(logging.ERROR)
 
+
 # Configure asyncio slow task threshold
 def configure_asyncio_threshold():
     """Configure asyncio to use a 30-second threshold for slow task warnings."""
     try:
         # Get the current event loop policy
         policy = asyncio.get_event_loop_policy()
-        
+
         # Set slow task threshold to 30 seconds (default is usually 0.1 seconds)
-        if hasattr(policy, '_slow_callback_duration'):
+        if hasattr(policy, "_slow_callback_duration"):
             policy._slow_callback_duration = 30.0
         else:
             # Alternative: set environment variable before asyncio is used
             import os
+
             os.environ["PYTHONASYNCIOSLOWTASKTHRESHOLD"] = "30.0"
     except Exception:
         # Fallback: suppress warnings if configuration fails
         warnings.filterwarnings("ignore", message=".*asyncio.*", category=RuntimeWarning)
 
+
 # Apply the configuration
 configure_asyncio_threshold()
+
 
 class ParsedArgKwargsResults(BaseModel):
     matched_args: list[Any]
@@ -169,29 +173,29 @@ class Misc:
     @staticmethod
     def safe_asyncio_run(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
         """Run a function in an asyncio loop with smart event loop handling.
-        
+
         This method handles all scenarios:
         - No event loop running: Uses asyncio.run()
         - Event loop running in async context: Uses await
         - Event loop running in sync context: Uses loop.create_task() and run_until_complete()
-        
+
         This approach eliminates the need for nest_asyncio and works in:
         - Jupyter notebooks
-        - FastMCP environments  
+        - FastMCP environments
         - Standard Python scripts
         - Any async framework
-        
+
         Args:
             func: The async function to run
             *args: Arguments to pass to the function
             **kwargs: Keyword arguments to pass to the function
-            
+
         Returns:
             The result of the async function
         """
         # Check if we're already in an event loop
         try:
-            loop = asyncio.get_running_loop()
+            asyncio.get_running_loop()
             # We're in a running event loop
             return Misc._run_in_existing_loop(func, *args, **kwargs)
         except RuntimeError:
@@ -201,18 +205,18 @@ class Misc:
     @staticmethod
     def _run_in_existing_loop(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
         """Run a function in an existing event loop.
-        
+
         This method handles the case where we're already in an event loop
         and need to execute an async function. It uses a thread-based approach
         to avoid interfering with the existing event loop.
         """
         # Use a thread-based approach to avoid event loop conflicts
         import concurrent.futures
-        
+
         def run_in_thread():
             # Create a new event loop in this thread and run the function
             return asyncio.run(func(*args, **kwargs))
-        
+
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(run_in_thread)
             return future.result()

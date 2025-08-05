@@ -1,11 +1,11 @@
 """Tests for API server Pydantic schemas."""
 
-from datetime import datetime
+from datetime import datetime, UTC
 
 import pytest
 from pydantic import ValidationError
 
-from dana.api.server.schemas import (
+from dana.api.core.schemas import (
     AgentBase,
     AgentCreate,
     AgentRead,
@@ -160,7 +160,7 @@ def test_topic_create_schema():
 
 def test_topic_read_schema():
     """Test TopicRead schema."""
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     data = {"id": 1, "name": "Test Topic", "description": "A test topic", "created_at": now, "updated_at": now}
     topic = TopicRead(**data)
     assert topic.id == 1
@@ -199,7 +199,7 @@ def test_document_create_schema():
 
 def test_document_read_schema():
     """Test DocumentRead schema."""
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     data = {
         "id": 1,
         "original_filename": "test.pdf",

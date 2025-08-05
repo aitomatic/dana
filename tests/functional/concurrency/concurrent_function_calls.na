@@ -1,0 +1,267 @@
+# Functional tests for concurrent function calls with Promise[T]
+# Copyright © 2025 Aitomatic, Inc.
+
+# Test concurrent data fetching scenario
+def test_concurrent_data_fetching():
+    # Simulate data fetching functions
+    def fetch_user_data(user_id: int):
+        # Simulate some work
+        return {"id": user_id, "name": f"User{user_id}", "role": "member"}
+    
+    def fetch_user_posts(user_id: int):
+        # Simulate some work  
+        return [f"Post{i}" for i in range(1, 4)]
+    
+    def fetch_user_settings(user_id: int):
+        # Simulate some work
+        return {"theme": "dark", "notifications": true}
+    
+    # Lazy functions that return promises for concurrent execution
+    def get_user_data(user_id):
+        return fetch_user_data(user_id)
+    
+    def get_user_posts(user_id):
+        return fetch_user_posts(user_id)
+    
+    def get_user_settings(user_id):
+        return fetch_user_settings(user_id)
+    
+    # Start all data fetches - these can potentially run in parallel
+    user_data = get_user_data(123)
+    user_posts = get_user_posts(123)
+    user_settings = get_user_settings(123)
+    
+    # Access results - Promise[T] resolution happens here
+    dashboard = {
+        "user": user_data,
+        "posts": user_posts,
+        "settings": user_settings
+    }
+    
+    # Verify results
+    assert dashboard["user"]["id"] == 123
+    assert dashboard["user"]["name"] == "User123"
+    assert len(dashboard["posts"]) == 3
+    assert dashboard["settings"]["theme"] == "dark"
+    
+    print("✓ Concurrent data fetching with Promise[T] works")
+
+# Test conditional computation with lazy evaluation
+def test_conditional_computation():
+    expensive_computation_count = 0
+    
+    def expensive_analysis():
+        expensive_computation_count = expensive_computation_count + 1
+        # Simulate heavy computation
+        result = 0
+        for i in range(1000):
+            result = result + i
+        return result
+    
+    def lazy_expensive_analysis():
+        return expensive_analysis()
+    
+    def process_data(data_size: int):
+        basic_result = data_size * 2
+        
+        # Only compute expensive analysis if data is large
+        if data_size > 100:
+            expensive_result = lazy_expensive_analysis()
+            return {"basic": basic_result, "detailed": expensive_result}
+        else:
+            return {"basic": basic_result}
+    
+    # Small data - expensive computation should not run
+    small_result = process_data(50)
+    small_computation_count = expensive_computation_count
+    
+    # Large data - expensive computation should run when accessed
+    large_result = process_data(200)
+    large_computation_count = expensive_computation_count
+    
+    # Verify results
+    assert small_result["basic"] == 100
+    assert "detailed" not in small_result
+    assert small_computation_count == 0  # No expensive computation
+    
+    assert large_result["basic"] == 400
+    assert large_result["detailed"] == 499500  # Sum of 0 to 999
+    assert large_computation_count == 1  # Expensive computation ran
+    
+    print("✓ Conditional computation with lazy evaluation works")
+
+# Test function composition with Promise[T]
+def test_function_composition():
+    def step1(input_value):
+        return input_value * 2
+    
+    def step2(input_value):
+        return input_value + 10
+    
+    def step3(input_value):
+        return input_value ** 2
+    
+    # Lazy composition functions
+    def lazy_step1(input_value):
+        return step1(input_value)
+    
+    def lazy_step2(input_value):
+        return step2(input_value)
+    
+    def lazy_step3(input_value):
+        return step3(input_value)
+    
+    # Create a processing pipeline
+    def process_pipeline(initial_value):
+        result1 = lazy_step1(initial_value)
+        result2 = lazy_step2(result1)
+        result3 = lazy_step3(result2)
+        return result3
+    
+    final_result = process_pipeline(5)
+    
+    # Verify: 5 * 2 = 10, 10 + 10 = 20, 20^2 = 400
+    assert final_result == 400
+    
+    print("✓ Function composition with Promise[T] works")
+
+# Test mixed eager/lazy execution patterns
+def test_mixed_execution_patterns():
+    operation_log = []
+    
+    def log_operation(name: str, value):
+        operation_log.append(f"{name}: {value}")
+        return value
+    
+    def eager_operation(value):
+        deliver log_operation("eager", value * 2)
+    
+    def lazy_operation(value):
+        return log_operation("lazy", value * 3)
+    
+    # Execute mixed patterns
+    eager_result = eager_operation(5)
+    lazy_result = lazy_operation(5)
+    
+    # Check that eager executed immediately
+    immediate_log_size = len(operation_log)
+    
+    # Access lazy result to trigger execution
+    lazy_value = lazy_result
+    final_log_size = len(operation_log)
+    
+    # Verify execution order
+    assert immediate_log_size == 1  # Only eager executed
+    assert final_log_size == 2      # Both executed
+    assert operation_log[0] == "eager: 10"
+    assert operation_log[1] == "lazy: 15"
+    assert eager_result == 10
+    assert lazy_value == 15
+    
+    print("✓ Mixed eager/lazy execution patterns work")
+
+# Test Promise[T] in data processing workflows
+def test_data_processing_workflow():
+    # Sample data
+    raw_data = [
+        {"id": 1, "name": "Alice", "score": 85},
+        {"id": 2, "name": "Bob", "score": 92},
+        {"id": 3, "name": "Charlie", "score": 78},
+        {"id": 4, "name": "Diana", "score": 96}
+    ]
+    
+    # Processing functions
+    def filter_high_scores(data):
+        return [item for item in data if item["score"] > 80]
+    
+    def calculate_statistics(data):
+        if len(data) == 0:
+            return {"avg": 0, "max": 0, "min": 0}
+        scores = [item["score"] for item in data]
+        return {
+            "avg": sum(scores) / len(scores),
+            "max": max(scores),
+            "min": min(scores)
+        }
+    
+    def generate_report(data, stats):
+        return {
+            "total_count": len(data),
+            "high_performers": len(data),
+            "statistics": stats,
+            "top_performer": max(data, key=lambda x :: x["score"])["name"]
+        }
+    
+    # Lazy processing functions
+    def lazy_filter(data):
+        return filter_high_scores(data)
+    
+    def lazy_stats(data):
+        return calculate_statistics(data)
+    
+    def lazy_report(data, stats):
+        return generate_report(data, stats)
+    
+    # Processing pipeline
+    filtered_data = lazy_filter(raw_data)
+    statistics = lazy_stats(filtered_data)
+    report = lazy_report(filtered_data, statistics)
+    
+    # Verify results
+    assert report["total_count"] == 3  # Alice, Bob, Diana
+    assert report["high_performers"] == 3
+    assert report["statistics"]["max"] == 96
+    assert report["top_performer"] == "Diana"
+    
+    print("✓ Data processing workflow with Promise[T] works")
+
+# Test Promise[T] with collections and comprehensions
+def test_promise_collections():
+    def process_item(item):
+        return item * item
+    
+    def lazy_process_item(item):
+        return process_item(item)
+    
+    # Create collection of lazy results
+    input_data = [1, 2, 3, 4, 5]
+    lazy_results = [lazy_process_item(x) for x in input_data]
+    
+    # Operations on collection of Promise[T] values
+    total = sum(lazy_results)
+    max_value = max(lazy_results)
+    squares = [x for x in lazy_results if x > 10]
+    
+    # Verify results
+    assert total == 55  # 1 + 4 + 9 + 16 + 25
+    assert max_value == 25
+    assert squares == [16, 25]
+    
+    print("✓ Promise[T] with collections works")
+
+# Test recursive Promise[T] scenarios
+def test_recursive_promises():
+    def fibonacci(n):
+        if n <= 1:
+            return n
+        return fibonacci(n-1) + fibonacci(n-2)
+    
+    def lazy_fibonacci(n):
+        return fibonacci(n)
+    
+    # Test recursive lazy computation
+    result = lazy_fibonacci(10)
+    assert result == 55  # 10th Fibonacci number
+    
+    print("✓ Recursive Promise[T] computation works")
+
+# Run all functional tests
+test_concurrent_data_fetching()
+test_conditional_computation()
+test_function_composition()
+test_mixed_execution_patterns()
+test_data_processing_workflow()
+test_promise_collections()
+test_recursive_promises()
+
+print("All functional concurrency tests passed!")

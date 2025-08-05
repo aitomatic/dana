@@ -17,8 +17,9 @@ from dana.core.lang.ast import (
     FunctionCall,
     ObjectFunctionCall,
     SubscriptExpression,
+    Location,
 )
-from dana.core.lang.exceptions import SandboxError
+from dana.common.exceptions import SandboxError
 
 
 class TrailerValidationError(SandboxError):
@@ -131,7 +132,12 @@ class AttributeAccessHandler:
         """
         self.validator.validate_attribute_trailer(trailer)
 
-        return AttributeAccess(object=current_base, attribute=trailer.value, location=getattr(current_base, "location", None))
+        # Get location from the trailer token (where the attribute is)
+        location = None
+        if hasattr(trailer, "line") and hasattr(trailer, "column"):
+            location = Location(line=trailer.line, column=trailer.column, source=getattr(self.transformer, "current_filename", ""))
+
+        return AttributeAccess(object=current_base, attribute=trailer.value, location=location)
 
 
 class IndexingHandler:

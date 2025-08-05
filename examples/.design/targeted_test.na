@@ -1,0 +1,125 @@
+# Targeted Test: What Agent Features Work in Dana 0.4.0
+
+log_level("info")
+
+# Test 1: Basic struct (should work)
+struct TestData:
+    name: str
+    value: float
+
+# Test 2: Agent keyword (correct syntax from examples)
+agent TestAgent:
+    name: str = "test_agent"
+    domain: str = "testing"
+
+# Test 3: Struct methods (test if this works now)
+def (data: TestData) get_info() -> str:
+    return f"Data: {data.name} = {data.value}"
+
+# Test 4: Basic agent creation and methods
+def test_basic_agent():
+    the_agent = TestAgent()
+    log(f"Agent created: {the_agent}")
+    log(f"Agent name: {the_agent.name}")
+    log(f"Agent domain: {the_agent.domain}")
+    return the_agent
+
+# Test 5: Test if plan() and solve() methods exist
+def test_agent_methods():
+    the_agent = TestAgent()
+    
+    # Test if plan() method exists
+    try:
+        plan_result = the_agent.plan("Test planning")
+        log(f"✅ plan() method works: {plan_result}")
+        return {"plan": plan_result, "status": "success"}
+    except Exception as e:
+        log(f"❌ plan() method failed: {e}")
+        return {"plan": None, "status": "failed", "error": str(e)}
+
+# Test 6: Test POET decorator
+@poet(domain="test", retries=1)
+def test_poet_function(x: str) -> str:
+    return f"POET enhanced: {x}"
+
+# Test 7: Test reason() with context
+def test_context_reason():
+    try:
+        result = reason("What is 5 + 3?", context={"numbers": [5, 3]})
+        return result
+    except Exception as e:
+        return f"Context reason failed: {e}"
+
+# Test 8: Test type-aware reasoning
+def test_type_aware():
+    try:
+        float_result: float = reason("Give me a number between 0 and 1")
+        dict_result: dict = reason("Give me a simple dictionary")
+        return {"float": float_result, "dict": dict_result}
+    except Exception as e:
+        return f"Type-aware failed: {e}"
+
+# Main test execution
+def run_targeted_tests():
+    log("=== Dana 0.4.0 Targeted Feature Test ===")
+    
+    results = {}
+    
+    # Test basic struct
+    log("\n1. Testing basic struct...")
+    data = TestData(name="test", value=42.0)
+    results["basic_struct"] = data
+    
+    # Test struct methods
+    log("\n2. Testing struct methods...")
+    try:
+        info = data.get_info()
+        results["struct_methods"] = info
+        log(f"✅ Struct methods work: {info}")
+    except Exception as e:
+        results["struct_methods"] = f"❌ Failed: {e}"
+        log(f"❌ Struct methods failed: {e}")
+    
+    # Test agent creation
+    log("\n3. Testing agent creation...")
+    try:
+        the_agent = test_basic_agent()
+        results["agent_creation"] = the_agent
+        log(f"✅ Agent creation works")
+    except Exception as e:
+        results["agent_creation"] = f"❌ Failed: {e}"
+        log(f"❌ Agent creation failed: {e}")
+    
+    # Test agent methods
+    log("\n4. Testing agent methods...")
+    agent_results = test_agent_methods()
+    results["agent_methods"] = agent_results
+    log(f"Agent methods result: {agent_results}")
+    
+    # Test POET
+    log("\n5. Testing POET decorator...")
+    try:
+        poet_result = test_poet_function("hello")
+        results["poet"] = poet_result
+        log(f"✅ POET works: {poet_result}")
+    except Exception as e:
+        results["poet"] = f"❌ Failed: {e}"
+        log(f"❌ POET failed: {e}")
+    
+    # Test context reasoning
+    log("\n6. Testing context reasoning...")
+    context_result = test_context_reason()
+    results["context_reasoning"] = context_result
+    log(f"Context reasoning: {context_result}")
+    
+    # Test type-aware reasoning
+    log("\n7. Testing type-aware reasoning...")
+    type_result = test_type_aware()
+    results["type_aware"] = type_result
+    log(f"Type-aware reasoning: {type_result}")
+    
+    return results
+
+# Execute tests
+final_results = run_targeted_tests()
+final_results 

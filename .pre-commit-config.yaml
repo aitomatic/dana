@@ -12,25 +12,27 @@ repos:
     rev: v4.5.0
     hooks:
       # - id: trailing-whitespace
-      #   exclude: ^opendxa/dana/runtime/executor/(expression_evaluator|context_manager|statement_executor)\.py$
+      #   exclude: ^dana/dana/runtime/executor/(expression_evaluator|context_manager|statement_executor)\.py$
       # - id: end-of-file-fixer
-      #   exclude: ^opendxa/dana/runtime/executor/(expression_evaluator|context_manager|statement_executor)\.py$
+      #   exclude: ^dana/dana/runtime/executor/(expression_evaluator|context_manager|statement_executor)\.py$
       - id: check-yaml
         exclude: ^mkdocs\.yml$
       - id: check-added-large-files
       # - id: check-ast
       - id: check-json
-        exclude: ^opendxa/dana/runtime/executor/expression_evaluator\.py$|\.ipynb$|\.vscode/settings\.json$
+        exclude: ^dana/dana/runtime/executor/expression_evaluator\.py$|\.ipynb$|\.vscode/settings\.json$
       - id: check-merge-conflict
       - id: detect-private-key
 
-  # - repo: https://github.com/astral-sh/ruff-pre-commit
-  #   rev: v0.3.0
-  #   hooks:
-  #     - id: ruff
-  #       args: [--fix, --config=pyproject.toml]
-  #     - id: ruff-format
-  #       args: [--config=pyproject.toml]
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.3.0
+    hooks:
+      # Note: The ruff hook from astral-sh/ruff-pre-commit has issues with --select/--exclude args
+      # Using local hook below instead for critical checks
+      - id: ruff
+      # Formatting check
+      - id: ruff-format
+        args: [--config=pyproject.toml]
 
   - repo: local
     hooks:
@@ -41,6 +43,11 @@ repos:
         pass_filenames: false
         always_run: true
         stages: [post-checkout, post-merge, post-rewrite]
+      - id: ruff-critical
+        name: Critical lint checks (E722, F821)
+        entry: uv run ruff check --select=E722,F821 --exclude=dana/contrib
+        language: system
+        types: [python]
 
   - repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.

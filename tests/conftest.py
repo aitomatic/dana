@@ -18,6 +18,7 @@ def pytest_configure(config):
     """Register custom markers."""
     config.addinivalue_line("markers", "llm: mark test as requiring an LLM connection")
     config.addinivalue_line("markers", "live: mark test as requiring external services (deselect with '-m \"not live\"')")
+    config.addinivalue_line("markers", "na_file: mark tests that execute .na files")
 
 
 def pytest_collection_modifyitems(config, items):
@@ -83,6 +84,38 @@ def configure_llm_mocking(request):
         yield
         if original_value:
             os.environ["DANA_MOCK_LLM"] = original_value
+
+
+@pytest.fixture(scope="session", autouse=True)
+def clear_promise_groups():
+    """Clear Promise groups at the start of each test session to prevent bleeding."""
+    from dana.core.concurrency.lazy_promise import _current_promise_group
+
+    # Clear any existing Promise groups
+    if hasattr(_current_promise_group, "group"):
+        delattr(_current_promise_group, "group")
+
+    yield
+
+    # Clear again at the end of the session
+    if hasattr(_current_promise_group, "group"):
+        delattr(_current_promise_group, "group")
+
+
+@pytest.fixture(autouse=True)
+def clear_promise_groups_per_test():
+    """Clear Promise groups before each test to prevent bleeding."""
+    from dana.core.concurrency.lazy_promise import _current_promise_group
+
+    # Clear any existing Promise groups before test
+    if hasattr(_current_promise_group, "group"):
+        delattr(_current_promise_group, "group")
+
+    yield
+
+    # Clear again after test
+    if hasattr(_current_promise_group, "group"):
+        delattr(_current_promise_group, "group")
 
 
 # Universal Dana (.na) file test integration
@@ -157,12 +190,29 @@ def run_dana_test_file(dana_test_file):
         run_dana_test_file(dana_test_file, fresh_dana_sandbox)
     """
     # Clear struct registry to ensure test isolation
-    from dana.core.lang.interpreter.struct_system import StructTypeRegistry
+    from dana.core.lang.interpreter.struct_system import MethodRegistry, StructTypeRegistry
+    from dana.core.runtime.modules.core import initialize_module_system, reset_module_system
+
     StructTypeRegistry.clear()
-    
+    MethodRegistry.clear()
+
+    # Initialize module system for tests that may use imports
+    reset_module_system()
+    initialize_module_system()
+
+    # Clear Promise group to prevent bleeding between tests
+    from dana.core.concurrency.lazy_promise import _current_promise_group
+
+    # Clear the thread-local Promise group
+    if hasattr(_current_promise_group, "group"):
+        delattr(_current_promise_group, "group")
+
     sandbox = DanaSandbox()
     try:
-        result = sandbox.run(dana_test_file)
+        result = sandbox.run_file(dana_test_file)
         assert result.success, f"Dana test {dana_test_file.name} failed: {result.error}"
     finally:
         sandbox._cleanup()
+        # Clear Promise group again after test
+        if hasattr(_current_promise_group, "group"):
+            delattr(_current_promise_group, "group")

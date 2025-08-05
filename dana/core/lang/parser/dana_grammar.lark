@@ -35,6 +35,7 @@ compound_stmt: if_stmt
              | while_stmt
              | for_stmt
              | function_def
+             | method_def
              | try_stmt
              | with_stmt
              | struct_def
@@ -55,8 +56,9 @@ elif_stmt: "elif" expr ":" [COMMENT] block
 
 // Other compound statements
 while_stmt: "while" expr ":" [COMMENT] block
-for_stmt: "for" NAME "in" expr ":" [COMMENT] block
+for_stmt: "for" for_targets "in" expr ":" [COMMENT] block
 function_def: [decorators] "def" NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
+method_def: [decorators] "def" "(" typed_parameter ")" NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
 try_stmt: "try" ":" [COMMENT] block except_clause+ ["finally" ":" [COMMENT] block]
 
 // Exception handling clauses
@@ -68,7 +70,8 @@ with_stmt: "with" (with_context_manager | (NAME | USE) "(" [mixed_arguments] ")"
 struct_def: "struct" NAME ":" [COMMENT] struct_block -> struct_definition
 agent_def: "agent" NAME ":" [COMMENT] agent_block -> agent_definition
 
-struct_block: _NL _INDENT struct_fields _DEDENT
+struct_block: _NL _INDENT [docstring] struct_fields _DEDENT
+docstring: MULTILINE_STRING _NL
 struct_fields: struct_field+
 struct_field: NAME ":" basic_type ["=" expr] [COMMENT] _NL -> struct_field
 
@@ -85,8 +88,8 @@ with_arg: kw_arg
 kw_arg: NAME "=" expr
 
 // Function parameters
-parameters: typed_parameter ("," typed_parameter)*
-typed_parameter: NAME [":" basic_type] ["=" expr]
+parameters: typed_parameter ("," [COMMENT] typed_parameter)*
+typed_parameter: NAME [":" basic_type] ["=" expr] [COMMENT]
 
 // ===== TYPE ANNOTATIONS =====
 // Basic type annotation support for KISS implementation with union types
@@ -116,8 +119,10 @@ ANY_TYPE: "any"
 
 // ===== SIMPLE STATEMENTS =====
 simple_stmt: assignment
+           | declarative_function_assignment
            | expr_stmt
            | return_stmt
+           | deliver_stmt
            | break_stmt
            | continue_stmt
            | pass_stmt
@@ -147,6 +152,7 @@ FROM.2: "from"
 DEF.2: "def"
 STRUCT.2: "struct"
 RETURN.2: "return"
+DELIVER.2: "deliver"
 PASS.2: "pass"
 BREAK.2: "break"
 CONTINUE.2: "continue"
@@ -166,13 +172,18 @@ export_stmt: "export" NAME -> export_list
 
 export_names: NAME ("," NAME)*
 
-assignment: typed_assignment | simple_assignment | function_call_assignment
+assignment: typed_assignment | simple_assignment | function_call_assignment | compound_assignment
 typed_assignment: target ":" basic_type "=" expr
 simple_assignment: target "=" expr
 function_call_assignment: target "=" return_object_stmt
+declarative_function_assignment: "def" NAME "(" [parameters] ")" ["->" basic_type] "=" function_composition_expr
+compound_assignment: target compound_op expr
+
+compound_op: PLUS_EQUALS | MINUS_EQUALS | MULT_EQUALS | DIV_EQUALS
 
 expr_stmt: expr
 return_stmt: "return" [expr]
+deliver_stmt: "deliver" [expr]
 break_stmt: "break"
 continue_stmt: "continue"
 pass_stmt: "pass"
@@ -213,7 +224,34 @@ target: atom
 // ===== EXPRESSIONS =====
 expr: pipe_expr
 
-pipe_expr: or_expr (PIPE or_expr)*
+pipe_expr: conditional_expr (PIPE conditional_expr)*
+
+// Conditional expressions (ternary operator): expr if condition else expr
+conditional_expr: or_expr ["if" or_expr "else" conditional_expr]
+
+// ===== FUNCTION COMPOSITION EXPRESSIONS =====
+// Only allowed in declarative function definitions
+function_composition_expr: function_pipe_expr
+
+// Function pipe expressions: f1 | f2 | f3
+function_pipe_expr: pipeline_stage (PIPE pipeline_stage)*
+
+// Pipeline stages: function expressions with optional named capture
+pipeline_stage: function_expr ["as" NAME]
+
+// Function expressions: function names, function calls, and list literals
+function_expr: function_name | function_call | function_list_literal
+
+// Function name: just a name
+function_name: NAME
+
+// Function call: name with arguments
+function_call: NAME "(" [arguments] ")"
+
+// Function list literal: [f1, f2, f3] for parallel composition
+function_list_literal: "[" [function_expr ("," function_expr)*] "]"
+
+
 
 or_expr: and_expr ("or" and_expr)*
 
@@ -233,12 +271,19 @@ GE_OP: ">="
 LE_OP: "<="
 NE_OP: "!="
 IN_OP: "in"
-NOT_IN_OP: "not" "in"
+NOT_IN_OP.3: /\bnot\s+in\b/
 IS_OP: /\bis\b/
 IS_NOT_OP: /\bis\s+not\b/
 
 // Define token patterns with explicit priorities (lexer specific)
-// IMPORTANT: Define ** first, then * to avoid conflicts
+// IMPORTANT: Define longer tokens first to avoid conflicts
+// Compound assignment operators must come before basic operators
+PLUS_EQUALS: "+="
+MINUS_EQUALS: "-="
+MULT_EQUALS: "*="
+DIV_EQUALS: "/="
+
+// Basic operators after compound operators
 POW: "**"  // Define POW as a distinct token separate from MUL
 ADD: "+" 
 SUB: "-"
@@ -247,6 +292,7 @@ DIV: "/"
 FDIV: "//"
 MOD: "%"
 PIPE: "|"
+DOLLAR_DOLLAR: "$$"
 
 // Expression precedence structure (lowest to highest)
 sum_expr: product ((ADD | SUB) product)*
@@ -278,10 +324,12 @@ slice_start_stop_step: expr ":" expr ":" expr // [start:stop:step]
 slice_all: ":"                               // [:]
 slice_step_only: "::" expr                   // [::step]
 
-arguments: argument ("," argument)* [","]
+arguments: argument ("," [COMMENT] argument)* [","]
 
-argument: kw_arg
-        | expr
+argument: (kw_arg | expr) [COMMENT]
+
+// ===== PLACEHOLDER =====
+placeholder: DOLLAR_DOLLAR -> placeholder_expression
 
 // ===== STRING LITERALS =====
 // Regular string literals, referenced from common
@@ -307,7 +355,7 @@ MULTILINE_STRING: /""".*?"""/s | /'''.*?'''/s
 
 // Define the NAME token with higher priority than keywords to handle identifiers containing keywords
 // Priority 3 is higher than NOT_OP (priority 2), ensuring names like 'not_var' are tokenized as NAME
-NAME.3: /(?!(True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|if|else|elif|while|for|def|struct|try|except|finally|raise|assert|import|from|with|use|agent|agent_pool|lambda|yield|global|nonlocal|del|and|or|not|in|is|export|as)\b)([a-zA-Z_][a-zA-Z0-9_]*)/
+NAME.3: /(?!(True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|deliver|if|else|elif|while|for|def|struct|try|except|finally|raise|assert|import|from|with|use|agent|agent_pool|lambda|yield|global|nonlocal|del|and|or|not|in|is|export|as)\b)([a-zA-Z_][a-zA-Z0-9_]*)/
 
 // Basic string literals with f-strings
 string_literal: REGULAR_STRING
@@ -336,20 +384,48 @@ atom: variable trailer*
     | FALSE
     | NONE
     | collection
+    | placeholder
+    | lambda_expr
     | "(" expr ")"
 
 // ===== COLLECTIONS =====
-collection: list | dict | tuple | set
+collection: list | set | dict | tuple
 
 list: "[" [list_items] "]"
-dict: "{" [dict_items] "}"
+    | list_comprehension
+dict: dict_comprehension
+    | "{" [dict_items] "}"
 tuple: "(" ")"
      | "(" expr "," [list_items] ")"
-set: "{" list_items "}"
+set: set_comprehension
+    | "{" list_items"}"
 
 list_items: expr ("," expr)* [","]
 dict_items: key_value_pair ("," key_value_pair)* [","]
 key_value_pair: expr ":" expr
+
+// ===== COMPREHENSIONS =====
+list_comprehension: "[" comprehension_body "]"
+set_comprehension: "{" comprehension_body "}"
+dict_comprehension: "{" dict_comprehension_body "}"
+comprehension_body: or_expr "for" for_targets "in" or_expr [comprehension_if]
+dict_comprehension_body: "(" or_expr ":" or_expr ")" "for" for_targets "in" or_expr [comprehension_if]
+
+
+comprehension_if: "if" or_expr
+
+// ===== FOR LOOP TARGETS =====
+for_targets: NAME | "(" for_target_list ")"
+for_target_list: NAME ("," NAME)*
+
+
+
+
+
+// ===== LAMBDA EXPRESSIONS =====
+lambda_expr: "lambda" [lambda_receiver] [lambda_params] "::" expr
+lambda_receiver: "(" NAME ":" basic_type ")"
+lambda_params: NAME [":" basic_type] ("," NAME [":" basic_type])*
 
 // ===== WHITESPACE AND COMMENTS =====
 // Modified to handle comments and newlines better
@@ -375,7 +451,9 @@ NOT_OP.2: "not"
 AT: "@"
 
 simple_import: "import" module_path [AS NAME]
-from_import: "from" module_path "import" NAME [AS NAME]
+from_import: "from" (relative_module_path | module_path) "import" import_name_list
+import_name_list: import_name ("," import_name)*
+import_name: NAME [AS NAME]
 
 // ===== DECORATORS =====
 decorators: decorator+

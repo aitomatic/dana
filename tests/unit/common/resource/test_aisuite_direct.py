@@ -9,7 +9,7 @@ def test_direct_aisuite_initialization():
 
     # Test 1: Empty provider_configs
     try:
-        client = ai.Client(provider_configs={})
+        _client = ai.Client(provider_configs={})
         print("✅ Empty provider_configs works")
     except Exception as e:
         print(f"❌ Empty provider_configs failed: {e}")
@@ -17,7 +17,7 @@ def test_direct_aisuite_initialization():
     # Test 2: Simple provider_configs
     try:
         provider_configs = {"anthropic": {"api_key": "test-key"}}
-        client = ai.Client(provider_configs=provider_configs)
+        _client = ai.Client(provider_configs=provider_configs)
         print("✅ Simple provider_configs works")
     except Exception as e:
         print(f"❌ Simple provider_configs failed: {e}")
@@ -30,14 +30,14 @@ def test_direct_aisuite_initialization():
             "groq": {"api_key": "test-groq-key"},
             "deepseek": {"api_key": "test-deepseek-key"},
         }
-        client = ai.Client(provider_configs=provider_configs)
+        _client = ai.Client(provider_configs=provider_configs)
         print("✅ Full provider_configs works")
     except Exception as e:
         print(f"❌ Full provider_configs failed: {e}")
 
     # Test 4: Try with no arguments
     try:
-        client = ai.Client()
+        _client = ai.Client()
         print("✅ No arguments works")
     except Exception as e:
         print(f"❌ No arguments failed: {e}")

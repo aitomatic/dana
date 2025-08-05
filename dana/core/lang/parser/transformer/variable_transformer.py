@@ -66,7 +66,8 @@ class VariableTransformer(BaseTransformer):
 
         var_name = raw_name(var)
         name = f"{scope}:{var_name}"
-        return Identifier(name=name)
+        location = self.create_location(items[0]) if items else None
+        return Identifier(name=name, location=location)
 
     def simple_name(self, items):
         """
@@ -77,7 +78,8 @@ class VariableTransformer(BaseTransformer):
         via registry first, and variable access to be handled by the context resolver.
         """
         name = self._extract_name(items[0])
-        return Identifier(name=name)
+        location = self.create_location(items[0])
+        return Identifier(name=name, location=location)
 
     def dotted_access(self, items):
         """
@@ -104,13 +106,16 @@ class VariableTransformer(BaseTransformer):
                 f"Use colon notation instead: '{base_name}:{attribute_names[0]}'"
             )
 
-        # Create the base object identifier without automatic scoping
-        base_obj = Identifier(name=base_name)
+        # Create the base object identifier with location
+        base_location = self.create_location(items[0])
+        base_obj = Identifier(name=base_name, location=base_location)
 
-        # Chain the attribute accesses
+        # Chain the attribute accesses with location information
         current_obj = base_obj
-        for attr_name in attribute_names:
-            current_obj = AttributeAccess(object=current_obj, attribute=attr_name)
+        for i, attr_name in enumerate(attribute_names):
+            # Get location from the corresponding item (i+1 because items[0] is the base)
+            attr_location = self.create_location(items[i + 1]) if i + 1 < len(items) else None
+            current_obj = AttributeAccess(object=current_obj, attribute=attr_name, location=attr_location)
 
         return current_obj
 
@@ -125,7 +130,8 @@ class VariableTransformer(BaseTransformer):
         """
         parts = [self._extract_name(item) for item in items]
         name = self._join_dotted(parts)
-        return Identifier(name=name)
+        location = self.create_location(items[0]) if items else None
+        return Identifier(name=name, location=location)
 
     # === Helper Methods ===
     def _extract_name(self, item):
