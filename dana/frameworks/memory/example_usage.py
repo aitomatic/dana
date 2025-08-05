@@ -6,7 +6,6 @@ context across a conversation with a human.
 """
 
 from conversation_memory import ConversationMemory
-from datetime import datetime
 
 
 class ConversationalAgent:
@@ -156,7 +155,7 @@ def demo_conversation():
     stats = agent.memory.get_statistics()
     print(f"Total turns: {stats['total_turns']}")
     print(f"Session count: {stats['session_count']}")
-    print(f"Memory file: demo_agent_memory.json")
+    print("Memory file: demo_agent_memory.json")
 
 
 def demo_multi_session():
@@ -178,11 +177,11 @@ def demo_multi_session():
     agent2 = ConversationalAgent("multi_session_memory.json")
 
     # The agent should remember the previous conversation
-    print(f"\n👤 User: Do you remember my name?")
+    print("\n👤 User: Do you remember my name?")
     response = agent2.respond("Do you remember my name?")
     print(f"🤖 Agent: {response}")
 
-    print(f"\n👤 User: What was I learning about?")
+    print("\n👤 User: What was I learning about?")
     response = agent2.respond("What was I learning about?")
     print(f"🤖 Agent: {response}")
 

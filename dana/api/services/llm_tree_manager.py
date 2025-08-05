@@ -4,11 +4,7 @@ import json
 import logging
 from typing import Any
 
-from dana.api.core.schemas import (
-    DomainKnowledgeTree,
-    DomainNode,
-    DomainKnowledgeUpdateResponse
-)
+from dana.api.core.schemas import DomainKnowledgeTree, DomainNode, DomainKnowledgeUpdateResponse
 from dana.common.mixins.loggable import Loggable
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
@@ -18,22 +14,23 @@ logger = logging.getLogger(__name__)
 
 class LLMTreeManager(Loggable):
     """LLM-powered service for intelligent domain knowledge tree management."""
-    
+
     def __init__(self):
         super().__init__()
         self.llm = LLMResource()
 
-
-    async def add_topic_to_knowledge(self, 
-                                    current_tree: DomainKnowledgeTree | None,
-                                    paths: list[str],
-                                    suggested_parent: str | None,
-                                    context_details: str | None,
-                                    agent_name: str,
-                                    agent_description: str,
-                                    chat_history: list = None) -> DomainKnowledgeUpdateResponse:
+    async def add_topic_to_knowledge(
+        self,
+        current_tree: DomainKnowledgeTree | None,
+        paths: list[str],
+        suggested_parent: str | None,
+        context_details: str | None,
+        agent_name: str,
+        agent_description: str,
+        chat_history: list = None,
+    ) -> DomainKnowledgeUpdateResponse:
         try:
-            print(f"🧠 Smart add knowledge starting...")
+            print("🧠 Smart add knowledge starting...")
             print(f"  - Paths: {paths}")
             print(f"  - Current tree exists: {current_tree is not None}")
 
@@ -46,7 +43,7 @@ class LLMTreeManager(Loggable):
                     return DomainKnowledgeUpdateResponse(
                         success=True,
                         updated_tree=current_tree,
-                        changes_summary=f"Topic '{final_topic}' already exists in tree - no changes needed"
+                        changes_summary=f"Topic '{final_topic}' already exists in tree - no changes needed",
                     )
 
             # changed will be used to determine if the tree has changed
@@ -75,11 +72,7 @@ class LLMTreeManager(Loggable):
                     changed = True
             if changed:
                 current_tree.version += 1
-            return DomainKnowledgeUpdateResponse(
-                success=True,
-                updated_tree=current_tree,
-                changes_summary=f"Added {paths} to the tree"
-            )
+            return DomainKnowledgeUpdateResponse(success=True, updated_tree=current_tree, changes_summary=f"Added {paths} to the tree")
         except Exception as e:
             print(f"❌ Exception in add_topic_to_knowledge: {e}")
             self.error(f"Error in add_topic_to_knowledge: {e}. Falling back to smart_add_knowledge.")
@@ -90,9 +83,9 @@ class LLMTreeManager(Loggable):
                 context_details=context_details,
                 agent_name=agent_name,
                 agent_description=agent_description,
-                chat_history=chat_history
+                chat_history=chat_history,
             )
-    
+
     async def smart_add_knowledge(
         self,
         current_tree: DomainKnowledgeTree | None,
@@ -101,11 +94,11 @@ class LLMTreeManager(Loggable):
         context_details: str | None,
         agent_name: str,
         agent_description: str,
-        chat_history: list = None
+        chat_history: list = None,
     ) -> DomainKnowledgeUpdateResponse:
         """
         Intelligently add knowledge to the tree using LLM reasoning.
-        
+
         Args:
             current_tree: Current domain knowledge tree
             new_topic: Topic to add
@@ -114,25 +107,23 @@ class LLMTreeManager(Loggable):
             agent_name: Agent's name for context
             agent_description: Agent's description for context
             chat_history: Recent chat messages for additional context
-            
+
         Returns:
             DomainKnowledgeUpdateResponse with updated tree
         """
         try:
-            print(f"🧠 Smart add knowledge starting...")
+            print("🧠 Smart add knowledge starting...")
             print(f"  - Topic: {new_topic}")
             print(f"  - Suggested parent: {suggested_parent}")
             print(f"  - Context: {context_details}")
             print(f"  - Agent: {agent_name}")
             print(f"  - Current tree exists: {current_tree is not None}")
-            
+
             # If no tree exists, create initial structure
             if not current_tree:
                 print("🌱 No current tree, creating initial structure...")
-                return await self._create_initial_tree_with_topic(
-                    new_topic, agent_name, agent_description
-                )
-            
+                return await self._create_initial_tree_with_topic(new_topic, agent_name, agent_description)
+
             print("🔍 Analyzing tree placement with LLM...")
             # Use LLM to determine best placement and structure
             tree_analysis = await self._analyze_tree_placement(
@@ -141,70 +132,56 @@ class LLMTreeManager(Loggable):
                 suggested_parent=suggested_parent,
                 context_details=context_details,
                 agent_context=f"{agent_name}: {agent_description}",
-                chat_history=chat_history or []
+                chat_history=chat_history or [],
             )
-            
+
             print(f"📊 Tree analysis result: {tree_analysis}")
-            
+
             if not tree_analysis.get("success", False):
                 error_msg = f"LLM analysis failed: {tree_analysis.get('error', 'Unknown error')}"
                 print(f"❌ {error_msg}")
-                return DomainKnowledgeUpdateResponse(
-                    success=False,
-                    error=error_msg
-                )
-            
+                return DomainKnowledgeUpdateResponse(success=False, error=error_msg)
+
             print("🔧 Applying tree changes...")
             # Apply the LLM's recommended changes
-            updated_tree = await self._apply_tree_changes(
-                current_tree, tree_analysis, new_topic
-            )
-            
-            print(f"✅ Tree changes applied successfully")
-            
+            updated_tree = await self._apply_tree_changes(current_tree, tree_analysis, new_topic)
+
+            print("✅ Tree changes applied successfully")
+
             return DomainKnowledgeUpdateResponse(
-                success=True,
-                updated_tree=updated_tree,
-                changes_summary=tree_analysis.get("changes_summary", f"Added {new_topic}")
+                success=True, updated_tree=updated_tree, changes_summary=tree_analysis.get("changes_summary", f"Added {new_topic}")
             )
-            
+
         except Exception as e:
             print(f"❌ Exception in smart_add_knowledge: {e}")
             import traceback
+
             print(f"📚 Full traceback: {traceback.format_exc()}")
             self.error(f"Error in smart_add_knowledge: {e}")
-            return DomainKnowledgeUpdateResponse(
-                success=False,
-                error=str(e)
-            )
-    
-    async def _create_initial_tree_with_topic(
-        self,
-        topic: str,
-        agent_name: str,
-        agent_description: str
-    ) -> DomainKnowledgeUpdateResponse:
+            return DomainKnowledgeUpdateResponse(success=False, error=str(e))
+
+    async def _create_initial_tree_with_topic(self, topic: str, agent_name: str, agent_description: str) -> DomainKnowledgeUpdateResponse:
         """Create initial tree structure with the new topic using LLM."""
         try:
             prompt = self._build_initial_tree_prompt(topic, agent_name, agent_description)
-            
+
             llm_request = BaseRequest(
                 arguments={
                     "messages": [
                         {"role": "system", "content": "You are an expert at organizing knowledge into hierarchical structures."},
-                        {"role": "user", "content": prompt}
+                        {"role": "user", "content": prompt},
                     ],
                     "temperature": 0.3,
-                    "max_tokens": 1000
+                    "max_tokens": 1000,
                 }
             )
-            
+
             response = await self.llm.query(llm_request)
-            
+
             # Parse LLM response
             content = response.content
             print(f"🔍 Response content type: {type(content)}, content: {content}")
-            
+
             if isinstance(content, str):
                 # Direct string response
                 # Handle markdown code blocks if present
@@ -229,10 +206,10 @@ class LLMTreeManager(Loggable):
                     result = content
             else:
                 raise ValueError(f"Unexpected response content type: {type(content)}")
-            
+
             # Build tree from LLM response - handle different formats
             tree_structure = result.get("tree_structure")
-            
+
             # If no tree_structure, check if response is in changes_to_apply format
             if not tree_structure:
                 changes = result.get("changes_to_apply", [])
@@ -242,46 +219,32 @@ class LLMTreeManager(Loggable):
                         # Convert to tree_structure format
                         new_topic = change.get("new_topic", topic)
                         child_topics = change.get("child_topics", [])
-                        
+
                         # Create children nodes
                         children = []
                         for child_topic in child_topics:
                             children.append({"topic": child_topic, "children": []})
-                        
+
                         # Create root with main topic as child
-                        tree_structure = {
-                            "topic": "Domain Knowledge",
-                            "children": [{
-                                "topic": new_topic,
-                                "children": children
-                            }]
-                        }
+                        tree_structure = {"topic": "Domain Knowledge", "children": [{"topic": new_topic, "children": children}]}
                     else:
                         # Simple add_node format
                         new_topic = change.get("new_topic", topic)
-                        tree_structure = {
-                            "topic": "Domain Knowledge", 
-                            "children": [{"topic": new_topic, "children": []}]
-                        }
+                        tree_structure = {"topic": "Domain Knowledge", "children": [{"topic": new_topic, "children": []}]}
                 else:
                     raise ValueError("LLM didn't provide tree structure or valid changes")
-            
+
             root_node = self._build_node_from_dict(tree_structure)
             tree = DomainKnowledgeTree(root=root_node, version=1)
-            
+
             return DomainKnowledgeUpdateResponse(
-                success=True,
-                updated_tree=tree,
-                changes_summary=f"Created initial knowledge tree with {topic}"
+                success=True, updated_tree=tree, changes_summary=f"Created initial knowledge tree with {topic}"
             )
-            
+
         except Exception as e:
             self.error(f"Error creating initial tree: {e}")
-            return DomainKnowledgeUpdateResponse(
-                success=False,
-                error=str(e)
-            )
-    
+            return DomainKnowledgeUpdateResponse(success=False, error=str(e))
+
     async def _analyze_tree_placement(
         self,
         current_tree: DomainKnowledgeTree,
@@ -289,48 +252,51 @@ class LLMTreeManager(Loggable):
         suggested_parent: str | None,
         context_details: str | None,
         agent_context: str,
-        chat_history: list = None
+        chat_history: list = None,
     ) -> dict[str, Any]:
         """Use LLM to analyze where and how to add the new topic."""
         try:
-            print(f"🔍 Building placement analysis prompt...")
+            print("🔍 Building placement analysis prompt...")
             print(f"  - New topic: '{new_topic}' (type: {type(new_topic)})")
             print(f"  - Suggested parent: {suggested_parent}")
             print(f"  - Context details: {context_details}")
             print(f"  - Agent context: {agent_context}")
-            
+
             prompt = self._build_placement_analysis_prompt(
                 current_tree=current_tree,
                 new_topic=new_topic,
                 suggested_parent=suggested_parent,
                 context_details=context_details,
                 agent_context=agent_context,
-                chat_history=chat_history or []
+                chat_history=chat_history or [],
             )
-            
+
             print(f"📝 Generated prompt (first 500 chars): {prompt[:500]}...")
-            
+
             llm_request = BaseRequest(
                 arguments={
                     "messages": [
-                        {"role": "system", "content": "You are an expert knowledge architect. Analyze tree structures and recommend optimal placements for new knowledge."},
-                        {"role": "user", "content": prompt}
+                        {
+                            "role": "system",
+                            "content": "You are an expert knowledge architect. Analyze tree structures and recommend optimal placements for new knowledge.",
+                        },
+                        {"role": "user", "content": prompt},
                     ],
                     "temperature": 0.2,
-                    "max_tokens": 1500
+                    "max_tokens": 1500,
                 }
             )
-            
-            print(f"🚀 Calling LLM...")
+
+            print("🚀 Calling LLM...")
             response = await self.llm.query(llm_request)
             print(f"📨 LLM response type: {type(response)}")
             print(f"📨 LLM response: {response}")
-            
+
             # Parse LLM response
             content = response.content
             print(f"📄 Response content type: {type(content)}")
             print(f"📄 Response content: {content}")
-            
+
             if isinstance(content, str):
                 print("🔄 Parsing content as JSON string...")
                 # Handle markdown code blocks if present
@@ -358,10 +324,10 @@ class LLMTreeManager(Loggable):
                     result = content
             else:
                 raise ValueError(f"Unexpected response content type: {type(content)}")
-            
+
             print(f"✅ Parsed result: {result}")
             return result
-            
+
         except json.JSONDecodeError as e:
             print(f"❌ JSON parsing error: {e}")
             print(f"📄 Raw content that failed to parse: {content}")
@@ -371,11 +337,8 @@ class LLMTreeManager(Loggable):
                 "success": True,
                 "action": "add_to_parent",
                 "parent_topic": "root",
-                "new_node": {
-                    "topic": new_topic,
-                    "children": []
-                },
-                "changes_summary": f"Added {new_topic} to the root level (fallback due to LLM parsing error)"
+                "new_node": {"topic": new_topic, "children": []},
+                "changes_summary": f"Added {new_topic} to the root level (fallback due to LLM parsing error)",
             }
             print(f"🚨 Returning fallback analysis: {fallback_analysis}")
             return fallback_analysis
@@ -383,27 +346,19 @@ class LLMTreeManager(Loggable):
             print(f"❌ General error in tree analysis: {e}")
             print(f"🔍 Error type: {type(e)}")
             import traceback
+
             print(f"📚 Full traceback: {traceback.format_exc()}")
             self.error(f"Error in tree analysis: {e}")
             # Return fallback analysis that adds to root
             return {
                 "success": True,
-                "action": "add_to_parent", 
+                "action": "add_to_parent",
                 "parent_topic": "root",
-                "new_node": {
-                    "topic": new_topic,
-                    "children": []
-                },
-                "changes_summary": f"Added {new_topic} to the root level (fallback due to analysis error)"
+                "new_node": {"topic": new_topic, "children": []},
+                "changes_summary": f"Added {new_topic} to the root level (fallback due to analysis error)",
             }
-    
-    
-    def _build_initial_tree_prompt(
-        self,
-        topic: str,
-        agent_name: str,
-        agent_description: str
-    ) -> str:
+
+    def _build_initial_tree_prompt(self, topic: str, agent_name: str, agent_description: str) -> str:
         """Build prompt for creating initial tree structure."""
         return f"""Create an initial domain knowledge tree for an agent.
 
@@ -495,7 +450,7 @@ Example: If topic is "Personal Finance Advisory", create:
     ]
   }}
 }}"""
-    
+
     def _build_placement_analysis_prompt(
         self,
         current_tree: DomainKnowledgeTree,
@@ -503,21 +458,21 @@ Example: If topic is "Personal Finance Advisory", create:
         suggested_parent: str | None,
         context_details: str | None,
         agent_context: str,
-        chat_history: list = None
+        chat_history: list = None,
     ) -> str:
         """Build prompt for analyzing optimal topic placement."""
-        
+
         tree_json = json.dumps(current_tree.model_dump(), indent=2, default=str)
-        
+
         # Build chat history context
         chat_context = ""
         if chat_history and len(chat_history) > 0:
             chat_context = "\n\nRecent Chat History (for context):\n"
             for msg in chat_history[-5:]:  # Last 5 messages
-                role = getattr(msg, 'role', 'unknown')
-                content = getattr(msg, 'content', str(msg))
+                role = getattr(msg, "role", "unknown")
+                content = getattr(msg, "content", str(msg))
                 chat_context += f"{role}: {content}\n"
-        
+
         return f"""Analyze this domain knowledge tree and add or reorganize the topic "{new_topic}".
 
 Agent Context: {agent_context}
@@ -525,7 +480,7 @@ Agent Context: {agent_context}
 Current Tree:
 {tree_json}
 
-Task: Add "{new_topic}" under parent "{suggested_parent or 'auto-detect'}"
+Task: Add "{new_topic}" under parent "{suggested_parent or "auto-detect"}"
 Additional Context: {context_details or "None"}{chat_context}
 
 CRITICAL REQUIREMENT: When adding "{new_topic}", you MUST automatically generate:
@@ -582,7 +537,7 @@ RESPOND WITH ONLY VALID JSON including multi-level child topics:
   "changes_to_apply": [
     {{
       "action": "add_node_with_hierarchical_children",
-      "parent_path": ["Untitled", "{suggested_parent or 'Untitled'}"],
+      "parent_path": ["Untitled", "{suggested_parent or "Untitled"}"],
       "new_topic": "{new_topic}",
       "hierarchical_structure": {{
         "topic": "{new_topic}",
@@ -639,60 +594,57 @@ If moving existing topics, use:
   ],
   "changes_summary": "Moved {new_topic} under {suggested_parent}"
 }}"""
-    
-    async def _apply_tree_changes(
-        self,
-        current_tree: DomainKnowledgeTree,
-        analysis: dict[str, Any],
-        new_topic: str
-    ) -> DomainKnowledgeTree:
+
+    async def _apply_tree_changes(self, current_tree: DomainKnowledgeTree, analysis: dict[str, Any], new_topic: str) -> DomainKnowledgeTree:
         """Apply the LLM's recommended changes to the tree."""
-        
-        print(f"🔧 Applying tree changes...")
+
+        print("🔧 Applying tree changes...")
         print(f"📋 Full analysis keys: {list(analysis.keys())}")
         print(f"📋 Analysis: {analysis}")
-        
+
         # Handle different possible response formats
         changes = analysis.get("changes_to_apply", [])
         if not changes:
             # Try alternate key names
             changes = analysis.get("changes", [])
-        
+
         print(f"📝 Changes to apply ({len(changes)} items): {changes}")
-        
+
         if not changes:
             print("❌ No changes found in analysis! Creating manual change...")
             # If LLM didn't provide proper format, create a fallback using the actual topic
-            changes = [{
-                "action": "add_node",
-                "parent_path": ["Untitled"],  # Add to root for now
-                "new_topic": new_topic  # Use the actual new_topic instead of hardcoded value
-            }]
+            changes = [
+                {
+                    "action": "add_node",
+                    "parent_path": ["Untitled"],  # Add to root for now
+                    "new_topic": new_topic,  # Use the actual new_topic instead of hardcoded value
+                }
+            ]
             print(f"📝 Fallback changes created: {changes}")
-        
+
         # Work on a copy of the tree
         tree_dict = current_tree.model_dump()
         print(f"🌳 Original tree dict: {tree_dict}")
-        
+
         root_node = self._build_node_from_dict(tree_dict["root"])
         print(f"🌱 Root node created: {root_node.topic} with {len(root_node.children)} children")
-        
+
         changes_applied_count = 0
-        
+
         # Apply each change
         for i, change in enumerate(changes):
-            print(f"🔄 Processing change {i+1}: {change}")
-            
+            print(f"🔄 Processing change {i + 1}: {change}")
+
             if change.get("action") == "add_node":
                 parent_path = change.get("parent_path", ["Untitled"])
                 new_topic = change.get("new_topic", "Unknown Topic")
-                
+
                 print(f"  - Adding '{new_topic}' to parent path: {parent_path}")
-                
+
                 # Find the parent node
                 parent_node = self._find_node_by_path(root_node, parent_path)
                 print(f"  - Parent node found: {parent_node.topic if parent_node else 'None'}")
-                
+
                 if parent_node:
                     # Check if topic already exists anywhere in the tree (comprehensive check)
                     existing_node = self._find_topic_in_tree_simple(root_node, new_topic)
@@ -702,7 +654,7 @@ If moving existing topics, use:
                         # Check if topic exists under this specific parent
                         existing_topics = [child.topic for child in parent_node.children]
                         print(f"  - Existing children: {existing_topics}")
-                        
+
                         if not any(child.topic == new_topic for child in parent_node.children):
                             new_node = DomainNode(topic=new_topic, children=[])
                             parent_node.children.append(new_node)
@@ -721,19 +673,19 @@ If moving existing topics, use:
                         root_node.children.append(new_node)
                         changes_applied_count += 1
                         print(f"  🔄 Added '{new_topic}' to root as fallback")
-            
+
             elif change.get("action") == "add_node_with_children":
                 parent_path = change.get("parent_path", ["Untitled"])
                 new_topic = change.get("new_topic", "Unknown Topic")
                 child_topics = change.get("child_topics", [])
-                
+
                 print(f"  - Adding '{new_topic}' with {len(child_topics)} children to parent path: {parent_path}")
                 print(f"  - Child topics: {child_topics}")
-                
+
                 # Find the parent node
                 parent_node = self._find_node_by_path(root_node, parent_path)
                 print(f"  - Parent node found: {parent_node.topic if parent_node else 'None'}")
-                
+
                 if parent_node:
                     # Check if topic already exists anywhere in the tree (comprehensive check)
                     existing_node = self._find_topic_in_tree_simple(root_node, new_topic)
@@ -743,13 +695,13 @@ If moving existing topics, use:
                         # Check if topic exists under this specific parent
                         existing_topics = [child.topic for child in parent_node.children]
                         print(f"  - Existing children: {existing_topics}")
-                        
+
                         if not any(child.topic == new_topic for child in parent_node.children):
                             # Create child nodes
                             child_nodes = []
                             for child_topic in child_topics:
                                 child_nodes.append(DomainNode(topic=child_topic, children=[]))
-                            
+
                             # Create the main node with children
                             new_node = DomainNode(topic=new_topic, children=child_nodes)
                             parent_node.children.append(new_node)
@@ -768,25 +720,25 @@ If moving existing topics, use:
                         child_nodes = []
                         for child_topic in child_topics:
                             child_nodes.append(DomainNode(topic=child_topic, children=[]))
-                        
+
                         # Create the main node with children
                         new_node = DomainNode(topic=new_topic, children=child_nodes)
                         root_node.children.append(new_node)
                         changes_applied_count += 1
                         print(f"  🔄 Added '{new_topic}' with {len(child_topics)} children to root as fallback")
-            
+
             elif change.get("action") == "add_node_with_hierarchical_children":
                 parent_path = change.get("parent_path", ["Untitled"])
                 new_topic = change.get("new_topic", "Unknown Topic")
                 hierarchical_structure = change.get("hierarchical_structure", {})
-                
+
                 print(f"  - Adding '{new_topic}' with hierarchical structure to parent path: {parent_path}")
                 print(f"  - Hierarchical structure: {hierarchical_structure}")
-                
+
                 # Find the parent node
                 parent_node = self._find_node_by_path(root_node, parent_path)
                 print(f"  - Parent node found: {parent_node.topic if parent_node else 'None'}")
-                
+
                 if parent_node:
                     # Check if topic already exists anywhere in the tree (comprehensive check)
                     existing_node = self._find_topic_in_tree_simple(root_node, new_topic)
@@ -796,7 +748,7 @@ If moving existing topics, use:
                         # Check if topic exists under this specific parent
                         existing_topics = [child.topic for child in parent_node.children]
                         print(f"  - Existing children: {existing_topics}")
-                        
+
                         if not any(child.topic == new_topic for child in parent_node.children):
                             # Build hierarchical structure recursively
                             new_node = self._build_node_from_dict(hierarchical_structure)
@@ -817,25 +769,25 @@ If moving existing topics, use:
                         root_node.children.append(new_node)
                         changes_applied_count += 1
                         print(f"  🔄 Added '{new_topic}' with hierarchical structure to root as fallback")
-            
+
             elif change.get("action") == "move_node":
                 topic_to_move = change.get("topic_to_move")
                 from_path = change.get("from_path", [])
                 to_path = change.get("to_path", ["Untitled"])
-                
+
                 print(f"  - Moving '{topic_to_move}' from {from_path} to {to_path}")
                 print(f"  - Root children before move: {[child.topic for child in root_node.children]}")
-                
+
                 # Find and remove the node from its current location
                 moved_node = self._find_and_remove_node(root_node, topic_to_move)
                 print(f"  - Found node to move: {moved_node.topic if moved_node else 'None'}")
                 print(f"  - Root children after remove: {[child.topic for child in root_node.children]}")
-                
+
                 if moved_node:
                     # Find the new parent and add the moved node
                     new_parent = self._find_node_by_path(root_node, to_path)
                     print(f"  - New parent found: {new_parent.topic if new_parent else 'None'}")
-                    
+
                     if new_parent:
                         print(f"  - New parent children before add: {[child.topic for child in new_parent.children]}")
                         new_parent.children.append(moved_node)
@@ -848,12 +800,12 @@ If moving existing topics, use:
                         print(f"  🔄 Moved '{topic_to_move}' to root as fallback - parent path {to_path} not found")
                 else:
                     print(f"  ❌ Could not find node '{topic_to_move}' to move")
-            
+
             elif change.get("action") == "remove_node":
                 topic_to_remove = change.get("topic_to_remove")
                 preserve_children = change.get("preserve_children", False)  # Default to removing children with parent
                 print(f"  - Removing '{topic_to_remove}' (preserve_children: {preserve_children})")
-                
+
                 if preserve_children:
                     removed_node, promoted_children = self._find_and_remove_node_preserve_children(root_node, topic_to_remove)
                     if removed_node:
@@ -872,55 +824,45 @@ If moving existing topics, use:
                         print(f"  ✅ Removed '{topic_to_remove}' including all children")
                     else:
                         print(f"  ❌ Could not find node '{topic_to_remove}' to remove")
-            
+
             else:
                 print(f"  ❌ Unknown action: {change.get('action', 'No action')}")
-        
+
         print(f"📊 Total changes applied: {changes_applied_count}")
-        
+
         # Create updated tree
-        updated_tree = DomainKnowledgeTree(
-            root=root_node,
-            version=current_tree.version + 1
-        )
-        
-        print(f"🌳 Updated tree structure:")
+        updated_tree = DomainKnowledgeTree(root=root_node, version=current_tree.version + 1)
+
+        print("🌳 Updated tree structure:")
         self._print_tree_structure(updated_tree.root, indent=0)
-        
+
         return updated_tree
-    
+
     def _print_tree_structure(self, node: DomainNode, indent: int = 0):
         """Debug helper to print tree structure."""
         print(f"{'  ' * indent}📁 {node.topic}")
         for child in node.children:
             self._print_tree_structure(child, indent + 1)
-    
+
     def _build_node_from_dict(self, node_dict: dict[str, Any]) -> DomainNode:
         """Recursively build DomainNode from dictionary."""
         children = []
         for child_dict in node_dict.get("children", []):
             children.append(self._build_node_from_dict(child_dict))
-        
+
         # Preserve existing UUID if present, otherwise let default factory generate one
         if "id" in node_dict:
-            return DomainNode(
-                id=node_dict["id"],
-                topic=node_dict["topic"],
-                children=children
-            )
+            return DomainNode(id=node_dict["id"], topic=node_dict["topic"], children=children)
         else:
-            return DomainNode(
-                topic=node_dict["topic"],
-                children=children
-            )
-    
+            return DomainNode(topic=node_dict["topic"], children=children)
+
     def _find_node_by_path(self, root: DomainNode, path: list[str]) -> DomainNode | None:
         """Find a node by following the given path."""
         current = root
-        
+
         # Skip the first element if it matches root
         start_idx = 1 if path and path[0] == current.topic else 0
-        
+
         for topic in path[start_idx:]:
             found = False
             for child in current.children:
@@ -930,7 +872,7 @@ If moving existing topics, use:
                     break
             if not found:
                 return None
-        
+
         return current
 
     def _find_and_remove_node(self, root: DomainNode, topic_to_find: str) -> DomainNode | None:
@@ -939,13 +881,13 @@ If moving existing topics, use:
         for i, child in enumerate(root.children):
             if child.topic == topic_to_find:
                 return root.children.pop(i)
-        
+
         # Recursively search in children
         for child in root.children:
             removed = self._find_and_remove_node(child, topic_to_find)
             if removed:
                 return removed
-        
+
         return None
 
     def _find_and_remove_node_preserve_children(self, root: DomainNode, topic_to_find: str) -> tuple[DomainNode | None, list[DomainNode]]:
@@ -963,52 +905,53 @@ If moving existing topics, use:
                     root.children.insert(i + j, promoted_child)
                 print(f"🔄 Promoted {len(children_to_promote)} children of '{topic_to_find}' to parent level")
                 return removed_node, children_to_promote
-        
+
         # Recursively search in children
         for child in root.children:
             removed, promoted = self._find_and_remove_node_preserve_children(child, topic_to_find)
             if removed:
                 return removed, promoted
-        
+
         return None, []
 
     def _find_topic_in_tree(self, root: DomainNode, topic_name: str) -> tuple[DomainNode | None, list[str]]:
         """
         Find a topic anywhere in the tree and return the node and its path.
-        
+
         Args:
             root: Root node of the tree
             topic_name: Topic name to search for (case-insensitive)
-            
+
         Returns:
             Tuple of (node, path) where node is the found node or None, and path is the list of topic names from root
         """
+
         def search_recursive(node: DomainNode, current_path: list[str]) -> tuple[DomainNode | None, list[str]]:
             if not node:
                 return None, []
-            
+
             # Check if current node matches (case-insensitive)
             if node.topic.lower() == topic_name.lower():
                 return node, current_path + [node.topic]
-            
+
             # Search in children
             for child in getattr(node, "children", []) or []:
                 found_node, found_path = search_recursive(child, current_path + [node.topic])
                 if found_node:
                     return found_node, found_path
-            
+
             return None, []
-        
+
         return search_recursive(root, [])
 
     def _find_topic_in_tree_simple(self, root: DomainNode, topic_name: str) -> DomainNode | None:
         """
         Find a topic anywhere in the tree and return the node.
-        
+
         Args:
             root: Root node of the tree
             topic_name: Topic name to search for (case-insensitive)
-            
+
         Returns:
             The found node or None
         """
@@ -1024,73 +967,63 @@ If moving existing topics, use:
     ) -> DomainKnowledgeUpdateResponse:
         """Remove topics from the knowledge tree."""
         try:
-            print(f"🗑️ Smart remove knowledge starting...")
+            print("🗑️ Smart remove knowledge starting...")
             print(f"  - Topics to remove: {topics_to_remove}")
             print(f"  - Current tree exists: {current_tree is not None}")
-            
+
             if not current_tree:
-                return DomainKnowledgeUpdateResponse(
-                    success=False,
-                    error="No knowledge tree exists to remove topics from"
-                )
-            
+                return DomainKnowledgeUpdateResponse(success=False, error="No knowledge tree exists to remove topics from")
+
             if not topics_to_remove:
-                return DomainKnowledgeUpdateResponse(
-                    success=False,
-                    error="No topics specified for removal"
-                )
-            
+                return DomainKnowledgeUpdateResponse(success=False, error="No topics specified for removal")
+
             # Create changes for each topic to remove
             changes_to_apply = []
             topics_found = []
             topics_not_found = []
-            
+
             for topic in topics_to_remove:
                 # Check if topic exists in the tree
                 existing_node = self._find_topic_in_tree_simple(current_tree.root, topic)
                 if existing_node:
-                    changes_to_apply.append({
-                        "action": "remove_node",
-                        "topic_to_remove": topic,
-                        "preserve_children": True  # Always preserve children by default
-                    })
+                    changes_to_apply.append(
+                        {
+                            "action": "remove_node",
+                            "topic_to_remove": topic,
+                            "preserve_children": True,  # Always preserve children by default
+                        }
+                    )
                     topics_found.append(topic)
                 else:
                     topics_not_found.append(topic)
-            
+
             if not topics_found:
                 return DomainKnowledgeUpdateResponse(
-                    success=False,
-                    error=f"None of the specified topics found in tree: {', '.join(topics_not_found)}"
+                    success=False, error=f"None of the specified topics found in tree: {', '.join(topics_not_found)}"
                 )
-            
+
             # Apply the removal changes using existing infrastructure
             analysis = {
                 "success": True,
                 "changes_to_apply": changes_to_apply,
-                "changes_summary": f"Removed {', '.join(topics_found)} from knowledge tree"
+                "changes_summary": f"Removed {', '.join(topics_found)} from knowledge tree",
             }
-            
+
             updated_tree = await self._apply_tree_changes(
-                current_tree, analysis, topics_found[0]  # Use first topic as reference
+                current_tree,
+                analysis,
+                topics_found[0],  # Use first topic as reference
             )
-            
+
             changes_summary = f"Removed {', '.join(topics_found)}"
             if topics_not_found:
                 changes_summary += f" (Could not find: {', '.join(topics_not_found)})"
-            
-            return DomainKnowledgeUpdateResponse(
-                success=True,
-                updated_tree=updated_tree,
-                changes_summary=changes_summary
-            )
-            
+
+            return DomainKnowledgeUpdateResponse(success=True, updated_tree=updated_tree, changes_summary=changes_summary)
+
         except Exception as e:
             print(f"❌ Exception in remove_topic_from_knowledge: {e}")
-            return DomainKnowledgeUpdateResponse(
-                success=False,
-                error=f"Error removing topics: {str(e)}"
-            )
+            return DomainKnowledgeUpdateResponse(success=False, error=f"Error removing topics: {str(e)}")
 
 
 def get_llm_tree_manager() -> LLMTreeManager:

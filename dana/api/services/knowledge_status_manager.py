@@ -3,7 +3,6 @@ import json
 import asyncio
 import uuid
 from datetime import datetime
-from typing import List, Dict, Optional
 
 
 class KnowledgeStatusManager:
@@ -37,11 +36,11 @@ class KnowledgeStatusManager:
             json.dump(data, f, indent=2, ensure_ascii=False)
         os.replace(tmp_path, self.status_path)
 
-    def load(self) -> Dict:
-        with open(self.status_path, "r", encoding="utf-8") as f:
+    def load(self) -> dict:
+        with open(self.status_path, encoding="utf-8") as f:
             return json.load(f)
 
-    def save(self, data: Dict):
+    def save(self, data: dict):
         self._atomic_write(data)
 
     def get_agent_id(self) -> str | None:
@@ -52,7 +51,7 @@ class KnowledgeStatusManager:
         except Exception:
             return None
 
-    def get_topic_entry(self, path: str) -> Optional[Dict]:
+    def get_topic_entry(self, path: str) -> dict | None:
         data = self.load()
         for entry in data["topics"]:
             if entry["path"] == path:
@@ -64,14 +63,14 @@ class KnowledgeStatusManager:
     ):
         """Add or update topic using UUID reference"""
         data = self.load()
-        
+
         # Find entry by topic_id
         entry = None
         for topic in data["topics"]:
             if topic.get("topic_id") == topic_id:
                 entry = topic
                 break
-        
+
         if entry:
             # Update existing entry
             entry["topic_name"] = topic_name
@@ -83,20 +82,22 @@ class KnowledgeStatusManager:
         else:
             # Create new entry with UUID reference
             final_status = "pending" if status == "preserve_existing" else status
-            data["topics"].append({
-                "id": str(uuid.uuid4()),
-                "topic_id": topic_id,
-                "topic_name": topic_name,
-                "path": path,
-                "file": file,
-                "status": final_status,
-                "last_generated": None,
-                "last_topic_update": last_topic_update,
-                "error": None,
-            })
+            data["topics"].append(
+                {
+                    "id": str(uuid.uuid4()),
+                    "topic_id": topic_id,
+                    "topic_name": topic_name,
+                    "path": path,
+                    "file": file,
+                    "status": final_status,
+                    "last_generated": None,
+                    "last_topic_update": last_topic_update,
+                    "error": None,
+                }
+            )
         self.save(data)
 
-    def get_entry_by_topic_uuid(self, topic_id: str) -> Optional[Dict]:
+    def get_entry_by_topic_uuid(self, topic_id: str) -> dict | None:
         """Get status entry by topic UUID"""
         data = self.load()
         for entry in data["topics"]:
@@ -108,18 +109,13 @@ class KnowledgeStatusManager:
         """Remove multiple topics by their UUIDs"""
         data = self.load()
         topic_ids_set = set(topic_ids)
-        
+
         # Filter out entries with matching topic_ids
-        data["topics"] = [
-            entry for entry in data.get("topics", [])
-            if entry.get("topic_id") not in topic_ids_set
-        ]
-        
+        data["topics"] = [entry for entry in data.get("topics", []) if entry.get("topic_id") not in topic_ids_set]
+
         self.save(data)
 
-    def add_or_update_topic(
-        self, path: str, file: str, last_topic_update: str, status: str = "pending"
-    ):
+    def add_or_update_topic(self, path: str, file: str, last_topic_update: str, status: str = "pending"):
         data = self.load()
         # Find entry in the loaded data instead of calling get_topic_entry
         entry = None
@@ -153,7 +149,7 @@ class KnowledgeStatusManager:
             )
         self.save(data)
 
-    def set_status(self, path: str, status: str, error: Optional[str] = None):
+    def set_status(self, path: str, status: str, error: str | None = None):
         data = self.load()
         for entry in data["topics"]:
             if entry["path"] == path:
@@ -171,15 +167,11 @@ class KnowledgeStatusManager:
         data["topics"] = [entry for entry in data["topics"] if entry["path"] != path]
         self.save(data)
 
-    def get_pending_or_failed(self) -> List[Dict]:
+    def get_pending_or_failed(self) -> list[dict]:
         data = self.load()
-        return [
-            entry
-            for entry in data["topics"]
-            if entry["status"] in ("pending", "failed")
-        ]
+        return [entry for entry in data["topics"] if entry["status"] in ("pending", "failed")]
 
-    def get_in_progress(self) -> List[Dict]:
+    def get_in_progress(self) -> list[dict]:
         data = self.load()
         return [entry for entry in data["topics"] if entry["status"] == "in_progress"]
 
@@ -191,16 +183,12 @@ class KnowledgeStatusManager:
         entry = self.get_topic_entry(path)
         return entry and entry["status"] == "success"
 
-    def get_pending_failed_or_null(self) -> List[Dict]:
+    def get_pending_failed_or_null(self) -> list[dict]:
         """
         Returns all topics with status 'pending', 'failed', or None (not set).
         """
         data = self.load()
-        return [
-            entry
-            for entry in data["topics"]
-            if entry.get("status") in ("pending", "failed", None)
-        ]
+        return [entry for entry in data["topics"] if entry.get("status") in ("pending", "failed", None)]
 
     def recover_stuck_in_progress(self, max_age_seconds=3600):
         """
@@ -214,24 +202,18 @@ class KnowledgeStatusManager:
         updated = False
         for entry in data["topics"]:
             if entry.get("status") is None:
-                print(
-                    f"[status_manager] Resetting null-status topic: {entry['path']} to pending"
-                )
+                print(f"[status_manager] Resetting null-status topic: {entry['path']} to pending")
                 entry["status"] = "pending"
                 entry["error"] = None
                 updated = True
             elif entry["status"] == "in_progress":
-                last_time = entry.get("last_generated") or entry.get(
-                    "last_topic_update"
-                )
+                last_time = entry.get("last_generated") or entry.get("last_topic_update")
                 if last_time:
                     try:
                         t = datetime.fromisoformat(last_time.replace("Z", ""))
                         age = (datetime.utcnow() - t).total_seconds()
                         if age > max_age_seconds:
-                            print(
-                                f"[status_manager] Recovering stuck topic: {entry['path']} (was in_progress for {age / 60:.1f} min)"
-                            )
+                            print(f"[status_manager] Recovering stuck topic: {entry['path']} (was in_progress for {age / 60:.1f} min)")
                             entry["status"] = "pending"
                             entry["error"] = None
                             updated = True
@@ -278,9 +260,7 @@ class KnowledgeGenerationManager:
         self.max_concurrent = max_concurrent
         self.workers = []
         self.running = False
-        self.ws_manager = (
-            ws_manager  # Should have .broadcast(topic_id, status) or similar
-        )
+        self.ws_manager = ws_manager  # Should have .broadcast(topic_id, status) or similar
         self.topic = topic
         self.role = role
         self.knows_folder = knows_folder
@@ -357,21 +337,15 @@ class KnowledgeGenerationManager:
                     if agent:
                         topic = agent.name or topic
                         role = agent.description or role
-                        print(
-                            f"[KNOWLEDGE GEN] Using agent info - Topic: {topic}, Role: {role}"
-                        )
+                        print(f"[KNOWLEDGE GEN] Using agent info - Topic: {topic}, Role: {role}")
             except Exception as e:
-                print(
-                    f"[KNOWLEDGE GEN] Could not fetch agent info for agent_id {agent_id}: {e}"
-                )
+                print(f"[KNOWLEDGE GEN] Could not fetch agent info for agent_id {agent_id}: {e}")
 
         # Create ManagerAgent instance
         manager_agent = ManagerAgent(topic, role)
         # Run in executor to avoid blocking event loop
         loop = asyncio.get_event_loop()
-        knowledge = await loop.run_in_executor(
-            None, manager_agent.generate_knowledge_for_area, area_name, key_topics
-        )
+        knowledge = await loop.run_in_executor(None, manager_agent.generate_knowledge_for_area, area_name, key_topics)
         # Save knowledge to JSON file in knows folder
         knows_folder = os.path.dirname(self.status_manager.status_path)
         file_path = os.path.join(knows_folder, topic_entry["file"])
@@ -395,9 +369,7 @@ class KnowledgeGenerationManager:
         if self.running:
             return
         self.running = True
-        self.workers = [
-            asyncio.create_task(self.worker()) for _ in range(self.max_concurrent)
-        ]
+        self.workers = [asyncio.create_task(self.worker()) for _ in range(self.max_concurrent)]
         await self.queue.join()
         for _ in self.workers:
             await self.queue.put(None)
@@ -416,24 +388,18 @@ class KnowledgeGenerationManager:
         updated = False
         for entry in data["topics"]:
             if entry.get("status") is None:
-                print(
-                    f"[status_manager] Resetting null-status topic: {entry['path']} to pending"
-                )
+                print(f"[status_manager] Resetting null-status topic: {entry['path']} to pending")
                 entry["status"] = "pending"
                 entry["error"] = None
                 updated = True
             elif entry["status"] == "in_progress":
-                last_time = entry.get("last_generated") or entry.get(
-                    "last_topic_update"
-                )
+                last_time = entry.get("last_generated") or entry.get("last_topic_update")
                 if last_time:
                     try:
                         t = datetime.fromisoformat(last_time.replace("Z", ""))
                         age = (datetime.utcnow() - t).total_seconds()
                         if age > max_age_seconds:
-                            print(
-                                f"[status_manager] Recovering stuck topic: {entry['path']} (was in_progress for {age / 60:.1f} min)"
-                            )
+                            print(f"[status_manager] Recovering stuck topic: {entry['path']} (was in_progress for {age / 60:.1f} min)")
                             entry["status"] = "pending"
                             entry["error"] = None
                             updated = True

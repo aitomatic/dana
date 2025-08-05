@@ -14,8 +14,6 @@ from dana.core.lang.interpreter.enhanced_coercion import SemanticCoercer
 from dana.core.lang.interpreter.prompt_enhancement import enhance_prompt_for_type
 from dana.core.lang.sandbox_context import SandboxContext
 
-from .py_reason import py_reason as reason_function
-
 
 class POETEnhancedReasonFunction(Loggable):
     """POET-enhanced reason function with context-aware prompt optimization."""

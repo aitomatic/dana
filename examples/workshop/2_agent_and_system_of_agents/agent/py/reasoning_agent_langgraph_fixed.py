@@ -52,7 +52,7 @@ class ReasoningAgent:
     def _initialize_llm(self):
         """Initialize the real LLM."""
         if not os.getenv("OPENAI_API_KEY"):
-            raise ValueError("OPENAI_API_KEY environment variable is required. " "Please set your OpenAI API key to use this agent.")
+            raise ValueError("OPENAI_API_KEY environment variable is required. Please set your OpenAI API key to use this agent.")
         return ChatOpenAI(model="gpt-4", temperature=0)
 
     async def _setup_mcp_tools(self):
@@ -248,9 +248,9 @@ async def main():
     agent = ReasoningAgent()
 
     for i, question in enumerate(test_questions, 1):
-        print(f"\n{'='*50}")
+        print(f"\n{'=' * 50}")
         print(f"TEST {i}: {question}")
-        print(f"{'='*50}")
+        print(f"{'=' * 50}")
 
         try:
             answer = await agent.solve(question)

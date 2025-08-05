@@ -43,6 +43,10 @@ class BasePromise(Loggable, abc.ABC):
         self._result = None
         self._error = None
 
+        # Safe metadata for display (never triggers resolution)
+        self._promise_id = hex(id(self))
+        self._promise_type = self.__class__.__name__
+
     @abc.abstractmethod
     def _ensure_resolved(self) -> Any:
         """
@@ -55,6 +59,27 @@ class BasePromise(Loggable, abc.ABC):
         Must be implemented by subclasses.
         """
         pass
+
+    def get_display_info(self) -> str:
+        """
+        Get safe display information about this Promise without triggering resolution.
+
+        This method NEVER calls _ensure_resolved() and is safe to use in REPL
+        display contexts where we want to show Promise info without blocking.
+
+        Returns:
+            str: Human-readable Promise information
+        """
+        status = "resolved" if self._resolved else "pending"
+
+        # Get computation description if safely available
+        comp_info = ""
+        if hasattr(self._computation, "__name__"):
+            comp_info = f" computing {self._computation.__name__}()"
+        elif hasattr(self._computation, "__qualname__"):
+            comp_info = f" computing {self._computation.__qualname__}()"
+
+        return f"<{self._promise_type} {self._promise_id} {status}{comp_info}>"
 
     # === Transparent Operations ===
     # Make Promise[T] behave exactly like T for all operations

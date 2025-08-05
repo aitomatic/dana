@@ -5,7 +5,6 @@ This demonstrates basic usage and validates core functionality.
 """
 
 import os
-import json
 from pathlib import Path
 from conversation_memory import ConversationMemory
 
@@ -137,19 +136,19 @@ def test_error_handling():
 
     # Test loading non-existent file
     memory = ConversationMemory(filepath="non_existent.json")
-    print(f"✓ Handled non-existent file gracefully")
+    print("✓ Handled non-existent file gracefully")
 
     # Test corrupted JSON
     with open("corrupted.json", "w") as f:
         f.write("{invalid json")
 
     memory2 = ConversationMemory(filepath="corrupted.json")
-    print(f"✓ Handled corrupted JSON gracefully")
+    print("✓ Handled corrupted JSON gracefully")
 
     # Add a turn to verify it still works
     memory2.add_turn("Test", "Response")
     assert len(memory2.history) == 1
-    print(f"✓ Memory still functional after error")
+    print("✓ Memory still functional after error")
 
     # Cleanup
     os.remove("corrupted.json")

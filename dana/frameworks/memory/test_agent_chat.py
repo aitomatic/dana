@@ -2,7 +2,6 @@
 Test script for agent chat functionality with conversation memory.
 """
 
-import os
 import sys
 from pathlib import Path
 
@@ -60,7 +59,7 @@ def test_chat_with_mock_llm():
         elif "hello" in prompt.lower() or "hi" in prompt.lower():
             return "Hello! It's great to meet you. I'm ChatBot, ready to assist you."
         else:
-            return f"I understand. Based on our conversation so far, I'm here to provide general assistance."
+            return "I understand. Based on our conversation so far, I'm here to provide general assistance."
 
     # Create agent with LLM in context
     agent_type = AgentStructType(

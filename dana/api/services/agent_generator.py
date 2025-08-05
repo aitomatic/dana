@@ -1703,9 +1703,9 @@ def _create_phase_2_prompt(
 AGENT SUMMARY:
 - Name: {agent_name}
 - Description: {agent_description}
-- Knowledge Domains: {', '.join(knowledge_domains) if knowledge_domains else 'None specified'}
-- Workflow Steps: {', '.join(workflow_steps) if workflow_steps else 'None specified'}
-- Tools: {', '.join(tools) if tools else 'None specified'}
+- Knowledge Domains: {", ".join(knowledge_domains) if knowledge_domains else "None specified"}
+- Workflow Steps: {", ".join(workflow_steps) if workflow_steps else "None specified"}
+- Tools: {", ".join(tools) if tools else "None specified"}
 - Summary: {agent_summary_description}
 
 CONVERSATION CONTEXT:

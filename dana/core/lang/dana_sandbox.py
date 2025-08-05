@@ -21,7 +21,7 @@ from dana.common.resource.llm.llm_resource import LLMResource
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.runtime import DanaThreadpool
+from dana.core.runtime import DanaThreadPool
 
 # from dana.frameworks.poet.core.client import POETClient, set_default_client  # Removed for KISS
 
@@ -372,7 +372,7 @@ class DanaSandbox(Loggable):
                 pass
 
         # Shutdown shared ThreadPoolExecutor
-        DanaThreadpool.get_instance().shutdown(wait=False)  # Don't wait during process exit
+        DanaThreadPool.get_instance().shutdown(wait=False)  # Don't wait during process exit
 
     @classmethod
     def cleanup_all(cls):

@@ -72,13 +72,14 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
+import inspect
 import threading
-from typing import Any, Union
 from collections.abc import Callable, Coroutine
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Union
 
-from dana.core.lang.ast import ASTNode, LiteralExpression, Identifier, BinaryExpression, FunctionCall, UnaryExpression
 from dana.core.concurrency.eager_promise import EagerPromise
+from dana.core.lang.ast import ASTNode, BinaryExpression, FunctionCall, Identifier, LiteralExpression, UnaryExpression
 
 
 class PromiseExecutionContext:
@@ -207,7 +208,7 @@ class PromiseFactory:
     @staticmethod
     def create_return_promise(
         computation: Union[Callable[[], Any], Coroutine],
-        executor: ThreadPoolExecutor,
+        executor: ThreadPoolExecutor | None = None,
         ast_node: ASTNode | None = None,
         context_info: dict | None = None,
     ) -> Any:
@@ -230,31 +231,50 @@ class PromiseFactory:
         if PromiseExecutionContext.is_nested():
             # We're already inside an EagerPromise - execute synchronously
             # to prevent thread pool exhaustion and deadlock
+            if inspect.iscoroutine(computation):
+                import asyncio
+
+                return asyncio.run(computation)
             return computation()  # type: ignore
 
         # Strategy 2: Simple expression optimization
         if ast_node and ExpressionComplexityAnalyzer.is_simple_expression(ast_node):
             # Simple expressions don't benefit from concurrency
             # Execute synchronously to avoid unnecessary overhead
+            if inspect.iscoroutine(computation):
+                import asyncio
+
+                return asyncio.run(computation)
             return computation()  # type: ignore
 
         # Strategy 3: Deep nesting prevention
         nesting_depth = PromiseExecutionContext.get_nesting_depth()
         if nesting_depth >= 3:  # Configurable threshold
             # Prevent excessively deep Promise nesting
+            if inspect.iscoroutine(computation):
+                import asyncio
+
+                return asyncio.run(computation)
             return computation()  # type: ignore
 
-        # Strategy 4: Create EagerPromise for complex expressions
-        # Wrap the computation to track execution context
+        # Strategy 4: Context-aware computation wrapper
         def context_aware_computation():
+            """Execute computation with proper context tracking."""
             try:
                 PromiseExecutionContext.enter_eager_execution()
                 PromiseExecutionContext.increment_depth()
-                return computation()  # type: ignore
+                if inspect.iscoroutine(computation):
+                    import asyncio
+
+                    result = asyncio.run(computation)
+                else:
+                    result = computation()
+                return result
             finally:
                 PromiseExecutionContext.decrement_depth()
                 PromiseExecutionContext.exit_eager_execution()
 
+        # Create EagerPromise for complex expressions that benefit from concurrency
         return EagerPromise.create(context_aware_computation, executor)
 
     @staticmethod
@@ -283,3 +303,48 @@ class PromiseFactory:
             return False
 
         return True
+
+    @staticmethod
+    def create_promise(
+        computation: Union[Callable[[], Any], Coroutine],
+        ast_node: ASTNode | None = None,
+        context_info: dict | None = None,
+    ) -> Any:
+        """
+        Create a Promise using Dana's shared thread pool.
+
+        This is a convenience method that automatically uses Dana's shared
+        thread pool, making it easier for client code to create promises
+        without needing to manage thread pools.
+
+        Automatically wraps regular Callable functions into coroutines for
+        consistent async execution.
+
+        Args:
+            computation: Function or coroutine to execute
+            ast_node: Optional AST node for complexity analysis
+            context_info: Optional context metadata
+
+        Returns:
+            Either the direct result (synchronous) or EagerPromise (concurrent)
+        """
+        # Automatically wrap regular functions into coroutines
+        if not inspect.iscoroutinefunction(computation) and not inspect.iscoroutine(computation):
+            # Wrap regular function into coroutine function
+            async def wrapped_computation():
+                return computation()
+
+            return PromiseFactory.create_return_promise(wrapped_computation, None, ast_node, context_info)
+
+        # For coroutines, wrap them in a callable function
+        if inspect.iscoroutine(computation):
+            # Wrap coroutine in a callable function
+            def wrapped_coroutine():
+                import asyncio
+
+                return asyncio.run(computation)
+
+            return EagerPromise.create(wrapped_coroutine, None)
+        else:
+            # For coroutine functions, create EagerPromise directly
+            return EagerPromise.create(computation, None)
