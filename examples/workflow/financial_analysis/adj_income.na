@@ -13,7 +13,7 @@ __all__ = [
 
 
 def _ebitda(intermed_results):
-    deliver reason(
+    deliver llm(
 f'Calculate `(Unadjusted) Earnings before Interest, Tax, Depreciation & Amortization, a.k.a. EBITDA`
 according to formula:
 
@@ -33,7 +33,7 @@ def calc_ebitda(args: FinQueryArgs) = [get_op_income, get_deprec_and_amort] | _e
 
 
 def _ebitda_2y(intermed_results):
-    deliver reason(
+    deliver llm(
 f'Calculate `(Unadjusted) Earnings before Interest, Tax, Depreciation & Amortization, a.k.a. EBITDA`
 for past 2 annual fiscal periods according to formula:
 
@@ -53,7 +53,7 @@ def calc_ebitda_2y(args: FinQueryArgs) = [get_op_income_2y, get_deprec_and_amort
 
 
 def _ebitda_3y(intermed_results):
-    deliver reason(
+    deliver llm(
 f'Calculate `(Unadjusted) Earnings before Interest, Tax, Depreciation & Amortization, a.k.a. EBITDA`
 for past 3 annual fiscal periods according to formula:
 

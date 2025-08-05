@@ -38,8 +38,6 @@ def get_op_cf(args: FinQueryArgs) -> float:
         line_item=OP_CF_LINE_ITEM,
         statement=CF_STATEMENT)
 
-    print(op_cf)
-
     return op_cf
 
 
@@ -51,8 +49,6 @@ def get_op_cf_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         line_item=OP_CF_LINE_ITEM,
         statement=CF_STATEMENT,
         n_years=2)
-
-    print(op_cf_2y)
 
     return op_cf_2y
 
@@ -66,8 +62,6 @@ def get_op_cf_3y(args: FinQueryArgs) -> tuple[float]:
         statement=CF_STATEMENT,
         n_years=3)
 
-    print(op_cf_3y)
-
     return op_cf_3y
 
 
@@ -78,8 +72,6 @@ def get_capex(args: FinQueryArgs) -> float:
         args,
         line_item=CAPEX_LINE_ITEM,
         statement=CF_STATEMENT)
-
-    print(capex)
 
     return capex
 
@@ -93,8 +85,6 @@ def get_capex_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         statement=CF_STATEMENT,
         n_years=2)
 
-    print(capex_2y)
-
     return capex_2y
 
 
@@ -107,8 +97,6 @@ def get_capex_3y(args: FinQueryArgs) -> tuple[float]:
         statement=CF_STATEMENT,
         n_years=3)
 
-    print(capex_3y)
-
     return capex_3y
 
 
@@ -119,8 +107,6 @@ def get_deprec_and_amort(args: FinQueryArgs) -> float:
         args,
         line_item=DnA_LINE_ITEM,
         statement=CF_STATEMENT)
-
-    print(deprec_and_amort)
 
     return deprec_and_amort
 
@@ -134,8 +120,6 @@ def get_deprec_and_amort_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         statement=CF_STATEMENT,
         n_years=2)
 
-    print(deprec_and_amort_2y)
-
     return deprec_and_amort_2y
 
 
@@ -148,8 +132,6 @@ def get_deprec_and_amort_3y(args: FinQueryArgs) -> tuple[float]:
         statement=CF_STATEMENT,
         n_years=3)
 
-    print(deprec_and_amort_3y)
-
     return deprec_and_amort_3y
 
 
@@ -160,8 +142,6 @@ def get_div(args: FinQueryArgs) -> float:
         args,
         line_item=DIV_LINE_ITEM,
         statement=CF_STATEMENT)
-
-    print(div)
 
     return div
 
@@ -175,8 +155,6 @@ def get_div_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         statement=CF_STATEMENT,
         n_years=2)
 
-    print(div_2y)
-
     return div_2y
 
 
@@ -188,7 +166,5 @@ def get_div_3y(args: FinQueryArgs) -> tuple[float]:
         line_item=DIV_LINE_ITEM,
         statement=CF_STATEMENT,
         n_years=3)
-
-    print(div_3y)
 
     return div_3y

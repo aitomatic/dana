@@ -51,7 +51,7 @@ The REPL supports multiline statements and blocks, which is especially useful fo
 2. If your input is incomplete (e.g., an `if` statement without a body), the prompt will change to `...` to indicate continuation.
 3. Continue entering code lines until the statement or block is complete.
 4. Once the code is complete, it will be automatically executed.
-5. To force execution of an incomplete block (if the parser thinks it's incomplete), type `##` on a new line.
+5. To force execution of an incomplete block (if the parser thinks it's incomplete), type `/` on a new line.
 
 **Example:**
 ```
@@ -77,13 +77,14 @@ The REPL detects incomplete input by:
 
 ## Special Commands and NLP Mode
 
-The REPL supports special commands (prefixed with `##`) for controlling NLP mode and other features:
+The REPL supports special commands (prefixed with `/`) for controlling NLP mode and other features:
 
-- `##nlp on` — Enable natural language processing mode
-- `##nlp off` — Disable NLP mode
-- `##nlp status` — Show NLP mode status and LLM resource availability
-- `##nlp test` — Test the NLP transcoder with common examples
-- `##` (on a new line) — Force execution of a multiline block
+- `/nlp on` — Enable natural language processing mode
+- `/nlp off` — Disable NLP mode
+- `/nlp status` — Show NLP mode status and LLM resource availability
+- `/nlp test` — Test the NLP transcoder with common examples
+- `/promise <code>` — Execute code normally but display Promise objects instead of resolved values
+- `/` (on a new line) — Force execution of a multiline block
 - `help`, `?` — Show help
 - `exit`, `quit` — Exit the REPL
 
@@ -91,11 +92,19 @@ When NLP mode is enabled and an LLM resource is configured, you can enter natura
 
 **Example: Using NLP Mode**
 ```
-dana> ##nlp on
+dana> /nlp on
 ✅ NLP mode enabled
 dana> add 42 and 17
 ✅ Execution result:
 59
+```
+
+**Example: Using Promise Preservation**
+```
+dana> /promise x = some_async_function()
+Promise[T] (pending)
+dana> x
+42  # x contains the resolved value
 ```
 
 ## Memory Spaces

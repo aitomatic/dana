@@ -63,8 +63,6 @@ def get_total_asset(args: FinQueryArgs) -> float:
         statement=BAL_SHEET,
         as_at_period_end=True)
 
-    print(total_asset)
-
     return total_asset
 
 
@@ -77,8 +75,6 @@ def get_total_asset_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         statement=BAL_SHEET,
         as_at_period_end=True,
         n_years=2)
-
-    print(total_asset_2y)
 
     return total_asset_2y
 
@@ -93,8 +89,6 @@ def get_total_asset_3y(args: FinQueryArgs) -> tuple[float]:
         as_at_period_end=True,
         n_years=3)
 
-    print(total_asset_3y)
-
     return total_asset_3y
 
 
@@ -106,8 +100,6 @@ def get_fixed_asset(args: FinQueryArgs) -> float:
         line_item=FA_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
-
-    print(fixed_asset)
 
     return fixed_asset
 
@@ -122,8 +114,6 @@ def get_fixed_asset_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         as_at_period_end=True,
         n_years=2)
 
-    print(fixed_asset_2y)
-
     return fixed_asset_2y
 
 
@@ -137,8 +127,6 @@ def get_fixed_asset_3y(args: FinQueryArgs) -> tuple[float]:
         as_at_period_end=True,
         n_years=3)
 
-    print(fixed_asset_3y)
-
     return fixed_asset_3y
 
 
@@ -150,8 +138,6 @@ def get_curr_asset(args: FinQueryArgs) -> float:
         line_item=CURR_ASSET_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
-
-    print(curr_asset)
 
     return curr_asset
 
@@ -166,8 +152,6 @@ def get_curr_asset_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         as_at_period_end=True,
         n_years=2)
 
-    print(curr_asset_2y)
-
     return curr_asset_2y
 
 
@@ -181,8 +165,6 @@ def get_curr_asset_3y(args: FinQueryArgs) -> tuple[float]:
         as_at_period_end=True,
         n_years=3)
 
-    print(curr_asset_3y)
-
     return curr_asset_3y
 
 
@@ -194,8 +176,6 @@ def get_cash_and_equiv(args: FinQueryArgs) -> float:
         line_item=CASH_AND_EQUIV_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
-
-    print(cash_and_equiv)
 
     return cash_and_equiv
 
@@ -210,8 +190,6 @@ def get_cash_and_equiv_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         as_at_period_end=True,
         n_years=2)
 
-    print(cash_and_equiv_2y)
-
     return cash_and_equiv_2y
 
 
@@ -225,8 +203,6 @@ def get_cash_and_equiv_3y(args: FinQueryArgs) -> tuple[float]:
         as_at_period_end=True,
         n_years=3)
 
-    print(cash_and_equiv_3y)
-
     return cash_and_equiv_3y
 
 
@@ -238,8 +214,6 @@ def get_st_inv(args: FinQueryArgs) -> float:
         line_item=ST_INV_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
-
-    print(st_inv)
 
     return st_inv
 
@@ -254,8 +228,6 @@ def get_st_inv_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         as_at_period_end=True,
         n_years=2)
 
-    print(st_inv_2y)
-
     return st_inv_2y
 
 
@@ -269,8 +241,6 @@ def get_st_inv_3y(args: FinQueryArgs) -> tuple[float]:
         as_at_period_end=True,
         n_years=3)
 
-    print(st_inv_3y)
-
     return st_inv_3y
 
 
@@ -282,8 +252,6 @@ def get_recvable(args: FinQueryArgs) -> float:
         line_item=RECVABLE_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
-
-    print(recvable)
 
     return recvable
 
@@ -298,8 +266,6 @@ def get_recvable_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         as_at_period_end=True,
         n_years=2)
 
-    print(recvable_2y)
-
     return recvable_2y
 
 
@@ -313,8 +279,6 @@ def get_recvable_3y(args: FinQueryArgs) -> tuple[float]:
         as_at_period_end=True,
         n_years=3)
 
-    print(recvable_3y)
-
     return recvable_3y
 
 
@@ -326,8 +290,6 @@ def get_inventory(args: FinQueryArgs) -> float:
         line_item=INVENTORY_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
-
-    print(inventory)
 
     return inventory
 
@@ -342,8 +304,6 @@ def get_inventory_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         as_at_period_end=True,
         n_years=2)
 
-    print(inventory_2y)
-
     return inventory_2y
 
 
@@ -357,8 +317,6 @@ def get_inventory_3y(args: FinQueryArgs) -> tuple[float]:
         as_at_period_end=True,
         n_years=3)
 
-    print(inventory_3y)
-
     return inventory_3y
 
 
@@ -370,8 +328,6 @@ def get_curr_liab(args: FinQueryArgs) -> float:
         line_item=CURR_LIAB_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
-
-    print(curr_liab)
 
     return curr_liab
 
@@ -386,8 +342,6 @@ def get_curr_liab_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         as_at_period_end=True,
         n_years=2)
 
-    print(curr_liab_2y)
-
     return curr_liab_2y
 
 
@@ -401,8 +355,6 @@ def get_curr_liab_3y(args: FinQueryArgs) -> tuple[float]:
         as_at_period_end=True,
         n_years=3)
 
-    print(curr_liab_3y)
-
     return curr_liab_3y
 
 
@@ -414,8 +366,6 @@ def get_payable(args: FinQueryArgs) -> float:
         line_item=PAYABLE_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
-
-    print(payable)
 
     return payable
 
@@ -430,8 +380,6 @@ def get_payable_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         as_at_period_end=True,
         n_years=2)
 
-    print(payable_2y)
-
     return payable_2y
 
 
@@ -445,8 +393,6 @@ def get_payable_3y(args: FinQueryArgs) -> tuple[float]:
         as_at_period_end=True,
         n_years=3)
 
-    print(payable_3y)
-
     return payable_3y
 
 
@@ -458,8 +404,6 @@ def get_lt_debt(args: FinQueryArgs) -> float:
         line_item=LT_DEBT_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
-
-    print(lt_debt)
 
     return lt_debt
 
@@ -474,8 +418,6 @@ def get_lt_debt_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         as_at_period_end=True,
         n_years=2)
 
-    print(lt_debt_2y)
-
     return lt_debt_2y
 
 
@@ -489,8 +431,6 @@ def get_lt_debt_3y(args: FinQueryArgs) -> tuple[float]:
         as_at_period_end=True,
         n_years=3)
 
-    print(lt_debt_3y)
-
     return lt_debt_3y
 
 
@@ -502,8 +442,6 @@ def get_st_debt(args: FinQueryArgs) -> float:
         line_item=ST_DEBT_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
-
-    print(st_debt)
 
     return st_debt
 
@@ -518,8 +456,6 @@ def get_st_debt_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         as_at_period_end=True,
         n_years=2)
 
-    print(st_debt_2y)
-
     return st_debt_2y
 
 
@@ -533,8 +469,6 @@ def get_st_debt_3y(args: FinQueryArgs) -> tuple[float]:
         as_at_period_end=True,
         n_years=3)
 
-    print(st_debt_3y)
-
     return st_debt_3y
 
 
@@ -546,8 +480,6 @@ def get_equity(args: FinQueryArgs) -> float:
         line_item=EQUITY_LINE_ITEM,
         statement=BAL_SHEET,
         as_at_period_end=True)
-
-    print(equity)
 
     return equity
 
@@ -562,8 +494,6 @@ def get_equity_2y(args: FinQueryArgs) -> CurrAndPrevNums:
         as_at_period_end=True,
         n_years=2)
 
-    print(equity_2y)
-
     return equity_2y
 
 
@@ -576,7 +506,5 @@ def get_equity_3y(args: FinQueryArgs) -> tuple[float]:
         statement=BAL_SHEET,
         as_at_period_end=True,
         n_years=3)
-
-    print(equity_3y)
 
     return equity_3y
