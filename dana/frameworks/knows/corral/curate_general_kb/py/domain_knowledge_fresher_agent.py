@@ -5,10 +5,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def reason(prompt: str, target_type: type | None = None) -> str:
     context = SandboxContext()
     context.set("system:__current_assignment_type", target_type)
     return reason_function(context, prompt)
+
 
 class DomainKnowledgeFresherAgent:
     def __init__(self, topic: str, role: str, confidence_threshold: float = 85.0, max_iterations: int = 10):
@@ -19,10 +21,10 @@ class DomainKnowledgeFresherAgent:
 
     def assess_domain_confidence(self, knowledge_area_description: str, questions: dict, previous_assessment: dict = {}) -> dict:
         """Assess LLM confidence using dynamic topic-based framework"""
-        
+
         # Extract topic names from questions dict
         topic_names = list(questions.keys())
-        
+
         confidence_prompt = f"""
 You are a senior domain expert performing a self-assessment.
 
@@ -49,12 +51,12 @@ OUTPUT FORMAT (valid JSON):
     "gaps": [["topic_name", "reason for inadequacy"]]
 }}
 """
-        
+
         return reason(confidence_prompt, target_type=dict)
 
     def generate_targeted_domain_questions(self, knowledge_area_description: str, gaps: list, existing_questions: dict) -> dict:
         """Generate additional targeted questions for gaps"""
-        
+
         prompt = f"""
 You are a seasoned {self.role} with expertise in {self.topic}.
 
@@ -73,23 +75,23 @@ OUTPUT FORMAT:
     "topic_name_2": ["new question 3", "new question 4"]
 }}
 """
-        
+
         return reason(prompt, target_type=dict)
 
     def generate_initial_domain_questions(self, knowledge_area_description: str, key_topics: list = []) -> dict:
         """Generate high-quality initial questions focused on key topics"""
-        
+
         if not key_topics:
             key_topics = ["concepts", "methods", "tools", "applications", "standards", "evaluation"]
-        
+
         # Convert key topics to safe keys
         safe_topics = [topic.lower().replace(" ", "_").replace("-", "_") for topic in key_topics]
-        
+
         # Build criteria section
         criteria_section = ""
         for i, topic in enumerate(key_topics, 1):
             criteria_section += f"{i}. **{topic}**  key knowledge about {topic}\n    "
-        
+
         # Build output format
         output_format = "{\n"
         for i, safe_topic in enumerate(safe_topics):
@@ -99,7 +101,7 @@ OUTPUT FORMAT:
             else:
                 output_format += "\n"
         output_format += "    }"
-        
+
         prompt = f"""
 You are a veteran {self.role} with deep, hands-on expertise in {self.topic}.
 
@@ -124,42 +126,41 @@ QUALITY RULES:
 OUTPUT FORMAT (strict)  return ONLY this:
 {output_format}
 """
-        
+
         return reason(prompt, target_type=dict)
 
     def generate_domain_questions(self, knowledge_area_description: str, key_topics: list = []) -> dict:
         """Main method to generate questions for a knowledge area until confidence threshold is reached"""
-        
+
         print("<� Processing knowledge area")
-        
+
         # Generate initial questions
         questions = self.generate_initial_domain_questions(knowledge_area_description, key_topics)
         iteration = 1
         previous_assessment = {}
-        
+
         print("= Starting iterative question generation...")
-        
+
         while iteration <= self.max_iterations:
             # Count total questions
-            total_questions = sum(len([q for q in questions.get(topic, []) if q and q.strip()]) 
-                                for topic in questions)
+            total_questions = sum(len([q for q in questions.get(topic, []) if q and q.strip()]) for topic in questions)
             print(f"   Iteration {iteration}: {total_questions} total questions across all topics")
-            
+
             # Assess confidence
             confidence_result = self.assess_domain_confidence(knowledge_area_description, questions, previous_assessment)
             confidence_score = confidence_result.get("overall_confidence", 0.0)
             gaps = confidence_result.get("gaps", [])
-            
+
             print(f"   Confidence: {confidence_score}%")
-            
+
             # Update previous assessment
             previous_assessment = confidence_result
-            
+
             # Check if threshold reached
             if confidence_score >= self.confidence_threshold:
                 print(f"Target confidence {self.confidence_threshold}% achieved!")
                 break
-                
+
             # Generate improved questions for gaps
             if gaps:
                 gap_topic_names = {}
@@ -167,41 +168,39 @@ OUTPUT FORMAT (strict)  return ONLY this:
                     try:
                         if isinstance(gap, list) and len(gap) > 0:
                             gap_topic_names[gap[0]] = gap[1]
-                    except:
+                    except Exception as _:
                         # Handle string gaps
                         gap_str = str(gap)
                         for topic_key in questions:
                             if topic_key.lower() in gap_str.lower():
                                 gap_topic_names[topic_key] = gap_str
                                 break
-                
+
                 print(f"   Gap topics identified: {gap_topic_names}")
-                
+
                 if gap_topic_names:
-                    improved_questions = self.generate_targeted_domain_questions(
-                        knowledge_area_description, gap_topic_names, questions
-                    )
-                    
+                    improved_questions = self.generate_targeted_domain_questions(knowledge_area_description, gap_topic_names, questions)
+
                     # Append new questions to existing arrays
                     for topic_key, new_questions_array in improved_questions.items():
                         if topic_key in questions:
                             questions[topic_key].extend(new_questions_array)
                         else:
                             questions[topic_key] = new_questions_array
-                    
+
                     print(f"   Improved questions for {len(improved_questions)} topics")
-            
+
             iteration += 1
-        
+
         # Final assessment
         final_confidence = self.assess_domain_confidence(knowledge_area_description, questions, previous_assessment)
-        
+
         # Convert questions dict to flat list
         questions_list = []
-        for topic_key, question_array in questions.items():
+        for _, question_array in questions.items():
             if question_array:
                 questions_list.extend([q for q in question_array if q and q.strip()])
-        
+
         result = {
             "knowledge_area_description": knowledge_area_description,
             "questions": questions_list,
@@ -209,11 +208,14 @@ OUTPUT FORMAT (strict)  return ONLY this:
             "final_confidence": final_confidence.get("overall_confidence", 0.0),
             "confidence_by_topics": final_confidence.get("per_criterion", {}),
             "iterations_used": iteration - 1,
-            "total_questions": len(questions_list)
+            "total_questions": len(questions_list),
         }
-        
-        print(f"<� Completed! Generated {len(questions_list)} high-quality questions across {len(questions)} topics in {iteration-1} iterations")
+
+        print(
+            f"<� Completed! Generated {len(questions_list)} high-quality questions across {len(questions)} topics in {iteration-1} iterations"
+        )
         return result
+
 
 if __name__ == "__main__":
     agent = DomainKnowledgeFresherAgent("Investing in stock market", "Financial Analyst")

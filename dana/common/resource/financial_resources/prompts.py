@@ -6,15 +6,15 @@ Prompts for financial analysis and ratio calculations
 def create_liquidity_ratios_prompt(markdown_content: str, company_name: str = "Company") -> str:
     """
     Create a prompt for LLM to generate Python code that calculates liquidity ratios.
-    
+
     Args:
         markdown_content: Full markdown content of financial statement files
         company_name: Name of the company being analyzed
-        
+
     Returns:
         Formatted prompt string for LLM
     """
-    
+
     prompt = f"""You are a financial analyst expert. Generate Python code to calculate liquidity ratios from the provided financial statement data.
 
 COMPANY: {company_name}
@@ -156,16 +156,16 @@ Generate the complete Python code now:"""
 def create_leverage_ratios_prompt(bs_content: str, is_content: str, company_name: str = "Company") -> str:
     """
     Create a prompt for LLM to generate Python code that calculates leverage ratios.
-    
+
     Args:
         bs_content: Balance sheet markdown content
         is_content: Income statement markdown content
         company_name: Name of the company being analyzed
-        
+
     Returns:
         Formatted prompt string for LLM
     """
-    
+
     prompt = f"""You are a financial analyst expert. Generate Python code to calculate leverage ratios from the provided financial statement data.
 
 COMPANY: {company_name}
@@ -302,16 +302,16 @@ Generate the complete Python code now:"""
 def create_efficiency_ratios_prompt(bs_content: str, is_content: str, company_name: str = "Company") -> str:
     """
     Create a prompt for LLM to generate Python code that calculates efficiency ratios.
-    
+
     Args:
         bs_content: Balance sheet markdown content
         is_content: Income statement markdown content
         company_name: Name of the company being analyzed
-        
+
     Returns:
         Formatted prompt string for LLM
     """
-    
+
     prompt = f"""You are a financial analyst expert. Generate Python code to calculate efficiency ratios from the provided financial statement data.
 
 COMPANY: {company_name}
@@ -464,16 +464,16 @@ Generate the complete Python code now:"""
 def create_profitability_ratios_prompt(bs_content: str, is_content: str, company_name: str = "Company") -> str:
     """
     Create a prompt for LLM to generate Python code that calculates profitability ratios.
-    
+
     Args:
         bs_content: Balance sheet markdown content
         is_content: Income statement markdown content
         company_name: Name of the company being analyzed
-        
+
     Returns:
         Formatted prompt string for LLM
     """
-    
+
     prompt = f"""You are a financial analyst expert. Generate Python code to calculate profitability ratios from the provided financial statement data.
 
 COMPANY: {company_name}
@@ -635,17 +635,17 @@ Generate the complete Python code now:"""
 def create_market_value_ratios_prompt(bs_content: str, is_content: str, company_name: str = "Company", market_data: str = "") -> str:
     """
     Create a prompt for LLM to generate Python code that calculates market value ratios.
-    
+
     Args:
         bs_content: Balance sheet markdown content
         is_content: Income statement markdown content
         company_name: Name of the company being analyzed
         market_data: Optional market data (stock price, shares outstanding, market cap)
-        
+
     Returns:
         Formatted prompt string for LLM
     """
-    
+
     prompt = f"""You are a financial analyst expert. Generate Python code to calculate market value ratios from the provided financial statement data.
 
 COMPANY: {company_name}
@@ -728,7 +728,7 @@ import pandas as pd
 company_name = "ACTUAL COMPANY NAME"
 
 # Market data (use placeholders if not available)
-market_data_available = {market_data_available}  # True if market data provided, False otherwise
+market_data_available = {{market_data_available}}  # True if market data provided, False otherwise
 
 # If market data available, extract it; otherwise use placeholders
 if market_data_available:
