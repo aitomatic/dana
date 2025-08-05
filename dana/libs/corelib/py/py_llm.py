@@ -169,8 +169,8 @@ def py_llm(
     logger.debug(f"context class: {context.__class__.__name__}")
 
     # Get the shared ThreadPoolExecutor from Dana
-    from dana.core.runtime import get_shared_thread_executor
+    from dana.core.runtime import DanaThreadpool
 
-    _executor = get_shared_thread_executor()
+    _executor = DanaThreadpool.get_instance().get_executor()
     # return LazyPromise(_async_llm_call)
     return EagerPromise(_async_llm_call, _executor)

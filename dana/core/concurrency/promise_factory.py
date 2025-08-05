@@ -151,14 +151,14 @@ class ExpressionComplexityAnalyzer:
 
         if isinstance(node, UnaryExpression):
             # Unary operations are simple if their operand is simple
-            return ExpressionComplexityAnalyzer.is_simple_expression(node.operand)
+            return ExpressionComplexityAnalyzer.is_simple_expression(node.operand)  # type: ignore
 
         if isinstance(node, BinaryExpression):
             # Binary operations are simple if both operands are simple
             # and the operation is a basic arithmetic/comparison
             if node.operator.value in {"+", "-", "*", "/", "%", "==", "!=", "<", ">", "<=", ">="}:
-                return ExpressionComplexityAnalyzer.is_simple_expression(node.left) and ExpressionComplexityAnalyzer.is_simple_expression(
-                    node.right
+                return ExpressionComplexityAnalyzer.is_simple_expression(node.left) and ExpressionComplexityAnalyzer.is_simple_expression(  # type: ignore
+                    node.right  # type: ignore
                 )
 
         if isinstance(node, FunctionCall):
@@ -180,12 +180,12 @@ class ExpressionComplexityAnalyzer:
             return True
 
         if isinstance(node, BinaryExpression):
-            return ExpressionComplexityAnalyzer.contains_function_calls(node.left) or ExpressionComplexityAnalyzer.contains_function_calls(
-                node.right
+            return ExpressionComplexityAnalyzer.contains_function_calls(node.left) or ExpressionComplexityAnalyzer.contains_function_calls(  # type: ignore
+                node.right  # type: ignore
             )
 
         if isinstance(node, UnaryExpression):
-            return ExpressionComplexityAnalyzer.contains_function_calls(node.operand)
+            return ExpressionComplexityAnalyzer.contains_function_calls(node.operand)  # type: ignore
 
         # Add more node types as needed
         return False
@@ -230,19 +230,19 @@ class PromiseFactory:
         if PromiseExecutionContext.is_nested():
             # We're already inside an EagerPromise - execute synchronously
             # to prevent thread pool exhaustion and deadlock
-            return computation()
+            return computation()  # type: ignore
 
         # Strategy 2: Simple expression optimization
         if ast_node and ExpressionComplexityAnalyzer.is_simple_expression(ast_node):
             # Simple expressions don't benefit from concurrency
             # Execute synchronously to avoid unnecessary overhead
-            return computation()
+            return computation()  # type: ignore
 
         # Strategy 3: Deep nesting prevention
         nesting_depth = PromiseExecutionContext.get_nesting_depth()
         if nesting_depth >= 3:  # Configurable threshold
             # Prevent excessively deep Promise nesting
-            return computation()
+            return computation()  # type: ignore
 
         # Strategy 4: Create EagerPromise for complex expressions
         # Wrap the computation to track execution context
@@ -250,7 +250,7 @@ class PromiseFactory:
             try:
                 PromiseExecutionContext.enter_eager_execution()
                 PromiseExecutionContext.increment_depth()
-                return computation()
+                return computation()  # type: ignore
             finally:
                 PromiseExecutionContext.decrement_depth()
                 PromiseExecutionContext.exit_eager_execution()
@@ -283,24 +283,3 @@ class PromiseFactory:
             return False
 
         return True
-
-
-# Convenience functions for backward compatibility and ease of use
-def create_optimized_return_promise(
-    computation: Union[Callable[[], Any], Coroutine], executor: ThreadPoolExecutor, ast_node: ASTNode | None = None
-) -> Any:
-    """
-    Convenience function for creating optimized return Promises.
-
-    This is the main entry point for return statement Promise creation.
-    """
-    return PromiseFactory.create_return_promise(computation, executor, ast_node)
-
-
-def is_nested_promise_context() -> bool:
-    """
-    Check if we're currently in a nested Promise execution context.
-
-    Useful for external code that needs to make context-aware decisions.
-    """
-    return PromiseExecutionContext.is_nested()

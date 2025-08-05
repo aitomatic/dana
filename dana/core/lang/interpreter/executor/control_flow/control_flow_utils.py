@@ -95,7 +95,7 @@ class ControlFlowUtils(Loggable):
             self.debug("Processing return statement with intelligent Promise creation")
 
             # Import the Promise factory
-            from dana.core.concurrency.promise_factory import create_optimized_return_promise
+            from dana.core.concurrency.promise_factory import PromiseFactory
 
             # Create a computation function that will evaluate the return value
             captured_context = context.copy()
@@ -104,7 +104,7 @@ class ControlFlowUtils(Loggable):
             def return_computation():
                 self.debug("Return computation function called")
                 try:
-                    result = self.parent_executor.execute(captured_node_value, captured_context)
+                    result = self.parent_executor.execute(captured_node_value, captured_context)  # type: ignore
                     self.debug(f"Return computation result: {result}")
                     return result
                 except Exception as e:
@@ -112,15 +112,15 @@ class ControlFlowUtils(Loggable):
                     raise
 
             # Use PromiseFactory to create optimal execution strategy
-            from dana.core.runtime import get_shared_thread_executor
+            from dana.core.runtime import DanaThreadpool
 
-            executor = get_shared_thread_executor()
+            executor = DanaThreadpool.get_instance().get_executor()
 
             # The factory will decide: synchronous execution or EagerPromise creation
-            promise_value = create_optimized_return_promise(
+            promise_value = PromiseFactory.create_return_promise(
                 return_computation,
                 executor,
-                node.value,  # Pass AST node for complexity analysis
+                node.value,  # type: ignore # Pass AST node for complexity analysis
             )
 
             self.debug(f"Promise factory returned: {type(promise_value)}")

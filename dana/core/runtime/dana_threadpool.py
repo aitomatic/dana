@@ -119,24 +119,3 @@ class DanaThreadpool(Loggable):
         if cls._instance is not None:
             cls._instance.shutdown(wait=True)
             cls._instance = None
-
-
-# Convenience functions for backward compatibility
-def get_shared_thread_executor() -> ThreadPoolExecutor:
-    """
-    Get the shared ThreadPoolExecutor for Dana-wide background tasks.
-
-    Returns:
-        Shared ThreadPoolExecutor instance
-    """
-    return DanaThreadpool.get_instance().get_executor()
-
-
-def shutdown_shared_thread_executor(wait: bool = True):
-    """
-    Shutdown the shared ThreadPoolExecutor.
-
-    Args:
-        wait: Whether to wait for running tasks to complete
-    """
-    DanaThreadpool.get_instance().shutdown(wait=wait)
