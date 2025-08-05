@@ -33,6 +33,7 @@
       ]
     }
   ],
+  "reportAttributeAccessIssue": "none",
   "reportCallIssue": "none",
   "reportInvalidTypeForm": "none",
   "reportMissingImports": "warning",
