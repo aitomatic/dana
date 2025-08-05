@@ -1,0 +1,20 @@
+import yaml.py as yaml
+
+agent FresherAgent:
+    name : str = "Workflow Question Generator"
+    description : str = "An expert agent that generates comprehensive questions for workflow nodes and assesses confidence until 85% threshold is reached."
+    topic : str
+    role : str
+    current_step : str = "Default"
+    memory_enabled : bool = False
+    confidence_threshold : float = 85.0
+    max_iterations : int = 10
+
+
+def generate_workflow_questions(fresher_agent: FresherAgent, node_description: str) -> dict:
+    """Main method to generate questions for a workflow node until 85% confidence"""
+    
+    answer : list = reason(f"Generate 3 questions for the following node description: {node_description} within the domain `{fresher_agent.topic}` and role `{fresher_agent.role}`")
+    return answer
+
+    

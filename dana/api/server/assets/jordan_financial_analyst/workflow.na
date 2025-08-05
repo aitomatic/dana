@@ -1,0 +1,4 @@
+from methods import execute_step
+from methods import compress_context
+
+def workflow(data) = compress_context | execute_step

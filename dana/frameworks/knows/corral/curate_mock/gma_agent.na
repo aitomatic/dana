@@ -1,0 +1,76 @@
+from utility import WORKFLOW_GENERATOR_PROMPT
+from utility import MERMAID_TO_PYTHON_CONVERSION_PROMPT
+from utility import INTERVIEW_PROMPT
+
+feedback = use("human")
+
+agent CurateAgent:
+    name : str = "Curate Agent"
+    description : str = "A curate agent "
+    topic : str
+    role : str
+    current_step : str = "Default"
+    memory_enabled : bool = False
+
+
+def create_mermaid_workflow(curate_agent:CurateAgent, prompt:str) -> str:
+    workflow_prompt = WORKFLOW_GENERATOR_PROMPT.format(topic=curate_agent.topic, role=curate_agent.role)
+    workflow_in_mermaid : str = reason(workflow_prompt, resources=[])
+    data = {"mermaid": workflow_in_mermaid, "topic": curate_agent.topic, "role": curate_agent.role}
+    return data
+
+def mermaid_to_python(data: dict) -> dict:
+    mermaid_to_python_prompt = MERMAID_TO_PYTHON_CONVERSION_PROMPT.format(mermaid=data["mermaid"], topic=data["topic"], role=data["role"])
+    python_dict : dict = reason(mermaid_to_python_prompt)
+    data["python_graph"] = python_dict
+    return data
+
+
+def gathering_requirements(curate_agent:CurateAgent) -> dict:
+    session_context_json = {}
+    llm_response = {}
+    latest_user_reply = "FRESH STARTED, NO REPLY YET"
+    satisfied = False
+    while satisfied != True:
+        print(llm_response)
+        prompt = INTERVIEW_PROMPT.format(session_context_json=session_context_json, latest_user_reply=latest_user_reply)
+        llm_response : dict = reason(prompt, resources=[])
+        session_context_json = llm_response["context"]
+        next_question = llm_response["next_question"]
+        satisfied : bool = llm_response["satisfied"]
+        guess = llm_response["guess"]
+        if satisfied == True:
+            break
+        else:
+            print(guess)
+            latest_user_reply = feedback.get_feedback(next_question)
+            latest_user_reply = f"Assistant : {next_question}\nUser : {latest_user_reply}"
+        break
+    return {'topic': 'Investing in stock market', 'role': 'Analyst', 'workflow': 'Typical workflow might look like: 1. Gather financial statements, 2. Analyze key metrics (e.g., P/E ratio, EPS), 3. Evaluate industry trends, 4. Forecast future earnings, 5. Compare against competitors, 6. Make investment decisions.', 'use_case': '', 'open_issues': ['use_case']}
+
+def finalize_user_workflow(curate_agent:CurateAgent, requirements:dict) -> dict:
+    user_feedback = ""
+    data = {}
+    satisfied = False
+    while satisfied != True:
+        print("LOOPING")
+        print(user_feedback)
+        prompt = WORKFLOW_GENERATOR_PROMPT.format(topic=requirements["topic"], role=requirements["role"], previous_workflow=requirements["workflow"], user_feedback=user_feedback)
+        workflow_in_mermaid : str = reason(prompt, resources=[])
+        data = {"mermaid": workflow_in_mermaid, "topic": curate_agent.topic, "role": curate_agent.role}
+        user_feedback = feedback.get_feedback(workflow_in_mermaid)
+        print(f"User feedback : {user_feedback}")
+        satisfied : bool = reason(f"Based on the user feedback, is the workflow complete or requiring any changes? User feedback : {user_feedback}. Return only true or false", resources=[])
+        print(f"Satisfied : {satisfied}")
+        if satisfied == True:
+            break
+    return data
+
+
+
+
+curate_agent = CurateAgent(topic="Investing in stock market by analyze company data", role="Financial Analysis")
+
+requirements = curate_agent.gathering_requirements()
+data = curate_agent.finalize_user_workflow(requirements)
+print(data)
