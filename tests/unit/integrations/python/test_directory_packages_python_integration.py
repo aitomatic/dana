@@ -225,7 +225,7 @@ def child_function() -> str:
         try:
             # Try to import from empty directory - should fail
             with pytest.raises(ModuleNotFoundError):
-                pass
+                __import__("test_empty_pkg")
 
         finally:
             disable_dana_imports()
