@@ -17,7 +17,6 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Union
 
 from dana.core.concurrency.base_promise import BasePromise, PromiseError
-from dana.core.lang.sandbox_context import SandboxContext
 
 
 class EagerPromise(BasePromise):
@@ -31,15 +30,14 @@ class EagerPromise(BasePromise):
     - Access after ready returns result
     """
 
-    def __init__(self, computation: Union[Callable[[], Any], Coroutine], context: SandboxContext, executor: ThreadPoolExecutor):
+    def __init__(self, computation: Union[Callable[[], Any], Coroutine], executor: ThreadPoolExecutor):
         """Initialize EagerPromise with immediate background execution.
 
         Args:
             computation: Function or coroutine to execute
-            context: Execution context
             executor: ThreadPoolExecutor for background execution
         """
-        super().__init__(computation, context)
+        super().__init__(computation)
         self._lock = threading.Lock()
         self._future = None
         self._executor = executor
@@ -173,17 +171,14 @@ class EagerPromise(BasePromise):
             return "EagerPromise[<resolving>]"
 
     @classmethod
-    def create(
-        cls, computation: Union[Callable[[], Any], Coroutine], context: SandboxContext, executor: ThreadPoolExecutor
-    ) -> "EagerPromise":
+    def create(cls, computation: Union[Callable[[], Any], Coroutine], executor: ThreadPoolExecutor) -> "EagerPromise":
         """Factory method to create EagerPromise.
 
         Args:
             computation: Function or coroutine to execute
-            context: Execution context
             executor: ThreadPoolExecutor for background execution
         """
-        return cls(computation, context, executor)
+        return cls(computation, executor)
 
 
 def is_eager_promise(obj: Any) -> bool:

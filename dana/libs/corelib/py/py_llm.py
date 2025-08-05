@@ -172,4 +172,4 @@ def py_llm(
     from dana.core.lang.dana_sandbox import DanaSandbox
 
     executor = DanaSandbox.get_shared_thread_executor()
-    return EagerPromise(_async_llm_call, context, executor)
+    return EagerPromise(_async_llm_call, executor)

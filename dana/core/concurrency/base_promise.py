@@ -11,7 +11,6 @@ import abc
 import traceback
 
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.sandbox_context import SandboxContext
 
 
 class PromiseError(Exception):
@@ -33,17 +32,15 @@ class BasePromise(Loggable, abc.ABC):
     abstract methods to define their specific execution strategy.
     """
 
-    def __init__(self, computation, context: SandboxContext):
+    def __init__(self, computation):
         """
-        Initialize a promise with a computation and context.
+        Initialize a promise with a computation.
 
         Args:
             computation: Callable or coroutine that computes the value
-            context: Execution context for the computation
         """
         super().__init__()
         self._computation = computation
-        self._context = context
         self._resolved = False
         self._result = None
         self._error = None

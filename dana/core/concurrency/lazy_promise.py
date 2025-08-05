@@ -17,7 +17,6 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Union
 
 from dana.core.concurrency.base_promise import BasePromise, PromiseError
-from dana.core.lang.sandbox_context import SandboxContext
 
 
 class PromiseGroup:
@@ -79,15 +78,14 @@ class LazyPromise(BasePromise):
     parallelization when multiple promises are accessed together.
     """
 
-    def __init__(self, computation: Union[Callable[[], Any], Coroutine], context: SandboxContext):
+    def __init__(self, computation: Union[Callable[[], Any], Coroutine]):
         """
         Initialize a lazy promise with deferred execution.
 
         Args:
             computation: Callable that returns the actual value, or coroutine
-            context: Execution context for the computation
         """
-        super().__init__(computation, context)
+        super().__init__(computation)
         self._lock = threading.Lock()
 
         self.info(f"🟡 LazyPromise CREATED at {self._creation_location}")
@@ -226,18 +224,20 @@ class LazyPromise(BasePromise):
             raise self._error.original_error
 
     @classmethod
-    def create(cls, computation: Union[Callable[[], Any], Coroutine], context: SandboxContext) -> "LazyPromise":
+    def create(
+        cls,
+        computation: Union[Callable[[], Any], Coroutine],
+    ) -> "LazyPromise":
         """
         Factory method to create a new LazyPromise[T].
 
         Args:
             computation: Callable that returns the actual value or coroutine
-            context: Execution context
 
         Returns:
             LazyPromise[T] that appears as T but executes lazily
         """
-        return cls(computation, context)
+        return cls(computation)
 
     # LazyPromise uses the transparent __str__ from BasePromise
     # This means str(lazy_promise) resolves to the actual value, not meta info
