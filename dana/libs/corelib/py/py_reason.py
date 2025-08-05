@@ -108,8 +108,6 @@ def old_reason_function(
         # Add resources if available
         if resources:
             request_params["available_resources"] = resources
-            llm_resource._query_strategy = QueryStrategy.ITERATIVE
-            llm_resource._query_max_iterations = options.get("max_iterations", 15)
 
         request = BaseRequest(arguments=request_params)
 
