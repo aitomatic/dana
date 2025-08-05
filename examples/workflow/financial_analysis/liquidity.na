@@ -32,7 +32,7 @@ __all__ = [
 
 
 def _quick_asset(intermed_results):
-    return llm(
+    deliver llm(
 f'Calculate `Quick Assets` according to formula:
 
 `Quick Assets` = (
@@ -47,13 +47,11 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def calc_quick_asset(doc: FinDoc) -> float = (
-    [get_cash_and_equiv, get_st_inv, get_recvable] | _quick_asset
-)
+def calc_quick_asset(doc: FinDoc) -> float = [get_cash_and_equiv, get_st_inv, get_recvable] | _quick_asset
 
 
 def _quick_asset_2y(intermed_results):
-    return llm(
+    deliver llm(
 f'Calculate `Quick Assets` as at past 2 annual fiscal period ends according to formula:
 
 `Quick Assets` = (
@@ -68,13 +66,11 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def calc_quick_asset_2y(doc: FinDoc) -> float = (
-    [get_cash_and_equiv_2y, get_st_inv_2y, get_recvable_2y] | _quick_asset_2y
-)
+def calc_quick_asset_2y(doc: FinDoc) -> float = [get_cash_and_equiv_2y, get_st_inv_2y, get_recvable_2y] | _quick_asset_2y
 
 
 def _quick_asset_3y(intermed_results):
-    return llm(
+    deliver llm(
 f'Calculate `Quick Assets` as at past 3 annual fiscal period ends according to formula:
 
 `Quick Assets` = (
@@ -89,13 +85,11 @@ and using the following intermediate results:
 ```
 State your result together with the supporting calculation(s).')
 
-def calc_quick_asset_3y(doc: FinDoc) -> float = (
-    [get_cash_and_equiv_3y, get_st_inv_3y, get_recvable_3y] | _quick_asset_3y
-)
+def calc_quick_asset_3y(doc: FinDoc) -> float = [get_cash_and_equiv_3y, get_st_inv_3y, get_recvable_3y] | _quick_asset_3y
 
 
 def _quick_ratio(intermed_results):
-    return llm(
+    deliver llm(
 f'Calculate `Quick Ratio` according to formula:
 
 `Quick Ratio` = `Quick Assets` / `(Total) Current Liabilities`
@@ -115,7 +109,7 @@ def calc_quick_ratio(doc: FinDoc) -> float = [calc_quick_asset, get_curr_liab] |
 
 
 def _net_work_cap(intermed_results):
-    return llm(
+    deliver llm(
 f'Calculate `(Net) Working Capital` according to formula:
 
 `(Net) Working Capital` = `(Total) Current Assets` - `(Total) Current Liabilities`
@@ -130,7 +124,7 @@ def calc_net_work_cap(doc: FinDoc) -> float = [get_curr_asset, get_curr_liab] | 
 
 
 def _work_cap_ratio(intermed_results):
-    return llm(
+    deliver llm(
 f'Calculate `(Net) Working Capital Ratio` according to formula:
 
 `(Net) Working Capital Ratio` = `(Total) Current Assets` / `(Total) Current Liabilities`
@@ -145,7 +139,7 @@ def calc_work_cap_ratio(doc: FinDoc) -> float = [get_curr_asset, get_curr_liab] 
 
 
 def _op_cf_ratio(intermed_results):
-    return llm(
+    deliver llm(
 f'Calculate `(Net) Cash Flows from Operations Ratio` according to formula:
 
 `(Net) Cash Flows from Operations Ratio` = (
@@ -163,7 +157,7 @@ def calc_op_cf_ratio(doc: FinDoc) -> float = [get_op_cf, get_curr_liab] | _op_cf
 
 
 def _fcf(intermed_results):
-    return llm(
+    deliver llm(
 f'Calculate `Free Cash Flow, a.k.a. FCF` according to formula:
 
 `Free Cash Flow, a.k.a. FCF` = (
@@ -182,7 +176,7 @@ def calc_fcf(doc: FinDoc) -> float = [get_op_cf, get_capex] | _fcf
 
 
 def _fcf_conv_ratio(intermed_results):
-    return llm(
+    deliver llm(
 f'Calculate `Free Cash Flow Conversion Ratio` according to formula:
 
 `Free Cash Flow Conversion Ratio` = (
@@ -200,7 +194,7 @@ def calc_fcf_conv_ratio(doc: FinDoc) -> float = [calc_fcf, get_net_income] | _fc
 
 
 def _dio(intermed_results):
-    return llm(
+    deliver llm(
 f'Calculate `Days Inventory Outstanding, a.k.a. DIO` according to formula:
 
 `Days Inventory Outstanding, a.k.a. DIO` = (
@@ -218,7 +212,7 @@ def calc_dio(doc: FinDoc) -> float = [get_inventory_2y, get_cogs] | _dio
 
 
 def _dso(intermed_results):
-    return llm(
+    deliver llm(
 f'Calculate `Days Sales Outstanding, a.k.a. DSO` according to formula:
 
 `Days Sales Outstanding, a.k.a. DSO` = (
@@ -236,7 +230,7 @@ def calc_dso(doc: FinDoc) -> float = [get_recvable_2y, get_rev] | _dso
 
 
 def _dpo(intermed_results):
-    return llm(
+    deliver llm(
 f'Calculate `Days Payable Outstanding, a.k.a. DPO` according to formula:
 
 `Days Payable Outstanding, a.k.a. DPO` = (
@@ -255,7 +249,7 @@ def calc_dpo(doc: FinDoc) -> float = [get_payable_2y, get_cogs, get_inventory_2y
 
 
 def _ccc(intermed_results):
-    return llm(
+    deliver llm(
 f'Calculate `Cash Conversion Cycle, a.k.a. CCC` according to formula:
 
 `Cash Conversion Cycle, a.k.a. CCC` = (

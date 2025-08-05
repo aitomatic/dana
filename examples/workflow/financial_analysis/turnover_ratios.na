@@ -16,7 +16,7 @@ __all__ = [
 
 
 def _total_asset_turnover_ratio(intermed_results):
-    return llm(
+    deliver llm(
 f'Calculate `(Total) Asset Turnover Ratio`
 as decimal value according to formula:
 
@@ -37,7 +37,7 @@ def calc_total_asset_turnover_ratio(doc: FinDoc) -> float = (
 
 
 def _fixed_asset_turnover_ratio(intermed_results):
-    return llm(
+    deliver llm(
 f'Calculate `(Fixed) Asset Turnover Ratio`
 as decimal value according to formula:
 
@@ -58,7 +58,7 @@ def calc_fixed_asset_turnover_ratio(doc: FinDoc) -> float = (
 
 
 def _inventory_turnover_ratio(intermed_results):
-    return llm(
+    deliver llm(
 f'Calculate `Inventory Turnover Ratio`
 as decimal value according to formula:
 
