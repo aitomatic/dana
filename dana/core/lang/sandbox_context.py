@@ -231,11 +231,10 @@ class SandboxContext:
 
             # Auto-resolve Promise if requested and value is a Promise
             if auto_resolve:
-                from dana.core.concurrency import BasePromise
+                from dana.core.concurrency import resolve_if_promise
 
-                if isinstance(value, BasePromise):
-                    # Auto-resolve promises to their values
-                    return value._ensure_resolved()
+                # Auto-resolve promises to their values
+                return resolve_if_promise(value)
 
             return value
         except StateError:

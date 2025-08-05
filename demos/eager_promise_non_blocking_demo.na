@@ -1,10 +1,11 @@
-# Demo: Non-blocking EagerPromise Behavior
+# Demo: EagerPromise Transparent Concurrency
 # 
-# This demo shows the new design where:
-# 1. EagerPromise never blocks the caller
+# This demo shows the blocking-on-access design where:
+# 1. EagerPromise creation never blocks (returns immediately)
 # 2. EagerPromise auto-resolves in background thread
-# 3. return statements create EagerPromise
-# 4. deliver statements execute inline
+# 3. Accessing an unresolved promise blocks until ready
+# 4. return statements create EagerPromise
+# 5. deliver statements execute inline
 
 import time
 
@@ -45,25 +46,23 @@ print(f"Function returned in {creation_time:.3f}s! Execution count: {execution_t
 print(f"Result type: {type(result)}")
 print(f"Result string: {str(result)}")
 
-# Try to access the result
-print("\nTrying to access the result...")
-try:
-    value = result
-    access_time = time.time() - start_time
-    print(f"Successfully accessed in {access_time:.3f}s! Value: {value}")
-except Exception as e:
-    print(f"Access failed: {e}")
-    print("This is expected - EagerPromise is not ready yet!")
+# Try to access the result (will block until ready)
+print("\nAccessing the result (this will block until ready)...")
+access_start = time.time()
+value = result
+access_time = time.time() - start_time
+block_duration = time.time() - access_start
+print(f"Successfully accessed in {access_time:.3f}s! Value: {value}")
+print(f"Blocked for {block_duration:.3f}s waiting for result")
 
-# Wait a bit and try again
-print("\nWaiting 200ms and trying again...")
-time.sleep(0.2)
-try:
-    value = result
-    final_time = time.time() - start_time
-    print(f"Successfully accessed in {final_time:.3f}s! Value: {value}")
-except Exception as e:
-    print(f"Still failed: {e}")
+# Access again (should be immediate now)
+print("\nAccessing again (should be immediate now)...")
+access_start = time.time()
+value2 = result
+final_time = time.time() - start_time
+instant_duration = time.time() - access_start
+print(f"Accessed again in {final_time:.3f}s! Value: {value2}")
+print(f"Second access took {instant_duration:.3f}s (should be ~0)")
 
 print("\n2. DELIVER FUNCTION (executes inline)")
 print("Creating deliver function...")
@@ -91,21 +90,20 @@ c = return_function()
 creation_time = time.time() - start_time
 print(f"Created 3 EagerPromises in {creation_time:.3f}s! Execution count: {execution_tracker[0]}")
 
-# Wait for all to complete
-print("\nWaiting for all to complete...")
-time.sleep(0.3)
-
-try:
-    combined = f"{a} | {b} | {c}"
-    final_time = time.time() - start_time
-    print(f"All accessed in {final_time:.3f}s! Combined: {combined}")
-except Exception as e:
-    print(f"Some still not ready: {e}")
+# Access all promises (will block until each is ready)
+print("\nAccessing all promises (will block for each if needed)...")
+access_start = time.time()
+combined = f"{a} | {b} | {c}"
+final_time = time.time() - start_time
+total_block = time.time() - access_start
+print(f"All accessed in {final_time:.3f}s! Combined: {combined}")
+print(f"Total blocking time: {total_block:.3f}s")
 
 print("\n=== KEY INSIGHTS ===")
-print("✅ return creates EagerPromise that never blocks caller")
-print("✅ EagerPromise auto-resolves in background thread")
+print("✅ EagerPromise creation never blocks (returns immediately)")
+print("✅ Background execution starts immediately in thread pool")
+print("✅ Accessing an unresolved promise blocks until ready (transparent concurrency)")
+print("✅ Subsequent accesses return immediately (cached result)")
 print("✅ deliver executes inline and blocks until complete")
 print("✅ Multiple EagerPromises can resolve in parallel")
-print("✅ Accessing EagerPromise before ready raises error")
-print("✅ Use await_result() for async-safe access") 
+print("✅ Use await_result() for async-safe access in async contexts") 

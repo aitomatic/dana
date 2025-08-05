@@ -508,7 +508,6 @@ class ImportHandler(Loggable):
 
         # Get the current package name from context
         current_package = getattr(context, "_current_package", None)
-        # print(f"DEBUG: Resolving relative import '{module_name}' with current_package='{current_package}'")
         if not current_package:
             raise SandboxError(f"Relative import '{module_name}' attempted without package context")
 
@@ -522,7 +521,6 @@ class ImportHandler(Loggable):
 
         # Get remaining path after dots
         remaining_path = module_name[leading_dots:]
-        # print(f"DEBUG: leading_dots={leading_dots}, remaining_path='{remaining_path}'")
 
         # Split current package into parts
         package_parts = current_package.split(".")
@@ -547,14 +545,12 @@ class ImportHandler(Loggable):
             target_package_parts = package_parts
 
         target_package = ".".join(target_package_parts) if target_package_parts else ""
-        # print(f"DEBUG: target_package='{target_package}'")
 
         # Build final absolute module name
         if remaining_path:
             result = f"{target_package}.{remaining_path}" if target_package else remaining_path
         else:
             result = target_package
-        # print(f"DEBUG: Resolved '{module_name}' to '{result}'")
 
         # Cache the result
         if not hasattr(self, "_relative_cache"):

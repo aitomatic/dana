@@ -1,10 +1,22 @@
 """
-Simple EagerPromise implementation for Dana.
+EagerPromise: Transparent concurrency through immediate background execution.
 
-Core Design Obligations:
-1. NEVER block the caller
-2. Auto-resolve in background
-3. Provide clear access patterns
+High-Level Design Behavior:
+EagerPromise implements "eager" execution where computations begin immediately
+upon promise creation, running in background threads while providing transparent
+access semantics to the caller.
+
+Key Characteristics:
+- **Immediate Execution**: Computation starts in background thread upon creation
+- **Transparent Access**: Promises behave like regular values - accessing them
+  blocks if not ready, returns immediately if resolved
+- **Multiple Access Patterns**: Supports sync blocking, async await, and status checking
+- **Thread Safety**: All operations are thread-safe with internal locking
+- **Error Transparency**: Background exceptions are captured and re-raised on access
+
+This enables "fire-and-forget" concurrent programming where you can create promises
+for expensive operations and continue other work, knowing that accessing the promise
+later will seamlessly provide the result when needed.
 
 Copyright © 2025 Aitomatic, Inc.
 """
@@ -21,13 +33,17 @@ from dana.core.concurrency.base_promise import BasePromise, PromiseError
 
 class EagerPromise(BasePromise):
     """
-    Simple EagerPromise that never blocks the caller.
+    EagerPromise with transparent concurrency through blocking-on-access.
 
-    Design:
-    - Creation returns immediately
+    Design Philosophy:
+    - Creation returns immediately (never blocks)
     - Background thread handles execution
-    - Access before ready raises error
-    - Access after ready returns result
+    - Access before ready blocks until resolution (ensures transparency)
+    - Access after ready returns result immediately
+
+    This blocking-on-access design is intentional to provide transparent
+    concurrency - users can work with promises as if they were regular
+    values, and the system handles synchronization automatically.
     """
 
     def __init__(self, computation: Union[Callable[[], Any], Coroutine], executor: ThreadPoolExecutor):
@@ -39,51 +55,39 @@ class EagerPromise(BasePromise):
         """
         super().__init__(computation)
         self._lock = threading.Lock()
-        self._future = None
         self._executor = executor
 
-        # Start background execution immediately
-        self._start_execution()
-
-    def _start_execution(self):
-        """Start execution - calls background execution to fulfill abstract method."""
-        self._start_background_execution()
-
-    def _start_background_execution(self):
-        """Start execution in background thread - never blocks caller."""
-
+        # EAGER: Start background execution immediately in constructor
         def background_runner():
             """Run computation in background thread."""
             try:
-                # Execute the computation
                 result = self._computation()
-
-                # If it's a coroutine, await it
+                # Handle coroutines
                 if inspect.iscoroutine(result):
                     result = asyncio.run(result)
-
                 with self._lock:
                     self._result = result
                     self._resolved = True
-
             except Exception as e:
                 with self._lock:
-                    self._error = PromiseError(e, self._creation_location, self._get_resolution_location())
+                    self._error = PromiseError(e)
                     self._resolved = True
 
-        # Submit to provided thread pool - returns immediately
+        # Submit to thread pool - returns immediately (never blocks constructor)
         self._future = self._executor.submit(background_runner)
 
-    def _ensure_resolved(self):
+    def _ensure_resolved(self) -> Any:
         """
-        Ensure promise is resolved before accessing result.
+        EAGER strategy: Block waiting for background thread, return cached result.
+
+        - If already resolved: return cached result immediately
+        - If not resolved: block until background thread completes
 
         Returns:
-            The resolved result if ready
+            The resolved result
 
         Raises:
-            RuntimeError: If not ready yet
-            Original error: If promise failed
+            Original error: If promise computation failed
         """
         with self._lock:
             if self._resolved:
@@ -91,84 +95,19 @@ class EagerPromise(BasePromise):
                     raise self._error.original_error
                 return self._result
 
-        # Not ready - wait for the background task to complete
+        # Block waiting for background thread to complete
         if self._future:
-            # Block and wait for the task to complete
             self._future.result()  # This blocks until completion
 
-            # Now check the result
+            # Result should now be cached
             with self._lock:
                 if self._resolved:
                     if self._error:
                         raise self._error.original_error
                     return self._result
 
-        # Should not reach here, but just in case
-        raise RuntimeError(f"EagerPromise failed to resolve.\nCreation location: {self._creation_location}")
-
-    def is_ready(self) -> bool:
-        """Check if promise is ready without blocking."""
-        with self._lock:
-            return self._resolved
-
-    async def await_result(self):
-        """
-        Wait for promise to complete in async context.
-
-        Returns:
-            The resolved result
-
-        Raises:
-            Original error if promise failed
-        """
-        # If already resolved, return immediately
-        with self._lock:
-            if self._resolved:
-                if self._error:
-                    raise self._error.original_error
-                return self._result
-
-        # Wait for background completion
-        if self._future:
-            try:
-                # Use run_in_executor to wait without blocking event loop
-                loop = asyncio.get_running_loop()
-                await loop.run_in_executor(None, self._future.result)
-            except Exception as e:
-                # Check if error was recorded
-                with self._lock:
-                    if self._error:
-                        raise self._error.original_error
-                    else:
-                        raise RuntimeError(f"EagerPromise failed: {e}")
-
-        # Check result after waiting
-        with self._lock:
-            if self._resolved:
-                if self._error:
-                    raise self._error.original_error
-                return self._result
-            else:
-                raise RuntimeError("EagerPromise task completed but not resolved")
-
-    def __str__(self):
-        """String representation showing status."""
-        with self._lock:
-            if self._resolved:
-                if self._error:
-                    return f"EagerPromise[Error: {self._error.original_error}]"
-                return f"EagerPromise[{repr(self._result)}]"
-            else:
-                return "EagerPromise[<resolving>]"
-
-    def __repr__(self):
-        """Representation showing status."""
-        with self._lock:
-            if self._resolved:
-                if self._error:
-                    return f"EagerPromise[Error: {self._error.original_error}]"
-                return f"EagerPromise[{repr(self._result)}]"
-            return "EagerPromise[<resolving>]"
+        # Should not reach here
+        raise RuntimeError("EagerPromise failed to resolve.")
 
     @classmethod
     def create(cls, computation: Union[Callable[[], Any], Coroutine], executor: ThreadPoolExecutor) -> "EagerPromise":

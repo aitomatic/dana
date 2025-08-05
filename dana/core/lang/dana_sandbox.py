@@ -9,9 +9,7 @@ MIT License
 """
 
 import atexit
-import threading
 import weakref
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -23,6 +21,7 @@ from dana.common.resource.llm.llm_resource import LLMResource
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.core.runtime import shutdown_shared_thread_executor
 
 # from dana.frameworks.poet.core.client import POETClient, set_default_client  # Removed for KISS
 
@@ -65,9 +64,7 @@ class DanaSandbox(Loggable):
     _shared_api_service: APIServiceManager | None = None
     _shared_api_client: APIClient | None = None
     _shared_llm_resource: LLMResource | None = None
-    _shared_thread_executor: ThreadPoolExecutor | None = None
     _resource_users = 0  # Count of instances using shared resources
-    _pool_lock = None  # Will be initialized as threading.Lock() when needed
 
     def __init__(self, debug_mode: bool = False, context: SandboxContext | None = None, module_search_paths: list[str] | None = None):
         """
@@ -131,7 +128,6 @@ class DanaSandbox(Loggable):
         try:
             # Check if we can reuse shared resources (for testing efficiency)
             if self._can_reuse_shared_resources():
-                self.debug("Reusing shared DanaSandbox resources")
                 self._use_shared_resources()
             else:
                 self.info("Initializing new DanaSandbox resources")
@@ -148,7 +144,6 @@ class DanaSandbox(Loggable):
             # set_default_client(poet_client)
 
             self._initialized = True
-            self.debug("DanaSandbox resources ready")
 
         except Exception as e:
             self.error(f"Failed to initialize DanaSandbox: {e}")
@@ -214,8 +209,6 @@ class DanaSandbox(Loggable):
         self._cleanup_called = True
 
         try:
-            self.debug("Cleaning up DanaSandbox resources")
-
             # If using shared resources, just decrement user count
             if self._using_shared:
                 DanaSandbox._resource_users = max(0, DanaSandbox._resource_users - 1)
@@ -379,52 +372,7 @@ class DanaSandbox(Loggable):
                 pass
 
         # Shutdown shared ThreadPoolExecutor
-        cls.shutdown_shared_thread_executor(wait=False)  # Don't wait during process exit
-
-    @classmethod
-    def get_shared_thread_executor(cls) -> ThreadPoolExecutor:
-        """Get or create the shared ThreadPoolExecutor for Dana-wide background tasks.
-
-        Returns:
-            Shared ThreadPoolExecutor instance
-        """
-        if cls._shared_thread_executor is None:
-            if cls._pool_lock is None:
-                cls._pool_lock = threading.Lock()
-
-            with cls._pool_lock:
-                if cls._shared_thread_executor is None:
-                    cls._shared_thread_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="Dana-Background")
-                    try:
-                        logger = cls.get_class_logger()
-                        if logger:
-                            cls.log_debug("Created shared ThreadPoolExecutor for Dana background tasks")
-                    except Exception:
-                        pass  # Ignore logging errors
-
-        return cls._shared_thread_executor
-
-    @classmethod
-    def shutdown_shared_thread_executor(cls, wait: bool = True):
-        """Shutdown the shared ThreadPoolExecutor.
-
-        Args:
-            wait: Whether to wait for running tasks to complete
-        """
-        if cls._pool_lock is None:
-            cls._pool_lock = threading.Lock()
-
-        with cls._pool_lock:
-            if cls._shared_thread_executor is not None:
-                try:
-                    logger = cls.get_class_logger()
-                    if logger:
-                        cls.log_debug(f"Shutting down shared ThreadPoolExecutor (wait={wait})")
-                except Exception:
-                    pass  # Ignore logging errors
-
-                cls._shared_thread_executor.shutdown(wait=wait)
-                cls._shared_thread_executor = None
+        shutdown_shared_thread_executor(wait=False)  # Don't wait during process exit
 
     @classmethod
     def cleanup_all(cls):

@@ -14,7 +14,7 @@ from dana.common.exceptions import SandboxError
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.logging import DANA_LOGGER
-from dana.core.concurrency import EagerPromise
+from dana.core.concurrency.eager_promise import EagerPromise
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -169,7 +169,8 @@ def py_llm(
     logger.debug(f"context class: {context.__class__.__name__}")
 
     # Get the shared ThreadPoolExecutor from Dana
-    from dana.core.lang.dana_sandbox import DanaSandbox
+    from dana.core.runtime import get_shared_thread_executor
 
-    executor = DanaSandbox.get_shared_thread_executor()
-    return EagerPromise(_async_llm_call, executor)
+    _executor = get_shared_thread_executor()
+    # return LazyPromise(_async_llm_call)
+    return EagerPromise(_async_llm_call, _executor)

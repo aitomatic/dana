@@ -8,18 +8,16 @@ Copyright © 2025 Aitomatic, Inc.
 """
 
 import abc
-import traceback
+from typing import Any
 
 from dana.common.mixins.loggable import Loggable
 
 
 class PromiseError(Exception):
-    """Errors from promise resolution with context preservation."""
+    """Errors from promise resolution."""
 
-    def __init__(self, original_error: Exception, creation_location: str, resolution_location: str):
+    def __init__(self, original_error: Exception):
         self.original_error = original_error
-        self.creation_location = creation_location
-        self.resolution_location = resolution_location
         super().__init__(f"Promise error: {original_error}")
 
 
@@ -44,46 +42,15 @@ class BasePromise(Loggable, abc.ABC):
         self._resolved = False
         self._result = None
         self._error = None
-        self._creation_location = self._get_creation_location()
-
-    def _get_creation_location(self) -> str:
-        """Get the location where this promise was created."""
-        stack = traceback.extract_stack()
-        # Skip Promise internal frames
-        for frame in reversed(stack[:-3]):
-            if not any(name in frame.filename for name in ["promise.py", "base_promise.py", "lazy_promise.py", "eager_promise.py"]):
-                return f"{frame.filename}:{frame.lineno} in {frame.name}"
-        return "unknown location"
-
-    def _get_resolution_location(self) -> str:
-        """Get the location where this promise is being resolved."""
-        stack = traceback.extract_stack()
-        for frame in reversed(stack[:-1]):
-            if not any(name in frame.filename for name in ["promise.py", "base_promise.py", "lazy_promise.py", "eager_promise.py"]):
-                return f"{frame.filename}:{frame.lineno} in {frame.name}"
-        return "unknown location"
 
     @abc.abstractmethod
-    def _ensure_resolved(self):
+    def _ensure_resolved(self) -> Any:
         """
         Ensure the promise is resolved and return the result.
 
         This is the key method that differentiates promise types:
         - LazyPromise: Executes computation on first call
         - EagerPromise: Waits for already-started computation
-
-        Must be implemented by subclasses.
-        """
-        pass
-
-    @abc.abstractmethod
-    def _start_execution(self):
-        """
-        Start executing the computation.
-
-        This method defines when and how the computation begins:
-        - LazyPromise: Does nothing (defers until access)
-        - EagerPromise: Starts execution immediately
 
         Must be implemented by subclasses.
         """
@@ -96,10 +63,6 @@ class BasePromise(Loggable, abc.ABC):
         """Transparent attribute access."""
         result = self._ensure_resolved()
         return getattr(result, name)
-
-    def get(self):
-        """Get the resolved value - explicit access method."""
-        return self._ensure_resolved()
 
     def __getitem__(self, key):
         """Transparent indexing."""
@@ -122,160 +85,117 @@ class BasePromise(Loggable, abc.ABC):
         if self._resolved and self._error:
             return str(self._error.original_error)
 
-        result = self._ensure_resolved()
-        return str(result)
-
-    def __repr__(self):
-        """Transparent representation."""
-        if self._resolved:
-            if self._error:
-                return f"{self.__class__.__name__}[Error: {self._error.original_error}]"
-            return repr(self._result)
-        return f"{self.__class__.__name__}[<pending>]"
+        return str(self._ensure_resolved())
 
     def __bool__(self):
         """Transparent boolean conversion."""
-        result = self._ensure_resolved()
-        return bool(result)
+        return bool(self._ensure_resolved())
 
     def __len__(self):
         """Transparent length."""
-        result = self._ensure_resolved()
-        return len(result)
+        return len(self._ensure_resolved())
 
     def __iter__(self):
         """Transparent iteration."""
-        result = self._ensure_resolved()
-        return iter(result)
+        return iter(self._ensure_resolved())
 
     def __contains__(self, item):
         """Transparent containment check."""
-        result = self._ensure_resolved()
-        return item in result
+        return item in self._ensure_resolved()
 
     # === Arithmetic Operations ===
     def __add__(self, other):
-        result = self._ensure_resolved()
-        return result + other
+        return self._ensure_resolved() + other
 
     def __radd__(self, other):
-        result = self._ensure_resolved()
-        return other + result
+        return other + self._ensure_resolved()
 
     def __sub__(self, other):
-        result = self._ensure_resolved()
-        return result - other
+        return self._ensure_resolved() - other
 
     def __rsub__(self, other):
-        result = self._ensure_resolved()
-        return other - result
+        return other - self._ensure_resolved()
 
     def __mul__(self, other):
-        result = self._ensure_resolved()
-        return result * other
+        return self._ensure_resolved() * other
 
     def __rmul__(self, other):
-        result = self._ensure_resolved()
-        return other * result
+        return other * self._ensure_resolved()
 
     def __truediv__(self, other):
-        result = self._ensure_resolved()
-        return result / other
+        return self._ensure_resolved() / other
 
     def __rtruediv__(self, other):
-        result = self._ensure_resolved()
-        return other / result
+        return other / self._ensure_resolved()
 
     def __floordiv__(self, other):
-        result = self._ensure_resolved()
-        return result // other
+        return self._ensure_resolved() // other
 
     def __rfloordiv__(self, other):
-        result = self._ensure_resolved()
-        return other // result
+        return other // self._ensure_resolved()
 
     def __mod__(self, other):
-        result = self._ensure_resolved()
-        return result % other
+        return self._ensure_resolved() % other
 
     def __rmod__(self, other):
-        result = self._ensure_resolved()
-        return other % result
+        return other % self._ensure_resolved()
 
     def __pow__(self, other):
-        result = self._ensure_resolved()
-        return result**other
+        return self._ensure_resolved() ** other
 
     def __rpow__(self, other):
-        result = self._ensure_resolved()
-        return other**result
+        return other ** self._ensure_resolved()
 
     # === Comparison Operations ===
     def __eq__(self, other):
-        result = self._ensure_resolved()
-        return result == other
+        return self._ensure_resolved() == other
 
     def __ne__(self, other):
-        result = self._ensure_resolved()
-        return result != other
+        return self._ensure_resolved() != other
 
     def __lt__(self, other):
-        result = self._ensure_resolved()
-        return result < other
+        return self._ensure_resolved() < other
 
     def __le__(self, other):
-        result = self._ensure_resolved()
-        return result <= other
+        return self._ensure_resolved() <= other
 
     def __gt__(self, other):
-        result = self._ensure_resolved()
-        return result > other
+        return self._ensure_resolved() > other
 
     def __ge__(self, other):
-        result = self._ensure_resolved()
-        return result >= other
+        return self._ensure_resolved() >= other
 
     # === Bitwise Operations ===
     def __and__(self, other):
-        result = self._ensure_resolved()
-        return result & other
+        return self._ensure_resolved() & other
 
     def __rand__(self, other):
-        result = self._ensure_resolved()
-        return other & result
+        return other & self._ensure_resolved()
 
     def __or__(self, other):
-        result = self._ensure_resolved()
-        return result | other
+        return self._ensure_resolved() | other
 
     def __ror__(self, other):
-        result = self._ensure_resolved()
-        return other | result
+        return other | self._ensure_resolved()
 
     def __xor__(self, other):
-        result = self._ensure_resolved()
-        return result ^ other
+        return self._ensure_resolved() ^ other
 
     def __rxor__(self, other):
-        result = self._ensure_resolved()
-        return other ^ result
+        return other ^ self._ensure_resolved()
 
     # === Unary Operations ===
     def __neg__(self):
-        result = self._ensure_resolved()
-        return -result
+        return -self._ensure_resolved()
 
     def __pos__(self):
-        result = self._ensure_resolved()
-        return +result
+        return +self._ensure_resolved()
 
     def __abs__(self):
-        result = self._ensure_resolved()
-        return abs(result)
+        return abs(self._ensure_resolved())
 
     def __invert__(self):
-        result = self._ensure_resolved()
-        return ~result
+        return ~self._ensure_resolved()
 
     # === Type-related Operations ===
     def __hash__(self):
@@ -284,5 +204,35 @@ class BasePromise(Loggable, abc.ABC):
 
     def __instancecheck__(self, cls):
         """Support isinstance() checks."""
-        result = self._ensure_resolved()
-        return isinstance(result, cls)
+        return isinstance(self._ensure_resolved(), cls)
+
+    # === Promise Status and Async Methods ===
+    def _get_final_result(self):
+        """Helper to get result or raise error after resolution."""
+        if self._error:
+            raise self._error.original_error
+        return self._result
+
+    async def await_result(self):
+        """
+        Wait for promise to complete in async context.
+
+        Generic async implementation that works for all promise types.
+
+        Returns:
+            The resolved result
+
+        Raises:
+            Original error if promise failed
+        """
+        # If already resolved, return immediately
+        if self._resolved:
+            return self._get_final_result()
+
+        # Generic async strategy: run _ensure_resolved in thread pool
+        import asyncio
+
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, self._ensure_resolved)
+
+        return self._get_final_result()

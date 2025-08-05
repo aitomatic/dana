@@ -29,11 +29,11 @@ class OptimizedASTTraversal(Loggable):
         super().__init__()
         self.base_executor = base_executor
 
-        # Configuration flags - CACHING TEMPORARILY DISABLED
-        self.enable_caching = False  # Disabled due to cache key generation bugs
+        # Configuration flags - caching disabled due to cache key generation issues
+        self.enable_caching = False
         self.enable_recursion_safety = enable_recursion_safety
         self.enable_performance_tracking = enable_performance_tracking
-        # TEMPORARILY DISABLE CIRCULAR REFERENCE DETECTION - causing false positives with recursive functions
+        # Circular reference detection disabled - causes false positives with recursive functions
         self.enable_circular_detection = False
 
         # Initialize optimization components
@@ -67,7 +67,7 @@ class OptimizedASTTraversal(Loggable):
         else:
             self.performance_metrics = None
 
-        self.debug("Initialized OptimizedASTTraversal with caching DISABLED and circular detection DISABLED for debugging")
+        self.debug("Initialized OptimizedASTTraversal with caching and circular detection disabled")
 
     def execute_optimized(self, node: Any, context: SandboxContext) -> Any:
         """Execute node with full optimization stack."""
