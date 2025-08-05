@@ -364,7 +364,7 @@ class TestInProcessSandboxInterface:
         mock_result = Mock()
         mock_result.success = True
         mock_result.result = "mocked response"
-        mock_sandbox_instance.eval.return_value = mock_result
+        mock_sandbox_instance.execute_string.return_value = mock_result
 
         sandbox = InProcessSandboxInterface()
 
@@ -375,8 +375,8 @@ class TestInProcessSandboxInterface:
             # Should not raise validation errors during option validation
             result = sandbox.reason("test", {"temperature": test_case["temperature"]})
             assert result == "mocked response"
-            # Verify the sandbox.eval was called with proper Dana code
-            mock_sandbox_instance.eval.assert_called_once()
+            # Verify the sandbox.execute_string was called with proper Dana code
+            mock_sandbox_instance.execute_string.assert_called_once()
 
     @pytest.mark.parametrize("test_case", max_tokens_validation_params, ids=lambda x: x["name"])
     @patch("dana.integrations.python.to_dana.core.inprocess_sandbox.DanaSandbox")
@@ -389,7 +389,7 @@ class TestInProcessSandboxInterface:
         mock_result = Mock()
         mock_result.success = True
         mock_result.result = "mocked response"
-        mock_sandbox_instance.eval.return_value = mock_result
+        mock_sandbox_instance.execute_string.return_value = mock_result
 
         sandbox = InProcessSandboxInterface()
 
@@ -399,7 +399,7 @@ class TestInProcessSandboxInterface:
         else:
             result = sandbox.reason("test", {"max_tokens": test_case["max_tokens"]})
             assert result == "mocked response"
-            mock_sandbox_instance.eval.assert_called_once()
+            mock_sandbox_instance.execute_string.assert_called_once()
 
     @pytest.mark.parametrize("test_case", format_validation_params, ids=lambda x: x["name"])
     @patch("dana.integrations.python.to_dana.core.inprocess_sandbox.DanaSandbox")
@@ -412,7 +412,7 @@ class TestInProcessSandboxInterface:
         mock_result = Mock()
         mock_result.success = True
         mock_result.result = "mocked response"
-        mock_sandbox_instance.eval.return_value = mock_result
+        mock_sandbox_instance.execute_string.return_value = mock_result
 
         sandbox = InProcessSandboxInterface()
 
@@ -422,14 +422,14 @@ class TestInProcessSandboxInterface:
         else:
             result = sandbox.reason("test", {"format": test_case["format_value"]})
             assert result == "mocked response"
-            mock_sandbox_instance.eval.assert_called_once()
+            mock_sandbox_instance.execute_string.assert_called_once()
 
     @pytest.mark.parametrize("test_case", boolean_options_validation_params, ids=lambda x: x["name"])
     def test_option_validation_boolean_options(self, test_case):
         """Test option validation for boolean options."""
         sandbox = InProcessSandboxInterface()
 
-        # These should fail validation before reaching sandbox.eval
+        # These should fail validation before reaching sandbox.execute_string
         with pytest.raises(DanaCallError, match=test_case["error_message"]):
             sandbox.reason("test", {test_case["option_name"]: test_case["option_value"]})
 
@@ -438,7 +438,7 @@ class TestInProcessSandboxInterface:
         """Test option validation for invalid option keys."""
         sandbox = InProcessSandboxInterface()
 
-        # These should fail validation before reaching sandbox.eval
+        # These should fail validation before reaching sandbox.execute_string
         with pytest.raises(DanaCallError, match=test_case["error_message"]):
             sandbox.reason("test", test_case["options"])
 
@@ -447,7 +447,7 @@ class TestInProcessSandboxInterface:
         """Test option validation when options is not a dict."""
         sandbox = InProcessSandboxInterface()
 
-        # These should fail validation before reaching sandbox.eval
+        # These should fail validation before reaching sandbox.execute_string
         with pytest.raises(DanaCallError, match=test_case["error_message"]):
             sandbox.reason("test", test_case["options"])
 
@@ -461,7 +461,7 @@ class TestInProcessSandboxInterface:
         mock_result = Mock()
         mock_result.success = True
         mock_result.result = "Successful mocked response"
-        mock_sandbox_instance.eval.return_value = mock_result
+        mock_sandbox_instance.execute_string.return_value = mock_result
 
         sandbox = InProcessSandboxInterface()
         result = sandbox.reason("What is 2+2?", {"temperature": 0.5})
@@ -470,8 +470,8 @@ class TestInProcessSandboxInterface:
         assert result == "Successful mocked response"
 
         # Verify the Dana code was properly constructed and called
-        mock_sandbox_instance.eval.assert_called_once()
-        call_args = mock_sandbox_instance.eval.call_args[0]
+        mock_sandbox_instance.execute_string.assert_called_once()
+        call_args = mock_sandbox_instance.execute_string.call_args[0]
         dana_code = call_args[0]
 
         # Should contain the prompt and formatted options
@@ -488,7 +488,7 @@ class TestInProcessSandboxInterface:
         mock_result = Mock()
         mock_result.success = False
         mock_result.error = "Mocked execution error"
-        mock_sandbox_instance.eval.return_value = mock_result
+        mock_sandbox_instance.execute_string.return_value = mock_result
 
         sandbox = InProcessSandboxInterface()
 
@@ -541,7 +541,7 @@ class TestInProcessSandboxInterface:
         mock_result = Mock()
         mock_result.success = True
         mock_result.result = "test response"
-        mock_sandbox_instance.eval.return_value = mock_result
+        mock_sandbox_instance.execute_string.return_value = mock_result
 
         # Test with debug enabled
         sandbox = InProcessSandboxInterface(debug=True)

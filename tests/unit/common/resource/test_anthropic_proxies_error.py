@@ -26,12 +26,12 @@ class TestAnthropicProxiesError:
         try:
             with DanaSandbox() as sandbox:
                 # Set model to anthropic - this should trigger the error
-                result = sandbox.eval('set_model("anthropic")')
+                result = sandbox.execute_string('set_model("anthropic")')
                 print(f"set_model result: {result}")
 
                 # Try to use reason function - let's see what happens
                 try:
-                    result = sandbox.eval('reason("what is pi?")')
+                    result = sandbox.execute_string('reason("what is pi?")')
                     print(f"✅ reason function succeeded with result: {result}")
                 except Exception as e:
                     error_str = str(e)
@@ -60,12 +60,12 @@ class TestAnthropicProxiesError:
         try:
             with DanaSandbox() as sandbox:
                 # Set model to anthropic
-                result = sandbox.eval('set_model("anthropic")')
+                result = sandbox.execute_string('set_model("anthropic")')
                 print(f"set_model result (no mock): {result}")
 
                 # Try to use reason function - this might trigger the proxies error
                 try:
-                    result = sandbox.eval('reason("what is pi?")')
+                    result = sandbox.execute_string('reason("what is pi?")')
                     print(f"✅ reason function succeeded without mocking: {result}")
                 except Exception as e:
                     error_str = str(e)
@@ -97,10 +97,10 @@ class TestAnthropicProxiesError:
         try:
             with DanaSandbox() as sandbox:
                 # Set model to anthropic
-                result = sandbox.eval('set_model("anthropic")')
+                result = sandbox.execute_string('set_model("anthropic")')
 
                 # This should work with mocking
-                result = sandbox.eval('reason("what is pi?")')
+                result = sandbox.execute_string('reason("what is pi?")')
                 # Mock should return some response
                 assert result is not None
                 print(f"✅ Mock test passed with result: {result}")

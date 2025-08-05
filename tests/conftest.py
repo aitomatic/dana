@@ -209,7 +209,7 @@ def run_dana_test_file(dana_test_file):
 
     sandbox = DanaSandbox()
     try:
-        result = sandbox.run_file(dana_test_file)
+        result = sandbox.execute_file(dana_test_file)
         assert result.success, f"Dana test {dana_test_file.name} failed: {result.error}"
     finally:
         sandbox._cleanup()

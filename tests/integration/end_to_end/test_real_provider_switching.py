@@ -55,12 +55,12 @@ class TestRealProviderSwitching:
         print("\n🧪 Testing real OpenAI API call...")
 
         # Set OpenAI model
-        result = self.sandbox.eval('set_model("openai:gpt-4o-mini")')
+        result = self.sandbox.execute_string('set_model("openai:gpt-4o-mini")')
         assert result.success, f"Failed to set OpenAI model: {result.error}"
         print(f"   ✅ Set model: {result.result}")
 
         # Make actual API call
-        result = self.sandbox.eval('reason("What is 2+2? Answer with just the number.")')
+        result = self.sandbox.execute_string('reason("What is 2+2? Answer with just the number.")')
 
         if not result.success:
             print(f"   ❌ OpenAI call failed: {result.error}")
@@ -78,12 +78,12 @@ class TestRealProviderSwitching:
         print("\n🧪 Testing real Anthropic API call...")
 
         # Set Anthropic model
-        result = self.sandbox.eval('set_model("anthropic:claude-3-5-haiku-20241022")')
+        result = self.sandbox.execute_string('set_model("anthropic:claude-3-5-haiku-20241022")')
         assert result.success, f"Failed to set Anthropic model: {result.error}"
         print(f"   ✅ Set model: {result.result}")
 
         # Make actual API call
-        result = self.sandbox.eval('reason("What is the capital of France? Answer with just the city name.")')
+        result = self.sandbox.execute_string('reason("What is the capital of France? Answer with just the city name.")')
 
         if not result.success:
             print(f"   ❌ Anthropic call failed: {result.error}")
@@ -102,30 +102,30 @@ class TestRealProviderSwitching:
 
         # Start with OpenAI
         print("   🔄 Switching to OpenAI...")
-        result = self.sandbox.eval('set_model("openai:gpt-4o-mini")')
+        result = self.sandbox.execute_string('set_model("openai:gpt-4o-mini")')
         assert result.success, f"Failed to set OpenAI: {result.error}"
 
-        result = self.sandbox.eval('reason("What is 3+3? Just the number.")')
+        result = self.sandbox.execute_string('reason("What is 3+3? Just the number.")')
         assert result.success, f"OpenAI call failed: {result.error}"
         openai_response = result.result
         print(f"   ✅ OpenAI: {openai_response}")
 
         # Switch to Anthropic
         print("   🔄 Switching to Anthropic...")
-        result = self.sandbox.eval('set_model("anthropic:claude-3-5-haiku-20241022")')
+        result = self.sandbox.execute_string('set_model("anthropic:claude-3-5-haiku-20241022")')
         assert result.success, f"Failed to set Anthropic: {result.error}"
 
-        result = self.sandbox.eval('reason("What is 5+5? Just the number.")')
+        result = self.sandbox.execute_string('reason("What is 5+5? Just the number.")')
         assert result.success, f"Anthropic call failed: {result.error}"
         anthropic_response = result.result
         print(f"   ✅ Anthropic: {anthropic_response}")
 
         # Switch back to OpenAI
         print("   🔄 Switching back to OpenAI...")
-        result = self.sandbox.eval('set_model("openai:gpt-4o-mini")')
+        result = self.sandbox.execute_string('set_model("openai:gpt-4o-mini")')
         assert result.success, f"Failed to switch back to OpenAI: {result.error}"
 
-        result = self.sandbox.eval('reason("What is 7+7? Just the number.")')
+        result = self.sandbox.execute_string('reason("What is 7+7? Just the number.")')
         assert result.success, f"OpenAI second call failed: {result.error}"
         openai_response2 = result.result
         print(f"   ✅ OpenAI (2nd): {openai_response2}")
@@ -155,11 +155,11 @@ class TestRealProviderSwitching:
             print(f"   Round {i + 1}: {model}")
 
             # Set model
-            result = self.sandbox.eval(f'set_model("{model}")')
+            result = self.sandbox.execute_string(f'set_model("{model}")')
             assert result.success, f"Failed to set {model}: {result.error}"
 
             # Ask question
-            result = self.sandbox.eval(f'reason("{question} Just the number.")')
+            result = self.sandbox.execute_string(f'reason("{question} Just the number.")')
             assert result.success, f"Failed to call {model}: {result.error}"
 
             responses.append(result.result)
@@ -177,21 +177,21 @@ class TestRealProviderSwitching:
 
         # Test with Anthropic (system messages should work)
         print("   🔄 Testing Anthropic with system message...")
-        result = self.sandbox.eval('set_model("anthropic:claude-3-5-haiku-20241022")')
+        result = self.sandbox.execute_string('set_model("anthropic:claude-3-5-haiku-20241022")')
         assert result.success, f"Failed to set Anthropic: {result.error}"
 
         # Note: We can't easily test system messages from Dana REPL directly
         # This test verifies the model switch works, system message testing is done in unit tests
-        result = self.sandbox.eval('reason("Respond with exactly: ANTHROPIC_WORKS")')
+        result = self.sandbox.execute_string('reason("Respond with exactly: ANTHROPIC_WORKS")')
         assert result.success, f"Anthropic system test failed: {result.error}"
         print(f"   ✅ Anthropic: {result.result}")
 
         # Test with OpenAI
         print("   🔄 Testing OpenAI with system message...")
-        result = self.sandbox.eval('set_model("openai:gpt-4o-mini")')
+        result = self.sandbox.execute_string('set_model("openai:gpt-4o-mini")')
         assert result.success, f"Failed to set OpenAI: {result.error}"
 
-        result = self.sandbox.eval('reason("Respond with exactly: OPENAI_WORKS")')
+        result = self.sandbox.execute_string('reason("Respond with exactly: OPENAI_WORKS")')
         assert result.success, f"OpenAI system test failed: {result.error}"
         print(f"   ✅ OpenAI: {result.result}")
 
@@ -203,28 +203,28 @@ class TestRealProviderSwitching:
         print("\n🧪 Testing error recovery...")
 
         # Start with a valid provider
-        result = self.sandbox.eval('set_model("openai:gpt-4o-mini")')
+        result = self.sandbox.execute_string('set_model("openai:gpt-4o-mini")')
         assert result.success, f"Failed to set OpenAI: {result.error}"
 
-        result = self.sandbox.eval('reason("Test 1")')
+        result = self.sandbox.execute_string('reason("Test 1")')
         assert result.success, f"Initial OpenAI call failed: {result.error}"
         print(f"   ✅ Initial call: {result.result}")
 
         # Try invalid model (should fail gracefully)
         print("   🔄 Testing invalid model...")
-        result = self.sandbox.eval('set_model("invalid:nonexistent-model")')
+        result = self.sandbox.execute_string('set_model("invalid:nonexistent-model")')
         # This might succeed (just setting the model name) but the reasoning should fail
 
-        result = self.sandbox.eval('reason("This should fail")')
+        result = self.sandbox.execute_string('reason("This should fail")')
         # We expect this to fail
         print(f"   ⚠️  Invalid model result: success={result.success}")
 
         # Recover with valid provider
         print("   🔄 Recovering with valid provider...")
-        result = self.sandbox.eval('set_model("anthropic:claude-3-5-haiku-20241022")')
+        result = self.sandbox.execute_string('set_model("anthropic:claude-3-5-haiku-20241022")')
         assert result.success, f"Failed to recover with Anthropic: {result.error}"
 
-        result = self.sandbox.eval('reason("Recovery test")')
+        result = self.sandbox.execute_string('reason("Recovery test")')
         assert result.success, f"Recovery call failed: {result.error}"
         print(f"   ✅ Recovery successful: {result.result}")
 

@@ -82,7 +82,7 @@ class SandboxContext:
         }
         # If parent exists, share global scopes instead of copying
         if parent:
-            for scope in RuntimeScopes.GLOBAL:
+            for scope in RuntimeScopes.GLOBALS:
                 self._state[scope] = parent._state[scope]  # Share reference instead of copy
 
     @property
@@ -188,7 +188,7 @@ class SandboxContext:
         scope, var_name = self._validate_key(key)
 
         # For global scopes, set in root context
-        if scope in RuntimeScopes.GLOBAL:
+        if scope in RuntimeScopes.GLOBALS:
             root = self
             while root._parent is not None:
                 root = root._parent
@@ -213,7 +213,7 @@ class SandboxContext:
             scope, var_name = self._validate_key(key)
 
             # For global scopes, search in root context
-            if scope in RuntimeScopes.GLOBAL:
+            if scope in RuntimeScopes.GLOBALS:
                 root = self
                 while root._parent is not None:
                     root = root._parent
@@ -331,7 +331,7 @@ class SandboxContext:
             raise StateError(f"Unknown scope: {scope}")
 
         # For global scopes, set in root context
-        if scope in RuntimeScopes.GLOBAL:
+        if scope in RuntimeScopes.GLOBALS:
             root = self
             while root._parent is not None:
                 root = root._parent
@@ -352,7 +352,7 @@ class SandboxContext:
         """
         try:
             scope, var_name = self._validate_key(key)
-            if scope in RuntimeScopes.GLOBAL:
+            if scope in RuntimeScopes.GLOBALS:
                 root = self
                 while root._parent is not None:
                     root = root._parent
@@ -371,7 +371,7 @@ class SandboxContext:
             StateError: If the key format is invalid or scope is unknown
         """
         scope, var_name = self._validate_key(key)
-        if scope in RuntimeScopes.GLOBAL:
+        if scope in RuntimeScopes.GLOBALS:
             root = self
             while root._parent is not None:
                 root = root._parent
@@ -639,7 +639,7 @@ class SandboxContext:
             raise StateError(f"Unknown scope: {scope}")
 
         # For global scopes, get from root context
-        if scope in RuntimeScopes.GLOBAL:
+        if scope in RuntimeScopes.GLOBALS:
             root = self
             while root._parent is not None:
                 root = root._parent
@@ -759,7 +759,7 @@ class SandboxContext:
             raise StateError(f"Unknown scope: {scope}")
 
         # For global scopes, delete from root context
-        if scope in RuntimeScopes.GLOBAL:
+        if scope in RuntimeScopes.GLOBALS:
             root = self
             while root._parent is not None:
                 root = root._parent

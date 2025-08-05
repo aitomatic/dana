@@ -63,7 +63,7 @@ result = mypackage.package_result
         initialize_module_system([str(tmp_path)])
 
         # Run driver module
-        result = DanaSandbox.quick_run(driver_file)
+        result = DanaSandbox.execute_file_once(driver_file)
 
         assert result.success
         assert result.final_context.get("local:result") == "Hello from utils"
@@ -110,7 +110,7 @@ result = parent.sub.sub_result
         initialize_module_system([str(tmp_path)])
 
         # Run driver module
-        result = DanaSandbox.quick_run(driver_file)
+        result = DanaSandbox.execute_file_once(driver_file)
 
         assert result.success
         result_value = str(result.final_context.get("local:result"))
@@ -158,7 +158,7 @@ result = grandparent.parent.sub.sub_result
         initialize_module_system([str(tmp_path)])
 
         # Run driver module
-        result = DanaSandbox.quick_run(driver_file)
+        result = DanaSandbox.execute_file_once(driver_file)
 
         assert result.success
         result_value = str(result.final_context.get("local:result"))
@@ -220,7 +220,7 @@ result = mixed.components.processor.result
         initialize_module_system([str(tmp_path)])
 
         # Run driver module
-        result = DanaSandbox.quick_run(driver_file)
+        result = DanaSandbox.execute_file_once(driver_file)
 
         # Check if the failure is due to module not found
         if not result.success:
@@ -261,7 +261,7 @@ result = simple.bad_import.result
         initialize_module_system([str(tmp_path)])
 
         # Run driver module - should fail with the relative import error
-        result = DanaSandbox.quick_run(driver_file)
+        result = DanaSandbox.execute_file_once(driver_file)
 
         # Should fail with the relative import error
         assert not result.success
@@ -306,7 +306,7 @@ result = aliased.result
         initialize_module_system([str(tmp_path)])
 
         # Run driver module
-        result = DanaSandbox.quick_run(driver_file)
+        result = DanaSandbox.execute_file_once(driver_file)
 
         assert result.success
         assert result.final_context.get("local:result") == "processed"
@@ -334,6 +334,6 @@ value = "utility value"
         sandbox = DanaSandbox()
 
         # Try to use relative import - this should fail since no file context
-        relative_result = sandbox.eval("from .utility import value")
+        relative_result = sandbox.execute_string("from .utility import value")
         assert not relative_result.success
         assert "without package context" in str(relative_result.error)

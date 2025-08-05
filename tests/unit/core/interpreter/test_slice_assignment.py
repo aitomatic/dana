@@ -28,7 +28,7 @@ numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 numbers[2:5] = [99, 88, 77]
 result = numbers
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         expected = [1, 2, 99, 88, 77, 6, 7, 8, 9, 10]
@@ -42,7 +42,7 @@ df = pd.DataFrame({"A": [1, 2, 3, 4], "B": [10, 20, 30, 40]})
 df.iloc[1:3, 0:2] = 999
 result = df.iloc[1, 0]  # Should be 999
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("local:result") == 999
@@ -55,7 +55,7 @@ df = pd.DataFrame({"A": [1, 2, 3], "B": [10, 20, 30], "C": [100, 200, 300]})
 df.iloc[:, 1] = 777
 result = df.iloc[0, 1]  # Check first row, second column
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("local:result") == 777
@@ -68,7 +68,7 @@ df = pd.DataFrame({"A": [1, 2, 3], "B": [10, 20, 30]})
 df.iloc[1, :] = 555
 result = df.iloc[1, 0]  # Check second row, first column
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("local:result") == 555
@@ -80,7 +80,7 @@ data = {"x": 1, "y": 2, "z": 3}
 data["y"] = 999
 result = data["y"]
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("local:result") == 999
@@ -91,7 +91,7 @@ result = data["y"]
 text = "hello"
 text[1:3] = "XX"
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert not result.success
         assert "does not support item assignment" in str(result.error)
 
@@ -102,7 +102,7 @@ numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 numbers[1:8:2] = [99, 88, 77, 66]
 result = numbers
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         expected = [1, 99, 3, 88, 5, 77, 7, 66, 9, 10]
@@ -115,7 +115,7 @@ matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 matrix[1][0:2] = [99, 88]
 result = matrix[1]
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("local:result") == [99, 88, 6]
@@ -135,7 +135,7 @@ numbers = [1, 2, 3]
 numbers[5:10] = [99, 88]  # Python allows this, extends the list
 result = numbers
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         # Python extends the list when slice is out of bounds
@@ -147,7 +147,7 @@ result = numbers
 number = 42
 number[0:2] = [1, 2]
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert not result.success
         assert "not support" in str(result.error) or "not subscriptable" in str(result.error)
 
@@ -159,7 +159,7 @@ df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
 df.iloc[0:2, 0:2] = 999  # Within bounds, should work
 result = df.iloc[0, 0]
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("local:result") == 999
@@ -179,7 +179,7 @@ numbers = [1, 2, 3, 4, 5]
 numbers[2:2] = []
 result = numbers
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("local:result") == [1, 2, 3, 4, 5]
@@ -191,7 +191,7 @@ numbers = [1, 2, 3, 4, 5]
 numbers[-3:-1] = [99, 88]
 result = numbers
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("local:result") == [1, 2, 99, 88, 5]
@@ -203,7 +203,7 @@ numbers = [1, 2, 3, 4, 5]
 numbers[1:3] = [99, 88, 77, 66]  # Replace 2 elements with 4
 result = numbers
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("local:result") == [1, 99, 88, 77, 66, 4, 5]
@@ -216,7 +216,7 @@ df = pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
 df.iloc[0:2, 0] = 999  # Assign single value to multiple positions
 result = df.iloc[0, 0]  # Check first position
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("local:result") == 999
@@ -239,7 +239,7 @@ replacement = [99, 88, 77]
 numbers[start:end] = replacement
 result = numbers
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         expected = [1, 2, 99, 88, 77, 6, 7, 8, 9, 10]
@@ -255,7 +255,7 @@ def modify_list(lst):
 numbers = [1, 2, 3, 4, 5]
 result = modify_list(numbers)
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("local:result") == [1, 99, 88, 4, 5]
@@ -268,7 +268,7 @@ numbers[0:2] = [99, 88]
 numbers[3:5] = [77, 66]
 result = numbers
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         expected = [99, 88, 3, 77, 66, 6, 7, 8, 9, 10]
@@ -283,7 +283,7 @@ replacement = [2 * multiplier, 3 * multiplier, 4 * multiplier]
 numbers[1:4] = replacement
 result = numbers
 """
-        result = self.sandbox.eval(code)
+        result = self.sandbox.execute_string(code)
         assert result.success
         assert result.final_context is not None
         assert result.final_context.get("local:result") == [1, 20, 30, 40, 5]

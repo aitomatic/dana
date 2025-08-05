@@ -58,7 +58,7 @@ class TestLLMIntegration(unittest.TestCase):
         agent = self.create_test_agent()
 
         # Mock the llm_function to return a Promise
-        with patch("dana.core.stdlib.core.llm_function.llm_function") as mock_llm_func:
+        with patch("dana.libs.corelib.py.py_llm.py_llm") as mock_llm_func:
             # Create a mock promise that resolves to a value
             mock_promise = Mock()
             mock_promise._ensure_resolved = Mock(return_value="Mock LLM response")
@@ -77,7 +77,7 @@ class TestLLMIntegration(unittest.TestCase):
         """Test that llm_function is called with proper context."""
         agent = self.create_test_agent()
 
-        with patch("dana.core.stdlib.core.llm_function.llm_function") as mock_llm_func:
+        with patch("dana.libs.corelib.py.py_llm.py_llm") as mock_llm_func:
             with patch("dana.core.lang.sandbox_context.SandboxContext") as mock_context_class:
                 mock_context = Mock()
                 mock_context_class.return_value = mock_context
@@ -106,7 +106,7 @@ class TestLLMIntegration(unittest.TestCase):
         """Test error handling when llm_function fails."""
         agent = self.create_test_agent()
 
-        with patch("dana.core.stdlib.core.llm_function.llm_function") as mock_llm_func:
+        with patch("dana.libs.corelib.py.py_llm.py_llm") as mock_llm_func:
             # Make llm_function raise an exception
             mock_llm_func.side_effect = Exception("LLM function failed")
 
@@ -134,7 +134,7 @@ class TestLLMIntegration(unittest.TestCase):
         custom_llm = Mock(return_value="Custom LLM response")
         agent = self.create_test_agent(fields={"llm": custom_llm})
 
-        with patch("dana.core.stdlib.core.llm_function.llm_function") as mock_llm_func:
+        with patch("dana.libs.corelib.py.py_llm.py_llm") as mock_llm_func:
             response = agent.chat("Test custom LLM")
 
             # Should use custom LLM, not Dana's llm_function
@@ -149,7 +149,7 @@ class TestLLMIntegration(unittest.TestCase):
         context_llm = Mock(return_value="Context LLM response")
         agent._context["llm"] = context_llm
 
-        with patch("dana.core.stdlib.core.llm_function.llm_function") as mock_llm_func:
+        with patch("dana.libs.corelib.py.py_llm.py_llm") as mock_llm_func:
             response = agent.chat("Test context LLM")
 
             # Should use context LLM, not Dana's llm_function
@@ -162,7 +162,7 @@ class TestLLMIntegration(unittest.TestCase):
         """Test that Promise behavior works across conversation turns."""
         agent = self.create_test_agent()
 
-        with patch("dana.core.stdlib.core.llm_function.llm_function") as mock_llm_func:
+        with patch("dana.libs.corelib.py.py_llm.py_llm") as mock_llm_func:
             # Create different mock promises for each call
             promise1 = Mock()
             promise1._ensure_resolved = Mock(return_value="First response")
@@ -194,7 +194,7 @@ class TestLLMIntegration(unittest.TestCase):
         """Test that Promise string representation works correctly."""
         agent = self.create_test_agent()
 
-        with patch("dana.core.stdlib.core.llm_function.llm_function") as mock_llm_func:
+        with patch("dana.libs.corelib.py.py_llm.py_llm") as mock_llm_func:
             # Create a promise that behaves like EagerPromise
             mock_promise = Mock()
             mock_promise._ensure_resolved = Mock(return_value="Hello from LLM")
@@ -235,7 +235,7 @@ class TestLLMFunctionIntegration(unittest.TestCase):
         agent_type = AgentStructType(name="WrapperTestAgent", fields={"role": "tester"}, field_order=["role"], field_comments={})
         agent = AgentStructInstance(agent_type, {"role": "tester"})
 
-        with patch("dana.core.stdlib.core.llm_function.llm_function") as mock_llm_func:
+        with patch("dana.libs.corelib.py.py_llm.py_llm") as mock_llm_func:
             # Mock promise with resolve method
             mock_promise = Mock()
             mock_promise._ensure_resolved = Mock(return_value="Resolved LLM response")
