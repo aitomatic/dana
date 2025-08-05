@@ -1,0 +1,41 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_431_24676)">
+<mask id="mask0_431_24676" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="20" height="20">
+<path d="M20 10C20 4.47715 15.5228 0 10 0C4.47715 0 0 4.47715 0 10C0 15.5228 4.47715 20 10 20C15.5228 20 20 15.5228 20 10Z" fill="white"/>
+</mask>
+<g mask="url(#mask0_431_24676)">
+</g>
+<g clip-path="url(#clip1_431_24676)">
+<mask id="mask1_431_24676" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="40" height="40">
+<path d="M40 20C40 8.9543 31.0457 0 20 0C8.9543 0 0 8.9543 0 20C0 31.0457 8.9543 40 20 40C31.0457 40 40 31.0457 40 20Z" fill="white"/>
+</mask>
+<g mask="url(#mask1_431_24676)">
+<path d="M40 0H0V40H40V0Z" fill="#B647A2"/>
+<g filter="url(#filter0_f_431_24676)">
+<path d="M-5.75358 21.5901L-15.0354 34.4454L-16.1929 50.998L36.9274 54.7125L38.9558 25.7044L28.9486 19.5704L7.69106 32.4115L-5.75358 21.5901Z" fill="#93D7E6"/>
+</g>
+<g style="mix-blend-mode:overlay" filter="url(#filter1_f_431_24676)">
+<path d="M22.1641 12.845L-1.52245 15.6194L-11.296 44.5021L25.415 75.3118L51.5969 39.3081L36.6633 31.0802L34.6966 48.9685L8.15664 53.9149L22.1641 12.845Z" fill="#F3F5FF"/>
+</g>
+</g>
+</g>
+</g>
+<defs>
+<filter id="filter0_f_431_24676" x="-37.1929" y="-1.42963" width="97.1489" height="77.1422" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="10.5" result="effect1_foregroundBlur_431_24676"/>
+</filter>
+<filter id="filter1_f_431_24676" x="-32.2959" y="-8.15497" width="104.893" height="104.467" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="10.5" result="effect1_foregroundBlur_431_24676"/>
+</filter>
+<clipPath id="clip0_431_24676">
+<rect width="40" height="40" fill="white"/>
+</clipPath>
+<clipPath id="clip1_431_24676">
+<rect width="40" height="40" fill="white"/>
+</clipPath>
+</defs>
+</svg>
