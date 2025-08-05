@@ -504,7 +504,7 @@ class ExpressionExecutor(BaseExecutor):
             The value at the specified index or slice
         """
         from dana.core.lang.ast import SliceExpression, SliceTuple
-        from dana.core.runtime.promise import is_promise, resolve_promise
+        from dana.core.concurrency import is_promise, resolve_promise
 
         # Get the target object
         target = self.parent.execute(node.object, context)

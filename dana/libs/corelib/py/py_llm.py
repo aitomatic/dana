@@ -14,7 +14,7 @@ from dana.common.exceptions import SandboxError
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.logging import DANA_LOGGER
-from dana.core.concurrency import LazyPromise
+from dana.core.concurrency.eager_promise import EagerPromise
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -161,7 +161,16 @@ def py_llm(
             logger.error(f"Error during async LLM call: {str(e)}")
             raise SandboxError(f"Error during async LLM call: {str(e)}") from e
 
-    # Create and return a LazyPromise that wraps the async function
-    # LazyPromise defers execution until first access, allowing quick return
-    logger.debug("Creating LazyPromise for async LLM call")
-    return LazyPromise.create(_async_llm_call(), context)
+    # Create and return an EagerPromise that wraps the async function
+    # EagerPromise starts execution immediately in background
+    logger.debug("Creating EagerPromise for async LLM call")
+    logger.debug(f"_async_llm_call type: {type(_async_llm_call)}")
+    logger.debug(f"context type: {type(context)}")
+    logger.debug(f"context class: {context.__class__.__name__}")
+
+    # Get the shared ThreadPoolExecutor from Dana
+    from dana.core.runtime import DanaThreadpool
+
+    _executor = DanaThreadpool.get_instance().get_executor()
+    # return LazyPromise(_async_llm_call)
+    return EagerPromise(_async_llm_call, _executor)

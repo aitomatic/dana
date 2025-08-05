@@ -100,7 +100,6 @@ class DanaParser(Lark, Loggable):
         if DanaParser._grammar_text is None:
             with open(grammar_path) as f:
                 DanaParser._grammar_text = f.read()
-            self.debug(f"Loaded grammar from {grammar_path}")
 
         # Temporarily suppress Lark's chatty warnings during grammar parsing
         lark_logger = logging.getLogger("lark")
@@ -156,7 +155,6 @@ class DanaParser(Lark, Loggable):
     def transform(self, parse_tree: Tree, do_type_check: bool = False) -> Program:
         """Transform a parse tree into an AST."""
         # Transform the parse tree into AST nodes
-        self.debug("Transforming parse tree to AST")
 
         # Set filename on transformer if available
         if hasattr(self.transformer, "set_filename"):
@@ -172,8 +170,6 @@ class DanaParser(Lark, Loggable):
             from dana.core.lang.ast import Location
 
             ast.location = Location(source=self.current_filename, line=1, column=1)
-
-        self.debug(f"Successfully parsed program with {len(ast.statements)} statements")
 
         # Perform type checking if enabled and parsing was successful
         if do_type_check and ast.statements:

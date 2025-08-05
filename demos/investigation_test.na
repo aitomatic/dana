@@ -1,0 +1,10 @@
+log_level("INFO")
+
+log("=== INVESTIGATION TEST ===")
+log("Step 1: About to call llm function")
+x = llm("tell me a short story")
+log("Step 2: llm function call completed")
+log(f"Step 3: x type is {type(x)}")
+log("Step 4: About to access x")
+log(f"Step 5: x value is: {x}")
+log("Step 6: Test completed") 

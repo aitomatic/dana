@@ -25,11 +25,11 @@ class OutputFormatter(Loggable):
     def format_result(self, result) -> None:
         """Format and display execution result."""
         if result is not None:
-            # Import promise classes to check instance
+            # Use consolidated Promise detection
             try:
-                from dana.core.concurrency import BasePromise
+                from dana.core.concurrency import is_promise
 
-                if isinstance(result, BasePromise):
+                if is_promise(result):
                     # Always show promise meta info instead of resolving
                     print_formatted_text(ANSI(self.colors.accent(str(result))))
                     return
@@ -43,19 +43,12 @@ class OutputFormatter(Loggable):
     async def format_result_async(self, result) -> None:
         """Format and display execution result, safe for async contexts."""
         if result is not None:
-            # Import promise classes to check instance
+            # Use consolidated Promise detection
             try:
-                from dana.core.concurrency import BasePromise
-                from dana.core.concurrency.eager_promise import EagerPromise
-                from dana.core.concurrency.lazy_promise import LazyPromise
+                from dana.core.concurrency import is_promise
 
-                if isinstance(result, EagerPromise | LazyPromise):
-                    # For both EagerPromise and LazyPromise, show the promise object itself (don't await)
-                    # This allows llm() calls to return quickly with the Promise
-                    print_formatted_text(ANSI(self.colors.accent(str(result))))
-                    return
-                elif isinstance(result, BasePromise):
-                    # For other promise types, show meta info instead of resolving
+                if is_promise(result):
+                    # Show the promise object itself (don't await)
                     print_formatted_text(ANSI(self.colors.accent(str(result))))
                     return
             except ImportError:
@@ -63,6 +56,35 @@ class OutputFormatter(Loggable):
                 pass
 
             # Normal display - show the resolved value with color
+            print_formatted_text(ANSI(self.colors.accent(str(result))))
+
+    def format_result_with_promise_mode(self, result, promise_display_mode: bool = False) -> None:
+        """Format and display execution result with promise display mode control."""
+        if result is not None:
+            # Use consolidated Promise detection and utilities
+            try:
+                from dana.core.concurrency import is_promise, resolve_if_promise
+
+                if is_promise(result):
+                    if promise_display_mode:
+                        # Show promise meta info without resolving
+                        print_formatted_text(ANSI(self.colors.accent(str(result))))
+                        return
+                    else:
+                        # Try to resolve the promise for normal display
+                        try:
+                            resolved_result = resolve_if_promise(result)
+                            print_formatted_text(ANSI(self.colors.accent(str(resolved_result))))
+                            return
+                        except Exception:
+                            # Resolution failed, show promise info
+                            print_formatted_text(ANSI(self.colors.accent(str(result))))
+                            return
+            except ImportError:
+                # If promise classes not available, fall back to normal display
+                pass
+
+            # Normal display - show the resolved value
             print_formatted_text(ANSI(self.colors.accent(str(result))))
 
     def format_error(self, error: Exception) -> None:
