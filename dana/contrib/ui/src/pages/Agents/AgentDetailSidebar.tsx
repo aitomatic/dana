@@ -4,7 +4,6 @@ import { apiService } from '@/lib/api';
 import { useParams } from 'react-router-dom';
 import { useSmartChatStore } from '@/stores/smart-chat-store';
 import { useAgentStore } from '@/stores/agent-store';
-import { Plus } from 'lucide-react';
 import { ArrowUp, Attachment } from 'iconoir-react';
 import { MarkdownViewerSmall } from './chat/markdown-viewer';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -202,13 +201,12 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
             return (
               <div
                 key={idx}
-                className={`rounded-sm px-3 py-2 text-sm ${
-                  msg.sender === 'user'
+                className={`rounded-sm px-3 py-2 text-sm ${msg.sender === 'user'
                     ? 'bg-gray-100'
                     : isThinking
                       ? ' self-start text-left border border-gray-100'
                       : ' self-start text-left'
-                }`}
+                  }`}
               >
                 {isThinking ? (
                   <div className="flex gap-2 items-center">
