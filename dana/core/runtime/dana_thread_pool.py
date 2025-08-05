@@ -16,7 +16,7 @@ from typing import Optional
 from dana.common.mixins.loggable import Loggable
 
 
-class DanaThreadpool(Loggable):
+class DanaThreadPool(Loggable):
     """
     Dana ThreadPool - Shared thread management for Dana runtime.
 
@@ -25,7 +25,7 @@ class DanaThreadpool(Loggable):
     """
 
     # Singleton instance
-    _instance: Optional["DanaThreadpool"] = None
+    _instance: Optional["DanaThreadPool"] = None
     _lock = threading.Lock()
 
     def __init__(self, max_workers: int = 16, thread_name_prefix: str = "Dana-Background"):
@@ -46,16 +46,16 @@ class DanaThreadpool(Loggable):
         atexit.register(self._cleanup_on_exit)
 
     @classmethod
-    def get_instance(cls, max_workers: int = 16, thread_name_prefix: str = "Dana-Background") -> "DanaThreadpool":
+    def get_instance(cls, max_workers: int = 16, thread_name_prefix: str = "Dana-Background") -> "DanaThreadPool":
         """
-        Get the singleton instance of DanaThreadpool.
+        Get the singleton instance of DanaThreadPool.
 
         Args:
             max_workers: Maximum number of worker threads (only used on first creation)
             thread_name_prefix: Prefix for thread names (only used on first creation)
 
         Returns:
-            Singleton DanaThreadpool instance
+            Singleton DanaThreadPool instance
         """
         if cls._instance is None:
             with cls._lock:
@@ -102,7 +102,7 @@ class DanaThreadpool(Loggable):
     def _cleanup_on_exit(self):
         """Cleanup callback for process exit."""
         try:
-            self.debug("Process exit: cleaning up DanaThreadpool")
+            self.debug("Process exit: cleaning up DanaThreadPool")
             self.shutdown(wait=False)  # Don't wait during process exit
         except Exception as e:
             # Avoid exceptions during process exit

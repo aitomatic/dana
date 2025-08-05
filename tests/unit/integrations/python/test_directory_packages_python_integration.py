@@ -10,7 +10,6 @@ MIT License
 
 import pytest
 import sys
-from pathlib import Path
 
 from dana.integrations.python.to_dana import enable_dana_imports, disable_dana_imports
 
@@ -22,18 +21,18 @@ class TestDirectoryPackagesPythonIntegration:
         """Set up for each test."""
         # Ensure dana imports are disabled initially
         disable_dana_imports()
-        
+
         # Clean up any existing modules from previous tests
-        modules_to_remove = [name for name in sys.modules.keys() if name.startswith('test_')]
+        modules_to_remove = [name for name in sys.modules.keys() if name.startswith("test_")]
         for module_name in modules_to_remove:
             del sys.modules[module_name]
 
     def teardown_method(self):
         """Clean up after each test."""
         disable_dana_imports()
-        
+
         # Clean up any test modules
-        modules_to_remove = [name for name in sys.modules.keys() if name.startswith('test_')]
+        modules_to_remove = [name for name in sys.modules.keys() if name.startswith("test_")]
         for module_name in modules_to_remove:
             del sys.modules[module_name]
 
@@ -75,7 +74,7 @@ MATH_CONSTANT = 42
         # Create nested package structure
         root_pkg = tmp_path / "test_nested_pkg"
         root_pkg.mkdir()
-        
+
         sub_pkg = root_pkg / "subpackage"
         sub_pkg.mkdir()
 
@@ -146,7 +145,7 @@ def second_func() -> str:
         # Create legacy package with __init__.na
         legacy_pkg = tmp_path / "test_legacy_pkg"
         legacy_pkg.mkdir()
-        
+
         legacy_init = legacy_pkg / "__init__.na"
         legacy_init.write_text("""
 LEGACY_VALUE = "legacy"
@@ -226,7 +225,7 @@ def child_function() -> str:
         try:
             # Try to import from empty directory - should fail
             with pytest.raises(ModuleNotFoundError):
-                import test_empty_pkg.nonexistent
+                pass
 
         finally:
             disable_dana_imports()
@@ -236,7 +235,7 @@ def child_function() -> str:
         # Create deep nesting
         path_parts = ["test_deep_pkg", "level1", "level2", "level3"]
         current_path = tmp_path
-        
+
         for part in path_parts:
             current_path = current_path / part
             current_path.mkdir()
@@ -283,13 +282,13 @@ def test_func() -> str:
 
             # Check module attributes
             module = test_attrs_pkg.test_mod
-            assert hasattr(module, '__name__')
-            assert hasattr(module, '__file__')
-            assert hasattr(module, '__package__')
-            
-            assert module.__name__ == 'test_attrs_pkg.test_mod'
-            assert module.__package__ == 'test_attrs_pkg'
-            assert module.__file__.endswith('test_mod.na')
+            assert hasattr(module, "__name__")
+            assert hasattr(module, "__file__")
+            assert hasattr(module, "__package__")
+
+            assert module.__name__ == "test_attrs_pkg.test_mod"
+            assert module.__package__ == "test_attrs_pkg"
+            assert module.__file__.endswith("test_mod.na")
 
         finally:
             disable_dana_imports()

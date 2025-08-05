@@ -1,9 +1,8 @@
 """Dana runtime components."""
 
 # Export module system
+# Export shared components
+from .dana_thread_pool import DanaThreadPool
 from .modules import errors, loader, registry, types
 
-# Export shared components
-from .dana_threadpool import DanaThreadpool
-
-__all__ = ["registry", "loader", "types", "errors", "DanaThreadpool"]
+__all__ = ["registry", "loader", "types", "errors", "DanaThreadPool"]

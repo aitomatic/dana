@@ -3,7 +3,6 @@
 Test the LLM integration with Dana's llm_function pattern.
 """
 
-import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -26,7 +25,6 @@ class TestLLMIntegration(unittest.TestCase):
 
         def mock_init(agent_self):
             if agent_self._conversation_memory is None:
-                from pathlib import Path
                 from dana.frameworks.memory.conversation_memory import ConversationMemory
 
                 # Use temp directory instead of ~/.dana/chats/

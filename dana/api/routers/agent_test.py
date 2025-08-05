@@ -124,7 +124,7 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
 
     try:
         # Read the original main.na content
-        with open(main_na_path, "r", encoding="utf-8") as f:
+        with open(main_na_path, encoding="utf-8") as f:
             original_content = f.read()
 
         # Add the response line at the end

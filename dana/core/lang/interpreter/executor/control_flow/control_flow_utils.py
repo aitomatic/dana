@@ -112,9 +112,9 @@ class ControlFlowUtils(Loggable):
                     raise
 
             # Use PromiseFactory to create optimal execution strategy
-            from dana.core.runtime import DanaThreadpool
+            from dana.core.runtime import DanaThreadPool
 
-            executor = DanaThreadpool.get_instance().get_executor()
+            executor = DanaThreadPool.get_instance().get_executor()
 
             # The factory will decide: synchronous execution or EagerPromise creation
             promise_value = PromiseFactory.create_return_promise(
