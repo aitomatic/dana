@@ -1731,7 +1731,7 @@ def solve(self : {agent_class}, query: str) -> str:
 this_agent = {agent_class}()
 """
 
-    methods_na = f"""
+    methods_na = """
 from knowledge import knowledge
 from knowledge import doc
 from common import QUERY_GENERATION_PROMPT
@@ -2106,7 +2106,6 @@ def get_multi_file_agent_generation_prompt(intentions: str, current_code: str = 
     """
     Returns the multi-file agent generation prompt for the LLM.
     """
-    rag_tools_block = 'rag_resource = use("rag", sources=["./docs"])'
     rag_import_block = "from tools import rag_resource\n"
     rag_search_block = "    package.retrieval_result = str(rag_resource.query(query))"
 
