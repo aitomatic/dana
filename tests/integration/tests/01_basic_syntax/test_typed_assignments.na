@@ -1,0 +1,114 @@
+# Test: Typed Assignments
+# Purpose: Test typed variable assignments with type annotations
+# Category: Basic Syntax - Basic Assignments and Variables
+
+log("Starting Typed Assignments test")
+
+# Test 1: Basic typed integer assignment
+x: int = 42
+assert x == 42, f"Expected 42, got {x}"
+log("✅ Basic typed integer assignment works")
+
+# Test 2: Basic typed float assignment
+y: float = 3.14
+assert y == 3.14, f"Expected 3.14, got {y}"
+log("✅ Basic typed float assignment works")
+
+# Test 3: Basic typed string assignment
+name: str = "Dana"
+assert name == "Dana", f"Expected 'Dana', got {name}"
+log("✅ Basic typed string assignment works")
+
+# Test 4: Basic typed boolean assignment
+is_active: bool = true
+assert is_active == true, f"Expected true, got {is_active}"
+log("✅ Basic typed boolean assignment works")
+
+# Test 5: Basic typed list assignment
+numbers: list = [1, 2, 3, 4, 5]
+assert len(numbers) == 5, f"Expected 5, got {len(numbers)}"
+log("✅ Basic typed list assignment works")
+
+# Test 6: Basic typed dict assignment
+settings: dict = {"debug": true, "timeout": 30}
+assert settings["debug"] == true, f"Expected true, got {settings['debug']}"
+log("✅ Basic typed dict assignment works")
+
+# Test 7: Basic typed set assignment
+unique_numbers: set = {1, 2, 3, 4, 5}
+assert len(unique_numbers) == 5, f"Expected 5, got {len(unique_numbers)}"
+log("✅ Basic typed set assignment works")
+
+# Test 8: Basic typed tuple assignment
+coordinates: tuple = (10, 20)
+assert len(coordinates) == 2, f"Expected 2, got {len(coordinates)}"
+log("✅ Basic typed tuple assignment works")
+
+# Test 9: Typed assignment with None
+empty_value: int = None
+assert empty_value == None, f"Expected None, got {empty_value}"
+log("✅ Typed assignment with None works")
+
+# Test 10: Typed assignment with expressions
+result: int = 5 + 3 * 2
+assert result == 11, f"Expected 11, got {result}"
+log("✅ Typed assignment with expressions works")
+
+# Test 11: Typed assignment with function calls
+def get_value() -> int:
+    return 42
+
+typed_result: int = get_value()
+assert typed_result == 42, f"Expected 42, got {typed_result}"
+log("✅ Typed assignment with function calls works")
+
+# Test 12: Typed assignment with complex expressions
+complex_result: float = (3.14 * 2) + 1.5
+assert complex_result == 7.78, f"Expected 7.78, got {complex_result}"
+log("✅ Typed assignment with complex expressions works")
+
+# Test 13: Typed assignment with string concatenation
+message: str = "Hello" + " " + "World"
+assert message == "Hello World", f"Expected 'Hello World', got {message}"
+log("✅ Typed assignment with string concatenation works")
+
+# Test 14: Typed assignment with list comprehension
+squares: list = [x * x for x in range(5)]
+assert len(squares) == 5, f"Expected 5, got {len(squares)}"
+assert squares[0] == 0, f"Expected 0, got {squares[0]}"
+log("✅ Typed assignment with list comprehension works")
+
+# Test 15: Typed assignment with conditional expression
+status: str = "active" if true else "inactive"
+assert status == "active", f"Expected 'active', got {status}"
+log("✅ Typed assignment with conditional expression works")
+
+# Test 16: Multiple typed assignments
+a: int = 10
+b: float = 20.5
+c: str = "test"
+d: bool = false
+
+assert a == 10, f"Expected 10, got {a}"
+assert b == 20.5, f"Expected 20.5, got {b}"
+assert c == "test", f"Expected 'test', got {c}"
+assert d == false, f"Expected false, got {d}"
+log("✅ Multiple typed assignments work")
+
+# Test 17: Typed assignment with negative numbers
+negative_int: int = -42
+negative_float: float = -3.14
+assert negative_int == -42, f"Expected -42, got {negative_int}"
+assert negative_float == -3.14, f"Expected -3.14, got {negative_float}"
+log("✅ Typed assignment with negative numbers works")
+
+# Test 18: Typed assignment with zero values
+zero_int: int = 0
+zero_float: float = 0.0
+empty_string: str = ""
+assert zero_int == 0, f"Expected 0, got {zero_int}"
+assert zero_float == 0.0, f"Expected 0.0, got {zero_float}"
+assert empty_string == "", f"Expected empty string, got '{empty_string}'"
+log("✅ Typed assignment with zero values works")
+
+log("Typed Assignments test completed successfully") 

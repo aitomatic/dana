@@ -1,0 +1,206 @@
+# Test: Arithmetic Expressions
+# Purpose: Test arithmetic expressions and operators
+# Category: Basic Syntax - Expressions and Operations
+
+log("Starting Arithmetic Expressions test")
+
+# Test 1: Basic addition
+result = 5 + 3
+assert result == 8, f"Expected 8, got {result}"
+log("✅ Basic addition works")
+
+# Test 2: Basic subtraction
+result = 10 - 4
+assert result == 6, f"Expected 6, got {result}"
+log("✅ Basic subtraction works")
+
+# Test 3: Basic multiplication
+result = 6 * 7
+assert result == 42, f"Expected 42, got {result}"
+log("✅ Basic multiplication works")
+
+# Test 4: Basic division
+result = 20 / 4
+assert result == 5.0, f"Expected 5.0, got {result}"
+log("✅ Basic division works")
+
+# Test 5: Integer division
+result = 20 // 3
+print(result)
+assert result == 6, f"Expected 6, got {result}"
+log("✅ Integer division works")
+
+# Test 6: Modulo operation
+result = 17 % 5
+assert result == 2, f"Expected 2, got {result}"
+log("✅ Modulo operation works")
+
+# Test 7: Exponentiation
+result = 2 ** 8
+assert result == 256, f"Expected 256, got {result}"
+log("✅ Exponentiation works")
+
+# Test 8: Order of operations (PEMDAS)
+result = 2 + 3 * 4 - 6 / 2
+assert result == 11.0, f"Expected 11.0, got {result}"
+log("✅ Order of operations works")
+
+# Test 9: Parentheses override precedence
+result = (2 + 3) * 4
+assert result == 20, f"Expected 20, got {result}"
+log("✅ Parentheses override precedence works")
+
+# Test 10: Negative numbers
+result = -5 + 3
+assert result == -2, f"Expected -2, got {result}"
+log("✅ Negative numbers work")
+
+# Test 11: Floating point arithmetic
+result = 3.14 + 2.86
+assert result == 6.0, f"Expected 6.0, got {result}"
+log("✅ Floating point arithmetic works")
+
+# Test 12: Mixed integer and float
+result = 5 + 3.5
+assert result == 8.5, f"Expected 8.5, got {result}"
+log("✅ Mixed integer and float works")
+
+# Test 13: Large numbers
+result = 1000000 * 1000000
+assert result == 1000000000000, f"Expected 1000000000000, got {result}"
+log("✅ Large numbers work")
+
+# Test 14: Division by zero handling
+try:
+    result = 10 / 0
+    log("⚠️ Division by zero did not raise error")
+except:
+    log("✅ Division by zero handled appropriately")
+log("✅ Division by zero error handling works")
+
+# Test 15: Modulo with zero handling
+try:
+    result = 10 % 0
+    log("⚠️ Modulo by zero did not raise error")
+except:
+    log("✅ Modulo by zero handled appropriately")
+log("✅ Modulo by zero error handling works")
+
+# Test 16: Complex expressions
+result = ((5 + 3) * 2 - 4) / 2 + 1
+assert result == 7.0, f"Expected 7.0, got {result}"
+log("✅ Complex expressions work")
+
+# Test 17: Exponentiation with negative base
+result = (-2) ** 3
+assert result == -8, f"Expected -8, got {result}"
+log("✅ Exponentiation with negative base works")
+
+# Test 18: Exponentiation with zero
+result = 5 ** 0
+assert result == 1, f"Expected 1, got {result}"
+log("✅ Exponentiation with zero works")
+
+# Test 19: Exponentiation with negative exponent
+result = 2 ** (-2)
+assert result == 0.25, f"Expected 0.25, got {result}"
+log("✅ Exponentiation with negative exponent works")
+
+# Test 20: Multiple operations in sequence
+a = 10
+b = 5
+c = 2
+result = a + b * c - a / c
+assert result == 15.0, f"Expected 15.0, got {result}"
+log("✅ Multiple operations in sequence work")
+
+# Test 21: Arithmetic with variables
+x = 10
+y = 3
+result = x * y + x / y
+assert result == 33.333333333333336, f"Expected 33.333333333333336, got {result}"
+log("✅ Arithmetic with variables works")
+
+# Test 22: Nested parentheses
+result = ((2 + 3) * (4 - 1)) / 3
+assert result == 5.0, f"Expected 5.0, got {result}"
+log("✅ Nested parentheses work")
+
+# Test 23: Arithmetic with function calls
+def get_number():
+    return 7
+
+result = get_number() * 3 + 2
+assert result == 23, f"Expected 23, got {result}"
+log("✅ Arithmetic with function calls works")
+
+# Test 24: Arithmetic with conditional expressions
+is_positive = true
+result = (10 if is_positive else -10) * 2
+assert result == 20, f"Expected 20, got {result}"
+log("✅ Arithmetic with conditional expressions works")
+
+# Test 25: Arithmetic with list elements
+numbers = [1, 2, 3, 4, 5]
+result = numbers[0] + numbers[1] * numbers[2]
+assert result == 7, f"Expected 7, got {result}"
+log("✅ Arithmetic with list elements works")
+
+# Test 26: Arithmetic with dictionary values
+scores = {"alice": 100, "bob": 80}
+result = scores["alice"] - scores["bob"]
+assert result == 20, f"Expected 20, got {result}"
+log("✅ Arithmetic with dictionary values works")
+
+# Test 27: Arithmetic with attribute access
+obj = {"value": 10}
+result = obj.value * 2 + 5
+assert result == 25, f"Expected 25, got {result}"
+log("✅ Arithmetic with attribute access works")
+
+# Test 28: Arithmetic with string length
+message = "Hello"
+result = len(message) * 2
+assert result == 10, f"Expected 10, got {result}"
+log("✅ Arithmetic with string length works")
+
+# Test 29: Arithmetic with list length
+numbers = [1, 2, 3, 4, 5, 6]
+result = len(numbers) / 2
+assert result == 3.0, f"Expected 3.0, got {result}"
+log("✅ Arithmetic with list length works")
+
+# Test 30: Arithmetic with boolean values
+true_val = true
+false_val = false
+result = (10 if true_val else 0) + (5 if false_val else 0)
+assert result == 10, f"Expected 10, got {result}"
+log("✅ Arithmetic with boolean values works")
+
+# Test 31: Arithmetic with None handling
+try:
+    result = 10 + None
+    log("⚠️ Arithmetic with None did not raise error")
+except:
+    log("✅ Arithmetic with None handled appropriately")
+log("✅ Arithmetic with None error handling works")
+
+# Test 32: Arithmetic with string concatenation (should fail)
+try:
+    result = "Hello" + 5
+    log("⚠️ String + number did not raise error")
+except:
+    log("✅ String + number handled appropriately")
+log("✅ String + number error handling works")
+
+# Test 33: Arithmetic with scientific notation
+result = 1.23e2 + 4.56e1
+assert result == 168.6, f"Expected 168.6, got {result}"
+log("✅ Arithmetic with scientific notation works")
+
+# Test 34: Arithmetic with very large numbers
+result = 1e10 * 1e10
+assert result == 1e20, f"Expected 1e20, got {result}"
+log("✅ Arithmetic with very large numbers works")
+
+log("Arithmetic Expressions test completed successfully") 

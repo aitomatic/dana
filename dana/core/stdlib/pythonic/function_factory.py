@@ -12,10 +12,10 @@ from enum import Enum
 from typing import Any
 
 from dana.common.exceptions import SandboxError
+from dana.core.concurrency import LazyPromise
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.interpreter.functions.function_registry import FunctionMetadata, FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.concurrency import LazyPromise
 
 
 class UnsupportedReason(Enum):
@@ -49,10 +49,10 @@ class PythonicFunctionFactory:
             raise TypeError("max expected at least 1 argument, got 0")
         elif len(resolved_args) == 1:
             # Single argument case
-            if isinstance(resolved_args[0], list | tuple):
+            if isinstance(resolved_args[0], list | tuple | set):
                 if len(resolved_args[0]) == 0:
                     raise ValueError("max() arg is an empty sequence")
-                return max(resolved_args[0])  # max([1,2,3]) or max((1,2,3))
+                return max(resolved_args[0])  # max([1,2,3]) or max((1,2,3)) or max({1,2,3})
             else:
                 # Single non-iterable argument: just return it
                 return resolved_args[0]  # max(42) returns 42
@@ -75,10 +75,10 @@ class PythonicFunctionFactory:
             raise TypeError("min expected at least 1 argument, got 0")
         elif len(resolved_args) == 1:
             # Single argument case
-            if isinstance(resolved_args[0], list | tuple):
+            if isinstance(resolved_args[0], list | tuple | set):
                 if len(resolved_args[0]) == 0:
                     raise ValueError("min() arg is an empty sequence")
-                return min(resolved_args[0])  # min([1,2,3]) or min((1,2,3))
+                return min(resolved_args[0])  # min([1,2,3]) or min((1,2,3)) or min({1,2,3})
             else:
                 # Single non-iterable argument: just return it
                 return resolved_args[0]  # min(42) returns 42
@@ -110,9 +110,9 @@ class PythonicFunctionFactory:
         # Numeric functions
         "len": {
             "func": len,
-            "types": [list, dict, str, tuple, LazyPromise],
+            "types": [list, dict, str, tuple, set, LazyPromise],
             "doc": "Return the length of an object",
-            "signatures": [(list,), (dict,), (str,), (tuple,), (LazyPromise,)],
+            "signatures": [(list,), (dict,), (str,), (tuple,), (set,), (LazyPromise,)],
         },
         # Smart wrappers for flexible argument handling
         "sum": {
@@ -122,11 +122,14 @@ class PythonicFunctionFactory:
             "signatures": [
                 (list,),
                 (tuple,),
+                (set,),
                 (list, int),
                 (list, float),
                 (tuple, int),
                 (tuple, float),
-            ],  # Allow list/tuple with optional start
+                (set, int),
+                (set, float),
+            ],  # Allow list/tuple/set with optional start
         },
         "max": {
             "func": _smart_max.__func__,
@@ -143,21 +146,21 @@ class PythonicFunctionFactory:
         # Original basic versions (strict iterable-only)
         "basic_sum": {
             "func": sum,
-            "types": [list, tuple],
+            "types": [list, tuple, set],
             "doc": "Return the sum of a sequence of numbers (strict iterable-only version)",
-            "signatures": [(list,), (tuple,)],
+            "signatures": [(list,), (tuple,), (set,)],
         },
         "basic_max": {
             "func": max,
-            "types": [list, tuple],
+            "types": [list, tuple, set],
             "doc": "Return the largest item in an iterable (strict iterable-only version)",
-            "signatures": [(list,), (tuple,)],
+            "signatures": [(list,), (tuple,), (set,)],
         },
         "basic_min": {
             "func": min,
-            "types": [list, tuple],
+            "types": [list, tuple, set],
             "doc": "Return the smallest item in an iterable (strict iterable-only version)",
-            "signatures": [(list,), (tuple,)],
+            "signatures": [(list,), (tuple,), (set,)],
         },
         "abs": {
             "func": abs,
@@ -205,9 +208,9 @@ class PythonicFunctionFactory:
         # Collection functions
         "sorted": {
             "func": sorted,
-            "types": [list, tuple, LazyPromise],
+            "types": [list, tuple, set, LazyPromise],
             "doc": "Return a new sorted list from an iterable",
-            "signatures": [(list,), (tuple,), (LazyPromise,)],
+            "signatures": [(list,), (tuple,), (set,), (LazyPromise,)],
         },
         "reversed": {
             "func": reversed,
@@ -224,26 +227,27 @@ class PythonicFunctionFactory:
         # Logic functions
         "all": {
             "func": all,
-            "types": [list, tuple, LazyPromise],
+            "types": [list, tuple, set, LazyPromise],
             "doc": "Return True if all elements are true",
-            "signatures": [(list,), (tuple,), (LazyPromise,)],
+            "signatures": [(list,), (tuple,), (set,), (LazyPromise,)],
         },
         "any": {
             "func": any,
-            "types": [list, tuple, LazyPromise],
+            "types": [list, tuple, set, LazyPromise],
             "doc": "Return True if any element is true",
-            "signatures": [(list,), (tuple,), (LazyPromise,)],
+            "signatures": [(list,), (tuple,), (set,), (LazyPromise,)],
         },
         # Range function
         "range": {"func": range, "types": [int], "doc": "Return a range object", "signatures": [(int,), (int, int), (int, int, int)]},
         # List constructor
         "list": {
             "func": list,
-            "types": [list, tuple, str, range, type(reversed([])), type({}.keys()), LazyPromise],
+            "types": [list, tuple, set, str, range, type(reversed([])), type({}.keys()), LazyPromise],
             "doc": "Convert an iterable to a list",
             "signatures": [
                 (list,),
                 (tuple,),
+                (set,),
                 (str,),
                 (range,),
                 (type(reversed([])),),
