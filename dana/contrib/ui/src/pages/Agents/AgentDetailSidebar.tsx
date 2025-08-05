@@ -4,7 +4,6 @@ import { apiService } from '@/lib/api';
 import { useParams } from 'react-router-dom';
 import { useSmartChatStore } from '@/stores/smart-chat-store';
 import { useAgentStore } from '@/stores/agent-store';
-import { Plus } from 'lucide-react';
 import { ArrowUp, Attachment } from 'iconoir-react';
 import { MarkdownViewerSmall } from './chat/markdown-viewer';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
