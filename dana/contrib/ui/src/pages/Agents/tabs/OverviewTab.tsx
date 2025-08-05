@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAgentStore } from '@/stores/agent-store';
 import { getAgentAvatarSync } from '@/utils/avatar';
-import { Pencil, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash } from 'iconoir-react';
+import { Trash, Edit, Check, Xmark } from 'iconoir-react';
 import { DeleteAgentDialog } from '@/components/delete-agent-dialog';
 import DomainKnowledgeTree from './DomainKnowledgeTree';
 import AgentOverviewChart from './AgentOverviewChart';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { NavigateFunction } from 'react-router-dom';
 
 const OverviewTab: React.FC<{
@@ -111,7 +111,7 @@ const OverviewTab: React.FC<{
           <div className="flex items-center text-sm text-gray-700">
             <div className="text-gray-600 w-30">Agent name:</div>
             {isEditingName ? (
-              <div className="flex gap-2 items-center">
+              <div className="flex items-center gap-2">
                 <Input
                   value={editedName}
                   onChange={(e) => setEditedName(e.target.value)}
@@ -131,26 +131,38 @@ const OverviewTab: React.FC<{
                   variant="ghost"
                   onClick={handleSaveName}
                   disabled={isUpdating}
-                  className="p-1 w-8 h-8"
+                  className=""
                 >
-                  <Check className="w-4 h-4 text-green-600" />
+                  <Check className="w-4 h-4 text-green-600" strokeWidth={1.5} />
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={handleCancelEdit}
                   disabled={isUpdating}
-                  className="p-1 w-8 h-8"
+                  className=""
                 >
-                  <X className="w-4 h-4 text-red-600" />
+                  <Xmark className="w-4 h-4 text-red-600" strokeWidth={1.5} />
                 </Button>
               </div>
             ) : (
               <div className="flex gap-2 items-center">
                 <div className="text-lg font-semibold text-gray-900">{agent?.name ?? '-'}</div>
-                <Button size="sm" variant="ghost" onClick={handleEditName} className="p-1 w-6 h-6">
-                  <Pencil className="w-3 h-3 text-gray-500" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleEditName}
+                      className="p-1 w-8 h-8 border border-gray-200 rounded-full"
+                    >
+                      <Edit className="w-4 h-4 text-gray-500" strokeWidth={2} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Edit</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
             )}
           </div>

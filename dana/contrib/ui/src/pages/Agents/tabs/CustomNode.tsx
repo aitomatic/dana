@@ -97,12 +97,11 @@ const getStatusText = (status?: string) => {
   }
 };
 
-const FilePopup = ({
-  x,
-  y,
+export const FilePopup = ({
   knowledgeStatus,
   isLeafNode,
-  nodePath,
+  x,
+  y,
 }: {
   x: number;
   y: number;
@@ -125,13 +124,12 @@ const FilePopup = ({
       border: '1px solid #E0E0E0',
     }}
   >
-    <div className="px-3 py-2 text-sm font-semibold text-gray-700 border-b border-gray-200">
+    {/* <div className="px-3 py-2 text-sm font-semibold text-gray-700 border-b border-gray-200">
       {nodePath || 'Node Information'}
-    </div>
+    </div> */}
     {isLeafNode ? (
       <div className="flex flex-col gap-2 p-3">
-        <div className="flex gap-2 items-center text-sm">
-          <div className="font-medium">Status:</div>
+        <div className="flex gap-2 items-center text-xs">
           <div
             className="flex gap-2 items-center"
             style={{ color: getStatusColor(knowledgeStatus?.status) }}
@@ -142,7 +140,7 @@ const FilePopup = ({
         </div>
         {knowledgeStatus?.last_generated && (
           <div className="text-xs text-gray-500">
-            Generated: {new Date(knowledgeStatus.last_generated).toLocaleString()}
+            Last modified: {new Date(knowledgeStatus.last_generated).toLocaleString()}
           </div>
         )}
         {knowledgeStatus?.error && (
@@ -151,23 +149,19 @@ const FilePopup = ({
           </div>
         )}
         {knowledgeStatus?.status === 'success' && (
-          <div className="flex items-center gap-2 text-xs text-green-600 max-w-[200px] truncate">
+          <div className="flex items-center gap-2 text-xs text-gray-600 max-w-[200px] overflow-eclipse truncate">
             <FileIcon ext={'json'} />
             {knowledgeStatus.file}
           </div>
         )}
       </div>
-    ) : (
-      <div className="px-3 py-2 text-sm text-gray-600">
-        This is a parent node. Knowledge is generated for leaf nodes only.
-      </div>
-    )}
+    ) : null}
   </PortalPopup>
 );
 
 const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }) => {
   const nodeRef = useRef<HTMLDivElement>(null);
-  const [popupPos, setPopupPos] = useState<{ x: number; y: number } | null>(null);
+  const [, setPopupPos] = useState<{ x: number; y: number } | null>(null);
 
   const nodeData = data as NodeData;
   const knowledgeStatus = nodeData.knowledgeStatus;
@@ -225,11 +219,11 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
     // Add selection highlighting
     const selectionStyle = isSelected
       ? {
-          // boxShadow: '0 0 0 1px #3B82F6, 0 4px 12px rgba(59, 130, 246, 0.3)',
-          border: 'none',
-          transform: 'scale(1.02)',
-          zIndex: 10,
-        }
+        // boxShadow: '0 0 0 1px #3B82F6, 0 4px 12px rgba(59, 130, 246, 0.3)',
+        border: 'none',
+        transform: 'scale(1.02)',
+        zIndex: 10,
+      }
       : {};
 
     if (!isLeafNode) {
@@ -322,7 +316,7 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
         position={Position.Right}
         style={{ background: '#F6FAFF', border: '1px solid #E0E0E0' }}
       />
-      {isSelected && popupPos && (
+      {/* {isSelected && popupPos && (
         <FilePopup
           x={popupPos.x}
           y={popupPos.y}
@@ -330,7 +324,7 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
           isLeafNode={isLeafNode}
           nodePath={nodeData.nodePath}
         />
-      )}
+      )} */}
     </div>
   );
 };

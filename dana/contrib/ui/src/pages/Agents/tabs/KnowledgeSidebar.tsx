@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { X, FileText, Calendar, Info, AlertCircle } from 'lucide-react';
+import { X, FileText, Calendar, AlertCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useUIStore } from '@/stores/ui-store';
 
@@ -74,13 +74,10 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
               <h5 className="mb-2 text-xs font-medium tracking-wide text-gray-600 uppercase">
                 Research Questions
               </h5>
-              <ul className="mb-4 space-y-2">
+              <ul className="mb-4 space-y-2 ml-8">
                 {questions.map((question, qIndex) => (
-                  <li
-                    key={qIndex}
-                    className="p-2 text-sm text-gray-600 bg-gray-50 rounded-md border-l-4 border-blue-200"
-                  >
-                    <Info size={12} className="inline mr-2 text-blue-500" />
+                  <li key={qIndex} className="text-sm text-gray-700 rounded-md list-disc">
+                    {/* <Info size={12} className="inline mr-2 text-blue-500" /> */}
                     {question}
                   </li>
                 ))}
@@ -94,7 +91,7 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
               <h5 className="mb-2 text-xs font-medium tracking-wide text-gray-600 uppercase">
                 Generated Knowledge
               </h5>
-              <div className="py-2 pl-4 bg-white border-l-4 border-green-200">
+              <div className="py-2 pl-4 bg-white">
                 <div className="max-w-none leading-relaxed text-gray-700 prose prose-sm">
                   {Array.isArray(answer) ? (
                     <ul className="pl-5 list-disc">
@@ -181,7 +178,7 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
             <h3 className="text-lg font-semibold text-gray-900 truncate">
               {formatTopicName(topicPath)}
             </h3>
-            <p className="text-sm text-gray-600 truncate">{topicPath}</p>
+            {/* <p className="text-sm text-gray-600 truncate">{topicPath}</p> */}
           </div>
           <button
             onClick={onClose}
@@ -216,14 +213,14 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
           {!loading && !error && content && (
             <div className="space-y-6">
               {/* Description */}
-              {content.knowledge_area_description && (
+              {/* {content.knowledge_area_description && (
                 <div>
                   <h4 className="mb-2 text-sm font-semibold text-gray-700">Description</h4>
                   <p className="text-sm leading-relaxed text-gray-600">
                     {content.knowledge_area_description}
                   </p>
                 </div>
-              )}
+              )} */}
 
               {/* User Instructions */}
               {renderUserInstructions()}
