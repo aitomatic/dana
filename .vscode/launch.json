@@ -30,6 +30,17 @@
       "env" : {
         "DANAPATH" : "${workspaceFolder}"
       }
+    },
+    {
+      "name" : "Debug Dana Backend",
+      "type": "python",
+      "request": "launch",
+      "module": "dana.core.cli.dana",
+      "args": ["start"],
+      "console": "integratedTerminal",
+      "env" : {
+        "DANAPATH" : "${workspaceFolder}"
+      }
     }
   ]
 }

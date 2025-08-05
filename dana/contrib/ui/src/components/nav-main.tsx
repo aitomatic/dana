@@ -43,7 +43,7 @@ export function NavMain({
                     <SidebarMenuButton
                       tooltip={item.title}
                       isActive={item.isActive}
-                      className="h-12 [&[data-active=true]]:!bg-brand-50 [&[data-active=true]]:!text-brand-600 hover:!bg-gray-100 hover:!text-gray-600 text-gray-600"
+                      className="h-12 [&[data-active=true]]:!bg-gray-100 [&[data-active=true]]:!text-gray-700 hover:!bg-gray-100 hover:!text-gray-600 text-gray-600"
                     >
                       {item.icon && <item.icon className="!size-5" />}
                       <span className="text-sm font-medium">{item.title}</span>
@@ -79,7 +79,7 @@ export function NavMain({
                   asChild
                   tooltip={item.title}
                   isActive={item.isActive}
-                  className="h-12 [&[data-active=true]]:!bg-brand-50 [&[data-active=true]]:!text-brand-600 hover:!bg-gray-100 hover:!text-gray-600 text-gray-600 [&>span:last-child]:truncate"
+                  className="h-12 [&[data-active=true]]:!bg-gray-100 [&[data-active=true]]:!text-gray-700 hover:!bg-gray-100 hover:!text-gray-600 text-gray-600 [&>span:last-child]:truncate"
                 >
                   <a
                     href="#"

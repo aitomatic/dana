@@ -5,12 +5,12 @@ import socket
 import subprocess
 import sys
 import time
-from contextlib import asynccontextmanager
 from typing import Any, cast
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi import WebSocket, WebSocketDisconnect
 
 from dana.api.client import APIClient
 from dana.common.config import ConfigLoader
@@ -19,18 +19,52 @@ from dana.common.mixins.loggable import Loggable
 from ..core.database import Base, engine
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Handle application startup and shutdown events"""
-    # Startup
-    Base.metadata.create_all(bind=engine)
-    yield
-    # Shutdown (if needed)
+# --- WebSocket manager for knowledge status updates ---
+class KnowledgeStatusWebSocketManager:
+    def __init__(self):
+        self.clients = set()
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.clients.add(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        self.clients.discard(websocket)
+
+    async def broadcast(self, msg):
+        to_remove = set()
+        for ws in self.clients:
+            try:
+                await ws.send_json(msg)
+            except Exception:
+                to_remove.add(ws)
+        for ws in to_remove:
+            self.clients.discard(ws)
+
+
+ws_manager = KnowledgeStatusWebSocketManager()
+
+# WebSocket endpoint
+from fastapi import APIRouter
+
+ws_router = APIRouter()
+
+
+@ws_router.websocket("/ws/knowledge-status")
+async def knowledge_status_ws(websocket: WebSocket):
+    await ws_manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()  # Keep alive
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket)
+    except Exception:
+        ws_manager.disconnect(websocket)
 
 
 def create_app():
     """Create FastAPI app with routers and static file serving"""
-    app = FastAPI(title="Dana API Server", version="1.0.0", lifespan=lifespan)
+    app = FastAPI(title="Dana API Server", version="1.0.0")
 
     # Add CORS middleware
     app.add_middleware(
@@ -49,11 +83,13 @@ def create_app():
     from ..routers.documents import router as new_documents_router
     from ..routers.topics import router as new_topics_router
     from ..routers.poet import router as poet_router
+    from ..routers.domain_knowledge import router as domain_knowledge_router
+    from ..routers.smart_chat import router as smart_chat_router
 
     # Legacy routers (for endpoints not yet migrated)
-    from .routers.api import router as api_router
-    from .routers.main import router as main_router
-    from .routers.agent_test import router as agent_test_router
+    from ..routers.api import router as api_router
+    from ..routers.main import router as main_router
+    from ..routers.agent_test import router as agent_test_router
 
     app.include_router(main_router)
 
@@ -64,6 +100,9 @@ def create_app():
     app.include_router(new_documents_router, prefix="/api")
     app.include_router(new_topics_router, prefix="/api")
     app.include_router(poet_router, prefix="/api")
+    app.include_router(domain_knowledge_router, prefix="/api")
+    app.include_router(smart_chat_router, prefix="/api")
+    app.include_router(ws_router)
 
     # Keep legacy api router for endpoints not yet migrated:
     # - /run-na-file - Run Dana files
@@ -80,6 +119,17 @@ def create_app():
     static_dir = os.path.join(os.path.dirname(__file__), "static")
     if os.path.exists(static_dir):
         app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+    # Create tables and run migrations on startup
+    @app.on_event("startup")
+    def on_startup():
+        from ..core.migrations import run_migrations
+
+        # Create base tables first
+        Base.metadata.create_all(bind=engine)
+
+        # Run any pending migrations
+        run_migrations()
 
     # Catch-all route for SPA (serves index.html for all non-API, non-static routes)
     @app.get("/{full_path:path}")
