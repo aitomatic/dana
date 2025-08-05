@@ -1,0 +1,310 @@
+{
+  "topics": [
+    {
+      "id": "083911a6-e028-4fcb-a6e9-a8e1dca68842",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Technical Analysis",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Technical_Analysis.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:25:05.557009Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "199e45e3-b5e8-4edb-ac74-9c14e035d1d8",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Fundamental Analysis",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Fundamental_Analysis.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:26:08.288850Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "d60324a2-47f2-4dc2-bfcd-15e025d78153",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Market Sentiment Analysis",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Market_Sentiment_Analysis.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:26:09.685983Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "24ae256d-d333-4df2-9177-217708bf03ec",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Risk Management Strategies",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Risk_Management_Strategies.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:26:42.001133Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "55d35d94-6ae1-4a16-b9a5-9a2cf39e59b5",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Investment Diversification Techniques",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Investment_Diversification_Techniques.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:27:42.282950Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "595d7cbb-1509-42a1-8558-dcc9df371da5",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Behavioral Finance Insights",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Behavioral_Finance_Insights.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:28:28.823058Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "e9a6d21f-3fbf-4d17-820a-a6b66be74145",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Sentiment Analysis - Market Sentiment Indicators",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Sentiment_Analysis___Market_Sentiment_Indicators.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:29:31.430960Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "d8938d26-1007-42ec-bfdf-a2896361a67a",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Sentiment Analysis - Social Media Sentiment Tracking",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Sentiment_Analysis___Social_Media_Sentiment_Tracking.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:29:20.548030Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "3fa74bd1-ac26-4e51-9b62-88cbe35c4777",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Sentiment Analysis - Sentiment Analysis Techniques",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Sentiment_Analysis___Sentiment_Analysis_Techniques.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:28:31.637591Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "bc7e5bd7-8ea6-4c44-ac72-d39e3d789774",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Sentiment Analysis - Natural Language Processing in Sentiment Analysis",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Sentiment_Analysis___Natural_Language_Processing_in_Sentiment_Analysis.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:31:23.490883Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "12ed53df-01e6-4463-b5c1-c6b1c15895f0",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Sentiment Analysis - Sentiment Analysis Tools and Software",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Sentiment_Analysis___Sentiment_Analysis_Tools_and_Software.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:29:55.662171Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "2fd9d990-352e-4ff7-a4a4-4908ef6b6c7b",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Sentiment Analysis - Impact of Sentiment on Market Movements",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Sentiment_Analysis___Impact_of_Sentiment_on_Market_Movements.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:31:44.466962Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "ff2f6ebb-ca02-4ab0-8143-e72010e21167",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Sentiment Analysis - Case Studies in Sentiment Analysis",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Sentiment_Analysis___Case_Studies_in_Sentiment_Analysis.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:33:17.711471Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "59abb66e-ecb5-40e9-8f2c-27910a97bdbc",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Financial Analyst - Financial Modeling Techniques",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Financial_Analyst___Financial_Modeling_Techniques.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:34:02.861922Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "e1748901-5a58-49b7-809b-3e7dc6f28663",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Financial Analyst - Valuation Methods",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Financial_Analyst___Valuation_Methods.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:34:19.353048Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "24212126-0136-4a3a-96fd-2f05420ee79a",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Financial Analyst - Investment Research and Reporting",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Financial_Analyst___Investment_Research_and_Reporting.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:35:30.417147Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "a6beb28d-97bc-4272-9c48-5b9dfef8c72b",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Financial Analyst - Portfolio Management Strategies",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Financial_Analyst___Portfolio_Management_Strategies.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:35:29.141064Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "e83a6058-f9fc-43f8-85be-45dc9b459295",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Financial Analyst - Financial Forecasting",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Financial_Analyst___Financial_Forecasting.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:37:44.133361Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "9bd20c7c-9717-463f-bb17-1095752696f8",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Financial Analyst - Market Analysis Tools",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Financial_Analyst___Market_Analysis_Tools.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:38:05.125812Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "d1115f80-a035-405d-81c6-037077dcbe93",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Financial Analyst - Regulatory Compliance in Financial Analysis",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Financial_Analyst___Regulatory_Compliance_in_Financial_Analysis.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:38:54.415028Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "877c5976-de99-448f-a1bc-4fa1ded524ef",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Technical analysis, sentiment analysis, fundamental analysis, Risk management, portfolio management - Chart Patterns and Technical Indicators",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Technical_analysis,_sentiment_analysis,_fundamental_analysis,_Risk_management,_portfolio_management___Chart_Patterns_and_Technical_Indicators.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:39:11.148748Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "b6ebde99-b345-4a69-89fa-89dcc4b3bf88",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Technical analysis, sentiment analysis, fundamental analysis, Risk management, portfolio management - Valuation Metrics and Ratios",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Technical_analysis,_sentiment_analysis,_fundamental_analysis,_Risk_management,_portfolio_management___Valuation_Metrics_and_Ratios.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:42:04.148915Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "bb1ed661-c792-4d3a-96c4-6631561ffd55",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Technical analysis, sentiment analysis, fundamental analysis, Risk management, portfolio management - Risk Assessment Techniques",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Technical_analysis,_sentiment_analysis,_fundamental_analysis,_Risk_management,_portfolio_management___Risk_Assessment_Techniques.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:41:02.929068Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "7350e361-679d-44b3-8e97-6fa91af3a40e",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Technical analysis, sentiment analysis, fundamental analysis, Risk management, portfolio management - Asset Allocation Strategies",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Technical_analysis,_sentiment_analysis,_fundamental_analysis,_Risk_management,_portfolio_management___Asset_Allocation_Strategies.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:44:32.057236Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "ef0ae2a9-368e-4983-bb36-77c6fd295581",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Technical analysis, sentiment analysis, fundamental analysis, Risk management, portfolio management - Market Psychology and Behavioral Biases",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Technical_analysis,_sentiment_analysis,_fundamental_analysis,_Risk_management,_portfolio_management___Market_Psychology_and_Behavioral_Biases.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:42:55.674955Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "f98efa14-a13d-4f4e-b1f3-6df3a6babd19",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Technical analysis, sentiment analysis, fundamental analysis, Risk management, portfolio management - Performance Measurement and Attribution",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Technical_analysis,_sentiment_analysis,_fundamental_analysis,_Risk_management,_portfolio_management___Performance_Measurement_and_Attribution.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:43:10.402217Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "d0fed263-36cd-4529-8f2b-12c98c38f331",
+      "path": "Investment and Market Analysis - strategies, stock analysis, understanding market trends - Technical analysis, sentiment analysis, fundamental analysis, Risk management, portfolio management - Investment Strategy Formulation",
+      "file": "Investment_and_Market_Analysis___strategies,_stock_analysis,_understanding_market_trends___Technical_analysis,_sentiment_analysis,_fundamental_analysis,_Risk_management,_portfolio_management___Investment_Strategy_Formulation.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:46:15.480518Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "a1fc82b4-bc07-427e-8975-8e78f9f9ddae",
+      "path": "Investment and Market Analysis - Financial Analysis - Financial Statement Analysis",
+      "file": "Investment_and_Market_Analysis___Financial_Analysis___Financial_Statement_Analysis.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:45:18.473807Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "722a937d-50de-41b3-8948-7b2ddf547a04",
+      "path": "Investment and Market Analysis - Financial Analysis - Cash Flow Analysis",
+      "file": "Investment_and_Market_Analysis___Financial_Analysis___Cash_Flow_Analysis.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:44:09.814552Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "0b8ffadc-9b22-44a4-89ee-b6bd813bc3aa",
+      "path": "Investment and Market Analysis - Financial Analysis - Ratio Analysis",
+      "file": "Investment_and_Market_Analysis___Financial_Analysis___Ratio_Analysis.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:46:05.860966Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "13c386fa-2c03-403b-888a-f576969cf2e5",
+      "path": "Investment and Market Analysis - Financial Analysis - Cost-Benefit Analysis",
+      "file": "Investment_and_Market_Analysis___Financial_Analysis___Cost_Benefit_Analysis.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:48:39.661737Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "f5bbb034-c721-42bf-8aaf-b82c32f35096",
+      "path": "Investment and Market Analysis - Financial Analysis - Break-Even Analysis",
+      "file": "Investment_and_Market_Analysis___Financial_Analysis___Break_Even_Analysis.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:47:39.790102Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "857df663-c756-46bb-ac58-2e0a720ff278",
+      "path": "Investment and Market Analysis - Financial Analysis - Trend Analysis",
+      "file": "Investment_and_Market_Analysis___Financial_Analysis___Trend_Analysis.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:49:45.059882Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    },
+    {
+      "id": "4c43bf28-ca15-442d-869d-571e8e2d8840",
+      "path": "Investment and Market Analysis - Financial Analysis - Scenario and Sensitivity Analysis",
+      "file": "Investment_and_Market_Analysis___Financial_Analysis___Scenario_and_Sensitivity_Analysis.json",
+      "status": "success",
+      "last_generated": "2025-07-24T02:49:34.909279Z",
+      "last_topic_update": "2025-07-24T04:39:46.844704+00:00Z",
+      "error": null
+    }
+  ]
+}

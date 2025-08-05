@@ -18,14 +18,14 @@ const data = {
   },
   teams: [
     {
-      name: 'DXA DANA',
-      logo: () => <img src={logo} alt="DXA DANA" className="size-8 rounded-md" />,
-      plan: 'Domain-Expert Agents',
+      name: 'Aitomatic',
+      logo: () => <img src={logo} alt="Aitomatic" className="rounded-md size-8" />,
+      plan: 'Dana Expert Agents',
     },
   ],
   navMain: [
     {
-      title: 'Domain-Expert Agents',
+      title: 'Dana Expert Agents',
       url: '/agents',
       icon: Box3dCenter,
     },

@@ -22,16 +22,21 @@ async def upload_document(
     file: UploadFile = File(...),
     topic_id: int | None = None,
     agent_id: int | None = None,
+    build_index: bool = True,
     db: Session = Depends(get_db),
     document_service: DocumentService = Depends(get_document_service),
 ):
-    """Upload a document."""
+    """Upload a document and optionally build RAG index."""
     try:
-        logger.info(f"Received document upload: {file.filename}")
+        logger.info(f"Received document upload: {file.filename} (build_index={build_index})")
 
         document = await document_service.upload_document(
-            file=file.file, filename=file.filename, topic_id=topic_id, agent_id=agent_id, db_session=db
+            file=file.file, filename=file.filename, topic_id=topic_id, agent_id=agent_id, db_session=db, build_index=build_index
         )
+
+        if build_index and agent_id:
+            logger.info(f"RAG index building started for agent {agent_id}")
+
         return document
 
     except Exception as e:
@@ -153,4 +158,22 @@ async def delete_document(document_id: int, db: Session = Depends(get_db), docum
         raise
     except Exception as e:
         logger.error(f"Error in delete document endpoint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/agent/{agent_id}/rebuild-index")
+async def rebuild_agent_index(agent_id: int, db: Session = Depends(get_db), document_service=Depends(get_document_service)):
+    """Rebuild RAG index for all documents belonging to an agent."""
+    try:
+        logger.info(f"Rebuilding RAG index for agent {agent_id}")
+
+        # Trigger index rebuild for agent
+        import asyncio
+
+        asyncio.create_task(document_service._build_index_for_agent(agent_id, "", db))
+
+        return {"message": f"RAG index rebuild started for agent {agent_id}", "status": "in_progress"}
+
+    except Exception as e:
+        logger.error(f"Error rebuilding index for agent {agent_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))

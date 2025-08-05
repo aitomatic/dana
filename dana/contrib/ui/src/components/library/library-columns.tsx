@@ -22,9 +22,9 @@ export const getCommonColumns = (): ColumnDef<LibraryItem>[] => [
     cell: ({ row }) => {
       const item = row.original;
       return (
-        <div className="flex space-x-3">
+        <div className="grid grid-cols-[max-content_1fr] gap-2">
           <FileIcon ext={item.type === 'file' ? (item as FileItem).extension : undefined} />
-          <div className="flex flex-col">
+          <div className="flex flex-col truncate">
             <span className="font-medium text-gray-900">{item.name}</span>
           </div>
         </div>
@@ -79,96 +79,96 @@ export const getSelectionColumns = (
   filteredItems: LibraryItem[],
   allLibraryItems?: LibraryItem[], // Add access to all library items for topic selection
 ): ColumnDef<LibraryItem>[] => [
-  {
-    id: 'select',
-    header: () => (
-      <Checkbox
-        checked={
-          filteredItems.length > 0
-            ? filteredItems.every((item: LibraryItem) => selectedIds.includes(item.id))
-              ? true
-              : filteredItems.some((item: LibraryItem) => selectedIds.includes(item.id))
-                ? 'indeterminate'
-                : false
-            : false
-        }
-        onCheckedChange={(checked) => {
-          if (checked) {
-            // For header checkbox, select all visible items
-            const visibleItemIds = filteredItems.map((item: LibraryItem) => item.id);
-            onSelectionChange(Array.from(new Set([...selectedIds, ...visibleItemIds])));
-          } else {
-            // For header checkbox, deselect all visible items
-            const visibleItemIds = filteredItems.map((item: LibraryItem) => item.id);
-            onSelectionChange(selectedIds.filter((id) => !visibleItemIds.includes(id)));
+    {
+      id: 'select',
+      header: () => (
+        <Checkbox
+          checked={
+            filteredItems.length > 0
+              ? filteredItems.every((item: LibraryItem) => selectedIds.includes(item.id))
+                ? true
+                : filteredItems.some((item: LibraryItem) => selectedIds.includes(item.id))
+                  ? 'indeterminate'
+                  : false
+              : false
           }
-        }}
-      />
-    ),
-    cell: ({ row }) => {
-      const item = row.original;
+          onCheckedChange={(checked) => {
+            if (checked) {
+              // For header checkbox, select all visible items
+              const visibleItemIds = filteredItems.map((item: LibraryItem) => item.id);
+              onSelectionChange(Array.from(new Set([...selectedIds, ...visibleItemIds])));
+            } else {
+              // For header checkbox, deselect all visible items
+              const visibleItemIds = filteredItems.map((item: LibraryItem) => item.id);
+              onSelectionChange(selectedIds.filter((id) => !visibleItemIds.includes(id)));
+            }
+          }}
+        />
+      ),
+      cell: ({ row }) => {
+        const item = row.original;
 
-      // For topics (folders), we need to handle selection of all files within the topic
-      if (item.type === 'folder' && allLibraryItems) {
-        const topicId = item.topicId;
-        if (topicId) {
-          // Find all documents that belong to this topic
-          const topicDocuments = allLibraryItems.filter(
-            (libraryItem) => libraryItem.type === 'file' && libraryItem.topicId === topicId,
-          );
-          const topicDocumentIds = topicDocuments.map((doc) => doc.id);
+        // For topics (folders), we need to handle selection of all files within the topic
+        if (item.type === 'folder' && allLibraryItems) {
+          const topicId = item.topicId;
+          if (topicId) {
+            // Find all documents that belong to this topic
+            const topicDocuments = allLibraryItems.filter(
+              (libraryItem) => libraryItem.type === 'file' && libraryItem.topicId === topicId,
+            );
+            const topicDocumentIds = topicDocuments.map((doc) => doc.id);
 
-          // Check if all files in this topic are selected
-          const allTopicFilesSelected =
-            topicDocumentIds.length > 0 && topicDocumentIds.every((id) => selectedIds.includes(id));
+            // Check if all files in this topic are selected
+            const allTopicFilesSelected =
+              topicDocumentIds.length > 0 && topicDocumentIds.every((id) => selectedIds.includes(id));
 
-          // Check if some files in this topic are selected
-          const someTopicFilesSelected = topicDocumentIds.some((id) => selectedIds.includes(id));
+            // Check if some files in this topic are selected
+            const someTopicFilesSelected = topicDocumentIds.some((id) => selectedIds.includes(id));
 
-          return (
-            <div onClick={(e) => e.stopPropagation()}>
-              <Checkbox
-                checked={
-                  allTopicFilesSelected ? true : someTopicFilesSelected ? 'indeterminate' : false
-                }
-                onCheckedChange={(checked) => {
-                  if (checked) {
-                    // Select all files in this topic
-                    const newSelectedIds = Array.from(
-                      new Set([...selectedIds, ...topicDocumentIds]),
-                    );
-                    onSelectionChange(newSelectedIds);
-                  } else {
-                    // Deselect all files in this topic
-                    const newSelectedIds = selectedIds.filter(
-                      (id) => !topicDocumentIds.includes(id),
-                    );
-                    onSelectionChange(newSelectedIds);
+            return (
+              <div onClick={(e) => e.stopPropagation()}>
+                <Checkbox
+                  checked={
+                    allTopicFilesSelected ? true : someTopicFilesSelected ? 'indeterminate' : false
                   }
-                }}
-              />
-            </div>
-          );
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      // Select all files in this topic
+                      const newSelectedIds = Array.from(
+                        new Set([...selectedIds, ...topicDocumentIds]),
+                      );
+                      onSelectionChange(newSelectedIds);
+                    } else {
+                      // Deselect all files in this topic
+                      const newSelectedIds = selectedIds.filter(
+                        (id) => !topicDocumentIds.includes(id),
+                      );
+                      onSelectionChange(newSelectedIds);
+                    }
+                  }}
+                />
+              </div>
+            );
+          }
         }
-      }
 
-      // For files, use the standard selection behavior
-      return (
-        <div onClick={(e) => e.stopPropagation()}>
-          <Checkbox
-            checked={selectedIds.includes(item.id)}
-            onCheckedChange={(checked) => {
-              onSelectionChange(
-                checked ? [...selectedIds, item.id] : selectedIds.filter((id) => id !== item.id),
-              );
-            }}
-          />
-        </div>
-      );
+        // For files, use the standard selection behavior
+        return (
+          <div onClick={(e) => e.stopPropagation()}>
+            <Checkbox
+              checked={selectedIds.includes(item.id)}
+              onCheckedChange={(checked) => {
+                onSelectionChange(
+                  checked ? [...selectedIds, item.id] : selectedIds.filter((id) => id !== item.id),
+                );
+              }}
+            />
+          </div>
+        );
+      },
     },
-  },
-  ...getCommonColumns(),
-];
+    ...getCommonColumns(),
+  ];
 
 // Library mode columns (with actions dropdown)
 export const getLibraryColumns = (
@@ -177,67 +177,67 @@ export const getLibraryColumns = (
   onDeleteItem: (item: LibraryItem) => void,
   onDownloadItem?: (item: LibraryItem) => void,
 ): ColumnDef<LibraryItem>[] => [
-  ...getCommonColumns(),
-  {
-    id: 'actions',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Actions" />,
-    cell: ({ row }) => {
-      const item = row.original;
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="p-0 w-8 h-8">
-              <IconDotsVertical className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewItem(item);
-              }}
-            >
-              <IconEye className="mr-2 w-4 h-4" />
-              View
-            </DropdownMenuItem>
-            {item.type === 'file' && onDownloadItem && (
+    ...getCommonColumns(),
+    {
+      id: 'actions',
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Actions" />,
+      cell: ({ row }) => {
+        const item = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="p-0 w-8 h-8">
+                <IconDotsVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
               <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation();
-                  onDownloadItem(item);
+                  onViewItem(item);
                 }}
               >
-                <IconDownload className="mr-2 w-4 h-4" />
-                Download
+                <IconEye className="mr-2 w-4 h-4" />
+                View
               </DropdownMenuItem>
-            )}
-            <DropdownMenuItem
-              disabled={
-                item.type === 'file' && (item as FileItem).extension.toLowerCase() === 'pdf'
-              }
-              onClick={(e) => {
-                e.stopPropagation();
-                if (item.type === 'file' && (item as FileItem).extension.toLowerCase() === 'pdf')
-                  return;
-                onEditItem(item);
-              }}
-            >
-              <IconEdit className="mr-2 w-4 h-4" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="text-red-600"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDeleteItem(item);
-              }}
-            >
-              <IconTrash className="mr-2 w-4 h-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
+              {item.type === 'file' && onDownloadItem && (
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDownloadItem(item);
+                  }}
+                >
+                  <IconDownload className="mr-2 w-4 h-4" />
+                  Download
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem
+                disabled={
+                  item.type === 'file' && (item as FileItem).extension.toLowerCase() === 'pdf'
+                }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (item.type === 'file' && (item as FileItem).extension.toLowerCase() === 'pdf')
+                    return;
+                  onEditItem(item);
+                }}
+              >
+                <IconEdit className="mr-2 w-4 h-4" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-red-600"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteItem(item);
+                }}
+              >
+                <IconTrash className="mr-2 w-4 h-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
     },
-  },
-];
+  ];
