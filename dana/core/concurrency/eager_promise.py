@@ -110,13 +110,19 @@ class EagerPromise(BasePromise):
         raise RuntimeError("EagerPromise failed to resolve.")
 
     @classmethod
-    def create(cls, computation: Union[Callable[[], Any], Coroutine], executor: ThreadPoolExecutor) -> "EagerPromise":
+    def create(cls, computation: Union[Callable[[], Any], Coroutine], executor: ThreadPoolExecutor | None = None) -> "EagerPromise":
         """Factory method to create EagerPromise.
 
         Args:
             computation: Function or coroutine to execute
-            executor: ThreadPoolExecutor for background execution
+            executor: ThreadPoolExecutor for background execution. If None, uses Dana's shared thread pool.
         """
+        if executor is None:
+            # Use Dana's shared thread pool
+            from dana.core.runtime.dana_thread_pool import DanaThreadPool
+
+            executor = DanaThreadPool.get_instance().get_executor()
+
         return cls(computation, executor)
 
 

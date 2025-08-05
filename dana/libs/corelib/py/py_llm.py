@@ -14,7 +14,7 @@ from dana.common.exceptions import SandboxError
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.logging import DANA_LOGGER
-from dana.core.concurrency.eager_promise import EagerPromise
+from dana.core.concurrency.promise_factory import PromiseFactory
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -90,7 +90,7 @@ def py_llm(
         """Async function that performs the actual LLM call."""
         try:
             # Log what's happening
-            logger.debug(f"Starting async LLM call with prompt: {prompt[:500]}{'...' if len(prompt) > 500 else ''}")
+            logger.debug(f"Starting LLM call with prompt: {prompt[:500]}{'...' if len(prompt) > 500 else ''}")
 
             # Prepare system message
             system_message = options.get("system_message", "You are a helpful AI assistant. Respond concisely and accurately.")
@@ -158,19 +158,15 @@ def py_llm(
             return result
 
         except Exception as e:
-            logger.error(f"Error during async LLM call: {str(e)}")
-            raise SandboxError(f"Error during async LLM call: {str(e)}") from e
+            logger.error(f"Error during LLM call: {str(e)}")
+            raise SandboxError(f"Error during LLM call: {str(e)}") from e
 
     # Create and return an EagerPromise that wraps the async function
     # EagerPromise starts execution immediately in background
-    logger.debug("Creating EagerPromise for async LLM call")
+    logger.debug("Creating EagerPromise for LLM call")
     logger.debug(f"_async_llm_call type: {type(_async_llm_call)}")
     logger.debug(f"context type: {type(context)}")
     logger.debug(f"context class: {context.__class__.__name__}")
 
-    # Get the shared ThreadPoolExecutor from Dana
-    from dana.core.runtime import DanaThreadPool
-
-    _executor = DanaThreadPool.get_instance().get_executor()
-    # return LazyPromise(_async_llm_call)
-    return EagerPromise(_async_llm_call, _executor)
+    # PromiseFactory.create_promise() handles DanaThreadPool internally
+    return PromiseFactory.create_promise(_async_llm_call)

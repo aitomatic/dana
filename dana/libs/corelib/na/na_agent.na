@@ -1,5 +1,5 @@
 agent BasicAgent:
-    name: str
-    description: str
-    domain: str
-    tasks: list[str]
+    name: str = "BasicAgent"
+    description: str = "A basic agent that can perform tasks"
+    domain: str = "general"
+    tasks: list[str] = ["task1", "task2", "task3"]

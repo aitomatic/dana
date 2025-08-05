@@ -8,10 +8,11 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-import pytest
 import sys
 
-from dana.integrations.python.to_dana import enable_dana_imports, disable_dana_imports
+import pytest
+
+from dana.integrations.python.to_dana import disable_dana_imports, enable_dana_imports
 
 
 class TestDirectoryPackagesPythonIntegration:
@@ -59,7 +60,7 @@ MATH_CONSTANT = 42
 
         try:
             # Import the Dana module from Python
-            from test_python_pkg.math_utils import add_numbers, multiply_numbers, MATH_CONSTANT
+            from test_python_pkg.math_utils import MATH_CONSTANT, add_numbers, multiply_numbers
 
             # Test function calls
             assert add_numbers(5, 3) == 8

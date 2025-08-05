@@ -72,13 +72,14 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
+import inspect
 import threading
-from typing import Any, Union
 from collections.abc import Callable, Coroutine
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Union
 
-from dana.core.lang.ast import ASTNode, LiteralExpression, Identifier, BinaryExpression, FunctionCall, UnaryExpression
 from dana.core.concurrency.eager_promise import EagerPromise
+from dana.core.lang.ast import ASTNode, BinaryExpression, FunctionCall, Identifier, LiteralExpression, UnaryExpression
 
 
 class PromiseExecutionContext:
@@ -207,7 +208,7 @@ class PromiseFactory:
     @staticmethod
     def create_return_promise(
         computation: Union[Callable[[], Any], Coroutine],
-        executor: ThreadPoolExecutor,
+        executor: ThreadPoolExecutor | None = None,
         ast_node: ASTNode | None = None,
         context_info: dict | None = None,
     ) -> Any:
@@ -283,3 +284,38 @@ class PromiseFactory:
             return False
 
         return True
+
+    @staticmethod
+    def create_promise(
+        computation: Union[Callable[[], Any], Coroutine],
+        ast_node: ASTNode | None = None,
+        context_info: dict | None = None,
+    ) -> Any:
+        """
+        Create a Promise using Dana's shared thread pool.
+
+        This is a convenience method that automatically uses Dana's shared
+        thread pool, making it easier for client code to create promises
+        without needing to manage thread pools.
+
+        Automatically wraps regular Callable functions into coroutines for
+        consistent async execution.
+
+        Args:
+            computation: Function or coroutine to execute
+            ast_node: Optional AST node for complexity analysis
+            context_info: Optional context metadata
+
+        Returns:
+            Either the direct result (synchronous) or EagerPromise (concurrent)
+        """
+        # Automatically wrap regular functions into coroutines
+        if not inspect.iscoroutinefunction(computation) and not inspect.iscoroutine(computation):
+            # Wrap regular function into coroutine function
+            async def wrapped_computation():
+                return computation()
+
+            return PromiseFactory.create_return_promise(wrapped_computation, None, ast_node, context_info)
+
+        # For coroutines, create EagerPromise directly
+        return EagerPromise.create(computation, None)
