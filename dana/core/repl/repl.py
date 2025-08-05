@@ -130,6 +130,23 @@ class REPL(Loggable):
             self.error(f"Could not set NLP mode: {e}")
             raise DanaError(f"Failed to set NLP mode: {e}")
 
+    def get_promise_display_mode(self) -> bool:
+        """Get the current promise display mode.
+
+        Returns:
+            True if promise display mode is enabled, False otherwise
+        """
+        return getattr(self, "_promise_display_mode", False)
+
+    def set_promise_display_mode(self, enabled: bool) -> None:
+        """Set promise display mode on or off.
+
+        Args:
+            enabled: True to enable promise display mode, False to disable
+        """
+        self._promise_display_mode = enabled
+        self.debug(f"Promise display mode {'enabled' if enabled else 'disabled'}")
+
     def _format_error_message(self, error_msg: str, user_input: str = "") -> str:
         """Format an error message to be more user-friendly for AI engineers.
 

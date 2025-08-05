@@ -203,7 +203,10 @@ class DanaREPLApp(Loggable):
                 self.input_processor.state.add_to_history(line)
                 # Store input context in sandbox context for IPV access
                 self._store_input_context()
-                await self._execute_program_blocking(line)
+                if True:
+                    self._start_background_execution(line)
+                else:
+                    await self._execute_program_blocking(line)
                 last_executed_program = line
 
             except KeyboardInterrupt:
@@ -316,6 +319,55 @@ class DanaREPLApp(Loggable):
         """Request cancellation of the current execution."""
         self._cancellation_requested = True
         self.debug("Cancellation requested by user")
+
+    def _start_background_execution(self, program: str) -> None:
+        """Start program execution in background and return immediately."""
+        # Create background task
+        task = asyncio.create_task(self._execute_program_background(program))
+
+        # Add to background tasks set
+        self._background_tasks.add(task)
+
+        # Add callback to remove task when done
+        task.add_done_callback(self._background_tasks.discard)
+
+    async def _execute_program_background(self, program: str) -> None:
+        """Execute a Dana program in the background with safe output handling."""
+        try:
+            # Execute without patch_stdout first
+            await self._execute_program(program)
+        except Exception as e:
+            # Handle errors in background execution
+            self.debug(f"Background execution error: {e}")
+            # For errors, always use patch_stdout to be safe
+            from prompt_toolkit.patch_stdout import patch_stdout
+
+            with patch_stdout():
+                self.output_formatter.format_error(e)
+
+    async def _execute_program(self, program: str) -> None:
+        """Execute a Dana program and handle the result or errors."""
+        try:
+            self.debug(f"Executing program: {program}")
+
+            # Use run_in_executor to prevent blocking the main event loop
+            loop = asyncio.get_running_loop()
+
+            # Execute Dana program in thread pool to avoid blocking
+            result = await loop.run_in_executor(None, self.repl.execute, program)
+
+            # Capture and display any print output from the interpreter
+            print_output = self.repl.interpreter.get_and_clear_output()
+            if print_output:
+                print(print_output)
+
+            # Display the result if it's not None
+            if result is not None:
+                await self.output_formatter.format_result_async(result)
+
+        except Exception as e:
+            self.debug(f"Execution error: {e}")
+            raise  # Let the background wrapper handle it
 
     def _handle_exit_commands(self, line: str) -> bool:
         """

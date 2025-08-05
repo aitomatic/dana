@@ -127,7 +127,12 @@ class ControlFlowUtils(Loggable):
             # Create Promise[T] wrapper for eager evaluation (concurrent by default)
             self.debug("Calling EagerPromise.create...")
             self.debug(f"Return computation function: {return_computation}")
-            promise_value = EagerPromise.create(return_computation, captured_context)
+
+            # Get the shared ThreadPoolExecutor from Dana
+            from dana.core.lang.dana_sandbox import DanaSandbox
+
+            executor = DanaSandbox.get_shared_thread_executor()
+            promise_value = EagerPromise.create(return_computation, executor)
             self.debug(f"Promise created: {type(promise_value)}")
             self.debug(f"Executing return statement with Promise[T] value: {type(promise_value)}")
         else:

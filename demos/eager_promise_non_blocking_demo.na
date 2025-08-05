@@ -1,0 +1,111 @@
+# Demo: Non-blocking EagerPromise Behavior
+# 
+# This demo shows the new design where:
+# 1. EagerPromise never blocks the caller
+# 2. EagerPromise auto-resolves in background thread
+# 3. return statements create EagerPromise
+# 4. deliver statements execute inline
+
+import time
+
+# Track execution to show timing
+execution_tracker = [0]
+
+def expensive_operation():
+    execution_tracker[0] = execution_tracker[0] + 1
+    print(f"🔄 Executing expensive operation #{execution_tracker[0]}...")
+    # Simulate expensive computation
+    time.sleep(0.1)  # 100ms delay
+    result = f"result_{execution_tracker[0]}"
+    print(f"✅ Expensive operation #{execution_tracker[0]} completed!")
+    return result
+
+# Function using return (creates EagerPromise)
+def return_function():
+    print("📝 Creating return function...")
+    return expensive_operation()
+
+# Function using deliver (executes inline)
+def deliver_function():
+    print("⚡ Creating deliver function...")
+    deliver expensive_operation()
+
+print("=== NON-BLOCKING EAGERPROMISE DEMO ===")
+
+print("\n1. RETURN FUNCTION (creates EagerPromise)")
+print("Creating return function...")
+execution_tracker[0] = 0
+start_time = time.time()
+
+# This should return immediately with EagerPromise
+result = return_function()
+creation_time = time.time() - start_time
+
+print(f"Function returned in {creation_time:.3f}s! Execution count: {execution_tracker[0]}")
+print(f"Result type: {type(result)}")
+print(f"Result string: {str(result)}")
+
+# Try to access the result
+print("\nTrying to access the result...")
+try:
+    value = result
+    access_time = time.time() - start_time
+    print(f"Successfully accessed in {access_time:.3f}s! Value: {value}")
+except Exception as e:
+    print(f"Access failed: {e}")
+    print("This is expected - EagerPromise is not ready yet!")
+
+# Wait a bit and try again
+print("\nWaiting 200ms and trying again...")
+time.sleep(0.2)
+try:
+    value = result
+    final_time = time.time() - start_time
+    print(f"Successfully accessed in {final_time:.3f}s! Value: {value}")
+except Exception as e:
+    print(f"Still failed: {e}")
+
+print("\n2. DELIVER FUNCTION (executes inline)")
+print("Creating deliver function...")
+execution_tracker[0] = 0
+start_time = time.time()
+
+# This should execute immediately and block until complete
+result = deliver_function()
+execution_time = time.time() - start_time
+
+print(f"Function executed in {execution_time:.3f}s! Execution count: {execution_tracker[0]}")
+print(f"Result type: {type(result)}")
+print(f"Result value: {result}")
+
+print("\n3. MULTIPLE RETURN FUNCTIONS (parallel execution)")
+print("Creating multiple return functions...")
+execution_tracker[0] = 0
+start_time = time.time()
+
+# Create multiple EagerPromises
+a = return_function()
+b = return_function()
+c = return_function()
+
+creation_time = time.time() - start_time
+print(f"Created 3 EagerPromises in {creation_time:.3f}s! Execution count: {execution_tracker[0]}")
+
+# Wait for all to complete
+print("\nWaiting for all to complete...")
+time.sleep(0.3)
+
+try:
+    combined = f"{a} | {b} | {c}"
+    final_time = time.time() - start_time
+    print(f"All accessed in {final_time:.3f}s! Combined: {combined}")
+except Exception as e:
+    print(f"Some still not ready: {e}")
+
+print("\n=== KEY INSIGHTS ===")
+print("✅ return creates EagerPromise that never blocks caller")
+print("✅ EagerPromise auto-resolves in background thread")
+print("✅ deliver executes inline and blocks until complete")
+print("✅ Multiple EagerPromises can resolve in parallel")
+print("✅ Accessing EagerPromise before ready raises error")
+print("✅ Use await_result() for async-safe access") 
