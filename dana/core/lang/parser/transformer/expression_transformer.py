@@ -220,6 +220,7 @@ class ExpressionTransformer(BaseTransformer):
             "-": BinaryOperator.SUBTRACT,
             "*": BinaryOperator.MULTIPLY,
             "/": BinaryOperator.DIVIDE,
+            "//": BinaryOperator.FLOOR_DIVIDE,
             "%": BinaryOperator.MODULO,
             "==": BinaryOperator.EQUALS,
             "!=": BinaryOperator.NOT_EQUALS,
@@ -912,7 +913,7 @@ class ExpressionTransformer(BaseTransformer):
 
     def FDIV(self, token):
         """Handle the floor division operator token."""
-        return BinaryOperator.DIVIDE  # For now, just map to regular division
+        return BinaryOperator.FLOOR_DIVIDE
 
     def MOD(self, token):
         """Handle the modulo operator token."""

@@ -568,6 +568,7 @@ class TypeChecker:
             BinaryOperator.SUBTRACT,
             BinaryOperator.MULTIPLY,
             BinaryOperator.DIVIDE,
+            BinaryOperator.FLOOR_DIVIDE,
             BinaryOperator.MODULO,
             BinaryOperator.POWER,
         ]:

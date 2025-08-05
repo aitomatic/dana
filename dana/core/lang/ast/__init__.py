@@ -112,6 +112,7 @@ class BinaryOperator(Enum):
     SUBTRACT = "-"
     MULTIPLY = "*"
     DIVIDE = "/"
+    FLOOR_DIVIDE = "//"
     MODULO = "%"
     POWER = "**"
     PIPE = "|"
