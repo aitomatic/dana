@@ -9,7 +9,9 @@ MIT License
 """
 
 import atexit
+import threading
 import weakref
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -63,6 +65,7 @@ class DanaSandbox(Loggable):
     _shared_api_service: APIServiceManager | None = None
     _shared_api_client: APIClient | None = None
     _shared_llm_resource: LLMResource | None = None
+    _shared_thread_executor: ThreadPoolExecutor | None = None
     _resource_users = 0  # Count of instances using shared resources
     _pool_lock = None  # Will be initialized as threading.Lock() when needed
 
@@ -374,6 +377,54 @@ class DanaSandbox(Loggable):
             except Exception:
                 # Logger may be closed during process exit
                 pass
+
+        # Shutdown shared ThreadPoolExecutor
+        cls.shutdown_shared_thread_executor(wait=False)  # Don't wait during process exit
+
+    @classmethod
+    def get_shared_thread_executor(cls) -> ThreadPoolExecutor:
+        """Get or create the shared ThreadPoolExecutor for Dana-wide background tasks.
+
+        Returns:
+            Shared ThreadPoolExecutor instance
+        """
+        if cls._shared_thread_executor is None:
+            if cls._pool_lock is None:
+                cls._pool_lock = threading.Lock()
+
+            with cls._pool_lock:
+                if cls._shared_thread_executor is None:
+                    cls._shared_thread_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="Dana-Background")
+                    try:
+                        logger = cls.get_class_logger()
+                        if logger:
+                            cls.log_debug("Created shared ThreadPoolExecutor for Dana background tasks")
+                    except Exception:
+                        pass  # Ignore logging errors
+
+        return cls._shared_thread_executor
+
+    @classmethod
+    def shutdown_shared_thread_executor(cls, wait: bool = True):
+        """Shutdown the shared ThreadPoolExecutor.
+
+        Args:
+            wait: Whether to wait for running tasks to complete
+        """
+        if cls._pool_lock is None:
+            cls._pool_lock = threading.Lock()
+
+        with cls._pool_lock:
+            if cls._shared_thread_executor is not None:
+                try:
+                    logger = cls.get_class_logger()
+                    if logger:
+                        cls.log_debug(f"Shutting down shared ThreadPoolExecutor (wait={wait})")
+                except Exception:
+                    pass  # Ignore logging errors
+
+                cls._shared_thread_executor.shutdown(wait=wait)
+                cls._shared_thread_executor = None
 
     @classmethod
     def cleanup_all(cls):

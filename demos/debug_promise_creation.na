@@ -1,34 +1,21 @@
-# Debug Promise Creation
-print("=== DEBUG PROMISE CREATION ===")
+log_level("INFO")
 
-def lazy_five():
-    print("lazy_five() called")
-    return 5
+log("=== DEBUG PROMISE CREATION ===")
 
-def eager_five():
-    print("eager_five() called")
-    deliver 5
+# Test 1: Check what llm returns
+log("Test 1: What does llm return?")
+x = llm("hi")
+log(f"x type: {type(x)}")
+log(f"x: {x}")
 
-print("1. Testing return (should create Promise)...")
-lazy_result = lazy_five()
-print(f"lazy_result type: {type(lazy_result)}")
-print(f"lazy_result value: {lazy_result}")
+# Test 2: Check if it's an EagerPromise
+log("\nTest 2: Is it an EagerPromise?")
+from dana.core.concurrency import is_eager_promise
+log(f"is_eager_promise(x): {is_eager_promise(x)}")
 
-print("\n2. Testing deliver (should create concrete value)...")
-eager_result = eager_five()
-print(f"eager_result type: {type(eager_result)}")
-print(f"eager_result value: {eager_result}")
+# Test 3: Check if it's a coroutine
+log("\nTest 3: Is it a coroutine?")
+import inspect
+log(f"inspect.iscoroutine(x): {inspect.iscoroutine(x)}")
 
-print("\n3. Testing direct assignment...")
-direct_result = 5
-print(f"direct_result type: {type(direct_result)}")
-print(f"direct_result value: {direct_result}")
-
-print("\n4. Testing Promise detection...")
-from dana.core.runtime.promise import is_promise
-
-print(f"is_promise(lazy_result): {is_promise(lazy_result)}")
-print(f"is_promise(eager_result): {is_promise(eager_result)}")
-print(f"is_promise(direct_result): {is_promise(direct_result)}")
-
-print("=== DEBUG COMPLETE ===") 
+log("=== END DEBUG ===") 

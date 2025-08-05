@@ -31,6 +31,7 @@ class PromiseGroup:
         """Add a promise to this group for potential parallel execution."""
         with self._lock:
             self._promises.add(weakref.ref(promise))
+            print(f"🟡 PromiseGroup: Added promise, total: {len(self._promises)}")
 
     def get_pending_promises(self) -> list["LazyPromise"]:
         """Get all pending promises in this group."""
@@ -45,13 +46,17 @@ class PromiseGroup:
                 elif not promise._resolved:
                     pending.append(promise)
             self._promises -= dead_refs
+            if pending:
+                print(f"🟡 PromiseGroup: Found {len(pending)} pending promises")
             return pending
 
     async def resolve_all_pending(self):
         """Resolve all pending promises in parallel."""
         pending = self.get_pending_promises()
         if len(pending) > 1:
+            print(f"🟡 PromiseGroup: Resolving {len(pending)} promises in parallel")
             await asyncio.gather(*[p._resolve_async() for p in pending], return_exceptions=True)
+            print("🟡 PromiseGroup: Parallel resolution completed")
 
 
 # Global promise group for automatic parallelization
@@ -85,6 +90,8 @@ class LazyPromise(BasePromise):
         super().__init__(computation, context)
         self._lock = threading.Lock()
 
+        self.info(f"🟡 LazyPromise CREATED at {self._creation_location}")
+
         # Add to current promise group for potential parallelization
         get_current_promise_group().add_promise(self)
 
@@ -94,49 +101,63 @@ class LazyPromise(BasePromise):
     def _start_execution(self):
         """Start execution - for lazy promises, this does nothing."""
         # Lazy promises don't start execution until accessed
+        self.info("🟡 LazyPromise _start_execution: Deferring execution until access")
         self.debug("LazyPromise created - execution deferred until access")
 
     async def _resolve_async(self):
         """Resolve the promise asynchronously."""
+        self.info("🟡 LazyPromise _resolve_async() called")
         if self._resolved:
+            self.info("🟡 LazyPromise _resolve_async: Already resolved")
             return
 
         with self._lock:
             if self._resolved:  # Double-check after acquiring lock
+                self.info("🟡 LazyPromise _resolve_async: Already resolved (double-check)")
                 return
 
+            self.info("🟡 LazyPromise _resolve_async: Starting resolution")
             try:
                 if inspect.iscoroutine(self._computation):
+                    self.info("🟡 LazyPromise _resolve_async: Async computation")
                     self._result = await self._computation
                 else:
+                    self.info("🟡 LazyPromise _resolve_async: Sync computation in thread pool")
                     # Run sync computation in thread pool to avoid blocking
                     loop = asyncio.get_event_loop()
                     with ThreadPoolExecutor() as executor:
                         self._result = await loop.run_in_executor(executor, self._computation)
 
                 self._resolved = True
+                self.info(f"🟡 LazyPromise _resolve_async: Resolution COMPLETED, result: {type(self._result)}")
 
             except Exception as e:
                 self._error = PromiseError(e, self._creation_location, self._get_resolution_location())
                 self._resolved = True
+                self.info(f"🟡 LazyPromise _resolve_async: Resolution FAILED: {e}")
                 self.error(f"Promise resolution failed: {e}")
                 raise  # Re-raise the exception
 
     def _resolve_sync(self):
         """Resolve the promise synchronously."""
+        self.info("🟡 LazyPromise _resolve_sync() called")
         if self._resolved:
+            self.info("🟡 LazyPromise _resolve_sync: Already resolved")
             return
 
         with self._lock:
             if self._resolved:  # Double-check after acquiring lock
+                self.info("🟡 LazyPromise _resolve_sync: Already resolved (double-check)")
                 return
 
+            self.info("🟡 LazyPromise _resolve_sync: Starting resolution")
             try:
                 # Check if we need to resolve other promises in parallel first
                 group = get_current_promise_group()
                 pending = group.get_pending_promises()
 
                 if len(pending) > 1:
+                    self.info(f"🟡 LazyPromise _resolve_sync: {len(pending)} pending promises, checking for parallel resolution")
                     # Multiple promises need resolution - use async execution
                     loop = None
                     try:
@@ -146,47 +167,61 @@ class LazyPromise(BasePromise):
 
                     if loop is not None:
                         # We're in an async context - create task for parallel resolution
+                        self.info("🟡 LazyPromise _resolve_sync: Creating parallel resolution task")
                         asyncio.create_task(group.resolve_all_pending())
                         # Continue with sync resolution for now
 
                 if inspect.iscoroutine(self._computation):
                     # Cannot resolve async computation synchronously
+                    self.info("🟡 LazyPromise _resolve_sync: ERROR - Cannot resolve async computation in sync context")
                     raise RuntimeError("Cannot resolve async computation in sync context")
                 else:
+                    self.info("🟡 LazyPromise _resolve_sync: Executing sync computation")
                     self._result = self._computation()
 
                 self._resolved = True
+                self.info(f"🟡 LazyPromise _resolve_sync: Resolution COMPLETED, result: {type(self._result)}")
 
             except Exception as e:
                 self._error = PromiseError(e, self._creation_location, self._get_resolution_location())
                 self._resolved = True
+                self.info(f"🟡 LazyPromise _resolve_sync: Resolution FAILED: {e}")
                 self.error(f"Promise resolution failed: {e}")
                 raise  # Re-raise the exception
 
     def _ensure_resolved(self):
         """Ensure the promise is resolved and return the result."""
+        self.info(f"🟡 LazyPromise _ensure_resolved() called at {self._get_resolution_location()}")
+
         if self._resolved:
             if self._error:
+                self.info(f"🟡 LazyPromise _ensure_resolved: Already resolved with ERROR: {self._error.original_error}")
                 raise self._error.original_error
+            self.info(f"🟡 LazyPromise _ensure_resolved: Already resolved with SUCCESS: {type(self._result)}")
             return self._result
 
         # Resolve the promise
+        self.info("🟡 LazyPromise _ensure_resolved: Starting resolution")
         try:
             from dana.common.utils.misc import Misc
 
             if asyncio.iscoroutine(self._computation):
                 # Async computation
+                self.info("🟡 LazyPromise _ensure_resolved: Using async resolution")
                 Misc.safe_asyncio_run(self._resolve_async)
             else:
                 # Sync computation
+                self.info("🟡 LazyPromise _ensure_resolved: Using sync resolution")
                 self._resolve_sync()
 
             self._resolved = True
+            self.info(f"🟡 LazyPromise _ensure_resolved: Resolution COMPLETED, result: {type(self._result)}")
             return self._result
 
         except Exception as e:
             self._error = PromiseError(e, self._creation_location, self._get_resolution_location())
             self._resolved = True
+            self.info(f"🟡 LazyPromise _ensure_resolved: Resolution FAILED: {e}")
             self.error(f"Promise resolution failed: {e}")
             raise self._error.original_error
 

@@ -100,6 +100,10 @@ class BasePromise(Loggable, abc.ABC):
         result = self._ensure_resolved()
         return getattr(result, name)
 
+    def get(self):
+        """Get the resolved value - explicit access method."""
+        return self._ensure_resolved()
+
     def __getitem__(self, key):
         """Transparent indexing."""
         result = self._ensure_resolved()

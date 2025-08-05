@@ -65,6 +65,49 @@ class OutputFormatter(Loggable):
             # Normal display - show the resolved value with color
             print_formatted_text(ANSI(self.colors.accent(str(result))))
 
+    def format_result_with_promise_mode(self, result, promise_display_mode: bool = False) -> None:
+        """Format and display execution result with promise display mode control."""
+        if result is not None:
+            # Import promise classes to check instance
+            try:
+                from dana.core.concurrency import BasePromise
+                from dana.core.concurrency.eager_promise import EagerPromise
+                from dana.core.concurrency.lazy_promise import LazyPromise
+
+                if isinstance(result, EagerPromise | LazyPromise | BasePromise):
+                    if promise_display_mode:
+                        # Show promise meta info without resolving
+                        print_formatted_text(ANSI(self.colors.accent(str(result))))
+                        return
+                    else:
+                        # Try to resolve the promise for normal display
+                        try:
+                            if isinstance(result, EagerPromise):
+                                # For EagerPromise, check if ready first
+                                if result.is_ready():
+                                    resolved_result = result.get_result_if_ready()
+                                    print_formatted_text(ANSI(self.colors.accent(str(resolved_result))))
+                                    return
+                                else:
+                                    # Not ready, show promise info
+                                    print_formatted_text(ANSI(self.colors.accent(str(result))))
+                                    return
+                            else:
+                                # For LazyPromise, resolve immediately (blocks)
+                                resolved_result = result._ensure_resolved()
+                                print_formatted_text(ANSI(self.colors.accent(str(resolved_result))))
+                                return
+                        except Exception:
+                            # Resolution failed, show promise info
+                            print_formatted_text(ANSI(self.colors.accent(str(result))))
+                            return
+            except ImportError:
+                # If promise classes not available, fall back to normal display
+                pass
+
+            # Normal display - show the resolved value
+            print_formatted_text(ANSI(self.colors.accent(str(result))))
+
     def format_error(self, error: Exception) -> None:
         """Format and display execution error."""
         context = ErrorContext("program execution")

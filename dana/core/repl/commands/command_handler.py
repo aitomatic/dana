@@ -40,6 +40,10 @@ class CommandHandler(Loggable):
             print_formatted_text(ANSI(self.colors.accent("✅ Forced multiline mode - type your code, end with empty line")))
             return True, "Multiline mode activated"
 
+        # Handle promise display command
+        if line_stripped.startswith("/promise"):
+            return await self._handle_promise_command(line_stripped)
+
         # Handle NLP commands
         if line_stripped.startswith("/nlp"):
             return await self._handle_nlp_command(line_stripped)
@@ -48,6 +52,47 @@ class CommandHandler(Loggable):
         if line_stripped in ["help", "?", "/help"]:
             self.help_formatter.show_help()
             return True, "Help displayed"
+
+        return False, ""
+
+    async def _handle_promise_command(self, command: str) -> tuple[bool, str]:
+        """Handle promise display commands."""
+        parts = command.split()
+
+        if len(parts) == 1:
+            # Show current promise display status
+            status = "enabled" if self.repl.promise_display_mode else "disabled"
+            print_formatted_text(ANSI(f"{self.colors.accent('Promise display mode:')} {status}"))
+            return True, f"Promise display {status}"
+
+        elif len(parts) == 2:
+            if parts[1] == "on":
+                self.repl.set_promise_display_mode(True)
+                print_formatted_text(ANSI(self.colors.accent("✅ Promise display mode enabled")))
+                return True, "Promise display enabled"
+
+            elif parts[1] == "off":
+                self.repl.set_promise_display_mode(False)
+                print_formatted_text(ANSI(self.colors.error("❌ Promise display mode disabled")))
+                return True, "Promise display disabled"
+
+        # Handle /promise <code> syntax
+        elif len(parts) > 1:
+            # Extract the code after /promise
+            code = " ".join(parts[1:])
+
+            # Temporarily enable promise display mode
+            original_mode = self.repl.get_promise_display_mode()
+            self.repl.set_promise_display_mode(True)
+
+            try:
+                # Execute the code with promise display enabled
+                self.repl.execute(code)
+                # Result will be displayed by the output formatter
+                return True, "Promise code executed"
+            finally:
+                # Restore original mode
+                self.repl.set_promise_display_mode(original_mode)
 
         return False, ""
 
