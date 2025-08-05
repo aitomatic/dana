@@ -162,8 +162,8 @@ class LLMQueryExecutor(Loggable):
                 request,
                 "system_messages",
                 [
-                    "You are an assistant. Use tools when necessary to complete tasks. "
-                    "After receiving tool results, you can request additional tools if needed."
+                    "You are an assistant. Use tools when necessary to complete tasks. CALLING 1 TOOL AT A TIME."
+                    "After receiving tool results, you can request additional tools if needed. DO NOT CALL MULTIPLE TOOLS AT ONCE."
                 ],
             )
         else:

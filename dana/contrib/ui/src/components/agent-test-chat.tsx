@@ -220,7 +220,13 @@ const AgentTestChat = ({
               disabled={isTesting}
             />
           </div>
-          <Button onClick={handleSendMessage} disabled={!canSend} size="sm" className="px-4">
+          <Button
+            onClick={handleSendMessage}
+            disabled={!canSend}
+            size="sm"
+            className="px-4"
+            aria-label="Send message"
+          >
             {isTesting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (

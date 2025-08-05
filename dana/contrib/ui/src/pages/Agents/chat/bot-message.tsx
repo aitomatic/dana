@@ -3,6 +3,8 @@ import { MarkdownViewerSmall } from './markdown-viewer';
 import { IconLoader } from '@tabler/icons-react';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, Hourglass } from 'iconoir-react';
+import { getAgentAvatarSync } from '@/utils/avatar';
+import { useParams } from 'react-router-dom';
 
 // Helper functions to extract message content and sources
 const extractMessageContent = (message: any) => {
@@ -63,6 +65,7 @@ const BotMessage = ({
   const messages: any[] = [];
   const isSplitScreen = false;
   const thinkingMessage = 'Thinking...';
+  const { agent_id } = useParams<{ agent_id: string }>();
 
   const [_, setIsFinished] = useState(false);
   const [isOldResponse, setIsOldResponse] = useState(false);
@@ -103,12 +106,8 @@ const BotMessage = ({
     return () => clearInterval(intervalId);
   }, [messageContent, message]);
 
-  // Avatar image source
-  const avatarSrc = '/agent-avatar/agent-avatar-1.svg';
-  // avatar ||
-  // (currentAgent?.avatar !== '1'
-  //   ? `/assets${currentAgent?.avatar ?? '/agent-avatar.svg'}`
-  //   : '/assets/agent-avatar.svg');
+  // Avatar image source - use dynamic avatar based on agent ID
+  const avatarSrc = agent_id ? getAgentAvatarSync(agent_id) : '/agent-avatar/agent-avatar-0.svg';
 
   const isLastMessage = useMemo(() => {
     if (!messages || messages.length === 0) return false;
@@ -119,7 +118,23 @@ const BotMessage = ({
 
   return (
     <div className="flex gap-2 items-start py-4 pl-6 w-full">
-      <img className="w-8 h-8" src={avatarSrc} alt="Agent avatar" />
+      <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center">
+        <img 
+          className="w-full h-full object-cover" 
+          src={avatarSrc} 
+          alt="Agent avatar"
+          onError={(e) => {
+            // Fallback to colored circle if image fails to load
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'none';
+            const parent = target.parentElement;
+            if (parent) {
+              parent.className = `w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-400 flex items-center justify-center text-white text-sm font-bold`;
+              parent.innerHTML = `<span className="text-white">A</span>`;
+            }
+          }}
+        />
+      </div>
 
       <div
         className={cn(

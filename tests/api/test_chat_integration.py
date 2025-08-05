@@ -245,7 +245,7 @@ class TestChatIntegration:
         assert response.status_code == 422
 
         # Test invalid agent_id type
-        response = client.post("/api/chat/", json={"message": "Hello", "agent_id": "not_a_number"})
+        response = client.post("/api/chat/", json={"message": "Hello", "agent_id": "invalid@agent#id"})
         assert response.status_code == 422
 
         # Test invalid message type
