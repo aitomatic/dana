@@ -7,6 +7,7 @@ import { Trash, Edit, Check, Xmark } from 'iconoir-react';
 import { DeleteAgentDialog } from '@/components/delete-agent-dialog';
 import DomainKnowledgeTree from './DomainKnowledgeTree';
 import AgentOverviewChart from './AgentOverviewChart';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { NavigateFunction } from 'react-router-dom';
 
 const OverviewTab: React.FC<{
