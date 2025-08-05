@@ -24,7 +24,7 @@ text = "  Hello World  "
 result = text.strip().lower()
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "hello world"
 
@@ -35,7 +35,7 @@ text = "  Hello World  "
 result = text.strip().lower().replace(" ", "_")
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "hello_world"
 
@@ -46,7 +46,7 @@ text = "The Quick Brown Fox"
 result = text.lower().replace(" ", "-").replace("fox", "wolf")
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "the-quick-brown-wolf"
 
@@ -57,7 +57,7 @@ text = "apple,banana,cherry"
 result = text.upper().split(",")
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == ["APPLE", "BANANA", "CHERRY"]
 
@@ -68,7 +68,7 @@ text = "hello world test"
 result = text.replace("world", "dana").replace("test", "language").upper()
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "HELLO DANA LANGUAGE"
 
@@ -80,7 +80,7 @@ parts = text.split(",")
 result = parts[0].upper()
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "A"
 
@@ -91,7 +91,7 @@ data = {"name": "john", "age": 30}
 result = data.get("name").upper()
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "JOHN"
 
@@ -102,7 +102,7 @@ data = {"items": "apple,banana,cherry"}
 result = data.get("items").split(",")[1].upper()
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "BANANA"
 
@@ -114,7 +114,7 @@ step1 = text.upper()
 result = step1.replace(" ", "_")
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "HELLO_WORLD"
 
@@ -125,7 +125,7 @@ text = "  HELLO  "
 result = text.strip().lower()
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "hello"
 
@@ -136,7 +136,7 @@ text = "hello world"
 result = text.replace("world", "dana").endswith("dana")
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result is True
 
@@ -147,7 +147,7 @@ text = "hello,world,test"
 result = len(text.split(","))
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == 3
 
@@ -158,7 +158,7 @@ text = "hello,world,test"
 result = text.split(",")[1].upper()
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "WORLD"
 
@@ -171,7 +171,7 @@ first_two = words[0:2]
 result = first_two[0].upper() + first_two[1].upper()
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "HELLOWORLD"
 
@@ -182,7 +182,7 @@ text = "  THE QUICK BROWN FOX JUMPS  "
 result = text.strip().lower().replace(" ", "_").replace("fox", "wolf").upper()
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "THE_QUICK_BROWN_WOLF_JUMPS"
 
@@ -194,7 +194,7 @@ text = "hello"
 result = text.upper().replace("H", "J")
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "JELLO"
 
@@ -206,7 +206,7 @@ greeting = "hello " + name
 result = greeting.upper().replace(" ", "+")
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "HELLO+JOHN"
 
@@ -222,7 +222,7 @@ else:
     result = text.lower()
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "HELLO WORLD"
 
@@ -235,7 +235,7 @@ parts = text.split(" ")
 result = parts[0].upper() + parts[1].upper() + parts[2].upper()
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "ABC"
 
@@ -246,7 +246,7 @@ text = ""
 result = text.strip().upper()
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == ""
 
@@ -257,7 +257,7 @@ text = "hello@world#test"
 result = text.replace("@", "_").replace("#", "_").upper()
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "HELLO_WORLD_TEST"
 
@@ -268,7 +268,7 @@ text = "123"
 result = text.strip().isdigit()
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result is True
 
@@ -279,7 +279,7 @@ text = "hello"
 result = text.find("l") >= 0
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result is True
 
@@ -290,7 +290,7 @@ b = ["hehe", "haha"]
 a = ",".join(b)
 a
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "hehe,haha"
 
@@ -301,7 +301,7 @@ words = ["apple", "banana", "cherry"]
 result = " - ".join(words)
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "apple - banana - cherry"
 
@@ -322,7 +322,7 @@ def process_text(text):
 result = process_text("  Hello World  ")
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "hello_world"
 
@@ -336,7 +336,7 @@ text = "  john doe  "
 result = format_name(text.strip().title())
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "Name: John Doe"
 
@@ -350,7 +350,7 @@ for text in texts:
 result = cleaned[0] + cleaned[1] + cleaned[2]
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "HELLOWORLDTEST"
 
@@ -362,7 +362,7 @@ text = "hello world test"
 result = text.replace(" ", separator).upper()
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "HELLO+WORLD+TEST"
 
@@ -374,7 +374,7 @@ text2 = "HELLO"
 result = text1.upper() == text2.lower().upper()
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result is True
 
@@ -387,7 +387,7 @@ def get_text():
 result = get_text().upper().replace(" ", "+")
 result
 """
-        execution_result = self.sandbox.eval(code)
+        execution_result = self.sandbox.execute_string(code)
         assert execution_result.success
         assert execution_result.result == "HELLO+WORLD"
 

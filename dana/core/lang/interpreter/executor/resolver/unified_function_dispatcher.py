@@ -202,7 +202,8 @@ class UnifiedFunctionDispatcher:
                 for key, value in user_context.items():
                     context.set(f"local:{key}", value)
 
-        raw_result = self.function_registry.call(resolved_name, context, "", *evaluated_args, **evaluated_kwargs)
+        # Use None namespace to let the registry search across all namespaces
+        raw_result = self.function_registry.call(resolved_name, context, None, *evaluated_args, **evaluated_kwargs)
         return self._assign_and_coerce_result(raw_result, func_name)
 
     def _execute_dana_function(
