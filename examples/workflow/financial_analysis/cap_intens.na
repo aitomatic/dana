@@ -20,32 +20,26 @@ __all__ = [
 
 def _fixed_asset_over_total_asset(intermed_results):
     deliver llm(
-f'Calculate `Fixed Assets` as proportion of `Total Assets` as percentage value,
+f'Calculate `Fixed Assets` as proportion of `Total Assets`
 using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_fixed_asset_over_total_asset(doc: FinDoc) = [get_fixed_asset, get_total_asset] | _fixed_asset_over_total_asset
+def calc_fixed_asset_over_total_asset(doc: FinDoc) -> float = [get_fixed_asset, get_total_asset] | _fixed_asset_over_total_asset
 
 
 def _total_asset_over_rev(intermed_results):
     deliver llm(
 f'Calculate `Total Assets` relative to `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
 as decimal value, using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_total_asset_over_rev(doc: FinDoc) = [get_total_asset, get_rev] | _total_asset_over_rev
+def calc_total_asset_over_rev(doc: FinDoc) -> float = [get_total_asset, get_rev] | _total_asset_over_rev
 
 
 def _capex_over_rev(intermed_results):
@@ -53,16 +47,13 @@ def _capex_over_rev(intermed_results):
 f'Calculate `Capital Expenditure(s), a.k.a. CapEx, or Capital Spending,
 or Property, Plant & Equipment (PP&E) Expenditure(s)/Purchase(s)`
 as proportion of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
-as percentage value, using the following intermediate results:
-
+using the following intermediate results:
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_capex_over_rev(doc: FinDoc) = [get_capex, get_rev] | _capex_over_rev
+def calc_capex_over_rev(doc: FinDoc) -> float = [get_capex, get_rev] | _capex_over_rev
 
 
 def _capex_over_rev_3y_avg(intermed_results):
@@ -71,16 +62,13 @@ f'Calculate 3-year average of
 `Capital Expenditure(s), a.k.a. CapEx, or Capital Spending,
 or Property, Plant & Equipment (PP&E) Expenditure(s)/Purchase(s)`
 as proportion of `(Total) (Net) (Operating) Revenue(s), a.k.a. (Total) (Net) Sales`
-as percentage value, using the sum-divided-by-sum method, and the following intermediate results:
-
+using the sum-divided-by-sum method, and the following intermediate results:
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_capex_over_rev_3y_avg(doc: FinDoc) = [get_capex_3y, get_rev_3y] | _capex_over_rev_3y_avg_pct
+def calc_capex_over_rev_3y_avg(doc: FinDoc) -> float = [get_capex_3y, get_rev_3y] | _capex_over_rev_3y_avg_pct
 
 
 def _cap_intens_assessment(intermed_results):
@@ -105,13 +93,10 @@ f'Capital-intensive businesses tend to have one or several of the following char
 
 Assess whether company is capital-intensive according to the concerned fiscal period data,
 using the following intermediate results:
-
 ```
 {intermed_results}
 ```
-
-State your result together with the supporting calculation(s).
-')
+State your result together with the supporting calculation(s).')
 
 def assess_cap_intens(doc: FinDoc) = [calc_fixed_asset_over_total_asset,
                                       calc_total_asset_over_rev,

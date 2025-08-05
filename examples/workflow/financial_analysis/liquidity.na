@@ -42,15 +42,12 @@ f'Calculate `Quick Assets` according to formula:
 )
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_quick_asset(doc: FinDoc) = [get_cash_and_equiv, get_st_inv, get_recvable] | _quick_asset
+def calc_quick_asset(doc: FinDoc) -> float = [get_cash_and_equiv, get_st_inv, get_recvable] | _quick_asset
 
 
 def _quick_asset_2y(intermed_results):
@@ -64,15 +61,12 @@ f'Calculate `Quick Assets` as at past 2 annual fiscal period ends according to f
 )
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_quick_asset_2y(doc: FinDoc) = [get_cash_and_equiv_2y, get_st_inv_2y, get_recvable_2y] | _quick_asset_2y
+def calc_quick_asset_2y(doc: FinDoc) -> float = [get_cash_and_equiv_2y, get_st_inv_2y, get_recvable_2y] | _quick_asset_2y
 
 
 def _quick_asset_3y(intermed_results):
@@ -86,15 +80,12 @@ f'Calculate `Quick Assets` as at past 3 annual fiscal period ends according to f
 )
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_quick_asset_3y(doc: FinDoc) = [get_cash_and_equiv_3y, get_st_inv_3y, get_recvable_3y] | _quick_asset_3y
+def calc_quick_asset_3y(doc: FinDoc) -> float = [get_cash_and_equiv_3y, get_st_inv_3y, get_recvable_3y] | _quick_asset_3y
 
 
 def _quick_ratio(intermed_results):
@@ -104,7 +95,6 @@ f'Calculate `Quick Ratio` according to formula:
 `Quick Ratio` = `Quick Assets` / `(Total) Current Liabilities`
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
@@ -113,10 +103,9 @@ From there, assess liquidity health:
 - if `Quick Ratio` >= 1, then liquidity is healthy
 - otherwise, liquidity is not very healthy
 
-State your result together with the supporting calculation(s).
-')
+State your result together with the supporting calculation(s).')
 
-def calc_quick_ratio(doc: FinDoc) = [calc_quick_asset, get_curr_liab] | _quick_ratio
+def calc_quick_ratio(doc: FinDoc) -> float = [calc_quick_asset, get_curr_liab] | _quick_ratio
 
 
 def _net_work_cap(intermed_results):
@@ -126,15 +115,12 @@ f'Calculate `(Net) Working Capital` according to formula:
 `(Net) Working Capital` = `(Total) Current Assets` - `(Total) Current Liabilities`
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_net_work_cap(doc: FinDoc) = [get_curr_asset, get_curr_liab] | _net_work_cap
+def calc_net_work_cap(doc: FinDoc) -> float = [get_curr_asset, get_curr_liab] | _net_work_cap
 
 
 def _work_cap_ratio(intermed_results):
@@ -144,15 +130,12 @@ f'Calculate `(Net) Working Capital Ratio` according to formula:
 `(Net) Working Capital Ratio` = `(Total) Current Assets` / `(Total) Current Liabilities`
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_work_cap_ratio(doc: FinDoc) = [get_curr_asset, get_curr_liab] | _work_cap_ratio
+def calc_work_cap_ratio(doc: FinDoc) -> float = [get_curr_asset, get_curr_liab] | _work_cap_ratio
 
 
 def _op_cf_ratio(intermed_results):
@@ -165,15 +148,12 @@ f'Calculate `(Net) Cash Flows from Operations Ratio` according to formula:
 )
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_op_cf_ratio(doc: FinDoc) = [get_op_cf, get_curr_liab] | _op_cf_ratio
+def calc_op_cf_ratio(doc: FinDoc) -> float = [get_op_cf, get_curr_liab] | _op_cf_ratio
 
 
 def _fcf(intermed_results):
@@ -187,15 +167,12 @@ f'Calculate `Free Cash Flow, a.k.a. FCF` according to formula:
 )
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_fcf(doc: FinDoc) = [get_op_cf, get_capex] | _fcf
+def calc_fcf(doc: FinDoc) -> float = [get_op_cf, get_capex] | _fcf
 
 
 def _fcf_conv_ratio(intermed_results):
@@ -208,15 +185,12 @@ f'Calculate `Free Cash Flow Conversion Ratio` according to formula:
 )
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_fcf_conv_ratio(doc: FinDoc) = [calc_fcf, get_net_income] | _fcf_conv_ratio
+def calc_fcf_conv_ratio(doc: FinDoc) -> float = [calc_fcf, get_net_income] | _fcf_conv_ratio
 
 
 def _dio(intermed_results):
@@ -229,15 +203,12 @@ f'Calculate `Days Inventory Outstanding, a.k.a. DIO` according to formula:
 )
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_dio(doc: FinDoc) = [get_inventory_2y, get_cogs] | _dio
+def calc_dio(doc: FinDoc) -> float = [get_inventory_2y, get_cogs] | _dio
 
 
 def _dso(intermed_results):
@@ -250,15 +221,12 @@ f'Calculate `Days Sales Outstanding, a.k.a. DSO` according to formula:
 )
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_dso(doc: FinDoc) = [get_recvable_2y, get_rev] | _dso
+def calc_dso(doc: FinDoc) -> float = [get_recvable_2y, get_rev] | _dso
 
 
 def _dpo(intermed_results):
@@ -272,15 +240,12 @@ f'Calculate `Days Payable Outstanding, a.k.a. DPO` according to formula:
 )
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_dpo(doc: FinDoc) = [get_payable_2y, get_cogs, get_inventory_2y] | _dpo
+def calc_dpo(doc: FinDoc) -> float = [get_payable_2y, get_cogs, get_inventory_2y] | _dpo
 
 
 def _ccc(intermed_results):
@@ -294,12 +259,9 @@ f'Calculate `Cash Conversion Cycle, a.k.a. CCC` according to formula:
 )
 
 and using the following intermediate results:
-
 ```
 {intermed_results}
 ```
+State your result together with the supporting calculation(s).')
 
-State your result together with the supporting calculation(s).
-')
-
-def calc_ccc(doc: FinDoc) = [calc_dio, calc_dso, calc_dpo] | _ccc
+def calc_ccc(doc: FinDoc) -> float = [calc_dio, calc_dso, calc_dpo] | _ccc

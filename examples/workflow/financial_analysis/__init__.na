@@ -1,4 +1,4 @@
-"""Financial Analysis Workflows."""
+"""Financial-Analysis Functions & Workflows."""
 
 
 from .fin_statements import get_total_asset, get_total_asset_2y, get_total_asset_3y

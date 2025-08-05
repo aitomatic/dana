@@ -1,4 +1,4 @@
-"""Financial-Analysis Types."""
+"""Financial-Analysis Data Types."""
 
 
 from typing.py import Optional
@@ -12,12 +12,11 @@ __all__ = [
 
 # TODO: have path outside of this struct, in outer context
 struct FinDoc:
-    """Financial query arguments."""
+    """Financial Document."""
 
     company: str
     period: str
     currency: str = 'dollars'
-
     path: Optional[str] = None
 
 
