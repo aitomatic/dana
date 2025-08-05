@@ -15,7 +15,6 @@ from dana.core.lang.interpreter.prompt_enhancement import enhance_prompt_for_typ
 from dana.core.lang.sandbox_context import SandboxContext
 
 
-
 class POETEnhancedReasonFunction(Loggable):
     """POET-enhanced reason function with context-aware prompt optimization."""
 
