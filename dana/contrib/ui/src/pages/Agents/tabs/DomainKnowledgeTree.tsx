@@ -270,7 +270,10 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           const lastTopicPart = topicParts[topicParts.length - 1];
 
           // If the leaf node names match and the topic path is a subset of the node path
-          if (lastPathPart === lastTopicPart && topicParts.every(part => pathParts.includes(part))) {
+          if (
+            lastPathPart === lastTopicPart &&
+            topicParts.every((part) => pathParts.includes(part))
+          ) {
             return topic;
           }
         }
@@ -279,7 +282,12 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       return null;
     };
 
-    const traverse = (domainNode: DomainNode, parentId?: string, pathParts: string[] = [], depth: number = 0) => {
+    const traverse = (
+      domainNode: DomainNode,
+      parentId?: string,
+      pathParts: string[] = [],
+      depth: number = 0,
+    ) => {
       const currentPath = [...pathParts, domainNode.topic];
       const nodeId = currentPath.join('/'); // Unique path-based ID
       // Create nodePath excluding the root level for knowledge status matching
@@ -292,12 +300,12 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       const hasChildren = domainNode.children && domainNode.children.length > 0;
       const knowledgeStatusInfo = isLeafNode ? getKnowledgeStatusForPath(nodePath) : null;
 
-
       // Only show the node if:
       // 1. It's the root node (depth 0)
       // 2. Its parent is expanded
       // 3. We don't have expansion state yet (show all - fallback behavior)
-      const shouldShowNode = depth === 0 || !parentId || !expandedNodeIds || expandedNodeIds.has(parentId);
+      const shouldShowNode =
+        depth === 0 || !parentId || !expandedNodeIds || expandedNodeIds.has(parentId);
 
       if (shouldShowNode) {
         // Create flow node with knowledge status information
@@ -490,7 +498,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         const removeDescendants = (nodeId: string) => {
           newExpandedNodes.delete(nodeId);
           // Find and remove all descendant nodes
-          nodes.forEach(n => {
+          nodes.forEach((n) => {
             if (n.id !== nodeId && n.id.startsWith(nodeId + '/')) {
               removeDescendants(n.id);
             }

@@ -123,7 +123,7 @@ export function Layout({ children, hideLayout = false }: LayoutProps) {
                   variant="outline"
                 >
                   <Settings style={{ width: '16', height: '16' }} />
-                  Train from this
+                  Customize
                 </Button>
               </div>
             )}
