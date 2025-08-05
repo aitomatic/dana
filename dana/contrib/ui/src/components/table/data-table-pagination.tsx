@@ -8,7 +8,7 @@ interface DataTablePaginationProps<TData> {
 
 export function DataTablePagination<TData>({ table }: DataTablePaginationProps<TData>) {
   return (
-    <div className="flex overflow-auto justify-between items-center w-full">
+    <div className="hidden flex overflow-auto justify-between items-center w-full">
       <div className="flex justify-between items-center w-full">
         <Button
           size="default"

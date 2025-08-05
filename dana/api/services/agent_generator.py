@@ -1541,7 +1541,12 @@ def solve(basic_agent : BasicAgent, problem : str):
 
 
 async def generate_agent_files_from_prompt(
-    prompt: str, messages: list[dict[str, Any]], agent_summary: dict[str, Any], multi_file: bool = False
+    prompt: str,
+    messages: list[dict[str, Any]],
+    agent_summary: dict[str, Any],
+    multi_file: bool = False,
+    has_docs_folder: bool = False,
+    has_knows_folder: bool = False,
 ) -> tuple[str, str | None, dict[str, Any] | None]:
     """
     Generate Dana agent files from a specific prompt, conversation messages, and agent summary.
@@ -1580,7 +1585,7 @@ async def generate_agent_files_from_prompt(
             return CodeHandler.get_fallback_template(), None, None
 
         # Create enhanced prompt with context
-        enhanced_prompt = _create_phase_2_prompt(prompt, messages, agent_summary, multi_file)
+        enhanced_prompt = _create_phase_2_prompt(prompt, messages, agent_summary, multi_file, has_docs_folder, has_knows_folder)
         print(f"Enhanced Phase 2 prompt: {enhanced_prompt}")
         logger.debug(f"Enhanced Phase 2 prompt: {enhanced_prompt[:200]}...")
 
@@ -1655,7 +1660,14 @@ async def generate_agent_files_from_prompt(
         return CodeHandler.get_fallback_template(), str(e), None
 
 
-def _create_phase_2_prompt(prompt: str, messages: list[dict[str, Any]], agent_summary: dict[str, Any], multi_file: bool) -> str:
+def _create_phase_2_prompt(
+    prompt: str,
+    messages: list[dict[str, Any]],
+    agent_summary: dict[str, Any],
+    multi_file: bool,
+    has_docs_folder: bool = False,
+    has_knows_folder: bool = False,
+) -> str:
     """
     Create an enhanced prompt for Phase 2 agent generation.
 
@@ -1691,9 +1703,9 @@ def _create_phase_2_prompt(prompt: str, messages: list[dict[str, Any]], agent_su
 AGENT SUMMARY:
 - Name: {agent_name}
 - Description: {agent_description}
-- Knowledge Domains: {", ".join(knowledge_domains) if knowledge_domains else "None specified"}
-- Workflow Steps: {", ".join(workflow_steps) if workflow_steps else "None specified"}
-- Tools: {", ".join(tools) if tools else "None specified"}
+- Knowledge Domains: {', '.join(knowledge_domains) if knowledge_domains else 'None specified'}
+- Workflow Steps: {', '.join(workflow_steps) if workflow_steps else 'None specified'}
+- Tools: {', '.join(tools) if tools else 'None specified'}
 - Summary: {agent_summary_description}
 
 CONVERSATION CONTEXT:
@@ -1719,41 +1731,34 @@ def solve(self : {agent_class}, query: str) -> str:
 this_agent = {agent_class}()
 """
 
-    methods_na = """
+    methods_na = f"""
 from knowledge import knowledge
+from knowledge import doc
 from common import QUERY_GENERATION_PROMPT
 from common import QUERY_DECISION_PROMPT
 from common import ANSWER_PROMPT
 from common import RetrievalPackage
 
 def search_document(package: RetrievalPackage) -> RetrievalPackage:
-    query = package.query
-    if package.refined_query != "":
-        query = package.refined_query
-    package.retrieval_result = str(knowledge.query(query))
+    query = package.refined_query
+    package.retrieval_result = str(doc.query(query))
     return package
 
 def refine_query(package: RetrievalPackage) -> RetrievalPackage:
-    if package.should_use_rag:
-        package.refined_query = reason(QUERY_GENERATION_PROMPT.format(user_input=package.query))
-    return package
-
-def should_use_rag(package: RetrievalPackage) -> RetrievalPackage:
-    package.should_use_rag = reason(QUERY_DECISION_PROMPT.format(user_input=package.query))
+    package.refined_query = reason(QUERY_GENERATION_PROMPT.format(user_input=package.query, context=package.context, filenames=doc.filenames), temperature=0.1)
     return package
 
 def get_answer(package: RetrievalPackage) -> str:
-    prompt = ANSWER_PROMPT.format(user_input=package.query, retrieved_docs=package.retrieval_result)
-    return reason(prompt)
+    prompt = ANSWER_PROMPT.format(user_input=package.query, retrieved_docs=package.retrieval_result, context=package.context, original_problem=package.original_problem)
+    return reason(prompt, resources=[knowledge], temperature=0.1)
 """
 
     workflows_na = """
-from methods import should_use_rag
 from methods import refine_query
 from methods import search_document
 from methods import get_answer
 
-workflow = should_use_rag | refine_query | search_document | get_answer
+workflow = refine_query | search_document | get_answer
 """
 
     # Build knowledge.na with rag_resource and comments about docs files
@@ -1766,8 +1771,15 @@ workflow = should_use_rag | refine_query | search_document | get_answer
             knowledges_na_lines.append(f"- {f}")
     else:
         knowledges_na_lines.append("- (No files currently listed. Add files to ./docs to make them available.)")
+    if not has_docs_folder:
+        knowledges_na_lines.append("- (No files currently listed. Add files to ./docs to make them available.)")
+    if not has_knows_folder:
+        knowledges_na_lines.append("- (No files currently listed. Add files to ./knows to make them available.)")
     knowledges_na_lines.append('"""\n')
-    knowledges_na_lines.append('knowledge = use("rag", sources=["./docs"])')
+    if has_docs_folder:
+        knowledges_na_lines.append('doc = use("rag", sources=["./docs"])')
+    if has_knows_folder:
+        knowledges_na_lines.append('knowledge = use("rag", sources=["./knows"])')
     knowledges_na = "\n".join(knowledges_na_lines)
 
     tools_na = ""  # No rag_resource here; left intentionally empty or for other tools
@@ -1775,32 +1787,67 @@ workflow = should_use_rag | refine_query | search_document | get_answer
     common_na = '''
 
 struct RetrievalPackage:
-    query: str
-    refined_query: str = ""
-    should_use_rag: bool = False
-    retrieval_result: str = "<empty>"
+   query: str
+   refined_query: str = ""
+   should_use_rag: bool = False
+   retrieval_result: str = "<empty>"
+   context: str = ""
+   original_problem: str = ""
     
 QUERY_GENERATION_PROMPT = """
 You are **QuerySmith**, an expert search-query engineer for a Retrieval-Augmented Generation (RAG) pipeline.
 
-**Task**  
-Given the USER_REQUEST below, craft **one** concise query string (≤ 12 tokens) that will maximize recall of the most semantically relevant documents.
+────────────────────────────────────────────────────────────
+GOAL  
+Return **one** concise search query (≤ 12 tokens) that retrieves ONLY information **missing** from the Current Context and most relevant to the topics hinted at by the available filenames.
 
-**Process**  
-1. **Extract Core Concepts** – identify the main entities, actions, and qualifiers.  
-2. **Select High-Signal Terms** – keep nouns/verbs with the strongest discriminative power; drop stop-words and vague modifiers.  
-3. **Synonym Check** – if a well-known synonym outperforms the original term in typical search engines, substitute it.  
-4. **Context Packing** – arrange terms from most to least important; group multi-word entities in quotes (like this).  
-5. **Final Polish** – ensure the string is lowercase, free of punctuation except quotes, and contains **no** explanatory text.
+────────────────────────────────────────────────────────────
+INPUTS  
+• USER_REQUEST – the user’s current question.  
+• CURRENT_CONTEXT – any information already known.  
+• AVAILABLE_FILES – *optional* list of filenames (with extensions) that suggest additional topics.
 
-**Output Format**  
-Return **only** the final query string on a single line. No markdown, labels, or additional commentary.
+────────────────────────────────────────────────────────────
+WORKFLOW  
 
----
+0. **Context Sufficiency Test**  
+   • If CURRENT_CONTEXT already answers USER_REQUEST completely, output a blank line and stop.
 
-USER_REQUEST: 
+1. **Filename Topic Mining**  
+   • Strip extensions from AVAILABLE_FILES.  
+   • Split remaining names on delimiters (space, underscore, dash).  
+   • Retain meaningful topic words/phrases; ignore ordinals, dates, version tags.
+
+2. **Gap-Focused Concept Extraction**  
+   • From USER_REQUEST, pull entities, actions, qualifiers **not covered** in CURRENT_CONTEXT.  
+   • Add relevant topic words mined in Step 1 that fill these gaps.
+
+3. **Term Refinement**  
+   • Keep the most discriminative nouns/verbs; drop stop-words and redundancies.  
+   • Substitute stronger, widely-used synonyms when they improve recall.
+
+4. **Context Packing**  
+   • Order terms by importance; wrap multi-word entities in quotes.
+
+5. **Final Polish**  
+   • Convert to lowercase; no punctuation except quotes; ≤ 12 tokens; **no** explanatory text.
+
+────────────────────────────────────────────────────────────
+OUTPUT  
+Return **only** the final query string on a single line (or a blank line if Step 0 triggered).  
+No markdown, labels, or commentary.
+
+────────────────────────────────────────────────────────────
+CURRENT_CONTEXT:
+{context}
+
+AVAILABLE_FILES:
+{filenames}
+
+USER_REQUEST:
 {user_input}
 """
+    
 
 QUERY_DECISION_PROMPT = """
 You are **RetrievalGate**, a binary decision agent guarding a Retrieval-Augmented Generation (RAG) pipeline.
@@ -1826,54 +1873,172 @@ USER_REQUEST:
 """
 
 ANSWER_PROMPT = """
-You are **RAGResponder**, an expert answer-composer for a Retrieval-Augmented Generation pipeline.
+You are **RAGResponder**, an expert answer-composer for a Retrieval-Augmented Generation (RAG) pipeline.
 
 ────────────────────────────────────────────────────────────
 INPUTS
-• USER_REQUEST: The user's natural-language question.  
-• RETRIEVED_DOCS: *Optional*— multiple objects, each with:
-    - metadata
-    - content
-  If no external retrieval was performed, RETRIEVED_DOCS will be empty.
+• ORIGINAL_PROBLEM – the user’s original question.
+• USER_REQUEST – the user’s current question.  
+• CURRENT_CONTEXT – *optional* conversation or system knowledge already at hand.  
+• RETRIEVED_DOCS – *optional* list of objects, each with:
+    · doc_id      · metadata  
+    · content
 
 ────────────────────────────────────────────────────────────
-TASK  
-Produce a single, well-structured answer that satisfies USER_REQUEST.
+OBJECTIVE  
+Provide one clear, complete answer that satisfies USER_REQUEST while avoiding redundancy.
 
 ────────────────────────────────────────────────────────────
-GUIDELINES  
-1. **Grounding Strategy**  
-   • If RETRIEVED_DOCS is **non-empty**, read the top-scoring snippets first.  
-   • Extract only the facts truly relevant to the question.  
-   • Integrate those facts into your reasoning and cite them inline as **[doc_id]**.
+WORKFLOW  
 
-2. **Fallback Strategy**  
-   • If RETRIEVED_DOCS is **empty**, rely on your internal knowledge.  
-   • Answer confidently but avoid invented specifics (no hallucinations).
+0. **Context Sufficiency Test**  
+   • If CURRENT_CONTEXT fully answers USER_REQUEST, use it and skip Steps 1-3.  
 
-3. **Citation Rules**  
-   • Cite **every** external fact or quotation with its matching [doc_id].  
-   • Do **not** cite when drawing solely from internal knowledge.  
-   • Never reference retrieval *scores* or expose raw snippets.
+1. **Context Integration**  
+   • Read CURRENT_CONTEXT first; extract any directly relevant facts.  
+   • Treat these facts as authoritative and **do not cite** them.
 
-4. **Answer Quality**  
-   • Prioritize clarity, accuracy, and completeness.  
-   • Use short paragraphs, bullets, or headings if it helps readability.  
+2. **Retrieval Grounding (if needed)**  
+   • If gaps remain, scan RETRIEVED_DOCS in ranked order.  
+   • Pull only the information that fills those gaps.  
+   • Cite each borrowed fact inline as **[doc_id]**.
+
+3. **Knowledge Fallback**  
+   • If unanswered aspects persist after Step 2, rely on internal knowledge.  
+   • Answer confidently but avoid invented specifics.
+
+4. **Answer Composition**  
+   • Merge insights from all sources into a cohesive response.  
+   • Prefer short paragraphs, bullets, or headings for readability.  
    • Maintain a neutral, informative tone unless the user requests otherwise.
 
-────────────────────────────────────────────────────────────
-OUTPUT FORMAT  
-Return **only** the answer text—no markdown fences, JSON, or additional labels.
-Citations must appear inline in square brackets, e.g.:
-    Solar power capacity grew by 24 % in 2024 [energy_outlook_2025].
+5. **Citation Rules**  
+   • Cite **every** external fact from RETRIEVED_DOCS with its matching [doc_id].  
+   • Do **not** cite CURRENT_CONTEXT or internal knowledge.  
+   • Never mention retrieval scores or quote raw snippets verbatim.
 
 ────────────────────────────────────────────────────────────
-RETRIEVED_DOCS: 
+OUTPUT  
+Return **only** the answer text—no markdown fences, JSON, or extra labels.  
+Citations must appear inline in square brackets, e.g.:  
+    Solar capacity rose 24 % in 2024 [energy_outlook_2025].
+
+────────────────────────────────────────────────────────────
+CURRENT_CONTEXT:
+{context}
+
+RETRIEVED_DOCS:
 {retrieved_docs}
 
+ORIGINAL_PROBLEM:
+{original_problem}
 
-USER_REQUEST: 
+USER_REQUEST:
 {user_input}
+"""
+
+PLAN_PROMPT = """
+You are a seasoned strategist and project-planning expert.
+
+Objective  
+Create a concise, actionable plan that leads directly to a complete answer to the user’s problem.
+
+Workflow  
+1. **Assess Complexity**  
+   • Read the **Problem**.  
+   • Decide if it is **simple** (one clear, low-risk action) or **complex** (multiple coordinated actions).  
+
+2. **Build the Plan**  
+   • **Simple** → Return a one-object JSON array:  
+     {{ "step": 1, "action": <concise action>, "successMetric": <evidence problem solved> }}  
+
+   • **Complex** → Return a 3-7-object JSON array. Each object must include:  
+     {{
+       "step": <number>,  
+       "goal": <sub-goal bringing solution closer>,  
+       "action": <specific next action>,  
+       "dataRequired": [<data needed>],  
+       "successMetric": <evidence step achieved>  
+     }}  
+   • Each step must move the solution measurably closer to fully answering the **Problem**.  
+   • Use outputs from earlier steps when helpful, but only if they add clarity. 
+
+   **Granularity Rules**  
+   • **Atomicity test:** If one action hides multiple calculations or deliverables, split it into additional steps.  
+     – Example red flags: “analyze,” “develop strategy,” “calculate cash flow.”  
+   • Break broad finance tasks (e.g., cash-flow analysis) into their logical sub-components (e.g., operating cash flow, free cash flow, cash-conversion cycle).  
+   • Keep 3-7 total steps; merge only if truly indivisible. 
+
+3. **Formatting Rules**  
+   • Output **only** the JSON array—no extra text.  
+   • Use camelCase keys exactly as shown.  
+   • Keep all string values ≤ 20 words.  
+   • If no data are needed, use an empty list [] for **dataRequired**.
+
+**Input Template (for the user):**  
+> **Problem:** {problem}
+
+**Output Examples**  
+*Simple*  
+```json
+[
+  {{
+    "step": 1,
+    "action": "Contact the vendor and request an updated invoice",
+    "successMetric": "Corrected invoice received"
+  }}
+]
+````
+
+*Complex*
+
+```json
+[
+  {{
+    "step": 1,
+    "goal": "Clarify scope",
+    "action": "Confirm current quarterly revenue",
+    "dataRequired": ["latest revenue report"],
+    "successMetric": "Baseline revenue documented"
+  }},
+  {{
+    "step": 2,
+    "goal": "Project next-year revenue",
+    "action": "Apply 20% quarterly growth rate",
+    "dataRequired": ["baseline revenue", "growth rate"],
+    "successMetric": "Projected revenue calculated"
+  }},
+  {{
+    "step": 3,
+    "goal": "Estimate operating cash flow",
+    "action": "Compute OCF from projected revenue",
+    "dataRequired": ["projected revenue", "operating margin"],
+    "successMetric": "OCF estimated"
+  }},
+  {{
+    "step": 4,
+    "goal": "Estimate free cash flow",
+    "action": "Subtract capex from OCF",
+    "dataRequired": ["OCF", "planned capex"],
+    "successMetric": "FCF estimated"
+  }},
+  {{
+    "step": 5,
+    "goal": "Analyze cash conversion cycle",
+    "action": "Calculate CCC for next year",
+    "dataRequired": ["DSO", "DIO", "DPO"],
+    "successMetric": "CCC calculated"
+  }},
+  {{
+    "step": 6,
+    "goal": "Determine cash need",
+    "action": "Combine FCF and CCC impacts",
+    "dataRequired": ["FCF", "CCC", "current cash"],
+    "successMetric": "Cash requirement finalized"
+  }}
+]
+
+```
 """
 
 '''
@@ -1941,6 +2106,7 @@ def get_multi_file_agent_generation_prompt(intentions: str, current_code: str = 
     """
     Returns the multi-file agent generation prompt for the LLM.
     """
+    rag_tools_block = 'rag_resource = use("rag", sources=["./docs"])'
     rag_import_block = "from tools import rag_resource\n"
     rag_search_block = "    package.retrieval_result = str(rag_resource.query(query))"
 

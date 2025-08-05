@@ -63,7 +63,7 @@ export function DataTable<TData, TValue>({
       <div
         className={cn(
           'flex flex-1 overflow-scroll bg-background scrollbar-hide rounded-t-lg',
-          is_border && 'border-b ',
+          is_border && '',
         )}
       >
         <Table>

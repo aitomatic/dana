@@ -1,5 +1,9 @@
 /* Full CSS conversion for Tailwind v4 */
 
+.content * {
+  font-size: 14px !important;
+}
+
 /* Content table styling */
 .content table {
   display: table;

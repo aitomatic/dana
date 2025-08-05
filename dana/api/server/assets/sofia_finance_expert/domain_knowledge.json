@@ -1,0 +1,173 @@
+{
+  "root": {
+    "topic": "Finance",
+    "children": [
+      {
+        "topic": "Investment and Market Analysis",
+        "children": [
+          {
+            "topic": "Financial Analysis",
+            "children": [
+              {
+                "topic": "Break-Even Analysis",
+                "children": []
+              },
+              {
+                "topic": "Cash Flow Analysis",
+                "children": []
+              },
+              {
+                "topic": "Cost-Benefit Analysis",
+                "children": []
+              },
+              {
+                "topic": "Financial Statement Analysis",
+                "children": []
+              },
+              {
+                "topic": "Ratio Analysis",
+                "children": []
+              },
+              {
+                "topic": "Scenario and Sensitivity Analysis",
+                "children": []
+              },
+              {
+                "topic": "Trend Analysis",
+                "children": []
+              }
+            ]
+          },
+          {
+            "topic": "strategies, stock analysis, understanding market trends",
+            "children": [
+              {
+                "topic": "Behavioral Finance Insights",
+                "children": []
+              },
+              {
+                "topic": "Financial Analyst",
+                "children": [
+                  {
+                    "topic": "Financial Forecasting",
+                    "children": []
+                  },
+                  {
+                    "topic": "Financial Modeling Techniques",
+                    "children": []
+                  },
+                  {
+                    "topic": "Investment Research and Reporting",
+                    "children": []
+                  },
+                  {
+                    "topic": "Market Analysis Tools",
+                    "children": []
+                  },
+                  {
+                    "topic": "Portfolio Management Strategies",
+                    "children": []
+                  },
+                  {
+                    "topic": "Regulatory Compliance in Financial Analysis",
+                    "children": []
+                  },
+                  {
+                    "topic": "Valuation Methods",
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "topic": "Fundamental Analysis",
+                "children": []
+              },
+              {
+                "topic": "Investment Diversification Techniques",
+                "children": []
+              },
+              {
+                "topic": "Market Sentiment Analysis",
+                "children": []
+              },
+              {
+                "topic": "Risk Management Strategies",
+                "children": []
+              },
+              {
+                "topic": "Sentiment Analysis",
+                "children": [
+                  {
+                    "topic": "Case Studies in Sentiment Analysis",
+                    "children": []
+                  },
+                  {
+                    "topic": "Impact of Sentiment on Market Movements",
+                    "children": []
+                  },
+                  {
+                    "topic": "Market Sentiment Indicators",
+                    "children": []
+                  },
+                  {
+                    "topic": "Natural Language Processing in Sentiment Analysis",
+                    "children": []
+                  },
+                  {
+                    "topic": "Sentiment Analysis Techniques",
+                    "children": []
+                  },
+                  {
+                    "topic": "Sentiment Analysis Tools and Software",
+                    "children": []
+                  },
+                  {
+                    "topic": "Social Media Sentiment Tracking",
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "topic": "Technical Analysis",
+                "children": []
+              },
+              {
+                "topic": "Technical analysis, sentiment analysis, fundamental analysis, Risk management, portfolio management",
+                "children": [
+                  {
+                    "topic": "Asset Allocation Strategies",
+                    "children": []
+                  },
+                  {
+                    "topic": "Chart Patterns and Technical Indicators",
+                    "children": []
+                  },
+                  {
+                    "topic": "Investment Strategy Formulation",
+                    "children": []
+                  },
+                  {
+                    "topic": "Market Psychology and Behavioral Biases",
+                    "children": []
+                  },
+                  {
+                    "topic": "Performance Measurement and Attribution",
+                    "children": []
+                  },
+                  {
+                    "topic": "Risk Assessment Techniques",
+                    "children": []
+                  },
+                  {
+                    "topic": "Valuation Metrics and Ratios",
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

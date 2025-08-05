@@ -136,12 +136,18 @@ class AgentManager:
         agent_name = agent_metadata.get("name")
         agent_description = agent_metadata.get("description")
 
-        # Generate code using the agent generator
+        # Detect docs/knows folders
+        has_docs_folder = (agent_folder / "docs").exists()
+        has_knows_folder = (agent_folder / "knows").exists()
+
+        # Generate code using the agent generator, passing folder flags in the prompt
         dana_code, syntax_error, multi_file_project = await generate_agent_files_from_prompt(
             prompt,
             messages,
             agent_metadata,
             True,  # Always multi-file
+            has_docs_folder=has_docs_folder,
+            has_knows_folder=has_knows_folder,
         )
 
         if syntax_error:

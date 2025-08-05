@@ -68,15 +68,54 @@ def use_function(context: SandboxContext, function_name: str, *args, _name: str 
                 kwargs["sources"] = new_sources
 
         resource = RAGResource(*args, name=_name, **kwargs)
+        description = kwargs.get("description", None)
         sources = kwargs.get("sources", [])
-        processed_sources = []
-        for source in sources:
-            if source.startswith("http"):
-                processed_sources.append(source)
-            else:
-                processed_sources.append(Path(source).stem)
-        doc_string = f"{resource.query.__func__.__doc__} These are the expertise sources: {processed_sources} known as {_name}"
+        filenames = sorted(resource.filenames)
+        doc_string = f"{resource.query.__func__.__doc__ if not description else description}. These are the expertise data sources: {filenames[:3]} known as {_name}"
         resource.query = create_function_with_better_doc_string(resource.query, doc_string)
+        context.set_resource(_name, resource)
+        return resource
+    elif function_name.lower() == "knowledge":
+        from dana.common.resource.rag.knowledge_resource import KnowledgeResource
+
+        description = kwargs.get("description", None)
+        resource = KnowledgeResource(*args, name=_name, **kwargs)
+        doc_string = f"{resource.get_facts.__func__.__doc__}. {'' if not description else description}"
+        resource.get_facts = create_function_with_better_doc_string(resource.get_facts, doc_string)
+        doc_string = f"{resource.get_plan.__func__.__doc__}. {'' if not description else description}"
+        resource.get_plan = create_function_with_better_doc_string(resource.get_plan, doc_string)
+        doc_string = f"{resource.get_heuristics.__func__.__doc__}. {'' if not description else description}"
+        resource.get_heuristics = create_function_with_better_doc_string(resource.get_heuristics, doc_string)
+        context.set_resource(_name, resource)
+        return resource
+    elif function_name.lower() == "human":
+        from dana.common.resource.human_resource import HumanResource
+
+        resource = HumanResource(*args, name=_name, **kwargs)
+        context.set_resource(_name, resource)
+        return resource
+    elif function_name.lower() == "coding":
+        from dana.common.resource.coding.coding_resource import CodingResource
+
+        resource = CodingResource(*args, name=_name, **kwargs)
+        context.set_resource(_name, resource)
+        return resource
+    elif function_name.lower() == "finance_coding":
+        from dana.common.resource.coding.finance_coding_resource import FinanceCodingResource
+
+        resource = FinanceCodingResource(*args, name=_name, **kwargs)
+        context.set_resource(_name, resource)
+        return resource
+    elif function_name.lower() == "financial_tools":
+        from dana.common.resource.financial_resources.financial_stmt_tools import FinancialStatementTools
+
+        resource = FinancialStatementTools(*args, name=_name, **kwargs)
+        context.set_resource(_name, resource)
+        return resource
+    elif function_name.lower() == "finance_rag":
+        from dana.common.resource.rag.financial_statement_rag_resource import FinancialStatementRAGResource
+
+        resource = FinancialStatementRAGResource(*args, name=_name, **kwargs)
         context.set_resource(_name, resource)
         return resource
     else:

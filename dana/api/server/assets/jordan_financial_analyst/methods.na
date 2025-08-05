@@ -1,0 +1,183 @@
+from tools import code
+from knowledge import knows
+from knowledge import docs
+from knowledge import raw_docs
+from common import State
+from common import COMPRESSION_PROMPT
+from common import PLANNING_SYSTEM_PROMPT
+from common import PLANNING_PROMPT
+from common import EXECUTION_SYSTEM_PROMPT
+from common import EXECUTION_PROMPT
+from common import DATA_FETCHING_PROMPT
+from common import STEP_BREAK
+from common import QUESTION_CLASSIFIER
+from common import COMPLEXITY_CLASSIFIER
+from common import EXAMPLE_LIBRARY
+from common import PLAN_VALIDATION_PROMPT
+from common import SIMPLE_PLANNING_TEMPLATE
+from common import MODERATE_PLANNING_TEMPLATE
+from common import COMPLEX_PLANNING_TEMPLATE
+from common import FOCUSED_PLANNING_PROMPT
+import yaml.py
+
+STEPS_TO_START_COMPRESSION = 3
+
+def get_tools() -> str:
+    tools = []
+    tools.extend(docs.list_tools())
+    # tools.extend(knows.list_tools())
+    # tools.extend(code.list_tools())
+    return yaml.dump(tools)
+
+TOOLS = get_tools()
+
+def classify_complexity(question: str) -> dict[str, str]:
+    """Classify question complexity and return classification details."""
+    complexity_prompt = COMPLEXITY_CLASSIFIER.format(question=question)
+    complexity_result = reason(complexity_prompt, resources=[], temperature=0)
+    
+    # Extract complexity level and select corresponding template
+    if "SIMPLE" in complexity_result.upper():
+        return {
+            "level": "SIMPLE",
+            "template": SIMPLE_PLANNING_TEMPLATE,
+            "max_steps": "2 steps maximum"
+        }
+    elif "COMPLEX" in complexity_result.upper():
+        return {
+            "level": "COMPLEX", 
+            "template": COMPLEX_PLANNING_TEMPLATE,
+            "max_steps": "5+ steps as needed"
+        }
+    else:  # MODERATE or any unrecognized result defaults to MODERATE
+        return {
+            "level": "MODERATE",
+            "template": MODERATE_PLANNING_TEMPLATE,
+            "max_steps": "3-4 steps"
+        }
+
+def plan_ahead(data : State) -> State:
+    # Step 1: Classify complexity and get template in one call
+    complexity_info = classify_complexity(data.original_problem)
+    
+    # Step 2: Classify question type for context
+    question_type_prompt = QUESTION_CLASSIFIER.format(question=data.original_problem)
+    question_type = reason(question_type_prompt, resources=[], temperature=0)
+    
+    # Step 3: Create focused planning prompt with ONLY the relevant template
+    focused_plan_prompt = FOCUSED_PLANNING_PROMPT.format(
+        system_plan_prompt=PLANNING_SYSTEM_PROMPT,
+        complexity_level=complexity_info["level"],
+        max_steps=complexity_info["max_steps"],
+        question_type=question_type.strip(),
+        template=complexity_info["template"],
+        question=data.original_problem
+    )
+    
+    str_plan = reason(focused_plan_prompt, resources=[knows], temperature=0)
+    
+    # Step 4: Parse the plan into steps using STEP_BREAK (---)
+    steps = str_plan.split(STEP_BREAK)
+    data.steps = steps
+    return data
+
+def should_get_data(data: State) -> bool:
+    if data.has_data == True:
+        return False
+    if len(data.steps) == 0:
+        return True
+    if "DATA" in data.current_step:
+        return True
+    return False
+
+def should_execute(data: State) -> bool:
+    if ("STEP" in data.current_step):
+        return True
+    if len(data.steps) == 0:
+        return True
+    return False
+    
+
+def execute_step(data : State) -> State:
+    if should_execute(data) == True:
+        need_to_get_data = should_get_data(data)        
+        
+        # Use regular EXECUTION_PROMPT for calculations and analysis
+        execution_prompt = EXECUTION_PROMPT.format(
+            question=data.original_problem, 
+            tools=TOOLS, 
+            context=data.context, 
+            step=data.current_step, 
+            execution_system_prompt=EXECUTION_SYSTEM_PROMPT
+        )
+
+        if need_to_get_data == True:
+            if len(data.steps) == 0:
+                # Use DATA_FETCHING_PROMPT for data extraction
+                step_answer = reason(execution_prompt, temperature=0, resources=[raw_docs, knows])
+            else:    
+                # Only get data 1 time
+                data_prompt = DATA_FETCHING_PROMPT.format(
+                    question=data.original_problem, 
+                    tools=TOOLS, 
+                    context=data.context, 
+                    step=data.current_step, 
+                    execution_system_prompt=EXECUTION_SYSTEM_PROMPT
+                )
+                step_answer = reason(data_prompt, temperature=0, resources=[docs])
+            data.has_data = True
+        else:
+            step_answer = reason(execution_prompt, temperature=0, resources=[code])
+            
+        data.context = f"{data.context}\n{step_answer}"
+        data.has_new_context = True
+        data.count = data.count + 1
+        print("="*50)
+    return data
+
+def compress_context(data : State) -> State:
+    if data.has_new_context == True:
+            compression_prompt = COMPRESSION_PROMPT.format(current_context=data.context)
+            compressed_context = reason(compression_prompt, resources=[], temperature=0)
+            data.context = compressed_context
+            print("="*50)
+            print(data.current_step)
+            print("-"*50)
+            print(compressed_context)
+            print("="*50)
+            data.has_new_context = False
+    return data
+
+# def check_temporal_consistency(step_result : str) -> str:
+#     """
+#     Optional function to check for common temporal inconsistencies in step results.
+#     Can be called after execute_step() to validate period usage.
+#     """
+#     import re.py
+    
+#     warnings = []
+    
+#     # Check for numbers without period labels
+#     number_pattern = r'\$[\d,]+[KMB]?(?!\s*(?:Q[1-4]|FY|2024|2023|quarterly|annual))'
+#     unlabeled_numbers = re.findall(number_pattern, step_result)
+#     if unlabeled_numbers:
+#         warnings.append("⚠️ Found financial figures without time period labels")
+    
+#     # Check for mixed quarterly/annual in same calculation
+#     has_quarterly = bool(re.search(r'Q[1-4]|quarterly', step_result, re.IGNORECASE))
+#     has_annual = bool(re.search(r'annual|yearly|FY', step_result, re.IGNORECASE))
+#     if has_quarterly and has_annual:
+#         if "annualized" not in step_result.lower() and "converted" not in step_result.lower():
+#             warnings.append("⚠️ Mixing quarterly and annual figures - ensure proper conversion")
+    
+#     # Check for growth rate confusion
+#     if "growth" in step_result.lower():
+#         if re.search(r'[0-9]+%.*growth', step_result) and not re.search(r'quarterly|annual|monthly', step_result):
+#             warnings.append("⚠️ Growth rate found without time period specification")
+    
+#     if warnings:
+#         warning_text = "\n".join(warnings)
+#         return f"{step_result}\n\n**TEMPORAL CONSISTENCY WARNINGS**:\n{warning_text}"
+    
+#     return step_result
+

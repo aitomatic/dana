@@ -1,0 +1,716 @@
+struct State:
+    original_problem : str
+    steps : list = []
+    context : str = ""
+    current_step : str = ""
+    count : int = 0
+    has_data : bool = False
+    has_new_context : bool = False
+
+STEP_BREAK = """
+---
+
+"""
+
+COMPRESSION_PROMPT = """
+**ROLE**: You are a Financial Analysis Context Compression Engine. Your job is to transform a long, detailed analysis context into a concise, information-dense summary that preserves all critical data while eliminating redundancy.
+
+**TASK**: Compress the provided analysis context while maintaining 100% of the essential numerical data and key findings needed for continued analysis execution.
+
+**CURRENT LONG CONTEXT**:
+{current_context}
+
+**COMPRESSION REQUIREMENTS**:
+
+1. **Preserve All Key Metrics**: Every calculated value, ratio, and financial figure must be retained
+2. **CRITICAL - Preserve Complete Financial Statement Tables**: 
+   - ALL Balance Sheet data with COMPLETE rows and columns exactly as extracted
+   - ALL Cash Flow Statement data with COMPLETE sections exactly as extracted  
+   - ALL P&L/Income Statement data with COMPLETE line items exactly as extracted
+   - Preserve EXACT table structure, headers, and formatting from original documents
+3. **Preserve Raw Data Integrity**: Keep complete financial statement tables with ALL period labels and original data structure
+4. **NEVER Summarize Financial Tables**: Financial statement tables must be preserved in their complete, original form
+5. **Eliminate Only Redundant Text**: Remove repeated explanations and verbose descriptions, NOT financial data
+6. **Maintain Traceability**: Keep step numbers and status indicators for audit trail
+7. **Standardize Format**: Use consistent, compact formatting for text, but preserve original table structures
+8. **Flag Data Quality**: Retain all data quality indicators (✅, ⚠️, 🔍, ❌)
+
+**COMPRESSION RULES**:
+
+**Keep - Essential Elements**:
+- **CRITICAL**: Complete Balance Sheet tables in their EXACT original format with ALL rows, columns, and periods
+- **CRITICAL**: Complete Cash Flow Statement tables in their EXACT original format with ALL sections and periods  
+- **CRITICAL**: Complete P&L/Income Statement tables in their EXACT original format with ALL line items and periods
+- **PRESERVE TABLE STRUCTURE**: Original headers, subtotals, totals, and table formatting exactly as extracted
+- **RAW FINANCIAL DATA**: All numerical values from financial statements in their original context and format
+- All calculated results and ratios with period labels
+- Data quality flags and proxy indicators (✅, ⚠️, 🔍, ❌)
+- Step completion status and progression
+- Key formulas used (in abbreviated form)
+- Missing data notes and limitations
+- Decision criteria outcomes
+
+**Remove - Redundant Elements**:
+- Detailed calculation steps (keep only final results)
+- Repeated context information and duplicate explanations
+- Verbose instructional text and formatting templates
+- Intermediate validation notes and process commentary
+- **NEVER REMOVE**: Financial statement tables, raw data, or numerical values
+
+**COMPRESSED OUTPUT FORMAT**:
+
+```
+**COMPRESSED ANALYSIS CONTEXT**:
+
+**Company**: [Name] | **Analysis**: [Type] | **Period**: [Quarter/Year]
+
+**COMPLETED STEPS SUMMARY**:
+
+**Step 1**: Data Extraction ✅
+Key Data: Revenue: $X | OCF: $Y | CapEx: $Z ⚠️[proxy used] | [other key items]
+
+**Step 2**: [Step Name] ✅/⚠️
+Results: [Metric 1]: X.X% | [Metric 2]: $XM | [Key Finding]
+Quality: [Any data limitations or proxies]
+
+**Step 3**: [Step Name] ✅/⚠️
+Results: [Key calculated values]
+Notes: [Critical limitations or assumptions]
+
+[Continue for all completed steps...]
+
+**FINANCIAL STATEMENT DATA** (PRESERVE COMPLETE ORIGINAL TABLES):
+
+**Balance Sheet** (EXACT format as extracted):
+[PRESERVE COMPLETE TABLE - All rows, columns, subtotals, and totals exactly as found in original documents]
+- Assets section: Current Assets, Non-Current Assets, ALL sub-items
+- Liabilities section: Current Liabilities, Long-term Liabilities, ALL sub-items  
+- Equity section: Share Capital, Retained Earnings, ALL sub-items
+- ALL periods with original labels: Q1 2024, Q2 2024, Q3 2024, Q4 2024, etc.
+
+**Income Statement/P&L** (EXACT format as extracted):
+[PRESERVE COMPLETE TABLE - All line items and calculations exactly as found in original documents]
+- Revenue section: ALL revenue streams and breakdowns
+- Expense section: ALL expense categories and sub-items
+- Profitability metrics: Gross Profit, Operating Income, Net Income, ALL sub-calculations
+- ALL periods with original labels
+
+**Cash Flow Statement** (EXACT format as extracted):
+[PRESERVE COMPLETE TABLE - All sections and line items exactly as found in original documents]
+- Operating Activities: ALL operating cash flow items and calculations
+- Investing Activities: ALL investing cash flow items  
+- Financing Activities: ALL financing cash flow items
+- Net Cash Flow calculations and beginning/ending cash balances
+- ALL periods with original labels
+
+**CALCULATED METRICS**:
+Financial Ratios:
+- [Key ratio 1]: X.X | [Key ratio 2]: X.X%
+- [All calculated ratios and percentages]
+
+Growth Rates:
+- Revenue Growth: Q1→Q2: X% | Q2→Q3: Y% | Q3→Q4: Z%
+- [Other calculated growth metrics]
+
+Analysis Outputs:
+- [Key decision outcomes]: [Result]
+- [Critical findings]: [Summary]
+
+**DATA QUALITY STATUS**:
+✅ Exact Data: [List items with perfect data]
+⚠️ Proxy Data: [List items using alternatives/proxies]
+❌ Missing Data: [List items not available]
+
+**LIMITATIONS & ASSUMPTIONS**:
+- [Key limitation 1]: [Impact on analysis]
+- [Key assumption 1]: [Basis and impact]
+
+**READY FOR**: Step [X] - [Next step description]
+```
+
+**COMPRESSION VALIDATION**:
+Before finalizing, verify:
+- [ ] All financial statement tables preserved in COMPLETE original format
+- [ ] No rows, columns, or data points removed from Balance Sheet, P&L, or Cash Flow tables
+- [ ] All numerical values preserved exactly with original period labels
+- [ ] No calculation results lost
+- [ ] Data quality flags maintained (✅, ⚠️, 🔍, ❌)
+- [ ] Step progression clear
+- [ ] Original table structures and headers maintained
+- [ ] Only redundant text removed, NEVER financial data
+- [ ] Context compressed through text reduction, not data removal
+- [ ] All essential information retained for next step execution
+
+**EXECUTE COMPRESSION NOW**:
+Transform the provided context using the format above, ensuring zero loss of critical analytical data while achieving maximum conciseness.
+"""
+
+# Question complexity classifier
+COMPLEXITY_CLASSIFIER = """
+Classify this financial question's complexity level by matching it to the examples below:
+
+**SIMPLE (1-2 steps)** - Direct lookups or single calculations:
+- "What is the revenue for Q4 2024?"
+- "What is the cash position at end of 2024?"
+- "What is the current ratio?"
+
+**MODERATE (3-4 steps)** - Growth rates, trends, comparisons:
+- "What was revenues in Q4. What is growth rate (compute)."
+- "What is the quarterly revenue growth rate?"
+- "Is profitability improving?"
+- "How has cash position changed over the year?"
+
+**COMPLEX (5+ steps)** - Forecasting, scenarios, funding calculations:
+- "How much cash is needed to reach profitability?"
+- "What happens to runway if growth slows by 20%?"
+- "Can the company self-fund its growth?"
+
+**CLASSIFICATION RULE**: 
+- If question asks for growth rate or growth calculation → MODERATE
+- If question asks "what if" or future projections → COMPLEX
+- If question is simple lookup → SIMPLE
+
+Question: {question}
+
+Match this question to the most similar example above.
+
+Classification: [SIMPLE/MODERATE/COMPLEX]
+"""
+
+# Question classifier to determine analysis type
+QUESTION_CLASSIFIER = """
+Classify this financial question into one of these categories:
+
+**CATEGORIES**:
+1. **Liquidity Analysis** - Ability to meet short-term obligations
+2. **Profitability Analysis** - Profit margins, earnings quality, returns
+3. **Growth Analysis** - Revenue/earnings growth rates, trends
+4. **Valuation Analysis** - Company value, price ratios, fair value
+5. **Efficiency Analysis** - Asset utilization, working capital management
+6. **Leverage/Solvency Analysis** - Debt levels, coverage ratios, financial risk
+7. **Cash Flow Analysis** - Cash generation, free cash flow, quality
+8. **Comprehensive Health Check** - Overall financial condition
+
+Question: {question}
+
+Analyze the core intent and select the PRIMARY category. If multiple categories apply, choose the most central one.
+
+Category: [SELECT ONE]
+"""
+
+# Category-specific examples for more targeted planning
+EXAMPLE_LIBRARY = """
+## LIQUIDITY ANALYSIS EXAMPLE:
+Question: Can the company meet its short-term obligations?
+
+**OBJECTIVE**: Determine if the company has sufficient liquidity to meet short-term obligations
+
+---
+
+**STEP 1: EXTRACT REQUIRED DATA**
+- [ ] Current Assets from Balance Sheet for ALL available quarters (Q1 2024, Q2 2024, Q3 2024, Q4 2024)
+- [ ] Current Liabilities from Balance Sheet for ALL available quarters
+- [ ] Cash & Cash Equivalents from Balance Sheet for ALL available quarters
+- [ ] Inventory from Balance Sheet for ALL available quarters
+
+---
+
+**STEP 2: CALCULATE LIQUIDITY RATIOS**
+For EACH quarter:
+- [ ] Current Ratio = Current Assets ÷ Current Liabilities (Q1: X.X, Q2: X.X, Q3: X.X, Q4: X.X)
+- [ ] Quick Ratio = (Current Assets - Inventory) ÷ Current Liabilities for each quarter
+- [ ] Cash Ratio = Cash ÷ Current Liabilities for each quarter
+
+---
+
+**STEP 3: ANALYZE TRENDS AND RESULTS**
+- [ ] Identify liquidity trend across quarters (improving, stable, deteriorating)
+- [ ] Apply decision rules to LATEST quarter:
+  - Current Ratio > 2.0 → Strong liquidity
+  - Current Ratio 1.0-2.0 → Adequate liquidity
+  - Current Ratio < 1.0 → Liquidity concern
+- [ ] Note any significant quarter-over-quarter changes
+
+---
+
+**STEP 4: DRAW CONCLUSION**
+Based on the latest ratios AND historical trend, determine if the company can meet its short-term obligations
+
+## PROFITABILITY ANALYSIS EXAMPLE:
+Question: Is the company's profitability improving?
+
+**OBJECTIVE**: Analyze profitability trends across multiple periods to determine improvement
+
+---
+
+**STEP 1: EXTRACT MULTI-PERIOD DATA**
+- [ ] Revenue for ALL available quarters (Q1 2024: $X, Q2 2024: $Y, Q3 2024: $Z, Q4 2024: $W)
+- [ ] Gross Profit for ALL available quarters with period labels
+- [ ] Operating Income for ALL available quarters with period labels
+- [ ] Net Income for ALL available quarters with period labels
+- [ ] Shareholders' Equity for corresponding periods
+
+---
+
+**STEP 2: CALCULATE MARGINS FOR EACH PERIOD**
+- [ ] Q1 2024: Gross Margin = X%, Operating Margin = Y%, Net Margin = Z%
+- [ ] Q2 2024: Gross Margin = X%, Operating Margin = Y%, Net Margin = Z%
+- [ ] Q3 2024: Gross Margin = X%, Operating Margin = Y%, Net Margin = Z%
+- [ ] Q4 2024: Gross Margin = X%, Operating Margin = Y%, Net Margin = Z%
+
+---
+
+**STEP 3: ANALYZE PERIOD-OVER-PERIOD CHANGES**
+- [ ] Calculate margin changes: Q1→Q2, Q2→Q3, Q3→Q4
+- [ ] Calculate ROE for each period = Net Income ÷ Shareholders' Equity
+- [ ] Identify trend direction for each metric
+
+---
+
+**STEP 4: DETERMINE PROFITABILITY TREND**
+Decision based on multi-quarter analysis:
+- Consistently increasing margins → Improving profitability
+- Stable margins across periods → Maintaining profitability
+- Consistently decreasing margins → Declining profitability
+
+## GROWTH ANALYSIS EXAMPLE:
+Question: What is the company's revenue growth rate?
+
+**OBJECTIVE**: Calculate comprehensive growth metrics using all available quarterly data
+
+---
+
+**STEP 1: EXTRACT COMPLETE TIME SERIES**
+- [ ] Revenue for ALL available quarters with explicit labels:
+  - Q1 2024: $1.2M
+  - Q2 2024: $1.5M
+  - Q3 2024: $1.8M
+  - Q4 2024: $2.1M
+  - (Continue for all available periods)
+
+---
+
+**STEP 2: CALCULATE PERIOD-OVER-PERIOD GROWTH**
+- [ ] Q1→Q2 growth: ((Q2-Q1)/Q1) × 100 = X%
+- [ ] Q2→Q3 growth: ((Q3-Q2)/Q2) × 100 = Y%
+- [ ] Q3→Q4 growth: ((Q4-Q3)/Q3) × 100 = Z%
+
+---
+
+**STEP 3: CALCULATE COMPOUND METRICS**
+- [ ] Compound Quarterly Growth Rate (CQGR) = ((Q4/Q1)^(1/3) - 1) × 100
+- [ ] Average quarterly growth rate
+- [ ] Year-over-year growth if multiple years available
+
+---
+
+**STEP 4: IDENTIFY GROWTH PATTERN**
+- [ ] Plot growth rates to identify trend: Accelerating, Stable, or Decelerating
+- [ ] Project next quarter based on trend
+- [ ] Flag any anomalies or seasonal patterns
+
+## CASH FLOW ANALYSIS EXAMPLE:
+Question: Is the company generating sustainable cash flow?
+
+**OBJECTIVE**: Assess cash flow sustainability using multi-period analysis
+
+---
+
+**STEP 1: EXTRACT QUARTERLY CASH FLOW DATA**
+- [ ] Operating Cash Flow (OCF) for ALL quarters (Q1 2024: $X, Q2 2024: $Y, etc.)
+- [ ] Capital Expenditures (CapEx) for ALL quarters with period labels
+- [ ] Net Income for ALL quarters for quality comparison
+
+---
+
+**STEP 2: CALCULATE FREE CASH FLOW BY QUARTER**
+- [ ] Q1 2024: FCF = OCF ($X) - CapEx ($Y) = $Z
+- [ ] Q2 2024: FCF = OCF ($X) - CapEx ($Y) = $Z
+- [ ] Q3 2024: FCF = OCF ($X) - CapEx ($Y) = $Z
+- [ ] Q4 2024: FCF = OCF ($X) - CapEx ($Y) = $Z
+
+---
+
+**STEP 3: ASSESS CASH FLOW QUALITY**
+For EACH quarter:
+- [ ] Calculate OCF/Net Income ratio (Q1: X.X, Q2: X.X, Q3: X.X, Q4: X.X)
+- [ ] Identify cash flow trend (improving, stable, deteriorating)
+- [ ] Calculate average burn rate if FCF negative
+
+---
+
+**STEP 4: DETERMINE SUSTAINABILITY**
+Based on multi-quarter patterns:
+- Consistently positive FCF with OCF/NI > 1.0 → Strong, sustainable cash generation
+- Positive but declining FCF → Monitor for sustainability concerns
+- Negative FCF → Calculate runway based on cash balance and burn rate
+"""
+
+# Dynamic planning templates based on complexity
+SIMPLE_PLANNING_TEMPLATE = """
+**OBJECTIVE**: [One clear sentence stating what needs to be determined]
+
+---
+
+**STEP 1: EXTRACT DATA**
+- [ ] [Specific data item] from [Source] for latest period AND historical context
+
+---
+
+**STEP 2: PROVIDE ANSWER**
+Present the requested information with:
+- Latest period value with label (e.g., "Q4 2024: $X")
+- Brief historical context if relevant
+"""
+
+MODERATE_PLANNING_TEMPLATE = """
+**OBJECTIVE**: [One clear sentence stating what needs to be determined]
+
+---
+
+**STEP 1: EXTRACT REQUIRED DATA**
+- [ ] [Data item 1] from [Statement] for ALL available periods (Q1, Q2, Q3, Q4)
+- [ ] [Data item 2] from [Statement] for ALL available periods with labels
+
+---
+
+**STEP 2: CALCULATE KEY METRICS**
+For EACH period:
+- [ ] [Metric Name] = [Formula] (Q1: X, Q2: Y, Q3: Z, Q4: W)
+- [ ] [Additional calculations with period labels]
+
+---
+
+**STEP 3: ANALYZE AND CONCLUDE**
+Apply decision criteria based on:
+- Latest period values
+- Historical trends across periods
+- Answer the original question with temporal context
+"""
+
+COMPLEX_PLANNING_TEMPLATE = """
+**OBJECTIVE**: [One clear sentence stating what needs to be determined]
+
+---
+
+**STEP 1: EXTRACT BASE DATA**
+- [ ] ALL relevant financial metrics from statements for ALL available quarters/years  
+- [ ] For growth questions: Revenue data across periods
+- [ ] For profitability questions: Revenue AND expense data across periods
+- [ ] For funding/cash requirement questions: Revenue, expenses, AND current cash position
+- [ ] If question mentions both growth AND cash needs: Treat as funding question with growth assumptions
+- [ ] Ensure complete time series with period labels (Q1 2024, Q2 2024, etc.)
+
+---
+
+**STEP 2: ESTABLISH BASELINE METRICS** 
+- [ ] Calculate current state metrics for EACH period
+- [ ] Calculate relevant rates: growth rates, burn rates, profitability margins
+- [ ] Perform trend analysis across ALL periods
+- [ ] Identify patterns, seasonality, or anomalies
+
+---
+
+**STEP 3: BUILD ASSUMPTIONS**
+- [ ] Derive assumptions from historical multi-period data
+- [ ] For growth questions: Calculate growth rates from period-over-period analysis
+- [ ] For funding questions: Determine burn rate and profitability trajectory  
+- [ ] If growth rate is provided in question: Use that rate instead of historical calculation
+- [ ] Document which periods inform each assumption
+
+---
+
+**STEP 4: PERFORM PROJECTIONS**
+- [ ] Project future periods based on historical patterns OR provided growth rates
+- [ ] For funding questions: Project path to profitability and cash requirements
+- [ ] If specific growth rate mentioned: Apply that rate to revenue projections
+- [ ] Model scenarios using different growth assumptions
+- [ ] Maintain period labeling in projections (Q1 2025, Q2 2025, etc.)
+
+---
+
+**STEP 5: ANALYZE REQUIREMENTS**
+- [ ] Calculate requirements based on multi-period projections
+- [ ] For funding questions: Total cash needed = Projected losses + Current cash gap
+- [ ] Consider timing of cash flows across periods
+- [ ] Account for seasonal variations if present
+
+---
+
+**STEP 6: DRAW COMPREHENSIVE CONCLUSION**
+Synthesize findings using:
+- Historical multi-period trends  
+- Projected future periods
+- Clear temporal context throughout
+"""
+
+# Main planning system prompt
+PLANNING_SYSTEM_PROMPT = """
+You are creating executable financial analysis plans.
+
+**CORE RULE**: Use the provided template exactly as given.
+
+**PLANNING REQUIREMENTS**:
+- Every step must be executable with basic financial knowledge
+- Use quantitative criteria, avoid subjective assessments  
+- Separate each step with --- on its own line
+- Focus only on answering the specific question
+
+Create your plan using the template provided.
+"""
+
+# Dynamic complexity-aware planning prompt  
+PLANNING_PROMPT = """
+{system_plan_prompt}
+
+First, analyze the complexity level of this question:
+{complexity_classifier}
+
+Based on the complexity classification, use the appropriate template:
+
+**SIMPLE Questions** use this template:
+{simple_template}
+
+**MODERATE Questions** use this template:
+{moderate_template}
+
+**COMPLEX Questions** use this template:
+{complex_template}
+
+Then, classify the analysis type for context:
+{question_classifier}
+
+Reference examples if helpful:
+{example_library}
+
+Now create a focused plan for this specific question using the appropriate complexity template:
+
+Question: {question}
+
+Plan:
+"""
+
+# Simplified execution prompt focused on flexibility
+EXECUTION_SYSTEM_PROMPT = """
+You are a Financial Analysis Execution Engine designed to execute analysis steps accurately while emphasizing TIME-SERIES data collection and multi-period analysis.
+
+**CORE FUNCTIONS**:
+1. Extract financial data from provided sources across ALL available time periods
+2. Perform calculations using specified formulas with proper temporal context
+3. Apply decision criteria to reach conclusions based on multi-period analysis
+4. Handle missing data intelligently while maintaining temporal consistency
+
+**EXECUTION PRINCIPLES**:
+
+**Time-Series First Approach**: For any financial metric, collect data across multiple periods (quarters/years) rather than single data points.
+
+**Multi-Period Data Collection**:
+- ALWAYS extract data for ALL available periods (Q1, Q2, Q3, Q4 or multiple years)
+- Label each data point with its specific time period (e.g., "Q1 2024: $4.2M, Q2 2024: $4.8M")
+- When asked for "current" or "latest" values, also collect historical context
+- Search for patterns like "quarterly revenue", "annual growth", "period-over-period changes"
+
+**Smart Data Handling**:
+- Use exact data when available, maintaining period labels
+- Find reasonable alternatives when data is missing, preserving time context
+- Always document data quality (✅ exact, ⚠️ proxy/alternative, ❌ unavailable) WITH period labels
+- Continue analysis even with imperfect data across time periods
+
+**Temporal Consistency**:
+- Ensure all related metrics use the same time periods for calculations
+- Clearly distinguish between quarterly vs annual figures
+- When mixing periods, explicitly state conversions (e.g., "annualized quarterly rate")
+- Flag any temporal mismatches in calculations
+
+**Clear Calculations**: Show your work step-by-step with actual numbers AND time period labels.
+
+**Direct Communication**: Be concise and factual. Avoid commentary beyond what's requested.
+
+**MULTI-PERIOD DATA PROTOCOL**:
+When extracting financial data:
+1. Search for the metric across ALL available periods, not just current
+2. Extract data with explicit period labels (Q1 2024, Q2 2024, FY 2023, etc.)
+3. Look for equivalent items across consistent time periods
+4. Use reasonable proxies if needed, maintaining temporal consistency
+5. Document any missing periods or data substitutions
+6. Continue with analysis using available time-series data
+
+**OUTPUT FORMAT**:
+[Perform requested extractions/calculations with period labels]
+[Show numerical results with time periods: "Q1 2024: $X, Q2 2024: $Y"]
+[Flag any data quality issues with temporal context]
+
+Status: ✅ Step [X] Complete [or ⚠️ if proxy data used or periods missing]
+
+Remember: Your value is in building comprehensive time-series analysis, not single-point snapshots. Financial analysis requires temporal context to be meaningful.
+"""
+
+EXECUTION_PROMPT = """
+{execution_system_prompt}
+
+Your goal: {question}
+
+Available tools:
+{tools}
+
+Analysis context with historical data:
+{context}
+
+Current step to execute: {step}
+
+**TEMPORAL EXECUTION INSTRUCTIONS**:
+- When extracting financial metrics, collect data for ALL available time periods (Q1, Q2, Q3, Q4 or multiple years)
+- Label every data point with its specific time period (e.g., "Q1 2024: $4.2M")
+- If the step mentions "current" or "latest", interpret this as needing the most recent period PLUS historical context
+- Search for multi-period patterns, not single data points
+- Ensure temporal consistency across all related metrics in calculations
+
+**SEARCH STRATEGIES FOR TIME-SERIES DATA**:
+- Instead of searching "current revenue", search "quarterly revenue Q1 Q2 Q3 Q4"
+- Instead of searching "cash balance", search "quarterly cash balances across periods"
+- Look for tables, charts, or sections showing multiple periods
+- Extract complete time series whenever possible
+
+**SEQUENTIAL TOOL EXECUTION**:
+- **CRITICAL**: Call only ONE tool at a time
+- Wait for the result of each tool call before proceeding
+- Do NOT make multiple tool calls simultaneously
+- After receiving tool results, analyze the data before deciding if additional tools are needed
+- If you need more data, make ONE additional tool call with a refined search based on previous results
+
+**EXECUTION FLOW**:
+1. Identify what data you need for this step
+2. Make ONE tool call to search for that data
+3. Analyze the results you received
+4. If sufficient data obtained → proceed with calculations/analysis
+5. If more data needed → make ONE additional refined tool call
+6. Complete the step with all gathered data
+
+Focus on completing this specific step with comprehensive time-series data collection. Use sequential tool calls to build up your data systematically.
+"""
+
+# Data fetching prompt optimized for document search and extraction
+DATA_FETCHING_PROMPT = """
+{execution_system_prompt}
+
+Your goal: {question}
+
+Available tools:
+{tools}
+
+Analysis context with historical data:
+{context}
+
+Current step to execute: {step}
+
+**DATA EXTRACTION AND ENRICHMENT MODE**:
+You are in DATA FETCHING mode. Your job is to:
+1. Extract comprehensive RAW financial data from documents
+2. PRESERVE all raw data exactly as found
+3. ADD relevant context and organization based on the current step requirements
+
+**RAW DATA PRESERVATION**:
+- **CRITICAL**: Always present the EXACT raw data as found in documents
+- Include all numbers, labels, and period information exactly as they appear
+- Do not summarize or condense raw data - keep it complete
+- Present raw data in clearly marked sections
+
+**STEP-BASED ENRICHMENT**:
+After preserving raw data, ADD the following based on what the step requires:
+- If step needs revenue data: Organize revenue by periods with labels
+- If step needs expense data: Categorize expenses and show trends
+- If step needs cash flow: Show operating, investing, and financing sections
+- If step needs growth rates: Keep raw numbers AND add calculated growth rates
+- If step needs profitability: Keep raw data AND add margin calculations
+
+**DATA EXTRACTION STRUCTURE**:
+```
+=== RAW DATA EXTRACTED ===
+[Exact data as found in documents, unmodified]
+
+=== ORGANIZED BY STEP REQUIREMENTS ===
+[Same data organized/enriched based on current step needs]
+- Time period labels added
+- Calculations performed if requested
+- Categories created if needed
+- Relationships identified
+```
+
+**TEMPORAL DATA REQUIREMENTS**:
+- Extract data for ALL available time periods
+- Search for "quarterly revenue Q1 Q2 Q3 Q4" patterns
+- Label every data point with its specific time period
+- Build complete time series whenever possible
+
+**SEQUENTIAL SEARCH STRATEGY**:
+1. Make ONE targeted search based on step requirements
+2. Extract and present ALL raw data from results
+3. Analyze what additional data might be needed
+4. Make ONE more refined search if necessary
+5. Combine all raw data, then organize per step needs
+
+**OUTPUT FORMAT**:
+1. **Raw Data Section**: Present unmodified extracted data
+2. **Step-Specific Organization**: Arrange data as the step requires
+3. **Data Quality Notes**: Flag any missing periods or data issues
+4. **Additional Context**: Add calculations/analysis the step needs
+
+Remember: PRESERVE raw data first, ENRICH second based on step requirements.
+"""
+
+# Add plan validation prompt
+PLAN_VALIDATION_PROMPT = """
+Review this financial analysis plan:
+
+Original Question: {question}
+Generated Plan: {plan}
+
+VALIDATION CHECKLIST:
+1. Does the plan directly answer the original question? (Not just provide related analysis)
+2. Are the data requirements realistic and commonly available?
+3. Are there any unnecessary steps that don't contribute to answering the question?
+4. Could the analysis be simpler while still being thorough?
+5. Are the decision criteria clear and quantitative?
+
+If the plan could be improved, provide a more focused alternative. Otherwise, confirm the plan is appropriate.
+"""
+
+# Focused planning prompt for complexity-specific template enforcement
+FOCUSED_PLANNING_PROMPT = """
+{system_plan_prompt}
+
+**QUESTION COMPLEXITY**: {complexity_level} ({max_steps})
+**QUESTION TYPE**: {question_type}
+
+**STRICT TEMPLATE TO FOLLOW**:
+{template}
+
+**QUESTION**: {question}
+
+**INSTRUCTIONS**:
+- You MUST follow the {complexity_level} template exactly
+- Use {max_steps} only
+- Do NOT add extra steps beyond the template
+- Focus on answering the specific question asked
+
+Create your plan now:
+"""
+
+# Simplified final answer prompt
+FINAL_ANSWER_PROMPT = """
+Provide a clear, direct answer to the financial question using the completed analysis.
+
+**ORIGINAL QUESTION**: {question}
+
+**COMPLETED ANALYSIS**: {context}
+
+**ANSWER REQUIREMENTS**:
+- Start with direct answer using specific numbers
+- Include 2-3 key supporting data points  
+- Note any significant data limitations
+- If user specified a format preference in their question, use that instead
+
+Keep it focused and factual.
+
+Generate the final answer now.
+"""

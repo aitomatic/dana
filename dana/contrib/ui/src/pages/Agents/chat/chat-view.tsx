@@ -13,16 +13,29 @@ import ChatBox from './chat-box';
 // Stores
 import { useChatStore } from '@/stores/chat-store';
 
+// Hooks
+import { useVariableUpdates } from '@/hooks/useVariableUpdates';
+
 interface AgentChatViewProps {
   isSidebarCollapsed: boolean;
   agentId?: string;
   conversationId?: string;
 }
 
-const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agentId, conversationId }) => {
+const AgentChatView: React.FC<AgentChatViewProps> = ({
+  isSidebarCollapsed,
+  agentId,
+  conversationId,
+}) => {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const [files] = useState<any[]>([]);
+  const [currentStep, setCurrentStep] = useState<string>('');
+
+  // Generate unique WebSocket ID for this chat session
+  const [websocketId] = useState(
+    () => `chatview-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+  );
 
   const {
     messages,
@@ -34,40 +47,98 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agent
     clearMessages,
     setError,
     clearError,
+    // Session conversation methods for prebuilt agents
+    loadSessionConversation,
+    createSessionConversation,
   } = useChatStore();
+
+  // WebSocket for variable updates
+  const { updates, disconnect } = useVariableUpdates(websocketId, {
+    maxUpdates: 50,
+    autoConnect: true,
+  });
+
+  // Handle variable updates - show step changes for thinking messages
+  useEffect(() => {
+    if (updates.length > 0) {
+      const latestUpdate = updates[updates.length - 1];
+      // Update current step for thinking message
+      if (latestUpdate.variable === 'step') {
+        const stepValue = latestUpdate.newValue || '';
+
+        if (stepValue) {
+          try {
+            // Parse the stringified object
+            const stepObject = JSON.parse(stepValue.replaceAll("'", '"'));
+            const action = stepObject.action || stepObject.description || stepObject.name || '';
+            setCurrentStep(action);
+          } catch (error) {
+            // If parsing fails, use the raw value
+            setCurrentStep(stepValue);
+          }
+        }
+      }
+    }
+  }, [updates]);
 
   // Set current agent ID when component mounts
   useEffect(() => {
     if (agentId) {
-      setCurrentAgentId(parseInt(agentId));
+      setCurrentAgentId(agentId); // Pass agentId directly (supports both string and number)
     }
   }, [agentId, setCurrentAgentId]);
 
   // Fetch conversation if conversationId is provided
   useEffect(() => {
     console.log('Chat view: conversationId changed to:', conversationId);
-    if (conversationId) {
+    if (conversationId && agentId) {
+      // Check if this is a session conversation (starts with 'session_')
+      if (conversationId.startsWith('session_')) {
+        console.log('Loading session conversation:', conversationId);
+        if (typeof agentId === 'string') {
+          loadSessionConversation(conversationId, agentId);
+        }
+        return;
+      }
+
       // Check if this is a temporary conversation ID (very large number)
       const conversationIdNum = parseInt(conversationId);
-      if (conversationIdNum > 1000000000) { // Temporary ID (timestamp-based)
-        console.log('Temporary conversation ID detected, not fetching from API');
+      if (isNaN(conversationIdNum) || conversationIdNum > 1000000000) {
+        // Invalid or temporary ID (timestamp-based)
+        console.log('Invalid or temporary conversation ID detected:', conversationId);
         // Don't fetch, just keep the current messages
         return;
       }
 
       console.log('Fetching conversation:', conversationId);
       fetchConversation(conversationIdNum);
-    } else {
-      console.log('Clearing messages - no conversation ID');
+    } else if (!conversationId && !isSending) {
+      // Only clear messages if there's no conversation ID AND we're not currently sending a message
+      // This prevents clearing messages when starting a new conversation where a message is being sent
+      console.log('Clearing messages - no conversation ID and not sending');
       clearMessages();
     }
-  }, [conversationId, fetchConversation, clearMessages]);
+  }, [
+    conversationId,
+    agentId,
+    fetchConversation,
+    clearMessages,
+    loadSessionConversation,
+    isSending,
+  ]);
 
   // Debug: Log messages when they change
   useEffect(() => {
     console.log('Chat messages updated:', messages);
     console.log('Messages length:', messages?.length);
   }, [messages]);
+
+  // Clean up WebSocket on component unmount
+  useEffect(() => {
+    return () => {
+      disconnect();
+    };
+  }, [disconnect]);
 
   const onSendMessage = async (data: any) => {
     if (!agentId) {
@@ -78,17 +149,41 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agent
     try {
       clearError();
 
-      // If this is a new conversation, create a temporary conversation ID and navigate immediately
+      let effectiveConversationId = conversationId;
+
+      // If this is a new conversation, handle differently for prebuilt vs regular agents
       if (!conversationId) {
-        const tempConversationId = Date.now();
-        navigate(`/agents/${agentId}/chat/${tempConversationId}`);
+        if (typeof agentId === 'string') {
+          // For prebuilt agents, create a session conversation
+          const sessionId = createSessionConversation(agentId);
+          effectiveConversationId = sessionId;
+          // Navigate AFTER sending message to avoid race condition
+        } else {
+          // For regular agents, use undefined conversation ID to let backend create one
+          effectiveConversationId = undefined;
+        }
       }
 
-      const response = await sendMessage(data.message, parseInt(agentId), conversationId ? parseInt(conversationId) : undefined);
+      const response = await sendMessage(
+        data, // Pass the entire data object which includes message and files
+        agentId, // Pass agentId directly (supports both string and number)
+        effectiveConversationId,
+        websocketId,
+      );
 
-      // If this was a new conversation, navigate to the actual conversation URL
-      if (!conversationId && response.conversation_id) {
-        navigate(`/agents/${agentId}/chat/${response.conversation_id}`);
+      const responseConversationId = response.conversation_id;
+
+      const isPrebuiltAgent = isNaN(Number(agentId));
+
+      // Navigate to the conversation URL after getting response
+      if (!conversationId) {
+        if (isPrebuiltAgent && effectiveConversationId) {
+          // For prebuilt agents, navigate to session conversation
+          navigate(`/agents/${agentId}/chat/${effectiveConversationId}`);
+        } else if (!isPrebuiltAgent && responseConversationId) {
+          // For regular agents, navigate to the actual conversation URL
+          navigate(`/agents/${agentId}/chat/${responseConversationId}`);
+        }
       }
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -105,18 +200,16 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agent
     `;
 
     return (
-      <div className="relative flex items-center w-full h-full fade-in">
+      <div className="flex relative items-center w-full h-full fade-in">
         <div className={contentClassName}>
           <div className="flex flex-col items-center">
-            <span className="text-[36px] font-medium text-gray-400">
-              Hi, how can I help you today?
-            </span>
-            <span className="text-[36px] font-medium text-gray-700">How can I help you today?</span>
+            <span className="text-[36px] font-medium text-gray-400">How can I help you today?</span>
           </div>
-          <div className={`flex flex-col gap-2 w-[700px] transition-all duration-300`}>
+          <div className={`flex flex-col gap-2 transition-all duration-300 w-[700px]`}>
             <ChatBox
               files={files}
-              isShowUpload={false}
+              isShowUpload={true}
+              agentId={agentId}
               placeholder="Ask me anything"
               handleSendMessage={onSendMessage}
             />
@@ -129,13 +222,13 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agent
   // Show error message if there's an error
   if (error) {
     return (
-      <div className="flex items-center justify-center w-full h-full">
-        <div className="text-red-500 text-center">
+      <div className="flex justify-center items-center w-full h-full">
+        <div className="text-center text-red-500">
           <p className="text-lg font-medium">Error</p>
           <p className="text-sm">{error}</p>
           <button
             onClick={clearError}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="px-4 py-2 mt-4 text-white bg-blue-500 rounded hover:bg-blue-600"
           >
             Try Again
           </button>
@@ -148,16 +241,16 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agent
     <div className="flex w-full h-full">
       <div className="w-full overflow-y-auto scrollbar-hide h-[calc(100vh-64px)] fade-in">
         {conversationId || messages.length > 0 ? (
-          <div className="flex items-center justify-center w-full h-full">
-            <div className="relative flex items-center justify-center w-full h-full">
+          <div className="flex justify-center items-center w-full h-full">
+            <div className="flex relative justify-center items-center w-full h-full">
               <div
                 id="chat-container"
-                className={cn('flex flex-col items-center justify-center w-full h-full', 'w-full')}
+                className={cn('flex flex-col justify-center items-center w-full h-full', 'w-full')}
               >
                 <div
                   className={cn(
-                    'relative flex flex-col justify-between h-full w-full',
-                    isSidebarCollapsed ? 'pl-10 pr-6' : 'px-4',
+                    'flex relative flex-col justify-between w-full h-full',
+                    isSidebarCollapsed ? 'pr-6 pl-10' : 'px-4',
                     'max-w-[760px] 3xl:max-w-[1200px]',
                     'opacity-100',
                   )}
@@ -165,16 +258,21 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agent
                   {/* Message container with fixed height and scroll */}
                   <div
                     ref={chatContainerRef}
-                    className="items-center pt-2 pb-4 overflow-y-auto scrollbar-hide fade-in"
+                    className="overflow-y-auto items-center pt-2 pb-4 scrollbar-hide fade-in"
                   >
-                    <ChatSession messages={messages} isBotThinking={isSending} />
+                    <ChatSession
+                      messages={messages}
+                      isBotThinking={isSending}
+                      currentStep={currentStep}
+                    />
                   </div>
 
                   {/* Fixed chat box at bottom */}
-                  <div className="sticky w-full bg-background bottom-6">
+                  <div className="sticky bottom-6 w-full bg-background">
                     <ChatBox
                       files={files}
-                      isShowUpload={false}
+                      isShowUpload={true}
+                      agentId={agentId}
                       placeholder="Ask me anything"
                       handleSendMessage={onSendMessage}
                     />
@@ -184,7 +282,7 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({ isSidebarCollapsed, agent
             </div>
           </div>
         ) : (
-          <div className={cn('relative flex items-center w-full h-full fade-in')}>
+          <div className={cn('flex relative items-center w-full h-full fade-in')}>
             {renderWelcomeContent()}
           </div>
         )}
