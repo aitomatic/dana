@@ -27,6 +27,7 @@ createRoot(document.getElementById('root')!).render(
             fontSize: '14px',
             fontWeight: '500',
           },
+          // @ts-ignore
           success: {
             style: {
               background: '#f0fdf4',
