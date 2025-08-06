@@ -33,6 +33,7 @@ from dana.core.lang.ast import (
     ImportFromStatement,
     ImportStatement,
     MethodDefinition,
+    MultipleAssignment,
     PassStatement,
     RaiseStatement,
     StructDefinition,
@@ -86,6 +87,7 @@ class StatementExecutor(BaseExecutor):
             AgentPoolStatement: self.execute_agent_pool_statement,
             Assignment: self.execute_assignment,
             CompoundAssignment: self.execute_compound_assignment,
+            MultipleAssignment: self.execute_multiple_assignment,
             AssertStatement: self.execute_assert_statement,
             FunctionDefinition: self.execute_function_definition,
             MethodDefinition: self.execute_method_definition,
@@ -122,6 +124,18 @@ class StatementExecutor(BaseExecutor):
             The assigned value
         """
         return self.assignment_handler.execute_compound_assignment(node, context)
+
+    def execute_multiple_assignment(self, node: MultipleAssignment, context: SandboxContext) -> Any:
+        """Execute a multiple assignment statement (e.g., a, b = 1, 2).
+
+        Args:
+            node: The multiple assignment to execute
+            context: The execution context
+
+        Returns:
+            A tuple of the assigned values
+        """
+        return self.assignment_handler.execute_multiple_assignment(node, context)
 
     def execute_assert_statement(self, node: AssertStatement, context: SandboxContext) -> None:
         """Execute an assert statement using optimized handler.

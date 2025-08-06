@@ -11,7 +11,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any, cast
+from typing import Any
 
 from dana.core.lang.ast import (
     AgentPoolStatement,
@@ -19,6 +19,7 @@ from dana.core.lang.ast import (
     Assignment,
     CompoundAssignment,
     Identifier,
+    MultipleAssignment,
     UseStatement,
 )
 from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
@@ -40,6 +41,41 @@ class AssignmentTransformer(BaseTransformer):
         super().__init__()
         self.main_transformer = main_transformer
         self.expression_transformer = main_transformer.expression_transformer
+
+    def _process_assignment_target(self, target_tree):
+        """
+        Recursively process assignment targets, including nested tuple patterns.
+
+        Args:
+            target_tree: The target parse tree to process
+
+        Returns:
+            Identifier, SubscriptExpression, AttributeAccess, or TupleLiteral for nested patterns
+        """
+        from dana.core.lang.ast import AttributeAccess, SubscriptExpression, TupleLiteral
+
+        # Try to transform as a variable first
+        target = VariableTransformer().variable([target_tree])
+
+        if isinstance(target, (Identifier, SubscriptExpression, AttributeAccess)):
+            return target
+        elif isinstance(target, TupleLiteral):
+            # Handle nested tuple patterns recursively
+            nested_targets = []
+            for item in target.items:
+                # For nested patterns, we need to process each item recursively
+                if hasattr(item, "name") and hasattr(item, "location"):
+                    # This is likely an Identifier
+                    nested_targets.append(item)
+                else:
+                    # Try to process it as a target tree
+                    nested_target = self._process_assignment_target(item)
+                    nested_targets.append(nested_target)
+            return TupleLiteral(items=nested_targets, location=target.location)
+        else:
+            raise TypeError(
+                f"Assignment target must be Identifier, SubscriptExpression, AttributeAccess, or nested tuple pattern, got {type(target)}"
+            )
 
     # === Assignment Statement Methods ===
 
@@ -68,6 +104,76 @@ class AssignmentTransformer(BaseTransformer):
         value_tree = items[1]
 
         return AssignmentHelper.create_assignment(target_tree, value_tree, self.expression_transformer, VariableTransformer())
+
+    def general_assignment(self, items):
+        """Transform a general assignment rule into either Assignment or MultipleAssignment node."""
+        # Grammar: general_assignment: assignment_targets "=" assignment_expr
+        assignment_targets_tree = items[0]
+        value = items[1]  # This is already transformed by assignment_expr
+
+        # Check if we have multiple targets
+        if len(assignment_targets_tree) == 1:
+            # Single assignment - could be simple or nested tuple pattern
+            target_tree = assignment_targets_tree[0]
+
+            # Transform the target using our helper that handles nested patterns
+            target = self._process_assignment_target(target_tree)
+
+            # Check if this is actually a nested pattern (tuple literal)
+            from dana.core.lang.ast import TupleLiteral
+
+            if isinstance(target, TupleLiteral):
+                # This is a nested pattern, create a special assignment that handles it as a single nested target
+                # We'll use Assignment but with a TupleLiteral target, which the executor will handle specially
+                return Assignment(target=target, value=value)
+
+            # Simple single assignment
+            # Special handling for UseStatement, AgentStatement, AgentPoolStatement
+            if isinstance(value, (UseStatement, AgentStatement, AgentPoolStatement)):
+                if hasattr(value, "target") and value.target is None:
+                    value.target = target
+
+            return Assignment(target=target, value=value)
+        else:
+            # Multiple assignment
+            from dana.core.lang.ast import TupleLiteral
+
+            targets = []
+            for target_tree in assignment_targets_tree:
+                target = self._process_assignment_target(target_tree)
+                targets.append(target)
+
+            return MultipleAssignment(targets=targets, value=value)
+
+    def assignment_targets(self, items):
+        """Transform an assignment_targets rule into a list of targets."""
+        # Grammar: assignment_targets: target ("," target)*
+        # Return the list of target trees for further processing
+        return items
+
+    def assignment_expr(self, items):
+        """Transform an assignment_expr rule into either a single expression or tuple."""
+        # Grammar: assignment_expr: (expr | use_stmt | agent_stmt | agent_pool_stmt) ("," (expr | use_stmt | agent_stmt | agent_pool_stmt))*
+        if len(items) == 1:
+            # Single item - check if it's already a statement or needs to be transformed as expression
+            item = items[0]
+            if isinstance(item, (UseStatement, AgentStatement, AgentPoolStatement)):
+                return item
+            else:
+                return self.expression_transformer.expression([item])
+        else:
+            # Multiple items - create a tuple
+            from dana.core.lang.ast import TupleLiteral
+
+            expressions = []
+            for item in items:
+                if isinstance(item, (UseStatement, AgentStatement, AgentPoolStatement)):
+                    expressions.append(item)
+                else:
+                    expr = self.expression_transformer.expression([item])
+                    expressions.append(expr)
+
+            return TupleLiteral(items=expressions)
 
     def compound_assignment(self, items):
         """Transform a compound assignment rule into a CompoundAssignment node."""
@@ -125,30 +231,6 @@ class AssignmentTransformer(BaseTransformer):
         """Return the compound operator token."""
         # Grammar: compound_op: PLUS_EQUALS | MINUS_EQUALS | MULT_EQUALS | DIV_EQUALS
         return items[0].value  # Return the string value of the token
-
-    def function_call_assignment(self, items):
-        """Transform a function_call_assignment rule into an Assignment node with object-returning statement."""
-        # Grammar: function_call_assignment: target "=" return_object_stmt
-        target_tree = items[0]
-        return_object_tree = items[1]
-
-        # Get target identifier
-        target = VariableTransformer().variable([target_tree])
-        if not isinstance(target, Identifier):
-            raise TypeError(f"Assignment target must be Identifier, got {type(target)}")
-
-        # Transform the return_object_stmt (which should be UseStatement, AgentStatement, or AgentPoolStatement)
-        # The return_object_tree should already be transformed by return_object_stmt method
-        if isinstance(return_object_tree, UseStatement | AgentStatement | AgentPoolStatement):
-            if hasattr(return_object_tree, "target") and return_object_tree.target is None:
-                # If the target is not set, set it to the target of the assignment
-                return_object_tree.target = target
-            value_expr = cast(AllowedAssignmentValue, return_object_tree)
-        else:
-            # Fallback transformation if needed
-            value_expr = cast(AllowedAssignmentValue, return_object_tree)
-
-        return Assignment(target=target, value=value_expr)
 
     def declarative_function_assignment(self, items):
         """Transform a declarative function assignment rule into a DeclarativeFunctionDefinition node."""

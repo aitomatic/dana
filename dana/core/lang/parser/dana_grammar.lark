@@ -172,12 +172,15 @@ export_stmt: "export" NAME -> export_list
 
 export_names: NAME ("," NAME)*
 
-assignment: typed_assignment | simple_assignment | function_call_assignment | compound_assignment
-typed_assignment: target ":" basic_type "=" expr
-simple_assignment: target "=" expr
-function_call_assignment: target "=" return_object_stmt
+assignment: typed_assignment | general_assignment | compound_assignment
+typed_assignment: target ":" basic_type "=" assignment_expr
+general_assignment: assignment_targets "=" assignment_expr
+
 declarative_function_assignment: "def" NAME "(" [parameters] ")" ["->" basic_type] "=" function_composition_expr
 compound_assignment: target compound_op expr
+
+// Assignment expression: allows comma-separated values (implicit tuples) or special statements
+assignment_expr: (expr | use_stmt | agent_stmt | agent_pool_stmt) ("," (expr | use_stmt | agent_stmt | agent_pool_stmt))*
 
 compound_op: PLUS_EQUALS | MINUS_EQUALS | MULT_EQUALS | DIV_EQUALS
 
@@ -220,6 +223,7 @@ scope_prefix: PRIVATE | PUBLIC | LOCAL | SYSTEM
 
 // Assignment targets
 target: atom
+assignment_targets: target ("," target)*
 
 // ===== EXPRESSIONS =====
 expr: pipe_expr
