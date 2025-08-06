@@ -124,7 +124,7 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
 
     try:
         # Read the original main.na content
-        with open(main_na_path, "r", encoding="utf-8") as f:
+        with open(main_na_path, encoding="utf-8") as f:
             original_content = f.read()
 
         # Add the response line at the end
@@ -209,8 +209,8 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
             return AgentTestResponse(success=True, agent_response=response_text or result, error=None)
         else:
             # Multi-file execution failed, use LLM fallback
-            logger.warning(f"Multi-file agent execution failed: {result.error}, using LLM fallback")
-            print(f"Multi-file agent execution failed: {result.error}, using LLM fallback")
+            logger.warning(f"Multi-file agent execution failed: {result}, using LLM fallback")
+            print(f"Multi-file agent execution failed: {result}, using LLM fallback")
 
             llm_response = await _llm_fallback(request.agent_name, request.agent_description, request.message)
 
