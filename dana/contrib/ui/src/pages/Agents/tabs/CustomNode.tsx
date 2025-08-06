@@ -108,6 +108,7 @@ export const FilePopup = ({
   <PortalPopup
     style={{
       position: 'absolute',
+      display: 'none',
       left: x,
       top: y,
       zIndex: 9999,
