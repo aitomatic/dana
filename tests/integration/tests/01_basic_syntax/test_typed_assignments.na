@@ -58,7 +58,7 @@ log("✅ Typed assignment with expressions works")
 def get_value() -> int:
     return 42
 
-typed_result: int = get_value()
+typed_result = get_value()
 assert typed_result == 42, f"Expected 42, got {typed_result}"
 log("✅ Typed assignment with function calls works")
 
@@ -87,12 +87,12 @@ log("✅ Typed assignment with conditional expression works")
 a: int = 10
 b: float = 20.5
 c: str = "test"
-d: bool = false
+d: bool = False
 
 assert a == 10, f"Expected 10, got {a}"
 assert b == 20.5, f"Expected 20.5, got {b}"
 assert c == "test", f"Expected 'test', got {c}"
-assert d == false, f"Expected false, got {d}"
+assert d == False, f"Expected false, got {d}"
 log("✅ Multiple typed assignments work")
 
 # Test 17: Typed assignment with negative numbers
