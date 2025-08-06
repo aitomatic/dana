@@ -250,6 +250,7 @@ class DanaREPLApp(Loggable):
 
     async def _execute_program_blocking(self, program: str) -> None:
         """Execute program with blocking behavior and ESC cancellation support."""
+        poll_count = 0
         try:
             self.debug(f"Starting blocking execution for: {program}")
 

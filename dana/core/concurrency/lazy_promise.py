@@ -114,8 +114,8 @@ def get_current_promise_group():
 
 def resolve_lazy_promise(promise):
     """Stub function for backward compatibility."""
-    if hasattr(promise, "_ensure_resolved"):
-        return promise._ensure_resolved()
+    if hasattr(promise, "_wait_for_delivery"):
+        return promise._wait_for_delivery()
     return promise
 
 

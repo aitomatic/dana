@@ -48,7 +48,7 @@ class TestPromiseTypes:
         assert isinstance(eager, EagerPromise)
 
         # Both should resolve to the same value
-        assert lazy._ensure_resolved() == 42
+        assert lazy._wait_for_delivery() == 42
         assert eager._wait_for_delivery() == 42
 
     def test_lazy_execution_timing(self, context, executor):
@@ -66,7 +66,7 @@ class TestPromiseTypes:
         assert len(executed) == 0
 
         # Access should trigger execution
-        result = lazy._ensure_resolved()
+        result = lazy._wait_for_delivery()
         assert result == "result"
         assert len(executed) == 1
 
@@ -102,7 +102,7 @@ class TestPromiseTypes:
         lazy = LazyPromise.create(sync_computation, context)
         assert call_count == 0  # Not executed yet
 
-        result = lazy._ensure_resolved()
+        result = lazy._wait_for_delivery()
         assert result == "sync_result_1"
         assert call_count == 1
 
@@ -126,7 +126,7 @@ class TestPromiseTypes:
         # Test lazy error handling
         lazy = LazyPromise.create(failing_computation, context)
         with pytest.raises(ValueError, match="Test error"):
-            lazy._ensure_resolved()
+            lazy._wait_for_delivery()
 
         # Test eager error handling
         eager = EagerPromise.create(failing_computation, executor)
@@ -151,7 +151,7 @@ class TestPromiseTypes:
             time.sleep(0.01)
 
             # Test type behavior
-            assert isinstance(lazy._ensure_resolved(), expected_type)
+            assert isinstance(lazy._wait_for_delivery(), expected_type)
             assert isinstance(eager._wait_for_delivery(), expected_type)
 
             # Test transparent operations
@@ -338,8 +338,8 @@ class TestPromiseSpecialCases:
         time.sleep(0.01)
 
         # Multiple resolutions should give same result
-        assert lazy._ensure_resolved() == "test"
-        assert lazy._ensure_resolved() == "test"
+        assert lazy._wait_for_delivery() == "test"
+        assert lazy._wait_for_delivery() == "test"
 
         assert eager._wait_for_delivery() == "test"
         assert eager._wait_for_delivery() == "test"
@@ -351,7 +351,7 @@ class TestPromiseSpecialCases:
 
         time.sleep(0.01)
 
-        assert lazy_none._ensure_resolved() is None
+        assert lazy_none._wait_for_delivery() is None
         assert eager_none._wait_for_delivery() is None
 
     def test_promise_boolean_evaluation(self, context, executor):

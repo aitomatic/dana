@@ -79,9 +79,9 @@ class REPL(Loggable):
         # Get the context from DanaSandbox
         self.context = self.sandbox._context
 
-        # Set LLM resource if provided and not already in context
-        if llm_resource is not None and not self.context.get("system:llm_resource"):
-            self.context.set("system:llm_resource", llm_resource)
+        # Set system-wide LLM resource if provided
+        if llm_resource is not None:
+            self.context.set_system_llm_resource(llm_resource)
 
         self.last_result = None
         self.transcoder = None

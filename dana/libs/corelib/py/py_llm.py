@@ -11,7 +11,6 @@ import os
 from typing import Any
 
 from dana.common.exceptions import SandboxError
-from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.logging import DANA_LOGGER
 from dana.core.concurrency.promise_factory import PromiseFactory
@@ -61,22 +60,9 @@ def py_llm(
     # Priority: function parameter > environment variable
     should_mock = use_mock if use_mock is not None else os.environ.get("DANA_MOCK_LLM", "").lower() == "true"
 
-    # Get LLM resource from context (assume it's available)
-    if hasattr(context, "llm_resource") and context.llm_resource:
-        llm_resource = context.llm_resource
-    else:
-        # Try to get from system:llm_resource
-        try:
-            llm_resource = context.get("system:llm_resource")
-            if not llm_resource:
-                llm_resource = LLMResource()
-        except Exception:
-            llm_resource = LLMResource()
-
-    # Apply mocking if needed
-    if should_mock:
-        logger.info(f"Using mock LLM response (prompt: {prompt[:100]}{'...' if len(prompt) > 100 else ''})")
-        llm_resource = llm_resource.with_mock_llm_call(True)
+    # Get LLM resource from context using consolidated method
+    llm_resource = context.get_system_llm_resource(use_mock=should_mock)
+    logger.info(f"LLMResource ID: {llm_resource.id}")
 
     # Get resources from context once and reuse throughout the function
     resources = {}

@@ -136,7 +136,7 @@ class DanaSandbox(Loggable):
             # TODO(#262): Temporarily disabled API context storage
             # Store in context
             # self._context.set("system:api_client", self._api_client)
-            self._context.set("system:llm_resource", self._llm_resource)
+            self._context.set_system_llm_resource(self._llm_resource)
 
             # Register started APIClient as default POET client
             # poet_client = POETClient.__new__(POETClient)  # Create without calling __init__

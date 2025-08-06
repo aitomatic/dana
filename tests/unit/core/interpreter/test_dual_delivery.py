@@ -53,7 +53,7 @@ class TestReturnStatement:
         # Test that we can create a LazyPromise[T] directly (the foundation exists)
         promise = LazyPromise(lambda: 42, context)
         # Test that LazyPromise[T] resolves to the correct value
-        resolved_value = promise._ensure_resolved()  # Access internal resolution
+        resolved_value = promise._wait_for_delivery()  # Access internal resolution
         assert resolved_value == 42
 
 
