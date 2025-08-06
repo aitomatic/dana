@@ -154,6 +154,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [, setGenerateMsg] = useState<string | null>(null);
@@ -165,8 +166,29 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   const [sidebarContent, setSidebarContent] = useState<any>(null);
   const [sidebarLoading, setSidebarLoading] = useState(false);
   const [sidebarError, setSidebarError] = useState<string | null>(null);
+  // New UX improvement states
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const containerRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const expandedNodesRef = useRef<Set<string>>(new Set());
+  const previousAgentIdRef = useRef<string | number | undefined>(undefined);
+  const nodeClickingRef = useRef<boolean>(false);
+
+  // Keep the ref in sync with the state
+  useEffect(() => {
+    expandedNodesRef.current = expandedNodes;
+  }, [expandedNodes]);
+
+  // Reset expansion state only when switching to a different agent
+  useEffect(() => {
+    if (agentId && agentId !== previousAgentIdRef.current) {
+      setExpandedNodes(new Set());
+      expandedNodesRef.current = new Set();
+      previousAgentIdRef.current = agentId;
+    } else if (agentId) {
+      previousAgentIdRef.current = agentId;
+    }
+  }, [agentId]);
 
   // WebSocket for real-time status updates
   useEffect(() => {
@@ -201,7 +223,8 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                   const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
                     domainResponse,
                     statusResponse,
-                    expandedNodes,
+                    expandedNodesRef.current,
+                    searchQuery,
                   );
                   const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
                   setNodes(layoutedNodes);
@@ -240,11 +263,27 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     ),
   };
 
+  // Helper function to check if a node matches search query
+  const matchesSearch = (nodeLabel: string, searchQuery: string): boolean => {
+    if (!searchQuery.trim()) return true;
+    return nodeLabel.toLowerCase().includes(searchQuery.toLowerCase().trim());
+  };
+
+  // Helper function to check if any child matches search
+  const hasMatchingDescendant = (node: DomainNode, searchQuery: string): boolean => {
+    if (matchesSearch(node.topic, searchQuery)) return true;
+    if (node.children) {
+      return node.children.some((child) => hasMatchingDescendant(child, searchQuery));
+    }
+    return false;
+  };
+
   // Convert domain knowledge tree to flow nodes and edges
   const convertDomainToFlow = (
     domainTree: DomainKnowledgeResponse,
     statusData?: KnowledgeStatusResponse,
     expandedNodeIds?: Set<string>,
+    searchQuery?: string,
   ): { nodes: FlowNode[]; edges: Edge[] } => {
     const nodes: FlowNode[] = [];
     const edges: Edge[] = [];
@@ -270,7 +309,10 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           const lastTopicPart = topicParts[topicParts.length - 1];
 
           // If the leaf node names match and the topic path is a subset of the node path
-          if (lastPathPart === lastTopicPart && topicParts.every(part => pathParts.includes(part))) {
+          if (
+            lastPathPart === lastTopicPart &&
+            topicParts.every((part) => pathParts.includes(part))
+          ) {
             return topic;
           }
         }
@@ -279,7 +321,12 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       return null;
     };
 
-    const traverse = (domainNode: DomainNode, parentId?: string, pathParts: string[] = [], depth: number = 0) => {
+    const traverse = (
+      domainNode: DomainNode,
+      parentId?: string,
+      pathParts: string[] = [],
+      depth: number = 0,
+    ) => {
       const currentPath = [...pathParts, domainNode.topic];
       const nodeId = currentPath.join('/'); // Unique path-based ID
       // Create nodePath excluding the root level for knowledge status matching
@@ -292,12 +339,25 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       const hasChildren = domainNode.children && domainNode.children.length > 0;
       const knowledgeStatusInfo = isLeafNode ? getKnowledgeStatusForPath(nodePath) : null;
 
-
       // Only show the node if:
       // 1. It's the root node (depth 0)
       // 2. Its parent is expanded
       // 3. We don't have expansion state yet (show all - fallback behavior)
-      const shouldShowNode = depth === 0 || !parentId || !expandedNodeIds || expandedNodeIds.has(parentId);
+      // 4. If there's a search query, the node or its descendants match
+      const shouldShowNode = (() => {
+        const baseCondition =
+          depth === 0 || !parentId || !expandedNodeIds || expandedNodeIds.has(parentId);
+
+        if (!searchQuery || !searchQuery.trim()) {
+          return baseCondition;
+        }
+
+        // For search: show if current node matches OR has matching descendants
+        const nodeMatches = matchesSearch(domainNode.topic, searchQuery);
+        const hasMatchingChild = hasMatchingDescendant(domainNode, searchQuery);
+
+        return baseCondition && (nodeMatches || hasMatchingChild);
+      })();
 
       if (shouldShowNode) {
         // Create flow node with knowledge status information
@@ -353,7 +413,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     }
 
     const fetchData = async () => {
-      setLoading(true);
+      setInitialLoading(true);
       setError(null);
 
       try {
@@ -373,16 +433,23 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           setDomainTree(domainResponse);
           setStatusData(statusResponse);
 
-          // Initialize expanded nodes with just the root
-          const rootPath = domainResponse.root.topic;
-          const initialExpanded = new Set([rootPath]);
-          setExpandedNodes(initialExpanded);
+          // Preserve existing expansion state or initialize with just the root
+          const currentExpanded =
+            expandedNodesRef.current.size > 0
+              ? expandedNodesRef.current
+              : new Set([domainResponse.root.topic]);
+
+          // Only set expanded nodes if we don't have any yet
+          if (expandedNodesRef.current.size === 0) {
+            setExpandedNodes(currentExpanded);
+          }
 
           // Convert domain knowledge to flow format (now with status information)
           const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
             domainResponse,
             statusResponse,
-            initialExpanded,
+            currentExpanded,
+            searchQuery,
           );
           const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
           setNodes(layoutedNodes);
@@ -396,7 +463,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         setNodes(layouted);
         setEdges(initialEdges);
       } finally {
-        setLoading(false);
+        setInitialLoading(false);
       }
     };
 
@@ -420,12 +487,126 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     };
   }, [selectedNodeId]);
 
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!domainTree || nodes.length === 0) return;
+
+      // Only handle keyboard events when tree is focused
+      if (!containerRef.current?.contains(document.activeElement)) return;
+
+      const currentNodeIndex = selectedNodeId
+        ? nodes.findIndex((n) => n.id === selectedNodeId)
+        : -1;
+
+      switch (event.key) {
+        case 'ArrowDown':
+          event.preventDefault();
+          const nextIndex = currentNodeIndex < nodes.length - 1 ? currentNodeIndex + 1 : 0;
+          setSelectedNodeId(nodes[nextIndex].id);
+          break;
+
+        case 'ArrowUp':
+          event.preventDefault();
+          const prevIndex = currentNodeIndex > 0 ? currentNodeIndex - 1 : nodes.length - 1;
+          setSelectedNodeId(nodes[prevIndex].id);
+          break;
+
+        case 'ArrowRight':
+        case ' ':
+          event.preventDefault();
+          if (selectedNodeId) {
+            const currentNode = nodes.find((n) => n.id === selectedNodeId);
+            if (currentNode?.data.hasChildren && !currentNode.data.isExpanded) {
+              // Expand node
+              const newExpandedNodes = new Set(expandedNodes);
+              newExpandedNodes.add(selectedNodeId);
+              setExpandedNodes(newExpandedNodes);
+
+              if (domainTree && statusData) {
+                const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
+                  domainTree,
+                  statusData,
+                  newExpandedNodes,
+                  searchQuery,
+                );
+                const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
+                setNodes(layoutedNodes);
+                setEdges(flowEdges);
+              }
+            }
+          }
+          break;
+
+        case 'ArrowLeft':
+          event.preventDefault();
+          if (selectedNodeId) {
+            const currentNode = nodes.find((n) => n.id === selectedNodeId);
+            if (currentNode?.data.hasChildren && currentNode.data.isExpanded) {
+              // Collapse node
+              const newExpandedNodes = new Set(expandedNodes);
+              newExpandedNodes.delete(selectedNodeId);
+              setExpandedNodes(newExpandedNodes);
+
+              if (domainTree && statusData) {
+                const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
+                  domainTree,
+                  statusData,
+                  newExpandedNodes,
+                  searchQuery,
+                );
+                const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
+                setNodes(layoutedNodes);
+                setEdges(flowEdges);
+              }
+            }
+          }
+          break;
+
+        case 'Enter':
+          event.preventDefault();
+          if (selectedNodeId) {
+            const currentNode = nodes.find((n) => n.id === selectedNodeId);
+            if (currentNode) {
+              // Simulate node click
+              onNodeClick({} as React.MouseEvent, currentNode);
+            }
+          }
+          break;
+
+        case 'Escape':
+          event.preventDefault();
+          setSelectedNodeId(null);
+          setSidebarOpen(false);
+          break;
+      }
+    };
+
+    // Add event listener
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedNodeId, nodes, expandedNodes, domainTree, statusData, searchQuery]);
+
   // Handle node click - toggle expansion for parent nodes, show sidebar for leaf nodes
-  const onNodeClick = async (_: React.MouseEvent, node: FlowNode) => {
+  const onNodeClick = async (event: React.MouseEvent, node: FlowNode) => {
+    // Prevent the click from triggering focus events that might interfere
+    event.stopPropagation();
+
+    // Flag that we're in the middle of a node click to prevent focus interference
+    nodeClickingRef.current = true;
+
     const nodeData = node.data;
 
-    // Set the selected node for highlighting
+    // Set the selected node for highlighting immediately
     setSelectedNodeId(node.id);
+
+    // Clear the clicking flag after a short delay
+    setTimeout(() => {
+      nodeClickingRef.current = false;
+    }, 100);
 
     // If it's a leaf node, show the knowledge sidebar
     if (nodeData.isLeafNode) {
@@ -490,7 +671,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         const removeDescendants = (nodeId: string) => {
           newExpandedNodes.delete(nodeId);
           // Find and remove all descendant nodes
-          nodes.forEach(n => {
+          nodes.forEach((n) => {
             if (n.id !== nodeId && n.id.startsWith(nodeId + '/')) {
               removeDescendants(n.id);
             }
@@ -510,6 +691,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           domainTree,
           statusData,
           newExpandedNodes,
+          searchQuery,
         );
         const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
         setNodes(layoutedNodes);
@@ -539,6 +721,117 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     } finally {
       setGenerating(false);
     }
+  };
+
+  // Handle search query changes
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+
+    // Auto-expand nodes when searching to show results
+    if (query.trim() && domainTree) {
+      const autoExpandForSearch = new Set<string>();
+
+      // Expand all parent nodes that contain matching children
+      const expandParentsWithMatches = (
+        node: DomainNode,
+        pathParts: string[] = [],
+        depth: number = 0,
+      ) => {
+        const currentPath = [...pathParts, node.topic];
+        const nodeId = currentPath.join('/');
+
+        if (hasMatchingDescendant(node, query)) {
+          autoExpandForSearch.add(nodeId);
+          if (node.children) {
+            node.children.forEach((child) =>
+              expandParentsWithMatches(child, currentPath, depth + 1),
+            );
+          }
+        }
+      };
+
+      if (domainTree.root) {
+        expandParentsWithMatches(domainTree.root);
+        setExpandedNodes(new Set([...expandedNodes, ...autoExpandForSearch]));
+      }
+    }
+
+    // Regenerate tree with search filter
+    if (domainTree && statusData) {
+      const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
+        domainTree,
+        statusData,
+        expandedNodesRef.current,
+        query,
+      );
+      const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
+      setNodes(layoutedNodes);
+      setEdges(flowEdges);
+    }
+  };
+
+  // Tree control functions
+  const handleExpandAll = () => {
+    if (!domainTree || !domainTree.root) return;
+
+    const allNodeIds = new Set<string>();
+
+    const collectAllNodes = (node: DomainNode, pathParts: string[] = []) => {
+      const currentPath = [...pathParts, node.topic];
+      const nodeId = currentPath.join('/');
+      allNodeIds.add(nodeId);
+
+      if (node.children) {
+        node.children.forEach((child) => collectAllNodes(child, currentPath));
+      }
+    };
+
+    collectAllNodes(domainTree.root);
+    setExpandedNodes(allNodeIds);
+
+    // Regenerate tree
+    const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
+      domainTree,
+      statusData!,
+      allNodeIds,
+      searchQuery,
+    );
+    const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
+    setNodes(layoutedNodes);
+    setEdges(flowEdges);
+  };
+
+  const handleCollapseAll = () => {
+    if (!domainTree || !domainTree.root) return;
+
+    // Only keep root expanded
+    const rootOnly = new Set([domainTree.root.topic]);
+    setExpandedNodes(rootOnly);
+
+    // Regenerate tree
+    const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
+      domainTree,
+      statusData!,
+      rootOnly,
+      searchQuery,
+    );
+    const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
+    setNodes(layoutedNodes);
+    setEdges(flowEdges);
+  };
+
+  // Calculate progress statistics
+  const getProgressStats = () => {
+    if (!statusData || !statusData.topics)
+      return { total: 0, completed: 0, inProgress: 0, failed: 0, pending: 0 };
+
+    const total = statusData.topics.length;
+    const completed = statusData.topics.filter((topic) => topic.status === 'success').length;
+    const inProgress = statusData.topics.filter((topic) => topic.status === 'in_progress').length;
+    const failed = statusData.topics.filter((topic) => topic.status === 'failed').length;
+    const pending = statusData.topics.filter((topic) => topic.status === 'pending').length;
+
+    return { total, completed, inProgress, failed, pending };
   };
 
   // Helper to get status for a node
@@ -573,46 +866,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     return null;
   };
 
-  // Show loading state
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center w-full h-full bg-white">
-        <div className="text-gray-500">Loading domain knowledge...</div>
-      </div>
-    );
-  }
-
-  // Show error state
-  if (error) {
-    return (
-      <div className="flex flex-col gap-4 justify-center items-center w-full h-full bg-white">
-        <div className="text-center text-gray-500">
-          <div className="text-lg font-medium">No Domain Knowledge</div>
-          <div className="text-sm">{error}</div>
-        </div>
-        <div className="max-w-md text-xs text-center text-gray-400">
-          Start a conversation with the agent to build domain knowledge automatically, or use the
-          smart chat feature to add specific expertise areas.
-        </div>
-      </div>
-    );
-  }
-
-  // Show empty state if no nodes
-  if (nodes.length === 0) {
-    return (
-      <div className="flex flex-col gap-4 justify-center items-center w-full h-full bg-white">
-        <div className="text-center text-gray-500">
-          <div className="text-lg font-medium">No Domain Knowledge</div>
-          <div className="text-sm">This agent doesn't have any domain knowledge yet</div>
-        </div>
-        <div className="max-w-md text-xs text-center text-gray-400">
-          Start a conversation with the agent to build domain knowledge automatically, or use the
-          smart chat feature to add specific expertise areas.
-        </div>
-      </div>
-    );
-  }
+  // No more full page loading replacement - all loading states handled within main component
 
   return (
     <>
@@ -621,31 +875,234 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         style={{ position: 'relative' }}
         ref={containerRef}
       >
-        {agentId && (
-          <div style={{}}>
-            <button
-              onClick={handleGenerateKnowledge}
-              disabled={generating}
-              className="absolute top-4 left-4 z-20 px-4 py-2 text-gray-500 bg-white text-sm rounded-md border border-gray-200 hover:bg-gray-100"
-            >
-              {generating ? 'Generating...' : 'Generate Contextual Knowledge'}
-            </button>
+        {/* Smooth loading indicator that slides down from top */}
+        {(initialLoading || loading) && (
+          <div className="absolute top-0 right-0 left-0 z-30 transition-all duration-300 ease-in-out transform">
+            <div className="flex justify-center items-center py-2 bg-blue-50 border-b border-blue-200 shadow-sm animate-pulse">
+              <div className="flex gap-2 items-center text-blue-700">
+                <div className="w-4 h-4 rounded-full border-2 border-blue-300 animate-spin border-t-blue-600"></div>
+                <span className="text-sm font-medium">
+                  {initialLoading ? 'Refreshing knowledge tree...' : 'Updating knowledge tree...'}
+                </span>
+              </div>
+            </div>
           </div>
         )}
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          fitView
-          nodesDraggable={false}
-          nodesConnectable={false}
-          elementsSelectable={false}
-          proOptions={{ hideAttribution: true }}
-          onNodeClick={onNodeClick}
-          onPaneClick={onPaneClick}
+
+        {/* Enhanced Control Bar */}
+        {agentId && (
+          <div
+            className={`absolute left-4 right-4 z-20 transition-all duration-300 ease-in-out ${
+              initialLoading || loading ? 'top-16' : 'top-4'
+            }`}
+          >
+            <div className="flex gap-3 justify-between items-center">
+              {/* Left side - Search and Tree Controls */}
+              <div className="flex flex-1 gap-3 items-center">
+                {/* Search Input */}
+                <div className="relative flex-1 max-w-md">
+                  <input
+                    type="text"
+                    placeholder="Search knowledge topics..."
+                    value={searchQuery}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    className="px-3 py-2 w-full text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => handleSearchChange('')}
+                      className="absolute right-2 top-1/2 text-gray-400 transform -translate-y-1/2 hover:text-gray-600"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Tree Controls */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleExpandAll}
+                    disabled={!domainTree}
+                    className="px-3 py-2 text-xs text-gray-600 bg-gray-50 rounded-md border border-gray-200 transition-colors hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Expand All"
+                  >
+                    Expand All
+                  </button>
+                  <button
+                    onClick={handleCollapseAll}
+                    disabled={!domainTree}
+                    className="px-3 py-2 text-xs text-gray-600 bg-gray-50 rounded-md border border-gray-200 transition-colors hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Collapse All"
+                  >
+                    Collapse All
+                  </button>
+                </div>
+              </div>
+
+              {/* Right side - Progress Stats and Generate Button */}
+              <div className="flex gap-3 items-center">
+                {/* Progress Stats */}
+                {statusData && statusData.topics && statusData.topics.length > 0 && (
+                  <div className="hidden gap-2 items-center text-xs text-gray-600 md:flex">
+                    {/* Completed */}
+                    {getProgressStats().completed > 0 && (
+                      <div className="flex gap-1 items-center">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>{getProgressStats().completed}</span>
+                      </div>
+                    )}
+
+                    {/* In Progress (Generating) */}
+                    {getProgressStats().inProgress > 0 && (
+                      <div className="flex gap-1 items-center">
+                        <div className="flex gap-0.5 items-center">
+                          <div
+                            className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"
+                            style={{ animationDelay: '0ms' }}
+                          ></div>
+                          <div
+                            className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"
+                            style={{ animationDelay: '150ms' }}
+                          ></div>
+                          <div
+                            className="w-1.5 h-1.5 bg-blue-300 rounded-full animate-pulse"
+                            style={{ animationDelay: '300ms' }}
+                          ></div>
+                        </div>
+                        <span>{getProgressStats().inProgress}</span>
+                      </div>
+                    )}
+
+                    {/* Failed */}
+                    {getProgressStats().failed > 0 && (
+                      <div className="flex gap-1 items-center">
+                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                        <span>{getProgressStats().failed}</span>
+                      </div>
+                    )}
+
+                    {/* Pending */}
+                    {getProgressStats().pending > 0 && (
+                      <div className="flex gap-1 items-center">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                        <span>{getProgressStats().pending}</span>
+                      </div>
+                    )}
+
+                    {/* Total count separator */}
+                    <div className="mx-1 w-px h-3 bg-gray-300"></div>
+                    <div className="font-medium text-gray-500">
+                      {getProgressStats().total} total
+                    </div>
+                  </div>
+                )}
+
+                {/* Generate Knowledge Button */}
+                <button
+                  onClick={handleGenerateKnowledge}
+                  disabled={generating || initialLoading || loading}
+                  className={`px-4 py-2 text-sm rounded-md border transition-all duration-200 shadow-sm ${
+                    generating || initialLoading || loading
+                      ? 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed opacity-75'
+                      : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:text-gray-900 hover:shadow-md'
+                  }`}
+                >
+                  {generating ? (
+                    <div className="flex gap-2 items-center">
+                      <div className="w-4 h-4 rounded-full border-2 border-gray-300 animate-spin border-t-blue-500"></div>
+                      <span>Generating...</span>
+                    </div>
+                  ) : (
+                    <span className="text-sm font-medium text-gray-700">Generate Knowledge</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tree View Container with smooth margin adjustment */}
+        <div
+          className={`transition-all duration-300 ease-in-out h-full ${
+            agentId ? (initialLoading || loading ? 'pt-32' : 'pt-20') : ''
+          }`}
         >
-          <Controls />
-        </ReactFlow>
+          {nodes.length > 0 ? (
+            <div
+              tabIndex={0}
+              className="h-full rounded-lg outline-none"
+              onFocus={(e) => {
+                // Don't interfere if we're in the middle of a node click
+                if (nodeClickingRef.current) return;
+
+                // Only auto-select first node when focusing via keyboard navigation
+                // Don't interfere when clicking on nodes or any child elements
+                if (!selectedNodeId && nodes.length > 0) {
+                  const isKeyboardTabFocus =
+                    e.relatedTarget !== null && e.relatedTarget !== e.currentTarget;
+                  const isEmptyAreaClick = e.target === e.currentTarget && !e.relatedTarget;
+
+                  // Only auto-select on keyboard tab navigation or clicking empty areas
+                  if (isKeyboardTabFocus || isEmptyAreaClick) {
+                    setSelectedNodeId(nodes[0].id);
+                  }
+                }
+              }}
+            >
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                nodeTypes={nodeTypes}
+                fitView
+                nodesDraggable={false}
+                nodesConnectable={false}
+                elementsSelectable={false}
+                proOptions={{ hideAttribution: true }}
+                onNodeClick={onNodeClick}
+                onPaneClick={onPaneClick}
+              >
+                <Controls />
+              </ReactFlow>
+            </div>
+          ) : (
+            /* Empty/Error State - Doesn't replace tree, shows as overlay */
+            <div className="flex flex-col gap-4 justify-center items-center h-full transition-opacity duration-500 ease-in-out">
+              {initialLoading ? (
+                /* Show loading state when first loading */
+                <div className="text-center text-gray-500">
+                  <div className="text-lg font-medium">Initializing Domain Knowledge</div>
+                  <div className="text-sm">
+                    Please wait while we load your agent's knowledge structure...
+                  </div>
+                </div>
+              ) : error ? (
+                /* Show error state */
+                <>
+                  <div className="text-center text-gray-500">
+                    <div className="text-lg font-medium">No Domain Knowledge</div>
+                    <div className="text-sm">{error}</div>
+                  </div>
+                  <div className="max-w-md text-xs text-center text-gray-400">
+                    Start a conversation with the agent to build domain knowledge automatically, or
+                    use the smart chat feature to add specific expertise areas.
+                  </div>
+                </>
+              ) : (
+                /* Show empty state when no nodes but no error */
+                <>
+                  <div className="text-center text-gray-500">
+                    <div className="text-lg font-medium">No Domain Knowledge</div>
+                    <div className="text-sm">This agent doesn't have any domain knowledge yet</div>
+                  </div>
+                  <div className="max-w-md text-xs text-center text-gray-400">
+                    Start a conversation with the agent to build domain knowledge automatically, or
+                    use the smart chat feature to add specific expertise areas.
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Knowledge Sidebar */}
