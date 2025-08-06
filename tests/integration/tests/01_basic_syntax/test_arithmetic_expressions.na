@@ -203,4 +203,29 @@ result = 1e10 * 1e10
 assert result == 1e20, f"Expected 1e20, got {result}"
 log("✅ Arithmetic with very large numbers works")
 
+# Test 36: Operator precedence with complex expressions
+result = 2 + 3 * 4 ** 2 - 6 / 3
+assert result == 48.0, f"Expected 48.0, got {result}"
+log("✅ Operator precedence with complex expressions works")
+
+# Test 37: Nested parentheses with multiple operators
+result = ((2 + 3) * (4 - 1)) ** 2 / 3
+assert result == 75.0, f"Expected 75.0, got {result}"
+log("✅ Nested parentheses with multiple operators works")
+
+# Test 38: Mixed operator precedence
+result = 10 + 5 * 2 ** 3 - 20 / 4
+assert result == 45.0, f"Expected 45.0, got {result}"
+log("✅ Mixed operator precedence works")
+
+# Test 39: Complex expression with all operators
+result = (5 + 3) * 2 ** 2 - 16 / 4 + 1
+assert result == 29.0, f"Expected 29.0, got {result}"
+log("✅ Complex expression with all operators works")
+
+# Test 40: Deeply nested parentheses
+result = ((((2 + 1) * 3) + 5) * 2) - 10
+assert result == 18, f"Expected 18, got {result}"
+log("✅ Deeply nested parentheses work")
+
 log("Arithmetic Expressions test completed successfully") 

@@ -242,7 +242,7 @@ class PythonicFunctionFactory:
         # List constructor
         "list": {
             "func": list,
-            "types": [list, tuple, set, str, range, type(reversed([])), type({}.keys()), LazyPromise],
+            "types": [list, tuple, set, str, range, type(reversed([])), type({}.keys()), type({}.values()), type({}.items()), LazyPromise],
             "doc": "Convert an iterable to a list",
             "signatures": [
                 (list,),
@@ -253,6 +253,8 @@ class PythonicFunctionFactory:
                 (type(reversed([])),),
                 (type(enumerate([])),),
                 (type({}.keys()),),
+                (type({}.values()),),
+                (type({}.items()),),
                 (LazyPromise,),
             ],
         },

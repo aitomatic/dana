@@ -503,7 +503,7 @@ class WhileLoop:
 class ForLoop:
     """For loop statement."""
 
-    target: Identifier
+    target: Union[Identifier, list[Identifier]]  # Support single or multiple targets for tuple unpacking
     iterable: Expression
     body: list[Statement]
     location: Location | None = None

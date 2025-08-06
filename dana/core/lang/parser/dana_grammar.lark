@@ -419,7 +419,7 @@ dict_comprehension_body: "(" or_expr ":" or_expr ")" "for" for_targets "in" or_e
 comprehension_if: "if" or_expr
 
 // ===== FOR LOOP TARGETS =====
-for_targets: NAME | "(" for_target_list ")"
+for_targets: NAME ("," NAME)* | "(" for_target_list ")"
 for_target_list: NAME ("," NAME)*
 
 
