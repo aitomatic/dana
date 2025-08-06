@@ -11,12 +11,26 @@ export interface VariableUpdateMessage {
   timestamp: number;
 }
 
+export interface LogMessage {
+  type: 'log_message';
+  level: string;
+  message: string;
+  timestamp: number;
+}
+
 export interface VariableUpdate {
   id: string;
   scope: string;
   variable: string;
   oldValue: string | null;
   newValue: string | null;
+  timestamp: Date;
+}
+
+export interface LogUpdate {
+  id: string;
+  level: string;
+  message: string;
   timestamp: Date;
 }
 
@@ -28,8 +42,10 @@ interface UseVariableUpdatesOptions {
 export function useVariableUpdates(websocketId: string, options: UseVariableUpdatesOptions = {}) {
   const { maxUpdates = 100, autoConnect = true } = options;
   const [updates, setUpdates] = useState<VariableUpdate[]>([]);
+  const [logUpdates, setLogUpdates] = useState<LogUpdate[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const updateIdCounter = useRef(0);
+  const logIdCounter = useRef(0);
 
   // WebSocket URL for variable updates
   const wsUrl = `ws://localhost:8080/api/agent-test/ws/${websocketId}`;
@@ -59,12 +75,30 @@ export function useVariableUpdates(websocketId: string, options: UseVariableUpda
             }
             return newUpdates;
           });
+        } else if (data.type === 'log_message') {
+          const logMessage = data as LogMessage;
+
+          const newLogUpdate: LogUpdate = {
+            id: `log-${++logIdCounter.current}`,
+            level: logMessage.level,
+            message: logMessage.message,
+            timestamp: new Date(logMessage.timestamp * 1000), // Convert from Unix timestamp
+          };
+
+          setLogUpdates((prev) => {
+            const newLogUpdates = [...prev, newLogUpdate];
+            // Keep only the most recent log updates
+            if (newLogUpdates.length > maxUpdates) {
+              return newLogUpdates.slice(-maxUpdates);
+            }
+            return newLogUpdates;
+          });
         } else if (data.type === 'echo') {
           console.log('WebSocket connection confirmed:', data.message);
           setIsConnected(true);
         }
       } catch (error) {
-        console.error('Failed to parse variable update message:', error);
+        console.error('Failed to parse WebSocket message:', error);
       }
     },
     [maxUpdates],
@@ -88,6 +122,11 @@ export function useVariableUpdates(websocketId: string, options: UseVariableUpda
   // Clear all updates
   const clearUpdates = useCallback(() => {
     setUpdates([]);
+  }, []);
+
+  // Clear all log updates
+  const clearLogUpdates = useCallback(() => {
+    setLogUpdates([]);
   }, []);
 
   // Get updates by scope
@@ -162,8 +201,10 @@ export function useVariableUpdates(websocketId: string, options: UseVariableUpda
 
   return {
     updates,
+    logUpdates,
     isConnected,
     clearUpdates,
+    clearLogUpdates,
     getUpdatesByScope,
     getUpdatesByVariable,
     getLatestUpdateForVariable,

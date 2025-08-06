@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowUp } from 'iconoir-react';
+import { ArrowUp, NavArrowDown, NavArrowUp, Xmark } from 'iconoir-react';
 import { SidebarExpand } from 'iconoir-react';
 import { useParams } from 'react-router-dom';
 import { apiService } from '@/lib/api';
 import { MarkdownViewerSmall } from './chat/markdown-viewer';
 import { useVariableUpdates } from '@/hooks/useVariableUpdates';
 import { getAgentAvatarSync } from '@/utils/avatar';
+import LogViewer from '@/components/LogViewer';
 
 interface Message {
   id: string;
@@ -27,6 +28,8 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [currentStep, setCurrentStep] = useState<string>('');
+  const [showLogs, setShowLogs] = useState(false);
+  const [hideLogs, setHideLogs] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Generate unique WebSocket ID for this chat session
@@ -34,8 +37,8 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
     () => `chatpane-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
   );
 
-  // WebSocket for variable updates (console logging only)
-  const { updates, disconnect } = useVariableUpdates(websocketId, {
+  // WebSocket for variable updates and log streaming
+  const { updates, logUpdates, disconnect, clearLogUpdates } = useVariableUpdates(websocketId, {
     maxUpdates: 50,
     autoConnect: true,
   });
@@ -155,6 +158,8 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
     setInputText('');
     setIsLoading(true);
     setCurrentStep(''); // Reset current step when starting new request
+    clearLogUpdates(); // Clear previous logs when starting new request
+    setHideLogs(false); // Show logs section when starting new request
 
     try {
       // Call the new agent test API using apiService with WebSocket ID
@@ -284,6 +289,65 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
         )}
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Collapsible Live Logs Section */}
+      {(isLoading || logUpdates.length > 0) && !hideLogs && (
+        <div className="border-t border-gray-200">
+          {/* Toggle Button */}
+          <div className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors">
+            <div 
+              className="flex items-center gap-2 cursor-pointer flex-1"
+              onClick={() => setShowLogs(!showLogs)}
+            >
+              <span className="text-sm font-medium text-gray-600">
+                Backend Logs
+              </span>
+              {isLoading && (
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                  <span className="text-xs text-blue-600">Live</span>
+                </div>
+              )}
+              {logUpdates.length > 0 && (
+                <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-medium">
+                  {logUpdates.length}
+                </span>
+              )}
+              {showLogs ? (
+                <NavArrowUp className="w-4 h-4 text-gray-400" />
+              ) : (
+                <NavArrowDown className="w-4 h-4 text-gray-400" />
+              )}
+            </div>
+            
+            {/* Close button */}
+            {!isLoading && (
+              <button
+                onClick={() => {
+                  setHideLogs(true);
+                  setShowLogs(false);
+                }}
+                className="p-1 hover:bg-gray-200 rounded transition-colors"
+                title="Hide logs"
+              >
+                <Xmark className="w-3 h-3 text-gray-400" />
+              </button>
+            )}
+          </div>
+          
+          {/* Logs Content - Only show when expanded */}
+          {showLogs && (
+            <div className="px-4 pb-3">
+              <LogViewer 
+                logs={logUpdates}
+                showTimestamps={true}
+                autoScroll={true}
+                maxHeight="150px"
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Input */}
       <div className="p-4">

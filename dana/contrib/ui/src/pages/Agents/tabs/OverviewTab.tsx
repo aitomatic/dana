@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash, Edit, Check, Xmark } from 'iconoir-react';
 import { DeleteAgentDialog } from '@/components/delete-agent-dialog';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import DomainKnowledgeTree from './DomainKnowledgeTree';
 import type { NavigateFunction } from 'react-router-dom';
 
 const OverviewTab: React.FC<{
@@ -80,7 +80,7 @@ const OverviewTab: React.FC<{
   return (
     <div className="flex flex-col gap-8 h-full md:flex-row">
       <div className="flex flex-col flex-1 gap-4 p-6 h-full bg-white rounded-lg">
-        <div className="flex flex-col gap-3">
+        <div className="flex gap-3 justify-between items-center">
           <div className="flex overflow-hidden justify-center items-center w-16 h-16 rounded-full">
             <img
               src={getAgentAvatarSync(agent?.id || 0)}
@@ -97,6 +97,12 @@ const OverviewTab: React.FC<{
                 }
               }}
             />
+          </div>
+          <div className="flex">
+            <Button variant="outline" className="w-fit" onClick={handleDeleteClick}>
+              <Trash className="size-4" strokeWidth={2} />
+              Delete Agent
+            </Button>
           </div>
         </div>
         <div className="flex flex-col gap-2 p-4 text-sm rounded-lg border border-gray-200 group">
@@ -174,11 +180,14 @@ const OverviewTab: React.FC<{
             </div>
           </div>
         </div>
-        <div className="flex">
-          <Button variant="outline" className="w-fit" onClick={handleDeleteClick}>
-            <Trash className="size-4" strokeWidth={2} />
-            Delete Agent
-          </Button>
+
+        <div className="flex flex-col flex-1 gap-2 min-h-0">
+          <div className="flex gap-2 items-center">
+            <span className="text-sm font-semibold text-gray-600">Agent's Knowledge Base</span>
+          </div>
+          <div className="overflow-hidden flex-1 rounded-lg border border-gray-200">
+            <DomainKnowledgeTree agentId={agent?.id} />
+          </div>
         </div>
       </div>
 
