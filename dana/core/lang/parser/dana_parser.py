@@ -25,6 +25,7 @@ Discord: https://discord.gg/6jGD4PYk
 
 import logging
 import os
+import re
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, NamedTuple, cast
@@ -124,6 +125,75 @@ class DanaParser(Lark, Loggable):
         self.transformer = DanaTransformer()
         self.program_text = ""
         self.current_filename = None  # Track current filename for error reporting
+        self.metadata_comments = {}  # Store ## comments by line number
+
+    def _extract_metadata_comments(self, program_text: str) -> dict[int, str]:
+        """Extract ## comments from source text with their line numbers.
+
+        Args:
+            program_text: The source text to extract metadata from
+
+        Returns:
+            Dictionary mapping line numbers to metadata strings
+        """
+        metadata = {}
+        lines = program_text.splitlines()
+
+        for line_num, line in enumerate(lines, 1):
+            # Look for ## comments - the text after ## becomes metadata
+            match = re.search(r"#\s*#\s*(.*)$", line)
+            if match:
+                metadata_text = match.group(1).strip()
+                if metadata_text:  # Only store non-empty metadata
+                    metadata[line_num] = metadata_text
+
+        return metadata
+
+    def _attach_metadata_to_ast(self, ast: Program) -> None:
+        """Attach extracted metadata to AST nodes on matching lines.
+
+        Args:
+            ast: The AST to attach metadata to
+        """
+        if not self.metadata_comments:
+            return
+
+        # Recursively traverse AST and attach metadata to nodes on matching lines
+        visited = set()
+        self._traverse_and_attach_metadata(ast, visited)
+
+    def _traverse_and_attach_metadata(self, node: Any, visited: set) -> None:
+        """Recursively traverse AST nodes and attach metadata based on line numbers.
+
+        Args:
+            node: The AST node to process
+            visited: Set of already visited nodes to prevent cycles
+        """
+        if node is None or id(node) in visited:
+            return
+
+        visited.add(id(node))
+
+        # Check if this node has location information
+        if hasattr(node, "location") and node.location and hasattr(node.location, "line"):
+            line_num = node.location.line
+            if line_num in self.metadata_comments:
+                # Attach metadata to this node
+                if not hasattr(node, "metadata"):
+                    node.metadata = {}
+                node.metadata["comment"] = self.metadata_comments[line_num]
+
+        # Recursively process child nodes
+        if hasattr(node, "__dict__"):
+            for attr_name, attr_value in node.__dict__.items():
+                # Skip private attributes and avoid cycles
+                if attr_name.startswith("_"):
+                    continue
+                if isinstance(attr_value, list):
+                    for item in attr_value:
+                        self._traverse_and_attach_metadata(item, visited)
+                elif hasattr(attr_value, "__dict__") and not isinstance(attr_value, str | int | float | bool):
+                    self._traverse_and_attach_metadata(attr_value, visited)
 
     def parse(self, program_text: str, do_transform: bool = True, do_type_check: bool = False, filename: str | None = None) -> Any:
         """Parse a Dana program string into an AST.
@@ -141,6 +211,9 @@ class DanaParser(Lark, Loggable):
         # Make sure the program text ends with a newline
         if not program_text.endswith("\n"):
             program_text += "\n"
+
+        # Extract metadata comments before parsing
+        self.metadata_comments = self._extract_metadata_comments(program_text)
 
         self.program_text = program_text
         self.current_filename = filename  # Store filename for transformer
@@ -171,6 +244,9 @@ class DanaParser(Lark, Loggable):
 
             ast.location = Location(source=self.current_filename, line=1, column=1)
 
+        # Attach metadata comments to AST nodes
+        self._attach_metadata_to_ast(ast)
+
         # Perform type checking if enabled and parsing was successful
         if do_type_check and ast.statements:
             TypeChecker.check_types(ast)
@@ -189,11 +265,17 @@ class DanaParser(Lark, Loggable):
         # Wrap the expression in a simple statement to make it parseable
         program_text = f"{expr_text}\n"
 
+        # Extract metadata comments before parsing
+        self.metadata_comments = self._extract_metadata_comments(program_text)
+
         # Parse as a complete program
         parse_tree = super().parse(program_text)
 
         # Transform to AST and extract the first statement which should be an expression
         ast = cast(Program, self.transformer.transform(parse_tree))
+
+        # Attach metadata comments to AST nodes
+        self._attach_metadata_to_ast(ast)
 
         # The first statement should be our expression
         if ast.statements and len(ast.statements) > 0:

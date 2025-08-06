@@ -14,6 +14,8 @@ MIT License
 
 from typing import cast
 
+from lark import Token
+
 from dana.core.lang.ast import (
     DictLiteral,
     Expression,
@@ -26,6 +28,16 @@ from dana.core.lang.parser.transformer.base_transformer import BaseTransformer
 
 class CollectionTransformer(BaseTransformer):
     """Transformer for collection literals."""
+
+    def _filter_comments(self, items):
+        """Filter out COMMENT tokens from a list of items."""
+        filtered = []
+        for item in items:
+            # Skip COMMENT tokens - they should not appear in final collections
+            if isinstance(item, Token) and item.type == "COMMENT":
+                continue
+            filtered.append(item)
+        return filtered
 
     def tuple(self, items):
         """Transform a tuple literal into a TupleLiteral AST node."""
@@ -78,21 +90,25 @@ class CollectionTransformer(BaseTransformer):
 
     def key_value_pair(self, items):
         """Transform a key-value pair into a tuple of (key, value)."""
+        # Filter out comments first
+        filtered_items = self._filter_comments(items)
         # Always return a (key, value) tuple
-        if len(items) >= 2:
-            key = items[0]
-            value = items[1]
+        if len(filtered_items) >= 2:
+            key = filtered_items[0]
+            value = filtered_items[1]
             # Note: Both key and value require the main expression transformer
             # We'll handle this in the integration phase
             return (key, value)
         else:
-            self.error(f"Invalid key-value pair: {items}")
+            self.error(f"Invalid key-value pair: {filtered_items}")
             return (None, None)
 
     def list_items(self, items):
         """Transform list items rule."""
-        return self.flatten_items(items)
+        flat_items = self.flatten_items(items)
+        return self._filter_comments(flat_items)
 
     def dict_items(self, items):
         """Transform dict items rule."""
-        return self.flatten_items(items)
+        flat_items = self.flatten_items(items)
+        return self._filter_comments(flat_items)
