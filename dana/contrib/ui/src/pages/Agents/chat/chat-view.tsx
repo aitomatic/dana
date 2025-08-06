@@ -9,12 +9,16 @@ import ChatSession from './chat-session';
 import { cn } from '@/lib/utils';
 
 import ChatBox from './chat-box';
+import { ChevronDown, ChevronUp, X } from 'lucide-react';
 
 // Stores
 import { useChatStore } from '@/stores/chat-store';
 
 // Hooks
 import { useVariableUpdates } from '@/hooks/useVariableUpdates';
+
+// Components
+import LogViewer from '@/components/LogViewer';
 
 interface AgentChatViewProps {
   isSidebarCollapsed: boolean;
@@ -31,6 +35,8 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
   const navigate = useNavigate();
   const [files] = useState<any[]>([]);
   const [currentStep, setCurrentStep] = useState<string>('');
+  const [showLogs, setShowLogs] = useState(false);
+  const [hideLogs, setHideLogs] = useState(false);
 
   // Generate unique WebSocket ID for this chat session
   const [websocketId] = useState(
@@ -52,8 +58,8 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
     createSessionConversation,
   } = useChatStore();
 
-  // WebSocket for variable updates
-  const { updates, disconnect } = useVariableUpdates(websocketId, {
+  // WebSocket for variable updates and log streaming
+  const { updates, logUpdates, disconnect, clearLogUpdates } = useVariableUpdates(websocketId, {
     maxUpdates: 50,
     autoConnect: true,
   });
@@ -148,6 +154,8 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
 
     try {
       clearError();
+      clearLogUpdates(); // Clear previous logs when starting new request
+      setHideLogs(false); // Show logs section when starting new request
 
       let effectiveConversationId = conversationId;
 
@@ -266,6 +274,65 @@ const AgentChatView: React.FC<AgentChatViewProps> = ({
                       currentStep={currentStep}
                     />
                   </div>
+
+                  {/* Collapsible Live Logs Section */}
+                  {(isSending || logUpdates.length > 0) && !hideLogs && (
+                    <div className="border-t border-gray-200">
+                      {/* Toggle Button */}
+                      <div className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors">
+                        <div 
+                          className="flex items-center gap-2 cursor-pointer flex-1"
+                          onClick={() => setShowLogs(!showLogs)}
+                        >
+                          <span className="text-sm font-medium text-gray-600">
+                            Backend Logs
+                          </span>
+                          {isSending && (
+                            <div className="flex items-center gap-1">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                              <span className="text-xs text-blue-600">Live</span>
+                            </div>
+                          )}
+                          {logUpdates.length > 0 && (
+                            <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-medium">
+                              {logUpdates.length}
+                            </span>
+                          )}
+                          {showLogs ? (
+                            <ChevronUp className="w-4 h-4 text-gray-400" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-gray-400" />
+                          )}
+                        </div>
+                        
+                        {/* Close button */}
+                        {!isSending && (
+                          <button
+                            onClick={() => {
+                              setHideLogs(true);
+                              setShowLogs(false);
+                            }}
+                            className="p-1 hover:bg-gray-200 rounded transition-colors"
+                            title="Hide logs"
+                          >
+                            <X className="w-3 h-3 text-gray-400" />
+                          </button>
+                        )}
+                      </div>
+                      
+                      {/* Logs Content - Only show when expanded */}
+                      {showLogs && (
+                        <div className="px-4 pb-4">
+                          <LogViewer 
+                            logs={logUpdates}
+                            showTimestamps={true}
+                            autoScroll={true}
+                            maxHeight="200px"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Fixed chat box at bottom */}
                   <div className="sticky bottom-6 w-full bg-background">

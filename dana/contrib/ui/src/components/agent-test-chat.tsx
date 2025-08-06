@@ -3,8 +3,10 @@ import { cn } from '@/lib/utils';
 import { apiService } from '@/lib/api';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Send, Loader2, Trash2 } from 'lucide-react';
+import { Send, Loader2, Trash2, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { MarkdownViewerSmall } from '@/pages/Agents/chat/markdown-viewer';
+import { useVariableUpdates } from '@/hooks/useVariableUpdates';
+import LogViewer from '@/components/LogViewer';
 
 // Message interface for the test chat
 interface TestChatMessage {
@@ -39,6 +41,19 @@ const AgentTestChat = ({
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTesting, setIsTesting] = useState(false);
+  const [showLogs, setShowLogs] = useState(false);
+  const [hideLogs, setHideLogs] = useState(false);
+
+  // Generate unique WebSocket ID for this test session
+  const [websocketId] = useState(
+    () => `agenttest-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+  );
+
+  // WebSocket for variable updates and log streaming
+  const { logUpdates, disconnect, clearLogUpdates } = useVariableUpdates(websocketId, {
+    maxUpdates: 50,
+    autoConnect: true,
+  });
 
   // Ref for the messages container to enable auto-scroll
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -53,6 +68,13 @@ const AgentTestChat = ({
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
+  // Clean up WebSocket on component unmount
+  useEffect(() => {
+    return () => {
+      disconnect();
+    };
+  }, [disconnect]);
+
   // Clear messages function
   const handleClearMessages = useCallback(() => {
     setMessages([
@@ -63,7 +85,9 @@ const AgentTestChat = ({
         timestamp: new Date(),
       },
     ]);
-  }, []);
+    clearLogUpdates(); // Also clear logs when clearing messages
+    setHideLogs(false); // Reset hide logs state
+  }, [clearLogUpdates]);
 
   const handleSendMessage = useCallback(async () => {
     if (!inputMessage.trim() || isTesting) return;
@@ -79,9 +103,11 @@ const AgentTestChat = ({
     setMessages((prev) => [...prev, userMessage]);
     setInputMessage('');
     setIsTesting(true);
+    clearLogUpdates(); // Clear previous logs when starting new request
+    setHideLogs(false); // Show logs section when starting new request
 
     try {
-      // Test the agent directly with the new API
+      // Test the agent directly with the new API including WebSocket ID for log streaming
       const response = await apiService.testAgent({
         agent_code: agentCode,
         message: userMessage.content,
@@ -89,6 +115,7 @@ const AgentTestChat = ({
         agent_description: agentDescription || 'A test agent',
         context: { user_id: 1, test_mode: true },
         folder_path: currentFolder,
+        websocket_id: websocketId, // Pass WebSocket ID for real-time log streaming
       });
 
       if (response.success) {
@@ -206,6 +233,65 @@ const AgentTestChat = ({
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Collapsible Live Logs Section */}
+      {(isTesting || logUpdates.length > 0) && !hideLogs && (
+        <div className="bg-gray-50 border-t border-gray-200">
+          {/* Toggle Button */}
+          <div className="flex items-center justify-between px-3 py-2 hover:bg-gray-100 transition-colors">
+            <div 
+              className="flex items-center gap-2 cursor-pointer flex-1"
+              onClick={() => setShowLogs(!showLogs)}
+            >
+              <span className="text-sm font-medium text-gray-600">
+                Backend Logs
+              </span>
+              {isTesting && (
+                <div className="flex items-center gap-1">
+                  <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
+                  <span className="text-xs text-blue-600">Live</span>
+                </div>
+              )}
+              {logUpdates.length > 0 && (
+                <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-medium">
+                  {logUpdates.length}
+                </span>
+              )}
+              {showLogs ? (
+                <ChevronUp className="w-4 h-4 text-gray-400" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-gray-400" />
+              )}
+            </div>
+            
+            {/* Close button */}
+            {!isTesting && (
+              <button
+                onClick={() => {
+                  setHideLogs(true);
+                  setShowLogs(false);
+                }}
+                className="p-1 hover:bg-gray-200 rounded transition-colors"
+                title="Hide logs"
+              >
+                <X className="w-3 h-3 text-gray-400" />
+              </button>
+            )}
+          </div>
+          
+          {/* Logs Content - Only show when expanded */}
+          {showLogs && (
+            <div className="px-3 pb-2">
+              <LogViewer 
+                logs={logUpdates}
+                showTimestamps={true}
+                autoScroll={true}
+                maxHeight="120px"
+              />
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Input */}
       <div className="p-3 bg-gray-50 border-t border-gray-200">
         <div className="flex gap-2">
@@ -213,7 +299,7 @@ const AgentTestChat = ({
             <textarea
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyPress}
               placeholder="Chat with agent"
               className="px-3 py-2 w-full text-sm rounded-lg border border-gray-300 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               rows={2}

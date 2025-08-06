@@ -4,6 +4,7 @@ import os
 import logging
 import asyncio
 import uuid
+import threading
 from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
@@ -12,6 +13,8 @@ import json
 
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.api.utils.sandbox_context_with_notifier import SandboxContextWithNotifier
+from dana.api.utils.streaming_function_override import streaming_print_override
+from dana.api.utils.streaming_stdout import StdoutContextManager
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 
@@ -58,6 +61,28 @@ class VariableUpdateManager:
                 # Remove disconnected WebSocket
                 self.disconnect(websocket_id)
 
+    async def send_log_message(
+        self,
+        websocket_id: str,
+        level: str,
+        message: str,
+    ):
+        """Send a log message via WebSocket"""
+        if websocket_id in self.active_connections:
+            websocket = self.active_connections[websocket_id]
+            try:
+                log_message = {
+                    "type": "log_message",
+                    "level": level,
+                    "message": message,
+                    "timestamp": asyncio.get_event_loop().time(),
+                }
+                await websocket.send_text(json.dumps(log_message))
+            except Exception as e:
+                logger.error(f"Failed to send log message via WebSocket: {e}")
+                # Remove disconnected WebSocket
+                self.disconnect(websocket_id)
+
 
 variable_update_manager = VariableUpdateManager()
 
@@ -72,6 +97,46 @@ def create_websocket_notifier(websocket_id: str | None = None):
                 await variable_update_manager.send_variable_update(websocket_id, scope, var_name, old_value, new_value)
 
     return variable_change_notifier
+
+
+class ThreadSafeLogCollector:
+    """Thread-safe log collector that can be read from async context."""
+    
+    def __init__(self, websocket_id: str):
+        self.websocket_id = websocket_id
+        self.logs = []
+        self._lock = threading.Lock()
+    
+    def add_log(self, level: str, message: str):
+        """Add a log message (called from execution thread)."""
+        with self._lock:
+            self.logs.append({
+                'websocket_id': self.websocket_id,
+                'level': level,
+                'message': message
+            })
+            pass  # Log collected successfully
+    
+    def get_and_clear_logs(self):
+        """Get all logs and clear the collector (called from async context)."""
+        with self._lock:
+            logs = self.logs.copy()
+            self.logs.clear()
+            return logs
+
+
+def create_sync_log_collector(websocket_id: str | None = None):
+    """Create a synchronous log collector for thread-safe log streaming."""
+    if not websocket_id:
+        return lambda level, message: None, None
+    
+    collector = ThreadSafeLogCollector(websocket_id)
+    
+    def log_streamer(level: str, message: str) -> None:
+        """Synchronous log streamer that collects logs."""
+        collector.add_log(level, message)
+    
+    return log_streamer, collector
 
 
 class AgentTestRequest(BaseModel):
@@ -144,8 +209,9 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
         os.environ["DANAPATH"] = abs_folder_path
         print("os DANAPATH", os.environ.get("DANAPATH"))
 
-        # Create a WebSocket-enabled notifier
+        # Create a WebSocket-enabled notifier and log collector
         notifier = create_websocket_notifier(request.websocket_id)
+        log_streamer, log_collector = create_sync_log_collector(request.websocket_id)
 
         # Run all potentially blocking operations in a separate thread
         with ThreadPoolExecutor(max_workers=1) as executor:
@@ -160,7 +226,14 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
                 sandbox_context.set("system:agent_instance_id", str(Path(folder_path).stem))
 
                 try:
-                    result = DanaSandbox.quick_run(file_path=temp_file_path, context=sandbox_context)
+                    # Create sandbox and override print function for streaming
+                    sandbox = DanaSandbox(context=sandbox_context)
+                    sandbox._ensure_initialized()  # Make sure function registry is available
+                    
+                    # Override both Dana print function and Python stdout for complete coverage
+                    with streaming_print_override(sandbox.function_registry, log_streamer):
+                        with StdoutContextManager(log_streamer):
+                            result = sandbox.run_file(temp_file_path)
 
                     if hasattr(result, "error"):
                         logger.error(f"Error: {result.error}")
@@ -185,6 +258,10 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
                     return None
 
                 finally:
+                    # Clean up the sandbox
+                    if 'sandbox' in locals():
+                        sandbox._cleanup()
+                    
                     # Clean up the context to prevent state leakage
                     sandbox_context.shutdown()
 
@@ -195,7 +272,41 @@ async def _execute_folder_based_agent(request: AgentTestRequest, folder_path: st
                     StructTypeRegistry.clear()
                     reset_module_system()
 
-            result = await asyncio.get_event_loop().run_in_executor(executor, run_agent_test)
+            # Start periodic log sending while execution runs
+            async def periodic_log_sender():
+                while True:
+                    if log_collector:
+                        logs = log_collector.get_and_clear_logs()
+                        for log_msg in logs:
+                            await variable_update_manager.send_log_message(
+                                log_msg['websocket_id'],
+                                log_msg['level'],
+                                log_msg['message']
+                            )
+                    await asyncio.sleep(0.1)  # Send logs every 100ms
+
+            # Start both the execution and log sender
+            log_sender_task = asyncio.create_task(periodic_log_sender()) if log_collector else None
+            
+            try:
+                result = await asyncio.get_event_loop().run_in_executor(executor, run_agent_test)
+            finally:
+                if log_sender_task:
+                    log_sender_task.cancel()
+                    try:
+                        await log_sender_task
+                    except asyncio.CancelledError:
+                        pass
+                    
+                    # Send any remaining logs
+                    if log_collector:
+                        logs = log_collector.get_and_clear_logs()
+                        for log_msg in logs:
+                            await variable_update_manager.send_log_message(
+                                log_msg['websocket_id'],
+                                log_msg['level'],
+                                log_msg['message']
+                            )
 
         print("--------------------------------")
         print(f"Result: {result}")
