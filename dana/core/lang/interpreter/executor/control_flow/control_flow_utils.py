@@ -117,7 +117,7 @@ class ControlFlowUtils(Loggable):
             executor = DanaThreadPool.get_instance().get_executor()
 
             # The factory will decide: synchronous execution or EagerPromise creation
-            promise_value = PromiseFactory.create_return_promise(
+            promise_value = PromiseFactory.create_promise(
                 return_computation,
                 executor,
                 node.value,  # type: ignore # Pass AST node for complexity analysis

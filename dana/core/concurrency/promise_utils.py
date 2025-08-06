@@ -65,7 +65,7 @@ def resolve_promise(promise: BasePromise) -> Any:
     if not is_promise(promise):
         raise TypeError(f"Expected Promise, got {type(promise)}")
 
-    return promise._ensure_resolved()
+    return promise._wait_for_delivery()
 
 
 def resolve_if_promise(obj: Any) -> Any:

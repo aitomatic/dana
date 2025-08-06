@@ -42,21 +42,21 @@ class LazyPromise(BasePromise):
         self._lock = threading.Lock()
         # LAZY: No immediate execution - deferred until first access
 
-    def _ensure_resolved(self) -> Any:
+    def _wait_for_delivery(self) -> Any:
         """
         LAZY strategy: Execute computation on first access, return cached result after.
 
-        - If already resolved: return cached result immediately
-        - If not resolved: execute computation now and cache result
+        - If already delivered: return cached result immediately
+        - If not delivered: execute computation now and cache result
 
         Returns:
             The resolved result
 
         Raises:
-            Original error: If computation failed
+            Error: If computation failed
         """
         with self._lock:
-            if self._resolved:
+            if self._delivered:
                 # Already computed - return cached result immediately
                 if self._error:
                     raise self._error.original_error
@@ -72,13 +72,15 @@ class LazyPromise(BasePromise):
 
                 # Cache the result
                 self._result = result
-                self._resolved = True
+                self._delivered = True
+                # Trigger callbacks after successful delivery
+                self._trigger_on_delivery_callbacks(result)
                 return result
 
             except Exception as e:
                 # Cache the error too
                 self._error = PromiseError(e)
-                self._resolved = True
+                self._delivered = True
                 raise self._error.original_error
 
     @classmethod

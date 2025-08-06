@@ -67,6 +67,7 @@ from dana.common.error_utils import DanaError
 from dana.common.mixins.loggable import Loggable
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.terminal_utils import ColorScheme
+from dana.core.concurrency.base_promise import BasePromise
 from dana.core.lang.log_manager import LogLevel
 from dana.core.repl.commands import CommandHandler
 from dana.core.repl.input import InputProcessor
@@ -383,7 +384,7 @@ class DanaREPLApp(Loggable):
             # Format and display error
             self.output_formatter.format_error(e)
 
-    async def _handle_promise_result_async(self, promise_result) -> None:
+    async def _handle_promise_result_async(self, promise_result: BasePromise) -> None:
         """Handle Promise result by displaying safe Promise information.
 
         This avoids passing the actual Promise object to the formatter,
@@ -394,16 +395,40 @@ class DanaREPLApp(Loggable):
         # Get safe display info without triggering resolution
         try:
             if hasattr(promise_result, "get_display_info"):
-                display_info = promise_result.get_display_info()
+                promise_info = promise_result.get_display_info()
             else:
                 # Fallback for non-BasePromise objects that are promise-like
-                display_info = f"<Promise {hex(id(promise_result))}>"
+                promise_info = f"<{type(promise_result).__name__}>"
         except Exception as e:
             # Ultra-safe fallback
             self.debug(f"Error getting Promise display info: {e}")
-            display_info = "<Promise (info unavailable)>"
+            promise_info = "<Promise (info unavailable)>"
 
-        await self.output_formatter.format_result_async(display_info)
+        await self.output_formatter.format_result_async(promise_info)
+
+        # Add callback to print the result when promise is delivered
+        if hasattr(promise_result, "add_on_delivery_callback"):
+
+            def on_promise_delivered(result):
+                """Callback to print the delivered promise result."""
+                try:
+                    self.debug(f"{promise_info} delivered with result: {result}")
+                    # Schedule the async formatting on the event loop
+                    import asyncio
+
+                    try:
+                        loop = asyncio.get_running_loop()
+                        # Create a task to format the result asynchronously
+                        loop.create_task(self.output_formatter.format_result_async(result))
+                    except RuntimeError:
+                        # No event loop running, just print the result directly
+                        print(f"{promise_info} delivered: {result}")
+                except Exception as e:
+                    self.debug(f"Error in promise resolution callback: {e}")
+                    # Fallback to simple print
+                    print(f"{promise_info} delivered: {result}")
+
+            promise_result.add_on_delivery_callback(on_promise_delivered)
 
     async def _execute_program(self, program: str) -> None:
         """Execute a Dana program and handle the result or errors."""

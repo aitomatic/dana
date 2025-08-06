@@ -206,23 +206,33 @@ class PromiseFactory:
     """
 
     @staticmethod
-    def create_return_promise(
+    def create_promise(
         computation: Union[Callable[[], Any], Coroutine],
         executor: ThreadPoolExecutor | None = None,
         ast_node: ASTNode | None = None,
         context_info: dict | None = None,
+        on_delivery: Callable[[Any], None] | list[Callable[[Any], None]] | None = None,
     ) -> Any:
         """
-        Create optimal execution strategy for a return statement.
+        Create optimal execution strategy for Promise creation.
 
         Analyzes the execution context and expression complexity to determine
         whether to use synchronous execution or EagerPromise creation.
+
+        This method implements critical correctness guarantees:
+        1. Prevents thread pool exhaustion and deadlock via nested detection
+        2. Optimizes simple expressions to avoid unnecessary overhead
+        3. Prevents excessive nesting depth
+
+        These are not optional optimizations - they prevent system failure.
 
         Args:
             computation: Function or coroutine to execute
             executor: ThreadPoolExecutor for background execution
             ast_node: Optional AST node for complexity analysis
             context_info: Optional context metadata
+            on_delivery: Optional callback(s) called with the result when delivered.
+                        Can be a single callback or a list of callbacks.
 
         Returns:
             Either the direct result (synchronous) or EagerPromise (concurrent)
@@ -234,8 +244,16 @@ class PromiseFactory:
             if inspect.iscoroutine(computation):
                 import asyncio
 
-                return asyncio.run(computation)
-            return computation()  # type: ignore
+                result = asyncio.run(computation)
+            elif inspect.iscoroutinefunction(computation):
+                import asyncio
+
+                result = asyncio.run(computation())
+            else:
+                result = computation()  # type: ignore
+
+            # For synchronous execution, ignore callbacks - return result directly
+            return result
 
         # Strategy 2: Simple expression optimization
         if ast_node and ExpressionComplexityAnalyzer.is_simple_expression(ast_node):
@@ -244,8 +262,16 @@ class PromiseFactory:
             if inspect.iscoroutine(computation):
                 import asyncio
 
-                return asyncio.run(computation)
-            return computation()  # type: ignore
+                result = asyncio.run(computation)
+            elif inspect.iscoroutinefunction(computation):
+                import asyncio
+
+                result = asyncio.run(computation())
+            else:
+                result = computation()  # type: ignore
+
+            # For synchronous execution, ignore callbacks - return result directly
+            return result
 
         # Strategy 3: Deep nesting prevention
         nesting_depth = PromiseExecutionContext.get_nesting_depth()
@@ -254,8 +280,16 @@ class PromiseFactory:
             if inspect.iscoroutine(computation):
                 import asyncio
 
-                return asyncio.run(computation)
-            return computation()  # type: ignore
+                result = asyncio.run(computation)
+            elif inspect.iscoroutinefunction(computation):
+                import asyncio
+
+                result = asyncio.run(computation())
+            else:
+                result = computation()  # type: ignore
+
+            # For synchronous execution, ignore callbacks - return result directly
+            return result
 
         # Strategy 4: Context-aware computation wrapper
         def context_aware_computation():
@@ -268,17 +302,29 @@ class PromiseFactory:
 
                     result = asyncio.run(computation)
                 else:
-                    result = computation()
+                    result = computation()  # type: ignore
                 return result
             finally:
                 PromiseExecutionContext.decrement_depth()
                 PromiseExecutionContext.exit_eager_execution()
 
         # Create EagerPromise for complex expressions that benefit from concurrency
-        return EagerPromise.create(context_aware_computation, executor)
+        promise = EagerPromise.create(context_aware_computation, executor)
+
+        # Add callbacks to the Promise using BasePromise callback facility
+        if on_delivery is not None:
+            if callable(on_delivery):
+                # Single callback
+                promise.add_on_delivery_callback(on_delivery)
+            elif isinstance(on_delivery, list):
+                # List of callbacks
+                for callback in on_delivery:
+                    promise.add_on_delivery_callback(callback)
+
+        return promise
 
     @staticmethod
-    def should_use_eager_promise(ast_node: ASTNode | None = None, context_info: dict | None = None) -> bool:
+    def _should_use_eager_promise(ast_node: ASTNode | None = None, context_info: dict | None = None) -> bool:
         """
         Determine if an expression should use EagerPromise or synchronous execution.
 
@@ -303,48 +349,3 @@ class PromiseFactory:
             return False
 
         return True
-
-    @staticmethod
-    def create_promise(
-        computation: Union[Callable[[], Any], Coroutine],
-        ast_node: ASTNode | None = None,
-        context_info: dict | None = None,
-    ) -> Any:
-        """
-        Create a Promise using Dana's shared thread pool.
-
-        This is a convenience method that automatically uses Dana's shared
-        thread pool, making it easier for client code to create promises
-        without needing to manage thread pools.
-
-        Automatically wraps regular Callable functions into coroutines for
-        consistent async execution.
-
-        Args:
-            computation: Function or coroutine to execute
-            ast_node: Optional AST node for complexity analysis
-            context_info: Optional context metadata
-
-        Returns:
-            Either the direct result (synchronous) or EagerPromise (concurrent)
-        """
-        # Automatically wrap regular functions into coroutines
-        if not inspect.iscoroutinefunction(computation) and not inspect.iscoroutine(computation):
-            # Wrap regular function into coroutine function
-            async def wrapped_computation():
-                return computation()
-
-            return PromiseFactory.create_return_promise(wrapped_computation, None, ast_node, context_info)
-
-        # For coroutines, wrap them in a callable function
-        if inspect.iscoroutine(computation):
-            # Wrap coroutine in a callable function
-            def wrapped_coroutine():
-                import asyncio
-
-                return asyncio.run(computation)
-
-            return EagerPromise.create(wrapped_coroutine, None)
-        else:
-            # For coroutine functions, create EagerPromise directly
-            return EagerPromise.create(computation, None)

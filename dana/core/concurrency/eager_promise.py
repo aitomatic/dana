@@ -9,7 +9,7 @@ access semantics to the caller.
 Key Characteristics:
 - **Immediate Execution**: Computation starts in background thread upon creation
 - **Transparent Access**: Promises behave like regular values - accessing them
-  blocks if not ready, returns immediately if resolved
+  blocks if not ready, returns immediately if delivered
 - **Multiple Access Patterns**: Supports sync blocking, async await, and status checking
 - **Thread Safety**: All operations are thread-safe with internal locking
 - **Error Transparency**: Background exceptions are captured and re-raised on access
@@ -67,30 +67,32 @@ class EagerPromise(BasePromise):
                     result = asyncio.run(result)
                 with self._lock:
                     self._result = result
-                    self._resolved = True
+                    self._delivered = True
+                # Trigger callbacks after successful resolution
+                self._trigger_on_delivery_callbacks(result)
             except Exception as e:
                 with self._lock:
                     self._error = PromiseError(e)
-                    self._resolved = True
+                    self._delivered = True
 
         # Submit to thread pool - returns immediately (never blocks constructor)
         self._future = self._executor.submit(background_runner)
 
-    def _ensure_resolved(self) -> Any:
+    def _wait_for_delivery(self) -> Any:
         """
         EAGER strategy: Block waiting for background thread, return cached result.
 
-        - If already resolved: return cached result immediately
-        - If not resolved: block until background thread completes
+        - If already delivered: return cached result immediately
+        - If not delivered: block until background thread completes
 
         Returns:
-            The resolved result
+            The delivered result
 
         Raises:
-            Original error: If promise computation failed
+            Error: If promise computation failed
         """
         with self._lock:
-            if self._resolved:
+            if self._delivered:
                 if self._error:
                     raise self._error.original_error
                 return self._result
@@ -101,13 +103,13 @@ class EagerPromise(BasePromise):
 
             # Result should now be cached
             with self._lock:
-                if self._resolved:
+                if self._delivered:
                     if self._error:
                         raise self._error.original_error
                     return self._result
 
         # Should not reach here
-        raise RuntimeError("EagerPromise failed to resolve.")
+        raise RuntimeError("EagerPromise failed to be delivered.")
 
     @classmethod
     def create(cls, computation: Union[Callable[[], Any], Coroutine], executor: ThreadPoolExecutor | None = None) -> "EagerPromise":

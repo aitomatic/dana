@@ -9,8 +9,9 @@ Design Reference: dana/agent/.design/3d_methodology_agent_struct_unification.md
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
+from dana.core.concurrency.promise_factory import PromiseFactory
 from dana.core.lang.interpreter.struct_system import StructInstance, StructType
 from dana.core.lang.sandbox_context import SandboxContext
 
@@ -74,7 +75,7 @@ def default_recall_method(agent_instance: "AgentStructInstance", key: str) -> An
 
 def default_chat_method(
     agent_instance: "AgentStructInstance", message: str, context: dict | None = None, max_context_turns: int = 5
-) -> str:
+) -> Any:
     """Default chat method for agent structs - delegates to instance method."""
     return agent_instance._chat_impl(message, context, max_context_turns)
 
@@ -147,7 +148,7 @@ class AgentStructInstance(StructInstance):
     @property
     def agent_type(self) -> AgentStructType:
         """Get the agent type."""
-        return self.__struct_type__
+        return self.__struct_type__  # type: ignore
 
     def plan(self, task: str, context: dict | None = None) -> Any:
         """Execute agent planning method."""
@@ -173,8 +174,8 @@ class AgentStructInstance(StructInstance):
             return self.__struct_type__.agent_methods["recall"](self, key)
         return default_recall_method(self, key)
 
-    def chat(self, message: str, context: dict | None = None, max_context_turns: int = 5) -> str:
-        """Chat with the agent using conversation memory."""
+    def chat(self, message: str, context: dict | None = None, max_context_turns: int = 5) -> Any:
+        """Chat with the agent using conversation memory. Returns a Promise that resolves to the response."""
         if self.__struct_type__.has_agent_method("chat"):
             return self.__struct_type__.agent_methods["chat"](self, message, context, max_context_turns)
         return default_chat_method(self, message, context, max_context_turns)
@@ -215,6 +216,7 @@ class AgentStructInstance(StructInstance):
     def _get_dana_llm_function(self):
         """Get Dana's stdlib llm_function with sandbox context."""
         try:
+            from dana.core.concurrency.base_promise import BasePromise
             from dana.core.lang.sandbox_context import SandboxContext
             from dana.libs.corelib.py.py_llm import py_llm
 
@@ -227,15 +229,15 @@ class AgentStructInstance(StructInstance):
             def wrapped_llm_function(prompt: str) -> str:
                 try:
                     # Call Dana's llm_function which returns a Promise
-                    promise = py_llm(context, prompt)
+                    promise = cast(BasePromise, py_llm(context, prompt))
 
                     # Properly resolve the Promise to get the actual content
-                    if hasattr(promise, "_ensure_resolved"):
-                        # For EagerPromise, use _ensure_resolved to get the actual value
-                        result = promise._ensure_resolved()
-                    elif hasattr(promise, "resolve"):
+                    if hasattr(promise, "_wait_for_delivery"):
+                        # For EagerPromise, use _wait_for_delivery to get the actual value
+                        result = promise._wait_for_delivery()
+                    elif hasattr(promise, "await_result"):
                         # Fallback for other Promise types
-                        result = promise.resolve()
+                        result = promise.await_result()
                     else:
                         # If it's not a Promise, return as-is
                         result = promise
@@ -280,6 +282,7 @@ class AgentStructInstance(StructInstance):
 
         # Check for memory-related queries
         if "remember" in message_lower or "recall" in message_lower:
+            assert self._conversation_memory is not None  # Should be initialized by now
             recent_turns = self._conversation_memory.get_recent_context(3)
             if recent_turns:
                 topics = []
@@ -304,12 +307,32 @@ class AgentStructInstance(StructInstance):
             "I'm currently running without an LLM connection, so my responses are limited."
         )
 
-    def _chat_impl(self, message: str, context: dict | None = None, max_context_turns: int = 5) -> str:
-        """Implementation of chat functionality."""
+    def _create_response_promise(self, computation: Callable[[], Any], message: str) -> Any:
+        """
+        Create a Promise with conversation memory callback.
+
+        Args:
+            computation: Function that computes the response
+            message: The original user message (for conversation memory)
+
+        Returns:
+            Promise that resolves to the response string
+        """
+
+        def save_conversation_callback(response: str):
+            """Callback to save the conversation turn when the response is ready."""
+            if self._conversation_memory:
+                self._conversation_memory.add_turn(message, response)
+
+        return PromiseFactory.create_promise(computation=computation, on_delivery=save_conversation_callback)
+
+    def _chat_impl(self, message: str, context: dict | None = None, max_context_turns: int = 5) -> Any:
+        """Implementation of chat functionality. Returns a Promise that resolves to the response."""
         # Initialize conversation memory if needed
         self._initialize_conversation_memory()
 
         # Build conversation context
+        assert self._conversation_memory is not None  # Should be initialized by _initialize_conversation_memory
         conversation_context = self._conversation_memory.build_llm_context(message, include_summaries=True, max_turns=max_context_turns)
 
         # Try to get LLM function
@@ -326,19 +349,20 @@ class AgentStructInstance(StructInstance):
             # Combine system prompt with conversation context
             full_prompt = f"{system_prompt}\n\n{conversation_context}"
 
-            # Call LLM to generate response
-            try:
-                response = llm_function(full_prompt)
-            except Exception as e:
-                response = f"I encountered an error while processing your message: {str(e)}"
+            # Create computation that will call LLM
+            def llm_computation():
+                try:
+                    return llm_function(full_prompt)
+                except Exception as e:
+                    return f"I encountered an error while processing your message: {str(e)}"
+
+            return self._create_response_promise(llm_computation, message)
         else:
-            # Use fallback response when no LLM is available
-            response = self._generate_fallback_response(message, conversation_context)
+            # For fallback response, execute synchronously but still use Promise for consistency
+            def fallback_computation():
+                return self._generate_fallback_response(message, conversation_context)
 
-        # Save the conversation turn
-        self._conversation_memory.add_turn(message, response)
-
-        return response
+            return self._create_response_promise(fallback_computation, message)
 
     def get_conversation_stats(self) -> dict:
         """Get conversation statistics for this agent."""
