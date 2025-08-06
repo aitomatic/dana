@@ -11,13 +11,17 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
+from dana.common.resource.llm.llm_resource import LLMResource
+from dana.core.concurrency.promise_factory import PromiseFactory
 from dana.core.lang.interpreter.struct_system import StructInstance, StructType
 from dana.core.lang.sandbox_context import SandboxContext
 
 # --- Default Agent Method Implementations ---
 
 
-def default_plan_method(agent_instance: "AgentStructInstance", task: str, user_context: dict | None = None) -> Any:
+def default_plan_method(
+    agent_instance: "AgentStructInstance", sandbox_context: SandboxContext, task: str, user_context: dict | None = None
+) -> Any:
     """Default plan method for agent structs."""
     agent_fields = ", ".join(f"{k}: {v}" for k, v in agent_instance.__dict__.items() if not k.startswith("_"))
     # TODO: Implement actual planning logic with prompt
@@ -34,7 +38,9 @@ def default_plan_method(agent_instance: "AgentStructInstance", task: str, user_c
     return f"Agent {agent_instance.agent_type.name} planning: {task} (fields: {agent_fields})"
 
 
-def default_solve_method(agent_instance: "AgentStructInstance", problem: str, user_context: dict | None = None) -> Any:
+def default_solve_method(
+    agent_instance: "AgentStructInstance", sandbox_context: SandboxContext, problem: str, user_context: dict | None = None
+) -> Any:
     """Default solve method for agent structs."""
     agent_fields = ", ".join(f"{k}: {v}" for k, v in agent_instance.__dict__.items() if not k.startswith("_"))
     # TODO: Implement actual solving logic with prompt
@@ -51,7 +57,7 @@ def default_solve_method(agent_instance: "AgentStructInstance", problem: str, us
     return f"Agent {agent_instance.agent_type.name} solving: {problem} (fields: {agent_fields})"
 
 
-def default_remember_method(agent_instance: "AgentStructInstance", key: str, value: Any) -> bool:
+def default_remember_method(agent_instance: "AgentStructInstance", sandbox_context: SandboxContext, key: str, value: Any) -> bool:
     """Default remember method for agent structs."""
     # Initialize memory if it doesn't exist
     try:
@@ -62,7 +68,7 @@ def default_remember_method(agent_instance: "AgentStructInstance", key: str, val
     return True
 
 
-def default_recall_method(agent_instance: "AgentStructInstance", key: str) -> Any:
+def default_recall_method(agent_instance: "AgentStructInstance", sandbox_context: SandboxContext, key: str) -> Any:
     """Default recall method for agent structs."""
     # Use try/except instead of hasattr to avoid sandbox restrictions
     try:
@@ -73,10 +79,14 @@ def default_recall_method(agent_instance: "AgentStructInstance", key: str) -> An
 
 
 def default_chat_method(
-    agent_instance: "AgentStructInstance", message: str, context: dict | None = None, max_context_turns: int = 5
-) -> str:
+    agent_instance: "AgentStructInstance",
+    sandbox_context: SandboxContext,
+    message: str,
+    context: dict | None = None,
+    max_context_turns: int = 5,
+) -> Any:
     """Default chat method for agent structs - delegates to instance method."""
-    return agent_instance._chat_impl(message, context, max_context_turns)
+    return agent_instance._chat_impl(sandbox_context, message, context, max_context_turns)
 
 
 # --- Agent Struct Type System ---
@@ -142,42 +152,42 @@ class AgentStructInstance(StructInstance):
         self._memory = {}
         self._context = {}
         self._conversation_memory = None  # Lazy initialization
-        self._llm_resource = None  # Lazy initialization
+        self._llm_resource: LLMResource = None  # Lazy initialization
 
     @property
     def agent_type(self) -> AgentStructType:
         """Get the agent type."""
-        return self.__struct_type__
+        return self.__struct_type__  # type: ignore
 
-    def plan(self, task: str, context: dict | None = None) -> Any:
+    def plan(self, sandbox_context: SandboxContext, task: str, context: dict | None = None) -> Any:
         """Execute agent planning method."""
         if self.__struct_type__.has_agent_method("plan"):
-            return self.__struct_type__.agent_methods["plan"](self, task, context)
-        return default_plan_method(self, task, context)
+            return self.__struct_type__.agent_methods["plan"](self, sandbox_context, task, context)
+        return default_plan_method(self, sandbox_context, task, context)
 
-    def solve(self, problem: str, context: dict | None = None) -> Any:
+    def solve(self, sandbox_context: SandboxContext, problem: str, context: dict | None = None) -> Any:
         """Execute agent problem-solving method."""
         if self.__struct_type__.has_agent_method("solve"):
-            return self.__struct_type__.agent_methods["solve"](self, problem, context)
-        return default_solve_method(self, problem, context)
+            return self.__struct_type__.agent_methods["solve"](self, sandbox_context, problem, context)
+        return default_solve_method(self, sandbox_context, problem, context)
 
-    def remember(self, key: str, value: Any) -> bool:
+    def remember(self, sandbox_context: SandboxContext, key: str, value: Any) -> bool:
         """Store information in agent memory."""
         if self.__struct_type__.has_agent_method("remember"):
-            return self.__struct_type__.agent_methods["remember"](self, key, value)
-        return default_remember_method(self, key, value)
+            return self.__struct_type__.agent_methods["remember"](self, sandbox_context, key, value)
+        return default_remember_method(self, sandbox_context, key, value)
 
-    def recall(self, key: str) -> Any:
+    def recall(self, sandbox_context: SandboxContext, key: str) -> Any:
         """Retrieve information from agent memory."""
         if self.__struct_type__.has_agent_method("recall"):
-            return self.__struct_type__.agent_methods["recall"](self, key)
-        return default_recall_method(self, key)
+            return self.__struct_type__.agent_methods["recall"](self, sandbox_context, key)
+        return default_recall_method(self, sandbox_context, key)
 
-    def chat(self, message: str, context: dict | None = None, max_context_turns: int = 5) -> str:
-        """Chat with the agent using conversation memory."""
+    def chat(self, sandbox_context: SandboxContext, message: str, context: dict | None = None, max_context_turns: int = 5) -> Any:
+        """Chat with the agent using conversation memory. Returns a Promise that resolves to the response."""
         if self.__struct_type__.has_agent_method("chat"):
-            return self.__struct_type__.agent_methods["chat"](self, message, context, max_context_turns)
-        return default_chat_method(self, message, context, max_context_turns)
+            return self.__struct_type__.agent_methods["chat"](self, sandbox_context, message, context, max_context_turns)
+        return default_chat_method(self, sandbox_context, message, context, max_context_turns)
 
     def _initialize_conversation_memory(self):
         """Initialize conversation memory if not already done."""
@@ -199,56 +209,14 @@ class AgentStructInstance(StructInstance):
                 max_turns=20,  # Keep last 20 turns in active memory
             )
 
-    def _get_llm_function(self):
-        """Get LLM function from agent fields, context, or Dana's stdlib llm_function."""
-        # Check if agent has an llm field
-        if hasattr(self, "llm") and callable(self.llm):
-            return self.llm
-
-        # Check agent's context
-        if "llm" in self._context and callable(self._context["llm"]):
-            return self._context["llm"]
-
-        # Use Dana's stdlib llm_function
-        return self._get_dana_llm_function()
-
-    def _get_dana_llm_function(self):
-        """Get Dana's stdlib llm_function with sandbox context."""
+    def _get_llm_resource(self):
+        """Get LLM resource context."""
         try:
             from dana.core.lang.sandbox_context import SandboxContext
-            from dana.libs.corelib.py.py_llm import py_llm
 
-            # Create a minimal sandbox context for LLM calls
-            # In a real Dana execution environment, this would be provided
-            # For now, create a minimal context
             context = SandboxContext()
-
-            # Create a wrapper that uses Dana's llm_function
-            def wrapped_llm_function(prompt: str) -> str:
-                try:
-                    # Call Dana's llm_function which returns a Promise
-                    promise = py_llm(context, prompt)
-
-                    # Properly resolve the Promise to get the actual content
-                    if hasattr(promise, "_ensure_resolved"):
-                        # For EagerPromise, use _ensure_resolved to get the actual value
-                        result = promise._ensure_resolved()
-                    elif hasattr(promise, "resolve"):
-                        # Fallback for other Promise types
-                        result = promise.resolve()
-                    else:
-                        # If it's not a Promise, return as-is
-                        result = promise
-
-                    return str(result) if result is not None else "No response from LLM"
-
-                except Exception as e:
-                    return f"LLM call failed: {str(e)}"
-
-            return wrapped_llm_function
-
+            return context.get_system_llm_resource()
         except Exception:
-            # If Dana's llm_function is not available, return None for fallback
             return None
 
     def _build_agent_description(self) -> str:
@@ -280,6 +248,7 @@ class AgentStructInstance(StructInstance):
 
         # Check for memory-related queries
         if "remember" in message_lower or "recall" in message_lower:
+            assert self._conversation_memory is not None  # Should be initialized by now
             recent_turns = self._conversation_memory.get_recent_context(3)
             if recent_turns:
                 topics = []
@@ -304,18 +273,44 @@ class AgentStructInstance(StructInstance):
             "I'm currently running without an LLM connection, so my responses are limited."
         )
 
-    def _chat_impl(self, message: str, context: dict | None = None, max_context_turns: int = 5) -> str:
-        """Implementation of chat functionality."""
+    def _create_response_promise(self, computation: Callable[[], Any], message: str) -> Any:
+        """
+        Create a Promise with conversation memory callback.
+
+        Args:
+            computation: Function that computes the response
+            message: The original user message (for conversation memory)
+
+        Returns:
+            Promise that resolves to the response string
+        """
+
+        def save_conversation_callback(response: str):
+            """Callback to save the conversation turn when the response is ready."""
+            if self._conversation_memory:
+                self._conversation_memory.add_turn(message, response)
+
+        return PromiseFactory.create_promise(computation=computation, on_delivery=save_conversation_callback)
+
+    def _chat_impl(
+        self, sandbox_context: SandboxContext | None = None, message: str = "", context: dict | None = None, max_context_turns: int = 5
+    ) -> Any:
+        """Implementation of chat functionality. Returns a Promise that resolves to the response."""
         # Initialize conversation memory if needed
         self._initialize_conversation_memory()
 
         # Build conversation context
+        assert self._conversation_memory is not None  # Should be initialized by _initialize_conversation_memory
         conversation_context = self._conversation_memory.build_llm_context(message, include_summaries=True, max_turns=max_context_turns)
 
-        # Try to get LLM function
-        llm_function = self._get_llm_function()
+        # Try to get LLM resource
+        llm_resource: LLMResource = None
+        if sandbox_context is not None:
+            llm_resource = sandbox_context.get_system_llm_resource()
+        else:
+            llm_resource = self._get_llm_resource()
 
-        if llm_function:
+        if llm_resource:
             # Build prompt with agent description and conversation context
             system_prompt = self._build_agent_description()
 
@@ -326,19 +321,46 @@ class AgentStructInstance(StructInstance):
             # Combine system prompt with conversation context
             full_prompt = f"{system_prompt}\n\n{conversation_context}"
 
-            # Call LLM to generate response
-            try:
-                response = llm_function(full_prompt)
-            except Exception as e:
-                response = f"I encountered an error while processing your message: {str(e)}"
+            # Create computation that will call LLM resource directly
+            def llm_computation():
+                try:
+                    from dana.common.types import BaseRequest
+
+                    request = BaseRequest(arguments={"prompt": full_prompt})
+                    response = llm_resource.query_sync(request)
+                    if response.success:
+                        # Extract the actual text content from the response
+                        content = response.content
+                        if isinstance(content, dict):
+                            if "choices" in content and content["choices"]:
+                                # OpenAI/Anthropic style response
+                                first_choice = content["choices"][0]
+                                if isinstance(first_choice, dict) and "message" in first_choice:
+                                    message = first_choice["message"]
+                                    if isinstance(message, dict) and "content" in message:
+                                        return message["content"]
+                                    elif hasattr(message, "content"):
+                                        return message.content
+                                elif hasattr(first_choice, "message") and hasattr(first_choice.message, "content"):
+                                    return first_choice.message.content
+                            elif "content" in content:
+                                return content["content"]
+                            elif "response" in content:
+                                return content["response"]
+                        # If we can't extract content, return the whole response as string
+                        return str(content)
+                    else:
+                        return f"LLM call failed: {response.error}"
+                except Exception as e:
+                    return f"I encountered an error while processing your message: {str(e)}"
+
+            return self._create_response_promise(llm_computation, message)
         else:
-            # Use fallback response when no LLM is available
-            response = self._generate_fallback_response(message, conversation_context)
+            # For fallback response, execute synchronously but still use Promise for consistency
+            def fallback_computation():
+                return self._generate_fallback_response(message, conversation_context)
 
-        # Save the conversation turn
-        self._conversation_memory.add_turn(message, response)
-
-        return response
+            return self._create_response_promise(fallback_computation, message)
 
     def get_conversation_stats(self) -> dict:
         """Get conversation statistics for this agent."""

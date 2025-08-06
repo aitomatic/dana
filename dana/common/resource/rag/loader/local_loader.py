@@ -27,10 +27,11 @@ class LocalLoader(AbstractLoader):
         if not os.path.exists(source):
             # Log warning but return empty list instead of failing
             import logging
+
             logger = logging.getLogger(__name__)
             logger.warning(f"RAG source does not exist: {source}")
             return []
-        
+
         try:
             if os.path.isdir(source):
                 # Check if directory has any files with supported extensions
@@ -42,14 +43,15 @@ class LocalLoader(AbstractLoader):
                             break
                     if has_supported_files:
                         break
-                
+
                 if not has_supported_files:
                     # Log info but return empty list instead of failing
                     import logging
+
                     logger = logging.getLogger(__name__)
                     logger.info(f"RAG source directory contains no supported files: {source}")
                     return []
-                
+
                 return await SimpleDirectoryReader(
                     input_dir=source,
                     input_files=None,
@@ -75,10 +77,11 @@ class LocalLoader(AbstractLoader):
                 if not any(source.lower().endswith(ext) for ext in self.supported_types):
                     # Log info but return empty list for unsupported file types
                     import logging
+
                     logger = logging.getLogger(__name__)
                     logger.info(f"RAG source file has unsupported extension: {source}")
                     return []
-                
+
                 return await SimpleDirectoryReader(
                     input_dir=None,
                     input_files=[source],
@@ -98,10 +101,11 @@ class LocalLoader(AbstractLoader):
                     raise_on_error=False,  # Changed to False to handle errors gracefully
                     fs=None,
                 ).aload_data(num_workers=1)
-        
+
         except Exception as e:
             # Log the error but return empty list instead of propagating the exception
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Error loading RAG source {source}: {e}")
             return []

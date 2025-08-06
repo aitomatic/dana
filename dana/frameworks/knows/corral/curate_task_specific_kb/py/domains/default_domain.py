@@ -140,6 +140,7 @@ Create your plan using the template provided.
 Create your plan now:
 """
 
+
 class DefaultDomain(BaseModel):
     role: str = "Generalist"
     domain: str = "General Knowledge"
@@ -148,29 +149,19 @@ class DefaultDomain(BaseModel):
     plan_templates: dict[str, str] = {
         "SIMPLE": SIMPLE_PLANNING_TEMPLATE,
         "MODERATE": MODERATE_PLANNING_TEMPLATE,
-        "COMPLEX": COMPLEX_PLANNING_TEMPLATE
+        "COMPLEX": COMPLEX_PLANNING_TEMPLATE,
     }
 
     categorize_prompt: str = CATEGORIZE_PROMPT
 
-    
     def get_plan_prompt(self, question: str, category: str) -> str:
         """Generate a planning prompt based on question complexity."""
         for key, value in self.plan_templates.items():
             if key.lower() in category.lower():
-                return FOCUSED_PLANNING_PROMPT.format(
-                    complexity_level=key,
-                    template=value,
-                    question=question
-                )
+                return FOCUSED_PLANNING_PROMPT.format(complexity_level=key, template=value, question=question)
         # Default to moderate if category not found
-        return FOCUSED_PLANNING_PROMPT.format(
-            complexity_level="MODERATE",
-            template=self.plan_templates["MODERATE"],
-            question=question
-        )
+        return FOCUSED_PLANNING_PROMPT.format(complexity_level="MODERATE", template=self.plan_templates["MODERATE"], question=question)
 
-    
     def get_fact_prompt(self, question: str) -> str:
         """Generate a prompt focused on extracting factual information."""
         return f"""You are an information specialist focused on identifying and extracting factual data needed to answer questions.
@@ -196,7 +187,6 @@ class DefaultDomain(BaseModel):
 **FACTUAL INFORMATION REQUIREMENTS**:
 List the specific factual data needed to answer this question:"""
 
-    
     def get_heuristic_prompt(self, question: str) -> str:
         """Generate a prompt focused on expert insights and best practices."""
         return f"""You are an expert consultant providing insights, best practices, and rules of thumb for complex problem-solving.
@@ -223,8 +213,7 @@ List the specific factual data needed to answer this question:"""
 
 **EXPERT INSIGHTS AND BEST PRACTICES**:
 Provide the key principles, rules of thumb, and expert guidance:"""
-    
-    
+
     def get_categorize_prompt(self, question: str) -> str:
         """Generate a categorization prompt for the given question."""
         return self.categorize_prompt.format(question=question)
@@ -232,11 +221,11 @@ Provide the key principles, rules of thumb, and expert guidance:"""
     def get_fresher_question_prompt(self, paths_description: str, task_descriptions: str) -> str:
         """
         Generate generic prompt for creating real-world questions based on tree paths.
-        
+
         Args:
             paths_description: Description of all tree paths
             task_descriptions: Description of the role's tasks
-            
+
         Returns:
             A generic prompt for generating domain-specific questions
         """

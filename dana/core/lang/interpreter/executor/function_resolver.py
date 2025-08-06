@@ -178,15 +178,6 @@ class FunctionResolver:
         from dana.core.lang.interpreter.functions.python_function import PythonFunction
         from dana.core.lang.interpreter.functions.sandbox_function import SandboxFunction
 
-        # DEBUG: Log what we're dealing with
-        self.logger.debug(f"DEBUG: Creating resolved function for '{name_info.full_key}'")
-        self.logger.debug(f"DEBUG: func_data type: {type(func_data)}")
-        self.logger.debug(f"DEBUG: func_data: {func_data}")
-        self.logger.debug(f"DEBUG: Is DanaFunction: {isinstance(func_data, DanaFunction)}")
-        self.logger.debug(f"DEBUG: Is PythonFunction: {isinstance(func_data, PythonFunction)}")
-        self.logger.debug(f"DEBUG: Is SandboxFunction: {isinstance(func_data, SandboxFunction)}")
-        self.logger.debug(f"DEBUG: Is callable: {callable(func_data)}")
-
         # Check if this is a decorated function (has __wrapped__ attribute)
         if hasattr(func_data, "__wrapped__"):
             # Decorated functions should be treated as CALLABLE since the decorator
@@ -205,8 +196,6 @@ class FunctionResolver:
                 # This should never happen for functions - raise an error instead of using invalid type
                 self.logger.error(f"ERROR: Function '{name_info.full_key}' has unknown type '{type(func_data)}' and is not callable")
                 raise SandboxError(f"Invalid function type '{type(func_data)}' for function '{name_info.full_key}'")
-
-        self.logger.debug(f"DEBUG: Determined func_type: {func_type.value}")
 
         return ResolvedFunction(
             func=func_data,

@@ -26,17 +26,30 @@ class RAGResource(BaseResource):
         initial_multiplier: int = 2,
     ):
         super().__init__(name, description)
-        self.post_init(sources=sources, 
-                       name=name, 
-                       cache_dir=cache_dir, 
-                       force_reload=force_reload, 
-                       chunk_size=chunk_size, 
-                       chunk_overlap=chunk_overlap, 
-                       debug=debug, 
-                       reranking=reranking, 
-                       initial_multiplier=initial_multiplier)
+        self.post_init(
+            sources=sources,
+            name=name,
+            cache_dir=cache_dir,
+            force_reload=force_reload,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            debug=debug,
+            reranking=reranking,
+            initial_multiplier=initial_multiplier,
+        )
 
-    def post_init(self, sources: list[str], name: str, cache_dir: str, force_reload: bool, chunk_size: int, chunk_overlap: int, debug: bool, reranking: bool, initial_multiplier: int):
+    def post_init(
+        self,
+        sources: list[str],
+        name: str,
+        cache_dir: str,
+        force_reload: bool,
+        chunk_size: int,
+        chunk_overlap: int,
+        debug: bool,
+        reranking: bool,
+        initial_multiplier: int,
+    ):
         Settings.chunk_size = chunk_size
         Settings.chunk_overlap = chunk_overlap
         self.sources = sources
@@ -70,7 +83,6 @@ class RAGResource(BaseResource):
         else:
             self._llm_reranker = None
 
-
     @property
     def filenames(self) -> list[str]:
         if not self._is_ready:
@@ -91,9 +103,7 @@ class RAGResource(BaseResource):
             await self.initialize()
 
         if self.debug:
-            print(
-                f"Querying {num_results} results from {self.name} RAG with query: {query}"
-            )
+            print(f"Querying {num_results} results from {self.name} RAG with query: {query}")
 
         # Get initial results (more than needed for reranking)
         initial_num_results = num_results
@@ -112,9 +122,7 @@ class RAGResource(BaseResource):
 
         return "\n\n".join([result.node.get_content() for result in results])
 
-    async def _rerank_with_llm(
-        self, query: str, results: list, target_count: int
-    ) -> list:
+    async def _rerank_with_llm(self, query: str, results: list, target_count: int) -> list:
         """Rerank and filter results using LLM to improve relevance and discard irrelevant content.
 
         The LLM will:
@@ -127,9 +135,7 @@ class RAGResource(BaseResource):
             return results
 
         if self.debug:
-            print(
-                f"LLM reranking: analyzing {len(results)} results (target {target_count} will be selected)"
-            )
+            print(f"LLM reranking: analyzing {len(results)} results (target {target_count} will be selected)")
 
         # Prepare documents for reranking
         documents = []
@@ -175,16 +181,10 @@ class RAGResource(BaseResource):
                 if self.debug:
                     original_count = len(results)
                     filtered_count = len(reranked_results)
-                    print(
-                        f"LLM reranking successful: filtered {original_count} -> {filtered_count} results"
-                    )
+                    print(f"LLM reranking successful: filtered {original_count} -> {filtered_count} results")
 
                 # Return only LLM-selected results (may be fewer than target_count)
-                return (
-                    reranked_results[:target_count]
-                    if len(reranked_results) > target_count
-                    else reranked_results
-                )
+                return reranked_results[:target_count] if len(reranked_results) > target_count else reranked_results
             else:
                 if self.debug:
                     print(f"LLM reranking failed: {response.error}")
@@ -195,9 +195,7 @@ class RAGResource(BaseResource):
                 print(f"Error during LLM reranking: {e}")
             return results[:target_count]
 
-    def _create_reranking_prompt(
-        self, query: str, documents: list[dict], target_count: int
-    ) -> str:
+    def _create_reranking_prompt(self, query: str, documents: list[dict], target_count: int) -> str:
         """Create a prompt for LLM-based reranking and filtering."""
         docs_text = ""
         for doc in documents:
@@ -241,19 +239,11 @@ Response (JSON array only):"""
 
             # The response should be a JSON array of integers
             if isinstance(parsed, list):
-                return [
-                    int(x)
-                    for x in parsed
-                    if isinstance(x, (int, str)) and str(x).isdigit()
-                ]
+                return [int(x) for x in parsed if isinstance(x, (int, str)) and str(x).isdigit()]
             elif isinstance(parsed, dict) and "ranking" in parsed:
                 ranking = parsed["ranking"]
                 if isinstance(ranking, list):
-                    return [
-                        int(x)
-                        for x in ranking
-                        if isinstance(x, (int, str)) and str(x).isdigit()
-                    ]
+                    return [int(x) for x in ranking if isinstance(x, (int, str)) and str(x).isdigit()]
 
             # Fallback: try to extract numbers from the text
             import re

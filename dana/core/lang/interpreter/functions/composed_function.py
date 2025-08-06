@@ -94,8 +94,10 @@ class ComposedFunction(SandboxFunction):
         Returns:
             The result of applying right_func to the result of left_func
         """
+
         # Resolve functions if they are strings (lazy resolution)
         left_resolved = self._resolve_function(self.left_func, context)
+
         right_resolved = self._resolve_function(self.right_func, context)
 
         # Apply the left function first
@@ -103,7 +105,9 @@ class ComposedFunction(SandboxFunction):
 
         # Apply the right function to the intermediate result
         # The intermediate result becomes the argument to the right function
-        return right_resolved.execute(context, intermediate_result)
+        final_result = right_resolved.execute(context, intermediate_result)
+
+        return final_result
 
     def _resolve_function(self, func: SandboxFunction | str | Callable, context: SandboxContext) -> SandboxFunction:
         """Resolve a function reference to a SandboxFunction object.
@@ -118,6 +122,7 @@ class ComposedFunction(SandboxFunction):
         Raises:
             SandboxError: If the function cannot be resolved
         """
+
         if isinstance(func, SandboxFunction):
             # Already resolved
             return func

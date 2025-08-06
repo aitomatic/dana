@@ -3,16 +3,11 @@ Financial Statement Tools Resource
 Unified tools for financial statement analysis with session management and CSV export.
 """
 
-import hashlib
-import json
 import logging
-import re
 import tempfile
-import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-import os
+from typing import Any
 
 
 from dana.common.mixins.tool_callable import ToolCallable
@@ -55,7 +50,7 @@ class FinancialSession:
         }
         self.metadata["last_updated"] = datetime.now().isoformat()
 
-    def get_statement(self, statement_type: str) -> Optional[Any]:
+    def get_statement(self, statement_type: str) -> Any | None:
         """Retrieve stored financial statement data."""
         if statement_type in self.financial_data:
             return self.financial_data[statement_type]["data"]
@@ -86,7 +81,7 @@ class FinancialStatementTools(BaseResource):
         self.debug = debug
         self.company = company
         self.cache = {}  # In-memory cache: company -> cached_data
-        
+
         # Set output directory for markdown files
         if output_dir:
             self.output_dir = Path(output_dir)
@@ -100,14 +95,14 @@ class FinancialStatementTools(BaseResource):
             debug=debug,
             **kwargs,
         )
-        
+
         # Initialize CodingResource for generating and executing code
         self.coding_resource = CodingResource(
             name=f"{name}_coding",
             debug=debug,
             **kwargs,
         )
-        
+
         # Initialize session for this company
         self.session = FinancialSession(f"session_{company}", company)
 
@@ -116,10 +111,10 @@ class FinancialStatementTools(BaseResource):
         await super().initialize()
         await self.financial_rag.initialize()
         await self.coding_resource.initialize()
-        
+
         # Initialization logging removed for brevity
 
-    def _get_from_cache(self, cache_key: str) -> Optional[Any]:
+    def _get_from_cache(self, cache_key: str) -> Any | None:
         """Retrieve data from cache."""
         cached_data = self.cache.get(cache_key)
         if cached_data:
@@ -135,69 +130,59 @@ class FinancialStatementTools(BaseResource):
         self.cache[cache_key] = data
         # Cache storage logging removed for brevity
 
-    def clear_cache(self) -> Dict[str, Any]:
+    def clear_cache(self) -> dict[str, Any]:
         """Clear all cached data."""
         cache_size = len(self.cache)
         self.cache.clear()
-        return {
-            "cache_cleared": True,
-            "entries_removed": cache_size,
-            "message": f"Cleared {cache_size} cache entries"
-        }
+        return {"cache_cleared": True, "entries_removed": cache_size, "message": f"Cleared {cache_size} cache entries"}
 
     async def _execute_ratio_calculation_with_cache(
-        self, 
-        ratio_type: str, 
-        prompt_generator, 
-        bs_file: str, 
-        is_file: str = "", 
-        company_name: str = "Company", 
-        market_data: str = ""
+        self, ratio_type: str, prompt_generator, bs_file: str, is_file: str = "", company_name: str = "Company", market_data: str = ""
     ) -> str:
         """Execute ratio calculation with caching support."""
         # Simple cache key using company and ratio type
         cache_key = f"{self.company}_{ratio_type}"
-        
+
         # Cache check logging removed for brevity
-        
+
         # Try to get from cache first
         cached_result = self._get_from_cache(cache_key)
-        
+
         if cached_result:
             # Use cached results
             # Using cached results
             return cached_result
-        
+
         # Execute fresh calculation
         # Executing fresh calculation
-        
+
         # Read file contents
         try:
             # Read balance sheet if provided
             bs_content = ""
             if bs_file:
-                with open(bs_file, 'r', encoding='utf-8') as f:
+                with open(bs_file, encoding="utf-8") as f:
                     bs_content = f.read()
                 # File read successful
-            
-            # Read income statement if provided  
+
+            # Read income statement if provided
             is_content = ""
             if is_file:
-                with open(is_file, 'r', encoding='utf-8') as f:
+                with open(is_file, encoding="utf-8") as f:
                     is_content = f.read()
                 # File read successful
-            
+
             # Check if files are empty
             if bs_file and not bs_content.strip():
                 return "Error: Balance sheet file is empty"
             if is_file and not is_content.strip():
                 return "Error: Income statement file is empty"
-                
+
         except Exception as e:
             error_msg = f"Failed to read financial statement files: {str(e)}"
             logger.error(error_msg)
             return error_msg
-        
+
         # Generate prompt using the provided generator function
         if market_data:
             prompt = prompt_generator(bs_content, is_content, company_name, market_data)
@@ -205,25 +190,25 @@ class FinancialStatementTools(BaseResource):
             prompt = prompt_generator(bs_content, is_content, company_name)
         else:
             prompt = prompt_generator(bs_content, company_name)
-        
+
         # Executing calculation
-        
+
         # Use CodingResource to generate AND execute Python code
         try:
             execution_result = await self.coding_resource.execute_code(prompt)
-            
+
             is_successful = not execution_result.startswith("Error:") and not execution_result.startswith("Failed")
-            
+
             # Calculation completed
-            
+
             # Cache the results if successful
             if is_successful:
                 self._store_in_cache(cache_key, execution_result)
                 # Results cached
-                
+
             # Return the text output directly
             return execution_result
-                
+
         except Exception as e:
             error_msg = f"Failed to execute {ratio_type} calculation: {str(e)}"
             logger.error(error_msg)
@@ -234,24 +219,23 @@ class FinancialStatementTools(BaseResource):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{session.company}_{statement_type}_{timestamp}.md"
         filepath = self.output_dir / filename
-        
+
         # Create markdown content with header
         markdown_content = f"# {statement_type.replace('_', ' ').title()}\n"
         markdown_content += f"**Company:** {session.company}\n"
         markdown_content += f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
         markdown_content += "---\n\n"
         markdown_content += statement_data
-        
-        # Write to file
-        with open(filepath, 'w', encoding='utf-8') as f:
-            f.write(markdown_content)
-        
-        session.add_output_file(statement_type, str(filepath))
-        
-        # File saved
-            
-        return str(filepath)
 
+        # Write to file
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(markdown_content)
+
+        session.add_output_file(statement_type, str(filepath))
+
+        # File saved
+
+        return str(filepath)
 
     @ToolCallable.tool
     async def load_financial_data(
@@ -264,11 +248,11 @@ class FinancialStatementTools(BaseResource):
         # Use instance company if not provided
         if not company:
             company = self.company
-            
+
         # Always include all three financial statements
         statements = ["balance_sheet", "income_statement", "cash_flow"]
         session = self.session
-        
+
         if self.debug:
             print(f"\nCALL: load_financial_data(company='{company}', periods='{periods}', source='{source}')")
 
@@ -294,45 +278,42 @@ class FinancialStatementTools(BaseResource):
 
                 # Simple cache key
                 cache_key = f"{company}_{statement_type}"
-                
+
                 # Try to get from cache first
                 cached_data = self._get_from_cache(cache_key)
-                
+
                 if cached_data:
                     # Use cached data
                     extracted_data = cached_data["extracted_data"]
                     md_path = cached_data["md_path"]
-                    
+
                     # Store in session
                     session.store_statement(statement_type, extracted_data)
-                    
+
                     # Using cached data
                 else:
                     # Extract fresh data using RAG
                     # Extracting fresh data
-                    
+
                     extractor = statement_extractors[statement_type]
                     extracted_data = await extractor(
                         company=company,
                         period=periods,
-                        format_output="timeseries"  # Request structured format
+                        format_output="timeseries",  # Request structured format
                     )
 
                     # Store in session
                     session.store_statement(statement_type, extracted_data)
-                    
+
                     # Save to markdown file
                     md_path = self._save_to_markdown(extracted_data, session, statement_type)
-                    
+
                     # Cache the results
-                    cache_data = {
-                        "extracted_data": extracted_data,
-                        "md_path": md_path
-                    }
+                    cache_data = {"extracted_data": extracted_data, "md_path": md_path}
                     self._store_in_cache(cache_key, cache_data)
-                    
+
                     # Data extracted and cached
-                
+
                 statements_loaded.append(statement_type)
                 markdown_files[statement_type] = md_path
 
@@ -347,7 +328,7 @@ class FinancialStatementTools(BaseResource):
             bs_file = markdown_files.get("balance_sheet", "")
             is_file = markdown_files.get("income_statement", "")
             cf_file = markdown_files.get("cash_flow", "")
-            
+
             markdown_output = f"""# Financial Data Loading Results ✅
 
 **Company:** {company}  
@@ -374,16 +355,16 @@ load_file(file_path='{cf_file}')  # Load cash flow content
 - 🎯 Ready for comprehensive financial analysis
 - ⚡ Cached results available for faster subsequent access
 """
-            
+
         elif len(statements_loaded) > 0:
             # Partial success
             missing = list(set(statements) - set(statements_loaded))
             loaded_files = []
-            
+
             for stmt_type in statements_loaded:
                 file_path = markdown_files.get(stmt_type, "")
                 loaded_files.append(f"- **{stmt_type.replace('_', ' ').title()}**: `{file_path}`")
-            
+
             markdown_output = f"""# Financial Data Loading Results ⚠️
 
 **Company:** {company}  
@@ -403,11 +384,11 @@ Some financial ratio analyses may not be available due to missing data.
 - Use available statements for partial analysis
 - Consider re-running with different period parameters
 """
-            
+
         else:
             # Complete failure
             error_list = "\n".join([f"- {error}" for error in errors]) if errors else "- Unknown error occurred"
-            
+
             markdown_output = f"""# Financial Data Loading Results ❌
 
 **Company:** {company}  
@@ -428,16 +409,14 @@ If issues persist, check the document sources and RAG configuration.
 
         return markdown_output
 
-    async def get_cache_info(self) -> Dict[str, Any]:
+    async def get_cache_info(self) -> dict[str, Any]:
         """@description: Shows cache statistics and information. Use to check cache performance and manage cached data."""
         return {
             "company": self.company,
             "cache_entries_count": len(self.cache),
             "cache_keys": list(self.cache.keys()),
             "cache_enabled": True,
-            "actions": {
-                "clear_cache": "Use clear_cache() to remove all cached data"
-            }
+            "actions": {"clear_cache": "Use clear_cache() to remove all cached data"},
         }
 
     @ToolCallable.tool
@@ -448,21 +427,21 @@ If issues persist, check the document sources and RAG configuration.
         """@description: Loads the content of a financial statement markdown file. Use this to read file contents before analysis or when you need to see the actual financial data."""
         if self.debug:
             print(f"\nCALL: load_file(file_path='{file_path}')")
-            
+
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
-            
+
             if self.debug:
                 print(f"RESPONSE: Loaded {len(content)} characters")
-            
-            return f'Content of `{file_path}` : \n {content}'
-                
+
+            return f"Content of `{file_path}` : \n {content}"
+
         except FileNotFoundError:
             error_msg = f"File not found: {file_path}"
             logger.error(error_msg)
             return error_msg
-            
+
         except Exception as e:
             error_msg = f"Failed to load file {file_path}: {str(e)}"
             logger.error(error_msg)
@@ -578,34 +557,36 @@ If issues persist, check the document sources and RAG configuration.
     #         print(f"RESPONSE: {cached} - {len(result)} characters")
     #     return result
 
-    async def query(self, query : str) -> str:
+    async def query(self, query: str) -> str:
         pass
-    
+
+
 if __name__ == "__main__":
     import asyncio
+
     finance_resource = FinancialStatementTools(
-        description="Financial statement analysis tools with simplified caching", 
+        description="Financial statement analysis tools with simplified caching",
         debug=True,
         company="Aitomatic",
-        sources=["/Users/lam/Desktop/repos/opendxa/agents/agent_5_untitled_agent/docs"]
+        sources=["/Users/lam/Desktop/repos/opendxa/agents/agent_5_untitled_agent/docs"],
     )
     asyncio.run(finance_resource.initialize())
-    
+
     # Test the simplified interface
     # print("=== First call (should cache data) ===")
     # markdown_result1 = asyncio.run(finance_resource.load_financial_data(periods="latest"))
     # print("MARKDOWN OUTPUT:")
     # print(markdown_result1)
-    
+
     # print("\n=== Cache info after first call ===")
     # cache_info = asyncio.run(finance_resource.get_cache_info())
     # print(f"Company: {cache_info.get('company')}")
     # print(f"Cache entries: {cache_info.get('cache_entries_count')}")
     # print(f"Cache keys: {cache_info.get('cache_keys')}")
-    
+
     # print("\n=== Second call (should use cache) ===")
     # markdown_result2 = asyncio.run(finance_resource.create_financial_forecast(
-    #     forecast_request="Grow revenue by 20% annually, maintain 40% gross margin, and reduce operating expenses by 10% annually.", 
+    #     forecast_request="Grow revenue by 20% annually, maintain 40% gross margin, and reduce operating expenses by 10% annually.",
     #     bs_file="agents/financial_stmt_analysis/docs/[FI] FY21-25 Aitomatic Financials - FY24 BS.md",
     #     is_file="agents/financial_stmt_analysis/docs/[FI] FY21-25 Aitomatic Financials - FY24 P&L.md",
     #     cf_file="agents/financial_stmt_analysis/docs/[FI] FY21-25 Aitomatic Financials - FY24 CF.md"))

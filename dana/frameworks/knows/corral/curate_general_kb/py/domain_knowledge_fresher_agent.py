@@ -45,7 +45,7 @@ INSTRUCTIONS:
 
 OUTPUT FORMAT (valid JSON):
 {{
-    "per_criterion": {{{', '.join([f'"{topic}": 0-100' for topic in topic_names])}}},
+    "per_criterion": {{{", ".join([f'"{topic}": 0-100' for topic in topic_names])}}},
     "overall_confidence": 0-100,
     "status": "Ready to proceed | More info needed",
     "gaps": [["topic_name", "reason for inadequacy"]]
@@ -212,7 +212,7 @@ OUTPUT FORMAT (strict)  return ONLY this:
         }
 
         print(
-            f"<� Completed! Generated {len(questions_list)} high-quality questions across {len(questions)} topics in {iteration-1} iterations"
+            f"<� Completed! Generated {len(questions_list)} high-quality questions across {len(questions)} topics in {iteration - 1} iterations"
         )
         return result
 

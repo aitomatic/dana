@@ -11,10 +11,9 @@ import os
 from typing import Any
 
 from dana.common.exceptions import SandboxError
-from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.logging import DANA_LOGGER
-from dana.core.concurrency import LazyPromise
+from dana.core.concurrency.promise_factory import PromiseFactory
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -61,22 +60,9 @@ def py_llm(
     # Priority: function parameter > environment variable
     should_mock = use_mock if use_mock is not None else os.environ.get("DANA_MOCK_LLM", "").lower() == "true"
 
-    # Get LLM resource from context (assume it's available)
-    if hasattr(context, "llm_resource") and context.llm_resource:
-        llm_resource = context.llm_resource
-    else:
-        # Try to get from system:llm_resource
-        try:
-            llm_resource = context.get("system:llm_resource")
-            if not llm_resource:
-                llm_resource = LLMResource()
-        except Exception:
-            llm_resource = LLMResource()
-
-    # Apply mocking if needed
-    if should_mock:
-        logger.info(f"Using mock LLM response (prompt: {prompt[:100]}{'...' if len(prompt) > 100 else ''})")
-        llm_resource = llm_resource.with_mock_llm_call(True)
+    # Get LLM resource from context using consolidated method
+    llm_resource = context.get_system_llm_resource(use_mock=should_mock)
+    logger.info(f"LLMResource ID: {llm_resource.id}")
 
     # Get resources from context once and reuse throughout the function
     resources = {}
@@ -90,7 +76,7 @@ def py_llm(
         """Async function that performs the actual LLM call."""
         try:
             # Log what's happening
-            logger.debug(f"Starting async LLM call with prompt: {prompt[:500]}{'...' if len(prompt) > 500 else ''}")
+            logger.debug(f"Starting LLM call with prompt: {prompt[:500]}{'...' if len(prompt) > 500 else ''}")
 
             # Prepare system message
             system_message = options.get("system_message", "You are a helpful AI assistant. Respond concisely and accurately.")
@@ -158,10 +144,15 @@ def py_llm(
             return result
 
         except Exception as e:
-            logger.error(f"Error during async LLM call: {str(e)}")
-            raise SandboxError(f"Error during async LLM call: {str(e)}") from e
+            logger.error(f"Error during LLM call: {str(e)}")
+            raise SandboxError(f"Error during LLM call: {str(e)}") from e
 
-    # Create and return a LazyPromise that wraps the async function
-    # LazyPromise defers execution until first access, allowing quick return
-    logger.debug("Creating LazyPromise for async LLM call")
-    return LazyPromise.create(_async_llm_call(), context)
+    # Create and return an EagerPromise that wraps the async function
+    # EagerPromise starts execution immediately in background
+    logger.debug("Creating EagerPromise for LLM call")
+    logger.debug(f"_async_llm_call type: {type(_async_llm_call)}")
+    logger.debug(f"context type: {type(context)}")
+    logger.debug(f"context class: {context.__class__.__name__}")
+
+    # PromiseFactory.create_promise() handles DanaThreadPool internally
+    return PromiseFactory.create_promise(_async_llm_call)

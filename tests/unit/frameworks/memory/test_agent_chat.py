@@ -8,7 +8,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from dana.agent.agent_struct_system import AgentStructType, AgentStructInstance
+from dana.agent.agent_struct_system import AgentStructInstance, AgentStructType
+from dana.core.lang.sandbox_context import SandboxContext
 
 
 class TestAgentChat(unittest.TestCase):
@@ -22,11 +23,8 @@ class TestAgentChat(unittest.TestCase):
         self.memory_dir.mkdir(parents=True, exist_ok=True)
 
         # Patch the memory initialization to use temp directory
-        original_init = AgentStructInstance._initialize_conversation_memory
-
         def mock_init(agent_self):
             if agent_self._conversation_memory is None:
-                from pathlib import Path
                 from dana.frameworks.memory.conversation_memory import ConversationMemory
 
                 # Use temp directory instead of ~/.dana/chats/
@@ -36,6 +34,9 @@ class TestAgentChat(unittest.TestCase):
 
         self.init_patcher = patch.object(AgentStructInstance, "_initialize_conversation_memory", mock_init)
         self.init_patcher.start()
+
+        # Create a sandbox context for testing
+        self.sandbox_context = SandboxContext()
 
     def tearDown(self):
         """Clean up test cases."""
@@ -67,12 +68,13 @@ class TestAgentChat(unittest.TestCase):
 
     def test_basic_chat_without_llm(self):
         """Test basic chat functionality without LLM."""
-        # Mock the LLM function to return None to force fallback behavior
-        with patch.object(AgentStructInstance, "_get_dana_llm_function", return_value=None):
+        # Mock the sandbox context to return None for LLM resource to force fallback behavior
+        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=None):
             agent = self.create_test_agent()
 
-            # Test greeting
-            response = agent.chat("Hello!")
+            # Test greeting - chat now returns a Promise
+            response_promise = agent.chat(self.sandbox_context, "Hello!")
+            response = response_promise._wait_for_delivery()
             self.assertIn("Hello", response)
             self.assertIn("TestAgent", response)
 
@@ -80,51 +82,61 @@ class TestAgentChat(unittest.TestCase):
             self.assertIsNotNone(agent._conversation_memory)
 
             # Test name query
-            response = agent.chat("What's your name?")
+            response_promise = agent.chat(self.sandbox_context, "What's your name?")
+            response = response_promise._wait_for_delivery()
             self.assertIn("TestAgent", response)
 
             # Test memory query
-            response = agent.chat("Do you remember what I said?")
+            response_promise = agent.chat(self.sandbox_context, "Do you remember what I said?")
+            response = response_promise._wait_for_delivery()
             self.assertTrue("hello" in response.lower() or "remember" in response.lower())
 
     def test_chat_with_mock_llm(self):
         """Test chat functionality with mock LLM."""
         agent = self.create_test_agent()
 
-        # Create mock LLM function
-        mock_llm = Mock(return_value="This is a mock LLM response.")
-        agent._context["llm"] = mock_llm
+        # Create mock LLM resource
+        mock_llm_resource = Mock()
+        mock_llm_resource.query_sync.return_value = Mock(success=True, content="This is a mock LLM response.")
 
-        # Chat with agent
-        response = agent.chat("Tell me about yourself")
+        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=mock_llm_resource):
+            # Chat with agent
+            response_promise = agent.chat(self.sandbox_context, "Tell me about yourself")
+            response = response_promise._wait_for_delivery()
 
-        # Should use LLM
-        self.assertEqual(response, "This is a mock LLM response.")
-        mock_llm.assert_called_once()
+            # Should use LLM
+            self.assertEqual(response, "This is a mock LLM response.")
+            mock_llm_resource.query_sync.assert_called_once()
 
-        # Check that prompt contains agent description
-        call_args = mock_llm.call_args[0][0]
-        self.assertIn("You are TestAgent", call_args)
-        # Agent fields are included in context when there's conversation history
-        # For first message, fields might not be shown due to no conversation context
+            # Check that prompt contains agent description
+            call_args = mock_llm_resource.query_sync.call_args[0][0]
+            self.assertIn("You are TestAgent", call_args.arguments["prompt"])
 
     def test_llm_field_detection(self):
         """Test that LLM is detected from agent fields."""
-        mock_llm = Mock(return_value="LLM field response")
-        agent = self.create_test_agent(fields={"llm": mock_llm})
+        # This test needs to be updated since LLM is now handled through resources
+        # rather than direct field detection
+        agent = self.create_test_agent(fields={"llm": "some_llm_value"})
 
-        response = agent.chat("Test message")
+        # Mock LLM resource
+        mock_llm_resource = Mock()
+        mock_llm_resource.query_sync.return_value = Mock(success=True, content="LLM field response")
 
-        self.assertEqual(response, "LLM field response")
-        mock_llm.assert_called_once()
+        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=mock_llm_resource):
+            response_promise = agent.chat(self.sandbox_context, "Test message")
+            response = response_promise._wait_for_delivery()
+
+            self.assertEqual(response, "LLM field response")
+            mock_llm_resource.query_sync.assert_called_once()
 
     def test_default_llm_resource(self):
         """Test that agents try to use default LLMResource."""
-        # Mock the LLM function to return None to force fallback behavior
-        with patch.object(AgentStructInstance, "_get_dana_llm_function", return_value=None):
+        # Mock the sandbox context to return None for LLM resource to force fallback behavior
+        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=None):
             agent = self.create_test_agent()
 
-            response = agent.chat("Hello")
+            response_promise = agent.chat(self.sandbox_context, "Hello")
+            response = response_promise._wait_for_delivery()
 
             # Should fall back to simple responses
             self.assertIn("Hello", response)
@@ -132,35 +144,38 @@ class TestAgentChat(unittest.TestCase):
 
     def test_conversation_persistence(self):
         """Test that conversations persist across agent instances."""
-        # Mock the LLM function to return None to force fallback behavior
-        with patch.object(AgentStructInstance, "_get_dana_llm_function", return_value=None):
+        # Mock the sandbox context to return None for LLM resource to force fallback behavior
+        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=None):
             # First agent instance
             agent1 = self.create_test_agent()
-            agent1.chat("My name is Alice")
-            agent1.chat("I like programming")
+            agent1.chat(self.sandbox_context, "My name is Alice")._wait_for_delivery()
+            agent1.chat(self.sandbox_context, "I like programming")._wait_for_delivery()
 
             # Second agent instance (same type)
             agent2 = self.create_test_agent()
-            response = agent2.chat("Do you remember my name?")
+            response_promise = agent2.chat(self.sandbox_context, "Do you remember my name?")
+            response = response_promise._wait_for_delivery()
 
             # Should remember from previous session
             self.assertTrue("alice" in response.lower() or "programming" in response.lower())
 
     def test_multiple_agent_separation(self):
         """Test that different agent types maintain separate conversations."""
-        # Mock the LLM function to return None to force fallback behavior
-        with patch.object(AgentStructInstance, "_get_dana_llm_function", return_value=None):
+        # Mock the sandbox context to return None for LLM resource to force fallback behavior
+        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=None):
             # Create two different agent types
             agent1 = self.create_test_agent("Agent1", {"role": "support"})
             agent2 = self.create_test_agent("Agent2", {"role": "sales"})
 
             # Have different conversations
-            agent1.chat("I have a technical problem")
-            agent2.chat("I want to buy something")
+            agent1.chat(self.sandbox_context, "I have a technical problem")._wait_for_delivery()
+            agent2.chat(self.sandbox_context, "I want to buy something")._wait_for_delivery()
 
             # Check that memories are separate
-            response1 = agent1.chat("What did we talk about?")
-            response2 = agent2.chat("What did we talk about?")
+            response_promise1 = agent1.chat(self.sandbox_context, "What did we talk about?")
+            response1 = response_promise1._wait_for_delivery()
+            response_promise2 = agent2.chat(self.sandbox_context, "What did we talk about?")
+            response2 = response_promise2._wait_for_delivery()
 
             # Each should only remember their own conversation
             self.assertNotEqual(response1, response2)
@@ -174,8 +189,8 @@ class TestAgentChat(unittest.TestCase):
         self.assertIn("error", stats)
 
         # After chatting
-        agent.chat("Hello")
-        agent.chat("How are you?")
+        agent.chat(self.sandbox_context, "Hello")._wait_for_delivery()
+        agent.chat(self.sandbox_context, "How are you?")._wait_for_delivery()
 
         stats = agent.get_conversation_stats()
         self.assertEqual(stats["total_turns"], 2)
@@ -187,8 +202,8 @@ class TestAgentChat(unittest.TestCase):
         agent = self.create_test_agent()
 
         # Add some conversation
-        agent.chat("Hello")
-        agent.chat("Test message")
+        agent.chat(self.sandbox_context, "Hello")._wait_for_delivery()
+        agent.chat(self.sandbox_context, "Test message")._wait_for_delivery()
 
         # Clear memory
         result = agent.clear_conversation_memory()
@@ -200,51 +215,57 @@ class TestAgentChat(unittest.TestCase):
 
     def test_chat_with_context(self):
         """Test chat with additional context."""
-        mock_llm = Mock(return_value="Contextual response")
+        mock_llm_resource = Mock()
+        mock_llm_resource.query_sync.return_value = Mock(success=True, content="Contextual response")
         agent = self.create_test_agent()
-        agent._context["llm"] = mock_llm
 
-        # Chat with additional context
-        context = {"priority": "high", "category": "support"}
-        response = agent.chat("Help me", context=context)
+        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=mock_llm_resource):
+            # Chat with additional context
+            context = {"priority": "high", "category": "support"}
+            response_promise = agent.chat(self.sandbox_context, "Help me", context=context)
+            _ = response_promise._wait_for_delivery()
 
-        # Check that context was included in prompt
-        call_args = mock_llm.call_args[0][0]
-        self.assertIn("Additional context", call_args)
-        self.assertIn("priority", call_args)
+            # Check that context was included in prompt
+            call_args = mock_llm_resource.query_sync.call_args[0][0]
+            self.assertIn("Additional context", call_args.arguments["prompt"])
+            self.assertIn("priority", call_args.arguments["prompt"])
 
     def test_max_context_turns(self):
         """Test limiting context turns."""
-        mock_llm = Mock(return_value="Limited context response")
+        mock_llm_resource = Mock()
+        mock_llm_resource.query_sync.return_value = Mock(success=True, content="Limited context response")
         agent = self.create_test_agent()
-        agent._context["llm"] = mock_llm
 
-        # Add several turns
-        for i in range(5):
-            agent.chat(f"Message {i}")
+        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=mock_llm_resource):
+            # Add several turns
+            for i in range(5):
+                agent.chat(self.sandbox_context, f"Message {i}")._wait_for_delivery()
 
-        # Chat with limited context
-        agent.chat("New message", max_context_turns=2)
+            # Chat with limited context
+            agent.chat(self.sandbox_context, "New message", max_context_turns=2)._wait_for_delivery()
 
-        # Check that only recent turns are included
-        call_args = mock_llm.call_args[0][0]
-        self.assertIn("Message 3", call_args)
-        self.assertIn("Message 4", call_args)
-        self.assertNotIn("Message 0", call_args)
-        self.assertNotIn("Message 1", call_args)
+            # Check that only recent turns are included
+            call_args = mock_llm_resource.query_sync.call_args[0][0]
+            prompt = call_args.arguments["prompt"]
+            self.assertIn("Message 3", prompt)
+            self.assertIn("Message 4", prompt)
+            self.assertNotIn("Message 0", prompt)
+            self.assertNotIn("Message 1", prompt)
 
     def test_llm_error_handling(self):
         """Test handling of LLM errors."""
         # Create LLM that throws an error
-        error_llm = Mock(side_effect=Exception("LLM error"))
+        mock_llm_resource = Mock()
+        mock_llm_resource.query_sync.side_effect = Exception("LLM error")
         agent = self.create_test_agent()
-        agent._context["llm"] = error_llm
 
-        response = agent.chat("Test message")
+        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=mock_llm_resource):
+            response_promise = agent.chat(self.sandbox_context, "Test message")
+            response = response_promise._wait_for_delivery()
 
-        # Should handle error gracefully
-        self.assertIn("error", response.lower())
-        self.assertIn("LLM error", response)
+            # Should handle error gracefully
+            self.assertIn("error", response.lower())
+            self.assertIn("LLM error", response)
 
     def test_agent_description_building(self):
         """Test building agent descriptions for prompts."""
@@ -259,8 +280,8 @@ class TestAgentChat(unittest.TestCase):
 
     def test_fallback_responses(self):
         """Test fallback response generation."""
-        # Mock the LLM function to return None to force fallback behavior
-        with patch.object(AgentStructInstance, "_get_dana_llm_function", return_value=None):
+        # Mock the sandbox context to return None for LLM resource to force fallback behavior
+        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=None):
             agent = self.create_test_agent()
 
             # Test different types of queries
@@ -272,7 +293,8 @@ class TestAgentChat(unittest.TestCase):
             ]
 
             for query, expected_in_response in test_cases:
-                response = agent.chat(query)
+                response_promise = agent.chat(self.sandbox_context, query)
+                response = response_promise._wait_for_delivery()
                 self.assertIn(expected_in_response.lower(), response.lower())
 
     def test_memory_initialization_lazy(self):
@@ -283,20 +305,21 @@ class TestAgentChat(unittest.TestCase):
         self.assertIsNone(agent._conversation_memory)
 
         # After first chat, memory should be initialized
-        agent.chat("Hello")
+        agent.chat(self.sandbox_context, "Hello")._wait_for_delivery()
         self.assertIsNotNone(agent._conversation_memory)
 
     def test_agent_fields_in_context(self):
         """Test that agent fields are included in context."""
-        mock_llm = Mock(return_value="Response with fields")
+        mock_llm_resource = Mock()
+        mock_llm_resource.query_sync.return_value = Mock(success=True, content="Response with fields")
         agent = self.create_test_agent("FieldAgent", {"department": "engineering", "specialty": "AI"})
-        agent._context["llm"] = mock_llm
 
-        agent.chat("Test")
+        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=mock_llm_resource):
+            agent.chat(self.sandbox_context, "Test")._wait_for_delivery()
 
-        call_args = mock_llm.call_args[0][0]
-        # With first message, agent characteristics should be in system prompt
-        self.assertIn("FieldAgent", call_args)
+            call_args = mock_llm_resource.query_sync.call_args[0][0]
+            # With first message, agent characteristics should be in system prompt
+            self.assertIn("FieldAgent", call_args.arguments["prompt"])
 
 
 class TestAgentChatIntegration(unittest.TestCase):
@@ -305,6 +328,7 @@ class TestAgentChatIntegration(unittest.TestCase):
     def setUp(self):
         """Set up integration tests."""
         self.temp_dir = tempfile.mkdtemp()
+        self.sandbox_context = SandboxContext()
 
     def tearDown(self):
         """Clean up integration tests."""
@@ -315,8 +339,8 @@ class TestAgentChatIntegration(unittest.TestCase):
 
     def test_full_conversation_flow(self):
         """Test a complete conversation flow."""
-        # Mock the LLM function to return None to force fallback behavior
-        with patch.object(AgentStructInstance, "_get_dana_llm_function", return_value=None):
+        # Mock the sandbox context to return None for LLM resource to force fallback behavior
+        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=None):
             agent_type = AgentStructType(
                 name="ConversationAgent",
                 fields={"role": "assistant", "domain": "general"},
@@ -337,7 +361,8 @@ class TestAgentChatIntegration(unittest.TestCase):
 
             responses = []
             for message, _ in conversation:
-                response = agent.chat(message)
+                response_promise = agent.chat(self.sandbox_context, message)
+                response = response_promise._wait_for_delivery()
                 responses.append(response)
 
             # Check that conversation was remembered
@@ -351,8 +376,8 @@ class TestAgentChatIntegration(unittest.TestCase):
 
     def test_agent_customization(self):
         """Test that agents can be customized for different roles."""
-        # Mock the LLM function to return None to force fallback behavior
-        with patch.object(AgentStructInstance, "_get_dana_llm_function", return_value=None):
+        # Mock the sandbox context to return None for LLM resource to force fallback behavior
+        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=None):
             # Create specialized agent types
             support_type = AgentStructType(
                 name="SupportAgent",
@@ -370,8 +395,10 @@ class TestAgentChatIntegration(unittest.TestCase):
             sales_agent = AgentStructInstance(sales_type, {"region": "north", "products": "software"})
 
             # Test that they identify differently
-            support_response = support_agent.chat("Who are you?")
-            sales_response = sales_agent.chat("Who are you?")
+            support_response_promise = support_agent.chat(self.sandbox_context, "Who are you?")
+            support_response = support_response_promise._wait_for_delivery()
+            sales_response_promise = sales_agent.chat(self.sandbox_context, "Who are you?")
+            sales_response = sales_response_promise._wait_for_delivery()
 
             self.assertIn("SupportAgent", support_response)
             self.assertIn("SalesAgent", sales_response)

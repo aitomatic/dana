@@ -21,6 +21,7 @@ from dana.common.resource.llm.llm_resource import LLMResource
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.core.runtime import DanaThreadPool
 
 # from dana.frameworks.poet.core.client import POETClient, set_default_client  # Removed for KISS
 
@@ -64,7 +65,6 @@ class DanaSandbox(Loggable):
     _shared_api_client: APIClient | None = None
     _shared_llm_resource: LLMResource | None = None
     _resource_users = 0  # Count of instances using shared resources
-    _pool_lock = None  # Will be initialized as threading.Lock() when needed
 
     def __init__(self, debug_mode: bool = False, context: SandboxContext | None = None, module_search_paths: list[str] | None = None):
         """
@@ -128,7 +128,6 @@ class DanaSandbox(Loggable):
         try:
             # Check if we can reuse shared resources (for testing efficiency)
             if self._can_reuse_shared_resources():
-                self.debug("Reusing shared DanaSandbox resources")
                 self._use_shared_resources()
             else:
                 self.info("Initializing new DanaSandbox resources")
@@ -137,7 +136,7 @@ class DanaSandbox(Loggable):
             # TODO(#262): Temporarily disabled API context storage
             # Store in context
             # self._context.set("system:api_client", self._api_client)
-            self._context.set("system:llm_resource", self._llm_resource)
+            self._context.set_system_llm_resource(self._llm_resource)
 
             # Register started APIClient as default POET client
             # poet_client = POETClient.__new__(POETClient)  # Create without calling __init__
@@ -145,7 +144,6 @@ class DanaSandbox(Loggable):
             # set_default_client(poet_client)
 
             self._initialized = True
-            self.debug("DanaSandbox resources ready")
 
         except Exception as e:
             self.error(f"Failed to initialize DanaSandbox: {e}")
@@ -211,8 +209,6 @@ class DanaSandbox(Loggable):
         self._cleanup_called = True
 
         try:
-            self.debug("Cleaning up DanaSandbox resources")
-
             # If using shared resources, just decrement user count
             if self._using_shared:
                 DanaSandbox._resource_users = max(0, DanaSandbox._resource_users - 1)
@@ -374,6 +370,9 @@ class DanaSandbox(Loggable):
             except Exception:
                 # Logger may be closed during process exit
                 pass
+
+        # Shutdown shared ThreadPoolExecutor
+        DanaThreadPool.get_instance().shutdown(wait=False)  # Don't wait during process exit
 
     @classmethod
     def cleanup_all(cls):
