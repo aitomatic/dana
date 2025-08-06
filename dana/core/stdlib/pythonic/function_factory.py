@@ -258,6 +258,25 @@ class PythonicFunctionFactory:
                 (LazyPromise,),
             ],
         },
+        # Set constructor
+        "set": {
+            "func": set,
+            "types": [list, tuple, set, str, range, type(reversed([])), type({}.keys()), type({}.values()), type({}.items()), LazyPromise],
+            "doc": "Convert an iterable to a set (removes duplicates)",
+            "signatures": [
+                (list,),
+                (tuple,),
+                (set,),
+                (str,),
+                (range,),
+                (type(reversed([])),),
+                (type(enumerate([])),),
+                (type({}.keys()),),
+                (type({}.values()),),
+                (type({}.items()),),
+                (LazyPromise,),
+            ],
+        },
     }
 
     # Explicitly unsupported functions with clear rationales

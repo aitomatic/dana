@@ -83,11 +83,12 @@ assert len(nested_dict) == 1, f"Expected 1, got {len(nested_dict)}"
 log("✅ Dictionary literals work")
 
 # Test 11: Set literals
-# empty_set = set()  - [NOT SUPPORTED YET]
+empty_set = set()
 simple_set = {1, 2, 3, 4, 5}
 mixed_set = {1, "hello", 3.14}
 assert len(simple_set) == 5, f"Expected 5, got {len(simple_set)}"
 assert len(mixed_set) == 3, f"Expected 3, got {len(mixed_set)}"
+assert len(empty_set) == 0, f"Expected 0, got {len(empty_set)}"
 log("✅ Set literals work")
 
 # Test 12: Tuple literals
@@ -168,11 +169,11 @@ log("✅ String literals with unicode work")
 # Test 22: Collection literals - empty collections
 empty_list = []
 empty_dict = {}
-# empty_set = set()  - [NOT SUPPORTED YET]
+empty_set = set()
 empty_tuple = ()
 assert len(empty_list) == 0, f"Expected 0, got {len(empty_list)}"
 assert len(empty_dict) == 0, f"Expected 0, got {len(empty_dict)}"
-# assert len(empty_set) == 0, f"Expected 0, got {len(empty_set)}"
+assert len(empty_set) == 0, f"Expected 0, got {len(empty_set)}"
 assert len(empty_tuple) == 0, f"Expected 0, got {len(empty_tuple)}"
 log("✅ Empty collection literals work")
 
