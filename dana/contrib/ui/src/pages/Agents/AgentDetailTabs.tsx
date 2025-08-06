@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import OverviewTab from './tabs/OverviewTab';
 import KnowledgeBaseTab from './tabs/KnowledgeBaseTab';
 import ToolsTab from './tabs/ToolsTab';
@@ -8,6 +8,7 @@ import { Code2, List, BookOpen } from 'lucide-react';
 import { Tools } from 'iconoir-react';
 import { Button } from '@/components/ui/button';
 import { useAgentStore } from '@/stores/agent-store';
+import { useUIStore } from '@/stores/ui-store';
 import { getAgentAvatarSync } from '@/utils/avatar';
 import type { NavigateFunction } from 'react-router-dom';
 
@@ -26,8 +27,9 @@ export const AgentDetailTabs: React.FC<{
   setActiveTab: (tab: string) => void;
   navigate: NavigateFunction;
 }> = ({ children, activeTab, setActiveTab, navigate }) => {
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const { selectedAgent } = useAgentStore();
+  const { isChatSidebarOpen, openChatSidebar, closeChatSidebar } = useUIStore();
+
   return (
     <div className="grid grid-cols-[1fr_max-content] h-full relative overflow-hidden">
       {/* Main content area */}
@@ -47,12 +49,12 @@ export const AgentDetailTabs: React.FC<{
             ))}
           </div>
           <div className="flex gap-2 items-center">
-            {!isChatOpen && (
+            {!isChatSidebarOpen && (
               <Button
                 variant="outline"
                 // size="sm"
                 className="flex gap-2 items-center px-3 py-2 text-gray-700 bg-white rounded-full border-gray-200 hover:bg-gray-50"
-                onClick={() => setIsChatOpen(!isChatOpen)}
+                onClick={() => openChatSidebar()}
               >
                 {/* Agent Avatar */}
                 <div className="flex overflow-hidden justify-center items-center w-6 h-6 rounded-full">
@@ -90,11 +92,11 @@ export const AgentDetailTabs: React.FC<{
       </div>
 
       {/* Chat pane */}
-      {isChatOpen && (
+      {isChatSidebarOpen && (
         <ChatPane
           agentName={selectedAgent?.name || 'Agent'}
-          isVisible={isChatOpen}
-          onClose={() => setIsChatOpen(false)}
+          isVisible={isChatSidebarOpen}
+          onClose={() => closeChatSidebar()}
         />
       )}
     </div>

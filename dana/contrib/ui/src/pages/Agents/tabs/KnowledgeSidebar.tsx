@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, FileText, Calendar, Info, AlertCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { useUIStore } from '@/stores/ui-store';
 
 interface KnowledgeContent {
   knowledge_area_description: string;
@@ -31,6 +32,15 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
   loading,
   error,
 }) => {
+  const { closeChatSidebar } = useUIStore();
+
+  // Close chat sidebar when knowledge sidebar opens
+  useEffect(() => {
+    if (isOpen) {
+      closeChatSidebar();
+    }
+  }, [isOpen, closeChatSidebar]);
+
   console.log({ content });
   if (!isOpen) return null;
 

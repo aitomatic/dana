@@ -9,6 +9,7 @@ import type { DomainKnowledgeResponse, DomainNode } from '@/types/domainKnowledg
 import type { KnowledgeStatusResponse, KnowledgeTopicStatus } from '@/lib/api';
 import { toast } from 'sonner';
 import KnowledgeSidebar from './KnowledgeSidebar';
+import { Search } from 'iconoir-react';
 
 const initialNodes: FlowNode[] = [
   {
@@ -789,12 +790,15 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
               <div className="flex flex-1 gap-3 items-center">
                 {/* Search Input */}
                 <div className="relative flex-1 max-w-md">
+                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                    <Search width={16} height={16} />
+                  </div>
                   <input
                     type="text"
-                    placeholder="Search knowledge topics..."
+                    placeholder="Search topic"
                     value={searchQuery}
                     onChange={(e) => handleSearchChange(e.target.value)}
-                    className="px-3 py-2 w-full text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="pl-10 pr-3 py-2 w-full text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-1"
                   />
                   {searchQuery && (
                     <button
@@ -902,20 +906,20 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                     <div className="text-sm">{error}</div>
                   </div>
                   <div className="max-w-md text-xs text-center text-gray-400">
-                    Start a conversation with the agent to build domain knowledge automatically, or
-                    use the smart chat feature to add specific expertise areas.
+                    Chat with Dana to add missing knowledge
                   </div>
                 </>
               ) : (
                 /* Show empty state when no nodes but no error */
                 <>
-                  <div className="text-center text-gray-500">
-                    <div className="text-lg font-medium">No Domain Knowledge</div>
-                    <div className="text-sm">This agent doesn't have any domain knowledge yet</div>
-                  </div>
-                  <div className="max-w-md text-xs text-center text-gray-400">
-                    Start a conversation with the agent to build domain knowledge automatically, or
-                    use the smart chat feature to add specific expertise areas.
+                  <div className="text-center flex item-center flex-col ">
+                    <div className="flex items-center pb-4 justify-center text-gray-400">
+                      <Search className="w-10 h-10" />
+                    </div>
+                    <div className="text-lg font-semibold text-gray-500">Keyword not found</div>
+                    <div className="text-sm text-gray-500">
+                      Chat with Dana to add missing knowledge
+                    </div>
                   </div>
                 </>
               )}
