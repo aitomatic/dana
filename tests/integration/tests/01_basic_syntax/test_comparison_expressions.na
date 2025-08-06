@@ -249,4 +249,50 @@ result = ((5 + 3) * 2) > (10 + 5)
 assert result == True, f"Expected True, got {result}"
 log("✅ Comparison with nested expressions works")
 
+# Test 46: Membership operators - in
+numbers = [1, 2, 3, 4, 5]
+result = 3 in numbers
+assert result == True, f"Expected True, got {result}"
+log("✅ Membership operator 'in' works")
+
+# Test 47: Membership operators - not in
+result = 6 not in numbers
+assert result == True, f"Expected True, got {result}"
+log("✅ Membership operator 'not in' works")
+
+# Test 48: Membership operators with strings
+message = "Hello World"
+result = "World" in message
+assert result == True, f"Expected True, got {result}"
+log("✅ Membership operators with strings work")
+
+# Test 49: Membership operators with dictionaries
+scores = {"alice": 100, "bob": 80}
+result = "alice" in scores
+assert result == True, f"Expected True, got {result}"
+log("✅ Membership operators with dictionaries work")
+
+# Test 50: Identity operators - is
+a = [1, 2, 3]
+b = a
+result = a is b
+assert result == True, f"Expected True, got {result}"
+log("✅ Identity operator 'is' works")
+
+# Test 51: Identity operators - is not
+c = [1, 2, 3]
+result = a is not c
+assert result == True, f"Expected True, got {result}"
+log("✅ Identity operator 'is not' works")
+
+# Test 52: Identity operators with None
+result = None is None
+assert result == True, f"Expected True, got {result}"
+log("✅ Identity operators with None work")
+
+# Test 53: Identity operators with different types
+result = 5 is not "5"
+assert result == True, f"Expected True, got {result}"
+log("✅ Identity operators with different types work")
+
 log("Comparison Expressions test completed successfully") 

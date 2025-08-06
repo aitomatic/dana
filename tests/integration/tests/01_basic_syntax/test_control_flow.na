@@ -342,4 +342,102 @@ else:
 assert result == "debug_slow", f"Expected 'debug_slow', got {result}"
 log("✅ Control flow with dictionary conditions works")
 
+# Test 36: Break statement in for loop
+sum = 0
+for i in range(10):
+    if i >= 5:
+        break
+    sum += i
+assert sum == 10, f"Expected 10, got {sum}"
+log("✅ Break statement in for loop works")
+
+# Test 37: Continue statement in for loop
+sum = 0
+for i in range(10):
+    if i % 2 == 0:
+        continue
+    sum += i
+assert sum == 25, f"Expected 25, got {sum}"
+log("✅ Continue statement in for loop works")
+
+# Test 38: Pass statement
+for i in range(5):
+    if i < 3:
+        pass  # Do nothing
+    else:
+        break
+log("✅ Pass statement works")
+
+# Test 39: Break statement in while loop
+i = 0
+sum = 0
+while True:
+    if i >= 5:
+        break
+    sum += i
+    i += 1
+assert sum == 10, f"Expected 10, got {sum}"
+log("✅ Break statement in while loop works")
+
+# Test 40: Continue statement in while loop
+i = 0
+sum = 0
+while i < 10:
+    i += 1
+    if i % 2 == 0:
+        continue
+    sum += i
+assert sum == 25, f"Expected 25, got {sum}"
+log("✅ Continue statement in while loop works")
+
+# Test 41: Nested control flow - if inside for
+result = []
+for i in range(5):
+    if i % 2 == 0:
+        result.append("even")
+    else:
+        result.append("odd")
+assert result == ["even", "odd", "even", "odd", "even"], f"Expected ['even', 'odd', 'even', 'odd', 'even'], got {result}"
+log("✅ Nested control flow - if inside for works")
+
+# Test 42: Nested control flow - for inside if
+numbers = [1, 2, 3, 4, 5]
+sum_even = 0
+if len(numbers) > 0:
+    for num in numbers:
+        if num % 2 == 0:
+            sum_even += num
+assert sum_even == 6, f"Expected 6, got {sum_even}"
+log("✅ Nested control flow - for inside if works")
+
+# Test 43: Nested control flow - while inside if
+count = 0
+if True:
+    while count < 3:
+        count += 1
+assert count == 3, f"Expected 3, got {count}"
+log("✅ Nested control flow - while inside if works")
+
+# Test 44: Nested control flow - if inside while
+i = 0
+result = []
+while i < 5:
+    if i < 3:
+        result.append("small")
+    else:
+        result.append("large")
+    i += 1
+assert result == ["small", "small", "small", "large", "large"], f"Expected ['small', 'small', 'small', 'large', 'large'], got {result}"
+log("✅ Nested control flow - if inside while works")
+
+# Test 45: Complex nested control flow
+matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+sum_diagonal = 0
+for i in range(len(matrix)):
+    for j in range(len(matrix[i])):
+        if i == j:
+            sum_diagonal += matrix[i][j]
+assert sum_diagonal == 15, f"Expected 15, got {sum_diagonal}"
+log("✅ Complex nested control flow works")
+
 log("Control Flow test completed successfully") 

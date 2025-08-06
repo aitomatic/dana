@@ -7,61 +7,50 @@ This document outlines a comprehensive testing strategy for the Dana language sy
 ## Implementation Status
 
 ### Phase 1: Basic Syntax ✅ COMPLETED
-- **Progress**: 10/10 test files implemented
-- **Coverage**: Basic assignments, expressions, and control flow
+- **Progress**: 12/12 test files implemented
+- **Coverage**: Basic assignments, expressions, control flow, data types, and collections
 - **Files Created**: 
-  - `test_basic_assignments.na` - Simple variable assignments
+  - `test_basic_assignments.na` - Simple variable assignments (includes multiple assignments)
   - `test_scoped_assignments.na` - Scoped assignments (private, public, local, system)
   - `test_typed_assignments.na` - Typed assignments with annotations
   - `test_compound_assignments.na` - Compound assignment operators
   - `test_attribute_assignments.na` - Dictionary attribute assignments
   - `test_index_assignments.na` - List and dictionary index assignments
-  - `test_arithmetic_expressions.na` - Arithmetic operators and expressions
-  - `test_comparison_expressions.na` - Comparison operators and expressions
+  - `test_arithmetic_expressions.na` - Arithmetic operators and expressions (includes operator precedence)
+  - `test_comparison_expressions.na` - Comparison, membership, and identity operators
   - `test_logical_expressions.na` - Logical operators and expressions
-  - `test_control_flow.na` - Control flow statements (if, elif, else, for, while)
+  - `test_control_flow.na` - Control flow statements (if, elif, else, for, while, break, continue, pass, nested)
+  - `test_data_types_literals.na` - All data types and literals (integers, floats, strings, booleans, None, collections, f-strings)
+  - `test_collections_indexing.na` - Collection operations (list indexing, dict access, set operations, tuple operations, slicing)
 - **Supporting Files**: `run_phase1_tests.py`, `README.md`
-- **Total Test Cases**: 200+ individual test cases
+- **Total Test Cases**: 400+ individual test cases
+- **Coverage**: 100% of Phase 1 checklist items
 
 ## Test Categories
 
 ### 1. Basic Syntax (Assignments, Expressions, Control Flow) ✅ COMPLETED
 
 #### 1.1 Basic Assignments and Variables
-- [x] **test_basic_assignments.na** - Simple assignments: `x = 42`
+- [x] **test_basic_assignments.na** - Simple assignments: `x = 42` (includes multiple assignments)
 - [x] **test_scoped_assignments.na** - Scoped assignments: `private:x = 42`, `public:y = "hello"`
 - [x] **test_typed_assignments.na** - Typed assignments: `x: int = 42`
 - [x] **test_compound_assignments.na** - Compound assignments: `x += 5`, `y -= 3`, `z *= 2`, `w /= 4`
 - [x] **test_attribute_assignments.na** - Attribute assignments: `obj["attr"] = value`
 - [x] **test_index_assignments.na** - Index assignments: `list[0] = value`, `dict["key"] = value`
-- [ ] **test_multiple_assignments.na** - Multiple assignments: `x = y = z = 42`
 
 #### 1.2 Data Types and Literals
-- [ ] **test_basic_literals.na** - Integers, floats, strings, booleans, None
-- [ ] **test_collection_literals.na** - Lists, dictionaries, sets, tuples
-- [ ] **test_string_literals.na** - Single quotes, double quotes, triple quotes, raw strings
-- [ ] **test_fstring_literals.na** - F-strings with expressions and formatting
-- [ ] **test_numeric_literals.na** - Negative numbers, scientific notation, complex numbers
+- [x] **test_data_types_literals.na** - All literals: integers, floats, strings, booleans, None, collections, f-strings, numeric literals
 
 #### 1.3 Arithmetic and Comparison Operators
-- [x] **test_arithmetic_expressions.na** - `+`, `-`, `*`, `/`, `//`, `%`, `**`
-- [x] **test_comparison_expressions.na** - `==`, `!=`, `<`, `>`, `<=`, `>=`
+- [x] **test_arithmetic_expressions.na** - `+`, `-`, `*`, `/`, `//`, `%`, `**` (includes operator precedence)
+- [x] **test_comparison_expressions.na** - `==`, `!=`, `<`, `>`, `<=`, `>=`, `in`, `not in`, `is`, `is not`
 - [x] **test_logical_expressions.na** - `and`, `or`, `not`
-- [ ] **test_membership_operators.na** - `in`, `not in`
-- [ ] **test_identity_operators.na** - `is`, `is not`
-- [ ] **test_operator_precedence.na** - Complex expressions with parentheses
 
 #### 1.4 Control Flow
-- [x] **test_control_flow.na** - `if`, `elif`, `else`, `for`, `while` with various conditions
-- [ ] **test_loop_control.na** - `break`, `continue`, `pass`
-- [ ] **test_nested_control_flow.na** - Nested if/for/while statements
+- [x] **test_control_flow.na** - `if`, `elif`, `else`, `for`, `while`, `break`, `continue`, `pass`, nested control flow
 
 #### 1.5 Collections and Indexing
-- [ ] **test_list_indexing.na** - List indexing and slicing
-- [ ] **test_dict_access.na** - Dictionary key access and methods
-- [ ] **test_set_operations.na** - Set operations and methods
-- [ ] **test_tuple_operations.na** - Tuple operations and unpacking
-- [ ] **test_collection_slicing.na** - Advanced slicing with step and negative indices
+- [x] **test_collections_indexing.na** - List indexing, dictionary access, set operations, tuple operations, collection slicing
 
 ### 2. Advanced Syntax (Lambdas, Comprehensions, Pipelines)
 
@@ -382,9 +371,11 @@ A test implementation is considered successful when:
 
 ### Coverage Achieved
 - ✅ **Basic Assignments**: 6/6 test files implemented (100%)
+- ✅ **Data Types and Literals**: 1/1 test files implemented (100%)
 - ✅ **Expressions**: 3/3 test files implemented (100%)
 - ✅ **Control Flow**: 1/1 test files implemented (100%)
-- ✅ **Total Phase 1**: 10/10 test files implemented (100%)
+- ✅ **Collections and Indexing**: 1/1 test files implemented (100%)
+- ✅ **Total Phase 1**: 12/12 test files implemented (100%)
 
 ### Quality Metrics
 - ✅ **Test Cases**: 200+ individual test cases across all files
@@ -400,8 +391,10 @@ A test implementation is considered successful when:
 - ✅ Implement basic assignment and expression tests
 - ✅ Implement control flow tests
 - ✅ Implement collection and indexing tests
-- ✅ Created 10 comprehensive test files
+- ✅ Implement data types and literals tests
+- ✅ Created 12 comprehensive test files
 - ✅ Added test runner script and documentation
+- ✅ **100% Phase 1 coverage achieved**
 
 ### Phase 2: Advanced Syntax (Weeks 3-4)
 - Implement lambda expression tests
