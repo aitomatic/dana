@@ -172,7 +172,6 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   const wsRef = useRef<WebSocket | null>(null);
   const expandedNodesRef = useRef<Set<string>>(new Set());
   const previousAgentIdRef = useRef<string | number | undefined>(undefined);
-  const nodeClickingRef = useRef<boolean>(false);
 
   // Keep the ref in sync with the state
   useEffect(() => {
@@ -487,126 +486,15 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     };
   }, [selectedNodeId]);
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (!domainTree || nodes.length === 0) return;
-
-      // Only handle keyboard events when tree is focused
-      if (!containerRef.current?.contains(document.activeElement)) return;
-
-      const currentNodeIndex = selectedNodeId
-        ? nodes.findIndex((n) => n.id === selectedNodeId)
-        : -1;
-
-      switch (event.key) {
-        case 'ArrowDown':
-          event.preventDefault();
-          const nextIndex = currentNodeIndex < nodes.length - 1 ? currentNodeIndex + 1 : 0;
-          setSelectedNodeId(nodes[nextIndex].id);
-          break;
-
-        case 'ArrowUp':
-          event.preventDefault();
-          const prevIndex = currentNodeIndex > 0 ? currentNodeIndex - 1 : nodes.length - 1;
-          setSelectedNodeId(nodes[prevIndex].id);
-          break;
-
-        case 'ArrowRight':
-        case ' ':
-          event.preventDefault();
-          if (selectedNodeId) {
-            const currentNode = nodes.find((n) => n.id === selectedNodeId);
-            if (currentNode?.data.hasChildren && !currentNode.data.isExpanded) {
-              // Expand node
-              const newExpandedNodes = new Set(expandedNodes);
-              newExpandedNodes.add(selectedNodeId);
-              setExpandedNodes(newExpandedNodes);
-
-              if (domainTree && statusData) {
-                const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
-                  domainTree,
-                  statusData,
-                  newExpandedNodes,
-                  searchQuery,
-                );
-                const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
-                setNodes(layoutedNodes);
-                setEdges(flowEdges);
-              }
-            }
-          }
-          break;
-
-        case 'ArrowLeft':
-          event.preventDefault();
-          if (selectedNodeId) {
-            const currentNode = nodes.find((n) => n.id === selectedNodeId);
-            if (currentNode?.data.hasChildren && currentNode.data.isExpanded) {
-              // Collapse node
-              const newExpandedNodes = new Set(expandedNodes);
-              newExpandedNodes.delete(selectedNodeId);
-              setExpandedNodes(newExpandedNodes);
-
-              if (domainTree && statusData) {
-                const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
-                  domainTree,
-                  statusData,
-                  newExpandedNodes,
-                  searchQuery,
-                );
-                const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
-                setNodes(layoutedNodes);
-                setEdges(flowEdges);
-              }
-            }
-          }
-          break;
-
-        case 'Enter':
-          event.preventDefault();
-          if (selectedNodeId) {
-            const currentNode = nodes.find((n) => n.id === selectedNodeId);
-            if (currentNode) {
-              // Simulate node click
-              onNodeClick({} as React.MouseEvent, currentNode);
-            }
-          }
-          break;
-
-        case 'Escape':
-          event.preventDefault();
-          setSelectedNodeId(null);
-          setSidebarOpen(false);
-          break;
-      }
-    };
-
-    // Add event listener
-    document.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [selectedNodeId, nodes, expandedNodes, domainTree, statusData, searchQuery]);
-
   // Handle node click - toggle expansion for parent nodes, show sidebar for leaf nodes
   const onNodeClick = async (event: React.MouseEvent, node: FlowNode) => {
     // Prevent the click from triggering focus events that might interfere
     event.stopPropagation();
 
-    // Flag that we're in the middle of a node click to prevent focus interference
-    nodeClickingRef.current = true;
-
     const nodeData = node.data;
 
-    // Set the selected node for highlighting immediately
+    // Set the selected node for highlighting
     setSelectedNodeId(node.id);
-
-    // Clear the clicking flag after a short delay
-    setTimeout(() => {
-      nodeClickingRef.current = false;
-    }, 100);
 
     // If it's a leaf node, show the knowledge sidebar
     if (nodeData.isLeafNode) {
@@ -939,61 +827,12 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                 </div>
               </div>
 
-              {/* Right side - Progress Stats and Generate Button */}
+              {/* Right side - Total count and Generate Button */}
               <div className="flex gap-3 items-center">
-                {/* Progress Stats */}
+                {/* Total Items Count */}
                 {statusData && statusData.topics && statusData.topics.length > 0 && (
-                  <div className="hidden gap-2 items-center text-xs text-gray-600 md:flex">
-                    {/* Completed */}
-                    {getProgressStats().completed > 0 && (
-                      <div className="flex gap-1 items-center">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span>{getProgressStats().completed}</span>
-                      </div>
-                    )}
-
-                    {/* In Progress (Generating) */}
-                    {getProgressStats().inProgress > 0 && (
-                      <div className="flex gap-1 items-center">
-                        <div className="flex gap-0.5 items-center">
-                          <div
-                            className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"
-                            style={{ animationDelay: '0ms' }}
-                          ></div>
-                          <div
-                            className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"
-                            style={{ animationDelay: '150ms' }}
-                          ></div>
-                          <div
-                            className="w-1.5 h-1.5 bg-blue-300 rounded-full animate-pulse"
-                            style={{ animationDelay: '300ms' }}
-                          ></div>
-                        </div>
-                        <span>{getProgressStats().inProgress}</span>
-                      </div>
-                    )}
-
-                    {/* Failed */}
-                    {getProgressStats().failed > 0 && (
-                      <div className="flex gap-1 items-center">
-                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                        <span>{getProgressStats().failed}</span>
-                      </div>
-                    )}
-
-                    {/* Pending */}
-                    {getProgressStats().pending > 0 && (
-                      <div className="flex gap-1 items-center">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                        <span>{getProgressStats().pending}</span>
-                      </div>
-                    )}
-
-                    {/* Total count separator */}
-                    <div className="mx-1 w-px h-3 bg-gray-300"></div>
-                    <div className="font-medium text-gray-500">
-                      {getProgressStats().total} total
-                    </div>
+                  <div className="text-xs font-medium text-gray-500">
+                    {getProgressStats().total} items
                   </div>
                 )}
 
@@ -1028,27 +867,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           }`}
         >
           {nodes.length > 0 ? (
-            <div
-              tabIndex={0}
-              className="h-full rounded-lg outline-none"
-              onFocus={(e) => {
-                // Don't interfere if we're in the middle of a node click
-                if (nodeClickingRef.current) return;
-
-                // Only auto-select first node when focusing via keyboard navigation
-                // Don't interfere when clicking on nodes or any child elements
-                if (!selectedNodeId && nodes.length > 0) {
-                  const isKeyboardTabFocus =
-                    e.relatedTarget !== null && e.relatedTarget !== e.currentTarget;
-                  const isEmptyAreaClick = e.target === e.currentTarget && !e.relatedTarget;
-
-                  // Only auto-select on keyboard tab navigation or clicking empty areas
-                  if (isKeyboardTabFocus || isEmptyAreaClick) {
-                    setSelectedNodeId(nodes[0].id);
-                  }
-                }
-              }}
-            >
+            <div className="h-full rounded-lg">
               <ReactFlow
                 nodes={nodes}
                 edges={edges}
