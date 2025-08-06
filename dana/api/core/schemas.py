@@ -202,6 +202,7 @@ class MessageData(BaseModel):
     role: str  # 'user' or 'assistant'
     content: str
     require_user: bool = False
+    treat_as_tool: bool = False
 
 
 class AgentGenerationRequest(BaseModel):

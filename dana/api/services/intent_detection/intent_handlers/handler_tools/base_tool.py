@@ -2,8 +2,13 @@ import textwrap
 from pydantic import BaseModel, Field
 from typing import List
 from abc import abstractmethod, ABC
-from dana.api.core.schemas import MessageData
 
+
+class ToolResult(BaseModel):
+    name: str
+    result: str
+    require_user: bool = True
+    metadata: dict = Field(default_factory=dict)
 
 class BaseArgument(BaseModel):
     name: str
@@ -41,13 +46,13 @@ class BaseTool(ABC):
     def __init__(self, tool_information: BaseToolInformation):
         self.tool_information = tool_information
 
-    def execute(self, **kwargs) -> MessageData:
+    def execute(self, **kwargs) -> ToolResult:
         if not self.tool_information.validate_arguments(kwargs):
             raise ValueError(f"Invalid arguments for tool {self.tool_information.name}")
         return self._execute(**kwargs)
 
     @abstractmethod
-    def _execute(self, **kwargs) -> MessageData:
+    def _execute(self, **kwargs) -> ToolResult:
         raise NotImplementedError("Subclasses must implement this method")
 
     def __repr__(self) -> str:
