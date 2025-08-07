@@ -7,7 +7,7 @@ from dana.common.utils.misc import Misc
 from dana.api.core.schemas import DomainKnowledgeTree, IntentDetectionRequest, DomainNode, MessageData
 from typing import Dict, Any, List, Optional
 from dana.api.services.intent_detection.intent_handlers.handler_tools.knowledge_ops_tools import (
-    AskFollowUpQuestionTool, NavigateTreeTool, CreatePlanTool, AskApprovalTool,
+    AskFollowUpQuestionTool, ExploreKnowledgeTool, CreatePlanTool, AskApprovalTool,
     GenerateKnowledgeTool, ModifyTreeTool, ValidateTool, PersistTool, 
     CheckExistingTool, AttemptCompletionTool
 )
@@ -60,16 +60,16 @@ class KnowledgeOpsHandler(AbstractHandler):
             self.tree_structure = ko_utils.load_tree(self.domain_knowledge_path)
             logger.info("Tree structure reloaded from disk")
             
-            # Update the NavigateTreeTool with the new tree structure
-            if "navigate_tree" in self.tools:
-                self.tools["navigate_tree"].tree_structure = self.tree_structure
+            # Update the ExploreKnowledgeTool with the new tree structure
+            if "explore_knowledge" in self.tools:
+                self.tools["explore_knowledge"].tree_structure = self.tree_structure
         except Exception as e:
             logger.error(f"Failed to reload tree structure: {e}")
 
     def _initialize_tools(self):
         # Core workflow tools
         self.tools.update(AskFollowUpQuestionTool().as_dict())
-        self.tools.update(NavigateTreeTool(llm=self.llm, tree_structure=self.tree_structure).as_dict())
+        self.tools.update(ExploreKnowledgeTool(tree_structure=self.tree_structure).as_dict())
         self.tools.update(CreatePlanTool(llm=self.llm).as_dict())
         self.tools.update(AskApprovalTool().as_dict())
         
@@ -388,13 +388,28 @@ if __name__ == "__main__":
                         thinking_match = re.search(r'<thinking>(.*?)</thinking>', msg.content, re.DOTALL)
                         if thinking_match:
                             thinking = thinking_match.group(1).strip()
-                            print(f"    💭 Thinking: {thinking[:100]}{'...' if len(thinking) > 100 else ''}")
+                            print(f"    💭 Thinking: {thinking}")
                     
-                    # Extract tool name
-                    tool_match = re.search(r'<(\w+)', msg.content)
+                    # Extract tool name and arguments (skip thinking tags)
+                    tool_match = re.search(r'<(?!thinking)(\w+)', msg.content)
                     if tool_match:
                         tool_name = tool_match.group(1)
                         print(f"    🔧 Tool Call: {tool_name}")
+                        
+                        # Extract and display tool arguments
+                        try:
+                            _, params, _ = handler._parse_xml_tool_call(msg.content)
+                            if params:
+                                print(f"    📝 Arguments:")
+                                for key, value in params.items():
+                                    if isinstance(value, list):
+                                        print(f"      {key}: {value}")
+                                    elif isinstance(value, str) and len(value) > 100:
+                                        print(f"      {key}: {value[:100]}...")
+                                    else:
+                                        print(f"      {key}: {value}")
+                        except Exception as e:
+                            print(f"    ⚠️ Could not parse arguments: {e}")
                 else:
                     # Regular message content
                     content_lines = msg.content.split('\n')
