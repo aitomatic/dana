@@ -4,21 +4,25 @@ import type { NodeProps } from 'reactflow';
 import PortalPopup from './PortalPopup';
 import FileIcon from '@/components/file-icon';
 import type { KnowledgeTopicStatus } from '@/lib/api';
-import { CheckIcon, Loader2Icon, XIcon, ChevronRight, ChevronDown } from 'lucide-react';
+import { CheckCircleSolid, SystemRestart, Xmark, NavArrowRight, NavArrowDown } from 'iconoir-react';
+import { XCircle } from 'lucide-react';
+
+// Single transition definition for consistency (matching DomainKnowledgeTree)
+const TRANSITION_DURATION = '1s';
+const TRANSITION_EASING = 'cubic-bezier(.43,.08,.45,.97)';
+const TRANSITION_ALL = `all ${TRANSITION_DURATION} ${TRANSITION_EASING}`;
 
 // Add CSS styles for node selection
 const nodeStyles = `
   .custom-node {
-    transition: all 0.2s ease;
+    transition: ${TRANSITION_ALL};
   }
 
   .custom-node.selected {
-
     transform: scale(1.02) !important;
     z-index: 10 !important;
     animation: selectedPulse 2s ease-in-out infinite;
   }
-
 
   @keyframes selectedPulse {
     0%, 100% {
@@ -69,11 +73,11 @@ const getStatusColor = (status?: string) => {
 const getStatusIcon = (status?: string) => {
   switch (status) {
     case 'in_progress':
-      return <Loader2Icon className="animate-spin" />;
+      return <SystemRestart className="animate-spin" />;
     case 'success':
-      return <CheckIcon />;
+      return <CheckCircleSolid className="text-green-600" />;
     case 'failed':
-      return <XIcon />;
+      return <Xmark />;
     default:
       return '';
   }
@@ -207,7 +211,7 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
       justifyContent: 'center',
       position: 'relative' as const,
       cursor: hasChildren ? 'pointer' : 'default',
-      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', // Enhanced smooth transitions
+      transition: TRANSITION_ALL, // Enhanced smooth transitions
       transform: 'scale(1)',
       opacity: 1,
     };
@@ -287,13 +291,13 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
           gap: 8,
         }}
       >
-        {/* Show expand/collapse icon for nodes with children */}
+        <span>{nodeData.label}</span>
+        {/* Show expand/collapse icon for nodes with children - moved to the right */}
         {hasChildren && (
-          <span style={{ fontSize: '16px', marginRight: 8 }}>
-            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          <span style={{ fontSize: '16px', marginLeft: 8 }}>
+            {isExpanded ? <NavArrowDown /> : <NavArrowRight />}
           </span>
         )}
-        <span>{nodeData.label}</span>
         {isLeafNode && knowledgeStatus && (
           <span style={{ fontSize: '16px', marginLeft: 8 }}>
             {getStatusIcon(knowledgeStatus.status)}
