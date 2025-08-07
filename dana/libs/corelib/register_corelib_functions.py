@@ -6,6 +6,9 @@ This source code is licensed under the license found in the LICENSE file in the 
 Core library function registration for the Dana interpreter.
 
 This module provides a helper function to automatically register all core library functions in the Dana interpreter.
+It supports both Python functions (from py/ directory) and Dana functions (from na/ directory).
+
+The Dana function registration uses Dana's standard module loading system for consistency and maintainability.
 """
 
 import importlib
@@ -34,15 +37,7 @@ def register_corelib_functions(registry: FunctionRegistry) -> None:
         _registered_python_functions = _register_python_functions(py_dir, registry)
 
     # Register Dana functions (from na/ directory)
-    na_dir = corelib_dir / "na"
-    if na_dir.exists():
-        # First, load the __init__.na to import all modules
-        init_file = na_dir / "__init__.na"
-        if init_file.exists():
-            _load_init_module(init_file, registry)
-
-        # Then register individual functions as wrappers
-        _registered_dana_functions = _register_dana_functions_from_init(registry)
+    _registered_dana_functions = _register_dana_modules_via_import_system(registry)
 
     # Register pythonic built-in functions
     from dana.libs.stdlib.pythonic.function_factory import PythonicFunctionFactory, register_pythonic_builtins
@@ -119,111 +114,94 @@ def _register_python_module(module_name: str, registry: FunctionRegistry) -> lis
     return registered_functions
 
 
-def _load_init_module(init_file: Path, registry: FunctionRegistry) -> None:
-    """Load the __init__.na module to import all core modules.
+def _register_dana_modules_via_import_system(registry: FunctionRegistry) -> list[str]:
+    """Register Dana functions using the standard Dana module system.
+
+    This leverages Dana's module loader to execute modules and discover their contents,
+    then registers the discovered functions directly from the loaded module.
 
     Args:
-        init_file: Path to the __init__.na file
-        registry: The function registry
-    """
-    # Ensure the module system is initialized with the correct search paths
-    from dana.core.runtime.modules.core import initialize_module_system
-
-    # Get the corelib directory and add it to search paths
-    corelib_dir = str(init_file.parent)
-    search_paths = [corelib_dir]
-
-    # Initialize the module system with our search paths
-    initialize_module_system(search_paths)
-
-    # Execute the __init__.na file to import all modules
-    from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-    from dana.core.lang.sandbox_context import SandboxContext
-
-    interpreter = DanaInterpreter()
-    context = SandboxContext()
-
-    with open(init_file, encoding="utf-8") as f:
-        init_content = f.read()
-
-    interpreter._eval(init_content, context)
-
-    # Store the context for later use in function wrappers
-    registry._init_context = context
-
-
-def _register_dana_functions_from_init(registry: FunctionRegistry) -> list[str]:
-    """Register Dana functions as wrappers to already-imported symbols.
-
-    Args:
-        registry: The function registry
+        registry: The function registry to register functions with
 
     Returns:
         List of registered function names
     """
     registered_functions = []
 
-    # Get the context from the loaded __init__.na
-    context = getattr(registry, "_init_context", None)
-    if not context:
-        return registered_functions
+    try:
+        # Initialize the module system if not already done
+        from dana.core.runtime.modules.core import get_module_loader, initialize_module_system
 
-    # Define the functions we want to register from each module
-    module_functions = {
-        "core": ["add_one", "add_two", "add_three", "add_four"],
-        # 'na_agent': ['Agent'],  # No longer needed - BasicAgent is imported directly
-    }
+        # Get the corelib na directory and set up search paths
+        corelib_dir = Path(__file__).parent
+        na_dir = corelib_dir / "na"
 
-    for module_name, func_names in module_functions.items():
-        # Get the module object from the context
-        if module_name not in context.get_scope("local"):
-            continue
+        if not na_dir.exists():
+            return registered_functions
 
-        module_obj = context.get_scope("local")[module_name]
+        # Initialize module system with corelib na directory in search paths
+        search_paths = [str(na_dir)]
+        initialize_module_system(search_paths)
 
-        for func_name in func_names:
-            if not hasattr(module_obj, func_name):
+        # Get the module loader
+        loader = get_module_loader()
+
+        # Find all .na modules in the na directory
+        na_files = [f for f in na_dir.glob("*.na") if f.name != "__init__.na"]
+
+        for na_file in na_files:
+            module_name = na_file.stem
+
+            # Create a module spec
+            spec = loader.find_spec(module_name)
+            if spec is None:
+                print(f"Corelib: Could not find module spec for '{module_name}'")
                 continue
 
-            # Create a simple wrapper that calls the imported function
-            def create_wrapper(module_obj, func_name):
-                def wrapper(*args, **kwargs):
-                    # Filter out registry-specific parameters that might conflict
-                    filtered_kwargs = {
-                        k: v for k, v in kwargs.items() if k not in ["name", "context", "namespace", "func_type", "metadata"]
-                    }
+            # Create and execute the module
+            module = loader.create_module(spec)
+            if module is None:
+                print(f"Corelib: Could not create module for '{module_name}'")
+                continue
 
-                    func = getattr(module_obj, func_name)
-                    from dana.core.lang.interpreter.functions.dana_function import DanaFunction
+            # Execute the module - this discovers and loads all its contents
+            loader.exec_module(module)
 
-                    if isinstance(func, DanaFunction):
-                        # Create a context for the function call
-                        from dana.core.lang.sandbox_context import SandboxContext
+            # Use the module's __exports__ to determine what to register globally
+            if hasattr(module, "__exports__"):
+                exports_to_register = module.__exports__
+            else:
+                # Fallback: register all public attributes
+                exports_to_register = {name for name in dir(module) if not name.startswith("_")}
 
-                        call_context = SandboxContext()
-                        return func.execute(call_context, *args, **filtered_kwargs)
-                    else:
-                        return func(*args, **filtered_kwargs)
+            # Register each exported item
+            for export_name in exports_to_register:
+                if hasattr(module, export_name):
+                    exported_obj = getattr(module, export_name)
 
-                return wrapper
+                    # Register the object directly (preserves its original type and behavior)
+                    registry.register(
+                        name=export_name,
+                        func=exported_obj,
+                        namespace=RuntimeScopes.SYSTEM,
+                        func_type=FunctionType.PYTHON,
+                        overwrite=True,
+                        trusted_for_context=True,
+                    )
 
-            wrapper_func = create_wrapper(module_obj, func_name)
+                    registered_functions.append(export_name)
+                    obj_type = type(exported_obj).__name__
+                    print(f"Corelib: Registered '{export_name}' ({obj_type}) from {module_name}")
 
-            # Wrap in PythonFunction for PYTHON type
-            from dana.core.lang.interpreter.functions.python_function import PythonFunction
+            print(f"Corelib: Module '{module_name}' loaded, {len(exports_to_register)} exports registered")
 
-            python_func = PythonFunction(wrapper_func, trusted_for_context=True)
+    except Exception as e:
+        print(f"Corelib: Error in Dana module registration: {e}")
+        import traceback
 
-            # Register the wrapper
-            registry.register(
-                name=func_name,
-                func=python_func,
-                namespace=RuntimeScopes.SYSTEM,
-                func_type=FunctionType.PYTHON,
-                overwrite=True,
-                trusted_for_context=True,
-            )
-
-            registered_functions.append(func_name)
+        traceback.print_exc()
 
     return registered_functions
+
+
+# Dana function wrapper removed - functions now use natural import system instead
