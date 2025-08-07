@@ -4,6 +4,7 @@ import { apiService } from '@/lib/api';
 import { useParams } from 'react-router-dom';
 import { useSmartChatStore } from '@/stores/smart-chat-store';
 import { useAgentStore } from '@/stores/agent-store';
+import { useUIStore } from '@/stores/ui-store';
 import { ArrowUp, Attachment } from 'iconoir-react';
 import { MarkdownViewerSmall } from './chat/markdown-viewer';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -35,7 +36,35 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
   const clearMessages = useSmartChatStore((s) => s.clearMessages);
   const setMessages = useSmartChatStore((s) => s.setMessages);
   const { fetchAgent } = useAgentStore();
+  const { setAgentDetailActiveTab, setKnowledgeBaseActiveSubTab } = useUIStore();
   const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  // Function to handle CTA button click
+  const handleCTAClick = () => {
+    setInput('Add knowledge about ');
+    // Focus the input field after a short delay to ensure it's rendered
+    setTimeout(() => {
+      const textarea = document.querySelector(
+        'textarea[placeholder="Type your message"]',
+      ) as HTMLTextAreaElement;
+      if (textarea) {
+        textarea.focus();
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+      }
+    }, 100);
+  };
+
+  // Function to handle "Add documents" CTA button click
+  const handleAddDocumentsClick = () => {
+    setAgentDetailActiveTab('Knowledge Base');
+    setKnowledgeBaseActiveSubTab('Documents');
+
+    // Add a message to the chat panel
+    addMessage({
+      sender: 'agent',
+      text: 'Now, please upload your files in Documents panel',
+    });
+  };
 
   // Humanized thinking messages
   const thinkingMessages = [
@@ -71,8 +100,8 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
           addMessage({
             sender: 'agent',
             text: displayName
-              ? `Hi! I'm here to help you to customize **${displayName}**. What would you like to do?`
-              : `Hi! I'm Dana. I’m here to help you to train your agent. First of all, what expertise your agent should have?`,
+              ? `Hi! I'm here to help you to train **${displayName}**. Here are the next steps I'd recommend to make ${displayName} better:`
+              : `Hi! I'm Dana. I'm here to help you to train your agent. First of all, what expertise your agent should have?`,
           });
         }
       } catch (e) {
@@ -198,15 +227,22 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
         >
           {messages.map((msg, idx) => {
             const isThinking = loading && idx === messages.length - 1 && msg.sender === 'agent';
+            const isWelcomeMessage =
+              msg.sender === 'agent' &&
+              (msg.text.includes("Hi! I'm Dana") ||
+                msg.text.includes("Hi! I'm here to help you to train") ||
+                msg.text.includes('Welcome! How can I assist you'));
+
             return (
               <div
                 key={idx}
-                className={`rounded-sm px-3 py-2 text-sm ${msg.sender === 'user'
+                className={`rounded-sm px-3 py-2 text-sm ${
+                  msg.sender === 'user'
                     ? 'bg-gray-100'
                     : isThinking
                       ? ' self-start text-left border border-gray-100'
                       : ' self-start text-left'
-                  }`}
+                }`}
               >
                 {isThinking ? (
                   <div className="flex gap-2 items-center">
@@ -214,7 +250,25 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
                     <span className="text-gray-700">{msg.text}</span>
                   </div>
                 ) : (
-                  <MarkdownViewerSmall>{msg.text}</MarkdownViewerSmall>
+                  <>
+                    <MarkdownViewerSmall>{msg.text}</MarkdownViewerSmall>
+                    {isWelcomeMessage && (
+                      <div className="mt-3 flex flex-col gap-2">
+                        <button
+                          onClick={handleCTAClick}
+                          className="px-4 py-2 cursor-pointer text-sm font-medium text-gray-700 border border-gray-300 bg-white rounded-md hover:bg-gray-100 transition-colors duration-200 shadow-sm"
+                        >
+                          Add knowledge on a topic
+                        </button>
+                        <button
+                          onClick={handleAddDocumentsClick}
+                          className="px-4 py-2 cursor-pointer text-sm font-medium text-gray-700 border border-gray-300 bg-white rounded-md hover:bg-gray-100 transition-colors duration-200 shadow-sm"
+                        >
+                          Add documents
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             );
@@ -244,7 +298,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
                 target.style.height = Math.min(target.scrollHeight, 120) + 'px';
               }}
             />
-            <Tooltip>
+            {/* <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   onClick={handleFileUpload}
@@ -259,7 +313,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
               <TooltipContent>
                 <p>Add files</p>
               </TooltipContent>
-            </Tooltip>
+            </Tooltip> */}
             {input.trim() && (
               <button
                 onClick={sendMessage}

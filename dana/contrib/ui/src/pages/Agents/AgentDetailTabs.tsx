@@ -28,20 +28,35 @@ export const AgentDetailTabs: React.FC<{
   navigate: NavigateFunction;
 }> = ({ children, activeTab, setActiveTab, navigate }) => {
   const { selectedAgent } = useAgentStore();
-  const { isChatSidebarOpen, openChatSidebar, closeChatSidebar } = useUIStore();
+  const {
+    isChatSidebarOpen,
+    openChatSidebar,
+    closeChatSidebar,
+    agentDetailActiveTab,
+    setAgentDetailActiveTab,
+  } = useUIStore();
+
+  // Use global state if available, otherwise fall back to props
+  const currentActiveTab = agentDetailActiveTab || activeTab || 'Overview';
+  const handleTabChange = (tab: string) => {
+    setAgentDetailActiveTab(tab);
+    if (setActiveTab) {
+      setActiveTab(tab);
+    }
+  };
 
   return (
     <div className="grid grid-cols-[1fr_max-content] h-full relative overflow-hidden">
       {/* Main content area */}
-      <div className=" overflow-auto grid grid-cols-1 grid-rows-[max-content_1fr] flex-1 gap-2 p-2 h-full">
+      <div className=" overflow-auto grid grid-cols-1 grid-rows-[max-content_1fr] flex-1 gap-2 pt-2 h-full">
         {/* Tab bar */}
-        <div className="flex justify-between items-center max-w-screen h-[40px]">
+        <div className="flex justify-between items-center max-w-screen h-[40px] pr-2">
           <div className="flex gap-2">
             {TABS.map((tab) => (
               <button
                 key={tab}
-                className={`cursor-pointer px-4 py-2 font-medium text-sm flex items-center gap-2 transition-colors ${activeTab === tab ? 'bg-white rounded-sm shadow' : 'border-transparent text-gray-500'}`}
-                onClick={() => setActiveTab(tab)}
+                className={`cursor-pointer px-4 py-2 font-medium text-sm flex items-center gap-2 transition-colors ${currentActiveTab === tab ? 'bg-white rounded-sm shadow' : 'border-transparent text-gray-500'}`}
+                onClick={() => handleTabChange(tab)}
               >
                 {TAB_ICONS[tab as keyof typeof TAB_ICONS]}
                 {tab}
@@ -77,17 +92,17 @@ export const AgentDetailTabs: React.FC<{
 
                 {/* Chat Text */}
                 <span className="text-sm font-medium">
-                  Chat with {selectedAgent?.name || 'Agent'}
+                  {selectedAgent?.name || 'Agent'} Playground
                 </span>
               </Button>
             )}
           </div>
         </div>
         {/* Tab content */}
-        {activeTab === 'Overview' && <OverviewTab navigate={navigate} />}
-        {activeTab === 'Knowledge Base' && <KnowledgeBaseTab />}
-        {activeTab === 'Tools' && <ToolsTab />}
-        {activeTab === 'Code' && <CodeTab />}
+        {currentActiveTab === 'Overview' && <OverviewTab navigate={navigate} />}
+        {currentActiveTab === 'Knowledge Base' && <KnowledgeBaseTab />}
+        {currentActiveTab === 'Tools' && <ToolsTab />}
+        {currentActiveTab === 'Code' && <CodeTab />}
         {children}
       </div>
 

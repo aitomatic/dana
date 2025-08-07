@@ -12,7 +12,7 @@ import KnowledgeSidebar from './KnowledgeSidebar';
 import { Search } from 'iconoir-react';
 
 // Single transition definition for consistency
-const TRANSITION_DURATION = '1s';
+const TRANSITION_DURATION = '0.5s';
 const TRANSITION_EASING = 'cubic-bezier(.43,.08,.45,.97)';
 const TRANSITION_ALL = `all ${TRANSITION_DURATION} ${TRANSITION_EASING}`;
 
@@ -53,14 +53,21 @@ const animationStyles = `
   
   /* Animate edges when they appear - only for new edges */
   .react-flow__edge.edge-new {
-    opacity: 0;
-    animation: edgeAppear 1s cubic-bezier(.43,.08,.45,.97) forwards;
+    opacity: 0 !important;
+    animation: edgeAppear 1s cubic-bezier(.43,.08,.45,.97) forwards !important;
   }
   
   .react-flow__edge.edge-new .react-flow__edge-path {
-    stroke-dasharray: 1000;
-    stroke-dashoffset: 1000;
-    animation: edgePathAppear 1s cubic-bezier(.43,.08,.45,.97) forwards;
+    stroke-dasharray: 1000 !important;
+    stroke-dashoffset: 1000 !important;
+    animation: edgePathAppear 1s cubic-bezier(.43,.08,.45,.97) forwards !important;
+  }
+  
+  /* Also target edge paths directly */
+  .react-flow__edge-path.edge-new {
+    stroke-dasharray: 1000 !important;
+    stroke-dashoffset: 1000 !important;
+    animation: edgePathAppear 1s cubic-bezier(.43,.08,.45,.97) forwards !important;
   }
   
   /* Keyframe animations for edges */
@@ -341,20 +348,85 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       const newEdgeIds = [...currentEdgeIds].filter((id) => !previousEdgeIds.has(id));
 
       if (newEdgeIds.length > 0) {
-        // Add animation class to new edges
+        // Add animation class to new edges with a longer delay to ensure ReactFlow has rendered them
         setTimeout(() => {
           newEdgeIds.forEach((edgeId) => {
-            const edgeElement = document.querySelector(`[data-id="${edgeId}"]`) as HTMLElement;
+            // ReactFlow edges are rendered as SVG elements with specific structure
+            // Try multiple approaches to find the edge element
+
+            // Approach 1: Look for edge by data-id attribute
+            let edgeElement = document.querySelector(`[data-id="${edgeId}"]`) as HTMLElement;
+
+            // Approach 2: Look for edge in ReactFlow's edge container
+            if (!edgeElement) {
+              const edgeContainer = document.querySelector('.react-flow__edges');
+              if (edgeContainer) {
+                const edgeElements = edgeContainer.querySelectorAll('.react-flow__edge');
+                for (const edge of edgeElements) {
+                  const id =
+                    edge.getAttribute('data-id') || edge.getAttribute('data-testid') || edge.id;
+                  if (id === edgeId) {
+                    edgeElement = edge as HTMLElement;
+                    break;
+                  }
+                }
+              }
+            }
+
+            // Approach 3: Look for edge by source and target attributes
+            if (!edgeElement) {
+              const edgeData = edges.find((e) => e.id === edgeId);
+              if (edgeData) {
+                const edgeElements = document.querySelectorAll('.react-flow__edge');
+                for (const edgeEl of edgeElements) {
+                  const source = edgeEl.getAttribute('data-source');
+                  const target = edgeEl.getAttribute('data-target');
+                  if (source === edgeData.source && target === edgeData.target) {
+                    edgeElement = edgeEl as HTMLElement;
+                    break;
+                  }
+                }
+              }
+            }
+
+            // Approach 4: Look for edge by checking all edge elements and their children
+            if (!edgeElement) {
+              const allEdgeElements = document.querySelectorAll('.react-flow__edge');
+              for (const edgeEl of allEdgeElements) {
+                // Check if any child element contains the edge ID
+                const children = edgeEl.querySelectorAll('*');
+                for (const child of children) {
+                  const childId =
+                    child.getAttribute('data-id') || child.getAttribute('data-testid') || child.id;
+                  if (childId === edgeId) {
+                    edgeElement = edgeEl as HTMLElement;
+                    break;
+                  }
+                }
+                if (edgeElement) break;
+              }
+            }
+
             if (edgeElement) {
+              // Add animation class to the edge
               edgeElement.classList.add('edge-new');
+
+              // Also add animation class to the edge path if it exists
+              const edgePath = edgeElement.querySelector('.react-flow__edge-path');
+              if (edgePath) {
+                edgePath.classList.add('edge-new');
+              }
 
               // Remove animation class after animation completes
               setTimeout(() => {
                 edgeElement.classList.remove('edge-new');
+                if (edgePath) {
+                  edgePath.classList.remove('edge-new');
+                }
               }, 1000);
             }
           });
-        }, 100);
+        }, 300); // Increased delay to ensure ReactFlow has rendered the edges
       }
 
       // Update previous edges
@@ -979,9 +1051,9 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         {/* Enhanced Control Bar */}
         {agentId && (
           <div
-            className={`absolute left-4 right-4 z-20 ${initialLoading || loading ? 'top-16' : 'top-4'
-              }`}
-            style={{ transition: TRANSITION_ALL }}
+            className={`absolute left-4 right-4 z-20 ${
+              initialLoading || loading ? 'top-16' : 'top-4'
+            }`}
           >
             <div className="flex gap-3 justify-between items-center">
               {/* Left side - Search and Tree Controls */}
@@ -1044,10 +1116,11 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                 <button
                   onClick={handleGenerateKnowledge}
                   disabled={generating || initialLoading || loading}
-                  className={`px-4 py-2 text-sm rounded-md border shadow-sm ${generating || initialLoading || loading
+                  className={`px-4 py-2 text-sm rounded-md border shadow-sm ${
+                    generating || initialLoading || loading
                       ? 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed opacity-75'
                       : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:text-gray-900 hover:shadow-md'
-                    }`}
+                  }`}
                   style={{ transition: TRANSITION_ALL }}
                 >
                   {generating ? (
