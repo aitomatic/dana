@@ -15,7 +15,7 @@ export const AgentDetailHeader: React.FC<AgentDetailHeaderProps> = ({
   onDeploy,
   onCancel,
 }) => (
-  <div className="flex justify-between items-center px-6 py-4 bg-white border-b h-[64px]">
+  <div className="flex justify-between items-center px-6 py-4 bg-white border-b h-[52px]">
     <div className="flex gap-1 items-center cursor-pointer" onClick={onBack}>
       <div className="flex justify-center items-center w-8 h-8 rounded-full transition-colors hover:bg-gray-100">
         <ArrowLeft className="w-4 h-4" />

@@ -81,7 +81,7 @@ const OverviewTab: React.FC<{
 
   return (
     <div className="flex flex-col gap-8 h-full md:flex-row">
-      <div className="flex flex-col flex-1 gap-4 p-6 h-full bg-white rounded-lg">
+      <div className="flex flex-col flex-1 gap-4 p-6 h-full bg-white ">
         <div className="flex gap-3 justify-between items-center">
           <div className="flex overflow-hidden justify-center items-center w-16 h-16 rounded-full">
             <img

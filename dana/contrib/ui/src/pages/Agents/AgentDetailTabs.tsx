@@ -48,9 +48,9 @@ export const AgentDetailTabs: React.FC<{
   return (
     <div className="grid grid-cols-[1fr_max-content] h-full relative overflow-hidden">
       {/* Main content area */}
-      <div className=" overflow-auto grid grid-cols-1 grid-rows-[max-content_1fr] flex-1 gap-2 pt-2 h-full">
+      <div className=" overflow-auto grid grid-cols-1 grid-rows-[max-content_1fr] flex-1 h-full">
         {/* Tab bar */}
-        <div className="flex justify-between items-center max-w-screen h-[40px] pr-2">
+        <div className="flex justify-between items-center max-w-screen h-15 p-2 border-b border-gray-200">
           <div className="flex gap-2">
             {TABS.map((tab) => (
               <button
