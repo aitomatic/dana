@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ReactFlow, { Controls, Position, MarkerType } from 'reactflow';
-import type { Node as FlowNode, Edge } from 'reactflow';
+import type { Node as FlowNode, Edge, ReactFlowInstance } from 'reactflow';
 import dagre from 'dagre';
 import 'reactflow/dist/style.css';
 import CustomNode from './CustomNode';
@@ -9,6 +9,124 @@ import type { DomainKnowledgeResponse, DomainNode } from '@/types/domainKnowledg
 import type { KnowledgeStatusResponse, KnowledgeTopicStatus } from '@/lib/api';
 import { toast } from 'sonner';
 import KnowledgeSidebar from './KnowledgeSidebar';
+import { Search } from 'iconoir-react';
+
+// Single transition definition for consistency
+const TRANSITION_DURATION = '0.5s';
+const TRANSITION_EASING = 'cubic-bezier(.43,.08,.45,.97)';
+const TRANSITION_ALL = `all ${TRANSITION_DURATION} ${TRANSITION_EASING}`;
+
+// Add CSS animations for smooth transitions
+const animationStyles = `
+  .react-flow__node {
+    transition: ${TRANSITION_ALL} !important;
+  }
+  
+  .react-flow__node-enter {
+    opacity: 0;
+    transform: scale(0.8) translateY(10px);
+  }
+  
+  .react-flow__node-enter-active {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  
+  .react-flow__node-exit {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  
+  .react-flow__node-exit-active {
+    opacity: 0;
+    transform: scale(0.8) translateY(-10px);
+  }
+  
+  /* Edge animations - improved implementation */
+  .react-flow__edge {
+    transition: ${TRANSITION_ALL} !important;
+  }
+  
+  .react-flow__edge-path {
+    transition: ${TRANSITION_ALL} !important;
+  }
+  
+  /* Animate edges when they appear - using data attributes for better targeting */
+  .react-flow__edge[data-edge-new="true"],
+  .react-flow__edges g[data-edge-new="true"] {
+    opacity: 0 !important;
+    animation: edgeAppear 0.8s cubic-bezier(.43,.08,.45,.97) forwards !important;
+  }
+  
+  .react-flow__edge[data-edge-new="true"] .react-flow__edge-path,
+  .react-flow__edges g[data-edge-new="true"] .react-flow__edge-path {
+    stroke-dasharray: 1000 !important;
+    stroke-dashoffset: 1000 !important;
+    animation: edgePathAppear 0.8s cubic-bezier(.43,.08,.45,.97) forwards !important;
+  }
+  
+  /* Also target edge paths directly with data attribute */
+  .react-flow__edge-path[data-edge-new="true"] {
+    stroke-dasharray: 1000 !important;
+    stroke-dashoffset: 1000 !important;
+    animation: edgePathAppear 0.8s cubic-bezier(.43,.08,.45,.97) forwards !important;
+  }
+  
+  /* Additional targeting for ReactFlow's edge structure */
+  .react-flow__edges g[data-edge-new="true"] .react-flow__edge-path {
+    stroke-dasharray: 1000 !important;
+    stroke-dashoffset: 1000 !important;
+    animation: edgePathAppear 0.8s cubic-bezier(.43,.08,.45,.97) forwards !important;
+  }
+  
+  /* Keyframe animations for edges */
+  @keyframes edgeAppear {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes edgePathAppear {
+    from {
+      stroke-dashoffset: 1000;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  
+  /* Ensure edges are visible during transitions */
+  .react-flow__edge.selected .react-flow__edge-path {
+    stroke-width: 3;
+  }
+  
+  .react-flow__edge:hover .react-flow__edge-path {
+    stroke-width: 2;
+  }
+  
+  /* Smooth viewport transitions */
+  .react-flow {
+    transition: ${TRANSITION_ALL} !important;
+  }
+  
+  .react-flow__viewport {
+    transition: ${TRANSITION_ALL} !important;
+  }
+  
+  .react-flow__transformationpane {
+    transition: ${TRANSITION_ALL} !important;
+  }
+`;
+
+// Inject styles
+if (typeof document !== 'undefined') {
+  const styleElement = document.createElement('style');
+  styleElement.textContent = animationStyles;
+  document.head.appendChild(styleElement);
+}
 
 const initialNodes: FlowNode[] = [
   {
@@ -61,42 +179,84 @@ const initialEdges: Edge[] = [
     source: '1',
     target: '2',
     markerEnd: { type: MarkerType.ArrowClosed },
-    type: 'smoothstep',
+    type: 'default',
+    style: {
+      stroke: '#6b7280',
+      strokeWidth: 1,
+      transition: TRANSITION_ALL,
+      opacity: 1,
+    },
+    animated: false,
   },
   {
     id: 'e2-3',
     source: '2',
     target: '3',
     markerEnd: { type: MarkerType.ArrowClosed },
-    type: 'smoothstep',
+    type: 'default',
+    style: {
+      stroke: '#6b7280',
+      strokeWidth: 1,
+      transition: TRANSITION_ALL,
+      opacity: 1,
+    },
+    animated: false,
   },
   {
     id: 'e3-4',
     source: '3',
     target: '4',
     markerEnd: { type: MarkerType.ArrowClosed },
-    type: 'smoothstep',
+    type: 'default',
+    style: {
+      stroke: '#6b7280',
+      strokeWidth: 1,
+      transition: TRANSITION_ALL,
+      opacity: 1,
+    },
+    animated: false,
   },
   {
     id: 'e1-5',
     source: '1',
     target: '5',
     markerEnd: { type: MarkerType.ArrowClosed },
-    type: 'smoothstep',
+    type: 'default',
+    style: {
+      stroke: '#6b7280',
+      strokeWidth: 1,
+      transition: TRANSITION_ALL,
+      opacity: 1,
+    },
+    animated: false,
   },
   {
     id: 'e1-6',
     source: '1',
     target: '6',
     markerEnd: { type: MarkerType.ArrowClosed },
-    type: 'smoothstep',
+    type: 'default',
+    style: {
+      stroke: '#6b7280',
+      strokeWidth: 1,
+      transition: TRANSITION_ALL,
+      opacity: 1,
+    },
+    animated: false,
   },
   {
     id: 'e1-7',
     source: '1',
     target: '7',
     markerEnd: { type: MarkerType.ArrowClosed },
-    type: 'smoothstep',
+    type: 'default',
+    style: {
+      stroke: '#6b7280',
+      strokeWidth: 1,
+      transition: TRANSITION_ALL,
+      opacity: 1,
+    },
+    animated: false,
   },
 ];
 
@@ -168,10 +328,161 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   const [sidebarError, setSidebarError] = useState<string | null>(null);
   // New UX improvement states
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const expandedNodesRef = useRef<Set<string>>(new Set());
   const previousAgentIdRef = useRef<string | number | undefined>(undefined);
+  const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
+  const nodesRef = useRef<FlowNode[]>([]);
+  const previousEdgesRef = useRef<Set<string>>(new Set());
+
+  // Function to center the view after nodes are expanded - with smooth transition
+  const centerView = useCallback(() => {
+    if (reactFlowInstanceRef.current && nodesRef.current.length > 0) {
+      // Use setTimeout to ensure the nodes are rendered before centering
+      setTimeout(() => {
+        const instance = reactFlowInstanceRef.current;
+        if (!instance) return;
+
+        // Use ReactFlow's fitView method
+        // The smooth transition will be handled by CSS transitions on the ReactFlow container
+        instance.fitView({
+          padding: 0.2,
+          includeHiddenNodes: false,
+          minZoom: 0.5,
+          maxZoom: 1.5,
+        });
+      }, 100);
+    }
+  }, []);
+
+  // Function to handle smooth transitions when expanding/collapsing
+  const handleSmoothTransition = useCallback(
+    (newNodes: FlowNode[], newEdges: Edge[]) => {
+      setIsTransitioning(true);
+
+      // Add a small delay to allow the transition to start
+      setTimeout(() => {
+        setNodes(newNodes);
+        setEdges(newEdges);
+
+        // Center view and end transition after animation completes
+        setTimeout(() => {
+          centerView();
+          setIsTransitioning(false);
+        }, 300);
+      }, 50);
+    },
+    [centerView],
+  );
+
+  // Keep nodes ref in sync
+  useEffect(() => {
+    nodesRef.current = nodes;
+  }, [nodes]);
+
+  // Center view when nodes change
+  useEffect(() => {
+    if (nodes.length > 0) {
+      centerView();
+    }
+  }, [nodes, centerView]);
+
+  // Handle edge animations for new edges
+  useEffect(() => {
+    if (edges.length > 0) {
+      const currentEdgeIds = new Set(edges.map((edge) => edge.id));
+      const previousEdgeIds = previousEdgesRef.current;
+
+      // Find new edges
+      const newEdgeIds = [...currentEdgeIds].filter((id) => !previousEdgeIds.has(id));
+
+      if (newEdgeIds.length > 0) {
+        // Add animation to new edges with a delay to ensure ReactFlow has rendered them
+        setTimeout(() => {
+          newEdgeIds.forEach((edgeId) => {
+            // Simplified edge detection - look for the edge element directly
+            let edgeElement: Element | null = null;
+
+            // Strategy 1: Look for edge by data-id attribute in the edges container
+            const edgeContainer = document.querySelector('.react-flow__edges');
+            if (edgeContainer) {
+              // ReactFlow renders edges as SVG g elements with data-id
+              edgeElement = edgeContainer.querySelector(`g[data-id="${edgeId}"]`);
+            }
+
+            // Strategy 2: If not found, try looking for any element with the edge ID
+            if (!edgeElement) {
+              edgeElement = document.querySelector(`[data-id="${edgeId}"]`);
+            }
+
+            // Strategy 3: Look for edge by checking all g elements in the edges container
+            if (!edgeElement && edgeContainer) {
+              const allEdgeElements = edgeContainer.querySelectorAll('g');
+              for (const edgeEl of allEdgeElements) {
+                const id = edgeEl.getAttribute('data-id');
+                if (id === edgeId) {
+                  edgeElement = edgeEl;
+                  break;
+                }
+              }
+            }
+
+            // If edge element is found, add animation
+            if (edgeElement) {
+              // Add data attribute for animation
+              edgeElement.setAttribute('data-edge-new', 'true');
+
+              // Also add data attribute to the edge path if it exists
+              const edgePath = edgeElement.querySelector('.react-flow__edge-path') as Element;
+              if (edgePath) {
+                edgePath.setAttribute('data-edge-new', 'true');
+              }
+
+              // Remove animation attributes after animation completes
+              setTimeout(() => {
+                edgeElement?.removeAttribute('data-edge-new');
+                if (edgePath) {
+                  edgePath.removeAttribute('data-edge-new');
+                }
+              }, 800); // Match the animation duration
+            } else {
+              // Retry mechanism - if edge not found initially, try again after a short delay
+              setTimeout(() => {
+                const retryEdgeElement =
+                  document.querySelector(`[data-id="${edgeId}"]`) ||
+                  document
+                    .querySelector('.react-flow__edges')
+                    ?.querySelector(`g[data-id="${edgeId}"]`);
+
+                if (retryEdgeElement) {
+                  retryEdgeElement.setAttribute('data-edge-new', 'true');
+
+                  const retryEdgePath = retryEdgeElement.querySelector(
+                    '.react-flow__edge-path',
+                  ) as Element;
+                  if (retryEdgePath) {
+                    retryEdgePath.setAttribute('data-edge-new', 'true');
+                  }
+
+                  setTimeout(() => {
+                    retryEdgeElement.removeAttribute('data-edge-new');
+                    if (retryEdgePath) {
+                      retryEdgePath.removeAttribute('data-edge-new');
+                    }
+                  }, 800);
+                }
+              }, 200);
+            }
+          });
+        }, 150); // Slightly increased delay for better reliability
+      }
+
+      // Update previous edges
+      previousEdgesRef.current = currentEdgeIds;
+    }
+  }, [edges]);
 
   // Keep the ref in sync with the state
   useEffect(() => {
@@ -381,7 +692,18 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
             source: parentId,
             target: nodeId,
             markerEnd: { type: MarkerType.ArrowClosed },
-            type: 'smoothstep',
+            type: 'default',
+            style: {
+              stroke: '#6b7280',
+              strokeWidth: 1,
+              transition: TRANSITION_ALL,
+              opacity: 1, // Ensure opacity is set for animations
+            },
+            animated: false, // We'll handle animation with CSS
+            data: {
+              // Add data for animation tracking
+              isNew: true,
+            },
           });
         }
       }
@@ -582,8 +904,9 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           searchQuery,
         );
         const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
-        setNodes(layoutedNodes);
-        setEdges(flowEdges);
+
+        // Use smooth transition function
+        handleSmoothTransition(layoutedNodes, flowEdges);
       }
     }
   };
@@ -765,7 +1088,10 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       >
         {/* Smooth loading indicator that slides down from top */}
         {(initialLoading || loading) && (
-          <div className="absolute top-0 right-0 left-0 z-30 transition-all duration-300 ease-in-out transform">
+          <div
+            className="absolute top-0 right-0 left-0 z-30 transform"
+            style={{ transition: TRANSITION_ALL }}
+          >
             <div className="flex justify-center items-center py-2 bg-blue-50 border-b border-blue-200 shadow-sm animate-pulse">
               <div className="flex gap-2 items-center text-blue-700">
                 <div className="w-4 h-4 rounded-full border-2 border-blue-300 animate-spin border-t-blue-600"></div>
@@ -780,21 +1106,23 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         {/* Enhanced Control Bar */}
         {agentId && (
           <div
-            className={`absolute left-4 right-4 z-20 transition-all duration-300 ease-in-out ${
-              initialLoading || loading ? 'top-16' : 'top-4'
-            }`}
+            className={`absolute left-4 right-4 z-20 ${initialLoading || loading ? 'top-16' : 'top-4'
+              }`}
           >
             <div className="flex gap-3 justify-between items-center">
               {/* Left side - Search and Tree Controls */}
               <div className="flex flex-1 gap-3 items-center">
                 {/* Search Input */}
                 <div className="relative flex-1 max-w-md">
+                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                    <Search width={16} height={16} />
+                  </div>
                   <input
                     type="text"
-                    placeholder="Search knowledge topics..."
+                    placeholder="Search topic"
                     value={searchQuery}
                     onChange={(e) => handleSearchChange(e.target.value)}
-                    className="px-3 py-2 w-full text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="pl-10 pr-3 py-2 w-full text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-1"
                   />
                   {searchQuery && (
                     <button
@@ -811,7 +1139,8 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                   <button
                     onClick={handleExpandAll}
                     disabled={!domainTree}
-                    className="px-3 py-2 text-xs text-gray-600 bg-gray-50 rounded-md border border-gray-200 transition-colors hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-2 text-xs text-gray-600 bg-gray-50 rounded-md border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ transition: TRANSITION_ALL }}
                     title="Expand All"
                   >
                     Expand All
@@ -819,7 +1148,8 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                   <button
                     onClick={handleCollapseAll}
                     disabled={!domainTree}
-                    className="px-3 py-2 text-xs text-gray-600 bg-gray-50 rounded-md border border-gray-200 transition-colors hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-2 text-xs text-gray-600 bg-gray-50 rounded-md border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ transition: TRANSITION_ALL }}
                     title="Collapse All"
                   >
                     Collapse All
@@ -840,11 +1170,11 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                 <button
                   onClick={handleGenerateKnowledge}
                   disabled={generating || initialLoading || loading}
-                  className={`px-4 py-2 text-sm rounded-md border transition-all duration-200 shadow-sm ${
-                    generating || initialLoading || loading
+                  className={`px-4 py-2 text-sm rounded-md border shadow-sm ${generating || initialLoading || loading
                       ? 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed opacity-75'
                       : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:text-gray-900 hover:shadow-md'
-                  }`}
+                    }`}
+                  style={{ transition: TRANSITION_ALL }}
                 >
                   {generating ? (
                     <div className="flex gap-2 items-center">
@@ -862,9 +1192,8 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
 
         {/* Tree View Container with smooth margin adjustment */}
         <div
-          className={`transition-all duration-300 ease-in-out h-full ${
-            agentId ? (initialLoading || loading ? 'pt-32' : 'pt-20') : ''
-          }`}
+          className={`h-full ${agentId ? (initialLoading || loading ? 'pt-32' : 'pt-20') : ''}`}
+          style={{ transition: TRANSITION_ALL }}
         >
           {nodes.length > 0 ? (
             <div className="h-full rounded-lg">
@@ -873,19 +1202,41 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                 edges={edges}
                 nodeTypes={nodeTypes}
                 fitView
+                fitViewOptions={{
+                  padding: 0.2,
+                  includeHiddenNodes: false,
+                  minZoom: 0.5,
+                  maxZoom: 1.5,
+                }}
                 nodesDraggable={false}
                 nodesConnectable={false}
                 elementsSelectable={false}
                 proOptions={{ hideAttribution: true }}
                 onNodeClick={onNodeClick}
                 onPaneClick={onPaneClick}
+                onInit={(reactFlowInstance) => {
+                  reactFlowInstanceRef.current = reactFlowInstance;
+                }}
+                // Smooth animation properties
+                defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+                minZoom={0.1}
+                maxZoom={2}
+                zoomOnScroll={true}
+                panOnScroll={false}
+                zoomOnPinch={true}
+                panOnDrag={true}
+                className={`${isTransitioning ? 'opacity-95' : 'opacity-100'}`}
+                style={{ transition: TRANSITION_ALL }}
               >
                 <Controls />
               </ReactFlow>
             </div>
           ) : (
             /* Empty/Error State - Doesn't replace tree, shows as overlay */
-            <div className="flex flex-col gap-4 justify-center items-center h-full transition-opacity duration-500 ease-in-out">
+            <div
+              className="flex flex-col gap-4 justify-center items-center h-full"
+              style={{ transition: TRANSITION_ALL }}
+            >
               {initialLoading ? (
                 /* Show loading state when first loading */
                 <div className="text-center text-gray-500">
@@ -902,20 +1253,20 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                     <div className="text-sm">{error}</div>
                   </div>
                   <div className="max-w-md text-xs text-center text-gray-400">
-                    Start a conversation with the agent to build domain knowledge automatically, or
-                    use the smart chat feature to add specific expertise areas.
+                    Chat with Dana to add missing knowledge
                   </div>
                 </>
               ) : (
                 /* Show empty state when no nodes but no error */
                 <>
-                  <div className="text-center text-gray-500">
-                    <div className="text-lg font-medium">No Domain Knowledge</div>
-                    <div className="text-sm">This agent doesn't have any domain knowledge yet</div>
-                  </div>
-                  <div className="max-w-md text-xs text-center text-gray-400">
-                    Start a conversation with the agent to build domain knowledge automatically, or
-                    use the smart chat feature to add specific expertise areas.
+                  <div className="text-center flex item-center flex-col ">
+                    <div className="flex items-center pb-4 justify-center text-gray-400">
+                      <Search className="w-10 h-10" />
+                    </div>
+                    <div className="text-lg font-semibold text-gray-500">Keyword not found</div>
+                    <div className="text-sm text-gray-500">
+                      Chat with Dana to add missing knowledge
+                    </div>
                   </div>
                 </>
               )}

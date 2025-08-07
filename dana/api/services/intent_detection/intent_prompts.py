@@ -72,7 +72,6 @@ return a single, *lower-case* label that best describes the **current USER inten
 
 2. **profile_ops**  
    The user wants to *create, modify, or configure* an agent's profile, which includes:
-   - **Role**: The agent's professional position (e.g., Senior Financial Analyst, Risk Manager)
    - **Domain**: The industry or field of expertise (e.g., Corporate Finance, Healthcare, Manufacturing)
    - **Topics**: Specific areas of knowledge within the domain (e.g., Liquidity Analysis, Cash Flow Management)
    - **Tasks**: Concrete activities the agent will perform (e.g., Analyze financial statements, Generate reports)
@@ -100,7 +99,7 @@ Respond with **exactly** this JSON (no extra keys, spaces, or comments):
 • Focus on the **latest USER turn** unless earlier context is essential for disambiguation.
 • If a request contains multiple intents, choose the *primary* one (the action most immediately
 requested).
-• Err on **profile\_ops** when the user mentions "agent," "assistant," "expert," "role," "I want my agent to,"
+• Err on **profile\_ops** when the user mentions "agent," "assistant," "expert," "domain," "topics," "tasks," "I want my agent to," "specific to," "focused on,"
 or describes what kind of professional/expert they need (domain, specialization, responsibilities).
 • Err on **knowledge\_ops** when the user mentions "add," "update," "store," "vector DB," "facts,"
 "heuristics," "knowledge base," or similar.

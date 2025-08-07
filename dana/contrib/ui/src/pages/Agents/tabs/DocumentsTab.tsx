@@ -5,7 +5,7 @@ import type { LibraryItem } from '@/types/library';
 import type { DocumentRead } from '@/types/document';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { IconSearch, IconPlus, IconLoader2, IconUpload } from '@tabler/icons-react';
+import { IconSearch, IconPlus, IconLoader2, IconUpload, IconFileText } from '@tabler/icons-react';
 import { apiService } from '@/lib/api';
 
 // Convert DocumentRead to LibraryItem format
@@ -30,6 +30,54 @@ const DocumentsTab: React.FC = () => {
   const [data, setData] = useState<LibraryItem[]>([]);
   const [uploadingFiles, setUploadingFiles] = useState<string[]>([]); // Track which files are uploading
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Drag and drop functionality
+  const handleFileUpload = async (file: File) => {
+    if (!agent_id) return;
+
+    setUploadingFiles((prev) => [...prev, file.name]);
+    try {
+      await apiService.uploadAgentDocument(agent_id, file);
+      setUploadingFiles((prev) => prev.filter((name) => name !== file.name));
+      await loadDocuments();
+    } catch (error) {
+      console.error('Failed to upload file:', error);
+      setUploadingFiles((prev) => prev.filter((name) => name !== file.name));
+    }
+  };
+
+  const handleDragDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!e.dataTransfer.files || e.dataTransfer.files.length === 0 || !agent_id) return;
+
+    const files = Array.from(e.dataTransfer.files);
+    const fileNames = files.map((f) => f.name);
+
+    setUploadingFiles(fileNames);
+
+    try {
+      for (const file of files) {
+        await apiService.uploadAgentDocument(agent_id, file);
+        setUploadingFiles((prev) => prev.filter((name) => name !== file.name));
+      }
+      await loadDocuments();
+    } catch (error) {
+      console.error('Failed to upload files:', error);
+      setUploadingFiles([]);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
 
   // Note: Using local uploadingFiles state instead of global document store for per-file tracking
 
@@ -102,6 +150,64 @@ const DocumentsTab: React.FC = () => {
     }
   };
 
+  // Empty state component
+  const EmptyState = () => {
+    const [isDragOver, setIsDragOver] = useState(false);
+
+    const handleDragOver = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+      handleDragDrop(e);
+    };
+
+    return (
+      <div
+        className={`flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg transition-colors ${
+          isDragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+        }`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <IconFileText className="w-12 h-12 text-gray-400 mb-4" />
+        <div className="text-center space-y-2">
+          <h3 className="text-lg font-semibold text-gray-700">No documents yet</h3>
+          <p className="text-sm text-gray-500">Drag and drop files here to upload</p>
+        </div>
+        <Button
+          onClick={handleAddFileClick}
+          className="mt-4 cursor-pointer"
+          disabled={uploadingFiles.length > 0}
+        >
+          {uploadingFiles.length > 0 ? (
+            <>
+              <IconLoader2 className="animate-spin w-4 h-4 mr-2" />
+              Uploading...
+            </>
+          ) : (
+            <>
+              <IconUpload className="w-4 h-4 mr-2" />
+              Browse Files
+            </>
+          )}
+        </Button>
+      </div>
+    );
+  };
+
   const filteredData = data.filter((item) =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
@@ -128,14 +234,14 @@ const DocumentsTab: React.FC = () => {
           <div className="text-lg font-semibold text-gray-700">Documents</div>
         </div>
         <div className="flex items-center space-x-2">
-          <Button onClick={handleAddFileClick} disabled={uploadingFiles.length > 0}>
+          {/* <Button onClick={handleAddFileClick} disabled={uploadingFiles.length > 0}>
             {uploadingFiles.length > 0 ? (
               <IconLoader2 className="animate-spin size-4" />
             ) : (
               <IconPlus className="size-4" />
             )}
             {uploadingFiles.length > 0 ? 'Uploading...' : 'Add file'}
-          </Button>
+          </Button> */}
         </div>
       </div>
 
@@ -173,7 +279,11 @@ const DocumentsTab: React.FC = () => {
       )}
 
       <div className="flex-1">
-        <LibraryTable data={filteredData} loading={loading} mode="library" />
+        {filteredData.length === 0 && !loading ? (
+          <EmptyState />
+        ) : (
+          <LibraryTable data={filteredData} loading={loading} mode="library" />
+        )}
       </div>
     </div>
   );

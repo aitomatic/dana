@@ -4,6 +4,7 @@ import DomainKnowledgeTab from './DomainKnowledgeTab';
 import DocumentsTab from './DocumentsTab';
 import WorkflowsTab from './WorkflowsTab';
 import { Brain, FilesIcon, Network } from 'lucide-react';
+import { useUIStore } from '@/stores/ui-store';
 
 const KNOWLEDGE_SUBTABS = ['Domain Knowledge', 'Documents', 'Workflows'] as const;
 type KnowledgeSubTab = (typeof KNOWLEDGE_SUBTABS)[number];
@@ -16,7 +17,16 @@ const SUBTAB_ICONS = {
 
 const KnowledgeBaseTab: React.FC = () => {
   const { agent_id } = useParams<{ agent_id: string }>();
-  const [activeSubTab, setActiveSubTab] = useState<KnowledgeSubTab>('Domain Knowledge');
+  const { knowledgeBaseActiveSubTab, setKnowledgeBaseActiveSubTab } = useUIStore();
+
+  // Use global state if available, otherwise fall back to local state
+  const [localActiveSubTab, setLocalActiveSubTab] = useState<KnowledgeSubTab>('Domain Knowledge');
+  const activeSubTab = (knowledgeBaseActiveSubTab as KnowledgeSubTab) || localActiveSubTab;
+
+  const handleSubTabChange = (subTab: KnowledgeSubTab) => {
+    setKnowledgeBaseActiveSubTab(subTab);
+    setLocalActiveSubTab(subTab);
+  };
 
   const renderSubTabContent = () => {
     switch (activeSubTab) {
@@ -51,7 +61,7 @@ const KnowledgeBaseTab: React.FC = () => {
                 ? 'text-primary shadow-sm border bg-gray-100 border-gray-200'
                 : 'text-gray-500 border border-gray-200 hover:text-gray-800 hover:bg-gray-100'
             }`}
-            onClick={() => setActiveSubTab(subTab)}
+            onClick={() => handleSubTabChange(subTab)}
           >
             {SUBTAB_ICONS[subTab]}
             {subTab}

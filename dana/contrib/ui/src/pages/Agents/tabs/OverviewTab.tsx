@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Trash, Edit, Check, Xmark } from 'iconoir-react';
 import { DeleteAgentDialog } from '@/components/delete-agent-dialog';
 import DomainKnowledgeTree from './DomainKnowledgeTree';
+import AgentOverviewChart from './AgentOverviewChart';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { NavigateFunction } from 'react-router-dom';
 
 const OverviewTab: React.FC<{
@@ -79,7 +81,7 @@ const OverviewTab: React.FC<{
 
   return (
     <div className="flex flex-col gap-8 h-full md:flex-row">
-      <div className="flex flex-col flex-1 gap-4 p-6 h-full bg-white rounded-lg">
+      <div className="flex flex-col flex-1 gap-4 p-6 h-full bg-white ">
         <div className="flex gap-3 justify-between items-center">
           <div className="flex overflow-hidden justify-center items-center w-16 h-16 rounded-full">
             <img
@@ -106,9 +108,8 @@ const OverviewTab: React.FC<{
           </div>
         </div>
         <div className="flex flex-col gap-2 p-4 text-sm rounded-lg border border-gray-200 group">
-          <div className="text-sm font-semibold text-gray-600">Agent Profile</div>
           <div className="flex items-center text-sm text-gray-700">
-            <div className="text-gray-600 w-30">Agent name:</div>
+            <div className="text-gray-600 min-w-30">Agent name:</div>
             {isEditingName ? (
               <div className="flex items-center gap-2">
                 <Input
@@ -166,22 +167,48 @@ const OverviewTab: React.FC<{
             )}
           </div>
           <div className="flex items-center text-sm text-gray-700">
-            <div className="text-gray-600 w-30">Domain:</div>
+            <div className="text-gray-600 min-w-30">Domain:</div>
             <div className="font-medium text-gray-900">{agent?.config?.domain ?? '-'}</div>
           </div>
-          <div className="flex items-center text-sm text-gray-700">
-            <div className="text-gray-600 w-30">Topic:</div>
-            <div className="font-medium text-gray-900">{agent?.config?.topic || '-'}</div>
+          <div className="flex items-start text-sm text-gray-700">
+            <div className="text-gray-600 min-w-30">Topics:</div>
+            <div className="capitalize font-medium text-gray-900">
+              {(() => {
+                const oldSpecialties = agent?.config?.specialties || [];
+                const newTopics = agent?.config?.topics || [];
+                const oldTopic = agent?.config?.topic ? [agent.config.topic] : [];
+                const allTopics = [...oldSpecialties, ...newTopics, ...oldTopic];
+                const uniqueTopics = Array.from(new Set(allTopics.filter(Boolean)));
+                return uniqueTopics.length > 0 ? uniqueTopics.join(', ') : '-';
+              })()}
+            </div>
           </div>
-          <div className="flex items-center text-sm text-gray-700">
-            <div className="text-gray-600 w-30">Tasks:</div>
-            <div className="font-medium text-gray-900">
-              {agent?.config?.task || agent?.config?.tasks || '-'}
+          <div className="flex items-start text-sm text-gray-700">
+            <div className="text-gray-600 min-w-30">Tasks:</div>
+            <div className="capitalize font-medium text-gray-900">
+              {(() => {
+                const oldSkills = agent?.config?.skills || [];
+                const newTasks = agent?.config?.tasks || [];
+                const oldTask = agent?.config?.task ? [agent.config.task] : [];
+                const allTasks = [...oldSkills, ...newTasks, ...oldTask];
+                const uniqueTasks = Array.from(new Set(allTasks.filter(Boolean)));
+                return uniqueTasks.length > 0 ? uniqueTasks.join(', ') : '-';
+              })()}
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col flex-1 gap-2 min-h-0">
+        {/* Agent Overview Chart */}
+        <div className="flex flex-col gap-2 h-[80%]">
+          <div className="flex gap-2 items-center">
+            {/* <span className="text-sm font-semibold text-gray-600">Agent Overview</span> */}
+          </div>
+          <div className="h-[100%] rounded-lg border border-gray-200 overflow-hidden">
+            <AgentOverviewChart agent={agent} />
+          </div>
+        </div>
+
+        <div className="flex flex-col flex-1 gap-2 min-h-0 hidden">
           <div className="flex gap-2 items-center">
             <span className="text-sm font-semibold text-gray-600">Agent's Knowledge Base</span>
           </div>

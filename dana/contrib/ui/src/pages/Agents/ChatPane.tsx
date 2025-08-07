@@ -204,12 +204,12 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
 
   return (
     <div
-      className={`w-[420px] min-w-[380px] bg-white max-h-[calc(100vh-64px)] rounded-lg overflow-y-auto flex flex-col m-2 transform transition-transform duration-300 ease-in-out z-50 ${
+      className={`w-[420px] min-w-[380px] bg-white max-h-[calc(100vh-64px)] border-l border-gray-200 overflow-y-auto flex flex-col transform transition-transform duration-300 ease-in-out z-50 ${
         isVisible ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
       {/* Header */}
-      <div className="flex justify-between items-center p-4 border-b border-gray-200">
+      <div className="flex justify-between items-center h-15 p-4 border-b border-gray-200">
         <div className="flex gap-3 items-center">
           <div className="flex overflow-hidden justify-center items-center w-8 h-8 rounded-full">
             <img
@@ -295,13 +295,11 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
         <div className="border-t border-gray-200">
           {/* Toggle Button */}
           <div className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors">
-            <div 
+            <div
               className="flex items-center gap-2 cursor-pointer flex-1"
               onClick={() => setShowLogs(!showLogs)}
             >
-              <span className="text-sm font-medium text-gray-600">
-                Backend Logs
-              </span>
+              <span className="text-sm font-medium text-gray-600">Backend Logs</span>
               {isLoading && (
                 <div className="flex items-center gap-1">
                   <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
@@ -319,7 +317,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
                 <NavArrowDown className="w-4 h-4 text-gray-400" />
               )}
             </div>
-            
+
             {/* Close button */}
             {!isLoading && (
               <button
@@ -334,11 +332,11 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
               </button>
             )}
           </div>
-          
+
           {/* Logs Content - Only show when expanded */}
           {showLogs && (
             <div className="px-4 pb-3">
-              <LogViewer 
+              <LogViewer
                 logs={logUpdates}
                 showTimestamps={true}
                 autoScroll={true}
