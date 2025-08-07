@@ -207,7 +207,9 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
       justifyContent: 'center',
       position: 'relative' as const,
       cursor: hasChildren ? 'pointer' : 'default',
-      transition: 'all 0.2s ease', // Add smooth transitions
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', // Enhanced smooth transitions
+      transform: 'scale(1)',
+      opacity: 1,
     };
 
     // Add selection highlighting
