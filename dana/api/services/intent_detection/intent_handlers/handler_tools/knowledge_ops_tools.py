@@ -477,10 +477,11 @@ Please respond with:
 
 
 class GenerateKnowledgeTool(BaseTool):
-    def __init__(self, llm: LLMResource | None = None):
+    def __init__(self, llm: LLMResource | None = None, knowledge_status_path: str | None = None):
+        self.knowledge_status_path = knowledge_status_path
         tool_info = BaseToolInformation(
             name="generate_knowledge",
-            description="Generate all types of knowledge (facts, procedures, heuristics) for the specified topic based on the approved plan.",
+            description="Generate all types of knowledge (facts, procedures, heuristics) for the specified topic based on the approved plan. Checks knowledge status and only generates for topics with status != 'success'.",
             input_schema=InputSchema(
                 type="object",
                 properties=[
@@ -514,6 +515,23 @@ class GenerateKnowledgeTool(BaseTool):
 
     def _execute(self, topic: str, knowledge_types: str, counts: str = "", context: str = "") -> ToolResult:
         try:
+            # Check knowledge status first
+            if self.knowledge_status_path:
+                status_check = self._check_knowledge_status(topic)
+                if status_check["skip"]:
+                    return ToolResult(
+                        name="generate_knowledge",
+                        result=f"""📚 Knowledge Generation Skipped
+
+Topic: {topic}
+Status: {status_check["status"]}
+Reason: {status_check["reason"]}
+
+✅ This topic already has successful knowledge generation.
+No action needed - knowledge is up to date.""",
+                        require_user=False,
+                    )
+
             # Parse knowledge types and counts
             types_list = [t.strip() for t in knowledge_types.split(",")]
 
@@ -629,11 +647,79 @@ Return as JSON:
             total_artifacts = len(result.get("facts", [])) + len(result.get("procedures", [])) + len(result.get("heuristics", []))
             content += f"\n✅ Knowledge generation complete. Total artifacts: {total_artifacts}"
 
+            # Update knowledge status to success
+            if self.knowledge_status_path:
+                self._update_knowledge_status(topic, "success", f"Generated {total_artifacts} artifacts")
+
             return ToolResult(name="generate_knowledge", result=content, require_user=False)
 
         except Exception as e:
             logger.error(f"Failed to generate knowledge: {e}")
+            # Update status to failed on error
+            if self.knowledge_status_path:
+                self._update_knowledge_status(topic, "failed", str(e))
             return ToolResult(name="generate_knowledge", result=f"❌ Error generating knowledge for {topic}: {str(e)}", require_user=False)
+
+    def _check_knowledge_status(self, topic: str) -> dict:
+        """Check if knowledge generation is needed for the given topic."""
+        try:
+            from pathlib import Path
+            import json
+
+            status_file = Path(self.knowledge_status_path)
+            if not status_file.exists():
+                # No status file means no topics have been processed yet
+                return {"skip": False, "status": "not_started", "reason": "No status file found"}
+
+            with open(status_file) as f:
+                status_data = json.load(f)
+
+            topic_status = status_data.get(topic, {})
+            current_status = topic_status.get("status", "not_started")
+
+            if current_status == "success":
+                return {
+                    "skip": True,
+                    "status": current_status,
+                    "reason": f"Topic already completed successfully on {topic_status.get('last_updated', 'unknown date')}",
+                }
+            else:
+                return {"skip": False, "status": current_status, "reason": f"Topic needs generation (current status: {current_status})"}
+
+        except Exception as e:
+            logger.error(f"Error checking knowledge status: {e}")
+            # Default to generating if we can't read status
+            return {"skip": False, "status": "error", "reason": f"Status check failed: {e}"}
+
+    def _update_knowledge_status(self, topic: str, status: str, message: str = "") -> None:
+        """Update the knowledge generation status for the given topic."""
+        try:
+            from pathlib import Path
+            from datetime import datetime, UTC
+            import json
+
+            status_file = Path(self.knowledge_status_path)
+
+            # Load existing status data or create new
+            if status_file.exists():
+                with open(status_file) as f:
+                    status_data = json.load(f)
+            else:
+                status_data = {}
+                # Ensure parent directory exists
+                status_file.parent.mkdir(parents=True, exist_ok=True)
+
+            # Update topic status
+            status_data[topic] = {"status": status, "last_updated": datetime.now(UTC).isoformat(), "message": message}
+
+            # Save updated status
+            with open(status_file, "w") as f:
+                json.dump(status_data, f, indent=2)
+
+            logger.info(f"Updated knowledge status for '{topic}': {status}")
+
+        except Exception as e:
+            logger.error(f"Failed to update knowledge status: {e}")
 
 
 class ModifyTreeTool(BaseTool):

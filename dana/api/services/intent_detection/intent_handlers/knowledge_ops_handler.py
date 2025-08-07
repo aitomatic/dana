@@ -36,8 +36,10 @@ class KnowledgeOpsHandler(AbstractHandler):
                  domain_knowledge_path: str, 
                  llm: LLMResource | None = None,  
                  domain : str = "General",
-                 role : str = "Domain Expert"):
+                 role : str = "Domain Expert",
+                 knowledge_status_path: str | None = None):
         self.domain_knowledge_path = domain_knowledge_path
+        self.knowledge_status_path = knowledge_status_path
         self.domain = domain
         self.role = role
         self.llm = llm or LLMResource()
@@ -74,7 +76,7 @@ class KnowledgeOpsHandler(AbstractHandler):
         self.tools.update(AskApprovalTool().as_dict())
         
         # Generation tool (unified)
-        self.tools.update(GenerateKnowledgeTool(llm=self.llm).as_dict())
+        self.tools.update(GenerateKnowledgeTool(llm=self.llm, knowledge_status_path=self.knowledge_status_path).as_dict())
         
         # Tree management
         self.tools.update(ModifyTreeTool(tree_structure=self.tree_structure, domain_knowledge_path=self.domain_knowledge_path).as_dict())
