@@ -109,7 +109,7 @@ const OverviewTab: React.FC<{
         </div>
         <div className="flex flex-col gap-2 p-4 text-sm rounded-lg border border-gray-200 group">
           <div className="flex items-center text-sm text-gray-700">
-            <div className="text-gray-600 w-30">Agent name:</div>
+            <div className="text-gray-600 min-w-30">Agent name:</div>
             {isEditingName ? (
               <div className="flex items-center gap-2">
                 <Input
@@ -167,11 +167,11 @@ const OverviewTab: React.FC<{
             )}
           </div>
           <div className="flex items-center text-sm text-gray-700">
-            <div className="text-gray-600 w-30">Domain:</div>
+            <div className="text-gray-600 min-w-30">Domain:</div>
             <div className="font-medium text-gray-900">{agent?.config?.domain ?? '-'}</div>
           </div>
           <div className="flex items-start text-sm text-gray-700">
-            <div className="text-gray-600 w-30">Topics:</div>
+            <div className="text-gray-600 min-w-30">Topics:</div>
             <div className="capitalize font-medium text-gray-900">
               {(() => {
                 const oldSpecialties = agent?.config?.specialties || [];
@@ -184,7 +184,7 @@ const OverviewTab: React.FC<{
             </div>
           </div>
           <div className="flex items-start text-sm text-gray-700">
-            <div className="text-gray-600 w-30">Tasks:</div>
+            <div className="text-gray-600 min-w-30">Tasks:</div>
             <div className="capitalize font-medium text-gray-900">
               {(() => {
                 const oldSkills = agent?.config?.skills || [];
