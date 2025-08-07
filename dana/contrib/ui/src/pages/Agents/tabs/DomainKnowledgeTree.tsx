@@ -42,7 +42,7 @@ const animationStyles = `
     transform: scale(0.8) translateY(-10px);
   }
   
-  /* Edge animations - using ReactFlow's structure */
+  /* Edge animations - improved implementation */
   .react-flow__edge {
     transition: ${TRANSITION_ALL} !important;
   }
@@ -51,23 +51,32 @@ const animationStyles = `
     transition: ${TRANSITION_ALL} !important;
   }
   
-  /* Animate edges when they appear - only for new edges */
-  .react-flow__edge.edge-new {
+  /* Animate edges when they appear - using data attributes for better targeting */
+  .react-flow__edge[data-edge-new="true"],
+  .react-flow__edges g[data-edge-new="true"] {
     opacity: 0 !important;
-    animation: edgeAppear 1s cubic-bezier(.43,.08,.45,.97) forwards !important;
+    animation: edgeAppear 0.8s cubic-bezier(.43,.08,.45,.97) forwards !important;
   }
   
-  .react-flow__edge.edge-new .react-flow__edge-path {
+  .react-flow__edge[data-edge-new="true"] .react-flow__edge-path,
+  .react-flow__edges g[data-edge-new="true"] .react-flow__edge-path {
     stroke-dasharray: 1000 !important;
     stroke-dashoffset: 1000 !important;
-    animation: edgePathAppear 1s cubic-bezier(.43,.08,.45,.97) forwards !important;
+    animation: edgePathAppear 0.8s cubic-bezier(.43,.08,.45,.97) forwards !important;
   }
   
-  /* Also target edge paths directly */
-  .react-flow__edge-path.edge-new {
+  /* Also target edge paths directly with data attribute */
+  .react-flow__edge-path[data-edge-new="true"] {
     stroke-dasharray: 1000 !important;
     stroke-dashoffset: 1000 !important;
-    animation: edgePathAppear 1s cubic-bezier(.43,.08,.45,.97) forwards !important;
+    animation: edgePathAppear 0.8s cubic-bezier(.43,.08,.45,.97) forwards !important;
+  }
+  
+  /* Additional targeting for ReactFlow's edge structure */
+  .react-flow__edges g[data-edge-new="true"] .react-flow__edge-path {
+    stroke-dasharray: 1000 !important;
+    stroke-dashoffset: 1000 !important;
+    animation: edgePathAppear 0.8s cubic-bezier(.43,.08,.45,.97) forwards !important;
   }
   
   /* Keyframe animations for edges */
@@ -171,6 +180,13 @@ const initialEdges: Edge[] = [
     target: '2',
     markerEnd: { type: MarkerType.ArrowClosed },
     type: 'default',
+    style: {
+      stroke: '#6b7280',
+      strokeWidth: 1,
+      transition: TRANSITION_ALL,
+      opacity: 1,
+    },
+    animated: false,
   },
   {
     id: 'e2-3',
@@ -178,6 +194,13 @@ const initialEdges: Edge[] = [
     target: '3',
     markerEnd: { type: MarkerType.ArrowClosed },
     type: 'default',
+    style: {
+      stroke: '#6b7280',
+      strokeWidth: 1,
+      transition: TRANSITION_ALL,
+      opacity: 1,
+    },
+    animated: false,
   },
   {
     id: 'e3-4',
@@ -185,6 +208,13 @@ const initialEdges: Edge[] = [
     target: '4',
     markerEnd: { type: MarkerType.ArrowClosed },
     type: 'default',
+    style: {
+      stroke: '#6b7280',
+      strokeWidth: 1,
+      transition: TRANSITION_ALL,
+      opacity: 1,
+    },
+    animated: false,
   },
   {
     id: 'e1-5',
@@ -192,6 +222,13 @@ const initialEdges: Edge[] = [
     target: '5',
     markerEnd: { type: MarkerType.ArrowClosed },
     type: 'default',
+    style: {
+      stroke: '#6b7280',
+      strokeWidth: 1,
+      transition: TRANSITION_ALL,
+      opacity: 1,
+    },
+    animated: false,
   },
   {
     id: 'e1-6',
@@ -199,6 +236,13 @@ const initialEdges: Edge[] = [
     target: '6',
     markerEnd: { type: MarkerType.ArrowClosed },
     type: 'default',
+    style: {
+      stroke: '#6b7280',
+      strokeWidth: 1,
+      transition: TRANSITION_ALL,
+      opacity: 1,
+    },
+    animated: false,
   },
   {
     id: 'e1-7',
@@ -206,6 +250,13 @@ const initialEdges: Edge[] = [
     target: '7',
     markerEnd: { type: MarkerType.ArrowClosed },
     type: 'default',
+    style: {
+      stroke: '#6b7280',
+      strokeWidth: 1,
+      transition: TRANSITION_ALL,
+      opacity: 1,
+    },
+    animated: false,
   },
 ];
 
@@ -348,85 +399,84 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       const newEdgeIds = [...currentEdgeIds].filter((id) => !previousEdgeIds.has(id));
 
       if (newEdgeIds.length > 0) {
-        // Add animation class to new edges with a longer delay to ensure ReactFlow has rendered them
+        // Add animation to new edges with a delay to ensure ReactFlow has rendered them
         setTimeout(() => {
           newEdgeIds.forEach((edgeId) => {
-            // ReactFlow edges are rendered as SVG elements with specific structure
-            // Try multiple approaches to find the edge element
+            // Simplified edge detection - look for the edge element directly
+            let edgeElement: Element | null = null;
 
-            // Approach 1: Look for edge by data-id attribute
-            let edgeElement = document.querySelector(`[data-id="${edgeId}"]`) as HTMLElement;
-
-            // Approach 2: Look for edge in ReactFlow's edge container
-            if (!edgeElement) {
-              const edgeContainer = document.querySelector('.react-flow__edges');
-              if (edgeContainer) {
-                const edgeElements = edgeContainer.querySelectorAll('.react-flow__edge');
-                for (const edge of edgeElements) {
-                  const id =
-                    edge.getAttribute('data-id') || edge.getAttribute('data-testid') || edge.id;
-                  if (id === edgeId) {
-                    edgeElement = edge as HTMLElement;
-                    break;
-                  }
-                }
-              }
+            // Strategy 1: Look for edge by data-id attribute in the edges container
+            const edgeContainer = document.querySelector('.react-flow__edges');
+            if (edgeContainer) {
+              // ReactFlow renders edges as SVG g elements with data-id
+              edgeElement = edgeContainer.querySelector(`g[data-id="${edgeId}"]`);
             }
 
-            // Approach 3: Look for edge by source and target attributes
+            // Strategy 2: If not found, try looking for any element with the edge ID
             if (!edgeElement) {
-              const edgeData = edges.find((e) => e.id === edgeId);
-              if (edgeData) {
-                const edgeElements = document.querySelectorAll('.react-flow__edge');
-                for (const edgeEl of edgeElements) {
-                  const source = edgeEl.getAttribute('data-source');
-                  const target = edgeEl.getAttribute('data-target');
-                  if (source === edgeData.source && target === edgeData.target) {
-                    edgeElement = edgeEl as HTMLElement;
-                    break;
-                  }
-                }
-              }
+              edgeElement = document.querySelector(`[data-id="${edgeId}"]`);
             }
 
-            // Approach 4: Look for edge by checking all edge elements and their children
-            if (!edgeElement) {
-              const allEdgeElements = document.querySelectorAll('.react-flow__edge');
+            // Strategy 3: Look for edge by checking all g elements in the edges container
+            if (!edgeElement && edgeContainer) {
+              const allEdgeElements = edgeContainer.querySelectorAll('g');
               for (const edgeEl of allEdgeElements) {
-                // Check if any child element contains the edge ID
-                const children = edgeEl.querySelectorAll('*');
-                for (const child of children) {
-                  const childId =
-                    child.getAttribute('data-id') || child.getAttribute('data-testid') || child.id;
-                  if (childId === edgeId) {
-                    edgeElement = edgeEl as HTMLElement;
-                    break;
-                  }
+                const id = edgeEl.getAttribute('data-id');
+                if (id === edgeId) {
+                  edgeElement = edgeEl;
+                  break;
                 }
-                if (edgeElement) break;
               }
             }
 
+            // If edge element is found, add animation
             if (edgeElement) {
-              // Add animation class to the edge
-              edgeElement.classList.add('edge-new');
+              // Add data attribute for animation
+              edgeElement.setAttribute('data-edge-new', 'true');
 
-              // Also add animation class to the edge path if it exists
-              const edgePath = edgeElement.querySelector('.react-flow__edge-path');
+              // Also add data attribute to the edge path if it exists
+              const edgePath = edgeElement.querySelector('.react-flow__edge-path') as Element;
               if (edgePath) {
-                edgePath.classList.add('edge-new');
+                edgePath.setAttribute('data-edge-new', 'true');
               }
 
-              // Remove animation class after animation completes
+              // Remove animation attributes after animation completes
               setTimeout(() => {
-                edgeElement.classList.remove('edge-new');
+                edgeElement?.removeAttribute('data-edge-new');
                 if (edgePath) {
-                  edgePath.classList.remove('edge-new');
+                  edgePath.removeAttribute('data-edge-new');
                 }
-              }, 1000);
+              }, 800); // Match the animation duration
+            } else {
+              // Retry mechanism - if edge not found initially, try again after a short delay
+              setTimeout(() => {
+                const retryEdgeElement =
+                  document.querySelector(`[data-id="${edgeId}"]`) ||
+                  document
+                    .querySelector('.react-flow__edges')
+                    ?.querySelector(`g[data-id="${edgeId}"]`);
+
+                if (retryEdgeElement) {
+                  retryEdgeElement.setAttribute('data-edge-new', 'true');
+
+                  const retryEdgePath = retryEdgeElement.querySelector(
+                    '.react-flow__edge-path',
+                  ) as Element;
+                  if (retryEdgePath) {
+                    retryEdgePath.setAttribute('data-edge-new', 'true');
+                  }
+
+                  setTimeout(() => {
+                    retryEdgeElement.removeAttribute('data-edge-new');
+                    if (retryEdgePath) {
+                      retryEdgePath.removeAttribute('data-edge-new');
+                    }
+                  }, 800);
+                }
+              }, 200);
             }
           });
-        }, 300); // Increased delay to ensure ReactFlow has rendered the edges
+        }, 150); // Slightly increased delay for better reliability
       }
 
       // Update previous edges
@@ -647,8 +697,13 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
               stroke: '#6b7280',
               strokeWidth: 1,
               transition: TRANSITION_ALL,
+              opacity: 1, // Ensure opacity is set for animations
             },
             animated: false, // We'll handle animation with CSS
+            data: {
+              // Add data for animation tracking
+              isNew: true,
+            },
           });
         }
       }
