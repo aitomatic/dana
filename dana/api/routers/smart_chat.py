@@ -29,7 +29,7 @@ from dana.api.services.llm_tree_manager import get_llm_tree_manager, LLMTreeMana
 from dana.api.services.knowledge_status_manager import KnowledgeStatusManager
 from dana.api.routers.agents import clear_agent_cache
 import os
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 import json
 
 logger = logging.getLogger(__name__)
@@ -44,9 +44,9 @@ def _get_all_topics_from_tree(tree) -> list[str]:
     """Extract all topic names from a domain knowledge tree."""
     if not tree or not hasattr(tree, "root") or not tree.root:
         return []
-    
+
     topics = []
-    
+
     def traverse(node):
         if not node:
             return
@@ -55,12 +55,9 @@ def _get_all_topics_from_tree(tree) -> list[str]:
         if hasattr(node, "children") and node.children:
             for child in node.children:
                 traverse(child)
-    
+
     traverse(tree.root)
     return topics
-
-
-
 
 
 @router.post("/{agent_id}/smart-chat")
@@ -88,11 +85,8 @@ async def smart_chat(
     # Concurrency protection: Acquire lock for this agent
     agent_lock = _agent_locks[agent_id]
     if not agent_lock.acquire(blocking=False):
-        raise HTTPException(
-            status_code=429, 
-            detail="Another operation is in progress for this agent. Please try again."
-        )
-    
+        raise HTTPException(status_code=429, detail="Another operation is in progress for this agent. Please try again.")
+
     try:
         user_message = request.get("message", "")
         conversation_id = request.get("conversation_id")
@@ -108,18 +102,14 @@ async def smart_chat(
             raise HTTPException(status_code=404, detail="Agent not found")
 
         # --- Save user message to AgentChatHistory ---
-        user_history = AgentChatHistory(
-            agent_id=agent_id, sender="user", text=user_message, type="smart_chat"
-        )
+        user_history = AgentChatHistory(agent_id=agent_id, sender="user", text=user_message, type="smart_chat")
         db.add(user_history)
         db.commit()
         db.refresh(user_history)
         # --- End save user message ---
 
         # Get current domain knowledge for context
-        current_domain_tree = await domain_service.get_agent_domain_knowledge(
-            agent_id, db
-        )
+        current_domain_tree = await domain_service.get_agent_domain_knowledge(agent_id, db)
 
         # Get recent chat history for context (last 10 messages)
         recent_chat_history = await _get_recent_chat_history(agent_id, db, limit=10)
@@ -151,9 +141,7 @@ async def smart_chat(
             ],
         )
 
-        logger.info(
-            f"Processing {len(all_intents)} intents: {[i.get('intent') for i in all_intents]}"
-        )
+        logger.info(f"Processing {len(all_intents)} intents: {[i.get('intent') for i in all_intents]}")
 
         # Step 2: Process all detected intents
         processing_results = []
@@ -224,9 +212,7 @@ async def smart_chat(
             db.refresh(agent_history)
         # --- End save agent response ---
 
-        logger.info(
-            f"Smart chat completed for agent {agent_id}: intent={detected_intent}"
-        )
+        logger.info(f"Smart chat completed for agent {agent_id}: intent={detected_intent}")
 
         return response
 
@@ -240,9 +226,7 @@ async def smart_chat(
         agent_lock.release()
 
 
-async def _get_recent_chat_history(
-    agent_id: int, db: Session, limit: int = 10
-) -> list[MessageData]:
+async def _get_recent_chat_history(agent_id: int, db: Session, limit: int = 10) -> list[MessageData]:
     """Get recent chat history for an agent."""
     try:
         from dana.api.core.models import AgentChatHistory
@@ -297,7 +281,7 @@ async def _process_based_on_intent(
             chat_history,
             db,
         )
-    
+
     elif intent == "remove_information":
         return await _process_remove_information_intent(
             entities,
@@ -307,22 +291,14 @@ async def _process_based_on_intent(
             current_domain_tree,
             db,
         )
-    
+
     elif intent == "instruct":
         return await _process_instruct_intent(
-            entities, 
-            user_message, 
-            agent,
-            domain_service,
-            llm_tree_manager,
-            current_domain_tree,
-            chat_history,
-            db)
+            entities, user_message, agent, domain_service, llm_tree_manager, current_domain_tree, chat_history, db
+        )
 
     elif intent == "refresh_domain_knowledge":
-        return await _process_refresh_knowledge_intent(
-            user_message, agent.id, domain_service, db
-        )
+        return await _process_refresh_knowledge_intent(user_message, agent.id, domain_service, db)
 
     elif intent == "update_agent_properties":
         return await _process_update_agent_intent(entities, user_message, agent, db)
@@ -345,7 +321,7 @@ async def _process_add_information_intent(
 ) -> dict[str, Any]:
     """Process add_information intent using LLM-powered tree management."""
 
-    topics = entities.get("topics")
+    topics = entities.get("knowledge_path")
     parent = entities.get("parent")
     details = entities.get("details")
 
@@ -368,33 +344,31 @@ async def _process_add_information_intent(
         existing_topics = _get_all_topics_from_tree(current_domain_tree)
         duplicate_topics = []
         new_topics = []
-        
+
         for topic in topics:
             # Advanced normalization for robust topic matching
             def normalize_topic(t: str) -> str:
                 """Normalize topic for robust comparison."""
                 import re
+
                 # Convert to lowercase, strip whitespace
                 normalized = t.lower().strip()
                 # Replace multiple spaces with single space
-                normalized = re.sub(r'\s+', ' ', normalized)
+                normalized = re.sub(r"\s+", " ", normalized)
                 # Remove special characters but keep alphanumeric and spaces
-                normalized = re.sub(r'[^\w\s]', '', normalized)
+                normalized = re.sub(r"[^\w\s]", "", normalized)
                 return normalized
-            
+
             normalized_topic = normalize_topic(topic)
-            
+
             # Check if topic already exists (robust matching)
-            is_duplicate = any(
-                normalize_topic(existing) == normalized_topic 
-                for existing in existing_topics
-            )
-            
+            is_duplicate = any(normalize_topic(existing) == normalized_topic for existing in existing_topics)
+
             if is_duplicate:
                 duplicate_topics.append(topic)
             else:
                 new_topics.append(topic)
-        
+
         # If all topics are duplicates, inform user
         if duplicate_topics and not new_topics:
             duplicate_list = ", ".join(duplicate_topics)
@@ -405,7 +379,7 @@ async def _process_add_information_intent(
                 "updates_applied": [],
                 "duplicate_topics": duplicate_topics,
             }
-        
+
         # If some topics are duplicates, proceed with new ones and inform about duplicates
         if duplicate_topics:
             duplicate_list = ", ".join(duplicate_topics)
@@ -437,37 +411,33 @@ async def _process_add_information_intent(
             print(f"💾 Save result: {save_success}")
 
             if save_success:
-                # Save version with proper change tracking  
+                # Save version with proper change tracking
                 try:
                     from dana.api.services.domain_knowledge_version_service import get_domain_knowledge_version_service
+
                     version_service = get_domain_knowledge_version_service()
                     version_service.save_version(
-                        agent_id=agent.id,
-                        tree=update_response.updated_tree,
-                        change_summary=f"Added {', '.join(topics)}",
-                        change_type="add"
+                        agent_id=agent.id, tree=update_response.updated_tree, change_summary=f"Added {', '.join(topics)}", change_type="add"
                     )
                 except Exception as e:
                     print(f"⚠️ Warning: Could not save version: {e}")
-                
+
                 # Get folder path for cache clearing and knowledge status management
                 folder_path = agent.config.get("folder_path") if agent.config else None
                 if not folder_path:
                     folder_path = os.path.join("agents", f"agent_{agent.id}")
-                
+
                 # Always clear cache when adding information to ensure consistency
                 clear_agent_cache(folder_path)
                 logger.info(f"Cleared RAG cache for agent {agent.id} after adding topics")
-                
+
                 # --- Trigger knowledge generation for new/pending topics ---
                 try:
                     knows_folder = os.path.join(folder_path, "knows")
                     os.makedirs(knows_folder, exist_ok=True)
                     status_path = os.path.join(knows_folder, "knowledge_status.json")
-                    status_manager = KnowledgeStatusManager(
-                        status_path, agent_id=str(agent.id)
-                    )
-                    now_str = datetime.now(timezone.utc).isoformat() + "Z"
+                    status_manager = KnowledgeStatusManager(status_path, agent_id=str(agent.id))
+                    now_str = datetime.now(UTC).isoformat() + "Z"
                     # Get the latest tree
                     leaf_paths = []
 
@@ -477,39 +447,35 @@ async def _process_add_information_intent(
                             path = path_so_far
                         else:
                             path = path_so_far + [node.topic]
-                        
+
                         if not getattr(node, "children", []):
                             leaf_paths.append((path, node))
                         for child in getattr(node, "children", []):
                             collect_leaf_paths(child, path, is_root=False)
 
                     collect_leaf_paths(update_response.updated_tree.root, [], is_root=True)
-                    
+
                     # Load existing status data and preserve all existing entries
                     existing_status_data = status_manager.load()
-                    
+
                     # Create a set of new leaf paths to identify what's actually new
                     new_leaf_paths = set()
-                    for path, leaf_node in leaf_paths:
+                    for path, _ in leaf_paths:
                         area_name = " - ".join(path)
                         new_leaf_paths.add(area_name)
-                    
+
                     # Find existing paths to identify what's already known
                     existing_paths = set(entry["path"] for entry in existing_status_data["topics"])
-                    
+
                     # Only add truly new topics, don't modify existing ones
-                    for path, leaf_node in leaf_paths:
+                    for path, _ in leaf_paths:
                         area_name = " - ".join(path)
-                        
+
                         # Only add topics that don't already exist in the status file
                         if area_name not in existing_paths:
-                            safe_area = (
-                                area_name.replace("/", "_")
-                                .replace(" ", "_")
-                                .replace("-", "_")
-                            )
+                            safe_area = area_name.replace("/", "_").replace(" ", "_").replace("-", "_")
                             file_name = f"{safe_area}.json"
-                            
+
                             # Add only new topics with pending status
                             status_manager.add_or_update_topic(
                                 path=area_name,
@@ -524,27 +490,23 @@ async def _process_add_information_intent(
                             status_manager.remove_topic(entry["path"])
                     # Only queue topics with status 'pending' or 'failed'
                     pending = status_manager.get_pending_or_failed()
-                    print(
-                        f"[smart-chat] {len(pending)} topics to generate (pending or failed)"
-                    )
+                    print(f"[smart-chat] {len(pending)} topics to generate (pending or failed)")
                 except Exception as e:
                     print(f"[smart-chat] Error triggering knowledge generation: {e}")
                 # --- End trigger ---
-                
+
                 # Prepare response message considering duplicates
                 if duplicate_topics:
                     duplicate_list = ", ".join(duplicate_topics)
                     response_message = f"Great! I've added {topics} to my knowledge. Note: I already knew about {duplicate_list}. What else would you like me to learn?"
                 else:
                     response_message = f"Perfect! I've intelligently organized my knowledge to include {topics}. {update_response.changes_summary}. What would you like to know about this topic?"
-                
+
                 return {
                     "processor": "add_information",
                     "success": True,
                     "agent_response": response_message,
-                    "updates_applied": [
-                        update_response.changes_summary or f"Added {topics}"
-                    ],
+                    "updates_applied": [update_response.changes_summary or f"Added {topics}"],
                     "updated_domain_tree": update_response.updated_tree.model_dump(),
                     "duplicate_topics": duplicate_topics if duplicate_topics else [],
                 }
@@ -559,8 +521,7 @@ async def _process_add_information_intent(
             return {
                 "processor": "add_information",
                 "success": False,
-                "agent_response": update_response.error
-                or "I couldn't update my knowledge tree.",
+                "agent_response": update_response.error or "I couldn't update my knowledge tree.",
                 "updates_applied": [],
             }
     except Exception as e:
@@ -582,13 +543,13 @@ async def _process_remove_information_intent(
     db: Session,
 ) -> dict[str, Any]:
     """Process remove_information intent to remove topics from knowledge tree."""
-    
-    topics = entities.get("topics", [])
-    
+
+    topics = entities.get("knowledge_path", [])
+
     print("🗑️ Processing remove_information intent:")
     print(f"  - Topics to remove: {topics}")
     print(f"  - Agent: {agent.name}")
-    
+
     if not topics:
         return {
             "processor": "remove_information",
@@ -596,7 +557,7 @@ async def _process_remove_information_intent(
             "agent_response": "I couldn't identify which topic you want me to remove. Could you be more specific?",
             "updates_applied": [],
         }
-    
+
     if not current_domain_tree:
         return {
             "processor": "remove_information",
@@ -604,7 +565,7 @@ async def _process_remove_information_intent(
             "agent_response": "I don't have any knowledge topics to remove yet.",
             "updates_applied": [],
         }
-    
+
     try:
         # Extract only the target topics to remove, not the full path
         # If topics is a path, we only want to remove the last (leaf) topic
@@ -616,7 +577,7 @@ async def _process_remove_information_intent(
             for topic in topics:
                 if topic.lower() not in ["root", "untitled", "domain knowledge"]:
                     non_root_topics.append(topic)
-            
+
             # Smart detection: if the user mentioned a specific nested topic, remove that
             # Otherwise, remove the last topic in the path
             if len(non_root_topics) > 1:
@@ -627,7 +588,7 @@ async def _process_remove_information_intent(
                 target_topics = non_root_topics if non_root_topics else topics
         else:
             target_topics = topics
-        
+
         # Critical validation: Prevent root node removal
         protected_topics = {"root", "untitled", "domain knowledge", ""}
         filtered_targets = []
@@ -636,51 +597,52 @@ async def _process_remove_information_intent(
                 filtered_targets.append(topic)
             else:
                 print(f"⚠️ Blocked attempt to remove protected topic: {topic}")
-        
+
         if not filtered_targets and target_topics:
             return {
-                "processor": "remove_information", 
+                "processor": "remove_information",
                 "success": False,
                 "agent_response": "I can't remove system topics like 'root' or 'domain knowledge'. Please specify a specific knowledge topic to remove.",
                 "updates_applied": [],
             }
-        
+
         target_topics = filtered_targets
-        
+
         print(f"🎯 Target topics to remove (filtered): {target_topics}")
-        
+
         # Find topics that exist in the tree
         existing_topics = _get_all_topics_from_tree(current_domain_tree)
         topics_to_remove = []
         topics_not_found = []
-        
+
         for topic in target_topics:
             # Advanced normalization for robust topic matching
             def normalize_topic(t: str) -> str:
                 """Normalize topic for robust comparison."""
                 import re
+
                 # Convert to lowercase, strip whitespace
                 normalized = t.lower().strip()
                 # Replace multiple spaces with single space
-                normalized = re.sub(r'\s+', ' ', normalized)
+                normalized = re.sub(r"\s+", " ", normalized)
                 # Remove special characters but keep alphanumeric and spaces
-                normalized = re.sub(r'[^\w\s]', '', normalized)
+                normalized = re.sub(r"[^\w\s]", "", normalized)
                 return normalized
-            
+
             normalized_topic = normalize_topic(topic)
-            
+
             # Find matching existing topic with robust matching
             matching_topic = None
             for existing in existing_topics:
                 if normalize_topic(existing) == normalized_topic:
                     matching_topic = existing
                     break
-            
+
             if matching_topic:
                 topics_to_remove.append(matching_topic)
             else:
                 topics_not_found.append(topic)
-        
+
         # If no topics found, inform user
         if not topics_to_remove:
             not_found_list = ", ".join(topics_not_found)
@@ -691,7 +653,7 @@ async def _process_remove_information_intent(
                 "updates_applied": [],
                 "topics_not_found": topics_not_found,
             }
-        
+
         # Use LLM tree manager to remove topics intelligently
         remove_response = await llm_tree_manager.remove_topic_from_knowledge(
             current_tree=current_domain_tree,
@@ -699,124 +661,113 @@ async def _process_remove_information_intent(
             agent_name=agent.name,
             agent_description=agent.description or "",
         )
-        
+
         print(f"🗑️ LLM tree manager remove response: success={remove_response.success}")
         if remove_response.error:
             print(f"❌ LLM tree manager error: {remove_response.error}")
-        
+
         if remove_response.success and remove_response.updated_tree:
             # Save the updated tree
             save_success = await domain_service.save_agent_domain_knowledge(
                 agent_id=agent.id, tree=remove_response.updated_tree, db=db, agent=agent
             )
-            
+
             print(f"💾 Save result: {save_success}")
-            
+
             if save_success:
                 # Save version with proper change tracking
                 try:
                     from dana.api.services.domain_knowledge_version_service import get_domain_knowledge_version_service
+
                     version_service = get_domain_knowledge_version_service()
                     version_service.save_version(
                         agent_id=agent.id,
                         tree=remove_response.updated_tree,
                         change_summary=f"Removed {', '.join(topics_to_remove)}",
-                        change_type="remove"
+                        change_type="remove",
                     )
                 except Exception as e:
                     print(f"⚠️ Warning: Could not save version: {e}")
-                
+
                 # Get folder path for cache clearing and knowledge status management
                 folder_path = agent.config.get("folder_path") if agent.config else None
                 if not folder_path:
                     folder_path = os.path.join("agents", f"agent_{agent.id}")
-                
+
                 # Always clear cache when removing information to ensure consistency
                 clear_agent_cache(folder_path)
                 logger.info(f"Cleared RAG cache for agent {agent.id} after removing topics")
-                
+
                 # Remove topics from knowledge status manager using UUIDs
                 try:
                     knows_folder = os.path.join(folder_path, "knows")
                     if os.path.exists(knows_folder):
                         status_path = os.path.join(knows_folder, "knowledge_status.json")
-                        status_manager = KnowledgeStatusManager(
-                            status_path, agent_id=str(agent.id)
-                        )
-                        
+                        status_manager = KnowledgeStatusManager(status_path, agent_id=str(agent.id))
+
                         # Collect UUIDs of topics to remove from the updated tree
                         topics_uuids_to_remove = []
-                        
+
                         def collect_removed_topic_uuids(node, target_topics):
                             """Collect UUIDs of topics that match removal criteria"""
-                            topic_name = getattr(node, 'topic', '')
-                            node_id = getattr(node, 'id', None)
-                            
+                            topic_name = getattr(node, "topic", "")
+                            node_id = getattr(node, "id", None)
+
                             # Check if this topic matches any target for removal
                             for target in target_topics:
                                 if target.lower() in topic_name.lower() and node_id:
                                     topics_uuids_to_remove.append(node_id)
                                     print(f"🗑️ Marked UUID {node_id} for removal (topic: {topic_name})")
-                            
+
                             # Recursively check children
-                            for child in getattr(node, 'children', []):
+                            for child in getattr(node, "children", []):
                                 collect_removed_topic_uuids(child, target_topics)
-                        
+
                         # Find UUIDs before removal by comparing original and updated trees
                         if current_domain_tree and remove_response.updated_tree:
                             # Find topics that exist in original but not in updated tree
                             original_uuids = set()
                             updated_uuids = set()
-                            
+
                             def collect_all_uuids(node, uuid_set):
-                                node_id = getattr(node, 'id', None)
+                                node_id = getattr(node, "id", None)
                                 if node_id:
                                     uuid_set.add(node_id)
-                                for child in getattr(node, 'children', []):
+                                for child in getattr(node, "children", []):
                                     collect_all_uuids(child, uuid_set)
-                            
+
                             collect_all_uuids(current_domain_tree.root, original_uuids)
                             collect_all_uuids(remove_response.updated_tree.root, updated_uuids)
-                            
+
                             topics_uuids_to_remove = list(original_uuids - updated_uuids)
                             print(f"🗑️ Found {len(topics_uuids_to_remove)} UUIDs to remove from status")
-                        
+
                         # Remove status entries by UUIDs
                         if topics_uuids_to_remove:
                             status_manager.remove_topics_by_uuids(topics_uuids_to_remove)
                             print(f"🗑️ Removed {len(topics_uuids_to_remove)} topics from knowledge status by UUID")
-                        
+
                         # Remove ALL knowledge files that contain the removed topics in their path
                         for topic in topics_to_remove:
-                            # Normalize topic name for file matching
-                            safe_topic = (
-                                topic.replace("/", "_")
-                                .replace(" ", "_")
-                                .replace("-", "_")
-                                .replace("(", "_")
-                                .replace(")", "_")
-                                .replace(",", "_")
-                            )
-                            
                             # Find and remove files that have the topic as a specific path component
                             if os.path.exists(knows_folder):
                                 for filename in os.listdir(knows_folder):
-                                    if filename.endswith('.json') and filename != 'knowledge_status.json':
+                                    if filename.endswith(".json") and filename != "knowledge_status.json":
                                         # Remove .json extension for pattern matching
                                         filename_without_ext = filename[:-5]  # Remove .json
-                                        
+
                                         # Split filename into path components
-                                        path_components = filename_without_ext.split('___')
-                                        
+                                        path_components = filename_without_ext.split("___")
+
                                         # Check if the removed topic is an exact match in the path
                                         topic_normalized = topic.replace(" ", "_")
                                         should_remove = False
-                                        
+
                                         for component in path_components:
                                             if component.lower() == topic_normalized.lower():
                                                 should_remove = True
                                                 break
-                                        
+
                                         if should_remove:
                                             file_path = os.path.join(knows_folder, filename)
                                             try:
@@ -824,10 +775,10 @@ async def _process_remove_information_intent(
                                                 print(f"🗑️ Removed knowledge file: {filename}")
                                             except Exception as file_error:
                                                 print(f"⚠️ Warning: Could not remove file {filename}: {file_error}")
-                                
+
                 except Exception as e:
                     print(f"⚠️ Warning: Error cleaning up knowledge files: {e}")
-                
+
                 # Prepare response message
                 removed_list = ", ".join(topics_to_remove)
                 if topics_not_found:
@@ -835,14 +786,12 @@ async def _process_remove_information_intent(
                     response_message = f"I've removed {removed_list} from my knowledge. Note: I didn't have knowledge about {not_found_list}. What else would you like me to learn about?"
                 else:
                     response_message = f"Perfect! I've removed {removed_list} from my knowledge base. {remove_response.changes_summary}. What new topic would you like me to learn?"
-                
+
                 return {
                     "processor": "remove_information",
                     "success": True,
                     "agent_response": response_message,
-                    "updates_applied": [
-                        remove_response.changes_summary or f"Removed {removed_list}"
-                    ],
+                    "updates_applied": [remove_response.changes_summary or f"Removed {removed_list}"],
                     "updated_domain_tree": remove_response.updated_tree.model_dump(),
                     "topics_removed": topics_to_remove,
                     "topics_not_found": topics_not_found if topics_not_found else [],
@@ -879,9 +828,7 @@ async def _process_refresh_knowledge_intent(
 ) -> dict[str, Any]:
     """Process refresh_domain_knowledge intent - focused on restructuring knowledge tree."""
 
-    refresh_response = await domain_service.refresh_domain_knowledge(
-        agent_id=agent_id, context=user_message, db=db
-    )
+    refresh_response = await domain_service.refresh_domain_knowledge(agent_id=agent_id, context=user_message, db=db)
 
     return {
         "processor": "refresh_knowledge",
@@ -889,83 +836,70 @@ async def _process_refresh_knowledge_intent(
         "agent_response": "I've reorganized and refreshed my knowledge structure to be more efficient and comprehensive."
         if refresh_response.success
         else "I had trouble refreshing my knowledge structure. Please try again.",
-        "updates_applied": [refresh_response.changes_summary]
-        if refresh_response.changes_summary
-        else [],
-        "updated_domain_tree": refresh_response.updated_tree.model_dump()
-        if refresh_response.updated_tree
-        else None,
+        "updates_applied": [refresh_response.changes_summary] if refresh_response.changes_summary else [],
+        "updated_domain_tree": refresh_response.updated_tree.model_dump() if refresh_response.updated_tree else None,
     }
 
 
-async def _process_update_agent_intent(
-    entities: dict[str, Any], user_message: str, agent: Agent, db: Session
-) -> dict[str, Any]:
+async def _process_update_agent_intent(entities: dict[str, Any], user_message: str, agent: Agent, db: Session) -> dict[str, Any]:
     updated_fields = []
     if "name" in entities and entities["name"]:
         agent.name = entities["name"].strip()
         updated_fields.append("name")
-    if "role" in entities and entities["role"]:
-        agent.description = entities["role"].strip()
-        updated_fields.append("role")
-    # Save specialties and skills to config
+    if "domain" in entities and entities["domain"]:
+        agent.description = entities["domain"].strip()
+        updated_fields.append("domain")
+    # Save topics and tasks to config
     # Create a new dict to ensure SQLAlchemy detects the change
     config = dict(agent.config) if agent.config else {}
 
-    # Handle specialties - accumulate instead of overwrite
-    if "specialties" in entities and entities["specialties"]:
-        new_specialties = entities["specialties"]
-        if isinstance(new_specialties, str):
+    # Handle topics - accumulate instead of overwrite
+    if "topics" in entities and entities["topics"]:
+        new_topics = entities["topics"]
+        if isinstance(new_topics, str):
             # Split comma-separated string into list
-            new_specialties = [
-                s.strip() for s in new_specialties.split(",") if s.strip()
-            ]
-        elif not isinstance(new_specialties, list):
-            new_specialties = [str(new_specialties)]
+            new_topics = [s.strip() for s in new_topics.split(",") if s.strip()]
+        elif not isinstance(new_topics, list):
+            new_topics = [str(new_topics)]
 
-        # Get existing specialties and merge with new ones
-        existing_specialties = config.get("specialties", [])
-        if not isinstance(existing_specialties, list):
-            existing_specialties = []
+        # Get existing topics and merge with new ones
+        existing_topics = config.get("topics", [])
+        if not isinstance(existing_topics, list):
+            existing_topics = []
 
         # Combine and deduplicate (case-insensitive)
-        combined_specialties = existing_specialties.copy()
-        for new_spec in new_specialties:
-            # Check if this specialty already exists (case-insensitive)
-            if not any(
-                new_spec.lower() == existing.lower()
-                for existing in combined_specialties
-            ):
-                combined_specialties.append(new_spec)
+        combined_topics = existing_topics.copy()
+        for new_topic in new_topics:
+            # Check if this topic already exists (case-insensitive)
+            if not any(new_topic.lower() == existing.lower() for existing in combined_topics):
+                combined_topics.append(new_topic)
 
-        config["specialties"] = combined_specialties
-        updated_fields.append("specialties")
+        config["topics"] = combined_topics
+        updated_fields.append("topics")
 
-    # Handle skills - accumulate instead of overwrite
-    if "skills" in entities and entities["skills"]:
-        new_skills = entities["skills"]
-        if isinstance(new_skills, str):
+    # Handle tasks - accumulate instead of overwrite
+    if "tasks" in entities and entities["tasks"]:
+        new_tasks = entities["tasks"]
+        if isinstance(new_tasks, str):
             # Split comma-separated string into list
-            new_skills = [s.strip() for s in new_skills.split(",") if s.strip()]
-        elif not isinstance(new_skills, list):
-            new_skills = [str(new_skills)]
+            new_tasks = [s.strip() for s in new_tasks.split(",") if s.strip()]
+        elif not isinstance(new_tasks, list):
+            new_tasks = [str(new_tasks)]
 
-        # Get existing skills and merge with new ones
-        existing_skills = config.get("skills", [])
-        if not isinstance(existing_skills, list):
-            existing_skills = []
+        # Get existing tasks and merge with new ones
+        existing_tasks = config.get("tasks", [])
+        if not isinstance(existing_tasks, list):
+            existing_tasks = []
 
         # Combine and deduplicate (case-insensitive)
-        combined_skills = existing_skills.copy()
-        for new_skill in new_skills:
-            # Check if this skill already exists (case-insensitive)
-            if not any(
-                new_skill.lower() == existing.lower() for existing in combined_skills
-            ):
-                combined_skills.append(new_skill)
+        combined_tasks = existing_tasks.copy()
+        for new_task in new_tasks:
+            # Check if this task already exists (case-insensitive)
+            if not any(new_task.lower() == existing.lower() for existing in combined_tasks):
+                combined_tasks.append(new_task)
 
-        config["skills"] = combined_skills
-        updated_fields.append("skills")
+        config["tasks"] = combined_tasks
+        updated_fields.append("tasks")
     agent.config = config
     if updated_fields:
         db.commit()
@@ -985,9 +919,7 @@ async def _process_update_agent_intent(
         }
 
 
-async def _process_test_agent_intent(
-    entities: dict[str, Any], user_message: str, agent: Agent
-) -> dict[str, Any]:
+async def _process_test_agent_intent(entities: dict[str, Any], user_message: str, agent: Agent) -> dict[str, Any]:
     """Process test_agent intent - focused on testing agent capabilities."""
 
     # This is a placeholder for future agent testing functionality
@@ -1001,8 +933,8 @@ async def _process_test_agent_intent(
 
 
 async def _process_instruct_intent(
-    entities: dict[str, Any], 
-    user_message: str, 
+    entities: dict[str, Any],
+    user_message: str,
     agent: Agent,
     domain_service: DomainKnowledgeService,
     llm_tree_manager: LLMTreeManager,
@@ -1011,16 +943,16 @@ async def _process_instruct_intent(
     db: Session,
 ) -> dict[str, Any]:
     """Process instruct intent - focused on instructing the agent to do something."""
-    
+
     # Extract instruction text and topics from entities
     instruction_text = entities.get("instruction_text", "")
-    topics = entities.get("topics", [])
-    
+    topics = entities.get("knowledge_path", [])
+
     print("🎯 Processing instruct intent:")
     print(f"  - Instruction text: {instruction_text}")
     print(f"  - Topics: {topics}")
     print(f"  - Agent: {agent.name}")
-    
+
     if not instruction_text:
         return {
             "processor": "instruct",
@@ -1028,7 +960,7 @@ async def _process_instruct_intent(
             "agent_response": "I couldn't identify what instruction you want me to follow. Could you be more specific?",
             "updates_applied": [],
         }
-    
+
     try:
         # Step 1: Call _process_add_information_intent to create or update existing paths
         # This ensures the topic structure exists in the domain tree
@@ -1041,9 +973,9 @@ async def _process_instruct_intent(
             chat_history=chat_history,
             db=db,
         )
-        
+
         print(f"📝 Add information result: success={add_info_result.get('success')}")
-        
+
         if not add_info_result.get("success"):
             return {
                 "processor": "instruct",
@@ -1051,25 +983,18 @@ async def _process_instruct_intent(
                 "agent_response": f"I couldn't set up the knowledge structure for your instruction: {add_info_result.get('agent_response', 'Unknown error')}",
                 "updates_applied": [],
             }
-        
+
         # Step 2: Update the instruction text as answers_by_topics in JSON knowledge files
         instruction_update_success = await _update_instruction_as_knowledge(
-            agent=agent,
-            topics=topics,
-            instruction_text=instruction_text,
-            domain_service=domain_service,
-            db=db
+            agent=agent, topics=topics, instruction_text=instruction_text, domain_service=domain_service, db=db
         )
-        
+
         if instruction_update_success:
             return {
                 "processor": "instruct",
                 "success": True,
                 "agent_response": f"Perfect! I've processed your instruction and updated my knowledge accordingly. {instruction_text[:100]}...",
-                "updates_applied": [
-                    "Updated domain knowledge tree",
-                    "Added instruction to knowledge base"
-                ],
+                "updates_applied": ["Updated domain knowledge tree", "Added instruction to knowledge base"],
                 "updated_domain_tree": add_info_result.get("updated_domain_tree"),
             }
         else:
@@ -1080,7 +1005,7 @@ async def _process_instruct_intent(
                 "updates_applied": ["Updated domain knowledge tree"],
                 "updated_domain_tree": add_info_result.get("updated_domain_tree"),
             }
-            
+
     except Exception as e:
         print(f"❌ Exception in instruct processing: {e}")
         return {
@@ -1092,53 +1017,45 @@ async def _process_instruct_intent(
 
 
 async def _update_instruction_as_knowledge(
-    agent: Agent,
-    topics: list[str],
-    instruction_text: str,
-    domain_service: DomainKnowledgeService,
-    db: Session
+    agent: Agent, topics: list[str], instruction_text: str, domain_service: DomainKnowledgeService, db: Session
 ) -> bool:
     """Update the instruction text as answers_by_topics in JSON knowledge files."""
-    
+
     try:
         print(f"📚 Updating instruction as knowledge for topics: {topics}")
-        
+
         # Get agent's folder path
         folder_path = agent.config.get("folder_path") if agent.config else None
         if not folder_path:
             folder_path = os.path.join("agents", f"agent_{agent.id}")
-        
+
         knows_folder = os.path.join(folder_path, "knows")
         if not os.path.exists(knows_folder):
             print(f"❌ Knows folder does not exist: {knows_folder}")
             return False
-        
+
         # Get the latest domain tree to find the correct file paths
         # Use the existing domain_service parameter instead of reinitializing
         current_tree = await domain_service.get_agent_domain_knowledge(agent.id, db)
-        
+
         if not current_tree:
             print("❌ No domain tree found")
             return False
 
-        # This path must exist in the tree        
+        # This path must exist in the tree
         matching_leaves = [([topic for topic in topics if topic != "root"], None)]
-        for path, leaf_node in matching_leaves:
+        for path, _ in matching_leaves:
             area_name = " - ".join(path)
-            safe_area = (
-                area_name.replace("/", "_")
-                .replace(" ", "_")
-                .replace("-", "_")
-            )
+            safe_area = area_name.replace("/", "_").replace(" ", "_").replace("-", "_")
             file_name = f"{safe_area}.json"
             file_path = os.path.join(knows_folder, file_name)
-            
+
             print(f"📝 Updating file: {file_path}")
-            
+
             # Read existing knowledge file
             if os.path.exists(file_path):
                 try:
-                    with open(file_path, "r", encoding="utf-8") as f:
+                    with open(file_path, encoding="utf-8") as f:
                         knowledge_data = json.load(f)
                 except Exception as e:
                     print(f"❌ Error reading file {file_path}: {e}")
@@ -1153,9 +1070,9 @@ async def _update_instruction_as_knowledge(
                     "confidence_by_topics": {},
                     "iterations_used": 0,
                     "total_questions": 0,
-                    "answers_by_topics": {}
+                    "answers_by_topics": {},
                 }
-            
+
             # Add the instruction text as an answer
             knowledge_data.setdefault("user_instructions", [])
             knowledge_data["user_instructions"].append(instruction_text)
@@ -1167,17 +1084,16 @@ async def _update_instruction_as_knowledge(
             except Exception as e:
                 print(f"❌ Error writing file {file_path}: {e}")
         return True
-        
+
     except Exception as e:
         print(f"❌ Exception in _update_instruction_as_knowledge: {e}")
         import traceback
+
         print(f"📚 Full traceback: {traceback.format_exc()}")
         return False
 
 
-async def _process_general_query_intent(
-    user_message: str, agent: Agent
-) -> dict[str, Any]:
+async def _process_general_query_intent(user_message: str, agent: Agent) -> dict[str, Any]:
     """Process general_query intent - focused on answering questions."""
 
     return {
@@ -1222,9 +1138,7 @@ def _combine_processing_results(results: list[dict[str, Any]]) -> dict[str, Any]
     if combined_responses:
         combined_response = " ".join(combined_responses)
     else:
-        combined_response = (
-            f"I've processed multiple requests: {', '.join(combined_processors)}."
-        )
+        combined_response = f"I've processed multiple requests: {', '.join(combined_processors)}."
 
     return {
         "processor": "multi_intent",
@@ -1234,5 +1148,3 @@ def _combine_processing_results(results: list[dict[str, Any]]) -> dict[str, Any]
         "updates_applied": combined_updates,
         "updated_domain_tree": updated_domain_tree,
     }
-
-

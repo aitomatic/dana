@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import ReactFlow, { Controls, Position, MarkerType, useReactFlow } from 'reactflow';
+import ReactFlow, { Controls, Position, MarkerType } from 'reactflow';
 import type { Node as FlowNode, Edge, ReactFlowInstance } from 'reactflow';
 import dagre from 'dagre';
 import 'reactflow/dist/style.css';
@@ -1106,9 +1106,8 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         {/* Enhanced Control Bar */}
         {agentId && (
           <div
-            className={`absolute left-4 right-4 z-20 ${
-              initialLoading || loading ? 'top-16' : 'top-4'
-            }`}
+            className={`absolute left-4 right-4 z-20 ${initialLoading || loading ? 'top-16' : 'top-4'
+              }`}
           >
             <div className="flex gap-3 justify-between items-center">
               {/* Left side - Search and Tree Controls */}
@@ -1171,11 +1170,10 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                 <button
                   onClick={handleGenerateKnowledge}
                   disabled={generating || initialLoading || loading}
-                  className={`px-4 py-2 text-sm rounded-md border shadow-sm ${
-                    generating || initialLoading || loading
+                  className={`px-4 py-2 text-sm rounded-md border shadow-sm ${generating || initialLoading || loading
                       ? 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed opacity-75'
                       : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:text-gray-900 hover:shadow-md'
-                  }`}
+                    }`}
                   style={{ transition: TRANSITION_ALL }}
                 >
                   {generating ? (

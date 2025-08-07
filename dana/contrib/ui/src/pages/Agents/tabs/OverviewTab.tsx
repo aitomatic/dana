@@ -170,14 +170,30 @@ const OverviewTab: React.FC<{
             <div className="text-gray-600 w-30">Domain:</div>
             <div className="font-medium text-gray-900">{agent?.config?.domain ?? '-'}</div>
           </div>
-          <div className="flex items-center text-sm text-gray-700">
-            <div className="text-gray-600 w-30">Topic:</div>
-            <div className="font-medium text-gray-900">{agent?.config?.topic || '-'}</div>
+          <div className="flex items-start text-sm text-gray-700">
+            <div className="text-gray-600 w-30">Topics:</div>
+            <div className="capitalize font-medium text-gray-900">
+              {(() => {
+                const oldSpecialties = agent?.config?.specialties || [];
+                const newTopics = agent?.config?.topics || [];
+                const oldTopic = agent?.config?.topic ? [agent.config.topic] : [];
+                const allTopics = [...oldSpecialties, ...newTopics, ...oldTopic];
+                const uniqueTopics = Array.from(new Set(allTopics.filter(Boolean)));
+                return uniqueTopics.length > 0 ? uniqueTopics.join(', ') : '-';
+              })()}
+            </div>
           </div>
-          <div className="flex items-center text-sm text-gray-700">
+          <div className="flex items-start text-sm text-gray-700">
             <div className="text-gray-600 w-30">Tasks:</div>
-            <div className="font-medium text-gray-900">
-              {agent?.config?.task || agent?.config?.tasks || '-'}
+            <div className="capitalize font-medium text-gray-900">
+              {(() => {
+                const oldSkills = agent?.config?.skills || [];
+                const newTasks = agent?.config?.tasks || [];
+                const oldTask = agent?.config?.task ? [agent.config.task] : [];
+                const allTasks = [...oldSkills, ...newTasks, ...oldTask];
+                const uniqueTasks = Array.from(new Set(allTasks.filter(Boolean)));
+                return uniqueTasks.length > 0 ? uniqueTasks.join(', ') : '-';
+              })()}
             </div>
           </div>
         </div>
