@@ -1,24 +1,38 @@
 log_level("info")
 
 def embedding_field_constructor(row: dict) -> str:
-    return f'{row.get("description", "")} {row.get("name", "")} {row.get("category", "")}'
+    return str(row)
 
 def metadata_constructor(row: dict) -> dict:
     return {
-        "name": row.get("name", ""),
-        "category": row.get("category", ""),
+        "make": row.get("make", ""),
+        "fuel-type": row.get("fuel-type", ""),
+        "num-of-cylinders": row.get("num-of-cylinders", ""),
     }
 
 tabular_index_config = {    
-    "source": "tmp/test_csv/input_product_field.csv",
+    "source": "tmp/car/Automobile_data.csv",
     "force_reload": True,
-    "table_name": "others",
+    "table_name": "automobile",
     "embedding_field_constructor": embedding_field_constructor,
     "metadata_constructor": metadata_constructor,
 }
 
 tabular_index = use("tabular_index", tabular_index_config=tabular_index_config)
 
-data = tabular_index.retrieve("List some data", top_k=10)
+# data = tabular_index.retrieve_all()
+data = tabular_index.retrieve("List some data", top_k=2)
 
-print(data)
+for item in data:
+    print(item.get("text"))
+    print(item.get("metadata"))
+    print("-" * 100)
+
+
+data_3 = tabular_index.single_search("make:mercedes", top_k=3)
+from pprint.py import pprint
+pprint(data_3)
+
+
+
+

@@ -249,6 +249,9 @@ class TabularIndexResource(BaseResource):
             raise ValueError(f"Failed to create vector store component: {e}") from e
 
     # Public API - delegates to TabularIndex
+    def retrieve_all(self) -> list:
+        """Retrieve all documents."""
+        return [1, 2, 3]
 
     async def initialize(self) -> None:
         """Initialize and preprocess sources."""

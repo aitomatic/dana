@@ -1,0 +1,60 @@
+# log_level("info")
+
+def embedding_field_constructor(row: dict) -> str:
+    return f'{row.get("State", "")} - {row.get("Year", "")} {row.get("Totals.Capital outlay", "")}'
+
+def metadata_constructor(row: dict) -> dict:
+    return {
+        "state": row.get("State", ""),
+        "year": row.get("Year", ""),
+    }
+
+vector_store_config = {
+    "provider": "pgvector",
+    "storage_config": {
+        "host": "localhost",
+        "port": 5432,
+        "database": "vector_db",
+        "user": "admin",
+        "password": "admin",
+        "schema_name": "public",
+        "table_name": "product_vectors",
+        "use_halfvec": False,
+        "hybrid_search": False,
+        "hnsw": {
+            "m": 32,
+            "ef_construction": 200,
+            "ef_search": 100,
+            "dist_method": "vector_cosine_ops"
+        }
+    }
+}
+
+tabular_index_config = {    
+    "source": "tmp/test_csv/finance.csv",
+    "force_reload": False,
+    "table_name": "product_embeddings",
+    "cache_dir": ".cache/pgvector_examples",
+    "embedding_field_constructor": embedding_field_constructor,
+    "metadata_constructor": metadata_constructor,
+    "vector_store_config": vector_store_config,
+    "excluded_embed_metadata_keys": ["_node_content"]
+}
+
+print("Creating TabularIndex with PGVector backend...")
+print(f"Connecting to PostgreSQL at localhost:5432/vector_db")
+print(f"Will create table: {vector_store_config['storage_config']['table_name']}")
+print(f"HNSW parameters: m={vector_store_config['storage_config']['hnsw']['m']}, ef_construction={vector_store_config['storage_config']['hnsw']['ef_construction']}")
+
+tabular_index = use("tabular_index", tabular_index_config=tabular_index_config)
+
+print("Retrieving data from PGVector...")
+data = tabular_index.retrieve("List some data", top_k=10)
+
+print("Results from PGVector:")
+print(data)
+
+# tabular_index = use("tabular_index", tabular_index_config=tabular_index_config)
+# data = tabular_index.retrieve("List some data 2", top_k=10)
+# print("Results from PGVector:")
+# print(data)

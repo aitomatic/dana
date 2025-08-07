@@ -222,12 +222,13 @@ class TabularIndex:
         if not self.index:
             await self.initialize()
 
-        result = {"query": query, "results": []}
+        # result = {"query": query, "results": []}
+        result = await self.retrieve(query, top_k)
 
         if callback:
-            callback(query, result.get("results", []))
+            callback(query, result)
 
-        return result
+        return {"query": query, "results": result}
 
     async def batch_search(
         self,
@@ -286,7 +287,7 @@ class TabularIndex:
         df = self._load_dataframe_from_source()
         logger.info(f"Loaded {len(df)} rows from source data")
 
-        documents = self._create_documents(df)
+        documents = await self._create_documents(df)
         logger.info(f"Created {len(documents)} documents for indexing")
 
         # Create index with injected dependencies - clean and simple!
@@ -313,7 +314,7 @@ class TabularIndex:
         else:
             raise ValueError(f"Unsupported file type: {source_path}")
 
-    def _create_documents(self, df: pd.DataFrame) -> list[Document]:
+    async def _create_documents(self, df: pd.DataFrame) -> list[Document]:
         """Create LlamaIndex documents from DataFrame.
 
         Args:
@@ -330,6 +331,12 @@ class TabularIndex:
             row_dict = row.to_dict()
             embedding_text = self.config.embedding_field_constructor(row_dict)
 
+            # Handle EagerPromise if returned from Dana function
+            from dana.core.concurrency.base_promise import BasePromise
+
+            if isinstance(embedding_text, BasePromise):
+                embedding_text = await embedding_text.await_result()
+
             # Skip if embedding text is empty
             if not embedding_text:
                 skipped_count += 1
@@ -339,6 +346,10 @@ class TabularIndex:
             metadata = {}
             if self.config.metadata_constructor:
                 metadata = self.config.metadata_constructor(row_dict)
+
+                # Handle EagerPromise if returned from Dana function
+                if isinstance(metadata, BasePromise):
+                    metadata = await metadata.await_result()
 
             # Create document
             doc = Document(
