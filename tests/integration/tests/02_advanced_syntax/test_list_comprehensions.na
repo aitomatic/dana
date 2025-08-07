@@ -1,0 +1,149 @@
+# Test: List Comprehensions
+# Purpose: Test list comprehensions with various patterns and conditions
+# Category: Advanced Syntax - Comprehensions
+
+log("Starting List Comprehensions test")
+
+# Test 1: Basic list comprehension
+numbers = [1, 2, 3, 4, 5]
+squares = [x * x for x in numbers]
+assert squares == [1, 4, 9, 16, 25], f"Expected [1, 4, 9, 16, 25], got {squares}"
+log("✅ Basic list comprehension works")
+
+# Test 2: List comprehension with conditional filtering
+even_squares = [x * x for x in numbers if x % 2 == 0]
+assert even_squares == [4, 16], f"Expected [4, 16], got {even_squares}"
+log("✅ List comprehension with conditional filtering works")
+
+# Test 3: List comprehension with string operations
+words = ["hello", "world", "python", "dana"]
+upper_words = [word.upper() for word in words]
+assert upper_words == ["HELLO", "WORLD", "PYTHON", "DANA"], f"Expected ['HELLO', 'WORLD', 'PYTHON', 'DANA'], got {upper_words}"
+log("✅ List comprehension with string operations works")
+
+# Test 4: List comprehension with length filtering
+long_words = [word for word in words if len(word) > 4]
+assert long_words == ["hello", "world", "python"], f"Expected ['hello', 'world', 'python'], got {long_words}"
+log("✅ List comprehension with length filtering works")
+
+# Test 5: List comprehension with arithmetic operations
+doubles = [x * 2 for x in range(5)]
+assert doubles == [0, 2, 4, 6, 8], f"Expected [0, 2, 4, 6, 8], got {doubles}"
+log("✅ List comprehension with arithmetic operations works")
+
+# Test 6: List comprehension with range
+range_squares = [i * i for i in range(1, 6)]
+assert range_squares == [1, 4, 9, 16, 25], f"Expected [1, 4, 9, 16, 25], got {range_squares}"
+log("✅ List comprehension with range works")
+
+# # Test 7: List comprehension with conditional expression - [NOT SUPPORTED YET]
+# parity_labels = ["even" if x % 2 == 0 else "odd" for x in numbers]
+# assert parity_labels == ["odd", "even", "odd", "even", "odd"], f"Expected ['odd', 'even', 'odd', 'even', 'odd'], got {parity_labels}"
+# log("✅ List comprehension with conditional expression works")
+
+# # Test 8: List comprehension with nested operations - [NOT SUPPORTED YET]
+# nested_result = [x + y for x in [1, 2] for y in [10, 20]]
+# assert nested_result == [11, 21, 12, 22], f"Expected [11, 21, 12, 22], got {nested_result}"
+# log("✅ List comprehension with nested operations works")
+
+# Test 9: List comprehension with dictionary keys
+data = {"a": 1, "b": 2, "c": 3}
+keys = [key for key in data.keys()]
+assert keys == ["a", "b", "c"], f"Expected ['a', 'b', 'c'], got {keys}"
+log("✅ List comprehension with dictionary keys works")
+
+# Test 10: List comprehension with dictionary values
+values = [value for value in data.values()]
+assert values == [1, 2, 3], f"Expected [1, 2, 3], got {values}"
+log("✅ List comprehension with dictionary values works")
+
+# Test 11: List comprehension with dictionary items
+items = [(key, value) for key, value in data.items()]
+assert items == [("a", 1), ("b", 2), ("c", 3)], f"Expected [('a', 1), ('b', 2), ('c', 3)], got {items}"
+log("✅ List comprehension with dictionary items works")
+
+# Test 12: List comprehension with string characters
+text = "hello"
+chars = [char for char in text]
+assert chars == ["h", "e", "l", "l", "o"], f"Expected ['h', 'e', 'l', 'l', 'o'], got {chars}"
+log("✅ List comprehension with string characters works")
+
+# Test 13: List comprehension with tuple unpacking
+pairs = [(1, "a"), (2, "b"), (3, "c")]
+first_elements = [x for x, y in pairs]
+second_elements = [y for x, y in pairs]
+assert first_elements == [1, 2, 3], f"Expected [1, 2, 3], got {first_elements}"
+assert second_elements == ["a", "b", "c"], f"Expected ['a', 'b', 'c'], got {second_elements}"
+log("✅ List comprehension with tuple unpacking works")
+
+# # Test 14: List comprehension with multiple conditions - [NOT SUPPORTED YET]
+# complex_filter = [x for x in range(20) if x % 2 == 0 if x % 3 == 0]
+# assert complex_filter == [0, 6, 12, 18], f"Expected [0, 6, 12, 18], got {complex_filter}"
+# log("✅ List comprehension with multiple conditions works")
+
+# Test 15: List comprehension with function calls
+def square(x: int) -> int:
+    return x * x
+
+squared_values = [square(x) for x in [1, 2, 3, 4]]
+assert squared_values == [1, 4, 9, 16], f"Expected [1, 4, 9, 16], got {squared_values}"
+log("✅ List comprehension with function calls works")
+
+# # Test 16: List comprehension with lambda functions - [NOT SUPPORTED YET]
+# lambda_squares = [(lambda x:: x * x)(x) for x in [1, 2, 3, 4]]
+# assert lambda_squares == [1, 4, 9, 16], f"Expected [1, 4, 9, 16], got {lambda_squares}"
+# log("✅ List comprehension with lambda functions works")
+
+# Test 17: List comprehension with boolean operations
+bool_list = [true, false, true, false, true]
+true_count = [x for x in bool_list if x]
+assert len(true_count) == 3, f"Expected 3, got {len(true_count)}"
+log("✅ List comprehension with boolean operations works")
+
+# Test 18: List comprehension with type checking
+mixed_data = [1, "hello", 3.14, true, [1, 2, 3]]
+int_values = [x for x in mixed_data if type(x) == 'int']
+str_values = [x for x in mixed_data if type(x) == 'str']
+assert int_values == [1], f"Expected [1], got {int_values}"
+assert str_values == ["hello"], f"Expected ['hello'], got {str_values}"
+log("✅ List comprehension with type checking works")
+
+# Test 19: List comprehension with list operations - [NOT SUPPORTED YET]
+nested_lists = [[1, 2], [3, 4], [5, 6]]
+flattened = [item for sublist in nested_lists for item in sublist]
+assert flattened == [1, 2, 3, 4, 5, 6], f"Expected [1, 2, 3, 4, 5, 6], got {flattened}"
+log("✅ List comprehension with list operations works")
+
+# # Test 20: List comprehension with complex expressions - [NOT SUPPORTED YET]
+# complex_expr = [x * 2 + 1 for x in range(5) if x % 2 == 0]
+# assert complex_expr == [1, 5, 9], f"Expected [1, 5, 9], got {complex_expr}"
+# log("✅ List comprehension with complex expressions works") 
+
+# # Test 21: List comprehension with empty source
+# empty_source = [x for x in []]
+# assert empty_source == [], f"Expected [], got {empty_source}"
+# log("✅ List comprehension with empty source works")
+
+# # Test 22: List comprehension with all elements filtered out
+# all_filtered = [x for x in [1, 2, 3, 4, 5] if x > 10]
+# assert all_filtered == [], f"Expected [], got {all_filtered}"
+# log("✅ List comprehension with all elements filtered out works")
+
+# # Test 23: List comprehension with set operations
+# set_data = {1, 2, 3, 4, 5}
+# set_squares = [x * x for x in set_data]
+# assert set_squares == [1, 4, 9, 16, 25], f"Expected [1, 4, 9, 16, 25], got {set_squares}"
+# log("✅ List comprehension with set operations works")
+
+# # Test 24: List comprehension with tuple operations
+# tuple_data = (1, 2, 3, 4, 5)
+# tuple_doubles = [x * 2 for x in tuple_data]
+# assert tuple_doubles == [2, 4, 6, 8, 10], f"Expected [2, 4, 6, 8, 10], got {tuple_doubles}"
+# log("✅ List comprehension with tuple operations works")
+
+# # Test 25: List comprehension with string formatting
+# formatted_strings = [f"Number {x}" for x in [1, 2, 3]]
+# assert formatted_strings == ["Number 1", "Number 2", "Number 3"], f"Expected ['Number 1', 'Number 2', 'Number 3'], got {formatted_strings}"
+# log("✅ List comprehension with string formatting works")
+
+# log("List Comprehensions test completed successfully") 

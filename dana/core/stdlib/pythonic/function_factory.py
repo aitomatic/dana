@@ -245,6 +245,7 @@ class PythonicFunctionFactory:
             "types": [list, tuple, set, str, range, type(reversed([])), type({}.keys()), type({}.values()), type({}.items()), LazyPromise],
             "doc": "Convert an iterable to a list",
             "signatures": [
+                (),  # Empty list: list()
                 (list,),
                 (tuple,),
                 (set,),
@@ -262,8 +263,9 @@ class PythonicFunctionFactory:
         "set": {
             "func": set,
             "types": [list, tuple, set, str, range, type(reversed([])), type({}.keys()), type({}.values()), type({}.items()), LazyPromise],
-            "doc": "Convert an iterable to a set (removes duplicates)",
+            "doc": "Convert an iterable to a set (removes duplicates) or create an empty set",
             "signatures": [
+                (),  # Empty set: set()
                 (list,),
                 (tuple,),
                 (set,),

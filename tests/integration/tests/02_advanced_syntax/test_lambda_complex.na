@@ -1,0 +1,111 @@
+# Test: Complex Lambda Expressions
+# Purpose: Test complex lambda expressions with advanced patterns and conditional logic
+# Category: Advanced Syntax - Lambda Expressions
+
+log("Starting Complex Lambda Expressions test")
+
+# Test 1: Lambda with complex conditional logic
+complex_condition = lambda x :: "high" if x > 100 else ("medium" if x > 50 else "low")
+result1 = complex_condition(25)
+result2 = complex_condition(75)
+result3 = complex_condition(150)
+assert result1 == "low", f"Expected 'low', got '{result1}'"
+assert result2 == "medium", f"Expected 'medium', got '{result2}'"
+assert result3 == "high", f"Expected 'high', got '{result3}'"
+log("✅ Lambda with complex conditional logic works")
+
+# Test 2: Lambda with nested arithmetic operations
+complex_math = lambda x, y :: (x + y) * (x - y) / (x * y) if x * y != 0 else 0
+result = complex_math(10, 5)
+assert result == 1.5, f"Expected 1.5, got {result}"
+log("✅ Lambda with nested arithmetic operations works")
+
+# Test 3: Lambda with string manipulation and formatting
+string_processor = lambda name, age :: f"Hello {name.upper()}, you are {age} years old" if age >= 18 else f"Hello {name}, you are too young"
+result1 = string_processor("alice", 25)
+result2 = string_processor("bob", 15)
+assert result1 == "Hello ALICE, you are 25 years old", f"Expected 'Hello ALICE, you are 25 years old', got '{result1}'"
+assert result2 == "Hello bob, you are too young", f"Expected 'Hello bob, you are too young', got '{result2}'"
+log("✅ Lambda with string manipulation and formatting works")
+
+# Test 4: Lambda with list comprehension
+list_processor = lambda lst :: [x * 2 for x in lst if x % 2 == 0] if lst else []
+result1 = list_processor([1, 2, 3, 4, 5, 6])
+result2 = list_processor([])
+assert result1 == [4, 8, 12], f"Expected [4, 8, 12], got {result1}"
+assert result2 == [], f"Expected [], got {result2}"
+log("✅ Lambda with list comprehension works")
+
+# Test 5: Lambda with dictionary comprehension
+dict_processor = lambda data :: {(k: v * 2) for k, v in data.items() if v > 0} if data else {}
+test_data = {"a": 1, "b": -2, "c": 3, "d": 0}
+result = dict_processor(test_data)
+expected = {"a": 2, "c": 6}
+assert result == expected, f"Expected {expected}, got {result}"
+log("✅ Lambda with dictionary comprehension works")
+
+# Test 6: Lambda with function composition
+compose = lambda f, g :: lambda x :: f(g(x))
+add_one = lambda x :: x + 1
+multiply_by_two = lambda x :: x * 2
+composed = compose(add_one, multiply_by_two)
+result = composed(5)
+assert result == 11, f"Expected 11, got {result}"
+log("✅ Lambda with function composition works")
+
+# Test 7: Lambda with error handling
+safe_divide = lambda a, b :: a / b if b != 0 else (None if a == 0 else float('inf') if a > 0 else float('-inf'))
+result1 = safe_divide(10, 2)
+result2 = safe_divide(10, 0)
+result3 = safe_divide(0, 0)
+assert result1 == 5.0, f"Expected 5.0, got {result1}"
+assert result2 == float('inf'), f"Expected inf, got {result2}"
+assert result3 == None, f"Expected None, got {result3}"
+log("✅ Lambda with error handling works")
+
+# Test 8: Lambda with complex data transformation
+data_transformer = lambda records :: [
+    {
+        "id": i,
+        "name": record.get("name", "Unknown"),
+        "status": "active" if record.get("age", 0) >= 18 else "minor",
+        "score": round(record.get("score", 0) * 1.1, 1)
+    }
+    for i, record in enumerate(records)
+    if record.get("name")
+]
+test_records = [
+    {"name": "Alice", "age": 25, "score": 85},
+    {"age": 15, "score": 90},
+    {"name": "Bob", "age": 30, "score": 78}
+]
+result = data_transformer(test_records)
+expected = [
+    {"id": 0, "name": "Alice", "status": "active", "score": 93.5},
+    {"id": 2, "name": "Bob", "status": "active", "score": 85.8}
+]
+assert result == expected, f"Expected {expected}, got {result}"
+log("✅ Lambda with complex data transformation works")
+
+# # Test 9: Lambda with nested lambda functions - [NOT SUPPORTED YET]
+# nested_lambda = lambda x :: lambda y :: lambda z :: x + y * z
+# result = nested_lambda(5)(3)(2)
+# assert result == 11, f"Expected 11, got {result}"
+# log("✅ Lambda with nested lambda functions works")
+
+# Test 10: Lambda with validation and transformation
+validator = lambda data :: [
+    {"original": item, "validated": item * 2, "status": "valid"} for item in data if type(item) == 'int'
+]
+test_data = [1, -2, 3, "hello", 4, 0, 5]
+result = validator(test_data)
+expected = [
+    {"original": 1, "validated": 2, "status": "valid"},
+    {"original": 3, "validated": 6, "status": "valid"},
+    {"original": 4, "validated": 8, "status": "valid"},
+    {"original": 5, "validated": 10, "status": "valid"}
+]
+assert result == expected, f"Expected {expected}, got {result}"
+log("✅ Lambda with validation and transformation works")
+
+log("Complex Lambda Expressions test completed successfully") 

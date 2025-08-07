@@ -1,0 +1,210 @@
+# Test: Placeholder Expressions
+# Purpose: Test placeholder expressions ($$) in various contexts
+# Category: Advanced Syntax - Pipeline Operations
+
+log("Starting Placeholder Expressions test")
+
+# Test 1: Basic placeholder expression
+def add_ten(x: int) -> int {
+    return x + 10
+}
+
+def double(x: int) -> int {
+    return x * 2
+}
+
+result = 5 | add_ten | lambda $$ :: $$ * 3
+assert result == 45, f"Expected 45, got {result}"
+log("✅ Basic placeholder expression works")
+
+# Test 2: Placeholder with arithmetic operations
+result = 10 | lambda $$ :: $$ + 5 | lambda $$ :: $$ * 2
+assert result == 30, f"Expected 30, got {result}"
+log("✅ Placeholder with arithmetic operations works")
+
+# Test 3: Placeholder with string operations
+def to_upper(s: str) -> str {
+    return s.upper()
+}
+
+result = "hello" | to_upper | lambda $$ :: $$ + "!"
+assert result == "HELLO!", f"Expected 'HELLO!', got '{result}'"
+log("✅ Placeholder with string operations works")
+
+# Test 4: Placeholder with conditional expressions
+result = 7 | lambda $$ :: "even" if $$ % 2 == 0 else "odd"
+assert result == "odd", f"Expected 'odd', got '{result}'"
+log("✅ Placeholder with conditional expressions works")
+
+# Test 5: Placeholder with list operations
+def filter_even(lst: list) -> list {
+    return [x for x in lst if x % 2 == 0]
+}
+
+result = [1, 2, 3, 4, 5, 6] | filter_even | lambda $$ :: [x * 2 for x in $$]
+assert result == [4, 8, 12], f"Expected [4, 8, 12], got {result}"
+log("✅ Placeholder with list operations works")
+
+# Test 6: Placeholder with dictionary operations
+def get_keys(d: dict) -> list {
+    return list(d.keys())
+}
+
+data = {"a": 1, "b": 2, "c": 3}
+result = data | get_keys | lambda $$ :: [key.upper() for key in $$]
+assert result == ["A", "B", "C"], f"Expected ['A', 'B', 'C'], got {result}"
+log("✅ Placeholder with dictionary operations works")
+
+# Test 7: Placeholder with tuple operations
+def create_tuple(x: int) -> tuple {
+    return (x, x * 2, x * 3)
+}
+
+result = 5 | create_tuple | lambda $$ :: sum($$)
+assert result == 30, f"Expected 30, got {result}"
+log("✅ Placeholder with tuple operations works")
+
+# Test 8: Placeholder with set operations
+def to_set(lst: list) -> set {
+    return set(lst)
+}
+
+result = [1, 2, 2, 3, 3, 3] | to_set | lambda $$ :: len($$)
+assert result == 3, f"Expected 3, got {result}"
+log("✅ Placeholder with set operations works")
+
+# Test 9: Placeholder with boolean operations
+def is_positive(x: int) -> bool {
+    return x > 0
+}
+
+result = 42 | is_positive | lambda $$ :: not $$
+assert result == false, f"Expected false, got {result}"
+log("✅ Placeholder with boolean operations works")
+
+# Test 10: Placeholder with type conversion
+def to_float(x: any) -> float {
+    return float(x)
+}
+
+result = "3.14" | to_float | lambda $$ :: int($$)
+assert result == 3, f"Expected 3, got {result}"
+log("✅ Placeholder with type conversion works")
+
+# Test 11: Placeholder with complex expressions
+result = 10 | lambda $$ :: $$ * 2 + 1 | lambda $$ :: $$ ** 2
+assert result == 441, f"Expected 441, got {result}"
+log("✅ Placeholder with complex expressions works")
+
+# Test 12: Placeholder with function calls
+def square(x: int) -> int {
+    return x * x
+}
+
+result = 5 | lambda $$ :: square($$) | lambda $$ :: $$ + 10
+assert result == 35, f"Expected 35, got {result}"
+log("✅ Placeholder with function calls works")
+
+# Test 13: Placeholder with string formatting
+result = 42 | lambda $$ :: f"Number: {$$}" | lambda $$ :: $$.upper()
+assert result == "NUMBER: 42", f"Expected 'NUMBER: 42', got '{result}'"
+log("✅ Placeholder with string formatting works")
+
+# Test 14: Placeholder with list comprehension
+result = [1, 2, 3, 4, 5] | lambda $$ :: [x * 2 for x in $$] | lambda $$ :: sum($$)
+assert result == 30, f"Expected 30, got {result}"
+log("✅ Placeholder with list comprehension works")
+
+# Test 15: Placeholder with dictionary comprehension
+data = {"a": 1, "b": 2, "c": 3}
+result = data | lambda $$ :: {k: v * 2 for k, v in $$.items()} | lambda $$ :: sum($$.values())
+assert result == 12, f"Expected 12, got {result}"
+log("✅ Placeholder with dictionary comprehension works")
+
+# Test 16: Placeholder with set comprehension
+result = [1, 2, 2, 3, 3, 3] | lambda $$ :: {x * x for x in $$} | lambda $$ :: len($$)
+assert result == 3, f"Expected 3, got {result}"
+log("✅ Placeholder with set comprehension works")
+
+# Test 17: Placeholder with nested operations
+result = 5 | lambda $$ :: ($$, $$ * 2) | lambda $$ :: $$[0] + $$[1]
+assert result == 15, f"Expected 15, got {result}"
+log("✅ Placeholder with nested operations works")
+
+# Test 18: Placeholder with error handling
+def safe_divide(x: int) -> float {
+    return x / 2 if x != 0 else 0
+}
+
+result = 10 | safe_divide | lambda $$ :: int($$) if $$ > 0 else 0
+assert result == 5, f"Expected 5, got {result}"
+log("✅ Placeholder with error handling works")
+
+# Test 19: Placeholder with conditional logic
+result = 7 | lambda $$ :: "small" if $$ < 10 else "large" | lambda $$ :: f"Size: {$$}"
+assert result == "Size: small", f"Expected 'Size: small', got '{result}'"
+log("✅ Placeholder with conditional logic works")
+
+# Test 20: Placeholder with mathematical operations
+result = 3.14 | lambda $$ :: $$ * 2 | lambda $$ :: round($$, 2)
+assert result == 6.28, f"Expected 6.28, got {result}"
+log("✅ Placeholder with mathematical operations works")
+
+# Test 21: Placeholder with string manipulation
+result = "hello world" | lambda $$ :: $$.split() | lambda $$ :: [word.upper() for word in $$]
+assert result == ["HELLO", "WORLD"], f"Expected ['HELLO', 'WORLD'], got {result}"
+log("✅ Placeholder with string manipulation works")
+
+# Test 22: Placeholder with list filtering
+result = [-2, -1, 0, 1, 2, 3] | lambda $$ :: [x for x in $$ if x > 0] | lambda $$ :: sum($$)
+assert result == 6, f"Expected 6, got {result}"
+log("✅ Placeholder with list filtering works")
+
+# Test 23: Placeholder with multiple placeholders in one expression
+# Note: This tests if multiple $$ can be used in a single lambda
+result = 5 | lambda $$ :: $$ + $$ | lambda $$ :: $$ * 2
+assert result == 20, f"Expected 20, got {result}"
+log("✅ Placeholder with multiple placeholders works")
+
+# Test 24: Placeholder with attribute access
+struct Person {
+    name: str
+    age: int
+}
+
+person = Person("Alice", 25)
+result = person | lambda $$ :: $$.name | lambda $$ :: $$.upper()
+assert result == "ALICE", f"Expected 'ALICE', got '{result}'"
+log("✅ Placeholder with attribute access works")
+
+# Test 25: Placeholder with method calls
+result = "hello" | lambda $$ :: $$.upper() | lambda $$ :: $$ + "!"
+assert result == "HELLO!", f"Expected 'HELLO!', got '{result}'"
+log("✅ Placeholder with method calls works")
+
+# Test 26: Placeholder with complex data transformation
+result = "abc123def456" | lambda $$ :: [int(c) for c in $$ if c.isdigit()] | lambda $$ :: sum($$)
+assert result == 21, f"Expected 21, got {result}"
+log("✅ Placeholder with complex data transformation works")
+
+# Test 27: Placeholder with boolean logic
+result = 15 | lambda $$ :: $$ > 10 | lambda $$ :: "high" if $$ else "low"
+assert result == "high", f"Expected 'high', got '{result}'"
+log("✅ Placeholder with boolean logic works")
+
+# Test 28: Placeholder with type checking
+result = 42 | lambda $$ :: type($$).__name__ | lambda $$ :: f"Type: {$$}"
+assert result == "Type: int", f"Expected 'Type: int', got '{result}'"
+log("✅ Placeholder with type checking works")
+
+# Test 29: Placeholder with list slicing
+result = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] | lambda $$ :: $$[:5] | lambda $$ :: sum($$)
+assert result == 15, f"Expected 15, got {result}"
+log("✅ Placeholder with list slicing works")
+
+# Test 30: Placeholder with complex nested expressions
+result = 2 | lambda $$ :: $$ ** 3 | lambda $$ :: $$ + 1 | lambda $$ :: $$ * 2 | lambda $$ :: f"Result: {$$}"
+assert result == "Result: 18", f"Expected 'Result: 18', got '{result}'"
+log("✅ Placeholder with complex nested expressions works")
+
+log("Placeholder Expressions test completed successfully") 

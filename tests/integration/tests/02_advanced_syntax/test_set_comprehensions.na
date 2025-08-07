@@ -1,0 +1,178 @@
+# Test: Set Comprehensions
+# Purpose: Test set comprehensions with various patterns and conditions
+# Category: Advanced Syntax - Comprehensions
+
+log("Starting Set Comprehensions test")
+
+# Test 1: Basic set comprehension
+numbers = [1, 2, 3, 4, 5]
+squares = {x * x for x in numbers}
+assert squares == {1, 4, 9, 16, 25}, f"Expected {1, 4, 9, 16, 25}, got {squares}"
+log("✅ Basic set comprehension works")
+
+# Test 2: Set comprehension with conditional filtering
+even_squares = {x * x for x in numbers if x % 2 == 0}
+assert even_squares == {4, 16}, f"Expected {4, 16}, got {even_squares}"
+log("✅ Set comprehension with conditional filtering works")
+
+# Test 3: Set comprehension with string operations
+words = ["hello", "world", "python", "dana", "hello"]
+unique_upper = {word.upper() for word in words}
+assert unique_upper == {"HELLO", "WORLD", "PYTHON", "DANA"}, f"Expected {'HELLO', 'WORLD', 'PYTHON', 'DANA'}, got {unique_upper}"
+log("✅ Set comprehension with string operations works")
+
+# Test 4: Set comprehension with length filtering
+long_words = {word for word in words if len(word) > 4}
+assert long_words == {"hello", "world", "python"}, f"Expected {'hello', 'world', 'python'}, got {long_words}"
+log("✅ Set comprehension with length filtering works")
+
+# Test 5: Set comprehension with arithmetic operations
+doubles = {x * 2 for x in range(5)}
+assert doubles == {0, 2, 4, 6, 8}, f"Expected {0, 2, 4, 6, 8}, got {doubles}"
+log("✅ Set comprehension with arithmetic operations works")
+
+# Test 6: Set comprehension with range
+range_squares = {i * i for i in range(1, 6)}
+assert range_squares == {1, 4, 9, 16, 25}, f"Expected {1, 4, 9, 16, 25}, got {range_squares}"
+log("✅ Set comprehension with range works")
+
+# Test 7: Set comprehension with conditional expression
+parity_labels = {"even" if x % 2 == 0 else "odd" for x in numbers}
+assert parity_labels == {"even", "odd"}, f"Expected {'even', 'odd'}, got {parity_labels}"
+log("✅ Set comprehension with conditional expression works")
+
+# Test 8: Set comprehension with nested operations
+nested_result = {x + y for x in [1, 2] for y in [10, 20]}
+assert nested_result == {11, 21, 12, 22}, f"Expected {11, 21, 12, 22}, got {nested_result}"
+log("✅ Set comprehension with nested operations works")
+
+# Test 9: Set comprehension with dictionary keys
+data = {"a": 1, "b": 2, "c": 3}
+keys = {key for key in data.keys()}
+assert keys == {"a", "b", "c"}, f"Expected {'a', 'b', 'c'}, got {keys}"
+log("✅ Set comprehension with dictionary keys works")
+
+# Test 10: Set comprehension with dictionary values
+values = {value for value in data.values()}
+assert values == {1, 2, 3}, f"Expected {1, 2, 3}, got {values}"
+log("✅ Set comprehension with dictionary values works")
+
+# Test 11: Set comprehension with dictionary items
+items = {(key, value) for key, value in data.items()}
+assert items == {("a", 1), ("b", 2), ("c", 3)}, f"Expected {('a', 1), ('b', 2), ('c', 3)}, got {items}"
+log("✅ Set comprehension with dictionary items works")
+
+# Test 12: Set comprehension with string characters
+text = "hello"
+chars = {char for char in text}
+assert chars == {"h", "e", "l", "o"}, f"Expected {'h', 'e', 'l', 'o'}, got {chars}"
+log("✅ Set comprehension with string characters works")
+
+# Test 13: Set comprehension with tuple unpacking
+pairs = [(1, "a"), (2, "b"), (3, "c")]
+first_elements = {x for x, y in pairs}
+second_elements = {y for x, y in pairs}
+assert first_elements == {1, 2, 3}, f"Expected {1, 2, 3}, got {first_elements}"
+assert second_elements == {"a", "b", "c"}, f"Expected {'a', 'b', 'c'}, got {second_elements}"
+log("✅ Set comprehension with tuple unpacking works")
+
+# Test 14: Set comprehension with multiple conditions
+complex_filter = {x for x in range(20) if x % 2 == 0 if x % 3 == 0}
+assert complex_filter == {0, 6, 12, 18}, f"Expected {0, 6, 12, 18}, got {complex_filter}"
+log("✅ Set comprehension with multiple conditions works")
+
+# Test 15: Set comprehension with function calls
+def square(x: int) -> int {
+    return x * x
+}
+
+squared_values = {square(x) for x in [1, 2, 3, 4]}
+assert squared_values == {1, 4, 9, 16}, f"Expected {1, 4, 9, 16}, got {squared_values}"
+log("✅ Set comprehension with function calls works")
+
+# Test 16: Set comprehension with lambda functions
+lambda_squares = {(lambda x: x * x)(x) for x in [1, 2, 3, 4]}
+assert lambda_squares == {1, 4, 9, 16}, f"Expected {1, 4, 9, 16}, got {lambda_squares}"
+log("✅ Set comprehension with lambda functions works")
+
+# Test 17: Set comprehension with boolean operations
+bool_list = [true, false, true, false, true]
+true_values = {x for x in bool_list if x}
+assert true_values == {true}, f"Expected {true}, got {true_values}"
+log("✅ Set comprehension with boolean operations works")
+
+# Test 18: Set comprehension with type checking
+mixed_data = [1, "hello", 3.14, true, [1, 2, 3]]
+int_values = {x for x in mixed_data if type(x) == int}
+str_values = {x for x in mixed_data if type(x) == str}
+assert int_values == {1}, f"Expected {1}, got {int_values}"
+assert str_values == {"hello"}, f"Expected {'hello'}, got {str_values}"
+log("✅ Set comprehension with type checking works")
+
+# Test 19: Set comprehension with list operations
+nested_lists = [[1, 2], [3, 4], [5, 6]]
+flattened = {item for sublist in nested_lists for item in sublist}
+assert flattened == {1, 2, 3, 4, 5, 6}, f"Expected {1, 2, 3, 4, 5, 6}, got {flattened}"
+log("✅ Set comprehension with list operations works")
+
+# Test 20: Set comprehension with complex expressions
+complex_expr = {x * 2 + 1 for x in range(5) if x % 2 == 0}
+assert complex_expr == {1, 5, 9}, f"Expected {1, 5, 9}, got {complex_expr}"
+log("✅ Set comprehension with complex expressions works")
+
+# Test 21: Set comprehension with empty source
+empty_source = {x for x in []}
+assert empty_source == set(), f"Expected set(), got {empty_source}"
+log("✅ Set comprehension with empty source works")
+
+# Test 22: Set comprehension with all elements filtered out
+all_filtered = {x for x in [1, 2, 3, 4, 5] if x > 10}
+assert all_filtered == set(), f"Expected set(), got {all_filtered}"
+log("✅ Set comprehension with all elements filtered out works")
+
+# Test 23: Set comprehension with set operations
+set_data = {1, 2, 3, 4, 5}
+set_squares = {x * x for x in set_data}
+assert set_squares == {1, 4, 9, 16, 25}, f"Expected {1, 4, 9, 16, 25}, got {set_squares}"
+log("✅ Set comprehension with set operations works")
+
+# Test 24: Set comprehension with tuple operations
+tuple_data = (1, 2, 3, 4, 5)
+tuple_doubles = {x * 2 for x in tuple_data}
+assert tuple_doubles == {2, 4, 6, 8, 10}, f"Expected {2, 4, 6, 8, 10}, got {tuple_doubles}"
+log("✅ Set comprehension with tuple operations works")
+
+# Test 25: Set comprehension with string formatting
+formatted_strings = {f"Number {x}" for x in [1, 2, 3]}
+expected = {"Number 1", "Number 2", "Number 3"}
+assert formatted_strings == expected, f"Expected {expected}, got {formatted_strings}"
+log("✅ Set comprehension with string formatting works")
+
+# Test 26: Set comprehension with duplicate removal
+duplicate_numbers = [1, 2, 2, 3, 3, 3, 4, 4, 4, 4]
+unique_numbers = {x for x in duplicate_numbers}
+assert unique_numbers == {1, 2, 3, 4}, f"Expected {1, 2, 3, 4}, got {unique_numbers}"
+log("✅ Set comprehension with duplicate removal works")
+
+# Test 27: Set comprehension with mathematical operations
+math_set = {x ** 2 + y ** 2 for x in range(3) for y in range(3)}
+assert math_set == {0, 1, 2, 4, 5, 8}, f"Expected {0, 1, 2, 4, 5, 8}, got {math_set}"
+log("✅ Set comprehension with mathematical operations works")
+
+# Test 28: Set comprehension with conditional logic
+conditional_set = {x if x % 2 == 0 else x * 2 for x in range(6)}
+assert conditional_set == {0, 2, 4, 2, 6, 10}, f"Expected {0, 2, 4, 2, 6, 10}, got {conditional_set}"
+log("✅ Set comprehension with conditional logic works")
+
+# Test 29: Set comprehension with nested sets
+nested_sets = [{1, 2}, {2, 3}, {3, 4}]
+union_set = {item for subset in nested_sets for item in subset}
+assert union_set == {1, 2, 3, 4}, f"Expected {1, 2, 3, 4}, got {union_set}"
+log("✅ Set comprehension with nested sets works")
+
+# Test 30: Set comprehension with complex filtering
+complex_filter_set = {x for x in range(50) if x % 2 == 0 if x % 3 == 0 if x % 5 == 0}
+assert complex_filter_set == {0, 30}, f"Expected {0, 30}, got {complex_filter_set}"
+log("✅ Set comprehension with complex filtering works")
+
+log("Set Comprehensions test completed successfully") 
