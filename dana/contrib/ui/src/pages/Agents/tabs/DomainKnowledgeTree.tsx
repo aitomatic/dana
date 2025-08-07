@@ -11,10 +11,15 @@ import { toast } from 'sonner';
 import KnowledgeSidebar from './KnowledgeSidebar';
 import { Search } from 'iconoir-react';
 
+// Single transition definition for consistency
+const TRANSITION_DURATION = '1s';
+const TRANSITION_EASING = 'cubic-bezier(.43,.08,.45,.97)';
+const TRANSITION_ALL = `all ${TRANSITION_DURATION} ${TRANSITION_EASING}`;
+
 // Add CSS animations for smooth transitions
 const animationStyles = `
   .react-flow__node {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transition: ${TRANSITION_ALL} !important;
   }
   
   .react-flow__node-enter {
@@ -37,27 +42,66 @@ const animationStyles = `
     transform: scale(0.8) translateY(-10px);
   }
   
+  /* Edge animations - using ReactFlow's structure */
   .react-flow__edge {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transition: ${TRANSITION_ALL} !important;
   }
   
-  .react-flow__edge-enter {
+  .react-flow__edge-path {
+    transition: ${TRANSITION_ALL} !important;
+  }
+  
+  /* Animate edges when they appear - only for new edges */
+  .react-flow__edge.edge-new {
     opacity: 0;
-    stroke-dasharray: 5;
-    stroke-dashoffset: 10;
+    animation: edgeAppear 1s cubic-bezier(.43,.08,.45,.97) forwards;
   }
   
-  .react-flow__edge-enter-active {
-    opacity: 1;
-    stroke-dashoffset: 0;
+  .react-flow__edge.edge-new .react-flow__edge-path {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: edgePathAppear 1s cubic-bezier(.43,.08,.45,.97) forwards;
   }
   
-  .react-flow__edge-exit {
-    opacity: 1;
+  /* Keyframe animations for edges */
+  @keyframes edgeAppear {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
   
-  .react-flow__edge-exit-active {
-    opacity: 0;
+  @keyframes edgePathAppear {
+    from {
+      stroke-dashoffset: 1000;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  
+  /* Ensure edges are visible during transitions */
+  .react-flow__edge.selected .react-flow__edge-path {
+    stroke-width: 3;
+  }
+  
+  .react-flow__edge:hover .react-flow__edge-path {
+    stroke-width: 2;
+  }
+  
+  /* Smooth viewport transitions */
+  .react-flow {
+    transition: ${TRANSITION_ALL} !important;
+  }
+  
+  .react-flow__viewport {
+    transition: ${TRANSITION_ALL} !important;
+  }
+  
+  .react-flow__transformationpane {
+    transition: ${TRANSITION_ALL} !important;
   }
 `;
 
@@ -233,13 +277,19 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   const previousAgentIdRef = useRef<string | number | undefined>(undefined);
   const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
   const nodesRef = useRef<FlowNode[]>([]);
+  const previousEdgesRef = useRef<Set<string>>(new Set());
 
-  // Function to center the view after nodes are expanded
+  // Function to center the view after nodes are expanded - with smooth transition
   const centerView = useCallback(() => {
     if (reactFlowInstanceRef.current && nodesRef.current.length > 0) {
       // Use setTimeout to ensure the nodes are rendered before centering
       setTimeout(() => {
-        reactFlowInstanceRef.current?.fitView({
+        const instance = reactFlowInstanceRef.current;
+        if (!instance) return;
+
+        // Use ReactFlow's fitView method
+        // The smooth transition will be handled by CSS transitions on the ReactFlow container
+        instance.fitView({
           padding: 0.2,
           includeHiddenNodes: false,
           minZoom: 0.5,
@@ -280,6 +330,37 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       centerView();
     }
   }, [nodes, centerView]);
+
+  // Handle edge animations for new edges
+  useEffect(() => {
+    if (edges.length > 0) {
+      const currentEdgeIds = new Set(edges.map((edge) => edge.id));
+      const previousEdgeIds = previousEdgesRef.current;
+
+      // Find new edges
+      const newEdgeIds = [...currentEdgeIds].filter((id) => !previousEdgeIds.has(id));
+
+      if (newEdgeIds.length > 0) {
+        // Add animation class to new edges
+        setTimeout(() => {
+          newEdgeIds.forEach((edgeId) => {
+            const edgeElement = document.querySelector(`[data-id="${edgeId}"]`) as HTMLElement;
+            if (edgeElement) {
+              edgeElement.classList.add('edge-new');
+
+              // Remove animation class after animation completes
+              setTimeout(() => {
+                edgeElement.classList.remove('edge-new');
+              }, 1000);
+            }
+          });
+        }, 100);
+      }
+
+      // Update previous edges
+      previousEdgesRef.current = currentEdgeIds;
+    }
+  }, [edges]);
 
   // Keep the ref in sync with the state
   useEffect(() => {
@@ -490,6 +571,12 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
             target: nodeId,
             markerEnd: { type: MarkerType.ArrowClosed },
             type: 'default',
+            style: {
+              stroke: '#6b7280',
+              strokeWidth: 1,
+              transition: TRANSITION_ALL,
+            },
+            animated: false, // We'll handle animation with CSS
           });
         }
       }
@@ -874,7 +961,10 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       >
         {/* Smooth loading indicator that slides down from top */}
         {(initialLoading || loading) && (
-          <div className="absolute top-0 right-0 left-0 z-30 transition-all duration-300 ease-in-out transform">
+          <div
+            className="absolute top-0 right-0 left-0 z-30 transform"
+            style={{ transition: TRANSITION_ALL }}
+          >
             <div className="flex justify-center items-center py-2 bg-blue-50 border-b border-blue-200 shadow-sm animate-pulse">
               <div className="flex gap-2 items-center text-blue-700">
                 <div className="w-4 h-4 rounded-full border-2 border-blue-300 animate-spin border-t-blue-600"></div>
@@ -889,9 +979,10 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         {/* Enhanced Control Bar */}
         {agentId && (
           <div
-            className={`absolute left-4 right-4 z-20 transition-all duration-300 ease-in-out ${
+            className={`absolute left-4 right-4 z-20 ${
               initialLoading || loading ? 'top-16' : 'top-4'
             }`}
+            style={{ transition: TRANSITION_ALL }}
           >
             <div className="flex gap-3 justify-between items-center">
               {/* Left side - Search and Tree Controls */}
@@ -923,7 +1014,8 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                   <button
                     onClick={handleExpandAll}
                     disabled={!domainTree}
-                    className="px-3 py-2 text-xs text-gray-600 bg-gray-50 rounded-md border border-gray-200 transition-colors hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-2 text-xs text-gray-600 bg-gray-50 rounded-md border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ transition: TRANSITION_ALL }}
                     title="Expand All"
                   >
                     Expand All
@@ -931,7 +1023,8 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                   <button
                     onClick={handleCollapseAll}
                     disabled={!domainTree}
-                    className="px-3 py-2 text-xs text-gray-600 bg-gray-50 rounded-md border border-gray-200 transition-colors hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-2 text-xs text-gray-600 bg-gray-50 rounded-md border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ transition: TRANSITION_ALL }}
                     title="Collapse All"
                   >
                     Collapse All
@@ -952,11 +1045,12 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                 <button
                   onClick={handleGenerateKnowledge}
                   disabled={generating || initialLoading || loading}
-                  className={`px-4 py-2 text-sm rounded-md border transition-all duration-200 shadow-sm ${
+                  className={`px-4 py-2 text-sm rounded-md border shadow-sm ${
                     generating || initialLoading || loading
                       ? 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed opacity-75'
                       : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:text-gray-900 hover:shadow-md'
                   }`}
+                  style={{ transition: TRANSITION_ALL }}
                 >
                   {generating ? (
                     <div className="flex gap-2 items-center">
@@ -974,9 +1068,8 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
 
         {/* Tree View Container with smooth margin adjustment */}
         <div
-          className={`transition-all duration-300 ease-in-out h-full ${
-            agentId ? (initialLoading || loading ? 'pt-32' : 'pt-20') : ''
-          }`}
+          className={`h-full ${agentId ? (initialLoading || loading ? 'pt-32' : 'pt-20') : ''}`}
+          style={{ transition: TRANSITION_ALL }}
         >
           {nodes.length > 0 ? (
             <div className="h-full rounded-lg">
@@ -1008,19 +1101,18 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                 panOnScroll={false}
                 zoomOnPinch={true}
                 panOnDrag={true}
-                className={`transition-all duration-300 ease-in-out ${
-                  isTransitioning ? 'opacity-95' : 'opacity-100'
-                }`}
-                style={{
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                }}
+                className={`${isTransitioning ? 'opacity-95' : 'opacity-100'}`}
+                style={{ transition: TRANSITION_ALL }}
               >
                 <Controls />
               </ReactFlow>
             </div>
           ) : (
             /* Empty/Error State - Doesn't replace tree, shows as overlay */
-            <div className="flex flex-col gap-4 justify-center items-center h-full transition-opacity duration-500 ease-in-out">
+            <div
+              className="flex flex-col gap-4 justify-center items-center h-full"
+              style={{ transition: TRANSITION_ALL }}
+            >
               {initialLoading ? (
                 /* Show loading state when first loading */
                 <div className="text-center text-gray-500">
