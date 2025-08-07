@@ -10,29 +10,35 @@ from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
 
-class AskFollowUpQuestionTool(BaseTool):
+class AskQuestionTool(BaseTool):
+    """
+    Unified tool for user interactions - replaces both AskFollowUpQuestionTool and AskApprovalTool.
+    Handles both general questions and approval requests naturally based on the question content.
+    """
+
     def __init__(self):
         tool_info = BaseToolInformation(
-            name="ask_follow_up_question",
-            description="Ask the user a question to gather additional information needed to complete the task. This tool should be used when you encounter ambiguities, need clarification, or require more details to proceed effectively. It allows for interactive problem-solving by enabling direct communication with the user. Use this tool judiciously to maintain a balance between gathering necessary information and avoiding excessive back-and-forth.",
+            name="ask_question",
+            description="Ask the user a question for clarification, information gathering, or approval. Use this tool after exploration to present options and get user decisions about knowledge generation (single vs bulk), tree modifications, or any other user input needed. Automatically detects approval questions and formats appropriately.",
             input_schema=InputSchema(
                 type="object",
                 properties=[
                     BaseArgument(
                         name="question",
                         type="string",
-                        description="The question to ask the user. This should be a clear, specific question that addresses the information you need.",
-                        example="Your question here",
+                        description="The question to ask the user. For approvals, phrase as 'Do you approve...?' or 'Should I proceed with...?'. For information gathering, ask directly what you need to know.",
+                        example="Do you approve removing these deprecated topics from the tree structure?",
                     ),
                     BaseArgument(
                         name="options",
                         type="list",
-                        description="An array of 2-5 options for the user to choose from. Each option should be a string describing a possible answer. You may not always need to provide options, but it may be helpful in many cases where it can save the user from having to type out a response manually. IMPORTANT: NEVER include an option to toggle to Act mode, as this would be something you need to direct the user to do manually themselves if needed.",
-                        example='Array of options here (optional), e.g. ["Option 1", "Option 2", "Option 3"]',
+                        description="Optional array of 2-5 specific choices for the user to select from. Not needed for approval questions (they get automatic yes/no/feedback options). Helpful for narrowing down user choices and reducing typing.",
+                        example='["Option 1", "Option 2", "Option 3"]',
                     ),
                 ],
                 required=["question"],
@@ -41,35 +47,65 @@ class AskFollowUpQuestionTool(BaseTool):
         super().__init__(tool_info)
 
     def _execute(self, question: str, options: list[str] = None) -> ToolResult:
-        options_str = "\n".join([f"- {option}" for option in options]) if options else ""
-        return ToolResult(
-            name="ask_follow_up_question",
-            result=f"""
-{question}
-{options_str}
-""",
-            require_user=True,
-        )
+        """
+        Execute question based on content - automatically handles approvals vs general questions.
+        """
+        # Detect if this is an approval question based on common patterns
+        approval_keywords = [
+            "do you approve",
+            "should i proceed",
+            "do you want me to",
+            "should i go ahead",
+            "need your approval",
+            "need approval",
+            "approve",
+            "permission",
+        ]
+        is_approval = any(keyword in question.lower() for keyword in approval_keywords)
+
+        if is_approval:
+            # Format as approval request
+            content = f"""🔍 Approval Required
+
+❓ **Question**: {question}
+
+**Please respond with:**
+- **"yes"** or **"approve"** to proceed
+- **"no"** or **"reject"** to cancel
+- **Feedback** to request modifications or ask questions"""
+
+        else:
+            # Format as general question
+            content = f"❓ {question}"
+
+            if options:
+                content += "\n\n**Please choose:**"
+                for i, option in enumerate(options, 1):
+                    content += f"\n{i}. {option}"
+                content += "\n\nOr provide your own response."
+
+        return ToolResult(name="ask_question", result=content, require_user=True)
 
 
 class ExploreKnowledgeTool(BaseTool):
-    def __init__(self, tree_structure: DomainKnowledgeTree | None = None):
+    def __init__(self, tree_structure: DomainKnowledgeTree | None = None, knowledge_status_path: str | None = None):
+        self.knowledge_status_path = knowledge_status_path
         tool_info = BaseToolInformation(
             name="explore_knowledge",
-            description="Explore and discover existing knowledge areas in the domain knowledge tree. Shows what topics and knowledge areas are available, providing an inventory of current agent capabilities.",
+            description="Explore and discover existing knowledge areas in the domain knowledge tree. Shows what topics and knowledge areas are available, including generation status for specific topics. Replaces check_existing functionality for comprehensive topic discovery.",
             input_schema=InputSchema(
                 type="object",
                 properties=[
                     BaseArgument(
                         name="query",
                         type="string",
-                        description="Optional filter to explore specific knowledge areas (e.g., 'Financial Analysis', 'all', or empty for overview)",
+                        description="Optional filter to explore specific knowledge areas (e.g., 'Financial Analysis', 'all', or empty for overview). For specific topics, shows generation status and recommendations.",
                         example="Financial Analysis",
                     ),
                     BaseArgument(
                         name="depth",
                         type="string",
-                        description="How deep to explore the tree (1=domains only, 2=include topics, 3=include subtopics)",
+                        description="How many levels deep to explore from the starting point (1=current level only, 2=include children, 3=include grandchildren, etc.)",
                         example="3",
                     ),
                 ],
@@ -144,9 +180,12 @@ Ready to proceed with knowledge operations despite exploration error."""
         # If no specific query or query is "all", explore from root
         if not query or query.lower() == "all":
             target_node = self.tree_structure.root
-            tree_content = self._format_node_tree(target_node, max_depth, show_root=True)
-            total_nodes = self._count_nodes(target_node, max_depth)
-            context_info = "Starting from root"
+            # For "all" queries, automatically use full tree depth to show complete hierarchy
+            full_depth = self._calculate_tree_depth(target_node)
+            actual_depth = max(max_depth, full_depth) if query.lower() == "all" else max_depth
+            tree_content = self._format_node_tree(target_node, actual_depth, show_root=True)
+            total_nodes = self._count_nodes(target_node, actual_depth)
+            context_info = f"Starting from root (showing full hierarchy: {actual_depth} levels)"
         else:
             # Find the target node that matches the query
             target_node = self._find_target_node(self.tree_structure.root, query)
@@ -176,27 +215,60 @@ Ready to proceed with knowledge operations despite exploration error."""
                 # Found exact match - explore from target node
                 tree_content = self._format_node_tree(target_node, max_depth, show_root=True)
                 total_nodes = self._count_nodes(target_node, max_depth)
-                context_info = f"Starting from '{target_node.topic}'"
+
+                # Get path from root to this node
+                path_to_node = self._find_path_to_node(self.tree_structure.root, target_node)
+                if path_to_node and len(path_to_node) > 1:
+                    # Show path if not at root
+                    path_str = " → ".join(path_to_node)
+                    context_info = f"Starting from '{target_node.topic}'\n📍 Path: {path_str}"
+                else:
+                    context_info = f"Starting from '{target_node.topic}'"
+
+                # Check generation status for specific topic queries
+                generation_status = self._check_generation_status(query)
+                if generation_status:
+                    status_emoji = "✅" if generation_status.get("status") == "success" else "⏳"
+                    status_text = generation_status.get("status", "unknown")
+                    context_info += f"\n{status_emoji} Generation Status: {status_text}"
+
+                    if generation_status.get("status") == "success":
+                        context_info += f"\n   Last updated: {generation_status.get('last_updated', 'Unknown')}"
+                        context_info += f"\n   Message: {generation_status.get('message', 'No details')}"
+                elif total_nodes == 1:  # Single leaf node without generation status
+                    context_info += "\n⏳ Generation Status: Not generated"
 
         # Build final content
+        display_depth = actual_depth if "actual_depth" in locals() else max_depth
         header = f"""🌳 Knowledge Exploration
 
 📂 Query: {query or "all areas"}
-📊 Depth: {max_depth} levels ({context_info})
+📊 Depth: {display_depth} levels ({context_info})
 🔢 Total areas found: {total_nodes}
 
 📋 Available Knowledge Areas:"""
 
-        footer = """
-
-💡 Usage Notes:
-- Use generate_knowledge to create content for any listed area
-- Use modify_tree to add/remove knowledge areas
-- Areas with (N topics) indicate deeper structure available
-
-Ready for knowledge generation in any of the above areas."""
+        # Build smart footer with recommendations
+        footer = self._build_smart_footer(
+            query, target_node if "target_node" in locals() else None, generation_status if "generation_status" in locals() else None
+        )
 
         return f"{header}\n{tree_content}{footer}"
+
+    def _build_smart_footer(self, query: str, target_node=None, generation_status=None) -> str:
+        """Build contextual footer with next steps after exploration."""
+
+        footer = """
+
+💡 **Next Steps**: 
+After exploring the available topics, use **ask_question** to decide:
+- Generate knowledge for a specific topic 
+- Generate knowledge for ALL topics (bulk generation)
+
+🎯 **Recommended Action**: 
+Use ask_question with context from this exploration to help the user choose between single topic or comprehensive generation."""
+
+        return footer
 
     def _find_target_node(self, node, query: str):
         """Recursively search for a node that matches the query exactly."""
@@ -207,6 +279,26 @@ Ready for knowledge generation in any of the above areas."""
             found = self._find_target_node(child, query)
             if found:
                 return found
+
+        return None
+
+    def _find_path_to_node(self, root, target_node, current_path=None):
+        """Find the path from root to target node."""
+        if current_path is None:
+            current_path = []
+
+        # Add current node to path
+        current_path = current_path + [root.topic]
+
+        # Check if we found the target
+        if root == target_node:
+            return current_path
+
+        # Search in children
+        for child in root.children:
+            result = self._find_path_to_node(child, target_node, current_path)
+            if result:
+                return result
 
         return None
 
@@ -227,6 +319,12 @@ Ready for knowledge generation in any of the above areas."""
         content_lines = []
 
         for match in matches:
+            # Get path to this match
+            path_to_match = self._find_path_to_node(self.tree_structure.root, match)
+            if path_to_match and len(path_to_match) > 1:
+                path_str = " → ".join(path_to_match)
+                content_lines.append(f"📍 Path: {path_str}")
+
             # Show the match and its children up to max_depth
             match_content = self._format_node_tree(match, max_depth, show_root=True)
             content_lines.append(match_content)
@@ -252,7 +350,9 @@ Ready for knowledge generation in any of the above areas."""
         else:
             emoji = "•"
 
-        lines = [f"{indent}{emoji} {node.topic}"]
+        # Add generation status indicator for each topic
+        status_indicator = self._get_status_indicator(node.topic)
+        lines = [f"{indent}{emoji} {node.topic}{status_indicator}"]
 
         # Add children info if they exist but we're not showing them due to depth limit
         if node.children and level == max_depth - 1:
@@ -280,6 +380,144 @@ Ready for knowledge generation in any of the above areas."""
                 count += self._count_nodes(child, max_depth, level + 1)
 
         return count
+
+    def _check_generation_status(self, topic: str) -> dict | None:
+        """Check if knowledge has been generated for this topic."""
+        if not self.knowledge_status_path:
+            return None
+
+        try:
+            from pathlib import Path
+            import json
+
+            status_file = Path(self.knowledge_status_path)
+            if status_file.exists():
+                with open(status_file) as f:
+                    status_data = json.load(f)
+                return status_data.get(topic, None)
+        except Exception:
+            pass
+
+        return None
+
+    def _calculate_tree_depth(self, node, current_depth=0) -> int:
+        """Calculate the maximum depth of the tree from a given node."""
+        if not node.children:
+            return current_depth + 1
+
+        max_child_depth = 0
+        for child in node.children:
+            child_depth = self._calculate_tree_depth(child, current_depth + 1)
+            max_child_depth = max(max_child_depth, child_depth)
+
+        return max_child_depth
+
+    def _count_knowledge_artifacts(self, topic: str) -> int:
+        """Count the number of knowledge artifacts for a topic."""
+        if not self.knowledge_status_path:
+            return 0
+
+        try:
+            from pathlib import Path
+            import json
+
+            status_file = Path(self.knowledge_status_path)
+            if status_file.exists():
+                with open(status_file) as f:
+                    status_data = json.load(f)
+                topic_status = status_data.get(topic, {})
+                # Count artifacts from the status data
+                return topic_status.get("artifact_count", 0)
+        except Exception:
+            pass
+
+        return 0
+
+    def _get_status_indicator(self, topic: str) -> str:
+        """Get visual status indicator for a topic's generation status with artifact count."""
+        status = self._check_generation_status(topic)
+        artifact_count = self._count_knowledge_artifacts(topic)
+
+        if status:
+            if status.get("status") == "success":
+                return f" ✅ ({artifact_count} artifacts)" if artifact_count > 0 else " ✅"
+            elif status.get("status") in ["pending", "in_progress"]:
+                return f" ⏳ ({artifact_count} artifacts)" if artifact_count > 0 else " ⏳"
+            else:
+                return f" ❌ ({artifact_count} artifacts)" if artifact_count > 0 else " ❌"
+
+        # For leaf nodes with no status, show if they have artifacts anyway
+        if artifact_count > 0:
+            return f" ({artifact_count} artifacts)"
+
+        return ""  # No status indicator if no status found
+
+    def _build_smart_footer(self, query: str, target_node, generation_status: dict | None) -> str:
+        """Build intelligent footer with context-aware recommendations."""
+
+        # For specific single topics (leaf nodes)
+        if target_node and (not target_node.children or len(target_node.children) == 0):
+            if generation_status and generation_status.get("status") == "success":
+                return """
+
+💡 Smart Recommendations:
+✅ This topic already has complete knowledge artifacts.
+
+Next actions:
+- Use this knowledge for analysis or reporting
+- Explore other topics that need knowledge generation
+- Use modify_tree to add new related topics
+
+Knowledge generation not needed for this topic."""
+            else:
+                return f"""
+
+💡 Smart Recommendations:
+⏳ This topic exists but needs knowledge generation.
+
+Next actions:
+- Use generate_knowledge to create content for "{query}"
+- Ready to proceed with knowledge generation
+- No tree modifications needed
+
+Perfect candidate for knowledge generation!"""
+
+        # For topics with children but also having generation status
+        elif target_node and target_node.children and generation_status and generation_status.get("status") == "success":
+            return """
+
+💡 Smart Recommendations:
+✅ This topic has generated knowledge and contains subtopics.
+
+Next actions:
+- Explore subtopics for additional knowledge generation opportunities
+- Use generate_knowledge for any unlisted subtopics
+- This topic itself already has complete knowledge
+
+Ready for subtopic knowledge generation."""
+
+        # For broader exploration or topics with children
+        elif target_node and target_node.children:
+            return """
+
+💡 Usage Notes:
+- Use generate_knowledge to create content for any listed area
+- Use modify_tree to add/remove knowledge areas  
+- Areas with (N topics) indicate deeper structure available
+- Explore specific topics to see generation status
+
+Ready for knowledge generation in any of the above areas."""
+
+        # For general exploration
+        else:
+            return """
+
+💡 Usage Notes:
+- Use generate_knowledge to create content for any listed area
+- Use modify_tree to add/remove knowledge areas
+- Areas with (N topics) indicate deeper structure available
+
+Ready for knowledge generation in any of the above areas."""
 
 
 class CreatePlanTool(BaseTool):
@@ -432,67 +670,40 @@ This plan shows the upcoming tool execution sequence. Ready for user approval.""
             return ToolResult(name="create_plan", result=content, require_user=False)
 
 
-class AskApprovalTool(BaseTool):
-    def __init__(self):
-        tool_info = BaseToolInformation(
-            name="ask_approval",
-            description="Present the generation plan to the user and request their approval before proceeding with knowledge generation. This is a critical human-in-the-loop checkpoint.",
-            input_schema=InputSchema(
-                type="object",
-                properties=[
-                    BaseArgument(
-                        name="plan_summary",
-                        type="string",
-                        description="Brief summary of the plan to be approved",
-                        example="Generate 10 knowledge artifacts about current ratio analysis",
-                    ),
-                    BaseArgument(
-                        name="estimated_artifacts", type="string", description="Number of knowledge pieces to be created", example="10"
-                    ),
-                ],
-                required=["plan_summary"],
-            ),
-        )
-        super().__init__(tool_info)
-
-    def _execute(self, plan_summary: str, estimated_artifacts: str = "multiple") -> ToolResult:
-        """
-        Ask user for approval of the generation plan.
-        """
-        content = f"""🔍 Approval Required
-
-The following plan has been created:
-{plan_summary}
-
-Estimated artifacts: {estimated_artifacts}
-
-Do you approve this plan and want to proceed with knowledge generation?
-
-Please respond with:
-- "yes" or "approve" to proceed
-- "no" or "reject" to cancel
-- Or provide feedback for modifications"""
-
-        return ToolResult(name="ask_approval", result=content, require_user=True)
-
-
 class GenerateKnowledgeTool(BaseTool):
-    def __init__(self, llm: LLMResource | None = None, knowledge_status_path: str | None = None):
+    def __init__(
+        self,
+        llm: LLMResource | None = None,
+        knowledge_status_path: str | None = None,
+        storage_path: str | None = None,
+        tree_structure: DomainKnowledgeTree | None = None,
+        domain: str = "General",
+        role: str = "Domain Expert",
+        tasks: list[str] | None = None,
+    ):
         self.knowledge_status_path = knowledge_status_path
+        self.storage_path = storage_path
+        self.tree_structure = tree_structure
+        self.domain = domain
+        self.role = role
+        self.tasks = tasks or ["Analyze Information", "Provide Insights", "Answer Questions"]
         tool_info = BaseToolInformation(
             name="generate_knowledge",
-            description="Generate all types of knowledge (facts, procedures, heuristics) for the specified topic based on the approved plan. Checks knowledge status and only generates for topics with status != 'success'.",
+            description="Generate knowledge for topics. Can generate for a single topic or automatically for all leaf nodes in the tree structure. Checks knowledge status and only generates for topics with status != 'success'.",
             input_schema=InputSchema(
                 type="object",
                 properties=[
                     BaseArgument(
-                        name="topic", type="string", description="Topic to generate knowledge about", example="Current Ratio Analysis"
+                        name="mode",
+                        type="string",
+                        description="Generation mode: 'single' for one topic or 'all_leaves' for all leaf nodes",
+                        example="single",
                     ),
                     BaseArgument(
-                        name="knowledge_types",
+                        name="topic",
                         type="string",
-                        description="Types of knowledge to generate (facts, procedures, heuristics)",
-                        example="facts, procedures, heuristics",
+                        description="Topic to generate knowledge about (required for single mode)",
+                        example="Current Ratio Analysis",
                     ),
                     BaseArgument(
                         name="counts",
@@ -507,21 +718,130 @@ class GenerateKnowledgeTool(BaseTool):
                         example="Focus on liquidity analysis for financial analysts",
                     ),
                 ],
-                required=["topic", "knowledge_types"],
+                required=["mode"],
             ),
         )
         super().__init__(tool_info)
         self.llm = llm or LLMResource()
 
-    def _execute(self, topic: str, knowledge_types: str, counts: str = "", context: str = "") -> ToolResult:
+    def _execute(self, mode: str, topic: str = "", counts: str = "", context: str = "") -> ToolResult:
         try:
-            # Check knowledge status first
-            if self.knowledge_status_path:
-                status_check = self._check_knowledge_status(topic)
-                if status_check["skip"]:
+            if mode == "all_leaves":
+                return self._generate_for_all_leaves(counts, context)
+            elif mode == "single":
+                if not topic:
                     return ToolResult(
-                        name="generate_knowledge",
-                        result=f"""📚 Knowledge Generation Skipped
+                        name="generate_knowledge", result="❌ Error: Topic is required for single mode generation", require_user=False
+                    )
+                return self._generate_for_single_topic(topic, counts, context)
+            else:
+                return ToolResult(
+                    name="generate_knowledge", result=f"❌ Error: Invalid mode '{mode}'. Use 'single' or 'all_leaves'", require_user=False
+                )
+        except Exception as e:
+            logger.error(f"Failed to generate knowledge: {e}")
+            return ToolResult(name="generate_knowledge", result=f"❌ Error generating knowledge: {str(e)}", require_user=False)
+
+    def _generate_for_all_leaves(self, counts: str, context: str) -> ToolResult:
+        """Generate knowledge for all leaf nodes in the tree structure."""
+        if not self.tree_structure or not self.tree_structure.root:
+            return ToolResult(
+                name="generate_knowledge", result="❌ Error: No tree structure available for all_leaves mode", require_user=False
+            )
+
+        # Extract all leaf paths from the tree
+        def extract_leaf_paths(node, current_path=None):
+            """Recursively extract all paths from root to leaf nodes."""
+            if current_path is None:
+                current_path = []
+            topic = node.topic
+            new_path = current_path + [topic]
+            children = node.children
+
+            if not children:  # Leaf node
+                return [new_path]
+
+            all_paths = []
+            for child in children:
+                all_paths.extend(extract_leaf_paths(child, new_path))
+            return all_paths
+
+        all_leaf_paths = extract_leaf_paths(self.tree_structure.root)
+        logger.info(f"Found {len(all_leaf_paths)} leaf nodes to process")
+
+        # Generate knowledge for each leaf
+        successful_generations = 0
+        failed_generations = 0
+        total_artifacts = 0
+        generation_results = []
+
+        for i, path in enumerate(all_leaf_paths):
+            leaf_topic = path[-1]  # Last element in path is the leaf topic
+            path_str = " → ".join(path)
+
+            logger.info(f"Processing leaf {i + 1}/{len(all_leaf_paths)}: {leaf_topic}")
+
+            try:
+                # Check if already generated
+                if self.knowledge_status_path:
+                    status_check = self._check_knowledge_status(leaf_topic)
+                    if status_check["skip"]:
+                        generation_results.append(f"⏭️ Skipped '{leaf_topic}' - already complete")
+                        continue
+
+                # Generate knowledge for this leaf
+                leaf_context = f"{context}\nTree path: {path_str}\nFocus on this specific aspect within the broader context."
+                result = self._generate_single_knowledge(leaf_topic, counts, leaf_context)
+
+                if "Error" not in result:
+                    successful_generations += 1
+                    # Extract artifact count from result
+                    artifacts_match = result.split("Total artifacts: ")
+                    if len(artifacts_match) > 1:
+                        try:
+                            total_artifacts += int(artifacts_match[1].split()[0])
+                        except ValueError:
+                            pass
+                    generation_results.append(f"✅ Generated '{leaf_topic}' - {path_str}")
+                else:
+                    failed_generations += 1
+                    generation_results.append(f"❌ Failed '{leaf_topic}' - {result}")
+
+            except Exception as e:
+                failed_generations += 1
+                generation_results.append(f"❌ Failed '{leaf_topic}' - {str(e)}")
+                logger.error(f"Failed to generate knowledge for leaf {leaf_topic}: {str(e)}")
+
+        # Format comprehensive summary
+        content = f"""🌳 Bulk Knowledge Generation Complete
+
+📊 **Generation Summary:**
+- Total leaf nodes: {len(all_leaf_paths)}
+- Successfully generated: {successful_generations}
+- Failed generations: {failed_generations}
+- Total artifacts created: {total_artifacts}
+
+📋 **Generation Results:**
+"""
+        for result in generation_results:
+            content += f"{result}\n"
+
+        if failed_generations == 0:
+            content += "\n🎉 All leaf nodes have been successfully processed!"
+        else:
+            content += f"\n⚠️ {failed_generations} leaf nodes failed - check logs for details"
+
+        return ToolResult(name="generate_knowledge", result=content, require_user=False)
+
+    def _generate_for_single_topic(self, topic: str, counts: str, context: str) -> ToolResult:
+        """Generate knowledge for a single topic."""
+        # Check knowledge status first
+        if self.knowledge_status_path:
+            status_check = self._check_knowledge_status(topic)
+            if status_check["skip"]:
+                return ToolResult(
+                    name="generate_knowledge",
+                    result=f"""📚 Knowledge Generation Skipped
 
 Topic: {topic}
 Status: {status_check["status"]}
@@ -529,35 +849,53 @@ Reason: {status_check["reason"]}
 
 ✅ This topic already has successful knowledge generation.
 No action needed - knowledge is up to date.""",
-                        require_user=False,
-                    )
+                    require_user=False,
+                )
 
-            # Parse knowledge types and counts
-            types_list = [t.strip() for t in knowledge_types.split(",")]
+        # Generate the knowledge
+        result_content = self._generate_single_knowledge(topic, counts, context)
+        return ToolResult(name="generate_knowledge", result=result_content, require_user=False)
 
-            # Generate comprehensive prompt
-            knowledge_prompt = f"""Generate comprehensive knowledge about "{topic}".
+    def _generate_single_knowledge(self, topic: str, counts: str, context: str) -> str:
+        """Core method to generate knowledge for a single topic."""
+        try:
+            # Always generate all types: facts, procedures, heuristics
+            types_list = ["facts", "procedures", "heuristics"]
 
-Context: {context}
-Requested types: {knowledge_types}
-Counts: {counts if counts else "appropriate amounts of each"}
+            # Build task descriptions for context
+            tasks_str = "\n".join([f"- {task}" for task in self.tasks])
+
+            # Generate domain/role/task-aware prompt
+            knowledge_prompt = f"""You are a {self.role} working in the {self.domain} domain. Generate comprehensive knowledge about "{topic}" that is specifically tailored for someone in your role.
+
+**Your Role**: {self.role}
+**Domain**: {self.domain}  
+**Key Tasks You Must Support**:
+{tasks_str}
+
+**Additional Context**: {context}
+**Target Counts**: {counts if counts else "appropriate amounts of each"}
+
+Generate knowledge that is immediately applicable and relevant for a {self.role} performing the above tasks. Focus on practical, actionable knowledge that supports real-world scenarios in {self.domain}.
 
 Generate the following knowledge:
 
 1. FACTS (definitions, formulas, key concepts):
-   - Accurate and verifiable
-   - Clear and concise
-   - Include definitions, formulas, data points
+   - Essential facts that a {self.role} MUST know about {topic}
+   - Include formulas, ratios, thresholds specific to {self.domain}
+   - Focus on facts directly applicable to: {", ".join(self.tasks)}
 
 2. PROCEDURES (step-by-step workflows):
-   - Clear, actionable steps
-   - Logically ordered
-   - Practical applications
+   - Detailed procedures that a {self.role} would follow for {topic}
+   - Step-by-step workflows specific to {self.domain} context
+   - Include decision points, inputs/outputs, and tools used
+   - Address common scenarios in: {", ".join(self.tasks)}
 
 3. HEURISTICS (best practices and rules of thumb):
-   - Practical and actionable
-   - Based on industry standards
-   - Include warning signs and guidelines
+   - Expert insights and judgment calls for {topic}
+   - Red flags and warning signs specific to {self.domain}
+   - Rules of thumb that experienced {self.role}s use
+   - Decision-making guidelines for: {", ".join(self.tasks)}
 
 Return as JSON:
 {{
@@ -645,20 +983,32 @@ Return as JSON:
 
             # Summary
             total_artifacts = len(result.get("facts", [])) + len(result.get("procedures", [])) + len(result.get("heuristics", []))
+
+            # Persist knowledge to disk if storage path is provided
+            persistence_info = ""
+            if self.storage_path:
+                try:
+                    persistence_info = self._persist_knowledge(topic, content, result, total_artifacts)
+                except Exception as e:
+                    logger.error(f"Failed to persist knowledge to disk: {e}")
+                    persistence_info = f"\n⚠️ Warning: Knowledge generated but not saved to disk: {str(e)}"
+
             content += f"\n✅ Knowledge generation complete. Total artifacts: {total_artifacts}"
+            if persistence_info:
+                content += persistence_info
 
             # Update knowledge status to success
             if self.knowledge_status_path:
                 self._update_knowledge_status(topic, "success", f"Generated {total_artifacts} artifacts")
 
-            return ToolResult(name="generate_knowledge", result=content, require_user=False)
+            return content
 
         except Exception as e:
-            logger.error(f"Failed to generate knowledge: {e}")
+            logger.error(f"Failed to generate knowledge for topic {topic}: {e}")
             # Update status to failed on error
             if self.knowledge_status_path:
                 self._update_knowledge_status(topic, "failed", str(e))
-            return ToolResult(name="generate_knowledge", result=f"❌ Error generating knowledge for {topic}: {str(e)}", require_user=False)
+            return f"❌ Error generating knowledge for {topic}: {str(e)}"
 
     def _check_knowledge_status(self, topic: str) -> dict:
         """Check if knowledge generation is needed for the given topic."""
@@ -720,6 +1070,44 @@ Return as JSON:
 
         except Exception as e:
             logger.error(f"Failed to update knowledge status: {e}")
+
+    def _persist_knowledge(self, topic: str, content: str, result_data: dict, total_artifacts: int) -> str:
+        """Persist generated knowledge to disk storage."""
+        from pathlib import Path
+        from datetime import datetime, UTC
+        import json
+
+        # Create safe filename from topic
+        safe_topic = topic.lower().replace(" ", "_").replace("-", "_")
+        safe_topic = "".join(c for c in safe_topic if c.isalnum() or c == "_")
+
+        # Create storage directory
+        storage_dir = Path(self.storage_path) / "processed_knowledge" / f"topic_{safe_topic}"
+        storage_dir.mkdir(parents=True, exist_ok=True)
+
+        # Prepare knowledge data for storage
+        knowledge_data = {
+            "topic": topic,
+            "generated_at": datetime.now(UTC).isoformat(),
+            "total_artifacts": total_artifacts,
+            "content_summary": f"Generated {total_artifacts} knowledge artifacts",
+            "raw_content": content,
+            "structured_data": result_data,
+            "status": "persisted",
+        }
+
+        # Save to JSON file
+        knowledge_file = storage_dir / "knowledge.json"
+        with open(knowledge_file, "w", encoding="utf-8") as f:
+            json.dump(knowledge_data, f, indent=2, ensure_ascii=False)
+
+        return f"""
+
+💾 **Knowledge Persisted Successfully**
+📁 Storage Location: {knowledge_file}
+📊 File Size: {knowledge_file.stat().st_size} bytes
+🕒 Saved At: {datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")}
+✅ Status: Ready for agent usage"""
 
 
 class ModifyTreeTool(BaseTool):
@@ -877,7 +1265,7 @@ class ModifyTreeTool(BaseTool):
 
         return content
 
-    def _modify_single_node(self, path_parts: list[str], tree_path: str, new_name: str = "") -> str:
+    def _modify_single_node(self, path_parts: list[str], tree_path: str) -> str:
         """Modify existing node in the tree structure."""
         if not self.tree_structure or not self.tree_structure.root:
             return "❌ Error: No tree structure exists to modify"
@@ -1382,7 +1770,7 @@ class PersistTool(BaseTool):
 📍 Storage Details:
 - Agent ID: {target_agent_id}
 - Storage Location: Vector Database
-- Timestamp: {Misc.get_current_datetime_str()}
+- Timestamp: {datetime.now().isoformat()}
 - Status: Successfully Stored
 
 🎯 Knowledge is now available for agent usage and retrieval."""
@@ -1391,77 +1779,169 @@ class PersistTool(BaseTool):
 
 
 class CheckExistingTool(BaseTool):
-    def __init__(self):
+    def __init__(self, tree_structure: DomainKnowledgeTree | None = None, knowledge_status_path: str | None = None):
+        self.tree_structure = tree_structure
+        self.knowledge_status_path = knowledge_status_path
         tool_info = BaseToolInformation(
             name="check_existing",
-            description="Check for existing knowledge at the target location to avoid duplicates.",
+            description="Check if a topic already exists in the tree structure or has been successfully generated.",
             input_schema=InputSchema(
                 type="object",
                 properties=[
                     BaseArgument(
                         name="target_path",
                         type="string",
-                        description="The tree path to check for existing knowledge",
+                        description="The tree path to check for existing knowledge (optional, will search entire tree if not provided)",
                         example="Financial Analysis > Liquidity Analysis > Current Ratio",
                     ),
                     BaseArgument(
                         name="topic", type="string", description="Topic to check for duplicates", example="Current Ratio Analysis"
                     ),
                 ],
-                required=["target_path"],
+                required=["topic"],
             ),
         )
         super().__init__(tool_info)
 
-    def _execute(self, target_path: str, topic: str = "") -> ToolResult:
-        # Mock duplicate check - in real implementation would query existing knowledge
-        import random
+    def _execute(self, topic: str, target_path: str = "") -> ToolResult:
+        """Check if topic exists in tree structure and/or has been generated."""
 
-        # Randomly simulate existing content check
-        has_existing = random.choice([True, False, False])  # 33% chance of existing content
+        # First check if topic exists in tree structure
+        topic_exists_in_tree = False
+        found_path = None
 
-        if has_existing:
-            content = f"""⚠️ Existing Knowledge Found
+        if self.tree_structure and self.tree_structure.root:
+            # Search for the topic in the tree
+            found_node = self._find_topic_in_tree(self.tree_structure.root, topic)
+            if found_node:
+                topic_exists_in_tree = True
+                # Get the path to this node
+                found_path = self._get_path_to_node(self.tree_structure.root, found_node)
 
-Path: {target_path}
-Topic: {topic}
+        # Check knowledge generation status if available
+        generation_status = None
+        if self.knowledge_status_path:
+            generation_status = self._check_generation_status(topic)
 
-Found existing knowledge items:
-- 2 related facts
-- 1 procedure overlap
+        # Build response based on findings
+        if topic_exists_in_tree:
+            path_str = " → ".join(found_path) if found_path else "Unknown path"
 
-Recommendation: Proceed with generation but focus on complementary content to avoid duplication."""
+            if generation_status and generation_status.get("status") == "success":
+                content = f"""⚠️ Topic Already Exists with Generated Knowledge
+
+📍 Found in tree at: {path_str}
+🎯 Topic: {topic}
+✅ Generation Status: Success
+
+Knowledge artifacts already generated:
+- Last updated: {generation_status.get("last_updated", "Unknown")}
+- Message: {generation_status.get("message", "No details")}
+
+Recommendation: Topic already has complete knowledge. Consider:
+- Using explore_knowledge to view existing structure
+- Generating knowledge for other topics
+- Using modify_tree if you want to reorganize structure"""
+            else:
+                content = f"""⚠️ Topic Already Exists in Tree
+
+📍 Found in tree at: {path_str}
+🎯 Topic: {topic}
+⏳ Generation Status: {generation_status.get("status", "Not generated") if generation_status else "Not generated"}
+
+This topic exists in the knowledge tree but doesn't have generated content yet.
+
+Recommendation: 
+- Proceed with generate_knowledge for this existing topic
+- Or use explore_knowledge to find other topics needing content"""
         else:
-            content = f"""✅ Clear to Proceed
+            # Topic doesn't exist in tree
+            if target_path:
+                content = f"""✅ Clear to Proceed - New Topic
 
-Path: {target_path}
-Topic: {topic}
+📍 Target Path: {target_path}
+🎯 Topic: {topic}
+🆕 Status: Topic not found in tree
 
-No duplicate knowledge found at target location.
-Safe to proceed with full knowledge generation."""
+This is a new topic that doesn't exist in the current tree structure.
+
+Recommendation:
+- Use modify_tree to add "{topic}" to the tree at the desired location
+- Then proceed with generate_knowledge for the new topic"""
+            else:
+                content = f"""✅ Topic Not Found
+
+🎯 Topic: {topic}
+🔍 Status: Not found in knowledge tree
+
+The topic "{topic}" doesn't exist in the current tree structure.
+
+Suggestions:
+- Use explore_knowledge to see available topics
+- Use modify_tree to add this as a new topic
+- Check spelling or try a similar topic name"""
 
         return ToolResult(name="check_existing", result=content, require_user=False)
+
+    def _find_topic_in_tree(self, node, topic: str):
+        """Recursively search for a topic in the tree."""
+        if node.topic.lower() == topic.lower():
+            return node
+
+        for child in node.children:
+            found = self._find_topic_in_tree(child, topic)
+            if found:
+                return found
+
+        return None
+
+    def _get_path_to_node(self, root, target_node, current_path=None):
+        """Get the path from root to target node."""
+        if current_path is None:
+            current_path = []
+
+        current_path = current_path + [root.topic]
+
+        if root == target_node:
+            return current_path
+
+        for child in root.children:
+            result = self._get_path_to_node(child, target_node, current_path)
+            if result:
+                return result
+
+        return None
+
+    def _check_generation_status(self, topic: str) -> dict | None:
+        """Check if knowledge has been generated for this topic."""
+        try:
+            from pathlib import Path
+            import json
+
+            status_file = Path(self.knowledge_status_path)
+            if status_file.exists():
+                with open(status_file) as f:
+                    status_data = json.load(f)
+                return status_data.get(topic, None)
+        except Exception:
+            pass
+
+        return None
 
 
 class AttemptCompletionTool(BaseTool):
     def __init__(self):
         tool_info = BaseToolInformation(
             name="attempt_completion",
-            description="Present the final results to the user and complete the knowledge generation workflow.",
+            description="Present information to the user. Use for final results after workflow completion OR to directly answer user questions about capabilities, explanations, or informational requests that don't require task execution.",
             input_schema=InputSchema(
                 type="object",
                 properties=[
                     BaseArgument(
                         name="summary",
                         type="string",
-                        description="Summary of what was accomplished",
-                        example="Successfully generated and stored 10 knowledge artifacts about current ratio analysis",
-                    ),
-                    BaseArgument(
-                        name="artifacts_created",
-                        type="string",
-                        description="Count and types of artifacts created",
-                        example="5 facts, 2 procedures, 3 heuristics",
+                        description="Summary of what was accomplished OR direct answer/explanation to user's question",
+                        example="Successfully generated 10 knowledge artifacts OR I can help you generate financial analysis knowledge, modify knowledge structure, and explore available topics",
                     ),
                 ],
                 required=["summary"],
@@ -1469,29 +1949,36 @@ class AttemptCompletionTool(BaseTool):
         )
         super().__init__(tool_info)
 
-    def _execute(self, summary: str, artifacts_created: str = "") -> ToolResult:
-        content = f"""🎉 Knowledge Generation Complete
+    def _execute(self, summary: str) -> ToolResult:
+        # Detect if this is a completion (mentions artifacts/generation) or information response
+        is_completion = any(
+            keyword in summary.lower() for keyword in ["generated", "created", "complete", "artifacts", "workflow", "finished"]
+        )
+
+        if is_completion:
+            # Format as workflow completion
+            content = f"""🎉 Knowledge Generation Complete
 
 {summary}
 
-📊 Final Results:
-{f"Artifacts: {artifacts_created}" if artifacts_created else "Multiple knowledge artifacts created"}
-
 ✅ All knowledge has been:
 - Generated with high accuracy
-- Validated for quality
+- Validated for quality  
 - Stored to vector database
 - Made available for agent usage
 
 The knowledge generation workflow is now complete. Your agent has been enhanced with new domain expertise!"""
+        else:
+            # Format as direct information response
+            content = f"""ℹ️ {summary}"""
 
-        return ToolResult(name="attempt_completion", result=content, require_user=False)
+        return ToolResult(name="attempt_completion", result=content, require_user=True)
 
 
 if __name__ == "__main__":
-    # Test AskFollowUpQuestionTool
-    tool = AskFollowUpQuestionTool()
-    print("AskFollowUpQuestionTool:")
+    # Test AskQuestionTool (merged tool)
+    tool = AskQuestionTool()
+    print("AskQuestionTool (merged from AskFollowUpQuestionTool and AskApprovalTool):")
     print(tool)
     print("\n" + "=" * 60 + "\n")
 

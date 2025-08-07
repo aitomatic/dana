@@ -1,7 +1,7 @@
 from dana.api.services.intent_detection_service import IntentDetectionService
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
-from dana.api.core.schemas import IntentDetectionRequest, IntentDetectionResponse, DomainKnowledgeTree, MessageData
+from dana.api.core.schemas import IntentDetectionRequest, IntentDetectionResponse, MessageData
 from dana.api.services.intent_detection.intent_prompts import INTENT_DETECTION_PROMPT, DANA_ASSISTANT_PROMPT
 from datetime import datetime, UTC
 from dana.common.utils.misc import Misc

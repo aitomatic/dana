@@ -1,15 +1,17 @@
 from dana.api.services.intent_detection.intent_handlers.abstract_handler import AbstractHandler
 from dana.api.services.intent_detection.intent_handlers.handler_prompts.knowledge_ops_prompts import TOOL_SELECTION_PROMPT
 from dana.common.resource.llm.llm_resource import LLMResource
-from dana.common.resource.rag.knowledge_resource import KnowledgeResource
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
 from dana.api.core.schemas import DomainKnowledgeTree, IntentDetectionRequest, DomainNode, MessageData
-from typing import Dict, Any, List, Optional
+from typing import Any
 from dana.api.services.intent_detection.intent_handlers.handler_tools.knowledge_ops_tools import (
-    AskFollowUpQuestionTool, ExploreKnowledgeTool, CreatePlanTool, AskApprovalTool,
-    GenerateKnowledgeTool, ModifyTreeTool, ValidateTool, PersistTool, 
-    CheckExistingTool, AttemptCompletionTool
+    AskQuestionTool,
+    ExploreKnowledgeTool,
+    GenerateKnowledgeTool,
+    ModifyTreeTool,
+    ValidateTool,
+    AttemptCompletionTool,
 )
 from dana.api.services.intent_detection.intent_handlers.handler_utility import knowledge_ops_utils as ko_utils
 import logging
@@ -32,22 +34,33 @@ class KnowledgeOpsHandler(AbstractHandler):
     4. Human approval happens via conversation
     """
 
-    def __init__(self, 
-                 domain_knowledge_path: str, 
-                 llm: LLMResource | None = None,  
-                 domain : str = "General",
-                 role : str = "Domain Expert",
-                 knowledge_status_path: str | None = None):
+    def __init__(
+        self,
+        domain_knowledge_path: str,
+        llm: LLMResource | None = None,
+        domain: str = "General",
+        role: str = "Domain Expert",
+        tasks: list[str] | None = None,
+        knowledge_status_path: str | None = None,
+    ):
+        from pathlib import Path
+
+        base_path = Path(domain_knowledge_path).parent
+
         self.domain_knowledge_path = domain_knowledge_path
-        self.knowledge_status_path = knowledge_status_path
+        # Default knowledge_status_path to same directory as domain_knowledge if not provided
+        self.knowledge_status_path = knowledge_status_path or str(base_path / "knowledge_status.json")
+        # Derive storage path from domain_knowledge_path parent directory
+        self.storage_path = str(base_path)
         self.domain = domain
         self.role = role
+        self.tasks = tasks or ["Analyze Information", "Provide Insights", "Answer Questions"]
         self.llm = llm or LLMResource()
         self.tree_structure = self._load_tree_structure(domain_knowledge_path)
         self.tools = {}
         self._initialize_tools()
 
-    def _load_tree_structure(self, domain_knowledge_path : str | None = None):
+    def _load_tree_structure(self, domain_knowledge_path: str | None = None):
         _path = Path(domain_knowledge_path)
         if not _path.exists():
             tree = DomainKnowledgeTree(root=DomainNode(topic=self.domain, children=[]))
@@ -61,33 +74,45 @@ class KnowledgeOpsHandler(AbstractHandler):
         try:
             self.tree_structure = ko_utils.load_tree(self.domain_knowledge_path)
             logger.info("Tree structure reloaded from disk")
-            
-            # Update the ExploreKnowledgeTool with the new tree structure
+
+            # Update tools with the new tree structure
             if "explore_knowledge" in self.tools:
                 self.tools["explore_knowledge"].tree_structure = self.tree_structure
+            if "generate_knowledge" in self.tools:
+                self.tools["generate_knowledge"].tree_structure = self.tree_structure
         except Exception as e:
             logger.error(f"Failed to reload tree structure: {e}")
 
     def _initialize_tools(self):
         # Core workflow tools
-        self.tools.update(AskFollowUpQuestionTool().as_dict())
-        self.tools.update(ExploreKnowledgeTool(tree_structure=self.tree_structure).as_dict())
-        self.tools.update(CreatePlanTool(llm=self.llm).as_dict())
-        self.tools.update(AskApprovalTool().as_dict())
-        
-        # Generation tool (unified)
-        self.tools.update(GenerateKnowledgeTool(llm=self.llm, knowledge_status_path=self.knowledge_status_path).as_dict())
-        
+        self.tools.update(AskQuestionTool().as_dict())  # Unified tool for questions and approvals
+        self.tools.update(
+            ExploreKnowledgeTool(tree_structure=self.tree_structure, knowledge_status_path=self.knowledge_status_path).as_dict()
+        )
+
+        # Generation tool (unified) with persistence
+        self.tools.update(
+            GenerateKnowledgeTool(
+                llm=self.llm,
+                knowledge_status_path=self.knowledge_status_path,
+                storage_path=self.storage_path,
+                tree_structure=self.tree_structure,
+                domain=self.domain,
+                role=self.role,
+                tasks=self.tasks,
+            ).as_dict()
+        )
+
         # Tree management
         self.tools.update(ModifyTreeTool(tree_structure=self.tree_structure, domain_knowledge_path=self.domain_knowledge_path).as_dict())
-        
+
         # Quality and completion tools
         self.tools.update(ValidateTool(llm=self.llm).as_dict())
-        self.tools.update(PersistTool().as_dict())
-        self.tools.update(CheckExistingTool().as_dict())
+        # Note: PersistTool removed - persistence now handled by GenerateKnowledgeTool
+        # Note: CheckExistingTool removed - functionality merged into ExploreKnowledgeTool
         self.tools.update(AttemptCompletionTool().as_dict())
 
-    async def handle(self, request: IntentDetectionRequest) -> Dict[str, Any]:
+    async def handle(self, request: IntentDetectionRequest) -> dict[str, Any]:
         """
         Main stateless handler - runs tool loop until completion.
 
@@ -103,7 +128,7 @@ class KnowledgeOpsHandler(AbstractHandler):
         conversation = request.chat_history + [MessageData(role="user", content=request.user_message)]
 
         # Tool loop - max 15 iterations
-        for iteration in range(15):
+        for _ in range(15):
             # Determine next tool from conversation
             tool_msg = await self._determine_next_tool(conversation)
 
@@ -127,6 +152,10 @@ class KnowledgeOpsHandler(AbstractHandler):
 
             # Add result to conversation
             conversation.append(tool_result_msg)
+
+            # Check if workflow completed after tool execution
+            if "attempt_completion" in tool_msg.content:
+                break
         # Mock final result
         return {
             "status": "success",
@@ -135,7 +164,7 @@ class KnowledgeOpsHandler(AbstractHandler):
             "final_result": {"artifacts": 10, "types": ["facts", "plans", "heuristics"]},
         }
 
-    async def _determine_next_tool(self, conversation: List[MessageData]) -> MessageData:
+    async def _determine_next_tool(self, conversation: list[MessageData]) -> MessageData:
         """
         LLM decides next tool based purely on conversation history.
 
@@ -191,16 +220,12 @@ class KnowledgeOpsHandler(AbstractHandler):
             result = tool.execute(**params)
 
             # Convert ToolResult to MessageData
-            message_data = MessageData(
-                role="user", 
-                content=result.result, 
-                require_user=result.require_user
-            )
-            
+            message_data = MessageData(role="user", content=result.result, require_user=result.require_user)
+
             # If this was a modify_tree operation, reload the tree structure
             if tool_name == "modify_tree" and "Tree Structure" in result.result:
                 self._reload_tree_structure()
-            
+
             return message_data
 
         except Exception as e:
@@ -305,7 +330,18 @@ if __name__ == "__main__":
     import asyncio
     from dana.api.core.schemas import MessageData
 
-    handler = KnowledgeOpsHandler(domain_knowledge_path="/Users/lam/Desktop/repos/opendxa/agents/financial_stmt_analysis/test_new_knows/domain_knowledge.json")
+    # Test with financial statement analysis agent path
+    handler = KnowledgeOpsHandler(
+        domain_knowledge_path="/Users/lam/Desktop/repos/opendxa/agents/financial_stmt_analysis/test_new_knows/domain_knowledge.json",
+        domain="Financial Statement Analysis",
+        role="Senior Financial Analyst",
+        tasks=[
+            "Analyze Financial Statements",
+            "Provide Financial Insights",
+            "Answer Financial Questions",
+            "Forecast Financial Performance",
+        ],
+    )
     chat_history = []
 
     print("🔧 Knowledge Ops Handler - Interactive Testing Environment")
@@ -320,16 +356,16 @@ if __name__ == "__main__":
 
     while True:
         try:
-            user_message = input(f"\n💬 User ({len(chat_history)//2 + 1}): ").strip()
+            user_message = input(f"\n💬 User ({len(chat_history) // 2 + 1}): ").strip()
 
-            if user_message.lower() in ['quit', 'exit']:
+            if user_message.lower() in ["quit", "exit"]:
                 print("👋 Goodbye!")
                 break
-            elif user_message.lower() == 'reset':
+            elif user_message.lower() == "reset":
                 chat_history = []
                 print("🗑️  Chat history cleared.")
                 continue
-            elif user_message.lower() == 'history':
+            elif user_message.lower() == "history":
                 if not chat_history:
                     print("📝 No conversation history yet.")
                 else:
@@ -338,71 +374,69 @@ if __name__ == "__main__":
                         role_emoji = "👤" if msg.role == "user" else "🤖"
                         print(f"  {i:2}. {role_emoji} {msg.role.upper()}: {msg.content[:100]}{'...' if len(msg.content) > 100 else ''}")
                 continue
-            elif user_message.lower() == 'tools':
+            elif user_message.lower() == "tools":
                 print(f"\n🛠️  Available Tools ({len(handler.tools)}):")
                 for i, (name, tool) in enumerate(handler.tools.items(), 1):
-                    print(f"  {i:2}. {name}: {tool.tool_information.description[:80]}{'...' if len(tool.tool_information.description) > 80 else ''}")
+                    print(
+                        f"  {i:2}. {name}: {tool.tool_information.description[:80]}{'...' if len(tool.tool_information.description) > 80 else ''}"
+                    )
                 continue
             elif not user_message:
                 continue
 
             # Create request
-            request = IntentDetectionRequest(
-                user_message=user_message, 
-                chat_history=chat_history, 
-                current_domain_tree=None, 
-                agent_id=1
-            )
+            request = IntentDetectionRequest(user_message=user_message, chat_history=chat_history, current_domain_tree=None, agent_id=1)
 
-            print(f"\n{'⚡'*3} PROCESSING REQUEST {'⚡'*3}")
+            print(f"\n{'⚡' * 3} PROCESSING REQUEST {'⚡' * 3}")
             print(f"Request: {user_message}")
 
             # Run handler
             result = asyncio.run(handler.handle(request))
 
             # Display results
-            print(f"\n{'📊'*3} WORKFLOW RESULTS {'📊'*3}")
+            print(f"\n{'📊' * 3} WORKFLOW RESULTS {'📊' * 3}")
             print(f"Status: {result['status']}")
             print(f"Message: {result['message']}")
-            
-            if result.get('final_result'):
-                final = result['final_result']
+
+            if result.get("final_result"):
+                final = result["final_result"]
                 print(f"Artifacts: {final.get('artifacts', 'N/A')}")
                 print(f"Types: {final.get('types', 'N/A')}")
 
             # Show conversation flow
-            conversation = result['conversation']
-            print(f"\n{'💭'*3} CONVERSATION FLOW ({len(conversation)} messages) {'💭'*3}")
-            
+            conversation = result["conversation"]
+            print(f"\n{'💭' * 3} CONVERSATION FLOW ({len(conversation)} messages) {'💭' * 3}")
+
             for i, msg in enumerate(conversation, 1):
                 role_emoji = "👤" if msg.role == "user" else "🤖"
                 role_color = "\033[94m" if msg.role == "user" else "\033[92m"  # Blue for user, green for assistant
                 reset_color = "\033[0m"
-                
+
                 print(f"\n{i:2}. {role_emoji} {role_color}{msg.role.upper()}{reset_color}:")
-                
+
                 # Handle tool calls vs regular messages
                 if msg.role == "assistant" and ("<" in msg.content and ">" in msg.content):
                     # This looks like a tool call
                     if "<thinking>" in msg.content:
                         # Extract thinking for display
                         import re
-                        thinking_match = re.search(r'<thinking>(.*?)</thinking>', msg.content, re.DOTALL)
+
+                        thinking_match = re.search(r"<thinking>(.*?)</thinking>", msg.content, re.DOTALL)
                         if thinking_match:
                             thinking = thinking_match.group(1).strip()
                             print(f"    💭 Thinking: {thinking}")
-                    
+
                     # Extract tool name and arguments (skip thinking tags)
-                    tool_match = re.search(r'<(?!thinking)(\w+)', msg.content)
+                    tool_match = re.search(r"<(?!thinking)(\w+)", msg.content)
                     if tool_match:
                         tool_name = tool_match.group(1)
                         print(f"    🔧 Tool Call: {tool_name}")
-                        
+
                         # Extract and display tool arguments
                         try:
                             _, params, _ = handler._parse_xml_tool_call(msg.content)
                             if params:
-                                print(f"    📝 Arguments:")
+                                print("    📝 Arguments:")
                                 for key, value in params.items():
                                     if isinstance(value, list):
                                         print(f"      {key}: {value}")
@@ -414,20 +448,20 @@ if __name__ == "__main__":
                             print(f"    ⚠️ Could not parse arguments: {e}")
                 else:
                     # Regular message content
-                    content_lines = msg.content.split('\n')
+                    content_lines = msg.content.split("\n")
                     for line in content_lines:  # Show first 5 lines
                         if line.strip():
                             print(f"    {line}")
 
             # Update chat history for next iteration
             chat_history = conversation
-            
+
             # Check if workflow is complete or needs user input
-            if result['status'] == 'user_input_required':
-                print(f"\n{'⏸️'*3} WORKFLOW PAUSED - USER INPUT REQUIRED {'⏸️'*3}")
+            if result["status"] == "user_input_required":
+                print(f"\n{'⏸️' * 3} WORKFLOW PAUSED - USER INPUT REQUIRED {'⏸️' * 3}")
                 print("The system is waiting for your response to continue.")
-            elif result['status'] == 'success':
-                print(f"\n{'✅'*3} WORKFLOW COMPLETED SUCCESSFULLY {'✅'*3}")
+            elif result["status"] == "success":
+                print(f"\n{'✅' * 3} WORKFLOW COMPLETED SUCCESSFULLY {'✅' * 3}")
                 print("You can start a new knowledge request or type 'reset' to clear history.")
 
         except KeyboardInterrupt:
@@ -436,6 +470,7 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"\n❌ Error: {e}")
             import traceback
+
             print("Full traceback:")
             traceback.print_exc()
             print("\n💡 Continuing... (you can type 'reset' to clear state)")

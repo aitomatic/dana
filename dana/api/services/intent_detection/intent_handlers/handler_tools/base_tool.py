@@ -1,6 +1,5 @@
 import textwrap
 from pydantic import BaseModel, Field
-from typing import List
 from abc import abstractmethod, ABC
 
 
@@ -9,6 +8,7 @@ class ToolResult(BaseModel):
     result: str
     require_user: bool = True
     metadata: dict = Field(default_factory=dict)
+
 
 class BaseArgument(BaseModel):
     name: str
@@ -19,8 +19,8 @@ class BaseArgument(BaseModel):
 
 class InputSchema(BaseModel):
     type: str = "object"
-    properties: List[BaseArgument] = Field(default_factory=list)
-    required: List[str] = Field(default_factory=list)
+    properties: list[BaseArgument] = Field(default_factory=list)
+    required: list[str] = Field(default_factory=list)
 
 
 class BaseToolInformation(BaseModel):
@@ -58,7 +58,7 @@ class BaseTool(ABC):
     def __repr__(self) -> str:
         parameter_str = "\n".join(
             [
-                f"- {arg.name}: {"(required)" if arg.name in self.tool_information.input_schema.required else ""} {arg.description}"
+                f"- {arg.name}: {'(required)' if arg.name in self.tool_information.input_schema.required else ''} {arg.description}"
                 for arg in self.tool_information.input_schema.properties
             ]
         )
