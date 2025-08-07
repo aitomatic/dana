@@ -96,3 +96,17 @@ class CollectionTransformer(BaseTransformer):
     def dict_items(self, items):
         """Transform dict items rule."""
         return self.flatten_items(items)
+
+    def dict_element(self, items):
+        """Transform dict_element rule (either key_value_pair or COMMENT)."""
+        if not items:
+            return None
+
+        item = items[0]
+
+        # If it's a comment token, skip it (comments are ignored during transformation)
+        if hasattr(item, "type") and item.type == "COMMENT":
+            return None
+
+        # Otherwise, it should be a key_value_pair
+        return item

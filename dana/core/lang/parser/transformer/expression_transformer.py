@@ -707,8 +707,29 @@ class ExpressionTransformer(BaseTransformer):
             elif hasattr(item, "data") and item.data == "key_value_pair":
                 pair = self.key_value_pair(item.children)
                 pairs.append(pair)
+            # Skip comment tokens - they are handled at the grammar level but ignored during transformation
+            elif hasattr(item, "type") and item.type == "COMMENT":
+                continue
         result = DictLiteral(items=pairs)
         return result
+
+    def dict_items(self, items):
+        """Transform dict_items rule (list of dict_element)."""
+        return self.flatten_items(items)
+
+    def dict_element(self, items):
+        """Transform dict_element rule (either key_value_pair or COMMENT)."""
+        if not items:
+            return None
+
+        item = items[0]
+
+        # If it's a comment token, skip it (comments are ignored during transformation)
+        if hasattr(item, "type") and item.type == "COMMENT":
+            return None
+
+        # Otherwise, it should be a key_value_pair
+        return item
 
     def set(self, items):
         """

@@ -405,7 +405,8 @@ set: set_comprehension
     | "{" list_items"}"
 
 list_items: expr ("," expr)* [","]
-dict_items: key_value_pair ("," key_value_pair)* [","]
+dict_items: dict_element ("," dict_element | dict_element)* [","]
+dict_element: key_value_pair | COMMENT
 key_value_pair: expr ":" expr
 
 // ===== COMPREHENSIONS =====
