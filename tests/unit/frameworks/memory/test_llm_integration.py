@@ -89,7 +89,10 @@ class TestLLMIntegration(unittest.TestCase):
 
             # Check that request contains prompt with agent description
             request = call_args[0][0]
-            self.assertIn("You are TestAgent", request.arguments["prompt"])
+            messages = request.arguments["messages"]
+            system_messages = [msg for msg in messages if msg["role"] == "system"]
+            self.assertTrue(len(system_messages) > 0)
+            self.assertIn("You are TestAgent", system_messages[0]["content"])
 
     def test_llm_resource_error_handling(self):
         """Test error handling when LLM resource fails."""
@@ -174,7 +177,9 @@ class TestLLMIntegration(unittest.TestCase):
 
             # Second call should include conversation history
             second_call_request = mock_llm_resource.query_sync.call_args_list[1][0][0]
-            self.assertIn("Alice", second_call_request.arguments["prompt"])
+            messages = second_call_request.arguments["messages"]
+            all_content = " ".join([msg["content"] for msg in messages])
+            self.assertIn("Alice", all_content)
 
     def test_promise_string_representation(self):
         """Test that Promise string representation works correctly."""
