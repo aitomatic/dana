@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import ReactFlow, { Controls, Position, MarkerType } from 'reactflow';
-import type { Node as FlowNode, Edge } from 'reactflow';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import ReactFlow, { Controls, Position, MarkerType, useReactFlow } from 'reactflow';
+import type { Node as FlowNode, Edge, ReactFlowInstance } from 'reactflow';
 import dagre from 'dagre';
 import 'reactflow/dist/style.css';
 import CustomNode from './CustomNode';
@@ -10,6 +10,63 @@ import type { KnowledgeStatusResponse, KnowledgeTopicStatus } from '@/lib/api';
 import { toast } from 'sonner';
 import KnowledgeSidebar from './KnowledgeSidebar';
 import { Search } from 'iconoir-react';
+
+// Add CSS animations for smooth transitions
+const animationStyles = `
+  .react-flow__node {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+  
+  .react-flow__node-enter {
+    opacity: 0;
+    transform: scale(0.8) translateY(10px);
+  }
+  
+  .react-flow__node-enter-active {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  
+  .react-flow__node-exit {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  
+  .react-flow__node-exit-active {
+    opacity: 0;
+    transform: scale(0.8) translateY(-10px);
+  }
+  
+  .react-flow__edge {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+  
+  .react-flow__edge-enter {
+    opacity: 0;
+    stroke-dasharray: 5;
+    stroke-dashoffset: 10;
+  }
+  
+  .react-flow__edge-enter-active {
+    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+  
+  .react-flow__edge-exit {
+    opacity: 1;
+  }
+  
+  .react-flow__edge-exit-active {
+    opacity: 0;
+  }
+`;
+
+// Inject styles
+if (typeof document !== 'undefined') {
+  const styleElement = document.createElement('style');
+  styleElement.textContent = animationStyles;
+  document.head.appendChild(styleElement);
+}
 
 const initialNodes: FlowNode[] = [
   {
@@ -169,10 +226,60 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   const [sidebarError, setSidebarError] = useState<string | null>(null);
   // New UX improvement states
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const expandedNodesRef = useRef<Set<string>>(new Set());
   const previousAgentIdRef = useRef<string | number | undefined>(undefined);
+  const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
+  const nodesRef = useRef<FlowNode[]>([]);
+
+  // Function to center the view after nodes are expanded
+  const centerView = useCallback(() => {
+    if (reactFlowInstanceRef.current && nodesRef.current.length > 0) {
+      // Use setTimeout to ensure the nodes are rendered before centering
+      setTimeout(() => {
+        reactFlowInstanceRef.current?.fitView({
+          padding: 0.2,
+          includeHiddenNodes: false,
+          minZoom: 0.5,
+          maxZoom: 1.5,
+        });
+      }, 100);
+    }
+  }, []);
+
+  // Function to handle smooth transitions when expanding/collapsing
+  const handleSmoothTransition = useCallback(
+    (newNodes: FlowNode[], newEdges: Edge[]) => {
+      setIsTransitioning(true);
+
+      // Add a small delay to allow the transition to start
+      setTimeout(() => {
+        setNodes(newNodes);
+        setEdges(newEdges);
+
+        // Center view and end transition after animation completes
+        setTimeout(() => {
+          centerView();
+          setIsTransitioning(false);
+        }, 300);
+      }, 50);
+    },
+    [centerView],
+  );
+
+  // Keep nodes ref in sync
+  useEffect(() => {
+    nodesRef.current = nodes;
+  }, [nodes]);
+
+  // Center view when nodes change
+  useEffect(() => {
+    if (nodes.length > 0) {
+      centerView();
+    }
+  }, [nodes, centerView]);
 
   // Keep the ref in sync with the state
   useEffect(() => {
@@ -583,8 +690,9 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
           searchQuery,
         );
         const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
-        setNodes(layoutedNodes);
-        setEdges(flowEdges);
+
+        // Use smooth transition function
+        handleSmoothTransition(layoutedNodes, flowEdges);
       }
     }
   };
@@ -877,12 +985,35 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                 edges={edges}
                 nodeTypes={nodeTypes}
                 fitView
+                fitViewOptions={{
+                  padding: 0.2,
+                  includeHiddenNodes: false,
+                  minZoom: 0.5,
+                  maxZoom: 1.5,
+                }}
                 nodesDraggable={false}
                 nodesConnectable={false}
                 elementsSelectable={false}
                 proOptions={{ hideAttribution: true }}
                 onNodeClick={onNodeClick}
                 onPaneClick={onPaneClick}
+                onInit={(reactFlowInstance) => {
+                  reactFlowInstanceRef.current = reactFlowInstance;
+                }}
+                // Smooth animation properties
+                defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+                minZoom={0.1}
+                maxZoom={2}
+                zoomOnScroll={true}
+                panOnScroll={false}
+                zoomOnPinch={true}
+                panOnDrag={true}
+                className={`transition-all duration-300 ease-in-out ${
+                  isTransitioning ? 'opacity-95' : 'opacity-100'
+                }`}
+                style={{
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                }}
               >
                 <Controls />
               </ReactFlow>
