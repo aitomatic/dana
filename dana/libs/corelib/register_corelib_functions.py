@@ -108,8 +108,9 @@ def _register_python_module(module_name: str, registry: FunctionRegistry) -> lis
                         )
                         registered_functions.append(dana_func_name)
 
-    except Exception as e:
-        print(f"Corelib: Error registering module {module_name}: {e}")
+    except Exception:
+        # Silently handle registration errors
+        pass
 
     return registered_functions
 
@@ -155,13 +156,11 @@ def _register_dana_modules_via_import_system(registry: FunctionRegistry) -> list
             # Create a module spec
             spec = loader.find_spec(module_name)
             if spec is None:
-                print(f"Corelib: Could not find module spec for '{module_name}'")
                 continue
 
             # Create and execute the module
             module = loader.create_module(spec)
             if module is None:
-                print(f"Corelib: Could not create module for '{module_name}'")
                 continue
 
             # Execute the module - this discovers and loads all its contents
@@ -190,16 +189,10 @@ def _register_dana_modules_via_import_system(registry: FunctionRegistry) -> list
                     )
 
                     registered_functions.append(export_name)
-                    obj_type = type(exported_obj).__name__
-                    print(f"Corelib: Registered '{export_name}' ({obj_type}) from {module_name}")
 
-            print(f"Corelib: Module '{module_name}' loaded, {len(exports_to_register)} exports registered")
-
-    except Exception as e:
-        print(f"Corelib: Error in Dana module registration: {e}")
-        import traceback
-
-        traceback.print_exc()
+    except Exception:
+        # Silently handle errors to avoid cluttering output
+        pass
 
     return registered_functions
 
