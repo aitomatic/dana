@@ -313,7 +313,7 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
   }
 
   return (
-    <div className={`h-[80%] min-h-140 w-full ${className}`}>
+    <div className={`h-[100%] min-h-140 w-full ${className}`}>
       <ReactFlow
         nodes={nodes}
         edges={edges}

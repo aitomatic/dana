@@ -8,7 +8,7 @@ import { CheckCircleSolid, SystemRestart, Xmark, NavArrowRight, NavArrowDown } f
 import { XCircle } from 'lucide-react';
 
 // Single transition definition for consistency (matching DomainKnowledgeTree)
-const TRANSITION_DURATION = '1s';
+const TRANSITION_DURATION = '0.5s';
 const TRANSITION_EASING = 'cubic-bezier(.43,.08,.45,.97)';
 const TRANSITION_ALL = `all ${TRANSITION_DURATION} ${TRANSITION_EASING}`;
 
@@ -219,11 +219,11 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
     // Add selection highlighting
     const selectionStyle = isSelected
       ? {
-        // boxShadow: '0 0 0 1px #3B82F6, 0 4px 12px rgba(59, 130, 246, 0.3)',
-        border: 'none',
-        transform: 'scale(1.02)',
-        zIndex: 10,
-      }
+          // boxShadow: '0 0 0 1px #3B82F6, 0 4px 12px rgba(59, 130, 246, 0.3)',
+          border: 'none',
+          transform: 'scale(1.02)',
+          zIndex: 10,
+        }
       : {};
 
     if (!isLeafNode) {
