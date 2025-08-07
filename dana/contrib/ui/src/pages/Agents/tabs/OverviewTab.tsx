@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Trash } from 'iconoir-react';
 import { DeleteAgentDialog } from '@/components/delete-agent-dialog';
 import DomainKnowledgeTree from './DomainKnowledgeTree';
+import AgentOverviewChart from './AgentOverviewChart';
 import type { NavigateFunction } from 'react-router-dom';
 
 const OverviewTab: React.FC<{
@@ -107,7 +108,6 @@ const OverviewTab: React.FC<{
           </div>
         </div>
         <div className="flex flex-col gap-2 p-4 text-sm rounded-lg border border-gray-200 group">
-          <div className="text-sm font-semibold text-gray-600">Agent Profile</div>
           <div className="flex items-center text-sm text-gray-700">
             <div className="text-gray-600 w-30">Agent name:</div>
             {isEditingName ? (
@@ -170,7 +170,17 @@ const OverviewTab: React.FC<{
           </div>
         </div>
 
-        <div className="flex flex-col flex-1 gap-2 min-h-0">
+        {/* Agent Overview Chart */}
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2 items-center">
+            {/* <span className="text-sm font-semibold text-gray-600">Agent Overview</span> */}
+          </div>
+          <div className="rounded-lg border border-gray-200 overflow-hidden">
+            <AgentOverviewChart agent={agent} />
+          </div>
+        </div>
+
+        <div className="flex flex-col flex-1 gap-2 min-h-0 hidden">
           <div className="flex gap-2 items-center">
             <span className="text-sm font-semibold text-gray-600">Agent's Knowledge Base</span>
           </div>
