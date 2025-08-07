@@ -62,42 +62,42 @@ const initialEdges: Edge[] = [
     source: '1',
     target: '2',
     markerEnd: { type: MarkerType.ArrowClosed },
-    type: 'smoothstep',
+    type: 'default',
   },
   {
     id: 'e2-3',
     source: '2',
     target: '3',
     markerEnd: { type: MarkerType.ArrowClosed },
-    type: 'smoothstep',
+    type: 'default',
   },
   {
     id: 'e3-4',
     source: '3',
     target: '4',
     markerEnd: { type: MarkerType.ArrowClosed },
-    type: 'smoothstep',
+    type: 'default',
   },
   {
     id: 'e1-5',
     source: '1',
     target: '5',
     markerEnd: { type: MarkerType.ArrowClosed },
-    type: 'smoothstep',
+    type: 'default',
   },
   {
     id: 'e1-6',
     source: '1',
     target: '6',
     markerEnd: { type: MarkerType.ArrowClosed },
-    type: 'smoothstep',
+    type: 'default',
   },
   {
     id: 'e1-7',
     source: '1',
     target: '7',
     markerEnd: { type: MarkerType.ArrowClosed },
-    type: 'smoothstep',
+    type: 'default',
   },
 ];
 
@@ -382,7 +382,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
             source: parentId,
             target: nodeId,
             markerEnd: { type: MarkerType.ArrowClosed },
-            type: 'smoothstep',
+            type: 'default',
           });
         }
       }
