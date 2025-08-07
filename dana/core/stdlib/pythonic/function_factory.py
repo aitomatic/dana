@@ -129,6 +129,8 @@ class PythonicFunctionFactory:
                 (tuple, float),
                 (set, int),
                 (set, float),
+                (type({}.keys()),),
+                (type({}.values()),),
             ],  # Allow list/tuple/set with optional start
         },
         "max": {

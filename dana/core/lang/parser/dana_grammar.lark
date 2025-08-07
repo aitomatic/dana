@@ -429,7 +429,7 @@ for_target_list: NAME ("," NAME)*
 // ===== LAMBDA EXPRESSIONS =====
 lambda_expr: "lambda" [lambda_receiver] [lambda_params] "::" expr
 lambda_receiver: "(" NAME ":" basic_type ")"
-lambda_params: NAME [":" basic_type] ("," NAME [":" basic_type])*
+lambda_params: NAME [":" basic_type] ["=" expr] ("," NAME [":" basic_type] ["=" expr])*
 
 // ===== WHITESPACE AND COMMENTS =====
 // Modified to handle comments and newlines better

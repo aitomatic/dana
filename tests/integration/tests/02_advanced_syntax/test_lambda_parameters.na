@@ -103,26 +103,26 @@ log("✅ Lambda with function type hint works")
 
 # Test 15: Lambda with list of specific type (if supported)
 # Note: This may not be supported in all implementations
-# int_list_op = lambda lst: list[int] :: sum(lst)
-# result = int_list_op([1, 2, 3, 4])
-# assert result == 10, f"Expected 10, got {result}"
-# log("✅ Lambda with list of specific type works")
+int_list_op = lambda lst: list[int] :: sum(lst)
+result = int_list_op([1, 2, 3, 4])
+assert result == 10, f"Expected 10, got {result}"
+log("✅ Lambda with list of specific type works")
 
 # Test 16: Lambda with dict of specific types (if supported)
 # Note: This may not be supported in all implementations
-# str_int_dict = lambda d: dict[str, int] :: sum(d.values())
-# result = str_int_dict({"a": 1, "b": 2, "c": 3})
-# assert result == 6, f"Expected 6, got {result}"
-# log("✅ Lambda with dict of specific types works")
+str_int_dict = lambda d: dict[str, int] :: sum(d.values())
+result = str_int_dict({"a": 1, "b": 2, "c": 3})
+assert result == 6, f"Expected 6, got {result}"
+log("✅ Lambda with dict of specific types works")
 
 # Test 17: Lambda with union type hints (if supported)
 # Note: This may not be supported in all implementations
-# union_handler = lambda x: int | str :: str(x)
-# result1 = union_handler(42)
-# result2 = union_handler("hello")
-# assert result1 == "42", f"Expected '42', got '{result1}'"
-# assert result2 == "hello", f"Expected 'hello', got '{result2}'"
-# log("✅ Lambda with union type hints works")
+union_handler = lambda x: int | str :: str(x)
+result1 = union_handler(42)
+result2 = union_handler("hello")
+assert result1 == "42", f"Expected '42', got '{result1}'"
+assert result2 == "hello", f"Expected 'hello', got '{result2}'"
+log("✅ Lambda with union type hints works")
 
 # Test 18: Lambda with nested type hints
 nested_handler = lambda data: list[dict] :: len(data)
@@ -139,7 +139,7 @@ assert result == [1, 4, 9], f"Expected [1, 4, 9], got {result}"
 log("✅ Lambda with callback type hint works")
 
 # Test 20: Lambda with complex parameter validation
-validator = lambda value: any, min_val: int = 0, max_val: int = 100 :: min_val <= value <= max_val
+validator = lambda value: any, min_val: int = 0, max_val: int = 100 :: (min_val <= value) and (value <= max_val)
 result1 = validator(50)
 result2 = validator(150)
 result3 = validator(-10)
