@@ -110,7 +110,11 @@ class TestAgentChat(unittest.TestCase):
 
             # Check that prompt contains agent description
             call_args = mock_llm_resource.query_sync.call_args[0][0]
-            self.assertIn("You are TestAgent", call_args.arguments["prompt"])
+            # Look for agent description in system message
+            messages = call_args.arguments["messages"]
+            system_messages = [msg for msg in messages if msg["role"] == "system"]
+            self.assertTrue(len(system_messages) > 0)
+            self.assertIn("You are TestAgent", system_messages[0]["content"])
 
     def test_llm_field_detection(self):
         """Test that LLM is detected from agent fields."""
@@ -227,8 +231,12 @@ class TestAgentChat(unittest.TestCase):
 
             # Check that context was included in prompt
             call_args = mock_llm_resource.query_sync.call_args[0][0]
-            self.assertIn("Additional context", call_args.arguments["prompt"])
-            self.assertIn("priority", call_args.arguments["prompt"])
+            # Look for context in system message
+            messages = call_args.arguments["messages"]
+            system_messages = [msg for msg in messages if msg["role"] == "system"]
+            system_content = system_messages[0]["content"] if system_messages else ""
+            self.assertIn("Additional context", system_content)
+            self.assertIn("priority", system_content)
 
     def test_max_context_turns(self):
         """Test limiting context turns."""
@@ -246,11 +254,13 @@ class TestAgentChat(unittest.TestCase):
 
             # Check that only recent turns are included
             call_args = mock_llm_resource.query_sync.call_args[0][0]
-            prompt = call_args.arguments["prompt"]
-            self.assertIn("Message 3", prompt)
-            self.assertIn("Message 4", prompt)
-            self.assertNotIn("Message 0", prompt)
-            self.assertNotIn("Message 1", prompt)
+            # Look for messages in system message context
+            messages = call_args.arguments["messages"]
+            all_content = " ".join([msg["content"] for msg in messages])
+            self.assertIn("Message 3", all_content)
+            self.assertIn("Message 4", all_content)
+            self.assertNotIn("Message 0", all_content)
+            self.assertNotIn("Message 1", all_content)
 
     def test_llm_error_handling(self):
         """Test handling of LLM errors."""
@@ -319,7 +329,10 @@ class TestAgentChat(unittest.TestCase):
 
             call_args = mock_llm_resource.query_sync.call_args[0][0]
             # With first message, agent characteristics should be in system prompt
-            self.assertIn("FieldAgent", call_args.arguments["prompt"])
+            messages = call_args.arguments["messages"]
+            system_messages = [msg for msg in messages if msg["role"] == "system"]
+            self.assertTrue(len(system_messages) > 0)
+            self.assertIn("FieldAgent", system_messages[0]["content"])
 
 
 class TestAgentChatIntegration(unittest.TestCase):

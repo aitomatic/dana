@@ -85,6 +85,11 @@ class DanaSandbox(Loggable):
         # Set interpreter in context
         self._context.interpreter = self._interpreter
 
+        # Add global objects from corelib registration to context
+        if hasattr(self._interpreter.function_registry, "_global_objects"):
+            for obj_name, obj in self._interpreter.function_registry._global_objects.items():
+                self._context.set(f"local:{obj_name}", obj)
+
         # Automatic lifecycle management
         self._initialized = False
         self._cleanup_called = False  # Prevent double cleanup

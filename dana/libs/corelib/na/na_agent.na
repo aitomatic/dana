@@ -10,5 +10,5 @@ agent DanaAgent:
     domain: str = "Dana Programming Language"
     tasks: list[str] = ["Advise on Dana"]
 
-DanaAgent = DanaAgent()
-BasicAgent = BasicAgent()
+DANA_AGENT = DanaAgent()
+BASIC_AGENT = BasicAgent()
