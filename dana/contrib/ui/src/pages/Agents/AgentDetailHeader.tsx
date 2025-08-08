@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'iconoir-react';
+import { ArrowLeft, Play } from 'iconoir-react';
 
 interface AgentDetailHeaderProps {
   onBack: () => void;
@@ -31,7 +31,7 @@ export const AgentDetailHeader: React.FC<AgentDetailHeaderProps> = ({
         Close
       </Button>
       <Button variant="default" className="px-4 py-1 font-semibold" onClick={onDeploy}>
-        Use Agent
+        <Play className="w-4 h-4" strokeWidth={1.5} /> Use Mode
       </Button>
     </div>
   </div>

@@ -5,7 +5,7 @@ import type { LibraryItem } from '@/types/library';
 import type { DocumentRead } from '@/types/document';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { IconSearch, IconPlus, IconLoader2, IconUpload, IconFileText } from '@tabler/icons-react';
+import { Search, Plus, SystemRestart, Upload, EmptyPage } from 'iconoir-react';
 import { apiService } from '@/lib/api';
 
 // Convert DocumentRead to LibraryItem format
@@ -175,31 +175,38 @@ const DocumentsTab: React.FC = () => {
 
     return (
       <div
-        className={`flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg transition-colors ${
+        className={`flex flex-col items-center justify-center h-[100%] border-2 border-dashed rounded-lg transition-colors ${
           isDragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
         }`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <IconFileText className="w-12 h-12 text-gray-400 mb-4" />
+        <div
+          className={`flex flex-col items-center justify-center mb-4 w-22 h-22 rounded-full ${
+            isDragOver ? 'bg-white' : 'bg-gray-100'
+          }`}
+        >
+          <EmptyPage className="w-10 h-10 text-gray-400" />
+        </div>
+
         <div className="text-center space-y-2">
           <h3 className="text-lg font-semibold text-gray-700">No documents yet</h3>
           <p className="text-sm text-gray-500">Drag and drop files here to upload</p>
         </div>
         <Button
           onClick={handleAddFileClick}
-          className="mt-4 cursor-pointer"
+          className="mt-4 cursor-pointer font-semibold"
           disabled={uploadingFiles.length > 0}
         >
           {uploadingFiles.length > 0 ? (
             <>
-              <IconLoader2 className="animate-spin w-4 h-4 mr-2" />
+              <SystemRestart className="animate-spin w-4 h-4 mr-2" />
               Uploading...
             </>
           ) : (
             <>
-              <IconUpload className="w-4 h-4 mr-2" />
+              <Upload className="w-4 h-4 mr-2" />
               Browse Files
             </>
           )}
@@ -247,7 +254,7 @@ const DocumentsTab: React.FC = () => {
 
       <div className="flex items-center space-x-4">
         <div className="relative flex-1 max-w-sm">
-          <IconSearch className="absolute left-3 top-1/2 w-4 h-4 text-gray-400 transform -translate-y-1/2" />
+          <Search className="absolute left-3 top-1/2 w-4 h-4 text-gray-400 transform -translate-y-1/2" />
           <Input
             placeholder="Search documents..."
             value={searchTerm}
@@ -260,7 +267,7 @@ const DocumentsTab: React.FC = () => {
       {uploadingFiles.length > 0 && (
         <div className="p-4 mb-4 bg-blue-50 rounded-lg border border-blue-200">
           <div className="flex items-center space-x-3">
-            <IconUpload className="w-5 h-5 text-blue-600" />
+            <Upload className="w-5 h-5 text-blue-600" />
             <div className="flex-1">
               <div className="font-medium text-blue-900">
                 Uploading {uploadingFiles.length} file{uploadingFiles.length > 1 ? 's' : ''}...
@@ -268,7 +275,7 @@ const DocumentsTab: React.FC = () => {
               <div className="mt-1 text-sm text-blue-700">
                 {uploadingFiles.map((fileName, index) => (
                   <div key={index} className="flex items-center space-x-2">
-                    <IconLoader2 className="w-3 h-3 animate-spin" />
+                    <SystemRestart className="w-3 h-3 animate-spin" />
                     <span>{fileName}</span>
                   </div>
                 ))}
