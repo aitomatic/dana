@@ -35,10 +35,7 @@ class DomainKnowledgeService(Loggable):
 
     def get_version_file_path(self, agent_id: int, version: int) -> Path:
         """Get the file path for a specific version of agent's domain knowledge."""
-        return (
-            self.domain_knowledge_dir
-            / f"agent_{agent_id}_domain_knowledge_v{version}.json"
-        )
+        return self.domain_knowledge_dir / f"agent_{agent_id}_domain_knowledge_v{version}.json"
 
     def get_version_history_dir(self, agent_id: int) -> Path:
         """Get the directory path for an agent's version history."""
@@ -46,9 +43,7 @@ class DomainKnowledgeService(Loggable):
         version_dir.mkdir(parents=True, exist_ok=True)
         return version_dir
 
-    async def get_agent_domain_knowledge(
-        self, agent_id: int, db: Session | None = None
-    ) -> DomainKnowledgeTree | None:
+    async def get_agent_domain_knowledge(self, agent_id: int, db: Session | None = None) -> DomainKnowledgeTree | None:
         """Retrieve domain knowledge tree for an agent."""
         try:
             if db is None:
@@ -73,9 +68,7 @@ class DomainKnowledgeService(Loggable):
 
             # 2. If not found, check if there's a specific path in config
             if not file_path:
-                domain_knowledge_path = (
-                    agent.config.get("domain_knowledge_path") if agent.config else None
-                )
+                domain_knowledge_path = agent.config.get("domain_knowledge_path") if agent.config else None
                 if domain_knowledge_path:
                     config_path = Path(domain_knowledge_path)
                     if config_path.exists():
@@ -93,7 +86,7 @@ class DomainKnowledgeService(Loggable):
                 self.warning(f"Domain knowledge file not found for agent {agent_id}")
                 return None
 
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 data = json.load(f)
 
             return DomainKnowledgeTree(**data)
@@ -169,9 +162,7 @@ class DomainKnowledgeService(Loggable):
 
             db.commit()
 
-            self.info(
-                f"Saved domain knowledge for agent {agent_id} to {file_path} (version {tree.version})"
-            )
+            self.info(f"Saved domain knowledge for agent {agent_id} to {file_path} (version {tree.version})")
             return True
 
         except Exception as e:
@@ -195,9 +186,7 @@ class DomainKnowledgeService(Loggable):
 
             root_node = DomainNode(topic=root_topic, children=[])
 
-            tree = DomainKnowledgeTree(
-                root=root_node, last_updated=datetime.now(UTC), version=1
-            )
+            tree = DomainKnowledgeTree(root=root_node, last_updated=datetime.now(UTC), version=1)
 
             # Save the tree
             success = await self.save_agent_domain_knowledge(agent_id, tree, db)
@@ -206,30 +195,19 @@ class DomainKnowledgeService(Loggable):
             return None
 
         except Exception as e:
-            self.error(
-                f"Error creating initial domain knowledge for agent {agent_id}: {e}"
-            )
+            self.error(f"Error creating initial domain knowledge for agent {agent_id}: {e}")
             return None
 
     def _extract_main_topic(self, agent_name: str, agent_description: str) -> str:
         """Extract the main topic from agent name and description."""
         # Simple heuristic - could be enhanced with NLP
-        if (
-            "financial" in agent_description.lower()
-            or "finance" in agent_description.lower()
-        ):
+        if "financial" in agent_description.lower() or "finance" in agent_description.lower():
             return "Finance"
         elif "legal" in agent_description.lower() or "law" in agent_description.lower():
             return "Legal"
-        elif (
-            "medical" in agent_description.lower()
-            or "health" in agent_description.lower()
-        ):
+        elif "medical" in agent_description.lower() or "health" in agent_description.lower():
             return "Healthcare"
-        elif (
-            "technical" in agent_description.lower()
-            or "engineering" in agent_description.lower()
-        ):
+        elif "technical" in agent_description.lower() or "engineering" in agent_description.lower():
             return "Engineering"
         elif "research" in agent_description.lower():
             return "Research"
@@ -248,9 +226,7 @@ class DomainKnowledgeService(Loggable):
             # Get current tree
             tree = await self.get_agent_domain_knowledge(agent_id, db)
             if not tree:
-                return DomainKnowledgeUpdateResponse(
-                    success=False, error="No domain knowledge tree found for agent"
-                )
+                return DomainKnowledgeUpdateResponse(success=False, error="No domain knowledge tree found for agent")
 
             # Find parent node or use root
             parent_node = tree.root
@@ -264,9 +240,7 @@ class DomainKnowledgeService(Loggable):
 
             # Check if topic already exists
             if self._find_node(tree.root, topic):
-                return DomainKnowledgeUpdateResponse(
-                    success=False, error=f"Topic '{topic}' already exists in tree"
-                )
+                return DomainKnowledgeUpdateResponse(success=False, error=f"Topic '{topic}' already exists in tree")
 
             # Add new node
             new_node = DomainNode(topic=topic, children=[])
@@ -278,9 +252,7 @@ class DomainKnowledgeService(Loggable):
             return DomainKnowledgeUpdateResponse(
                 success=success,
                 updated_tree=tree if success else None,
-                changes_summary=f"Added '{topic}' under '{parent_node.topic}'"
-                if success
-                else None,
+                changes_summary=f"Added '{topic}' under '{parent_node.topic}'" if success else None,
                 error=None if success else "Failed to save updated tree",
             )
 
@@ -288,9 +260,7 @@ class DomainKnowledgeService(Loggable):
             self.error(f"Error adding knowledge node: {e}")
             return DomainKnowledgeUpdateResponse(success=False, error=str(e))
 
-    async def refresh_domain_knowledge(
-        self, agent_id: int, context: str = "", db: Session | None = None
-    ) -> DomainKnowledgeUpdateResponse:
+    async def refresh_domain_knowledge(self, agent_id: int, context: str = "", db: Session | None = None) -> DomainKnowledgeUpdateResponse:
         """Refresh/regenerate the domain knowledge tree."""
         try:
             if db is None:
@@ -299,9 +269,7 @@ class DomainKnowledgeService(Loggable):
             # Get agent info
             agent = db.query(Agent).filter(Agent.id == agent_id).first()
             if not agent:
-                return DomainKnowledgeUpdateResponse(
-                    success=False, error="Agent not found"
-                )
+                return DomainKnowledgeUpdateResponse(success=False, error="Agent not found")
 
             # Get current tree
             current_tree = await self.get_agent_domain_knowledge(agent_id, db)
@@ -310,36 +278,24 @@ class DomainKnowledgeService(Loggable):
             # In the future, this would use LLM to regenerate based on context
             if current_tree:
                 # Add some default enhancements based on context
-                enhanced_tree = await self._enhance_tree_with_context(
-                    current_tree, context, agent
-                )
-                success = await self.save_agent_domain_knowledge(
-                    agent_id, enhanced_tree, db
-                )
+                enhanced_tree = await self._enhance_tree_with_context(current_tree, context, agent)
+                success = await self.save_agent_domain_knowledge(agent_id, enhanced_tree, db)
 
                 return DomainKnowledgeUpdateResponse(
                     success=success,
                     updated_tree=enhanced_tree if success else None,
-                    changes_summary="Refreshed domain knowledge tree with new context"
-                    if success
-                    else None,
+                    changes_summary="Refreshed domain knowledge tree with new context" if success else None,
                     error=None if success else "Failed to save refreshed tree",
                 )
             else:
                 # Create new tree
-                new_tree = await self.create_initial_domain_knowledge(
-                    agent_id, agent.name, agent.description or "", db
-                )
+                new_tree = await self.create_initial_domain_knowledge(agent_id, agent.name, agent.description or "", db)
 
                 return DomainKnowledgeUpdateResponse(
                     success=new_tree is not None,
                     updated_tree=new_tree,
-                    changes_summary="Created new domain knowledge tree"
-                    if new_tree
-                    else None,
-                    error=None
-                    if new_tree
-                    else "Failed to create domain knowledge tree",
+                    changes_summary="Created new domain knowledge tree" if new_tree else None,
+                    error=None if new_tree else "Failed to create domain knowledge tree",
                 )
 
         except Exception as e:
@@ -352,18 +308,13 @@ class DomainKnowledgeService(Loggable):
         """Save a version to file history and maintain only last 10 versions."""
         try:
             version_service = get_domain_knowledge_version_service()
-            
+
             # Save to files
-            version_service.save_version(
-                agent_id=agent_id,
-                tree=tree,
-                change_summary=change_summary,
-                change_type=change_type
-            )
-            
+            version_service.save_version(agent_id=agent_id, tree=tree, change_summary=change_summary, change_type=change_type)
+
             # Clean up old versions (keep only last 10)
             version_service.cleanup_old_versions(agent_id, keep_count=10)
-            
+
         except Exception as e:
             self.error(f"Error saving version {tree.version} to history: {e}")
 
@@ -398,9 +349,7 @@ class DomainKnowledgeService(Loggable):
                 versions.append(
                     {
                         "version": current_tree.version,
-                        "last_updated": current_tree.last_updated.isoformat()
-                        if current_tree.last_updated
-                        else None,
+                        "last_updated": current_tree.last_updated.isoformat() if current_tree.last_updated else None,
                         "is_current": True,
                     }
                 )
@@ -408,7 +357,7 @@ class DomainKnowledgeService(Loggable):
             # Add historical versions
             for version_file in version_files:
                 try:
-                    with open(version_file, "r", encoding="utf-8") as f:
+                    with open(version_file, encoding="utf-8") as f:
                         data = json.load(f)
 
                     versions.append(
@@ -429,9 +378,7 @@ class DomainKnowledgeService(Loggable):
             self.error(f"Error getting version history: {e}")
             return []
 
-    async def revert_to_version(
-        self, agent_id: int, target_version: int, db: Session | None = None
-    ) -> DomainKnowledgeUpdateResponse:
+    async def revert_to_version(self, agent_id: int, target_version: int, db: Session | None = None) -> DomainKnowledgeUpdateResponse:
         """Revert domain knowledge to a specific version."""
         try:
             if db is None:
@@ -456,7 +403,7 @@ class DomainKnowledgeService(Loggable):
                 )
 
             # Load the target version
-            with open(version_file, "r", encoding="utf-8") as f:
+            with open(version_file, encoding="utf-8") as f:
                 data = json.load(f)
 
             target_tree = DomainKnowledgeTree(**data)
@@ -467,9 +414,7 @@ class DomainKnowledgeService(Loggable):
             return DomainKnowledgeUpdateResponse(
                 success=success,
                 updated_tree=target_tree if success else None,
-                changes_summary=f"Reverted to version {target_version}"
-                if success
-                else None,
+                changes_summary=f"Reverted to version {target_version}" if success else None,
                 error=None if success else "Failed to revert to target version",
             )
 
@@ -489,9 +434,7 @@ class DomainKnowledgeService(Loggable):
 
         return None
 
-    async def _enhance_tree_with_context(
-        self, tree: DomainKnowledgeTree, context: str, agent: Agent
-    ) -> DomainKnowledgeTree:
+    async def _enhance_tree_with_context(self, tree: DomainKnowledgeTree, context: str, agent: Agent) -> DomainKnowledgeTree:
         """Enhance existing tree with context (placeholder for LLM enhancement)."""
         # This is a placeholder - in the future, this would use LLM to enhance the tree
         # For now, just return the existing tree with updated timestamp

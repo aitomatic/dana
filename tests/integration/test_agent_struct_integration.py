@@ -100,18 +100,18 @@ class TestMethodDispatchPriority(unittest.TestCase):
         agent_instance = create_agent_struct_instance("TestAgent", {"name": "test"}, context)
 
         # Test that built-in methods work
-        plan_result = agent_instance.plan("test task")
+        plan_result = agent_instance.plan(context, "test task")
         self.assertIn("planning", plan_result.lower())
         self.assertIn("TestAgent", plan_result)
 
-        solve_result = agent_instance.solve("test problem")
+        solve_result = agent_instance.solve(context, "test problem")
         self.assertIn("solving", solve_result.lower())
         self.assertIn("TestAgent", solve_result)
 
-        remember_result = agent_instance.remember("key", "value")
+        remember_result = agent_instance.remember(context, "key", "value")
         self.assertTrue(remember_result)
 
-        recall_result = agent_instance.recall("key")
+        recall_result = agent_instance.recall(context, "key")
         self.assertEqual(recall_result, "value")
 
     def test_custom_methods_override_builtin(self):
@@ -122,7 +122,7 @@ class TestMethodDispatchPriority(unittest.TestCase):
         agent_instance = create_agent_struct_instance("TestAgent", {"name": "test"}, context)
 
         # Built-in methods should work
-        plan_result = agent_instance.plan("test task")
+        plan_result = agent_instance.plan(context, "test task")
         self.assertIn("planning", plan_result.lower())
 
         # Custom methods would be tested here when implemented

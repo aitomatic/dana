@@ -1,12 +1,9 @@
 import os
 from dana.common.mixins.tool_callable import ToolCallable
-from dana.common.resource.base_resource import BaseResource
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.resource.rag.pipeline.rag_orchestrator import RAGOrchestrator
 from dana.common.resource.rag.pipeline.knowledge_loader import KnowledgeLoader
 from dana.common.resource.rag.pipeline.unified_cache_manager import UnifiedCacheManager
-from dana.common.types import BaseRequest
-from dana.common.utils.misc import Misc
 from llama_index.core import Settings
 from dana.common.resource.rag.rag_resource import RAGResource
 from llama_index.core.schema import NodeWithScore
@@ -15,6 +12,7 @@ from llama_index.core.vector_stores import (
     MetadataFilters,
     FilterOperator,
 )
+
 
 class KnowledgeResource(RAGResource):
     """RAG resource for document retrieval."""
@@ -32,9 +30,31 @@ class KnowledgeResource(RAGResource):
         reranking: bool = False,
         initial_multiplier: int = 2,
     ):
-        super().__init__(sources=sources, name=name, cache_dir=cache_dir, force_reload=force_reload, description=description, chunk_size=chunk_size, chunk_overlap=chunk_overlap, debug=debug, reranking=reranking, initial_multiplier=initial_multiplier)
+        super().__init__(
+            sources=sources,
+            name=name,
+            cache_dir=cache_dir,
+            force_reload=force_reload,
+            description=description,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            debug=debug,
+            reranking=reranking,
+            initial_multiplier=initial_multiplier,
+        )
 
-    def post_init(self, sources: list[str], name: str, cache_dir: str, force_reload: bool, chunk_size: int, chunk_overlap: int, debug: bool, reranking: bool, initial_multiplier: int):
+    def post_init(
+        self,
+        sources: list[str],
+        name: str,
+        cache_dir: str,
+        force_reload: bool,
+        chunk_size: int,
+        chunk_overlap: int,
+        debug: bool,
+        reranking: bool,
+        initial_multiplier: int,
+    ):
         Settings.chunk_size = chunk_size
         Settings.chunk_overlap = chunk_overlap
         self.sources = sources
@@ -70,8 +90,7 @@ class KnowledgeResource(RAGResource):
 
     @ToolCallable.tool
     async def get_facts(self, query: str, num_results: int = 3) -> str:
-        """@description: Get existing facts from knowledge base
-        """
+        """@description: Get existing facts from knowledge base"""
         if not self._is_ready:
             await self.initialize()
         filters = MetadataFilters(
@@ -83,12 +102,11 @@ class KnowledgeResource(RAGResource):
         results = [self.post_retrieve_process(result, "facts") for result in results]
         # Apply LLM reranking if enabled
         results = await self._apply_reranking(results, query, num_results)
-        return  self._create_final_result(results)
-    
+        return self._create_final_result(results)
+
     @ToolCallable.tool
     async def get_plan(self, query: str, num_results: int = 3) -> str:
-        """@description: Get existing plan from knowledge base
-        """
+        """@description: Get existing plan from knowledge base"""
         if not self._is_ready:
             await self.initialize()
         filters = MetadataFilters(
@@ -99,12 +117,11 @@ class KnowledgeResource(RAGResource):
         results = await self._orchestrator.retrieve_with_filters(query, num_results, filters)
         results = [self.post_retrieve_process(result, "plan") for result in results]
         results = await self._apply_reranking(results, query, num_results)
-        return  self._create_final_result(results)
-    
+        return self._create_final_result(results)
+
     @ToolCallable.tool
     async def get_heuristics(self, query: str, num_results: int = 3) -> str:
-        """@description: Get existing heuristics from knowledge base
-        """
+        """@description: Get existing heuristics from knowledge base"""
         if not self._is_ready:
             await self.initialize()
         filters = MetadataFilters(
@@ -115,13 +132,13 @@ class KnowledgeResource(RAGResource):
         results = await self._orchestrator.retrieve_with_filters(query, num_results, filters)
         results = [self.post_retrieve_process(result, "heuristics") for result in results]
         results = await self._apply_reranking(results, query, num_results)
-        return  self._create_final_result(results)
-    
-    def post_retrieve_process(self, result: NodeWithScore, metadata_field_as_text : str | None = None) -> NodeWithScore:
+        return self._create_final_result(results)
+
+    def post_retrieve_process(self, result: NodeWithScore, metadata_field_as_text: str | None = None) -> NodeWithScore:
         if metadata_field_as_text is not None:
             result.node.text = result.node.metadata[metadata_field_as_text]
         return result
-    
+
     def _create_final_result(self, results: list[NodeWithScore]) -> str:
         return "\n\n".join([f"Source : {result.node.metadata['source']}\nContent : \n{result.get_content()}" for result in results])
 
@@ -132,19 +149,18 @@ class KnowledgeResource(RAGResource):
             # Truncate to requested number if no reranking
             results = results[:num_results]
         return results
-    
+
     async def query(self, query: str, num_results: int = 10) -> str:
         pass
-    
 
 
 if __name__ == "__main__":
     import asyncio
+
     async def main():
         knowledge_resource = KnowledgeResource(sources=["agents/financial_stmt_analysis/knows/processed_knowledge"], force_reload=True)
         await knowledge_resource.initialize()
         res = await knowledge_resource.get_plan("What is the capital expenditure for the company?", num_results=10)
         print(res)
-    asyncio.run(main())
 
-    
+    asyncio.run(main())

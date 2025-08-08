@@ -57,17 +57,19 @@ class TestAgentStructType(unittest.TestCase):
         self.assertIn("solve", agent_type.agent_methods)
         self.assertIn("remember", agent_type.agent_methods)
         self.assertIn("recall", agent_type.agent_methods)
+        self.assertIn("chat", agent_type.agent_methods)
 
         # Check that methods are callable
         self.assertTrue(callable(agent_type.agent_methods["plan"]))
         self.assertTrue(callable(agent_type.agent_methods["solve"]))
         self.assertTrue(callable(agent_type.agent_methods["remember"]))
         self.assertTrue(callable(agent_type.agent_methods["recall"]))
+        self.assertTrue(callable(agent_type.agent_methods["chat"]))
 
     def test_custom_agent_methods(self):
         """Test adding custom agent methods."""
 
-        def custom_plan(agent_instance, task: str) -> str:
+        def custom_plan(agent_instance, sandbox_context, task: str) -> str:
             return f"Custom plan for {task}"
 
         agent_type = AgentStructType(
@@ -86,6 +88,7 @@ class TestAgentStructInstance(unittest.TestCase):
         self.agent_type = AgentStructType(
             name="TestAgent", fields={"name": "str", "age": "int"}, field_order=["name", "age"], field_comments={}
         )
+        self.sandbox_context = SandboxContext()
 
     def test_agent_struct_instance_creation(self):
         """Test creating an AgentStructInstance."""
@@ -114,12 +117,14 @@ class TestAgentStructInstance(unittest.TestCase):
         self.assertTrue(hasattr(agent_instance, "solve"))
         self.assertTrue(hasattr(agent_instance, "remember"))
         self.assertTrue(hasattr(agent_instance, "recall"))
+        self.assertTrue(hasattr(agent_instance, "chat"))
 
         # Check that methods are callable
         self.assertTrue(callable(agent_instance.plan))
         self.assertTrue(callable(agent_instance.solve))
         self.assertTrue(callable(agent_instance.remember))
         self.assertTrue(callable(agent_instance.recall))
+        self.assertTrue(callable(agent_instance.chat))
 
     def test_agent_method_execution(self):
         """Test that agent methods execute correctly."""
@@ -127,20 +132,20 @@ class TestAgentStructInstance(unittest.TestCase):
         agent_instance = AgentStructInstance(self.agent_type, values)
 
         # Test plan method
-        plan_result = agent_instance.plan("test task")
+        plan_result = agent_instance.plan(self.sandbox_context, "test task")
         self.assertIn("planning", plan_result.lower())
         self.assertIn("TestAgent", plan_result)
 
         # Test solve method
-        solve_result = agent_instance.solve("test problem")
+        solve_result = agent_instance.solve(self.sandbox_context, "test problem")
         self.assertIn("solving", solve_result.lower())
         self.assertIn("TestAgent", solve_result)
 
         # Test memory methods
-        remember_result = agent_instance.remember("test_key", "test_value")
+        remember_result = agent_instance.remember(self.sandbox_context, "test_key", "test_value")
         self.assertTrue(remember_result)
 
-        recall_result = agent_instance.recall("test_key")
+        recall_result = agent_instance.recall(self.sandbox_context, "test_key")
         self.assertEqual(recall_result, "test_value")
 
     def test_agent_memory_isolation(self):
@@ -152,12 +157,12 @@ class TestAgentStructInstance(unittest.TestCase):
         agent2 = AgentStructInstance(self.agent_type, values2)
 
         # Store different values in each agent's memory
-        agent1.remember("key", "value1")
-        agent2.remember("key", "value2")
+        agent1.remember(self.sandbox_context, "key", "value1")
+        agent2.remember(self.sandbox_context, "key", "value2")
 
         # Check that memories are isolated
-        self.assertEqual(agent1.recall("key"), "value1")
-        self.assertEqual(agent2.recall("key"), "value2")
+        self.assertEqual(agent1.recall(self.sandbox_context, "key"), "value1")
+        self.assertEqual(agent2.recall(self.sandbox_context, "key"), "value2")
 
     def test_invalid_struct_type(self):
         """Test that AgentStructInstance rejects non-AgentStructType."""

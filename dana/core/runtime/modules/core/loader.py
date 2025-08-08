@@ -454,8 +454,6 @@ class ModuleLoader(MetaPathFinder, Loader):
             else:
                 # Top-level module has no package
                 context._current_package = ""
-            # Debug logging
-            # print(f"DEBUG: Setting context for module {module.__name__}, package = {context._current_package}")
 
             # Initialize module dict with context
             for key, value in module.__dict__.items():

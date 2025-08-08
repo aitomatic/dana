@@ -2,7 +2,7 @@ from .document_loader import DocumentLoader
 from dana.common.resource.rag.loader.json_knowledge_loader import JsonKnowledgeLoader
 from llama_index.core import Document
 import asyncio
-import os
+
 
 class KnowledgeLoader(DocumentLoader):
     """Handles document loading and preprocessing only."""
