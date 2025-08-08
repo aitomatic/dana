@@ -8,10 +8,10 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from dana.agent.agent_struct_system import AgentStructInstance, AgentStructType, register_agent_struct_type
+from dana.agent.agent_instance import AgentType, AgentInstance, register_agent_type
 
 
-def agent_from_template(template_name: str, **kwargs) -> AgentStructInstance:
+def agent_from_template(template_name: str, **kwargs) -> AgentInstance:
     """
     Create an agent from a pre-built template.
 
@@ -64,15 +64,15 @@ def agent_from_template(template_name: str, **kwargs) -> AgentStructInstance:
 
     # Create agent instance directly using agent system
     # Create agent struct type if it doesn't exist
-    agent_struct_type = AgentStructType(name=agent_type)
-    register_agent_struct_type(agent_struct_type)
+    agent_type = AgentType(name=agent_type)
+    register_agent_type(agent_type)
 
     # Create and return agent instance
-    return AgentStructInstance(agent_struct_type, fields)
+    return AgentInstance(agent_type, fields)
 
 
 # Pre-built agent creation functions for common use cases
-def create_customer_service_agent(domain: str = "general", **kwargs) -> AgentStructInstance:
+def create_customer_service_agent(domain: str = "general", **kwargs) -> AgentInstance:
     """
     Create a customer service agent with common configuration.
 
@@ -86,7 +86,7 @@ def create_customer_service_agent(domain: str = "general", **kwargs) -> AgentStr
     return agent_from_template("customer_service", domain=domain, **kwargs)
 
 
-def create_technical_support_agent(expertise: str = "general", **kwargs) -> AgentStructInstance:
+def create_technical_support_agent(expertise: str = "general", **kwargs) -> AgentInstance:
     """
     Create a technical support agent with common configuration.
 
@@ -100,7 +100,7 @@ def create_technical_support_agent(expertise: str = "general", **kwargs) -> Agen
     return agent_from_template("technical_support", expertise=expertise, **kwargs)
 
 
-def create_data_analyst_agent(specialization: str = "general", **kwargs) -> AgentStructInstance:
+def create_data_analyst_agent(specialization: str = "general", **kwargs) -> AgentInstance:
     """
     Create a data analyst agent with common configuration.
 
@@ -114,7 +114,7 @@ def create_data_analyst_agent(specialization: str = "general", **kwargs) -> Agen
     return agent_from_template("data_analyst", specialization=specialization, **kwargs)
 
 
-def create_quality_inspector_agent(domain: str = "manufacturing", **kwargs) -> AgentStructInstance:
+def create_quality_inspector_agent(domain: str = "manufacturing", **kwargs) -> AgentInstance:
     """
     Create a quality inspector agent with common configuration.
 

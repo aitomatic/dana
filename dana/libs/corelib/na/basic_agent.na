@@ -1,14 +1,16 @@
-agent BasicAgent:
+agent_blueprint BasicAgentBlueprint:
     name: str = "BasicAgent"
     description: str = "A basic agent"
     domain: str = "general"
     tasks: list[str] = ["Chat about things"]
+agent BasicAgent(BasicAgentBlueprint)
 
-agent DanaAgent:
+agent_blueprint DanaAgentBlueprint:
     name: str = "DanaAgent"
     description: str = "The Official Dana Agent"
     domain: str = "Dana Programming Language"
     tasks: list[str] = ["Advise on Dana"]
 
-DANA_AGENT = DanaAgent()
-BASIC_AGENT = BasicAgent()
+Dana = DanaAgentBlueprint()
+print(Dana)
+print("Hello there")

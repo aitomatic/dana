@@ -721,12 +721,39 @@ class AgentDefinition:
 
 
 @dataclass
+class SingletonAgentDefinition:
+    """Singleton agent definition referencing a blueprint and optional overrides."""
+
+    blueprint_name: str
+    overrides: list["SingletonAgentField"]
+    alias_name: str | None = None
+    location: Location | None = None
+
+
+@dataclass
+class BaseAgentSingletonDefinition:
+    """Base agent singleton definition (e.g., agent John)."""
+
+    alias_name: str
+    location: Location | None = None
+
+
+@dataclass
 class AgentField:
     """A field in an agent definition."""
 
     name: str
     type_hint: TypeHint
     default_value: Expression | None = None
+    location: Location | None = None
+
+
+@dataclass
+class SingletonAgentField:
+    """An override assignment in a singleton agent definition block."""
+
+    name: str
+    value: Expression
     location: Location | None = None
 
 

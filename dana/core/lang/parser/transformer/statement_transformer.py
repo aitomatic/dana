@@ -340,6 +340,23 @@ class StatementTransformer(BaseTransformer):
         """Transform an agent field rule into an AgentField node."""
         return self.function_definition_transformer.agent_field(items)
 
+    # === Agent Singleton Definitions ===
+    def singleton_agent_definition(self, items):
+        """Transform non-alias singleton agent definition into AST."""
+        return self.function_definition_transformer.singleton_agent_definition(items)
+
+    def singleton_agent_definition_with_alias(self, items):
+        """Transform alias-based singleton with block into AST."""
+        return self.function_definition_transformer.singleton_agent_definition_with_alias(items)
+
+    def singleton_agent_definition_with_alias_simple(self, items):
+        """Transform alias-based singleton without block into AST."""
+        return self.function_definition_transformer.singleton_agent_definition_with_alias_simple(items)
+
+    def base_agent_singleton_definition(self, items):
+        """Transform base agent singleton `agent Name` into AST."""
+        return self.function_definition_transformer.base_agent_singleton_definition(items)
+
     def try_stmt(self, items):
         """Transform a try-except-finally statement into a TryBlock node."""
         return self.control_flow_transformer.try_stmt(items)

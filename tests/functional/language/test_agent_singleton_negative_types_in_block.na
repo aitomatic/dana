@@ -1,0 +1,8 @@
+# NOTE: This test is intentionally commented out until the parser enforces errors for typed fields in singleton blocks.
+# agent_blueprint Template:
+#     name: str = "x"
+#
+# agent Bad(Template):
+#     name: str = "y"  # should be invalid: types not allowed in agent block
+#
+# _ = Bad.chat("hi") 
