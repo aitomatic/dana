@@ -201,6 +201,8 @@ class MessageData(BaseModel):
 
     role: str  # 'user' or 'assistant'
     content: str
+    require_user: bool = False
+    treat_as_tool: bool = False
 
 
 class AgentGenerationRequest(BaseModel):
@@ -471,6 +473,14 @@ class IntentDetectionRequest(BaseModel):
     chat_history: list[MessageData] = []
     current_domain_tree: DomainKnowledgeTree | None = None
     agent_id: int
+
+    def get_conversation_str(self, include_latest_user_message: bool = True) -> str:
+        conversation = ""
+        for i, message in enumerate(self.chat_history):
+            conversation += f"{message.role}: {message.content}{'\n' if i % 2 == 0 else '\n\n'}"
+        if include_latest_user_message:
+            conversation += f"user: {self.user_message}"
+        return conversation
 
 
 class IntentDetectionResponse(BaseModel):
