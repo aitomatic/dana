@@ -29,8 +29,8 @@ class BaseToolInformation(BaseModel):
     input_schema: InputSchema
 
     def validate_arguments(self, arguments: dict) -> bool:
-        for argument in self.input_schema.properties:
-            if argument.name not in arguments:
+        for argument in self.input_schema.required:
+            if argument not in arguments:
                 return False
         return True
 

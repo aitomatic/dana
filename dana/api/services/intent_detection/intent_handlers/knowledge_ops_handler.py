@@ -145,7 +145,7 @@ class KnowledgeOpsHandler(AbstractHandler):
             if tool_result_msg.require_user:
                 return {
                     "status": "user_input_required",
-                    "message": "User input required",
+                    "message": tool_result_msg.content,
                     "conversation": conversation,
                     "final_result": None,
                 }
@@ -159,9 +159,9 @@ class KnowledgeOpsHandler(AbstractHandler):
         # Mock final result
         return {
             "status": "success",
-            "message": "Successfully generated and stored 10 knowledge artifacts",
+            "message": conversation[-1].content,
             "conversation": conversation,
-            "final_result": {"artifacts": 10, "types": ["facts", "plans", "heuristics"]},
+            "final_result": None,
         }
 
     async def _determine_next_tool(self, conversation: list[MessageData]) -> MessageData:
@@ -173,6 +173,8 @@ class KnowledgeOpsHandler(AbstractHandler):
         # Convert conversation to string
         llm_conversation = []
         for message in conversation:
+            if message.role == "agent":
+                message.role = "assistant"
             llm_conversation.append({"role": message.role, "content": message.content})
 
         tool_str = "\n\n".join([f"{tool}" for tool in self.tools.values()])
@@ -223,7 +225,7 @@ class KnowledgeOpsHandler(AbstractHandler):
             message_data = MessageData(role="user", content=result.result, require_user=result.require_user)
 
             # If this was a modify_tree operation, reload the tree structure
-            if tool_name == "modify_tree" and "Tree Structure" in result.result:
+            if tool_name == "modify_tree":
                 self._reload_tree_structure()
 
             return message_data
