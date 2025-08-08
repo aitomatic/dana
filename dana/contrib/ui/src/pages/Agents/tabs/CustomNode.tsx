@@ -200,16 +200,12 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
     const baseStyle = {
       padding: 16,
       borderRadius: 8,
-      minWidth: 120,
-      maxWidth: 220,
-      width: 220,
-      textAlign: 'center' as const,
+      width: 280,
+      textAlign: 'left' as const,
       wordBreak: 'break-word' as const,
       whiteSpace: 'pre-line' as const,
       overflowWrap: 'break-word' as const,
       display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
       position: 'relative' as const,
       cursor: hasChildren ? 'pointer' : 'default',
       transition: TRANSITION_ALL, // Enhanced smooth transitions
@@ -220,11 +216,11 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
     // Add selection highlighting
     const selectionStyle = isSelected
       ? {
-        // boxShadow: '0 0 0 1px #3B82F6, 0 4px 12px rgba(59, 130, 246, 0.3)',
-        border: 'none',
-        transform: 'scale(1.02)',
-        zIndex: 10,
-      }
+          // boxShadow: '0 0 0 1px #3B82F6, 0 4px 12px rgba(59, 130, 246, 0.3)',
+          border: 'none',
+          transform: 'scale(1.02)',
+          zIndex: 10,
+        }
       : {};
 
     if (!isLeafNode) {
