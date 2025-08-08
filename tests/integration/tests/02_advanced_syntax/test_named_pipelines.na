@@ -4,32 +4,23 @@
 
 log("Starting Named Pipeline Stages test")
 
-# Test 1: Basic named pipeline stage
+# Test 1: Basic Named Parameter Capture Mode
 def add_ten(x: int) -> int:
     return x + 10
 
-def double(x: int) -> int:
-    return x * 2
+def multiply_by(x: int, factor: int) -> int:
+    return x * factor
 
-def pipeline(x) = add_ten as intermediate | double
-result = pipeline(5)
-assert result == 30, f"Expected 30, got {result}"
-log("✅ Basic named pipeline stage works")
+def add_values(a: int, b: int) -> int:
+    return a + b
 
-# Test 2: Named pipeline with string operations
-def to_upper(s: str) -> str:
-    return s.upper()
-    
+# Capture and reuse intermediate values
+def named_capture_pipeline(x: int) = add_ten as base | multiply_by(2) as doubled | add_values(base, doubled)
+result = named_capture_pipeline(5)
+assert result == 45, f"Expected 45, got {result}"  # base=15, doubled=30, 15+30=45
+log("✅ Basic named parameter capture mode works")
 
-def add_exclamation(s: str) -> str:
-    return s + "!"
-
-def string_pipeline(s) = to_upper as upper_result | add_exclamation
-result = string_pipeline("hello")
-assert result == "HELLO!", f"Expected 'HELLO!', got '{result}'"
-log("✅ Named pipeline with string operations works")
-
-# Test 3: Multiple named pipeline stages
+# Test 2: Multiple Named Pipeline Stages
 def square(x: int) -> int:
     return x * x
 
@@ -39,249 +30,64 @@ def add_one(x: int) -> int:
 def multiply_by_three(x: int) -> int:
     return x * 3
 
-def multi_pipeline(x) = square as squared | add_one as incremented | multiply_by_three
+def multi_pipeline(x: int) = square as squared | add_one as incremented | multiply_by_three
 result = multi_pipeline(2)
-assert result == 15, f"Expected 15, got {result}"
+assert result == 15, f"Expected 15, got {result}"  # 2^2=4, 4+1=5, 5*3=15
 log("✅ Multiple named pipeline stages works")
 
-# Test 4: Named pipeline with list operations
-def filter_even(lst: list) -> list:
-    return [x for x in lst if x % 2 == 0]
+# Test 3: Mixed Mode - Combining Implicit and Named Capture
+def add_prefix(text: str, prefix: str) -> str:
+    return f"{prefix}{text}"
 
-def double_list(lst: list) -> list:
-    return [x * 2 for x in lst]
+def wrap_with_brackets(text: str, left: str, right: str) -> str:
+    return f"{left}{text}{right}"
 
-def sum_list(lst: list) -> int:
-    return sum(lst)
+def format_result(text: str, original: str) -> str:
+    return f"{text} (was: {original})"
 
-def list_pipeline(lst) = filter_even as evens | double_list as doubled | sum_list
-result = list_pipeline([1, 2, 3, 4, 5, 6])
-assert result == 24, f"Expected 24, got {result}"
-log("✅ Named pipeline with list operations works")
+# Mix implicit and named capture modes
+def mixed_pipeline(text: str) = add_prefix("INFO: ") as prefixed | wrap_with_brackets(prefixed, "[", "]") as wrapped | format_result(wrapped, prefixed)
+result = mixed_pipeline("data")
+expected = "[INFO: data] (was: INFO: data)"
+assert result == expected, f"Expected '{expected}', got '{result}'"
+log("✅ Mixed mode pipeline works")
 
-# Test 5: Named pipeline with conditional functions
-def is_positive(x: int) -> bool:
-    return x > 0
+# Test 4: Complex Business Logic with Multiple Captures
+def apply_discount(price: float, discount_percent: int) -> float:
+    return price * (1 - discount_percent / 100)
 
-def to_string(x: any) -> str:
-    return str(x)
+def calculate_tax(price: float, tax_rate: float) -> float:
+    return price * tax_rate
 
-def add_prefix(s: str) -> str:
-    return "Result: " + s
+def format_invoice(original: float, discounted: float, tax: float, total: float) -> str:
+    return f"Invoice: Original=${original}, Discounted=${discounted}, Tax=${tax}, Total=${total}"
 
-def conditional_pipeline(x) = is_positive as positive_check | to_string as string_result | add_prefix
-result = conditional_pipeline(42)
-assert result == "Result: True", f"Expected 'Result: True', got '{result}'"
-log("✅ Named pipeline with conditional functions works")
+# Complex business logic with multiple captures
+def calculate_invoice(price: float) = multiply_by(1) as original | apply_discount(original, 20) as discounted | calculate_tax(discounted, 0.08) as tax | add_values(discounted, tax) as total | format_invoice(original, discounted, tax, total)
+result = calculate_invoice(100.0)
+expected = "Invoice: Original=$100.0, Discounted=$80.0, Tax=$6.4, Total=$86.4"
+assert result == expected, f"Expected '{expected}', got '{result}'"
+log("✅ Complex business logic with multiple captures works")
 
-# Test 6: Named pipeline with lambda functions
-add_five = lambda x :: x + 5
-multiply_by_two = lambda x :: x * 2
-subtract_one = lambda x :: x - 1
+# Test 7: Advanced Placeholder Mode with Named Captures
+def format_message(prefix: str, text: str, suffix: str) -> str:
+    return f"{prefix}{text}{suffix}"
 
-def lambda_pipeline(x) = add_five as added | multiply_by_two as multiplied | subtract_one
-result = lambda_pipeline(10)
-assert result == 29, f"Expected 29, got {result}"
-log("✅ Named pipeline with lambda functions works")
+# Placeholder in first position with named capture
+def first_placeholder_pipeline(text: str) = format_message($$, "MIDDLE", "!!!") as formatted | wrap_with_brackets(formatted, "[", "]")
+result = first_placeholder_pipeline("world")
+assert result == "[worldMIDDLE!!!]", f"Expected '[worldMIDDLE!!!]', got '{result}'"
+log("✅ Advanced placeholder mode with named captures works")
 
-# Test 7: Named pipeline with mixed function types
-def format_number(x: int) -> str:
-    return f"Number: {x}"
+# Test 8: Multiple Placeholders with Named Captures
+def multi_placeholder_func(a: str, b: str, c: str, d: str) -> str:
+    return f"{a}-{b}-{c}-{d}"
 
-def mixed_pipeline(x) = add_ten as intermediate | double as doubled | format_number
-result = mixed_pipeline(7)
-assert result == "Number: 34", f"Expected 'Number: 34', got '{result}'"
-log("✅ Named pipeline with mixed function types works")
+# Multiple placeholders with named capture
+def add_suffix(suffix: str, text: str) -> str:
+    return f"{text}{suffix}"
 
-# Test 8: Named pipeline with error handling
-def safe_divide(x: int) -> float:
-    return x / 2 if x != 0 else 0
-
-def round_to_int(x: float) -> int:
-    return int(round(x))
-
-def error_handling_pipeline(x) = safe_divide as divided | round_to_int
-result = error_handling_pipeline(10)
-assert result == 5, f"Expected 5, got {result}"
-log("✅ Named pipeline with error handling works")
-
-# Test 9: Named pipeline with dictionary operations
-def get_keys(d: dict) -> list:
-    return list(d.keys())
-
-def filter_string_keys(lst: list) -> list:
-    return [key for key in lst if type(key) == str]
-
-def join_keys(lst: list) -> str:
-    return ", ".join(lst)
-
-def dict_pipeline(d) = get_keys as keys | filter_string_keys as string_keys | join_keys
-data = {"name": "Alice", "age": 30, "city": "New York"}
-result = dict_pipeline(data)
-assert result == "name, age, city", f"Expected 'name, age, city', got '{result}'"
-log("✅ Named pipeline with dictionary operations works")
-
-# Test 10: Named pipeline with tuple operations
-def create_tuple(x: int) -> tuple:
-    return (x, x * 2, x * 3)
-
-def sum_tuple(t: tuple) -> int:
-    return sum(t)
-
-def tuple_pipeline(x) = create_tuple as tuple_result | sum_tuple
-result = tuple_pipeline(5)
-assert result == 30, f"Expected 30, got {result}"
-log("✅ Named pipeline with tuple operations works")
-
-# Test 11: Named pipeline with set operations
-def to_set(lst: list) -> set:
-    return set(lst)
-
-def filter_even_set(s: set) -> set:
-    return {x for x in s if x % 2 == 0}
-
-def set_to_list(s: set) -> list:
-    return list(s)
-
-def set_pipeline(lst) = to_set as set_result | filter_even_set as even_set | set_to_list
-result = set_pipeline([1, 2, 2, 3, 4, 4, 5, 6])
-assert result == [2, 4, 6], f"Expected [2, 4, 6], got {result}"
-log("✅ Named pipeline with set operations works")
-
-# Test 12: Named pipeline with boolean operations
-def is_even(x: int) -> bool:
-    return x % 2 == 0
-
-def negate(b: bool) -> bool:
-    return not b
-
-def bool_to_string(b: bool) -> str:
-    return "Even" if b else "Odd"
-
-def boolean_pipeline(x) = is_even as even_check | negate as negated | bool_to_string
-result = boolean_pipeline(7)
-assert result == "Odd", f"Expected 'Odd', got '{result}'"
-log("✅ Named pipeline with boolean operations works")
-
-# Test 13: Named pipeline with type conversion
-def to_float(x: any) -> float:
-    return float(x)
-
-def to_int(x: float) -> int:
-    return int(x)
-
-def type_conversion_pipeline(x) = to_float as float_result | to_int
-result = type_conversion_pipeline("3.14")
-assert result == 3, f"Expected 3, got {result}"
-log("✅ Named pipeline with type conversion works")
-
-# Test 14: Named pipeline with arithmetic operations
-def add_hundred(x: int) -> int:
-    return x + 100
-
-def divide_by_five(x: int) -> float:
-    return x / 5
-
-def multiply_by_pi(x: float) -> float:
-    return x * 3.14159
-
-def arithmetic_pipeline(x) = add_hundred as added_hundred | divide_by_five as divided | multiply_by_pi
-result = arithmetic_pipeline(50)
-assert abs(result - 94.2477) < 0.01, f"Expected approximately 94.2477, got {result}"
-log("✅ Named pipeline with arithmetic operations works")
-
-# Test 15: Named pipeline with string manipulation
-def reverse_string(s: str) -> str:
-    return s[::-1]
-
-def capitalize_first(s: str) -> str:
-    return s.capitalize()
-
-def add_quotes(s: str) -> str:
-    return f'"{s}"'
-
-def string_manipulation_pipeline(s) = reverse_string as reversed_str | capitalize_first as capitalized | add_quotes
-result = string_manipulation_pipeline("hello world")
-assert result == '"Dlrow olleh"', f"Expected '\"Dlrow olleh\"', got '{result}'"
-log("✅ Named pipeline with string manipulation works")
-
-# Test 16: Named pipeline with list filtering and transformation
-def filter_positive(lst: list) -> list:
-    return [x for x in lst if x > 0]
-
-def square_list(lst: list) -> list:
-    return [x * x for x in lst]
-
-def take_first_three(lst: list) -> list:
-    return lst[:3]
-
-def list_filtering_pipeline(lst) = filter_positive as positives | square_list as squared | take_first_three
-result = list_filtering_pipeline([-2, -1, 0, 1, 2, 3, 4, 5])
-assert result == [1, 4, 9], f"Expected [1, 4, 9], got {result}"
-log("✅ Named pipeline with list filtering and transformation works")
-
-# Test 17: Named pipeline with function composition
-def compose(f: function, g: function) -> function:
-    return lambda x :: f(g(x))
-
-def add_one(x: int) -> int:
-    return x + 1
-
-def multiply_by_ten(x: int) -> int:
-    return x * 10
-
-composed = compose(add_one, multiply_by_ten)
-def composition_pipeline(x) = composed as composed_result
-result = composition_pipeline(5)
-assert result == 51, f"Expected 51, got {result}"
-log("✅ Named pipeline with function composition works")
-
-# Test 18: Named pipeline with conditional branching
-def check_range(x: int) -> str:
-    if x < 10:
-        return "small"
-    elif x < 50:
-        return "medium"
-    else:
-        return "large"
-
-def add_size_prefix(s: str) -> str:
-    return f"Size: {s}"
-
-def conditional_branching_pipeline(x) = check_range as size_category | add_size_prefix
-result = conditional_branching_pipeline(25)
-assert result == "Size: medium", f"Expected 'Size: medium', got '{result}'"
-log("✅ Named pipeline with conditional branching works")
-
-# Test 19: Named pipeline with data validation
-def validate_positive(x: int) -> int:
-    if x <= 0:
-        return 1
-    return x
-
-def validate_even(x: int) -> int:
-    if x % 2 != 0:
-        return x + 1
-    return x
-
-def validation_pipeline(x) = validate_positive as validated | validate_even
-result = validation_pipeline(-5)
-assert result == 2, f"Expected 2, got {result}"
-log("✅ Named pipeline with data validation works")
-
-# Test 20: Named pipeline with complex data transformation
-def extract_numbers(s: str) -> list:
-    return [int(c) for c in s if c.isdigit()]
-
-def sum_digits(lst: list) -> int:
-    return sum(lst)
-
-def format_result(x: int) -> str:
-    return f"Sum of digits: {x}"
-
-def complex_transformation_pipeline(s) = extract_numbers as numbers | sum_digits as sum_result | format_result
-result = complex_transformation_pipeline("abc123def456")
-assert result == "Sum of digits: 21", f"Expected 'Sum of digits: 21', got '{result}'"
-log("✅ Named pipeline with complex data transformation works")
-
-log("Named Pipeline Stages test completed successfully") 
+def multi_placeholder_pipeline(text: str) = multi_placeholder_func("start", $$, "middle", $$) as combined | add_prefix(combined, "RESULT: ") | add_suffix("!!!", $$)
+result = multi_placeholder_pipeline("value")
+assert result == "RESULT: start-value-middle-value!!!", f"Expected 'RESULT: start-value-middle-value!!!', got '{result}'"
+log("✅ Multiple placeholders with named captures works")

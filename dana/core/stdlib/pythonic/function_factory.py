@@ -181,7 +181,7 @@ class PythonicFunctionFactory:
             "func": int,
             "types": [str, float, bool, LazyPromise],
             "doc": "Convert a value to an integer",
-            "signatures": [(str,), (float,), (bool,), (LazyPromise,)],
+            "signatures": [(int,), (str,), (float,), (bool,), (LazyPromise,)],
         },
         "float": {
             "func": float,
