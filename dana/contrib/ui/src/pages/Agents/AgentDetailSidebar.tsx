@@ -12,7 +12,7 @@ import { MarkdownViewerSmall } from './chat/markdown-viewer';
 const MIN_WIDTH = 380;
 const MAX_WIDTH = 800;
 const DEFAULT_WIDTH = 420;
-const RESIZE_HANDLE_WIDTH = 4;
+const RESIZE_HANDLE_WIDTH = 2;
 
 // Resize handle component
 const ResizeHandle: React.FC<{
@@ -67,9 +67,9 @@ const ResizeHandle: React.FC<{
     <div
       ref={handleRef}
       className={`
-        absolute top-0 right-0 h-full z-10
+        absolute top-0 right-0 h-full z-50
         hover:bg-gray-200 hover:shadow-sm transition-all duration-200
-        ${isResizing ? 'bg-gray-200 shadow-md' : 'bg-gray-100 hover:bg-gray-200'}
+        ${isResizing ? 'bg-primary' : 'hover:bg-gray-200'}
         group
       `}
       onMouseDown={handleMouseDown}
@@ -82,10 +82,14 @@ const ResizeHandle: React.FC<{
       {/* Visual indicator line */}
       <div
         className={`
-        absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2
-        w-0.5 h-8 rounded-full transition-all duration-200
-        ${isResizing ? 'bg-white' : 'bg-gray-400 group-hover:bg-white'}
-      `}
+          absolute top-1/2 left-1/2 transform -translate-x-1/3 -translate-y-1/2
+          w-2 h-8 rounded-full transition-all duration-200 border border-gray-300
+          ${isResizing ? 'bg-white shadow-sm' : 'bg-white group-hover:bg-primary shadow-sm'}
+        `}
+        style={{
+          zIndex: 60,
+          pointerEvents: 'none',
+        }}
       />
     </div>
   );
@@ -137,7 +141,6 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
       }
     }, 100);
   };
-
 
   // Function to handle "Add documents" CTA button click
   const handleAddDocumentsClick = () => {
@@ -316,12 +319,13 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
             return (
               <div
                 key={idx}
-                className={`rounded-sm px-3 py-2 text-sm ${msg.sender === 'user'
-                  ? 'bg-gray-100'
-                  : isThinking
-                    ? ' self-start text-left border border-gray-100'
-                    : ' self-start text-left'
-                  }`}
+                className={`rounded-sm px-3 py-2 text-sm ${
+                  msg.sender === 'user'
+                    ? 'bg-gray-100'
+                    : isThinking
+                      ? ' self-start text-left border border-gray-100'
+                      : ' self-start text-left'
+                }`}
               >
                 {isThinking ? (
                   <div className="flex gap-2 items-center">
@@ -434,7 +438,7 @@ export const AgentDetailSidebar: React.FC = () => {
 
   return (
     <div
-      className="relative max-h-[calc(100vh-64px)] border-r border-gray-200 overflow-y-auto flex flex-col bg-gray-50"
+      className="relative max-h-[calc(100vh-64px)] border-r border-gray-200 overflow-visible flex flex-col bg-gray-50"
       style={{
         width: `${sidebarWidth}px`,
         minWidth: `${MIN_WIDTH}px`,
@@ -442,12 +446,12 @@ export const AgentDetailSidebar: React.FC = () => {
       }}
     >
       <ResizeHandle onResize={handleResize} isResizing={isResizing} setIsResizing={setIsResizing} />
-      <div className="flex flex-col h-full bg-white">
-        <div className="flex h-15 gap-3 items-center p-2 border-b border-gray-200">
+      <div className="flex flex-col h-full bg-white overflow-y-auto">
+        <div className="flex h-14 gap-3 items-center p-2 border-b border-gray-200">
           <img className="w-10 h-10 rounded-full" src={DanaAvatar} alt="Dana avatar" />
           <div>
-            <div className="font-semibold text-gray-900">Dana</div>
-            <div className="text-sm text-gray-500">Agent builder assistant</div>
+            <div className="font-semibold text-sm  text-gray-900">Dana</div>
+            <div className="text-xs text-gray-500">Agent builder assistant</div>
           </div>
         </div>
         <div className="flex overflow-y-auto flex-col flex-1">

@@ -12,7 +12,7 @@ import LogViewer from '@/components/LogViewer';
 const MIN_WIDTH = 380;
 const MAX_WIDTH = 800;
 const DEFAULT_WIDTH = 420;
-const RESIZE_HANDLE_WIDTH = 4;
+const RESIZE_HANDLE_WIDTH = 2;
 
 interface Message {
   id: string;
@@ -80,9 +80,9 @@ const ChatResizeHandle: React.FC<{
     <div
       ref={handleRef}
       className={`
-        absolute top-0 left-0 h-full z-10
+        absolute top-0 left-0 h-full z-50
         hover:bg-gray-200 hover:shadow-sm transition-all duration-200
-        ${isResizing ? 'bg-gray-200 shadow-md' : 'bg-gray-100 hover:bg-gray-200'}
+        ${isResizing ? 'bg-primary' : ' hover:bg-gray-200'}
         group
       `}
       onMouseDown={handleMouseDown}
@@ -95,10 +95,14 @@ const ChatResizeHandle: React.FC<{
       {/* Visual indicator line */}
       <div
         className={`
-          absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2
-          w-0.5 h-8 rounded-full transition-all duration-200
-          ${isResizing ? 'bg-white' : 'bg-gray-400 group-hover:bg-white'}
+          absolute top-1/2 left-1/2 transform -translate-x-2/3 -translate-y-1/2
+          w-2 h-8 rounded-full transition-all duration-200 border border-gray-300
+          ${isResizing ? 'bg-primary shadow-sm' : 'bg-white group-hover:bg-primary shadow-sm'}
         `}
+        style={{
+          zIndex: 60,
+          pointerEvents: 'none',
+        }}
       />
     </div>
   );
@@ -308,7 +312,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
 
   return (
     <div
-      className={`relative bg-white max-h-[calc(100vh-64px)] border-l border-gray-200 overflow-y-auto flex flex-col transform transition-transform duration-300 ease-in-out z-50 ${
+      className={`relative bg-white max-h-[calc(100vh-64px)] border-l border-gray-200 overflow-visible flex flex-col transform transition-transform duration-300 ease-in-out z-50 ${
         isVisible ? 'translate-x-0' : 'translate-x-full'
       }`}
       style={{
@@ -323,7 +327,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
         setIsResizing={setIsResizing}
       />
       {/* Header */}
-      <div className="flex justify-between items-center h-15 p-4 border-b border-gray-200">
+      <div className="flex justify-between items-center h-14 p-4 border-b border-gray-200">
         <div className="flex gap-3 items-center">
           <div className="flex overflow-hidden justify-center items-center w-8 h-8 rounded-full">
             <img
