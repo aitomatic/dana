@@ -86,44 +86,30 @@ class IntentDetectionService(Loggable):
             return IntentDetectionResponse(intent="general_query", entities={}, explanation=f"Error in intent detection: {str(e)}")
 
     async def generate_followup_message(self, user_message: str, agent: Any, knowledge_topics: list[str]) -> str:
-        """Generate a domain-aware, constructive follow-up message for the smart chat flow."""
-        agent_name = getattr(agent, "name", None) or (agent.get("name") if isinstance(agent, dict) else None) or "(no name)"
-        agent_description = (
-            getattr(agent, "description", None) or (agent.get("description") if isinstance(agent, dict) else None) or "(no description)"
-        )
+        """Generate a contextually aware, empathetic follow-up message for the smart chat flow."""
+        agent_name = getattr(agent, "name", None) or (agent.get("name") if isinstance(agent, dict) else None) or "your agent"
         agent_config = getattr(agent, "config", None) or (agent.get("config") if isinstance(agent, dict) else None) or {}
-        specialties = agent_config.get("specialties", None) or "(not set)"
-        tasks = agent_config.get("tasks", None) or "(not set)"
+        domain = agent_config.get("domain", "")
+        recent_topics = knowledge_topics[-2:] if len(knowledge_topics) > 1 else knowledge_topics  # Last 2 topics
 
-        # Analyze domain knowledge structure for better suggestions
-        domain_analysis = self._analyze_domain_knowledge(knowledge_topics)
-        topics_str = ", ".join(knowledge_topics) if knowledge_topics else "(none yet)"
+        # Determine user's progress stage for empathetic response
+        progress_stage = "starting" if len(knowledge_topics) < 3 else "developing" if len(knowledge_topics) < 8 else "advanced"
 
-        # Build domain-aware, LLM-generated follow-up prompt
+        # Build contextual prompt with empathy
         context_prompt = f"""
-You are a creative and insightful agent designer with deep domain expertise. Analyze the user's recent action and the agent's current domain knowledge, then ask ONE engaging question that will help them build a better agent.
+User just said: "{user_message}"
+Agent name: {agent_name}
+Agent domain: {domain or "not set yet"}
+Recent topics added: {', '.join(recent_topics) if recent_topics else "none yet"}
+Progress stage: {progress_stage}
 
-AGENT STATE:
-Name: {agent_name}
-Domain: {agent_config.get("domain", "(not set)")}
-Topics: {topics_str}
-Tasks: {tasks}
+Generate a supportive follow-up message that:
+1. Acknowledges what they just accomplished
+2. Asks ONE helpful next step question (20-30 words)
+3. Shows understanding of their agent-building journey
+4. Relates to their specific domain/topics when possible
 
-CURRENT DOMAIN KNOWLEDGE:
-{domain_analysis}
-
-USER JUST SAID: "{user_message}"
-
-Based on the agent's current domain knowledge and the user's recent action, ask ONE question that will:
-- Suggest a related topic or subdomain that would enhance the agent's expertise
-- Propose a practical application or use case within the current domain
-- Identify a gap in the knowledge structure that could be filled
-- Suggest a deeper or more advanced aspect of the current domain
-- Recommend a complementary skill or capability that fits the domain
-
-Be specific to the domain, creative, and genuinely helpful. Reference the current knowledge structure when making suggestions. Make the user excited to explore more of their chosen domain.
-
-Ask only ONE question. Make it engaging, domain-relevant, and actionable.
+Be encouraging and specific to their context.
 """
 
         llm_request = BaseRequest(
@@ -131,12 +117,12 @@ Ask only ONE question. Make it engaging, domain-relevant, and actionable.
                 "messages": [
                     {
                         "role": "system",
-                        "content": "You are a creative, insightful agent designer who asks engaging, thought-provoking questions. Be specific, helpful, and genuinely interested in helping users build amazing agents.",
+                        "content": "You are an encouraging agent-building coach. Acknowledge progress, then ask one specific, helpful question about their next step.",
                     },
                     {"role": "user", "content": context_prompt},
                 ],
-                "temperature": 0.9,
-                "max_tokens": 150,
+                "temperature": 0.5,
+                "max_tokens": 80,
             }
         )
         try:
@@ -154,69 +140,13 @@ Ask only ONE question. Make it engaging, domain-relevant, and actionable.
                 return str(content)
         except Exception as e:
             self.error(f"Error generating follow-up message: {e}")
-            # Return a creative fallback that encourages engagement
+            # Return contextual fallback messages
             if not knowledge_topics:
-                return "What fascinating domain should this agent master to become truly exceptional?"
-            elif specialties == "(not set)":
-                return "What unique superpower should this agent have that sets it apart?"
-            elif agent_description == "(no description)":
-                return "What amazing transformation should this agent help users achieve?"
+                return f"Great start! What domain would you like {agent_name} to specialize in?"
+            elif len(knowledge_topics) < 3:
+                return f"Nice work building {agent_name}'s knowledge! What related topic should we add next?"
             else:
-                return "What unexpected capability would make users say 'wow' when using this agent?"
-
-    def _analyze_domain_knowledge(self, knowledge_topics: list[str]) -> str:
-        """Analyze domain knowledge structure to provide insights for follow-up suggestions."""
-        if not knowledge_topics:
-            return "No domain knowledge yet - agent is a blank slate ready for specialization."
-
-        # Analyze the knowledge structure
-        topic_count = len(knowledge_topics)
-        main_domains = []
-        subdomains = []
-
-        # Categorize topics by depth/complexity
-        for topic in knowledge_topics:
-            if topic.lower() in ["root", "domain knowledge", "untitled"]:
-                continue
-            if len(topic.split()) <= 2:  # Simple topics
-                main_domains.append(topic)
-            else:  # Complex/multi-word topics
-                subdomains.append(topic)
-
-        # Build domain analysis
-        analysis = f"Agent has {topic_count} knowledge areas:\n"
-
-        if main_domains:
-            analysis += f"• Main domains: {', '.join(main_domains[:3])}"
-            if len(main_domains) > 3:
-                analysis += f" and {len(main_domains) - 3} more"
-            analysis += "\n"
-
-        if subdomains:
-            analysis += f"• Specialized areas: {', '.join(subdomains[:3])}"
-            if len(subdomains) > 3:
-                analysis += f" and {len(subdomains) - 3} more"
-            analysis += "\n"
-
-        # Add domain-specific insights
-        if any("finance" in topic.lower() or "financial" in topic.lower() for topic in knowledge_topics):
-            analysis += "• Finance-focused agent with quantitative capabilities\n"
-        elif any("tech" in topic.lower() or "software" in topic.lower() or "programming" in topic.lower() for topic in knowledge_topics):
-            analysis += "• Technology-focused agent with technical expertise\n"
-        elif any("health" in topic.lower() or "medical" in topic.lower() for topic in knowledge_topics):
-            analysis += "• Healthcare-focused agent with medical knowledge\n"
-        elif any("market" in topic.lower() or "business" in topic.lower() for topic in knowledge_topics):
-            analysis += "• Business-focused agent with market insights\n"
-
-        # Suggest potential gaps or next steps
-        if topic_count < 3:
-            analysis += "• Knowledge structure is still developing - many opportunities for expansion\n"
-        elif topic_count < 8:
-            analysis += "• Good foundation established - ready for deeper specialization\n"
-        else:
-            analysis += "• Comprehensive knowledge base - consider advanced applications and edge cases\n"
-
-        return analysis
+                return f"Your {domain or 'agent'} is looking good! What aspect would you like to deepen?"
 
     def _build_intent_detection_prompt(
         self, user_message: str, chat_history: list[MessageData], domain_tree: DomainKnowledgeTree | None

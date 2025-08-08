@@ -6,7 +6,7 @@ import ConversationsSidebar from './conversations-sidebar';
 import { Tooltip, TooltipContent } from '@/components/ui/tooltip';
 import { TooltipTrigger } from '@/components/ui/tooltip';
 import { TooltipPortal } from '@radix-ui/react-tooltip';
-import { ChatPlusIn, Tools } from 'iconoir-react';
+import { ChatPlusIn, Settings, Menu } from 'iconoir-react';
 import { IconMenu2 } from '@tabler/icons-react';
 
 const SIDEBAR_COLLAPSED_KEY = 'agent-sidebar-collapsed';
@@ -46,7 +46,10 @@ const AgentChat = () => {
           )}
         >
           <div className="absolute inset-0 transition-none bg-background">
-            <ConversationsSidebar setIsSidebarCollapsed={setIsSidebarCollapsed} agentId={effectiveAgentId} />
+            <ConversationsSidebar
+              setIsSidebarCollapsed={setIsSidebarCollapsed}
+              agentId={effectiveAgentId}
+            />
           </div>
         </div>
         <div
@@ -70,7 +73,7 @@ const AgentChat = () => {
                       aria-label="Toggle sidebar"
                       data-testid="toggle-sidebar-button"
                     >
-                      <IconMenu2 size={20} strokeWidth={2} />
+                      <Menu width={20} strokeWidth={2} />
                     </div>
                   </TooltipTrigger>
                   <TooltipPortal>
@@ -102,18 +105,30 @@ const AgentChat = () => {
                       <div
                         className="flex items-center justify-center w-[40px] h-[40px] cursor-pointer"
                         role="button"
-                        aria-label="Manage agent"
+                        aria-label="Train agent"
                         data-testid="manage-agent-button"
                       >
-                        <Tools width={20} height={20} strokeWidth={2} />
+                        <Settings
+                          width={20}
+                          height={20}
+                          strokeWidth={2}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/agents/${agent_id}`);
+                          }}
+                        />
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent side="right">Manage agent</TooltipContent>
+                    <TooltipContent side="right">Train agent</TooltipContent>
                   </Tooltip>
                 </>
               </div>
             )}
-            <AgentChatView isSidebarCollapsed={isSidebarCollapsed} agentId={effectiveAgentId} conversationId={conversation_id} />
+            <AgentChatView
+              isSidebarCollapsed={isSidebarCollapsed}
+              agentId={effectiveAgentId}
+              conversationId={conversation_id}
+            />
           </div>
         </div>
       </div>

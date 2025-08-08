@@ -249,10 +249,12 @@ export default function AgentDetailPage() {
         onDeploy={handleDeploy}
         onCancel={handleClose}
       />
-      <div className="grid grid-cols-[max-content_1fr] flex-1 w-full h-full overflow-hidden">
+      <div className="flex flex-1 w-full h-full overflow-hidden">
         <AgentDetailSidebar />
         {/* Pass activeTab and setActiveTab to AgentDetailTabs */}
-        <AgentDetailTabs activeTab={activeTab} setActiveTab={setActiveTab} navigate={navigate} />
+        <div className="flex-1 min-w-0">
+          <AgentDetailTabs activeTab={activeTab} setActiveTab={setActiveTab} navigate={navigate} />
+        </div>
       </div>
       <AgentPerformanceComparisonModal
         open={showComparison}

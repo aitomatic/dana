@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ArrowUp, NavArrowDown, NavArrowUp, Xmark } from 'iconoir-react';
 import { SidebarExpand } from 'iconoir-react';
 import { useParams } from 'react-router-dom';
@@ -7,6 +7,12 @@ import { MarkdownViewerSmall } from './chat/markdown-viewer';
 import { useVariableUpdates } from '@/hooks/useVariableUpdates';
 import { getAgentAvatarSync } from '@/utils/avatar';
 import LogViewer from '@/components/LogViewer';
+
+// Constants for resize functionality
+const MIN_WIDTH = 380;
+const MAX_WIDTH = 800;
+const DEFAULT_WIDTH = 420;
+const RESIZE_HANDLE_WIDTH = 2;
 
 interface Message {
   id: string;
@@ -21,6 +27,87 @@ interface ChatPaneProps {
   isVisible: boolean;
 }
 
+// Resize handle component for ChatPane
+const ChatResizeHandle: React.FC<{
+  onResize: (width: number) => void;
+  isResizing: boolean;
+  setIsResizing: (resizing: boolean) => void;
+}> = ({ onResize, isResizing, setIsResizing }) => {
+  const handleRef = useRef<HTMLDivElement>(null);
+  const startXRef = useRef<number>(0);
+  const startWidthRef = useRef<number>(0);
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!handleRef.current) return;
+
+      setIsResizing(true);
+      startXRef.current = e.clientX;
+      startWidthRef.current = handleRef.current.parentElement?.offsetWidth || DEFAULT_WIDTH;
+
+      // Add global mouse event listeners
+      const handleMouseMove = (e: MouseEvent) => {
+        const deltaX = startXRef.current - e.clientX; // Inverted for left-side resize
+        const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startWidthRef.current + deltaX));
+        onResize(newWidth);
+      };
+
+      const handleMouseUp = () => {
+        setIsResizing(false);
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    },
+    [onResize, setIsResizing],
+  );
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (isResizing) {
+        setIsResizing(false);
+      }
+    };
+  }, [isResizing, setIsResizing]);
+
+  return (
+    <div
+      ref={handleRef}
+      className={`
+        absolute top-0 left-0 h-full z-50
+        hover:bg-gray-200 hover:shadow-sm transition-all duration-200
+        ${isResizing ? 'bg-primary' : ' hover:bg-gray-200'}
+        group
+      `}
+      onMouseDown={handleMouseDown}
+      style={{
+        width: `${RESIZE_HANDLE_WIDTH}px`,
+        cursor: 'col-resize',
+      }}
+      title="Drag to resize chat panel"
+    >
+      {/* Visual indicator line */}
+      <div
+        className={`
+          absolute top-1/2 left-1/2 transform -translate-x-2/3 -translate-y-1/2
+          w-2 h-8 rounded-full transition-all duration-200 border border-gray-300
+          ${isResizing ? 'bg-primary shadow-sm' : 'bg-white group-hover:bg-primary shadow-sm'}
+        `}
+        style={{
+          zIndex: 60,
+          pointerEvents: 'none',
+        }}
+      />
+    </div>
+  );
+};
+
 export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose, isVisible }) => {
   const { agent_id } = useParams();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -31,6 +118,27 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
   const [showLogs, setShowLogs] = useState(false);
   const [hideLogs, setHideLogs] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Resize state management
+  const [chatWidth, setChatWidth] = useState(() => {
+    // Try to get saved width from localStorage
+    const savedWidth = localStorage.getItem('chat-pane-width');
+    if (savedWidth) {
+      const width = parseInt(savedWidth, 10);
+      return Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, width));
+    }
+    return DEFAULT_WIDTH;
+  });
+  const [isResizing, setIsResizing] = useState(false);
+
+  // Save width to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('chat-pane-width', chatWidth.toString());
+  }, [chatWidth]);
+
+  const handleResize = useCallback((newWidth: number) => {
+    setChatWidth(newWidth);
+  }, []);
 
   // Generate unique WebSocket ID for this chat session
   const [websocketId] = useState(
@@ -204,12 +312,22 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
 
   return (
     <div
-      className={`w-[420px] min-w-[380px] bg-white max-h-[calc(100vh-64px)] border-l border-gray-200 overflow-y-auto flex flex-col transform transition-transform duration-300 ease-in-out z-50 ${
+      className={`relative bg-white max-h-[calc(100vh-64px)] border-l border-gray-200 overflow-visible flex flex-col transform transition-transform duration-300 ease-in-out z-50 ${
         isVisible ? 'translate-x-0' : 'translate-x-full'
       }`}
+      style={{
+        width: `${chatWidth}px`,
+        minWidth: `${MIN_WIDTH}px`,
+        maxWidth: `${MAX_WIDTH}px`,
+      }}
     >
+      <ChatResizeHandle
+        onResize={handleResize}
+        isResizing={isResizing}
+        setIsResizing={setIsResizing}
+      />
       {/* Header */}
-      <div className="flex justify-between items-center h-15 p-4 border-b border-gray-200">
+      <div className="flex justify-between items-center h-14 p-4 border-b border-gray-200">
         <div className="flex gap-3 items-center">
           <div className="flex overflow-hidden justify-center items-center w-8 h-8 rounded-full">
             <img
@@ -292,29 +410,31 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
 
       {/* Collapsible Live Logs Section */}
       {(isLoading || logUpdates.length > 0) && !hideLogs && (
-        <div className="border-t border-gray-200">
+        <div className="border-t border-gray-200 dark:border-gray-700">
           {/* Toggle Button */}
-          <div className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors">
+          <div className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
             <div
               className="flex items-center gap-2 cursor-pointer flex-1"
               onClick={() => setShowLogs(!showLogs)}
             >
-              <span className="text-sm font-medium text-gray-600">Backend Logs</span>
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                Backend Logs
+              </span>
               {isLoading && (
                 <div className="flex items-center gap-1">
                   <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                  <span className="text-xs text-blue-600">Live</span>
+                  <span className="text-xs text-blue-600 dark:text-blue-400">Live</span>
                 </div>
               )}
               {logUpdates.length > 0 && (
-                <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-medium">
+                <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs px-2 py-0.5 rounded-full font-medium">
                   {logUpdates.length}
                 </span>
               )}
               {showLogs ? (
-                <NavArrowUp className="w-4 h-4 text-gray-400" />
+                <NavArrowUp className="w-4 h-4 text-gray-400 dark:text-gray-500" />
               ) : (
-                <NavArrowDown className="w-4 h-4 text-gray-400" />
+                <NavArrowDown className="w-4 h-4 text-gray-400 dark:text-gray-500" />
               )}
             </div>
 
@@ -325,10 +445,10 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
                   setHideLogs(true);
                   setShowLogs(false);
                 }}
-                className="p-1 hover:bg-gray-200 rounded transition-colors"
+                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
                 title="Hide logs"
               >
-                <Xmark className="w-3 h-3 text-gray-400" />
+                <Xmark className="w-3 h-3 text-gray-400 dark:text-gray-500" />
               </button>
             )}
           </div>

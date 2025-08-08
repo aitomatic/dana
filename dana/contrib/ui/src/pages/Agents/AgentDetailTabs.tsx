@@ -50,12 +50,16 @@ export const AgentDetailTabs: React.FC<{
       {/* Main content area */}
       <div className=" overflow-auto grid grid-cols-1 grid-rows-[max-content_1fr] flex-1 h-full">
         {/* Tab bar */}
-        <div className="flex justify-between items-center max-w-screen h-15 p-2 border-b border-gray-200">
-          <div className="flex gap-2">
+        <div className="flex justify-between items-center max-w-screen border-b border-gray-200">
+          <div className="flex">
             {TABS.map((tab) => (
               <button
                 key={tab}
-                className={`cursor-pointer px-4 py-2 font-medium text-sm flex items-center gap-2 transition-colors ${currentActiveTab === tab ? 'bg-white rounded-sm shadow' : 'border-transparent text-gray-500'}`}
+                className={`cursor-pointer px-4 py-4 h-14 font-medium text-sm flex items-center gap-2 transition-colors relative ${
+                  currentActiveTab === tab
+                    ? 'text-primary bg-white before:absolute before:bottom-[-1px] before:left-0 before:right-0 before:h-1 before:bg-white before:content-[""]'
+                    : 'text-gray-500'
+                }`}
                 onClick={() => handleTabChange(tab)}
               >
                 {TAB_ICONS[tab as keyof typeof TAB_ICONS]}
@@ -66,9 +70,9 @@ export const AgentDetailTabs: React.FC<{
           <div className="flex gap-2 items-center">
             {!isChatSidebarOpen && (
               <Button
-                variant="outline"
+                variant="link"
                 // size="sm"
-                className="flex gap-2 items-center px-3 py-2 text-gray-700 bg-white rounded-full border-gray-200 hover:bg-gray-50"
+                className="flex gap-2 items-center px-3 py-2 text-gray-700 border-gray-200 hover:bg-gray-50"
                 onClick={() => openChatSidebar()}
               >
                 {/* Agent Avatar */}

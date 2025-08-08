@@ -167,22 +167,15 @@ const OverviewTab: React.FC<{
             )}
           </div>
           <div className="flex items-center text-sm text-gray-700">
+            <div className="text-gray-600 min-w-30">Role:</div>
+            <div className="font-medium text-gray-900">{agent?.config?.role ?? '-'}</div>
+          </div>
+
+          <div className="flex items-center text-sm text-gray-700">
             <div className="text-gray-600 min-w-30">Domain:</div>
             <div className="font-medium text-gray-900">{agent?.config?.domain ?? '-'}</div>
           </div>
-          <div className="flex items-start text-sm text-gray-700">
-            <div className="text-gray-600 min-w-30">Topics:</div>
-            <div className="capitalize font-medium text-gray-900">
-              {(() => {
-                const oldSpecialties = agent?.config?.specialties || [];
-                const newTopics = agent?.config?.topics || [];
-                const oldTopic = agent?.config?.topic ? [agent.config.topic] : [];
-                const allTopics = [...oldSpecialties, ...newTopics, ...oldTopic];
-                const uniqueTopics = Array.from(new Set(allTopics.filter(Boolean)));
-                return uniqueTopics.length > 0 ? uniqueTopics.join(', ') : '-';
-              })()}
-            </div>
-          </div>
+
           <div className="flex items-start text-sm text-gray-700">
             <div className="text-gray-600 min-w-30">Tasks:</div>
             <div className="capitalize font-medium text-gray-900">

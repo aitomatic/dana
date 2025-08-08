@@ -235,34 +235,34 @@ const AgentTestChat = ({
 
       {/* Collapsible Live Logs Section */}
       {(isTesting || logUpdates.length > 0) && !hideLogs && (
-        <div className="bg-gray-50 border-t border-gray-200">
+        <div className="bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
           {/* Toggle Button */}
-          <div className="flex items-center justify-between px-3 py-2 hover:bg-gray-100 transition-colors">
-            <div 
+          <div className="flex items-center justify-between px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <div
               className="flex items-center gap-2 cursor-pointer flex-1"
               onClick={() => setShowLogs(!showLogs)}
             >
-              <span className="text-sm font-medium text-gray-600">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
                 Backend Logs
               </span>
               {isTesting && (
                 <div className="flex items-center gap-1">
                   <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
-                  <span className="text-xs text-blue-600">Live</span>
+                  <span className="text-xs text-blue-600 dark:text-blue-400">Live</span>
                 </div>
               )}
               {logUpdates.length > 0 && (
-                <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-medium">
+                <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs px-2 py-0.5 rounded-full font-medium">
                   {logUpdates.length}
                 </span>
               )}
               {showLogs ? (
-                <ChevronUp className="w-4 h-4 text-gray-400" />
+                <ChevronUp className="w-4 h-4 text-gray-400 dark:text-gray-500" />
               ) : (
-                <ChevronDown className="w-4 h-4 text-gray-400" />
+                <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500" />
               )}
             </div>
-            
+
             {/* Close button */}
             {!isTesting && (
               <button
@@ -270,18 +270,18 @@ const AgentTestChat = ({
                   setHideLogs(true);
                   setShowLogs(false);
                 }}
-                className="p-1 hover:bg-gray-200 rounded transition-colors"
+                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
                 title="Hide logs"
               >
-                <X className="w-3 h-3 text-gray-400" />
+                <X className="w-3 h-3 text-gray-400 dark:text-gray-500" />
               </button>
             )}
           </div>
-          
+
           {/* Logs Content - Only show when expanded */}
           {showLogs && (
             <div className="px-3 pb-2">
-              <LogViewer 
+              <LogViewer
                 logs={logUpdates}
                 showTimestamps={true}
                 autoScroll={true}
@@ -293,7 +293,7 @@ const AgentTestChat = ({
       )}
 
       {/* Input */}
-      <div className="p-3 bg-gray-50 border-t border-gray-200">
+      <div className="p-3 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
         <div className="flex gap-2">
           <div className="relative flex-1">
             <textarea
@@ -301,7 +301,7 @@ const AgentTestChat = ({
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyDown={handleKeyPress}
               placeholder="Chat with agent"
-              className="px-3 py-2 w-full text-sm rounded-lg border border-gray-300 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-3 py-2 w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               rows={2}
               disabled={isTesting}
             />

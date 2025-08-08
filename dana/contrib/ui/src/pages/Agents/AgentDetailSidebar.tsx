@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import DanaAvatar from '/agent-avatar/javis-avatar.svg';
 import { apiService } from '@/lib/api';
 import { useParams } from 'react-router-dom';
@@ -8,11 +8,98 @@ import { useUIStore } from '@/stores/ui-store';
 import { ArrowUp } from 'iconoir-react';
 import { MarkdownViewerSmall } from './chat/markdown-viewer';
 
+// Constants for resize functionality
+const MIN_WIDTH = 380;
+const MAX_WIDTH = 800;
+const DEFAULT_WIDTH = 420;
+const RESIZE_HANDLE_WIDTH = 2;
+
+// Resize handle component
+const ResizeHandle: React.FC<{
+  onResize: (width: number) => void;
+  isResizing: boolean;
+  setIsResizing: (resizing: boolean) => void;
+}> = ({ onResize, isResizing, setIsResizing }) => {
+  const handleRef = useRef<HTMLDivElement>(null);
+  const startXRef = useRef<number>(0);
+  const startWidthRef = useRef<number>(0);
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!handleRef.current) return;
+
+      setIsResizing(true);
+      startXRef.current = e.clientX;
+      startWidthRef.current = handleRef.current.parentElement?.offsetWidth || DEFAULT_WIDTH;
+
+      // Add global mouse event listeners
+      const handleMouseMove = (e: MouseEvent) => {
+        const deltaX = e.clientX - startXRef.current;
+        const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startWidthRef.current + deltaX));
+        onResize(newWidth);
+      };
+
+      const handleMouseUp = () => {
+        setIsResizing(false);
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    },
+    [onResize, setIsResizing],
+  );
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (isResizing) {
+        setIsResizing(false);
+      }
+    };
+  }, [isResizing, setIsResizing]);
+
+  return (
+    <div
+      ref={handleRef}
+      className={`
+        absolute top-0 right-0 h-full z-50
+        hover:bg-gray-200 hover:shadow-sm transition-all duration-200
+        ${isResizing ? 'bg-primary' : 'hover:bg-gray-200'}
+        group
+      `}
+      onMouseDown={handleMouseDown}
+      style={{
+        width: `${RESIZE_HANDLE_WIDTH}px`,
+        cursor: 'col-resize',
+      }}
+      title="Drag to resize sidebar"
+    >
+      {/* Visual indicator line */}
+      <div
+        className={`
+          absolute top-1/2 left-1/2 transform -translate-x-1/3 -translate-y-1/2
+          w-2 h-8 rounded-full transition-all duration-200 border border-gray-300
+          ${isResizing ? 'bg-white shadow-sm' : 'bg-white group-hover:bg-primary shadow-sm'}
+        `}
+        style={{
+          zIndex: 60,
+          pointerEvents: 'none',
+        }}
+      />
+    </div>
+  );
+};
+
 const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
   // Custom scrollbar styles
   const scrollbarStyles = `
     .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
+      width: 4px;
     }
     .custom-scrollbar::-webkit-scrollbar-track {
       background: transparent;
@@ -125,6 +212,8 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
     setLoading(true);
 
     try {
+      setIsThinking(true);
+      setThinkingMessage(thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)]);
       const response = await apiService.smartChat(agent_id, userInput);
 
       // Remove the thinking message
@@ -167,6 +256,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
       addMessage({ sender: 'agent' as const, text: 'Sorry, something went wrong.' });
     } finally {
       setLoading(false);
+      setIsThinking(false);
     }
   };
 
@@ -232,17 +322,18 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
             return (
               <div
                 key={idx}
-                className={`rounded-sm px-3 py-2 text-sm ${msg.sender === 'user'
-                  ? 'bg-gray-100'
-                  : isThinking
-                    ? ' self-start text-left border border-gray-100'
-                    : ' self-start text-left'
-                  }`}
+                className={`rounded-sm px-3 py-2 text-sm ${
+                  msg.sender === 'user'
+                    ? 'bg-gray-100'
+                    : isThinking
+                      ? ' self-start text-left border border-gray-100'
+                      : ' self-start text-left'
+                }`}
               >
                 {isThinking ? (
-                  <div className="flex gap-2 items-center">
+                  <div className="px-3 py-2 flex gap-2 items-center">
                     <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
-                    <span className="text-gray-700">{msg.text}</span>
+                    <span className="text-gray-700 text-sm">{msg.text}</span>
                   </div>
                 ) : (
                   <>
@@ -268,6 +359,12 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
               </div>
             );
           })}
+          {isThinking && (
+            <div className="px-3 py-2 flex gap-2 items-center self-start text-left">
+              <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
+              <span className="text-gray-700 text-sm">{thinkingMessage}</span>
+            </div>
+          )}
           <div ref={bottomRef} />
         </div>
         <div className="p-3">
@@ -328,14 +425,42 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
 
 export const AgentDetailSidebar: React.FC = () => {
   const selectedAgent = useAgentStore((s) => s.selectedAgent);
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    // Try to get saved width from localStorage
+    const savedWidth = localStorage.getItem('agent-detail-sidebar-width');
+    if (savedWidth) {
+      const width = parseInt(savedWidth, 10);
+      return Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, width));
+    }
+    return DEFAULT_WIDTH;
+  });
+  const [isResizing, setIsResizing] = useState(false);
+
+  // Save width to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('agent-detail-sidebar-width', sidebarWidth.toString());
+  }, [sidebarWidth]);
+
+  const handleResize = useCallback((newWidth: number) => {
+    setSidebarWidth(newWidth);
+  }, []);
+
   return (
-    <div className="w-[420px] min-w-[380px] max-h-[calc(100vh-64px)] border-r border-gray-200 overflow-y-auto flex flex-col  bg-gray-50">
-      <div className="flex flex-col h-full bg-white ">
-        <div className="flex h-15 gap-3 items-center p-2 border-b border-gray-200">
+    <div
+      className="relative max-h-[calc(100vh-64px)] border-r border-gray-200 overflow-visible flex flex-col bg-gray-50"
+      style={{
+        width: `${sidebarWidth}px`,
+        minWidth: `${MIN_WIDTH}px`,
+        maxWidth: `${MAX_WIDTH}px`,
+      }}
+    >
+      <ResizeHandle onResize={handleResize} isResizing={isResizing} setIsResizing={setIsResizing} />
+      <div className="flex flex-col h-full bg-white overflow-y-auto">
+        <div className="flex h-14 gap-3 items-center p-2 border-b border-gray-200">
           <img className="w-10 h-10 rounded-full" src={DanaAvatar} alt="Dana avatar" />
           <div>
-            <div className="font-semibold text-gray-900">Dana</div>
-            <div className="text-sm text-gray-500">Agent builder assistant</div>
+            <div className="font-semibold text-sm  text-gray-900">Dana</div>
+            <div className="text-xs text-gray-500">Agent builder assistant</div>
           </div>
         </div>
         <div className="flex overflow-y-auto flex-col flex-1">
