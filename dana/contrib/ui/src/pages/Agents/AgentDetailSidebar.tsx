@@ -331,9 +331,9 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
                 }`}
               >
                 {isThinking ? (
-                  <div className="flex gap-2 items-center">
+                  <div className="px-3 py-2 flex gap-2 items-center">
                     <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
-                    <span className="text-gray-700">{msg.text}</span>
+                    <span className="text-gray-700 text-sm">{msg.text}</span>
                   </div>
                 ) : (
                   <>
@@ -360,9 +360,9 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
             );
           })}
           {isThinking && (
-            <div className="flex gap-2 items-center">
+            <div className="px-3 py-2 flex gap-2 items-center self-start text-left">
               <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
-              <span className="text-gray-700">{thinkingMessage}</span>
+              <span className="text-gray-700 text-sm">{thinkingMessage}</span>
             </div>
           )}
           <div ref={bottomRef} />
