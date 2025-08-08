@@ -5,7 +5,7 @@ import PortalPopup from './PortalPopup';
 import FileIcon from '@/components/file-icon';
 import type { KnowledgeTopicStatus } from '@/lib/api';
 import { CheckCircleSolid, SystemRestart, Xmark, NavArrowRight, NavArrowDown } from 'iconoir-react';
-import { XCircle } from 'lucide-react';
+// import { XCircle } from 'lucide-react';
 
 // Single transition definition for consistency (matching DomainKnowledgeTree)
 const TRANSITION_DURATION = '0.5s';
@@ -71,6 +71,7 @@ const getStatusColor = (status?: string) => {
 };
 
 const getStatusIcon = (status?: string) => {
+  console.log('🧠 status: ', status);
   switch (status) {
     case 'in_progress':
       return <SystemRestart className="animate-spin" />;
@@ -219,11 +220,11 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, isSelected, onNodeClick }
     // Add selection highlighting
     const selectionStyle = isSelected
       ? {
-          // boxShadow: '0 0 0 1px #3B82F6, 0 4px 12px rgba(59, 130, 246, 0.3)',
-          border: 'none',
-          transform: 'scale(1.02)',
-          zIndex: 10,
-        }
+        // boxShadow: '0 0 0 1px #3B82F6, 0 4px 12px rgba(59, 130, 246, 0.3)',
+        border: 'none',
+        transform: 'scale(1.02)',
+        zIndex: 10,
+      }
       : {};
 
     if (!isLeafNode) {

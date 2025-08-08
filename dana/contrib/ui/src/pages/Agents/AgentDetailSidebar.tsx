@@ -5,9 +5,8 @@ import { useParams } from 'react-router-dom';
 import { useSmartChatStore } from '@/stores/smart-chat-store';
 import { useAgentStore } from '@/stores/agent-store';
 import { useUIStore } from '@/stores/ui-store';
-import { ArrowUp, Attachment } from 'iconoir-react';
+import { ArrowUp } from 'iconoir-react';
 import { MarkdownViewerSmall } from './chat/markdown-viewer';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
   // Custom scrollbar styles
@@ -38,6 +37,8 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
   const { fetchAgent } = useAgentStore();
   const { setAgentDetailActiveTab, setKnowledgeBaseActiveSubTab } = useUIStore();
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const [isThinking, setIsThinking] = useState(false);
+  const [thinkingMessage, setThinkingMessage] = useState('Thinking...');
 
   // Function to handle CTA button click
   const handleCTAClick = () => {
@@ -119,11 +120,6 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
     const userMsg = { sender: 'user' as const, text: input };
     addMessage(userMsg);
 
-    // Show humanized thinking message
-    const randomThinking = thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
-    const thinkingMsg = { sender: 'agent' as const, text: randomThinking };
-    addMessage(thinkingMsg);
-
     const userInput = input;
     setInput('');
     setLoading(true);
@@ -189,24 +185,24 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
     setIsComposing(false);
   };
 
-  const handleFileUpload = () => {
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = '*/*';
-    fileInput.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        // TODO: Implement file upload functionality
-        console.log('File selected:', file.name);
-        // For now, just add a message indicating file upload intent
-        addMessage({
-          sender: 'user',
-          text: `📎 Uploaded: ${file.name}`,
-        });
-      }
-    };
-    fileInput.click();
-  };
+  // const handleFileUpload = () => {
+  //   const fileInput = document.createElement('input');
+  //   fileInput.type = 'file';
+  //   fileInput.accept = '*/*';
+  //   fileInput.onchange = (e) => {
+  //     const file = (e.target as HTMLInputElement).files?.[0];
+  //     if (file) {
+  //       // TODO: Implement file upload functionality
+  //       console.log('File selected:', file.name);
+  //       // For now, just add a message indicating file upload intent
+  //       addMessage({
+  //         sender: 'user',
+  //         text: `📎 Uploaded: ${file.name}`,
+  //       });
+  //     }
+  //   };
+  //   fileInput.click();
+  // };
 
   return (
     <>
@@ -236,13 +232,12 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
             return (
               <div
                 key={idx}
-                className={`rounded-sm px-3 py-2 text-sm ${
-                  msg.sender === 'user'
-                    ? 'bg-gray-100'
-                    : isThinking
-                      ? ' self-start text-left border border-gray-100'
-                      : ' self-start text-left'
-                }`}
+                className={`rounded-sm px-3 py-2 text-sm ${msg.sender === 'user'
+                  ? 'bg-gray-100'
+                  : isThinking
+                    ? ' self-start text-left border border-gray-100'
+                    : ' self-start text-left'
+                  }`}
               >
                 {isThinking ? (
                   <div className="flex gap-2 items-center">
