@@ -22,6 +22,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional
 
 from dana.common.exceptions import StateError
+from dana.common.mixins.loggable import Loggable
 from dana.common.resource.base_resource import BaseResource
 from dana.common.runtime_scopes import RuntimeScopes
 from dana.core.lang.parser.utils.scope_utils import extract_scope_and_name
@@ -40,7 +41,7 @@ class ExecutionStatus(Enum):
     FAILED = "failed"
 
 
-class SandboxContext:
+class SandboxContext(Loggable):
     """Manages the scoped state during Dana program execution."""
 
     def __init__(self, parent: Optional["SandboxContext"] = None, manager: Optional["ContextManager"] = None):
@@ -231,11 +232,10 @@ class SandboxContext:
 
             # Auto-resolve Promise if requested and value is a Promise
             if auto_resolve:
-                from dana.core.concurrency import BasePromise
+                from dana.core.concurrency import resolve_if_promise
 
-                if isinstance(value, BasePromise):
-                    # Auto-resolve promises to their values
-                    return value._ensure_resolved()
+                # Auto-resolve promises to their values
+                return resolve_if_promise(value)
 
             return value
         except StateError:
@@ -744,6 +744,78 @@ class SandboxContext:
                 if var_name in self._state[scope]:
                     all_resources.append(resource.name)
         return all_resources
+
+    def get_system_llm_resource(self, use_mock: bool | None = None) -> Any:
+        """Get the system LLM resource with standardized fallback strategy.
+
+        This method consolidates the LLM resource retrieval logic used across
+        multiple functions in the codebase. It follows this priority order:
+        1. Try to get from "system:llm_resource" key
+        2. Try to get from "llm_resource" key
+        3. Try direct attribute access on context
+        4. Create new LLMResource() as fallback
+
+        Args:
+            use_mock: Whether to apply mocking (None = check environment variable)
+
+        Returns:
+            LLMResource instance, potentially with mocking applied
+        """
+        import os
+
+        from dana.common.resource.llm.llm_resource import LLMResource
+
+        # Try to get LLM resource from context with fallback strategy
+        llm_resource: LLMResource = None
+
+        # Priority 1: Try "system:llm_resource" key
+        try:
+            llm_resource = self.get("system:llm_resource")
+        except Exception:
+            pass
+
+        # Priority 2: Try "llm_resource" key if not found
+        if not llm_resource:
+            try:
+                llm_resource = self.get("llm_resource")
+            except Exception:
+                pass
+
+        # Priority 3: Try direct attribute access
+        if not llm_resource and hasattr(self, "llm_resource"):
+            llm_resource = self.llm_resource
+
+        # Priority 4: Create new LLMResource as fallback
+        if not llm_resource:
+            llm_resource = LLMResource()
+
+        # Apply mocking if requested
+        if use_mock is not None:
+            llm_resource = llm_resource.with_mock_llm_call(use_mock)
+        elif os.environ.get("DANA_MOCK_LLM", "").lower() == "true":
+            llm_resource = llm_resource.with_mock_llm_call(True)
+
+        self.info(f"Using LLMResource: {llm_resource.id}")
+        return llm_resource
+
+    def set_system_llm_resource(self, llm_resource: Any) -> None:
+        """Set the system LLM resource in the context.
+
+        This method provides a standardized way to set LLM resources in the context.
+        It stores the resource in the "system:llm_resource" key, which is the primary
+        location that get_system_llm_resource() checks first.
+
+        Args:
+            llm_resource: The LLMResource instance to store in the context
+        """
+        from dana.common.resource.llm.llm_resource import LLMResource
+
+        # Validate that we're setting a proper LLMResource
+        if not isinstance(llm_resource, LLMResource):
+            raise ValueError(f"Expected LLMResource instance, got {type(llm_resource).__name__}")
+
+        # Store in the primary location that get_system_llm_resource() checks first
+        self.set("system:llm_resource", llm_resource)
 
     def delete_from_scope(self, var_name: str, scope: str = "local") -> None:
         """Delete a variable from a specific scope.

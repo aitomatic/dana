@@ -3,56 +3,45 @@ import subprocess
 import sys
 import tempfile
 import pkg_resources
-from typing import Any, List
 from dana.common.mixins.tool_callable import ToolCallable
 from dana.common.resource.base_resource import BaseResource
 from dana.common.resource.llm.llm_resource import LLMResource
-from dana.common.types import BaseRequest, BaseResponse
+from dana.common.types import BaseRequest
 
 
 class CodingResource(BaseResource):
     """Coding resource for generating and executing Python code from natural language requests."""
 
-    def __init__(
-        self,
-        name: str = "coding_resource",
-        description: str | None = None,
-        debug: bool = True,
-        timeout: int = 30,
-        **kwargs
-    ):
+    def __init__(self, name: str = "coding_resource", description: str | None = None, debug: bool = True, timeout: int = 30, **kwargs):
         super().__init__(name, description)
         self.debug = debug
         self.timeout = timeout
         # Initialize LLM resource for code generation
         try:
-            self._llm_resource = LLMResource(
-                name=f"{name}_llm",
-                description="LLM for code generation",
-                **kwargs
-            )
+            self._llm_resource = LLMResource(name=f"{name}_llm", description="LLM for code generation", **kwargs)
         except Exception as e:
             self.error(f"Failed to create LLM resource: {e}")
             self._llm_resource = None
-            
+
         self._is_ready = False
         self._available_packages = None
 
-    def _get_available_packages(self) -> List[str]:
+    def _get_available_packages(self) -> list[str]:
         """Get list of available packages in the current environment."""
         if self._available_packages is None:
             try:
                 # Get installed packages
                 installed_packages = [d.project_name for d in pkg_resources.working_set]
-                
+
                 # Add standard library modules
                 import stdlib_list
+
                 stdlib_modules = stdlib_list.stdlib_list()
-                
+
                 # Combine and sort
                 all_packages = list(set(installed_packages + stdlib_modules))
                 all_packages.sort()
-                
+
                 self._available_packages = all_packages
                 if self.debug:
                     print(f"Detected {len(all_packages)} available packages")
@@ -60,17 +49,31 @@ class CodingResource(BaseResource):
                 self.warning(f"Could not detect available packages: {e}")
                 # Fallback to common packages
                 self._available_packages = [
-                    'os', 'sys', 'math', 'random', 'datetime', 'json', 'csv',
-                    'collections', 'itertools', 'functools', 're', 'string',
-                    'numpy', 'pandas', 'matplotlib', 'requests', 'urllib'
+                    "os",
+                    "sys",
+                    "math",
+                    "random",
+                    "datetime",
+                    "json",
+                    "csv",
+                    "collections",
+                    "itertools",
+                    "functools",
+                    "re",
+                    "string",
+                    "numpy",
+                    "pandas",
+                    "matplotlib",
+                    "requests",
+                    "urllib",
                 ]
-        
+
         return self._available_packages
 
     async def initialize(self) -> None:
         """Initialize the coding resource and LLM."""
         await super().initialize()
-        
+
         if self._llm_resource:
             try:
                 await self._llm_resource.initialize()
@@ -95,7 +98,7 @@ class CodingResource(BaseResource):
 
         last_error = None
         last_python_code = None
-        
+
         for attempt in range(max_retries + 1):
             try:
                 if attempt == 0:
@@ -104,10 +107,10 @@ class CodingResource(BaseResource):
                 else:
                     # Retry attempts: use error feedback to improve
                     python_code = await self._generate_python_code_with_feedback(request, last_error, last_python_code, attempt)
-                
+
                 # Execute the generated code with timeout
                 result = self._execute_python_code(python_code, timeout=self.timeout)
-                
+
                 # Check if execution was successful
                 if not result.startswith("Error:") and not result.startswith("TimeoutError:"):
                     if attempt > 0:
@@ -119,17 +122,17 @@ class CodingResource(BaseResource):
                 else:
                     last_error = result
                     last_python_code = python_code
-                    
+
             except Exception as e:
                 last_error = f"Error: {str(e)}"
                 self.error(f"Attempt {attempt + 1} failed: {e}")
-        
+
         # All attempts failed
         return f"Failed after {max_retries + 1} attempts. Last error: {last_error}"
 
     async def _generate_python_code(self, request: str) -> str:
         """Generate Python code from natural language request."""
-        
+
         if self._llm_resource and self._llm_resource._is_available:
             return await self._generate_with_llm(request)
         else:
@@ -138,13 +141,13 @@ class CodingResource(BaseResource):
 
     async def _generate_with_llm(self, request: str) -> str:
         """Generate Python code using LLM."""
-        
+
         # Get available packages
         available_packages = self._get_available_packages()
         packages_info = ", ".join(available_packages[:50])  # Limit to first 50 for readability
         if len(available_packages) > 50:
             packages_info += f" ... and {len(available_packages) - 50} more"
-        
+
         prompt = f"""
 # ROLE: You are a senior Python engineer.
 # TASK: Write an *executable* Python 3.12 script that fulfils the user’s request.
@@ -178,15 +181,17 @@ class CodingResource(BaseResource):
 {request}
 ```
 """
-        
-        llm_request = BaseRequest(arguments={
-            "prompt": prompt,
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.3,
-        })
-        
+
+        llm_request = BaseRequest(
+            arguments={
+                "prompt": prompt,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.3,
+            }
+        )
+
         response = await self._llm_resource.query(llm_request)
-        
+
         if response.success:
             content = response.content
             if isinstance(content, dict):
@@ -201,7 +206,7 @@ class CodingResource(BaseResource):
                         code = str(content)
             else:
                 code = str(content)
-            
+
             return self._clean_code(code)
         else:
             self.error(f"LLM generation failed: {response.error}")
@@ -209,13 +214,13 @@ class CodingResource(BaseResource):
 
     async def _generate_python_code_with_feedback(self, request: str, last_error: str, last_python_code: str, attempt: int) -> str:
         """Generate Python code using LLM with error feedback from previous attempts."""
-        
+
         # Get available packages
         available_packages = self._get_available_packages()
         packages_info = ", ".join(available_packages[:50])  # Limit to first 50 for readability
         if len(available_packages) > 50:
             packages_info += f" ... and {len(available_packages) - 50} more"
-        
+
         prompt = f"""Generate Python code that: {request}
 
 Available packages in this environment: {packages_info}
@@ -260,15 +265,17 @@ def calculate_factorial(n):
 print(calculate_factorial(5))
 ```
 """
-        
-        llm_request = BaseRequest(arguments={
-            "prompt": prompt,
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.2,  # Lower temperature for more focused fixes
-        })
-        
+
+        llm_request = BaseRequest(
+            arguments={
+                "prompt": prompt,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.2,  # Lower temperature for more focused fixes
+            }
+        )
+
         response = await self._llm_resource.query(llm_request)
-        
+
         if response.success:
             content = response.content
             if isinstance(content, dict):
@@ -283,7 +290,7 @@ print(calculate_factorial(5))
                         code = str(content)
             else:
                 code = str(content)
-            
+
             return self._clean_code(code)
         else:
             self.error(f"LLM generation with feedback failed: {response.error}")
@@ -291,7 +298,7 @@ print(calculate_factorial(5))
 
     def _generate_fallback(self, request: str) -> str:
         """Generate simple Python code when LLM is not available."""
-        
+
         return f'''def process_request():
     """{request}"""
     print("Processing request...")
@@ -302,7 +309,7 @@ print(process_request())
 
     def _clean_code(self, code: str) -> str:
         """Clean up generated code by removing markdown formatting."""
-        
+
         # Remove markdown code blocks
         if "```python" in code:
             start = code.find("```python") + 9
@@ -314,7 +321,7 @@ print(process_request())
             end = code.find("```", start)
             if end != -1:
                 code = code[start:end].strip()
-        
+
         return code.strip()
 
     def _execute_python_code(self, code: str, timeout: int = 30) -> str:
@@ -328,16 +335,11 @@ print(process_request())
         """
         try:
             # Create temporary file
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
                 f.write(code)
                 temp_file = f.name
             # Execute the code
-            result = subprocess.run(
-                [sys.executable, temp_file],
-                capture_output=True,
-                text=True,
-                timeout=timeout
-            )
+            result = subprocess.run([sys.executable, temp_file], capture_output=True, text=True, timeout=timeout)
             # Clean up
             os.unlink(temp_file)
             # Return output

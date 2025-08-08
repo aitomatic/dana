@@ -30,16 +30,11 @@ from dana.core.lang.sandbox_context import SandboxContext
 
 
 def _auto_resolve_promises(items):
-    """Auto-resolve any promises in a collection of items."""
-    from dana.core.concurrency import BasePromise
+    """Auto-resolve any promises in a collection of items (KISS approach)."""
+    from dana.core.concurrency import resolve_if_promise
 
-    resolved_items = []
-    for item in items:
-        if isinstance(item, BasePromise):
-            resolved_items.append(item._ensure_resolved())
-        else:
-            resolved_items.append(item)
-    return resolved_items
+    # Simple list comprehension - resolve if promise, keep if not
+    return [resolve_if_promise(item) for item in items]
 
 
 class CollectionExecutor(BaseExecutor):

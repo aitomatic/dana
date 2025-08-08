@@ -313,15 +313,28 @@ def py_set_model(
     if options is None:
         options = {}
 
-    # Get the current LLM resource from context
-    llm_resource = context.get("system:llm_resource")
+    # Check if there's an existing LLM resource in the context
+    existing_llm_resource = None
+    try:
+        existing_llm_resource = context.get("system:llm_resource")
+    except Exception:
+        pass
+
+    if not existing_llm_resource:
+        try:
+            existing_llm_resource = context.get("llm_resource")
+        except Exception:
+            pass
+
+    # Get the current LLM resource from context using consolidated method
+    llm_resource = context.get_system_llm_resource()
 
     # If no model argument provided, display comprehensive information
     if model is None:
-        # Get current model
+        # Get current model - only show model if it was explicitly set in context
         current_model = "None"
-        if llm_resource is not None and llm_resource.model is not None:
-            current_model = llm_resource.model
+        if existing_llm_resource is not None and existing_llm_resource.model is not None:
+            current_model = existing_llm_resource.model
 
         # Get only available models (with API keys)
         config_manager = LLMConfigurationManager()
@@ -371,11 +384,11 @@ def py_set_model(
             elif not matched_model:
                 logger.warning(f"No close match found for '{original_input}', trying as-is")
 
-        if llm_resource is None:
-            # If no LLM resource exists, create a new one with the specified model
-            logger.info(f"No existing LLM resource found, creating new one with model: {model}")
+        if existing_llm_resource is None:
+            # If no LLM resource exists in context, create a new one with the specified model
+            logger.info(f"No existing LLM resource found in context, creating new one with model: {model}")
             llm_resource = LLMResource(name="dana_llm", model=model)
-            context.set("system:llm_resource", llm_resource)
+            context.set_system_llm_resource(llm_resource)
         else:
             # Update the existing LLM resource's model
             logger.info(f"Updating existing LLM resource model from '{llm_resource.model}' to '{model}'")
