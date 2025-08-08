@@ -1,4 +1,4 @@
-# log_level("info")
+log_level("info")
 
 def embedding_field_constructor(row: dict) -> str:
     return f'{row.get("State", "")} - {row.get("Year", "")} {row.get("Totals.Capital outlay", "")}'

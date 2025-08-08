@@ -1,0 +1,39 @@
+def embedding_field_constructor(row: dict) -> str:
+    return str(row)
+
+def metadata_constructor(row: dict) -> dict:
+    return row
+
+def get_vector_store_config() -> dict:
+    return {
+        "provider": "pgvector",
+        "storage_config": {
+            "host": "localhost",
+            "port": 5432,
+            "database": "vector_db",
+            "user": "admin", 
+            "password": "adm!n123",
+            "schema_name": "public",
+            "table_name": "product_search_vectors",
+            "use_halfvec": False,
+            "hybrid_search": False,
+            "hnsw": {
+                "m": 32,
+                "ef_construction": 200,
+                "ef_search": 100,
+                "dist_method": "vector_cosine_ops"
+            }
+        }
+    }
+
+def get_tabular_index_config() -> dict:
+    return {
+        "source": "tmp/car/Automobile_data.csv",
+        "force_reload": False,
+        "table_name": "product_search_embeddings",
+        "cache_dir": ".cache/product_search",
+        "embedding_field_constructor": embedding_field_constructor,
+        "metadata_constructor": metadata_constructor, 
+        "vector_store_config": get_vector_store_config(),
+        "excluded_embed_metadata_keys": ["_node_content"]
+    }

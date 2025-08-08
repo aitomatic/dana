@@ -1,0 +1,126 @@
+log_level("info")
+set_model("openai:gpt-4.1-mini")
+
+from prompts import build_enhancement_prompt
+from prompts import build_ranking_prompt
+import part_search_bridge.py as part_bridge
+import standardize.py as std
+from time.py import time
+from config import get_tabular_index_config
+
+
+
+def enhance_query(query: str) -> dict:
+    prompt = build_enhancement_prompt(query)
+    result: dict = reason(prompt)
+
+    if not result:
+        result = {
+            "refined_query": query,
+            "most_weighted_keyword": "",
+            "mfr_part_num": ""
+        }
+
+    return result
+
+def main():
+    start_time = time()
+    
+    query = "Subaru sedan with good fuel economy"
+    print(f"Starting product search for: {query}")
+
+    enhanced = enhance_query(query)
+    refined_query = enhanced.get("refined_query", query)
+    weighted_term = enhanced.get("most_weighted_keyword", "")
+    mfr_part_num = enhanced.get("mfr_part_num", "")
+    
+    print(f"Enhanced query: {refined_query}, weighted term: {weighted_term}, part num: {mfr_part_num}")
+
+    tabular_index_config = get_tabular_index_config()
+    
+    print("Using PGVector configuration:")
+    print(f"Host: {tabular_index_config['vector_store_config']['storage_config']['host']}:{tabular_index_config['vector_store_config']['storage_config']['port']}")
+    print(f"Database: {tabular_index_config['vector_store_config']['storage_config']['database']}")
+    print(f"Table: {tabular_index_config['vector_store_config']['storage_config']['table_name']}")
+
+    tabular_index = use("tabular_index", tabular_index_config=tabular_index_config)
+
+    # Step 3: Part-number search (if applicable)
+    standardized_part_results = []
+    if mfr_part_num != "":
+        print(f"Searching for part number: {mfr_part_num}")
+        part_results = part_bridge.part_search_smart(mfr_part_num, limit_to_top=2)
+        print(f"Part search strategy: {part_results.get('strategy_used', 'none')}, found: {part_results.get('total_found', 0)}")
+        standardized_part_results = std.standardize_part_results(part_results)
+
+    # Step 4: Vector search  
+    is_part_only = refined_query.lower() == mfr_part_num.lower() if mfr_part_num != "" else false
+    search_query = refined_query if (weighted_term == "" or is_part_only) else f"{refined_query} {weighted_term}"
+    
+    print(f"Vector search query: {search_query}")
+    vector_data = tabular_index.retrieve(search_query, top_k=3)
+    standardized_vector_results = std.standardize_vector_results(vector_data)
+
+    # Step 5: Related extraction (prioritize weighted keyword results)
+    if weighted_term != "" and not is_part_only:
+        print(f"Applying related extraction for weighted term: {weighted_term}")
+        prioritized_results = []
+        other_results = []
+        
+        for result in standardized_vector_results:
+            text_lower = result["product_name"].lower()
+            if weighted_term.lower() in text_lower:
+                prioritized_results.append(result)
+            else:
+                other_results.append(result)
+        
+        # Combine prioritized first, then others, limit to top_k
+        standardized_vector_results = (prioritized_results + other_results)[:3]
+
+    # Step 6: Merge and format results
+    all_results = std.merge_and_dedupe_results(standardized_part_results, standardized_vector_results, max_results=4)
+    formatted_results = std.format_results_for_ai(all_results)
+
+    print(f"Final result count: {len(all_results)} (part: {len(standardized_part_results)}, vector: {len(standardized_vector_results)})")
+
+    # Print preview for visibility
+    # print("=== Formatted Results For Ranking ===")
+    # print(formatted_results)
+    # print("====================================")
+
+    # Step 7: Ranking
+    ranking_prompt = build_ranking_prompt(query, formatted_results)
+    decision: dict = reason(ranking_prompt)
+
+    if not decision:
+        decision = {"item_index": 1, "confidence_score": 0.5, "notes": "fallback"}
+
+    print(f"Ranking decision: {decision}")
+
+    # Step 8: Build final response
+    processing_time = time() - start_time
+    best_match = std.to_best_match(all_results, decision.get("item_index", 1), decision.get("notes", ""), decision.get("confidence_score", 0.5))
+    
+    final_response = std.build_search_response(
+        query=query,
+        results=all_results,
+        best_match=best_match,
+        processing_time=processing_time,
+        enhanced_query=refined_query,
+        weighted_term=weighted_term,
+        broad_search_count=len(standardized_vector_results)
+    )
+
+    print("=== FINAL SEARCH RESPONSE ===")
+    print(f"Query: {final_response['query']}")
+    print(f"Processing Time: {final_response['processing_time']:.2f}s")
+    print(f"Total Results: {final_response['total_results']}")
+    print(f"Best Match: {final_response['best_match']['product_name']} (confidence: {final_response['best_match']['confidence_score']:.2f})")
+    print(f"Notes: {final_response['best_match']['notes']}")
+    print("==============================")
+
+    return final_response
+
+main()
+
+

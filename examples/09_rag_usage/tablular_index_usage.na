@@ -1,4 +1,4 @@
-log_level("info")
+# log_level("info")
 
 def embedding_field_constructor(row: dict) -> str:
     return str(row)
@@ -32,7 +32,3 @@ for item in data:
 data_3 = tabular_index.single_search("make:mercedes", top_k=3)
 from pprint.py import pprint
 pprint(data_3)
-
-
-
-

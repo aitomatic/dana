@@ -1,0 +1,87 @@
+"""
+Prompt builders for Dana Product Search PoC.
+
+Separated for readability and reuse.
+"""
+
+def build_enhancement_prompt(query: str) -> str:
+    return f"""You are a query enhancement specialist for electrical and industrial product searches at Wesco.
+
+Your task is to analyze user queries and extract structured information for optimized search in a database containing product_name, mfr_part_num, source_category, and attribute fields.
+
+ANALYSIS REQUIREMENTS:
+1. REFINED QUERY: Convert measurements and normalize technical terms
+   - Replace \" with \"in\" (inches), ' with \"ft\" (feet)
+   - Expand abbreviations (e.g., \"WD\" → \"WD-40\", \"SS\" → \"stainless steel\")
+   - Keep all original information and specifications
+
+2. MOST WEIGHTED KEYWORD: Primary product type (prioritize in this order):
+   - Specific tool/part names (e.g., \"combination wrench\", \"carbide burr\")
+   - Product types (e.g., \"wrench\", \"screw\", \"sensor\")
+   - Brand names if no product type exists
+
+3. MFR_PART_NUM: Extract potential manufacturer part numbers (alphanumeric codes, model numbers)
+
+EXAMPLES:
+Input: '48 "pipe wrench WD-40'
+Output: {
+  "refined_query": "48 in pipe wrench WD-40",
+  "most_weighted_keyword": "pipe wrench",
+  "mfr_part_num": ""
+}
+
+Input: "Set screw 20mm SS304"
+Output: {
+  "refined_query": "Set screw 20mm stainless steel 304",
+  "most_weighted_keyword": "set screw",
+  "mfr_part_num": ""
+}
+
+Input: "Phillips screwdriver IRDV-BA/CA 1/4in"
+Output: {
+  "refined_query": "Phillips screwdriver IRDV-BA/CA 1/4 in",
+  "most_weighted_keyword": "screwdriver",
+  "mfr_part_num": "IRDV-BA/CA"
+}
+
+USER QUERY: {query}
+
+Return ONLY valid JSON with the three required keys: refined_query, most_weighted_keyword, mfr_part_num.
+If no manufacturer part number is detected, use empty string."""
+
+
+def build_ranking_prompt(query: str, formatted_results: str) -> str:
+    return f"""You are an expert product matching specialist for electrical and industrial products.
+
+Your task is to analyze search results and select the single best match for a user query by choosing the result number.
+
+CORE SCORING PRINCIPLE:
+Score based on coverage of REQUESTED query components only. Parse the user query to identify which components are specified (product type, manufacturer brand, part number, specifications), then score how well the result matches those specified components. Components not mentioned in the query should NOT affect the score negatively.
+
+SCORING RULES (summary):
+- Product type is critical
+- Consider part number, brand, specs only if present in the query
+- Be generous when components match well; do not penalize unspecified components
+
+USER QUERY:
+<query>
+{query}
+</query>
+
+SEARCH RESULTS:
+<search_results>
+{formatted_results}
+</search_results>
+
+REQUIRED OUTPUT (JSON only):
+{{
+  "item_index": 1,
+  "confidence_score": 0.90,
+  "notes": "Short explanation for the confidence score and reasoning"
+}}
+
+IMPORTANT:
+- Output only the JSON object, no extra text
+- item_index must be an integer referencing the Result # (1-based)
+- confidence_score must be between 0.0 and 1.0
+"""
