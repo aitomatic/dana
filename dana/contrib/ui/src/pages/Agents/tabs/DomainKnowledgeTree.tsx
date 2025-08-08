@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import ReactFlow, { Controls, Position, MarkerType, useReactFlow } from 'reactflow';
+import ReactFlow, { Controls, Position, MarkerType } from 'reactflow';
 import type { Node as FlowNode, Edge, ReactFlowInstance } from 'reactflow';
 import dagre from 'dagre';
 import 'reactflow/dist/style.css';
@@ -602,18 +602,27 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     const getKnowledgeStatusForPath = (nodePath: string): KnowledgeTopicStatus | null => {
       if (!statusData || !statusData.topics) return null;
 
+      // Debug logging
+      console.log('🔍 Looking for knowledge status for nodePath:', nodePath);
+      console.log('📋 Available status topics:', statusData.topics.map(t => ({ path: t.path, status: t.status })));
+
       // Find the status entry that matches this node's path
       // First try exact match
       let match = statusData.topics.find((topic) => topic.path === nodePath);
-      if (match) return match;
+      if (match) {
+        console.log('✅ Found exact match for:', nodePath);
+        return match;
+      }
 
       // If no exact match, try to find a partial match for leaf nodes
       // This handles cases where the domain tree structure differs from knowledge status paths
       const pathParts = nodePath.split(' - ');
+
+      // Try different matching strategies
       for (const topic of statusData.topics) {
         const topicParts = topic.path.split(' - ');
 
-        // Check if this could be a match by comparing the last part (leaf node name)
+        // Strategy 1: Check if this could be a match by comparing the last part (leaf node name)
         if (pathParts.length > 0 && topicParts.length > 0) {
           const lastPathPart = pathParts[pathParts.length - 1];
           const lastTopicPart = topicParts[topicParts.length - 1];
@@ -623,11 +632,42 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
             lastPathPart === lastTopicPart &&
             topicParts.every((part) => pathParts.includes(part))
           ) {
+            console.log('✅ Found match with Strategy 1 for:', nodePath, '->', topic.path);
             return topic;
           }
         }
+
+        // Strategy 2: Check if the node path is a subset of the topic path
+        // This handles cases where the UI shows a shorter path but the status has a longer path
+        if (pathParts.length > 0 && topicParts.length >= pathParts.length) {
+          const nodePathString = pathParts.join(' - ');
+          if (topic.path.includes(nodePathString)) {
+            console.log('✅ Found match with Strategy 2 for:', nodePath, '->', topic.path);
+            return topic;
+          }
+        }
+
+        // Strategy 3: Check if the topic path is a subset of the node path
+        // This handles cases where the UI shows a longer path but the status has a shorter path
+        if (topicParts.length > 0 && pathParts.length >= topicParts.length) {
+          const topicPathString = topicParts.join(' - ');
+          if (nodePath.includes(topicPathString)) {
+            console.log('✅ Found match with Strategy 3 for:', nodePath, '->', topic.path);
+            return topic;
+          }
+        }
+
+        // Strategy 4: Check if any part of the node path matches any part of the topic path
+        // This is a fallback for complex cases
+        const nodePathLower = nodePath.toLowerCase();
+        const topicPathLower = topic.path.toLowerCase();
+        if (nodePathLower === topicPathLower) {
+          console.log('✅ Found match with Strategy 4 for:', nodePath, '->', topic.path);
+          return topic;
+        }
       }
 
+      console.log('❌ No match found for:', nodePath);
       return null;
     };
 
@@ -1106,9 +1146,8 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         {/* Enhanced Control Bar */}
         {agentId && (
           <div
-            className={`absolute left-4 right-4 z-20 ${
-              initialLoading || loading ? 'top-16' : 'top-4'
-            }`}
+            className={`absolute left-4 right-4 z-20 ${initialLoading || loading ? 'top-16' : 'top-4'
+              }`}
           >
             <div className="flex gap-3 justify-between items-center">
               {/* Left side - Search and Tree Controls */}
@@ -1171,11 +1210,10 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                 <button
                   onClick={handleGenerateKnowledge}
                   disabled={generating || initialLoading || loading}
-                  className={`px-4 py-2 text-sm rounded-md border shadow-sm ${
-                    generating || initialLoading || loading
-                      ? 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed opacity-75'
-                      : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:text-gray-900 hover:shadow-md'
-                  }`}
+                  className={`px-4 py-2 text-sm rounded-md border shadow-sm ${generating || initialLoading || loading
+                    ? 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed opacity-75'
+                    : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:text-gray-900 hover:shadow-md'
+                    }`}
                   style={{ transition: TRANSITION_ALL }}
                 >
                   {generating ? (

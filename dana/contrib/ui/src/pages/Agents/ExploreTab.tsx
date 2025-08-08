@@ -264,53 +264,69 @@ export const ExploreTab: React.FC<{
 
               <div className="space-y-4 mb-4">
                 <div>
-                  <h4 className="text-sm font-medium text-gray-800 mb-1">Topic</h4>
+                  <h4 className="text-sm font-medium text-gray-800 mb-1">Description</h4>
                   <p className="text-sm text-gray-600">
-                    {selectedAgent?.description || 'No topic information available'}
+                    {selectedAgent?.description || 'No description available'}
                   </p>
                 </div>
 
-                <div>
-                  <h4 className="text-sm font-medium text-gray-800 mb-1">Tasks</h4>
-                  <p className="text-sm text-gray-600">
-                    {selectedAgent?.details || 'No task information available'}
-                  </p>
-                </div>
+                {/* Domain */}
+                {selectedAgent?.config?.domain && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-800 mb-1">Domain</h4>
+                    <p className="text-sm text-gray-600">
+                      {selectedAgent.config.domain}
+                    </p>
+                  </div>
+                )}
 
-                {/* Specialties */}
-                {selectedAgent?.config?.specialties &&
-                  selectedAgent.config.specialties.length > 0 && (
+                {/* Topics (combines old specialties and new topics) */}
+                {(() => {
+                  const oldSpecialties = selectedAgent?.config?.specialties || [];
+                  const newTopics = selectedAgent?.config?.topics || [];
+                  const allTopics = [...oldSpecialties, ...newTopics];
+                  const uniqueTopics = Array.from(new Set(allTopics));
+
+                  return uniqueTopics.length > 0 && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-800 mb-1">Specialties</h4>
+                      <h4 className="text-sm font-medium text-gray-800 mb-1">Topics</h4>
                       <div className="flex flex-wrap gap-1">
-                        {selectedAgent.config.specialties.map((specialty: string, index: number) => (
+                        {uniqueTopics.map((topic: string, index: number) => (
                           <span
                             key={index}
-                            className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full"
+                            className="capitalize px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full"
                           >
-                            {specialty}
+                            {topic}
                           </span>
                         ))}
                       </div>
                     </div>
-                  )}
+                  );
+                })()}
 
-                {/* Skills */}
-                {selectedAgent?.config?.skills && selectedAgent.config.skills.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-800 mb-1">Skills</h4>
-                    <div className="flex flex-wrap gap-1">
-                      {selectedAgent.config.skills.map((skill: string, index: number) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full"
-                        >
-                          {skill}
-                        </span>
-                      ))}
+                {/* Tasks (combines old skills and new tasks) */}
+                {(() => {
+                  const oldSkills = selectedAgent?.config?.skills || [];
+                  const newTasks = selectedAgent?.config?.tasks || [];
+                  const allTasks = [...oldSkills, ...newTasks];
+                  const uniqueTasks = Array.from(new Set(allTasks));
+
+                  return uniqueTasks.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-800 mb-1">Tasks</h4>
+                      <div className="flex flex-wrap gap-1">
+                        {uniqueTasks.map((task: string, index: number) => (
+                          <span
+                            key={index}
+                            className="capitalize px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full"
+                          >
+                            {task}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Expertise Level & Personality */}
                 {(selectedAgent?.config?.expertise_level || selectedAgent?.config?.personality) && (
