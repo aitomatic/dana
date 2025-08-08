@@ -212,6 +212,8 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
     setLoading(true);
 
     try {
+      setIsThinking(true);
+      setThinkingMessage(thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)]);
       const response = await apiService.smartChat(agent_id, userInput);
 
       // Remove the thinking message
@@ -254,6 +256,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
       addMessage({ sender: 'agent' as const, text: 'Sorry, something went wrong.' });
     } finally {
       setLoading(false);
+      setIsThinking(false);
     }
   };
 
@@ -356,6 +359,12 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
               </div>
             );
           })}
+          {isThinking && (
+            <div className="flex gap-2 items-center">
+              <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
+              <span className="text-gray-700">{thinkingMessage}</span>
+            </div>
+          )}
           <div ref={bottomRef} />
         </div>
         <div className="p-3">
