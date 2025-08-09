@@ -21,64 +21,64 @@ const animationStyles = `
   .react-flow__node {
     transition: ${TRANSITION_ALL} !important;
   }
-  
+
   .react-flow__node-enter {
     opacity: 0;
     transform: scale(0.8) translateY(10px);
   }
-  
+
   .react-flow__node-enter-active {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
-  
+
   .react-flow__node-exit {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
-  
+
   .react-flow__node-exit-active {
     opacity: 0;
     transform: scale(0.8) translateY(-10px);
   }
-  
+
   /* Edge animations - improved implementation */
   .react-flow__edge {
     transition: ${TRANSITION_ALL} !important;
   }
-  
+
   .react-flow__edge-path {
     transition: ${TRANSITION_ALL} !important;
   }
-  
+
   /* Animate edges when they appear - using data attributes for better targeting */
   .react-flow__edge[data-edge-new="true"],
   .react-flow__edges g[data-edge-new="true"] {
     opacity: 0 !important;
     animation: edgeAppear 0.8s cubic-bezier(.43,.08,.45,.97) forwards !important;
   }
-  
+
   .react-flow__edge[data-edge-new="true"] .react-flow__edge-path,
   .react-flow__edges g[data-edge-new="true"] .react-flow__edge-path {
     stroke-dasharray: 1000 !important;
     stroke-dashoffset: 1000 !important;
     animation: edgePathAppear 0.8s cubic-bezier(.43,.08,.45,.97) forwards !important;
   }
-  
+
   /* Also target edge paths directly with data attribute */
   .react-flow__edge-path[data-edge-new="true"] {
     stroke-dasharray: 1000 !important;
     stroke-dashoffset: 1000 !important;
     animation: edgePathAppear 0.8s cubic-bezier(.43,.08,.45,.97) forwards !important;
   }
-  
+
   /* Additional targeting for ReactFlow's edge structure */
   .react-flow__edges g[data-edge-new="true"] .react-flow__edge-path {
     stroke-dasharray: 1000 !important;
     stroke-dashoffset: 1000 !important;
     animation: edgePathAppear 0.8s cubic-bezier(.43,.08,.45,.97) forwards !important;
   }
-  
+
   /* Keyframe animations for edges */
   @keyframes edgeAppear {
     from {
@@ -88,7 +88,7 @@ const animationStyles = `
       opacity: 1;
     }
   }
-  
+
   @keyframes edgePathAppear {
     from {
       stroke-dashoffset: 1000;
@@ -97,25 +97,25 @@ const animationStyles = `
       stroke-dashoffset: 0;
     }
   }
-  
+
   /* Ensure edges are visible during transitions */
   .react-flow__edge.selected .react-flow__edge-path {
     stroke-width: 3;
   }
-  
+
   .react-flow__edge:hover .react-flow__edge-path {
     stroke-width: 2;
   }
-  
+
   /* Smooth viewport transitions */
   .react-flow {
     transition: ${TRANSITION_ALL} !important;
   }
-  
+
   .react-flow__viewport {
     transition: ${TRANSITION_ALL} !important;
   }
-  
+
   .react-flow__transformationpane {
     transition: ${TRANSITION_ALL} !important;
   }
@@ -604,7 +604,10 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
 
       // Debug logging
       console.log('🔍 Looking for knowledge status for nodePath:', nodePath);
-      console.log('📋 Available status topics:', statusData.topics.map(t => ({ path: t.path, status: t.status })));
+      console.log(
+        '📋 Available status topics:',
+        statusData.topics.map((t) => ({ path: t.path, status: t.status })),
+      );
 
       // Find the status entry that matches this node's path
       // First try exact match
@@ -1146,15 +1149,16 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         {/* Enhanced Control Bar */}
         {agentId && (
           <div
-            className={`absolute left-4 right-4 z-20 ${initialLoading || loading ? 'top-16' : 'top-4'
-              }`}
+            className={`absolute left-4 right-4 z-20 ${
+              initialLoading || loading ? 'top-16' : 'top-4'
+            }`}
           >
             <div className="flex gap-3 justify-between items-center">
               {/* Left side - Search and Tree Controls */}
               <div className="flex flex-1 gap-3 items-center">
                 {/* Search Input */}
                 <div className="relative flex-1 max-w-md">
-                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                  <div className="absolute left-3 top-1/2 text-gray-400 transform -translate-y-1/2">
                     <Search width={16} height={16} />
                   </div>
                   <input
@@ -1162,7 +1166,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                     placeholder="Search topic"
                     value={searchQuery}
                     onChange={(e) => handleSearchChange(e.target.value)}
-                    className="pl-10 pr-3 py-2 w-full text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-1"
+                    className="py-2 pr-3 pl-10 w-full text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-1"
                   />
                   {searchQuery && (
                     <button
@@ -1210,10 +1214,11 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                 <button
                   onClick={handleGenerateKnowledge}
                   disabled={generating || initialLoading || loading}
-                  className={`px-4 py-2 text-sm rounded-md border shadow-sm ${generating || initialLoading || loading
-                    ? 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed opacity-75'
-                    : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:text-gray-900 hover:shadow-md'
-                    }`}
+                  className={`px-4 py-2 text-sm rounded-md border shadow-sm ${
+                    generating || initialLoading || loading
+                      ? 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed opacity-75'
+                      : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:text-gray-900 hover:shadow-md'
+                  }`}
                   style={{ transition: TRANSITION_ALL }}
                 >
                   {generating ? (
@@ -1299,8 +1304,8 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
               ) : (
                 /* Show empty state when no nodes but no error */
                 <>
-                  <div className="text-center flex item-center flex-col ">
-                    <div className="flex items-center pb-4 justify-center text-gray-400">
+                  <div className="flex flex-col text-center item-center">
+                    <div className="flex justify-center items-center pb-4 text-gray-400">
                       <Search className="w-10 h-10" />
                     </div>
                     <div className="text-lg font-semibold text-gray-500">Keyword not found</div>

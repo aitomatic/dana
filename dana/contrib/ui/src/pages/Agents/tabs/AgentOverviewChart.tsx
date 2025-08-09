@@ -1,5 +1,5 @@
-import React, { useMemo, useEffect, useState } from 'react';
-import ReactFlow, { Controls, Position, MarkerType } from 'reactflow';
+import React, { useMemo, useEffect, useState, useRef } from 'react';
+import ReactFlow, { Controls, MarkerType } from 'reactflow';
 import type { Node as FlowNode, Edge } from 'reactflow';
 import dagre from 'dagre';
 import 'reactflow/dist/style.css';
@@ -7,18 +7,21 @@ import AgentChartNode from './AgentChartNode';
 import type { AgentOverviewChartProps, AgentChartData } from './types/agent-chart';
 import { apiService } from '@/lib/api';
 import type { DomainKnowledgeResponse } from '@/types/domainKnowledge';
+import type { KnowledgeStatusResponse } from '@/lib/api';
 
 const nodeWidth = 250;
 const nodeHeight = 100;
 const mainNodeSize = 96;
 
-function getLayoutedElements(nodes: FlowNode[], edges: Edge[], direction: 'TB' = 'TB') {
+function getLayoutedElements(nodes: FlowNode[], edges: Edge[], direction: 'TB' | 'LR' = 'TB') {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
   dagreGraph.setGraph({
     rankdir: direction,
-    nodesep: 100, // Increased separation between nodes
-    ranksep: 150, // Increased separation between ranks
+    nodesep: 90, // Horizontal separation between nodes on same rank
+    ranksep: 80, // Reduced vertical separation between ranks
+    marginx: 60, // Margin on x-axis
+    marginy: 40, // Reduced top/bottom margin
   });
 
   nodes.forEach((node) => {
@@ -40,60 +43,132 @@ function getLayoutedElements(nodes: FlowNode[], edges: Edge[], direction: 'TB' =
     const width = isMain ? mainNodeSize : nodeWidth;
     const height = isMain ? mainNodeSize : nodeHeight;
 
-    node.position = {
-      x: nodeWithPosition.x - width / 2,
-      y: nodeWithPosition.y - height / 2,
-    };
-    node.targetPosition = Position.Top;
-    node.sourcePosition = Position.Bottom;
+    // Custom positioning for proper layout
+    if (node.id === 'ai-model') {
+      const topRowY = 55; // Fixed Y position for top row
+      node.position = {
+        x: nodeWithPosition.x - width / 2 - 250, // Move further left
+        y: topRowY,
+      };
+    } else if (node.id === 'agent') {
+      // Agent should be centered between Knowledge Base and Tools
+      const agentRowY = 50; // Same row as AI Model
+      node.position = {
+        x: nodeWithPosition.x - width / 2, // Center position
+        y: agentRowY,
+      };
+    } else if (node.id === 'knowledge-base') {
+      node.position = {
+        x: nodeWithPosition.x - width / 2 - 150, // Position left of center
+        y: nodeWithPosition.y - height / 2 - 60, // Move closer to Agent
+      };
+    } else if (node.id === 'tools') {
+      node.position = {
+        x: nodeWithPosition.x - width / 2 + 150, // Position right of center
+        y: nodeWithPosition.y - height / 2 - 60, // Move closer to Agent
+      };
+    } else {
+      node.position = {
+        x: nodeWithPosition.x - width / 2,
+        y: nodeWithPosition.y - height / 2,
+      };
+    }
     return node;
   });
 }
 
-// Utility function to count nodes in domain knowledge tree
-function countDomainKnowledgeNodes(domainTree: DomainKnowledgeResponse | null): number {
-  if (!domainTree || !domainTree.root) return 0;
-
-  let count = 0;
-
-  function traverse(node: any) {
-    if (node) {
-      count++;
-      if (node.children && Array.isArray(node.children)) {
-        node.children.forEach(traverse);
-      }
-    }
-  }
-
-  traverse(domainTree.root);
-  return count;
-}
-
 const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, className = '' }) => {
   const [domainKnowledge, setDomainKnowledge] = useState<DomainKnowledgeResponse | null>(null);
+  const [knowledgeStatus, setKnowledgeStatus] = useState<KnowledgeStatusResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
 
-  // Fetch domain knowledge data
+  // Fetch domain knowledge data and knowledge status
   useEffect(() => {
     if (!agent?.id) {
       setDomainKnowledge(null);
+      setKnowledgeStatus(null);
       return;
     }
 
-    const fetchDomainKnowledge = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       try {
-        const response = await apiService.getDomainKnowledge(agent.id);
-        setDomainKnowledge(response);
+        // Fetch both domain knowledge and knowledge status in parallel
+        const [domainResponse, statusResponse] = await Promise.all([
+          apiService.getDomainKnowledge(agent.id),
+          apiService.getKnowledgeStatus(agent.id).catch(() => ({ topics: [] })), // Fallback to empty if status fails
+        ]);
+        setDomainKnowledge(domainResponse);
+        setKnowledgeStatus(statusResponse);
       } catch (error) {
-        console.error('Failed to fetch domain knowledge:', error);
+        console.error('Failed to fetch data:', error);
         setDomainKnowledge(null);
+        setKnowledgeStatus(null);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchDomainKnowledge();
+    fetchData();
+  }, [agent?.id]);
+
+  // WebSocket for real-time status updates (same as DomainKnowledgeTree)
+  useEffect(() => {
+    if (!agent?.id) return;
+
+    const wsUrl = `ws://localhost:8080/ws/knowledge-status`;
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'knowledge_status_update') {
+          if (agent?.id) {
+            (async () => {
+              try {
+                setLoading(true);
+                const [domainResponse, statusResponse] = await Promise.all([
+                  apiService.getDomainKnowledge(agent.id),
+                  apiService.getKnowledgeStatus(agent.id).catch(() => ({ topics: [] })),
+                ]);
+
+                // Handle response properly (same as DomainKnowledgeTree)
+                if (domainResponse.message) {
+                  // API returned an error message, don't update data
+                } else {
+                  // Normal response, update data
+                  setDomainKnowledge(domainResponse);
+                  setKnowledgeStatus(statusResponse);
+                }
+              } catch (error) {
+                console.log('Error in WebSocket data refresh:', error);
+              } finally {
+                setLoading(false);
+              }
+            })();
+          }
+        }
+      } catch (e) {
+        // Ignore malformed messages
+      }
+    };
+
+    ws.onclose = () => {
+      // Connection closed
+    };
+
+    ws.onerror = (error) => {
+      console.log('WebSocket error:', error);
+    };
+
+    return () => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
+    };
   }, [agent?.id]);
 
   const chartData = useMemo((): AgentChartData => {
@@ -112,8 +187,8 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
       };
     }
 
-    // Count domain knowledge nodes
-    const domainKnowledgeCount = countDomainKnowledgeNodes(domainKnowledge);
+    // Count domain knowledge items from knowledge status (same as DomainKnowledgeTree)
+    const domainKnowledgeCount = knowledgeStatus?.topics?.length || 0;
 
     // Count documents (from agent.files or other source)
     const documentsCount = agent.files ? agent.files.length : 0;
@@ -133,7 +208,7 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
         knowledgeBase: {
           domainKnowledge: {
             count: domainKnowledgeCount,
-            status: domainKnowledgeCount > 0 ? 'active' : 'empty',
+            status: loading ? 'loading' : domainKnowledgeCount > 0 ? 'active' : 'empty',
           },
           documents: {
             count: documentsCount,
@@ -148,7 +223,7 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
         },
       },
     };
-  }, [agent, domainKnowledge]);
+  }, [agent, domainKnowledge, knowledgeStatus, loading]);
 
   const { nodes, edges } = useMemo(() => {
     const flowNodes: FlowNode[] = [];
@@ -174,6 +249,7 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
         label: 'AI Model',
         description: chartData.components.aiModel.name,
         status: chartData.components.aiModel.status,
+        isMain: false, // Same level as agent
       },
       position: { x: 0, y: 0 },
     });
@@ -184,7 +260,7 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
       type: 'agentChart',
       data: {
         label: 'Knowledge Base',
-        status: 'active',
+        status: loading ? 'loading' : 'active',
       },
       position: { x: 0, y: 0 },
     });
@@ -208,7 +284,9 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
         label: 'Domain Knowledge',
         count: chartData.components.knowledgeBase.domainKnowledge.count,
         status: chartData.components.knowledgeBase.domainKnowledge.status,
-        description: `${chartData.components.knowledgeBase.domainKnowledge.count} knowledge packs`,
+        description: loading
+          ? 'New Item Adding...'
+          : `${chartData.components.knowledgeBase.domainKnowledge.count} items`,
       },
       position: { x: 0, y: 0 },
     });
@@ -235,13 +313,17 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
       position: { x: 0, y: 0 },
     });
 
-    // Edges
+    // Right to left connection: AI Model to Agent
     flowEdges.push({
-      id: 'e-agent-ai-model',
-      source: 'agent',
-      target: 'ai-model',
-      markerEnd: { type: MarkerType.ArrowClosed },
-      style: { stroke: '#6b7280', strokeWidth: 2 },
+      id: 'e-ai-model-agent',
+      source: 'ai-model',
+      target: 'agent',
+      sourceHandle: 'right',
+      targetHandle: 'left',
+      style: {
+        stroke: '#6b7280',
+        strokeWidth: 2,
+      },
     });
 
     flowEdges.push({
@@ -286,16 +368,19 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
 
     const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'TB');
     return { nodes: layoutedNodes, edges: flowEdges };
-  }, [chartData, agent?.id]);
+  }, [chartData, agent?.id, loading]);
 
-  const nodeTypes = {
-    agentChart: AgentChartNode,
-  };
+  const nodeTypes = useMemo(
+    () => ({
+      agentChart: AgentChartNode,
+    }),
+    [],
+  );
 
   if (!agent) {
     return (
       <div
-        className={`flex items-center justify-center h-64 bg-gray-50 rounded-lg border border-gray-200 ${className}`}
+        className={`flex justify-center items-center h-64 bg-gray-50 rounded-lg border border-gray-200 ${className}`}
       >
         <div className="text-gray-500">No agent selected</div>
       </div>
@@ -305,7 +390,7 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
   if (isLoading) {
     return (
       <div
-        className={`flex items-center justify-center h-64 bg-gray-50 rounded-lg border border-gray-200 ${className}`}
+        className={`flex justify-center items-center h-64 bg-gray-50 rounded-lg border border-gray-200 ${className}`}
       >
         <div className="text-gray-500">Loading agent overview...</div>
       </div>
