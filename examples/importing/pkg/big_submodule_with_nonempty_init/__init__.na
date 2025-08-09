@@ -16,12 +16,12 @@ INTO: {I_AM}
 ')
 
 print(f'
-USED: {util_submodule.small_submodule}
+ACCESSED: {util_submodule.small_submodule}
 IN: {I_AM}
 ')
 
 print(f'
-USED: {util_submodule.small_submodule.I_AM}
+ACCESSED: {util_submodule.small_submodule.I_AM}
 IN: {I_AM}
 ')
 
@@ -33,7 +33,7 @@ INTO: {I_AM}
 ')
 
 print(f'
-USED: {small_util_submodule_in_big_util_submodule.I_AM}
+ACCESSED: {small_util_submodule_in_big_util_submodule.I_AM}
 IN: {I_AM}
 ')
 
@@ -52,41 +52,44 @@ INTO: {I_AM}
 ')
 
 print(f'
-USED: {small_submodule_in_big_submodule_with_nonempty_init.I_AM}
+ACCESSED: {small_submodule_in_big_submodule_with_nonempty_init.I_AM}
 IN: {I_AM}
 ')
 
+
+# access `SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_NONEMPTY_INIT`
 print(f'
 IMPORTED: {SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_NONEMPTY_INIT}
 INTO: {I_AM}
 ')
 
+
 print(f'
-USED: {small_submodule_in_big_submodule_with_nonempty_init.util_submodule}
+ACCESSED: {small_submodule_in_big_submodule_with_nonempty_init.util_submodule}
 IN: {I_AM}
 ')
 
 print(f'
-USED: {small_submodule_in_big_submodule_with_nonempty_init.util_submodule.small_submodule}
+ACCESSED: {small_submodule_in_big_submodule_with_nonempty_init.util_submodule.small_submodule}
 IN: {I_AM}
 ')
 
 print(f'
-USED: {small_submodule_in_big_submodule_with_nonempty_init.small_util_submodule_in_big_util_submodule}
+ACCESSED: {small_submodule_in_big_submodule_with_nonempty_init.small_util_submodule_in_big_util_submodule}
 IN: {I_AM}
 ')
 
 print(f'
-USED: {small_submodule_in_big_submodule_with_nonempty_init.util_submodule.small_submodule.I_AM}
+ACCESSED: {small_submodule_in_big_submodule_with_nonempty_init.util_submodule.small_submodule.I_AM}
 IN: {I_AM}
 ')
 
 print(f'
-USED: {small_submodule_in_big_submodule_with_nonempty_init.small_util_submodule_in_big_util_submodule.I_AM}
+ACCESSED: {small_submodule_in_big_submodule_with_nonempty_init.small_util_submodule_in_big_util_submodule.I_AM}
 IN: {I_AM}
 ')
 
 print(f'
-USED: {small_submodule_in_big_submodule_with_nonempty_init.SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE}
+ACCESSED: {small_submodule_in_big_submodule_with_nonempty_init.SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE}
 IN: {I_AM}
 ')
