@@ -12,7 +12,7 @@ from typing import Any, cast
 
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.ast import ImportFromStatement, ImportStatement
+from dana.core.lang.ast import ExportStatement, ImportFromStatement, ImportStatement
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -131,6 +131,39 @@ class ImportHandler(Loggable):
         except Exception as e:
             # Convert other errors to SandboxErrors for consistency
             raise SandboxError(f"Error importing from module '{module_name}': {e}") from e
+
+    def execute_export_statement(self, node: ExportStatement, context: SandboxContext) -> None:
+        """Execute an export statement with optimized processing.
+
+        Args:
+            node: The export statement node
+            context: The execution context
+
+        Returns:
+            None
+        """
+        # Get the name to export
+        name = node.name
+
+        # Validate presence in local scope if already defined (best-effort)
+        try:
+            context.get_from_scope(name, scope="local")
+        except Exception:
+            # If not defined yet, that's acceptable; it may be defined later in the module
+            pass
+
+        # Track exports on the context
+        if not hasattr(context, "_exports"):
+            context._exports = set()
+        context._exports.add(name)
+
+        # Trace export operation
+        try:
+            self.debug(f"Exporting name: {name}")
+        except Exception:
+            pass
+
+        return None
 
     def _execute_python_import(self, module_name: str, context_name: str, context: SandboxContext) -> None:
         """Execute import of a Python module with caching.

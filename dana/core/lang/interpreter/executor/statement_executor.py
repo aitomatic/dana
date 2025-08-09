@@ -48,6 +48,7 @@ from dana.core.lang.interpreter.executor.statement import (
     ImportHandler,
     StatementUtils,
 )
+from dana.core.lang.interpreter.executor.statement.type_handler import TypeHandler
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
 
@@ -77,6 +78,7 @@ class StatementExecutor(BaseExecutor):
         self.import_handler = ImportHandler(parent_executor=self, function_registry=self.function_registry)
         self.agent_handler = AgentHandler(parent_executor=self, function_registry=self.function_registry)
         self.statement_utils = StatementUtils(parent_executor=self)
+        self.type_handler = TypeHandler(parent_executor=self)
 
         self.register_handlers()
 
@@ -462,7 +464,7 @@ class StatementExecutor(BaseExecutor):
         Returns:
             None
         """
-        return self.agent_handler.execute_export_statement(node, context)
+        return self.import_handler.execute_export_statement(node, context)
 
     def execute_struct_definition(self, node: StructDefinition, context: SandboxContext) -> None:
         """Execute a struct definition statement using optimized handler.
@@ -474,7 +476,7 @@ class StatementExecutor(BaseExecutor):
         Returns:
             None (struct definitions don't produce a value, they register a type)
         """
-        return self.agent_handler.execute_struct_definition(node, context)
+        return self.type_handler.execute_struct_definition(node, context)
 
     def execute_agent_definition(self, node: AgentDefinition, context: SandboxContext) -> None:
         """Execute an agent definition statement using optimized handler.
@@ -521,7 +523,7 @@ class StatementExecutor(BaseExecutor):
         return self.agent_handler.execute_agent_pool_statement(node, context)
 
     def execute_function_definition(self, node: "FunctionDefinition", context: SandboxContext) -> Any:
-        """Execute a function definition, routing to agent handler if appropriate.
+        """Execute a function definition, routing to function executor when available.
 
         Args:
             node: The function definition to execute
@@ -530,10 +532,10 @@ class StatementExecutor(BaseExecutor):
         Returns:
             The defined function
         """
-        # Route to agent handler which can associate methods with agent types
-        self.debug(f"Routing function definition '{node.name.name}' to agent handler")
-        result = self.agent_handler.execute_function_definition(node, context)
-        return result
+        if hasattr(self.parent, "_function_executor") and self.parent._function_executor is not None:
+            return self.parent._function_executor.execute_function_definition(node, context)
+        # Fallback to previous behavior
+        return self.agent_handler.execute_function_definition(node, context)
 
     def execute_method_definition(self, node: "MethodDefinition", context: SandboxContext) -> Any:
         """Execute a method definition with explicit receiver.
