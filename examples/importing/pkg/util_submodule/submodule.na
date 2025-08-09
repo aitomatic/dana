@@ -1,5 +1,1 @@
-"""A util sub-module."""
-
-__all__ = ['UTIL_CONST']
-
-UTIL_CONST = 'utility const'
+WHERE_AM_I = 'a small util sub-module, in a big util sub-module, in a package'

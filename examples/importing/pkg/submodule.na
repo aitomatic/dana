@@ -1,5 +1,1 @@
-"""A small sub-module."""
-
-__all__ = ['SUBMODULE_CONST']
-
-SUBMODULE_CONST = 'submodule const'
+WHERE_AM_I = 'a small sub-module, in a package'
