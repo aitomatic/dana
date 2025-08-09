@@ -1,0 +1,39 @@
+from .. import util_submodule
+from ..util_submodule import submodule as small_util_submodule_in_big_util_submodule
+from ..util_submodule.submodule import WHERE_AM_I as SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE
+
+
+WHERE_AM_I = 'a small sub-module, in a big sub-module with an empty `__init__.na`, in a package'
+
+
+print(f'
+IMPORTED: {util_submodule}
+INTO: {WHERE_AM_I}
+')
+
+print(f'
+USED: {util_submodule.submodule}
+IN: {WHERE_AM_I}
+')
+
+print(f'
+USED: {util_submodule.submodule.WHERE_AM_I}
+IN: {WHERE_AM_I}
+')
+
+
+print(f'
+IMPORTED: {small_util_submodule_in_big_util_submodule}
+INTO: {WHERE_AM_I}
+')
+
+print(f'
+USED: {small_util_submodule_in_big_util_submodule.WHERE_AM_I}
+IN: {WHERE_AM_I}
+')
+
+
+print(f'
+IMPORTED: {SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE}
+INTO: {WHERE_AM_I}
+')
