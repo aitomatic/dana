@@ -538,7 +538,7 @@ class FunctionDefinitionTransformer(BaseTransformer):
 
         alias_token = next((it for it in items if isinstance(it, Token) and it.type == "NAME"), None)
         if alias_token is None:
-            raise ValueError("Malformed AST: expected an alias token for base agent singleton definition, but none was found.")
+            raise ParseError("Malformed AST: expected an alias token for base agent singleton definition, but none was found.")
         alias = alias_token.value
         return BaseAgentSingletonDefinition(alias_name=alias)
 
