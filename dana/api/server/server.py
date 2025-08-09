@@ -85,7 +85,6 @@ def create_app():
     from ..routers.poet import router as poet_router
     from ..routers.domain_knowledge import router as domain_knowledge_router
     from ..routers.smart_chat import router as smart_chat_router
-    from ..routers.smart_chat_v2 import router as smart_chat_v2_router
 
     # Legacy routers (for endpoints not yet migrated)
     from ..routers.api import router as api_router
@@ -103,6 +102,7 @@ def create_app():
     app.include_router(poet_router, prefix="/api")
     app.include_router(domain_knowledge_router, prefix="/api")
     if os.getenv("USE_SMART_CHAT_V2", "false").lower() == "true":
+        from ..routers.smart_chat_v2 import router as smart_chat_v2_router
         app.include_router(smart_chat_v2_router, prefix="/api")
     else:
         app.include_router(smart_chat_router, prefix="/api")
