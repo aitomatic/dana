@@ -9,7 +9,7 @@ from .small_submodule import I_AM as SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_NONEM
 I_AM = 'a big sub-module with a non-empty `__init__.na`, in a package'
 
 
-# test referring to `util_submodule` and its nested objects
+# access `util_submodule` and its nested objects
 print(f'
 IMPORTED: {util_submodule}
 INTO: {I_AM}
@@ -26,7 +26,7 @@ IN: {I_AM}
 ')
 
 
-# test referring to `small_util_submodule_in_big_util_submodule` and its nested objects
+# access `small_util_submodule_in_big_util_submodule` and its nested objects
 print(f'
 IMPORTED: {small_util_submodule_in_big_util_submodule}
 INTO: {I_AM}
@@ -38,14 +38,14 @@ IN: {I_AM}
 ')
 
 
-# test referring to `SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE`
+# access `SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE`
 print(f'
 IMPORTED: {SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE}
 INTO: {I_AM}
 ')
 
 
-# test referring to `small_submodule_in_big_submodule_with_nonempty_init` and its nested objects
+# access `small_submodule_in_big_submodule_with_nonempty_init` and its nested objects
 print(f'
 IMPORTED: {small_submodule_in_big_submodule_with_nonempty_init}
 INTO: {I_AM}
@@ -57,7 +57,7 @@ IN: {I_AM}
 ')
 
 
-# test referring to `SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_NONEMPTY_INIT`
+# access `SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_NONEMPTY_INIT`
 print(f'
 IMPORTED: {SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_NONEMPTY_INIT}
 INTO: {I_AM}
