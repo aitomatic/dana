@@ -13,12 +13,12 @@ INTO: {I_AM}
 ')
 
 print(f'
-USED: {util_submodule.small_submodule}
+ACCESSED: {util_submodule.small_submodule}
 IN: {I_AM}
 ')
 
 print(f'
-USED: {util_submodule.small_submodule.I_AM}
+ACCESSED: {util_submodule.small_submodule.I_AM}
 IN: {I_AM}
 ')
 
@@ -30,7 +30,7 @@ INTO: {I_AM}
 ')
 
 print(f'
-USED: {small_util_submodule_in_big_util_submodule.I_AM}
+ACCESSED: {small_util_submodule_in_big_util_submodule.I_AM}
 IN: {I_AM}
 ')
 
