@@ -26,7 +26,7 @@ class TestQueryable:
     def test_get_query_max_iterations(self):
         """Test getting the maximum number of iterations."""
         obj = Queryable()
-        assert obj.get_query_max_iterations() == 3
+        assert obj.get_query_max_iterations() == 10
 
     @pytest.mark.asyncio
     async def test_query_with_no_params(self):
