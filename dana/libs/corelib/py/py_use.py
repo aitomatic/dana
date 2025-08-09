@@ -69,13 +69,18 @@ def py_use(context: SandboxContext, function_name: str, *args, _name: str | None
 
         # Make sources DANAPATH-aware if DANAPATH is set and sources are relative
         danapath = os.environ.get("DANAPATH")
+        if danapath.endswith("stdlib") and "libs" in danapath and "dana" in danapath:
+            danapath = None
         sources = args[0] if args else kwargs.get("sources", [])
-        if danapath and sources:
+        if sources:
             new_sources = []
             for src in sources:
                 # If src is absolute, leave as is; if relative, join with DANAPATH
                 if not os.path.isabs(src):
-                    new_sources.append(str(Path(danapath) / src))
+                    if danapath:
+                        new_sources.append(str(Path(danapath) / src))
+                    else:
+                        new_sources.append(os.path.abspath(src))
                 else:
                     new_sources.append(src)
             # Replace sources in args or kwargs
