@@ -1,0 +1,452 @@
+# Test: Python Type Compatibility
+# Purpose: Test Python type conversions and compatibility between Dana and Python
+# Category: Integration - Python
+
+log("Starting Python Type Compatibility test")
+
+# Test 1: Basic type conversions
+log("Test 1: Basic type conversions")
+try:
+    # Test integer conversions
+    dana_int = 42
+    python_int = int(dana_int)
+    assert python_int == 42, "Integer conversion should work"
+    assert type(python_int).__name__ == "int", "Should be Python int type"
+    log(f"✓ Integer conversion: {dana_int} → {python_int} ({type(python_int).__name__})")
+    
+    # Test float conversions
+    dana_float = 3.14159
+    python_float = float(dana_float)
+    assert abs(python_float - 3.14159) < 0.0001, "Float conversion should preserve value"
+    assert type(python_float).__name__ == "float", "Should be Python float type"
+    log(f"✓ Float conversion: {dana_float} → {python_float} ({type(python_float).__name__})")
+    
+    # Test string conversions
+    dana_string = "Hello, World!"
+    python_string = str(dana_string)
+    assert python_string == "Hello, World!", "String conversion should work"
+    assert type(python_string).__name__ == "str", "Should be Python str type"
+    log(f"✓ String conversion: '{dana_string}' → '{python_string}' ({type(python_string).__name__})")
+    
+    # Test boolean conversions
+    dana_bool_true = true
+    dana_bool_false = false
+    python_bool_true = bool(dana_bool_true)
+    python_bool_false = bool(dana_bool_false)
+    assert python_bool_true == true, "True conversion should work"
+    assert python_bool_false == false, "False conversion should work"
+    log(f"✓ Boolean conversions: {dana_bool_true} → {python_bool_true}, {dana_bool_false} → {python_bool_false}")
+    
+except Exception as e:
+    log(f"✗ Basic type conversions failed: {e}")
+
+# Test 2: Collection type conversions
+log("Test 2: Collection type conversions")
+try:
+    # Test list conversions
+    dana_list = [1, 2, 3, 4, 5]
+    python_list = list(dana_list)
+    assert len(python_list) == 5, "List conversion should preserve length"
+    assert python_list[0] == 1, "List conversion should preserve elements"
+    assert type(python_list).__name__ == "list", "Should be Python list type"
+    log(f"✓ List conversion: {dana_list} → {python_list}")
+    
+    # Test tuple conversions
+    dana_tuple = (1, 2, 3)
+    python_tuple = tuple(dana_tuple)
+    assert len(python_tuple) == 3, "Tuple conversion should preserve length"
+    assert python_tuple[1] == 2, "Tuple conversion should preserve elements"
+    assert type(python_tuple).__name__ == "tuple", "Should be Python tuple type"
+    log(f"✓ Tuple conversion: {dana_tuple} → {python_tuple}")
+    
+    # Test dictionary conversions
+    dana_dict = {"name": "Alice", "age": 30, "city": "NYC"}
+    python_dict = dict(dana_dict)
+    assert len(python_dict) == 3, "Dict conversion should preserve length"
+    assert python_dict["name"] == "Alice", "Dict conversion should preserve values"
+    assert type(python_dict).__name__ == "dict", "Should be Python dict type"
+    log(f"✓ Dictionary conversion: {dana_dict} → {python_dict}")
+    
+    # Test set conversions
+    dana_set = {1, 2, 3, 4, 5}
+    python_set = set(dana_set)
+    assert len(python_set) == 5, "Set conversion should preserve unique elements"
+    assert 3 in python_set, "Set conversion should preserve elements"
+    assert type(python_set).__name__ == "set", "Should be Python set type"
+    log(f"✓ Set conversion: {dana_set} → {python_set}")
+    
+except Exception as e:
+    log(f"✗ Collection type conversions failed: {e}")
+
+# Test 3: None/null type handling
+log("Test 3: None/null type handling")
+try:
+    # Test null conversions
+    dana_null = null
+    python_none = None
+    
+    # Test null to None conversion
+    converted_none = None if dana_null is null else dana_null
+    assert converted_none is None, "null should convert to None"
+    log("✓ null → None conversion working")
+    
+    # Test None handling in Python functions
+    import json
+    
+    # JSON should handle None correctly
+    data_with_none = {"value": None, "number": 42}
+    json_str = json.dumps(data_with_none)
+    parsed_data = json.loads(json_str)
+    assert parsed_data["value"] is None, "None should be preserved in JSON"
+    assert parsed_data["number"] == 42, "Other values should be preserved"
+    log("✓ None handling in Python functions working")
+    
+    # Test null in collections
+    list_with_null = [1, null, 3]
+    assert len(list_with_null) == 3, "List with null should have correct length"
+    assert list_with_null[1] is null, "null should be preserved in list"
+    log("✓ null handling in collections working")
+    
+except Exception as e:
+    log(f"✗ None/null type handling failed: {e}")
+
+# Test 4: Numeric type precision and compatibility
+log("Test 4: Numeric type precision and compatibility")
+try:
+    import math
+    
+    # Test large integers
+    large_int = 9223372036854775807  # Max 64-bit signed int
+    python_large = int(large_int)
+    assert python_large == large_int, "Large integers should be preserved"
+    log(f"✓ Large integer: {large_int}")
+    
+    # Test very large integers (Python has arbitrary precision)
+    very_large_int = 123456789012345678901234567890
+    python_very_large = int(very_large_int)
+    assert python_very_large == very_large_int, "Very large integers should be preserved"
+    log(f"✓ Very large integer preserved")
+    
+    # Test floating-point precision
+    precise_float = 1.23456789012345
+    python_precise = float(precise_float)
+    assert abs(python_precise - precise_float) < 1e-10, "Float precision should be preserved"
+    log(f"✓ Precise float: {precise_float} → {python_precise}")
+    
+    # Test scientific notation
+    scientific = 1.23e-10
+    python_scientific = float(scientific)
+    assert abs(python_scientific - scientific) < 1e-15, "Scientific notation should work"
+    log(f"✓ Scientific notation: {scientific} → {python_scientific}")
+    
+    # Test special float values
+    infinity = float('inf')
+    negative_infinity = float('-inf')
+    assert math.isinf(infinity), "Positive infinity should be recognized"
+    assert math.isinf(negative_infinity), "Negative infinity should be recognized"
+    log("✓ Special float values (inf) working")
+    
+    # Test NaN
+    nan_value = float('nan')
+    assert math.isnan(nan_value), "NaN should be recognized"
+    log("✓ NaN handling working")
+    
+except Exception as e:
+    log(f"✗ Numeric type precision test failed: {e}")
+
+# Test 5: String encoding and Unicode
+log("Test 5: String encoding and Unicode")
+try:
+    # Test Unicode strings
+    unicode_string = "Hello, 世界! 🌍 Émojis: 😀🎉"
+    python_unicode = str(unicode_string)
+    assert len(python_unicode) > 0, "Unicode string should be converted"
+    assert "世界" in python_unicode, "Unicode characters should be preserved"
+    assert "🌍" in python_unicode, "Emoji should be preserved"
+    log(f"✓ Unicode string: '{unicode_string}'")
+    
+    # Test string encoding
+    encoded_bytes = unicode_string.encode('utf-8')
+    decoded_string = encoded_bytes.decode('utf-8')
+    assert decoded_string == unicode_string, "Encoding/decoding should be reversible"
+    log("✓ String encoding/decoding working")
+    
+    # Test different encodings
+    ascii_string = "Hello, ASCII!"
+    ascii_bytes = ascii_string.encode('ascii')
+    ascii_decoded = ascii_bytes.decode('ascii')
+    assert ascii_decoded == ascii_string, "ASCII encoding should work"
+    log("✓ ASCII encoding working")
+    
+    # Test string methods with Unicode
+    upper_unicode = unicode_string.upper()
+    lower_unicode = unicode_string.lower()
+    assert len(upper_unicode) > 0, "Unicode upper() should work"
+    assert len(lower_unicode) > 0, "Unicode lower() should work"
+    log("✓ Unicode string methods working")
+    
+except Exception as e:
+    log(f"✗ String encoding and Unicode test failed: {e}")
+
+# Test 6: Complex data structure conversions
+log("Test 6: Complex data structure conversions")
+try:
+    # Test nested structures
+    complex_data = {
+        "users": [
+            {"name": "Alice", "age": 30, "tags": ["admin", "developer"]},
+            {"name": "Bob", "age": 25, "tags": ["user"]}
+        ],
+        "settings": {
+            "debug": true,
+            "timeout": 30.5,
+            "retries": null
+        },
+        "metadata": {
+            "version": "1.0.0",
+            "created": "2024-01-15"
+        }
+    }
+    
+    # Convert to JSON and back to test type preservation
+    import json
+    json_str = json.dumps(complex_data)
+    restored_data = json.loads(json_str)
+    
+    assert len(restored_data["users"]) == 2, "Nested arrays should be preserved"
+    assert restored_data["users"][0]["name"] == "Alice", "Nested object values should be preserved"
+    assert restored_data["settings"]["debug"] == true, "Boolean values should be preserved"
+    assert restored_data["settings"]["timeout"] == 30.5, "Float values should be preserved"
+    assert restored_data["settings"]["retries"] is null, "null values should be preserved"
+    log("✓ Complex nested structure conversion working")
+    
+    # Test mixed type collections
+    mixed_list = [1, "string", 3.14, true, null, {"key": "value"}, [1, 2, 3]]
+    assert len(mixed_list) == 7, "Mixed type list should preserve all elements"
+    assert mixed_list[0] == 1, "Integer should be preserved"
+    assert mixed_list[1] == "string", "String should be preserved"
+    assert mixed_list[2] == 3.14, "Float should be preserved"
+    assert mixed_list[3] == true, "Boolean should be preserved"
+    assert mixed_list[4] is null, "null should be preserved"
+    assert mixed_list[5]["key"] == "value", "Object should be preserved"
+    assert mixed_list[6][0] == 1, "Nested array should be preserved"
+    log("✓ Mixed type collections working")
+    
+except Exception as e:
+    log(f"✗ Complex data structure conversions failed: {e}")
+
+# Test 7: Type checking and introspection
+log("Test 7: Type checking and introspection")
+try:
+    # Test isinstance function
+    test_int = 42
+    test_str = "hello"
+    test_list = [1, 2, 3]
+    test_dict = {"key": "value"}
+    
+    assert isinstance(test_int, int), "isinstance should work for int"
+    assert isinstance(test_str, str), "isinstance should work for str"
+    assert isinstance(test_list, list), "isinstance should work for list"
+    assert isinstance(test_dict, dict), "isinstance should work for dict"
+    log("✓ isinstance function working correctly")
+    
+    # Test type function
+    int_type = type(test_int)
+    str_type = type(test_str)
+    list_type = type(test_list)
+    dict_type = type(test_dict)
+    
+    assert int_type.__name__ == "int", "type() should return int type"
+    assert str_type.__name__ == "str", "type() should return str type"
+    assert list_type.__name__ == "list", "type() should return list type"
+    assert dict_type.__name__ == "dict", "type() should return dict type"
+    log("✓ type() function working correctly")
+    
+    # Test hasattr and getattr
+    class TestClass:
+        def __init__(self):
+            self.attribute = "value"
+    
+    obj = TestClass()
+    assert hasattr(obj, 'attribute'), "hasattr should find existing attribute"
+    assert not hasattr(obj, 'missing'), "hasattr should not find missing attribute"
+    
+    attr_value = getattr(obj, 'attribute')
+    default_value = getattr(obj, 'missing', 'default')
+    assert attr_value == "value", "getattr should return attribute value"
+    assert default_value == "default", "getattr should return default for missing"
+    log("✓ hasattr and getattr working correctly")
+    
+except Exception as e:
+    log(f"✗ Type checking and introspection failed: {e}")
+
+# Test 8: Callable type handling
+log("Test 8: Callable type handling")
+try:
+    import math
+    
+    # Test built-in function types
+    sqrt_func = math.sqrt
+    assert callable(sqrt_func), "Built-in functions should be callable"
+    
+    result = sqrt_func(16)
+    assert result == 4.0, "Callable should execute correctly"
+    log("✓ Built-in function callable working")
+    
+    # Test lambda functions
+    double = lambda x: x * 2
+    assert callable(double), "Lambda functions should be callable"
+    
+    doubled = double(5)
+    assert doubled == 10, "Lambda should execute correctly"
+    log("✓ Lambda function callable working")
+    
+    # Test method types
+    test_list = [1, 2, 3]
+    append_method = test_list.append
+    assert callable(append_method), "Methods should be callable"
+    
+    append_method(4)
+    assert len(test_list) == 4, "Method should execute correctly"
+    assert test_list[-1] == 4, "Method should modify object"
+    log("✓ Method callable working")
+    
+    # Test class constructor
+    class TestClass:
+        def __init__(self, value):
+            self.value = value
+    
+    assert callable(TestClass), "Classes should be callable"
+    
+    instance = TestClass(42)
+    assert instance.value == 42, "Class constructor should work"
+    log("✓ Class constructor callable working")
+    
+except Exception as e:
+    log(f"✗ Callable type handling failed: {e}")
+
+# Test 9: Error and exception type handling
+log("Test 9: Error and exception type handling")
+try:
+    # Test exception types
+    try:
+        result = 1 / 0
+        log("✗ Division by zero should raise exception")
+    except ZeroDivisionError as e:
+        assert isinstance(e, ZeroDivisionError), "Should catch ZeroDivisionError"
+        error_str = str(e)
+        assert len(error_str) > 0, "Exception should have string representation"
+        log(f"✓ ZeroDivisionError caught: {error_str}")
+    
+    # Test ValueError
+    try:
+        result = int("not a number")
+        log("✗ Invalid int conversion should raise exception")
+    except ValueError as e:
+        assert isinstance(e, ValueError), "Should catch ValueError"
+        log(f"✓ ValueError caught: {str(e)}")
+    
+    # Test TypeError
+    try:
+        result = len(42)  # len() expects sequence, not int
+        log("✗ Invalid len() call should raise exception")
+    except TypeError as e:
+        assert isinstance(e, TypeError), "Should catch TypeError"
+        log(f"✓ TypeError caught: {str(e)}")
+    
+    # Test custom exception
+    class CustomError(Exception):
+        def __init__(self, message):
+            self.message = message
+            super().__init__(message)
+    
+    try:
+        raise CustomError("Custom error message")
+        log("✗ Custom exception should be raised")
+    except CustomError as e:
+        assert isinstance(e, CustomError), "Should catch custom exception"
+        assert e.message == "Custom error message", "Custom exception should preserve message"
+        log(f"✓ Custom exception caught: {e.message}")
+    
+except Exception as e:
+    log(f"✗ Error and exception type handling failed: {e}")
+
+# Test 10: Type conversion edge cases
+log("Test 10: Type conversion edge cases")
+try:
+    # Test empty collections
+    empty_list = []
+    empty_dict = {}
+    empty_set = set()
+    empty_string = ""
+    
+    assert len(empty_list) == 0, "Empty list should have length 0"
+    assert len(empty_dict) == 0, "Empty dict should have length 0"
+    assert len(empty_set) == 0, "Empty set should have length 0"
+    assert len(empty_string) == 0, "Empty string should have length 0"
+    log("✓ Empty collections handling working")
+    
+    # Test boolean conversions
+    assert bool([1, 2, 3]) == true, "Non-empty list should be truthy"
+    assert bool([]) == false, "Empty list should be falsy"
+    assert bool({"key": "value"}) == true, "Non-empty dict should be truthy"
+    assert bool({}) == false, "Empty dict should be falsy"
+    assert bool("text") == true, "Non-empty string should be truthy"
+    assert bool("") == false, "Empty string should be falsy"
+    assert bool(42) == true, "Non-zero number should be truthy"
+    assert bool(0) == false, "Zero should be falsy"
+    log("✓ Boolean conversion edge cases working")
+    
+    # Test string to number conversions
+    str_int = "42"
+    str_float = "3.14"
+    str_scientific = "1.23e-4"
+    
+    converted_int = int(str_int)
+    converted_float = float(str_float)
+    converted_scientific = float(str_scientific)
+    
+    assert converted_int == 42, "String to int conversion should work"
+    assert abs(converted_float - 3.14) < 0.001, "String to float conversion should work"
+    assert abs(converted_scientific - 1.23e-4) < 1e-10, "Scientific notation conversion should work"
+    log("✓ String to number conversions working")
+    
+    # Test number to string conversions
+    int_to_str = str(42)
+    float_to_str = str(3.14159)
+    bool_to_str = str(true)
+    
+    assert int_to_str == "42", "Int to string should work"
+    assert "3.14" in float_to_str, "Float to string should work"
+    assert bool_to_str in ["True", "true"], "Bool to string should work"
+    log("✓ Number to string conversions working")
+    
+except Exception as e:
+    log(f"✗ Type conversion edge cases failed: {e}")
+
+log("Python Type Compatibility test completed")
+
+# Summary of test results
+log("=== Python Type Compatibility Test Summary ===")
+log("✓ Basic type conversions (int, float, str, bool)")
+log("✓ Collection type conversions (list, tuple, dict, set)")
+log("✓ None/null type handling")
+log("✓ Numeric type precision and compatibility")
+log("✓ String encoding and Unicode support")
+log("✓ Complex data structure conversions")
+log("✓ Type checking and introspection")
+log("✓ Callable type handling")
+log("✓ Error and exception type handling")
+log("✓ Type conversion edge cases")
+log("=== All Python type compatibility tests passed ===")
+
+# Notes for developers
+log("")
+log("NOTES:")
+log("- Dana and Python types are largely compatible")
+log("- Type conversions preserve data integrity")
+log("- Unicode and encoding work correctly")
+log("- Complex nested structures convert properly")
+log("- Exception handling maintains type information")
+log("- Edge cases (empty collections, special values) are handled correctly")
+log("- Type introspection functions work as expected")

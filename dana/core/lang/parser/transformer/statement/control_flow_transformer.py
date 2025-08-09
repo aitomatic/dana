@@ -166,8 +166,17 @@ class ControlFlowTransformer(BaseTransformer):
         # Filter out irrelevant items (None, comments, etc.)
         relevant_items = self.main_transformer._filter_relevant_items(items)
 
-        # Get the loop variable (target)
-        target = Identifier(name=relevant_items[0].value if isinstance(relevant_items[0], Token) else str(relevant_items[0]))
+        # Get the loop variable(s) (target)
+        target_str = relevant_items[0].value if isinstance(relevant_items[0], Token) else str(relevant_items[0])
+
+        # Handle tuple unpacking: check if target_str contains commas
+        if "," in target_str:
+            # Multiple targets: create list of Identifiers
+            target_names = [name.strip() for name in target_str.split(",")]
+            target = [Identifier(name=name) for name in target_names]
+        else:
+            # Single target: create single Identifier
+            target = Identifier(name=target_str)
 
         # Transform the iterable expression
         iterable = self.expression_transformer.expression([relevant_items[1]])

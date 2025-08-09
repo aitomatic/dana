@@ -242,6 +242,11 @@ class StructInstance:
         if field_type is None:
             return value
 
+        # Handle None values - None can be assigned to any type
+        # This allows for optional/nullable types in Dana
+        if value is None:
+            return None
+
         # Numeric coercion: int → float
         if field_type == "float" and isinstance(value, int):
             return float(value)

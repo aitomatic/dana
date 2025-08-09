@@ -1,0 +1,184 @@
+# Test: Index Assignments
+# Purpose: Test index assignments with list and dictionary indices
+# Category: Basic Syntax - Basic Assignments and Variables
+
+log("Starting Index Assignments test")
+
+# Test 1: Basic list index assignment
+numbers = [1, 2, 3, 4, 5]
+numbers[0] = 10
+assert numbers[0] == 10, f"Expected 10, got {numbers[0]}"
+log("✅ Basic list index assignment works")
+
+# Test 2: Basic dictionary key assignment
+scores = {"alice": 100, "bob": 80}
+scores["alice"] = 120
+assert scores["alice"] == 120, f"Expected 120, got {scores['alice']}"
+log("✅ Basic dictionary key assignment works")
+
+# Test 3: List index assignment with different data types
+data = [1, "hello", 3.14, true]
+data[1] = "world"
+data[2] = 2.718
+data[3] = false
+
+assert data[1] == "world", f"Expected 'world', got {data[1]}"
+assert data[2] == 2.718, f"Expected 2.718, got {data[2]}"
+assert data[3] == false, f"Expected false, got {data[3]}"
+log("✅ List index assignment with different data types works")
+
+# Test 4: Dictionary key assignment with different data types
+config = {"timeout": 30, "debug": false}
+config["timeout"] = 60
+config["debug"] = true
+config["host"] = "localhost"
+
+assert config["timeout"] == 60, f"Expected 60, got {config['timeout']}"
+assert config["debug"] == true, f"Expected true, got {config['debug']}"
+assert config["host"] == "localhost", f"Expected 'localhost', got {config['host']}"
+log("✅ Dictionary key assignment with different data types works")
+
+# Test 5: Negative list index assignment
+numbers = [1, 2, 3, 4, 5]
+numbers[-1] = 10
+assert numbers[-1] == 10, f"Expected 10, got {numbers[-1]}"
+assert numbers[4] == 10, f"Expected 10, got {numbers[4]}"
+log("✅ Negative list index assignment works")
+
+# Test 6: Nested list index assignment
+matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+matrix[1][2] = 10
+assert matrix[1][2] == 10, f"Expected 10, got {matrix[1][2]}"
+log("✅ Nested list index assignment works")
+
+# Test 7: Nested dictionary key assignment
+nested = {"level1": {"level2": {"value": 10}}}
+nested["level1"]["level2"]["value"] = 20
+assert nested["level1"]["level2"]["value"] == 20, f"Expected 20, got {nested['level1']['level2']['value']}"
+log("✅ Nested dictionary key assignment works")
+
+# Test 8: Index assignment with expressions
+numbers = [1, 2, 3, 4, 5]
+index = 2
+numbers[index] = 10
+assert numbers[index] == 10, f"Expected 10, got {numbers[index]}"
+log("✅ Index assignment with expressions works")
+
+# Test 9: Index assignment with function calls
+# def get_index():
+#     return 1
+
+# def get_value():
+#     return 42
+
+# data = [10, 20, 30]
+# data[get_index()] = get_value()
+# assert data[get_index()] == 42, f"Expected 42, got {data[get_index()]}"
+# log("✅ Index assignment with function calls works")
+
+# Test 10: Multiple index assignments
+scores = {"alice": 100, "bob": 80, "charlie": 90}
+scores["alice"] = 120
+scores["bob"] = 85
+scores["charlie"] = 95
+
+assert scores["alice"] == 120, f"Expected 120, got {scores['alice']}"
+assert scores["bob"] == 85, f"Expected 85, got {scores['bob']}"
+assert scores["charlie"] == 95, f"Expected 95, got {scores['charlie']}"
+log("✅ Multiple index assignments work")
+
+# Test 11: Index assignment with None
+data = [1, 2, 3]
+data[1] = None
+assert data[1] == None, f"Expected None, got {data[1]}"
+log("✅ Index assignment with None works")
+
+# Test 12: Index assignment with zero values
+numbers = [1, 2, 3]
+numbers[0] = 0
+assert numbers[0] == 0, f"Expected 0, got {numbers[0]}"
+log("✅ Index assignment with zero values works")
+
+# Test 13: Index assignment with negative numbers
+data = [1, 2, 3]
+data[1] = -5
+assert data[1] == -5, f"Expected -5, got {data[1]}"
+log("✅ Index assignment with negative numbers works")
+
+# Test 14: Index assignment with large numbers
+numbers = [1, 2, 3]
+numbers[2] = 1000000
+assert numbers[2] == 1000000, f"Expected 1000000, got {numbers[2]}"
+log("✅ Index assignment with large numbers works")
+
+# Test 15: Index assignment with string concatenation
+messages = ["Hello", "World"]
+messages[0] = messages[0] + " " + "Dana"
+assert messages[0] == "Hello Dana", f"Expected 'Hello Dana', got {messages[0]}"
+log("✅ Index assignment with string concatenation works")
+
+# Test 16: Index assignment with arithmetic operations
+numbers = [1, 2, 3, 4, 5]
+numbers[2] = numbers[1] + numbers[3]
+assert numbers[2] == 6, f"Expected 6, got {numbers[2]}"
+log("✅ Index assignment with arithmetic operations works")
+
+# Test 17: Index assignment with conditional expressions
+status = ["active", "inactive"]
+is_active = true
+status[0] = "enabled" if is_active else "disabled"
+assert status[0] == "enabled", f"Expected 'enabled', got {status[0]}"
+log("✅ Index assignment with conditional expressions works")
+
+# Test 18: Index assignment with list operations
+data = [[1, 2], [3, 4], [5, 6]]
+data[1][0] = 10
+assert data[1][0] == 10, f"Expected 10, got {data[1][0]}"
+log("✅ Index assignment with list operations works")
+
+# Test 19: Index assignment with dictionary operations
+config = {"params": {"timeout": 30, "retries": 3}}
+config["params"]["timeout"] = 60
+assert config["params"]["timeout"] == 60, f"Expected 60, got {config['params']['timeout']}"
+log("✅ Index assignment with dictionary operations works")
+
+# Test 20: Index assignment with complex nested structures
+complex_data = {"level1": {"level2": [{"level3": {"value": 1}}]}}
+complex_data["level1"]["level2"][0]["level3"]["value"] = 100
+assert complex_data["level1"]["level2"][0]["level3"]["value"] == 100, f"Expected 100, got {complex_data['level1']['level2'][0]['level3']['value']}"
+log("✅ Index assignment with complex nested structures works")
+
+# Test 21: Index assignment with boolean keys
+flags = {true: "enabled", false: "disabled"}
+flags[true] = "active"
+assert flags[true] == "active", f"Expected 'active', got {flags[true]}"
+log("✅ Index assignment with boolean keys works")
+
+# Test 22: Index assignment with numeric keys
+numeric_keys = {1: "one", 2: "two", 3: "three"}
+numeric_keys[2] = "TWO"
+assert numeric_keys[2] == "TWO", f"Expected 'TWO', got {numeric_keys[2]}"
+log("✅ Index assignment with numeric keys works")
+
+# Test 23: Index assignment with mixed key types
+mixed = {1: "number", "string": "text", True: "boolean"}
+mixed[1] = "updated_number"
+mixed["string"] = "updated_text"
+
+assert mixed[1] == "updated_number", f"Expected 'updated_number', got {mixed[1]}"
+assert mixed["string"] == "updated_text", f"Expected 'updated_text', got {mixed['string']}"
+log("✅ Index assignment with mixed key types works")
+
+# Test 24: Index assignment with empty collections
+empty_list = []
+empty_list.append(1)
+empty_list[0] = 10
+assert empty_list[0] == 10, f"Expected 10, got {empty_list[0]}"
+
+empty_dict = {}
+empty_dict["key"] = "value"
+empty_dict["key"] = "updated_value"
+assert empty_dict["key"] == "updated_value", f"Expected 'updated_value', got {empty_dict['key']}"
+log("✅ Index assignment with empty collections works")
+
+log("Index Assignments test completed successfully") 

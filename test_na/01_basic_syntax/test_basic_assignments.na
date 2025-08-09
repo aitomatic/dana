@@ -1,0 +1,175 @@
+# Test: Basic Assignments
+# Purpose: Test simple variable assignments and basic data types
+# Category: Basic Syntax - Basic Assignments and Variables
+
+log("Starting Basic Assignments test")
+
+# Test 1: Simple integer assignment
+x = 42
+assert x == 42, f"Expected 42, got {x}"
+log("✅ Simple integer assignment works")
+
+# Test 2: Simple float assignment
+y = 3.14
+assert y == 3.14, f"Expected 3.14, got {y}"
+log("✅ Simple float assignment works")
+
+# Test 3: Simple string assignment
+name = "Dana"
+assert name == "Dana", f"Expected 'Dana', got {name}"
+log("✅ Simple string assignment works")
+
+# Test 4: Simple boolean assignment
+is_active = true
+assert is_active == true, f"Expected true, got {is_active}"
+log("✅ Simple boolean assignment works")
+
+# Test 5: None assignment
+empty_value = None
+assert empty_value == None, f"Expected None, got {empty_value}"
+log("✅ None assignment works")
+
+# Test 6: Negative number assignment
+negative = -5
+assert negative == -5, f"Expected -5, got {negative}"
+log("✅ Negative number assignment works")
+
+# Test 7: Zero assignment
+zero = 0
+assert zero == 0, f"Expected 0, got {zero}"
+log("✅ Zero assignment works")
+
+# Test 8: Large number assignment
+large = 1000000
+assert large == 1000000, f"Expected 1000000, got {large}"
+log("✅ Large number assignment works")
+
+# Test 9: Scientific notation
+scientific = 1.23e-4
+assert scientific == 1.23e-4, f"Expected 1.23e-4, got {scientific}"
+log("✅ Scientific notation assignment works")
+
+# Test 10: Empty string assignment
+empty_string = ""
+assert empty_string == "", f"Expected empty string, got '{empty_string}'"
+log("✅ Empty string assignment works")
+
+
+# # Test 11: Multiple assignment (tuple unpacking)
+# a, b = 1, 2
+# assert a == 1, f"Expected 1, got {a}"
+# assert b == 2, f"Expected 2, got {b}"
+# log("✅ Multiple assignment (tuple unpacking) works")
+
+# # Test 12: Multiple assignment with three values
+# x, y, z = 10, 20, 30
+# assert x == 10, f"Expected 10, got {x}"
+# assert y == 20, f"Expected 20, got {y}"
+# assert z == 30, f"Expected 30, got {z}"
+# log("✅ Multiple assignment with three values works")
+
+# # Test 13: Multiple assignment with strings
+# first, last = "John", "Doe"
+# assert first == "John", f"Expected 'John', got {first}"
+# assert last == "Doe", f"Expected 'Doe', got {last}"
+# log("✅ Multiple assignment with strings works")
+
+# # Test 14: Multiple assignment with mixed types
+# num, text, flag = 42, "hello", true
+# assert num == 42, f"Expected 42, got {num}"
+# assert text == "hello", f"Expected 'hello', got {text}"
+# assert flag == true, f"Expected true, got {flag}"
+# log("✅ Multiple assignment with mixed types works")
+
+# # Test 15: Multiple assignment with expressions
+# sum_val, diff_val = 5 + 3, 10 - 2
+# assert sum_val == 8, f"Expected 8, got {sum_val}"
+# assert diff_val == 8, f"Expected 8, got {diff_val}"
+# log("✅ Multiple assignment with expressions works")
+
+# # Test 16: Unpacking from list
+# list_values = [100, 200, 300]
+# val1, val2, val3 = list_values
+# assert val1 == 100, f"Expected 100, got {val1}"
+# assert val2 == 200, f"Expected 200, got {val2}"
+# assert val3 == 300, f"Expected 300, got {val3}"
+# log("✅ Unpacking from list works")
+
+# # Test 17: Unpacking from list literal
+# p, q, r = [11, 22, 33]
+# assert p == 11, f"Expected 11, got {p}"
+# assert q == 22, f"Expected 22, got {q}"
+# assert r == 33, f"Expected 33, got {r}"
+# log("✅ Unpacking from list literal works")
+
+# # Test 18: Unpacking mixed data types from list
+# mixed_list = [42, "test", true]
+# num_val, str_val, bool_val = mixed_list
+# assert num_val == 42, f"Expected 42, got {num_val}"
+# assert str_val == "test", f"Expected 'test', got {str_val}"
+# assert bool_val == true, f"Expected true, got {bool_val}"
+# log("✅ Unpacking mixed data types from list works")
+
+# # Test 19: Unpacking from tuple
+# tuple_data = (7, 14, 21)
+# t1, t2, t3 = tuple_data
+# assert t1 == 7, f"Expected 7, got {t1}"
+# assert t2 == 14, f"Expected 14, got {t2}"
+# assert t3 == 21, f"Expected 21, got {t3}"
+# log("✅ Unpacking from tuple works")
+
+# # Test 20: Swapping variables using unpacking
+# swap_a = 5
+# swap_b = 10
+# swap_a, swap_b = swap_b, swap_a
+# assert swap_a == 10, f"Expected 10, got {swap_a}"
+# assert swap_b == 5, f"Expected 5, got {swap_b}"
+# log("✅ Variable swapping using unpacking works")
+
+# # Test 21: Nested unpacking from list of lists
+# nested_list = [[1, 2], [3, 4], [5, 6]]
+# (n1, n2), (n3, n4), (n5, n6) = nested_list
+# assert n1 == 1, f"Expected 1, got {n1}"
+# assert n2 == 2, f"Expected 2, got {n2}"
+# assert n3 == 3, f"Expected 3, got {n3}"
+# assert n4 == 4, f"Expected 4, got {n4}"
+# assert n5 == 5, f"Expected 5, got {n5}"
+# assert n6 == 6, f"Expected 6, got {n6}"
+# log("✅ Nested unpacking from list of lists works")
+
+# # Test 22: Nested unpacking from tuple of tuples
+# nested_tuple = ((10, 20), (30, 40))
+# (nt1, nt2), (nt3, nt4) = nested_tuple
+# assert nt1 == 10, f"Expected 10, got {nt1}"
+# assert nt2 == 20, f"Expected 20, got {nt2}"
+# assert nt3 == 30, f"Expected 30, got {nt3}"
+# assert nt4 == 40, f"Expected 40, got {nt4}"
+# log("✅ Nested unpacking from tuple of tuples works")
+
+# # Test 23: Nested unpacking with mixed types
+# mixed_nested = [("Alice", 25), ("Bob", 30)]
+# (name1, age1), (name2, age2) = mixed_nested
+# assert name1 == "Alice", f"Expected 'Alice', got {name1}"
+# assert age1 == 25, f"Expected 25, got {age1}"
+# assert name2 == "Bob", f"Expected 'Bob', got {name2}"
+# assert age2 == 30, f"Expected 30, got {age2}"
+# log("✅ Nested unpacking with mixed types works")
+
+# # Test 24: Three-level nested unpacking
+# deep_nested = [[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]]
+# ((d1, d2, d3), (d4, d5, d6)), ((d7, d8, d9), (d10, d11, d12)) = deep_nested
+# assert d1 == 1, f"Expected 1, got {d1}"
+# assert d6 == 6, f"Expected 6, got {d6}"
+# assert d7 == 7, f"Expected 7, got {d7}"
+# assert d12 == 12, f"Expected 12, got {d12}"
+# log("✅ Three-level nested unpacking works")
+
+# # Test 25: Nested unpacking with different structures
+# coord_data = [(100, 200), [300, 400, 500]]
+# (coord_x, coord_y), coord_list = coord_data
+# assert coord_x == 100, f"Expected 100, got {coord_x}"
+# assert coord_y == 200, f"Expected 200, got {coord_y}"
+# assert coord_list == [300, 400, 500], f"Expected [300, 400, 500], got {coord_list}"
+# log("✅ Nested unpacking with different structures wor
+
+log("Basic Assignments test completed successfully") 
