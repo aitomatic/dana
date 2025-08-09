@@ -15,9 +15,6 @@ from . import util_submodule
 from .util_submodule import submodule as small_submodule_in_util_submodule
 from .util_submodule.submodule import I_AM as SMALL_SUBMODULE_IN_UTIL_SUBMODULE
 
-from . import standalone_module
-from .standalone_module import I_AM as STANDALONE_MODULE_I_AM
-
 
 I_AM = 'a package'
 
