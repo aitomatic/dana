@@ -3,7 +3,7 @@ from ..util_submodule import submodule as small_util_submodule_in_big_util_submo
 from ..util_submodule.submodule import I_AM as SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE
 
 
-I_AM = 'a small sub-module, in a big sub-module with an empty `__init__.na`, in a package'
+I_AM = 'a small sub-module, in a big namespace sub-module (without `__init__.na`), in a package'
 
 
 print(f'
