@@ -64,3 +64,144 @@ print(f"""
 ACCESSED: {big_namespace_submodule.small_submodule.SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE}
 IN: {I_AM}
 """)
+
+
+# access `small_submodule_in_big_namespace_submodule` and its nested objects
+print(f"""
+USED: {small_submodule_in_big_namespace_submodule}
+IN: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {small_submodule_in_big_namespace_submodule.I_AM}
+IN: {I_AM}
+""")
+
+print(f"""
+IMPORTED: {SMALL_SUBMODULE_IN_BIG_NAMESPACE_SUBMODULE}
+INTO: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {small_submodule_in_big_namespace_submodule.util_submodule}
+IN: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {small_submodule_in_big_namespace_submodule.util_submodule.small_submodule}
+IN: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {small_submodule_in_big_namespace_submodule.small_util_submodule_in_big_util_submodule}
+IN: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {small_submodule_in_big_namespace_submodule.util_submodule.small_submodule.I_AM}
+IN: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {small_submodule_in_big_namespace_submodule.small_util_submodule_in_big_util_submodule.I_AM}
+IN: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {small_submodule_in_big_namespace_submodule.SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE}
+IN: {I_AM}
+""")
+
+
+# access `big_submodule_with_empty_init` and its nested objects
+print(f"""
+IMPORTED: {big_submodule_with_empty_init}
+IN: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {big_submodule_with_empty_init.small_submodule}
+IN: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {big_submodule_with_empty_init.small_submodule.I_AM}
+IN: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {big_submodule_with_empty_init.small_submodule.util_submodule}
+IN: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {big_submodule_with_empty_init.small_submodule.util_submodule.small_submodule}
+IN: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {big_submodule_with_empty_init.small_submodule.small_util_submodule_in_big_util_submodule}
+IN: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {big_submodule_with_empty_init.small_submodule.util_submodule.small_submodule.I_AM}
+IN: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {big_submodule_with_empty_init.small_submodule.small_util_submodule_in_big_util_submodule.I_AM}
+IN: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {big_submodule_with_empty_init.small_submodule.SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE}
+IN: {I_AM}
+""")
+
+
+# access `small_submodule_in_big_submodule_with_empty_init` and its nested objects
+print(f"""
+IMPORTED: {small_submodule_in_big_submodule_with_empty_init}
+IN: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {small_submodule_in_big_submodule_with_empty_init.I_AM}
+IN: {I_AM}
+""")
+
+print(f"""
+IMPORTED: {SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_EMPTY_INIT}
+INTO: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {small_submodule_in_big_submodule_with_empty_init.util_submodule}
+IN: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {small_submodule_in_big_submodule_with_empty_init.util_submodule.small_submodule}
+IN: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {small_submodule_in_big_submodule_with_empty_init.small_util_submodule_in_big_util_submodule}
+IN: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {small_submodule_in_big_submodule_with_empty_init.util_submodule.small_submodule.I_AM}
+IN: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {small_submodule_in_big_submodule_with_empty_init.small_util_submodule_in_big_util_submodule.I_AM}
+IN: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {small_submodule_in_big_submodule_with_empty_init.SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE}
+IN: {I_AM}
+""")

@@ -133,26 +133,14 @@ print(f'
 ACCESSED: {big_submodule_with_empty_init.small_submodule.util_submodule}
 IN: {I_AM}
 ')
-print(f'
-ACCESSED: {big_submodule_with_empty_init.small_submodule_in_big_submodule_with_nonempty_init.util_submodule}
-IN: {I_AM}
-')
 
 print(f'
 ACCESSED: {big_submodule_with_empty_init.small_submodule.util_submodule.small_submodule}
 IN: {I_AM}
 ')
-print(f'
-ACCESSED: {big_submodule_with_empty_init.small_submodule_in_big_submodule_with_nonempty_init.util_submodule.small_submodule}
-IN: {I_AM}
-')
 
 print(f'
 ACCESSED: {big_submodule_with_empty_init.small_submodule.small_util_submodule_in_big_util_submodule}
-IN: {I_AM}
-')
-print(f'
-ACCESSED: {big_submodule_with_empty_init.small_submosmall_submodule_in_big_submodule_with_nonempty_initdule.small_util_submodule_in_big_util_submodule}
 IN: {I_AM}
 ')
 
