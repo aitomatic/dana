@@ -88,3 +88,4 @@ tasks.json
 experiments/
 
 .vscode/launch.json.backup
+**/MODULE_ANALYSIS.md

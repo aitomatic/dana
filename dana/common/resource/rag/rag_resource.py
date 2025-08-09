@@ -7,6 +7,7 @@ from dana.common.resource.rag.pipeline.unified_cache_manager import UnifiedCache
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
 from llama_index.core import Settings
+from pathlib import Path
 
 
 class RAGResource(BaseResource):
@@ -21,7 +22,7 @@ class RAGResource(BaseResource):
         description: str | None = None,
         chunk_size: int = 1024,
         chunk_overlap: int = 256,
-        debug: bool = True,
+        debug: bool = False,
         reranking: bool = False,
         initial_multiplier: int = 2,
     ):
@@ -50,24 +51,25 @@ class RAGResource(BaseResource):
         reranking: bool,
         initial_multiplier: int,
     ):
-        Settings.chunk_size = chunk_size
-        Settings.chunk_overlap = chunk_overlap
-        self.sources = sources
-        self.force_reload = force_reload
-        self.debug = debug
-        self.reranking = reranking
-        self.initial_multiplier = initial_multiplier
         # Use DANAPATH if set, otherwise default to .cache/rag
         # if cache_dir is None:
         danapath = os.environ.get("DANAPATH")
 
-        if danapath:
-            if cache_dir:
-                cache_dir = os.path.join(danapath, cache_dir)
-            else:
-                cache_dir = os.path.join(danapath, ".cache", "rag")
-        else:
-            cache_dir = ".cache/rag"
+        if danapath.endswith("stdlib") and "libs" in danapath and "dana" in danapath:
+            danapath = None
+
+        Settings.chunk_size = chunk_size
+        Settings.chunk_overlap = chunk_overlap
+        self.force_reload = force_reload
+        self.debug = debug
+        self.reranking = reranking
+        self.initial_multiplier = initial_multiplier
+        self.sources = self._resolve_sources(sources, danapath)
+
+        cache_dir = self._resolve_cache_dir(cache_dir, danapath)
+
+        if self.debug:
+            print(f"RAGResource initialized with cache_dir: {cache_dir}")
 
         self._cache_manager = UnifiedCacheManager(cache_dir)
         self._orchestrator = RAGOrchestrator(cache_manager=self._cache_manager)
@@ -82,6 +84,27 @@ class RAGResource(BaseResource):
             )
         else:
             self._llm_reranker = None
+
+    def _resolve_sources(self, sources: list[str], danapath: str) -> list[str]:
+        new_sources = []
+        for src in sources:
+            if not os.path.isabs(src):
+                if danapath:
+                    new_sources.append(str(Path(danapath) / src))
+                else:
+                    new_sources.append(os.path.abspath(src))
+            else:
+                new_sources.append(src)
+        return new_sources
+    
+    def _resolve_cache_dir(self, cache_dir: str, danapath: str) -> str:
+        if danapath:
+            if cache_dir:
+                return os.path.join(danapath, cache_dir)
+            else:
+                return os.path.join(danapath, ".cache", "rag")
+        else:
+            return os.path.abspath(".cache/rag")
 
     @property
     def filenames(self) -> list[str]:

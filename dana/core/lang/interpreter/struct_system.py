@@ -459,10 +459,10 @@ class StructTypeRegistry:
             raise ValueError(f"Unknown struct type '{struct_name}'. Available types: {available_types}")
 
         # Check if this is an agent struct type
-        from dana.agent import AgentStructInstance, AgentStructType
+        from dana.agent import AgentType, AgentInstance
 
-        if isinstance(struct_type, AgentStructType):
-            return AgentStructInstance(struct_type, values)
+        if isinstance(struct_type, AgentType):
+            return AgentInstance(struct_type, values)
         else:
             return StructInstance(struct_type, values)
 

@@ -26,6 +26,7 @@ from dana.core.lang.ast import (
     AgentStatement,
     AssertStatement,
     Assignment,
+    BaseAgentSingletonDefinition,
     CompoundAssignment,
     DeclarativeFunctionDefinition,
     ExportStatement,
@@ -35,6 +36,7 @@ from dana.core.lang.ast import (
     MethodDefinition,
     PassStatement,
     RaiseStatement,
+    SingletonAgentDefinition,
     StructDefinition,
     UseStatement,
 )
@@ -82,8 +84,10 @@ class StatementExecutor(BaseExecutor):
         """Register handlers for statement node types."""
         self._handlers = {
             AgentDefinition: self.execute_agent_definition,
-            AgentStatement: self.execute_agent_statement,
+            SingletonAgentDefinition: self.execute_singleton_agent_definition,
+            BaseAgentSingletonDefinition: self.execute_base_agent_singleton_definition,
             AgentPoolStatement: self.execute_agent_pool_statement,
+            AgentStatement: self.execute_agent_statement,
             Assignment: self.execute_assignment,
             CompoundAssignment: self.execute_compound_assignment,
             AssertStatement: self.execute_assert_statement,
@@ -480,6 +484,14 @@ class StatementExecutor(BaseExecutor):
             None (agent definitions don't produce a value, they register a type)
         """
         return self.agent_handler.execute_agent_definition(node, context)
+
+    def execute_singleton_agent_definition(self, node: SingletonAgentDefinition, context: SandboxContext) -> None:
+        """Execute a singleton agent definition statement using optimized handler."""
+        return self.agent_handler.execute_singleton_agent_definition(node, context)
+
+    def execute_base_agent_singleton_definition(self, node: BaseAgentSingletonDefinition, context: SandboxContext) -> None:
+        """Execute a base agent singleton definition statement using optimized handler."""
+        return self.agent_handler.execute_base_agent_singleton_definition(node, context)
 
     def execute_agent_statement(self, node: AgentStatement, context: SandboxContext) -> Any:
         """Execute an agent statement using optimized handler.
