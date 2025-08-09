@@ -54,6 +54,34 @@ IN: {I_AM}
 ')
 
 print(f'
+USED: {pkg.big_namespace_submodule.small_submodule.util_submodule}
+IN: {I_AM}
+')
+
+print(f'
+USED: {pkg.big_namespace_submodule.small_submodule.util_submodule.small_submodule}
+IN: {I_AM}
+')
+
+print(f'
+USED: {pkg.big_namespace_submodule.small_submodule.small_util_submodule_in_big_util_submodule}
+IN: {I_AM}
+')
+
+print(f'
+USED: {pkg.big_namespace_submodule.small_submodule.util_submodule.small_submodule.I_AM}
+IN: {I_AM}
+')
+
+print(f'
+USED: {pkg.big_namespace_submodule.small_submodule.small_util_submodule_in_big_util_submodule.I_AM}
+IN: {I_AM}
+')
+
+print(f'
+USED: {pkg.big_namespace_submodule.small_submodule.SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE}
+IN: {I_AM}
+')
 
 
 # access `big_namespace_submodule` and its nested objects
