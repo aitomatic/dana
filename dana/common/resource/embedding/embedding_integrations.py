@@ -284,11 +284,7 @@ class EmbeddingFactory:
 
 
 # Convenience functions using default instance
-_default_resource = LlamaIndexEmbeddingResource()
-get_embedding_model = _default_resource.get_embedding_model
-get_default_embedding_model = _default_resource.get_default_embedding_model
-default_embedding_model = _default_resource.get_default_embedding_model()
-setup_llamaindex = _default_resource.setup_llamaindex
-
-# Backward compatibility alias
 RAGEmbeddingResource = LlamaIndexEmbeddingResource
+get_embedding_model = RAGEmbeddingResource().get_embedding_model
+get_default_embedding_model = RAGEmbeddingResource().get_default_embedding_model
+setup_llamaindex = RAGEmbeddingResource().setup_llamaindex
