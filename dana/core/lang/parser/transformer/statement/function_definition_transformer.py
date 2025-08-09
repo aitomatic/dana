@@ -478,6 +478,7 @@ class FunctionDefinitionTransformer(BaseTransformer):
 
         from dana.core.lang.ast import SingletonAgentDefinition
 
+        assert blueprint_name is not None
         return SingletonAgentDefinition(blueprint_name=blueprint_name, overrides=overrides, alias_name=None)
 
     def singleton_agent_definition_with_alias(self, items):
@@ -510,6 +511,7 @@ class FunctionDefinitionTransformer(BaseTransformer):
 
         from dana.core.lang.ast import SingletonAgentDefinition
 
+        assert blueprint_name is not None
         return SingletonAgentDefinition(blueprint_name=blueprint_name, overrides=overrides, alias_name=alias_name)
 
     def singleton_agent_definition_with_alias_simple(self, items):
@@ -521,6 +523,8 @@ class FunctionDefinitionTransformer(BaseTransformer):
         blueprint_name = name_tokens[1].value if len(name_tokens) >= 2 else None
         from dana.core.lang.ast import SingletonAgentDefinition
 
+        assert blueprint_name is not None
+        assert alias_name is not None
         return SingletonAgentDefinition(blueprint_name=blueprint_name, overrides=[], alias_name=alias_name)
 
     def singleton_agent_field(self, items):
