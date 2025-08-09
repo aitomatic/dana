@@ -14,7 +14,7 @@ from dana.core.lang.interpreter.functions.function_registry import FunctionRegis
 from dana.core.lang.sandbox_context import SandboxContext
 
 # Import the real PythonicFunctionFactory
-from dana.libs.stdlib.pythonic.function_factory import PythonicFunctionFactory, UnsupportedReason
+from dana.libs.corelib.py_builtins.register_py_builtins import PythonicBuiltinsFactory as PythonicFunctionFactory, UnsupportedReason
 
 
 class TestUnsupportedFunctions:
@@ -238,9 +238,9 @@ class TestUnsupportedFunctionRegistry:
     def test_unsupported_functions_registered(self):
         """Test that unsupported functions are registered with error handlers."""
         registry = FunctionRegistry()
-        from dana.libs.stdlib.pythonic.function_factory import register_pythonic_builtins
+        from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
 
-        register_pythonic_builtins(registry)
+        do_register_py_builtins(registry)
 
         # Test that unsupported functions are "registered" (with error handlers)
         assert registry.has("eval")
@@ -250,9 +250,9 @@ class TestUnsupportedFunctionRegistry:
     def test_calling_unsupported_through_registry(self):
         """Test calling unsupported functions through the registry."""
         registry = FunctionRegistry()
-        from dana.libs.stdlib.pythonic.function_factory import register_pythonic_builtins
+        from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
 
-        register_pythonic_builtins(registry)
+        do_register_py_builtins(registry)
         context = SandboxContext()
 
         # Test calling eval through registry
@@ -284,9 +284,9 @@ class TestUnsupportedFunctionRegistry:
         registry.register("eval", PythonFunction(safe_eval, trusted_for_context=True), func_type=FunctionType.PYTHON, overwrite=True)
 
         # Now register built-ins (should overwrite the custom eval with error handler)
-        from dana.libs.stdlib.pythonic.function_factory import register_pythonic_builtins
+        from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
 
-        register_pythonic_builtins(registry)
+        do_register_py_builtins(registry)
 
         # The built-in error handler should now be active, not the custom function
         context = SandboxContext()

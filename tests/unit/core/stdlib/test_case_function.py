@@ -6,7 +6,7 @@ import pytest
 
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.libs.corelib.register_corelib_functions import register_corelib_functions
+from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
 
 
 class TestCaseFunction:
@@ -15,7 +15,7 @@ class TestCaseFunction:
     def setup_method(self):
         """Set up test environment."""
         self.registry = FunctionRegistry()
-        register_corelib_functions(self.registry)
+        register_py_wrappers(self.registry)
         self.context = SandboxContext()
 
     def test_case_function_registered(self):

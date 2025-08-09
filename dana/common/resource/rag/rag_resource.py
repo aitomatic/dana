@@ -55,7 +55,7 @@ class RAGResource(BaseResource):
         # if cache_dir is None:
         danapath = os.environ.get("DANAPATH")
 
-        if danapath.endswith("stdlib") and "libs" in danapath and "dana" in danapath:
+        if danapath and danapath.endswith("stdlib") and "libs" in danapath and "dana" in danapath:
             danapath = None
 
         Settings.chunk_size = chunk_size
@@ -64,7 +64,7 @@ class RAGResource(BaseResource):
         self.debug = debug
         self.reranking = reranking
         self.initial_multiplier = initial_multiplier
-        self.sources = self._resolve_sources(sources, danapath)
+        self.sources = sources
 
         cache_dir = self._resolve_cache_dir(cache_dir, danapath)
 
@@ -96,7 +96,7 @@ class RAGResource(BaseResource):
             else:
                 new_sources.append(src)
         return new_sources
-    
+
     def _resolve_cache_dir(self, cache_dir: str, danapath: str) -> str:
         if danapath:
             if cache_dir:
@@ -262,11 +262,11 @@ Response (JSON array only):"""
 
             # The response should be a JSON array of integers
             if isinstance(parsed, list):
-                return [int(x) for x in parsed if isinstance(x, (int, str)) and str(x).isdigit()]
+                return [int(x) for x in parsed if isinstance(x, int | str) and str(x).isdigit()]
             elif isinstance(parsed, dict) and "ranking" in parsed:
                 ranking = parsed["ranking"]
                 if isinstance(ranking, list):
-                    return [int(x) for x in ranking if isinstance(x, (int, str)) and str(x).isdigit()]
+                    return [int(x) for x in ranking if isinstance(x, int | str) and str(x).isdigit()]
 
             # Fallback: try to extract numbers from the text
             import re

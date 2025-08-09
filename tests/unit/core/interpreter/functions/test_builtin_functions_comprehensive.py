@@ -9,7 +9,7 @@ import pytest
 
 from dana.common.exceptions import SandboxError
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.libs.stdlib.pythonic.function_factory import PythonicFunctionFactory
+from dana.libs.corelib.py_builtins.register_py_builtins import PythonicBuiltinsFactory as PythonicFunctionFactory
 
 
 @pytest.mark.deep

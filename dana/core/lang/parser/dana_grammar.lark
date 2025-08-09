@@ -463,9 +463,12 @@ NOT_OP.2: "not"
 AT: "@"
 
 simple_import: "import" module_path [AS NAME] [COMMENT]
-from_import: "from" (relative_module_path | module_path) "import" import_name_list [COMMENT]
+from_import: "from" (relative_module_path | module_path) "import" (import_name_list | STAR) [COMMENT]
 import_name_list: import_name ("," import_name)*
 import_name: NAME [AS NAME]
+
+// Star token for star imports
+STAR: "*"
 
 // ===== DECORATORS =====
 decorators: decorator+
