@@ -62,36 +62,10 @@ def py_use(context: SandboxContext, function_name: str, *args, _name: str | None
         context.set_resource(_name, resource)
         return resource
     elif function_name.lower() == "rag":
-        import os
-        from pathlib import Path
-
         from dana.common.resource.rag.rag_resource import RAGResource
-
-        # Make sources DANAPATH-aware if DANAPATH is set and sources are relative
-        danapath = os.environ.get("DANAPATH")
-        if danapath.endswith("stdlib") and "libs" in danapath and "dana" in danapath:
-            danapath = None
-        sources = args[0] if args else kwargs.get("sources", [])
-        if sources:
-            new_sources = []
-            for src in sources:
-                # If src is absolute, leave as is; if relative, join with DANAPATH
-                if not os.path.isabs(src):
-                    if danapath:
-                        new_sources.append(str(Path(danapath) / src))
-                    else:
-                        new_sources.append(os.path.abspath(src))
-                else:
-                    new_sources.append(src)
-            # Replace sources in args or kwargs
-            if args:
-                args = (new_sources,) + args[1:]
-            else:
-                kwargs["sources"] = new_sources
 
         resource = RAGResource(*args, name=_name, **kwargs)
         description = kwargs.get("description", None)
-        sources = kwargs.get("sources", [])
         filenames = sorted(resource.filenames)
         doc_string = f"{resource.query.__func__.__doc__ if not description else description}. These are the expertise data sources: {filenames[:3]} known as {_name}"
         resource.query = create_function_with_better_doc_string(resource.query, doc_string)
