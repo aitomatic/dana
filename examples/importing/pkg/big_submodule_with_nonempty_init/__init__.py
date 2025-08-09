@@ -1,4 +1,4 @@
-from . import small_submodule as small_submodule_in_big_submodule_with_nonempty_init
+from . import small_submodule
 from .small_submodule import (
     I_AM as SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_NONEMPTY_INIT,
 
@@ -16,12 +16,12 @@ I_AM = 'a big sub-module with a non-empty `__init__.py`, in a package'
 
 
 print(f"""
-IMPORTED: {small_submodule_in_big_submodule_with_nonempty_init}
+IMPORTED: {small_submodule}
 INTO: {I_AM}
 """)
 
 print(f"""
-ACCESSED: {small_submodule_in_big_submodule_with_nonempty_init.I_AM}
+ACCESSED: {small_submodule.I_AM}
 IN: {I_AM}
 """)
 print(f"""
@@ -30,7 +30,7 @@ INTO: {I_AM}
 """)
 
 print(f"""
-ACCESSED: {small_submodule_in_big_submodule_with_nonempty_init.util_submodule}
+ACCESSED: {small_submodule.util_submodule}
 IN: {I_AM}
 """)
 print(f"""
@@ -43,11 +43,11 @@ INTO: {I_AM}
 """)
 
 print(f"""
-ACCESSED: {small_submodule_in_big_submodule_with_nonempty_init.util_submodule.small_submodule}
+ACCESSED: {small_submodule.util_submodule.small_submodule}
 IN: {I_AM}
 """)
 print(f"""
-ACCESSED: {small_submodule_in_big_submodule_with_nonempty_init.small_util_submodule_in_big_util_submodule}
+ACCESSED: {small_submodule.small_util_submodule_in_big_util_submodule}
 IN: {I_AM}
 """)
 print(f"""
@@ -64,15 +64,15 @@ INTO: {I_AM}
 """)
 
 print(f"""
-ACCESSED: {small_submodule_in_big_submodule_with_nonempty_init.util_submodule.small_submodule.I_AM}
+ACCESSED: {small_submodule.util_submodule.small_submodule.I_AM}
 IN: {I_AM}
 """)
 print(f"""
-ACCESSED: {small_submodule_in_big_submodule_with_nonempty_init.small_util_submodule_in_big_util_submodule.I_AM}
+ACCESSED: {small_submodule.small_util_submodule_in_big_util_submodule.I_AM}
 IN: {I_AM}
 """)
 print(f"""
-ACCESSED: {small_submodule_in_big_submodule_with_nonempty_init.SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE}
+ACCESSED: {small_submodule.SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE}
 IN: {I_AM}
 """)
 print(f"""
