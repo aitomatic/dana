@@ -4,6 +4,7 @@ import { apiService } from '@/lib/api';
 import { useParams } from 'react-router-dom';
 import { useSmartChatStore } from '@/stores/smart-chat-store';
 import { useAgentStore } from '@/stores/agent-store';
+import { useKnowledgeStore } from '@/stores/knowledge-store';
 import { useUIStore } from '@/stores/ui-store';
 import { ArrowUp } from 'iconoir-react';
 import { MarkdownViewerSmall } from './chat/markdown-viewer';
@@ -84,7 +85,7 @@ const ResizeHandle: React.FC<{
         className={`
           absolute top-1/2 left-1/2 transform -translate-x-1/3 -translate-y-1/2
           w-2 h-8 rounded-full transition-all duration-200 border border-gray-300
-          ${isResizing ? 'bg-white shadow-sm' : 'bg-white group-hover:bg-primary shadow-sm'}
+          ${isResizing ? 'bg-white shadow-sm' : 'bg-white shadow-sm group-hover:bg-primary'}
         `}
         style={{
           zIndex: 60,
@@ -121,7 +122,7 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
   const removeMessage = useSmartChatStore((s) => s.removeMessage);
   const clearMessages = useSmartChatStore((s) => s.clearMessages);
   const setMessages = useSmartChatStore((s) => s.setMessages);
-  const { fetchAgent } = useAgentStore();
+  // fetchAgent removed - now using direct API calls to avoid loading skeleton
   const { setAgentDetailActiveTab, setKnowledgeBaseActiveSubTab } = useUIStore();
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const [isThinking, setIsThinking] = useState(false);
@@ -225,29 +226,35 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
         text: response.follow_up_message || response.agent_response || response.message || '...',
       });
 
-      // Reload the agent data if the smart chat updated agent properties
+      // Refresh agent data silently if the smart chat updated agent properties
       if (
         response.success &&
         (response.updates_applied?.length > 0 || response.updated_domain_tree)
       ) {
         try {
           // Only refresh agent data for numeric IDs (regular agents)
+          // Use silent refresh to avoid showing loading skeleton
           if (!isNaN(Number(agent_id))) {
-            await fetchAgent(parseInt(agent_id));
+            const updatedAgent = await apiService.getAgent(parseInt(agent_id));
+            // Update the agent store without triggering loading state
+            const currentState = useAgentStore.getState();
+            useAgentStore.setState({
+              ...currentState,
+              selectedAgent: updatedAgent,
+            });
           }
         } catch (fetchError) {
           console.warn('Failed to refresh agent data:', fetchError);
         }
       }
 
-      // If the response indicates a knowledge status update, refresh domain knowledge and status
-      if (response.status === 'knowledge_status_update') {
-        try {
-          await apiService.getDomainKnowledge(agent_id);
-          await apiService.getKnowledgeStatus(agent_id);
-          // Optionally, trigger a UI update or notification here
-        } catch (err) {
-          console.warn('Failed to refresh domain knowledge/status:', err);
+      // If the response indicates a knowledge status update, trigger centralized store refresh
+      if (response.status === 'knowledge_status_update' || response.updated_domain_tree) {
+        // Use our centralized knowledge store for domain knowledge updates
+        // This will automatically handle debouncing and avoid duplicate calls
+        const knowledgeStore = useKnowledgeStore.getState();
+        if (agent_id) {
+          knowledgeStore.fetchKnowledgeData(agent_id, true); // Force refresh
         }
       }
     } catch (e) {
@@ -331,24 +338,24 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
                 }`}
               >
                 {isThinking ? (
-                  <div className="px-3 py-2 flex gap-2 items-center">
+                  <div className="flex gap-2 items-center px-3 py-2">
                     <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
-                    <span className="text-gray-700 text-sm">{msg.text}</span>
+                    <span className="text-sm text-gray-700">{msg.text}</span>
                   </div>
                 ) : (
                   <>
                     <MarkdownViewerSmall>{msg.text}</MarkdownViewerSmall>
                     {isWelcomeMessage && (
-                      <div className="mt-3 flex flex-col gap-2">
+                      <div className="flex flex-col gap-2 mt-3">
                         <button
                           onClick={handleCTAClick}
-                          className="px-4 py-2 cursor-pointer text-sm font-medium text-gray-700 border border-gray-300 bg-white rounded-md hover:bg-gray-100 transition-colors duration-200 shadow-sm"
+                          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md border border-gray-300 shadow-sm transition-colors duration-200 cursor-pointer hover:bg-gray-100"
                         >
                           Add knowledge on a topic
                         </button>
                         <button
                           onClick={handleAddDocumentsClick}
-                          className="px-4 py-2 cursor-pointer text-sm font-medium text-gray-700 border border-gray-300 bg-white rounded-md hover:bg-gray-100 transition-colors duration-200 shadow-sm"
+                          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md border border-gray-300 shadow-sm transition-colors duration-200 cursor-pointer hover:bg-gray-100"
                         >
                           Add documents
                         </button>
@@ -360,9 +367,9 @@ const SmartAgentChat: React.FC<{ agentName?: string }> = ({ agentName }) => {
             );
           })}
           {isThinking && (
-            <div className="px-3 py-2 flex gap-2 items-center self-start text-left">
+            <div className="flex gap-2 items-center self-start px-3 py-2 text-left">
               <div className="w-4 h-4 rounded-full border-2 border-gray-600 animate-spin border-t-transparent"></div>
-              <span className="text-gray-700 text-sm">{thinkingMessage}</span>
+              <span className="text-sm text-gray-700">{thinkingMessage}</span>
             </div>
           )}
           <div ref={bottomRef} />
@@ -455,11 +462,11 @@ export const AgentDetailSidebar: React.FC = () => {
       }}
     >
       <ResizeHandle onResize={handleResize} isResizing={isResizing} setIsResizing={setIsResizing} />
-      <div className="flex flex-col h-full bg-white overflow-y-auto">
-        <div className="flex h-14 gap-3 items-center p-2 border-b border-gray-200">
+      <div className="flex overflow-y-auto flex-col h-full bg-white">
+        <div className="flex gap-3 items-center p-2 h-14 border-b border-gray-200">
           <img className="w-10 h-10 rounded-full" src={DanaAvatar} alt="Dana avatar" />
           <div>
-            <div className="font-semibold text-sm  text-gray-900">Dana</div>
+            <div className="text-sm font-semibold text-gray-900">Dana</div>
             <div className="text-xs text-gray-500">Agent builder assistant</div>
           </div>
         </div>

@@ -5,8 +5,9 @@ import dagre from 'dagre';
 import 'reactflow/dist/style.css';
 import CustomNode from './CustomNode';
 import { apiService } from '@/lib/api';
+import { useKnowledgeStore } from '@/stores/knowledge-store';
 import type { DomainKnowledgeResponse, DomainNode } from '@/types/domainKnowledge';
-import type { KnowledgeStatusResponse, KnowledgeTopicStatus } from '@/lib/api';
+import type { KnowledgeTopicStatus, KnowledgeStatusResponse } from '@/lib/api';
 import { toast } from 'sonner';
 import KnowledgeSidebar from './KnowledgeSidebar';
 import { Search } from 'iconoir-react';
@@ -305,22 +306,33 @@ async function triggerGenerateKnowledge(agentId: string | number) {
   return response;
 }
 
-// Use backend URL for WebSocket
-const wsUrl = `ws://localhost:8080/ws/knowledge-status`;
+// Use backend URL for WebSocket (now disabled - using centralized store)
+// const wsUrl = `ws://localhost:8080/ws/knowledge-status`;
 
 const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) => {
+  // Use centralized knowledge store
+  const {
+    domainKnowledge: domainTree,
+    knowledgeStatus: statusData,
+    isLoading: initialLoading,
+    error: storeError,
+    setCurrentAgent,
+  } = useKnowledgeStore();
+
   const [nodes, setNodes] = useState<FlowNode[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(false);
+  const [loading] = useState(false); // Keep for local loading states if needed
   const [error, setError] = useState<string | null>(null);
+
+  // Update error when store error changes
+  useEffect(() => {
+    setError(storeError);
+  }, [storeError]);
   const [generating, setGenerating] = useState(false);
   const [, setGenerateMsg] = useState<string | null>(null);
   const [topicStatus] = useState<{ [id: string]: string }>({});
-  const [domainTree, setDomainTree] = useState<DomainKnowledgeResponse | null>(null);
-  const [statusData, setStatusData] = useState<KnowledgeStatusResponse | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarTopicPath, setSidebarTopicPath] = useState<string>('');
   const [sidebarContent, setSidebarContent] = useState<any>(null);
@@ -330,7 +342,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const wsRef = useRef<WebSocket | null>(null);
+  // const wsRef = useRef<WebSocket | null>(null); // No longer needed
   const expandedNodesRef = useRef<Set<string>>(new Set());
   const previousAgentIdRef = useRef<string | number | undefined>(undefined);
   const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
@@ -500,7 +512,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     }
   }, [agentId]);
 
-  // WebSocket for real-time status updates
+  /* WebSocket for real-time status updates - DISABLED (now handled by centralized store)
   useEffect(() => {
     if (!agentId) return;
     const ws = new WebSocket(wsUrl);
@@ -559,7 +571,10 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     return () => {
       ws.close();
     };
-  }, [agentId]);
+  }, [agentId]); */
+
+  // WebSocket handling is now managed by the centralized knowledge store
+  // (The old WebSocket code above has been commented out to prevent duplicate connections)
 
   const nodeTypes = {
     custom: (nodeProps: any) => (
@@ -775,64 +790,63 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       setEdges(initialEdges);
       return;
     }
+  }, [agentId]);
 
-    const fetchData = async () => {
-      setInitialLoading(true);
-      setError(null);
+  // Update current agent in centralized store
+  useEffect(() => {
+    if (agentId) {
+      setCurrentAgent(agentId);
+    } else {
+      setCurrentAgent(null);
+      // Show default nodes if no agent ID
+      const layouted = getLayoutedElements(initialNodes, initialEdges, 'LR');
+      setNodes(layouted);
+      setEdges(initialEdges);
+    }
+  }, [agentId, setCurrentAgent]);
 
-      try {
-        // Fetch both domain knowledge and knowledge status in parallel
-        const [domainResponse, statusResponse] = await Promise.all([
-          apiService.getDomainKnowledge(agentId),
-          apiService.getKnowledgeStatus(agentId).catch(() => ({ topics: [] })), // Fallback to empty if status fails
-        ]);
-
-        if (domainResponse.message) {
-          // No domain knowledge found, show empty state
-          setNodes([]);
-          setEdges([]);
-          setError(domainResponse.message);
-        } else if (domainResponse.root) {
-          // Store the domain tree and status data
-          setDomainTree(domainResponse);
-          setStatusData(statusResponse);
-
-          // Preserve existing expansion state or initialize with just the root
-          const currentExpanded =
-            expandedNodesRef.current.size > 0
-              ? expandedNodesRef.current
-              : new Set([domainResponse.root.topic]);
-
-          // Only set expanded nodes if we don't have any yet
-          if (expandedNodesRef.current.size === 0) {
-            setExpandedNodes(currentExpanded);
-          }
-
-          // Convert domain knowledge to flow format (now with status information)
-          const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
-            domainResponse,
-            statusResponse,
-            currentExpanded,
-            searchQuery,
-          );
-          const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
-          setNodes(layoutedNodes);
-          setEdges(flowEdges);
-        }
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to load domain knowledge');
-        // Fall back to default nodes
+  // Process domain knowledge and status data from store
+  useEffect(() => {
+    if (!domainTree || !statusData) {
+      if (!agentId) {
+        // Show default nodes if no agent ID
         const layouted = getLayoutedElements(initialNodes, initialEdges, 'LR');
         setNodes(layouted);
         setEdges(initialEdges);
-      } finally {
-        setInitialLoading(false);
       }
-    };
+      return;
+    }
 
-    fetchData();
-  }, [agentId]);
+    if (domainTree.message) {
+      // No domain knowledge found, show empty state
+      setNodes([]);
+      setEdges([]);
+      setError(domainTree.message);
+    } else if (domainTree.root) {
+      // Preserve existing expansion state or initialize with just the root
+      const currentExpanded =
+        expandedNodesRef.current.size > 0
+          ? expandedNodesRef.current
+          : new Set([domainTree.root.topic]);
+
+      // Only set expanded nodes if we don't have any yet
+      if (expandedNodesRef.current.size === 0) {
+        setExpandedNodes(currentExpanded);
+      }
+
+      // Convert domain knowledge to flow format (now with status information)
+      const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
+        domainTree,
+        statusData as KnowledgeStatusResponse,
+        currentExpanded,
+        searchQuery,
+      );
+      const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
+      setNodes(layoutedNodes);
+      setEdges(flowEdges);
+      setError(null);
+    }
+  }, [domainTree, statusData, searchQuery]);
 
   // Hide popup when clicking outside
   useEffect(() => {
@@ -1080,10 +1094,12 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       return { total: 0, completed: 0, inProgress: 0, failed: 0, pending: 0 };
 
     const total = statusData.topics.length;
-    const completed = statusData.topics.filter((topic) => topic.status === 'success').length;
-    const inProgress = statusData.topics.filter((topic) => topic.status === 'in_progress').length;
-    const failed = statusData.topics.filter((topic) => topic.status === 'failed').length;
-    const pending = statusData.topics.filter((topic) => topic.status === 'pending').length;
+    const completed = statusData.topics.filter((topic: any) => topic.status === 'success').length;
+    const inProgress = statusData.topics.filter(
+      (topic: any) => topic.status === 'in_progress',
+    ).length;
+    const failed = statusData.topics.filter((topic: any) => topic.status === 'failed').length;
+    const pending = statusData.topics.filter((topic: any) => topic.status === 'pending').length;
 
     return { total, completed, inProgress, failed, pending };
   };

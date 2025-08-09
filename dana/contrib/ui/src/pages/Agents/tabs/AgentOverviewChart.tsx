@@ -1,13 +1,11 @@
-import React, { useMemo, useEffect, useState, useRef } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import ReactFlow, { Controls, MarkerType } from 'reactflow';
 import type { Node as FlowNode, Edge } from 'reactflow';
 import dagre from 'dagre';
 import 'reactflow/dist/style.css';
 import AgentChartNode from './AgentChartNode';
 import type { AgentOverviewChartProps, AgentChartData } from './types/agent-chart';
-import { apiService } from '@/lib/api';
-import type { DomainKnowledgeResponse } from '@/types/domainKnowledge';
-import type { KnowledgeStatusResponse } from '@/lib/api';
+import { useKnowledgeStore } from '@/stores/knowledge-store';
 
 const nodeWidth = 250;
 const nodeHeight = 100;
@@ -78,98 +76,17 @@ function getLayoutedElements(nodes: FlowNode[], edges: Edge[], direction: 'TB' |
 }
 
 const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, className = '' }) => {
-  const [domainKnowledge, setDomainKnowledge] = useState<DomainKnowledgeResponse | null>(null);
-  const [knowledgeStatus, setKnowledgeStatus] = useState<KnowledgeStatusResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
+  // Use centralized knowledge store
+  const { domainKnowledge, knowledgeStatus, isLoading, setCurrentAgent } = useKnowledgeStore();
 
-  // Fetch domain knowledge data and knowledge status
+  // Update current agent when component mounts or agent changes
   useEffect(() => {
-    if (!agent?.id) {
-      setDomainKnowledge(null);
-      setKnowledgeStatus(null);
-      return;
+    if (agent?.id) {
+      setCurrentAgent(agent.id);
+    } else {
+      setCurrentAgent(null);
     }
-
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        // Fetch both domain knowledge and knowledge status in parallel
-        const [domainResponse, statusResponse] = await Promise.all([
-          apiService.getDomainKnowledge(agent.id),
-          apiService.getKnowledgeStatus(agent.id).catch(() => ({ topics: [] })), // Fallback to empty if status fails
-        ]);
-        setDomainKnowledge(domainResponse);
-        setKnowledgeStatus(statusResponse);
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
-        setDomainKnowledge(null);
-        setKnowledgeStatus(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [agent?.id]);
-
-  // WebSocket for real-time status updates (same as DomainKnowledgeTree)
-  useEffect(() => {
-    if (!agent?.id) return;
-
-    const wsUrl = `ws://localhost:8080/ws/knowledge-status`;
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
-
-    ws.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data);
-        if (msg.type === 'knowledge_status_update') {
-          if (agent?.id) {
-            (async () => {
-              try {
-                setLoading(true);
-                const [domainResponse, statusResponse] = await Promise.all([
-                  apiService.getDomainKnowledge(agent.id),
-                  apiService.getKnowledgeStatus(agent.id).catch(() => ({ topics: [] })),
-                ]);
-
-                // Handle response properly (same as DomainKnowledgeTree)
-                if (domainResponse.message) {
-                  // API returned an error message, don't update data
-                } else {
-                  // Normal response, update data
-                  setDomainKnowledge(domainResponse);
-                  setKnowledgeStatus(statusResponse);
-                }
-              } catch (error) {
-                console.log('Error in WebSocket data refresh:', error);
-              } finally {
-                setLoading(false);
-              }
-            })();
-          }
-        }
-      } catch (e) {
-        // Ignore malformed messages
-      }
-    };
-
-    ws.onclose = () => {
-      // Connection closed
-    };
-
-    ws.onerror = (error) => {
-      console.log('WebSocket error:', error);
-    };
-
-    return () => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.close();
-      }
-    };
-  }, [agent?.id]);
+  }, [agent?.id, setCurrentAgent]);
 
   const chartData = useMemo((): AgentChartData => {
     if (!agent) {
@@ -208,7 +125,7 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
         knowledgeBase: {
           domainKnowledge: {
             count: domainKnowledgeCount,
-            status: loading ? 'loading' : domainKnowledgeCount > 0 ? 'active' : 'empty',
+            status: isLoading ? 'loading' : domainKnowledgeCount > 0 ? 'active' : 'empty',
           },
           documents: {
             count: documentsCount,
@@ -223,7 +140,7 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
         },
       },
     };
-  }, [agent, domainKnowledge, knowledgeStatus, loading]);
+  }, [agent, domainKnowledge, knowledgeStatus, isLoading]);
 
   const { nodes, edges } = useMemo(() => {
     const flowNodes: FlowNode[] = [];
@@ -260,7 +177,7 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
       type: 'agentChart',
       data: {
         label: 'Knowledge Base',
-        status: loading ? 'loading' : 'active',
+        status: isLoading ? 'loading' : 'active',
       },
       position: { x: 0, y: 0 },
     });
@@ -284,7 +201,7 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
         label: 'Domain Knowledge',
         count: chartData.components.knowledgeBase.domainKnowledge.count,
         status: chartData.components.knowledgeBase.domainKnowledge.status,
-        description: loading
+        description: isLoading
           ? 'New Item Adding...'
           : `${chartData.components.knowledgeBase.domainKnowledge.count} items`,
       },
@@ -368,7 +285,7 @@ const AgentOverviewChart: React.FC<AgentOverviewChartProps> = ({ agent, classNam
 
     const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'TB');
     return { nodes: layoutedNodes, edges: flowEdges };
-  }, [chartData, agent?.id, loading]);
+  }, [chartData, agent?.id, isLoading]);
 
   const nodeTypes = useMemo(
     () => ({
