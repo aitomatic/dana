@@ -1,6 +1,7 @@
 from . import small_submodule as small_submodule_in_big_submodule_with_nonempty_init
 from .small_submodule import (
     I_AM as SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_NONEMPTY_INIT,
+
     util_submodule as util_submodule_imported_in_small_submodule_in_big_submodule_with_nonempty_init,
     small_util_submodule_in_big_util_submodule as small_util_submodule_in_big_util_submodule_imported_in_small_submodule_in_big_submodule_with_nonempty_init,
     SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE as SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE_IMPORTED_IN_SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_NONEMPTY_INIT,
@@ -14,7 +15,6 @@ from ..util_submodule.small_submodule import I_AM as SMALL_UTIL_SUBMODULE_IN_BIG
 I_AM = 'a big sub-module with a non-empty `__init__.py`, in a package'
 
 
-# access `small_submodule_in_big_submodule_with_nonempty_init` and its nested objects
 print(f"""
 IMPORTED: {small_submodule_in_big_submodule_with_nonempty_init}
 INTO: {I_AM}
@@ -37,6 +37,10 @@ print(f"""
 IMPORTED: {util_submodule_imported_in_small_submodule_in_big_submodule_with_nonempty_init}
 IN: {I_AM}
 """)
+print(f"""
+IMPORTED: {util_submodule}
+INTO: {I_AM}
+""")
 
 print(f"""
 ACCESSED: {small_submodule_in_big_submodule_with_nonempty_init.util_submodule.small_submodule}
@@ -48,6 +52,14 @@ IN: {I_AM}
 """)
 print(f"""
 IMPORTED: {small_util_submodule_in_big_util_submodule_imported_in_small_submodule_in_big_submodule_with_nonempty_init}
+INTO: {I_AM}
+""")
+print(f"""
+ACCESSED: {util_submodule.small_submodule}
+IN: {I_AM}
+""")
+print(f"""
+IMPORTED: {small_util_submodule_in_big_util_submodule}
 INTO: {I_AM}
 """)
 
@@ -67,38 +79,14 @@ print(f"""
 IMPORTED: {SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE_IMPORTED_IN_SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_NONEMPTY_INIT}
 INTO: {I_AM}
 """)
-
-
-# access `util_submodule` and its nested objects
-print(f"""
-IMPORTED: {util_submodule}
-INTO: {I_AM}
-""")
-
-print(f"""
-ACCESSED: {util_submodule.small_submodule}
-IN: {I_AM}
-""")
-
 print(f"""
 ACCESSED: {util_submodule.small_submodule.I_AM}
 IN: {I_AM}
 """)
-
-
-# access `small_util_submodule_in_big_util_submodule` and its nested objects
-print(f"""
-IMPORTED: {small_util_submodule_in_big_util_submodule}
-INTO: {I_AM}
-""")
-
 print(f"""
 ACCESSED: {small_util_submodule_in_big_util_submodule.I_AM}
 IN: {I_AM}
 """)
-
-
-# access `SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE`
 print(f"""
 IMPORTED: {SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE}
 INTO: {I_AM}
