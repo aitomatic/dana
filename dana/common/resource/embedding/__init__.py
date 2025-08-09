@@ -13,10 +13,7 @@ from .embedding_query_executor import EmbeddingQueryExecutor
 
 # Simple LlamaIndex integration
 from .embedding_integrations import (
-    setup_llamaindex,
-    LlamaIndexEmbeddingResource,
     get_embedding_model,
-    get_default_embedding_model,
     RAGEmbeddingResource,  # Backward compatibility alias
     EmbeddingFactory,
 )
@@ -25,11 +22,7 @@ __all__ = [
     # Core embedding system
     "EmbeddingResource",
     "EmbeddingQueryExecutor",
-    # Simple LlamaIndex integration
-    "setup_llamaindex",
-    "LlamaIndexEmbeddingResource",
     "get_embedding_model",
-    "get_default_embedding_model",
     "RAGEmbeddingResource",
     "EmbeddingFactory",
 ]

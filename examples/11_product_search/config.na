@@ -32,7 +32,7 @@ struct VectorStoreConfig:
 struct DataConfig:
     csv_file_path: str = "examples/11_product_search/data/sample_products.csv"
     cache_dir: str = ".cache/product_search"
-    force_reload: bool = true
+    force_reload: bool = false
     table_name: str = "product_search_example"
 
 
