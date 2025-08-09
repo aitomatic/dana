@@ -142,7 +142,7 @@ class StatementExecutor(BaseExecutor):
         """
         return self.statement_utils.execute_assert_statement(node, context)
 
-    def _execute_python_import(self, module_name: str, context_name: str, context: SandboxContext) -> None:
+    def unused_execute_python_import(self, module_name: str, context_name: str, context: SandboxContext) -> None:
         """Execute import of a Python module (.py extension required).
 
         Args:
@@ -169,7 +169,7 @@ class StatementExecutor(BaseExecutor):
         except ImportError as e:
             raise SandboxError(f"Python module '{import_name}' not found: {e}") from e
 
-    def _execute_dana_import(self, module_name: str, context_name: str, context: SandboxContext) -> None:
+    def unused_execute_dana_import(self, module_name: str, context_name: str, context: SandboxContext) -> None:
         """Execute Dana module import (import module).
 
         Args:
@@ -177,6 +177,7 @@ class StatementExecutor(BaseExecutor):
             context_name: Name to use in context
             context: The execution context
         """
+        self.error(f"Executing Dana import: {module_name} {context_name}")
         self._ensure_module_system_initialized()
 
         # Handle relative imports
@@ -211,7 +212,7 @@ class StatementExecutor(BaseExecutor):
             # Convert to SandboxError for consistency
             raise SandboxError(f"Error loading Dana module '{absolute_module_name}': {e}") from e
 
-    def _execute_python_from_import(self, module_name: str, names: list[tuple[str, str | None]], context: SandboxContext) -> None:
+    def unused_execute_python_from_import(self, module_name: str, names: list[tuple[str, str | None]], context: SandboxContext) -> None:
         """Execute from-import of a Python module (.py extension required).
 
         Args:
@@ -254,7 +255,7 @@ class StatementExecutor(BaseExecutor):
             if callable(obj) and self.function_registry:
                 self._register_imported_function(obj, context_name, module_name, name)
 
-    def _execute_dana_from_import(self, module_name: str, names: list[tuple[str, str | None]], context: SandboxContext) -> None:
+    def unused_execute_dana_from_import(self, module_name: str, names: list[tuple[str, str | None]], context: SandboxContext) -> None:
         """Execute Dana module from-import (from module import name).
 
         Args:
@@ -262,6 +263,8 @@ class StatementExecutor(BaseExecutor):
             names: List of (name, alias) tuples to import
             context: The execution context
         """
+        self.error(f"Executing Dana from-import: {module_name} {names}")
+
         self._ensure_module_system_initialized()
 
         # Handle relative imports
@@ -316,7 +319,7 @@ class StatementExecutor(BaseExecutor):
             # Convert to SandboxError for consistency
             raise SandboxError(f"Error importing from Dana module '{absolute_module_name}': {e}") from e
 
-    def _register_imported_function(self, func: callable, context_name: str, module_name: str, original_name: str) -> None:
+    def unused_register_imported_function(self, func: callable, context_name: str, module_name: str, original_name: str) -> None:
         """Register an imported function in the function registry.
 
         Args:
@@ -614,7 +617,7 @@ class StatementExecutor(BaseExecutor):
             import inspect  # noqa: F401
 
             signature = self._create_signature(node.parameters, node.return_type)
-            wrapper.__signature__ = signature
+            wrapper.__signature__ = signature  # type: ignore[attr-defined]
         except ImportError:
             # inspect module not available, skip signature creation
             self.debug("inspect module not available, skipping signature creation for IDE support")

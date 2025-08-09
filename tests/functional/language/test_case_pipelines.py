@@ -5,7 +5,7 @@ Test case function integration with Dana pipelines and placeholder expressions.
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.parser.dana_parser import parse_program
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.libs.corelib.register_corelib_functions import register_corelib_functions
+from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
 
 
 class TestCasePipelines:
@@ -16,7 +16,7 @@ class TestCasePipelines:
         self.interpreter = DanaInterpreter()
         self.context = SandboxContext()
         # Register corelib functions including case
-        register_corelib_functions(self.interpreter.function_registry)
+        register_py_wrappers(self.interpreter.function_registry)
 
     def execute_code(self, code):
         """Helper method to parse and execute Dana code."""

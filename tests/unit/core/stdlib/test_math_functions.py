@@ -5,7 +5,7 @@ Test math functions in Dana standard library.
 import pytest
 
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
-from dana.libs.corelib.register_corelib_functions import register_corelib_functions
+from dana.libs.corelib.py_wrappers.register_py_wrappers import register_py_wrappers
 
 
 class TestMathFunctions:
@@ -14,7 +14,7 @@ class TestMathFunctions:
     def setup_method(self):
         """Set up test environment."""
         self.registry = FunctionRegistry()
-        register_corelib_functions(self.registry)
+        register_py_wrappers(self.registry)
 
     def test_math_functions_registered(self):
         """Test that math functions are properly registered."""

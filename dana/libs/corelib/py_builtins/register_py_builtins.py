@@ -32,7 +32,7 @@ class UnsupportedReason(Enum):
     DEPRECATED = "deprecated"
 
 
-class PythonicFunctionFactory:
+class PythonicBuiltinsFactory:
     """Factory for creating Pythonic built-in function wrappers."""
 
     @staticmethod
@@ -117,7 +117,7 @@ class PythonicFunctionFactory:
         },
         # Smart wrappers for flexible argument handling
         "sum": {
-            "func": _smart_sum.__func__,
+            "func": _smart_sum.__func__,  # type: ignore[attr-defined]
             "types": [],  # Skip type validation - smart wrapper handles it
             "doc": "Return the sum of a sequence of numbers, optionally with a start value",
             "signatures": [
@@ -130,13 +130,13 @@ class PythonicFunctionFactory:
             ],  # Allow list/tuple with optional start
         },
         "max": {
-            "func": _smart_max.__func__,
+            "func": _smart_max.__func__,  # type: ignore[attr-defined]
             "types": [],  # Skip type validation - smart wrapper handles it
             "doc": "Return the largest item in an iterable or among multiple arguments",
             "signatures": [],  # Skip signature validation - smart wrapper handles it
         },
         "min": {
-            "func": _smart_min.__func__,
+            "func": _smart_min.__func__,  # type: ignore[attr-defined]
             "types": [],  # Skip type validation - smart wrapper handles it
             "doc": "Return the smallest item in an iterable or among multiple arguments",
             "signatures": [],  # Skip signature validation - smart wrapper handles it
@@ -186,7 +186,7 @@ class PythonicFunctionFactory:
             "signatures": [(str,), (int,), (bool,), (LazyPromise,)],
         },
         "bool": {
-            "func": lambda v: PythonicFunctionFactory._semantic_bool_wrapper(v),
+            "func": lambda v: PythonicBuiltinsFactory._semantic_bool_wrapper(v),
             "types": [str, int, float, list, dict, LazyPromise],
             "doc": "Convert a value to a boolean with semantic understanding",
             "signatures": [(str,), (int,), (float,), (list,), (dict,), (LazyPromise,)],
@@ -762,7 +762,7 @@ If this is a custom function, make sure it's:
         return report
 
 
-def register_pythonic_builtins(registry: FunctionRegistry) -> None:
+def do_register_py_builtins(registry: FunctionRegistry) -> None:
     """Register all Pythonic built-in functions using the factory.
 
     This function registers built-in functions with HIGHEST priority,
@@ -777,7 +777,7 @@ def register_pythonic_builtins(registry: FunctionRegistry) -> None:
     Args:
         registry: The function registry to register functions with
     """
-    factory = PythonicFunctionFactory()
+    factory = PythonicBuiltinsFactory()
 
     for function_name in factory.FUNCTION_CONFIGS:
         wrapper = factory.create_function(function_name)
