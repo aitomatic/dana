@@ -26,7 +26,7 @@ class Queryable:
     def __init__(self):
         """Initialize the Queryable object."""
         self._query_strategy = getattr(self, "_query_strategy", QueryStrategy.ONCE)
-        self._query_max_iterations = getattr(self, "_query_max_iterations", 3)
+        self._query_max_iterations = getattr(self, "_query_max_iterations", 10)
 
     @ToolCallable.tool
     async def query(self, request: dict[str, Any]) -> BaseResponse:
