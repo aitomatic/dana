@@ -13,6 +13,7 @@ MIT License
 
 from lark import Token, Tree
 
+from dana.common.exceptions import ParseError
 from dana.core.lang.ast import (
     AgentDefinition,
     AgentField,
