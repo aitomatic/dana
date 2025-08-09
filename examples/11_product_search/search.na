@@ -1,0 +1,226 @@
+log_level("warn")
+
+from prompts import get_enhancement_prompt, get_ranking_prompt
+from config import SEARCH_CONFIG, MODEL_CONFIG, DATA_CONFIG, get_tabular_index_config
+from time.py import time
+
+set_model(MODEL_CONFIG.model_name)
+
+# ===== MAIN PRODUCT SEARCH FUNCTION =====
+
+def product_search(query: str) -> dict:
+    """
+    Main product search function - consolidated 4-step pipeline
+    Query → Enhancement → Search → Ranking → Response
+    """
+    start_time = time()
+    
+    # Step 1: Query Enhancement with reason()
+    enhanced = enhance_query(query)
+    
+    # Step 2: Search with native Dana
+    results = search_products(enhanced)
+    
+    # Step 3: Intelligent ranking with reason()
+    ranked = rank_results(query, results)
+    
+    # Add processing time
+    ranked["processing_time"] = time() - start_time
+    
+    return ranked
+
+# ===== QUERY ENHANCEMENT =====
+
+def enhance_query(query: str) -> dict:
+    """Extract structured information from user query using LLM"""
+    prompt = get_enhancement_prompt(query)
+    enhanced: dict = reason(prompt)
+    
+    return {
+        "original_query": query,
+        "enhanced": enhanced
+    }
+
+# ===== SEARCH IMPLEMENTATION =====
+
+def search_products(context: dict) -> list:
+    """Combined search using tabular_index for both part number and vector search"""
+    enhanced = context["enhanced"]
+    
+    # Initialize tabular_index with complete configuration
+    tabular_index_config = get_tabular_index_config()
+    product_data = use("tabular_index", tabular_index_config=tabular_index_config)
+    
+    results = []
+    
+    # Part number search (if available)
+    if enhanced.get("mfr_part_num") and enhanced["mfr_part_num"] != "":
+        part_results = search_by_part_number(
+            enhanced["mfr_part_num"], 
+            product_data, 
+            SEARCH_CONFIG.part_search_limit
+        )
+        results.extend(part_results)
+    
+    # Vector similarity search
+    search_query = build_search_query(enhanced)
+    vector_results = product_data.retrieve(
+        search_query, 
+        top_k=SEARCH_CONFIG.vector_search_limit
+    )
+    results.extend(standardize_vector_results(vector_results))
+    
+    return dedupe_results(results, SEARCH_CONFIG.max_results)
+
+def search_by_part_number(part_num: str, product_data, limit: int) -> list:
+    """Search for exact part number matches using tabular_index filtering"""
+    # Use retrieve with the part number as query to find matches
+    matches = product_data.retrieve(part_num, top_k=limit)
+    return standardize_vector_results(matches)
+
+def build_search_query(enhanced: dict) -> str:
+    """Build search query from enhanced data"""
+    refined = enhanced.get("refined_query", "")
+    weighted = enhanced.get("most_weighted_keyword", "")
+    
+    if SEARCH_CONFIG.use_weighted_terms and weighted != "":
+        return f"{refined} {weighted}"
+    return refined
+
+# ===== RESULT STANDARDIZATION =====
+
+def standardize_vector_results(items: list) -> list:
+    """Convert tabular_index results to standardized format"""
+    standardized = []
+    for item in items:
+        metadata = item.get("metadata", {})
+        
+        standardized.append({
+            "product_name": str(item.get("text", "")),
+            "mfr_part_num": str(metadata.get("mfr_part_num", "")),
+            "mfr_brand": str(metadata.get("mfr_brand", "")),
+            "source_category": str(metadata.get("source_category", "")),
+            "data_source": str(metadata.get("data_source", "vector_search")),
+            "search_strategy": "vector_similarity",
+            "confidence_level": "medium"
+        })
+    
+    return standardized
+
+def dedupe_results(results: list, max_results: int) -> list:
+    """Remove duplicates based on part number and limit results"""
+    seen_parts = []  # Use list instead of set
+    deduped = []
+    
+    for result in results:
+        part_num = result.get("mfr_part_num", "").lower()
+        
+        # Add if not a duplicate and under max limit
+        if part_num not in seen_parts and len(deduped) < max_results:
+            deduped.append(result)
+            if part_num:  # Only track non-empty part numbers
+                seen_parts.append(part_num)
+    
+    return deduped
+
+# ===== RANKING AND RESULT ASSEMBLY =====
+
+def rank_results(query: str, results: list) -> dict:
+    """Intelligent ranking using LLM to select best match"""
+    if not results:
+        return {
+            "query": query,
+            "best_match": None,
+            "total_results": 0,
+            "confidence": 0.0,
+            "meets_threshold": false,
+            "reasoning": "No results found"
+        }
+    
+    formatted = format_results_for_ranking(results)
+    prompt = get_ranking_prompt(query, formatted)
+    
+    ranking: dict = reason(prompt)
+    
+    # Validate confidence against threshold
+    confidence = ranking.get("confidence_score", 0.0)
+    meets_threshold = confidence >= SEARCH_CONFIG.confidence_threshold
+    
+    best_match = None
+    if meets_threshold and ranking.get("item_index", 0) > 0:
+        best_match = results[ranking["item_index"] - 1]
+    
+    return {
+        "query": query,
+        "results": results,
+        "best_match": best_match,
+        "total_results": len(results),
+        "confidence": confidence,
+        "meets_threshold": meets_threshold,
+        "reasoning": ranking.get("notes", "")
+    }
+
+def format_results_for_ranking(results: list) -> str:
+    """Format search results for LLM ranking prompt"""
+    if not results:
+        return "No results found."
+    
+    formatted_lines = []
+    for i in range(len(results)):
+        result = results[i]
+        idx = i + 1  # 1-based indexing for display
+        lines = [
+            f"Result #{idx}:",
+            f"Product Name: {result['product_name']}",
+            f"Part Number: {result['mfr_part_num']}",
+            f"Brand: {result['mfr_brand']}",
+            f"Category: {result['source_category']}",
+            f"Source: {result['data_source']}"
+        ]
+        formatted_lines.append("\n".join(lines))
+    
+    return "\n\n".join(formatted_lines)
+
+# ===== TEST FUNCTIONS =====
+
+def test_enhancement():
+    """Test query enhancement functionality"""
+    result = enhance_query("Subaru sedan brake pads")
+    print(f"Enhancement result: {result}")
+    return result
+
+def test_search():
+    """Test search functionality"""
+    query = "Subaru sedan brake pads"
+    enhanced = enhance_query(query)
+    results = search_products(enhanced)
+    print(f"Search results: {results}")
+    return results
+
+def test_full_pipeline():
+    """Test complete product search pipeline"""
+    return product_search("Subaru sedan brake pads")
+
+def main():
+    """Main function to demonstrate the search functionality"""
+    query = "Subaru sedan brake pads"
+    response = product_search(query)
+    
+    print("=== DANA PRODUCT SEARCH RESULT ===")
+    print(f"Query: {response['query']}")
+    print(f"Total Results: {response['total_results']}")
+    print(f"Confidence Score: {response['confidence']}")
+    print(f"Processing Time: {response['processing_time']}s")
+    
+    if response['best_match']:
+        print(f"Best Match: {response['best_match']['product_name']}")
+        print(f"Part Number: {response['best_match']['mfr_part_num']}")
+        print(f"Brand: {response['best_match']['mfr_brand']}")
+    else:
+        print("No suitable match found")
+    
+    print(f"Reasoning: {response['reasoning']}")
+    
+    return response
+
+main()

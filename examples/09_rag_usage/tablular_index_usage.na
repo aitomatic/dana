@@ -12,7 +12,7 @@ def metadata_constructor(row: dict) -> dict:
 
 tabular_index_config = {    
     "source": "tmp/car/Automobile_data.csv",
-    "force_reload": True,
+    "force_reload": False,
     "table_name": "automobile",
     "embedding_field_constructor": embedding_field_constructor,
     "metadata_constructor": metadata_constructor,
@@ -20,7 +20,6 @@ tabular_index_config = {
 
 tabular_index = use("tabular_index", tabular_index_config=tabular_index_config)
 
-# data = tabular_index.retrieve_all()
 data = tabular_index.retrieve("List some data", top_k=2)
 
 for item in data:
@@ -29,6 +28,8 @@ for item in data:
     print("-" * 100)
 
 
-data_3 = tabular_index.single_search("make:mercedes", top_k=3)
-from pprint.py import pprint
-pprint(data_3)
+def tabular_query(query: str, top_k: int = 2) -> list:
+    return tabular_index.retrieve(query, top_k)
+
+data = [tabular_query("List some data", top_k=2), tabular_query("car is good", top_k=2)]
+print(len(data))

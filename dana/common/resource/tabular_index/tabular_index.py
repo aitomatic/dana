@@ -202,7 +202,7 @@ class TabularIndex:
         if not self.index:
             await self.initialize()
 
-        print(f"Retrieving {num_results} results for query: {query}")
+        # print(f"Retrieving {num_results} results for query: {query}")
         nodes = await self.index.as_retriever(similarity_top_k=num_results).aretrieve(query)  # type: ignore
         return [{"text": node.text, "metadata": node.metadata} for node in nodes]
 

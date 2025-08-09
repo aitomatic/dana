@@ -1,0 +1,85 @@
+# Configuration for Dana Product Search
+# Clean, Pydantic-like struct definitions with default values
+
+
+
+# Model configuration
+struct ModelConfig:
+    model_name: str = "openai:gpt-4.1-mini"
+
+# Search configuration  
+struct SearchConfig:
+    max_results: int = 5
+    confidence_threshold: float = 0.7
+    part_search_limit: int = 3
+    vector_search_limit: int = 15
+    use_weighted_terms: bool = true
+
+# Vector store configuration
+struct VectorStoreConfig:
+    provider: str = "pgvector"
+    host: str = "localhost"
+    port: int = 5432
+    database: str = "vector_db"
+    user: str = "admin"
+    password: str = "adm!n123"
+    schema_name: str = "public"
+    table_name: str = "product_search_vectors"
+    use_halfvec: bool = false
+    hybrid_search: bool = false
+
+# Data configuration
+struct DataConfig:
+    csv_file_path: str = "examples/11_product_search/data/sample_products.csv"
+    cache_dir: str = ".cache/product_search"
+    force_reload: bool = true
+    table_name: str = "product_search_embeddings"
+
+
+# Default configuration instances
+MODEL_CONFIG = ModelConfig()
+SEARCH_CONFIG = SearchConfig()
+VECTOR_STORE_CONFIG = VectorStoreConfig()
+DATA_CONFIG = DataConfig()
+
+# Helper function to build vector store config dict
+def get_vector_store_config() -> dict:
+    return {
+        "provider": VECTOR_STORE_CONFIG.provider,
+        "storage_config": {
+            "host": VECTOR_STORE_CONFIG.host,
+            "port": VECTOR_STORE_CONFIG.port,
+            "database": VECTOR_STORE_CONFIG.database,
+            "user": VECTOR_STORE_CONFIG.user,
+            "password": VECTOR_STORE_CONFIG.password,
+            "schema_name": VECTOR_STORE_CONFIG.schema_name,
+            "table_name": VECTOR_STORE_CONFIG.table_name,
+            "use_halfvec": VECTOR_STORE_CONFIG.use_halfvec,
+            "hybrid_search": VECTOR_STORE_CONFIG.hybrid_search,
+        }
+    }
+
+# Required functions for tabular_index
+def embedding_field_constructor(row: dict) -> str:
+    return str(row)
+
+def metadata_constructor(row: dict) -> dict:
+    metadata = {
+        "data_source": row.get("data_source", ""),
+        "source_category": row.get("source_category", ""),
+        "mfr_brand": row.get("mfr_brand", ""),
+    }
+    return metadata
+
+# Helper function to build complete tabular_index config
+def get_tabular_index_config() -> dict:
+    return {
+        "source": DATA_CONFIG.csv_file_path,
+        "force_reload": DATA_CONFIG.force_reload,
+        "table_name": DATA_CONFIG.table_name,
+        "cache_dir": DATA_CONFIG.cache_dir,
+        "embedding_field_constructor": embedding_field_constructor,
+        "metadata_constructor": metadata_constructor,
+        "vector_store_config": null, # change to get_vector_store_config() if needed
+        "excluded_embed_metadata_keys": []
+    }
