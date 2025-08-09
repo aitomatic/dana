@@ -33,7 +33,7 @@ struct DataConfig:
     csv_file_path: str = "examples/11_product_search/data/sample_products.csv"
     cache_dir: str = ".cache/product_search"
     force_reload: bool = true
-    table_name: str = "product_search_embeddings"
+    table_name: str = "product_search_example"
 
 
 # Default configuration instances
@@ -80,6 +80,6 @@ def get_tabular_index_config() -> dict:
         "cache_dir": DATA_CONFIG.cache_dir,
         "embedding_field_constructor": embedding_field_constructor,
         "metadata_constructor": metadata_constructor,
-        "vector_store_config": null, # change to get_vector_store_config() if needed
+        "vector_store_config": null,
         "excluded_embed_metadata_keys": []
     }

@@ -1,101 +1,99 @@
-# Dana Product Search - Consolidated Version
+# Dana Product Search Example
 
-A streamlined, self-contained product search example demonstrating Dana's agent-native programming capabilities.
+A modular, intelligent product search system demonstrating Dana's agent-native programming capabilities with AI-enhanced query processing and ranking.
 
-## Overview
+## What It Does
 
-This consolidated version eliminates Python dependencies and showcases pure Dana implementation of an intelligent product search system with:
+This example showcases a **4-step intelligent search pipeline** that transforms natural language queries into precise product matches:
 
-- **Query Enhancement**: Uses `reason()` to extract structured information from user queries
-- **Dual Search Strategy**: Combines part number matching with vector similarity search
-- **Intelligent Ranking**: LLM-powered result ranking with confidence scoring
-- **Self-Contained**: No external databases required - uses embedded CSV data
+1. **Query Enhancement**: Uses `reason()` to extract structured information (part numbers, keywords, specifications)
+2. **Dual Search**: Combines exact part number matching with vector similarity search  
+3. **AI Ranking**: LLM-powered result selection with confidence scoring
+4. **Response Assembly**: Returns best match with reasoning and metadata
 
-## Architecture
+**Example Query**: `"Subaru sedan brake pads"` → Finds specific brake pad products for Subaru sedans with confidence scores and detailed reasoning.
 
-### Files Structure
-```
-11_single_search/
-├── search.na              # Main consolidated implementation
-├── config.na              # Configuration constants and settings
-├── prompts.na             # Separated LLM prompts
-├── data/
-│   └── sample_products.csv # Sample product data
-└── README.md              # This documentation
-```
+## Features
 
-### Key Dana Features Demonstrated
+- **Agent-Native Design**: Uses Dana's `reason()` for context-aware intelligence
+- **Modular Architecture**: Clean separation of concerns across focused modules
+- **Self-Contained**: No external databases - uses embedded CSV data via `tabular_index`
+- **Configurable**: Easily adjust search parameters, confidence thresholds, and prompts
+- **Educational**: Clear demonstration of Dana best practices and patterns
 
-1. **Agent-Native Programming**: Uses `reason()` for context-aware intelligence
-2. **Resource Management**: `use()` for tabular_index data access
-3. **Struct-Based Configuration**: Type-safe config using Dana structs
-4. **Modular Prompts**: Separated prompt functions for easy tuning
+## Quick Start
 
-## Usage
-
-### Basic Usage
-```dana
-# Run the main demo
-main()
-
-# Test individual components  
-test_enhancement()     # Test query enhancement
-test_search()          # Test search functionality
-test_full_pipeline()   # Test complete pipeline
-
-# Direct access to configuration
-from config import SEARCH_CONFIG, MODEL_CONFIG, DATA_CONFIG
-print(f"Max results: {SEARCH_CONFIG.max_results}")
+### Run the Example
+```bash
+./bin/dana examples/11_product_search/search.na
 ```
 
-### Search Examples
-```dana
-product_search("Subaru sedan brake pads")
-product_search("Honda oil filter")
-product_search("LED headlight bulbs")
+### Test Individual Components
+```bash
+# Test query enhancement only
+./bin/dana -c "from examples.11_product_search.modules.query_enhancement import enhance_query; print(enhance_query('brake pads'))"
+
+# Test search functionality  
+./bin/dana -c "from examples.11_product_search.search import test_search; test_search()"
+
+# Test full pipeline
+./bin/dana -c "from examples.11_product_search.search import test_full_pipeline; test_full_pipeline()"
+```
+
+## File Structure
+
+```
+examples/11_product_search/
+├── search.na                   # Main orchestrator (79 lines)
+├── modules/
+│   ├── query_enhancement.na    # Query processing with LLM
+│   ├── product_search.na       # Search implementation  
+│   ├── result_ranking.na       # AI-powered ranking
+│   └── data_access.na         # Data utilities
+├── config.na                  # Configuration structs
+├── prompts.na                 # LLM prompts
+├── data/sample_products.csv   # Sample automotive parts data
+└── README.md                  # This file
 ```
 
 ## Configuration
 
-Edit `config.na` struct default values to modify:
+Edit values in `config.na`:
+
 ```dana
 struct SearchConfig:
-    max_results: int = 5                    # Change this value
-    confidence_threshold: float = 0.7       # 0.0-1.0 range
-    part_search_limit: int = 3
-    vector_search_limit: int = 3
-    use_weighted_terms: bool = true
+    max_results: int = 5                    # Maximum results returned
+    confidence_threshold: float = 0.7       # Minimum confidence for best match
+    part_search_limit: int = 3              # Part number search limit
+    vector_search_limit: int = 15           # Vector similarity limit
+    use_weighted_terms: bool = true         # Use keyword weighting
 ```
 
-## Prompt Tuning
+## Example Usage
 
-Edit `prompts.na` to customize:
-- **Enhancement prompts**: Modify query analysis logic
-- **Ranking prompts**: Adjust product matching criteria
+```dana
+# Basic search
+response = product_search("Honda oil filter")
 
-## Sample Data
+# Check results
+print(f"Found {response['total_results']} results")
+print(f"Confidence: {response['confidence']}")
+if response['best_match']:
+    print(f"Best: {response['best_match']['product_name']}")
+    print(f"Part#: {response['best_match']['mfr_part_num']}")
+```
 
-The `data/sample_products.csv` contains automotive parts with columns:
-- `product_name`: Product description
-- `mfr_part_num`: Manufacturer part number
-- `mfr_brand`: Brand/manufacturer
-- `source_category`: Product category
-- `data_source`: Origin source identifier
+## Sample Queries
 
-## Benefits Over Original
+- `"Subaru sedan brake pads"` - Specific vehicle and part type
+- `"LED headlight bulbs"` - Generic part category  
+- `"Honda Civic brake pads"` - Vehicle model specific
+- `"Phillips screwdriver IRDV-BA/CA"` - Part number extraction
 
-1. **Pure Dana**: No Python dependencies - showcases Dana capabilities
-2. **Simplified**: 4 files vs 10+ in original multi-stage version
-3. **Self-Contained**: Embedded data vs external PostgreSQL requirement
-4. **Educational**: Clear Dana patterns and best practices
-5. **Maintainable**: Clean separation of config, prompts, and logic
+## Key Dana Patterns Demonstrated
 
-## Extension Ideas
-
-- Add more sophisticated part number matching patterns
-- Implement category-based filtering
-- Add price and availability data
-- Create domain-specific search strategies
-- Implement fuzzy string matching for product names
-
-This example demonstrates Dana's power for building intelligent, self-improving systems with clean, maintainable code.
+1. **Modular Imports**: Clean module organization with focused responsibilities
+2. **Context-Aware Reasoning**: `reason()` calls that adapt based on context
+3. **Resource Management**: `use("tabular_index")` for data access
+4. **Struct Configuration**: Type-safe configuration management
+5. **Pipeline Composition**: Orchestrated function composition
