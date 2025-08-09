@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from dana.agent.agent_struct_system import AgentStructInstance, AgentStructType
+from dana.agent.agent_instance import AgentType, AgentInstance
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -32,7 +32,7 @@ class TestAgentChat(unittest.TestCase):
                 memory_file = self.memory_dir / f"{agent_name}_conversation.json"
                 agent_self._conversation_memory = ConversationMemory(filepath=str(memory_file), max_turns=20)
 
-        self.init_patcher = patch.object(AgentStructInstance, "_initialize_conversation_memory", mock_init)
+        self.init_patcher = patch.object(AgentInstance, "_initialize_conversation_memory", mock_init)
         self.init_patcher.start()
 
         # Create a sandbox context for testing
@@ -51,9 +51,9 @@ class TestAgentChat(unittest.TestCase):
         if fields is None:
             fields = {"personality": "helpful"}
 
-        agent_type = AgentStructType(name=name, fields=fields, field_order=list(fields.keys()), field_comments={})
+        agent_type = AgentType(name=name, fields=fields, field_order=list(fields.keys()), field_comments={})
 
-        return AgentStructInstance(agent_type, fields)
+        return AgentInstance(agent_type, fields)
 
     def test_chat_initialization(self):
         """Test that chat functionality initializes properly."""
@@ -354,14 +354,14 @@ class TestAgentChatIntegration(unittest.TestCase):
         """Test a complete conversation flow."""
         # Mock the sandbox context to return None for LLM resource to force fallback behavior
         with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=None):
-            agent_type = AgentStructType(
+            agent_type = AgentType(
                 name="ConversationAgent",
                 fields={"role": "assistant", "domain": "general"},
                 field_order=["role", "domain"],
                 field_comments={},
             )
 
-            agent = AgentStructInstance(agent_type, {"role": "assistant", "domain": "general"})
+            agent = AgentInstance(agent_type, {"role": "assistant", "domain": "general"})
 
             # Simulate a conversation
             conversation = [
@@ -392,20 +392,20 @@ class TestAgentChatIntegration(unittest.TestCase):
         # Mock the sandbox context to return None for LLM resource to force fallback behavior
         with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=None):
             # Create specialized agent types
-            support_type = AgentStructType(
+            support_type = AgentType(
                 name="SupportAgent",
                 fields={"department": "technical", "expertise": "troubleshooting"},
                 field_order=["department", "expertise"],
                 field_comments={},
             )
 
-            sales_type = AgentStructType(
+            sales_type = AgentType(
                 name="SalesAgent", fields={"region": "north", "products": "software"}, field_order=["region", "products"], field_comments={}
             )
 
-            support_agent = AgentStructInstance(support_type, {"department": "technical", "expertise": "troubleshooting"})
+            support_agent = AgentInstance(support_type, {"department": "technical", "expertise": "troubleshooting"})
 
-            sales_agent = AgentStructInstance(sales_type, {"region": "north", "products": "software"})
+            sales_agent = AgentInstance(sales_type, {"region": "north", "products": "software"})
 
             # Test that they identify differently
             support_response_promise = support_agent.chat(self.sandbox_context, "Who are you?")

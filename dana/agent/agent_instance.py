@@ -4,7 +4,7 @@ Agent Struct System for Dana Language (Unified with Struct System)
 This module implements agent capabilities by extending the struct system.
 AgentStructType inherits from StructType, and AgentStructInstance inherits from StructInstance.
 
-Design Reference: dana/agent/.design/3d_methodology_agent_struct_unification.md
+Design Reference: dana/agent/.design/3d_methodology_base_agent_unification.md
 """
 
 from collections.abc import Callable
@@ -20,7 +20,7 @@ from dana.core.lang.sandbox_context import SandboxContext
 
 
 def default_plan_method(
-    agent_instance: "AgentStructInstance", sandbox_context: SandboxContext, task: str, user_context: dict | None = None
+    agent_instance: "AgentInstance", sandbox_context: SandboxContext, task: str, user_context: dict | None = None
 ) -> Any:
     """Default plan method for agent structs."""
     agent_fields = ", ".join(f"{k}: {v}" for k, v in agent_instance.__dict__.items() if not k.startswith("_"))
@@ -39,7 +39,7 @@ def default_plan_method(
 
 
 def default_solve_method(
-    agent_instance: "AgentStructInstance", sandbox_context: SandboxContext, problem: str, user_context: dict | None = None
+    agent_instance: "AgentInstance", sandbox_context: SandboxContext, problem: str, user_context: dict | None = None
 ) -> Any:
     """Default solve method for agent structs."""
     agent_fields = ", ".join(f"{k}: {v}" for k, v in agent_instance.__dict__.items() if not k.startswith("_"))
@@ -57,7 +57,7 @@ def default_solve_method(
     return f"Agent {agent_instance.agent_type.name} solving: {problem} (fields: {agent_fields})"
 
 
-def default_remember_method(agent_instance: "AgentStructInstance", sandbox_context: SandboxContext, key: str, value: Any) -> bool:
+def default_remember_method(agent_instance: "AgentInstance", sandbox_context: SandboxContext, key: str, value: Any) -> bool:
     """Default remember method for agent structs."""
     # Initialize memory if it doesn't exist
     try:
@@ -68,7 +68,7 @@ def default_remember_method(agent_instance: "AgentStructInstance", sandbox_conte
     return True
 
 
-def default_recall_method(agent_instance: "AgentStructInstance", sandbox_context: SandboxContext, key: str) -> Any:
+def default_recall_method(agent_instance: "AgentInstance", sandbox_context: SandboxContext, key: str) -> Any:
     """Default recall method for agent structs."""
     # Use try/except instead of hasattr to avoid sandbox restrictions
     try:
@@ -79,7 +79,7 @@ def default_recall_method(agent_instance: "AgentStructInstance", sandbox_context
 
 
 def default_chat_method(
-    agent_instance: "AgentStructInstance",
+    agent_instance: "AgentInstance",
     sandbox_context: SandboxContext,
     message: str,
     context: dict | None = None,
@@ -93,7 +93,7 @@ def default_chat_method(
 
 
 @dataclass
-class AgentStructType(StructType):
+class AgentType(StructType):
     """Agent struct type with built-in agent capabilities.
 
     Inherits from StructType and adds agent-specific functionality.
@@ -128,13 +128,13 @@ class AgentStructType(StructType):
         return name in self.agent_methods
 
 
-class AgentStructInstance(StructInstance):
+class AgentInstance(StructInstance):
     """Agent struct instance with built-in agent capabilities.
 
     Inherits from StructInstance and adds agent-specific state and methods.
     """
 
-    def __init__(self, struct_type: AgentStructType, values: dict[str, Any]):
+    def __init__(self, struct_type: AgentType, values: dict[str, Any]):
         """Create a new agent struct instance.
 
         Args:
@@ -142,7 +142,7 @@ class AgentStructInstance(StructInstance):
             values: Field values (must match struct type requirements)
         """
         # Ensure we have an AgentStructType
-        if not isinstance(struct_type, AgentStructType):
+        if not isinstance(struct_type, AgentType):
             raise TypeError(f"AgentStructInstance requires AgentStructType, got {type(struct_type)}")
 
         # Initialize the base StructInstance
@@ -155,7 +155,7 @@ class AgentStructInstance(StructInstance):
         self._llm_resource: LLMResource = None  # Lazy initialization
 
     @property
-    def agent_type(self) -> AgentStructType:
+    def agent_type(self) -> AgentType:
         """Get the agent type."""
         return self.__struct_type__  # type: ignore
 
@@ -384,20 +384,20 @@ class AgentStructInstance(StructInstance):
 # --- Agent Type Registry ---
 
 
-class AgentStructTypeRegistry:
+class AgentTypeRegistry:
     """Registry for agent struct types.
 
     Extends the existing StructTypeRegistry to handle agent types.
     """
 
     def __init__(self):
-        self._agent_types: dict[str, AgentStructType] = {}
+        self._agent_types: dict[str, AgentType] = {}
 
-    def register_agent_type(self, agent_type: AgentStructType) -> None:
+    def register_agent_type(self, agent_type: AgentType) -> None:
         """Register an agent struct type."""
         self._agent_types[agent_type.name] = agent_type
 
-    def get_agent_type(self, name: str) -> AgentStructType | None:
+    def get_agent_type(self, name: str) -> AgentType | None:
         """Get an agent struct type by name."""
         return self._agent_types.get(name)
 
@@ -405,14 +405,14 @@ class AgentStructTypeRegistry:
         """List all registered agent type names."""
         return list(self._agent_types.keys())
 
-    def create_agent_instance(self, name: str, field_values: dict[str, Any], context: SandboxContext) -> AgentStructInstance:
+    def create_agent_instance(self, name: str, field_values: dict[str, Any], context: SandboxContext) -> AgentInstance:
         """Create an agent struct instance."""
         agent_type = self.get_agent_type(name)
         if not agent_type:
             raise ValueError(f"Unknown agent type: {name}")
 
         # Create instance with field values
-        instance = AgentStructInstance(agent_type, field_values)
+        instance = AgentInstance(agent_type, field_values)
 
         return instance
 
@@ -420,15 +420,15 @@ class AgentStructTypeRegistry:
 # --- Global Registry Instance ---
 
 # Global registry for agent struct types
-agent_struct_type_registry = AgentStructTypeRegistry()
+agent_type_registry = AgentTypeRegistry()
 
 
 # --- Utility Functions ---
 
 
-def register_agent_struct_type(agent_type: AgentStructType) -> None:
+def register_agent_type(agent_type: AgentType) -> None:
     """Register an agent struct type in the global registry."""
-    agent_struct_type_registry.register_agent_type(agent_type)
+    agent_type_registry.register_agent_type(agent_type)
 
     # Also register in the struct registry so method dispatch can find it
     from dana.core.lang.interpreter.struct_system import StructTypeRegistry
@@ -436,11 +436,11 @@ def register_agent_struct_type(agent_type: AgentStructType) -> None:
     StructTypeRegistry.register(agent_type)
 
 
-def get_agent_struct_type(name: str) -> AgentStructType | None:
+def get_agent_type(name: str) -> AgentType | None:
     """Get an agent struct type from the global registry."""
-    return agent_struct_type_registry.get_agent_type(name)
+    return agent_type_registry.get_agent_type(name)
 
 
-def create_agent_struct_instance(name: str, field_values: dict[str, Any], context: SandboxContext) -> AgentStructInstance:
+def create_agent_instance(name: str, field_values: dict[str, Any], context: SandboxContext) -> AgentInstance:
     """Create an agent struct instance using the global registry."""
-    return agent_struct_type_registry.create_agent_instance(name, field_values, context)
+    return agent_type_registry.create_agent_instance(name, field_values, context)

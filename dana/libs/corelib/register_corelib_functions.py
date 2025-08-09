@@ -17,6 +17,7 @@ from pathlib import Path
 from dana.common.runtime_scopes import RuntimeScopes
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+from dana.common import DANA_LOGGER
 
 
 def register_corelib_functions(registry: FunctionRegistry) -> None:
@@ -151,6 +152,7 @@ def _register_dana_modules_via_import_system(registry: FunctionRegistry) -> list
         na_files = [f for f in na_dir.glob("*.na") if f.name != "__init__.na"]
 
         for na_file in na_files:
+            DANA_LOGGER.error(f"Registering Dana module: {na_file}")
             module_name = na_file.stem
 
             # Create a module spec
@@ -173,10 +175,14 @@ def _register_dana_modules_via_import_system(registry: FunctionRegistry) -> list
                 # Fallback: register all public attributes
                 exports_to_register = {name for name in dir(module) if not name.startswith("_")}
 
+            DANA_LOGGER.error(f"Exports to register: {exports_to_register}")
+
             # Register each exported item
             for export_name in exports_to_register:
                 if hasattr(module, export_name):
                     exported_obj = getattr(module, export_name)
+
+                    DANA_LOGGER.error(f"Registering function: {export_name}")
 
                     # Register the object directly (preserves its original type and behavior)
                     registry.register(

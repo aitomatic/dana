@@ -1,0 +1,9 @@
+agent_blueprint Person:
+    name: str = "Anon"
+    mood: str = "neutral"
+
+agent Alice(Person):
+    name = "Alice"
+    mood = "happy"
+
+_ = Alice.solve("greet") 
