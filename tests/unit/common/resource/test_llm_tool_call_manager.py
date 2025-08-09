@@ -38,7 +38,7 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
 
     def test_initialization(self):
         """Test tool call manager initialization."""
-        self.assertEqual(self.tool_manager.max_response_length, 10000)
+        self.assertEqual(self.tool_manager.max_response_length, 40000)
 
         # Test custom max response length
         custom_manager = LLMToolCallManager(max_response_length=5000)
