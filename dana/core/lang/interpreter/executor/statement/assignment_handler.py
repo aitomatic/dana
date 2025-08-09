@@ -17,9 +17,7 @@ from dana.core.lang.ast import (
     AttributeAccess,
     CompoundAssignment,
     Identifier,
-    MultipleAssignment,
     SubscriptExpression,
-    TupleLiteral,
 )
 from dana.core.lang.sandbox_context import SandboxContext
 
@@ -285,10 +283,6 @@ class AssignmentHandler(Loggable):
             # Attribute assignment: obj.attr = value
             self._execute_attribute_assignment(target, value, context)
 
-        elif isinstance(target, TupleLiteral):
-            # Nested tuple pattern: (a, b), (c, d) = value
-            self._execute_nested_tuple_assignment(target, value, context)
-
         else:
             target_type_name = type(target).__name__
             raise SandboxError(f"Unsupported assignment target type: {target_type_name}")
@@ -403,123 +397,6 @@ class AssignmentHandler(Loggable):
             obj_name = self._get_assignment_target_name(target.object)
             raise SandboxError(f"Attribute assignment to {obj_name}.{target.attribute} failed: {e}")
 
-    def _execute_nested_tuple_assignment(self, target: TupleLiteral, value: Any, context: SandboxContext) -> None:
-        """Execute nested tuple pattern assignment.
-
-        Args:
-            target: The tuple pattern (e.g., (a, b) from ((a, b), (c, d)) = data)
-            value: The value to unpack (should be a sequence)
-            context: The execution context
-        """
-        try:
-            # Unpack the value for this tuple pattern
-            unpacked_values = self._unpack_value_for_multiple_assignment(value, len(target.items))
-
-            # Recursively assign each item in the tuple pattern
-            for nested_target, nested_value in zip(target.items, unpacked_values, strict=False):
-                self._execute_assignment_by_target(nested_target, nested_value, context)
-
-        except Exception as e:
-            raise SandboxError(f"Nested tuple assignment failed: {str(e)}") from e
-
-    def execute_multiple_assignment(self, node: MultipleAssignment, context: SandboxContext) -> Any:
-        """Execute a multiple assignment statement with unpacking support.
-
-        Args:
-            node: The multiple assignment to execute
-            context: The execution context
-
-        Returns:
-            A tuple of the assigned values
-        """
-        self._assignment_count += 1
-
-        try:
-            # Evaluate the right side expression
-            if not self.parent_executor or not hasattr(self.parent_executor, "parent") or self.parent_executor.parent is None:
-                raise SandboxError("Parent executor not properly initialized")
-            value = self.parent_executor.parent.execute(node.value, context)
-
-            # Handle unpacking for different types
-            unpacked_values = self._unpack_value_for_multiple_assignment(value, len(node.targets))
-
-            # Assign each unpacked value to its corresponding target
-            for target, unpacked_value in zip(node.targets, unpacked_values, strict=False):
-                self._execute_assignment_by_target(target, unpacked_value, context)
-                self._trace_assignment(target, unpacked_value)
-
-            # Store the tuple of values as the last value for implicit return
-            result_tuple = tuple(unpacked_values)
-            context.set("system:__last_value", result_tuple)
-
-            return result_tuple
-
-        except Exception as e:
-            # Enhance error messages with context about multiple assignment
-            target_names = [self._get_assignment_target_name(target) for target in node.targets]
-            raise SandboxError(f"Multiple assignment to {', '.join(target_names)} failed: {str(e)}") from e
-
-    def _unpack_value_for_multiple_assignment(self, value: Any, expected_count: int) -> list[Any]:
-        """Unpack a value for multiple assignment with proper error handling.
-
-        Args:
-            value: The value to unpack
-            expected_count: The number of targets expecting values
-
-        Returns:
-            List of unpacked values
-
-        Raises:
-            ValueError: If unpacking fails due to count mismatch
-        """
-        # Handle tuple unpacking
-        if isinstance(value, tuple):
-            if len(value) != expected_count:
-                raise ValueError(f"not enough values to unpack (expected {expected_count}, got {len(value)})")
-            return list(value)
-
-        # Handle list unpacking
-        elif isinstance(value, list):
-            if len(value) != expected_count:
-                raise ValueError(f"not enough values to unpack (expected {expected_count}, got {len(value)})")
-            return value
-
-        # Handle set unpacking (unordered)
-        elif isinstance(value, set):
-            if len(value) != expected_count:
-                raise ValueError(f"not enough values to unpack (expected {expected_count}, got {len(value)})")
-            return list(value)
-
-        # Handle dictionary unpacking (keys only)
-        elif isinstance(value, dict):
-            keys = list(value.keys())
-            if len(keys) != expected_count:
-                raise ValueError(f"not enough values to unpack (expected {expected_count}, got {len(keys)})")
-            return keys
-
-        # Handle string unpacking (character by character)
-        elif isinstance(value, str):
-            if len(value) != expected_count:
-                raise ValueError(f"not enough values to unpack (expected {expected_count}, got {len(value)})")
-            return list(value)
-
-        # Handle iterables (try to convert to list)
-        elif hasattr(value, "__iter__") and not isinstance(value, (str, bytes)):
-            try:
-                unpacked = list(value)
-                if len(unpacked) != expected_count:
-                    raise ValueError(f"not enough values to unpack (expected {expected_count}, got {len(unpacked)})")
-                return unpacked
-            except Exception as e:
-                raise ValueError(f"Failed to unpack iterable: {str(e)}") from e
-
-        # Handle single value (can only be assigned to single target)
-        else:
-            if expected_count == 1:
-                return [value]
-            else:
-                raise ValueError(f"cannot unpack non-sequence {type(value).__name__}")
-
     def _get_assignment_target_name(self, target: Any) -> str:
         """Get a string representation of the assignment target for error messages.
 
@@ -537,9 +414,6 @@ class AssignmentHandler(Loggable):
         elif isinstance(target, AttributeAccess):
             obj_name = self._get_assignment_target_name(target.object)
             return f"{obj_name}.{target.attribute}"
-        elif isinstance(target, TupleLiteral):
-            item_names = [self._get_assignment_target_name(item) for item in target.items]
-            return f"({', '.join(item_names)})"
         else:
             return str(target)
 

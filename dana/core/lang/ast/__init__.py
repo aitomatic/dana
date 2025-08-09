@@ -65,7 +65,6 @@ Expression = Union[
 # A Statement is any node that primarily performs an action, but still produces a value.
 Statement = Union[
     "Assignment",
-    "MultipleAssignment",  # Multiple assignments like a, b = 1, 2
     "CompoundAssignment",  # Compound assignments like x += 1
     "Conditional",
     "WhileLoop",
@@ -413,9 +412,7 @@ class ListLiteral:
 class Assignment:
     """Assignment statement (e.g., x = 42, obj[key] = value, obj.attr = value). Returns the assigned value."""
 
-    target: Union[
-        Identifier, SubscriptExpression, AttributeAccess, "TupleLiteral"
-    ]  # Allow complex assignment targets including nested patterns
+    target: Identifier | SubscriptExpression | AttributeAccess  # Allow complex assignment targets
     value: Union[
         LiteralExpression,
         Identifier,
@@ -436,35 +433,6 @@ class Assignment:
         "DeclarativeFunctionDefinition",  # Added to support declarative function definitions
     ]
     type_hint: TypeHint | None = None  # For typed assignments like x: int = 42
-    location: Location | None = None
-
-
-@dataclass
-class MultipleAssignment:
-    """Multiple assignment statement (e.g., a, b = 1, 2). Returns a tuple of the assigned values."""
-
-    targets: list[
-        Union[Identifier, SubscriptExpression, AttributeAccess, "TupleLiteral"]
-    ]  # Multiple assignment targets, supports nested patterns
-    value: Union[
-        LiteralExpression,
-        Identifier,
-        BinaryExpression,
-        UnaryExpression,
-        FunctionCall,
-        ObjectFunctionCall,
-        TupleLiteral,
-        DictLiteral,
-        ListLiteral,
-        SetLiteral,
-        SubscriptExpression,
-        AttributeAccess,
-        FStringExpression,
-        "UseStatement",
-        "AgentStatement",
-        "AgentPoolStatement",
-        "DeclarativeFunctionDefinition",
-    ]
     location: Location | None = None
 
 

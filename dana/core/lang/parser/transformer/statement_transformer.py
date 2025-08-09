@@ -635,22 +635,9 @@ class StatementTransformer(BaseTransformer):
         """Transform a simple assignment rule into an Assignment node without type hint."""
         return self.assignment_transformer.simple_assignment(items)
 
-    def general_assignment(self, items):
-        """Transform a general assignment rule into either Assignment or MultipleAssignment node."""
-        return self.assignment_transformer.general_assignment(items)
-
-    def assignment_targets(self, items):
-        """Transform an assignment_targets rule into a list of targets."""
-        return self.assignment_transformer.assignment_targets(items)
-
-    def assignment_expr(self, items):
-        """Transform an assignment_expr rule into either a single expression or tuple."""
-        return self.assignment_transformer.assignment_expr(items)
-
-    def target(self, items):
-        """Transform a target rule - delegate to variable transformer or handle atom."""
-        # target: atom - just pass through the atom
-        return items[0] if items else None
+    def function_call_assignment(self, items):
+        """Transform a function_call_assignment rule into an Assignment node with object-returning statement."""
+        return self.assignment_transformer.function_call_assignment(items)
 
     def compound_assignment(self, items):
         """Transform a compound assignment rule into a CompoundAssignment node."""
