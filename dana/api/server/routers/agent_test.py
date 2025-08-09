@@ -171,7 +171,7 @@ async def test_agent(request: AgentTestRequest):
                         sandbox_context.set("system:session_id", "test-agent-creation")
                         sandbox_context.set("system:agent_instance_id", str(Path(request.folder_path).stem))
                         print(f"sandbox_context: {sandbox_context.get_scope('system')}")
-                        result = DanaSandbox.quick_run(file_path=temp_file_path, context=sandbox_context)
+                        result = DanaSandbox.execute_file_once(file_path=temp_file_path, context=sandbox_context)
 
                         # Get the response from the execution
                         if result.success and result.output:
@@ -211,7 +211,7 @@ async def test_agent(request: AgentTestRequest):
                     # Clean up temporary file
                     try:
                         if temp_file_path.exists():
-                            # temp_file_path.unlink()
+                            temp_file_path.unlink()
                             print(f"Cleaned up temporary file: {temp_file_path}")
                     except Exception as cleanup_error:
                         print(f"Warning: Failed to cleanup temporary file {temp_file_path}: {cleanup_error}")
@@ -266,7 +266,7 @@ async def test_agent(request: AgentTestRequest):
         print("--------------------------------")
         try:
             sandbox_context = SandboxContext()
-            result = DanaSandbox.quick_run(file_path=full_path, context=sandbox_context)
+            result = DanaSandbox.execute_file_once(file_path=full_path, context=sandbox_context)
 
             if not result.success:
                 # Dana execution failed, use LLM fallback

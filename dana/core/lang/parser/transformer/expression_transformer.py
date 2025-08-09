@@ -82,6 +82,16 @@ class ExpressionTransformer(BaseTransformer):
         """Set whether we're currently in a declarative function context."""
         self._in_declarative_function = in_declarative_function
 
+    def _filter_comments(self, items):
+        """Filter out COMMENT tokens from a list of items."""
+        filtered = []
+        for item in items:
+            # Skip COMMENT tokens - they should not appear in final collections
+            if isinstance(item, Token) and item.type == "COMMENT":
+                continue
+            filtered.append(item)
+        return filtered
+
     def expression(self, items):
         if not items:
             return None
@@ -648,9 +658,11 @@ class ExpressionTransformer(BaseTransformer):
         from dana.core.lang.ast import Expression, TupleLiteral
 
         flat_items = self.flatten_items(items)
+        # Filter out COMMENT tokens before processing
+        filtered_items = self._filter_comments(flat_items)
         # Ensure each item is properly cast to Expression type
         tuple_items: list[Expression] = []
-        for item in flat_items:
+        for item in filtered_items:
             expr = self.expression([item])
             tuple_items.append(cast(Expression, expr))
 
@@ -673,9 +685,11 @@ class ExpressionTransformer(BaseTransformer):
 
         # This is a regular list literal
         flat_items = self.flatten_items(items)
+        # Filter out COMMENT tokens before processing
+        filtered_items = self._filter_comments(flat_items)
         # Ensure each item is properly cast to Expression type
         list_items: list[Expression] = []
-        for item in flat_items:
+        for item in filtered_items:
             expr = self.expression([item])
             list_items.append(cast(Expression, expr))
 
@@ -693,12 +707,14 @@ class ExpressionTransformer(BaseTransformer):
 
         # This is a regular dict literal
         flat_items = self.flatten_items(items)
+        # Filter out COMMENT tokens before processing
+        filtered_items = self._filter_comments(flat_items)
         pairs = []
-        for item in flat_items:
+        for item in filtered_items:
             # Check if this individual item is a dict comprehension
             if hasattr(item, "__class__") and item.__class__.__name__ == "DictComprehension":
                 # If we have a single dict comprehension, return it directly
-                if len(flat_items) == 1:
+                if len(filtered_items) == 1:
                     return item
                 # Otherwise, this shouldn't happen - a dict literal can't contain a comprehension
                 raise ValueError("Dict literal cannot contain dict comprehension as an item")
@@ -743,13 +759,15 @@ class ExpressionTransformer(BaseTransformer):
 
         # This is a regular set literal
         flat_items = self.flatten_items(items)
+        # Filter out COMMENT tokens before processing
+        filtered_items = self._filter_comments(flat_items)
         # Ensure each item is properly cast to Expression type
         set_items: list[Expression] = []
-        for item in flat_items:
+        for item in filtered_items:
             # Check if this individual item is a set comprehension
             if hasattr(item, "__class__") and item.__class__.__name__ == "SetComprehension":
                 # If we have a single set comprehension, return it directly
-                if len(flat_items) == 1:
+                if len(filtered_items) == 1:
                     return item
                 # Otherwise, this shouldn't happen - a set literal can't contain a comprehension
                 raise ValueError("Set literal cannot contain set comprehension as an item")
@@ -818,10 +836,16 @@ class ExpressionTransformer(BaseTransformer):
         return ".".join(reversed(parts))
 
     def key_value_pair(self, items):
+        # Filter out COMMENT tokens before processing
+        filtered_items = self._filter_comments(items)
         # Always return a (key, value) tuple
-        key = self.expression([items[0]])
-        value = self.expression([items[1]])
-        return (key, value)
+        if len(filtered_items) >= 2:
+            key = self.expression([filtered_items[0]])
+            value = self.expression([filtered_items[1]])
+            return (key, value)
+        else:
+            # Handle error case with insufficient items after filtering
+            return (None, None)
 
     def expr(self, items):
         # Delegate to the main expression handler

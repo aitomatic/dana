@@ -173,9 +173,9 @@ export_stmt: "export" NAME -> export_list
 export_names: NAME ("," NAME)*
 
 assignment: typed_assignment | simple_assignment | function_call_assignment | compound_assignment
-typed_assignment: target ":" basic_type "=" expr
-simple_assignment: target "=" expr
-function_call_assignment: target "=" return_object_stmt
+typed_assignment: target ":" basic_type "=" expr [COMMENT]
+simple_assignment: target "=" expr [COMMENT]
+function_call_assignment: target "=" return_object_stmt [COMMENT]
 declarative_function_assignment: "def" NAME "(" [parameters] ")" ["->" basic_type] "=" function_composition_expr
 compound_assignment: target compound_op expr
 
@@ -400,10 +400,9 @@ tuple: "(" ")"
 set: set_comprehension
     | "{" list_items"}"
 
-list_items: expr ("," expr)* [","]
-dict_items: dict_element ("," dict_element | dict_element)* [","]
-dict_element: key_value_pair | COMMENT
-key_value_pair: expr ":" expr
+list_items: expr [COMMENT] ("," [COMMENT] expr [COMMENT])* [","]
+dict_items: key_value_pair [COMMENT] ("," [COMMENT] key_value_pair [COMMENT])* [","]
+key_value_pair: expr ":" expr [COMMENT]
 
 // ===== COMPREHENSIONS =====
 list_comprehension: "[" comprehension_body "]"
@@ -451,8 +450,8 @@ NOT_OP.2: "not"
 // AT token for decorators
 AT: "@"
 
-simple_import: "import" module_path [AS NAME]
-from_import: "from" (relative_module_path | module_path) "import" import_name_list
+simple_import: "import" module_path [AS NAME] [COMMENT]
+from_import: "from" (relative_module_path | module_path) "import" import_name_list [COMMENT]
 import_name_list: import_name ("," import_name)*
 import_name: NAME [AS NAME]
 

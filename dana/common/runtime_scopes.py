@@ -6,15 +6,27 @@ This source code is licensed under the license found in the LICENSE file in the 
 
 
 class RuntimeScopes:
-    LOCAL = ["local"]
-    LOCAL_WITH_DOT = [f"{scope}." for scope in LOCAL]
-    LOCAL_WITH_COLON = [f"{scope}:" for scope in LOCAL]
-    GLOBAL = ["private", "public", "system"]
-    GLOBAL_WITH_DOT = [f"{scope}." for scope in GLOBAL]
-    GLOBAL_WITH_COLON = [f"{scope}:" for scope in GLOBAL]
-    ALL = LOCAL + GLOBAL
-    ALL_WITH_DOT = LOCAL_WITH_DOT + GLOBAL_WITH_DOT
-    ALL_WITH_COLON = LOCAL_WITH_COLON + GLOBAL_WITH_COLON
+    LOCAL = "local"
+    SYSTEM = "system"
+    PRIVATE = "private"
+    PUBLIC = "public"
+
+    LOCALS = [LOCAL]
+    SYSTEMS = [SYSTEM]
+    PRIVATES = [PRIVATE]
+    PUBLICS = [PUBLIC]
+
+    LOCALS_WITH_DOT = [f"{scope}." for scope in LOCALS]
+    LOCALS_WITH_COLON = [f"{scope}:" for scope in LOCALS]
+
+    GLOBALS = [PRIVATE, PUBLIC, SYSTEM]
+    GLOBALS_WITH_DOT = [f"{scope}." for scope in GLOBALS]
+    GLOBALS_WITH_COLON = [f"{scope}:" for scope in GLOBALS]
+
+    ALL = LOCALS + GLOBALS
+    ALL_WITH_DOT = LOCALS_WITH_DOT + GLOBALS_WITH_DOT
+    ALL_WITH_COLON = LOCALS_WITH_COLON + GLOBALS_WITH_COLON
     ALL_WITH_SEPARATOR = ALL_WITH_DOT + ALL_WITH_COLON
-    SENSITIVE = ["private", "system"]
-    NOT_SENSITIVE = [scope for scope in ALL if scope not in ["private", "system"]]
+
+    SENSITIVE = [PRIVATE, SYSTEM]
+    NOT_SENSITIVE = [LOCAL, PUBLIC]

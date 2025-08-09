@@ -11,6 +11,7 @@ from typing import Any, cast
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi import WebSocket, WebSocketDisconnect
 
 from dana.api.client import APIClient
 from dana.common.config import ConfigLoader
@@ -19,13 +20,65 @@ from dana.common.mixins.loggable import Loggable
 from ..core.database import Base, engine
 
 
+# --- WebSocket manager for knowledge status updates ---
+class KnowledgeStatusWebSocketManager:
+    def __init__(self):
+        self.clients = set()
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.clients.add(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        self.clients.discard(websocket)
+
+    async def broadcast(self, msg):
+        to_remove = set()
+        for ws in self.clients:
+            try:
+                await ws.send_json(msg)
+            except Exception:
+                to_remove.add(ws)
+        for ws in to_remove:
+            self.clients.discard(ws)
+
+
+ws_manager = KnowledgeStatusWebSocketManager()
+
+# WebSocket endpoint
+from fastapi import APIRouter
+
+ws_router = APIRouter()
+
+
+@ws_router.websocket("/ws/knowledge-status")
+async def knowledge_status_ws(websocket: WebSocket):
+    await ws_manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()  # Keep alive
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket)
+    except Exception:
+        ws_manager.disconnect(websocket)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Handle application startup and shutdown events"""
     # Startup
+    from ..core.migrations import run_migrations
+
+    # Create base tables first
     Base.metadata.create_all(bind=engine)
+
+    # Run any pending migrations
+    run_migrations()
+
     yield
-    # Shutdown (if needed)
+
+    # Shutdown (if needed in the future)
+    pass
 
 
 def create_app():
@@ -49,11 +102,13 @@ def create_app():
     from ..routers.documents import router as new_documents_router
     from ..routers.topics import router as new_topics_router
     from ..routers.poet import router as poet_router
+    from ..routers.domain_knowledge import router as domain_knowledge_router
+    from ..routers.smart_chat import router as smart_chat_router
 
     # Legacy routers (for endpoints not yet migrated)
-    from .routers.api import router as api_router
-    from .routers.main import router as main_router
-    from .routers.agent_test import router as agent_test_router
+    from ..routers.api import router as api_router
+    from ..routers.main import router as main_router
+    from ..routers.agent_test import router as agent_test_router
 
     app.include_router(main_router)
 
@@ -64,6 +119,9 @@ def create_app():
     app.include_router(new_documents_router, prefix="/api")
     app.include_router(new_topics_router, prefix="/api")
     app.include_router(poet_router, prefix="/api")
+    app.include_router(domain_knowledge_router, prefix="/api")
+    app.include_router(smart_chat_router, prefix="/api")
+    app.include_router(ws_router)
 
     # Keep legacy api router for endpoints not yet migrated:
     # - /run-na-file - Run Dana files

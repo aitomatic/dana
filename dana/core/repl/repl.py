@@ -79,9 +79,9 @@ class REPL(Loggable):
         # Get the context from DanaSandbox
         self.context = self.sandbox._context
 
-        # Set LLM resource if provided and not already in context
-        if llm_resource is not None and not self.context.get("system:llm_resource"):
-            self.context.set("system:llm_resource", llm_resource)
+        # Set system-wide LLM resource if provided
+        if llm_resource is not None:
+            self.context.set_system_llm_resource(llm_resource)
 
         self.last_result = None
         self.transcoder = None
@@ -196,7 +196,18 @@ class REPL(Loggable):
                     break
         if tip:
             formatted.append(f"  {tip}")
-        return "\n".join(formatted)
+
+        # Don't add "Error:" prefix if the message already contains it or is a formatted error
+        result = "\n".join(formatted)
+        if "Error:" in error_msg or "=== Dana Runtime Error ===" in error_msg:
+            # If the error message already contains "Error:" or is a formatted error,
+            # just return the original error message with user input prepended
+            if user_input:
+                return f"Error:\n  Input: {user_input}\n  {error_msg}"
+            else:
+                return error_msg
+        else:
+            return result
 
     def execute(self, program_source: str, initial_context: dict[str, Any] | None = None) -> Any:
         """Execute a Dana program and return the result value.
@@ -233,7 +244,7 @@ class REPL(Loggable):
 
         # Execute using DanaSandbox
         try:
-            result = self.sandbox.eval(program_source)
+            result = self.sandbox.execute_string(program_source)
 
             if result.success:
                 # Restore any print output to the interpreter buffer so tests can access it

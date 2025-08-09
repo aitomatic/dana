@@ -1,0 +1,14 @@
+agent BasicAgent:
+    name: str = "BasicAgent"
+    description: str = "A basic agent"
+    domain: str = "general"
+    tasks: list[str] = ["Chat about things"]
+
+agent DanaAgent:
+    name: str = "DanaAgent"
+    description: str = "The Official Dana Agent"
+    domain: str = "Dana Programming Language"
+    tasks: list[str] = ["Advise on Dana"]
+
+DANA_AGENT = DanaAgent()
+BASIC_AGENT = BasicAgent()

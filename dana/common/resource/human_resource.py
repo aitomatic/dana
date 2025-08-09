@@ -10,6 +10,7 @@ Classes:
 
 from dana.common.resource.base_resource import BaseResource
 from dana.common.types import BaseRequest, BaseResponse
+from dana.common.mixins import ToolCallable
 
 
 class HumanResource(BaseResource):
@@ -65,3 +66,8 @@ class HumanResource(BaseResource):
         """
         print(f"\n{prompt}")
         return input("> ")
+
+    @ToolCallable.tool
+    async def get_feedback(self, prompt: str) -> str:
+        """Ask user for clarification. Avoid making assumptions, instead ask user for specific details."""
+        return await self._get_human_input(prompt)

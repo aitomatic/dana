@@ -9,7 +9,7 @@ import pytest
 
 from dana.common.exceptions import SandboxError
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.core.stdlib.pythonic.function_factory import PythonicFunctionFactory
+from dana.libs.stdlib.pythonic.function_factory import PythonicFunctionFactory
 
 
 @pytest.mark.deep
@@ -636,8 +636,7 @@ class TestFunctionFactoryMethods:
 
     def test_get_available_functions(self):
         """Test getting list of available functions."""
-        factory = PythonicFunctionFactory()
-        available = factory.get_available_functions()
+        available = PythonicFunctionFactory.get_available_functions()
 
         # Check that all expected functions are available
         expected_functions = [
@@ -663,11 +662,10 @@ class TestFunctionFactoryMethods:
 
     def test_get_function_info(self):
         """Test getting function information."""
-        factory = PythonicFunctionFactory()
 
         # Test getting info for each function
-        for func_name in factory.get_available_functions():
-            info = factory.get_function_info(func_name)
+        for func_name in PythonicFunctionFactory.get_available_functions():
+            info = PythonicFunctionFactory.get_function_info(func_name)
             assert "func" in info
             assert "types" in info
             assert "doc" in info
@@ -677,23 +675,21 @@ class TestFunctionFactoryMethods:
 
     def test_is_supported(self):
         """Test checking if functions are supported."""
-        factory = PythonicFunctionFactory()
 
         # Test supported functions
-        assert factory.is_supported("len")
-        assert factory.is_supported("sum")
-        assert factory.is_supported("max")
+        assert PythonicFunctionFactory.is_supported("len")
+        assert PythonicFunctionFactory.is_supported("sum")
+        assert PythonicFunctionFactory.is_supported("max")
 
         # Test unsupported functions
-        assert not factory.is_supported("eval")
-        assert not factory.is_supported("open")
-        assert not factory.is_supported("unknown_function")
+        assert not PythonicFunctionFactory.is_supported("eval")
+        assert not PythonicFunctionFactory.is_supported("open")
+        assert not PythonicFunctionFactory.is_supported("unknown_function")
 
     def test_function_info_error(self):
         """Test error handling for function info."""
-        factory = PythonicFunctionFactory()
 
         with pytest.raises(ValueError) as exc_info:
-            factory.get_function_info("unknown_function")
+            PythonicFunctionFactory.get_function_info("unknown_function")
 
         assert "Unknown function: unknown_function" in str(exc_info.value)

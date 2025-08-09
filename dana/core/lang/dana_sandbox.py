@@ -21,6 +21,7 @@ from dana.common.resource.llm.llm_resource import LLMResource
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
 from dana.core.lang.sandbox_context import SandboxContext
+from dana.core.runtime import DanaThreadPool
 
 # from dana.frameworks.poet.core.client import POETClient, set_default_client  # Removed for KISS
 
@@ -64,7 +65,6 @@ class DanaSandbox(Loggable):
     _shared_api_client: APIClient | None = None
     _shared_llm_resource: LLMResource | None = None
     _resource_users = 0  # Count of instances using shared resources
-    _pool_lock = None  # Will be initialized as threading.Lock() when needed
 
     def __init__(self, debug_mode: bool = False, context: SandboxContext | None = None, module_search_paths: list[str] | None = None):
         """
@@ -84,6 +84,11 @@ class DanaSandbox(Loggable):
 
         # Set interpreter in context
         self._context.interpreter = self._interpreter
+
+        # Add global objects from corelib registration to context
+        if hasattr(self._interpreter.function_registry, "_global_objects"):
+            for obj_name, obj in self._interpreter.function_registry._global_objects.items():
+                self._context.set(f"local:{obj_name}", obj)
 
         # Automatic lifecycle management
         self._initialized = False
@@ -128,7 +133,6 @@ class DanaSandbox(Loggable):
         try:
             # Check if we can reuse shared resources (for testing efficiency)
             if self._can_reuse_shared_resources():
-                self.debug("Reusing shared DanaSandbox resources")
                 self._use_shared_resources()
             else:
                 self.info("Initializing new DanaSandbox resources")
@@ -137,7 +141,7 @@ class DanaSandbox(Loggable):
             # TODO(#262): Temporarily disabled API context storage
             # Store in context
             # self._context.set("system:api_client", self._api_client)
-            self._context.set("system:llm_resource", self._llm_resource)
+            self._context.set_system_llm_resource(self._llm_resource)
 
             # Register started APIClient as default POET client
             # poet_client = POETClient.__new__(POETClient)  # Create without calling __init__
@@ -145,7 +149,6 @@ class DanaSandbox(Loggable):
             # set_default_client(poet_client)
 
             self._initialized = True
-            self.debug("DanaSandbox resources ready")
 
         except Exception as e:
             self.error(f"Failed to initialize DanaSandbox: {e}")
@@ -211,8 +214,6 @@ class DanaSandbox(Loggable):
         self._cleanup_called = True
 
         try:
-            self.debug("Cleaning up DanaSandbox resources")
-
             # If using shared resources, just decrement user count
             if self._using_shared:
                 DanaSandbox._resource_users = max(0, DanaSandbox._resource_users - 1)
@@ -375,6 +376,9 @@ class DanaSandbox(Loggable):
                 # Logger may be closed during process exit
                 pass
 
+        # Shutdown shared ThreadPoolExecutor
+        DanaThreadPool.get_instance().shutdown(wait=False)  # Don't wait during process exit
+
     @classmethod
     def cleanup_all(cls):
         """
@@ -403,7 +407,7 @@ class DanaSandbox(Loggable):
             and self._llm_resource is not None
         )
 
-    def run_file(self, file_path: str | Path) -> ExecutionResult:
+    def execute_file(self, file_path: str | Path) -> ExecutionResult:
         """
         Run a Dana file.
 
@@ -493,7 +497,7 @@ class DanaSandbox(Loggable):
                 final_context=self._context.copy(),
             )
 
-    def eval(self, source_code: str, filename: str | None = None) -> ExecutionResult:
+    def execute_string(self, source_code: str, filename: str | None = None) -> ExecutionResult:
         """
         Evaluate Dana source code.
 
@@ -577,7 +581,7 @@ class DanaSandbox(Loggable):
             )
 
     @classmethod
-    def quick_run(cls, file_path: str | Path, debug_mode: bool = False, context: SandboxContext | None = None) -> ExecutionResult:
+    def execute_file_once(cls, file_path: str | Path, debug_mode: bool = False, context: SandboxContext | None = None) -> ExecutionResult:
         """
         Quick run a Dana file without managing lifecycle.
 
@@ -590,10 +594,10 @@ class DanaSandbox(Loggable):
             ExecutionResult with success status and results
         """
         with cls(debug_mode=debug_mode, context=context) as sandbox:
-            return sandbox.run_file(file_path)
+            return sandbox.execute_file(file_path)
 
     @classmethod
-    def quick_eval(
+    def execute_string_once(
         cls,
         source_code: str,
         filename: str | None = None,
@@ -615,7 +619,7 @@ class DanaSandbox(Loggable):
             ExecutionResult with success status and results
         """
         with cls(debug_mode=debug_mode, context=context, module_search_paths=module_search_paths) as sandbox:
-            return sandbox.eval(source_code, filename)
+            return sandbox.execute_string(source_code, filename)
 
     def __enter__(self) -> "DanaSandbox":
         """Context manager entry - ensures initialization."""
@@ -639,11 +643,11 @@ class DanaSandbox(Loggable):
         """Public accessor for the sandbox execution context."""
         return self._context
 
-    def load_file(self, file_path: str) -> None:
+    def _deprecated_load_file(self, file_path: str) -> None:
         """Load and evaluate a Dana file in the sandbox context."""
         with open(file_path, encoding="utf-8") as f:
             source_code = f.read()
-        self.eval(source_code, filename=file_path)
+        self.execute_string(source_code, filename=file_path)
 
     @property
     def function_registry(self):

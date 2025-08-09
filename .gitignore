@@ -77,7 +77,7 @@ uploads
 dana/api/server/static/
 dana/contrib/ui/public/static/
 generated/
-agents/
+/agents/
 docs/.ai-only/ai_output/
 
 # act file
@@ -85,3 +85,6 @@ docs/.ai-only/ai_output/
 .secrets
 .secrets.example
 tasks.json
+experiments/
+
+.vscode/launch.json.backup

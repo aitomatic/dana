@@ -1,0 +1,143 @@
+# Dana Stdlib Agent Demo
+# Demonstrates core vs non-core stdlib functionality
+
+log("🚀 Dana Stdlib Agent Demo - Core vs Non-Core")
+log("=" * 50)
+
+# ============================================================================
+# 1. CORE FUNCTIONALITY (Automatically Available)
+# ============================================================================
+
+log("\n📋 1. Core Agent Functionality (No Import Required)")
+log("-" * 50)
+
+# The 'agent' function is automatically available - no import needed!
+# This is equivalent to the 'agent' keyword syntax
+
+log("✅ Creating agents using core function (automatically available)")
+
+# Create agents using the core function
+inspector = agent("QualityInspector", {
+    "domain": "semiconductor",
+    "tolerance_threshold": 0.015
+})
+
+analyst = agent("DataAnalyst", {
+    "specialization": "manufacturing",
+    "tools": ["python", "pandas", "matplotlib"]
+})
+
+log(f"✅ Created inspector: {inspector}")
+log(f"✅ Created analyst: {analyst}")
+
+# Use built-in methods (automatically available)
+log("\n🧠 Using built-in agent methods:")
+
+plan = inspector.plan("Inspect wafer batch WB-2024-001")
+log(f"📝 Inspector Plan: {plan}")
+
+solution = analyst.solve("Analyze production yield data")
+log(f"🔍 Analyst Solution: {solution}")
+
+# Memory operations (automatically available)
+inspector.remember("common_defects", ["misalignment", "surface_roughness"])
+defects = inspector.recall("common_defects")
+log(f"💾 Recalled defects: {defects}")
+
+# ============================================================================
+# 2. NON-CORE FUNCTIONALITY (Requires Explicit Import)
+# ============================================================================
+
+log("\n📦 2. Non-Core Agent Functionality (Requires Import)")
+log("-" * 50)
+
+# Import the non-core agent utilities
+import agent
+
+log("✅ Imported non-core agent utilities")
+
+# Use utility functions that require explicit import
+log("\n🔧 Using non-core utilities:")
+
+# Create agent pool
+agents = create_agent_pool("CustomerService", 3, [
+    {"domain": "billing"},
+    {"domain": "technical"},
+    {"domain": "general"}
+])
+log(f"📊 Created agent pool with {len(agents)} agents")
+
+# Use templates
+cs_agent = agent_from_template("customer_service", domain="billing")
+log(f"🎯 Created customer service agent from template: {cs_agent}")
+
+# Get metrics
+metrics = agent_metrics(inspector)
+log(f"📈 Inspector metrics: {metrics}")
+
+# ============================================================================
+# 3. COMPARISON: CORE VS NON-CORE
+# ============================================================================
+
+log("\n⚖️ 3. Core vs Non-Core Comparison")
+log("-" * 50)
+
+log("""
+CORE (Automatically Available):
+✅ agent() function - creates agents with built-in AI capabilities
+✅ Built-in methods: plan(), solve(), remember(), recall(), chat()
+✅ No import statement required
+✅ Always available in every Dana program
+
+NON-CORE (Requires Explicit Import):
+📦 import agent - imports utility functions and templates
+📦 create_agent_pool() - create multiple agents for parallel processing
+📦 agent_from_template() - use pre-built agent templates
+📦 load_agent_config() / save_agent_config() - configuration management
+📦 agent_benchmark() / agent_metrics() - performance analysis
+📦 Must be explicitly imported with: import agent
+""")
+
+# ============================================================================
+# 4. PRACTICAL EXAMPLE
+# ============================================================================
+
+log("\n🎯 4. Practical Example: Manufacturing Quality System")
+log("-" * 50)
+
+# Core functionality - always available
+quality_agent = agent("QualityAgent", {
+    "process": "etching",
+    "tolerance": 0.02,
+    "shift": "day"
+})
+
+# Use built-in AI capabilities
+quality_plan = quality_agent.plan("Implement SPC monitoring for etching process")
+log(f"📋 Quality Plan: {quality_plan}")
+
+# Non-core functionality - requires import
+if hasattr(globals(), 'create_agent_pool'):
+    # Create a team of quality agents for different processes
+    quality_team = create_agent_pool("QualityAgent", 4, [
+        {"process": "etching", "shift": "day"},
+        {"process": "deposition", "shift": "day"},
+        {"process": "lithography", "shift": "night"},
+        {"process": "cleaning", "shift": "night"}
+    ])
+    
+    log(f"👥 Created quality team with {len(quality_team)} agents")
+    
+    # Benchmark the team
+    benchmark_tasks = [
+        "Analyze process data",
+        "Identify quality issues", 
+        "Recommend improvements"
+    ]
+    
+    for i, agent in enumerate(quality_team):
+        results = agent_benchmark(agent, benchmark_tasks)
+        log(f"📊 Agent {i+1} benchmark: {results['success_rate']:.1%} success rate")
+
+log("\n✅ Demo completed! Core agent functionality is always available,")
+log("   while advanced utilities require explicit imports.") 

@@ -18,7 +18,7 @@ class TestEagerPromiseTransparency:
     def test_basic_value_transparency(self):
         """Test basic value transparency - EagerPromise should behave like the actual value."""
         # Simple function that returns a value
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def simple_function():
     return 42
 
@@ -35,7 +35,7 @@ result = simple_function()
 
     def test_string_transparency(self):
         """Test string value transparency."""
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def string_function():
     return "hello world"
 
@@ -53,7 +53,7 @@ result = string_function()
 
     def test_boolean_transparency(self):
         """Test boolean value transparency."""
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def boolean_function():
     return True
 
@@ -61,14 +61,14 @@ result = boolean_function()
 """)
 
         assert result.success
-        assert result.result == True  # Equality (not identity) - noqa: E712
-        assert result.result != False  # Inequality - noqa: E712
+        assert result.result is True  # Equality (not identity) - noqa: E712
+        assert result.result is not False  # Inequality - noqa: E712
         assert bool(result.result)  # Boolean conversion
         # Note: result.result is True would fail (identity check)
 
     def test_list_transparency(self):
         """Test list value transparency."""
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def list_function():
     return [1, 2, 3, 4, 5]
 
@@ -85,7 +85,7 @@ result = list_function()
 
     def test_dict_transparency(self):
         """Test dictionary value transparency."""
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def dict_function():
     return {"name": "Alice", "age": 30, "city": "New York"}
 
@@ -103,7 +103,7 @@ result = dict_function()
 
     def test_arithmetic_transparency(self):
         """Test arithmetic operation transparency."""
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def number_function():
     return 10
 
@@ -120,7 +120,7 @@ result = number_function()
 
     def test_function_call_transparency(self):
         """Test that EagerPromise can be passed to functions transparently."""
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def value_function():
     return 42
 
@@ -136,7 +136,7 @@ result = test_function(value)
 
     def test_nested_function_transparency(self):
         """Test transparency with nested function calls."""
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def inner_function():
     return 21
 
@@ -151,7 +151,7 @@ result = outer_function()
 
     def test_error_transparency(self):
         """Test that errors are properly propagated through EagerPromise."""
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def error_function():
     return "This is a test"  # Changed to avoid ValueError not found issue
 
@@ -164,7 +164,7 @@ result = error_function()
 
     def test_complex_object_transparency(self):
         """Test transparency with complex objects."""
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def complex_function():
     return {
         "numbers": [1, 2, 3, 4, 5],
@@ -182,7 +182,7 @@ result = complex_function()
 
     def test_type_transparency(self):
         """Test that type checking works correctly."""
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def type_test_function():
     return "test string"
 
@@ -198,7 +198,7 @@ result = type_test_function()
 
     def test_identity_vs_equality(self):
         """Test that identity checks fail but equality works."""
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def identity_test_function():
     return [1, 2, 3]
 
@@ -216,7 +216,7 @@ result = identity_test_function()
 
     def test_method_chaining_transparency(self):
         """Test that method chaining works transparently."""
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def method_chain_function():
     return "  hello world  "
 
@@ -229,7 +229,7 @@ result = method_chain_function()
 
     def test_comparison_operations(self):
         """Test all comparison operations."""
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def comparison_function():
     return 15
 
@@ -246,7 +246,7 @@ result = comparison_function()
 
     def test_boolean_operations(self):
         """Test boolean operations."""
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def boolean_ops_function():
     return True
 
@@ -260,7 +260,7 @@ result = boolean_ops_function()
 
     def test_string_operations(self):
         """Test string-specific operations."""
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def string_ops_function():
     return "hello"
 
@@ -275,7 +275,7 @@ result = string_ops_function()
 
     def test_list_operations(self):
         """Test list-specific operations."""
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def list_ops_function():
     return [1, 2, 3]
 
@@ -290,7 +290,7 @@ result = list_ops_function()
 
     def test_dict_operations(self):
         """Test dictionary-specific operations."""
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def dict_ops_function():
     return {"a": 1, "b": 2}
 
@@ -306,7 +306,7 @@ result = dict_ops_function()
 
     def test_numeric_operations(self):
         """Test numeric-specific operations."""
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def numeric_ops_function():
     return 10.5
 
@@ -325,7 +325,7 @@ result = numeric_ops_function()
 
     def test_complex_nested_transparency(self):
         """Test transparency with complex nested operations."""
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def complex_nested_function():
     return {
         "data": [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}],
@@ -345,7 +345,7 @@ result = complex_nested_function()
 
     def test_edge_cases(self):
         """Test edge cases for transparency."""
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def edge_case_function():
     return None
 
@@ -355,11 +355,11 @@ result = edge_case_function()
         assert result.success
         # Identity doesn't work with EagerPromise (expected limitation)
         # assert result.result is None  # This fails - EagerPromise[None] is not None
-        assert result.result == None  # None should work with equality - noqa: E711
+        assert result.result is None  # None should work with equality - noqa: E711
 
     def test_empty_collections(self):
         """Test transparency with empty collections."""
-        result = self.sandbox.eval("""
+        result = self.sandbox.execute_string("""
 def empty_collections_function():
     return {"list": [], "dict": {}, "string": ""}
 

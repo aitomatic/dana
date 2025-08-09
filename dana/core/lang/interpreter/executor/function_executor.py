@@ -21,6 +21,7 @@ import logging
 from typing import Any
 
 from dana.common.exceptions import SandboxError
+from dana.common.runtime_scopes import RuntimeScopes
 from dana.core.lang.ast import (
     AttributeAccess,
     FStringExpression,
@@ -123,11 +124,8 @@ class FunctionExecutor(BaseExecutor):
 
         # Check if this function should be associated with an agent type
         # Import here to avoid circular imports
-        # Temporarily commented out during migration to unified struct system
-        # from dana.agent.agent_system import register_agent_method_from_function_def
-
-        # Try to register as agent method if first parameter is an agent type
-        # register_agent_method_from_function_def(node, dana_func)
+        # Agent method registration disabled during struct system migration
+        # TODO: Re-enable after unified struct system is complete
 
         # Apply decorators if present
         if node.decorators:
@@ -257,20 +255,34 @@ class FunctionExecutor(BaseExecutor):
         """Resolve a decorator to a callable function."""
         decorator_name = decorator.name
 
-        # Try function registry first (most common case)
-        if self.function_registry and self.function_registry.has(decorator_name, "core"):
-            func, _, _ = self.function_registry.resolve(decorator_name, "core")
-            return func
+        # Try function registry first - search all namespaces systematically
+        if self.function_registry:
+            # Search all available namespaces in order of preference
+            namespaces_to_check = RuntimeScopes.ALL
 
-        # Try local context
-        try:
-            local_func = context.get(f"local:{decorator_name}")
-            if callable(local_func):
-                return local_func
-        except Exception:
-            pass
+            for namespace in namespaces_to_check:
+                if self.function_registry.has(decorator_name, namespace):
+                    func, _, _ = self.function_registry.resolve(decorator_name, namespace)
+                    return func
 
-        # Try global context
+            # Fallback: search without specifying namespace (searches all namespaces)
+            if self.function_registry.has(decorator_name):
+                func, _, _ = self.function_registry.resolve(decorator_name)
+                return func
+
+        # Try context lookups - search all scopes systematically
+        context_scopes = RuntimeScopes.ALL
+
+        for scope in context_scopes:
+            try:
+                # Try scoped lookup: local:decorator_name
+                scoped_func = context.get(f"{scope}:{decorator_name}")
+                if callable(scoped_func):
+                    return scoped_func
+            except Exception:
+                pass
+
+        # Try global context (no scope prefix)
         try:
             global_func = context.get(decorator_name)
             if callable(global_func):
@@ -300,7 +312,7 @@ class FunctionExecutor(BaseExecutor):
             return value
 
         # Special handling for Promise objects - DO NOT resolve them (for lazy evaluation)
-        from dana.core.runtime.promise import is_promise
+        from dana.core.concurrency import is_promise
 
         if is_promise(value):
             self.debug(f"Found Promise object in _ensure_fully_evaluated, keeping as Promise: {type(value)}")
@@ -348,10 +360,8 @@ class FunctionExecutor(BaseExecutor):
 
         # Phase 2: Process arguments
         evaluated_args, evaluated_kwargs = self.__process_arguments(node, context)
-        self.debug(f"Processed arguments: args={evaluated_args}, kwargs={evaluated_kwargs}")
 
         # Phase 2.5: Check for struct instantiation
-        self.debug("Checking for struct instantiation...")
         # Phase 2.5: Handle method calls (AttributeAccess) before other processing
         from dana.core.lang.ast import AttributeAccess
 
@@ -362,8 +372,6 @@ class FunctionExecutor(BaseExecutor):
         if struct_result is not None:
             self.debug(f"Found struct instantiation, returning: {struct_result}")
             return struct_result
-
-        self.debug("Not a struct instantiation, proceeding with function resolution...")
 
         # Phase 3: Handle special cases before unified dispatcher
         from dana.core.lang.ast import SubscriptExpression
@@ -709,14 +717,9 @@ class FunctionExecutor(BaseExecutor):
         if StructTypeRegistry.exists(base_name):
             try:
                 # Resolve any promises in the kwargs before struct instantiation
-                resolved_kwargs = {}
-                from dana.core.concurrency import BasePromise
+                from dana.core.concurrency import resolve_if_promise
 
-                for key, value in evaluated_kwargs.items():
-                    if isinstance(value, BasePromise):
-                        resolved_kwargs[key] = value._ensure_resolved()
-                    else:
-                        resolved_kwargs[key] = value
+                resolved_kwargs = {key: resolve_if_promise(value) for key, value in evaluated_kwargs.items()}
 
                 self.debug(f"Creating struct instance for {base_name} with resolved kwargs: {resolved_kwargs}")
                 # Create struct instance using our utility function
@@ -873,8 +876,7 @@ class FunctionExecutor(BaseExecutor):
     ) -> Any:
         """Execute a function call where the function name is a string representation of a SubscriptExpression.
 
-        This handles cases where the function name is a string like:
-        "SubscriptExpression(object=Identifier(name='FUNCS_FOR_TEST'), index=Identifier(name='func_name'))"
+        This handles cases where the function name is a string representation of a SubscriptExpression.
 
         Args:
             node: The function call node with string representation of SubscriptExpression as name
@@ -890,7 +892,7 @@ class FunctionExecutor(BaseExecutor):
         """
         try:
             # Parse the string representation to extract the object and index
-            # Format: "SubscriptExpression(object=Identifier(name='FUNCS_FOR_TEST'), index=Identifier(name='func_name'))"
+            # Parse string representation of SubscriptExpression
             name_str = str(node.name)
 
             # More robust parsing with error handling
@@ -957,10 +959,9 @@ class FunctionExecutor(BaseExecutor):
             object_value = self.parent.execute(Identifier(name=object_name), context)
 
             # Resolve Promise if object_value is a Promise (for dual delivery system)
-            from dana.core.concurrency import BasePromise
+            from dana.core.concurrency import resolve_if_promise
 
-            if isinstance(object_value, BasePromise):
-                object_value = object_value._ensure_resolved()
+            object_value = resolve_if_promise(object_value)
 
             # For LiteralExpression, we need to handle the value directly
             if index_name is not None and index_name.startswith("'") and index_name.endswith("'"):

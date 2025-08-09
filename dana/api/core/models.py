@@ -72,3 +72,13 @@ class Message(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
     conversation = relationship("Conversation", back_populates="messages")
+
+
+class AgentChatHistory(Base):
+    __tablename__ = "agent_chat_history"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    agent_id = Column(Integer, ForeignKey("agents.id"), nullable=False, index=True)
+    sender = Column(String, nullable=False)  # 'user' or 'agent'
+    text = Column(Text, nullable=False)
+    type = Column(String, nullable=False, default="chat_with_dana_build")
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))

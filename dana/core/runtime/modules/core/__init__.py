@@ -32,6 +32,8 @@ def initialize_module_system(search_paths: list[str] | None = None) -> None:
         search_paths = [
             str(Path.cwd()),  # Current directory
             str(Path.cwd() / "dana"),  # ./dana directory
+            str(Path(__file__).parent.parent.parent.parent / "libs" / "corelib"),  # dana/libs/corelib
+            str(Path(__file__).parent.parent.parent.parent / "libs" / "stdlib"),  # dana/libs/stdlib
         ]
 
         # Add paths from DANAPATH environment variable

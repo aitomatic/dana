@@ -189,7 +189,7 @@ def test_unified_interpreter_execution_comprehensive():
             Assignment(target=Identifier("local:a"), value=LiteralExpression(10)),
             Assignment(target=Identifier("local:b"), value=LiteralExpression(20)),
             Assignment(
-                target=Identifier("local:sum"),
+                target=Identifier("system:sum"),
                 value=BinaryExpression(left=Identifier("local:a"), operator=BinaryOperator.ADD, right=Identifier("local:b")),
             ),
         ]
@@ -198,7 +198,7 @@ def test_unified_interpreter_execution_comprehensive():
     assert result == 30  # Result of last statement
     assert context.get("local:a") == 10
     assert context.get("local:b") == 20
-    assert context.get("local:sum") == 30
+    assert context.get("system:sum") == 30
 
     # Test 5: Complex expression evaluation
     complex_expr = BinaryExpression(

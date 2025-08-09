@@ -69,6 +69,8 @@ body {
   line-height: 1.4rem;
   color: var(--md-default-fg-color);
   background-color: var(--md-default-bg-color);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Ensure content background is also set */

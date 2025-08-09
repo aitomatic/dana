@@ -80,35 +80,6 @@ export const useAgentStore = create<AgentState>((set) => ({
     }
   },
 
-  deployAgent: async (deployRequest: {
-    name: string;
-    description: string;
-    config: Record<string, any>;
-    dana_code?: string;
-    multi_file_project?: any;
-  }) => {
-    set({ isCreating: true, error: null });
-
-    try {
-      const response = await apiService.deployAgent(deployRequest);
-      if (response.success && response.agent) {
-        set((state) => ({
-          agents: [...state.agents, response.agent!],
-          isCreating: false,
-        }));
-        return response.agent;
-      } else {
-        throw new Error(response.error || 'Deployment failed');
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to deploy agent';
-      set({
-        isCreating: false,
-        error: errorMessage,
-      });
-      throw error;
-    }
-  },
 
   updateAgent: async (agentId: number, agent: AgentCreate) => {
     set({ isUpdating: true, error: null });

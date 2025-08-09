@@ -9,6 +9,7 @@ MIT License
 """
 
 import json
+import uuid
 from typing import Any, cast
 
 from dana.common.mixins.loggable import Loggable
@@ -140,6 +141,12 @@ class LLMToolCallManager(Loggable):
                 # Get the function object (can be object or dict)
                 function_obj = Misc.get_field(tool_call, "function")
                 tool_call_id = Misc.get_field(tool_call, "id")
+
+                # Ensure tool_call_id is never None
+                if tool_call_id is None:
+                    tool_call_id = "fallback_" + str(uuid.uuid4())[:8]
+                    self.warning(f"Tool call missing ID, generated fallback ID: {tool_call_id}")
+
                 if not function_obj:
                     self.error("Invalid tool call structure: missing function object")
                     continue
@@ -180,7 +187,9 @@ class LLMToolCallManager(Loggable):
                 response = f"Tool call failed: {str(e)}"
                 self.error(response)
                 function_name = "unknown"
-                tool_call_id = None
+                # Ensure tool_call_id is never None for tool messages
+                if tool_call_id is None:
+                    tool_call_id = "error_" + str(uuid.uuid4())[:8]
 
             responses.append({"role": "tool", "name": function_name, "content": response, "tool_call_id": tool_call_id})
 
