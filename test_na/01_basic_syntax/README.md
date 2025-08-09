@@ -144,7 +144,7 @@ All Phase 1 tests are working correctly with:
 ## Known Limitations
 
 ### Current Issues
-- **Typed assignment with function calls** (in `test_typed_assignments.na`): assigning the result of a function that returns an EagerPromise to a typed variable is not supported. Coercion from `EagerPromise[T]` to `T` does not occur implicitly.
+- ~~**Typed assignment with function calls** (in `test_typed_assignments.na`): assigning the result of a function that returns an EagerPromise to a typed variable is not supported. Coercion from `EagerPromise[T]` to `T` does not occur implicitly.~~
 - **F-string formatting specifiers** (in `test_data_types_literals.na`): format spec like `{pi:.2f}` is not supported.
 - **Nested/complex f-strings** (in `test_data_types_literals.na`): expressions using helpers like `map()` or `join()` inside f-strings are not supported.
 - **`repr()`-based assertions** (in `test_data_types_literals.na`): `repr()` is not supported for string escape verification.

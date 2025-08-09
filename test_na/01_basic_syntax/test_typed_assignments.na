@@ -55,14 +55,12 @@ assert result == 11, f"Expected 11, got {result}"
 log("✅ Typed assignment with expressions works")
 
 # # Test 11: Typed assignment with function calls
-# [NOT SUPPORTED YET] -  Error: SandboxError - Assignment to 'typed_result' failed: cannot coerce value 'EagerPromise[42]' to type 'int': Cannot safely coerce 
-# EagerPromise to int
-# def get_value() -> int:
-#     return 42
+def get_value() -> int:
+    return 42
 
-# typed_result: int = get_value()
-# assert typed_result == 42, f"Expected 42, got {typed_result}"
-# log("✅ Typed assignment with function calls works")
+typed_result: int = get_value()
+assert typed_result == 42, f"Expected 42, got {typed_result}"
+log("✅ Typed assignment with function calls works")
 
 # Test 12: Typed assignment with complex expressions
 complex_result: float = (3.14 * 2) + 1.5

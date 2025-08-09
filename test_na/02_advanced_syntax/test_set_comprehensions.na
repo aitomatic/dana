@@ -45,13 +45,13 @@ log("✅ Set comprehension with tuple unpacking works")
 # assert complex_filter == {0, 6, 12, 18}, f"Expected {0, 6, 12, 18}, got {complex_filter}"
 # log("✅ Set comprehension with multiple conditions works")
 
-# Test 8: Set comprehension with function calls - [NOT SUPPORTED YET] EagerPromise is not resolved in the comprehension for now
-# def square(x: int) -> int:
-#     return x * x
+# Test 8: Set comprehension with function calls
+def square(x: int) -> int:
+    return x * x
 
-# squared_values = {square(x) for x in [1, 2, 3, 4]}
-# assert squared_values == {1, 4, 9, 16}, f"Expected {1, 4, 9, 16}, got {squared_values}"
-# log("✅ Set comprehension with function calls works")
+squared_values = {square(x) for x in [1, 2, 3, 4]}
+assert squared_values == {1, 4, 9, 16}, f"Expected {1, 4, 9, 16}, got {squared_values}"
+log("✅ Set comprehension with function calls works")
 
 # Test 9: Set comprehension with type checking
 mixed_data = [1, "hello", 3.14, true, [1, 2, 3]]
