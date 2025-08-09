@@ -102,7 +102,7 @@ def _preload_corelib_functions():
         # This avoids the need for deferred registration
         import dana.core.lang.interpreter.functions.function_registry as registry_module
 
-        registry_module._preloaded_corelib_functions = temp_registry._functions.copy()
+        registry_module._preloaded_functions = temp_registry._functions.copy()
 
     except Exception as e:
         # Log error but don't fail startup - corelib functions will be loaded normally

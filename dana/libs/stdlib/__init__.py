@@ -16,8 +16,21 @@ This package provides implementations of core Dana functions including:
 - Math and utility functions
 """
 
-# Import infrastructure components from interpreter
-from dana.core.lang.interpreter.functions.dana_function import DanaFunction
-from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
+#
+# Just make sure this module path is in DANA_PATH
+#
+import os
+from pathlib import Path
 
-__all__ = ["FunctionRegistry", "DanaFunction"]
+
+def _ensure_stdlib_in_danapath():
+    """Ensure stdlib is in DANA_PATH for on-demand loading."""
+    stdlib_path = str(Path(__file__).parent.resolve())
+    danapath = os.environ.get("DANA_PATH", "")
+    paths = [p for p in danapath.split(os.pathsep) if p]
+    if stdlib_path not in paths:
+        paths.append(stdlib_path)
+        os.environ["DANA_PATH"] = os.pathsep.join(paths)
+
+
+_ensure_stdlib_in_danapath()

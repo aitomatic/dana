@@ -17,10 +17,8 @@ from dana.core.lang.ast import (
     AgentPoolStatement,
     AgentStatement,
     BaseAgentSingletonDefinition,
-    ExportStatement,
     FunctionDefinition,
     SingletonAgentDefinition,
-    StructDefinition,
     UseStatement,
 )
 from dana.core.lang.sandbox_context import SandboxContext
@@ -70,6 +68,7 @@ class AgentHandler(Loggable):
 
         # Set target name for agent
         target = node.target
+        target_name = "anonymous"
         if target is not None:
             target_name = target.name if hasattr(target, "name") else str(target)
             kwargs["_name"] = target_name
@@ -111,6 +110,7 @@ class AgentHandler(Loggable):
 
         # Set target name for agent pool
         target = node.target
+        target_name = "anonymous"
         if target is not None:
             target_name = target.name if hasattr(target, "name") else str(target)
             kwargs["_name"] = target_name
@@ -148,6 +148,7 @@ class AgentHandler(Loggable):
 
         # Set target name for resource
         target = node.target
+        target_name = "anonymous"
         if target is not None:
             target_name = target.split(".")[-1] if isinstance(target, str) else (target.name if hasattr(target, "name") else str(target))
             kwargs["_name"] = target_name
@@ -164,84 +165,7 @@ class AgentHandler(Loggable):
 
         return result
 
-    def execute_export_statement(self, node: ExportStatement, context: SandboxContext) -> None:
-        """Execute an export statement with optimized processing.
-
-        Args:
-            node: The export statement node
-            context: The execution context
-
-        Returns:
-            None
-        """
-        # Get the name to export
-        name = node.name
-
-        # Get the value from the local scope (validation step)
-        try:
-            context.get_from_scope(name, scope="local")
-        except Exception:
-            # If the value doesn't exist yet, that's okay - it might be defined later
-            pass
-
-        # Add to exports efficiently
-        if not hasattr(context, "_exports"):
-            context._exports = set()
-        context._exports.add(name)
-
-        # Trace export operation
-        self._trace_resource_operation("export", name, 0, 0)
-
-        # Return None since export statements don't produce a value
-        return None
-
-    def execute_struct_definition(self, node: StructDefinition, context: SandboxContext) -> None:
-        """Execute a struct definition statement with optimized processing.
-
-        Args:
-            node: The struct definition node
-            context: The execution context
-
-        Returns:
-            None (struct definitions don't produce a value, they register a type)
-        """
-        # Import here to avoid circular imports
-        from dana.core.lang.interpreter.struct_system import StructTypeRegistry, create_struct_type_from_ast
-
-        # Create the struct type and evaluate default values
-        try:
-            struct_type = create_struct_type_from_ast(node)
-
-            # Evaluate default values in the current context
-            if struct_type.field_defaults:
-                evaluated_defaults = {}
-                for field_name, default_expr in struct_type.field_defaults.items():
-                    try:
-                        # Evaluate the default value expression
-                        default_value = self.parent_executor.parent.execute(default_expr, context)
-                        evaluated_defaults[field_name] = default_value
-                    except Exception as e:
-                        raise SandboxError(f"Failed to evaluate default value for field '{field_name}': {e}")
-                struct_type.field_defaults = evaluated_defaults
-
-            # Register the struct type
-            StructTypeRegistry.register(struct_type)
-            self.debug(f"Registered struct type: {struct_type.name}")
-
-            # Register struct constructor function in the context
-            # This allows `instance = MyStruct(field1=value1, field2=value2)` syntax
-            def struct_constructor(**kwargs):
-                return StructTypeRegistry.create_instance(struct_type.name, kwargs)
-
-            context.set(f"local:{node.name}", struct_constructor)
-
-            # Trace struct registration
-            self._trace_resource_operation("struct", node.name, len(node.fields), 0)
-
-        except Exception as e:
-            raise SandboxError(f"Failed to register struct {node.name}: {e}")
-
-        return None
+    # Note: export and struct definition responsibilities moved to dedicated handlers
 
     def execute_agent_definition(self, node: AgentDefinition, context: SandboxContext) -> None:
         """
@@ -270,7 +194,7 @@ class AgentHandler(Loggable):
                 fields=fields,
                 field_order=field_order,
                 field_comments={},
-                field_defaults=field_defaults or None,
+                field_defaults=field_defaults or {},
                 docstring=getattr(node, "docstring", None),
             )
 
@@ -320,7 +244,7 @@ class AgentHandler(Loggable):
                     name=node.alias_name,
                     fields=dict(getattr(blueprint_type, "fields", {})),
                     field_order=list(getattr(blueprint_type, "field_order", [])),
-                    field_defaults=dict(merged_defaults) if merged_defaults else None,
+                    field_defaults=dict(merged_defaults) if merged_defaults else {},
                     field_comments=dict(getattr(blueprint_type, "field_comments", {})),
                 )
                 # Inherit agent methods and capabilities

@@ -595,10 +595,11 @@ class ImportStatement:
 
 @dataclass
 class ImportFromStatement:
-    """From-import statement (e.g., from math import sqrt)."""
+    """From-import statement (e.g., from math import sqrt or from math import *)."""
 
     module: str
     names: list[tuple[str, str | None]]
+    is_star_import: bool = False
     location: Location | None = None
 
 

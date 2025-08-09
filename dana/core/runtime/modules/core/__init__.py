@@ -27,13 +27,16 @@ def initialize_module_system(search_paths: list[str] | None = None) -> None:
     """
     global _module_registry, _module_loader
 
+    import dana as dana_module
+
+    dana_module_path = Path(dana_module.__file__).parent
     # Set up default search paths
     if search_paths is None:
         search_paths = [
+            str(dana_module_path / "libs" / "stdlib"),
             str(Path.cwd()),  # Current directory
             str(Path.cwd() / "dana"),  # ./dana directory
-            str(Path(__file__).parent.parent.parent.parent / "libs" / "corelib"),  # dana/libs/corelib
-            str(Path(__file__).parent.parent.parent.parent / "libs" / "stdlib"),  # dana/libs/stdlib
+            str(Path.home() / ".dana" / "libs"),
         ]
 
         # Add paths from DANAPATH environment variable
@@ -52,8 +55,11 @@ def initialize_module_system(search_paths: list[str] | None = None) -> None:
 
 def get_module_registry() -> ModuleRegistry:
     """Get the global module registry instance."""
+    global _module_registry
     if _module_registry is None:
-        raise ModuleError("Module system not initialized. Call initialize_module_system() first.")
+        initialize_module_system()
+        # After initialization, the registry must be set
+        assert _module_registry is not None
     return _module_registry
 
 
