@@ -1,135 +1,104 @@
-"""A comprehensive import-and-access smoke test for Dana's importing system.
+import pkg
+from pkg import I_AM as PKG
 
-This script intentionally exercises:
-- package-level imports and aliasing
-- namespace subpackages (no __init__.na)
-- subpackages with empty and non-empty __init__.na
-- re-exports via pkg/__init__.na
-- nested attribute access through module objects
-- top-level standalone module imports
+from pkg import big_namespace_submodule
+from pkg.big_namespace_submodule import submodule as small_submodule_in_big_namespace_submodule
+from pkg.big_namespace_submodule.small_submodule import I_AM as SMALL_SUBMODULE_IN_BIG_NAMESPACE_SUBMODULE
 
-Note: avoids cross-imports between big submodules to prevent circular import patterns.
-"""
+from pkg import big_submodule_with_empty_init
+from pkg.big_submodule_with_empty_init import submodule as small_submodule_in_big_submodule_with_empty_init
+from pkg.big_submodule_with_empty_init.small_submodule import I_AM as SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_EMPTY_INIT
 
-# --- Top-level package imports and aliasing
-import pkg as P
-from pkg import I_AM as PKG_I_AM
-from pkg import (
-  big_namespace_submodule as BNS,
-  big_submodule_with_empty_init as BSE,
-  big_submodule_with_nonempty_init as BSN,
-  util_submodule as UTIL,
-)
+from pkg import big_submodule_with_nonempty_init
+from pkg.big_submodule_with_nonempty_init import I_AM as BIG_SUBMODULE_WITH_NONEMPTY_INIT
+from pkg.big_submodule_with_nonempty_init import submodule as small_submodule_in_big_submodule_with_nonempty_init
+from pkg.big_submodule_with_nonempty_init.small_submodule import I_AM as SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_NONEMPTY_INIT
 
-print(f"PKG_I_AM: {PKG_I_AM}")
-print(f"P.I_AM: {P.I_AM}")
+from pkg import util_submodule
+from pkg.util_submodule import submodule as small_submodule_in_util_submodule
+from pkg.util_submodule.small_submodule import I_AM as SMALL_SUBMODULE_IN_UTIL_SUBMODULE
 
-# --- Re-exports exposed by pkg/__init__.na
-from pkg import (
-  small_submodule_in_big_namespace_submodule as PKG_BNS_SMALL,
-  SMALL_SUBMODULE_IN_BIG_NAMESPACE_SUBMODULE as PKG_BNS_SMALL_I_AM,
-  small_submodule_in_big_submodule_with_empty_init as PKG_BSE_SMALL,
-  SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_EMPTY_INIT as PKG_BSE_SMALL_I_AM,
-  BIG_SUBMODULE_WITH_NONEMPTY_INIT as PKG_BSN_I_AM,
-  small_submodule_in_big_submodule_with_nonempty_init as PKG_BSN_SMALL,
-  SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_NONEMPTY_INIT as PKG_BSN_SMALL_I_AM,
-  small_submodule_in_util_submodule as PKG_UTIL_SMALL,
-  SMALL_SUBMODULE_IN_UTIL_SUBMODULE as PKG_UTIL_SMALL_I_AM,
-)
 
-print(f"PKG_BNS_SMALL: {PKG_BNS_SMALL}")
-print(f"PKG_BNS_SMALL.I_AM: {PKG_BNS_SMALL.I_AM}")
-print(f"PKG_BNS_SMALL_I_AM: {PKG_BNS_SMALL_I_AM}")
+I_AM = 'a script'
 
-print(f"PKG_BSE_SMALL: {PKG_BSE_SMALL}")
-print(f"PKG_BSE_SMALL.I_AM: {PKG_BSE_SMALL.I_AM}")
-print(f"PKG_BSE_SMALL_I_AM: {PKG_BSE_SMALL_I_AM}")
 
-print(f"PKG_BSN_I_AM: {PKG_BSN_I_AM}")
-print(f"PKG_BSN_SMALL: {PKG_BSN_SMALL}")
-print(f"PKG_BSN_SMALL.I_AM: {PKG_BSN_SMALL.I_AM}")
-print(f"PKG_BSN_SMALL_I_AM: {PKG_BSN_SMALL_I_AM}")
+# access `pkg` and its nested objects
+print(f'
+IMPORTED: {pkg}
+INTO: {I_AM}
+')
 
-print(f"PKG_UTIL_SMALL: {PKG_UTIL_SMALL}")
-print(f"PKG_UTIL_SMALL.I_AM: {PKG_UTIL_SMALL.I_AM}")
-print(f"PKG_UTIL_SMALL_I_AM: {PKG_UTIL_SMALL_I_AM}")
+print(f'
+USED: {pkg.I_AM}
+IN: {I_AM}
+')
 
-# --- Namespace submodule (no __init__.na)
-from pkg.big_namespace_submodule import submodule as BNS_SMALL
-from pkg.big_namespace_submodule.submodule import I_AM as BNS_SMALL_I_AM
+print(f'
+IMPORTED: {PKG}
+INTO: {I_AM}
+')
 
-print(f"BNS: {BNS}")
-print(f"BNS.submodule: {BNS.submodule}")
-print(f"BNS.submodule.I_AM: {BNS.submodule.I_AM}")
-print(f"BNS_SMALL: {BNS_SMALL}")
-print(f"BNS_SMALL.I_AM: {BNS_SMALL.I_AM}")
-print(f"BNS_SMALL_I_AM: {BNS_SMALL_I_AM}")
+print(f'
+USED: {pkg.big_namespace_submodule}
+IN: {I_AM}
+')
 
-# --- Subpackage with empty __init__.na
-from pkg.big_submodule_with_empty_init import submodule as BSE_SMALL
-from pkg.big_submodule_with_empty_init.submodule import I_AM as BSE_SMALL_I_AM
+print(f'
+USED: {pkg.big_namespace_submodule.small_submodule}
+IN: {I_AM}
+')
 
-print(f"BSE: {BSE}")
-print(f"BSE.submodule: {BSE.submodule}")
-print(f"BSE.submodule.I_AM: {BSE.submodule.I_AM}")
-print(f"BSE_SMALL: {BSE_SMALL}")
-print(f"BSE_SMALL.I_AM: {BSE_SMALL.I_AM}")
-print(f"BSE_SMALL_I_AM: {BSE_SMALL_I_AM}")
+print(f'
+USED: {pkg.big_namespace_submodule.small_submodule.I_AM}
+IN: {I_AM}
+')
 
-# --- Subpackage with non-empty __init__.na (re-exports within)
-from pkg.big_submodule_with_nonempty_init import submodule as BSN_SMALL
-from pkg.big_submodule_with_nonempty_init.submodule import I_AM as BSN_SMALL_I_AM
+print(f'
 
-print(f"BSN: {BSN}")
-print(f"BSN.I_AM: {BSN.I_AM}")
-print(f"BSN.small_submodule_in_big_submodule_with_nonempty_init: {BSN.small_submodule_in_big_submodule_with_nonempty_init}")
-print(f"BSN.SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_NONEMPTY_INIT: {BSN.SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_NONEMPTY_INIT}")
-print(f"BSN.submodule: {BSN.submodule}")
-print(f"BSN.submodule.I_AM: {BSN.submodule.I_AM}")
-print(f"BSN_SMALL: {BSN_SMALL}")
-print(f"BSN_SMALL.I_AM: {BSN_SMALL.I_AM}")
-print(f"BSN_SMALL_I_AM: {BSN_SMALL_I_AM}")
 
-# Re-exported names directly from the subpackage's non-empty __init__.na
-from pkg.big_submodule_with_nonempty_init import (
-  small_submodule_in_big_submodule_with_nonempty_init as BSN_SMALL_REEX,
-  SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_NONEMPTY_INIT as BSN_SMALL_REEX_I_AM,
-)
-print(f"BSN_SMALL_REEX: {BSN_SMALL_REEX}")
-print(f"BSN_SMALL_REEX.I_AM: {BSN_SMALL_REEX.I_AM}")
-print(f"BSN_SMALL_REEX_I_AM: {BSN_SMALL_REEX_I_AM}")
+# access `big_namespace_submodule` and its nested objects
+print(f'
+USED: {pkg.big_namespace_submodule}
+IN: {I_AM}
+')
 
-# --- Util submodule patterns
-from pkg.util_submodule import submodule as UTIL_SMALL
-from pkg.util_submodule.submodule import I_AM as UTIL_SMALL_I_AM_2
+print(f'
+USED: {pkg.big_namespace_submodule.small_submodule}
+IN: {I_AM}
+')
 
-print(f"UTIL: {UTIL}")
-print(f"UTIL.submodule: {UTIL.submodule}")
-print(f"UTIL.submodule.I_AM: {UTIL.submodule.I_AM}")
-print(f"UTIL_SMALL: {UTIL_SMALL}")
-print(f"UTIL_SMALL.I_AM: {UTIL_SMALL.I_AM}")
-print(f"UTIL_SMALL_I_AM (via pkg/__init__): {PKG_UTIL_SMALL_I_AM}")
-print(f"UTIL_SMALL_I_AM_2 (direct): {UTIL_SMALL_I_AM_2}")
+print(f'
+USED: {pkg.big_namespace_submodule.small_submodule.I_AM}
+IN: {I_AM}
+')
 
-# --- Access via package alias P (nested attribute access)
-print(f"P.util_submodule.submodule.I_AM: {P.util_submodule.submodule.I_AM}")
-print(f"P.big_namespace_submodule.submodule.I_AM: {P.big_namespace_submodule.submodule.I_AM}")
-print(f"P.big_submodule_with_empty_init.submodule.I_AM: {P.big_submodule_with_empty_init.submodule.I_AM}")
-print(f"P.big_submodule_with_nonempty_init.I_AM: {P.big_submodule_with_nonempty_init.I_AM}")
-print(f"P.big_submodule_with_nonempty_init.submodule.I_AM: {P.big_submodule_with_nonempty_init.submodule.I_AM}")
+print(f'
+USED: {pkg.big_submodule_with_empty_init}
+IN: {I_AM}
+')
 
-# --- Dotted import with alias for module objects
-import pkg.big_namespace_submodule as BNS_PKG
-import pkg.big_namespace_submodule.submodule as BNS_MOD
-print(f"BNS_PKG: {BNS_PKG}")
-print(f"BNS_PKG.submodule.I_AM: {BNS_PKG.submodule.I_AM}")
-print(f"BNS_MOD: {BNS_MOD}")
-print(f"BNS_MOD.I_AM: {BNS_MOD.I_AM}")
+print(f'
+USED: {pkg.big_submodule_with_empty_init.small_submodule}
+IN: {I_AM}
+')
 
-# --- Standalone module patterns
-import standalone_module as SM
-from standalone_module import I_AM as STANDALONE_I_AM
+print(f'
+USED: {pkg.big_submodule_with_empty_init.small_submodule.I_AM}
+IN: {I_AM}
+')
 
-print(f"SM: {SM}")
-print(f"SM.I_AM: {SM.I_AM}")
-print(f"STANDALONE_I_AM: {STANDALONE_I_AM}")
+print(f'
+USED: {pkg.I_AM}
+IN: {I_AM}
+')
+
+
+print(f'
+IMPORTED: {big_namespace_submodule}
+INTO: {I_AM}
+')
+
+print(f'
+USED: {big_namespace_submodule.small_submodule}
+IN: {I_AM}
+')
