@@ -71,7 +71,7 @@ class TestRationalizedLibraryLoading:
         # Import dana to trigger startup and DANA_PATH setup
 
         # Verify DANA_PATH contains stdlib (note: variable name is DANA_PATH, not DANAPATH)
-        assert "DANA_PATH" in os.environ, f"DANA_PATH not found in environment: {list(os.environ.keys())}"
+        assert "DANA_PATH" in os.environ, "DANA_PATH not found in environment"
         dana_path = os.environ["DANA_PATH"]
 
         # Get the expected stdlib path
