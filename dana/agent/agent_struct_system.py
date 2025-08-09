@@ -318,15 +318,20 @@ class AgentStructInstance(StructInstance):
             if context:
                 system_prompt += f" Additional context: {context}"
 
-            # Combine system prompt with conversation context
-            full_prompt = f"{system_prompt}\n\n{conversation_context}"
-
             # Create computation that will call LLM resource directly
             def llm_computation():
                 try:
                     from dana.common.types import BaseRequest
 
-                    request = BaseRequest(arguments={"prompt": full_prompt})
+                    # Build proper messages format for LLM query executor
+                    messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": message}]
+
+                    # Add conversation context if available
+                    if conversation_context.strip():
+                        # Insert conversation context before the user message
+                        messages.insert(-1, {"role": "system", "content": f"Previous conversation:\n{conversation_context}"})
+
+                    request = BaseRequest(arguments={"messages": messages})
                     response = llm_resource.query_sync(request)
                     if response.success:
                         # Extract the actual text content from the response
@@ -336,11 +341,11 @@ class AgentStructInstance(StructInstance):
                                 # OpenAI/Anthropic style response
                                 first_choice = content["choices"][0]
                                 if isinstance(first_choice, dict) and "message" in first_choice:
-                                    message = first_choice["message"]
-                                    if isinstance(message, dict) and "content" in message:
-                                        return message["content"]
-                                    elif hasattr(message, "content"):
-                                        return message.content
+                                    response_message = first_choice["message"]
+                                    if isinstance(response_message, dict) and "content" in response_message:
+                                        return response_message["content"]
+                                    elif hasattr(response_message, "content"):
+                                        return response_message.content
                                 elif hasattr(first_choice, "message") and hasattr(first_choice.message, "content"):
                                     return first_choice.message.content
                             elif "content" in content:
