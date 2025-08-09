@@ -6,12 +6,12 @@ Tests AgentStructType, AgentStructInstance, and related functionality.
 import unittest
 
 from dana.agent import (
-    AgentStructInstance,
-    AgentStructType,
-    AgentStructTypeRegistry,
-    create_agent_struct_instance,
-    get_agent_struct_type,
-    register_agent_struct_type,
+    AgentType,
+    AgentTypeRegistry,
+    AgentInstance,
+    create_agent_instance,
+    get_agent_type,
+    register_agent_type,
 )
 from dana.core.lang.interpreter.struct_system import StructInstance, StructType
 from dana.core.lang.sandbox_context import SandboxContext
@@ -20,13 +20,13 @@ from dana.core.lang.sandbox_context import SandboxContext
 class TestAgentStructType(unittest.TestCase):
     """Test AgentStructType functionality."""
 
-    def test_agent_struct_type_creation(self):
-        """Test creating an AgentStructType."""
+    def test_agent_type_creation(self):
+        """Test creating an AgentType."""
         fields = {"name": "str", "age": "int"}
         field_order = ["name", "age"]
         field_defaults = {"name": "default", "age": 25}
 
-        agent_type = AgentStructType(
+        agent_type = AgentType(
             name="TestAgent",
             fields=fields,
             field_order=field_order,
@@ -41,16 +41,16 @@ class TestAgentStructType(unittest.TestCase):
         self.assertEqual(agent_type.field_defaults, field_defaults)
         self.assertEqual(agent_type.docstring, "Test agent type")
 
-    def test_agent_struct_type_inheritance(self):
-        """Test that AgentStructType inherits from StructType."""
-        agent_type = AgentStructType(name="TestAgent", fields={"name": "str"}, field_order=["name"], field_comments={})
+    def test_agent_type_inheritance(self):
+        """Test that AgentType inherits from StructType."""
+        agent_type = AgentType(name="TestAgent", fields={"name": "str"}, field_order=["name"], field_comments={})
 
         self.assertIsInstance(agent_type, StructType)
-        self.assertIsInstance(agent_type, AgentStructType)
+        self.assertIsInstance(agent_type, AgentType)
 
     def test_default_agent_methods(self):
         """Test that default agent methods are created."""
-        agent_type = AgentStructType(name="TestAgent", fields={"name": "str"}, field_order=["name"], field_comments={})
+        agent_type = AgentType(name="TestAgent", fields={"name": "str"}, field_order=["name"], field_comments={})
 
         # Check that default agent methods exist
         self.assertIn("plan", agent_type.agent_methods)
@@ -72,7 +72,7 @@ class TestAgentStructType(unittest.TestCase):
         def custom_plan(agent_instance, sandbox_context, task: str) -> str:
             return f"Custom plan for {task}"
 
-        agent_type = AgentStructType(
+        agent_type = AgentType(
             name="TestAgent", fields={"name": "str"}, field_order=["name"], field_comments={}, agent_methods={"custom_plan": custom_plan}
         )
 
@@ -80,37 +80,35 @@ class TestAgentStructType(unittest.TestCase):
         self.assertEqual(agent_type.agent_methods["custom_plan"], custom_plan)
 
 
-class TestAgentStructInstance(unittest.TestCase):
-    """Test AgentStructInstance functionality."""
+class TestAgentInstance(unittest.TestCase):
+    """Test AgentInstance functionality."""
 
     def setUp(self):
         """Set up test fixtures."""
-        self.agent_type = AgentStructType(
-            name="TestAgent", fields={"name": "str", "age": "int"}, field_order=["name", "age"], field_comments={}
-        )
+        self.agent_type = AgentType(name="TestAgent", fields={"name": "str", "age": "int"}, field_order=["name", "age"], field_comments={})
         self.sandbox_context = SandboxContext()
 
-    def test_agent_struct_instance_creation(self):
-        """Test creating an AgentStructInstance."""
+    def test_agent_instance_creation(self):
+        """Test creating an AgentInstance."""
         values = {"name": "Alice", "age": 30}
-        agent_instance = AgentStructInstance(self.agent_type, values)
+        agent_instance = AgentInstance(self.agent_type, values)
 
         self.assertEqual(agent_instance.__struct_type__, self.agent_type)
         self.assertEqual(agent_instance.name, "Alice")
         self.assertEqual(agent_instance.age, 30)
 
-    def test_agent_struct_instance_inheritance(self):
-        """Test that AgentStructInstance inherits from StructInstance."""
+    def test_agent_instance_inheritance(self):
+        """Test that AgentInstance inherits from StructInstance."""
         values = {"name": "Alice", "age": 30}
-        agent_instance = AgentStructInstance(self.agent_type, values)
+        agent_instance = AgentInstance(self.agent_type, values)
 
         self.assertIsInstance(agent_instance, StructInstance)
-        self.assertIsInstance(agent_instance, AgentStructInstance)
+        self.assertIsInstance(agent_instance, AgentInstance)
 
     def test_agent_method_binding(self):
         """Test that agent methods are bound to instances."""
         values = {"name": "Alice", "age": 30}
-        agent_instance = AgentStructInstance(self.agent_type, values)
+        agent_instance = AgentInstance(self.agent_type, values)
 
         # Check that methods are bound to the instance
         self.assertTrue(hasattr(agent_instance, "plan"))
@@ -129,7 +127,7 @@ class TestAgentStructInstance(unittest.TestCase):
     def test_agent_method_execution(self):
         """Test that agent methods execute correctly."""
         values = {"name": "Alice", "age": 30}
-        agent_instance = AgentStructInstance(self.agent_type, values)
+        agent_instance = AgentInstance(self.agent_type, values)
 
         # Test plan method
         plan_result = agent_instance.plan(self.sandbox_context, "test task")
@@ -153,8 +151,8 @@ class TestAgentStructInstance(unittest.TestCase):
         values1 = {"name": "Alice", "age": 30}
         values2 = {"name": "Bob", "age": 25}
 
-        agent1 = AgentStructInstance(self.agent_type, values1)
-        agent2 = AgentStructInstance(self.agent_type, values2)
+        agent1 = AgentInstance(self.agent_type, values1)
+        agent2 = AgentInstance(self.agent_type, values2)
 
         # Store different values in each agent's memory
         agent1.remember(self.sandbox_context, "key", "value1")
@@ -165,33 +163,33 @@ class TestAgentStructInstance(unittest.TestCase):
         self.assertEqual(agent2.recall(self.sandbox_context, "key"), "value2")
 
     def test_invalid_struct_type(self):
-        """Test that AgentStructInstance rejects non-AgentStructType."""
+        """Test that AgentInstance rejects non-AgentStructType."""
         regular_struct_type = StructType(name="RegularStruct", fields={"name": "str"}, field_order=["name"], field_comments={})
 
         with self.assertRaises(TypeError):
-            AgentStructInstance(regular_struct_type, {"name": "test"})
+            AgentInstance(regular_struct_type, {"name": "test"})
 
 
-class TestAgentStructTypeRegistry(unittest.TestCase):
-    """Test AgentStructTypeRegistry functionality."""
+class TestAgentTypeRegistry(unittest.TestCase):
+    """Test AgentTypeRegistry functionality."""
 
     def setUp(self):
         """Set up test fixtures."""
-        self.registry = AgentStructTypeRegistry()
+        self.registry = AgentTypeRegistry()
 
     def test_singleton_pattern(self):
-        """Test that AgentStructTypeRegistry is a singleton."""
+        """Test that AgentTypeRegistry is a singleton."""
         # Note: The registry is not actually a singleton in the current implementation
         # This test is updated to reflect the actual behavior
-        registry1 = AgentStructTypeRegistry()
-        registry2 = AgentStructTypeRegistry()
+        registry1 = AgentTypeRegistry()
+        registry2 = AgentTypeRegistry()
 
         # They should be different instances in the current implementation
         self.assertIsNot(registry1, registry2)
 
     def test_register_and_get_agent_type(self):
         """Test registering and retrieving agent types."""
-        agent_type = AgentStructType(name="TestAgent", fields={"name": "str"}, field_order=["name"], field_comments={})
+        agent_type = AgentType(name="TestAgent", fields={"name": "str"}, field_order=["name"], field_comments={})
 
         # Register the agent type
         self.registry.register_agent_type(agent_type)
@@ -207,7 +205,7 @@ class TestAgentStructTypeRegistry(unittest.TestCase):
 
     def test_agent_type_exists(self):
         """Test checking if an agent type exists."""
-        agent_type = AgentStructType(name="TestAgent", fields={"name": "str"}, field_order=["name"], field_comments={})
+        agent_type = AgentType(name="TestAgent", fields={"name": "str"}, field_order=["name"], field_comments={})
 
         self.registry.register_agent_type(agent_type)
 
@@ -221,7 +219,7 @@ class TestAgentStructTypeRegistry(unittest.TestCase):
 
 
 class TestHelperFunctions(unittest.TestCase):
-    """Test helper functions for agent struct system."""
+    """Test helper functions for agent system."""
 
     def setUp(self):
         """Set up test fixtures."""
@@ -230,51 +228,51 @@ class TestHelperFunctions(unittest.TestCase):
 
         StructTypeRegistry.clear()
 
-    def test_register_agent_struct_type(self):
-        """Test register_agent_struct_type helper function."""
-        agent_type = AgentStructType(name="TestAgent", fields={"name": "str"}, field_order=["name"], field_comments={})
+    def test_register_agent_type(self):
+        """Test register_agent_type helper function."""
+        agent_type = AgentType(name="TestAgent", fields={"name": "str"}, field_order=["name"], field_comments={})
 
         # Register using helper function
-        register_agent_struct_type(agent_type)
+        register_agent_type(agent_type)
 
         # Verify registration
-        retrieved_type = get_agent_struct_type("TestAgent")
+        retrieved_type = get_agent_type("TestAgent")
         self.assertIs(retrieved_type, agent_type)
 
-    def test_get_agent_struct_type(self):
-        """Test get_agent_struct_type helper function."""
-        agent_type = AgentStructType(name="TestAgent", fields={"name": "str"}, field_order=["name"], field_comments={})
+    def test_get_agent_type(self):
+        """Test get_agent_type helper function."""
+        agent_type = AgentType(name="TestAgent", fields={"name": "str"}, field_order=["name"], field_comments={})
 
-        register_agent_struct_type(agent_type)
+        register_agent_type(agent_type)
 
         # Get using helper function
-        retrieved_type = get_agent_struct_type("TestAgent")
+        retrieved_type = get_agent_type("TestAgent")
         self.assertIs(retrieved_type, agent_type)
 
-    def test_create_agent_struct_instance(self):
-        """Test create_agent_struct_instance helper function."""
-        agent_type = AgentStructType(name="TestAgent", fields={"name": "str", "age": "int"}, field_order=["name", "age"], field_comments={})
+    def test_create_agent_instance(self):
+        """Test create_agent_instance helper function."""
+        agent_type = AgentType(name="TestAgent", fields={"name": "str", "age": "int"}, field_order=["name", "age"], field_comments={})
 
-        register_agent_struct_type(agent_type)
+        register_agent_type(agent_type)
 
         # Create instance using helper function
         values = {"name": "Alice", "age": 30}
         context = SandboxContext()
-        agent_instance = create_agent_struct_instance("TestAgent", values, context)
+        agent_instance = create_agent_instance("TestAgent", values, context)
 
-        self.assertIsInstance(agent_instance, AgentStructInstance)
+        self.assertIsInstance(agent_instance, AgentInstance)
         self.assertEqual(agent_instance.name, "Alice")
         self.assertEqual(agent_instance.age, 30)
 
-    def test_create_agent_struct_instance_nonexistent(self):
-        """Test create_agent_struct_instance with non-existent type."""
+    def test_create_agent_instance_nonexistent(self):
+        """Test create_agent_instance with non-existent type."""
         context = SandboxContext()
         with self.assertRaises(ValueError):
-            create_agent_struct_instance("NonexistentAgent", {}, context)
+            create_agent_instance("NonexistentAgent", {}, context)
 
 
 class TestAgentStructIntegration(unittest.TestCase):
-    """Test integration between agent struct system and struct system."""
+    """Test integration between agent system and struct system."""
 
     def setUp(self):
         """Set up test fixtures."""
@@ -285,26 +283,26 @@ class TestAgentStructIntegration(unittest.TestCase):
 
     def test_agent_type_in_struct_registry(self):
         """Test that agent types are registered in struct registry."""
-        agent_type = AgentStructType(name="TestAgent", fields={"name": "str"}, field_order=["name"], field_comments={})
+        agent_type = AgentType(name="TestAgent", fields={"name": "str"}, field_order=["name"], field_comments={})
 
-        register_agent_struct_type(agent_type)
+        register_agent_type(agent_type)
 
         # Check that it's in the agent registry
-        retrieved_type = get_agent_struct_type("TestAgent")
+        retrieved_type = get_agent_type("TestAgent")
         self.assertIs(retrieved_type, agent_type)
 
     def test_agent_instance_creation_via_struct_registry(self):
         """Test creating agent instances via agent registry."""
-        agent_type = AgentStructType(name="TestAgent", fields={"name": "str", "age": "int"}, field_order=["name", "age"], field_comments={})
+        agent_type = AgentType(name="TestAgent", fields={"name": "str", "age": "int"}, field_order=["name", "age"], field_comments={})
 
-        register_agent_struct_type(agent_type)
+        register_agent_type(agent_type)
 
         # Create instance via agent registry
         values = {"name": "Alice", "age": 30}
         context = SandboxContext()
-        agent_instance = create_agent_struct_instance("TestAgent", values, context)
+        agent_instance = create_agent_instance("TestAgent", values, context)
 
-        self.assertIsInstance(agent_instance, AgentStructInstance)
+        self.assertIsInstance(agent_instance, AgentInstance)
         self.assertEqual(agent_instance.name, "Alice")
         self.assertEqual(agent_instance.age, 30)
 

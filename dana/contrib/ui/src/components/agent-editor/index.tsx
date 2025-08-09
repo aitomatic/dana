@@ -585,6 +585,7 @@ export const AgentEditor = ({
             // Knowledge blocks
             [/\bwith\s+knowledge\s*\(/, { token: 'keyword', next: '@knowledge_block' }],
             // Agent declarations - use custom state
+            [/\bagent_blueprint\s+([a-zA-Z_]\w*)\s*:/, { token: 'keyword', next: '@agent_declaration' }],
             [/\bagent\s+([a-zA-Z_]\w*)\s*:/, { token: 'keyword', next: '@agent_declaration' }],
             // Struct declarations - use custom state
             [/\bstruct\s+([a-zA-Z_]\w*)\s*:/, { token: 'keyword', next: '@struct_declaration' }],
@@ -598,7 +599,7 @@ export const AgentEditor = ({
             [/\b(call_resources|reason|plan)\s*(?=\()/, 'function.special'],
             // Regular keywords
             [
-              /\b(?:with|as|private|log|while|True|False|None|break|continue|if|elif|else|for|in|return|input|print|def|class|import|from|try|except|finally|raise|and|or|not|agent|struct|use|export)\b/,
+              /\b(?:with|as|private|log|while|True|False|None|break|continue|if|elif|else|for|in|return|input|print|def|class|import|from|try|except|finally|raise|and|or|not|agent|agent_blueprint|struct|use|export)\b/,
               'keyword',
             ],
             // Function definitions and calls

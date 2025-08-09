@@ -143,6 +143,21 @@ class DanaSandbox(Loggable):
             # self._context.set("system:api_client", self._api_client)
             self._context.set_system_llm_resource(self._llm_resource)
 
+            # Perform a root-only auto-import of corelib Dana modules using the module's __name__
+            # to avoid hardcoding the path.
+            try:
+                import dana.libs.corelib.na_modules as module
+
+                module_path = module.__name__
+                self._interpreter._eval(
+                    f"from {module_path} import *",
+                    context=self._context,
+                    filename="<auto-import>",
+                )
+            except Exception as auto_import_err:
+                # Non-fatal: if auto-import fails, continue without it
+                self.error(f"Auto-import skipped: {auto_import_err}")
+
             # Register started APIClient as default POET client
             # poet_client = POETClient.__new__(POETClient)  # Create without calling __init__
             # poet_client.api = self._api_client  # Use our started APIClient

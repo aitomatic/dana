@@ -423,11 +423,11 @@ class DanaREPLApp(Loggable):
                         loop.create_task(self.output_formatter.format_result_async(result))
                     except RuntimeError:
                         # No event loop running, just print the result directly
-                        print(f"{promise_info} delivered: {result}")
+                        print(result)
                 except Exception as e:
                     self.debug(f"Error in promise resolution callback: {e}")
                     # Fallback to simple print
-                    print(f"{promise_info} delivered: {result}")
+                    print(result)
 
             promise_result.add_on_delivery_callback(on_promise_delivered)
 

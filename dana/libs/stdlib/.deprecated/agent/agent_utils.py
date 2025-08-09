@@ -10,10 +10,10 @@ MIT License
 
 from typing import Any
 
-from dana.agent.agent_struct_system import AgentStructInstance, AgentStructType, register_agent_struct_type
+from dana.agent.agent_instance import AgentType, AgentInstance, register_agent_type
 
 
-def create_agent_pool(agent_type: str, count: int, configs: list[dict[str, Any]] | None = None) -> list[AgentStructInstance]:
+def create_agent_pool(agent_type: str, count: int, configs: list[dict[str, Any]] | None = None) -> list[AgentInstance]:
     """
     Create a pool of agent instances for parallel processing.
 
@@ -39,9 +39,9 @@ def create_agent_pool(agent_type: str, count: int, configs: list[dict[str, Any]]
     for i in range(count):
         config = configs[i] if configs and i < len(configs) else {}
         # Create agent instance directly using agent system
-        agent_struct_type = AgentStructType(name=agent_type)
-        register_agent_struct_type(agent_struct_type)
-        agent_instance = AgentStructInstance(agent_struct_type, config)
+        agent_type = AgentType(name=agent_type)
+        register_agent_type(agent_type)
+        agent_instance = AgentInstance(agent_type, config)
         agents.append(agent_instance)
     return agents
 
@@ -68,7 +68,7 @@ def load_agent_config(filepath: str) -> dict[str, Any]:
         return json.load(f)
 
 
-def save_agent_config(agent_instance: AgentStructInstance, filepath: str) -> bool:
+def save_agent_config(agent_instance: AgentInstance, filepath: str) -> bool:
     """
     Save agent configuration to a file.
 
@@ -96,7 +96,7 @@ def save_agent_config(agent_instance: AgentStructInstance, filepath: str) -> boo
         return False
 
 
-def agent_benchmark(agent_instance: AgentStructInstance, tasks: list[str]) -> dict[str, Any]:
+def agent_benchmark(agent_instance: AgentInstance, tasks: list[str]) -> dict[str, Any]:
     """
     Benchmark an agent's performance on a set of tasks.
 
@@ -139,7 +139,7 @@ def agent_benchmark(agent_instance: AgentStructInstance, tasks: list[str]) -> di
     return results
 
 
-def agent_metrics(agent_instance: AgentStructInstance) -> dict[str, Any]:
+def agent_metrics(agent_instance: AgentInstance) -> dict[str, Any]:
     """
     Get metrics about an agent's usage and performance.
 

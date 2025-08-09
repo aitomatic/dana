@@ -14,6 +14,7 @@ The Dana function registration uses Dana's standard module loading system for co
 import importlib
 from pathlib import Path
 
+from dana.common import DANA_LOGGER
 from dana.common.runtime_scopes import RuntimeScopes
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
@@ -31,19 +32,17 @@ def register_corelib_functions(registry: FunctionRegistry) -> None:
     # Get the corelib directory
     corelib_dir = Path(__file__).parent
 
-    # Register Python functions (from py/ directory)
+    #
+    # Register Python functions (from py/ directory) next. They can override the pythonic built-in functions.
+    #
     py_dir = corelib_dir / "py"
     if py_dir.exists():
         _registered_python_functions = _register_python_functions(py_dir, registry)
 
-    # Register Dana functions (from na/ directory)
+    #
+    # Register Dana functions last (from na/ directory), so that they can use or override the Python functions
+    #
     _registered_dana_functions = _register_dana_modules_via_import_system(registry)
-
-    # Register pythonic built-in functions
-    from dana.libs.stdlib.pythonic.function_factory import PythonicFunctionFactory, register_pythonic_builtins
-
-    register_pythonic_builtins(registry)
-    _pythonic_builtin_functions = list(PythonicFunctionFactory.FUNCTION_CONFIGS.keys())
 
 
 def _register_python_functions(py_dir: Path, registry: FunctionRegistry) -> list[str]:
@@ -67,7 +66,7 @@ def _register_python_functions(py_dir: Path, registry: FunctionRegistry) -> list
 
     # Import each module and register functions
     for py_file in python_files:
-        module_name = f"dana.libs.corelib.py.{py_file.stem}"
+        module_name = f"dana.libs.corelib.py_wrappers.{py_file.stem}"
         registered_functions.extend(_register_python_module(module_name, registry))
 
     return registered_functions
@@ -115,6 +114,55 @@ def _register_python_module(module_name: str, registry: FunctionRegistry) -> lis
     return registered_functions
 
 
+def _register_dana_modules_via_import_system_2(registry: FunctionRegistry) -> list[str]:
+    """Register Dana functions using the standard Dana module system.
+
+    This leverages Dana's module loader to execute modules and discover their contents,
+    then registers the discovered functions directly from the loaded module.
+
+    Args:
+        registry: The function registry to register functions with
+
+    Returns:
+        List of registered function names
+    """
+    registered_functions = []
+
+    # Scan for all .na files in corelib_dir/na and all its subdirectories, and import them one at a time
+    from pathlib import Path
+
+    na_dir = Path(__file__).parent / "na"
+    if na_dir.exists():
+        for na_file in na_dir.rglob("*.na"):
+            if na_file.name == "__init__.na":
+                continue
+            # Compute the module import path relative to na_dir's parent
+            rel_path = na_file.relative_to(na_dir.parent)
+            module_parts = rel_path.with_suffix("").parts
+            module_import_path = ".".join(module_parts)
+            import_stmt = f"from {module_import_path} import WHAT_EVER"
+            DANA_LOGGER.error(f"CTN Importing statement: {import_stmt}")
+            try:
+                from dana.core.runtime.modules.core import get_module_loader, initialize_module_system
+
+                # Ensure the module system is initialized with the correct search path
+                search_paths = [str(na_dir)]
+                initialize_module_system(search_paths)
+                loader = get_module_loader()
+
+                # Import the module using the Dana module loader
+                module_name = module_import_path.replace(".", "/")
+                spec = loader.find_spec(module_name)
+                if spec is not None:
+                    module = loader.create_module(spec)
+                    if module is not None:
+                        loader.exec_module(module)
+            except Exception:
+                pass
+
+    return registered_functions
+
+
 def _register_dana_modules_via_import_system(registry: FunctionRegistry) -> list[str]:
     """Register Dana functions using the standard Dana module system.
 
@@ -151,6 +199,7 @@ def _register_dana_modules_via_import_system(registry: FunctionRegistry) -> list
         na_files = [f for f in na_dir.glob("*.na") if f.name != "__init__.na"]
 
         for na_file in na_files:
+            DANA_LOGGER.error(f"CTN Registering Dana module: {na_file}")
             module_name = na_file.stem
 
             # Create a module spec
@@ -164,6 +213,7 @@ def _register_dana_modules_via_import_system(registry: FunctionRegistry) -> list
                 continue
 
             # Execute the module - this discovers and loads all its contents
+            DANA_LOGGER.error(f"CTN Executing module: {module.__name__}")
             loader.exec_module(module)
 
             # Use the module's __exports__ to determine what to register globally
@@ -173,10 +223,14 @@ def _register_dana_modules_via_import_system(registry: FunctionRegistry) -> list
                 # Fallback: register all public attributes
                 exports_to_register = {name for name in dir(module) if not name.startswith("_")}
 
+            DANA_LOGGER.error(f"CTN Exports to register: {exports_to_register}")
+
             # Register each exported item
             for export_name in exports_to_register:
                 if hasattr(module, export_name):
                     exported_obj = getattr(module, export_name)
+
+                    DANA_LOGGER.error(f"CTN Registering function: {export_name}")
 
                     # Register the object directly (preserves its original type and behavior)
                     registry.register(
@@ -190,8 +244,9 @@ def _register_dana_modules_via_import_system(registry: FunctionRegistry) -> list
 
                     registered_functions.append(export_name)
 
-    except Exception:
+    except Exception as e:
         # Silently handle errors to avoid cluttering output
+        DANA_LOGGER.error(f"CTN Error registering Dana module: {e}")
         pass
 
     return registered_functions

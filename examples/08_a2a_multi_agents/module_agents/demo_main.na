@@ -17,8 +17,8 @@ print("Created A2A agents")
 import weather_expert
 import travel_planner
 
-weather_module_agent = agent(module=weather_expert)
-travel_module_agent = agent(module=travel_planner)
+weather_module_agent = weather_expert  # call exported functions directly
+travel_module_agent = travel_planner   # call exported functions directly
 
 print("Created module agents")
 
@@ -31,7 +31,7 @@ print("\n=== Test 1: A2A Agent Usage ===")
 weather_result = weather_agent.solve("What's the weather in Tokyo?")
 print(f"A2A Weather: {weather_result}")
 
-# Test 2: Basic module agent usage
+# Test 2: Basic module usage (direct function call)
 print("\n=== Test 2: Module Agent Usage ===")
 module_weather_result = weather_module_agent.solve("What's the weather in Paris?")
 print(f"Module Weather: {module_weather_result}")
@@ -47,7 +47,7 @@ print("\n=== Test 4: Reason Function with A2A Agents ===")
 reason_result = reason("What's the weather like in London?", agents=[weather_agent])
 print(f"Reason A2A result: {reason_result}")
 
-# Test 5: Reason function with module agents
+# Test 5: Reason function with module modules
 print("\n=== Test 5: Reason Function with Module Agents ===")
 module_reason_result = reason("Plan a weekend trip to Rome", agents=[travel_module_agent])
 print(f"Reason module result: {module_reason_result}")

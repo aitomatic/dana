@@ -26,6 +26,7 @@ from dana.core.lang.ast import (
     AgentStatement,
     AssertStatement,
     Assignment,
+    BaseAgentSingletonDefinition,
     CompoundAssignment,
     DeclarativeFunctionDefinition,
     ExportStatement,
@@ -35,6 +36,7 @@ from dana.core.lang.ast import (
     MethodDefinition,
     PassStatement,
     RaiseStatement,
+    SingletonAgentDefinition,
     StructDefinition,
     UseStatement,
 )
@@ -46,6 +48,7 @@ from dana.core.lang.interpreter.executor.statement import (
     ImportHandler,
     StatementUtils,
 )
+from dana.core.lang.interpreter.executor.statement.type_handler import TypeHandler
 from dana.core.lang.interpreter.functions.function_registry import FunctionRegistry
 from dana.core.lang.sandbox_context import SandboxContext
 
@@ -75,6 +78,7 @@ class StatementExecutor(BaseExecutor):
         self.import_handler = ImportHandler(parent_executor=self, function_registry=self.function_registry)
         self.agent_handler = AgentHandler(parent_executor=self, function_registry=self.function_registry)
         self.statement_utils = StatementUtils(parent_executor=self)
+        self.type_handler = TypeHandler(parent_executor=self)
 
         self.register_handlers()
 
@@ -82,8 +86,10 @@ class StatementExecutor(BaseExecutor):
         """Register handlers for statement node types."""
         self._handlers = {
             AgentDefinition: self.execute_agent_definition,
-            AgentStatement: self.execute_agent_statement,
+            SingletonAgentDefinition: self.execute_singleton_agent_definition,
+            BaseAgentSingletonDefinition: self.execute_base_agent_singleton_definition,
             AgentPoolStatement: self.execute_agent_pool_statement,
+            AgentStatement: self.execute_agent_statement,
             Assignment: self.execute_assignment,
             CompoundAssignment: self.execute_compound_assignment,
             AssertStatement: self.execute_assert_statement,
@@ -138,7 +144,7 @@ class StatementExecutor(BaseExecutor):
         """
         return self.statement_utils.execute_assert_statement(node, context)
 
-    def _execute_python_import(self, module_name: str, context_name: str, context: SandboxContext) -> None:
+    def unused_execute_python_import(self, module_name: str, context_name: str, context: SandboxContext) -> None:
         """Execute import of a Python module (.py extension required).
 
         Args:
@@ -165,7 +171,7 @@ class StatementExecutor(BaseExecutor):
         except ImportError as e:
             raise SandboxError(f"Python module '{import_name}' not found: {e}") from e
 
-    def _execute_dana_import(self, module_name: str, context_name: str, context: SandboxContext) -> None:
+    def unused_execute_dana_import(self, module_name: str, context_name: str, context: SandboxContext) -> None:
         """Execute Dana module import (import module).
 
         Args:
@@ -173,6 +179,7 @@ class StatementExecutor(BaseExecutor):
             context_name: Name to use in context
             context: The execution context
         """
+        self.error(f"Executing Dana import: {module_name} {context_name}")
         self._ensure_module_system_initialized()
 
         # Handle relative imports
@@ -207,7 +214,7 @@ class StatementExecutor(BaseExecutor):
             # Convert to SandboxError for consistency
             raise SandboxError(f"Error loading Dana module '{absolute_module_name}': {e}") from e
 
-    def _execute_python_from_import(self, module_name: str, names: list[tuple[str, str | None]], context: SandboxContext) -> None:
+    def unused_execute_python_from_import(self, module_name: str, names: list[tuple[str, str | None]], context: SandboxContext) -> None:
         """Execute from-import of a Python module (.py extension required).
 
         Args:
@@ -250,7 +257,7 @@ class StatementExecutor(BaseExecutor):
             if callable(obj) and self.function_registry:
                 self._register_imported_function(obj, context_name, module_name, name)
 
-    def _execute_dana_from_import(self, module_name: str, names: list[tuple[str, str | None]], context: SandboxContext) -> None:
+    def unused_execute_dana_from_import(self, module_name: str, names: list[tuple[str, str | None]], context: SandboxContext) -> None:
         """Execute Dana module from-import (from module import name).
 
         Args:
@@ -258,6 +265,8 @@ class StatementExecutor(BaseExecutor):
             names: List of (name, alias) tuples to import
             context: The execution context
         """
+        self.error(f"Executing Dana from-import: {module_name} {names}")
+
         self._ensure_module_system_initialized()
 
         # Handle relative imports
@@ -312,7 +321,7 @@ class StatementExecutor(BaseExecutor):
             # Convert to SandboxError for consistency
             raise SandboxError(f"Error importing from Dana module '{absolute_module_name}': {e}") from e
 
-    def _register_imported_function(self, func: callable, context_name: str, module_name: str, original_name: str) -> None:
+    def unused_register_imported_function(self, func: callable, context_name: str, module_name: str, original_name: str) -> None:
         """Register an imported function in the function registry.
 
         Args:
@@ -455,7 +464,7 @@ class StatementExecutor(BaseExecutor):
         Returns:
             None
         """
-        return self.agent_handler.execute_export_statement(node, context)
+        return self.import_handler.execute_export_statement(node, context)
 
     def execute_struct_definition(self, node: StructDefinition, context: SandboxContext) -> None:
         """Execute a struct definition statement using optimized handler.
@@ -467,7 +476,7 @@ class StatementExecutor(BaseExecutor):
         Returns:
             None (struct definitions don't produce a value, they register a type)
         """
-        return self.agent_handler.execute_struct_definition(node, context)
+        return self.type_handler.execute_struct_definition(node, context)
 
     def execute_agent_definition(self, node: AgentDefinition, context: SandboxContext) -> None:
         """Execute an agent definition statement using optimized handler.
@@ -480,6 +489,14 @@ class StatementExecutor(BaseExecutor):
             None (agent definitions don't produce a value, they register a type)
         """
         return self.agent_handler.execute_agent_definition(node, context)
+
+    def execute_singleton_agent_definition(self, node: SingletonAgentDefinition, context: SandboxContext) -> None:
+        """Execute a singleton agent definition statement using optimized handler."""
+        return self.agent_handler.execute_singleton_agent_definition(node, context)
+
+    def execute_base_agent_singleton_definition(self, node: BaseAgentSingletonDefinition, context: SandboxContext) -> None:
+        """Execute a base agent singleton definition statement using optimized handler."""
+        return self.agent_handler.execute_base_agent_singleton_definition(node, context)
 
     def execute_agent_statement(self, node: AgentStatement, context: SandboxContext) -> Any:
         """Execute an agent statement using optimized handler.
@@ -506,7 +523,7 @@ class StatementExecutor(BaseExecutor):
         return self.agent_handler.execute_agent_pool_statement(node, context)
 
     def execute_function_definition(self, node: "FunctionDefinition", context: SandboxContext) -> Any:
-        """Execute a function definition, routing to agent handler if appropriate.
+        """Execute a function definition, routing to function executor when available.
 
         Args:
             node: The function definition to execute
@@ -515,10 +532,10 @@ class StatementExecutor(BaseExecutor):
         Returns:
             The defined function
         """
-        # Route to agent handler which can associate methods with agent types
-        self.debug(f"Routing function definition '{node.name.name}' to agent handler")
-        result = self.agent_handler.execute_function_definition(node, context)
-        return result
+        if hasattr(self.parent, "_function_executor") and self.parent._function_executor is not None:
+            return self.parent._function_executor.execute_function_definition(node, context)
+        # Fallback to previous behavior
+        return self.agent_handler.execute_function_definition(node, context)
 
     def execute_method_definition(self, node: "MethodDefinition", context: SandboxContext) -> Any:
         """Execute a method definition with explicit receiver.
@@ -602,7 +619,7 @@ class StatementExecutor(BaseExecutor):
             import inspect  # noqa: F401
 
             signature = self._create_signature(node.parameters, node.return_type)
-            wrapper.__signature__ = signature
+            wrapper.__signature__ = signature  # type: ignore[attr-defined]
         except ImportError:
             # inspect module not available, skip signature creation
             self.debug("inspect module not available, skipping signature creation for IDE support")

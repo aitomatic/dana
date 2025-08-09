@@ -149,7 +149,7 @@ class LLMQueryExecutor(Loggable):
         if self.query_strategy == QueryStrategy.ITERATIVE:
             max_iterations = Misc.get_field(request, "max_iterations", self.query_max_iterations)
         else:
-            max_iterations = 1
+            max_iterations = self.query_max_iterations
 
         user_messages = Misc.get_field(request, "user_messages", Misc.get_field(request, "messages", ["Hello, how are you?"]))
 

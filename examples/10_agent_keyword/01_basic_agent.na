@@ -12,7 +12,7 @@ log("\n📋 1. Basic Agent Definition")
 log("-" * 30)
 
 # Define an agent with built-in intelligence capabilities
-agent ManufacturingInspector:
+agent_blueprint ManufacturingInspector:
     process_type: str = "assembly"
     tolerance_threshold: float = 0.02
     alert_channels: list[str] = ["email", "slack"]

@@ -90,10 +90,30 @@ class FunctionRegistry:
         self._functions: dict[str, dict[str, tuple[Callable, FunctionType, FunctionMetadata]]] = {}
         self._arg_processor = None  # Will be initialized on first use
 
-        # Load preloaded corelib functions if available
-        self._load_preloaded_corelib_functions()
+        # Load preloaded functions if available
+        self._register_preloaded_functions()
 
-    def _load_preloaded_corelib_functions(self):
+    @staticmethod
+    def get_preloaded_functions():
+        """Get preloaded functions."""
+        import dana.core.lang.interpreter.functions.function_registry as registry_module
+
+        if not hasattr(registry_module, "_preloaded_functions"):
+            registry_module._preloaded_functions = {}
+
+        return registry_module._preloaded_functions
+
+    @staticmethod
+    def add_preloaded_functions(functions: dict[str, dict[str, tuple[Callable, FunctionType, FunctionMetadata]]]):
+        """Add preloaded functions to the registry module for later registration."""
+        preloaded_functions = FunctionRegistry.get_preloaded_functions()
+
+        for namespace, funcs in functions.items():
+            if namespace not in preloaded_functions:
+                preloaded_functions[namespace] = {}
+            preloaded_functions[namespace].update(funcs)
+
+    def _register_preloaded_functions(self):
         """Load preloaded corelib functions from initlib startup.
 
         This method loads core library functions that were preloaded during
@@ -101,20 +121,19 @@ class FunctionRegistry:
         """
         try:
             # Check if preloaded functions are available in the module
-            import dana.core.lang.interpreter.functions.function_registry as registry_module
+            preloaded_functions = FunctionRegistry.get_preloaded_functions()
+            # Merge preloaded functions into this registry
+            for namespace, functions in preloaded_functions.items():
+                if namespace not in self._functions:
+                    self._functions[namespace] = {}
+                self._functions[namespace].update(functions)
 
-            if hasattr(registry_module, "_preloaded_corelib_functions"):
-                preloaded_functions = registry_module._preloaded_corelib_functions
-                if preloaded_functions:
-                    # Merge preloaded functions into this registry
-                    for namespace, functions in preloaded_functions.items():
-                        if namespace not in self._functions:
-                            self._functions[namespace] = {}
-                        self._functions[namespace].update(functions)
         except Exception:
             # If preloading failed, corelib functions will not be available
             # This is expected behavior - preloading should always work during normal startup
-            pass
+            from dana.common import DANA_LOGGER
+
+            DANA_LOGGER.error("Failed to load preloaded functions")
 
     def _get_arg_processor(self):
         """
@@ -406,7 +425,7 @@ class FunctionRegistry:
         raise FunctionRegistryError(
             f"Function '{name}' not found in any namespace. Searched: {search_order}",
             function_name=name,
-            namespace=None,
+            namespace="None",
             operation="resolve",
             calling_function=calling_function,
             call_stack=call_stack,
@@ -642,3 +661,26 @@ class FunctionRegistry:
         """
         _, _, metadata = self.resolve(name, namespace)
         return metadata
+
+
+class PreloadedFunctionRegistry(FunctionRegistry):
+    """A registry for preloaded functions."""
+
+    def __init__(self):
+        super().__init__()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        FunctionRegistry.add_preloaded_functions(self._functions)
+
+    def __aenter__(self):
+        return self
+
+    def __aexit__(self, exc_type, exc_value, traceback):
+        FunctionRegistry.add_preloaded_functions(self._functions)
+
+    def _register_preloaded_functions(self):
+        """Register preloaded functions."""
+        pass

@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.libs.corelib.py.py_reason import py_reason as reason_function
+from dana.libs.corelib.py_wrappers.py_reason import py_reason as reason_function
 
 from .abstract_dana_agent import AbstractDanaAgent
 

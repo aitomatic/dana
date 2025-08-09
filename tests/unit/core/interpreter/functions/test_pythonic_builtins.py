@@ -14,7 +14,7 @@ from dana.core.lang.interpreter.functions.function_registry import FunctionRegis
 from dana.core.lang.sandbox_context import SandboxContext
 
 # Import the real PythonicFunctionFactory
-from dana.libs.stdlib.pythonic.function_factory import PythonicFunctionFactory
+from dana.libs.corelib.py_builtins.register_py_builtins import PythonicBuiltinsFactory as PythonicFunctionFactory
 
 
 def test_pythonic_function_factory_basic():
@@ -129,9 +129,9 @@ def test_register_pythonic_builtins():
     registry = FunctionRegistry()
 
     # Register the built-ins
-    from dana.libs.stdlib.pythonic.function_factory import register_pythonic_builtins
+    from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
 
-    register_pythonic_builtins(registry)
+    do_register_py_builtins(registry)
 
     # Test that functions are registered
     assert registry.has("len")
@@ -161,9 +161,9 @@ def test_function_lookup_order():
     registry.register("len", PythonFunction(custom_len, trusted_for_context=True), func_type=FunctionType.PYTHON, overwrite=True)
 
     # Now register built-ins (should overwrite custom function for safety)
-    from dana.libs.stdlib.pythonic.function_factory import register_pythonic_builtins
+    from dana.libs.corelib.py_builtins.register_py_builtins import do_register_py_builtins
 
-    register_pythonic_builtins(registry)
+    do_register_py_builtins(registry)
 
     # The built-in function should now take precedence
     context = SandboxContext()
