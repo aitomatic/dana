@@ -205,3 +205,39 @@ print(f"""
 ACCESSED: {small_submodule_in_big_submodule_with_empty_init.SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE}
 IN: {I_AM}
 """)
+
+
+# access `util_submodule` and its nested objects
+print(f"""
+IMPORTED: {util_submodule}
+INTO: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {util_submodule.small_submodule}
+IN: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {util_submodule.small_submodule.I_AM}
+IN: {I_AM}
+""")
+
+
+# access `small_util_submodule_in_util_submodule` and its nested objects
+print(f"""
+IMPORTED: {small_util_submodule_in_util_submodule}
+INTO: {I_AM}
+""")
+
+print(f"""
+ACCESSED: {small_util_submodule_in_util_submodule.I_AM}
+IN: {I_AM}
+""")
+
+
+# access `SMALL_UTIL_SUBMODULE_IN_UTIL_SUBMODULE`
+print(f"""
+IMPORTED: {SMALL_UTIL_SUBMODULE_IN_UTIL_SUBMODULE}
+INTO: {I_AM}
+""")
