@@ -117,7 +117,7 @@ class PythonicBuiltinsFactory:
         },
         # Smart wrappers for flexible argument handling
         "sum": {
-            "func": _smart_sum.__func__,  # type: ignore[attr-defined]
+            "func": sum,
             "types": [],  # Skip type validation - smart wrapper handles it
             "doc": "Return the sum of a sequence of numbers, optionally with a start value",
             "signatures": [
@@ -130,13 +130,13 @@ class PythonicBuiltinsFactory:
             ],  # Allow list/tuple with optional start
         },
         "max": {
-            "func": _smart_max.__func__,  # type: ignore[attr-defined]
+            "func": max,
             "types": [],  # Skip type validation - smart wrapper handles it
             "doc": "Return the largest item in an iterable or among multiple arguments",
             "signatures": [],  # Skip signature validation - smart wrapper handles it
         },
         "min": {
-            "func": _smart_min.__func__,  # type: ignore[attr-defined]
+            "func": min,
             "types": [],  # Skip type validation - smart wrapper handles it
             "doc": "Return the smallest item in an iterable or among multiple arguments",
             "signatures": [],  # Skip signature validation - smart wrapper handles it
@@ -760,6 +760,12 @@ If this is a custom function, make sure it's:
             report["security_critical"].extend(functions)
 
         return report
+
+
+# Bind smart wrappers after class definition to avoid staticmethod.__func__ typing issues
+PythonicBuiltinsFactory.FUNCTION_CONFIGS["sum"]["func"] = PythonicBuiltinsFactory._smart_sum
+PythonicBuiltinsFactory.FUNCTION_CONFIGS["max"]["func"] = PythonicBuiltinsFactory._smart_max
+PythonicBuiltinsFactory.FUNCTION_CONFIGS["min"]["func"] = PythonicBuiltinsFactory._smart_min
 
 
 def do_register_py_builtins(registry: FunctionRegistry) -> None:

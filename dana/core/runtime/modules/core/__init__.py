@@ -55,9 +55,11 @@ def initialize_module_system(search_paths: list[str] | None = None) -> None:
 
 def get_module_registry() -> ModuleRegistry:
     """Get the global module registry instance."""
+    global _module_registry
     if _module_registry is None:
         initialize_module_system()
-        # raise ModuleError("Module system not initialized. Call initialize_module_system() first.")
+        # After initialization, the registry must be set
+        assert _module_registry is not None
     return _module_registry
 
 
