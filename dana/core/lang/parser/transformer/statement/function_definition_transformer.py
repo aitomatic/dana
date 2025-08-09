@@ -421,49 +421,129 @@ class FunctionDefinitionTransformer(BaseTransformer):
         # === Agent Definitions ===
 
     def agent_definition(self, items):
-        """Transform an agent definition rule into an AgentDefinition node."""
-        name_token = items[0]
-        # items are [NAME, optional COMMENT, agent_block]
-        agent_block = items[2] if len(items) > 2 else items[1]
+        """Transform an agent blueprint definition rule into an AgentDefinition node."""
+        # Items may include a leading keyword token (AGENT_BLUEPRINT)
+        from lark import Token, Tree
+
+        name_token = None
+        agent_block = None
+
+        for it in items:
+            if isinstance(it, Token) and it.type == "NAME" and name_token is None:
+                name_token = it
+            elif isinstance(it, Tree) and getattr(it, "data", None) == "agent_block":
+                agent_block = it
+
+        if name_token is None or agent_block is None:
+            # Fallback to previous positional behavior
+            name_token = items[0]
+            agent_block = items[2] if len(items) > 2 else items[1]
 
         fields = []
         if hasattr(agent_block, "data") and agent_block.data == "agent_block":
-            # The children of agent_block are NL, INDENT, agent_fields, DEDENT...
-            # The agent_fields tree is what we want
             agent_fields_tree = None
             for child in agent_block.children:
                 if hasattr(child, "data") and child.data == "agent_fields":
                     agent_fields_tree = child
                     break
-
             if agent_fields_tree:
                 fields = [child for child in agent_fields_tree.children if isinstance(child, AgentField)]
 
         return AgentDefinition(name=name_token.value, fields=fields)
 
+    def singleton_agent_definition(self, items):
+        """Transform a singleton agent definition into a SingletonAgentDefinition node."""
+        from lark import Token, Tree
+
+        blueprint_name = None
+        overrides_block = None
+
+        for it in items:
+            if isinstance(it, Token) and it.type == "NAME" and blueprint_name is None:
+                blueprint_name = it.value
+            elif isinstance(it, Tree) and getattr(it, "data", None) == "singleton_agent_block":
+                overrides_block = it
+
+        overrides = []
+        if overrides_block is not None:
+            # children may contain singleton_agent_fields
+            for child in overrides_block.children:
+                if hasattr(child, "data") and child.data == "singleton_agent_fields":
+                    for f in child.children:
+                        from dana.core.lang.ast import SingletonAgentField
+
+                        if isinstance(f, SingletonAgentField):
+                            overrides.append(f)
+
+        from dana.core.lang.ast import SingletonAgentDefinition
+
+        return SingletonAgentDefinition(blueprint_name=blueprint_name, overrides=overrides, alias_name=None)
+
+    def singleton_agent_definition_with_alias(self, items):
+        """Transform alias-based singleton with block: agent Alias(Blueprint): ..."""
+        from lark import Token, Tree
+
+        alias_name = None
+        blueprint_name = None
+        overrides_block = None
+
+        # Expect order: AGENT, Alias NAME, '(', Blueprint NAME, ')', ':', block
+        name_tokens = [it for it in items if isinstance(it, Token) and it.type == "NAME"]
+        if len(name_tokens) >= 2:
+            alias_name = name_tokens[0].value
+            blueprint_name = name_tokens[1].value
+
+        for it in items:
+            if isinstance(it, Tree) and getattr(it, "data", None) == "singleton_agent_block":
+                overrides_block = it
+
+        overrides = []
+        if overrides_block is not None:
+            for child in overrides_block.children:
+                if hasattr(child, "data") and child.data == "singleton_agent_fields":
+                    for f in child.children:
+                        from dana.core.lang.ast import SingletonAgentField
+
+                        if isinstance(f, SingletonAgentField):
+                            overrides.append(f)
+
+        from dana.core.lang.ast import SingletonAgentDefinition
+
+        return SingletonAgentDefinition(blueprint_name=blueprint_name, overrides=overrides, alias_name=alias_name)
+
+    def singleton_agent_definition_with_alias_simple(self, items):
+        """Transform alias-based singleton without block: agent Alias(Blueprint)"""
+        from lark import Token
+
+        name_tokens = [it for it in items if isinstance(it, Token) and it.type == "NAME"]
+        alias_name = name_tokens[0].value if len(name_tokens) >= 1 else None
+        blueprint_name = name_tokens[1].value if len(name_tokens) >= 2 else None
+        from dana.core.lang.ast import SingletonAgentDefinition
+
+        return SingletonAgentDefinition(blueprint_name=blueprint_name, overrides=[], alias_name=alias_name)
+
+    def singleton_agent_field(self, items):
+        """Transform a singleton agent override into a SingletonAgentField node."""
+        name_token = items[0]
+        value_expr = items[1]
+        from dana.core.lang.ast import SingletonAgentField
+
+        return SingletonAgentField(name=name_token.value, value=value_expr)
+
+    def base_agent_singleton_definition(self, items):
+        """Transform `agent Name` into a BaseAgentSingletonDefinition AST node."""
+        from lark import Token
+
+        from dana.core.lang.ast import BaseAgentSingletonDefinition
+
+        alias_token = next((it for it in items if isinstance(it, Token) and it.type == "NAME"), None)
+        alias = alias_token.value if alias_token is not None else "agent"
+        return BaseAgentSingletonDefinition(alias_name=alias)
+
     def agent_field(self, items):
         """Transform an agent field rule into an AgentField node."""
-
         name_token = items[0]
-        type_hint_node = items[1]
-        default_value = None
+        type_hint = items[1] if len(items) > 1 else None
+        default_value = items[2] if len(items) > 2 else None
 
-        # Check if there's a default value (items[2] would be the default expression)
-        if len(items) > 2:
-            default_value = self.main_transformer.expression_transformer.transform(items[2])
-
-        field_name = name_token.value
-
-        # The type_hint_node should already be a TypeHint object
-        # from the 'basic_type' rule transformation.
-        if not isinstance(type_hint_node, TypeHint):
-            # Fallback if it's a token
-            if isinstance(type_hint_node, Token):
-                type_hint = TypeHint(name=type_hint_node.value)
-            else:
-                # This would be an unexpected state
-                raise TypeError(f"Unexpected type for type_hint_node: {type(type_hint_node)}")
-        else:
-            type_hint = type_hint_node
-
-        return AgentField(name=field_name, type_hint=type_hint, default_value=default_value)
+        return AgentField(name=name_token.value, type_hint=type_hint, default_value=default_value)

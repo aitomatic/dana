@@ -3,7 +3,7 @@
 
 # Test agent method calls with deliver/return
 def test_agent_deliver_return():
-    agent DataProcessor:
+    agent_blueprint DataProcessor:
         name: str = "DataProcessor"
         
         def (self) process_immediately(data):
@@ -28,8 +28,8 @@ def test_agent_deliver_return():
 
 # Test concurrent agent operations
 def test_concurrent_agent_operations():
-    agent APIClient:
-        base_url: str = "https:#api.example.com"
+    agent_blueprint APIClient:
+        base_url: str = "https://api.example.com"
         
         def (self) fetch_users():
             return [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]
@@ -64,7 +64,7 @@ def test_concurrent_agent_operations():
 
 # Test agent communication with Promise[T]
 def test_agent_communication():
-    agent ResearchAgent:
+    agent_blueprint ResearchAgent:
         expertise: str = "research"
         
         def (self) research_topic(topic: str):
@@ -73,7 +73,7 @@ def test_agent_communication():
         def (self) quick_summary(topic: str):
             deliver f"Quick summary: {topic}"
     
-    agent AnalysisAgent:
+    agent_blueprint AnalysisAgent:
         expertise: str = "analysis"
         
         def (self) analyze_data(data: str):
@@ -82,8 +82,8 @@ def test_agent_communication():
         def (self) rapid_insight(data: str):
             deliver f"Rapid insight: {data}"
     
-    agent OrchestratorAgent:
-        name: str = "orchestrator"
+    agent_blueprint OrchestratorAgent:
+        name: str = "Orchestrator"
         
         def (self) coordinate_research(topic: str):
             researcher = ResearchAgent()
@@ -112,7 +112,7 @@ def test_agent_communication():
 
 # Test conditional agent execution
 def test_conditional_agent_execution():
-    agent ComputeAgent:
+    agent_blueprint ComputeAgent:
         power_level: str = "standard"
         
         def (self) light_computation(data):
@@ -122,8 +122,8 @@ def test_conditional_agent_execution():
             # Expensive operation - only run when needed
             return sum(x * x for x in data)
     
-    agent TaskCoordinator:
-        name: str = "coordinator"
+    agent_blueprint TaskCoordinator:
+        name: str = "Coordinator"
         
         def (self) process_workload(data, complexity: str):
             compute_agent = ComputeAgent()
@@ -154,20 +154,20 @@ def test_conditional_agent_execution():
 
 # Test agent pipeline with Promise[T]
 def test_agent_pipeline():
-    agent DataIngestionAgent:
-        source: str = "database"
+    agent_blueprint DataIngestionAgent:
+        source: str = "s3://bucket/data"
         
         def (self) ingest_data():
             return {"raw_data": [10, 20, 30, 40, 50]}
     
-    agent DataCleaningAgent:
-        rules: str = "standard"
+    agent_blueprint DataCleaningAgent:
+        rules: list = ["drop_nulls", "normalize"]
         
         def (self) clean_data(raw_data):
             return {"clean_data": [x for x in raw_data["raw_data"] if x > 15]}
     
-    agent DataAnalysisAgent:
-        model: str = "statistical"
+    agent_blueprint DataAnalysisAgent:
+        method: str = "statistical"
         
         def (self) analyze(clean_data):
             data = clean_data["clean_data"]
@@ -180,8 +180,8 @@ def test_agent_pipeline():
                 }
             }
     
-    agent PipelineCoordinator:
-        name: str = "pipeline"
+    agent_blueprint PipelineCoordinator:
+        name: str = "PipeCoord"
         
         def (self) run_pipeline():
             ingestion = DataIngestionAgent()
@@ -209,8 +209,8 @@ def test_agent_pipeline():
 
 # Test error handling in agent concurrency
 def test_agent_error_handling():
-    agent FlakyService:
-        reliability: str = "low"
+    agent_blueprint FlakyService:
+        failure_rate: float = 0.2
         
         def (self) reliable_operation():
             deliver "success"
@@ -218,8 +218,8 @@ def test_agent_error_handling():
         def (self) unreliable_operation():
             return 1 / 0  # This will fail
     
-    agent ErrorHandler:
-        name: str = "handler"
+    agent_blueprint ErrorHandler:
+        retries: int = 2
         
         def (self) safe_operations():
             service = FlakyService()
@@ -249,8 +249,8 @@ def test_agent_error_handling():
 
 # Test agent resource management with Promise[T]
 def test_agent_resource_management():
-    agent DatabaseAgent:
-        connection_pool: str = "main"
+    agent_blueprint DatabaseAgent:
+        dsn: str = "postgres://..."
         
         def (self) query_users():
             return [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]
@@ -258,8 +258,8 @@ def test_agent_resource_management():
         def (self) query_orders():
             return [{"id": 101, "user_id": 1}, {"id": 102, "user_id": 2}]
     
-    agent CacheAgent:
-        cache_type: str = "redis"
+    agent_blueprint CacheAgent:
+        size: int = 256
         
         def (self) get_cached_data(key: str):
             return f"cached_{key}"
@@ -267,8 +267,8 @@ def test_agent_resource_management():
         def (self) expensive_computation():
             return "computed_result"
     
-    agent ResourceCoordinator:
-        name: str = "coordinator"
+    agent_blueprint ResourceCoordinator:
+        name: str = "ResCoord"
         
         def (self) load_dashboard():
             db = DatabaseAgent()

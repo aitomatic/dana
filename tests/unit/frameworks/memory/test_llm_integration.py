@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from dana.agent.agent_struct_system import AgentStructInstance, AgentStructType
+from dana.agent.agent_instance import AgentType, AgentInstance
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -22,7 +22,7 @@ class TestLLMIntegration(unittest.TestCase):
         self.memory_dir.mkdir(parents=True, exist_ok=True)
 
         # Patch memory initialization to use temp directory
-        _original_init = AgentStructInstance._initialize_conversation_memory
+        _original_init = AgentInstance._initialize_conversation_memory
 
         def mock_init(agent_self):
             if agent_self._conversation_memory is None:
@@ -33,7 +33,7 @@ class TestLLMIntegration(unittest.TestCase):
                 memory_file = self.memory_dir / f"{agent_name}_conversation.json"
                 agent_self._conversation_memory = ConversationMemory(filepath=str(memory_file), max_turns=20)
 
-        self.init_patcher = patch.object(AgentStructInstance, "_initialize_conversation_memory", mock_init)
+        self.init_patcher = patch.object(AgentInstance, "_initialize_conversation_memory", mock_init)
         self.init_patcher.start()
 
         # Create a sandbox context for testing
@@ -51,9 +51,9 @@ class TestLLMIntegration(unittest.TestCase):
         if fields is None:
             fields = {"role": "assistant"}
 
-        agent_type = AgentStructType(name=name, fields=fields, field_order=list(fields.keys()), field_comments={})
+        agent_type = AgentType(name=name, fields=fields, field_order=list(fields.keys()), field_comments={})
 
-        return AgentStructInstance(agent_type, fields)
+        return AgentInstance(agent_type, fields)
 
     def test_llm_resource_integration(self):
         """Test that agent uses LLM resource properly."""
@@ -209,10 +209,10 @@ class TestLLMFunctionIntegration(unittest.TestCase):
 
     def test_sandbox_context_creation(self):
         """Test that SandboxContext is created properly."""
-        from dana.agent.agent_struct_system import AgentStructInstance, AgentStructType
+        from dana.agent.agent_instance import AgentType, AgentInstance
 
-        agent_type = AgentStructType(name="ContextTestAgent", fields={"purpose": "testing"}, field_order=["purpose"], field_comments={})
-        agent = AgentStructInstance(agent_type, {"purpose": "testing"})
+        agent_type = AgentType(name="ContextTestAgent", fields={"purpose": "testing"}, field_order=["purpose"], field_comments={})
+        agent = AgentInstance(agent_type, {"purpose": "testing"})
 
         # Test the LLM resource creation without mocking
         llm_resource = agent._get_llm_resource()
@@ -222,10 +222,10 @@ class TestLLMFunctionIntegration(unittest.TestCase):
 
     def test_wrapper_function_behavior(self):
         """Test the wrapped LLM resource behavior."""
-        from dana.agent.agent_struct_system import AgentStructInstance, AgentStructType
+        from dana.agent.agent_instance import AgentType, AgentInstance
 
-        agent_type = AgentStructType(name="WrapperTestAgent", fields={"role": "tester"}, field_order=["role"], field_comments={})
-        agent = AgentStructInstance(agent_type, {"role": "tester"})
+        agent_type = AgentType(name="WrapperTestAgent", fields={"role": "tester"}, field_order=["role"], field_comments={})
+        agent = AgentInstance(agent_type, {"role": "tester"})
 
         mock_llm_resource = Mock()
         mock_llm_resource.query_sync.return_value = Mock(success=True, content="Resolved LLM response")
