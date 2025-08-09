@@ -8,11 +8,11 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any
+from typing import Any, cast
 
 from dana.common.exceptions import SandboxError
 from dana.common.mixins.loggable import Loggable
-from dana.core.lang.ast import ImportFromStatement, ImportStatement
+from dana.core.lang.ast import ExportStatement, ImportFromStatement, ImportStatement
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -56,6 +56,10 @@ class ImportHandler(Loggable):
     def execute_import_statement(self, node: ImportStatement, context: SandboxContext) -> Any:
         """Execute an import statement with optimized processing.
 
+        Examples:
+            - Dana module: ``import utils.text`` or with alias ``import utils.text as txt``
+            - Python module: ``import os.py`` or with alias ``import os.py as osmod``
+
         Args:
             node: The import statement to execute
             context: The execution context
@@ -93,6 +97,11 @@ class ImportHandler(Loggable):
     def execute_import_from_statement(self, node: ImportFromStatement, context: SandboxContext) -> Any:
         """Execute a from-import statement with optimized processing.
 
+        Examples:
+            - Dana module: ``from math_utils import add, sub as subtract``
+            - Python module: ``from os.py import path, getenv as env``
+            - Star import: ``from math import *``
+
         Args:
             node: The from-import statement to execute
             context: The execution context
@@ -104,14 +113,17 @@ class ImportHandler(Loggable):
         module_name = node.module
 
         try:
-            self._trace_import("from_import", module_name, f"names={[name for name, _ in node.names]}")
+            if node.is_star_import:
+                self._trace_import("from_import", module_name, "names=*")
+            else:
+                self._trace_import("from_import", module_name, f"names={[name for name, _ in node.names]}")
 
             if module_name.endswith(".py"):
                 # Explicitly Python module
-                return self._execute_python_from_import(module_name, node.names, context)
+                return self._execute_python_from_import(module_name, node.names, context, is_star=node.is_star_import)
             else:
                 # Dana module (implicit .na)
-                return self._execute_dana_from_import(module_name, node.names, context)
+                return self._execute_dana_from_import(module_name, node.names, context, is_star=node.is_star_import)
 
         except SandboxError:
             # Re-raise SandboxErrors directly
@@ -120,8 +132,44 @@ class ImportHandler(Loggable):
             # Convert other errors to SandboxErrors for consistency
             raise SandboxError(f"Error importing from module '{module_name}': {e}") from e
 
+    def execute_export_statement(self, node: ExportStatement, context: SandboxContext) -> None:
+        """Execute an export statement with optimized processing.
+
+        Args:
+            node: The export statement node
+            context: The execution context
+
+        Returns:
+            None
+        """
+        # Get the name to export
+        name = node.name
+
+        # Validate presence in local scope if already defined (best-effort)
+        try:
+            context.get_from_scope(name, scope="local")
+        except Exception:
+            # If not defined yet, that's acceptable; it may be defined later in the module
+            pass
+
+        # Track exports on the context
+        if not hasattr(context, "_exports"):
+            context._exports = set()
+        context._exports.add(name)
+
+        # Trace export operation
+        try:
+            self.debug(f"Exporting name: {name}")
+        except Exception:
+            pass
+
+        return None
+
     def _execute_python_import(self, module_name: str, context_name: str, context: SandboxContext) -> None:
         """Execute import of a Python module with caching.
+
+        Example:
+            ``import os.py as osmod``  -> binds module to ``local:osmod``
 
         Args:
             module_name: Full module name with .py extension
@@ -156,6 +204,9 @@ class ImportHandler(Loggable):
 
     def _execute_dana_import(self, module_name: str, context_name: str, context: SandboxContext) -> None:
         """Execute Dana module import with caching.
+
+        Example:
+            ``import utils.text as txt``  -> binds module to ``local:txt`` and merges public data
 
         Args:
             module_name: Dana module name (may be relative)
@@ -209,7 +260,7 @@ class ImportHandler(Loggable):
             if module is None:
                 raise ImportError(f"Could not create Dana module '{absolute_module_name}'")
 
-            loader.exec_module(module)
+            loader.exec_module(cast(Any, module))
 
             # Cache the module
             if len(self._module_cache) < self.MODULE_CACHE_SIZE:
@@ -233,128 +284,72 @@ class ImportHandler(Loggable):
             # Convert to SandboxError for consistency
             raise SandboxError(f"Error loading Dana module '{absolute_module_name}': {e}") from e
 
-    def _execute_python_from_import(self, module_name: str, names: list[tuple[str, str | None]], context: SandboxContext) -> None:
-        """Execute from-import of a Python module with caching.
+    def _execute_python_from_import(
+        self, module_name: str, names: list[tuple[str, str | None]], context: SandboxContext, is_star: bool = False
+    ) -> None:
+        """Execute from-import of a Python module with caching (refactored).
 
-        Args:
-            module_name: Full module name with .py extension
-            names: List of (name, alias) tuples to import
-            context: The execution context
+        Example:
+            ``from os.py import path, getenv as env``  -> binds ``local:path`` and ``local:env``
+            ``from math.py import *``  -> imports all public names
         """
-        import importlib
+        module, import_name = self._get_module(kind="py", module_name=module_name, context=context)
 
-        # Strip .py extension for Python import
-        import_name = module_name[:-3]
-
-        # Check cache first
-        cache_key = f"py:{import_name}"
-        if cache_key in self._module_cache:
-            module = self._module_cache[cache_key]
+        if is_star:
+            # Star import: import all public names from the module
+            self._import_all_from_module(
+                module,
+                context,
+                module_name_for_errors=import_name,
+                enforce_exports=False,
+                enforce_underscore_privacy=True,  # Even for Python, don't import private names
+                crosswire_dana_functions=False,
+            )
         else:
-            try:
-                module = importlib.import_module(import_name)
+            # Explicit imports
+            self._import_names_from_module(
+                module,
+                names,
+                context,
+                module_name_for_errors=import_name,
+                enforce_exports=False,
+                enforce_underscore_privacy=False,
+                crosswire_dana_functions=False,
+            )
 
-                # Cache the module
-                if len(self._module_cache) < self.MODULE_CACHE_SIZE:
-                    self._module_cache[cache_key] = module
+    def _execute_dana_from_import(
+        self, module_name: str, names: list[tuple[str, str | None]], context: SandboxContext, is_star: bool = False
+    ) -> None:
+        """Execute Dana module from-import with caching (refactored).
 
-            except ImportError as e:
-                raise SandboxError(f"Python module '{import_name}' not found: {e}") from e
-
-        # Import specific names from the module
-        for name, alias in names:
-            # Check if the name exists in the module
-            if not hasattr(module, name):
-                raise SandboxError(f"Cannot import name '{name}' from Python module '{import_name}'")
-
-            # Get the object from the module
-            obj = getattr(module, name)
-
-            # Determine the name to use in the context
-            context_name = alias if alias else name
-
-            # Set the object in the local context
-            context.set(f"local:{context_name}", obj)
-
-            # If it's a function, also register it in the function registry for calls
-            if callable(obj) and self.function_registry:
-                self._register_imported_function(obj, context_name, module_name, name)
-
-    def _execute_dana_from_import(self, module_name: str, names: list[tuple[str, str | None]], context: SandboxContext) -> None:
-        """Execute Dana module from-import with caching.
-
-        Args:
-            module_name: Dana module name (may be relative)
-            names: List of (name, alias) tuples to import
-            context: The execution context
+        Example:
+            ``from core.math import add, sub as subtract``  -> binds ``local:add`` and ``local:subtract``
+            ``from dana.libs.corelib.na_modules import *``  -> imports all exported names
         """
         self._ensure_module_system_initialized()
+        module, absolute_module_name = self._get_module(kind="dana", module_name=module_name, context=context)
 
-        # Handle relative imports
-        absolute_module_name = self._resolve_relative_import(module_name, context)
-
-        # Check cache first
-        cache_key = f"dana:{absolute_module_name}"
-        if cache_key in self._module_cache:
-            module = self._module_cache[cache_key]
+        if is_star:
+            # Star import: import all exported names from the module
+            self._import_all_from_module(
+                module,
+                context,
+                module_name_for_errors=absolute_module_name,
+                enforce_exports=True,
+                enforce_underscore_privacy=True,
+                crosswire_dana_functions=True,
+            )
         else:
-            # Use the Dana module system directly
-            from dana.core.runtime.modules.core import get_module_loader
-
-            loader = get_module_loader()
-
-            # Find the module spec
-            spec = loader.find_spec(absolute_module_name)
-            if spec is None:
-                raise SandboxError(f"Module '{module_name}' not found")
-
-            # Create and execute the module
-            module = loader.create_module(spec)
-            if module is None:
-                raise SandboxError(f"Could not create module '{module_name}'")
-
-            loader.exec_module(module)
-
-            # Cache the module
-            self._module_cache[cache_key] = module
-
-        # Import specific names from the module
-        for name, alias in names:
-            # Check if the name exists in the module
-            if not hasattr(module, name):
-                raise SandboxError(f"Cannot import name '{name}' from Dana module '{absolute_module_name}': name not found")
-
-            # Enforce underscore privacy rule: reject names starting with '_'
-            if name.startswith("_"):
-                raise SandboxError(
-                    f"Cannot import name '{name}' from Dana module '{absolute_module_name}': names starting with '_' are private"
-                )
-
-            # Additional check: respect module's __exports__ if available
-            if hasattr(module, "__exports__") and name not in module.__exports__:
-                raise SandboxError(f"Cannot import name '{name}' from Dana module '{absolute_module_name}': not in module exports")
-
-            # Get the object from the module
-            obj = getattr(module, name)
-
-            # Use alias if provided, otherwise use original name
-            context_name = alias if alias else name
-
-            # Set the object in the local context
-            context.set(f"local:{context_name}", obj)
-
-            # If it's a function, also register it in the function registry for calls
-            if callable(obj) and self.function_registry:
-                self._register_imported_function(obj, context_name, module_name, name)
-
-                # For DanaFunction objects, ensure they have access to the module's context
-                from dana.core.lang.interpreter.functions.dana_function import DanaFunction
-
-                if isinstance(obj, DanaFunction) and obj.context is not None:
-                    # Copy all module functions to the function's context so it can call them
-                    for module_name_key, module_obj in module.__dict__.items():
-                        if callable(module_obj) and not module_name_key.startswith("__"):
-                            obj.context.set_in_scope(module_name_key, module_obj, scope="local")
+            # Explicit imports
+            self._import_names_from_module(
+                module,
+                names,
+                context,
+                module_name_for_errors=absolute_module_name,
+                enforce_exports=True,
+                enforce_underscore_privacy=True,
+                crosswire_dana_functions=True,
+            )
 
     def _register_imported_function(self, func: callable, context_name: str, module_name: str, original_name: str) -> None:
         """Register an imported function in the function registry with optimized handling.
@@ -411,6 +406,7 @@ class ImportHandler(Loggable):
 
     def _ensure_module_system_initialized(self) -> None:
         """Ensure the Dana module system is initialized with caching."""
+
         if self._module_loader_initialized:
             return
 
@@ -594,3 +590,151 @@ class ImportHandler(Loggable):
             "module_cache_utilization_percent": round(len(self._module_cache) / max(self.MODULE_CACHE_SIZE, 1) * 100, 2),
             "namespace_cache_utilization_percent": round(len(self._namespace_cache) / max(self.NAMESPACE_CACHE_SIZE, 1) * 100, 2),
         }
+
+    def _get_module(self, kind: str, module_name: str, context: SandboxContext) -> tuple[Any, str]:
+        """Fetch a module (Python or Dana) with caching and return (module, name_for_errors).
+
+        kind: "py" or "dana"
+        module_name: For Python, may end with ".py"; for Dana, may be relative (e.g., ".utils").
+        name_for_errors: Stripped import name (py) or absolute module name (dana).
+        """
+        if kind == "py":
+            import importlib
+
+            import_name = module_name[:-3] if module_name.endswith(".py") else module_name
+            cache_key = f"py:{import_name}"
+            if cache_key in self._module_cache:
+                return self._module_cache[cache_key], import_name
+            try:
+                module = importlib.import_module(import_name)
+                if len(self._module_cache) < self.MODULE_CACHE_SIZE:
+                    self._module_cache[cache_key] = module
+                return module, import_name
+            except ImportError as e:
+                raise SandboxError(f"Python module '{import_name}' not found: {e}") from e
+        elif kind == "dana":
+            absolute_module_name = self._resolve_relative_import(module_name, context)
+            cache_key = f"dana:{absolute_module_name}"
+            if cache_key in self._module_cache:
+                return self._module_cache[cache_key], absolute_module_name
+            try:
+                from dana.core.runtime.modules.core import get_module_loader
+
+                loader = get_module_loader()
+                spec = loader.find_spec(absolute_module_name)
+                if spec is None:
+                    raise SandboxError(f"Module '{module_name}' not found")
+                module = loader.create_module(spec)
+                if module is None:
+                    raise SandboxError(f"Could not create module '{module_name}'")
+                loader.exec_module(cast(Any, module))
+                if len(self._module_cache) < self.MODULE_CACHE_SIZE:
+                    self._module_cache[cache_key] = module
+                return module, absolute_module_name
+            except Exception as e:
+                raise SandboxError(f"Error loading Dana module '{absolute_module_name}': {e}") from e
+        else:
+            raise SandboxError(f"Unknown module kind '{kind}'")
+
+    def _import_names_from_module(
+        self,
+        module: Any,
+        names: list[tuple[str, str | None]],
+        context: SandboxContext,
+        *,
+        module_name_for_errors: str,
+        enforce_exports: bool,
+        enforce_underscore_privacy: bool,
+        crosswire_dana_functions: bool,
+    ) -> None:
+        """Common implementation for importing specific names from a module.
+
+        Applies optional privacy/export enforcement and handles function registration.
+        """
+        for name, alias in names:
+            if not hasattr(module, name):
+                raise SandboxError(
+                    f"Cannot import name '{name}' from {'Dana' if enforce_exports else 'Python'} module '{module_name_for_errors}': name not found"
+                )
+            if enforce_underscore_privacy and name.startswith("_"):
+                raise SandboxError(
+                    f"Cannot import name '{name}' from Dana module '{module_name_for_errors}': names starting with '_' are private"
+                )
+            if enforce_exports and hasattr(module, "__exports__") and name not in module.__exports__:
+                raise SandboxError(f"Cannot import name '{name}' from Dana module '{module_name_for_errors}': not in module exports")
+            obj = getattr(module, name)
+            context_name = alias if alias else name
+            context.set(f"local:{context_name}", obj)
+            if callable(obj) and self.function_registry:
+                self._register_imported_function(obj, context_name, module_name_for_errors, name)
+                if crosswire_dana_functions:
+                    try:
+                        from dana.core.lang.interpreter.functions.dana_function import DanaFunction  # type: ignore
+
+                        if isinstance(obj, DanaFunction) and obj.context is not None:
+                            for module_name_key, module_obj in module.__dict__.items():
+                                if callable(module_obj) and not module_name_key.startswith("__"):
+                                    obj.context.set_in_scope(module_name_key, module_obj, scope="local")
+                    except Exception:
+                        # Best-effort: do not fail import due to cross-wiring issues
+                        pass
+
+    def _import_all_from_module(
+        self,
+        module: Any,
+        context: SandboxContext,
+        *,
+        module_name_for_errors: str,
+        enforce_exports: bool,
+        enforce_underscore_privacy: bool,
+        crosswire_dana_functions: bool,
+    ) -> None:
+        """Import all public/exported names from a module (star import).
+
+        For Dana modules: respects __exports__ if present, otherwise imports all public names.
+        For Python modules: imports all names except those starting with underscore.
+        """
+        # Determine which names to import
+        if enforce_exports and hasattr(module, "__exports__"):
+            # Dana module with explicit exports
+            names_to_import = module.__exports__
+        elif hasattr(module, "__all__"):
+            # Python module with __all__ defined
+            names_to_import = module.__all__
+        else:
+            # Default: import all attributes that don't start with underscore
+            names_to_import = []
+            for name in dir(module):
+                if enforce_underscore_privacy and name.startswith("_"):
+                    continue
+                # Skip special attributes
+                if name.startswith("__") and name.endswith("__"):
+                    continue
+                names_to_import.append(name)
+
+        # Import each name
+        for name in names_to_import:
+            if not hasattr(module, name):
+                # Skip names that don't exist (e.g., from __all__ but not actually defined)
+                self.warning(f"Name '{name}' listed in exports but not found in module '{module_name_for_errors}'")
+                continue
+
+            obj = getattr(module, name)
+            context.set(f"local:{name}", obj)
+
+            # Register functions
+            if callable(obj) and self.function_registry:
+                self._register_imported_function(obj, name, module_name_for_errors, name)
+
+                # Cross-wire Dana functions if needed
+                if crosswire_dana_functions:
+                    try:
+                        from dana.core.lang.interpreter.functions.dana_function import DanaFunction  # type: ignore
+
+                        if isinstance(obj, DanaFunction) and obj.context is not None:
+                            for module_name_key, module_obj in module.__dict__.items():
+                                if callable(module_obj) and not module_name_key.startswith("__"):
+                                    obj.context.set_in_scope(module_name_key, module_obj, scope="local")
+                    except Exception:
+                        # Best-effort: do not fail import due to cross-wiring issues
+                        pass

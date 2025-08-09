@@ -460,13 +460,13 @@ class FunctionDefinitionTransformer(BaseTransformer):
 
         for it in items:
             if isinstance(it, Token) and it.type == "NAME" and blueprint_name is None:
+                # This is the blueprint name (first NAME after 'agent (')
                 blueprint_name = it.value
             elif isinstance(it, Tree) and getattr(it, "data", None) == "singleton_agent_block":
                 overrides_block = it
 
         overrides = []
         if overrides_block is not None:
-            # children may contain singleton_agent_fields
             for child in overrides_block.children:
                 if hasattr(child, "data") and child.data == "singleton_agent_fields":
                     for f in child.children:
@@ -537,13 +537,41 @@ class FunctionDefinitionTransformer(BaseTransformer):
         from dana.core.lang.ast import BaseAgentSingletonDefinition
 
         alias_token = next((it for it in items if isinstance(it, Token) and it.type == "NAME"), None)
-        alias = alias_token.value if alias_token is not None else "agent"
+        if alias_token is None:
+            raise ValueError("Malformed AST: expected an alias token for base agent singleton definition, but none was found.")
+        alias = alias_token.value
         return BaseAgentSingletonDefinition(alias_name=alias)
 
     def agent_field(self, items):
-        """Transform an agent field rule into an AgentField node."""
+        """Transform an agent field rule into an AgentField node.
+
+        Grammar: agent_field: NAME ":" basic_type ["=" expr] [COMMENT] _NL
+        """
+        # Validate minimum required parts (name and type)
+        if len(items) < 2:
+            raise ValueError(f"Agent field must include a name and a type, got {len(items)} item(s): {items}")
+
         name_token = items[0]
-        type_hint = items[1] if len(items) > 1 else None
-        default_value = items[2] if len(items) > 2 else None
+        type_hint_node = items[1]
+
+        # Normalize type hint to TypeHint
+        if not isinstance(type_hint_node, TypeHint):
+            if isinstance(type_hint_node, Token):
+                type_hint = TypeHint(name=type_hint_node.value)
+            else:
+                raise TypeError(f"Unexpected type for type_hint_node: {type(type_hint_node)}")
+        else:
+            type_hint = type_hint_node
+
+        # Optional default value expression (third positional item before any COMMENT)
+        default_value = None
+        if len(items) > 2:
+            default_candidate = items[2]
+            # Transform only if it looks like an expression tree/token, otherwise ignore
+            try:
+                default_value = self.main_transformer.expression_transformer.transform(default_candidate)
+            except Exception:
+                # If it's a trailing comment token or something non-expr, ignore gracefully
+                default_value = None
 
         return AgentField(name=name_token.value, type_hint=type_hint, default_value=default_value)
