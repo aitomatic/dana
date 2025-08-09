@@ -1,19 +1,19 @@
 from . import big_namespace_submodule
 from .big_namespace_submodule import submodule as small_submodule_in_big_namespace_submodule
-from .big_namespace_submodule.submodule import I_AM as SMALL_SUBMODULE_IN_BIG_NAMESPACE_SUBMODULE
+from .big_namespace_submodule.small_submodule import I_AM as SMALL_SUBMODULE_IN_BIG_NAMESPACE_SUBMODULE
 
 from . import big_submodule_with_empty_init
 from .big_submodule_with_empty_init import submodule as small_submodule_in_big_submodule_with_empty_init
-from .big_submodule_with_empty_init.submodule import I_AM as SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_EMPTY_INIT
+from .big_submodule_with_empty_init.small_submodule import I_AM as SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_EMPTY_INIT
 
 from . import big_submodule_with_nonempty_init
 from .big_submodule_with_nonempty_init import I_AM as BIG_SUBMODULE_WITH_NONEMPTY_INIT
 from .big_submodule_with_nonempty_init import submodule as small_submodule_in_big_submodule_with_nonempty_init
-from .big_submodule_with_nonempty_init.submodule import I_AM as SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_NONEMPTY_INIT
+from .big_submodule_with_nonempty_init.small_submodule import I_AM as SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_NONEMPTY_INIT
 
 from . import util_submodule
 from .util_submodule import submodule as small_submodule_in_util_submodule
-from .util_submodule.submodule import I_AM as SMALL_SUBMODULE_IN_UTIL_SUBMODULE
+from .util_submodule.small_submodule import I_AM as SMALL_SUBMODULE_IN_UTIL_SUBMODULE
 
 
 I_AM = 'a package'
@@ -35,6 +35,6 @@ IN: {I_AM}
 ')
 
 print(f'
-USED: {small_submodule_in_big_namespace_submodule.submodule.I_AM}
+USED: {small_submodule_in_big_namespace_submodule.small_submodule.I_AM}
 IN: {I_AM}
 ')

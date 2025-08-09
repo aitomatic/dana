@@ -1,27 +1,29 @@
 from .. import util_submodule
 from ..util_submodule import submodule as small_util_submodule_in_big_util_submodule
-from ..util_submodule.submodule import I_AM as SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE
+from ..util_submodule.small_submodule import I_AM as SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE
 
 
 I_AM = 'a small sub-module, in a big sub-module with a non-empty `__init__.na`, in a package'
 
 
+# test referring to `util_submodule` and its nested objects
 print(f'
 IMPORTED: {util_submodule}
 INTO: {I_AM}
 ')
 
 print(f'
-USED: {util_submodule.submodule}
+USED: {util_submodule.small_submodule}
 IN: {I_AM}
 ')
 
 print(f'
-USED: {util_submodule.submodule.I_AM}
+USED: {util_submodule.small_submodule.I_AM}
 IN: {I_AM}
 ')
 
 
+# test referring to `small_util_submodule_in_big_util_submodule` and its nested objects
 print(f'
 IMPORTED: {small_util_submodule_in_big_util_submodule}
 INTO: {I_AM}
@@ -33,6 +35,7 @@ IN: {I_AM}
 ')
 
 
+# test referring to `SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE`
 print(f'
 IMPORTED: {SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE}
 INTO: {I_AM}
