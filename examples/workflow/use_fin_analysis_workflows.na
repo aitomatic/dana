@@ -7,9 +7,6 @@ from financial_analysis.liquidity import calc_quick_ratio, calc_ccc
 from financial_analysis.utils import FinDoc
 
 
-# log_level('info')  # enable this for more verbose logging
-
-
 # several financial cases to study
 DOCS_DIR = 'financial_analysis/docs'
 
@@ -20,17 +17,17 @@ VERIZON = FinDoc(company='Verizon', period='2022', path=f'{DOCS_DIR}/VERIZON_202
 
 
 # Capital-Intensity assessment
-print(f"
-3M's CAPITAL INTENSITY
-======================
-{assess_cap_intens(MMM)}
-")
+# print(f"
+# 3M's CAPITAL INTENSITY
+# ======================
+# {assess_cap_intens(MMM)}
+# ")
 
-print(f"
-VERIZON's CAPITAL INTENSITY
-===========================
-{assess_cap_intens(VERIZON)}
-")
+# print(f"
+# VERIZON's CAPITAL INTENSITY
+# ===========================
+# {assess_cap_intens(VERIZON)}
+# ")
 
 # Liquidity assessment by Quick Ratio
 print(f"
@@ -40,8 +37,8 @@ AMD's QUICK RATIO
 ")
 
 # Liquidity assessment by Cash Conversion Cycle
-print(f"
-GENERAL MILLS's CASH CONVERSION CYCLE
-=====================================
-{calc_ccc(GEN_MILLS)}
-")
+# print(f"
+# GENERAL MILLS's CASH CONVERSION CYCLE
+# =====================================
+# {calc_ccc(GEN_MILLS)}
+# ")
