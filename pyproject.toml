@@ -58,7 +58,7 @@ dependencies = [
     "fastapi",
     "uvicorn",
     # Testing Frameworks
-    "datest",
+    # "datest",  # TODO: publish `datest` on PyPI
     "pytest",
     "pytest-asyncio",
     "pytest-mock",
