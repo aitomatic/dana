@@ -230,6 +230,7 @@ class ExpressionTransformer(BaseTransformer):
             "-": BinaryOperator.SUBTRACT,
             "*": BinaryOperator.MULTIPLY,
             "/": BinaryOperator.DIVIDE,
+            "//": BinaryOperator.FLOOR_DIVIDE,
             "%": BinaryOperator.MODULO,
             "==": BinaryOperator.EQUALS,
             "!=": BinaryOperator.NOT_EQUALS,
@@ -722,8 +723,29 @@ class ExpressionTransformer(BaseTransformer):
             elif hasattr(item, "data") and item.data == "key_value_pair":
                 pair = self.key_value_pair(item.children)
                 pairs.append(pair)
+            # Skip comment tokens - they are handled at the grammar level but ignored during transformation
+            elif hasattr(item, "type") and item.type == "COMMENT":
+                continue
         result = DictLiteral(items=pairs)
         return result
+
+    def dict_items(self, items):
+        """Transform dict_items rule (list of dict_element)."""
+        return self.flatten_items(items)
+
+    def dict_element(self, items):
+        """Transform dict_element rule (either key_value_pair or COMMENT)."""
+        if not items:
+            return None
+
+        item = items[0]
+
+        # If it's a comment token, skip it (comments are ignored during transformation)
+        if hasattr(item, "type") and item.type == "COMMENT":
+            return None
+
+        # Otherwise, it should be a key_value_pair
+        return item
 
     def set(self, items):
         """
@@ -936,7 +958,7 @@ class ExpressionTransformer(BaseTransformer):
 
     def FDIV(self, token):
         """Handle the floor division operator token."""
-        return BinaryOperator.DIVIDE  # For now, just map to regular division
+        return BinaryOperator.FLOOR_DIVIDE
 
     def MOD(self, token):
         """Handle the modulo operator token."""
@@ -1289,38 +1311,48 @@ class ExpressionTransformer(BaseTransformer):
 
     def for_targets(self, items):
         """Transform for loop targets (single variable or tuple unpacking)."""
-        if len(items) == 1:
-            # Check if this is a list of tokens (tuple unpacking case)
-            if isinstance(items[0], list) and all(hasattr(item, "value") for item in items[0]):
-                # Extract the actual name values from tokens
-                names = []
-                for item in items[0]:
-                    names.append(item.value)
-                return ", ".join(names)
+        # Handle the new grammar: NAME ("," NAME)* | "(" for_target_list ")"
+
+        # Check if we have exactly one item that's a list (parenthesized form)
+        if len(items) == 1 and isinstance(items[0], list):
+            # This is the result from "(" for_target_list ")" - parentheses are consumed by grammar
+            target_list = items[0]
+            if all(isinstance(name, str) for name in target_list):
+                # for_target_list returns processed names
+                return ", ".join(target_list)
             else:
-                # Single variable: just return the name
-                return items[0]
-        elif len(items) == 3 and items[0] == "(" and items[2] == ")":
-            # Tuple unpacking: return comma-separated string of names
-            if isinstance(items[1], list):
-                # Extract the actual name values from tokens
-                names = []
-                for item in items[1]:
-                    if hasattr(item, "value"):
-                        names.append(item.value)
-                    else:
-                        names.append(str(item))
-                return ", ".join(names)
-            else:
-                return str(items[1])
+                # Handle unexpected format
+                return str(target_list)
+
+        # Handle the direct form: NAME ("," NAME)*
+        # All items should be NAME tokens or comma tokens
+        names = []
+        for item in items:
+            if hasattr(item, "value") and item.value != ",":
+                names.append(item.value)
+            elif hasattr(item, "value") and item.value == ",":
+                # Skip comma tokens
+                continue
+            elif isinstance(item, str) and item != ",":
+                names.append(item)
+
+        if len(names) == 1:
+            # Single variable: just return the name
+            return names[0]
         else:
-            # Unexpected structure
-            return items
+            # Multiple variables: return comma-separated string
+            return ", ".join(names)
 
     def for_target_list(self, items):
         """Transform for target list (comma-separated names)."""
-        # Return the list of names
-        return items
+        # Extract tokens and return list of name strings
+        names = []
+        for item in items:
+            if hasattr(item, "value") and item.value != ",":
+                names.append(item.value)
+            elif isinstance(item, str) and item != ",":
+                names.append(item)
+        return names
 
     def comprehension_if(self, items):
         """Transform comprehension condition - just pass through to parent."""

@@ -112,6 +112,7 @@ class BinaryOperator(Enum):
     SUBTRACT = "-"
     MULTIPLY = "*"
     DIVIDE = "/"
+    FLOOR_DIVIDE = "//"
     MODULO = "%"
     POWER = "**"
     PIPE = "|"
@@ -470,7 +471,7 @@ class WhileLoop:
 class ForLoop:
     """For loop statement."""
 
-    target: Identifier
+    target: Union[Identifier, list[Identifier]]  # Support single or multiple targets for tuple unpacking
     iterable: Expression
     body: list[Statement]
     location: Location | None = None

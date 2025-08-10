@@ -1,0 +1,142 @@
+# Test: Basic Lambda Expressions
+# Purpose: Test simple lambda expressions and their basic functionality
+# Category: Advanced Syntax - Lambda Expressions
+
+log("Starting Basic Lambda Expressions test")
+
+# Test 1: Simple lambda with single parameter
+double = lambda x :: x * 2
+result = double(5)
+assert result == 10, f"Expected 10, got {result}"
+log("✅ Simple lambda with single parameter works")
+
+# Test 2: Lambda with multiple parameters
+add = lambda x, y :: x + y
+result = add(3, 7)
+assert result == 10, f"Expected 10, got {result}"
+log("✅ Lambda with multiple parameters works")
+
+# Test 3: Lambda with no parameters
+get_five = lambda :: 5
+result = get_five()
+assert result == 5, f"Expected 5, got {result}"
+log("✅ Lambda with no parameters works")
+
+# Test 4: Lambda with string operations
+greet = lambda name :: "Hello, " + name
+result = greet("Dana")
+assert result == "Hello, Dana", f"Expected 'Hello, Dana', got '{result}'"
+log("✅ Lambda with string operations works")
+
+# Test 5: Lambda with boolean operations
+is_even = lambda x :: x % 2 == 0
+result1 = is_even(4)
+result2 = is_even(7)
+assert result1 == true, f"Expected true, got {result1}"
+assert result2 == false, f"Expected false, got {result2}"
+log("✅ Lambda with boolean operations works")
+
+# Test 6: Lambda with list operations
+get_length = lambda lst :: len(lst)
+result = get_length([1, 2, 3, 4, 5])
+assert result == 5, f"Expected 5, got {result}"
+log("✅ Lambda with list operations works")
+
+# Test 7: Lambda with dictionary access
+get_value = lambda d, key :: d[key]
+data = {"name": "Dana", "version": "1.0"}
+result = get_value(data, "name")
+assert result == "Dana", f"Expected 'Dana', got '{result}'"
+log("✅ Lambda with dictionary access works")
+
+# Test 8: Lambda with conditional expression
+abs_value = lambda x :: x if x >= 0 else -x
+result1 = abs_value(5)
+result2 = abs_value(-5)
+assert result1 == 5, f"Expected 5, got {result1}"
+assert result2 == 5, f"Expected 5, got {result2}"
+log("✅ Lambda with conditional expression works")
+
+# Test 9: Lambda with arithmetic operations
+power = lambda base, exp :: base ** exp
+result = power(2, 3)
+assert result == 8, f"Expected 8, got {result}"
+log("✅ Lambda with arithmetic operations works")
+
+# Test 10: Lambda with float operations
+divide = lambda a, b :: a / b
+result = divide(10, 2)
+assert result == 5.0, f"Expected 5.0, got {result}"
+log("✅ Lambda with float operations works")
+
+# Test 11: Lambda with string concatenation
+join_strings = lambda a, b :: a + " " + b
+result = join_strings("Hello", "World")
+assert result == "Hello World", f"Expected 'Hello World', got '{result}'"
+log("✅ Lambda with string concatenation works")
+
+# Test 12: Lambda with list comprehension
+double_list = lambda lst :: [x * 2 for x in lst]
+result = double_list([1, 2, 3])
+assert result == [2, 4, 6], f"Expected [2, 4, 6], got {result}"
+log("✅ Lambda with list comprehension works")
+
+# Test 13: Lambda with nested operations
+complex_op = lambda x, y :: (x + y) * (x - y)
+result = complex_op(5, 3)
+assert result == 16, f"Expected 16, got {result}"
+log("✅ Lambda with nested operations works")
+
+# Test 14: Lambda with multiple statements (if supported)
+# Note: This may not be supported in all lambda implementations
+multi_statement = lambda x :: (x * 2, x + 1)
+result = multi_statement(5)
+assert result == (10, 6), f"Expected (10, 6), got {result}"
+log("✅ Lambda with multiple statements works")
+
+# Test 15: Lambda assigned to variable and called
+square = lambda x :: x * x
+result = square(4)
+assert result == 16, f"Expected 16, got {result}"
+log("✅ Lambda assigned to variable works")
+
+# Test 16: Lambda with None handling
+safe_divide = lambda a, b :: a / b if b != 0 else None
+result1 = safe_divide(10, 2)
+result2 = safe_divide(10, 0)
+assert result1 == 5.0, f"Expected 5.0, got {result1}"
+assert result2 == None, f"Expected None, got {result2}"
+log("✅ Lambda with None handling works")
+
+# Test 17: Lambda with empty string handling
+safe_concat = lambda a, b :: a + b if a and b else ""
+result1 = safe_concat("Hello", "World")
+result2 = safe_concat("", "World")
+assert result1 == "HelloWorld", f"Expected 'HelloWorld', got '{result1}'"
+assert result2 == "", f"Expected '', got '{result2}'"
+log("✅ Lambda with empty string handling works")
+
+# Test 18: Lambda with boolean logic
+and_op = lambda a, b :: a and b
+or_op = lambda a, b :: a or b
+not_op = lambda a :: not a
+
+result1 = and_op(true, true)
+result2 = or_op(false, true)
+result3 = not_op(false)
+
+assert result1 == true, f"Expected true, got {result1}"
+assert result2 == true, f"Expected true, got {result2}"
+assert result3 == true, f"Expected true, got {result3}"
+log("✅ Lambda with boolean logic works")
+
+# Test 19: Lambda with list operations
+first_element = lambda lst :: lst[0] if lst else None
+result1 = first_element([1, 2, 3])
+result2 = first_element([])
+assert result1 == 1, f"Expected 1, got {result1}"
+assert result2 == None, f"Expected None, got {result2}"
+log("✅ Lambda with list operations works")
+
+
+log("Basic Lambda Expressions test completed successfully") 
