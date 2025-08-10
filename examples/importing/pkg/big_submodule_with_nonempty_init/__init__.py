@@ -1,3 +1,5 @@
+import sys
+
 from . import small_submodule
 from .small_submodule import (
     I_AM as SMALL_SUBMODULE_IN_BIG_SUBMODULE_WITH_NONEMPTY_INIT,
@@ -12,7 +14,7 @@ from ..util_submodule import small_submodule as small_util_submodule_in_big_util
 from ..util_submodule.small_submodule import I_AM as SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE
 
 
-I_AM = 'a big sub-module with a non-empty `__init__.py`, in a package'
+I_AM = sys.modules[__name__]
 
 
 print(f"""
@@ -35,7 +37,7 @@ IN: {I_AM}
 """)
 print(f"""
 IMPORTED: {util_submodule_imported_in_small_submodule_in_big_submodule_with_nonempty_init}
-IN: {I_AM}
+INTO: {I_AM}
 """)
 print(f"""
 IMPORTED: {util_submodule}

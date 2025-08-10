@@ -1,9 +1,11 @@
+import sys
+
 from .. import util_submodule
 from ..util_submodule import small_submodule as small_util_submodule_in_big_util_submodule
 from ..util_submodule.small_submodule import I_AM as SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE
 
 
-I_AM = 'a small sub-module, in a big sub-module with an empty `__init__.py`, in a package'
+I_AM = sys.modules[__name__]
 
 
 print(f"""
