@@ -67,7 +67,7 @@ def test_na_file(na_file):
 
         base_llm_resource = BaseLLMResource(name="test_llm", model="openai:gpt-4o-mini")
         base_llm_resource.initialize()
-        
+
         # Enable mock mode for testing
         if base_llm_resource._bridge and base_llm_resource._bridge._sys_resource:
             base_llm_resource._bridge._sys_resource.with_mock_llm_call(True)

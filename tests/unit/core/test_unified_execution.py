@@ -48,11 +48,11 @@ def test_reason_function_parameter_order():
 
     base_llm_resource = BaseLLMResource(name="test_llm", model="openai:gpt-4o-mini")
     base_llm_resource.initialize()
-    
+
     # Enable mock mode for testing
     if base_llm_resource._bridge and base_llm_resource._bridge._sys_resource:
         base_llm_resource._bridge._sys_resource.with_mock_llm_call(True)
-    
+
     context.set_system_llm_resource(base_llm_resource)
 
     # Test with explicit mocking parameter
