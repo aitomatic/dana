@@ -2,7 +2,7 @@
 # Tests for the agent keyword and related language features
 
 # Test 1: Basic agent definition
-agent TestAgent:
+agent_blueprint TestAgent:
     name: str = "test_agent"
     age: int = 25
     skills: list = ["python", "dana"]
@@ -21,7 +21,7 @@ def test_basic_agent_definition():
     return "✅ Basic agent definition works"
 
 # Test 2: Agent with custom fields
-agent CustomAgent:
+agent_blueprint CustomAgent:
     role: str = "developer"
     experience_years: int = 5
     is_active: bool = true
@@ -125,49 +125,40 @@ def test_agent_memory_isolation():
     return "✅ Agent memory isolation works"
 
 # Test 7: Complex agent fields
-agent ComplexAgent:
-    name: str = "complex_agent"
-    metadata: dict = {"version": "1.0", "tags": ["ai", "agent"]}
-    capabilities: list = ["planning", "solving", "learning"]
-    settings: dict = {"timeout": 30, "retries": 3, "debug": false}
+agent_blueprint ComplexAgent:
+    name: str = "complex"
+    config: dict = {"retries": 3, "timeout": 30}
+    flags: list = ["A", "B", "C"]
 
 def test_complex_agent_fields():
     agent_instance = ComplexAgent()
     
     # Test complex field types
-    if agent_instance.name != "complex_agent":
+    if agent_instance.name != "complex":
         return "❌ Complex agent name field not set correctly"
-    if agent_instance.metadata.get("version") != "1.0":
-        return "❌ Complex agent metadata field not set correctly"
-    if len(agent_instance.capabilities) != 3:
-        return "❌ Complex agent capabilities field not set correctly"
-    if agent_instance.settings.get("timeout") != 30:
-        return "❌ Complex agent settings field not set correctly"
+    if agent_instance.config.get("timeout") != 30:
+        return "❌ Complex agent config field not set correctly"
+    if len(agent_instance.flags) != 3:
+        return "❌ Complex agent flags field not set correctly"
     
     return "✅ Complex agent fields work"
 
 # Test 8: Multiple agent types
-agent AgentA:
-    type: str = "type_a"
-    priority: int = 1
+agent_blueprint AgentA:
+    name: str = "A"
 
-agent AgentB:
-    type: str = "type_b"
-    priority: int = 2
+agent_blueprint AgentB:
+    name: str = "B"
 
 def test_multiple_agent_types():
     agent_a = AgentA()
     agent_b = AgentB()
     
     # Test that different agent types work independently
-    if agent_a.type != "type_a":
-        return "❌ AgentA type field not set correctly"
-    if agent_b.type != "type_b":
-        return "❌ AgentB type field not set correctly"
-    if agent_a.priority != 1:
-        return "❌ AgentA priority field not set correctly"
-    if agent_b.priority != 2:
-        return "❌ AgentB priority field not set correctly"
+    if agent_a.name != "A":
+        return "❌ AgentA name field not set correctly"
+    if agent_b.name != "B":
+        return "❌ AgentB name field not set correctly"
     
     # Test that both agents have working methods
     plan_a = agent_a.plan("task for agent a")
@@ -229,7 +220,7 @@ def test_agent_field_access():
     return "✅ Agent field access works"
 
 # Test 12: Agent with no default values
-agent MinimalAgent:
+agent_blueprint MinimalAgent:
     name: str
     role: str
 

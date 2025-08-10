@@ -242,6 +242,11 @@ class StructInstance:
         if field_type is None:
             return value
 
+        # Handle None values - None can be assigned to any type
+        # This allows for optional/nullable types in Dana
+        if value is None:
+            return None
+
         # Numeric coercion: int → float
         if field_type == "float" and isinstance(value, int):
             return float(value)
@@ -454,10 +459,10 @@ class StructTypeRegistry:
             raise ValueError(f"Unknown struct type '{struct_name}'. Available types: {available_types}")
 
         # Check if this is an agent struct type
-        from dana.agent import AgentStructType, AgentStructInstance
+        from dana.agent import AgentType, AgentInstance
 
-        if isinstance(struct_type, AgentStructType):
-            return AgentStructInstance(struct_type, values)
+        if isinstance(struct_type, AgentType):
+            return AgentInstance(struct_type, values)
         else:
             return StructInstance(struct_type, values)
 

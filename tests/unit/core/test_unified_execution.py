@@ -12,7 +12,7 @@ from dana.common.resource.llm.llm_resource import LLMResource
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.libs.corelib.py.py_reason import py_reason as reason_function
+from dana.libs.corelib.py_wrappers.py_reason import py_reason as reason_function
 
 
 @patch.dict(os.environ, {"DANA_MOCK_LLM": "true"})

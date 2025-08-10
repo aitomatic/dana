@@ -13,8 +13,10 @@ from collections.abc import Sequence
 from importlib.abc import Loader, MetaPathFinder
 from importlib.machinery import ModuleSpec as PyModuleSpec
 from pathlib import Path
-from typing import TYPE_CHECKING
+from types import ModuleType
+from typing import TYPE_CHECKING, cast
 
+from dana.common.mixins.loggable import Loggable
 from dana.core.lang.parser.utils.parsing_utils import ParserCache
 
 from .errors import ImportError, ModuleNotFoundError, SyntaxError
@@ -26,7 +28,7 @@ if TYPE_CHECKING:
     from dana.core.lang.sandbox_context import SandboxContext
 
 
-class ModuleLoader(MetaPathFinder, Loader):
+class ModuleLoader(Loggable, MetaPathFinder, Loader):
     """Loader responsible for finding and loading Dana modules."""
 
     def __init__(self, search_paths: list[str], registry: ModuleRegistry):
@@ -36,10 +38,13 @@ class ModuleLoader(MetaPathFinder, Loader):
             search_paths: List of paths to search for modules
             registry: Module registry instance
         """
+        # Initialize logging mixin
+        Loggable.__init__(self)
+
         self.search_paths = [Path(p).resolve() for p in search_paths]
         self.registry = registry
 
-    def find_spec(self, fullname: str, path: Sequence[str | bytes] | None = None, target: Module | None = None) -> PyModuleSpec | None:
+    def find_spec(self, fullname: str, path: Sequence[str | bytes] | None = None, target: ModuleType | None = None) -> PyModuleSpec | None:
         """Find a module specification.
 
         This implements the MetaPathFinder protocol for Python's import system.
@@ -63,6 +68,20 @@ class ModuleLoader(MetaPathFinder, Loader):
                 importing_module_path = first_path[23:]  # Remove prefix
 
         return self._find_spec_with_context(fullname, importing_module_path)
+
+    def _wrap_dana_spec(self, dana_spec: ModuleSpec) -> PyModuleSpec:
+        """Create a Python ModuleSpec from a Dana ModuleSpec, copying key attributes."""
+        py_spec = PyModuleSpec(name=dana_spec.name, loader=self, origin=dana_spec.origin)
+        py_spec.has_location = dana_spec.has_location
+        py_spec.submodule_search_locations = dana_spec.submodule_search_locations
+        return py_spec
+
+    def _create_and_register_spec(self, fullname: str, origin: Path) -> PyModuleSpec:
+        """Create, package-setup, register a Dana ModuleSpec, and wrap it for Python import system."""
+        dana_spec = ModuleSpec(name=fullname, loader=self, origin=str(origin))
+        self._setup_package_attributes(dana_spec)
+        self.registry.register_spec(dana_spec)
+        return self._wrap_dana_spec(dana_spec)
 
     def _find_spec_with_context(self, fullname: str, importing_module_path: str | None = None) -> PyModuleSpec | None:
         """Find a module specification with optional context of importing module.
@@ -216,11 +235,7 @@ class ModuleLoader(MetaPathFinder, Loader):
         try:
             dana_spec = self.registry.get_spec(fullname)
             if dana_spec is not None:
-                # Convert to Python spec
-                py_spec = PyModuleSpec(name=dana_spec.name, loader=self, origin=dana_spec.origin)
-                py_spec.has_location = dana_spec.has_location
-                py_spec.submodule_search_locations = dana_spec.submodule_search_locations
-                return py_spec
+                return self._wrap_dana_spec(dana_spec)
         except ModuleNotFoundError:
             pass  # Continue searching
 
@@ -237,42 +252,17 @@ class ModuleLoader(MetaPathFinder, Loader):
                     for search_path in parent_spec.submodule_search_locations:
                         module_file = Path(search_path) / f"{module_name}.na"
                         if module_file.is_file():
-                            # Create and register Dana spec
-                            dana_spec = ModuleSpec(name=fullname, loader=self, origin=str(module_file))
-                            # Check if this module can also serve as a package
-                            self._setup_package_attributes(dana_spec)
-                            self.registry.register_spec(dana_spec)
-                            # Convert to Python spec
-                            py_spec = PyModuleSpec(name=dana_spec.name, loader=self, origin=dana_spec.origin)
-                            py_spec.has_location = dana_spec.has_location
-                            py_spec.submodule_search_locations = dana_spec.submodule_search_locations
-                            return py_spec
+                            return self._create_and_register_spec(fullname, module_file)
 
                         # Also check for package/__init__.na in parent's search paths (legacy)
                         init_file = Path(search_path) / module_name / "__init__.na"
                         if init_file.is_file():
-                            # Create and register Dana spec
-                            dana_spec = ModuleSpec(name=fullname, loader=self, origin=str(init_file))
-                            self._setup_package_attributes(dana_spec)
-                            self.registry.register_spec(dana_spec)
-                            # Convert to Python spec
-                            py_spec = PyModuleSpec(name=dana_spec.name, loader=self, origin=dana_spec.origin)
-                            py_spec.has_location = dana_spec.has_location
-                            py_spec.submodule_search_locations = dana_spec.submodule_search_locations
-                            return py_spec
+                            return self._create_and_register_spec(fullname, init_file)
 
                         # Also check for directory packages in parent's search paths (new)
                         package_dir = Path(search_path) / module_name
                         if package_dir.is_dir() and self._is_dana_package_directory(package_dir):
-                            # Create and register Dana spec
-                            dana_spec = ModuleSpec(name=fullname, loader=self, origin=str(package_dir))
-                            self._setup_package_attributes(dana_spec)
-                            self.registry.register_spec(dana_spec)
-                            # Convert to Python spec
-                            py_spec = PyModuleSpec(name=dana_spec.name, loader=self, origin=dana_spec.origin)
-                            py_spec.has_location = dana_spec.has_location
-                            py_spec.submodule_search_locations = dana_spec.submodule_search_locations
-                            return py_spec
+                            return self._create_and_register_spec(fullname, package_dir)
             except ModuleNotFoundError:
                 pass  # Continue searching
 
@@ -282,30 +272,12 @@ class ModuleLoader(MetaPathFinder, Loader):
             importing_dir = Path(importing_module_path).parent
             module_file = self._find_module_in_directory(module_name, importing_dir)
             if module_file is not None:
-                # Create and register Dana spec
-                dana_spec = ModuleSpec(name=fullname, loader=self, origin=str(module_file))
-                # Check if this module can also serve as a package
-                self._setup_package_attributes(dana_spec)
-                self.registry.register_spec(dana_spec)
-                # Convert to Python spec
-                py_spec = PyModuleSpec(name=dana_spec.name, loader=self, origin=dana_spec.origin)
-                py_spec.has_location = dana_spec.has_location
-                py_spec.submodule_search_locations = dana_spec.submodule_search_locations
-                return py_spec
+                return self._create_and_register_spec(fullname, module_file)
 
         # Then search in regular search paths
         module_file = self._find_module_file(module_name)
         if module_file is not None:
-            # Create and register Dana spec
-            dana_spec = ModuleSpec(name=fullname, loader=self, origin=str(module_file))
-            # Check if this module can also serve as a package
-            self._setup_package_attributes(dana_spec)
-            self.registry.register_spec(dana_spec)
-            # Convert to Python spec
-            py_spec = PyModuleSpec(name=dana_spec.name, loader=self, origin=dana_spec.origin)
-            py_spec.has_location = dana_spec.has_location
-            py_spec.submodule_search_locations = dana_spec.submodule_search_locations
-            return py_spec
+            return self._create_and_register_spec(fullname, module_file)
 
         # Module not found after checking all paths - return None to let Python handle it
         return None
@@ -350,7 +322,7 @@ class ModuleLoader(MetaPathFinder, Loader):
                     if "." in spec.name:
                         spec.parent = spec.name.rsplit(".", 1)[0]
 
-    def create_module(self, spec: PyModuleSpec) -> Module | None:
+    def create_module(self, spec: PyModuleSpec) -> ModuleType | None:
         """Create a new module object.
 
         Args:
@@ -396,117 +368,206 @@ class ModuleLoader(MetaPathFinder, Loader):
         # Register module
         self.registry.register_module(module)
 
-        return module
+        return cast(ModuleType, module)
 
-    def exec_module(self, module: Module) -> None:
+    def exec_module(self, module: ModuleType) -> None:
         """Execute a module's code.
 
         Args:
             module: Module to execute
         """
-        if not module.__file__:
-            raise ImportError(f"No file path for module {module.__name__}")
+        # We manage our own Module class; cast for type checking
+        module_obj: Module = cast(Module, module)
+        if not module_obj.__file__:
+            raise ImportError(f"No file path for module {module_obj.__name__}")
 
-        # Start loading
-        self.registry.start_loading(module.__name__)
+        # Start loading lifecycle
+        self.registry.start_loading(module_obj.__name__)
         try:
-            # Handle directory packages (no source code to execute)
-            origin_path = Path(module.__file__)
+            origin_path = Path(module_obj.__file__)
+
+            # Directory package - execute __init__.na if present; otherwise nothing to execute
             if origin_path.is_dir():
-                # Directory package - nothing to execute, just finish loading
-                self.registry.finish_loading(module.__name__)
+                init_file = origin_path / "__init__.na"
+                if not init_file.is_file():
+                    self.registry.finish_loading(module_obj.__name__)
+                    return
+                # 1) Read and parse from __init__.na
+                source = self._read_source(init_file)
+                ast = self._parse_source(source, module_obj.__name__, str(init_file))
+
+                # 2) Create execution context and seed it
+                interpreter, context = self._create_execution_context(module_obj, origin_path)
+                self._seed_context_from_module(context, module_obj)
+
+                # 3) Execute AST
+                self._execute_ast(interpreter, ast, context)
+
+                # 4) Publish results back to module/public scopes
+                public_vars = self._collect_public_vars(context)
+                self._publish_scopes_to_module(module_obj, context, public_vars)
+                self._merge_public_into_root(context, public_vars)
+                self._expose_system_vars(module_obj, context)
+
+                # 5) Determine and apply exports
+                exports = self._determine_exports(module_obj, context, public_vars)
+                self._apply_exports(module_obj, exports)
+
+                # 6) Post-process: enable intra-module function calls and log
+                self._setup_module_function_context(module_obj, interpreter, context)
+
                 return
 
-            # Read source
-            source = origin_path.read_text()
+            # 1) Read and parse
+            source = self._read_source(origin_path)
+            ast = self._parse_source(source, module_obj.__name__, module_obj.__file__)
 
-            # Parse and compile
-            from lark.exceptions import UnexpectedCharacters, UnexpectedToken
+            # 2) Create execution context and seed it
+            interpreter, context = self._create_execution_context(module_obj, origin_path)
+            self._seed_context_from_module(context, module_obj)
 
-            parser = ParserCache.get_parser("dana")
-            try:
-                ast = parser.parse(source)
-            except (UnexpectedToken, UnexpectedCharacters) as e:
-                # Extract line number and source line from the error
-                line_number = e.line
-                source_line = source.splitlines()[line_number - 1] if line_number > 0 else None
-                raise SyntaxError(str(e), module.__name__, module.__file__, line_number, source_line)
+            # 3) Execute AST
+            self._execute_ast(interpreter, ast, context)
 
-            # Execute
-            from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
-            from dana.core.lang.sandbox_context import SandboxContext
+            # 4) Publish results back to module/public scopes
+            public_vars = self._collect_public_vars(context)
+            self._publish_scopes_to_module(module_obj, context, public_vars)
+            self._merge_public_into_root(context, public_vars)
+            self._expose_system_vars(module_obj, context)
 
-            interpreter = DanaInterpreter()
-            context = SandboxContext()
-            context._interpreter = interpreter  # Set the interpreter in the context
+            # 5) Determine and apply exports
+            exports = self._determine_exports(module_obj, context, public_vars)
+            self._apply_exports(module_obj, exports)
 
-            # Set current module and package for relative import resolution
-            context._current_module = module.__name__
-            # Set current package for relative import resolution
-            # Special case: for __init__.na files and directory packages, the current package is the module itself
-            # For regular modules, the current package is the parent package
-            if origin_path and (origin_path.name == "__init__.na" or origin_path.is_dir()):
-                # __init__.na file or directory package - current package is the module itself
-                context._current_package = module.__name__
-            elif "." in module.__name__:
-                # Regular module - current package is parent package
-                context._current_package = module.__name__.rsplit(".", 1)[0]
-            else:
-                # Top-level module has no package
-                context._current_package = ""
-            # Debug logging
-            # print(f"DEBUG: Setting context for module {module.__name__}, package = {context._current_package}")
-
-            # Initialize module dict with context
-            for key, value in module.__dict__.items():
-                context.set_in_scope(key, value, scope="local")
-
-            # Execute the module
-            interpreter._execute(ast, context)
-
-            # Update module dict with local scope
-            module.__dict__.update(context.get_scope("local"))
-
-            # Also include public scope variables in the module namespace
-            # Public variables should be accessible as module attributes
-            public_vars = context.get_scope("public")
-            module.__dict__.update(public_vars)
-
-            # Merge public_vars into the global public scope (root context)
-            root_context = context
-            while getattr(root_context, "parent_context", None) is not None:
-                root_context = root_context.parent_context
-            root_context._state["public"].update(public_vars)
-
-            # Include system scope variables for agent functionality
-            # This allows modules with system:agent_name and system:agent_description to be used as agents
-            system_vars = context.get_scope("system")
-            for key, value in system_vars.items():
-                # Store system variables with their scope prefix for easy identification
-                module.__dict__[f"system:{key}"] = value
-
-            # Handle exports
-            if hasattr(context, "_exports"):
-                # Explicit exports override underscore privacy - respect user's explicit choices
-                module.__exports__ = context._exports
-            else:
-                # If no explicit exports, export all local and public variables
-                local_vars = set(context.get_scope("local").keys())
-                public_vars_set = set(public_vars.keys())
-                all_vars = local_vars | public_vars_set
-
-                # Apply underscore privacy rule: auto-export everything except names starting with '_'
-                module.__exports__ = {name for name in all_vars if not name.startswith("_")}
-
-            # Always remove internal Python variables (double underscore) from exports
-            module.__exports__ = {name for name in module.__exports__ if not name.startswith("__")}
-
-            # Post-process: Ensure DanaFunction objects can access each other for recursive calls
-            self._setup_module_function_context(module, interpreter, context)
+            # 6) Post-process: enable intra-module function calls and log
+            self._setup_module_function_context(module_obj, interpreter, context)
 
         finally:
             # Finish loading
-            self.registry.finish_loading(module.__name__)
+            self.registry.finish_loading(module_obj.__name__)
+
+    # ===== Helper methods for exec_module =====
+
+    def _read_source(self, origin_path: Path) -> str:
+        """Read module source from disk."""
+        return origin_path.read_text()
+
+    def _parse_source(self, source: str, module_name: str, module_file: str | None):
+        """Parse Dana source code into an AST, raising Dana SyntaxError on failure."""
+        from lark.exceptions import UnexpectedCharacters, UnexpectedToken
+
+        parser = ParserCache.get_parser("dana")
+        try:
+            return parser.parse(source)
+        except (UnexpectedToken, UnexpectedCharacters) as e:
+            # Extract line number and source line from the error
+            line_number = e.line
+            source_line = source.splitlines()[line_number - 1] if line_number > 0 else None
+            raise SyntaxError(str(e), module_name, module_file, line_number, source_line)
+
+    def _create_execution_context(self, module: Module, origin_path: Path) -> tuple[DanaInterpreter, SandboxContext]:
+        """Create a fresh interpreter + context and set module/package metadata for relative imports."""
+        from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+        from dana.core.lang.sandbox_context import SandboxContext
+
+        interpreter = DanaInterpreter()
+        context = SandboxContext()
+        context._interpreter = interpreter  # Bind interpreter
+
+        # Set current module and package for relative import resolution
+        context._current_module = module.__name__
+        if origin_path and (origin_path.name == "__init__.na" or origin_path.is_dir()):
+            # __init__.na file or directory package - current package is the module itself
+            context._current_package = module.__name__
+        elif "." in module.__name__:
+            # Regular module - current package is parent package
+            context._current_package = module.__name__.rsplit(".", 1)[0]
+        else:
+            # Top-level module has no package
+            context._current_package = ""
+
+        return interpreter, context
+
+    def _seed_context_from_module(self, context: SandboxContext, module: Module) -> None:
+        """Copy any pre-existing module attributes into the local scope before execution."""
+        for key, value in module.__dict__.items():
+            context.set_in_scope(key, value, scope="local")
+
+    def _execute_ast(self, interpreter: DanaInterpreter, ast, context: SandboxContext) -> None:
+        """Execute parsed AST inside the given context."""
+        interpreter._execute(ast, context)
+
+    def _collect_public_vars(self, context: SandboxContext) -> dict[str, object]:
+        """Collect public scope variables from the execution context."""
+        return context.get_scope("public")
+
+    def _publish_scopes_to_module(self, module: Module, context: SandboxContext, public_vars: dict[str, object]) -> None:
+        """Publish local and public scopes to the module namespace."""
+        module.__dict__.update(context.get_scope("local"))
+        module.__dict__.update(public_vars)
+
+    def _merge_public_into_root(self, context: SandboxContext, public_vars: dict[str, object]) -> None:
+        """Merge module public variables into the root context's public scope."""
+        root_context: SandboxContext = context
+        # Walk up to the root context explicitly
+        while True:
+            parent = getattr(root_context, "parent_context", None)
+            if parent is None:
+                break
+            root_context = parent
+        root_context._state["public"].update(public_vars)
+
+    def _expose_system_vars(self, module: Module, context: SandboxContext) -> None:
+        """Expose system scope variables as namespaced attributes on the module."""
+        system_vars = context.get_scope("system")
+        for key, value in system_vars.items():
+            module.__dict__[f"system:{key}"] = value
+
+    def _determine_exports(
+        self,
+        module: Module,
+        context: SandboxContext,
+        public_vars: dict[str, object],
+    ) -> set[str]:
+        """Determine the module's export set from context/module/defaults, without dunder filtering."""
+        exports: set[str] | None = None
+
+        # 1) Prefer explicit exports captured on the context during execution
+        if hasattr(context, "_exports"):
+            try:
+                ctx_exports = set(context._exports)  # type: ignore[attr-defined]
+                if ctx_exports:
+                    exports = ctx_exports
+            except Exception:
+                exports = None
+
+        # 2) Otherwise, honor a module-defined __exports__ if present and non-empty iterable
+        if exports is None and "__exports__" in module.__dict__:
+            raw_exports = module.__dict__["__exports__"]
+            if isinstance(raw_exports, set | list | tuple):
+                try:
+                    mod_exports = set(raw_exports)
+                    if mod_exports:
+                        exports = mod_exports
+                except Exception:
+                    exports = None
+
+        # 3) Final fallback: auto-derive from locals ∪ public (skip underscore)
+        if exports is None:
+            local_vars = set(context.get_scope("local").keys())
+            public_vars_set = set(public_vars.keys())
+            all_vars = local_vars | public_vars_set
+            exports = {name for name in all_vars if not name.startswith("_")}
+
+        # Defensive fallback: if still empty, derive from module namespace (exclude colon-names)
+        if not exports:
+            exports = {name for name in module.__dict__.keys() if not name.startswith("_") and ":" not in name}
+
+        return exports
+
+    def _apply_exports(self, module: Module, exports: set[str]) -> None:
+        """Apply the export set to the module, filtering out double-underscore names."""
+        module.__exports__ = {name for name in exports if not name.startswith("__")}  # type: ignore[assignment]
 
     def _setup_module_function_context(self, module: Module, interpreter: DanaInterpreter, context: SandboxContext) -> None:
         """Set up function contexts to enable recursive calls within the module.

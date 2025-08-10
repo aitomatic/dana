@@ -39,7 +39,9 @@ compound_stmt: if_stmt
              | try_stmt
              | with_stmt
              | struct_def
-             | agent_def
+             | agent_blueprint_def
+             | singleton_agent_def
+             | singleton_agent_alias_def
 
 block: _NL _INDENT statements _DEDENT
 
@@ -68,7 +70,9 @@ exception_type: expr
 
 with_stmt: "with" (with_context_manager | (NAME | USE) "(" [mixed_arguments] ")") AS NAME ":" [COMMENT] block
 struct_def: "struct" NAME ":" [COMMENT] struct_block -> struct_definition
-agent_def: "agent" NAME ":" [COMMENT] agent_block -> agent_definition
+agent_blueprint_def: AGENT_BLUEPRINT NAME ":" [COMMENT] agent_block -> agent_definition
+singleton_agent_def: AGENT "(" NAME ")" ":" [COMMENT] singleton_agent_block -> singleton_agent_definition
+singleton_agent_alias_def: AGENT NAME "(" NAME ")" ":" [COMMENT] singleton_agent_block -> singleton_agent_definition_with_alias
 
 struct_block: _NL _INDENT [docstring] struct_fields _DEDENT
 docstring: MULTILINE_STRING _NL
@@ -78,6 +82,10 @@ struct_field: NAME ":" basic_type ["=" expr] [COMMENT] _NL -> struct_field
 agent_block: _NL _INDENT agent_fields _DEDENT
 agent_fields: agent_field+
 agent_field: NAME ":" basic_type ["=" expr] [COMMENT] _NL -> agent_field
+
+singleton_agent_block: _NL _INDENT [singleton_agent_fields] _DEDENT
+singleton_agent_fields: singleton_agent_field+
+singleton_agent_field: NAME "=" expr [COMMENT] _NL -> singleton_agent_field
 
 with_context_manager: expr
 mixed_arguments: with_arg ("," with_arg)*
@@ -131,9 +139,10 @@ simple_stmt: assignment
            | assert_stmt
            | comment_stmt
            | use_stmt
-           | export_stmt
            | agent_stmt
            | agent_pool_stmt
+           | singleton_agent_alias_simple
+           | base_agent_simple
 
 // ===== STATEMENTS THAT RETURN OBJECT =====
 return_object_stmt: use_stmt | agent_stmt | agent_pool_stmt
@@ -144,6 +153,8 @@ comment_stmt: COMMENT
 use_stmt: USE "(" [mixed_arguments] ")"
 agent_stmt: AGENT "(" [mixed_arguments] ")"
 agent_pool_stmt: AGENT_POOL "(" [mixed_arguments] ")"
+singleton_agent_alias_simple: AGENT NAME "(" NAME ")" -> singleton_agent_definition_with_alias_simple
+base_agent_simple: AGENT NAME -> base_agent_singleton_definition
 
 // Keywords
 EXPORT.2: "export"
@@ -160,6 +171,7 @@ RAISE.2: "raise"
 ASSERT.2: "assert"
 USE.0: "use"
 AGENT.2: "agent"
+AGENT_BLUEPRINT.2: "agent_blueprint"
 AGENT_POOL.2: "agent_pool"
 AS.2: "as"
 PRIVATE.2: "private"
@@ -173,9 +185,9 @@ export_stmt: "export" NAME -> export_list
 export_names: NAME ("," NAME)*
 
 assignment: typed_assignment | simple_assignment | function_call_assignment | compound_assignment
-typed_assignment: target ":" basic_type "=" expr
-simple_assignment: target "=" expr
-function_call_assignment: target "=" return_object_stmt
+typed_assignment: target ":" basic_type "=" expr [COMMENT]
+simple_assignment: target "=" expr [COMMENT]
+function_call_assignment: target "=" return_object_stmt [COMMENT]
 declarative_function_assignment: "def" NAME "(" [parameters] ")" ["->" basic_type] "=" function_composition_expr
 compound_assignment: target compound_op expr
 
@@ -355,7 +367,7 @@ MULTILINE_STRING: /""".*?"""/s | /'''.*?'''/s
 
 // Define the NAME token with higher priority than keywords to handle identifiers containing keywords
 // Priority 3 is higher than NOT_OP (priority 2), ensuring names like 'not_var' are tokenized as NAME
-NAME.3: /(?!(True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|deliver|if|else|elif|while|for|def|struct|try|except|finally|raise|assert|import|from|with|use|agent|agent_pool|lambda|yield|global|nonlocal|del|and|or|not|in|is|export|as)\b)([a-zA-Z_][a-zA-Z0-9_]*)/
+NAME.3: /(?!(True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|deliver|if|else|elif|while|for|def|struct|try|except|finally|raise|assert|import|from|with|use|agent|agent_blueprint|agent_pool|lambda|yield|global|nonlocal|del|and|or|not|in|is|export|as)\b)([a-zA-Z_][a-zA-Z0-9_]*)/
 
 // Basic string literals with f-strings
 string_literal: REGULAR_STRING
@@ -400,9 +412,9 @@ tuple: "(" ")"
 set: set_comprehension
     | "{" list_items"}"
 
-list_items: expr ("," expr)* [","]
-dict_items: key_value_pair ("," key_value_pair)* [","]
-key_value_pair: expr ":" expr
+list_items: expr [COMMENT] ("," [COMMENT] expr [COMMENT])* [","]
+dict_items: key_value_pair [COMMENT] ("," [COMMENT] key_value_pair [COMMENT])* [","]
+key_value_pair: expr ":" expr [COMMENT]
 
 // ===== COMPREHENSIONS =====
 list_comprehension: "[" comprehension_body "]"
@@ -415,7 +427,7 @@ dict_comprehension_body: "(" or_expr ":" or_expr ")" "for" for_targets "in" or_e
 comprehension_if: "if" or_expr
 
 // ===== FOR LOOP TARGETS =====
-for_targets: NAME | "(" for_target_list ")"
+for_targets: NAME ("," NAME)* | "(" for_target_list ")"
 for_target_list: NAME ("," NAME)*
 
 
@@ -425,7 +437,7 @@ for_target_list: NAME ("," NAME)*
 // ===== LAMBDA EXPRESSIONS =====
 lambda_expr: "lambda" [lambda_receiver] [lambda_params] "::" expr
 lambda_receiver: "(" NAME ":" basic_type ")"
-lambda_params: NAME [":" basic_type] ("," NAME [":" basic_type])*
+lambda_params: NAME [":" basic_type] ["=" expr] ("," NAME [":" basic_type] ["=" expr])*
 
 // ===== WHITESPACE AND COMMENTS =====
 // Modified to handle comments and newlines better
@@ -450,10 +462,13 @@ NOT_OP.2: "not"
 // AT token for decorators
 AT: "@"
 
-simple_import: "import" module_path [AS NAME]
-from_import: "from" (relative_module_path | module_path) "import" import_name_list
+simple_import: "import" module_path [AS NAME] [COMMENT]
+from_import: "from" (relative_module_path | module_path) "import" (import_name_list | STAR) [COMMENT]
 import_name_list: import_name ("," import_name)*
 import_name: NAME [AS NAME]
+
+// Star token for star imports
+STAR: "*"
 
 // ===== DECORATORS =====
 decorators: decorator+

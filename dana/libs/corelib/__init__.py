@@ -1,19 +1,9 @@
-"""
-Dana Core Library
+"""Initialization library for Dana.
 
-Copyright © 2025 Aitomatic, Inc.
-
-This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
-
-Core library functions for the Dana language.
-
-This package provides implementations of core Dana functions including:
-- Math functions (sum_range, is_odd, is_even, factorial)
-- Basic utility functions
-- Core language constructs
+This module provides initialization and startup functionality for Dana applications,
+including environment loading, configuration setup, and bootstrap utilities.
 """
 
-# Main registration function
-from .register_corelib_functions import register_corelib_functions
-
-__all__ = ["register_corelib_functions"]
+from .py_builtins import *
+from .py_wrappers import *
+from .na_modules import *

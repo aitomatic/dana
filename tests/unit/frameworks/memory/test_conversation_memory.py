@@ -2,12 +2,9 @@
 Unit tests for ConversationMemory class.
 """
 
-import json
 import os
 import tempfile
 import unittest
-from pathlib import Path
-from unittest.mock import patch
 
 from dana.frameworks.memory.conversation_memory import ConversationMemory
 

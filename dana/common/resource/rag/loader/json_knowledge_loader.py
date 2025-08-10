@@ -34,10 +34,11 @@ class JsonKnowledgeLoader(LocalLoader):
         if not os.path.exists(source):
             # Log warning but return empty list instead of failing
             import logging
+
             logger = logging.getLogger(__name__)
             logger.warning(f"RAG source does not exist: {source}")
             return []
-        
+
         try:
             if os.path.isdir(source):
                 # Check if directory has any files with supported extensions
@@ -53,10 +54,11 @@ class JsonKnowledgeLoader(LocalLoader):
                 if not has_supported_files:
                     # Log info but return empty list instead of failing
                     import logging
+
                     logger = logging.getLogger(__name__)
                     logger.info(f"RAG source directory contains no supported files: {source}")
                     return []
-                
+
                 results = await SimpleDirectoryReader(
                     input_dir=source,
                     input_files=None,
@@ -82,10 +84,11 @@ class JsonKnowledgeLoader(LocalLoader):
                 if not any(source.lower().endswith(ext) for ext in self.supported_types):
                     # Log info but return empty list for unsupported file types
                     import logging
+
                     logger = logging.getLogger(__name__)
                     logger.info(f"RAG source file has unsupported extension: {source}")
                     return []
-                
+
                 results = await SimpleDirectoryReader(
                     input_dir=None,
                     input_files=[source],
@@ -106,17 +109,19 @@ class JsonKnowledgeLoader(LocalLoader):
                     fs=None,
                 ).aload_data(num_workers=1)
             return [self.post_process(doc) for doc in results]
-        
+
         except Exception as e:
             # Log the error but return empty list instead of propagating the exception
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Error loading RAG source {source}: {e}")
             return []
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import asyncio
+
     loader = JsonKnowledgeLoader(supported_types=[".json"])
     results = asyncio.run(loader.load("agents/financial_stmt_analysis/knows/processed_knowledge"))
     print(len(results))

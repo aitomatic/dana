@@ -130,6 +130,7 @@ class RAGOrchestrator(Loggable):
             # Instead of raising an exception, create a fallback empty index
             self.warning("No valid indices available for any source - creating empty index")
             from llama_index.core import VectorStoreIndex, Document
+
             # Create a dummy document to avoid completely empty index issues
             dummy_doc = Document(text="No documents found in the specified sources.", metadata={"source": "system", "type": "fallback"})
             fallback_index = VectorStoreIndex.from_documents([dummy_doc])
@@ -176,7 +177,7 @@ class RAGOrchestrator(Loggable):
             raise ValueError("Retriever not initialized. Call _preprocess() with sources first.")
         return await self._retriever.aretrieve(query, num_results)
 
-    async def retrieve_with_filters(self, query: str, num_results: int = 10, filters: MetadataFilters| None = None) -> list[NodeWithScore]:
+    async def retrieve_with_filters(self, query: str, num_results: int = 10, filters: MetadataFilters | None = None) -> list[NodeWithScore]:
         if filters is None:
             return await self.retrieve(query, num_results)
         return await self._retriever.aretrieve_with_filters(query, num_results, filters)

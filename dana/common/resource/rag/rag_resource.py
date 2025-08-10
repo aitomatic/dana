@@ -7,6 +7,7 @@ from dana.common.resource.rag.pipeline.unified_cache_manager import UnifiedCache
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
 from llama_index.core import Settings
+from pathlib import Path
 
 
 class RAGResource(BaseResource):
@@ -21,40 +22,54 @@ class RAGResource(BaseResource):
         description: str | None = None,
         chunk_size: int = 1024,
         chunk_overlap: int = 256,
-        debug: bool = True,
+        debug: bool = False,
         reranking: bool = False,
         initial_multiplier: int = 2,
     ):
         super().__init__(name, description)
-        self.post_init(sources=sources, 
-                       name=name, 
-                       cache_dir=cache_dir, 
-                       force_reload=force_reload, 
-                       chunk_size=chunk_size, 
-                       chunk_overlap=chunk_overlap, 
-                       debug=debug, 
-                       reranking=reranking, 
-                       initial_multiplier=initial_multiplier)
+        self.post_init(
+            sources=sources,
+            name=name,
+            cache_dir=cache_dir,
+            force_reload=force_reload,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            debug=debug,
+            reranking=reranking,
+            initial_multiplier=initial_multiplier,
+        )
 
-    def post_init(self, sources: list[str], name: str, cache_dir: str, force_reload: bool, chunk_size: int, chunk_overlap: int, debug: bool, reranking: bool, initial_multiplier: int):
-        Settings.chunk_size = chunk_size
-        Settings.chunk_overlap = chunk_overlap
-        self.sources = sources
-        self.force_reload = force_reload
-        self.debug = debug
-        self.reranking = reranking
-        self.initial_multiplier = initial_multiplier
+    def post_init(
+        self,
+        sources: list[str],
+        name: str,
+        cache_dir: str,
+        force_reload: bool,
+        chunk_size: int,
+        chunk_overlap: int,
+        debug: bool,
+        reranking: bool,
+        initial_multiplier: int,
+    ):
         # Use DANAPATH if set, otherwise default to .cache/rag
         # if cache_dir is None:
         danapath = os.environ.get("DANAPATH")
 
-        if danapath:
-            if cache_dir:
-                cache_dir = os.path.join(danapath, cache_dir)
-            else:
-                cache_dir = os.path.join(danapath, ".cache", "rag")
-        else:
-            cache_dir = ".cache/rag"
+        if danapath and danapath.endswith("stdlib") and "libs" in danapath and "dana" in danapath:
+            danapath = None
+
+        Settings.chunk_size = chunk_size
+        Settings.chunk_overlap = chunk_overlap
+        self.force_reload = force_reload
+        self.debug = debug
+        self.reranking = reranking
+        self.initial_multiplier = initial_multiplier
+        self.sources = sources
+
+        cache_dir = self._resolve_cache_dir(cache_dir, danapath)
+
+        if self.debug:
+            print(f"RAGResource initialized with cache_dir: {cache_dir}")
 
         self._cache_manager = UnifiedCacheManager(cache_dir)
         self._orchestrator = RAGOrchestrator(cache_manager=self._cache_manager)
@@ -70,6 +85,26 @@ class RAGResource(BaseResource):
         else:
             self._llm_reranker = None
 
+    def _resolve_sources(self, sources: list[str], danapath: str) -> list[str]:
+        new_sources = []
+        for src in sources:
+            if not os.path.isabs(src):
+                if danapath:
+                    new_sources.append(str(Path(danapath) / src))
+                else:
+                    new_sources.append(os.path.abspath(src))
+            else:
+                new_sources.append(src)
+        return new_sources
+
+    def _resolve_cache_dir(self, cache_dir: str, danapath: str) -> str:
+        if danapath:
+            if cache_dir:
+                return os.path.join(danapath, cache_dir)
+            else:
+                return os.path.join(danapath, ".cache", "rag")
+        else:
+            return os.path.abspath(".cache/rag")
 
     @property
     def filenames(self) -> list[str]:
@@ -91,9 +126,7 @@ class RAGResource(BaseResource):
             await self.initialize()
 
         if self.debug:
-            print(
-                f"Querying {num_results} results from {self.name} RAG with query: {query}"
-            )
+            print(f"Querying {num_results} results from {self.name} RAG with query: {query}")
 
         # Get initial results (more than needed for reranking)
         initial_num_results = num_results
@@ -112,9 +145,7 @@ class RAGResource(BaseResource):
 
         return "\n\n".join([result.node.get_content() for result in results])
 
-    async def _rerank_with_llm(
-        self, query: str, results: list, target_count: int
-    ) -> list:
+    async def _rerank_with_llm(self, query: str, results: list, target_count: int) -> list:
         """Rerank and filter results using LLM to improve relevance and discard irrelevant content.
 
         The LLM will:
@@ -127,9 +158,7 @@ class RAGResource(BaseResource):
             return results
 
         if self.debug:
-            print(
-                f"LLM reranking: analyzing {len(results)} results (target {target_count} will be selected)"
-            )
+            print(f"LLM reranking: analyzing {len(results)} results (target {target_count} will be selected)")
 
         # Prepare documents for reranking
         documents = []
@@ -175,16 +204,10 @@ class RAGResource(BaseResource):
                 if self.debug:
                     original_count = len(results)
                     filtered_count = len(reranked_results)
-                    print(
-                        f"LLM reranking successful: filtered {original_count} -> {filtered_count} results"
-                    )
+                    print(f"LLM reranking successful: filtered {original_count} -> {filtered_count} results")
 
                 # Return only LLM-selected results (may be fewer than target_count)
-                return (
-                    reranked_results[:target_count]
-                    if len(reranked_results) > target_count
-                    else reranked_results
-                )
+                return reranked_results[:target_count] if len(reranked_results) > target_count else reranked_results
             else:
                 if self.debug:
                     print(f"LLM reranking failed: {response.error}")
@@ -195,9 +218,7 @@ class RAGResource(BaseResource):
                 print(f"Error during LLM reranking: {e}")
             return results[:target_count]
 
-    def _create_reranking_prompt(
-        self, query: str, documents: list[dict], target_count: int
-    ) -> str:
+    def _create_reranking_prompt(self, query: str, documents: list[dict], target_count: int) -> str:
         """Create a prompt for LLM-based reranking and filtering."""
         docs_text = ""
         for doc in documents:
@@ -241,19 +262,11 @@ Response (JSON array only):"""
 
             # The response should be a JSON array of integers
             if isinstance(parsed, list):
-                return [
-                    int(x)
-                    for x in parsed
-                    if isinstance(x, (int, str)) and str(x).isdigit()
-                ]
+                return [int(x) for x in parsed if isinstance(x, int | str) and str(x).isdigit()]
             elif isinstance(parsed, dict) and "ranking" in parsed:
                 ranking = parsed["ranking"]
                 if isinstance(ranking, list):
-                    return [
-                        int(x)
-                        for x in ranking
-                        if isinstance(x, (int, str)) and str(x).isdigit()
-                    ]
+                    return [int(x) for x in ranking if isinstance(x, int | str) and str(x).isdigit()]
 
             # Fallback: try to extract numbers from the text
             import re

@@ -1,5 +1,0 @@
-agent BasicAgent:
-    name: str
-    description: str
-    domain: str
-    tasks: list[str]

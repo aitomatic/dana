@@ -25,11 +25,11 @@ class OutputFormatter(Loggable):
     def format_result(self, result) -> None:
         """Format and display execution result."""
         if result is not None:
-            # Import promise classes to check instance
+            # Use consolidated Promise detection
             try:
-                from dana.core.concurrency import BasePromise
+                from dana.core.concurrency import is_promise
 
-                if isinstance(result, BasePromise):
+                if is_promise(result):
                     # Always show promise meta info instead of resolving
                     print_formatted_text(ANSI(self.colors.accent(str(result))))
                     return
@@ -43,19 +43,12 @@ class OutputFormatter(Loggable):
     async def format_result_async(self, result) -> None:
         """Format and display execution result, safe for async contexts."""
         if result is not None:
-            # Import promise classes to check instance
+            # Use consolidated Promise detection
             try:
-                from dana.core.concurrency import BasePromise
-                from dana.core.concurrency.eager_promise import EagerPromise
-                from dana.core.concurrency.lazy_promise import LazyPromise
+                from dana.core.concurrency import is_promise
 
-                if isinstance(result, EagerPromise | LazyPromise):
-                    # For both EagerPromise and LazyPromise, show the promise object itself (don't await)
-                    # This allows llm() calls to return quickly with the Promise
-                    print_formatted_text(ANSI(self.colors.accent(str(result))))
-                    return
-                elif isinstance(result, BasePromise):
-                    # For other promise types, show meta info instead of resolving
+                if is_promise(result):
+                    # Show the promise object itself (don't await)
                     print_formatted_text(ANSI(self.colors.accent(str(result))))
                     return
             except ImportError:

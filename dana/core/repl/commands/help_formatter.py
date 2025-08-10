@@ -54,11 +54,6 @@ class HelpFormatter(Loggable):
         print_formatted_text(ANSI(f"                  {self.colors.accent('    private:x = private:x + 1')}"))
         print_formatted_text(ANSI(f"  {self.colors.bold('Functions:')}      {self.colors.accent('func add(a, b): return a + b')}"))
 
-        print_formatted_text(ANSI(f"\n{self.colors.bold('Promise Display Examples:')}"))
-        # Show example that demonstrates Promise display
-        example_text = f"  {self.colors.accent('some_async_function()')}                  - Automatically shows Promise meta info if result is a Promise"
-        print_formatted_text(ANSI(example_text))
-
         # Show tips and general info
         print_formatted_text(ANSI(f"\n{self.colors.bold('Tips:')}"))
         print_formatted_text(ANSI(f"  {self.colors.accent('•')} Use {self.colors.bold('Tab')} for command completion"))

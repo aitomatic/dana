@@ -64,6 +64,8 @@ class BinaryOperationHandler(Loggable):
                 return left * right
             elif node.operator == BinaryOperator.DIVIDE:
                 return left / right
+            elif node.operator == BinaryOperator.FLOOR_DIVIDE:
+                return left // right
             elif node.operator == BinaryOperator.MODULO:
                 return left % right
             elif node.operator == BinaryOperator.POWER:

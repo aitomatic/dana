@@ -68,6 +68,6 @@ class HumanResource(BaseResource):
         return input("> ")
 
     @ToolCallable.tool
-    async def get_feedback(self, prompt : str) -> str:
+    async def get_feedback(self, prompt: str) -> str:
         """Ask user for clarification. Avoid making assumptions, instead ask user for specific details."""
         return await self._get_human_input(prompt)

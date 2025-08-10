@@ -76,7 +76,6 @@ class DanaInterpreter(Loggable):
         super().__init__()
 
         # Set logger level to DEBUG
-        # DANA_LOGGER.setLevel(logging.DEBUG)
 
         # Initialize the function registry first
         self._init_function_registry()
