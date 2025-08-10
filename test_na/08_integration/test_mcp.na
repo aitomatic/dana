@@ -1,0 +1,173 @@
+# Test: MCP Integration Tests (Consolidated)
+# Purpose: Test MCP server connectivity, tools, error handling, and resource management
+# Category: Integration - MCP
+# 
+# Precondition: Ensure MCP server is running before executing this test.
+# You can start the MCP server with:
+#```
+#   python test_na/08_integration/python/start_http_streamable_server.py
+#```
+
+log("Starting MCP Consolidated Integration test")
+
+# Test 1: Basic MCP connection
+log("Test 1: Basic MCP connection")
+connection_success = false
+try:
+    mcp_client = use("mcp", url="http://localhost:8000/mcp")
+    print(f"mcp_client: {mcp_client}")
+    log("✓ MCP connection established successfully")
+    connection_success = true
+except as e:
+    connection_success = false
+
+if not connection_success:
+    assert false, "✗ MCP connection should have been established successfully"
+
+# Test 2: List available tools
+if connection_success:
+    log("Test 2: List available tools")
+    functions = mcp_client.list_openai_functions()
+    assert functions is not null, "✗ Functions list should not be null"
+    assert len(functions) >= 0, "✗ Functions list should be valid"
+    log(f"✓ Found {len(functions)} available functions")
+
+# Test 3: Execute basic tools
+if connection_success:
+    log("Test 3: Execute basic tools")
+    
+    # Test echo tool
+    echo_result = mcp_client.call_tool("echo", {"message": "Hello, MCP!"})
+    assert echo_result is not null, "✗ Echo result should not be null"
+    result_str = str(echo_result)
+    assert "Hello, MCP!" in result_str, "✗ Echo result should contain our message"
+    log("✓ Echo tool executed successfully")
+    
+    # Test ping tool
+    ping_result = mcp_client.call_tool("ping", {})
+    assert ping_result is not null, "✗ Ping result should not be null"
+    log("✓ Ping tool executed successfully")
+
+# Test 4: MCP with statement pattern
+log("Test 4: MCP with statement pattern")
+with use("mcp", url="http://localhost:8000/mcp") as mcp_with:
+    functions_with = mcp_with.list_openai_functions()
+    assert functions_with is not null, "✗ Functions list should not be null in with block"
+    result_with = mcp_with.call_tool("ping", {})
+    assert result_with is not null, "✗ Tool call should work in with block"
+    log("✓ MCP with statement working correctly")
+
+# Test 5: Error handling for invalid connection
+log("Test 5: Invalid MCP connection handling")
+invalid_connection_success = false
+try:
+    invalid_mcp = use("mcp", url="http://localhost:9999/invalid_mcp")
+    invalid_connection_success = true
+except as e:
+    invalid_connection_success = false
+
+if invalid_connection_success:
+    assert false, "✗ Invalid connection should have failed"
+else:
+    log("✓ Invalid connection properly rejected")
+
+# Test 6: Parameter validation errors
+log("Test 6: Parameter validation errors")
+
+# Test missing URL parameter
+missing_url_success = false
+try:
+    no_url_resource = use("mcp")
+    missing_url_success = true
+except as e:
+    missing_url_success = false
+
+if missing_url_success:
+    assert false, "✗ Missing URL parameter should cause error"
+else:
+    log("✓ Missing URL parameter properly rejected")
+
+# Test invalid URL format
+invalid_url_success = false
+try:
+    invalid_url_resource = use("mcp", url="not-a-valid-url")
+    invalid_url_success = true
+except as e:
+    invalid_url_success = false
+
+if invalid_url_success:
+    assert false, "✗ Invalid URL should have caused connection error"
+else:
+    log("✓ Invalid URL properly rejected")
+
+# Test 7: Tool execution errors (requires working connection)
+if connection_success:
+    log("Test 7: Tool execution errors")
+    
+    # Test non-existent tool
+    nonexistent_tool_success = false
+    try:
+        result = mcp_client.call_tool("nonexistent_tool", {})
+        nonexistent_tool_success = not ('Unknown tool' in result)
+        print(f"nonexistent_tool_success: {nonexistent_tool_success}")
+    except as e:
+        nonexistent_tool_success = false
+
+    if nonexistent_tool_success:
+        assert false, "✗ Non-existent tool should cause error"
+    else:
+        log("✓ Non-existent tool properly rejected")
+
+    # Test recovery after failed tool call
+    try:
+        # Attempt invalid operation
+        try:
+            invalid_result = mcp_client.call_tool("invalid_tool", {})
+        except as e:
+            log(f"✓ Invalid operation failed as expected: {e}")
+        
+        # Verify resource still works after error
+        valid_result = mcp_client.call_tool("ping", {})
+        assert valid_result is not null, "✗ Resource should work after error"
+        log("✓ Resource recovered successfully after error")
+        
+    except as e:
+        assert false, f"✗ Error recovery test failed: {e}"
+
+# Test 8: Sequential tool execution
+if connection_success:
+    log("Test 8: Sequential tool execution")
+    results = []
+    for i in range(3):
+        result = mcp_client.call_tool("echo", {"message": f"Sequential call {i + 1}"})
+        results.append(result)
+        assert result is not null, f"✗ Sequential call {i + 1} should succeed"
+    
+    assert len(results) == 3, "✗ All sequential calls should complete"
+
+    print(f"results: {results}")
+    log("✓ Sequential tool execution working correctly")
+
+log("MCP Consolidated Integration test completed successfully")
+
+# Summary of test results
+log("=== MCP Consolidated Integration Test Summary ===")
+log("✓ Basic MCP connectivity")
+log("✓ Tool listing and discovery")
+log("✓ Basic tool execution (echo, ping)")
+log("✓ With statement pattern")
+log("✓ Error handling for invalid connections")
+log("✓ Parameter validation errors")
+if connection_success:
+    log("✓ Tool execution errors and recovery")
+    log("✓ Sequential tool execution")
+else:
+    log("⚠ Some tests skipped - MCP server not available")
+log("=== All MCP consolidated integration tests passed ===")
+
+if not connection_success:
+    log("")
+    log("NOTE: Some tests were skipped due to no available MCP server.")
+    log("To run complete tests, start the MCP server:")
+    log("  cd examples/05_mcp_integration")
+    log("  python start_sse_server.py")
