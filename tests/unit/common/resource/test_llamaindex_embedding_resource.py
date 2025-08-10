@@ -9,7 +9,7 @@ from dana.common.resource.embedding.embedding_integrations import (
     LlamaIndexEmbeddingResource,
     get_embedding_model,
     get_default_embedding_model,
-    setup_llamaindex,
+    RAGEmbeddingResource,
 )
 
 
@@ -61,7 +61,7 @@ class TestLlamaIndexEmbeddingResource(unittest.TestCase):
         mock_embedding_instance = MagicMock()
         mock_create_embedding.return_value = mock_embedding_instance
 
-        setup_llamaindex("openai:text-embedding-3-small", chunk_size=512)
+        RAGEmbeddingResource().setup_llamaindex("openai:text-embedding-3-small", chunk_size=512)
 
         mock_create_embedding.assert_called_once_with("openai:text-embedding-3-small", None)
         self.assertEqual(mock_settings.embed_model, mock_embedding_instance)

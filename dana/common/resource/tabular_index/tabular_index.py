@@ -14,7 +14,7 @@ import logging
 import os
 import time
 import pandas as pd
-
+import asyncio
 from llama_index.core.schema import Document
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core import VectorStoreIndex, StorageContext
@@ -222,7 +222,6 @@ class TabularIndex:
         if not self.index:
             await self.initialize()
 
-        # result = {"query": query, "results": []}
         result = await self.retrieve(query, top_k)
 
         if callback:
@@ -249,11 +248,11 @@ class TabularIndex:
         if not self.index:
             await self.initialize()
 
-        # TODO: Implement actual batch search logic
-        results = []
+        tasks = []
         for query in queries:
-            result = await self.single_search(query, batch_config.top_k, callback)
-            results.append(result)
+            tasks.append(self.single_search(query, batch_config.top_k, callback))
+
+        results = await asyncio.gather(*tasks)
 
         return results
 

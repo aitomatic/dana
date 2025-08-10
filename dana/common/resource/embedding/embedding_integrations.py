@@ -287,4 +287,3 @@ class EmbeddingFactory:
 RAGEmbeddingResource = LlamaIndexEmbeddingResource
 get_embedding_model = RAGEmbeddingResource().get_embedding_model
 get_default_embedding_model = RAGEmbeddingResource().get_default_embedding_model
-setup_llamaindex = RAGEmbeddingResource().setup_llamaindex
