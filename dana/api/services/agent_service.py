@@ -9,7 +9,7 @@ import logging
 import os
 from typing import Any
 
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 
 from dana.api.services.code_handler import CodeHandler

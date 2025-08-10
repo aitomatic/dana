@@ -2,7 +2,7 @@
 
 import os
 
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.llm_resource import LLMResource
 
 
 def test_simple_provider_configs_debug():

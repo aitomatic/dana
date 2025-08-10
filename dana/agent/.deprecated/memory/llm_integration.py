@@ -12,7 +12,7 @@ import json
 import re
 from typing import Any
 
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 from dana.common.utils.misc import Misc
 

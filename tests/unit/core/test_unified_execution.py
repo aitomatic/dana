@@ -8,7 +8,6 @@ import os
 import unittest
 from unittest.mock import patch
 
-from dana.common.resource.llm.llm_resource import LLMResource
 from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
 from dana.core.lang.interpreter.executor.function_resolver import FunctionType
 from dana.core.lang.sandbox_context import SandboxContext
@@ -20,10 +19,18 @@ def test_reason_function_direct_call():
     """Test reason function with direct call to verify basic functionality."""
     # Create context
     context = SandboxContext()
-    llm_resource = LLMResource()
 
     # Set up context with LLM resource
-    context.set("system:llm_resource", llm_resource)
+    from dana.core.resource.plugins.base_llm_resource import BaseLLMResource
+
+    base_llm_resource = BaseLLMResource(name="test_llm", model="openai:gpt-4o-mini")
+    base_llm_resource.initialize()
+
+    # Enable mock mode for testing
+    if base_llm_resource._bridge and base_llm_resource._bridge._sys_resource:
+        base_llm_resource._bridge._sys_resource.with_mock_llm_call(True)
+
+    context.set_system_llm_resource(base_llm_resource)
 
     # Test basic call
     result = reason_function(context, "test prompt")
@@ -35,10 +42,18 @@ def test_reason_function_parameter_order():
     """Test reason function with different parameter orders to verify robustness."""
     # Create context
     context = SandboxContext()
-    llm_resource = LLMResource()
 
     # Set up context with LLM resource
-    context.set("system:llm_resource", llm_resource)
+    from dana.core.resource.plugins.base_llm_resource import BaseLLMResource
+
+    base_llm_resource = BaseLLMResource(name="test_llm", model="openai:gpt-4o-mini")
+    base_llm_resource.initialize()
+    
+    # Enable mock mode for testing
+    if base_llm_resource._bridge and base_llm_resource._bridge._sys_resource:
+        base_llm_resource._bridge._sys_resource.with_mock_llm_call(True)
+    
+    context.set_system_llm_resource(base_llm_resource)
 
     # Test with explicit mocking parameter
     result1 = reason_function(context, "test prompt", use_mock=True)

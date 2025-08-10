@@ -31,7 +31,7 @@ class StructType:
     fields: dict[str, str]  # Maps field name to type name string
     field_order: list[str]  # Maintain field declaration order
     field_comments: dict[str, str]  # Maps field name to comment/description
-    field_defaults: dict[str, Any] = None  # Maps field name to default value
+    field_defaults: dict[str, Any] | None = None  # Maps field name to default value
     docstring: str | None = None  # Struct docstring
 
     def __post_init__(self):
@@ -362,18 +362,24 @@ class MethodRegistry:
         return cls._instance
 
     @classmethod
-    def register_method(cls, receiver_types: list[str], method_name: str, function: Any) -> None:
+    def register_method(cls, receiver_types: list[str], method_name: str, function: Any, source_info: str | None = None) -> None:
         """Register a method for one or more receiver types.
 
         Args:
             receiver_types: List of struct type names (from union types)
             method_name: Name of the method
             function: The DanaFunction to register
+            source_info: Optional source information for error messages (e.g., "line 42, file example.na")
         """
         for type_name in receiver_types:
             key = (type_name, method_name)
             if key in cls._methods:
-                raise ValueError(f"Method '{method_name}' already defined for type '{type_name}'")
+                # Error on duplicates with helpful message
+                source_msg = f" at {source_info}" if source_info else ""
+                raise ValueError(
+                    f"Method '{method_name}' already defined for type '{type_name}'{source_msg}. "
+                    f"To override an existing method, use explicit syntax or rename your method."
+                )
             cls._methods[key] = function
 
     @classmethod
@@ -454,12 +460,22 @@ class StructTypeRegistry:
             raise ValueError(f"Unknown struct type '{struct_name}'. Available types: {available_types}")
 
         # Check if this is an agent struct type
-        from dana.agent import AgentType, AgentInstance
+        from dana.agent import AgentInstance, AgentType
+
+        # Lazy import to avoid circulars for resource classes
+        try:
+            from dana.core.resource.resource_instance import ResourceInstance, ResourceType  # type: ignore
+        except Exception:
+            ResourceType = None  # type: ignore
+            ResourceInstance = None  # type: ignore
 
         if isinstance(struct_type, AgentType):
             return AgentInstance(struct_type, values)
-        else:
-            return StructInstance(struct_type, values)
+        # If this is a resource-defined type, return a ResourceInstance
+        if ResourceType is not None and isinstance(struct_type, ResourceType):  # type: ignore[arg-type]
+            return ResourceInstance(struct_type, values)  # type: ignore[call-arg]
+
+        return StructInstance(struct_type, values)
 
     @classmethod
     def get_schema(cls, struct_name: str) -> dict[str, Any]:
@@ -610,7 +626,7 @@ def create_struct_type_from_ast(struct_def, context=None) -> StructType:
         name=struct_def.name,
         fields=fields,
         field_order=field_order,
-        field_defaults=field_defaults or None,
+        field_defaults=field_defaults if field_defaults else None,
         field_comments=field_comments,
         docstring=struct_def.docstring,
     )

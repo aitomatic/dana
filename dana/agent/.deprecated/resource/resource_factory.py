@@ -3,7 +3,7 @@
 from typing import Any
 
 # First-party imports
-from dana.common.resource import BaseResource, LLMResource
+from dana.common.sys_resource import BaseSysResource, LLMResource
 
 # Local imports
 from dana.frameworks.agent.resource.expert_resource import ExpertResource
@@ -13,7 +13,7 @@ class ResourceFactory:
     """Creates resources based on type."""
 
     @classmethod
-    def create_resource(cls, resource_type: str, config: dict[str, Any]) -> BaseResource:
+    def create_resource(cls, resource_type: str, config: dict[str, Any]) -> BaseSysResource:
         """Create resource instance."""
         if resource_type == "llm":
             return LLMResource(name=config.get("name", "llm"), config=config)

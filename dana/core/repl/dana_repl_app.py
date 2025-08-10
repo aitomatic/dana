@@ -65,7 +65,7 @@ import time
 
 from dana.common.error_utils import DanaError
 from dana.common.mixins.loggable import Loggable
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.llm_resource import LLMResource
 from dana.common.terminal_utils import ColorScheme
 from dana.core.concurrency.base_promise import BasePromise
 from dana.core.lang.log_manager import LogLevel

@@ -4,8 +4,8 @@ import os
 import unittest
 from unittest.mock import patch
 
-from dana.common.resource.llm.llm_configuration_manager import LLMConfigurationManager
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.llm_configuration_manager import LLMConfigurationManager
+from dana.common.sys_resource.llm.llm_resource import LLMResource
 
 
 class TestLLMResourceRefactored(unittest.TestCase):
@@ -147,7 +147,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
         self.assertEqual(llm3.config["max_tokens"], 2048)
 
     @patch("dana.common.config.ConfigLoader")
-    @patch("dana.common.resource.llm.llm_configuration_manager.ConfigLoader")
+    @patch("dana.common.sys_resource.llm.llm_configuration_manager.ConfigLoader")
     def test_preferred_models_integration(self, mock_config_loader_cm, mock_config_loader):
         """Test integration with preferred models from configuration."""
         # Mock configuration with preferred models
@@ -179,8 +179,8 @@ class TestLLMResourceRefactored(unittest.TestCase):
         """Verify that the refactoring actually reduced code complexity."""
         import inspect
 
-        from dana.common.resource.llm.llm_configuration_manager import LLMConfigurationManager
-        from dana.common.resource.llm.llm_resource import LLMResource
+        from dana.common.sys_resource.llm.llm_configuration_manager import LLMConfigurationManager
+        from dana.common.sys_resource.llm.llm_resource import LLMResource
 
         # Get method source code lengths for verification
         llm_validate_lines = len(inspect.getsource(LLMResource._validate_model).split("\n"))

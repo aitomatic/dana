@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 from llama_index.core.schema import NodeWithScore
 
-from dana.common.resource.rag.rag_resource import RAGResource
+from dana.common.sys_resource.rag.rag_resource import RAGResource
 
 
 class TestRAGResource:

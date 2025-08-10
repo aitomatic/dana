@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 
 from dana.common.exceptions import LLMAuthenticationError, LLMContextLengthError, LLMError, LLMProviderError, LLMRateLimitError
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest, BaseResponse
 
 

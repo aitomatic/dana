@@ -6,7 +6,7 @@ from typing import Any
 
 from dana.api.core.schemas import DomainKnowledgeTree, DomainNode, DomainKnowledgeUpdateResponse
 from dana.common.mixins.loggable import Loggable
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 
 logger = logging.getLogger(__name__)

@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from dana.common.exceptions import ParseError, TranscoderError
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseResponse
 from dana.core.lang.ast import Program
 from dana.core.lang.parser.dana_parser import ParseResult

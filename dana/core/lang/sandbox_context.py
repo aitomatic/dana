@@ -19,17 +19,18 @@ Discord: https://discord.gg/6jGD4PYk
 
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from dana.common.exceptions import StateError
 from dana.common.mixins.loggable import Loggable
-from dana.common.resource.base_resource import BaseResource
 from dana.common.runtime_scopes import RuntimeScopes
 from dana.core.lang.parser.utils.scope_utils import extract_scope_and_name
 
 if TYPE_CHECKING:
     from dana.core.lang.context_manager import ContextManager
     from dana.core.lang.interpreter.dana_interpreter import DanaInterpreter
+    from dana.core.resource import BaseResource
+    from dana.core.resource.plugins.base_llm_resource import BaseLLMResource
 
 
 class ExecutionStatus(Enum):
@@ -60,6 +61,9 @@ class SandboxContext(Loggable):
 
         self._error_context = ErrorContext()
 
+        # Private system LLM resource for efficient access
+        self._system_llm_resource: BaseLLMResource | None = None
+
         self._state: dict[str, dict[str, Any]] = {
             "local": {},  # Always fresh local scope
             "private": {},  # Shared global scope
@@ -69,17 +73,16 @@ class SandboxContext(Loggable):
                 "history": [],
             },
         }
+        # Update the type annotations and remove system scope from __resources and __agents
         self.__resources: dict[str, dict[str, BaseResource]] = {
             "local": {},
             "private": {},
             "public": {},
-            "system": {},
         }
         self.__agents: dict[str, dict[str, BaseResource]] = {
             "local": {},
             "private": {},
             "public": {},
-            "system": {},
         }
         # If parent exists, share global scopes instead of copying
         if parent:
@@ -679,7 +682,7 @@ class SandboxContext(Loggable):
 
         return None
 
-    def set_resource(self, name: str, resource: BaseResource) -> None:
+    def set_resource(self, name: str, resource: "BaseResource") -> None:
         """Set a resource in the context.
 
         Args:
@@ -693,13 +696,13 @@ class SandboxContext(Loggable):
         self.set_in_scope(var_name, resource, scope=scope)
         self.__resources[scope][var_name] = resource
 
-    def get_resource(self, name: str) -> BaseResource:
+    def get_resource(self, name: str) -> "BaseResource":
         scope, var_name = extract_scope_and_name(name)
         if scope is None:
             scope = "private"
         return self.__resources[scope][var_name]
 
-    def get_resources(self, included: list[str | BaseResource] | None = None) -> dict[str, BaseResource]:
+    def get_resources(self, included: list[Union[str, "BaseResource"]] | None = None) -> dict[str, "BaseResource"]:
         """Get a dictionary of resources from the context.
 
         Args:
@@ -713,13 +716,13 @@ class SandboxContext(Loggable):
             resource_names = self.list_resources()
             return {name: self.get_resource(name) for name in resource_names}
 
-        # Handle mixed list of BaseResource objects and string names
+        # Handle mixed list of resource objects and string names
         resources = {}
         for item in included:
-            if isinstance(item, BaseResource):
+            if hasattr(item, "name"):  # Check if it's a resource object
                 # Direct resource object - use it directly
                 resources[item.name] = item
-            else:
+            elif isinstance(item, str):
                 # String name - look it up in context
                 try:
                     resources[item] = self.get_resource(item)
@@ -744,78 +747,6 @@ class SandboxContext(Loggable):
                 if var_name in self._state[scope]:
                     all_resources.append(resource.name)
         return all_resources
-
-    def get_system_llm_resource(self, use_mock: bool | None = None) -> Any:
-        """Get the system LLM resource with standardized fallback strategy.
-
-        This method consolidates the LLM resource retrieval logic used across
-        multiple functions in the codebase. It follows this priority order:
-        1. Try to get from "system:llm_resource" key
-        2. Try to get from "llm_resource" key
-        3. Try direct attribute access on context
-        4. Create new LLMResource() as fallback
-
-        Args:
-            use_mock: Whether to apply mocking (None = check environment variable)
-
-        Returns:
-            LLMResource instance, potentially with mocking applied
-        """
-        import os
-
-        from dana.common.resource.llm.llm_resource import LLMResource
-
-        # Try to get LLM resource from context with fallback strategy
-        llm_resource: LLMResource = None
-
-        # Priority 1: Try "system:llm_resource" key
-        try:
-            llm_resource = self.get("system:llm_resource")
-        except Exception:
-            pass
-
-        # Priority 2: Try "llm_resource" key if not found
-        if not llm_resource:
-            try:
-                llm_resource = self.get("llm_resource")
-            except Exception:
-                pass
-
-        # Priority 3: Try direct attribute access
-        if not llm_resource and hasattr(self, "llm_resource"):
-            llm_resource = self.llm_resource
-
-        # Priority 4: Create new LLMResource as fallback
-        if not llm_resource:
-            llm_resource = LLMResource()
-
-        # Apply mocking if requested
-        if use_mock is not None:
-            llm_resource = llm_resource.with_mock_llm_call(use_mock)
-        elif os.environ.get("DANA_MOCK_LLM", "").lower() == "true":
-            llm_resource = llm_resource.with_mock_llm_call(True)
-
-        self.info(f"Using LLMResource: {llm_resource.id}")
-        return llm_resource
-
-    def set_system_llm_resource(self, llm_resource: Any) -> None:
-        """Set the system LLM resource in the context.
-
-        This method provides a standardized way to set LLM resources in the context.
-        It stores the resource in the "system:llm_resource" key, which is the primary
-        location that get_system_llm_resource() checks first.
-
-        Args:
-            llm_resource: The LLMResource instance to store in the context
-        """
-        from dana.common.resource.llm.llm_resource import LLMResource
-
-        # Validate that we're setting a proper LLMResource
-        if not isinstance(llm_resource, LLMResource):
-            raise ValueError(f"Expected LLMResource instance, got {type(llm_resource).__name__}")
-
-        # Store in the primary location that get_system_llm_resource() checks first
-        self.set("system:llm_resource", llm_resource)
 
     def delete_from_scope(self, var_name: str, scope: str = "local") -> None:
         """Delete a variable from a specific scope.
@@ -845,7 +776,7 @@ class SandboxContext(Loggable):
         elif self._parent is not None:
             self._parent.delete_from_scope(var_name, scope)
 
-    def set_agent(self, name: str, agent: BaseResource) -> None:
+    def set_agent(self, name: str, agent: "BaseResource") -> None:
         """Set an agent in the context.
 
         Args:
@@ -859,13 +790,13 @@ class SandboxContext(Loggable):
         self.set_in_scope(var_name, agent, scope=scope)
         self.__agents[scope][var_name] = agent
 
-    def get_agent(self, name: str) -> BaseResource:
+    def get_agent(self, name: str) -> "BaseResource":
         scope, var_name = extract_scope_and_name(name)
         if scope is None:
             scope = "private"
         return self.__agents[scope][var_name]
 
-    def get_agents(self, included: list[str | BaseResource] | None = None) -> dict[str, BaseResource]:
+    def get_agents(self, included: list[Union[str, "BaseResource"]] | None = None) -> dict[str, "BaseResource"]:
         """Get a dictionary of agents from the context.
 
         Args:
@@ -877,7 +808,7 @@ class SandboxContext(Loggable):
         agent_names = self.list_agents()
         if included is not None:
             # Convert to list of strings
-            included = [agent.name if isinstance(agent, BaseResource) else agent for agent in included]
+            included = [agent.name if hasattr(agent, "name") else agent for agent in included]
         agent_names = filter(lambda name: (included is None or name in included), agent_names)
         return {name: self.get_agent(name) for name in agent_names}
 
@@ -897,7 +828,7 @@ class SandboxContext(Loggable):
                     all_agents.append(agent.name)
         return all_agents
 
-    def get_self_agent_card(self, included_resources: list[str | BaseResource] | None = None) -> dict[str, dict[str, Any]]:
+    def get_self_agent_card(self, included_resources: list[Union[str, "BaseResource"]] | None = None) -> dict[str, dict[str, Any]]:
         """
         Get the agent card for the current agent.
         Args:
@@ -916,7 +847,7 @@ class SandboxContext(Loggable):
         """
 
         if included_resources is not None:
-            included_resources = [resource.name if isinstance(resource, BaseResource) else resource for resource in included_resources]
+            included_resources = [resource.name if hasattr(resource, "name") else resource for resource in included_resources]
 
         tools = []
         for name, resource in self.get_resources().items():
@@ -934,7 +865,7 @@ class SandboxContext(Loggable):
                 agent_card["skills"].append({"name": function.get("name", ""), "description": function.get("description", "")})
         return {"__self__": agent_card}
 
-    def get_other_agent_cards(self, included_agents: list[str | BaseResource] | None = None) -> dict[str, dict[str, Any]]:
+    def get_other_agent_cards(self, included_agents: list[Union[str, "BaseResource"]] | None = None) -> dict[str, dict[str, Any]]:
         all_agent_cards = {}
         for name, agent in self.get_agents(included=included_agents).items():
             all_agent_cards[name] = agent.agent_card
@@ -965,3 +896,35 @@ class SandboxContext(Loggable):
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """Context manager exit - cleanup local state only"""
         self.shutdown()
+
+    def get_system_llm_resource(self, use_mock: bool | None = None) -> "BaseLLMResource | None":
+        """Get the system LLM resource as a Dana LLMResource (core resource).
+
+        This method provides convenient access to the system LLM resource
+        but returns it as a Dana LLMResource instance that follows the
+        core resource interface.
+        """
+        return self._system_llm_resource
+
+    def set_system_llm_resource(self, llm_resource: "BaseLLMResource") -> None:
+        """Set the system LLM resource.
+
+        This method accepts a Dana LLMResource instance and stores it
+        for efficient access.
+        """
+        try:
+            # Ensure it's a BaseLLMResource
+            from dana.core.resource.plugins.base_llm_resource import BaseLLMResource
+
+            if not isinstance(llm_resource, BaseLLMResource):
+                raise ValueError("llm_resource must be a BaseLLMResource instance")
+
+            # Store in private property for efficient access
+            self._system_llm_resource = llm_resource
+
+            # Also store as a core resource for consistency with resource system
+            self.set_resource("system_llm", llm_resource)
+
+            self.info(f"Stored system LLM resource: {llm_resource.model}")
+        except Exception as e:
+            self.error(f"Failed to set system LLM resource: {e}")

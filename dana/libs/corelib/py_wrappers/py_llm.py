@@ -60,9 +60,13 @@ def py_llm(
     # Priority: function parameter > environment variable
     should_mock = use_mock if use_mock is not None else os.environ.get("DANA_MOCK_LLM", "").lower() == "true"
 
-    # Get LLM resource from context using consolidated method
+    # Get LLM resource from context using system resource access
     llm_resource = context.get_system_llm_resource(use_mock=should_mock)
-    logger.info(f"LLMResource ID: {llm_resource.id}")
+
+    if llm_resource is None:
+        raise SandboxError("No LLM resource available in context")
+
+    logger.info(f"LLMResource: {llm_resource.name} (model: {llm_resource.model})")
 
     # Get resources from context once and reuse throughout the function
     resources = {}
@@ -98,7 +102,7 @@ def py_llm(
             request = BaseRequest(arguments=request_params)
 
             # Make the async call directly
-            response = await llm_resource.query(request)
+            response = await llm_resource.query_async(request)
 
             if not response.success:
                 raise SandboxError(f"LLM call failed: {response.error}")

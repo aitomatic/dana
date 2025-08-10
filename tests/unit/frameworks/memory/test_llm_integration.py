@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from dana.agent.agent_instance import AgentType, AgentInstance
+from dana.agent.agent_instance import AgentInstance, AgentType
 from dana.core.lang.sandbox_context import SandboxContext
 
 
@@ -56,19 +56,21 @@ class TestLLMIntegration(unittest.TestCase):
         return AgentInstance(agent_type, fields)
 
     def test_llm_resource_integration(self):
-        """Test that agent uses LLM resource properly."""
+        """Test that LLM resource is properly integrated with agent chat."""
         agent = self.create_test_agent()
 
         # Mock the LLM resource
         mock_llm_resource = Mock()
-        mock_llm_resource.query_sync.return_value = Mock(success=True, content="Mock LLM response")
+        mock_llm_resource.kind = "llm"  # Set the kind attribute
+        mock_llm_resource.query.return_value = Mock(success=True, content="Mock LLM response")
 
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=mock_llm_resource):
+        # Mock the get_resources method to return our mock LLM resource
+        with patch.object(self.sandbox_context, "get_resources", return_value={"test_llm": mock_llm_resource}):
             response_promise = agent.chat(self.sandbox_context, "Test message")
             response = response_promise._wait_for_delivery()
 
             # Should have called LLM resource
-            mock_llm_resource.query_sync.assert_called_once()
+            mock_llm_resource.query.assert_called_once()
 
             # Response should be the resolved value
             self.assertEqual(response, "Mock LLM response")
@@ -78,14 +80,16 @@ class TestLLMIntegration(unittest.TestCase):
         agent = self.create_test_agent()
 
         mock_llm_resource = Mock()
-        mock_llm_resource.query_sync.return_value = Mock(success=True, content="Context response")
+        mock_llm_resource.kind = "llm"  # Set the kind attribute
+        mock_llm_resource.query.return_value = Mock(success=True, content="Context response")
 
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=mock_llm_resource):
+        # Mock the get_resources method to return our mock LLM resource
+        with patch.object(self.sandbox_context, "get_resources", return_value={"test_llm": mock_llm_resource}):
             agent.chat(self.sandbox_context, "Test with context")._wait_for_delivery()
 
             # Should have called LLM resource with proper request
-            self.assertEqual(mock_llm_resource.query_sync.call_count, 1)
-            call_args = mock_llm_resource.query_sync.call_args
+            self.assertEqual(mock_llm_resource.query.call_count, 1)
+            call_args = mock_llm_resource.query.call_args
 
             # Check that request contains prompt with agent description
             request = call_args[0][0]
@@ -99,9 +103,11 @@ class TestLLMIntegration(unittest.TestCase):
         agent = self.create_test_agent()
 
         mock_llm_resource = Mock()
-        mock_llm_resource.query_sync.side_effect = Exception("LLM resource failed")
+        mock_llm_resource.kind = "llm"  # Set the kind attribute
+        mock_llm_resource.query.side_effect = Exception("LLM resource failed")
 
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=mock_llm_resource):
+        # Mock the get_resources method to return our mock LLM resource
+        with patch.object(self.sandbox_context, "get_resources", return_value={"test_llm": mock_llm_resource}):
             response_promise = agent.chat(self.sandbox_context, "Test error handling")
             response = response_promise._wait_for_delivery()
 
@@ -113,8 +119,8 @@ class TestLLMIntegration(unittest.TestCase):
         """Test fallback behavior when LLM resource is not available."""
         agent = self.create_test_agent()
 
-        # Mock the sandbox context to return None for LLM resource
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=None):
+        # Mock the sandbox context to return no LLM resources
+        with patch.object(self.sandbox_context, "get_resources", return_value={}):
             response_promise = agent.chat(self.sandbox_context, "Hello")
             response = response_promise._wait_for_delivery()
 
@@ -129,8 +135,8 @@ class TestLLMIntegration(unittest.TestCase):
         custom_llm = Mock(return_value="Custom LLM response")
         agent = self.create_test_agent(fields={"llm": custom_llm})
 
-        # Mock sandbox context to return None to force fallback
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=None):
+        # Mock sandbox context to return no LLM resources to force fallback
+        with patch.object(self.sandbox_context, "get_resources", return_value={}):
             response_promise = agent.chat(self.sandbox_context, "Test custom LLM")
             response = response_promise._wait_for_delivery()
 
@@ -142,8 +148,8 @@ class TestLLMIntegration(unittest.TestCase):
         # This test needs to be updated since the context approach has changed
         agent = self.create_test_agent()
 
-        # Mock sandbox context to return None to force fallback
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=None):
+        # Mock sandbox context to return no LLM resources to force fallback
+        with patch.object(self.sandbox_context, "get_resources", return_value={}):
             response_promise = agent.chat(self.sandbox_context, "Test context LLM")
             response = response_promise._wait_for_delivery()
 
@@ -155,13 +161,15 @@ class TestLLMIntegration(unittest.TestCase):
         agent = self.create_test_agent()
 
         mock_llm_resource = Mock()
+        mock_llm_resource.kind = "llm"  # Set the kind attribute
         # Create different mock responses for each call
-        mock_llm_resource.query_sync.side_effect = [
+        mock_llm_resource.query.side_effect = [
             Mock(success=True, content="First response"),
             Mock(success=True, content="Second response remembering first"),
         ]
 
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=mock_llm_resource):
+        # Mock the get_resources method to return our mock LLM resource
+        with patch.object(self.sandbox_context, "get_resources", return_value={"test_llm": mock_llm_resource}):
             # First turn
             response_promise1 = agent.chat(self.sandbox_context, "Hello, my name is Alice")
             response1 = response_promise1._wait_for_delivery()
@@ -173,10 +181,10 @@ class TestLLMIntegration(unittest.TestCase):
             self.assertEqual(response2, "Second response remembering first")
 
             # Should have called LLM resource twice
-            self.assertEqual(mock_llm_resource.query_sync.call_count, 2)
+            self.assertEqual(mock_llm_resource.query.call_count, 2)
 
             # Second call should include conversation history
-            second_call_request = mock_llm_resource.query_sync.call_args_list[1][0][0]
+            second_call_request = mock_llm_resource.query.call_args_list[1][0][0]
             messages = second_call_request.arguments["messages"]
             all_content = " ".join([msg["content"] for msg in messages])
             self.assertIn("Alice", all_content)
@@ -186,9 +194,11 @@ class TestLLMIntegration(unittest.TestCase):
         agent = self.create_test_agent()
 
         mock_llm_resource = Mock()
-        mock_llm_resource.query_sync.return_value = Mock(success=True, content="Hello from LLM")
+        mock_llm_resource.kind = "llm"  # Set the kind attribute
+        mock_llm_resource.query.return_value = Mock(success=True, content="Hello from LLM")
 
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=mock_llm_resource):
+        # Mock the get_resources method to return our mock LLM resource
+        with patch.object(self.sandbox_context, "get_resources", return_value={"test_llm": mock_llm_resource}):
             response_promise = agent.chat(self.sandbox_context, "Say hello")
             response = response_promise._wait_for_delivery()
 
@@ -209,7 +219,7 @@ class TestLLMFunctionIntegration(unittest.TestCase):
 
     def test_sandbox_context_creation(self):
         """Test that SandboxContext is created properly."""
-        from dana.agent.agent_instance import AgentType, AgentInstance
+        from dana.agent.agent_instance import AgentInstance, AgentType
 
         agent_type = AgentType(name="ContextTestAgent", fields={"purpose": "testing"}, field_order=["purpose"], field_comments={})
         agent = AgentInstance(agent_type, {"purpose": "testing"})
@@ -222,21 +232,23 @@ class TestLLMFunctionIntegration(unittest.TestCase):
 
     def test_wrapper_function_behavior(self):
         """Test the wrapped LLM resource behavior."""
-        from dana.agent.agent_instance import AgentType, AgentInstance
+        from dana.agent.agent_instance import AgentInstance, AgentType
 
         agent_type = AgentType(name="WrapperTestAgent", fields={"role": "tester"}, field_order=["role"], field_comments={})
         agent = AgentInstance(agent_type, {"role": "tester"})
 
         mock_llm_resource = Mock()
-        mock_llm_resource.query_sync.return_value = Mock(success=True, content="Resolved LLM response")
+        mock_llm_resource.kind = "llm"  # Set the kind attribute
+        mock_llm_resource.query.return_value = Mock(success=True, content="Resolved LLM response")
 
-        with patch.object(self.sandbox_context, "get_system_llm_resource", return_value=mock_llm_resource):
+        # Mock the get_resources method to return our mock LLM resource
+        with patch.object(self.sandbox_context, "get_resources", return_value={"test_llm": mock_llm_resource}):
             # Test that chat method uses the LLM resource properly
             response_promise = agent.chat(self.sandbox_context, "Test prompt")
             response = response_promise._wait_for_delivery()
 
             # Should call LLM resource and get response
-            mock_llm_resource.query_sync.assert_called_once()
+            mock_llm_resource.query.assert_called_once()
             self.assertEqual(response, "Resolved LLM response")
 
 

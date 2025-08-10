@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from dana.core.lang.dana_sandbox import DanaSandbox
 from dana.core.lang.sandbox_context import SandboxContext
-from dana.common.resource.llm.llm_resource import LLMResource
+from dana.common.sys_resource.llm.llm_resource import LLMResource
 from dana.common.types import BaseRequest
 
 logger = logging.getLogger(__name__)

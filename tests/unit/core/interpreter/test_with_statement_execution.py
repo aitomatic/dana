@@ -8,11 +8,11 @@ from unittest.mock import patch
 
 import pytest
 
-from dana.common.resource.base_resource import BaseResource
+from dana.common.sys_resource.base_resource import BaseSysResource
 from dana.core.lang.dana_sandbox import DanaSandbox
 
 
-class MockMCPResource(BaseResource):
+class MockMCPResource(BaseSysResource):
     """Mock MCP resource for testing without real MCP servers."""
 
     def __init__(self, name, *args, **kwargs):

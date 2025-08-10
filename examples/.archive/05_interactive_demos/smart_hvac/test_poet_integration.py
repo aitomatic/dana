@@ -37,7 +37,7 @@ async def test_poet_imports():
         return False
 
     try:
-        from dana.common.resource.llm_resource import LLMResource
+        from dana.common.sys_resource.llm_resource import LLMResource
 
         print("✅ LLM resource imported successfully")
     except ImportError as e:
@@ -106,7 +106,7 @@ async def test_llm_setup():
     print(f"✅ Found API keys for: {', '.join(available_keys)}")
 
     try:
-        from dana.common.resource.llm_resource import LLMResource
+        from dana.common.sys_resource.llm_resource import LLMResource
 
         # Create LLM resource
         llm = LLMResource(name="test_llm")

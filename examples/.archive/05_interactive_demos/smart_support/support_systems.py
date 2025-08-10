@@ -22,7 +22,7 @@ from typing import Any
 
 # Try to import LLMResource for basic agent
 try:
-    from dana.common.resource.llm_resource import LLMRequest, LLMResource
+    from dana.common.sys_resource.llm_resource import LLMRequest, LLMResource
 
     # Initialize LLM resource for basic agent
     basic_llm_resource = LLMResource()

@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 
-from dana.common.resource.base_resource import BaseResource
+from dana.common.sys_resource.base_resource import BaseSysResource
 
 
-class AbstractDanaAgent(BaseResource, ABC):
+class AbstractDanaAgent(BaseSysResource, ABC):
     @property
     @abstractmethod
     def agent_card(self) -> dict[str, any]:
