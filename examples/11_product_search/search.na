@@ -18,7 +18,6 @@ def product_search(query: str) -> dict:
     Main product search function - consolidated 4-step pipeline
     Query → Enhancement → Search → Ranking → Response
     """
-    start_time = time()
     
     # Step 1: Query Enhancement with reason()
     enhanced = enhance_query(query)
@@ -28,10 +27,7 @@ def product_search(query: str) -> dict:
     
     # Step 3: Intelligent ranking with reason()
     ranked = rank_results(query, results)
-    
-    # Add processing time
-    ranked["processing_time"] = time() - start_time
-    
+        
     return ranked
 
 # ===== TEST FUNCTIONS =====
@@ -57,13 +53,15 @@ def test_full_pipeline():
 def main():
     """Main function to demonstrate the search functionality"""
     query = "Subaru sedan brake pads"
+    start_time = time()
     response = product_search(query)
+    end_time = time()
     
     print("=== DANA PRODUCT SEARCH RESULT ===")
     print(f"Query: {response['query']}")
     print(f"Total Results: {response['total_results']}")
     print(f"Confidence Score: {response['confidence']}")
-    print(f"Processing Time: {response['processing_time']}s")
+    print(f"Processing Time: {end_time - start_time}s")
     
     if response['best_match']:
         print(f"Best Match: {response['best_match']['product_name']}")
