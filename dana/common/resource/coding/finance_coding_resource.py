@@ -3,7 +3,6 @@ import subprocess
 import sys
 import tempfile
 import pkg_resources
-from typing import List
 from dana.common.mixins.tool_callable import ToolCallable
 from dana.common.resource.base_resource import BaseResource
 from dana.common.resource.llm.llm_resource import LLMResource
@@ -23,8 +22,7 @@ class FinanceCodingResource(BaseResource):
     ):
         super().__init__(
             name,
-            description
-            or "Specialized resource for financial calculations and analysis",
+            description or "Specialized resource for financial calculations and analysis",
         )
         self.debug = debug
         self.timeout = timeout
@@ -63,7 +61,7 @@ class FinanceCodingResource(BaseResource):
             "chart-studio",
         ]
 
-    def _get_available_packages(self) -> List[str]:
+    def _get_available_packages(self) -> list[str]:
         """Get list of available packages with focus on financial libraries."""
         if self._available_packages is None:
             try:
@@ -82,22 +80,16 @@ class FinanceCodingResource(BaseResource):
                 # Combine and sort, but exclude forbidden visualization packages
                 all_packages = list(set(installed_packages + stdlib_modules))
                 # Filter out forbidden packages
-                all_packages = [
-                    pkg for pkg in all_packages if pkg not in self._forbidden_packages
-                ]
+                all_packages = [pkg for pkg in all_packages if pkg not in self._forbidden_packages]
                 all_packages.sort()
 
                 # Check which financial packages are available
-                available_financial = [
-                    pkg for pkg in self._financial_packages if pkg in all_packages
-                ]
+                available_financial = [pkg for pkg in self._financial_packages if pkg in all_packages]
 
                 self._available_packages = all_packages
                 if self.debug:
                     print(f"Detected {len(all_packages)} available packages")
-                    print(
-                        f"Available financial packages: {', '.join(available_financial)}"
-                    )
+                    print(f"Available financial packages: {', '.join(available_financial)}")
             except Exception as e:
                 self.warning(f"Could not detect available packages: {e}")
                 # Fallback to common packages
@@ -132,22 +124,16 @@ class FinanceCodingResource(BaseResource):
                 await self._llm_resource.initialize()
                 self._is_ready = True
                 if self.debug:
-                    print(
-                        f"Finance coding resource [{self.name}] initialized successfully"
-                    )
+                    print(f"Finance coding resource [{self.name}] initialized successfully")
             except Exception as e:
                 self.error(f"Failed to initialize LLM resource: {e}")
                 self._is_ready = False
         else:
-            self.warning(
-                "No LLM resource available, finance coding resource will use fallback methods"
-            )
+            self.warning("No LLM resource available, finance coding resource will use fallback methods")
             self._is_ready = True
 
     @ToolCallable.tool
-    async def calculate_financial_metrics(
-        self, request: str, max_retries: int = 3
-    ) -> str:
+    async def calculate_financial_metrics(self, request: str, max_retries: int = 3) -> str:
         """Generate Python code for financial calculations and execute it.
 
         @description: Generate Python code for financial calculations and execute it. Specialized for financial metrics like NPV, IRR, portfolio analysis, risk metrics, growth rates, etc. IMPORTANT: For growth rate calculations, provide ALL available time-series data points (e.g., quarterly data: {"Q1": 100, "Q2": 110, "Q3": 115, "Q4": 125}) not just start/end values. The tool will analyze multi-period patterns and calculate period-over-period growth rates. Always include temporal context (daily, monthly, quarterly, annual) for all data points.
@@ -176,9 +162,7 @@ class FinanceCodingResource(BaseResource):
                     python_code = await self._generate_financial_python_code(request)
                 else:
                     # Retry attempts: use error feedback to improve
-                    python_code = await self._generate_financial_code_with_feedback(
-                        request, last_error, last_python_code, attempt
-                    )
+                    python_code = await self._generate_financial_code_with_feedback(request, last_error, last_python_code, attempt)
 
                 # Validate code doesn't contain chart generation
                 is_valid, validation_error = self._validate_no_charts(python_code)
@@ -191,14 +175,10 @@ class FinanceCodingResource(BaseResource):
                 result = self._execute_python_code(python_code, timeout=self.timeout)
 
                 # Check if execution was successful
-                if not result.startswith("Error:") and not result.startswith(
-                    "TimeoutError:"
-                ):
+                if not result.startswith("Error:") and not result.startswith("TimeoutError:"):
                     if attempt > 0:
                         if self.debug:
-                            print(
-                                f"Successfully executed code on attempt {attempt + 1}"
-                            )
+                            print(f"Successfully executed code on attempt {attempt + 1}")
                     if self.debug:
                         print(f"Result: \n```\n{result}\n```")
                     return result
@@ -227,19 +207,13 @@ class FinanceCodingResource(BaseResource):
 
         # Get available packages
         available_packages = self._get_available_packages()
-        financial_packages = [
-            pkg for pkg in self._financial_packages if pkg in available_packages
-        ]
+        financial_packages = [pkg for pkg in self._financial_packages if pkg in available_packages]
 
         packages_info = ", ".join(available_packages[:50])
         if len(available_packages) > 50:
             packages_info += f" ... and {len(available_packages) - 50} more"
 
-        financial_packages_info = (
-            ", ".join(financial_packages)
-            if financial_packages
-            else "numpy, pandas (basic libraries)"
-        )
+        financial_packages_info = ", ".join(financial_packages) if financial_packages else "numpy, pandas (basic libraries)"
 
         prompt = f"""
 # ROLE: You are a senior quantitative finance engineer and financial analyst.
@@ -385,15 +359,11 @@ class FinanceCodingResource(BaseResource):
             self.error(f"LLM generation failed: {response.error}")
             raise Exception(f"LLM generation failed: {response.error}")
 
-    async def _generate_financial_code_with_feedback(
-        self, request: str, last_error: str, last_python_code: str, attempt: int
-    ) -> str:
+    async def _generate_financial_code_with_feedback(self, request: str, last_error: str, last_python_code: str, attempt: int) -> str:
         """Generate financial Python code using LLM with error feedback."""
 
         available_packages = self._get_available_packages()
-        financial_packages = [
-            pkg for pkg in self._financial_packages if pkg in available_packages
-        ]
+        financial_packages = [pkg for pkg in self._financial_packages if pkg in available_packages]
 
         packages_info = ", ".join(available_packages[:50])
         if len(available_packages) > 50:
@@ -680,9 +650,7 @@ print(f"\\nFinal Result: ${{result:,.2f}}")
         pass
 
     @ToolCallable.tool
-    async def analyze_portfolio(
-        self, holdings_json: str, prices_json: str, benchmark: str = "SPY"
-    ) -> str:
+    async def analyze_portfolio(self, holdings_json: str, prices_json: str, benchmark: str = "SPY") -> str:
         """Analyze a portfolio's performance metrics.
 
         @description: Analyze a portfolio's performance metrics including returns, volatility, and Sharpe ratio. Calculates total portfolio value, individual position values and weights, portfolio diversity metrics, and compares to a benchmark.

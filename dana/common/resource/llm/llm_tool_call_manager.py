@@ -22,7 +22,7 @@ from dana.common.utils.misc import Misc
 
 # To avoid accidentally sending too much data to the LLM,
 # we limit the total length of tool-call responses.
-MAX_TOOL_CALL_RESPONSE_LENGTH = 10000
+MAX_TOOL_CALL_RESPONSE_LENGTH = 40000
 
 
 class LLMToolCallManager(Loggable):
@@ -181,7 +181,7 @@ class LLMToolCallManager(Loggable):
 
                 # Truncate response if needed
                 if self.max_response_length and isinstance(response, str):
-                    response = response[: self.max_response_length]
+                    response = response[: self.max_response_length] # NOTE : This may reduce our LLM performance because we are truncating the tool response naively
 
             except Exception as e:
                 response = f"Tool call failed: {str(e)}"

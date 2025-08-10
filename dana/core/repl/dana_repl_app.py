@@ -67,11 +67,13 @@ from dana.common.error_utils import DanaError
 from dana.common.mixins.loggable import Loggable
 from dana.common.resource.llm.llm_resource import LLMResource
 from dana.common.terminal_utils import ColorScheme
+from dana.core.concurrency.base_promise import BasePromise
 from dana.core.lang.log_manager import LogLevel
 from dana.core.repl.commands import CommandHandler
 from dana.core.repl.input import InputProcessor
 from dana.core.repl.repl import REPL
 from dana.core.repl.ui import OutputFormatter, PromptSessionManager, WelcomeDisplay
+from dana.core.runtime import DanaThreadPool
 
 # Map Dana LogLevel to Python logging levels
 LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
@@ -176,7 +178,8 @@ class DanaREPLApp(Loggable):
                     if executed_program:
                         # Store input context for multiline programs too
                         self._store_input_context()
-                        await self._execute_program_blocking(executed_program)
+                        # Use smart execution for multiline programs too
+                        await self._execute_program_smart(executed_program)
                         last_executed_program = executed_program
                     continue
 
@@ -203,7 +206,8 @@ class DanaREPLApp(Loggable):
                 self.input_processor.state.add_to_history(line)
                 # Store input context in sandbox context for IPV access
                 self._store_input_context()
-                await self._execute_program_blocking(line)
+                # Smart execution: direct first, then check for Promises
+                await self._execute_program_smart(line)
                 last_executed_program = line
 
             except KeyboardInterrupt:
@@ -246,6 +250,7 @@ class DanaREPLApp(Loggable):
 
     async def _execute_program_blocking(self, program: str) -> None:
         """Execute program with blocking behavior and ESC cancellation support."""
+        poll_count = 0
         try:
             self.debug(f"Starting blocking execution for: {program}")
 
@@ -254,7 +259,8 @@ class DanaREPLApp(Loggable):
 
             # Start execution in background thread
             loop = asyncio.get_running_loop()
-            future = loop.run_in_executor(None, self.repl.execute, program)
+            executor = DanaThreadPool.get_instance().get_executor()
+            future = loop.run_in_executor(executor, self.repl.execute, program)
 
             # Track polling time
             start_time = time.time()
@@ -316,6 +322,139 @@ class DanaREPLApp(Loggable):
         """Request cancellation of the current execution."""
         self._cancellation_requested = True
         self.debug("Cancellation requested by user")
+
+    def _start_background_execution(self, program: str) -> None:
+        """Start program execution in background and return immediately."""
+        # Create background task
+        task = asyncio.create_task(self._execute_program_background(program))
+
+        # Add to background tasks set
+        self._background_tasks.add(task)
+
+        # Add callback to remove task when done
+        task.add_done_callback(self._background_tasks.discard)
+
+    async def _execute_program_background(self, program: str) -> None:
+        """Execute a Dana program in the background with safe output handling."""
+        try:
+            # Execute without patch_stdout first
+            await self._execute_program(program)
+        except Exception as e:
+            # Handle errors in background execution
+            self.debug(f"Background execution error: {e}")
+            # For errors, always use patch_stdout to be safe
+            from prompt_toolkit.patch_stdout import patch_stdout
+
+            with patch_stdout():
+                self.output_formatter.format_error(e)
+
+    async def _execute_program_smart(self, program: str) -> None:
+        """Execute program with smart threading based on return type.
+
+        Strategy:
+        1. Execute directly first (no threadpool upfront)
+        2. If result is Promise: handle asynchronously in background
+        3. If result is regular value: display immediately (execution was blocking)
+        """
+        try:
+            self.debug(f"Starting smart execution for: {program}")
+
+            # Execute directly on main thread first
+            result = self.repl.execute(program)
+
+            # Handle print output
+            print_output = self.repl.interpreter.get_and_clear_output()
+            if print_output:
+                print(print_output)
+
+            if result is not None:
+                # Check if result is a Promise
+                from dana.core.concurrency import is_promise
+
+                if is_promise(result):
+                    # Async semantics - move Promise handling to thread pool to avoid blocking
+                    self.debug("Result is Promise, handling in background thread to avoid blocking")
+                    await self._handle_promise_result_async(result)
+                else:
+                    # Sync semantics - display result (execution was already blocking)
+                    self.debug(f"Result is direct value, displaying: {result}")
+                    await self.output_formatter.format_result_async(result)
+
+        except Exception as e:
+            self.debug(f"Smart execution error: {e}")
+            # Format and display error
+            self.output_formatter.format_error(e)
+
+    async def _handle_promise_result_async(self, promise_result: BasePromise) -> None:
+        """Handle Promise result by displaying safe Promise information.
+
+        This avoids passing the actual Promise object to the formatter,
+        which could trigger synchronous resolution and block the UI.
+        """
+        self.debug(f"Handling Promise result: {type(promise_result)}")
+
+        # Get safe display info without triggering resolution
+        try:
+            if hasattr(promise_result, "get_display_info"):
+                promise_info = promise_result.get_display_info()
+            else:
+                # Fallback for non-BasePromise objects that are promise-like
+                promise_info = f"<{type(promise_result).__name__}>"
+        except Exception as e:
+            # Ultra-safe fallback
+            self.debug(f"Error getting Promise display info: {e}")
+            promise_info = "<Promise (info unavailable)>"
+
+        await self.output_formatter.format_result_async(promise_info)
+
+        # Add callback to print the result when promise is delivered
+        if hasattr(promise_result, "add_on_delivery_callback"):
+
+            def on_promise_delivered(result):
+                """Callback to print the delivered promise result."""
+                try:
+                    self.debug(f"{promise_info} delivered with result: {result}")
+                    # Schedule the async formatting on the event loop
+                    import asyncio
+
+                    try:
+                        loop = asyncio.get_running_loop()
+                        # Create a task to format the result asynchronously
+                        loop.create_task(self.output_formatter.format_result_async(result))
+                    except RuntimeError:
+                        # No event loop running, just print the result directly
+                        print(result)
+                except Exception as e:
+                    self.debug(f"Error in promise resolution callback: {e}")
+                    # Fallback to simple print
+                    print(result)
+
+            promise_result.add_on_delivery_callback(on_promise_delivered)
+
+    async def _execute_program(self, program: str) -> None:
+        """Execute a Dana program and handle the result or errors."""
+        try:
+            self.debug(f"Executing program: {program}")
+
+            # Use run_in_executor to prevent blocking the main event loop
+            loop = asyncio.get_running_loop()
+
+            # Execute Dana program in thread pool to avoid blocking
+            executor = DanaThreadPool.get_instance().get_executor()
+            result = await loop.run_in_executor(executor, self.repl.execute, program)
+
+            # Capture and display any print output from the interpreter
+            print_output = self.repl.interpreter.get_and_clear_output()
+            if print_output:
+                print(print_output)
+
+            # Display the result if it's not None
+            if result is not None:
+                await self.output_formatter.format_result_async(result)
+
+        except Exception as e:
+            self.debug(f"Execution error: {e}")
+            raise  # Let the background wrapper handle it
 
     def _handle_exit_commands(self, line: str) -> bool:
         """

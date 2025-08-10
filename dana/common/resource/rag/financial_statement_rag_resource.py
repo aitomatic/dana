@@ -54,9 +54,7 @@ class FinancialStatementRAGResource(BaseResource):
             logger.info(f"Financial statement RAG resource [{self.name}] initialized")
 
     @ToolCallable.tool
-    async def get_balance_sheet(
-        self, company: str, period: str = "latest", format_output: str = "timeseries"
-    ) -> str:
+    async def get_balance_sheet(self, company: str, period: str = "latest", format_output: str = "timeseries") -> str:
         """Extract balance sheet data and format as timeseries DataFrame.
 
         Args:
@@ -67,28 +65,20 @@ class FinancialStatementRAGResource(BaseResource):
         query = f"balance sheet data for {company} {period} assets liabilities equity"
 
         if self.debug:
-            print(
-                f"[FinancialRAG] get_balance_sheet: company={company}, period={period}, format={format_output}"
-            )
+            print(f"[FinancialRAG] get_balance_sheet: company={company}, period={period}, format={format_output}")
             print(f"[FinancialRAG] RAG query: {query}")
 
         # Get relevant documents from RAG
         rag_results = await self.rag_resource.query(query, num_results=5)
 
         if self.debug:
-            print(
-                f"[FinancialRAG] RAG results length: {len(rag_results) if rag_results else 0} characters"
-            )
+            print(f"[FinancialRAG] RAG results length: {len(rag_results) if rag_results else 0} characters")
 
         # Extract and format balance sheet data using LLM
-        extraction_prompt = self._create_balance_sheet_extraction_prompt(
-            company, period, rag_results, format_output
-        )
+        extraction_prompt = self._create_balance_sheet_extraction_prompt(company, period, rag_results, format_output)
 
         if self.debug:
-            print(
-                f"[FinancialRAG] LLM extraction prompt length: {len(extraction_prompt)} characters"
-            )
+            print(f"[FinancialRAG] LLM extraction prompt length: {len(extraction_prompt)} characters")
 
         request = BaseRequest(
             arguments={
@@ -107,9 +97,7 @@ class FinancialStatementRAGResource(BaseResource):
             try:
                 result = Misc.get_response_content(response)
                 if self.debug:
-                    print(
-                        f"[FinancialRAG] Extracted balance sheet content length: {len(result)} characters"
-                    )
+                    print(f"[FinancialRAG] Extracted balance sheet content length: {len(result)} characters")
                     # Show a preview of the extracted content for debugging
                     print(result)
                 return result
@@ -121,9 +109,7 @@ class FinancialStatementRAGResource(BaseResource):
             return f"Error extracting balance sheet data: {response.error}"
 
     @ToolCallable.tool
-    async def get_cash_flow(
-        self, company: str, period: str = "latest", format_output: str = "timeseries"
-    ) -> str:
+    async def get_cash_flow(self, company: str, period: str = "latest", format_output: str = "timeseries") -> str:
         """Extract cash flow statement data and format as timeseries DataFrame.
 
         Args:
@@ -134,28 +120,20 @@ class FinancialStatementRAGResource(BaseResource):
         query = f"cash flow statement for {company} {period} operating investing financing activities"
 
         if self.debug:
-            print(
-                f"[FinancialRAG] get_cash_flow: company={company}, period={period}, format={format_output}"
-            )
+            print(f"[FinancialRAG] get_cash_flow: company={company}, period={period}, format={format_output}")
             print(f"[FinancialRAG] RAG query: {query}")
 
         # Get relevant documents from RAG
         rag_results = await self.rag_resource.query(query, num_results=5)
 
         if self.debug:
-            print(
-                f"[FinancialRAG] RAG results length: {len(rag_results) if rag_results else 0} characters"
-            )
+            print(f"[FinancialRAG] RAG results length: {len(rag_results) if rag_results else 0} characters")
 
         # Extract and format cash flow data using LLM
-        extraction_prompt = self._create_cash_flow_extraction_prompt(
-            company, period, rag_results, format_output
-        )
+        extraction_prompt = self._create_cash_flow_extraction_prompt(company, period, rag_results, format_output)
 
         if self.debug:
-            print(
-                f"[FinancialRAG] LLM extraction prompt length: {len(extraction_prompt)} characters"
-            )
+            print(f"[FinancialRAG] LLM extraction prompt length: {len(extraction_prompt)} characters")
 
         request = BaseRequest(
             arguments={
@@ -174,9 +152,7 @@ class FinancialStatementRAGResource(BaseResource):
             try:
                 result = Misc.get_response_content(response)
                 if self.debug:
-                    print(
-                        f"[FinancialRAG] Extracted cash flow content length: {len(result)} characters"
-                    )
+                    print(f"[FinancialRAG] Extracted cash flow content length: {len(result)} characters")
                     # Show a preview of the extracted content for debugging
                     print(result)
                 return result
@@ -188,9 +164,7 @@ class FinancialStatementRAGResource(BaseResource):
             return f"Error extracting cash flow data: {response.error}"
 
     @ToolCallable.tool
-    async def get_profit_n_loss(
-        self, company: str, period: str = "latest", format_output: str = "timeseries"
-    ) -> str:
+    async def get_profit_n_loss(self, company: str, period: str = "latest", format_output: str = "timeseries") -> str:
         """Extract profit and loss statement data and format as timeseries DataFrame.
 
         Args:
@@ -201,28 +175,20 @@ class FinancialStatementRAGResource(BaseResource):
         query = f"profit and loss income statement for {company} {period} revenue expenses net income"
 
         if self.debug:
-            print(
-                f"[FinancialRAG] get_profit_n_loss: company={company}, period={period}, format={format_output}"
-            )
+            print(f"[FinancialRAG] get_profit_n_loss: company={company}, period={period}, format={format_output}")
             print(f"[FinancialRAG] RAG query: {query}")
 
         # Get relevant documents from RAG
         rag_results = await self.rag_resource.query(query, num_results=5)
 
         if self.debug:
-            print(
-                f"[FinancialRAG] RAG results length: {len(rag_results) if rag_results else 0} characters"
-            )
+            print(f"[FinancialRAG] RAG results length: {len(rag_results) if rag_results else 0} characters")
 
         # Extract and format P&L data using LLM
-        extraction_prompt = self._create_profit_loss_extraction_prompt(
-            company, period, rag_results, format_output
-        )
+        extraction_prompt = self._create_profit_loss_extraction_prompt(company, period, rag_results, format_output)
 
         if self.debug:
-            print(
-                f"[FinancialRAG] LLM extraction prompt length: {len(extraction_prompt)} characters"
-            )
+            print(f"[FinancialRAG] LLM extraction prompt length: {len(extraction_prompt)} characters")
 
         request = BaseRequest(
             arguments={
@@ -241,9 +207,7 @@ class FinancialStatementRAGResource(BaseResource):
             try:
                 result = Misc.get_response_content(response)
                 if self.debug:
-                    print(
-                        f"[FinancialRAG] Extracted profit & loss content length: {len(result)} characters"
-                    )
+                    print(f"[FinancialRAG] Extracted profit & loss content length: {len(result)} characters")
                     print(result)
                 return result
             except ValueError as e:
@@ -253,9 +217,7 @@ class FinancialStatementRAGResource(BaseResource):
             logger.error(f"Profit & loss extraction failed: {response.error}")
             return f"Error extracting profit & loss data: {response.error}"
 
-    def _create_balance_sheet_extraction_prompt(
-        self, company: str, period: str, rag_results: str, format_output: str
-    ) -> str:
+    def _create_balance_sheet_extraction_prompt(self, company: str, period: str, rag_results: str, format_output: str) -> str:
         """Create prompt for balance sheet data extraction."""
         return f"""You are a financial data extraction expert. Extract balance sheet data from the provided documents and format it as requested.
 
@@ -324,9 +286,7 @@ If you have gathered sufficient information from this tool, consider providing a
 
 RESPONSE:"""
 
-    def _create_cash_flow_extraction_prompt(
-        self, company: str, period: str, rag_results: str, format_output: str
-    ) -> str:
+    def _create_cash_flow_extraction_prompt(self, company: str, period: str, rag_results: str, format_output: str) -> str:
         """Create prompt for cash flow data extraction."""
         return f"""You are a financial data extraction expert. Extract cash flow statement data from the provided documents and format it as requested.
 
@@ -406,9 +366,7 @@ If you have gathered sufficient information from this tool, consider providing a
 
 RESPONSE:"""
 
-    def _create_profit_loss_extraction_prompt(
-        self, company: str, period: str, rag_results: str, format_output: str
-    ) -> str:
+    def _create_profit_loss_extraction_prompt(self, company: str, period: str, rag_results: str, format_output: str) -> str:
         """Create prompt for profit and loss data extraction."""
         return f"""You are a financial data extraction expert. Extract profit and loss (income statement) data from the provided documents and format it as requested.
 
@@ -513,6 +471,7 @@ RESPONSE:"""
 
 if __name__ == "__main__":
     import asyncio
+
     rag = FinancialStatementRAGResource(
         name="financial_statement_rag",
         sources=["/Users/lam/Desktop/repos/opendxa/agents/agent_5_untitled_agent/docs"],
