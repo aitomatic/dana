@@ -21,6 +21,15 @@ class ResourceType(StructType):
     downstream runtime decisions (e.g., instantiation returns ResourceInstance).
     """
 
+    def __repr__(self) -> str:
+        """String representation showing this is a ResourceType."""
+        field_strs = [f"{name}: {type_name}" for name, type_name in self.fields.items()]
+        return f"ResourceType({self.name}, fields=[{', '.join(field_strs)}])"
+
+    def __str__(self) -> str:
+        """String representation showing this is a ResourceType."""
+        return self.__repr__()
+
 
 class ResourceInstance(StructInstance):
     """Runtime representation of a resource instance.
@@ -28,6 +37,19 @@ class ResourceInstance(StructInstance):
     Extends StructInstance semantics while providing a distinct runtime type
     for resource instances to enable feature gating and specialization.
     """
+
+    def __repr__(self) -> str:
+        """String representation showing resource type and field values."""
+        field_strs = []
+        for field_name in self._type.field_order:
+            value = self._values.get(field_name)
+            field_strs.append(f"{field_name}={repr(value)}")
+
+        return f"{self._type.name}({', '.join(field_strs)})"
+
+    def __str__(self) -> str:
+        """String representation showing resource type and field values."""
+        return self.__repr__()
 
     # --- Default lifecycle methods ---
     # These delegate to struct-defined functions when present. If not present,
@@ -107,33 +129,57 @@ class ResourceInstance(StructInstance):
 def create_resource_type_from_ast(resource_def, context=None) -> ResourceType:
     """Create a ResourceType from a ResourceDefinition AST node.
 
-    Mirrors create_struct_type_from_ast but accepts ResourceDefinition.
+    Mirrors create_struct_type_from_ast but accepts ResourceDefinition and handles inheritance.
 
     Args:
         resource_def: The ResourceDefinition AST node
         context: Optional sandbox context for evaluating default values
 
     Returns:
-        ResourceType with fields and default values
+        ResourceType with fields and default values, including inherited fields
     """
     # Import here to avoid circular imports
     from dana.core.lang.ast import ResourceDefinition
+    from dana.core.lang.interpreter.struct_system import StructTypeRegistry
 
     if not isinstance(resource_def, ResourceDefinition):
         raise TypeError(f"Expected ResourceDefinition, got {type(resource_def)}")
 
-    # Convert ResourceField list to dict and field order
+    # Start with inherited fields if parent exists
     fields: dict[str, str] = {}
     field_order: list[str] = []
     field_defaults: dict[str, Any] = {}
     field_comments: dict[str, str] = {}
 
+    # Handle inheritance by merging parent fields
+    if resource_def.parent_name:
+        parent_type = StructTypeRegistry.get(resource_def.parent_name)
+        if parent_type is None:
+            raise ValueError(f"Parent resource '{resource_def.parent_name}' not found for '{resource_def.name}'")
+
+        # Copy parent fields first (inheritance order: parent fields come first)
+        fields.update(parent_type.fields)
+        field_order.extend(parent_type.field_order)
+
+        if parent_type.field_defaults:
+            field_defaults.update(parent_type.field_defaults)
+
+        if hasattr(parent_type, "field_comments") and parent_type.field_comments:
+            field_comments.update(parent_type.field_comments)
+
+    # Add child fields (child fields override parent fields with same name)
     for field in resource_def.fields:
         if field.type_hint is None:
             raise ValueError(f"Field {field.name} has no type hint")
         if not hasattr(field.type_hint, "name"):
             raise ValueError(f"Field {field.name} type hint {field.type_hint} has no name attribute")
+
+        # Add or override field
         fields[field.name] = field.type_hint.name
+
+        # Update field order (remove if exists, then add to end)
+        if field.name in field_order:
+            field_order.remove(field.name)
         field_order.append(field.name)
 
         if field.default_value is not None:

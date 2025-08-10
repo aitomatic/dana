@@ -137,7 +137,9 @@ class EnhancedErrorFormatter:
 
             # Minimal, single-line hint for common reserved keyword misuse
             if token_value == "resource":
-                lines.append("hint: 'resource' is reserved; rename the receiver to 'self' (e.g., def (self: Type) method(...):)")
+                lines.append(
+                    "hint: 'resource' is reserved; rename the receiver to the resource type or 'self' (e.g., def (bicycle: Type) method(...):)"
+                )
             return "\n".join(lines)
 
         # Fall back to original formatting for non-reserved keyword errors
