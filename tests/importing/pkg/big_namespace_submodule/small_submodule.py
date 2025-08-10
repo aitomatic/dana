@@ -5,7 +5,7 @@ from ..util_submodule import small_submodule as small_util_submodule_in_big_util
 from ..util_submodule.small_submodule import I_AM as SMALL_UTIL_SUBMODULE_IN_BIG_UTIL_SUBMODULE
 
 
-I_AM = sys.modules[__name__]
+I_AM = sys.modules[__name__].__name__
 
 
 print(f"""

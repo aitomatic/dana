@@ -1,3 +1,5 @@
+import sys
+
 import pkg
 
-I_AM = 'a stand-alone module'
+I_AM = sys.modules[__name__].__name__

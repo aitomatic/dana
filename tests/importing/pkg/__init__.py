@@ -42,7 +42,7 @@ from .util_submodule import small_submodule as small_util_submodule_in_util_subm
 from .util_submodule.small_submodule import I_AM as SMALL_UTIL_SUBMODULE_IN_UTIL_SUBMODULE
 
 
-I_AM = sys.modules[__name__]
+I_AM = sys.modules[__name__].__name__
 
 
 # pkg.big_namespace_submodule

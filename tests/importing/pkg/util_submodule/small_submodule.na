@@ -1,1 +1,1 @@
-I_AM = 'a small util sub-module, in a big util sub-module, in a package'
+I_AM = 'pkg.util_submodule.small_submodule'
