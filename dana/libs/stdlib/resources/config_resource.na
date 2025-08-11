@@ -1,4 +1,4 @@
-# Configuration config  
+# Configuration resource  
 # Provides configuration management and key-value storage for Dana agents
 
 resource ConfigResource:
