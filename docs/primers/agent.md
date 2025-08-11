@@ -117,24 +117,27 @@ print(agent_instance.config.get("timeout"))  # 30
 print(len(agent_instance.flags))             # 3
 ```
 
-### Blueprint Inheritance
+### Blueprint Composition
 
-Agent blueprints support inheritance:
+Agent blueprints support composition through nested structs and field references:
 
 ```dana
-agent_blueprint Animal:
-    name: str = "Animal"
-    legs: int = 4
+# Define base components
+agent_blueprint Address:
+    street: str = "Unknown"
+    city: str = "Unknown"
+    state: str = "Unknown"
 
-agent_blueprint Dog(Animal):
-    name = "Dog"
-    breed: str = "Unknown"
+agent_blueprint Person:
+    name: str = "Anonymous"
+    age: int = 0
+    address: Address = Address()
 
-# Create instance with inherited fields
-my_dog = Dog(breed="Golden Retriever")
-print(my_dog.name)   # "Dog"
-print(my_dog.legs)   # 4 (inherited)
-print(my_dog.breed)  # "Golden Retriever"
+# Create instance with composed fields
+my_person = Person(name="John", age=30)
+print(my_person.name)                    # "John"
+print(my_person.address.street)          # "Unknown"
+print(my_person.address.city)            # "Unknown"
 ```
 
 ## Singleton Agents
@@ -247,34 +250,34 @@ print(agent1.recall("key"))  # "value1"
 print(agent2.recall("key"))  # "value2"
 ```
 
-## Agent Inheritance Patterns
+## Agent Composition Patterns
 
-### Multi-level Blueprint Inheritance
+### Complex Blueprint Composition
 ```dana
-agent_blueprint Level1:
-    name: str = "Level1"
-    level: int = 1
+agent_blueprint DatabaseConfig:
+    host: str = "localhost"
+    port: int = 5432
+    name: str = "default"
 
-agent_blueprint Level2(Level1):
-    name = "Level2"
-    level = 2
-    extra: str = "level2"
+agent_blueprint CacheConfig:
+    enabled: bool = true
+    ttl: int = 300
 
-agent_blueprint Level3(Level2):
-    name = "Level3"
-    level = 3
-    extra = "level3"
-    final: bool = true
+agent_blueprint AppConfig:
+    name: str = "App"
+    version: str = "1.0"
+    database: DatabaseConfig = DatabaseConfig()
+    cache: CacheConfig = CacheConfig()
 
-# Create instance with full inheritance chain
-deep = Level3()
-print(deep.name)   # "Level3"
-print(deep.level)  # 3
-print(deep.extra)  # "level3"
-print(deep.final)  # true
+# Create instance with composed configuration
+config = AppConfig(version="2.0")
+print(config.name)                    # "App"
+print(config.version)                 # "2.0"
+print(config.database.host)           # "localhost"
+print(config.cache.enabled)           # true
 ```
 
-### Singleton Inheritance with Overrides
+### Singleton with Field Overrides
 ```dana
 agent_blueprint OverrideBase:
     name: str = "Base"
