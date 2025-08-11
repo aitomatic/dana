@@ -26,7 +26,7 @@ const AgentChartNode: React.FC<AgentChartNodeProps> = ({ data, selected }) => {
     const baseClasses = 'rounded-lg border-2 transition-all duration-200 shadow-sm';
 
     if (isMain) {
-      return `${baseClasses} w-24 h-24 bg-white border-gray-200 shadow-lg`;
+      return `${baseClasses}  p-4 min-w-34 bg-white border-gray-200 shadow-lg`;
     }
 
     const statusClasses = {
@@ -49,8 +49,8 @@ const AgentChartNode: React.FC<AgentChartNodeProps> = ({ data, selected }) => {
     // Default icons based on label with wrapping circles
     const iconMap: Record<string, React.ReactNode> = {
       'AI Model': (
-        <div className="flex justify-center items-center w-12 h-12 bg-blue-100 rounded-full">
-          <Brain className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-blue-600'}`} />
+        <div className="flex justify-center items-center w-12 h-12 bg-gray-100 rounded-full">
+          <Brain className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-gray-600'}`} />
         </div>
       ),
       'Knowledge Base': (
@@ -63,11 +63,11 @@ const AgentChartNode: React.FC<AgentChartNodeProps> = ({ data, selected }) => {
         </div>
       ),
       'Domain Knowledge': (
-        <div className="flex justify-center items-center w-12 h-12 bg-green-100 rounded-full">
+        <div className="flex justify-center items-center w-12 h-12 bg-orange-100 rounded-full">
           {isLoading ? (
             <div className="w-6 h-6 rounded-full border-2 border-green-300 animate-spin border-t-green-600"></div>
           ) : (
-            <Book className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-green-600'}`} />
+            <Book className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-orange-600'}`} />
           )}
         </div>
       ),
@@ -86,7 +86,7 @@ const AgentChartNode: React.FC<AgentChartNodeProps> = ({ data, selected }) => {
         </div>
       ),
       Tools: (
-        <div className="flex justify-center items-center w-8 h-8 bg-gray-100 rounded-full">
+        <div className="flex justify-center items-center w-12 h-12 bg-gray-100 rounded-full">
           <Tools className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-orange-600'}`} />
         </div>
       ),
@@ -95,7 +95,7 @@ const AgentChartNode: React.FC<AgentChartNodeProps> = ({ data, selected }) => {
     return (
       iconMap[label] || (
         <div className="flex justify-center items-center w-6 h-6 bg-gray-100 rounded-full">
-          <div className={`w-4 h-4 ${isComingSoon ? 'text-gray-400' : 'text-gray-600'}`} />
+          <div className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-gray-600'}`} />
         </div>
       )
     );
@@ -139,9 +139,9 @@ const AgentChartNode: React.FC<AgentChartNodeProps> = ({ data, selected }) => {
             position: 'absolute',
           }}
         />
-        <div className="flex flex-col justify-center items-center h-full text-gray-900">
+        <div className="flex flex-col  justify-center items-center h-full text-gray-900">
           {/* Agent Avatar */}
-          <div className="flex overflow-hidden justify-center items-center mb-1 w-12 h-12 bg-gray-100 rounded-full">
+          <div className="flex overflow-hidden justify-center items-center mb-1 w-16 h-16 bg-gray-100 rounded-full">
             <img
               src={getAgentAvatarSync(agentId || 0)}
               alt={`${label} avatar`}
@@ -159,7 +159,7 @@ const AgentChartNode: React.FC<AgentChartNodeProps> = ({ data, selected }) => {
             />
           </div>
           {/* Agent Name */}
-          <div className="text-sm font-medium leading-tight text-center text-gray-900">{label}</div>
+          <div className="text-md mt-2 font-bold leading-tight text-center text-gray-900">{label}</div>
         </div>
       </div>
     );

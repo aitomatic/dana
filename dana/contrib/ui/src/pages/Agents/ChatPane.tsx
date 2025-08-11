@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ArrowUp, NavArrowDown, NavArrowUp, Xmark, CloudUpload, Download, Page } from 'iconoir-react';
+import { ArrowUp, NavArrowDown, NavArrowUp, Xmark, Table2Columns, Download, Page } from 'iconoir-react';
 import { SidebarExpand } from 'iconoir-react';
 import { useParams } from 'react-router-dom';
 import { apiService } from '@/lib/api';
@@ -673,7 +673,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
                   : 'text-gray-600 hover:text-gray-800'
               }`}
             >
-              Individual Chat
+              Chat
             </button>
             <button
               onClick={() => setEvaluationMode('bulk')}
@@ -756,8 +756,8 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
                   onDrop={handleFileDrop}
                   onDragOver={(e) => e.preventDefault()}
                 >
-                  <CloudUpload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Upload CSV File</h3>
+                  <Table2Columns className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Add Evaluation File (.csv)</h3>
                   <p className="text-sm text-gray-600 mb-4">
                     Drop your CSV file here or click to browse.
                   </p>
@@ -766,7 +766,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
                   </p>
                   
                   {/* Sample CSV Download Link */}
-                  <button
+                  <button variant="default"
                     onClick={(e) => {
                       e.stopPropagation();
                       downloadSampleCSV();
@@ -774,7 +774,7 @@ export const ChatPane: React.FC<ChatPaneProps> = ({ agentName = 'Agent', onClose
                     className="inline-flex items-center gap-2 px-3 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
                   >
                     <Page className="w-4 h-4" />
-                    Download Sample CSV
+                    Get Sample CSV
                   </button>
                   
                   <input

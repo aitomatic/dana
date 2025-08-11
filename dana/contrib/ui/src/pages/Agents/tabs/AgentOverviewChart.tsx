@@ -43,9 +43,9 @@ function getLayoutedElements(nodes: FlowNode[], edges: Edge[], direction: 'TB' |
 
     // Custom positioning for proper layout
     if (node.id === 'ai-model') {
-      const topRowY = 55; // Fixed Y position for top row
+      const topRowY = 74; // Fixed Y position for top row
       node.position = {
-        x: nodeWithPosition.x - width / 2 - 250, // Move further left
+        x: nodeWithPosition.x - width / 2 - 320, // Move further left
         y: topRowY,
       };
     } else if (node.id === 'agent') {
