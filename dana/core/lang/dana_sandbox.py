@@ -249,6 +249,10 @@ class DanaSandbox(Loggable):
         base_llm_resource = BaseLLMResource(name="system_llm", model="openai:gpt-4o-mini")
         base_llm_resource.initialize()
 
+        # Enable mock mode for testing if DANA_MOCK_LLM is set
+        if base_llm_resource._bridge and base_llm_resource._bridge._sys_resource:
+            base_llm_resource._bridge._sys_resource.with_mock_llm_call(True)
+
         # Set LLM resource in context for reason function access
         self._context.set_system_llm_resource(base_llm_resource)
 
