@@ -1,12 +1,10 @@
-import type { Node as FlowNode, Edge } from 'reactflow';
-
 export interface AgentChartNode {
   id: string;
   type: 'agent' | 'component' | 'subcomponent';
   data: {
     label: string;
     icon?: React.ReactNode;
-    status?: 'active' | 'coming-soon' | 'empty';
+    status?: 'active' | 'coming-soon' | 'empty' | 'loading';
     count?: number;
     description?: string;
     isMain?: boolean;
@@ -29,7 +27,7 @@ export interface AgentChartData {
     knowledgeBase: {
       domainKnowledge: {
         count: number;
-        status: 'active' | 'empty';
+        status: 'active' | 'empty' | 'loading';
       };
       documents: {
         count: number;

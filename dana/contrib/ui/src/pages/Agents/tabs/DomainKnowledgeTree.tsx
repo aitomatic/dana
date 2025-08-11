@@ -5,8 +5,9 @@ import dagre from 'dagre';
 import 'reactflow/dist/style.css';
 import CustomNode from './CustomNode';
 import { apiService } from '@/lib/api';
+import { useKnowledgeStore } from '@/stores/knowledge-store';
 import type { DomainKnowledgeResponse, DomainNode } from '@/types/domainKnowledge';
-import type { KnowledgeStatusResponse, KnowledgeTopicStatus } from '@/lib/api';
+import type { KnowledgeTopicStatus, KnowledgeStatusResponse } from '@/lib/api';
 import { toast } from 'sonner';
 import KnowledgeSidebar from './KnowledgeSidebar';
 import { Search } from 'iconoir-react';
@@ -21,64 +22,64 @@ const animationStyles = `
   .react-flow__node {
     transition: ${TRANSITION_ALL} !important;
   }
-  
+
   .react-flow__node-enter {
     opacity: 0;
     transform: scale(0.8) translateY(10px);
   }
-  
+
   .react-flow__node-enter-active {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
-  
+
   .react-flow__node-exit {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
-  
+
   .react-flow__node-exit-active {
     opacity: 0;
     transform: scale(0.8) translateY(-10px);
   }
-  
+
   /* Edge animations - improved implementation */
   .react-flow__edge {
     transition: ${TRANSITION_ALL} !important;
   }
-  
+
   .react-flow__edge-path {
     transition: ${TRANSITION_ALL} !important;
   }
-  
+
   /* Animate edges when they appear - using data attributes for better targeting */
   .react-flow__edge[data-edge-new="true"],
   .react-flow__edges g[data-edge-new="true"] {
     opacity: 0 !important;
     animation: edgeAppear 0.8s cubic-bezier(.43,.08,.45,.97) forwards !important;
   }
-  
+
   .react-flow__edge[data-edge-new="true"] .react-flow__edge-path,
   .react-flow__edges g[data-edge-new="true"] .react-flow__edge-path {
     stroke-dasharray: 1000 !important;
     stroke-dashoffset: 1000 !important;
     animation: edgePathAppear 0.8s cubic-bezier(.43,.08,.45,.97) forwards !important;
   }
-  
+
   /* Also target edge paths directly with data attribute */
   .react-flow__edge-path[data-edge-new="true"] {
     stroke-dasharray: 1000 !important;
     stroke-dashoffset: 1000 !important;
     animation: edgePathAppear 0.8s cubic-bezier(.43,.08,.45,.97) forwards !important;
   }
-  
+
   /* Additional targeting for ReactFlow's edge structure */
   .react-flow__edges g[data-edge-new="true"] .react-flow__edge-path {
     stroke-dasharray: 1000 !important;
     stroke-dashoffset: 1000 !important;
     animation: edgePathAppear 0.8s cubic-bezier(.43,.08,.45,.97) forwards !important;
   }
-  
+
   /* Keyframe animations for edges */
   @keyframes edgeAppear {
     from {
@@ -88,7 +89,7 @@ const animationStyles = `
       opacity: 1;
     }
   }
-  
+
   @keyframes edgePathAppear {
     from {
       stroke-dashoffset: 1000;
@@ -97,25 +98,25 @@ const animationStyles = `
       stroke-dashoffset: 0;
     }
   }
-  
+
   /* Ensure edges are visible during transitions */
   .react-flow__edge.selected .react-flow__edge-path {
     stroke-width: 3;
   }
-  
+
   .react-flow__edge:hover .react-flow__edge-path {
     stroke-width: 2;
   }
-  
+
   /* Smooth viewport transitions */
   .react-flow {
     transition: ${TRANSITION_ALL} !important;
   }
-  
+
   .react-flow__viewport {
     transition: ${TRANSITION_ALL} !important;
   }
-  
+
   .react-flow__transformationpane {
     transition: ${TRANSITION_ALL} !important;
   }
@@ -305,22 +306,33 @@ async function triggerGenerateKnowledge(agentId: string | number) {
   return response;
 }
 
-// Use backend URL for WebSocket
-const wsUrl = `ws://localhost:8080/ws/knowledge-status`;
+// Use backend URL for WebSocket (now disabled - using centralized store)
+// const wsUrl = `ws://localhost:8080/ws/knowledge-status`;
 
 const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) => {
+  // Use centralized knowledge store
+  const {
+    domainKnowledge: domainTree,
+    knowledgeStatus: statusData,
+    isLoading: initialLoading,
+    error: storeError,
+    setCurrentAgent,
+  } = useKnowledgeStore();
+
   const [nodes, setNodes] = useState<FlowNode[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(false);
+  const [loading] = useState(false); // Keep for local loading states if needed
   const [error, setError] = useState<string | null>(null);
+
+  // Update error when store error changes
+  useEffect(() => {
+    setError(storeError);
+  }, [storeError]);
   const [generating, setGenerating] = useState(false);
   const [, setGenerateMsg] = useState<string | null>(null);
   const [topicStatus] = useState<{ [id: string]: string }>({});
-  const [domainTree, setDomainTree] = useState<DomainKnowledgeResponse | null>(null);
-  const [statusData, setStatusData] = useState<KnowledgeStatusResponse | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarTopicPath, setSidebarTopicPath] = useState<string>('');
   const [sidebarContent, setSidebarContent] = useState<any>(null);
@@ -330,7 +342,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const wsRef = useRef<WebSocket | null>(null);
+  // const wsRef = useRef<WebSocket | null>(null); // No longer needed
   const expandedNodesRef = useRef<Set<string>>(new Set());
   const previousAgentIdRef = useRef<string | number | undefined>(undefined);
   const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
@@ -500,7 +512,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     }
   }, [agentId]);
 
-  // WebSocket for real-time status updates
+  /* WebSocket for real-time status updates - DISABLED (now handled by centralized store)
   useEffect(() => {
     if (!agentId) return;
     const ws = new WebSocket(wsUrl);
@@ -559,7 +571,10 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
     return () => {
       ws.close();
     };
-  }, [agentId]);
+  }, [agentId]); */
+
+  // WebSocket handling is now managed by the centralized knowledge store
+  // (The old WebSocket code above has been commented out to prevent duplicate connections)
 
   const nodeTypes = {
     custom: (nodeProps: any) => (
@@ -604,7 +619,10 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
 
       // Debug logging
       console.log('🔍 Looking for knowledge status for nodePath:', nodePath);
-      console.log('📋 Available status topics:', statusData.topics.map(t => ({ path: t.path, status: t.status })));
+      console.log(
+        '📋 Available status topics:',
+        statusData.topics.map((t) => ({ path: t.path, status: t.status })),
+      );
 
       // Find the status entry that matches this node's path
       // First try exact match
@@ -772,64 +790,63 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       setEdges(initialEdges);
       return;
     }
+  }, [agentId]);
 
-    const fetchData = async () => {
-      setInitialLoading(true);
-      setError(null);
+  // Update current agent in centralized store
+  useEffect(() => {
+    if (agentId) {
+      setCurrentAgent(agentId);
+    } else {
+      setCurrentAgent(null);
+      // Show default nodes if no agent ID
+      const layouted = getLayoutedElements(initialNodes, initialEdges, 'LR');
+      setNodes(layouted);
+      setEdges(initialEdges);
+    }
+  }, [agentId, setCurrentAgent]);
 
-      try {
-        // Fetch both domain knowledge and knowledge status in parallel
-        const [domainResponse, statusResponse] = await Promise.all([
-          apiService.getDomainKnowledge(agentId),
-          apiService.getKnowledgeStatus(agentId).catch(() => ({ topics: [] })), // Fallback to empty if status fails
-        ]);
-
-        if (domainResponse.message) {
-          // No domain knowledge found, show empty state
-          setNodes([]);
-          setEdges([]);
-          setError(domainResponse.message);
-        } else if (domainResponse.root) {
-          // Store the domain tree and status data
-          setDomainTree(domainResponse);
-          setStatusData(statusResponse);
-
-          // Preserve existing expansion state or initialize with just the root
-          const currentExpanded =
-            expandedNodesRef.current.size > 0
-              ? expandedNodesRef.current
-              : new Set([domainResponse.root.topic]);
-
-          // Only set expanded nodes if we don't have any yet
-          if (expandedNodesRef.current.size === 0) {
-            setExpandedNodes(currentExpanded);
-          }
-
-          // Convert domain knowledge to flow format (now with status information)
-          const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
-            domainResponse,
-            statusResponse,
-            currentExpanded,
-            searchQuery,
-          );
-          const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
-          setNodes(layoutedNodes);
-          setEdges(flowEdges);
-        }
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to load domain knowledge');
-        // Fall back to default nodes
+  // Process domain knowledge and status data from store
+  useEffect(() => {
+    if (!domainTree || !statusData) {
+      if (!agentId) {
+        // Show default nodes if no agent ID
         const layouted = getLayoutedElements(initialNodes, initialEdges, 'LR');
         setNodes(layouted);
         setEdges(initialEdges);
-      } finally {
-        setInitialLoading(false);
       }
-    };
+      return;
+    }
 
-    fetchData();
-  }, [agentId]);
+    if (domainTree.message) {
+      // No domain knowledge found, show empty state
+      setNodes([]);
+      setEdges([]);
+      setError(domainTree.message);
+    } else if (domainTree.root) {
+      // Preserve existing expansion state or initialize with just the root
+      const currentExpanded =
+        expandedNodesRef.current.size > 0
+          ? expandedNodesRef.current
+          : new Set([domainTree.root.topic]);
+
+      // Only set expanded nodes if we don't have any yet
+      if (expandedNodesRef.current.size === 0) {
+        setExpandedNodes(currentExpanded);
+      }
+
+      // Convert domain knowledge to flow format (now with status information)
+      const { nodes: flowNodes, edges: flowEdges } = convertDomainToFlow(
+        domainTree,
+        statusData as KnowledgeStatusResponse,
+        currentExpanded,
+        searchQuery,
+      );
+      const layoutedNodes = getLayoutedElements(flowNodes, flowEdges, 'LR');
+      setNodes(layoutedNodes);
+      setEdges(flowEdges);
+      setError(null);
+    }
+  }, [domainTree, statusData, searchQuery]);
 
   // Hide popup when clicking outside
   useEffect(() => {
@@ -1077,10 +1094,12 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
       return { total: 0, completed: 0, inProgress: 0, failed: 0, pending: 0 };
 
     const total = statusData.topics.length;
-    const completed = statusData.topics.filter((topic) => topic.status === 'success').length;
-    const inProgress = statusData.topics.filter((topic) => topic.status === 'in_progress').length;
-    const failed = statusData.topics.filter((topic) => topic.status === 'failed').length;
-    const pending = statusData.topics.filter((topic) => topic.status === 'pending').length;
+    const completed = statusData.topics.filter((topic: any) => topic.status === 'success').length;
+    const inProgress = statusData.topics.filter(
+      (topic: any) => topic.status === 'in_progress',
+    ).length;
+    const failed = statusData.topics.filter((topic: any) => topic.status === 'failed').length;
+    const pending = statusData.topics.filter((topic: any) => topic.status === 'pending').length;
 
     return { total, completed, inProgress, failed, pending };
   };
@@ -1146,15 +1165,16 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
         {/* Enhanced Control Bar */}
         {agentId && (
           <div
-            className={`absolute left-4 right-4 z-20 ${initialLoading || loading ? 'top-16' : 'top-4'
-              }`}
+            className={`absolute left-4 right-4 z-20 ${
+              initialLoading || loading ? 'top-16' : 'top-4'
+            }`}
           >
             <div className="flex gap-3 justify-between items-center">
               {/* Left side - Search and Tree Controls */}
               <div className="flex flex-1 gap-3 items-center">
                 {/* Search Input */}
                 <div className="relative flex-1 max-w-md">
-                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                  <div className="absolute left-3 top-1/2 text-gray-400 transform -translate-y-1/2">
                     <Search width={16} height={16} />
                   </div>
                   <input
@@ -1162,7 +1182,7 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                     placeholder="Search topic"
                     value={searchQuery}
                     onChange={(e) => handleSearchChange(e.target.value)}
-                    className="pl-10 pr-3 py-2 w-full text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-1"
+                    className="py-2 pr-3 pl-10 w-full text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-1"
                   />
                   {searchQuery && (
                     <button
@@ -1210,10 +1230,11 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
                 <button
                   onClick={handleGenerateKnowledge}
                   disabled={generating || initialLoading || loading}
-                  className={`px-4 py-2 text-sm rounded-md border shadow-sm ${generating || initialLoading || loading
-                    ? 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed opacity-75'
-                    : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:text-gray-900 hover:shadow-md'
-                    }`}
+                  className={`px-4 py-2 text-sm rounded-md border shadow-sm ${
+                    generating || initialLoading || loading
+                      ? 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed opacity-75'
+                      : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hover:text-gray-900 hover:shadow-md'
+                  }`}
                   style={{ transition: TRANSITION_ALL }}
                 >
                   {generating ? (
@@ -1299,8 +1320,8 @@ const DomainKnowledgeTree: React.FC<DomainKnowledgeTreeProps> = ({ agentId }) =>
               ) : (
                 /* Show empty state when no nodes but no error */
                 <>
-                  <div className="text-center flex item-center flex-col ">
-                    <div className="flex items-center pb-4 justify-center text-gray-400">
+                  <div className="flex flex-col text-center item-center">
+                    <div className="flex justify-center items-center pb-4 text-gray-400">
                       <Search className="w-10 h-10" />
                     </div>
                     <div className="text-lg font-semibold text-gray-500">Keyword not found</div>
