@@ -33,7 +33,7 @@ const AgentChartNode: React.FC<AgentChartNodeProps> = ({ data, selected }) => {
       active: 'bg-white border-gray-100 shadow-md',
       'coming-soon': 'bg-gray-50 border-gray-200',
       empty: 'bg-white border-gray-200',
-      loading: 'bg-blue-50 border-blue-200 animate-pulse',
+      loading: 'bg-blue-50 border-blue-200',
     };
 
     return `${baseClasses} ${statusClasses[status || 'active']} ${selected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`;
@@ -55,20 +55,12 @@ const AgentChartNode: React.FC<AgentChartNodeProps> = ({ data, selected }) => {
       ),
       'Knowledge Base': (
         <div className="flex justify-center items-center w-12 h-12 bg-green-100 rounded-full">
-          {isLoading ? (
-            <div className="w-6 h-6 rounded-full border-2 border-green-300 animate-spin border-t-green-600"></div>
-          ) : (
-            <OpenBook className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-green-600'}`} />
-          )}
+          <OpenBook className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-green-600'}`} />
         </div>
       ),
       'Domain Knowledge': (
         <div className="flex justify-center items-center w-12 h-12 bg-orange-100 rounded-full">
-          {isLoading ? (
-            <div className="w-6 h-6 rounded-full border-2 border-green-300 animate-spin border-t-green-600"></div>
-          ) : (
-            <Book className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-orange-600'}`} />
-          )}
+          <Book className={`w-6 h-6 ${isComingSoon ? 'text-gray-400' : 'text-orange-600'}`} />
         </div>
       ),
       Documents: (
@@ -159,7 +151,9 @@ const AgentChartNode: React.FC<AgentChartNodeProps> = ({ data, selected }) => {
             />
           </div>
           {/* Agent Name */}
-          <div className="text-md mt-2 font-bold leading-tight text-center text-gray-900">{label}</div>
+          <div className="text-md mt-2 font-bold leading-tight text-center text-gray-900">
+            {label}
+          </div>
         </div>
       </div>
     );
@@ -228,10 +222,10 @@ const AgentChartNode: React.FC<AgentChartNodeProps> = ({ data, selected }) => {
             )}
             {/* Loading label underneath the name */}
             {status === 'loading' && (
-              <Badge variant="secondary" className="mt-1 bg-blue-100 text-blue-700 animate-pulse">
+              <Badge variant="secondary" className="mt-1 bg-blue-100 text-blue-700">
                 <div className="flex gap-1 items-center">
                   <div className="w-2 h-2 rounded-full border border-blue-500 animate-spin border-t-transparent"></div>
-                  New Item Adding...
+                  Processing...
                 </div>
               </Badge>
             )}
